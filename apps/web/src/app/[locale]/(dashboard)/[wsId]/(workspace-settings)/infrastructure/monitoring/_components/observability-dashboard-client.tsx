@@ -20,7 +20,6 @@ import {
   Radio,
   RefreshCw,
   Search,
-  Terminal,
   Trash2,
 } from '@tuturuuu/icons';
 import {
@@ -88,6 +87,7 @@ import {
   formatDateTime,
   formatLatencyMs,
 } from './formatters';
+import { ObservabilityResourceClusters } from './observability-resource-clusters';
 
 export type ObservabilityDashboardMode =
   | 'analytics'
@@ -312,14 +312,6 @@ function statusClass(status: number | null | undefined) {
   }
 
   return 'text-dynamic-green';
-}
-
-function getPercent(value: number | null | undefined, max: number) {
-  if (value == null || !Number.isFinite(value)) {
-    return 0;
-  }
-
-  return Math.max(2, Math.min(100, (value / max) * 100));
 }
 
 function getCpuTone(value: number | null | undefined): Tone {
@@ -1561,29 +1553,6 @@ export function ObservabilityDashboardClient({
         .some((value) => String(value).includes(projectServiceNeedle))
     );
   }, [projectId, resources?.allContainers]);
-  const scopedResourceSummary = useMemo(
-    () => ({
-      serviceCount: scopedContainers.length,
-      totalCpuPercent: scopedContainers.reduce(
-        (total, container) => total + (container.cpuPercent ?? 0),
-        0
-      ),
-      totalMemoryBytes: scopedContainers.reduce(
-        (total, container) => total + (container.memoryBytes ?? 0),
-        0
-      ),
-      totalRxBytes: scopedContainers.reduce(
-        (total, container) => total + (container.rxBytes ?? 0),
-        0
-      ),
-      totalTxBytes: scopedContainers.reduce(
-        (total, container) => total + (container.txBytes ?? 0),
-        0
-      ),
-    }),
-    [scopedContainers]
-  );
-
   useEffect(() => {
     if (mode !== 'deployments' || !hasDeploymentInProgress) {
       return;
@@ -3002,134 +2971,10 @@ export function ObservabilityDashboardClient({
             </div>
           )}
 
-          <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-            <section className="rounded-lg border border-border bg-background">
-              <div className="grid grid-cols-[minmax(0,1fr)_90px_90px_120px_120px_120px] gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs">
-                <span>{t('resources.container')}</span>
-                <span>{t('resources.health')}</span>
-                <span>{t('resources.uptime')}</span>
-                <span>{t('resources.cpu')}</span>
-                <span>{t('resources.memory')}</span>
-                <span>{t('resources.network')}</span>
-              </div>
-              {resourcesQuery.isLoading ? (
-                <LoadingSkeleton rows={8} />
-              ) : scopedContainers.length > 0 ? (
-                scopedContainers.map((container) => {
-                  const cpuTone = getCpuTone(container.cpuPercent);
-                  const memoryTone = getMemoryTone(container.memoryBytes);
-                  const memoryMb =
-                    container.memoryBytes == null
-                      ? null
-                      : container.memoryBytes / 1024 / 1024;
-
-                  return (
-                    <div
-                      className="grid grid-cols-[minmax(0,1fr)_90px_90px_120px_120px_120px] items-center gap-4 border-border/50 border-b px-4 py-3 text-sm"
-                      key={container.containerId}
-                    >
-                      <div className="min-w-0">
-                        <p className="truncate font-medium">{container.name}</p>
-                        <p className="truncate font-mono text-muted-foreground text-xs">
-                          {container.image ?? container.serviceName ?? '-'}
-                        </p>
-                      </div>
-                      <span
-                        className={cn(
-                          container.health === 'healthy'
-                            ? 'text-dynamic-green'
-                            : container.health === 'unhealthy'
-                              ? 'text-dynamic-red'
-                              : 'text-muted-foreground'
-                        )}
-                      >
-                        {container.health}
-                      </span>
-                      <span className="font-mono text-muted-foreground text-xs">
-                        {container.runningFor ?? '-'}
-                      </span>
-                      <div>
-                        <span
-                          className={cn(
-                            'font-medium',
-                            toneClasses[cpuTone].text
-                          )}
-                        >
-                          {formatNumber(container.cpuPercent)}%
-                        </span>
-                        <div className="mt-1 h-1 rounded-full bg-muted">
-                          <div
-                            className={cn(
-                              'h-full rounded-full',
-                              toneClasses[cpuTone].bar
-                            )}
-                            style={{
-                              width: `${getPercent(container.cpuPercent, 40)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <span
-                          className={cn(
-                            'font-medium',
-                            toneClasses[memoryTone].text
-                          )}
-                        >
-                          {formatBytes(container.memoryBytes)}
-                        </span>
-                        <div className="mt-1 h-1 rounded-full bg-muted">
-                          <div
-                            className={cn(
-                              'h-full rounded-full',
-                              toneClasses[memoryTone].bar
-                            )}
-                            style={{
-                              width: `${getPercent(memoryMb, 1024)}%`,
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <span className="font-mono text-muted-foreground text-xs">
-                        {formatBytes(container.rxBytes)} /{' '}
-                        {formatBytes(container.txBytes)}
-                      </span>
-                    </div>
-                  );
-                })
-              ) : (
-                <div className="px-4 py-12 text-center text-muted-foreground text-sm">
-                  {t('empty.containers')}
-                </div>
-              )}
-            </section>
-            <section className="rounded-lg border border-border bg-background p-4">
-              <Terminal className="mb-3 h-4 w-4 text-muted-foreground" />
-              <p className="font-medium text-sm">{t('resources.summary')}</p>
-              {resourcesQuery.isLoading ? (
-                <LoadingSkeleton className="px-0" rows={5} />
-              ) : (
-                <div className="mt-4 grid gap-3">
-                  <MetricCard
-                    label={t('resources.total_cpu')}
-                    value={`${formatNumber(scopedResourceSummary.totalCpuPercent)}%`}
-                  />
-                  <MetricCard
-                    label={t('resources.total_memory')}
-                    value={formatBytes(scopedResourceSummary.totalMemoryBytes)}
-                  />
-                  <MetricCard
-                    label={t('resources.network')}
-                    value={`${formatBytes(scopedResourceSummary.totalRxBytes)} / ${formatBytes(scopedResourceSummary.totalTxBytes)}`}
-                  />
-                  <MetricCard
-                    label={t('resources.services')}
-                    value={formatNumber(scopedResourceSummary.serviceCount)}
-                  />
-                </div>
-              )}
-            </section>
-          </div>
+          <ObservabilityResourceClusters
+            containers={scopedContainers}
+            isLoading={resourcesQuery.isLoading}
+          />
         </div>
       )}
 
