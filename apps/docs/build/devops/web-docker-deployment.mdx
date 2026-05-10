@@ -875,6 +875,9 @@ Dashboard details:
   target proxy, restores the legacy `platform` proxy, and leaves the legacy
   project intact for another retry. After a successful handoff, it removes the
   old `platform` Compose project with `docker compose down --remove-orphans`.
+  Once the legacy project is absent, a watcher that lacks inherited Compose
+  project env is treated as the fully migrated `tuturuuu` watcher and remains in
+  the normal Git poll/build loop instead of starting another migration handoff.
   Do not inherit arbitrary container-scoped Compose project names from the
   watcher container; doing so can create duplicate service names such as nested
   `tuturuuu-markitdown-1` containers during self-refresh.

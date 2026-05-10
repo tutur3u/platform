@@ -326,6 +326,20 @@ async function handoffLegacyWatcherToTargetProject({
     return false;
   }
 
+  const sourceEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  };
+  const sourceHasContainers = await composeProjectHasContainers({
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    return false;
+  }
+
   const targetEnv = getMigrationTargetWatcherEnv({ env, rootDir });
 
   log.warn?.(
@@ -354,10 +368,7 @@ async function handoffLegacyWatcherToTargetProject({
       BLUE_GREEN_WATCHER_SERVICE
     ),
     {
-      env: {
-        ...env,
-        COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
-      },
+      env: sourceEnv,
       runCommand: run,
     }
   );

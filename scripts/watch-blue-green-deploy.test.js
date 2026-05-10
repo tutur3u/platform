@@ -3864,23 +3864,33 @@ test('handoffLegacyWatcherToTargetProject starts a staged target watcher and sto
       fsImpl: fs,
       rootDir: '/workspace',
       runCommand: async (command, args, options = {}) => {
-        calls.push(`${command} ${args.join(' ')}`);
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
         envs.push(options.env ?? null);
+        if (
+          key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+        ) {
+          return createResult('legacy-web-proxy\n');
+        }
         return createResult('');
       },
     });
 
     assert.equal(started, true);
     assert.deepEqual(calls, [
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
       'docker compose version',
       prodComposeWatcherUpKey(),
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
     ]);
-    assert.equal(envs[1].COMPOSE_PROJECT_NAME, 'tuturuuu');
-    assert.equal(envs[1].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
-    assert.equal(envs[1].DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
-    assert.equal(envs[1].DOCKER_WEB_PROXY_HOST_PORT, '17803');
-    assert.equal(envs[2].COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[0].COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[0].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[2].COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[2].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[2].DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
+    assert.equal(envs[2].DOCKER_WEB_PROXY_HOST_PORT, '17803');
+    assert.equal(envs[3].COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(envs[3].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'platform');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -3911,13 +3921,20 @@ test('handoffLegacyWatcherToTargetProject detects legacy watcher containers with
       fsImpl: fs,
       rootDir: '/workspace',
       runCommand: async (command, args) => {
-        calls.push(`${command} ${args.join(' ')}`);
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+        if (
+          key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+        ) {
+          return createResult('legacy-web-proxy\n');
+        }
         return createResult('');
       },
     });
 
     assert.equal(started, true);
     assert.deepEqual(calls, [
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
       'docker compose version',
       prodComposeWatcherUpKey(),
       `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
@@ -3925,6 +3942,28 @@ test('handoffLegacyWatcherToTargetProject detects legacy watcher containers with
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('handoffLegacyWatcherToTargetProject keeps a fully migrated unmarked target watcher running when the legacy source is absent', async () => {
+  const calls = [];
+  const started = await handoffLegacyWatcherToTargetProject({
+    env: {
+      PATH: process.env.PATH,
+      PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
+      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+    },
+    rootDir: '/workspace',
+    runCommand: async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+      return createResult('');
+    },
+  });
+
+  assert.equal(started, false);
+  assert.deepEqual(calls, [
+    `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
+  ]);
 });
 
 test('handoffLegacyWatcherToTargetProject does not re-handoff a staged target watcher', async () => {
