@@ -49,7 +49,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
 | `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
 | `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
-| `--build-builder-name platform` | Override the throttled Buildx builder name |
+| `--build-builder-name tuturuuu` | Override the throttled Buildx builder name |
 | `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
 | `--replace-existing` | If another watcher PID already holds the lock, stop it and take over |
 | `--if-locked &lt;fail|resume|replace&gt;` | Explicit lock-conflict policy for the watcher |
@@ -428,7 +428,7 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILD_MEMORY=4g`
 - `DOCKER_WEB_BUILD_CPUS=2`
 - `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
-- `DOCKER_WEB_BUILD_BUILDER_NAME=platform`
+- `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
 
@@ -436,8 +436,8 @@ How it works:
 
 - The helper starts the Compose-owned `buildkit` service and then creates or
   reuses the remote Buildx builder named by `DOCKER_WEB_BUILD_BUILDER_NAME`.
-  The container is named `${COMPOSE_PROJECT_NAME:-platform}-buildkit-1`, so it
-  stays visually grouped under the `platform` Docker Desktop stack.
+  The container is named `${COMPOSE_PROJECT_NAME:-tuturuuu}-buildkit-1`, so it
+  stays visually grouped under the `tuturuuu` Docker Desktop stack.
 - `DOCKER_WEB_BUILD_MEMORY` caps the Compose-owned BuildKit service's memory
   budget.
 - `DOCKER_WEB_BUILD_CPUS` sets the BuildKit service CPU budget.
@@ -467,7 +467,7 @@ Operational notes:
   confusing.
 - During capped-build setup, the helper removes known legacy Buildx builders
   such as `platform-web-capped-builder` before creating or reusing the
-  Compose-owned remote `platform` builder. If `docker buildx ls` still shows
+  Compose-owned remote `tuturuuu` builder. If `docker buildx ls` still shows
   that legacy builder, run the capped web deploy helper once so it can clean up
   the stale Buildx record.
 - A lower parallelism setting usually trades build speed for host stability.
@@ -595,7 +595,7 @@ Behavior:
     host-side install churn does not stop subsequent polling cycles.
 13. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
-14. Polls imported Infrastructure projects from log-drain Postgres, synchronizes enabled public GitHub projects into `tmp/docker-web/projects/<projectId>/repo`, deploys them through generated Next.js compose files under the shared `platform` Compose project, and merges hostname routes into the central nginx proxy.
+14. Polls imported Infrastructure projects from log-drain Postgres, synchronizes enabled public GitHub projects into `tmp/docker-web/projects/<projectId>/repo`, deploys them through generated Next.js compose files under the shared `tuturuuu` Compose project, and merges hostname routes into the central nginx proxy.
     The imported-project and manual deployment queue cadence is independent
     from the normal Git polling interval, so a watcher configured with a long
     Git interval such as 1000 seconds still wakes on the shorter project queue
@@ -851,7 +851,7 @@ Dashboard details:
 - The watcher image must also include both the Docker Compose and Buildx CLI
   plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
   rollout handoff shells into `docker compose ...`, and capped production
-  builds create/use the remote `platform` Buildx builder from inside the watcher
+  builds create/use the remote `tuturuuu` Buildx builder from inside the watcher
   container. The watcher reaches the Compose-owned BuildKit daemon at
   `tcp://buildkit:1234`.
 - When the watcher drives Docker Desktop through `/var/run/docker.sock`, it
@@ -861,9 +861,11 @@ Dashboard details:
   because `/workspace/...` is not a real shared host path.
 - The watcher compose environment preserves `PLATFORM_HOST_WORKSPACE_DIR` and
   pins `COMPOSE_PROJECT_NAME` from that host checkout path unless
-  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. Do not inherit a
+  `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. A canonical checkout
+  directory named `platform` maps to the `tuturuuu` Compose project so Docker
+  Desktop groups the stack under the product name. Do not inherit a
   container-scoped Compose project name from the watcher container; doing so can
-  create duplicate service names such as nested `platform-markitdown-1`
+  create duplicate service names such as nested `tuturuuu-markitdown-1`
   containers during self-refresh.
 - If Docker reports `container name ... is already in use` for a requested
   production service, the helper removes only the exact expected container name

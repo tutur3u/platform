@@ -21,7 +21,7 @@ const BUILDKIT_STATE_FILE = path.join(
   BUILDKIT_RUNTIME_DIR,
   'builder-config.json'
 );
-const DEFAULT_BUILDER_NAME = 'platform';
+const DEFAULT_BUILDER_NAME = 'tuturuuu';
 const DEFAULT_BUILDKIT_HOST_PORT = 7914;
 const BUILDKIT_SERVICE_NAME = 'buildkit';
 const LEGACY_BUILDER_NAMES = ['platform-web-capped-builder'];

@@ -306,7 +306,7 @@ function validateDockerCompose(
     '  buildkit:',
     '    container_name: ' +
       '${' +
-      'COMPOSE_PROJECT_NAME:-platform' +
+      'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
     '      - platform-buildkit-state:/var/lib/buildkit',
@@ -370,7 +370,7 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
       '${' +
-      'COMPOSE_PROJECT_NAME:-platform' +
+      'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
     '      - platform-buildkit-state:/var/lib/buildkit',
@@ -458,7 +458,7 @@ function validateDockerProdCompose(composeContent) {
     '  log-drain-postgres:',
     '    container_name: ' +
       '${' +
-      'COMPOSE_PROJECT_NAME:-platform' +
+      'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-log-drain-postgres-1',
     '    image: postgres:16-alpine',
     '      POSTGRES_DB: platform_log_drain',

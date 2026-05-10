@@ -3741,7 +3741,7 @@ test('getWatcherComposeEnv preserves the existing host workspace path when runni
     });
 
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], hostWorkspaceDir);
-    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform');
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

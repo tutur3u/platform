@@ -37,6 +37,7 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
   'http://storage-unzip-proxy:8788/extract';
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
+const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 
 function stripUnquotedInlineComment(value) {
   const quote = value[0];
@@ -165,6 +166,14 @@ function getFirstNonBlank(values) {
   );
 }
 
+function getDefaultComposeProjectName(rootDir = ROOT_DIR) {
+  const workspaceName = path.basename(rootDir);
+
+  return workspaceName === 'platform'
+    ? DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME
+    : workspaceName;
+}
+
 function getComposeEnvironment({
   baseEnv = process.env,
   envFilePath,
@@ -196,7 +205,7 @@ function getComposeEnvironment({
     COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
     COMPOSE_PROJECT_NAME:
       getFirstNonBlank([baseEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME]) ??
-      path.basename(rootDir),
+      getDefaultComposeProjectName(rootDir),
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
     DOCKER_WEB_ENV_FILE:
       baseEnv.DOCKER_WEB_ENV_FILE ??
@@ -559,6 +568,7 @@ function getDockerStorageUnzipRuntime({
 }
 
 module.exports = {
+  DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
   DOCKER_MARKITDOWN_SERVICE_URL,
   DOCKER_PRONUNCIATION_ASSESSOR_URL,
@@ -579,6 +589,7 @@ module.exports = {
   generateDockerRedisToken,
   generateDockerServiceToken,
   getComposeEnvironment,
+  getDefaultComposeProjectName,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
   getDockerMarkitdownRuntime,

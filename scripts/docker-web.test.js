@@ -497,6 +497,17 @@ test('getComposeEnvironment pins compose project names from the workspace path',
 
     assert.equal(env.COMPOSE_PROJECT_NAME, path.basename(tempDir));
 
+    const canonicalRepoEnv = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'bad-inherited-project',
+      },
+      envFilePath,
+      rootDir: path.join(tempDir, 'platform'),
+    });
+
+    assert.equal(canonicalRepoEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
+
     const overriddenEnv = getComposeEnvironment({
       baseEnv: {
         PATH: 'test-path',
