@@ -15,10 +15,13 @@ x-web-service: &web-service
     - DISCORD_APP_DEPLOYMENT_URL
     - DRIVE_AUTO_EXTRACT_PROXY_TOKEN
     - DRIVE_AUTO_EXTRACT_PROXY_URL
+    - HIVE_REALTIME_TOKEN_SECRET
+    - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
     - HOSTNAME=0.0.0.0
     - INTERNAL_WEB_API_ORIGIN
     - MARKITDOWN_ENDPOINT_SECRET
     - MARKITDOWN_ENDPOINT_URL
+    - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
     - NEXT_TELEMETRY_DISABLED=1
     - NODE_ENV=production
     - PORT=7803
@@ -149,6 +152,64 @@ services:
       start_period: 5s
       retries: 3
     init: true
+
+  hive-realtime:
+    build:
+      context: .
+      dockerfile: apps/hive-realtime/Dockerfile
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - NODE_ENV=production
+      - PORT=7815
+      - SUPABASE_SECRET_KEY
+      - SUPABASE_SERVER_URL
+      - SUPABASE_SERVICE_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - SUPABASE_URL
+    expose:
+      - "7815"
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7815/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    restart: unless-stopped
+
+  hive:
+    build:
+      context: .
+      dockerfile: apps/hive/Dockerfile
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
+      - NEXT_TELEMETRY_DISABLED=1
+      - NODE_ENV=production
+      - PORT=7814
+      - SUPABASE_SERVER_URL
+    expose:
+      - "7814"
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    restart: unless-stopped
 
   pronunciation-assessor:
     build:

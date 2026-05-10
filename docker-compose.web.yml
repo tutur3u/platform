@@ -38,6 +38,8 @@ services:
       - CHOKIDAR_INTERVAL=1000
       - CHOKIDAR_USEPOLLING=1
       - HOSTNAME=0.0.0.0
+      - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+      - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-ws://localhost:7815/realtime}
       - NEXT_TELEMETRY_DISABLED=1
       - NODE_ENV=development
       - PORT=7803
@@ -121,6 +123,72 @@ services:
     depends_on:
       log-drain-postgres:
         condition: service_healthy
+
+  hive-realtime:
+    build:
+      context: .
+      dockerfile: apps/hive-realtime/Dockerfile
+    command: ["bun", "--cwd", "apps/hive-realtime", "run", "dev"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - PORT=7815
+      - SUPABASE_SECRET_KEY
+      - SUPABASE_SERVER_URL
+      - SUPABASE_SERVICE_KEY
+      - SUPABASE_SERVICE_ROLE_KEY
+      - SUPABASE_URL
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7815/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    ports:
+      - "7815:7815"
+    volumes:
+      - .:/workspace
+      - platform-hive-realtime-node_modules:/workspace/apps/hive-realtime/node_modules
+      - platform-web-node_modules:/workspace/node_modules
+
+  hive:
+    build:
+      context: .
+      dockerfile: apps/hive/Dockerfile
+    command: ["bun", "--cwd", "apps/hive", "run", "dev"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-ws://localhost:7815/realtime}
+      - NEXT_TELEMETRY_DISABLED=1
+      - NODE_ENV=development
+      - PORT=7814
+      - SUPABASE_SERVER_URL
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    ports:
+      - "7814:7814"
+    volumes:
+      - .:/workspace
+      - platform-hive-next:/workspace/apps/hive/.next
+      - platform-hive-node_modules:/workspace/apps/hive/node_modules
+      - platform-web-node_modules:/workspace/node_modules
 
   log-drain-postgres:
     container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-log-drain-postgres-1
@@ -252,6 +320,9 @@ volumes:
   platform-web-hooks-dist:
   platform-web-icons-node_modules:
   platform-web-icons-dist:
+  platform-hive-next:
+  platform-hive-node_modules:
+  platform-hive-realtime-node_modules:
   platform-web-internal-api-node_modules:
   platform-web-internal-api-dist:
   platform-web-masonry-node_modules:
