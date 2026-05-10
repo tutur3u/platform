@@ -75,6 +75,7 @@ const {
   getWatcherContainerState,
   getLatestSuccessfulDeploymentCommitHash,
   getMigrationTargetWatcherEnv,
+  getWatcherStartupComposeEnv,
   hasPersistedPendingDeployRequest,
   handoffLegacyWatcherToTargetProject,
   writePendingDeployRequest,
@@ -3783,6 +3784,57 @@ test('getMigrationTargetWatcherEnv stages the tuturuuu stack on non-conflicting 
   for (const [key, value] of Object.entries(MIGRATION_STAGING_PORT_ENV)) {
     assert.equal(env[key], value);
   }
+});
+
+test('getWatcherStartupComposeEnv stages host watcher startup when the legacy project still exists', async () => {
+  const calls = [];
+  const env = await getWatcherStartupComposeEnv({
+    composeEnv: {
+      COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      PATH: process.env.PATH,
+      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({
+        command: `${command} ${args.join(' ')}`,
+        env: options.env ?? {},
+      });
+      return createResult('legacy-web-proxy\n');
+    },
+  });
+
+  assert.deepEqual(calls, [
+    {
+      command: `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
+      env: {
+        COMPOSE_PROJECT_NAME: 'platform',
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
+        PATH: process.env.PATH,
+        [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      },
+    },
+  ]);
+  assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(env.DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(env.DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
+  assert.equal(env.DOCKER_WEB_BUILDKIT_PORT, '17914');
+  assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '17803');
+});
+
+test('getWatcherStartupComposeEnv keeps canonical ports when no legacy project exists', async () => {
+  const env = await getWatcherStartupComposeEnv({
+    composeEnv: {
+      COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      PATH: process.env.PATH,
+      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+    },
+    runCommand: async () => createResult(''),
+  });
+
+  assert.equal(env.DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, undefined);
+  assert.equal(env.DOCKER_WEB_BUILDKIT_PORT, undefined);
 });
 
 test('handoffLegacyWatcherToTargetProject starts a staged target watcher and stops the legacy watcher', async () => {

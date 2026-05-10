@@ -365,6 +365,52 @@ async function handoffLegacyWatcherToTargetProject({
   return true;
 }
 
+async function getWatcherStartupComposeEnv({
+  composeEnv,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const hostWorkspaceDir =
+    getProjectNameFromEnv(composeEnv, HOST_WORKSPACE_DIR_ENV) || rootDir;
+  const projectName = getProjectNameFromEnv(composeEnv, 'COMPOSE_PROJECT_NAME');
+  const migrationSourceProjectName = getProjectNameFromEnv(
+    composeEnv,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+
+  if (
+    composeEnv?.[WATCHER_CONTAINER_ENV] === '1' ||
+    migrationSourceProjectName ||
+    projectName !== DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME ||
+    path.basename(hostWorkspaceDir) !== LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
+  ) {
+    return composeEnv;
+  }
+
+  const sourceEnv = {
+    ...composeEnv,
+    COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  };
+  const sourceHasContainers = await composeProjectHasContainers({
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    return composeEnv;
+  }
+
+  console.warn(
+    `Detected legacy ${LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME} Compose project while starting ${DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher; staging target watcher on migration ports.`
+  );
+
+  return getMigrationTargetWatcherEnv({
+    env: composeEnv,
+    rootDir: hostWorkspaceDir,
+  });
+}
+
 function writeWatchArgsFile(
   argv,
   { fsImpl = fs, paths = getWatchPaths() } = {}
@@ -437,6 +483,11 @@ async function startBlueGreenWatcherContainer(
     fsImpl,
     rootDir,
   });
+  const startupComposeEnv = await getWatcherStartupComposeEnv({
+    composeEnv,
+    rootDir,
+    runCommand: run,
+  });
 
   clearContainerManagedWatcherState({
     fsImpl,
@@ -460,7 +511,7 @@ async function startBlueGreenWatcherContainer(
       BLUE_GREEN_WATCHER_SERVICE
     ),
     {
-      env: composeEnv,
+      env: startupComposeEnv,
       fsImpl,
       runCommand: run,
     }
@@ -6198,6 +6249,7 @@ module.exports = {
   getTrackedUpstream,
   getWatcherContainerState,
   getWatcherComposeEnv,
+  getWatcherStartupComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,
   handoffLegacyWatcherToTargetProject,
