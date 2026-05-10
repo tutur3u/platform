@@ -84,7 +84,22 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Check whether the version already exists on npm
+        id: version-check
+        working-directory: packages/sdk
+        run: |
+          PACKAGE_NAME=$(node -p "require('./package.json').name")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+
+          if npm view "${PACKAGE_NAME}@${PACKAGE_VERSION}" version --registry https://registry.npmjs.org >/dev/null 2>&1; then
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "${PACKAGE_NAME}@${PACKAGE_VERSION} already exists on npm; skipping publish."
+          else
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Publish package
+        if: steps.version-check.outputs.should_publish == 'true'
         working-directory: packages/sdk
         run: bun publish
         env:

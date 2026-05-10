@@ -155,8 +155,9 @@ run `ttr login` again to create a fresh dedicated CLI session.
 SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` after a merged version-bump PR
 updates `packages/sdk/package.json` and includes `chore(tuturuuu)` in the PR
-title. The workflow runs the SDK tests and publishes `packages/sdk` to npm with
-`NPM_TOKEN`.
+title. The workflow runs the SDK tests, skips publication if the exact package
+version already exists on npm, and otherwise publishes `packages/sdk` to npm
+with `NPM_TOKEN`.
 
 ### Scoped Help
 

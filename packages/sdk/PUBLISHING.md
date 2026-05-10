@@ -110,35 +110,18 @@ Check the package on npm:
 
 ### Option 1: GitHub Actions
 
-Create `.github/workflows/publish.yml`:
+The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
+SDK automatically to npm when a merged version-bump PR updates
+`packages/sdk/package.json` and the PR title matches `chore(tuturuuu)`. The
+workflow runs the SDK test suite, checks whether the exact package version is
+already present on npm, and publishes `packages/sdk` with `bun publish` using
+the `NPM_TOKEN` secret only when that version does not exist yet.
 
-```yaml
-name: Publish to npm
+To publish a new release:
 
-on:
-  release:
-    types: [created]
-
-jobs:
-  publish:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: oven-sh/setup-bun@v1
-      - run: bun install
-      - run: cd packages/sdk && bun test
-      - run: cd packages/sdk && bun run build
-      - uses: JS-DevTools/npm-publish@v2
-        with:
-          token: ${{ secrets.NPM_TOKEN }}
-          package: ./packages/sdk/package.json
-```
-
-Then:
-
-1. Add `NPM_TOKEN` to GitHub Secrets
-2. Create a GitHub Release
-3. Package automatically publishes
+1. Bump `packages/sdk/package.json`.
+2. Merge a PR whose title includes `chore(tuturuuu)`.
+3. Ensure `NPM_TOKEN` is configured in GitHub Actions.
 
 ### Option 2: npm Scripts
 
