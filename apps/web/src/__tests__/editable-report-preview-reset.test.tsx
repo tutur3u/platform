@@ -127,6 +127,14 @@ vi.mock(
 
 import EditableReportPreview from '@/app/[locale]/(dashboard)/[wsId]/users/reports/[reportId]/editable-report-preview';
 
+function openBasicInfoDialog() {
+  expect(
+    screen.queryByLabelText('user-report-data-table.title')
+  ).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole('button', { name: 'common.edit' }));
+}
+
 describe('EditableReportPreview form reset behavior', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -161,6 +169,8 @@ describe('EditableReportPreview form reset behavior', () => {
         canUpdateReports
       />
     );
+
+    openBasicInfoDialog();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
 
@@ -210,6 +220,8 @@ describe('EditableReportPreview form reset behavior', () => {
         canCreateReports
       />
     );
+
+    openBasicInfoDialog();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(
@@ -269,6 +281,8 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
+    openBasicInfoDialog();
+
     const pageShortcutHandler = vi.fn((event: KeyboardEvent) => {
       event.preventDefault();
     });
@@ -310,6 +324,8 @@ describe('EditableReportPreview form reset behavior', () => {
         isNew
       />
     );
+
+    openBasicInfoDialog();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(
@@ -371,6 +387,8 @@ describe('EditableReportPreview form reset behavior', () => {
         isNew={false}
       />
     );
+
+    openBasicInfoDialog();
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
     const contentInput = screen.getByLabelText(

@@ -46,10 +46,10 @@ import { RejectDialog } from '../../approvals/components/reject-dialog';
 import UserMonthAttendance from '../../attendance/user-month-attendance';
 import UserFeedbackSection from '../../groups/[groupId]/reports/user-feedback-section';
 import { getWorkspaceUserArchiveState } from '../user-archive';
+import { ReportBasicInfoDialog } from './basic-info-dialog';
 import { DeleteReportDialog } from './components/delete-report-dialog';
 import { ReportActions } from './components/report-actions';
 import { ReportHistory } from './components/report-history';
-import UserReportForm from './form';
 import { useReportDynamicText } from './hooks/use-report-dynamic-text';
 import { useReportExport } from './hooks/use-report-export';
 import { useReportHistory } from './hooks/use-report-history';
@@ -545,7 +545,7 @@ export default function EditableReportPreview({
                   </div>
                 </div>
               ) : (
-                <UserReportForm
+                <ReportBasicInfoDialog
                   isNew={isNew}
                   form={form}
                   submitLabel={isNew ? t('common.create') : t('common.save')}
@@ -574,6 +574,9 @@ export default function EditableReportPreview({
                     createMutation.isPending || updateMutation.isPending
                   }
                   showHeading={false}
+                  titleValue={title}
+                  contentValue={content}
+                  feedbackValue={feedback}
                 />
               )}
             </CollapsibleContent>
