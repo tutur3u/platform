@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { permissions } from '@tuturuuu/utils/permissions';
 import { describe, expect, it } from 'vitest';
 import {
@@ -94,6 +97,41 @@ describe('Post Approval Workflow', () => {
 });
 
 describe('Permission Integration', () => {
+  it('includes every workspace role permission enum value in the roles UI catalog', () => {
+    const supabaseTypes = readFileSync(
+      resolve(process.cwd(), '../../packages/types/src/supabase.ts'),
+      'utf8'
+    );
+    const enumBlock = supabaseTypes.match(
+      /workspace_role_permission:\n([\s\S]*?)\n\s*zalopay_tier:/
+    )?.[1];
+
+    expect(enumBlock).toBeDefined();
+
+    const enumPermissionIds = Array.from(
+      enumBlock?.matchAll(/'([^']+)'/g) ?? [],
+      (match) => match[1]
+    );
+
+    const actualPermissionIds = permissions({
+      wsId: ROOT_WORKSPACE_ID,
+      user: {
+        id: 'root-user',
+        email: 'ops@tuturuuu.com',
+        app_metadata: {},
+        user_metadata: {},
+        aud: '',
+        created_at: '',
+      },
+    }).map((permission) => permission.id);
+
+    expect(new Set(actualPermissionIds).size).toBe(actualPermissionIds.length);
+
+    for (const permissionId of enumPermissionIds) {
+      expect(actualPermissionIds).toContain(permissionId);
+    }
+  });
+
   it('should include required approval permissions in the permission system', () => {
     const requiredPermissions = [
       'approve_reports',

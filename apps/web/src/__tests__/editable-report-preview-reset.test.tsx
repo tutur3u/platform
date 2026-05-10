@@ -215,6 +215,9 @@ describe('EditableReportPreview form reset behavior', () => {
     fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
       target: { value: 'Progress notes' },
     });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+      target: { value: 'Family feedback' },
+    });
 
     const createButton = screen.getByRole('button', { name: 'common.create' });
     expect(createButton).not.toBeDisabled();
@@ -225,13 +228,60 @@ describe('EditableReportPreview form reset behavior', () => {
       expect(mutationMocks.createMutate).toHaveBeenCalledWith({
         title: 'May report',
         content: 'Progress notes',
-        feedback: '',
+        feedback: 'Family feedback',
       });
     });
     expect(mutationMocks.updateMutate).not.toHaveBeenCalled();
   });
 
-  it('keeps existing reports read-only without update permission', () => {
+  it('keeps new report fields editable even when create submit is blocked', () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          creator_name: 'Manager',
+          title: '',
+          content: '',
+          feedback: '',
+          scores: [],
+        }}
+        configs={[]}
+        isNew
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+      target: { value: 'Draft report title' },
+    });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+      target: { value: 'Draft report content' },
+    });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+      target: { value: 'Draft report feedback' },
+    });
+
+    expect(screen.getByLabelText('user-report-data-table.title')).toHaveValue(
+      'Draft report title'
+    );
+    expect(screen.getByLabelText('user-report-data-table.content')).toHaveValue(
+      'Draft report content'
+    );
+    expect(
+      screen.getByLabelText('user-report-data-table.feedback')
+    ).toHaveValue('Draft report feedback');
+    expect(
+      screen.getByRole('button', { name: 'common.create' })
+    ).toBeDisabled();
+    expect(
+      screen.getByText('ws-reports.create_permission_required')
+    ).toBeInTheDocument();
+  });
+
+  it('keeps basic fields editable but blocks saving without update permission', () => {
     render(
       <EditableReportPreview
         wsId="ws-1"
@@ -253,9 +303,26 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
+    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+      target: { value: 'Local title draft' },
+    });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+      target: { value: 'Local content draft' },
+    });
+    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+      target: { value: 'Local feedback draft' },
+    });
+
+    expect(screen.getByLabelText('user-report-data-table.title')).toHaveValue(
+      'Local title draft'
+    );
+    expect(screen.getByLabelText('user-report-data-table.content')).toHaveValue(
+      'Local content draft'
+    );
     expect(
-      screen.getByLabelText('user-report-data-table.title')
-    ).toBeDisabled();
+      screen.getByLabelText('user-report-data-table.feedback')
+    ).toHaveValue('Local feedback draft');
+    expect(screen.getByRole('button', { name: 'common.save' })).toBeDisabled();
     expect(
       screen.getByText('ws-reports.update_permission_required')
     ).toBeInTheDocument();

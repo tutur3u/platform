@@ -42,7 +42,7 @@ export default function UserReportForm({
   readOnlyMessage,
 }: UserReportFormProps) {
   const t = useTranslations();
-  const fieldsDisabled = !canSubmit || isSubmitting;
+  const fieldsDisabled = isSubmitting;
 
   return (
     <div className="grid h-fit gap-2 rounded-lg border p-4">
