@@ -1,11 +1,17 @@
 'use client';
 
-import { Box, Radio, Terminal } from '@tuturuuu/icons';
+import {
+  Box,
+  ChevronDown,
+  ChevronRight,
+  Radio,
+  Terminal,
+} from '@tuturuuu/icons';
 import type { BlueGreenMonitoringDockerContainer } from '@tuturuuu/internal-api/infrastructure';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { parseAsString, useQueryState } from 'nuqs';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { formatBytes } from './formatters';
 import {
   formatResourceNumber,
@@ -147,19 +153,26 @@ export function ObservabilityResourceClusters({
 function ResourceClusterCard({ cluster }: { cluster: ResourceCluster }) {
   const t = useTranslations('blue-green-monitoring.observability');
   const clusterTone = getClusterTone(cluster.summary, cluster.containers);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-background">
       <div className="flex flex-col gap-4 border-border border-b bg-muted/20 p-4 xl:flex-row xl:items-center xl:justify-between">
         <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2">
+          <button
+            className="flex w-full flex-wrap items-center gap-2 text-left"
+            onClick={() => setIsExpanded((current) => !current)}
+            type="button"
+          >
             <span
               className={cn(
                 'h-2.5 w-2.5 rounded-full',
                 resourceToneClasses[clusterTone].dot
               )}
             />
-            <h3 className="truncate font-semibold text-base">{cluster.id}</h3>
+            <span className="truncate font-semibold text-base">
+              {cluster.id}
+            </span>
             <span className="rounded-full border border-border bg-background px-2 py-0.5 text-muted-foreground text-xs">
               {cluster.source === 'project'
                 ? t('resources.compose_project')
@@ -167,14 +180,19 @@ function ResourceClusterCard({ cluster }: { cluster: ResourceCluster }) {
                   ? t('resources.detected_prefix')
                   : t('resources.no_cluster')}
             </span>
-          </div>
+            {isExpanded ? (
+              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
           <p className="mt-1 text-muted-foreground text-xs">
             {t('resources.cluster_count', {
               count: cluster.summary.serviceCount,
             })}
           </p>
         </div>
-        <div className="grid gap-2 text-xs sm:grid-cols-2 xl:min-w-[560px] xl:grid-cols-4">
+        <div className="grid gap-2 text-xs sm:grid-cols-2 xl:min-w-140 xl:grid-cols-4">
           <SummaryPill
             label={t('resources.cpu')}
             tone={getCpuTone(cluster.summary.totalCpuPercent)}
@@ -198,23 +216,27 @@ function ResourceClusterCard({ cluster }: { cluster: ResourceCluster }) {
         </div>
       </div>
 
-      <div className="hidden grid-cols-[minmax(0,1fr)_88px_98px_120px_128px_132px] gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs xl:grid">
-        <span>{t('resources.container')}</span>
-        <span>{t('resources.health')}</span>
-        <span>{t('resources.uptime')}</span>
-        <span>{t('resources.cpu')}</span>
-        <span>{t('resources.memory')}</span>
-        <span>{t('resources.network')}</span>
-      </div>
-      <div className="divide-y divide-border/60">
-        {cluster.containers.map((container) => (
-          <ContainerRow
-            clusterId={cluster.id}
-            container={container}
-            key={container.containerId}
-          />
-        ))}
-      </div>
+      {isExpanded ? (
+        <>
+          <div className="hidden grid-cols-[minmax(0,1fr)_88px_98px_120px_128px_132px] gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs xl:grid">
+            <span>{t('resources.container')}</span>
+            <span>{t('resources.health')}</span>
+            <span>{t('resources.uptime')}</span>
+            <span>{t('resources.cpu')}</span>
+            <span>{t('resources.memory')}</span>
+            <span>{t('resources.network')}</span>
+          </div>
+          <div className="divide-y divide-border/60">
+            {cluster.containers.map((container) => (
+              <ContainerRow
+                clusterId={cluster.id}
+                container={container}
+                key={container.containerId}
+              />
+            ))}
+          </div>
+        </>
+      ) : null}
     </section>
   );
 }

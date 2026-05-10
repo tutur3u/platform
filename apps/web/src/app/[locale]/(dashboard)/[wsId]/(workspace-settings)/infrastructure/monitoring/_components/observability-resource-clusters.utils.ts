@@ -158,9 +158,8 @@ export function getMemoryTone(value: number | null | undefined): ResourceTone {
   if (value == null || !Number.isFinite(value)) return 'muted';
 
   const mb = value / 1024 / 1024;
-  if (mb < 200) return 'green';
-  if (mb <= 500) return 'amber';
-  if (mb <= 1024) return 'orange';
+  if (mb < 1024) return 'green';
+  if (mb < 2048) return 'orange';
   return 'red';
 }
 
@@ -170,17 +169,14 @@ export function getClusterTone(
 ): ResourceTone {
   if (summary.serviceCount === 0) return 'muted';
 
-  // Red: at least one service is unhealthy
   if (containers?.some((container) => container.health === 'unhealthy')) {
     return 'red';
   }
 
-  // Green: all services are healthy
   if (summary.healthyCount === summary.serviceCount) {
     return 'green';
   }
 
-  // Orange: not all are healthy but no unhealthy (mixed state)
   return 'orange';
 }
 
