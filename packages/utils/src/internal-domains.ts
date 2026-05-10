@@ -43,6 +43,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'teach',
     url: 'https://teach.tuturuuu.com',
   },
+  {
+    name: 'hive',
+    url: 'https://hive.tuturuuu.com',
+  },
 ] as const;
 
 export const DEV_INTERNAL_APP_DOMAINS = [
@@ -85,6 +89,10 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   {
     name: 'teach',
     url: 'http://localhost:7813',
+  },
+  {
+    name: 'hive',
+    url: 'http://localhost:7814',
   },
 ] as const;
 

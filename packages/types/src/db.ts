@@ -2,7 +2,7 @@ import type { User as PrimitiveUser } from './primitives/User';
 import type { Database, Json, Tables } from './supabase';
 import type { JSONContent } from './tiptap';
 
-export type { Database } from './supabase';
+export type { Database, Json } from './supabase';
 
 type TaskActorRpcName =
   | 'add_task_label_with_actor'
@@ -43,6 +43,13 @@ export type AIWhitelistEmail = Tables<'ai_whitelisted_emails'>;
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
+export type HiveMember = Tables<'hive_members'>;
+export type HiveNpc = Tables<'hive_npcs'>;
+export type HiveNpcMemory = Tables<'hive_npc_memories'>;
+export type HiveNpcRun = Tables<'hive_npc_runs'>;
+export type HiveServer = Tables<'hive_servers'>;
+export type HiveWorldEvent = Tables<'hive_world_events'>;
+export type HiveWorldState = Tables<'hive_world_states'>;
 export type UserGroupPost = Tables<'user_group_posts'> & {
   group_name?: string | null;
 };

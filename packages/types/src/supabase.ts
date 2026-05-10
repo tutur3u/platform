@@ -5237,6 +5237,515 @@ export type Database = {
           },
         ];
       };
+      hive_members: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          notes: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          notes?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          notes?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_members_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: true;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_npc_memories: {
+        Row: {
+          content: string;
+          created_at: string;
+          created_by: string | null;
+          enabled: boolean;
+          id: string;
+          importance: number;
+          npc_id: string;
+          server_id: string;
+          source_run_id: string | null;
+        };
+        Insert: {
+          content: string;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          id?: string;
+          importance?: number;
+          npc_id: string;
+          server_id: string;
+          source_run_id?: string | null;
+        };
+        Update: {
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          enabled?: boolean;
+          id?: string;
+          importance?: number;
+          npc_id?: string;
+          server_id?: string;
+          source_run_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_npc_memories_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_npc_id_fkey';
+            columns: ['npc_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_npcs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_memories_source_run_id_fkey';
+            columns: ['source_run_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_npc_runs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_npc_runs: {
+        Row: {
+          actor_user_id: string | null;
+          applied_event_id: string | null;
+          created_at: string;
+          id: string;
+          input_context: Json;
+          npc_id: string;
+          output_decision: Json;
+          prompt_mode: string;
+          server_id: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          applied_event_id?: string | null;
+          created_at?: string;
+          id?: string;
+          input_context?: Json;
+          npc_id: string;
+          output_decision?: Json;
+          prompt_mode?: string;
+          server_id: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          applied_event_id?: string | null;
+          created_at?: string;
+          id?: string;
+          input_context?: Json;
+          npc_id?: string;
+          output_decision?: Json;
+          prompt_mode?: string;
+          server_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_npc_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_applied_event_id_fkey';
+            columns: ['applied_event_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_world_events';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_npc_id_fkey';
+            columns: ['npc_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_npcs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_npcs: {
+        Row: {
+          backstory: string;
+          backstory_enabled: boolean;
+          created_at: string;
+          created_by: string | null;
+          custom_prompt_enabled: boolean;
+          id: string;
+          memory_enabled: boolean;
+          model: string;
+          name: string;
+          position: Json;
+          role: string;
+          server_id: string;
+          settings: Json;
+          system_prompt: string;
+          updated_at: string;
+        };
+        Insert: {
+          backstory?: string;
+          backstory_enabled?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          custom_prompt_enabled?: boolean;
+          id?: string;
+          memory_enabled?: boolean;
+          model?: string;
+          name: string;
+          position?: Json;
+          role?: string;
+          server_id: string;
+          settings?: Json;
+          system_prompt?: string;
+          updated_at?: string;
+        };
+        Update: {
+          backstory?: string;
+          backstory_enabled?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          custom_prompt_enabled?: boolean;
+          id?: string;
+          memory_enabled?: boolean;
+          model?: string;
+          name?: string;
+          position?: Json;
+          role?: string;
+          server_id?: string;
+          settings?: Json;
+          system_prompt?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_npcs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npcs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_npcs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npcs_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npcs_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_servers: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          enabled: boolean;
+          id: string;
+          max_players: number;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          enabled?: boolean;
+          id?: string;
+          max_players?: number;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          enabled?: boolean;
+          id?: string;
+          max_players?: number;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_servers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_servers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_servers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_servers_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_world_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          payload: Json;
+          revision: number;
+          server_id: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          payload?: Json;
+          revision: number;
+          server_id: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          payload?: Json;
+          revision?: number;
+          server_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_world_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_world_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_world_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_world_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_world_events_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_world_states: {
+        Row: {
+          revision: number;
+          server_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          world_data: Json;
+        };
+        Insert: {
+          revision?: number;
+          server_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          world_data?: Json;
+        };
+        Update: {
+          revision?: number;
+          server_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          world_data?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_world_states_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: true;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_world_states_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_world_states_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_world_states_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_world_states_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       internal_email_api_keys: {
         Row: {
           allowed_emails: string[] | null;
@@ -26185,6 +26694,25 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      apply_hive_world_event: {
+        Args: {
+          p_actor_user_id: string;
+          p_event_type: string;
+          p_expected_revision: number;
+          p_payload: Json;
+          p_server_id: string;
+          p_world_data: Json;
+        };
+        Returns: {
+          actor_user_id: string;
+          created_at: string;
+          event_type: string;
+          id: string;
+          payload: Json;
+          revision: number;
+          server_id: string;
+        }[];
+      };
       archive_old_notifications: {
         Args: { p_days_threshold?: number };
         Returns: number;
@@ -29083,6 +29611,8 @@ export type Database = {
         Args: { p_template_id: string };
         Returns: boolean;
       };
+      is_hive_member: { Args: { _user_id?: string }; Returns: boolean };
+      is_hive_platform_admin: { Args: { _user_id?: string }; Returns: boolean };
       is_list_accessible: { Args: { _list_id: string }; Returns: boolean };
       is_member_invited: {
         Args: { _org_id: string; _user_id: string };
