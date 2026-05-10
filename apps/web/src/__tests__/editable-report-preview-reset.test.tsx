@@ -248,6 +248,49 @@ describe('EditableReportPreview form reset behavior', () => {
     expect(mutationMocks.updateMutate).not.toHaveBeenCalled();
   });
 
+  it('keeps field keyboard input away from page-level shortcut handlers', () => {
+    render(
+      <EditableReportPreview
+        wsId="ws-1"
+        report={{
+          user_id: 'user-1',
+          user_name: 'Test User',
+          group_id: 'group-1',
+          group_name: 'Test Group',
+          creator_name: 'Manager',
+          title: '',
+          content: '',
+          feedback: '',
+          scores: [],
+        }}
+        configs={[]}
+        isNew
+        canCreateReports
+      />
+    );
+
+    const pageShortcutHandler = vi.fn((event: KeyboardEvent) => {
+      event.preventDefault();
+    });
+    document.addEventListener('keydown', pageShortcutHandler);
+
+    const titleInput = screen.getByLabelText('user-report-data-table.title');
+    const contentInput = screen.getByLabelText(
+      'user-report-data-table.content'
+    );
+    const feedbackInput = screen.getByLabelText(
+      'user-report-data-table.feedback'
+    );
+
+    fireEvent.keyDown(titleInput, { key: 'a' });
+    fireEvent.keyDown(contentInput, { key: 'b' });
+    fireEvent.keyDown(feedbackInput, { key: 'c' });
+
+    document.removeEventListener('keydown', pageShortcutHandler);
+
+    expect(pageShortcutHandler).not.toHaveBeenCalled();
+  });
+
   it('keeps new report fields editable even when create submit is blocked', () => {
     render(
       <EditableReportPreview

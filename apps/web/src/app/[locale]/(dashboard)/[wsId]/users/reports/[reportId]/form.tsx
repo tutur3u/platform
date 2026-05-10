@@ -19,12 +19,19 @@ import {
 } from '@tuturuuu/ui/select';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useTranslations } from 'next-intl';
+import type { KeyboardEvent } from 'react';
 import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
   MAX_MONTHLY_REPORT_TITLE_LENGTH,
 } from '@/features/reports/report-limits';
 import { CharacterCount } from './character-count';
 import type { UserReportFormProps } from './form-types';
+
+const stopEditableShortcutPropagation = (
+  event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>
+) => {
+  event.stopPropagation();
+};
 
 export default function UserReportForm({
   isNew,
@@ -103,6 +110,7 @@ export default function UserReportForm({
                     {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TITLE_LENGTH}
+                    onKeyDownCapture={stopEditableShortcutPropagation}
                     placeholder={t('user-report-data-table.title')}
                   />
                 </FormControl>
@@ -126,6 +134,7 @@ export default function UserReportForm({
                     {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
+                    onKeyDownCapture={stopEditableShortcutPropagation}
                     placeholder={t('user-report-data-table.content')}
                   />
                 </FormControl>
@@ -149,6 +158,7 @@ export default function UserReportForm({
                     {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
+                    onKeyDownCapture={stopEditableShortcutPropagation}
                     placeholder={t('user-report-data-table.feedback')}
                   />
                 </FormControl>
