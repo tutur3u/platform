@@ -152,6 +152,12 @@ token, refreshes shortly before token expiry, updates the saved config with the
 rotated refresh token, and retries once after a `401` response. If refresh fails,
 run `ttr login` again to create a fresh dedicated CLI session.
 
+SDK releases are published automatically from
+`.github/workflows/release-sdk-package.yaml` after a merged version-bump PR
+updates `packages/sdk/package.json` and includes `chore(tuturuuu)` in the PR
+title. The workflow runs the SDK tests and publishes `packages/sdk` to npm with
+`NPM_TOKEN`.
+
 ### Scoped Help
 
 Use scoped help when you know the area but not the exact flags. Help commands do
