@@ -164,6 +164,8 @@ describe('EditableReportPreview form reset behavior', () => {
 
     const titleInput = screen.getByLabelText('user-report-data-table.title');
 
+    expect(titleInput).not.toBeDisabled();
+
     fireEvent.change(titleInput, { target: { value: 'Typed by user' } });
     expect(titleInput).toHaveValue('Typed by user');
 
@@ -209,13 +211,25 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+    const titleInput = screen.getByLabelText('user-report-data-table.title');
+    const contentInput = screen.getByLabelText(
+      'user-report-data-table.content'
+    );
+    const feedbackInput = screen.getByLabelText(
+      'user-report-data-table.feedback'
+    );
+
+    expect(titleInput).not.toBeDisabled();
+    expect(contentInput).not.toBeDisabled();
+    expect(feedbackInput).not.toBeDisabled();
+
+    fireEvent.change(titleInput, {
       target: { value: 'May report' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+    fireEvent.change(contentInput, {
       target: { value: 'Progress notes' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+    fireEvent.change(feedbackInput, {
       target: { value: 'Family feedback' },
     });
 
@@ -254,13 +268,25 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+    const titleInput = screen.getByLabelText('user-report-data-table.title');
+    const contentInput = screen.getByLabelText(
+      'user-report-data-table.content'
+    );
+    const feedbackInput = screen.getByLabelText(
+      'user-report-data-table.feedback'
+    );
+
+    expect(titleInput).not.toBeDisabled();
+    expect(contentInput).not.toBeDisabled();
+    expect(feedbackInput).not.toBeDisabled();
+
+    fireEvent.change(titleInput, {
       target: { value: 'Draft report title' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+    fireEvent.change(contentInput, {
       target: { value: 'Draft report content' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+    fireEvent.change(feedbackInput, {
       target: { value: 'Draft report feedback' },
     });
 
@@ -303,13 +329,25 @@ describe('EditableReportPreview form reset behavior', () => {
       />
     );
 
-    fireEvent.change(screen.getByLabelText('user-report-data-table.title'), {
+    const titleInput = screen.getByLabelText('user-report-data-table.title');
+    const contentInput = screen.getByLabelText(
+      'user-report-data-table.content'
+    );
+    const feedbackInput = screen.getByLabelText(
+      'user-report-data-table.feedback'
+    );
+
+    expect(titleInput).not.toBeDisabled();
+    expect(contentInput).not.toBeDisabled();
+    expect(feedbackInput).not.toBeDisabled();
+
+    fireEvent.change(titleInput, {
       target: { value: 'Local title draft' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.content'), {
+    fireEvent.change(contentInput, {
       target: { value: 'Local content draft' },
     });
-    fireEvent.change(screen.getByLabelText('user-report-data-table.feedback'), {
+    fireEvent.change(feedbackInput, {
       target: { value: 'Local feedback draft' },
     });
 

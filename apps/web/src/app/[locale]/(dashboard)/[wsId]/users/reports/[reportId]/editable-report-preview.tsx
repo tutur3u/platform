@@ -28,7 +28,14 @@ import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { cn } from '@tuturuuu/utils/format';
 import { useFormatter, useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import * as z from 'zod';
 import {
   MAX_MONTHLY_REPORT_TEXT_LENGTH,
@@ -285,6 +292,9 @@ export default function EditableReportPreview({
   const previewTitle = selectedLog?.title ?? title;
   const previewContent = selectedLog?.content ?? content;
   const previewFeedback = selectedLog?.feedback ?? feedback;
+  const deferredPreviewTitle = useDeferredValue(previewTitle);
+  const deferredPreviewContent = useDeferredValue(previewContent);
+  const deferredPreviewFeedback = useDeferredValue(previewFeedback);
   const previewScore =
     (selectedLog ? selectedLog.score : representativeScoreValue)?.toFixed(1) ||
     '';
@@ -347,6 +357,14 @@ export default function EditableReportPreview({
       Math.min(currentPage, Math.max(0, previewPageCount - 1))
     );
   }, [previewPageCount]);
+
+  const handlePaginationStateChange = useCallback(
+    ({ ready, pageCount }: { ready: boolean; pageCount: number }) => {
+      setIsPaginationReady(ready);
+      setPreviewPageCount(Math.max(1, pageCount));
+    },
+    []
+  );
 
   return (
     <div className="space-y-4">
@@ -768,17 +786,14 @@ export default function EditableReportPreview({
               getConfig={getConfig}
               theme={resolvedReportTheme}
               data={{
-                title: previewTitle,
-                content: previewContent,
+                title: deferredPreviewTitle,
+                content: deferredPreviewContent,
                 score: previewScore,
-                feedback: previewFeedback,
+                feedback: deferredPreviewFeedback,
               }}
               previewPageIndex={activePreviewPage}
               singlePagePreview
-              onPaginationStateChange={({ ready, pageCount }) => {
-                setIsPaginationReady(ready);
-                setPreviewPageCount(Math.max(1, pageCount));
-              }}
+              onPaginationStateChange={handlePaginationStateChange}
               notice={
                 isPendingApproval ? (
                   <div className="mb-4 rounded-lg border border-dynamic-orange/30 bg-dynamic-orange/10 p-4">

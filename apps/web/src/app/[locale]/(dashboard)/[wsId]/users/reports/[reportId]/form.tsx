@@ -100,10 +100,10 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.title')}</FormLabel>
                 <FormControl>
                   <Input
+                    {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TITLE_LENGTH}
                     placeholder={t('user-report-data-table.title')}
-                    {...field}
                   />
                 </FormControl>
                 <CharacterCount
@@ -123,10 +123,10 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.content')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.content')}
-                    {...field}
                   />
                 </FormControl>
                 <CharacterCount
@@ -146,10 +146,10 @@ export default function UserReportForm({
                 <FormLabel>{t('user-report-data-table.feedback')}</FormLabel>
                 <FormControl>
                   <AutosizeTextarea
+                    {...field}
                     disabled={fieldsDisabled}
                     maxLength={MAX_MONTHLY_REPORT_TEXT_LENGTH}
                     placeholder={t('user-report-data-table.feedback')}
-                    {...field}
                   />
                 </FormControl>
                 <CharacterCount
