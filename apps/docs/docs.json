@@ -105,7 +105,8 @@
                   "platform/applications/nova",
                   "platform/applications/tasks",
                   "platform/applications/learn",
-                  "platform/applications/teach"
+                  "platform/applications/teach",
+                  "platform/applications/hive"
                 ]
               }
             ]
@@ -120,6 +121,7 @@
                   "build/devops/overview",
                   "build/devops/environments-release-flow",
                   "build/devops/web-docker-deployment",
+                  "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
                   "build/devops/github-actions-runbook",
                   "build/devops/secrets-and-configuration",

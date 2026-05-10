@@ -691,6 +691,10 @@ Dashboard details:
   callback route and uploads extracted files directly to the active storage
   backend, which avoids nginx body-size limits for large WebGL artifacts while
   keeping folder creation and auth checks in the backend callback.
+- Hive is part of the web blue/green support-service set: `hive` is routed from
+  `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
+  `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
+  `NEXT_PUBLIC_HIVE_REALTIME_URL` configured in the same production stack.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete

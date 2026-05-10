@@ -1,0 +1,57 @@
+---
+title: Hive Realtime Runbook
+description: Operating notes for the Hive WebSocket service and satellite app deployment.
+---
+
+Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
+only by Hive; do not replace it with Supabase Realtime.
+
+## Required Environment
+
+- `HIVE_REALTIME_TOKEN_SECRET`: shared HMAC secret used by `apps/web` to mint
+  short-lived join tokens and by `apps/hive-realtime` to validate them.
+- `HIVE_REALTIME_URL`: internal server URL used by `apps/web` and `apps/hive`
+  when they need the service-side endpoint.
+- `NEXT_PUBLIC_HIVE_REALTIME_URL`: browser-facing WebSocket URL, normally
+  `wss://hive.tuturuuu.com/realtime` in production.
+- Supabase service credentials already used by the platform, such as
+  `SUPABASE_SERVER_URL` and the service-role secret variable present in the
+  deployment environment.
+
+## Blue/Green Deployment
+
+`docker-compose.web.prod.yml` runs both `hive` and `hive-realtime` as
+blue/green support services. `scripts/docker-web/blue-green.js` waits for them
+alongside `apps/web` support services before proxy handoff.
+
+The generated nginx config routes:
+
+- `hive.tuturuuu.com/` to the `hive` satellite app on port `7814`.
+- `hive.tuturuuu.com/realtime` to `hive-realtime` on port `7815`.
+
+`scripts/watch-blue-green-deploy.js` watches the Hive Dockerfiles, package
+manifests, realtime source files, and `docker-compose.web.prod.yml`; changes to
+these files trigger the watcher container refresh path.
+
+## Protocol
+
+Clients connect with a short-lived token from
+`POST /api/v1/hive/servers/:serverId/realtime-token`. Tokens include user ID,
+server ID, role, expiry, and event scopes.
+
+Accepted client messages are typed commands:
+
+- `block.place`
+- `block.remove`
+- `object.place`
+- `object.remove`
+- `object.move`
+- `npc.move`
+- `npc.config`
+- `npc.decision`
+- `server.metadata`
+- `selection`
+- `presence.join`
+
+World events are persisted through the central `apply_hive_world_event(...)`
+RPC so stale revisions are rejected before broadcast.

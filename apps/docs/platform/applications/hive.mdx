@@ -1,0 +1,49 @@
+---
+title: Hive
+description: Voxel research editor for shared simulated environments and manual NPC decision experiments.
+---
+
+Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
+It uses the centralized Tuturuuu login handoff and keeps protected product APIs
+inside `apps/web` under `/api/v1/hive/*`.
+
+## Access Model
+
+- Production access requires a row in `hive_members` with `enabled = true`.
+- Platform admins are users whose `platform_user_roles.allow_role_management`
+  value is `true`; they can create and manage Hive servers and Hive members.
+- V1 server policy is intentionally broad: every enabled Hive member can join
+  every enabled Hive server.
+
+## Data Model
+
+Hive stores shared world state as revisioned snapshots and events:
+
+- `hive_servers`
+- `hive_world_states`
+- `hive_world_events`
+- `hive_npcs`
+- `hive_npc_memories`
+- `hive_npc_runs`
+- `hive_members`
+
+World edits should be persisted through `apply_hive_world_event(...)` so stale
+revision writes are rejected consistently.
+
+## Editor Surface
+
+`apps/hive` is a hidden-locale Next.js satellite app. The editor uses a
+full-bleed React Three Fiber viewport, a left server navigator, a bottom tool
+dock, a right inspector, and an NPC Lab panel for manual research runs.
+
+Client data access must go through `@tuturuuu/internal-api` helpers and
+TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
+
+## NPC Research Runs
+
+V1 supports manual NPC decision runs only. A run captures the current world,
+nearby entities, selected prompt mode, optional backstory, and active memories.
+The API persists the decision in `hive_npc_runs`, appends a typed
+`npc.decision` event, and lets realtime clients broadcast the result.
+
+Autonomous simulation ticks are intentionally deferred to a later phase.
