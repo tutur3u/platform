@@ -1,0 +1,11 @@
+{
+  "extends": "@tuturuuu/typescript-config/base.json",
+  "compilerOptions": {
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "noEmit": true,
+    "types": ["bun-types"]
+  },
+  "include": ["src/**/*.ts"]
+}

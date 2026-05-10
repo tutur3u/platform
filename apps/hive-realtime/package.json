@@ -1,0 +1,27 @@
+{
+  "name": "@tuturuuu/hive-realtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "tsgo --project tsconfig.json"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "@tuturuuu/supabase": "workspace:*",
+    "@tuturuuu/types": "workspace:*",
+    "jose": "^6.2.3",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tuturuuu/typescript-config": "workspace:*",
+    "bun-types": "^1.3.13",
+    "typescript": "^6.0.3",
+    "vitest": "^4.1.5"
+  },
+  "packageManager": "bun@1.3.13"
+}

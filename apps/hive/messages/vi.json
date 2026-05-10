@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "continueWithTuturuuu": "Tiếp tục với Tuturuuu",
+    "description": "Đăng nhập bằng hệ thống tài khoản tập trung của Tuturuuu để vào công cụ nghiên cứu Hive.",
+    "experimentBody": "Thành viên trong danh sách cho phép có thể chỉnh sửa thế giới voxel, cấu hình prompt cho NPC và so sánh quyết định thủ công của agent.",
+    "experimentTitle": "Phòng thí nghiệm mô phỏng dùng chung",
+    "logout": "Đăng xuất",
+    "notWhitelistedBody": "Tài khoản của bạn đã đăng nhập, nhưng chưa được bật trong danh sách cho phép của Hive.",
+    "notWhitelistedTitle": "Quyền truy cập Hive bị giới hạn",
+    "researchLab": "Nghiên cứu Tuturuuu",
+    "restricted": "Môi trường production chỉ mở cho thành viên Hive đã được bật quyền.",
+    "title": "Công cụ nghiên cứu voxel Hive"
+  },
+  "dashboard": {
+    "description": "Xây dựng thế giới voxel dùng chung, cấu hình NPC dùng LLM và chạy thí nghiệm quyết định agent thủ công.",
+    "title": "Hive"
+  },
+  "metadata": {
+    "description": "Trình biên tập nghiên cứu dựa trên voxel cho thí nghiệm hành vi agent trong môi trường mô phỏng.",
+    "title": "Hive"
+  }
+}
