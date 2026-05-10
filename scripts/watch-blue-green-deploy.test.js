@@ -1188,70 +1188,80 @@ test('appendDeploymentHistory keeps the active deployment open during standby re
 });
 
 test('parseProxyLogEntries keeps only access lines and collectDeploymentTraffic counts non-health requests', async () => {
-  const deployments = [
-    {
-      activatedAt: Date.parse('2026-04-18T11:00:00.000Z'),
-      activeColor: 'green',
-      buildDurationMs: 30_000,
-      commitShortHash: 'bbb222',
-      commitSubject: 'current',
-      finishedAt: Date.parse('2026-04-18T11:00:00.000Z'),
-      startedAt: Date.parse('2026-04-18T10:59:30.000Z'),
-      status: 'successful',
-    },
-    {
-      activatedAt: Date.parse('2026-04-18T10:30:00.000Z'),
-      activeColor: 'blue',
-      buildDurationMs: 25_000,
-      commitShortHash: 'aaa111',
-      commitSubject: 'previous',
-      endedAt: Date.parse('2026-04-18T11:00:00.000Z'),
-      finishedAt: Date.parse('2026-04-18T10:30:00.000Z'),
-      startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
-      status: 'successful',
-    },
-  ];
-  const parsed = parseProxyLogEntries(
-    [
-      '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
-      '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
-      '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
-      '2026-04-18T11:07:00.000000000Z nginx: configuration file /etc/nginx/nginx.conf test is successful',
-    ].join('\n')
-  );
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-traffic-'));
+  const paths = getWatchPaths(tempDir);
 
-  assert.equal(parsed.length, 3);
+  try {
+    const deployments = [
+      {
+        activatedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+        activeColor: 'green',
+        buildDurationMs: 30_000,
+        commitShortHash: 'bbb222',
+        commitSubject: 'current',
+        finishedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+        startedAt: Date.parse('2026-04-18T10:59:30.000Z'),
+        status: 'successful',
+      },
+      {
+        activatedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+        activeColor: 'blue',
+        buildDurationMs: 25_000,
+        commitShortHash: 'aaa111',
+        commitSubject: 'previous',
+        endedAt: Date.parse('2026-04-18T11:00:00.000Z'),
+        finishedAt: Date.parse('2026-04-18T10:30:00.000Z'),
+        startedAt: Date.parse('2026-04-18T10:29:35.000Z'),
+        status: 'successful',
+      },
+    ];
+    const parsed = parseProxyLogEntries(
+      [
+        '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+        '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+        '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
+        '2026-04-18T11:07:00.000000000Z nginx: configuration file /etc/nginx/nginx.conf test is successful',
+      ].join('\n')
+    );
 
-  const enriched = await collectDeploymentTraffic(deployments, {
-    now: Date.parse('2026-04-18T11:30:00.000Z'),
-    runCommand: createRunCommandMock(
-      new Map([
-        [
-          prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
-          createResult('proxy-123\n'),
-        ],
-        [
-          'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
-          createResult(
-            [
-              '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
-              '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
-              '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
-            ].join('\n')
-          ),
-        ],
-      ])
-    ),
-  });
+    assert.equal(parsed.length, 3);
 
-  assert.equal(enriched[0].requestCount, 1);
-  assert.equal(enriched[1].requestCount, 1);
-  assert.equal(enriched[0].averageRequestsPerMinute, 1 / 30);
-  assert.equal(enriched[0].dailyAverageRequests, 48);
-  assert.equal(enriched[0].dailyPeakRequests, 1);
-  assert.equal(enriched[0].dailyRequestCount, 1);
-  assert.equal(enriched[0].peakRequestsPerMinute, 1);
-  assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
+    const enriched = await collectDeploymentTraffic(deployments, {
+      fsImpl: fs,
+      now: Date.parse('2026-04-18T11:30:00.000Z'),
+      paths,
+      rootDir: tempDir,
+      runCommand: createRunCommandMock(
+        new Map([
+          [
+            prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
+            createResult('proxy-123\n'),
+          ],
+          [
+            'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
+            createResult(
+              [
+                '2026-04-18T10:35:00.000000000Z 10.0.0.1 - - [18/Apr/2026:10:35:00 +0000] "GET /docs HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+                '2026-04-18T11:05:00.000000000Z 10.0.0.1 - - [18/Apr/2026:11:05:00 +0000] "GET / HTTP/1.1" 200 120 "-" "Mozilla/5.0" "-"',
+                '2026-04-18T11:06:00.000000000Z 127.0.0.1 - - [18/Apr/2026:11:06:00 +0000] "GET /api/health HTTP/1.1" 200 2 "-" "Wget/1.21" "-"',
+              ].join('\n')
+            ),
+          ],
+        ])
+      ),
+    });
+
+    assert.equal(enriched[0].requestCount, 1);
+    assert.equal(enriched[1].requestCount, 1);
+    assert.equal(enriched[0].averageRequestsPerMinute, 1 / 30);
+    assert.equal(enriched[0].dailyAverageRequests, 48);
+    assert.equal(enriched[0].dailyPeakRequests, 1);
+    assert.equal(enriched[0].dailyRequestCount, 1);
+    assert.equal(enriched[0].peakRequestsPerMinute, 1);
+    assert.equal(enriched[0].lifetimeMs, 30 * 60 * 1_000);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('parseProxyLogEntries understands structured nginx JSON access logs', () => {
