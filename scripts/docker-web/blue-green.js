@@ -41,7 +41,6 @@ const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const BLUE_GREEN_SUPPORT_SERVICES = [
   'markitdown',
-  'pronunciation-assessor',
   'storage-unzip-proxy',
   'web-cron-runner',
 ];

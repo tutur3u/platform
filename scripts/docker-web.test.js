@@ -1893,12 +1893,7 @@ test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp c
       PATH: 'test-path',
     },
     runCommand,
-    services: [
-      'web-green',
-      'markitdown',
-      'pronunciation-assessor',
-      'storage-unzip-proxy',
-    ],
+    services: ['web-green', 'markitdown', 'storage-unzip-proxy'],
     upArgs: [
       'up',
       '--build',
@@ -1906,7 +1901,6 @@ test('runComposeUpWithNameConflictRecovery removes stale Compose recreate temp c
       '--remove-orphans',
       'web-green',
       'markitdown',
-      'pronunciation-assessor',
       'storage-unzip-proxy',
     ],
   });
