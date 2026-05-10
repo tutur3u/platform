@@ -368,6 +368,28 @@ console.log(loadingData.artworkCategories);
 
 For the Yoola adapter, `artworkCategories` reflects the explicit gallery taxonomy configured on the `singleton-sections/gallery` entry (`profile_data.categoryOptions`), filtered down to categories that currently have artworks.
 
+External apps can also seed assets from their local `public/` folder without holding production Supabase keys:
+
+```typescript
+import {
+  linkExternalProjectPublicFolderAssets
+} from 'tuturuuu';
+import { uploadExternalProjectPublicFolderAssets } from 'tuturuuu/external-projects/public-assets';
+
+const linkedManifest = linkExternalProjectPublicFolderAssets(manifest);
+const sync = await uploadExternalProjectPublicFolderAssets(
+  client.externalProjects,
+  workspaceId,
+  manifest,
+  { publicDir: './public' }
+);
+
+console.log(sync.uploaded.length);
+console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
+```
+
+Set `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl` on manifest assets. The helper uploads those files through the existing external-project signed upload URL endpoint and rewrites assets to deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
+
 Yoola-style consumers can also use the helper accessors exported from the SDK:
 
 ```typescript

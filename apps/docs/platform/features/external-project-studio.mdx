@@ -1,7 +1,7 @@
 ---
 title: 'Tuturuuu CMS'
 description: 'Canonical project registry, workspace bindings, and workspace authoring for external-project delivery.'
-updatedAt: '2026-04-22'
+updatedAt: '2026-05-10'
 ---
 
 ## TL;DR
@@ -63,6 +63,9 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 - Keep preview sourced from the existing delivery route instead of introducing a second preview payload contract.
 - Backend/database naming remains `external-project*`; the product surface is what changed.
 - Translation validation now treats `null` leaves as invalid so missing shared keys fail checks instead of silently passing parity.
+- External apps can mark manifest assets with `metadata.publicPath`, `metadata.localAssetPath`, or a relative `sourceUrl` such as `/media/hero.png`.
+- Before diff/apply, run the public-folder linker so the manifest stores deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
+- Before apply, upload those files through the existing external-project asset signed upload URL route. Abort the apply if a local public asset is missing so CMS never receives storage paths for objects that were not uploaded.
 
 ## Team Guidance
 

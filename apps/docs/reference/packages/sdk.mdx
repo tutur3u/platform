@@ -572,6 +572,31 @@ console.log(yoolaLoadingData.artworkCategories);
 
 For the Yoola adapter, `artworkCategories` comes from the configured gallery taxonomy on `singleton-sections/gallery` (`profile_data.categoryOptions`) rather than being inferred from every artwork entry.
 
+### Public Folder Asset Sync
+
+External apps can keep seed media in their local `public/` folder and still publish it through Tuturuuu Drive. Mark each manifest asset with `metadata.publicPath`, `metadata.localAssetPath`, `metadata.sourcePublicPath`, or a relative `sourceUrl`.
+
+```typescript
+import {
+  linkExternalProjectPublicFolderAssets,
+} from 'tuturuuu';
+import { uploadExternalProjectPublicFolderAssets } from 'tuturuuu/external-projects/public-assets';
+
+const linkedManifest = linkExternalProjectPublicFolderAssets(manifest);
+
+const sync = await uploadExternalProjectPublicFolderAssets(
+  client.externalProjects,
+  'workspace-id',
+  manifest,
+  { publicDir: './public' }
+);
+
+console.log(sync.uploaded.length);
+console.log(linkedManifest.content.entries[0]?.assets?.[0]?.storagePath);
+```
+
+The linker writes deterministic storage paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`. The upload helper uses the existing external-project signed upload URL route, so production Supabase keys are not needed in external apps.
+
 ### TanStack Query
 
 For React apps, keep the SDK as the delivery boundary and TanStack Query as the cache owner:

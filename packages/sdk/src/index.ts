@@ -32,6 +32,14 @@ export {
 } from './errors';
 export type { ExternalProjectsClientConfig } from './external-projects';
 export { ExternalProjectsClient } from './external-projects';
+export type { ExternalProjectPublicAssetUpload } from './external-projects-public-assets';
+export {
+  getExternalProjectPublicAssetFilename,
+  getExternalProjectPublicAssetPublicPath,
+  getExternalProjectPublicAssetStoragePath,
+  getExternalProjectPublicAssetUploads,
+  linkExternalProjectPublicFolderAssets,
+} from './external-projects-public-assets';
 export type { TuturuuuUserClientConfig } from './platform';
 export {
   TasksClient,

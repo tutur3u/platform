@@ -57,6 +57,13 @@
       "require": "./dist/external-projects.js",
       "default": "./dist/external-projects.js"
     },
+    "./external-projects/public-assets": {
+      "types": "./dist/external-projects-public-assets-node.d.ts",
+      "bun": "./dist/external-projects-public-assets-node.js",
+      "import": "./dist/external-projects-public-assets-node.js",
+      "require": "./dist/external-projects-public-assets-node.js",
+      "default": "./dist/external-projects-public-assets-node.js"
+    },
     "./epm": {
       "types": "./dist/epm.d.ts",
       "bun": "./dist/epm.js",
