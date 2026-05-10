@@ -18,7 +18,7 @@ const {
   getComposeFile,
   runChecked,
 } = require('../docker-web/compose.js');
-const { getDefaultComposeProjectName } = require('../docker-web/env.js');
+const { getDockerWebComposeProjectName } = require('../docker-web/env.js');
 
 const DEFAULT_PROJECT_POLL_INTERVAL_MS = 60_000;
 function normalizeProjectId(value) {
@@ -652,9 +652,10 @@ async function deployManagedProject(project, { env, rootDir, runCommand }) {
     {
       env: {
         ...env,
-        COMPOSE_PROJECT_NAME:
-          env.DOCKER_WEB_COMPOSE_PROJECT_NAME?.trim() ||
-          getDefaultComposeProjectName(rootDir),
+        COMPOSE_PROJECT_NAME: getDockerWebComposeProjectName({
+          baseEnv: env,
+          rootDir,
+        }),
       },
       runCommand,
     }

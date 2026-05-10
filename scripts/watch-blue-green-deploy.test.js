@@ -3734,14 +3734,14 @@ test('getWatcherComposeEnv preserves the existing host workspace path when runni
     const composeEnv = getWatcherComposeEnv({
       baseEnv: {
         PATH: 'test-path',
-        COMPOSE_PROJECT_NAME: 'bad-container-project',
+        COMPOSE_PROJECT_NAME: 'platform',
         [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
       },
       rootDir: '/workspace',
     });
 
     assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], hostWorkspaceDir);
-    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

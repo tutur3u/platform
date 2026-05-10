@@ -38,6 +38,7 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
+const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
 
 function stripUnquotedInlineComment(value) {
   const quote = value[0];
@@ -169,9 +170,34 @@ function getFirstNonBlank(values) {
 function getDefaultComposeProjectName(rootDir = ROOT_DIR) {
   const workspaceName = path.basename(rootDir);
 
-  return workspaceName === 'platform'
+  return workspaceName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
     ? DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME
     : workspaceName;
+}
+
+function getDockerWebComposeProjectName({
+  baseEnv = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const explicitProjectName = getFirstNonBlank([
+    baseEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  ]);
+
+  if (explicitProjectName) {
+    return explicitProjectName.trim();
+  }
+
+  const inheritedProjectName = getFirstNonBlank([baseEnv.COMPOSE_PROJECT_NAME]);
+  const workspaceName = path.basename(rootDir);
+
+  if (
+    workspaceName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
+    inheritedProjectName?.trim() === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
+  ) {
+    return LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME;
+  }
+
+  return getDefaultComposeProjectName(rootDir);
 }
 
 function getComposeEnvironment({
@@ -203,9 +229,7 @@ function getComposeEnvironment({
     BUILDX_NO_DEFAULT_ATTESTATIONS:
       baseEnv.BUILDX_NO_DEFAULT_ATTESTATIONS ?? '1',
     COMPOSE_DOCKER_CLI_BUILD: baseEnv.COMPOSE_DOCKER_CLI_BUILD ?? '1',
-    COMPOSE_PROJECT_NAME:
-      getFirstNonBlank([baseEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME]) ??
-      getDefaultComposeProjectName(rootDir),
+    COMPOSE_PROJECT_NAME: getDockerWebComposeProjectName({ baseEnv, rootDir }),
     DOCKER_BUILDKIT: baseEnv.DOCKER_BUILDKIT ?? '1',
     DOCKER_WEB_ENV_FILE:
       baseEnv.DOCKER_WEB_ENV_FILE ??
@@ -590,6 +614,7 @@ module.exports = {
   generateDockerServiceToken,
   getComposeEnvironment,
   getDefaultComposeProjectName,
+  getDockerWebComposeProjectName,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
   getDockerMarkitdownRuntime,

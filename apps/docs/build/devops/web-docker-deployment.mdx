@@ -863,10 +863,13 @@ Dashboard details:
   pins `COMPOSE_PROJECT_NAME` from that host checkout path unless
   `DOCKER_WEB_COMPOSE_PROJECT_NAME` is explicitly set. A canonical checkout
   directory named `platform` maps to the `tuturuuu` Compose project so Docker
-  Desktop groups the stack under the product name. Do not inherit a
-  container-scoped Compose project name from the watcher container; doing so can
-  create duplicate service names such as nested `tuturuuu-markitdown-1`
-  containers during self-refresh.
+  Desktop groups the stack under the product name on clean startups. During
+  self-refresh from an already-running legacy `platform` Compose project, the
+  watcher keeps using `platform` until the stack is intentionally recreated;
+  otherwise Docker Compose would split the live services across two project
+  groups. Do not inherit arbitrary container-scoped Compose project names from
+  the watcher container; doing so can create duplicate service names such as
+  nested `tuturuuu-markitdown-1` containers during self-refresh.
 - If Docker reports `container name ... is already in use` for a requested
   production service, the helper removes only the exact expected container name
   for the current Compose project, then retries `docker compose up`. This handles

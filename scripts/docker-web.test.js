@@ -508,6 +508,17 @@ test('getComposeEnvironment pins compose project names from the workspace path',
 
     assert.equal(canonicalRepoEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
 
+    const legacyLiveStackEnv = getComposeEnvironment({
+      baseEnv: {
+        PATH: 'test-path',
+        COMPOSE_PROJECT_NAME: 'platform',
+      },
+      envFilePath,
+      rootDir: path.join(tempDir, 'platform'),
+    });
+
+    assert.equal(legacyLiveStackEnv.COMPOSE_PROJECT_NAME, 'platform');
+
     const overriddenEnv = getComposeEnvironment({
       baseEnv: {
         PATH: 'test-path',
