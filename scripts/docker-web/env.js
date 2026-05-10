@@ -39,6 +39,8 @@ const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
+const DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV =
+  'DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT';
 
 function stripUnquotedInlineComment(value) {
   const quote = value[0];
@@ -593,6 +595,7 @@ function getDockerStorageUnzipRuntime({
 
 module.exports = {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
   DOCKER_MARKITDOWN_SERVICE_URL,
   DOCKER_PRONUNCIATION_ASSESSOR_URL,
@@ -605,6 +608,7 @@ module.exports = {
   DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE,
   DOCKER_HOST_ALIAS,
   LEGACY_WEB_ENV_FILE,
+  LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
   ensureProductionRedisToken,
   ensureRequiredComposeEnvironment,

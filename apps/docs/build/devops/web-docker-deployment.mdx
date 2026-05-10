@@ -865,11 +865,19 @@ Dashboard details:
   directory named `platform` maps to the `tuturuuu` Compose project so Docker
   Desktop groups the stack under the product name on clean startups. During
   self-refresh from an already-running legacy `platform` Compose project, the
-  watcher keeps using `platform` until the stack is intentionally recreated;
-  otherwise Docker Compose would split the live services across two project
-  groups. Do not inherit arbitrary container-scoped Compose project names from
-  the watcher container; doing so can create duplicate service names such as
-  nested `tuturuuu-markitdown-1` containers during self-refresh.
+  legacy watcher starts a staged `tuturuuu` watcher with non-conflicting host
+  ports, then stops only the old watcher service. The target watcher builds or
+  recovers the `tuturuuu` stack before it touches the public proxy port. When
+  the target proxy is healthy on the staged port, it stops the legacy
+  `platform` proxy, recreates the `tuturuuu` proxy on port `7803`, and verifies
+  the internal drain-status route within 3 seconds. If that handoff exceeds
+  3 seconds or the target proxy health check fails, the watcher stops the
+  target proxy, restores the legacy `platform` proxy, and leaves the legacy
+  project intact for another retry. After a successful handoff, it removes the
+  old `platform` Compose project with `docker compose down --remove-orphans`.
+  Do not inherit arbitrary container-scoped Compose project names from the
+  watcher container; doing so can create duplicate service names such as nested
+  `tuturuuu-markitdown-1` containers during self-refresh.
 - If Docker reports `container name ... is already in use` for a requested
   production service, the helper removes only the exact expected container name
   for the current Compose project, then retries `docker compose up`. This handles

@@ -17,6 +17,8 @@ const {
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
   HOST_WORKSPACE_DIR_ENV,
+  MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  MIGRATION_STAGING_PORT_ENV,
   MAX_GIT_FAILURE_BACKOFF_MS,
   MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
   SELF_WATCHED_FILES,
@@ -30,6 +32,7 @@ const {
   collectDeploymentTraffic,
   createQuietRunCommand,
   createWatchUi,
+  finalizeComposeProjectMigrationIfRequested,
   formatCountdown,
   formatRelativeTime,
   formatRequestsPerMinute,
@@ -71,7 +74,9 @@ const {
   clearPendingDeployRequest,
   getWatcherContainerState,
   getLatestSuccessfulDeploymentCommitHash,
+  getMigrationTargetWatcherEnv,
   hasPersistedPendingDeployRequest,
+  handoffLegacyWatcherToTargetProject,
   writePendingDeployRequest,
   writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
@@ -151,6 +156,22 @@ function prodComposeWatcherUpKey() {
 
 function prodComposeWatcherLogsKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis logs --follow --tail 100 ${BLUE_GREEN_WATCHER_SERVICE}`;
+}
+
+function prodComposeProxyHealthKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`;
+}
+
+function prodComposeProxyStopKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_PROXY_SERVICE}`;
+}
+
+function prodComposeProxyUpKey(extraArgs = []) {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build ${extraArgs.join(' ')}${extraArgs.length > 0 ? ' ' : ''}${BLUE_GREEN_PROXY_SERVICE}`;
+}
+
+function prodComposeProjectDownKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis --profile cloudflared down --remove-orphans`;
 }
 
 test('parseArgs uses a 1s interval by default and accepts --once', () => {
@@ -3745,6 +3766,236 @@ test('getWatcherComposeEnv preserves the existing host workspace path when runni
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('getMigrationTargetWatcherEnv stages the tuturuuu stack on non-conflicting ports', () => {
+  const env = getMigrationTargetWatcherEnv({
+    env: {
+      COMPOSE_PROJECT_NAME: 'platform',
+      PATH: 'test-path',
+      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+    },
+    rootDir: '/workspace',
+  });
+
+  assert.equal(env.DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(env.DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
+  for (const [key, value] of Object.entries(MIGRATION_STAGING_PORT_ENV)) {
+    assert.equal(env[key], value);
+  }
+});
+
+test('handoffLegacyWatcherToTargetProject starts a staged target watcher and stops the legacy watcher', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-migration-'));
+  const hostWorkspaceDir = path.join(tempDir, 'platform');
+  const envFilePath = path.join(hostWorkspaceDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  const envs = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const started = await handoffLegacyWatcherToTargetProject({
+      argv: ['--interval-ms', '5000'],
+      env: {
+        COMPOSE_PROJECT_NAME: 'platform',
+        PATH: process.env.PATH,
+        PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
+        [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
+      },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: '/workspace',
+      runCommand: async (command, args, options = {}) => {
+        calls.push(`${command} ${args.join(' ')}`);
+        envs.push(options.env ?? null);
+        return createResult('');
+      },
+    });
+
+    assert.equal(started, true);
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
+    ]);
+    assert.equal(envs[1].COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[1].DOCKER_WEB_COMPOSE_PROJECT_NAME, 'tuturuuu');
+    assert.equal(envs[1].DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT, 'platform');
+    assert.equal(envs[1].DOCKER_WEB_PROXY_HOST_PORT, '17803');
+    assert.equal(envs[2].COMPOSE_PROJECT_NAME, 'platform');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('finalizeComposeProjectMigrationIfRequested switches proxy under the deadline and removes the legacy project', async () => {
+  const calls = [];
+  const envs = [];
+  const timestamps = [0, 1200, 1200];
+  const result = await finalizeComposeProjectMigrationIfRequested({
+    env: {
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT: 'platform',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+      PATH: process.env.PATH,
+    },
+    log: { error() {}, info() {}, warn() {} },
+    now: () => timestamps.shift() ?? 1200,
+    runCommand: async (command, args, options = {}) => {
+      const key = `${command} ${args.join(' ')}`;
+      calls.push(key);
+      envs.push(options.env ?? {});
+
+      if (
+        key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+      ) {
+        return createResult('legacy-web-proxy\n');
+      }
+
+      if (
+        [
+          prodComposeProxyHealthKey(),
+          prodComposeProxyStopKey(),
+          prodComposeProxyUpKey(['--force-recreate']),
+          prodComposeProjectDownKey(),
+        ].includes(key)
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    },
+  });
+
+  assert.deepEqual(result, {
+    handoffDurationMs: 1200,
+    sourceProjectName: 'platform',
+    status: 'completed',
+    targetProjectName: 'tuturuuu',
+  });
+  assert.deepEqual(calls, [
+    `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
+    prodComposeProxyHealthKey(),
+    prodComposeProxyStopKey(),
+    prodComposeProxyUpKey(['--force-recreate']),
+    prodComposeProxyHealthKey(),
+    prodComposeProjectDownKey(),
+  ]);
+  assert.equal(envs[1].COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(envs[1].DOCKER_WEB_PROXY_HOST_PORT, '17803');
+  assert.equal(envs[2].COMPOSE_PROJECT_NAME, 'platform');
+  assert.equal(envs[4].COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(envs[4].DOCKER_WEB_PROXY_HOST_PORT, '7803');
+});
+
+test('finalizeComposeProjectMigrationIfRequested rolls back when target proxy verification fails', async () => {
+  const calls = [];
+  const envs = [];
+  const timestamps = [0, 10, 20];
+  const result = await finalizeComposeProjectMigrationIfRequested({
+    env: {
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT: 'platform',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+      PATH: process.env.PATH,
+    },
+    log: { error() {}, info() {}, warn() {} },
+    now: () => timestamps.shift() ?? 20,
+    runCommand: async (command, args, options = {}) => {
+      const key = `${command} ${args.join(' ')}`;
+      const env = options.env ?? {};
+      calls.push(key);
+      envs.push(env);
+
+      if (
+        key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+      ) {
+        return createResult('legacy-web-proxy\n');
+      }
+
+      if (
+        key === prodComposeProxyHealthKey() &&
+        env.COMPOSE_PROJECT_NAME === 'tuturuuu' &&
+        env.DOCKER_WEB_PROXY_HOST_PORT === '7803'
+      ) {
+        return createResult('', { code: 1, stderr: 'target unhealthy' });
+      }
+
+      if (
+        [
+          prodComposeProxyHealthKey(),
+          prodComposeProxyStopKey(),
+          prodComposeProxyUpKey(['--force-recreate']),
+          prodComposeProxyUpKey(),
+        ].includes(key)
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    },
+  });
+
+  assert.equal(result.status, 'rolled-back');
+  assert.match(result.error, /target unhealthy/);
+  assert.deepEqual(calls, [
+    `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`,
+    prodComposeProxyHealthKey(),
+    prodComposeProxyStopKey(),
+    prodComposeProxyUpKey(['--force-recreate']),
+    prodComposeProxyHealthKey(),
+    prodComposeProxyStopKey(),
+    prodComposeProxyUpKey(),
+    prodComposeProxyHealthKey(),
+  ]);
+  assert.equal(envs[5].COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(envs[6].COMPOSE_PROJECT_NAME, 'platform');
+  assert.equal(envs[7].COMPOSE_PROJECT_NAME, 'platform');
+});
+
+test('finalizeComposeProjectMigrationIfRequested rolls back when proxy handoff exceeds three seconds', async () => {
+  const timestamps = [0, MIGRATION_PROXY_HANDOFF_TIMEOUT_MS + 1, 3010, 3020];
+  const result = await finalizeComposeProjectMigrationIfRequested({
+    env: {
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT: 'platform',
+      DOCKER_WEB_PROXY_HOST_PORT: '17803',
+      PATH: process.env.PATH,
+    },
+    log: { error() {}, info() {}, warn() {} },
+    now: () => timestamps.shift() ?? 3020,
+    runCommand: async (command, args) => {
+      const key = `${command} ${args.join(' ')}`;
+
+      if (
+        key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+      ) {
+        return createResult('legacy-web-proxy\n');
+      }
+
+      if (
+        [
+          prodComposeProxyHealthKey(),
+          prodComposeProxyStopKey(),
+          prodComposeProxyUpKey(['--force-recreate']),
+          prodComposeProxyUpKey(),
+        ].includes(key)
+      ) {
+        return createResult('');
+      }
+
+      throw new Error(`Unexpected command: ${key}`);
+    },
+  });
+
+  assert.equal(result.status, 'rolled-back');
+  assert.match(result.error, /Proxy handoff exceeded 3000ms/);
 });
 
 test('clearContainerManagedWatcherState removes persisted lock and status files', () => {

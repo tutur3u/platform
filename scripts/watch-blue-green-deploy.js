@@ -17,9 +17,13 @@ const {
   tagBlueGreenServiceImageForCache,
 } = require('./docker-web/blue-green.js');
 const {
+  DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   ensureProductionRedisToken,
   ensureWebEnvFile,
   getComposeEnvironment,
+  getDockerWebComposeProjectName,
+  LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
 } = require('./docker-web/env.js');
 const {
@@ -117,6 +121,21 @@ const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
 const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
 const WATCHER_CONTAINER_REFRESH_MESSAGE =
   'host-supervised watcher service recreation';
+const MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
+const MIGRATION_STAGING_PORT_ENV = {
+  DOCKER_WEB_BUILDKIT_PORT: '17914',
+  DOCKER_WEB_DIRECT_HOST_PORT: '17804',
+  DOCKER_WEB_PROXY_HOST_PORT: '17803',
+  DOCKER_WEB_REDIS_HOST_PORT: '16379',
+  DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '18079',
+};
+const MIGRATION_CANONICAL_PORT_ENV = {
+  DOCKER_WEB_BUILDKIT_PORT: '7914',
+  DOCKER_WEB_DIRECT_HOST_PORT: '7803',
+  DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  DOCKER_WEB_REDIS_HOST_PORT: '6379',
+  DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '8079',
+};
 const ANSI = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
@@ -201,6 +220,57 @@ function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
+function getProjectNameFromEnv(env, key) {
+  return typeof env?.[key] === 'string' ? env[key].trim() : '';
+}
+
+function isLegacyComposeProjectWatcher({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const inheritedProjectName = getProjectNameFromEnv(
+    env,
+    'COMPOSE_PROJECT_NAME'
+  );
+  const hostWorkspaceDir =
+    getProjectNameFromEnv(env, HOST_WORKSPACE_DIR_ENV) || rootDir;
+
+  return (
+    env[WATCHER_CONTAINER_ENV] === '1' &&
+    inheritedProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
+    path.basename(hostWorkspaceDir) === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
+  );
+}
+
+function getMigrationTargetWatcherEnv({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const targetProjectName = getDockerWebComposeProjectName({
+    baseEnv: {
+      ...env,
+      COMPOSE_PROJECT_NAME: undefined,
+      DOCKER_WEB_COMPOSE_PROJECT_NAME:
+        env.DOCKER_WEB_COMPOSE_PROJECT_NAME ??
+        DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    },
+    rootDir,
+  });
+
+  return {
+    ...env,
+    ...Object.fromEntries(
+      Object.entries(MIGRATION_STAGING_PORT_ENV).map(([key, value]) => [
+        key,
+        env[key] ?? value,
+      ])
+    ),
+    [DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV]:
+      LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: targetProjectName,
+  };
+}
+
 function getWatcherComposeEnv({
   baseEnv = process.env,
   envFilePath,
@@ -224,6 +294,58 @@ function getWatcherComposeEnv({
     }),
     [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
   };
+}
+
+async function handoffLegacyWatcherToTargetProject({
+  argv,
+  env = process.env,
+  envFilePath,
+  fsImpl = fs,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!isLegacyComposeProjectWatcher({ env, rootDir })) {
+    return false;
+  }
+
+  const targetEnv = getMigrationTargetWatcherEnv({ env, rootDir });
+
+  log.warn?.(
+    `Starting ${targetEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher to migrate the legacy ${LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME} Compose project.`
+  );
+
+  await startBlueGreenWatcherContainer(argv, {
+    env: targetEnv,
+    envFilePath,
+    fsImpl,
+    rootDir:
+      getProjectNameFromEnv(env, HOST_WORKSPACE_DIR_ENV) ||
+      getProjectNameFromEnv(targetEnv, HOST_WORKSPACE_DIR_ENV) ||
+      rootDir,
+    runCommand: run,
+  });
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'stop',
+      '--timeout',
+      '1',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: {
+        ...env,
+        COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+      },
+      runCommand: run,
+    }
+  );
+
+  return true;
 }
 
 function writeWatchArgsFile(
@@ -2169,6 +2291,332 @@ async function runBlueGreenDeploy({
   });
 }
 
+async function testComposeProxyRouting({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      BLUE_GREEN_PROXY_SERVICE,
+      'wget',
+      '-q',
+      '-O',
+      '/dev/null',
+      'http://127.0.0.1:7803/__platform/drain-status'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function testComposeProxyRoutingWithin({
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  now = () => Date.now(),
+  ...options
+} = {}) {
+  const startedAt = now();
+
+  await testComposeProxyRouting(options);
+
+  const elapsedMs = now() - startedAt;
+  if (elapsedMs > deadlineMs) {
+    throw new Error(
+      `Proxy handoff verification exceeded ${deadlineMs}ms (${elapsedMs}ms).`
+    );
+  }
+}
+
+function getMigrationRequest({ env = process.env, rootDir = ROOT_DIR } = {}) {
+  const sourceProjectName = getProjectNameFromEnv(
+    env,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+  const targetProjectName = getDockerWebComposeProjectName({
+    baseEnv: env,
+    rootDir,
+  });
+
+  if (!sourceProjectName || !targetProjectName) {
+    return null;
+  }
+
+  if (sourceProjectName === targetProjectName) {
+    return null;
+  }
+
+  return {
+    sourceProjectName,
+    targetProjectName,
+  };
+}
+
+function markComposeProjectMigrationComplete(env) {
+  if (!env || typeof env !== 'object') {
+    return;
+  }
+
+  Object.assign(env, MIGRATION_CANONICAL_PORT_ENV);
+  delete env[DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV];
+}
+
+async function composeProjectHasContainers({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await runChecked(
+    'docker',
+    getComposeCommandArgs(composeFile, composeGlobalArgs, 'ps', '-q'),
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout.trim().length > 0;
+}
+
+async function removeLegacyComposeProject({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis', '--profile', 'cloudflared'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'down',
+      '--remove-orphans'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function recoverLegacyProxy({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+  sourceEnv,
+  targetEnv,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'stop',
+      '--timeout',
+      '1',
+      BLUE_GREEN_PROXY_SERVICE
+    ),
+    {
+      env: targetEnv,
+      runCommand: run,
+    }
+  );
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'up',
+      '--detach',
+      '--no-build',
+      BLUE_GREEN_PROXY_SERVICE
+    ),
+    {
+      env: sourceEnv,
+      runCommand: run,
+    }
+  );
+  await testComposeProxyRoutingWithin({
+    composeFile,
+    composeGlobalArgs,
+    deadlineMs,
+    env: sourceEnv,
+    now,
+    runCommand: run,
+  });
+}
+
+async function finalizeComposeProjectMigrationIfRequested({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  env = process.env,
+  log = console,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const migration = getMigrationRequest({ env, rootDir });
+
+  if (!migration) {
+    return null;
+  }
+
+  const sourceEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: migration.sourceProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: migration.sourceProjectName,
+    DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  };
+  const targetStagedEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: migration.targetProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: migration.targetProjectName,
+  };
+  const targetFinalEnv = {
+    ...targetStagedEnv,
+    DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  };
+
+  const sourceHasContainers = await composeProjectHasContainers({
+    composeFile,
+    composeGlobalArgs,
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    markComposeProjectMigrationComplete(env);
+
+    return {
+      sourceProjectName: migration.sourceProjectName,
+      status: 'source-absent',
+      targetProjectName: migration.targetProjectName,
+    };
+  }
+
+  await testComposeProxyRouting({
+    composeFile,
+    composeGlobalArgs,
+    env: targetStagedEnv,
+    runCommand: run,
+  });
+
+  const handoffStartedAt = now();
+  log.warn?.(
+    `Switching Docker proxy from ${migration.sourceProjectName} to ${migration.targetProjectName}; rollback threshold is ${deadlineMs}ms.`
+  );
+
+  try {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: sourceEnv,
+        runCommand: run,
+      }
+    );
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'up',
+        '--detach',
+        '--no-build',
+        '--force-recreate',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: targetFinalEnv,
+        runCommand: run,
+      }
+    );
+    await testComposeProxyRouting({
+      composeFile,
+      composeGlobalArgs,
+      env: targetFinalEnv,
+      runCommand: run,
+    });
+
+    const verifiedAt = now();
+    const handoffDurationMs = verifiedAt - handoffStartedAt;
+    if (handoffDurationMs > deadlineMs) {
+      throw new Error(
+        `Proxy handoff exceeded ${deadlineMs}ms (${handoffDurationMs}ms).`
+      );
+    }
+  } catch (error) {
+    const failureMessage =
+      error instanceof Error ? error.message : String(error);
+
+    try {
+      await recoverLegacyProxy({
+        composeFile,
+        composeGlobalArgs,
+        deadlineMs,
+        now,
+        runCommand: run,
+        sourceEnv,
+        targetEnv: targetFinalEnv,
+      });
+    } catch (rollbackError) {
+      throw new Error(
+        `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed and rollback also failed: ${failureMessage}; rollback error: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`
+      );
+    }
+
+    log.error?.(
+      `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed; legacy proxy was restored: ${failureMessage}`
+    );
+
+    return {
+      error: failureMessage,
+      sourceProjectName: migration.sourceProjectName,
+      status: 'rolled-back',
+      targetProjectName: migration.targetProjectName,
+    };
+  }
+
+  const handoffDurationMs = now() - handoffStartedAt;
+
+  await removeLegacyComposeProject({
+    composeFile,
+    env: sourceEnv,
+    runCommand: run,
+  });
+  markComposeProjectMigrationComplete(env);
+
+  log.info?.(
+    `Docker proxy migration to ${migration.targetProjectName} completed in ${handoffDurationMs}ms.`
+  );
+
+  return {
+    handoffDurationMs,
+    sourceProjectName: migration.sourceProjectName,
+    status: 'completed',
+    targetProjectName: migration.targetProjectName,
+  };
+}
+
 async function runBunUpgradeAndInstall({
   env,
   runCommand: run = runCommand,
@@ -2437,11 +2885,20 @@ async function runMissingActiveDeploymentRecovery(
         `Recovered blue/green runtime from cached image ${cachedDeployment.imageTag} with active ${recovery.activeColor} and standby ${recovery.standbyColor} for ${cachedCommit.shortHash}.`
       );
 
+      const migration = await finalizeComposeProjectMigrationIfRequested({
+        env,
+        log,
+        now,
+        rootDir,
+        runCommand: run,
+      });
+
       return attachRuntime(
         {
           checkedAt,
           cachedImageTag: cachedDeployment.imageTag,
           latestCommit,
+          migration,
           status: 'recovered',
         },
         history
@@ -2655,10 +3112,19 @@ async function runMissingActiveDeploymentRecovery(
       `Recovered blue/green runtime with active ${activeColor ?? 'unknown'} and standby ${standbyResult.standbyColor ?? standbyColor ?? 'unknown'} for ${latestCommit.shortHash}.`
     );
 
+    const migration = await finalizeComposeProjectMigrationIfRequested({
+      env,
+      log,
+      now,
+      rootDir,
+      runCommand: run,
+    });
+
     return attachRuntime(
       {
         checkedAt,
         latestCommit,
+        migration,
         status: 'recovered',
       },
       history
@@ -2770,6 +3236,13 @@ async function runPendingDeployAfterRestart({
     log,
     runCommand: run,
   });
+  const migration = await finalizeComposeProjectMigrationIfRequested({
+    env,
+    log,
+    now,
+    rootDir,
+    runCommand: run,
+  });
 
   return {
     activeColor,
@@ -2777,6 +3250,7 @@ async function runPendingDeployAfterRestart({
     deployFinishedAt,
     deployStartedAt,
     history,
+    migration,
     refreshedProxy,
   };
 }
@@ -3831,6 +4305,13 @@ async function runPinnedDeploymentIteration(
       log,
       runCommand: run,
     });
+    const migration = await finalizeComposeProjectMigrationIfRequested({
+      env,
+      log,
+      now,
+      rootDir,
+      runCommand: run,
+    });
 
     log.info?.(`Pinned rollback deployed for ${latestCommit.shortHash}.`);
 
@@ -3838,6 +4319,7 @@ async function runPinnedDeploymentIteration(
       {
         checkedAt,
         latestCommit,
+        migration,
         pinnedFromCommitHash: latestDeployedCommitHash,
         status: 'pinned-deployed',
       },
@@ -4127,6 +4609,13 @@ async function runDeployWatchIteration(
             log,
             runCommand: run,
           });
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
           await updatePlatformProjectStatus({
             latestCommit,
             metadata: {
@@ -4145,6 +4634,7 @@ async function runDeployWatchIteration(
             {
               checkedAt,
               latestCommit,
+              migration,
               status: 'deployed',
             },
             history
@@ -4326,6 +4816,13 @@ async function runDeployWatchIteration(
             log,
             runCommand: run,
           });
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
 
           log.info?.(
             `Blue/green reconciliation deployment completed for ${latestCommit.shortHash}.`
@@ -4335,6 +4832,7 @@ async function runDeployWatchIteration(
             {
               checkedAt,
               latestCommit,
+              migration,
               reconciledFromCommitHash: latestDeployedCommitHash,
               status: 'deployed',
             },
@@ -4413,7 +4911,18 @@ async function runDeployWatchIteration(
           }
         }
 
-        return runtimeSnapshot;
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+
+        return {
+          ...runtimeSnapshot,
+          migration,
+        };
       }
 
       if (
@@ -4501,6 +5010,13 @@ async function runDeployWatchIteration(
           log,
           runCommand: run,
         });
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
 
         log.info?.(
           `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
@@ -4517,6 +5033,7 @@ async function runDeployWatchIteration(
           {
             checkedAt,
             latestCommit,
+            migration,
             status: 'standby-refreshed',
           },
           history
@@ -4818,6 +5335,13 @@ async function runDeployWatchIteration(
           log,
           runCommand: run,
         });
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
         if (shouldUpdatePlatformProject) {
           await updatePlatformProjectStatus({
             latestCommit,
@@ -4840,6 +5364,7 @@ async function runDeployWatchIteration(
             checkedAt,
             containerRefreshRequired: false,
             latestCommit,
+            migration,
             newHead: updatedHead,
             oldHead: localHead,
             restartRequired: false,
@@ -5160,6 +5685,28 @@ async function main(argv = process.argv.slice(2), options = {}) {
   };
 
   try {
+    const migrationHandoffStarted = await handoffLegacyWatcherToTargetProject({
+      argv: options.restartArgv ?? argv,
+      env,
+      envFilePath,
+      fsImpl,
+      log: ui,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (migrationHandoffStarted) {
+      ui.info(
+        `Started ${DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher for Docker project migration; legacy watcher will stop.`
+      );
+
+      return {
+        sourceProjectName: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+        status: 'migration-handoff',
+        targetProjectName: DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+      };
+    }
+
     const initialTarget = await resolveLockedBranchTarget({
       env,
       fsImpl,
@@ -5590,6 +6137,8 @@ module.exports = {
   MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
   MAX_DEPLOYMENTS,
   MAX_EVENTS,
+  MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  MIGRATION_STAGING_PORT_ENV,
   CONTAINER_REFRESH_WATCHED_FILES,
   HOST_WORKSPACE_DIR_ENV,
   SELF_WATCHED_FILES,
@@ -5612,6 +6161,7 @@ module.exports = {
   collectDeploymentTraffic,
   createWatchUi,
   fetchTrackedBranch,
+  finalizeComposeProjectMigrationIfRequested,
   formatClockTime,
   formatCountdown,
   formatDuration,
@@ -5624,6 +6174,8 @@ module.exports = {
   getLatestSuccessfulDeploymentCommitHash,
   getCommitMetadata,
   getCurrentBranch,
+  getMigrationRequest,
+  getMigrationTargetWatcherEnv,
   getProdComposeServiceContainerId,
   getRevision,
   getTrackedUpstream,
@@ -5631,6 +6183,7 @@ module.exports = {
   getWatcherComposeEnv,
   getWatchPaths,
   hasDirtyWorktree,
+  handoffLegacyWatcherToTargetProject,
   listDirtyWorktreePaths,
   hasWatchedScriptChanges,
   isRecoverableGitCommandError,

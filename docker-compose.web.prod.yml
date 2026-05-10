@@ -78,7 +78,7 @@ services:
   web:
     <<: *web-service
     ports:
-      - "7803:7803"
+      - "${DOCKER_WEB_DIRECT_HOST_PORT:-7803}:7803"
 
   web-blue:
     <<: *web-service
@@ -96,7 +96,7 @@ services:
     image: nginx:1.27-alpine
     init: true
     ports:
-      - "7803:7803"
+      - "${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"
     volumes:
       - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 
@@ -214,6 +214,13 @@ services:
     environment:
       - CLOUDFLARED_TOKEN
       - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234
+      - DOCKER_WEB_BUILDKIT_PORT
+      - DOCKER_WEB_COMPOSE_PROJECT_NAME
+      - DOCKER_WEB_DIRECT_HOST_PORT
+      - DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT
+      - DOCKER_WEB_PROXY_HOST_PORT
+      - DOCKER_WEB_REDIS_HOST_PORT
+      - DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT
       - DOCKER_WEB_WITH_CLOUDFLARED
       - GITHUB_TOKEN
       - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
@@ -270,7 +277,7 @@ services:
     profiles: ["redis"]
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "${DOCKER_WEB_REDIS_HOST_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -288,7 +295,7 @@ services:
       SRH_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token}
     image: hiett/serverless-redis-http:latest
     ports:
-      - "8079:80"
+      - "${DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079}:80"
     healthcheck:
       test:
         [
