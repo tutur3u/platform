@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { permissions } from '@tuturuuu/utils/permissions';
 import { describe, expect, it } from 'vitest';
@@ -8,6 +9,11 @@ import {
   type ApprovalStatus,
   canRemoveApproval,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/approvals/utils';
+
+const repoRoot = resolve(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../../..'
+);
 
 describe('Post Approval Workflow', () => {
   describe('Approval Revoke Guard', () => {
@@ -99,7 +105,7 @@ describe('Post Approval Workflow', () => {
 describe('Permission Integration', () => {
   it('includes every workspace role permission enum value in the roles UI catalog', () => {
     const supabaseTypes = readFileSync(
-      resolve(process.cwd(), '../../packages/types/src/supabase.ts'),
+      resolve(repoRoot, 'packages/types/src/supabase.ts'),
       'utf8'
     );
     const enumBlock = supabaseTypes.match(

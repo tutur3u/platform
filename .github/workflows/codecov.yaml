@@ -29,11 +29,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies
-        run: bun install
-
-      - name: Build workspace dependencies
-        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+      - name: Install and build workspace setup
+        run: bun setup
 
       - name: Run tests
         run: bun vitest run --coverage
