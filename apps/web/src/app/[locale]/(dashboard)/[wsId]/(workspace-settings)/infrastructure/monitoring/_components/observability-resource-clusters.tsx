@@ -146,7 +146,7 @@ export function ObservabilityResourceClusters({
 
 function ResourceClusterCard({ cluster }: { cluster: ResourceCluster }) {
   const t = useTranslations('blue-green-monitoring.observability');
-  const clusterTone = getClusterTone(cluster.summary);
+  const clusterTone = getClusterTone(cluster.summary, cluster.containers);
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-background">

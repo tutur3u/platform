@@ -164,10 +164,24 @@ export function getMemoryTone(value: number | null | undefined): ResourceTone {
   return 'red';
 }
 
-export function getClusterTone(summary: ResourceSummary): ResourceTone {
+export function getClusterTone(
+  summary: ResourceSummary,
+  containers?: BlueGreenMonitoringDockerContainer[]
+): ResourceTone {
   if (summary.serviceCount === 0) return 'muted';
-  if (summary.healthyCount < summary.serviceCount) return 'orange';
-  return getMemoryTone(summary.totalMemoryBytes);
+
+  // Red: at least one service is unhealthy
+  if (containers?.some((container) => container.health === 'unhealthy')) {
+    return 'red';
+  }
+
+  // Green: all services are healthy
+  if (summary.healthyCount === summary.serviceCount) {
+    return 'green';
+  }
+
+  // Orange: not all are healthy but no unhealthy (mixed state)
+  return 'orange';
 }
 
 export function formatResourceNumber(value: number | null | undefined) {
