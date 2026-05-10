@@ -232,13 +232,30 @@ function isLegacyComposeProjectWatcher({
     env,
     'COMPOSE_PROJECT_NAME'
   );
+  const explicitProjectName = getProjectNameFromEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_PROJECT_NAME'
+  );
+  const migrationSourceProjectName = getProjectNameFromEnv(
+    env,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
   const hostWorkspaceDir =
     getProjectNameFromEnv(env, HOST_WORKSPACE_DIR_ENV) || rootDir;
 
+  const hasLegacyProjectName =
+    inheritedProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME ||
+    explicitProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME;
+  const isUnmarkedLegacyWatcher =
+    !inheritedProjectName &&
+    !explicitProjectName &&
+    !migrationSourceProjectName;
+
   return (
     env[WATCHER_CONTAINER_ENV] === '1' &&
-    inheritedProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
-    path.basename(hostWorkspaceDir) === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
+    path.basename(hostWorkspaceDir) ===
+      LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
+    (hasLegacyProjectName || isUnmarkedLegacyWatcher)
   );
 }
 

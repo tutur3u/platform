@@ -213,6 +213,7 @@ services:
         required: false
     environment:
       - CLOUDFLARED_TOKEN
+      - COMPOSE_PROJECT_NAME
       - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234
       - DOCKER_WEB_BUILDKIT_PORT
       - DOCKER_WEB_COMPOSE_PROJECT_NAME

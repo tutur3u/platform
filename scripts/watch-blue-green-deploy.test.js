@@ -3834,6 +3834,65 @@ test('handoffLegacyWatcherToTargetProject starts a staged target watcher and sto
   }
 });
 
+test('handoffLegacyWatcherToTargetProject detects legacy watcher containers without compose env passthrough', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-migration-'));
+  const hostWorkspaceDir = path.join(tempDir, 'platform');
+  const envFilePath = path.join(hostWorkspaceDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    const started = await handoffLegacyWatcherToTargetProject({
+      argv: [],
+      env: {
+        PATH: process.env.PATH,
+        PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
+        [HOST_WORKSPACE_DIR_ENV]: hostWorkspaceDir,
+      },
+      envFilePath,
+      fsImpl: fs,
+      rootDir: '/workspace',
+      runCommand: async (command, args) => {
+        calls.push(`${command} ${args.join(' ')}`);
+        return createResult('');
+      },
+    });
+
+    assert.equal(started, true);
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop --timeout 1 ${BLUE_GREEN_WATCHER_SERVICE}`,
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('handoffLegacyWatcherToTargetProject does not re-handoff a staged target watcher', async () => {
+  const started = await handoffLegacyWatcherToTargetProject({
+    env: {
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT: 'platform',
+      PATH: process.env.PATH,
+      PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
+      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+    },
+    rootDir: '/workspace',
+    runCommand: async () => {
+      throw new Error('target watcher should not start another watcher');
+    },
+  });
+
+  assert.equal(started, false);
+});
+
 test('finalizeComposeProjectMigrationIfRequested switches proxy under the deadline and removes the legacy project', async () => {
   const calls = [];
   const envs = [];
