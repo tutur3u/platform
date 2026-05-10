@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDefaultConfigPath } from './config';
+import { getDefaultConfigPath, normalizeBaseUrl } from './config';
 
 describe('CLI config path resolution', () => {
   it('uses the explicit config path when TUTURUUU_CONFIG is set', () => {
@@ -40,5 +40,21 @@ describe('CLI config path resolution', () => {
         platform: 'linux',
       })
     ).toBe('/home/alice/.config-alt/tuturuuu/config.json');
+  });
+
+  it('rewrites browser-hostile local origins to localhost', () => {
+    expect(normalizeBaseUrl('http://0.0.0.0:7803')).toBe(
+      'http://localhost:7803'
+    );
+    expect(normalizeBaseUrl('http://[::]:7803')).toBe('http://localhost:7803');
+  });
+
+  it('keeps normal origins unchanged', () => {
+    expect(normalizeBaseUrl('http://127.0.0.1:7803')).toBe(
+      'http://127.0.0.1:7803'
+    );
+    expect(normalizeBaseUrl('https://tuturuuu.com/')).toBe(
+      'https://tuturuuu.com'
+    );
   });
 });

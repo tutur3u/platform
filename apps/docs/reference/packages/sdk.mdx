@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-09'
+updatedAt: '2026-05-10'
 ---
 
 # Tuturuuu SDK
@@ -119,6 +119,11 @@ show the signed-in account email when the web session exposes it. The CLI stores
 that session and selected workspace, board, list, task, label, and project in
 the OS app config directory. `personal` is the default workspace after login and
 when no workspace has been selected:
+
+If you target a local web origin with `ttr config set-base-url`, prefer a
+browser-safe host such as `http://localhost:7803`. The CLI normalizes
+`0.0.0.0` and unspecified IPv6 origins to `localhost` so the browser login flow
+does not open a blocked address.
 
 - macOS: `~/Library/Application Support/Tuturuuu/config.json`
 - Linux: `$XDG_CONFIG_HOME/tuturuuu/config.json` or `~/.config/tuturuuu/config.json`

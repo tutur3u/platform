@@ -36,6 +36,20 @@ function stripTrailingSlash(value: string) {
   return value.replace(/\/+$/u, '');
 }
 
+function normalizeBrowserSafeOrigin(origin: string) {
+  const url = new URL(origin);
+
+  if (
+    url.hostname === '0.0.0.0' ||
+    url.hostname === '::' ||
+    url.hostname === '[::]'
+  ) {
+    url.hostname = 'localhost';
+  }
+
+  return stripTrailingSlash(url.origin);
+}
+
 export function normalizeBaseUrl(value?: string) {
   if (!value?.trim()) {
     return DEFAULT_BASE_URL;
@@ -46,7 +60,7 @@ export function normalizeBaseUrl(value?: string) {
     ? trimmed
     : `https://${trimmed}`;
 
-  return stripTrailingSlash(new URL(withProtocol).origin);
+  return normalizeBrowserSafeOrigin(new URL(withProtocol).origin);
 }
 
 export function getDefaultConfigPath(
