@@ -14,7 +14,13 @@ const {
   stopComposeServicesIfPresent,
   waitForComposeServiceHealthy,
 } = require('./compose.js');
-const { getComposeEnvironment } = require('./env.js');
+const {
+  DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
+  getComposeEnvironment,
+  getDockerWebComposeProjectName,
+  LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+} = require('./env.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -44,11 +50,109 @@ const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFERS = '8 128k';
 const BLUE_GREEN_PROXY_BUSY_BUFFER_SIZE = '256k';
+const BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
+const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
+  DOCKER_WEB_BUILDKIT_PORT: '17914',
+  DOCKER_WEB_DIRECT_HOST_PORT: '17804',
+  DOCKER_WEB_PROXY_HOST_PORT: '17803',
+  DOCKER_WEB_REDIS_HOST_PORT: '16379',
+  DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '18079',
+};
 
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function getProjectNameFromEnv(env, key) {
+  return typeof env?.[key] === 'string' ? env[key].trim() : '';
+}
+
+function getBlueGreenMigrationSourceEnv(env, sourceProjectName) {
+  return {
+    ...env,
+    COMPOSE_PROJECT_NAME: sourceProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: sourceProjectName,
+    DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  };
+}
+
+function getBlueGreenMigrationTargetEnv(env, targetProjectName) {
+  return {
+    ...env,
+    ...Object.fromEntries(
+      Object.entries(BLUE_GREEN_MIGRATION_STAGING_PORT_ENV).map(
+        ([key, value]) => [key, env[key] ?? value]
+      )
+    ),
+    [DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV]:
+      LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    COMPOSE_PROJECT_NAME: targetProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: targetProjectName,
+  };
+}
+
+async function getBlueGreenComposeMigration({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const targetProjectName = getDockerWebComposeProjectName({
+    baseEnv: env,
+    rootDir,
+  });
+  const migrationSourceProjectName = getProjectNameFromEnv(
+    env,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+  const shouldDetectLegacyProject =
+    !migrationSourceProjectName &&
+    targetProjectName === DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
+    path.basename(rootDir) === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME;
+  const sourceProjectName =
+    migrationSourceProjectName ||
+    (shouldDetectLegacyProject ? LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME : '');
+
+  if (!sourceProjectName || sourceProjectName === targetProjectName) {
+    return null;
+  }
+
+  const sourceEnv = getBlueGreenMigrationSourceEnv(env, sourceProjectName);
+  const sourceContainers = await runChecked(
+    'docker',
+    getComposeCommandArgs(composeFile, composeGlobalArgs, 'ps', '-q'),
+    {
+      env: sourceEnv,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  if (!sourceContainers.stdout.trim()) {
+    return null;
+  }
+
+  const targetEnv = migrationSourceProjectName
+    ? {
+        ...env,
+        COMPOSE_PROJECT_NAME: targetProjectName,
+        DOCKER_WEB_COMPOSE_PROJECT_NAME: targetProjectName,
+      }
+    : getBlueGreenMigrationTargetEnv(env, targetProjectName);
+
+  return {
+    sourceEnv,
+    sourceProjectName,
+    targetEnv,
+    targetFinalEnv: {
+      ...targetEnv,
+      DOCKER_WEB_PROXY_HOST_PORT: '7803',
+    },
+    targetProjectName,
+  };
 }
 
 function getBlueGreenPaths(rootDir = ROOT_DIR) {
@@ -544,6 +648,147 @@ async function testBlueGreenProxyRouting({
   );
 }
 
+async function finalizeBlueGreenComposeMigration({
+  composeFile,
+  composeGlobalArgs = [],
+  deadlineMs = BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  migration,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+} = {}) {
+  if (!migration) {
+    return null;
+  }
+
+  await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs,
+    env: migration.targetEnv,
+    runCommand: run,
+  });
+
+  const handoffStartedAt = now();
+
+  try {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: migration.sourceEnv,
+        runCommand: run,
+      }
+    );
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'up',
+        '--detach',
+        '--no-build',
+        '--force-recreate',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: migration.targetFinalEnv,
+        runCommand: run,
+      }
+    );
+    await testBlueGreenProxyRouting({
+      composeFile,
+      composeGlobalArgs,
+      env: migration.targetFinalEnv,
+      runCommand: run,
+    });
+
+    const handoffDurationMs = now() - handoffStartedAt;
+    if (handoffDurationMs > deadlineMs) {
+      throw new Error(
+        `Proxy handoff exceeded ${deadlineMs}ms (${handoffDurationMs}ms).`
+      );
+    }
+
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        ['--profile', 'redis', '--profile', 'cloudflared'],
+        'down',
+        '--remove-orphans'
+      ),
+      {
+        env: migration.sourceEnv,
+        runCommand: run,
+      }
+    );
+
+    return {
+      handoffDurationMs,
+      sourceProjectName: migration.sourceProjectName,
+      status: 'completed',
+      targetProjectName: migration.targetProjectName,
+    };
+  } catch (error) {
+    const failureMessage =
+      error instanceof Error ? error.message : String(error);
+
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: migration.targetFinalEnv,
+        runCommand: run,
+      }
+    );
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'up',
+        '--detach',
+        '--no-build',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: migration.sourceEnv,
+        runCommand: run,
+      }
+    );
+    await testBlueGreenProxyRouting({
+      composeFile,
+      composeGlobalArgs,
+      env: migration.sourceEnv,
+      runCommand: run,
+    });
+
+    console.error(
+      `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed; legacy proxy was restored: ${failureMessage}`
+    );
+
+    return {
+      error: failureMessage,
+      sourceProjectName: migration.sourceProjectName,
+      status: 'rolled-back',
+      targetProjectName: migration.targetProjectName,
+    };
+  }
+}
+
 async function getBlueGreenServiceDrainStatus(
   serviceName,
   { composeFile, composeGlobalArgs = [], env, runCommand: run }
@@ -673,7 +918,7 @@ async function resolveBlueGreenStandbyColor(
 
 async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const composeFile = getComposeFile(parsed.mode);
-  const env = getComposeEnvironment({
+  const baseEnv = getComposeEnvironment({
     baseEnv: options.env ?? process.env,
     envFilePath: options.envFilePath,
     fsImpl: options.fsImpl ?? fs,
@@ -685,6 +930,14 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const fsImpl = options.fsImpl ?? fs;
   const paths = getBlueGreenPaths(options.rootDir ?? ROOT_DIR);
   const run = options.runCommand ?? runCommand;
+  const migration = await getBlueGreenComposeMigration({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: baseEnv,
+    rootDir: options.rootDir ?? ROOT_DIR,
+    runCommand: run,
+  });
+  const env = migration?.targetEnv ?? baseEnv;
   const persistedActiveColor = readBlueGreenActiveColor(paths, fsImpl);
   const proxyActiveColor = readBlueGreenProxyActiveColor(paths, fsImpl);
   const proxyDrainMs = options.proxyDrainMs ?? BLUE_GREEN_PROXY_DRAIN_MS;
@@ -709,15 +962,14 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     PLATFORM_BLUE_GREEN_COLOR: targetColor,
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
-  const needsProxyBootstrap = !(await hasComposeServiceContainer(
-    BLUE_GREEN_PROXY_SERVICE,
-    {
+  const needsProxyBootstrap =
+    !!migration ||
+    !(await hasComposeServiceContainer(BLUE_GREEN_PROXY_SERVICE, {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env,
       runCommand: run,
-    }
-  ));
+    }));
 
   if (needsProxyBootstrap) {
     writeBlueGreenProxyConfig(initialProxyColor, {
@@ -869,6 +1121,16 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       timeoutMs: drainTimeoutMs,
     });
   }
+
+  return {
+    migration: await finalizeBlueGreenComposeMigration({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      migration,
+      now: options.now,
+      runCommand: run,
+    }),
+  };
 }
 
 async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
@@ -1176,6 +1438,7 @@ module.exports = {
   generateBlueGreenDeploymentStamp,
   getBlueGreenCacheImageTag,
   getBlueGreenPaths,
+  getBlueGreenComposeMigration,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
   readBlueGreenDeploymentStamp,
@@ -1186,6 +1449,7 @@ module.exports = {
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   refreshBlueGreenProxyIfRunning,
+  finalizeBlueGreenComposeMigration,
   reloadBlueGreenProxy,
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,

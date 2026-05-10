@@ -36,6 +36,7 @@ const {
   writeBlueGreenActiveColor,
 } = require('./docker-web.js');
 const {
+  getBlueGreenComposeMigration,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
@@ -1679,6 +1680,182 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
           call.includes(' rm -f web-green')
       ),
       false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getBlueGreenComposeMigration stages target ports while the legacy project exists', async () => {
+  const migration = await getBlueGreenComposeMigration({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      COMPOSE_PROJECT_NAME: 'tuturuuu',
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+      PATH: 'test-path',
+    },
+    rootDir: '/tmp/platform',
+    runCommand: async (command, args, options = {}) => {
+      assert.equal(
+        `${command} ${args.join(' ')}`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q`
+      );
+      assert.equal(options.env.COMPOSE_PROJECT_NAME, 'platform');
+      assert.equal(options.env.DOCKER_WEB_COMPOSE_PROJECT_NAME, 'platform');
+
+      return { code: 0, signal: null, stderr: '', stdout: 'legacy\n' };
+    },
+  });
+
+  assert.equal(migration.sourceProjectName, 'platform');
+  assert.equal(migration.targetProjectName, 'tuturuuu');
+  assert.equal(migration.targetEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
+  assert.equal(migration.targetEnv.DOCKER_WEB_REDIS_HOST_PORT, '16379');
+  assert.equal(migration.targetEnv.DOCKER_WEB_PROXY_HOST_PORT, '17803');
+  assert.equal(
+    migration.targetEnv.DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT,
+    'platform'
+  );
+});
+
+test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy handoff', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'platform-migrate-'));
+  const rootDir = path.join(tempDir, 'platform');
+  const envFilePath = path.join(rootDir, 'apps', 'web', '.env.local');
+  const calls = [];
+  let targetStarted = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args, options = {}) => {
+    const key = `${command} ${args.join(' ')}`;
+    const env = options.env ?? {};
+    calls.push({ env, key });
+
+    if (
+      key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q` &&
+      env.COMPOSE_PROJECT_NAME === 'platform'
+    ) {
+      return resultFor('legacy-web-proxy\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
+      assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (targetStarted) {
+        return resultFor(`${serviceName}-id\n`);
+      }
+
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-blue')) {
+      targetStarted = true;
+      assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
+      assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
+      assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '17803');
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      args.includes('wget')
+    ) {
+      return resultFor('');
+    }
+
+    if (
+      args.includes('stop') &&
+      args.includes('--timeout') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE)
+    ) {
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      args.includes('--force-recreate') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE)
+    ) {
+      assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
+      assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '7803');
+      return resultFor('');
+    }
+
+    if (args.includes('down') && env.COMPOSE_PROJECT_NAME === 'platform') {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    const result = await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        env: {
+          DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+          PATH: 'test-path',
+        },
+        envFilePath,
+        now: () => 0,
+        rootDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(result.migration.status, 'completed');
+    assert.ok(
+      calls.some(
+        ({ env, key }) =>
+          key.includes(' up --detach --no-build --remove-orphans') &&
+          key.includes(' redis ') &&
+          env.DOCKER_WEB_REDIS_HOST_PORT === '16379'
+      )
+    );
+    assert.ok(
+      calls.some(
+        ({ env, key }) =>
+          key.endsWith(' up --detach --no-build --force-recreate web-proxy') &&
+          env.DOCKER_WEB_PROXY_HOST_PORT === '7803'
+      )
+    );
+    assert.ok(
+      calls.some(
+        ({ env, key }) =>
+          key.endsWith(
+            ' --profile redis --profile cloudflared down --remove-orphans'
+          ) && env.COMPOSE_PROJECT_NAME === 'platform'
+      )
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
