@@ -387,6 +387,10 @@ test('production Docker root scripts keep the default build caps', () => {
     path.join(__dirname, 'build-web-docker.js'),
     'utf8'
   );
+  const webNextConfig = fs.readFileSync(
+    path.join(__dirname, '..', 'apps', 'web', 'next.config.ts'),
+    'utf8'
+  );
 
   assert.match(
     packageJson.scripts['serve:web:docker'],
@@ -410,4 +414,9 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
   assert.match(buildWebDockerScript, /build:web:docker/);
+  assert.match(webNextConfig, /DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT/);
+  assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
+  assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
+  assert.match(webNextConfig, /staticPageGenerationTimeout/);
+  assert.match(webNextConfig, /staticGenerationMaxConcurrency/);
 });

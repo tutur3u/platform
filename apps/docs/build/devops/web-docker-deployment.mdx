@@ -477,6 +477,9 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
+- `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
+- `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=4`
+- `DOCKER_WEB_NEXT_BUILD_CPUS=4`
 
 How it works:
 
@@ -501,6 +504,13 @@ How it works:
   build dependency graph, caps the web app's V8 heap at 8 GB (same
   `--max-old-space-size` target as local `build`), and still uses the Turbopack
   production build.
+- Docker standalone Next builds default static page generation to a 180 second
+  timeout with static generation concurrency and Next build CPU count capped at
+  4. This avoids false `Failed to build ... because it took more than 60
+  seconds` failures when the same host is also running blue/green sidecars and
+  BuildKit. Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
+  `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
+  `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
 
 Operational notes:
 
