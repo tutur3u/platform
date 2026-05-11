@@ -5,10 +5,13 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_SUPPORT_SERVICES,
+  BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   CLOUDFLARED_SERVICE,
   COMPOSE_FILE,
+  DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   DEFAULT_BUILDER_NAME,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
@@ -21,6 +24,7 @@ const {
   describeActiveDeploymentConflict,
   ensureRequiredComposeEnvironment,
   getActiveDeploymentConflict,
+  getBlueGreenBuildTimeoutMs,
   getBlueGreenPaths,
   getComposeEnvironment,
   getComposeFile,
@@ -204,6 +208,21 @@ test('parseArgs accepts manual active build cancellation override', () => {
       '--cancel-active-build',
     ]).cancelActiveBuild,
     true
+  );
+});
+
+test('getBlueGreenBuildTimeoutMs reads the build watchdog timeout from env', () => {
+  assert.equal(
+    getBlueGreenBuildTimeoutMs({}),
+    DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS
+  );
+  assert.equal(
+    getBlueGreenBuildTimeoutMs({ DOCKER_WEB_BUILD_TIMEOUT_MS: '1234' }),
+    1234
+  );
+  assert.throws(
+    () => getBlueGreenBuildTimeoutMs({ DOCKER_WEB_BUILD_TIMEOUT_MS: 'nope' }),
+    /DOCKER_WEB_BUILD_TIMEOUT_MS/
   );
 });
 
@@ -1146,6 +1165,58 @@ test('buildBlueGreenServices recovers Bun tarball extraction once', async () => 
   );
 });
 
+test('buildBlueGreenServices recovers a stalled compose build once', async () => {
+  const calls = [];
+  let buildAttempts = 0;
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILD_TIMEOUT_MS: '5000',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.timeoutMs]);
+
+      if (args.includes('build')) {
+        buildAttempts += 1;
+        return buildAttempts === 1
+          ? {
+              code: 1,
+              signal: 'SIGTERM',
+              stderr: '',
+              stdout: '',
+              timedOut: true,
+            }
+          : { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      if (args.includes('ps') && args.includes('buildkit')) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
+      if (args[0] === 'inspect') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.equal(buildAttempts, 2);
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
+      .map(([, , timeoutMs]) => timeoutMs),
+    [5000, 5000]
+  );
+  assert.ok(
+    calls.some(([, args]) => args[0] === 'buildx' && args[1] === 'prune')
+  );
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -1585,7 +1656,25 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args.includes('up') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
           args.includes('web-blue') &&
-          BLUE_GREEN_SUPPORT_SERVICES.every((service) => args.includes(service))
+          BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.every((service) =>
+            args.includes(service)
+          ) &&
+          !BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.some((service) =>
+            args.includes(service)
+          )
+      )
+    );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args[1] === '-f' &&
+          args[2] === PROD_COMPOSE_FILE &&
+          args.includes('up') &&
+          BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.every((service) =>
+            args.includes(service)
+          )
       )
     );
     assert.ok(
@@ -1802,7 +1891,7 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
         ([command, args]) =>
           command === 'docker' && args[0] === 'compose' && args.includes('up')
       ).length,
-      2
+      3
     );
     assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
   } finally {
@@ -2011,6 +2100,15 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
       assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
       assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
       assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '17803');
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      args.includes('hive') &&
+      env.COMPOSE_PROJECT_NAME === 'tuturuuu'
+    ) {
+      assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
       return resultFor('');
     }
 

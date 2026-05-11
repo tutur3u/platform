@@ -947,6 +947,58 @@ test('deployment build lock replaces stale owners', () => {
   }
 });
 
+test('deployment build lock clears Linux PID reuse when cmdline does not match deploy', () => {
+  if (os.platform() !== 'linux') {
+    return;
+  }
+
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'deploy-build-pidreuse-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const ownerPid = process.pid;
+  const fsImpl = {
+    existsSync: (p) => fs.existsSync(p),
+    mkdirSync: (...args) => fs.mkdirSync(...args),
+    readFileSync: (p, enc) => {
+      if (String(p) === `/proc/${ownerPid}/cmdline`) {
+        return Buffer.from('node\u0000/usr/bin/node\u0000', 'utf8');
+      }
+
+      return fs.readFileSync(p, enc);
+    },
+    rmSync: (...args) => fs.rmSync(...args),
+    writeFileSync: (...args) => fs.writeFileSync(...args),
+  };
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        deploymentKind: 'manual',
+        lockToken: 'stale-token',
+        ownerPid,
+        startedAt: 100,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const heldLock = acquireDeploymentBuildLock({
+      command: 'bun serve:web:docker:bg',
+      deploymentKind: 'manual',
+      fsImpl,
+      now: () => 200,
+      paths,
+      processImpl: process,
+    });
+
+    assert.equal(heldLock.reentrant, false);
+    assert.equal(heldLock.lock.ownerPid, process.pid);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('writeWatchStatus persists a serializable watcher snapshot', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-status-'));
   const paths = getWatchPaths(tempDir);
@@ -2804,16 +2856,12 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive`,
-        createResult('hive-123\n'),
-      ],
-      [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
-        createResult('hive-realtime-123\n'),
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+        createResult(''),
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
@@ -2833,14 +2881,6 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
-        createResult('healthy\n'),
-      ],
-      [
-        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-123`,
-        createResult('healthy\n'),
-      ],
-      [
-        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
         createResult('healthy\n'),
       ],
       [
@@ -2933,7 +2973,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -3302,16 +3342,12 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive`,
-          createResult('hive-123\n'),
-        ],
-        [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
-          createResult('hive-realtime-123\n'),
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+          createResult(''),
         ],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q markitdown`,
@@ -3331,14 +3367,6 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-123`,
-          createResult('healthy\n'),
-        ],
-        [
-          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
           createResult('healthy\n'),
         ],
         [
