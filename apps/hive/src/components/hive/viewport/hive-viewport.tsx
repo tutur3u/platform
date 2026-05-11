@@ -38,23 +38,16 @@ type HiveViewportProps = {
 
 export function HiveViewport(props: HiveViewportProps) {
   const [hoverPosition, setHoverPosition] = useState<HiveVector3 | null>(null);
-  const [spacePanning, setSpacePanning] = useState(false);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.code === 'Space') setSpacePanning(true);
       if (event.key === 'Escape') props.onSelect(null);
-    };
-    const onKeyUp = (event: KeyboardEvent) => {
-      if (event.code === 'Space') setSpacePanning(false);
     };
 
     window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
 
     return () => {
       window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
     };
   }, [props.onSelect]);
 
@@ -85,7 +78,7 @@ export function HiveViewport(props: HiveViewportProps) {
       >
         <Suspense fallback={null}>
           <color args={['#edf3f2']} attach="background" />
-          <fog args={['#edf3f2', 13, 24]} attach="fog" />
+          <fog args={['#edf3f2', 20, 60]} attach="fog" />
           <PerspectiveCamera makeDefault fov={44} position={[8, 7.5, 8]} />
           <ambientLight intensity={1.2} />
           <directionalLight
@@ -164,11 +157,11 @@ export function HiveViewport(props: HiveViewportProps) {
             enablePan
             enableZoom
             mouseButtons={{
-              LEFT: spacePanning ? MOUSE.PAN : MOUSE.ROTATE,
+              LEFT: MOUSE.ROTATE,
               MIDDLE: MOUSE.DOLLY,
               RIGHT: MOUSE.PAN,
             }}
-            maxDistance={24}
+            maxDistance={80}
             maxPolarAngle={Math.PI / 2.08}
             minDistance={4}
             screenSpacePanning

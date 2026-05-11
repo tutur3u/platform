@@ -109,17 +109,28 @@ export function VoxelTiles({
           onSelect(block.id);
         }}
         ref={meshRef}
+        receiveShadow
+        castShadow
       >
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial roughness={0.72} transparent />
+        <meshStandardMaterial roughness={0.6} transparent metalness={0.1} />
       </instancedMesh>
-      <instancedMesh args={[undefined, undefined, blocks.length]} ref={sideRef}>
+      <instancedMesh
+        args={[undefined, undefined, blocks.length]}
+        ref={sideRef}
+        receiveShadow
+        castShadow
+      >
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial roughness={0.84} />
+        <meshStandardMaterial roughness={0.8} />
       </instancedMesh>
-      <instancedMesh args={[undefined, undefined, blocks.length]} ref={edgeRef}>
+      <instancedMesh
+        args={[undefined, undefined, blocks.length]}
+        ref={edgeRef}
+        receiveShadow
+      >
         <boxGeometry args={[1.02, 0.08, 1.02]} />
-        <meshStandardMaterial roughness={0.9} />
+        <meshStandardMaterial roughness={0.9} color="#4a5a25" />
       </instancedMesh>
     </>
   );
