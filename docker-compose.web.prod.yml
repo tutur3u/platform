@@ -198,8 +198,8 @@ services:
       - NODE_ENV=production
       - PORT=7814
       - SUPABASE_SERVER_URL
-    expose:
-      - "7814"
+    ports:
+      - "7814:7814"
     healthcheck:
       test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 30s

@@ -754,6 +754,9 @@ Dashboard details:
   `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
   `NEXT_PUBLIC_HIVE_REALTIME_URL` configured in the same production stack.
+  Production compose publishes **`7814:7814`** so Hive is reachable on the host
+  at `http://localhost:7814` for local debugging, not only via the Docker
+  network and nginx.
   `hive` uses the same Supabase env source as `apps/web`: runtime env files are
   shared, and production image builds mount the `web_env` BuildKit secret so
   hidden-locale auth pages can prerender with the platform Supabase URL.
