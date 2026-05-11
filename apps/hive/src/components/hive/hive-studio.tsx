@@ -101,6 +101,7 @@ export function HiveStudio({
         left={
           <ServerNavigator
             activeServerId={engine.serverId}
+            currentUser={currentUser}
             isAdmin={isAdmin}
             onCreateServer={() => {
               setServerActionTarget(null);

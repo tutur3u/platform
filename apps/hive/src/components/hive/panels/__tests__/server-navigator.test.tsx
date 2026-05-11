@@ -13,6 +13,11 @@ const server: HiveServer = {
   slug: 'research-garden',
 };
 
+const currentUser = {
+  email: 'researcher@tuturuuu.com',
+  id: 'user-1',
+};
+
 describe('ServerNavigator', () => {
   it('shows admin server and world controls only for admins', () => {
     const onEditServer = vi.fn();
@@ -21,6 +26,7 @@ describe('ServerNavigator', () => {
     render(
       <ServerNavigator
         activeServerId={server.id}
+        currentUser={currentUser}
         isAdmin
         onCreateServer={vi.fn()}
         onDeleteServer={vi.fn()}
@@ -36,12 +42,14 @@ describe('ServerNavigator', () => {
 
     expect(onEditServer).toHaveBeenCalledWith(server);
     expect(onResetWorld).toHaveBeenCalledWith('reseed');
+    expect(screen.getAllByText('researcher@tuturuuu.com')).toHaveLength(2);
   });
 
   it('hides admin controls from regular hive members', () => {
     render(
       <ServerNavigator
         activeServerId={server.id}
+        currentUser={currentUser}
         isAdmin={false}
         onCreateServer={vi.fn()}
         onDeleteServer={vi.fn()}

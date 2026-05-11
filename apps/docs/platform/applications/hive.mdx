@@ -29,6 +29,9 @@ Hive stores shared world state as revisioned snapshots and events:
 
 World edits should be persisted through `apply_hive_world_event(...)` so stale
 revision writes are rejected consistently.
+The API maps RPC failures into explicit response codes, including
+`hive_revision_conflict`, `hive_access_denied`, and `hive_server_not_found`, so
+clients can distinguish sync conflicts from invalid edit payloads.
 
 ## Editor Surface
 
@@ -50,6 +53,10 @@ The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World
 edits should commit only after click/drag threshold handling so orbit, pan,
 zoom, placement, erasing, moving, and rotating do not conflict with each other.
+When a world edit fails because the local revision is stale, the Hive editor
+refetches the latest snapshot, rebases the intended edit once, and then either
+advances the revision from the successful response or shows a non-blocking sync
+notice.
 
 Client data access must go through `@tuturuuu/internal-api` helpers and
 TanStack Query. Do not add raw client `fetch()` calls in the satellite app.

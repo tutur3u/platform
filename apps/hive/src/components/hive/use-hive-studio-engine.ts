@@ -28,6 +28,7 @@ import {
   useHiveSnapshot,
 } from '@/hooks/use-hive-data';
 import { connectHiveRealtime } from '@/realtime/hive-realtime-client';
+import { createWorldEventPersistence } from './use-world-event-persistence';
 
 type UseHiveStudioEngineProps = {
   currentUser: HiveUser;
@@ -94,45 +95,32 @@ export function useHiveStudioEngine({
     [serverId, serversQuery.data.servers]
   );
 
-  const persistWorld = (
-    nextWorld: HiveWorldData,
-    eventType: string,
-    payload: Record<string, unknown> = {}
-  ) => {
-    if (!serverId) return;
-    const expectedRevision = revisionRef.current;
-    setWorld(nextWorld);
-    mutations.createWorldEvent.mutate(
-      {
-        eventType,
-        expectedRevision,
-        payload: { actor: currentUser.id, tool, ...payload },
-        world: nextWorld,
-      },
-      {
-        onError: async () => {
-          setSyncNotice(
-            'World changed remotely. Reloaded the latest snapshot.'
-          );
-          const result = await snapshotQuery.refetch();
-          if (result.data) {
-            setWorld(result.data.world ?? createDefaultWorld());
-            setNpcs(result.data.npcs);
-            setRevision(result.data.revision);
-            revisionRef.current = result.data.revision;
-          }
-        },
-        onSuccess: (data) => {
-          setRevision(data.revision);
-          revisionRef.current = data.revision;
-          setSyncNotice(null);
-        },
-      }
-    );
-  };
+  const persistWorld = createWorldEventPersistence({
+    createWorldEvent: mutations.createWorldEvent,
+    currentUserId: currentUser.id,
+    revisionRef,
+    serverId,
+    setNpcs,
+    setRevision,
+    setSyncNotice,
+    setWorld,
+    snapshotQuery,
+    tool,
+  });
 
   const placeTerrain = (position: HiveVector3) => {
-    persistWorld(upsertBlock(world, position, activeTerrain), 'block.place');
+    persistWorld(
+      upsertBlock(world, position, activeTerrain),
+      'block.place',
+      {
+        blockType: activeTerrain,
+        position,
+      },
+      {
+        rebase: (latestWorld) =>
+          upsertBlock(latestWorld, position, activeTerrain),
+      }
+    );
   };
 
   const placeObject = (position: HiveVector3) => {
@@ -141,10 +129,17 @@ export function useHiveStudioEngine({
       setSyncNotice('That object cannot be placed on this tile.');
       return;
     }
-    persistWorld(nextWorld, 'object.place', {
-      objectType: activeObject,
-      position,
-    });
+    persistWorld(
+      nextWorld,
+      'object.place',
+      {
+        objectType: activeObject,
+        position,
+      },
+      {
+        rebase: (latestWorld) => addObject(latestWorld, position, activeObject),
+      }
+    );
   };
 
   const placeNpc = (position: HiveVector3) => {
@@ -169,10 +164,18 @@ export function useHiveStudioEngine({
       return;
     }
 
-    persistWorld(result.world, `${target.kind}.remove`, {
-      erasedId: target.id,
-      erasedKind: target.kind,
-    });
+    persistWorld(
+      result.world,
+      `${target.kind}.remove`,
+      {
+        erasedId: target.id,
+        erasedKind: target.kind,
+      },
+      {
+        rebase: (latestWorld) =>
+          removeSelection(latestWorld, npcs, target).world,
+      }
+    );
   };
 
   const moveSelection = (position: HiveVector3) => {
@@ -181,10 +184,18 @@ export function useHiveStudioEngine({
     if (selection.kind === 'object') {
       const nextWorld = moveObject(world, selection.id, position);
       if (nextWorld !== world) {
-        persistWorld(nextWorld, 'object.move', {
-          movedId: selection.id,
-          position,
-        });
+        persistWorld(
+          nextWorld,
+          'object.move',
+          {
+            movedId: selection.id,
+            position,
+          },
+          {
+            rebase: (latestWorld) =>
+              moveObject(latestWorld, selection.id, position),
+          }
+        );
       }
       return;
     }
@@ -204,9 +215,16 @@ export function useHiveStudioEngine({
 
   const rotateSelection = () => {
     if (!selection || selection.kind !== 'object') return;
-    persistWorld(rotateObject(world, selection.id), 'object.update', {
-      rotatedId: selection.id,
-    });
+    persistWorld(
+      rotateObject(world, selection.id),
+      'object.update',
+      {
+        rotatedId: selection.id,
+      },
+      {
+        rebase: (latestWorld) => rotateObject(latestWorld, selection.id),
+      }
+    );
   };
   rotateSelectionRef.current = rotateSelection;
 
@@ -317,7 +335,14 @@ export function useHiveStudioEngine({
     const nextWorld =
       mode === 'clear' ? createEmptyWorld() : createDefaultWorld();
     setSelection(null);
-    persistWorld(nextWorld, `world.${mode}`, { mode });
+    persistWorld(
+      nextWorld,
+      `world.${mode}`,
+      { mode },
+      {
+        rebase: () => nextWorld,
+      }
+    );
   };
 
   return {

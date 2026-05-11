@@ -8,10 +8,12 @@ import {
   ShieldCheck,
   Trash2,
 } from '@tuturuuu/icons';
-import type { HiveServer } from '@/engine/types';
+import type { HiveServer, HiveUser } from '@/engine/types';
+import { HiveAccountMenu } from './hive-account-menu';
 
 type ServerNavigatorProps = {
   activeServerId: string | null;
+  currentUser: HiveUser;
   isAdmin: boolean;
   onCreateServer: () => void;
   onDeleteServer: (server: HiveServer) => void;
@@ -23,6 +25,7 @@ type ServerNavigatorProps = {
 
 export function ServerNavigator({
   activeServerId,
+  currentUser,
   isAdmin,
   onCreateServer,
   onDeleteServer,
@@ -88,50 +91,53 @@ export function ServerNavigator({
           );
         })}
       </div>
-      {isAdmin ? (
-        <div className="space-y-3 border-border/20 border-t p-4">
-          <div className="text-xs text-zinc-400">
-            <ShieldCheck className="mr-2 inline h-4 w-4 text-dynamic-green" />
-            Platform admin controls enabled
-          </div>
-          {activeServer ? (
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
-                onClick={() => onEditServer(activeServer)}
-                type="button"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-                Edit
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
-                onClick={() => onResetWorld('reseed')}
-                type="button"
-              >
-                <RefreshCcw className="h-3.5 w-3.5" />
-                Reseed
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
-                onClick={() => onResetWorld('clear')}
-                type="button"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Clear
-              </button>
-              <button
-                className="inline-flex items-center justify-center gap-2 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs hover:bg-dynamic-red/15"
-                onClick={() => onDeleteServer(activeServer)}
-                type="button"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                Delete
-              </button>
+      <div className="space-y-3 border-border/20 border-t p-4">
+        {isAdmin ? (
+          <>
+            <div className="text-xs text-zinc-400">
+              <ShieldCheck className="mr-2 inline h-4 w-4 text-dynamic-green" />
+              Platform admin controls enabled
             </div>
-          ) : null}
-        </div>
-      ) : null}
+            {activeServer ? (
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                  onClick={() => onEditServer(activeServer)}
+                  type="button"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Edit
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                  onClick={() => onResetWorld('reseed')}
+                  type="button"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Reseed
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                  onClick={() => onResetWorld('clear')}
+                  type="button"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Clear
+                </button>
+                <button
+                  className="inline-flex items-center justify-center gap-2 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs hover:bg-dynamic-red/15"
+                  onClick={() => onDeleteServer(activeServer)}
+                  type="button"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Delete
+                </button>
+              </div>
+            ) : null}
+          </>
+        ) : null}
+        <HiveAccountMenu user={currentUser} />
+      </div>
     </aside>
   );
 }

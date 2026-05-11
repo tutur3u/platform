@@ -1,0 +1,33 @@
+---
+title: Hive world event troubleshooting
+description: Fix ambiguous server_id errors when applying Hive world events.
+---
+
+## Symptoms
+
+When creating a Hive world event, the API can return:
+
+```
+column reference "server_id" is ambiguous
+```
+
+This surfaces as `hive_event_failed` in the client with a 400 error.
+
+## Cause
+
+`apply_hive_world_event` returns a `table` signature that includes `server_id`.
+In PL/pgSQL, output columns are variables. Unqualified references to
+`server_id` inside the function can become ambiguous and fail at runtime.
+
+## Fix
+
+Use a constraint-based conflict target in the insert that bootstraps
+`hive_world_states` so the SQL does not rely on a bare `server_id` identifier:
+
+```
+insert into public.hive_world_states (server_id, revision, world_data, updated_by)
+values (p_server_id, 0, '{}'::jsonb, p_actor_user_id)
+on conflict on constraint hive_world_states_pkey do nothing;
+```
+
+Apply the migration and re-run Hive event creation after the updated function is live.

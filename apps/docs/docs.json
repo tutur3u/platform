@@ -106,7 +106,8 @@
                   "platform/applications/tasks",
                   "platform/applications/learn",
                   "platform/applications/teach",
-                  "platform/applications/hive"
+                  "platform/applications/hive",
+                  "platform/applications/hive-world-event-troubleshooting"
                 ]
               }
             ]

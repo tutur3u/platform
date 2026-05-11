@@ -47,6 +47,9 @@ export type HiveSelection =
   | null;
 
 export type HiveUser = {
+  avatarUrl?: string | null;
+  displayName?: string | null;
   email?: string | null;
+  handle?: string | null;
   id: string;
 };

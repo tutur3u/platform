@@ -98,4 +98,24 @@ describe('Hive world helpers', () => {
       )
     ).toBe(false);
   });
+
+  it('removes legacy seeded block ids without resurrecting attached objects', () => {
+    const world = {
+      blocks: [
+        { id: 'grass-0-0', position: { x: 0, y: 0, z: 0 }, type: 'grass' },
+        { id: 'grass-1-0', position: { x: 1, y: 0, z: 0 }, type: 'grass' },
+      ],
+      objects: [{ id: 'tree-1', position: { x: 0, y: 1, z: 0 }, type: 'tree' }],
+    };
+
+    const removed = removeSelection(world, [], {
+      id: 'grass-0-0',
+      kind: 'block',
+    });
+
+    expect(removed.world.blocks.map((block) => block.id)).toEqual([
+      'grass-1-0',
+    ]);
+    expect(removed.world.objects).toEqual([]);
+  });
 });

@@ -97,7 +97,6 @@ export function useHiveMutations(serverId: string | null) {
           (servers) => (servers ? { ...servers } : servers)
         );
       },
-      onError: () => invalidateServer(),
     }),
     deleteServer: useMutation({
       mutationFn: (targetServerId: string) => deleteHiveServer(targetServerId),

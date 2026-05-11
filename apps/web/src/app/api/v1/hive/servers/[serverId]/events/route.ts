@@ -4,6 +4,7 @@ import {
   hiveEventSchema,
   mapHiveEvent,
   requireHiveAccess,
+  serverLogger,
   withHiveRoute,
 } from '../../../_shared';
 
@@ -42,14 +43,49 @@ async function createEvent(request: NextRequest, serverId: string) {
   );
 
   if (error || !data?.[0]) {
+    if (error) {
+      serverLogger.warn('Failed to create Hive world event', {
+        code: error.code,
+        details: error.details,
+        eventType: parsed.data.eventType,
+        message: error.message,
+        serverId,
+      });
+    }
+
+    const isRevisionConflict =
+      error?.message === 'hive_revision_conflict' || error?.code === '40001';
+    const isAccessDenied =
+      error?.message === 'hive_access_denied' || error?.code === '42501';
+    const isMissingServer =
+      error?.message === 'hive_server_not_found' || error?.code === 'P0002';
+
     return NextResponse.json(
       {
-        error:
-          error?.message === 'hive_revision_conflict'
-            ? 'Hive world revision conflict'
-            : 'Failed to create Hive event',
+        code: isRevisionConflict
+          ? 'hive_revision_conflict'
+          : isAccessDenied
+            ? 'hive_access_denied'
+            : isMissingServer
+              ? 'hive_server_not_found'
+              : 'hive_event_failed',
+        error: isRevisionConflict
+          ? 'Hive world revision conflict'
+          : isAccessDenied
+            ? 'Hive access denied'
+            : isMissingServer
+              ? 'Hive server not found'
+              : 'Failed to create Hive event',
       },
-      { status: error?.message === 'hive_revision_conflict' ? 409 : 400 }
+      {
+        status: isRevisionConflict
+          ? 409
+          : isAccessDenied
+            ? 403
+            : isMissingServer
+              ? 404
+              : 400,
+      }
     );
   }
 
