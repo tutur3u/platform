@@ -1,10 +1,14 @@
 const crypto = require('node:crypto');
 const fs = require('node:fs');
+const os = require('node:os');
 
 const { getWatchPaths } = require('./paths.js');
 
 const DEPLOYMENT_BUILD_LOCK_TOKEN_ENV = 'DOCKER_WEB_DEPLOYMENT_LOCK_TOKEN';
 const CANCEL_ACTIVE_BUILD_ENV = 'DOCKER_WEB_CANCEL_ACTIVE_BUILD';
+const DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV =
+  'DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS';
+const DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS = 8 * 60 * 60 * 1000;
 const ACTIVE_DEPLOYMENT_STATUSES = new Set(['building', 'deploying']);
 
 class DeploymentBuildLockConflictError extends Error {
@@ -83,6 +87,241 @@ function isProcessAlive(pid, processImpl = process) {
   }
 }
 
+/** @returns {'alive'|'dead'|'perm'} */
+function signalPidZero(pid, processImpl = process) {
+  if (!Number.isInteger(pid) || pid <= 0) {
+    return 'dead';
+  }
+
+  try {
+    processImpl.kill(pid, 0);
+    return 'alive';
+  } catch (error) {
+    if (error?.code === 'EPERM') {
+      return 'perm';
+    }
+
+    return 'dead';
+  }
+}
+
+function getDeploymentLockStaleAfterMs(env = process.env) {
+  const raw = env?.[DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV];
+  if (raw == null || String(raw).trim() === '') {
+    return DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS;
+  }
+
+  const parsed = Number.parseInt(String(raw).trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function normalizeProcessCmdline(raw) {
+  if (typeof raw !== 'string') {
+    return '';
+  }
+
+  return raw.replace(/\0/g, ' ').trim().toLowerCase();
+}
+
+function readLinuxProcessCmdline(pid, fsImpl = fs) {
+  if (os.platform() !== 'linux' || !Number.isInteger(pid) || pid <= 0) {
+    return null;
+  }
+
+  try {
+    return normalizeProcessCmdline(
+      fsImpl.readFileSync(`/proc/${pid}/cmdline`, 'utf8')
+    );
+  } catch {
+    return null;
+  }
+}
+
+function deploymentLockMatchesProcessCmdline(lock, cmdlineLower) {
+  if (!cmdlineLower) {
+    return false;
+  }
+
+  const kind = String(lock?.deploymentKind ?? '').trim();
+  const cmd = String(lock?.command ?? '').toLowerCase();
+
+  if (cmd.includes('serve:web:docker:bg')) {
+    return cmdlineLower.includes('serve:web:docker:bg');
+  }
+
+  if (
+    cmd.includes('standby-refresh') ||
+    kind === 'standby-refresh' ||
+    cmd === 'standby-refresh'
+  ) {
+    return (
+      cmdlineLower.includes('bun') &&
+      (cmdlineLower.includes('watch-blue-green') ||
+        cmdlineLower.includes('docker-web'))
+    );
+  }
+
+  if (
+    cmd.includes('cached-recovery') ||
+    kind === 'cached-recovery' ||
+    cmd === 'cached-recovery'
+  ) {
+    return (
+      cmdlineLower.includes('bun') &&
+      (cmdlineLower.includes('watch-blue-green') ||
+        cmdlineLower.includes('docker-web'))
+    );
+  }
+
+  if (
+    [
+      'watcher',
+      'recovery-bootstrap',
+      'reconcile',
+      'pending-restart',
+      'manual',
+    ].includes(kind) &&
+    cmd
+  ) {
+    if (cmd.includes('serve:web:docker:bg')) {
+      return cmdlineLower.includes('serve:web:docker:bg');
+    }
+
+    if (cmd.includes('docker-web') || cmdlineLower.includes('docker-web')) {
+      return cmdlineLower.includes('bun') || cmdlineLower.includes('node');
+    }
+  }
+
+  const tokens = cmd
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 4);
+  if (tokens.length === 0) {
+    return cmdlineLower.includes('bun');
+  }
+
+  return tokens.some((t) => cmdlineLower.includes(t.toLowerCase()));
+}
+
+function lockAgeExceedsThreshold(lock, now, staleAfterMs) {
+  if (staleAfterMs == null) {
+    return false;
+  }
+
+  const startedAt = Number(lock?.startedAt);
+  if (!Number.isFinite(startedAt)) {
+    return false;
+  }
+
+  return now() - startedAt > staleAfterMs;
+}
+
+/**
+ * Clears a deployment build lock file when the recorded owner PID is
+ * obviously stale (dead, PID reuse, Docker CLI on Linux) or stale by age
+ * when /proc cannot be read.
+ * @returns {boolean} true when the lock file was removed
+ */
+function tryInvalidateStaleDeploymentBuildLock(
+  lock,
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = () => Date.now(),
+    paths = getWatchPaths(),
+    processImpl = process,
+  } = {}
+) {
+  const pid = Number(lock?.ownerPid ?? lock?.pid);
+  const staleAfterMs = getDeploymentLockStaleAfterMs(env);
+  const sig = signalPidZero(pid, processImpl);
+
+  if (sig === 'dead') {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return true;
+  }
+
+  const linux = os.platform() === 'linux';
+  const cmdline = linux ? readLinuxProcessCmdline(pid, fsImpl) : null;
+
+  if (linux) {
+    if (lockAgeExceedsThreshold(lock, now, staleAfterMs)) {
+      if (cmdline == null || cmdline.length === 0) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+        return true;
+      }
+
+      if (!deploymentLockMatchesProcessCmdline(lock, cmdline)) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+        return true;
+      }
+    }
+
+    if (cmdline != null && cmdline.length > 0) {
+      if (!deploymentLockMatchesProcessCmdline(lock, cmdline)) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+        return true;
+      }
+
+      return false;
+    }
+
+    if (sig === 'perm' && lockAgeExceedsThreshold(lock, now, staleAfterMs)) {
+      clearDeploymentBuildLock({ fsImpl, paths });
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * After stale invalidation, returns true when another actor still holds
+ * a legitimate deployment build lock (manual conflict UX / cancel flows).
+ */
+function isDeploymentBuildLockBlocking(
+  lock,
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = () => Date.now(),
+    processImpl = process,
+  } = {}
+) {
+  if (!lock) {
+    return false;
+  }
+
+  const pid = Number(lock.ownerPid ?? lock.pid);
+  const sig = signalPidZero(pid, processImpl);
+  if (sig === 'dead') {
+    return false;
+  }
+
+  if (os.platform() === 'linux') {
+    const cmd = readLinuxProcessCmdline(pid, fsImpl);
+    if (cmd && deploymentLockMatchesProcessCmdline(lock, cmd)) {
+      return true;
+    }
+
+    if (cmd) {
+      return false;
+    }
+
+    return !lockAgeExceedsThreshold(
+      lock,
+      now,
+      getDeploymentLockStaleAfterMs(env)
+    );
+  }
+
+  return sig === 'alive' || sig === 'perm';
+}
+
 function isDeploymentBuildLockLive(lock, processImpl = process) {
   const pid = Number(lock?.ownerPid ?? lock?.pid);
   return isProcessAlive(pid, processImpl);
@@ -132,7 +371,18 @@ function acquireDeploymentBuildLock({
   paths = getWatchPaths(),
   processImpl = process,
 } = {}) {
-  const currentLock = readDeploymentBuildLock(paths, fsImpl);
+  let currentLock = readDeploymentBuildLock(paths, fsImpl);
+  if (currentLock) {
+    tryInvalidateStaleDeploymentBuildLock(currentLock, {
+      env,
+      fsImpl,
+      now,
+      paths,
+      processImpl,
+    });
+    currentLock = readDeploymentBuildLock(paths, fsImpl);
+  }
+
   const requestedToken = env?.[DEPLOYMENT_BUILD_LOCK_TOKEN_ENV];
 
   if (
@@ -149,8 +399,29 @@ function acquireDeploymentBuildLock({
     };
   }
 
-  if (currentLock && isDeploymentBuildLockLive(currentLock, processImpl)) {
-    throw new DeploymentBuildLockConflictError(currentLock);
+  if (currentLock) {
+    const pid = Number(currentLock.ownerPid ?? currentLock.pid);
+    const sig = signalPidZero(pid, processImpl);
+    const staleAfterMs = getDeploymentLockStaleAfterMs(env);
+
+    if (sig === 'dead') {
+      clearDeploymentBuildLock({ fsImpl, paths });
+    } else if (os.platform() === 'linux') {
+      const cmd = readLinuxProcessCmdline(pid, fsImpl);
+      if (cmd && deploymentLockMatchesProcessCmdline(currentLock, cmd)) {
+        throw new DeploymentBuildLockConflictError(currentLock);
+      }
+
+      if (cmd) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+      } else if (lockAgeExceedsThreshold(currentLock, now, staleAfterMs)) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+      } else {
+        throw new DeploymentBuildLockConflictError(currentLock);
+      }
+    } else if (sig === 'alive' || sig === 'perm') {
+      throw new DeploymentBuildLockConflictError(currentLock);
+    }
   }
 
   const lock = createDeploymentBuildLock({
@@ -205,16 +476,22 @@ module.exports = {
   ACTIVE_DEPLOYMENT_STATUSES,
   CANCEL_ACTIVE_BUILD_ENV,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
   clearDeploymentBuildLock,
   createDeploymentBuildLock,
   createDeploymentBuildLockToken,
+  deploymentLockMatchesProcessCmdline,
   getActiveDeploymentFromStatus,
+  getDeploymentLockStaleAfterMs,
   isActiveDeploymentStatus,
+  isDeploymentBuildLockBlocking,
   isDeploymentBuildLockLive,
   isProcessAlive,
   readDeploymentBuildLock,
+  readLinuxProcessCmdline,
   releaseDeploymentBuildLock,
+  tryInvalidateStaleDeploymentBuildLock,
   writeDeploymentBuildLock,
 };
