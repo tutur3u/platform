@@ -22,6 +22,8 @@ const {
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
 } = require('./env.js');
 const {
+  BUILD_STALL_RECOVERY_REASON,
+  isBuildStallTimeoutError,
   isBunTarballExtractionError,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
@@ -43,19 +45,28 @@ const BLUE_GREEN_DRAIN_POLL_MS = 1_000;
 const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
-const BLUE_GREEN_SUPPORT_SERVICES = [
+/** Started in a second compose phase so web/proxy/redis can become healthy first. */
+const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive',
   'hive-realtime',
+]);
+/** Support sidecars that gate blue/green promotion (Hive warms independently). */
+const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
   'markitdown',
   'storage-unzip-proxy',
   'web-cron-runner',
-];
+]);
+const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
+  ...BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
+  ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+]);
 const BLUE_GREEN_COLORS = ['blue', 'green'];
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFERS = '8 128k';
 const BLUE_GREEN_PROXY_BUSY_BUFFER_SIZE = '256k';
 const BLUE_GREEN_MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
+const DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS = 45 * 60_000;
 const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
   DOCKER_WEB_DIRECT_HOST_PORT: '17804',
@@ -68,6 +79,20 @@ function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });
+}
+
+function splitBlueGreenProdServicePhases(serviceNames) {
+  const deferred = new Set(BLUE_GREEN_DEFERRED_SUPPORT_SERVICES);
+  const phase1Services = [];
+  const phase2Services = [];
+  for (const name of serviceNames) {
+    if (deferred.has(name)) {
+      phase2Services.push(name);
+    } else {
+      phase1Services.push(name);
+    }
+  }
+  return { phase1Services, phase2Services };
 }
 
 function getProjectNameFromEnv(env, key) {
@@ -260,6 +285,22 @@ function generateBlueGreenDeploymentStamp(date = new Date()) {
 
 function getNextBlueGreenColor(activeColor) {
   return activeColor === 'blue' ? 'green' : 'blue';
+}
+
+function getBlueGreenBuildTimeoutMs(env = process.env) {
+  const rawValue = env.DOCKER_WEB_BUILD_TIMEOUT_MS;
+
+  if (rawValue == null || rawValue === '') {
+    return DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS;
+  }
+
+  const value = Number(rawValue);
+
+  if (!Number.isFinite(value) || value <= 0) {
+    throw new Error('DOCKER_WEB_BUILD_TIMEOUT_MS must be a positive number.');
+  }
+
+  return value;
 }
 
 function getBlueGreenServiceName(color) {
@@ -581,14 +622,19 @@ async function buildBlueGreenServices({
     'build',
     ...services
   );
+  const timeoutMs = getBlueGreenBuildTimeoutMs(env);
 
   try {
     await runChecked('docker', buildArgs, {
       env,
       runCommand: run,
+      timeoutMs,
     });
   } catch (error) {
-    if (!isBunTarballExtractionError(error)) {
+    const isRecoverableBuildError =
+      isBunTarballExtractionError(error) || isBuildStallTimeoutError(error);
+
+    if (!isRecoverableBuildError) {
       throw error;
     }
 
@@ -596,12 +642,16 @@ async function buildBlueGreenServices({
       composeFile,
       composeGlobalArgs,
       env,
+      reason: isBuildStallTimeoutError(error)
+        ? BUILD_STALL_RECOVERY_REASON
+        : 'bun-tarball-extraction',
       runCommand: run,
     });
 
     await runChecked('docker', buildArgs, {
       env,
       runCommand: run,
+      timeoutMs,
     });
   }
 }
@@ -1063,6 +1113,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     targetColor,
     needsProxyBootstrap
   );
+  const { phase1Services, phase2Services } =
+    splitBlueGreenProdServicePhases(targetServices);
 
   await buildBlueGreenServices({
     composeFile,
@@ -1098,16 +1150,35 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     env: targetEnv,
     fsImpl,
     runCommand: run,
-    services: targetServices,
+    services: phase1Services,
     upArgs: [
       'up',
       '--detach',
       '--no-build',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...targetServices,
+      ...phase1Services,
     ],
   });
+
+  if (phase2Services.length > 0) {
+    await runComposeUpWithNameConflictRecovery({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      fsImpl,
+      runCommand: run,
+      services: phase2Services,
+      upArgs: [
+        'up',
+        '--detach',
+        '--no-build',
+        '--remove-orphans',
+        ...parsed.composeArgs,
+        ...phase2Services,
+      ],
+    });
+  }
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(targetColor), {
     composeFile,
@@ -1116,7 +1187,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES) {
+  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE) {
     await waitForComposeServiceHealthy(serviceName, {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1277,22 +1348,44 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     }
   );
 
+  const { phase1Services: standbyPhase1, phase2Services: standbyPhase2 } =
+    splitBlueGreenProdServicePhases(standbyServices);
+
   await runComposeUpWithNameConflictRecovery({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
     env: standbyEnv,
     fsImpl,
     runCommand: run,
-    services: standbyServices,
+    services: standbyPhase1,
     upArgs: [
       'up',
       '--detach',
       '--no-build',
       '--remove-orphans',
       ...parsed.composeArgs,
-      ...standbyServices,
+      ...standbyPhase1,
     ],
   });
+
+  if (standbyPhase2.length > 0) {
+    await runComposeUpWithNameConflictRecovery({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: standbyEnv,
+      fsImpl,
+      runCommand: run,
+      services: standbyPhase2,
+      upArgs: [
+        'up',
+        '--detach',
+        '--no-build',
+        '--remove-orphans',
+        ...parsed.composeArgs,
+        ...standbyPhase2,
+      ],
+    });
+  }
 
   await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
     composeFile,
@@ -1301,7 +1394,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES) {
+  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE) {
     await waitForComposeServiceHealthy(serviceName, {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1502,13 +1595,17 @@ module.exports = {
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_STAMP_FILE,
+  BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
   BLUE_GREEN_SUPPORT_SERVICES,
+  BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+  DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   buildBlueGreenServices,
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,
   getBlueGreenCacheImageTag,
   getBlueGreenPaths,
+  getBlueGreenBuildTimeoutMs,
   getBlueGreenComposeMigration,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -1529,6 +1626,7 @@ module.exports = {
   runBlueGreenCachedRecoveryWorkflow,
   runBlueGreenStandbyRefreshWorkflow,
   sleep,
+  splitBlueGreenProdServicePhases,
   tagBlueGreenServiceImageForCache,
   testBlueGreenProxyRouting,
   validateBlueGreenProxyConfig,
