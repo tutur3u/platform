@@ -83,7 +83,10 @@ const {
 } = require('./watch-blue-green/control.js');
 const {
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
+  readDeploymentBuildLock,
+  tryInvalidateStaleDeploymentBuildLock,
 } = require('./watch-blue-green/build-lock.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
@@ -3001,6 +3004,45 @@ async function runBlueGreenCachedRecovery({
   }
 }
 
+function noBlueGreenComposeContainersForRecovery(currentBlueGreen) {
+  if (!currentBlueGreen || currentBlueGreen.state === 'unknown') {
+    return false;
+  }
+
+  const sc = currentBlueGreen.serviceContainers ?? {};
+  if (sc.proxy || sc['web-blue'] || sc['web-green']) {
+    return false;
+  }
+
+  return true;
+}
+
+function reconcileDeploymentBuildLockWhenComposeStackIdle({
+  currentBlueGreen,
+  env,
+  fsImpl,
+  now,
+  paths,
+  processImpl = process,
+}) {
+  if (!noBlueGreenComposeContainersForRecovery(currentBlueGreen)) {
+    return;
+  }
+
+  const lock = readDeploymentBuildLock(paths, fsImpl);
+  if (!lock) {
+    return;
+  }
+
+  tryInvalidateStaleDeploymentBuildLock(lock, {
+    env,
+    fsImpl,
+    now,
+    paths,
+    processImpl,
+  });
+}
+
 async function runMissingActiveDeploymentRecovery(
   latestCommit,
   {
@@ -3014,8 +3056,10 @@ async function runMissingActiveDeploymentRecovery(
     now = () => Date.now(),
     onDeploymentStart = () => {},
     paths = getWatchPaths(),
+    processImpl = process,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
+    runtimeSnapshot = null,
   } = {}
 ) {
   const deploymentHistory = readDeploymentHistory(paths, fsImpl);
@@ -3026,6 +3070,15 @@ async function runMissingActiveDeploymentRecovery(
   log.warn?.(
     `No active blue/green deployment is serving traffic. Bootstrapping ${latestCommit.shortHash} as active and standby to avoid downtime.`
   );
+
+  reconcileDeploymentBuildLockWhenComposeStackIdle({
+    currentBlueGreen: runtimeSnapshot?.currentBlueGreen ?? null,
+    env,
+    fsImpl,
+    now,
+    paths,
+    processImpl,
+  });
 
   if (cachedDeployment) {
     const cachedCommit = {
@@ -3146,6 +3199,19 @@ async function runMissingActiveDeploymentRecovery(
       );
     } catch (error) {
       const activeFinishedAt = now();
+      if (error instanceof DeploymentBuildLockConflictError) {
+        log.warn?.(
+          `Cached blue/green runtime recovery skipped for ${latestCommit.shortHash} due to an active deployment build lock (${error.message}). If no deploy is running, clear tmp/docker-web/watch/blue-green-deployment-build.lock or set DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 on the next manual deploy.`
+        );
+
+        return attachRuntime({
+          checkedAt,
+          error,
+          latestCommit,
+          status: 'deploy-failed',
+        });
+      }
+
       const history = appendDeploymentHistory(
         {
           buildDurationMs: Math.max(0, activeFinishedAt - activeStartedAt),
@@ -3254,6 +3320,19 @@ async function runMissingActiveDeploymentRecovery(
     );
   } catch (error) {
     const deployFinishedAt = now();
+    if (error instanceof DeploymentBuildLockConflictError) {
+      log.warn?.(
+        `Blue/green runtime recovery skipped for ${latestCommit.shortHash} due to an active deployment build lock (${error.message}). If no deploy is running, clear tmp/docker-web/watch/blue-green-deployment-build.lock or set DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 on the next manual deploy.`
+      );
+
+      return attachRuntime({
+        checkedAt,
+        error,
+        latestCommit,
+        status: 'deploy-failed',
+      });
+    }
+
     history = appendDeploymentHistory(
       {
         buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
@@ -4982,6 +5061,7 @@ async function runDeployWatchIteration(
           paths,
           rootDir,
           runCommand: run,
+          runtimeSnapshot,
         });
       }
 
