@@ -640,11 +640,11 @@ async function streamBlueGreenWatcherLogs({
 
   if (result.code !== 0) {
     const detail = result.stderr?.trim() || result.stdout?.trim();
-    throw new Error(
-      detail
-        ? `Unable to stream watcher logs.\n${detail}`
-        : 'Unable to stream watcher logs.'
-    );
+    return {
+      status: 'stream-error',
+      code: result.code,
+      detail: detail || null,
+    };
   }
 
   return { status: 'completed' };
@@ -674,6 +674,15 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
     }
 
     if (result?.status === 'recreated') {
+      continue;
+    }
+
+    if (result?.status === 'stream-error') {
+      console.warn(
+        `[watch-blue-green-deploy] Watcher log stream exited with code ${result.code}; reconnecting after backoff.${
+          result.detail ? `\n${result.detail}` : ''
+        }`
+      );
       continue;
     }
 
