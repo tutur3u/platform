@@ -4,5 +4,11 @@ import { type NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   const supabase = await createClient(request);
   await supabase.auth.signOut();
-  return NextResponse.json({ success: true });
+  return NextResponse.redirect(new URL('/', request.url));
+}
+
+export async function GET(request: NextRequest) {
+  const supabase = await createClient(request);
+  await supabase.auth.signOut();
+  return NextResponse.redirect(new URL('/', request.url));
 }
