@@ -8,6 +8,17 @@ const BLUE_GREEN_HEALTH_POLL_MS = 2_000;
 const BLUE_GREEN_HEALTH_TIMEOUT_MS = 180_000;
 const DOCKER_NAME_CONFLICT_PATTERN =
   /container name\s+"\/?([^"]+)"\s+is already in use/giu;
+const DEFAULT_COMMAND_KILL_TIMEOUT_MS = 10_000;
+
+class CommandTimeoutError extends Error {
+  constructor(command, args, timeoutMs) {
+    super(
+      `Command timed out after ${timeoutMs}ms: ${[command, ...args].join(' ')}`
+    );
+    this.name = 'CommandTimeoutError';
+    this.timeoutMs = timeoutMs;
+  }
+}
 
 function getComposeFile(mode = 'dev') {
   return mode === 'prod' ? PROD_COMPOSE_FILE : COMPOSE_FILE;
@@ -46,6 +57,19 @@ function runCommand(command, args, options = {}) {
 
     let stdout = '';
     let stderr = '';
+    let timedOut = false;
+    let timeout = null;
+    let killTimeout = null;
+
+    const clearTimers = () => {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
+
+      if (killTimeout) {
+        clearTimeout(killTimeout);
+      }
+    };
 
     child.stdout?.on('data', (chunk) => {
       stdout += chunk;
@@ -55,12 +79,27 @@ function runCommand(command, args, options = {}) {
       stderr += chunk;
     });
 
-    child.on('error', reject);
+    if (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {
+      timeout = setTimeout(() => {
+        timedOut = true;
+        child.kill(options.timeoutSignal ?? 'SIGTERM');
+        killTimeout = setTimeout(() => {
+          child.kill('SIGKILL');
+        }, options.killTimeoutMs ?? DEFAULT_COMMAND_KILL_TIMEOUT_MS);
+      }, options.timeoutMs);
+    }
+
+    child.on('error', (error) => {
+      clearTimers();
+      reject(error);
+    });
     child.on('close', (code, signal) => {
+      clearTimers();
       resolve({
         code: code ?? 1,
         signal: signal ?? null,
         stderr,
+        timedOut,
         stdout,
       });
     });
@@ -83,6 +122,20 @@ async function runChecked(command, args, options = {}) {
   if (result.code !== 0) {
     const failedCommand = [command, ...args].join(' ');
     const detail = result.stderr?.trim() || result.stdout?.trim();
+
+    if (result.timedOut) {
+      const wrappedError = new CommandTimeoutError(
+        command,
+        args,
+        options.timeoutMs
+      );
+      wrappedError.exitCode = result.code;
+      wrappedError.signal = result.signal;
+      wrappedError.stderr = result.stderr;
+      wrappedError.stdout = result.stdout;
+      throw wrappedError;
+    }
+
     const wrappedError = new Error(
       detail
         ? `Command failed (${result.code}): ${failedCommand}\n${detail}`
@@ -413,6 +466,7 @@ async function waitForComposeServiceHealthy(
 
 module.exports = {
   COMPOSE_FILE,
+  CommandTimeoutError,
   PROD_COMPOSE_FILE,
   getComposeCommandArgs,
   getComposeFile,
