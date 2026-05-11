@@ -25,6 +25,7 @@ const DEFAULT_BUILDER_NAME = 'tuturuuu';
 const DEFAULT_BUILDKIT_HOST_PORT = 7914;
 const BUILDKIT_SERVICE_NAME = 'buildkit';
 const LEGACY_BUILDER_NAMES = ['platform-web-capped-builder'];
+const BUILD_STALL_RECOVERY_REASON = 'build-stall-timeout';
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -415,11 +416,16 @@ function isBunTarballExtractionError(error) {
   );
 }
 
+function isBuildStallTimeoutError(error) {
+  return error?.name === 'CommandTimeoutError';
+}
+
 async function recoverBuildkitBunInstallCache({
   composeFile,
   composeGlobalArgs = [],
   env = process.env,
   fsImpl = fs,
+  reason = 'bun-tarball-extraction',
   runCommand: run = runCommand,
 } = {}) {
   const builderName =
@@ -487,6 +493,11 @@ async function recoverBuildkitBunInstallCache({
     env,
     runCommand: run,
   });
+
+  return {
+    builderName,
+    reason,
+  };
 }
 
 module.exports = {
@@ -501,7 +512,9 @@ module.exports = {
   ensureBuildkitBuilder,
   getBuildkitPaths,
   getBuilderConfigFingerprint,
+  isBuildStallTimeoutError,
   isBunTarballExtractionError,
+  BUILD_STALL_RECOVERY_REASON,
   normalizeBuilderConfig,
   parsePositiveInteger,
   parsePositiveNumber,
