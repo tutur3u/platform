@@ -150,7 +150,11 @@ function deploymentLockMatchesProcessCmdline(lock, cmdlineLower) {
   const cmd = String(lock?.command ?? '').toLowerCase();
 
   if (cmd.includes('serve:web:docker:bg')) {
-    return cmdlineLower.includes('serve:web:docker:bg');
+    return (
+      cmdlineLower.includes('serve:web:docker:bg') ||
+      cmdlineLower.includes('docker-web.js') ||
+      cmdlineLower.includes('scripts/docker-web')
+    );
   }
 
   if (

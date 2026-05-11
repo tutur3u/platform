@@ -385,9 +385,13 @@ Blue/green deploys coordinate on a JSON lock file under
 deployment kind, and a re-entrant token for nested helper calls).
 
 - On **Linux**, the helper compares `/proc/<pid>/cmdline` to the recorded lock
-  so a reused PID after a crash cannot masquerade as an in-flight deploy. When
-  no `web-proxy` / `web-blue` / `web-green` containers exist, the auto-deploy
-  watcher also runs the same stale-lock sweep before cached recovery.
+  so a reused PID after a crash cannot masquerade as an in-flight deploy. The
+  recorded command is the package script name (`bun serve:web:docker:bg`), but
+  production deploys usually run as `node scripts/docker-web.js ...`; the
+  matcher treats those as the same holder so a live `node` deploy is not cleared
+  as a stale PID reuse. When no `web-proxy` / `web-blue` / `web-green`
+  containers exist, the auto-deploy watcher also runs the same stale-lock sweep
+  before cached recovery.
 - **`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`**: optional override for the
   default eight-hour window used when `/proc` is unreadable but `kill(pid, 0)`
   still reports a process (for example permission quirks). Set to `0` to
@@ -397,10 +401,13 @@ deployment kind, and a re-entrant token for nested helper calls).
   clears the lock, and records a canceled history row before starting fresh.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
   --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
-  If tarball extraction still fails (for example `@biomejs/cli-linux-x64`),
-  prune BuildKit state (`docker builder prune`) and retry the deploy; the
-  blue/green helper may also restart the Compose-owned `buildkit` service on
-  certain BuildKit cache errors during a deploy attempt.
+  If the build still exits with `bun install --frozen-lockfile` **exit code 1**
+  after a `git pull`, run `bun install` at the repo root on the host (or in the
+  same checkout the image build uses) so `bun.lock` matches `package.json`, then
+  retry the deploy. If tarball extraction still fails (for example
+  `@biomejs/cli-linux-x64`), prune BuildKit state (`docker builder prune`) and
+  retry; the blue/green helper may also restart the Compose-owned `buildkit`
+  service on certain BuildKit cache errors during a deploy attempt.
 
 ### Monitoring Surfaces
 

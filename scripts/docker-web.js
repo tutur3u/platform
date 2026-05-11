@@ -644,6 +644,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   });
   const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   let blueGreenBuildLock = null;
+  let deployLockSignalCleanup = null;
   let latestBlueGreenCommit = null;
   let blueGreenDeployStartedAt = null;
 
@@ -682,6 +683,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       paths: watchPaths,
       processImpl,
     });
+    deployLockSignalCleanup = () => {
+      blueGreenBuildLock?.release();
+    };
+    process.once('SIGTERM', deployLockSignalCleanup);
+    process.once('SIGINT', deployLockSignalCleanup);
   }
 
   try {
@@ -722,6 +728,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       });
     }
   } catch (error) {
+    if (deployLockSignalCleanup) {
+      process.off('SIGTERM', deployLockSignalCleanup);
+      process.off('SIGINT', deployLockSignalCleanup);
+      deployLockSignalCleanup = null;
+    }
     blueGreenBuildLock?.release();
     throw error;
   }
@@ -813,6 +824,11 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
       throw error;
     } finally {
+      if (deployLockSignalCleanup) {
+        process.off('SIGTERM', deployLockSignalCleanup);
+        process.off('SIGINT', deployLockSignalCleanup);
+        deployLockSignalCleanup = null;
+      }
       blueGreenBuildLock?.release();
     }
 
