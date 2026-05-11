@@ -157,7 +157,30 @@ SDK releases are published automatically from
 updates `packages/sdk/package.json` and includes `chore(tuturuuu)` in the PR
 title. The workflow runs the SDK tests, skips publication if the exact package
 version already exists on npm, and otherwise publishes `packages/sdk` to npm
-with `NPM_TOKEN`.
+through [npm trusted publishing](https://docs.npmjs.com/trusted-publishers): the
+`publish-npm` job requests `id-token: write` so GitHub Actions mints a short-lived
+OIDC token, upgrades to the latest `npm` CLI (trusted publishing requires
+npm 11.5.1+), and runs `npm publish` without an `NPM_TOKEN`. Because the
+`tuturuuu` package is public and `tutur3u/platform` is a public repository, npm
+also generates and attaches build provenance attestations automatically.
+
+The matching npm-side trusted publisher must stay configured at
+`https://www.npmjs.com/package/tuturuuu/access` with these exact values:
+
+- **Provider**: GitHub Actions
+- **Organization or user**: `tutur3u`
+- **Repository**: `platform`
+- **Workflow filename**: `release-sdk-package.yaml`
+- **Environment name**: leave empty (the publish job does not target a GitHub
+  environment)
+
+If the npm-side configuration drifts (for example after a repo rename or after
+moving the publish step into another workflow file), `npm publish` will fail
+with `ENEEDAUTH`. Update the trusted publisher entry first; do not paper over
+the failure by reintroducing a long-lived `NPM_TOKEN`. After confirming a
+trusted-publisher release works end to end, the npm package settings should
+keep `Require two-factor authentication and disallow tokens` enabled so the
+package cannot be published with classic tokens.
 
 ### Scoped Help
 

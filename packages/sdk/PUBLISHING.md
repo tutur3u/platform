@@ -108,20 +108,37 @@ Check the package on npm:
 
 ## Automated Publishing (Recommended)
 
-### Option 1: GitHub Actions
+### Option 1: GitHub Actions (npm Trusted Publishing)
 
 The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
 SDK automatically to npm when a merged version-bump PR updates
 `packages/sdk/package.json` and the PR title matches `chore(tuturuuu)`. The
 workflow runs the SDK test suite, checks whether the exact package version is
-already present on npm, and publishes `packages/sdk` with `bun publish` using
-the `NPM_TOKEN` secret only when that version does not exist yet.
+already present on npm, and publishes `packages/sdk` with `npm publish` only
+when that version does not exist yet.
+
+The publish job authenticates with npm through
+[trusted publishing](https://docs.npmjs.com/trusted-publishers): GitHub Actions
+mints a short-lived OIDC token (`id-token: write`) and the npm CLI exchanges it
+for a one-shot publish credential. The job does **not** read an `NPM_TOKEN`
+secret. Because `tuturuuu` is a public package and `tutur3u/platform` is a
+public repository, npm also generates and attaches build provenance
+attestations automatically.
 
 To publish a new release:
 
 1. Bump `packages/sdk/package.json`.
 2. Merge a PR whose title includes `chore(tuturuuu)`.
-3. Ensure `NPM_TOKEN` is configured in GitHub Actions.
+3. Make sure the npm trusted publisher entry for `tuturuuu` still points at
+   `tutur3u/platform` and the workflow filename
+   `release-sdk-package.yaml` (no GitHub environment). Manage it from the
+   package settings page on npmjs.com under **Trusted Publisher**.
+
+The npm package settings should keep
+**Require two-factor authentication and disallow tokens** enabled so the
+package cannot be published with classic tokens. If a release ever needs to be
+unblocked manually, re-enable token publishing temporarily and revoke the token
+afterward instead of disabling trusted publishing.
 
 ### Option 2: npm Scripts
 
