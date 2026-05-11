@@ -38,6 +38,8 @@
     "buildx": "turbo test build",
     "publish:sdk": "cd packages/sdk && bun publish",
     "serve:web": "cd apps/web && bun serve:web",
+    "serve:hive": "turbo run serve:hive -F @tuturuuu/hive",
+    "serve:hive-realtime": "turbo run serve:hive-realtime -F @tuturuuu/hive-realtime",
     "dev": "turbo run dev --parallel",
     "check": "node scripts/check.js",
     "check:now": "node scripts/check.js --force-now",

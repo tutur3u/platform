@@ -1,6 +1,7 @@
 ---
 title: Hive Realtime Runbook
 description: Operating notes for the Hive WebSocket service and satellite app deployment.
+updatedAt: '2026-05-11'
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
@@ -24,6 +25,17 @@ comes from `.env.local` with the same `apps/web/.env.local` fallback, and the
 production Hive image receives the `web_env` BuildKit secret during `next build`
 so prerendered auth routes can resolve `NEXT_PUBLIC_SUPABASE_URL` and related
 platform Supabase variables.
+
+## Local production-style servers (Turbo)
+
+From the repo root, Turbo runs workspace dependency builds first, then starts
+each process (see `turbo.json` tasks `@tuturuuu/hive#serve:hive` and
+`@tuturuuu/hive-realtime#serve:hive-realtime`):
+
+- `bun serve:hive` — production Next server for Hive on port `7814` (requires a
+  prior `next build` output; Turbo schedules `build` before `serve:hive`).
+- `bun serve:hive-realtime` — Bun WebSocket server (default port `7815` via
+  `PORT`).
 
 ## Blue/Green Deployment
 

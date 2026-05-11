@@ -70,6 +70,16 @@
       "cache": false,
       "persistent": true
     },
+    "@tuturuuu/hive#serve:hive": {
+      "dependsOn": ["^build", "build"],
+      "cache": false,
+      "persistent": true
+    },
+    "@tuturuuu/hive-realtime#serve:hive-realtime": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "persistent": true
+    },
     "test": {
       "env": ["CHECK_DETAILS"]
     },

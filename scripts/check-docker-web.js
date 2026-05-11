@@ -4,6 +4,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const {
+  readDockerProdComposeMergedText,
+} = require('./docker-web/prod-compose-include.js');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -360,6 +363,14 @@ function validateDockerCompose(
 function validateDockerProdCompose(composeContent) {
   const errors = [];
   const requiredSnippets = [
+    'path: docker-compose/compose.web.prod.log-drain.yml',
+    'path: docker-compose/compose.web.prod.buildkit.yml',
+    'path: docker-compose/compose.web.prod.web.yml',
+    'path: docker-compose/compose.web.prod.edge.yml',
+    'path: docker-compose/compose.web.prod.sidecars.yml',
+    'path: docker-compose/compose.web.prod.voice.yml',
+    'path: docker-compose/compose.web.prod.ops.yml',
+    'path: docker-compose/compose.web.prod.redis.yml',
     'x-web-service: &web-service',
     '  web:',
     '  web-blue:',
@@ -576,10 +587,7 @@ function checkDockerWebSetup({
     path.join(rootDir, 'docker-compose.web.yml'),
     'utf8'
   ),
-  prodComposeContent = fsImpl.readFileSync(
-    path.join(rootDir, 'docker-compose.web.prod.yml'),
-    'utf8'
-  ),
+  prodComposeContent = readDockerProdComposeMergedText(rootDir, fsImpl),
   watcherDockerfileContent = fsImpl.readFileSync(
     path.join(
       rootDir,

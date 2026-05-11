@@ -5,13 +5,16 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  readDockerProdComposeMergedText,
+} = require('./docker-web/prod-compose-include.js');
+
+const {
   CRON_RUNNER_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
-  WEB_PROD_COMPOSE_FILE_PATH,
   checkDockerWebSetup,
   getCopiedRelativePaths,
   getCopiedWorkspaceManifestPaths,
@@ -171,18 +174,16 @@ test('validateDockerCompose reports missing package-local artifact isolation', (
 });
 
 test('validateDockerProdCompose accepts the current production compose file', () => {
-  const composeContent = fs.readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
 });
 
 test('validateDockerProdCompose reports missing blue-green proxy wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace(
-      '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n',
-      ''
-    );
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -196,9 +197,10 @@ test('validateDockerProdCompose reports missing blue-green proxy wiring', () => 
 });
 
 test('validateDockerProdCompose reports missing watcher container wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replaceAll('      - /var/run/docker.sock:/var/run/docker.sock\n', '');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '      - /var/run/docker.sock:/var/run/docker.sock\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -206,9 +208,10 @@ test('validateDockerProdCompose reports missing watcher container wiring', () =>
 });
 
 test('validateDockerProdCompose reports missing cron runner wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace('  web-cron-runner:\n', '');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '  web-cron-runner:\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -216,15 +219,13 @@ test('validateDockerProdCompose reports missing cron runner wiring', () => {
 });
 
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replaceAll(
-      '      - .:' +
-        '${' +
-        'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
-        '}\n',
-      ''
-    );
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '      - .:' +
+      '${' +
+      'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
+      '}\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -232,12 +233,10 @@ test('validateDockerProdCompose reports missing watcher host workspace wiring', 
 });
 
 test('validateDockerProdCompose reports missing watcher project registry wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replaceAll(
-      '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain\n',
-      ''
-    );
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -245,9 +244,10 @@ test('validateDockerProdCompose reports missing watcher project registry wiring'
 });
 
 test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace('    - ./tmp/docker-web:/app/runtime/docker-web:ro\n', '');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '    - ./tmp/docker-web:/app/runtime/docker-web:ro\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -258,12 +258,10 @@ test('validateDockerProdCompose reports missing monitoring runtime mount', () =>
 });
 
 test('validateDockerProdCompose reports missing monitoring env wiring', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace(
-      '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web\n',
-      ''
-    );
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -274,9 +272,10 @@ test('validateDockerProdCompose reports missing monitoring env wiring', () => {
 });
 
 test('validateDockerProdCompose reports a drifted proxy healthcheck path', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replaceAll('/__platform/drain-status', '/api/health');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
+    '/__platform/drain-status',
+    '/api/health'
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 
@@ -287,8 +286,7 @@ test('validateDockerProdCompose reports a drifted proxy healthcheck path', () =>
 });
 
 test('validateDockerProdCompose reports missing sidecar healthchecks', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
     .replace('http://127.0.0.1:8788/health', 'http://127.0.0.1:8788/')
     .replace('["PING"]', '["ECHO","ok"]')
     .replace("ps | grep -q '[w]atch-blue-green-deploy.js'", 'ps');
@@ -301,9 +299,10 @@ test('validateDockerProdCompose reports missing sidecar healthchecks', () => {
 });
 
 test('validateDockerProdCompose reports missing MarkItDown Supabase URL env', () => {
-  const composeContent = fs
-    .readFileSync(WEB_PROD_COMPOSE_FILE_PATH, 'utf8')
-    .replace('      - SUPABASE_URL\n', '');
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '      - SUPABASE_URL\n',
+    ''
+  );
 
   const errors = validateDockerProdCompose(composeContent);
 

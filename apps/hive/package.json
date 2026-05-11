@@ -9,6 +9,7 @@
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "next build --turbopack",
     "build:docker": "NODE_OPTIONS='--max-old-space-size=8192 --experimental-require-module' next build --turbopack",
+    "serve:hive": "NODE_OPTIONS='--experimental-require-module' next start -p 7814",
     "start": "next start -p 7814",
     "preview": "next build --turbopack && next start -p 7814",
     "test": "vitest run",

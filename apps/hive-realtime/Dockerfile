@@ -10,4 +10,4 @@ RUN bun install --frozen-lockfile
 
 EXPOSE 7815
 
-CMD ["bun", "--filter", "@tuturuuu/hive-realtime", "start"]
+CMD ["bun", "run", "--filter", "@tuturuuu/hive-realtime", "start"]

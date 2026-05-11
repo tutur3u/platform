@@ -128,7 +128,7 @@ services:
     build:
       context: .
       dockerfile: apps/hive-realtime/Dockerfile
-    command: ["bun", "--cwd", "apps/hive-realtime", "run", "dev"]
+    command: ["bun", "run", "--filter", "@tuturuuu/hive-realtime", "dev"]
     env_file:
       - path: apps/web/.env.local
         required: false
@@ -156,7 +156,7 @@ services:
       context: .
       dockerfile: apps/hive/Dockerfile
       target: dev
-    command: ["bun", "--cwd", "apps/hive", "run", "dev"]
+    command: ["bun", "run", "--filter", "@tuturuuu/hive", "dev"]
     env_file:
       - path: apps/web/.env.local
         required: false

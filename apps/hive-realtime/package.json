@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
+    "serve:hive-realtime": "bun run start",
     "start": "bun src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest",

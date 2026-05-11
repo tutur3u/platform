@@ -18,7 +18,7 @@ ENV NODE_ENV=development
 
 EXPOSE 7814
 
-CMD ["bun", "--cwd", "apps/hive", "run", "dev"]
+CMD ["bun", "run", "--filter", "@tuturuuu/hive", "dev"]
 
 FROM base AS builder
 
@@ -29,7 +29,7 @@ ENV HIVE_DOCKER_BUILD=1
 
 RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  bun --env-file=/tmp/web.env --filter @tuturuuu/hive run build:docker
+  bun --env-file=/tmp/web.env run --filter @tuturuuu/hive build:docker
 
 FROM builder AS runner
 
@@ -37,4 +37,4 @@ ENV NODE_ENV=production
 
 EXPOSE 7814
 
-CMD ["bun", "--filter", "@tuturuuu/hive", "start"]
+CMD ["bun", "run", "--filter", "@tuturuuu/hive", "start"]

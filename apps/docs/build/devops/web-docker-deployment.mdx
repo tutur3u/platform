@@ -13,7 +13,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - `apps/web/docker/cron-runner.Dockerfile`
 - `apps/web/cron.config.json`
 - `docker-compose.web.yml`
-- `docker-compose.web.prod.yml`
+- `docker-compose.web.prod.yml` (Compose `include` entry that merges `docker-compose/compose.web.prod.*.yml` fragments plus shared `secrets` / `volumes`)
 - `scripts/sync-web-crons.js`
 - `scripts/watch-web-crons.js`
 - `scripts/docker-web.js`
