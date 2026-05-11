@@ -1,0 +1,66 @@
+x-web-service: &web-service
+  build:
+    context: .
+    dockerfile: apps/web/Dockerfile
+    target: runner
+    secrets:
+      - web_env
+  env_file:
+    - path: apps/web/.env.local
+      required: false
+    - path: .env.local
+      required: false
+  environment: &web-environment
+    - CRON_SECRET
+    - DISCORD_APP_DEPLOYMENT_URL
+    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN
+    - DRIVE_AUTO_EXTRACT_PROXY_URL
+    - HIVE_REALTIME_TOKEN_SECRET
+    - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+    - HOSTNAME=0.0.0.0
+    - INTERNAL_WEB_API_ORIGIN
+    - MARKITDOWN_ENDPOINT_SECRET
+    - MARKITDOWN_ENDPOINT_URL
+    - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
+    - NEXT_TELEMETRY_DISABLED=1
+    - NODE_ENV=production
+    - PORT=7803
+    - PLATFORM_BLUE_GREEN_COLOR
+    - PLATFORM_BLUE_GREEN_CONTROL_DIR=/app/runtime/docker-web-control
+    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web
+    - PLATFORM_DEPLOYMENT_STAMP
+    - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
+    - PLATFORM_LOG_DRAIN_ENABLED=${PLATFORM_LOG_DRAIN_ENABLED:-true}
+    - PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS=${PLATFORM_LOG_DRAIN_RAW_RETENTION_DAYS:-30}
+    - PLATFORM_LOG_DRAIN_SUMMARY_RETENTION_DAYS=${PLATFORM_LOG_DRAIN_SUMMARY_RETENTION_DAYS:-90}
+    - SUPABASE_SERVER_URL
+    - UPSTASH_REDIS_REST_TOKEN
+    - UPSTASH_REDIS_REST_URL
+    - VALSEA_PRONUNCIATION_ASSESSOR_URL=${VALSEA_PRONUNCIATION_ASSESSOR_URL:-http://pronunciation-assessor:8010/assess}
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  healthcheck:
+    test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 7803) + '/__platform/drain-status').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+    interval: 30s
+    timeout: 5s
+    start_period: 10s
+    retries: 3
+  init: true
+  volumes:
+    - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control
+    - ./tmp/docker-web:/app/runtime/docker-web:ro
+  depends_on:
+    log-drain-postgres:
+      condition: service_healthy
+
+services:
+  web:
+    <<: *web-service
+    ports:
+      - "${DOCKER_WEB_DIRECT_HOST_PORT:-7803}:7803"
+
+  web-blue:
+    <<: *web-service
+
+  web-green:
+    <<: *web-service

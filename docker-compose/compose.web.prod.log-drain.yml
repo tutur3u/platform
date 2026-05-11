@@ -1,0 +1,16 @@
+services:
+  log-drain-postgres:
+    container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-log-drain-postgres-1
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: platform_log_drain
+      POSTGRES_PASSWORD: platform_log_drain
+      POSTGRES_USER: platform_log_drain
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U platform_log_drain -d platform_log_drain"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - platform-log-drain-postgres:/var/lib/postgresql/data
+      - ./apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro

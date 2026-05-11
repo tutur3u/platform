@@ -1,0 +1,72 @@
+services:
+  web-blue-green-watcher:
+    build:
+      context: .
+      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - CLOUDFLARED_TOKEN
+      - COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME}
+      - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234
+      - DOCKER_WEB_BUILDKIT_PORT
+      - DOCKER_WEB_COMPOSE_PROJECT_NAME
+      - DOCKER_WEB_DIRECT_HOST_PORT
+      - DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT
+      - DOCKER_WEB_PROXY_HOST_PORT
+      - DOCKER_WEB_REDIS_HOST_PORT
+      - DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT
+      - DOCKER_WEB_WITH_CLOUDFLARED
+      - GITHUB_TOKEN
+      - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - PLATFORM_LOG_DRAIN_DATABASE_URL=postgres://platform_log_drain:platform_log_drain@log-drain-postgres:5432/platform_log_drain
+      - PLATFORM_LOG_DRAIN_ENABLED=${PLATFORM_LOG_DRAIN_ENABLED:-true}
+      - UPSTASH_REDIS_REST_TOKEN
+      - UPSTASH_REDIS_REST_URL
+    depends_on:
+      buildkit:
+        condition: service_healthy
+      log-drain-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -q '[w]atch-blue-green-deploy.js'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    restart: unless-stopped
+    volumes:
+      - .:/workspace
+      - .:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - /var/run/docker.sock:/var/run/docker.sock
+      - platform-bun-install:/root/.bun/install/cache
+      - platform-blue-green-watcher-node_modules:/workspace/node_modules
+      - platform-blue-green-watcher-node_modules:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/node_modules
+
+  web-cron-runner:
+    build:
+      context: .
+      dockerfile: apps/web/docker/cron-runner.Dockerfile
+    environment:
+      - CRON_SECRET
+      - INTERNAL_WEB_API_ORIGIN
+      - PLATFORM_CRON_CONTROL_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/watch/control
+      - PLATFORM_CRON_MONITORING_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}/tmp/docker-web/cron
+      - PLATFORM_HOST_WORKSPACE_DIR=${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - VERCEL_CRON_SECRET
+    healthcheck:
+      test: ["CMD-SHELL", "ps | grep -q '[w]atch-web-crons.js'"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    restart: unless-stopped
+    volumes:
+      - .:/workspace:ro
+      - .:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - /var/run/docker.sock:/var/run/docker.sock

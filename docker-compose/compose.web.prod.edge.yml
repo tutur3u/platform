@@ -1,0 +1,31 @@
+services:
+  web-proxy:
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    image: nginx:1.27-alpine
+    init: true
+    ports:
+      - "${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"
+    volumes:
+      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
+  cloudflared:
+    profiles: ["cloudflared"]
+    command:
+      [
+        "tunnel",
+        "--no-autoupdate",
+        "run",
+        "--token",
+        "${CLOUDFLARED_TOKEN:-}",
+      ]
+    depends_on:
+      web-proxy:
+        condition: service_healthy
+    image: cloudflare/cloudflared:latest
+    init: true
+    restart: unless-stopped

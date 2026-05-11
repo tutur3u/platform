@@ -1,0 +1,89 @@
+services:
+  markitdown:
+    build:
+      context: apps/discord
+      dockerfile: Dockerfile.markitdown
+    environment:
+      - PORT=8000
+      - SUPABASE_URL
+    expose:
+      - "8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3).read()\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+
+  storage-unzip-proxy:
+    build:
+      context: apps/storage-unzip-proxy
+    environment:
+      - DRIVE_UNZIP_PROXY_SHARED_TOKEN
+      - PORT=8788
+    expose:
+      - "8788"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://127.0.0.1:8788/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+
+  hive-realtime:
+    build:
+      context: .
+      dockerfile: apps/hive-realtime/Dockerfile
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - NODE_ENV=production
+      - PORT=7815
+    expose:
+      - "7815"
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7815/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    restart: unless-stopped
+
+  hive:
+    build:
+      context: .
+      dockerfile: apps/hive/Dockerfile
+      target: runner
+      secrets:
+        - web_env
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_REALTIME_TOKEN_SECRET
+      - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+      - HOSTNAME=0.0.0.0
+      - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
+      - NEXT_TELEMETRY_DISABLED=1
+      - NODE_ENV=production
+      - PORT=7814
+      - SUPABASE_SERVER_URL
+    ports:
+      - "7814:7814"
+    healthcheck:
+      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    init: true
+    restart: unless-stopped

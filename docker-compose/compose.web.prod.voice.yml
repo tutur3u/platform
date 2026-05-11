@@ -1,0 +1,36 @@
+services:
+  pronunciation-assessor:
+    build:
+      context: apps/pronunciation-assessor
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - PORT=8010
+      - PRONUNCIATION_ASSESSOR_DEFAULT_MODEL=${PRONUNCIATION_ASSESSOR_DEFAULT_MODEL:-local-whisper-large-v3-turbo}
+      - PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS=${PRONUNCIATION_ASSESSOR_IDLE_TTL_SECONDS:-900}
+      - PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS=${PRONUNCIATION_ASSESSOR_MAX_LOADED_MODELS:-1}
+      - PRONUNCIATION_ASSESSOR_MODEL=${PRONUNCIATION_ASSESSOR_MODEL:-facebook/wav2vec2-base-960h}
+      - PRONUNCIATION_ASSESSOR_PRELOAD=${PRONUNCIATION_ASSESSOR_PRELOAD:-true}
+      - PRONUNCIATION_ASSESSOR_WHISPER_BASE_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_BASE_MODEL:-openai/whisper-base}
+      - PRONUNCIATION_ASSESSOR_WHISPER_LARGE_V3_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_LARGE_V3_MODEL:-openai/whisper-large-v3}
+      - PRONUNCIATION_ASSESSOR_WHISPER_LARGE_V3_TURBO_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_LARGE_V3_TURBO_MODEL:-openai/whisper-large-v3-turbo}
+      - PRONUNCIATION_ASSESSOR_WHISPER_MEDIUM_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_MEDIUM_MODEL:-openai/whisper-medium}
+      - PRONUNCIATION_ASSESSOR_WHISPER_SMALL_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_SMALL_MODEL:-openai/whisper-small}
+      - PRONUNCIATION_ASSESSOR_WHISPER_TINY_MODEL=${PRONUNCIATION_ASSESSOR_WHISPER_TINY_MODEL:-openai/whisper-tiny}
+      - PIPER_DATA_DIR=/root/.cache/piper
+      - PIPER_DEFAULT_VOICE=${PIPER_DEFAULT_VOICE:-en_US-lessac-high}
+    expose:
+      - "8010"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=3).read()\" || exit 1"]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+      retries: 10
+    init: true
+    volumes:
+      - platform-pronunciation-assessor-cache:/root/.cache/huggingface
+      - platform-voice-lab-cache:/root/.cache/piper
