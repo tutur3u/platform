@@ -11,6 +11,10 @@ const WATCH_LOCK_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.lock'
 );
+const WATCH_DEPLOYMENT_BUILD_LOCK_FILE = path.join(
+  WATCH_RUNTIME_DIR,
+  'blue-green-deployment-build.lock'
+);
 const WATCH_HISTORY_FILE = path.join(
   WATCH_RUNTIME_DIR,
   'blue-green-auto-deploy.history.json'
@@ -76,6 +80,10 @@ function getWatchPaths(rootDir = ROOT_DIR, env = process.env) {
     ),
     blueGreen: getBlueGreenPaths(rootDir),
     controlDir: path.join(runtimeDir, 'control'),
+    deploymentBuildLockFile: path.join(
+      runtimeDir,
+      'blue-green-deployment-build.lock'
+    ),
     deploymentPinFile: path.join(
       runtimeDir,
       'control',
@@ -116,6 +124,7 @@ module.exports = {
   WATCH_ARGS_FILE_ENV,
   WATCH_ARGS_FILE,
   WATCH_CONTROL_DIR,
+  WATCH_DEPLOYMENT_BUILD_LOCK_FILE,
   WATCH_DEPLOYMENT_PIN_FILE,
   WATCH_HISTORY_FILE,
   WATCH_INSTANT_ROLLOUT_REQUEST_FILE,

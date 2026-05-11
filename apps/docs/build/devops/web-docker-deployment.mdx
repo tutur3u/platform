@@ -476,6 +476,12 @@ Operational notes:
   `--build-memory` while keeping `--build-max-parallelism 1`.
 - If host memory or swap is saturated, lower `--build-max-parallelism` first
   and stop unrelated containers before raising the builder memory cap.
+- If Bun fails during an image install with a tarball extraction error such as
+  `Fail extracting tarball for "@biomejs/cli-linux-x64"`, the blue/green helper
+  treats it as BuildKit exec-cache corruption once per deployment attempt. It
+  prunes BuildKit exec cache mounts, restarts the Compose-owned `buildkit`
+  service, and retries the same build once. A second failure is recorded as a
+  real deployment failure with the original command context preserved in logs.
 
 ## Redis Profile
 
@@ -637,6 +643,21 @@ Behavior:
 
 Operational notes for the containerized watcher:
 
+- Manual `bun serve:web:docker:bg` and watcher-triggered deploys share a
+  deployment-build lock at
+  `tmp/docker-web/watch/blue-green-deployment-build.lock`. This lock is
+  separate from `blue-green-auto-deploy.lock`: the watcher may remain alive, but
+  only one build/deploy phase can be active across manual deploys, auto-pulls,
+  standby refreshes, rollback pins, cached recovery, and reconcile deploys.
+- If a manual deploy sees that lock or a live watcher status of `building` or
+  `deploying`, an interactive terminal prompts before it interrupts the active
+  deployment. Confirming stops `web-blue-green-watcher`, stops/resets the
+  Compose-owned BuildKit work, clears the active build lock/status, records the
+  interrupted entry as `canceled`, then starts the requested deployment alone.
+- Non-interactive manual automation fails fast on an active deployment unless
+  `--cancel-active-build` or `DOCKER_WEB_CANCEL_ACTIVE_BUILD=1` is provided.
+  Use that override only when it is acceptable to interrupt all BuildKit work
+  owned by the platform deployment stack.
 - Re-running `bun serve:web:docker:bg:watch` intentionally recreates the
   watcher container so it picks up local repo changes, new CLI args, and
   watcher-image updates in one path.

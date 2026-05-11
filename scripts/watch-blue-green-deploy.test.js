@@ -5,6 +5,13 @@ const os = require('node:os');
 const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
+const {
+  DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DeploymentBuildLockConflictError,
+  acquireDeploymentBuildLock,
+  readDeploymentBuildLock,
+  writeDeploymentBuildLock,
+} = require('./watch-blue-green/build-lock.js');
 
 const {
   BLUE_GREEN_PROXY_SERVICE,
@@ -833,6 +840,108 @@ test('acquireWatchLock rejects a live existing watcher', () => {
         ),
       /already locked by PID 1234/
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('deployment build lock supports token re-entry and guarded release', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-build-lock-'));
+  const paths = getWatchPaths(tempDir);
+  const processImpl = {
+    kill(pid) {
+      if (pid !== 4321) {
+        const error = new Error('missing');
+        error.code = 'ESRCH';
+        throw error;
+      }
+    },
+    pid: 4321,
+  };
+
+  try {
+    const heldLock = acquireDeploymentBuildLock({
+      command: ['bun', 'serve:web:docker:bg'],
+      deploymentKind: 'manual',
+      fsImpl: fs,
+      latestCommit: {
+        hash: 'abc123',
+        shortHash: 'abc123',
+        subject: 'Deploy lock test',
+      },
+      now: () => 1000,
+      paths,
+      processImpl,
+    });
+
+    assert.equal(readDeploymentBuildLock(paths, fs).ownerPid, 4321);
+    assert.throws(
+      () =>
+        acquireDeploymentBuildLock({
+          command: 'another deploy',
+          fsImpl: fs,
+          paths,
+          processImpl,
+        }),
+      DeploymentBuildLockConflictError
+    );
+
+    const reentrant = acquireDeploymentBuildLock({
+      command: 'nested watcher deploy',
+      env: {
+        [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+      },
+      fsImpl: fs,
+      paths,
+      processImpl,
+    });
+
+    assert.equal(reentrant.reentrant, true);
+    assert.equal(reentrant.release(), false);
+    assert.notEqual(readDeploymentBuildLock(paths, fs), null);
+    assert.equal(heldLock.release(), true);
+    assert.equal(readDeploymentBuildLock(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('deployment build lock replaces stale owners', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'deploy-build-stale-'));
+  const paths = getWatchPaths(tempDir);
+  const processImpl = {
+    kill() {
+      const error = new Error('missing');
+      error.code = 'ESRCH';
+      throw error;
+    },
+    pid: 9999,
+  };
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'old deploy',
+        lockToken: 'stale-token',
+        ownerPid: 1234,
+        startedAt: 100,
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+
+    const heldLock = acquireDeploymentBuildLock({
+      command: 'fresh deploy',
+      fsImpl: fs,
+      now: () => 200,
+      paths,
+      processImpl,
+    });
+
+    assert.equal(heldLock.lock.ownerPid, 9999);
+    assert.equal(heldLock.lock.command, 'fresh deploy');
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

@@ -1653,6 +1653,7 @@
     "deployment_status": {
       "active": "Active",
       "building": "Building",
+      "canceled": "Canceled",
       "deploying": "Deploying",
       "ended": "Ended",
       "failed": "Failed",
@@ -2105,6 +2106,7 @@
     },
     "rollout": {
       "avg_latency": "Avg Latency",
+      "canceled_title": "Latest rollout canceled",
       "commit": "Commit",
       "description": "Track the newest build, deployment phase, and recovery state before it settles into the historical ledger.",
       "failure_title": "Latest rollout failure",

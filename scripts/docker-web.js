@@ -2,6 +2,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const readline = require('node:readline');
 
 const {
   BLUE_GREEN_COLORS,
@@ -64,6 +65,7 @@ const {
 } = require('./docker-web/env.js');
 const {
   DEFAULT_BUILDER_NAME,
+  BUILDKIT_SERVICE_NAME,
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
 const {
@@ -72,9 +74,21 @@ const {
 } = require('./watch-blue-green/history.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
+  readWatchStatus,
   WATCHER_CONTAINER_ENV,
+  BLUE_GREEN_WATCHER_SERVICE,
   startBlueGreenWatcherContainer,
 } = require('./watch-blue-green-deploy.js');
+const {
+  CANCEL_ACTIVE_BUILD_ENV,
+  DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  acquireDeploymentBuildLock,
+  clearDeploymentBuildLock,
+  getActiveDeploymentFromStatus,
+  isDeploymentBuildLockLive,
+  isProcessAlive,
+  readDeploymentBuildLock,
+} = require('./watch-blue-green/build-lock.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLOUDFLARED_SERVICE = 'cloudflared';
@@ -129,6 +143,7 @@ function parseArgs(argv) {
   let buildCpus = null;
   let buildMaxParallelism = null;
   let buildBuilderName = null;
+  let cancelActiveBuild = false;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -151,6 +166,11 @@ function parseArgs(argv) {
 
     if (arg === '--with-cloudflared') {
       withCloudflared = true;
+      continue;
+    }
+
+    if (arg === '--cancel-active-build') {
+      cancelActiveBuild = true;
       continue;
     }
 
@@ -269,6 +289,7 @@ function parseArgs(argv) {
     buildCpus,
     buildMaxParallelism,
     buildMemory,
+    cancelActiveBuild,
     withSupabase,
     withRedis,
   };
@@ -305,6 +326,229 @@ function getInPlaceProdServices(parsed) {
   return services;
 }
 
+function formatElapsedDuration(ms) {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes <= 0) {
+    return `${remainingSeconds}s`;
+  }
+
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+function getActiveDeploymentConflict({
+  fsImpl = fs,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
+} = {}) {
+  const lock = readDeploymentBuildLock(paths, fsImpl);
+
+  if (lock && isDeploymentBuildLockLive(lock, processImpl)) {
+    return {
+      elapsedMs: Math.max(0, now() - (lock.startedAt ?? now())),
+      lock,
+      source: 'lock',
+      status: 'building',
+    };
+  }
+
+  const status = readWatchStatus(paths, fsImpl);
+  const activeDeployment = getActiveDeploymentFromStatus(status);
+
+  if (!activeDeployment) {
+    return null;
+  }
+
+  const ownerPid = Number(status?.ownerPid ?? status?.pid);
+  if (Number.isInteger(ownerPid) && ownerPid > 0) {
+    if (!isProcessAlive(ownerPid, processImpl)) {
+      return null;
+    }
+  }
+
+  return {
+    elapsedMs: Math.max(0, now() - (activeDeployment.startedAt ?? now())),
+    lock: {
+      command: 'blue/green watcher',
+      commitHash: activeDeployment.commitHash ?? null,
+      commitShortHash: activeDeployment.commitShortHash ?? null,
+      commitSubject: activeDeployment.commitSubject ?? null,
+      deploymentKind: activeDeployment.deploymentKind ?? 'watcher',
+      ownerPid: Number.isInteger(ownerPid) && ownerPid > 0 ? ownerPid : null,
+      startedAt: activeDeployment.startedAt ?? null,
+    },
+    source: 'watch-status',
+    status: activeDeployment.status,
+  };
+}
+
+function describeActiveDeploymentConflict(conflict) {
+  const lock = conflict?.lock ?? {};
+  const details = [
+    `status=${conflict?.status ?? 'unknown'}`,
+    `source=${conflict?.source ?? 'unknown'}`,
+    lock.ownerPid ? `pid=${lock.ownerPid}` : null,
+    lock.command ? `command=${lock.command}` : null,
+    lock.deploymentKind ? `kind=${lock.deploymentKind}` : null,
+    lock.commitShortHash ? `commit=${lock.commitShortHash}` : null,
+    lock.commitSubject ? `subject=${lock.commitSubject}` : null,
+    conflict?.elapsedMs != null
+      ? `elapsed=${formatElapsedDuration(conflict.elapsedMs)}`
+      : null,
+  ].filter(Boolean);
+
+  return details.join(', ');
+}
+
+async function promptForActiveDeploymentCancellation(
+  conflict,
+  {
+    confirmActiveBuildCancellation,
+    input = process.stdin,
+    output = process.stdout,
+  } = {}
+) {
+  if (typeof confirmActiveBuildCancellation === 'function') {
+    return await confirmActiveBuildCancellation(conflict);
+  }
+
+  if (!input?.isTTY || !output?.isTTY) {
+    return false;
+  }
+
+  const rl = readline.createInterface({ input, output });
+
+  try {
+    const answer = await new Promise((resolve) => {
+      rl.question(
+        `Active blue/green deployment detected (${describeActiveDeploymentConflict(conflict)}). Stop it and start this deployment? [y/N] `,
+        resolve
+      );
+    });
+
+    return /^(y|yes)$/iu.test(String(answer).trim());
+  } finally {
+    rl.close();
+  }
+}
+
+async function cancelActiveBlueGreenBuild({
+  composeEnv,
+  conflict,
+  fsImpl = fs,
+  latestCommit,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const canceledAt = now();
+  const reason = `Canceled active deployment before manual blue/green deploy: ${describeActiveDeploymentConflict(conflict)}`;
+
+  await run(
+    'docker',
+    getComposeCommandArgs(
+      getComposeFile('prod'),
+      ['--profile', 'redis'],
+      'stop',
+      '--timeout',
+      '1',
+      BLUE_GREEN_WATCHER_SERVICE,
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env: composeEnv,
+      stdio: 'pipe',
+    }
+  );
+  await run('docker', ['buildx', 'rm', DEFAULT_BUILDER_NAME], {
+    env: composeEnv,
+    stdio: 'pipe',
+  });
+
+  clearDeploymentBuildLock({ fsImpl, paths });
+  if (fsImpl.existsSync(paths.statusFile)) {
+    fsImpl.rmSync(paths.statusFile, { force: true });
+  }
+
+  appendDeploymentHistory(
+    {
+      buildDurationMs: Math.max(
+        0,
+        canceledAt - (conflict?.lock?.startedAt ?? canceledAt)
+      ),
+      cancellationReason: reason,
+      commitHash: conflict?.lock?.commitHash ?? latestCommit?.hash ?? null,
+      commitShortHash:
+        conflict?.lock?.commitShortHash ?? latestCommit?.shortHash ?? null,
+      commitSubject:
+        conflict?.lock?.commitSubject ?? latestCommit?.subject ?? null,
+      deploymentKind: conflict?.lock?.deploymentKind ?? 'manual-interrupt',
+      finishedAt: canceledAt,
+      rootDir,
+      startedAt: conflict?.lock?.startedAt ?? canceledAt,
+      status: 'canceled',
+    },
+    {
+      fsImpl,
+      paths,
+    }
+  );
+
+  return reason;
+}
+
+async function resolveManualBlueGreenBuildConflict({
+  composeEnv,
+  env,
+  fsImpl = fs,
+  latestCommit,
+  now = () => Date.now(),
+  parsed,
+  paths = getWatchPaths(),
+  processImpl = process,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  ...promptOptions
+} = {}) {
+  const conflict = getActiveDeploymentConflict({
+    fsImpl,
+    now,
+    paths,
+    processImpl,
+  });
+
+  if (!conflict) {
+    return null;
+  }
+
+  const canCancel =
+    parsed?.cancelActiveBuild || isTruthyEnv(env?.[CANCEL_ACTIVE_BUILD_ENV]);
+  const confirmed =
+    canCancel ||
+    (await promptForActiveDeploymentCancellation(conflict, promptOptions));
+
+  if (!confirmed) {
+    throw new Error(
+      `Active blue/green deployment build detected (${describeActiveDeploymentConflict(conflict)}). Re-run with --cancel-active-build or DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 to cancel it before starting a fresh deployment.`
+    );
+  }
+
+  return cancelActiveBlueGreenBuild({
+    composeEnv,
+    conflict,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+}
+
 async function runDockerWebWorkflow(parsed, options = {}) {
   const run = options.runCommand ?? runCommand;
   const fsImpl = options.fsImpl ?? fs;
@@ -312,6 +556,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     options.startWatcherContainer ?? startBlueGreenWatcherContainer;
   const composeFile = getComposeFile(parsed.mode);
   const env = options.env ?? process.env;
+  const processImpl = options.processImpl ?? process;
+  const now = options.now ?? (() => Date.now());
   ensureCloudflaredProfileFromEnv(parsed, env);
   const withRedis = hasComposeProfile(parsed.composeGlobalArgs, 'redis');
   const withCloudflared = hasComposeProfile(
@@ -375,52 +621,110 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     withCloudflared,
     withRedis,
   });
-  composeEnv = await ensureBuildkitBuilder(
-    {
-      builderName: parsed.buildBuilderName,
-      cpus: parsed.buildCpus,
-      maxParallelism: parsed.buildMaxParallelism,
-      memory: parsed.buildMemory,
-    },
-    {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env: composeEnv,
-      fsImpl,
-      rootDir: options.rootDir,
-      runCommand: run,
-    }
-  );
-  ensureRequiredComposeEnvironment(composeEnv, { withCloudflared, withRedis });
+  const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
+  let blueGreenBuildLock = null;
+  let latestBlueGreenCommit = null;
+  let blueGreenDeployStartedAt = null;
 
-  if (parsed.withSupabase) {
-    await runChecked('bun', ['sb:start'], {
+  if (usesBlueGreenStrategy(parsed)) {
+    latestBlueGreenCommit = await getCurrentGitCommitMetadata({
+      env,
+      runCommand: run,
+    });
+
+    if (!env[DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]) {
+      await resolveManualBlueGreenBuildConflict({
+        composeEnv,
+        confirmActiveBuildCancellation: options.confirmActiveBuildCancellation,
+        env,
+        fsImpl,
+        input: options.input,
+        latestCommit: latestBlueGreenCommit,
+        now,
+        output: options.output,
+        parsed,
+        paths: watchPaths,
+        processImpl,
+        rootDir: options.rootDir ?? ROOT_DIR,
+        runCommand: run,
+      });
+    }
+
+    blueGreenDeployStartedAt = now();
+    blueGreenBuildLock = acquireDeploymentBuildLock({
+      command: 'bun serve:web:docker:bg',
+      deploymentKind: 'manual',
       env,
       fsImpl,
-      runCommand: run,
+      latestCommit: latestBlueGreenCommit,
+      now,
+      paths: watchPaths,
+      processImpl,
     });
   }
 
-  if (parsed.resetSupabase) {
-    await runChecked('bun', ['sb:reset'], {
-      env,
-      fsImpl,
-      runCommand: run,
+  try {
+    composeEnv = await ensureBuildkitBuilder(
+      {
+        builderName: parsed.buildBuilderName,
+        cpus: parsed.buildCpus,
+        maxParallelism: parsed.buildMaxParallelism,
+        memory: parsed.buildMemory,
+      },
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: composeEnv,
+        fsImpl,
+        rootDir: options.rootDir,
+        runCommand: run,
+      }
+    );
+    ensureRequiredComposeEnvironment(composeEnv, {
+      withCloudflared,
+      withRedis,
     });
+
+    if (parsed.withSupabase) {
+      await runChecked('bun', ['sb:start'], {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    }
+
+    if (parsed.resetSupabase) {
+      await runChecked('bun', ['sb:reset'], {
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    }
+  } catch (error) {
+    blueGreenBuildLock?.release();
+    throw error;
   }
 
   if (usesBlueGreenStrategy(parsed)) {
-    const deployStartedAt = Date.now();
-    const latestCommit = await getCurrentGitCommitMetadata({
-      env,
-      runCommand: run,
-    });
+    const deployStartedAt = blueGreenDeployStartedAt ?? now();
+    const latestCommit =
+      latestBlueGreenCommit ??
+      (await getCurrentGitCommitMetadata({
+        env,
+        runCommand: run,
+      }));
+    const workflowEnv = blueGreenBuildLock
+      ? {
+          ...env,
+          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
+        }
+      : env;
 
     try {
       await runBlueGreenProdWorkflow(parsed, {
         drainPollMs: options.drainPollMs,
         drainTimeoutMs: options.drainTimeoutMs,
-        env,
+        env: workflowEnv,
         envFilePath: options.envFilePath,
         fsImpl,
         proxyDrainMs: options.proxyDrainMs,
@@ -487,6 +791,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       }
 
       throw error;
+    } finally {
+      blueGreenBuildLock?.release();
     }
 
     return;
@@ -562,6 +868,8 @@ module.exports = {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  cancelActiveBlueGreenBuild,
+  describeActiveDeploymentConflict,
   ensureBuildkitBuilder,
   ensureBlueGreenRuntime,
   ensureProductionRedisToken,
@@ -571,6 +879,7 @@ module.exports = {
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
   getBlueGreenServiceName,
+  getActiveDeploymentConflict,
   getComposeEnvironment,
   getComposeFile,
   getComposeServiceContainerId,
@@ -590,6 +899,7 @@ module.exports = {
   reloadBlueGreenProxy,
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
+  resolveManualBlueGreenBuildConflict,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
   runComposeUpWithNameConflictRecovery,

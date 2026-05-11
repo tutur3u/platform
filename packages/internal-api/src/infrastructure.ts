@@ -118,6 +118,7 @@ export interface BlueGreenMonitoringDeployment {
   activeColor?: string | null;
   averageRequestsPerMinute?: number | null;
   buildDurationMs?: number | null;
+  cancellationReason?: string | null;
   commitHash?: string | null;
   commitShortHash?: string | null;
   commitSubject?: string | null;

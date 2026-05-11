@@ -10,8 +10,10 @@ import { RolloutStagePanel } from './blue-green-monitoring-rollout-panels';
 const messages: Record<string, string> = {
   'colors.blue': 'Blue',
   'deployment_status.building': 'Building',
+  'deployment_status.canceled': 'Canceled',
   'panels.rollout_now': 'Rollout Now',
   'rollout.avg_latency': 'Avg Latency',
+  'rollout.canceled_title': 'Rollout canceled',
   'rollout.commit': 'Commit',
   'rollout.description': 'Track rollout state.',
   'rollout.failure_title': 'Rollout failed',
@@ -87,5 +89,54 @@ describe('RolloutStagePanel', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('shows cancellation details for interrupted deployments', () => {
+    const startedAt = new Date('2026-01-01T00:00:00.000Z').getTime();
+
+    const deployments: BlueGreenMonitoringDeploymentRollup[] = [
+      {
+        activeColor: null,
+        activeColors: [],
+        averageLatencyMs: null,
+        averageRequestsPerMinute: null,
+        buildDurationMs: 4000,
+        cancellationReason: 'Canceled active deployment before manual run.',
+        commitHash: 'canceled-commit',
+        commitShortHash: 'cancel1',
+        commitSubject: 'Canceled deployment',
+        deploymentKind: 'promotion',
+        deploymentStamp: null,
+        deploymentStamps: [],
+        errorCount: null,
+        firstRequestAt: null,
+        lastRequestAt: null,
+        lifetimeMs: null,
+        mergedDeploymentCount: 1,
+        peakRequestsPerMinute: null,
+        requestCount: null,
+        runtimeState: null,
+        runtimeStates: [],
+        startedAt,
+        status: 'canceled',
+      },
+    ];
+
+    render(
+      <RolloutStagePanel
+        deployments={deployments}
+        watcher={
+          {
+            lastDeployAt: startedAt,
+            lastDeployStatus: 'canceled',
+          } as BlueGreenMonitoringSnapshot['watcher']
+        }
+      />
+    );
+
+    expect(screen.getByText('Rollout canceled')).toBeInTheDocument();
+    expect(
+      screen.getByText('Canceled active deployment before manual run.')
+    ).toBeInTheDocument();
   });
 });

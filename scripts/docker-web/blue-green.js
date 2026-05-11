@@ -21,6 +21,10 @@ const {
   getDockerWebComposeProjectName,
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
 } = require('./env.js');
+const {
+  isBunTarballExtractionError,
+  recoverBuildkitBunInstallCache,
+} = require('./buildkit-builder.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const DOCKER_WEB_RUNTIME_DIR = path.join(ROOT_DIR, 'tmp', 'docker-web');
@@ -571,14 +575,35 @@ async function buildBlueGreenServices({
   runCommand: run,
   services,
 }) {
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(composeFile, composeGlobalArgs, 'build', ...services),
-    {
+  const buildArgs = getComposeCommandArgs(
+    composeFile,
+    composeGlobalArgs,
+    'build',
+    ...services
+  );
+
+  try {
+    await runChecked('docker', buildArgs, {
       env,
       runCommand: run,
+    });
+  } catch (error) {
+    if (!isBunTarballExtractionError(error)) {
+      throw error;
     }
-  );
+
+    await recoverBuildkitBunInstallCache({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+
+    await runChecked('docker', buildArgs, {
+      env,
+      runCommand: run,
+    });
+  }
 }
 
 async function refreshBlueGreenProxyIfRunning({
@@ -1478,6 +1503,7 @@ module.exports = {
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_STAMP_FILE,
   BLUE_GREEN_SUPPORT_SERVICES,
+  buildBlueGreenServices,
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,

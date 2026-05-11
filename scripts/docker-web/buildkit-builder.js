@@ -405,6 +405,90 @@ async function ensureBuildkitBuilder(
   return nextEnv;
 }
 
+function isBunTarballExtractionError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /Fail extracting tarball for "@biomejs\/cli-linux-x64"/iu.test(message) ||
+    /Fail extracting tarball for "[^"]+"/iu.test(message) ||
+    /failed?\s+to\s+extract(?:ing)?\s+tarball/iu.test(message)
+  );
+}
+
+async function recoverBuildkitBunInstallCache({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+
+  await runChecked(
+    'docker',
+    [
+      'buildx',
+      'prune',
+      '--builder',
+      builderName,
+      '--force',
+      '--filter',
+      'type=exec.cachemount',
+    ],
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  if (!composeFile) {
+    return;
+  }
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'stop',
+      '--timeout',
+      '1',
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'up',
+      '--detach',
+      '--no-build',
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+  await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+}
+
 module.exports = {
   BUILDKIT_CONFIG_FILE,
   BUILDKIT_RUNTIME_DIR,
@@ -417,9 +501,11 @@ module.exports = {
   ensureBuildkitBuilder,
   getBuildkitPaths,
   getBuilderConfigFingerprint,
+  isBunTarballExtractionError,
   normalizeBuilderConfig,
   parsePositiveInteger,
   parsePositiveNumber,
+  recoverBuildkitBunInstallCache,
   renderBuildkitConfig,
   readBuilderState,
   writeBuilderState,

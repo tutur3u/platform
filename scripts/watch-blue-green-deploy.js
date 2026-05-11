@@ -81,6 +81,10 @@ const {
   readDeploymentPin,
   readInstantRolloutRequest,
 } = require('./watch-blue-green/control.js');
+const {
+  DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  acquireDeploymentBuildLock,
+} = require('./watch-blue-green/build-lock.js');
 const DEFAULT_INTERVAL_MS = 1_000;
 const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
 const DEFAULT_GIT_FAILURE_BACKOFF_MS = 60_000;
@@ -2447,16 +2451,38 @@ async function checkoutBranch(
 async function runBlueGreenDeploy({
   deployCommand = DEFAULT_DEPLOY_COMMAND,
   env,
+  fsImpl = fs,
+  latestCommit = null,
+  paths = getWatchPaths(),
+  deploymentKind = 'watcher',
+  now = () => Date.now(),
+  processImpl = process,
   runCommand: run = runCommand,
 } = {}) {
   const [command, ...args] = deployCommand;
-  await runChecked(command, args, {
-    env: {
-      ...(env ?? process.env),
-      [SKIP_WATCH_HISTORY_ENV]: '1',
-    },
-    runCommand: run,
+  const heldLock = acquireDeploymentBuildLock({
+    command: deployCommand,
+    deploymentKind,
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
   });
+
+  try {
+    await runChecked(command, args, {
+      env: {
+        ...(env ?? process.env),
+        [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        [SKIP_WATCH_HISTORY_ENV]: '1',
+      },
+      runCommand: run,
+    });
+  } finally {
+    heldLock.release();
+  }
 }
 
 async function testComposeProxyRouting({
@@ -2883,25 +2909,47 @@ async function runBlueGreenStandbyRefresh({
   env,
   envFilePath = WEB_ENV_FILE,
   fsImpl = fs,
+  latestCommit = null,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
-  return runBlueGreenStandbyRefreshWorkflow(
-    {
-      action: 'up',
-      composeArgs: [],
-      composeGlobalArgs: ['--profile', 'redis'],
-      mode: 'prod',
-      strategy: 'blue-green',
-    },
-    {
-      env,
-      envFilePath,
-      fsImpl,
-      rootDir,
-      runCommand: run,
-    }
-  );
+  const heldLock = acquireDeploymentBuildLock({
+    command: 'standby-refresh',
+    deploymentKind: 'standby-refresh',
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+  });
+
+  try {
+    return await runBlueGreenStandbyRefreshWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        env: {
+          ...(env ?? process.env),
+          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        },
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+  } finally {
+    heldLock.release();
+  }
 }
 
 async function runBlueGreenCachedRecovery({
@@ -2909,26 +2957,48 @@ async function runBlueGreenCachedRecovery({
   env,
   envFilePath = WEB_ENV_FILE,
   fsImpl = fs,
+  latestCommit = null,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
 } = {}) {
-  return runBlueGreenCachedRecoveryWorkflow(
-    {
-      action: 'up',
-      composeArgs: [],
-      composeGlobalArgs: ['--profile', 'redis'],
-      mode: 'prod',
-      strategy: 'blue-green',
-    },
-    {
-      cachedImageTag,
-      env,
-      envFilePath,
-      fsImpl,
-      rootDir,
-      runCommand: run,
-    }
-  );
+  const heldLock = acquireDeploymentBuildLock({
+    command: 'cached-recovery',
+    deploymentKind: 'cached-recovery',
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+  });
+
+  try {
+    return await runBlueGreenCachedRecoveryWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        cachedImageTag,
+        env: {
+          ...(env ?? process.env),
+          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        },
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+  } finally {
+    heldLock.release();
+  }
 }
 
 async function runMissingActiveDeploymentRecovery(
@@ -2985,6 +3055,9 @@ async function runMissingActiveDeploymentRecovery(
         env,
         envFilePath,
         fsImpl,
+        latestCommit: cachedCommit,
+        now,
+        paths,
         rootDir,
         runCommand: run,
       });
@@ -3132,8 +3205,13 @@ async function runMissingActiveDeploymentRecovery(
 
   try {
     await runBlueGreenDeploy({
+      deploymentKind: 'pending-restart',
       deployCommand,
       env,
+      fsImpl,
+      latestCommit,
+      now,
+      paths,
       runCommand: run,
     });
 
@@ -3231,6 +3309,9 @@ async function runMissingActiveDeploymentRecovery(
       env,
       envFilePath,
       fsImpl,
+      latestCommit,
+      now,
+      paths,
       rootDir,
       runCommand: run,
     });
@@ -3362,8 +3443,13 @@ async function runPendingDeployAfterRestart({
 
   const deployStartedAt = now();
   await runBlueGreenDeploy({
+    deploymentKind: 'recovery-bootstrap',
     deployCommand,
     env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
     runCommand: run,
   });
   const deployFinishedAt = now();
@@ -4424,8 +4510,13 @@ async function runPinnedDeploymentIteration(
       `Deploying pinned rollback ${latestCommit.shortHash}; auto-pulls remain paused until the pin is cleared.`
     );
     await runBlueGreenDeploy({
+      deploymentKind: 'rollback-pin',
       deployCommand,
       env,
+      fsImpl,
+      latestCommit,
+      now,
+      paths,
       runCommand: run,
     });
 
@@ -4730,8 +4821,13 @@ async function runDeployWatchIteration(
             status: 'deploying',
           });
           await runBlueGreenDeploy({
+            deploymentKind: 'queued',
             deployCommand,
             env,
+            fsImpl,
+            latestCommit,
+            now,
+            paths,
             runCommand: run,
           });
 
@@ -4937,8 +5033,13 @@ async function runDeployWatchIteration(
 
         try {
           await runBlueGreenDeploy({
+            deploymentKind: 'reconcile',
             deployCommand,
             env,
+            fsImpl,
+            latestCommit,
+            now,
+            paths,
             runCommand: run,
           });
 
@@ -5133,6 +5234,9 @@ async function runDeployWatchIteration(
           env,
           envFilePath,
           fsImpl,
+          latestCommit,
+          now,
+          paths,
           rootDir,
           runCommand: run,
         });
@@ -5464,8 +5568,13 @@ async function runDeployWatchIteration(
         }
 
         await runBlueGreenDeploy({
+          deploymentKind: 'promotion',
           deployCommand,
           env,
+          fsImpl,
+          latestCommit,
+          now,
+          paths,
           runCommand: run,
         });
 

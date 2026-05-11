@@ -18,7 +18,9 @@ const {
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
+  describeActiveDeploymentConflict,
   ensureRequiredComposeEnvironment,
+  getActiveDeploymentConflict,
   getBlueGreenPaths,
   getComposeEnvironment,
   getComposeFile,
@@ -29,6 +31,7 @@ const {
   readBlueGreenProxyActiveColor,
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
+  resolveManualBlueGreenBuildConflict,
   rewriteLocalhostUrl,
   runComposeUpWithNameConflictRecovery,
   runDockerWebWorkflow,
@@ -36,11 +39,15 @@ const {
   writeBlueGreenActiveColor,
 } = require('./docker-web.js');
 const {
+  buildBlueGreenServices,
   getBlueGreenComposeMigration,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
+const {
+  writeDeploymentBuildLock,
+} = require('./watch-blue-green/build-lock.js');
 const {
   CONTAINER_REFRESH_EXIT_CODE,
   getStatusSnapshotHealth,
@@ -88,6 +95,7 @@ test('parseArgs keeps redis profile before the compose action', () => {
     buildCpus: null,
     buildMaxParallelism: null,
     buildMemory: null,
+    cancelActiveBuild: false,
     composeArgs: ['-d'],
     composeGlobalArgs: ['--profile', 'redis'],
     mode: 'dev',
@@ -107,6 +115,7 @@ test('parseArgs accepts prod mode and blue-green strategy', () => {
       buildCpus: null,
       buildMaxParallelism: null,
       buildMemory: null,
+      cancelActiveBuild: false,
       composeArgs: [],
       composeGlobalArgs: ['--profile', 'redis'],
       mode: 'prod',
@@ -125,6 +134,7 @@ test('parseArgs allows dockerized commands to disable the bundled redis stack', 
     buildCpus: null,
     buildMaxParallelism: null,
     buildMemory: null,
+    cancelActiveBuild: false,
     composeArgs: [],
     composeGlobalArgs: [],
     mode: 'dev',
@@ -171,6 +181,7 @@ test('parseArgs accepts build resource throttling flags', () => {
       buildCpus: '2',
       buildMaxParallelism: '2',
       buildMemory: '4g',
+      cancelActiveBuild: false,
       composeArgs: [],
       composeGlobalArgs: ['--profile', 'redis'],
       mode: 'dev',
@@ -179,6 +190,20 @@ test('parseArgs accepts build resource throttling flags', () => {
       withSupabase: false,
       withRedis: true,
     }
+  );
+});
+
+test('parseArgs accepts manual active build cancellation override', () => {
+  assert.equal(
+    parseArgs([
+      'up',
+      '--mode',
+      'prod',
+      '--strategy',
+      'blue-green',
+      '--cancel-active-build',
+    ]).cancelActiveBuild,
+    true
   );
 });
 
@@ -909,6 +934,216 @@ test('writeBlueGreenActiveColor persists the selected color', () => {
     clearBlueGreenRuntime(paths);
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('manual blue-green conflict refusal reports the active deployment', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-active-build-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitShortHash: 'abc123',
+        lockToken: 'active-token',
+        ownerPid: 1234,
+        startedAt: 1000,
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+
+    const processImpl = {
+      kill(pid) {
+        if (pid !== 1234) {
+          const error = new Error('missing');
+          error.code = 'ESRCH';
+          throw error;
+        }
+      },
+      pid: 9999,
+    };
+
+    const conflict = getActiveDeploymentConflict({
+      fsImpl: fs,
+      now: () => 5000,
+      paths,
+      processImpl,
+    });
+    assert.match(describeActiveDeploymentConflict(conflict), /commit=abc123/);
+
+    await assert.rejects(
+      () =>
+        resolveManualBlueGreenBuildConflict({
+          composeEnv: { PATH: 'test-path' },
+          env: {},
+          fsImpl: fs,
+          now: () => 5000,
+          parsed: { cancelActiveBuild: false },
+          paths,
+          processImpl,
+          runCommand: async () => ({
+            code: 0,
+            signal: null,
+            stderr: '',
+            stdout: '',
+          }),
+        }),
+      /--cancel-active-build/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('manual blue-green override cancels active build and records history', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-cancel-build-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'oldhash',
+        commitShortHash: 'old123',
+        commitSubject: 'Old deployment',
+        deploymentKind: 'promotion',
+        lockToken: 'active-token',
+        ownerPid: 1234,
+        startedAt: 1000,
+      },
+      {
+        fsImpl: fs,
+        paths,
+      }
+    );
+    fs.writeFileSync(paths.statusFile, JSON.stringify({ ownerPid: 1234 }));
+
+    const processImpl = {
+      kill(pid) {
+        if (pid !== 1234) {
+          const error = new Error('missing');
+          error.code = 'ESRCH';
+          throw error;
+        }
+      },
+      pid: 9999,
+    };
+
+    await resolveManualBlueGreenBuildConflict({
+      composeEnv: { PATH: 'test-path' },
+      env: {},
+      fsImpl: fs,
+      latestCommit: {
+        hash: 'newhash',
+        shortHash: 'new123',
+        subject: 'New deployment',
+      },
+      now: () => 5000,
+      parsed: { cancelActiveBuild: true },
+      paths,
+      processImpl,
+      runCommand: async (command, args) => {
+        calls.push([command, args]);
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      },
+    });
+
+    assert.deepEqual(calls, [
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          '--profile',
+          'redis',
+          'stop',
+          '--timeout',
+          '1',
+          'web-blue-green-watcher',
+          'buildkit',
+        ],
+      ],
+      ['docker', ['buildx', 'rm', DEFAULT_BUILDER_NAME]],
+    ]);
+    assert.equal(fs.existsSync(paths.deploymentBuildLockFile), false);
+    assert.equal(fs.existsSync(paths.statusFile), false);
+
+    const history = JSON.parse(fs.readFileSync(paths.historyFile, 'utf8'));
+    assert.equal(history[0].status, 'canceled');
+    assert.equal(history[0].commitShortHash, 'old123');
+    assert.match(history[0].cancellationReason, /old123/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('buildBlueGreenServices recovers Bun tarball extraction once', async () => {
+  const calls = [];
+  let buildAttempts = 0;
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('build')) {
+        buildAttempts += 1;
+        return buildAttempts === 1
+          ? {
+              code: 1,
+              signal: null,
+              stderr:
+                'error: Fail extracting tarball for "@biomejs/cli-linux-x64"',
+              stdout: '',
+            }
+          : { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      if (args.includes('ps') && args.includes('buildkit')) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
+      if (args[0] === 'inspect') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.equal(buildAttempts, 2);
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args.slice(0, 4)]),
+    [
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+      ['docker', ['buildx', 'prune', '--builder', DEFAULT_BUILDER_NAME]],
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+      [
+        'docker',
+        [
+          'inspect',
+          '-f',
+          '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}',
+          'buildkit-id',
+        ],
+      ],
+      ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
+    ]
+  );
 });
 
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {

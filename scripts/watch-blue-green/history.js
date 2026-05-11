@@ -102,15 +102,12 @@ function createPendingDeploymentEntry({
 }
 
 function prependPendingDeployment(deployments, pendingDeployment) {
+  const inProgressStatuses = new Set(['building', 'deploying']);
+
   return [
     pendingDeployment,
     ...(deployments ?? []).filter(
-      (entry) =>
-        !(
-          pendingDeployment.commitHash &&
-          entry.commitHash === pendingDeployment.commitHash &&
-          (entry.status === 'building' || entry.status === 'deploying')
-        )
+      (entry) => !inProgressStatuses.has(String(entry?.status ?? ''))
     ),
   ].slice(0, MAX_DEPLOYMENTS);
 }

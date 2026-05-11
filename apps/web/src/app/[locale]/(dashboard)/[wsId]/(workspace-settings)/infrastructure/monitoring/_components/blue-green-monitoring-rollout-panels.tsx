@@ -175,14 +175,20 @@ export function RolloutStagePanel({
     typeof watcher.lastResult?.error === 'string'
       ? (watcher.lastResult.error.split('\n')[0]?.trim() ?? null)
       : null;
+  const cancellationDetail =
+    latestDeployment?.status === 'canceled'
+      ? (latestDeployment.cancellationReason ?? null)
+      : null;
   const accentClass =
     status === 'failed'
       ? 'border-dynamic-red/25 bg-dynamic-red/5'
-      : status === 'building'
-        ? 'border-dynamic-orange/25 bg-dynamic-orange/5'
-        : status === 'deploying'
-          ? 'border-dynamic-blue/25 bg-dynamic-blue/5'
-          : 'border-border/60 bg-background';
+      : status === 'canceled'
+        ? 'border-dynamic-yellow/25 bg-dynamic-yellow/5'
+        : status === 'building'
+          ? 'border-dynamic-orange/25 bg-dynamic-orange/5'
+          : status === 'deploying'
+            ? 'border-dynamic-blue/25 bg-dynamic-blue/5'
+            : 'border-border/60 bg-background';
 
   return (
     <section className={`overflow-hidden rounded-lg border p-5 ${accentClass}`}>
@@ -274,6 +280,14 @@ export function RolloutStagePanel({
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('rollout.failure_title')}</AlertTitle>
           <AlertDescription>{failureDetail}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {cancellationDetail ? (
+        <Alert className="mt-5 rounded-lg border-dynamic-yellow/25 bg-dynamic-yellow/5">
+          <TriangleAlert className="h-4 w-4" />
+          <AlertTitle>{t('rollout.canceled_title')}</AlertTitle>
+          <AlertDescription>{cancellationDetail}</AlertDescription>
         </Alert>
       ) : null}
     </section>
@@ -451,6 +465,17 @@ export function DeploymentLedger({
                   value={formatLatencyMs(deployment.averageLatencyMs)}
                 />
               </div>
+
+              {deployment.status === 'canceled' &&
+              deployment.cancellationReason ? (
+                <Alert className="mt-5 rounded-lg border-dynamic-yellow/25 bg-dynamic-yellow/5">
+                  <TriangleAlert className="h-4 w-4" />
+                  <AlertTitle>{t('rollout.canceled_title')}</AlertTitle>
+                  <AlertDescription>
+                    {deployment.cancellationReason}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
             </div>
           );
         })}
