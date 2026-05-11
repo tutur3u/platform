@@ -18,6 +18,7 @@ type ToolDockProps = {
   activeTerrain: string;
   onSelectObject: (id: string) => void;
   onSelectTerrain: (id: string) => void;
+  onRotateSelection: () => void;
   onSetTool: (tool: HiveTool) => void;
   tool: HiveTool;
 };
@@ -34,8 +35,8 @@ const toolItems = [
 
 export function ToolDock(props: ToolDockProps) {
   return (
-    <div className="absolute right-6 bottom-6 left-6 z-20 flex justify-center">
-      <div className="flex max-w-full items-stretch gap-3 overflow-x-auto rounded-xl border border-zinc-200/80 bg-white/88 p-3 text-zinc-700 shadow-2xl shadow-zinc-900/16 backdrop-blur-md">
+    <div className="pointer-events-auto flex justify-center">
+      <div className="flex max-w-full items-stretch gap-3 overflow-x-auto rounded-xl border border-border/70 bg-background/92 p-3 text-foreground shadow-2xl shadow-foreground/15 backdrop-blur-md">
         <div className="flex items-center gap-1.5">
           {toolItems.map(({ icon: Icon, id, label, shortcut }) => (
             <button
@@ -43,11 +44,14 @@ export function ToolDock(props: ToolDockProps) {
               className={[
                 'grid h-14 min-w-14 place-items-center rounded-lg border px-2 text-[11px] transition',
                 props.tool === id
-                  ? 'border-emerald-400 bg-emerald-50 text-emerald-800 shadow-emerald-200/60 shadow-inner'
-                  : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300 hover:text-zinc-900',
+                  ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner'
+                  : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
               ].join(' ')}
               key={id}
-              onClick={() => props.onSetTool(id)}
+              onClick={() => {
+                if (id === 'rotate') props.onRotateSelection();
+                props.onSetTool(id);
+              }}
               title={label}
               type="button"
             >
@@ -56,15 +60,15 @@ export function ToolDock(props: ToolDockProps) {
             </button>
           ))}
         </div>
-        <div className="my-1 w-px shrink-0 bg-zinc-200" />
+        <div className="my-1 w-px shrink-0 bg-border" />
         <div className="flex items-center gap-1.5">
           {terrainCatalog.map((item, index) => (
             <button
               className={[
                 'grid h-14 min-w-16 place-items-center rounded-lg border px-2 text-[11px] transition',
                 props.activeTerrain === item.id
-                  ? 'border-emerald-300 bg-lime-50 text-zinc-900 shadow-inner shadow-lime-200/60'
-                  : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300',
+                  ? 'border-dynamic-green bg-dynamic-green/10 text-foreground shadow-dynamic-green/20 shadow-inner'
+                  : 'border-border bg-background text-muted-foreground hover:border-foreground/25',
               ].join(' ')}
               key={item.id}
               onClick={() => {
@@ -78,19 +82,21 @@ export function ToolDock(props: ToolDockProps) {
                 className="h-6 w-8 rounded-md border border-black/10 shadow-sm"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="mt-1 leading-none">{index + 1}</span>
+              <span className="mt-1 leading-none">
+                {item.shortcut ?? index + 1}
+              </span>
             </button>
           ))}
         </div>
-        <div className="my-1 w-px shrink-0 bg-zinc-200" />
+        <div className="my-1 w-px shrink-0 bg-border" />
         <div className="flex items-center gap-1.5">
           {objectCatalog.map((item, index) => (
             <button
               className={[
                 'grid h-14 min-w-18 place-items-center rounded-lg border px-3 text-[11px] transition',
                 props.activeObject === item.id
-                  ? 'border-emerald-300 bg-lime-50 text-zinc-900 shadow-inner shadow-lime-200/60'
-                  : 'border-zinc-200 bg-white text-zinc-500 hover:border-zinc-300',
+                  ? 'border-dynamic-green bg-dynamic-green/10 text-foreground shadow-dynamic-green/20 shadow-inner'
+                  : 'border-border bg-background text-muted-foreground hover:border-foreground/25',
               ].join(' ')}
               key={item.id}
               onClick={() => {
@@ -104,22 +110,22 @@ export function ToolDock(props: ToolDockProps) {
                 style={{ backgroundColor: item.color }}
               />
               <span className="mt-1 leading-none">
-                {item.label} {index + 5}
+                {item.label} {item.shortcut ?? index + 1}
               </span>
             </button>
           ))}
         </div>
-        <div className="my-1 w-px shrink-0 bg-zinc-200" />
+        <div className="my-1 w-px shrink-0 bg-border" />
         <div className="flex items-center gap-1.5">
           <button
-            className="inline-flex h-14 w-12 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-400"
+            className="inline-flex h-14 w-12 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
             title="Undo"
             type="button"
           >
             <Undo2 className="h-4 w-4" />
           </button>
           <button
-            className="inline-flex h-14 w-12 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-400"
+            className="inline-flex h-14 w-12 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
             title="Redo"
             type="button"
           >

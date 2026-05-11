@@ -6,6 +6,7 @@ import {
   createHiveServer,
   createHiveWorldEvent,
   deleteHiveNpc,
+  deleteHiveServer,
   getHiveRealtimeToken,
   getHiveSnapshot,
   type HiveNpcPayload,
@@ -50,12 +51,15 @@ export function useHiveSnapshot(
 
 export function useHiveMutations(serverId: string | null) {
   const queryClient = useQueryClient();
-  const invalidateServer = async () => {
+  const invalidateServers = async () => {
+    await queryClient.invalidateQueries({ queryKey: hiveQueryKeys.servers });
+  };
+  const invalidateServer = async (targetServerId = serverId) => {
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: hiveQueryKeys.servers }),
-      serverId
+      targetServerId
         ? queryClient.invalidateQueries({
-            queryKey: hiveQueryKeys.snapshot(serverId),
+            queryKey: hiveQueryKeys.snapshot(targetServerId),
           })
         : Promise.resolve(),
     ]);
@@ -65,20 +69,48 @@ export function useHiveMutations(serverId: string | null) {
     createNpc: useMutation({
       mutationFn: (payload: HiveNpcPayload) =>
         createHiveNpc(serverId!, payload),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
     createServer: useMutation({
       mutationFn: (payload: HiveServerPayload) => createHiveServer(payload),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
     createWorldEvent: useMutation({
       mutationFn: (payload: HiveWorldEventPayload) =>
         createHiveWorldEvent(serverId!, payload),
-      onSuccess: invalidateServer,
+      onSuccess: (data, variables) => {
+        if (!serverId) return;
+        queryClient.setQueryData<HiveSnapshotResponse>(
+          hiveQueryKeys.snapshot(serverId),
+          (snapshot) =>
+            snapshot
+              ? {
+                  ...snapshot,
+                  events: [data.event, ...snapshot.events].slice(0, 100),
+                  revision: data.revision,
+                  world: variables.world,
+                }
+              : snapshot
+        );
+        queryClient.setQueryData<HiveServersResponse>(
+          hiveQueryKeys.servers,
+          (servers) => (servers ? { ...servers } : servers)
+        );
+      },
+      onError: () => invalidateServer(),
+    }),
+    deleteServer: useMutation({
+      mutationFn: (targetServerId: string) => deleteHiveServer(targetServerId),
+      onSuccess: async (_data, targetServerId) => {
+        queryClient.removeQueries({
+          queryKey: hiveQueryKeys.snapshot(targetServerId),
+        });
+        await invalidateServers();
+      },
     }),
     deleteNpc: useMutation({
       mutationFn: (npcId: string) => deleteHiveNpc(serverId!, npcId),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
     runNpc: useMutation({
       mutationFn: ({
@@ -88,7 +120,7 @@ export function useHiveMutations(serverId: string | null) {
         npcId: string;
         payload: HiveNpcRunPayload;
       }) => runHiveNpcDecision(serverId!, npcId, payload),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
     updateNpc: useMutation({
       mutationFn: ({
@@ -98,7 +130,7 @@ export function useHiveMutations(serverId: string | null) {
         npcId: string;
         payload: Partial<HiveNpcPayload>;
       }) => updateHiveNpc(serverId!, npcId, payload),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
     updateServer: useMutation({
       mutationFn: ({
@@ -108,7 +140,7 @@ export function useHiveMutations(serverId: string | null) {
         payload: Partial<HiveServerPayload>;
         server: string;
       }) => updateHiveServer(server, payload),
-      onSuccess: invalidateServer,
+      onSuccess: () => invalidateServer(),
     }),
   };
 }

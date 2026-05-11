@@ -3,7 +3,11 @@
 import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Color, type InstancedMesh, Object3D } from 'three';
-import { getTerrainColor, getTerrainSideColor } from '@/engine/catalog';
+import {
+  getTerrainColor,
+  getTerrainHeight,
+  getTerrainSideColor,
+} from '@/engine/catalog';
 import type { HiveBlock, HiveSelection, HiveTool } from '@/engine/types';
 
 type VoxelTilesProps = {
@@ -30,12 +34,17 @@ export function VoxelTiles({
     if (!meshRef.current || !edgeRef.current || !sideRef.current) return;
 
     blocks.forEach((block, index) => {
+      const height = getTerrainHeight(block.type);
       dummy.position.set(
         block.position.x,
-        block.position.y + 0.02,
+        block.position.y + height / 2 - 0.07,
         block.position.z
       );
-      dummy.scale.set(0.96, selectedId === block.id ? 0.24 : 0.18, 0.96);
+      dummy.scale.set(
+        0.96,
+        selectedId === block.id ? height + 0.06 : height,
+        0.96
+      );
       dummy.updateMatrix();
       meshRef.current?.setMatrixAt(index, dummy.matrix);
       meshRef.current?.setColorAt(
@@ -45,10 +54,10 @@ export function VoxelTiles({
 
       dummy.position.set(
         block.position.x,
-        block.position.y - 0.28,
+        block.position.y - 0.28 + height / 2,
         block.position.z
       );
-      dummy.scale.set(0.96, 0.42, 0.96);
+      dummy.scale.set(0.96, 0.42 + height, 0.96);
       dummy.updateMatrix();
       sideRef.current?.setMatrixAt(index, dummy.matrix);
       sideRef.current?.setColorAt(

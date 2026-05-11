@@ -36,6 +36,21 @@ revision writes are rejected consistently.
 full-bleed React Three Fiber viewport, a left server navigator, a bottom tool
 dock, a right inspector, and an NPC Lab panel for manual research runs.
 
+The editor is built on the shared `@tuturuuu/satellite` workspace shell. Hive
+uses that shell for collapsible left/right rails, top research overlays, and the
+bottom tool dock so satellite apps can share layout mechanics while keeping
+Hive-specific tool density and viewport behavior.
+
+Hive V1 keeps one editable world per server. Admins manage that world through
+server controls: creating a server creates its world, deleting a server deletes
+the world through database cascade, and clear/reseed actions persist typed world
+events against the current server snapshot.
+
+The 3D editor treats the voxel grid as the source of truth. Perspective comes
+from the camera and controls, not from rotating the editable world group. World
+edits should commit only after click/drag threshold handling so orbit, pan,
+zoom, placement, erasing, moving, and rotating do not conflict with each other.
+
 Client data access must go through `@tuturuuu/internal-api` helpers and
 TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
 

@@ -1,12 +1,22 @@
 'use client';
 
-import { Plus, Server, ShieldCheck } from '@tuturuuu/icons';
+import {
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Server,
+  ShieldCheck,
+  Trash2,
+} from '@tuturuuu/icons';
 import type { HiveServer } from '@/engine/types';
 
 type ServerNavigatorProps = {
   activeServerId: string | null;
   isAdmin: boolean;
   onCreateServer: () => void;
+  onDeleteServer: (server: HiveServer) => void;
+  onEditServer: (server: HiveServer) => void;
+  onResetWorld: (mode: 'clear' | 'reseed') => void;
   onSelectServer: (id: string) => void;
   servers: HiveServer[];
 };
@@ -15,20 +25,25 @@ export function ServerNavigator({
   activeServerId,
   isAdmin,
   onCreateServer,
+  onDeleteServer,
+  onEditServer,
+  onResetWorld,
   onSelectServer,
   servers,
 }: ServerNavigatorProps) {
+  const activeServer = servers.find((server) => server.id === activeServerId);
+
   return (
-    <aside className="flex h-full w-[280px] shrink-0 flex-col border-zinc-800 border-r bg-[#101114]">
-      <div className="border-zinc-800 border-b p-5">
+    <aside className="flex h-full w-full shrink-0 flex-col border-border border-r bg-[#101114] text-zinc-100">
+      <div className="border-border/20 border-b p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
             <p className="font-semibold text-base text-zinc-100">Hive</p>
-            <p className="text-sm text-zinc-500">Agentic voxel labs</p>
+            <p className="text-sm text-zinc-400">Shared voxel labs</p>
           </div>
           {isAdmin ? (
             <button
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:bg-zinc-800"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/25 bg-white/5 text-zinc-100 transition hover:bg-white/10"
               onClick={onCreateServer}
               title="Create server"
               type="button"
@@ -39,6 +54,11 @@ export function ServerNavigator({
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
+        {servers.length === 0 ? (
+          <div className="rounded-lg border border-border/20 bg-white/5 p-4 text-sm text-zinc-400">
+            No Hive servers are available.
+          </div>
+        ) : null}
         {servers.map((server) => {
           const active = server.id === activeServerId;
 
@@ -47,15 +67,15 @@ export function ServerNavigator({
               className={[
                 'w-full rounded border p-3 text-left transition',
                 active
-                  ? 'border-emerald-400/80 bg-emerald-950/35 text-zinc-50 shadow-emerald-950/40 shadow-inner'
-                  : 'border-zinc-800 bg-zinc-900/70 text-zinc-300 hover:border-zinc-700',
+                  ? 'border-dynamic-green/80 bg-dynamic-green/15 text-zinc-50 shadow-dynamic-green/10 shadow-inner'
+                  : 'border-border/20 bg-white/5 text-zinc-300 hover:border-border/40',
               ].join(' ')}
               key={server.id}
               onClick={() => onSelectServer(server.id)}
               type="button"
             >
               <span className="flex items-center gap-2">
-                <Server className="h-4 w-4 text-emerald-300" />
+                <Server className="h-4 w-4 text-dynamic-green" />
                 <span className="truncate font-medium text-sm">
                   {server.name}
                 </span>
@@ -69,9 +89,47 @@ export function ServerNavigator({
         })}
       </div>
       {isAdmin ? (
-        <div className="border-zinc-800 border-t p-4 text-xs text-zinc-500">
-          <ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-300" />
-          Platform admin controls enabled
+        <div className="space-y-3 border-border/20 border-t p-4">
+          <div className="text-xs text-zinc-400">
+            <ShieldCheck className="mr-2 inline h-4 w-4 text-dynamic-green" />
+            Platform admin controls enabled
+          </div>
+          {activeServer ? (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                onClick={() => onEditServer(activeServer)}
+                type="button"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Edit
+              </button>
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                onClick={() => onResetWorld('reseed')}
+                type="button"
+              >
+                <RefreshCcw className="h-3.5 w-3.5" />
+                Reseed
+              </button>
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-border/20 bg-white/5 px-3 py-2 text-xs text-zinc-200 hover:bg-white/10"
+                onClick={() => onResetWorld('clear')}
+                type="button"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Clear
+              </button>
+              <button
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs hover:bg-dynamic-red/15"
+                onClick={() => onDeleteServer(activeServer)}
+                type="button"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </aside>

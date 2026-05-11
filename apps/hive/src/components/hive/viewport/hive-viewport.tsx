@@ -7,7 +7,8 @@ import {
   Sky,
 } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
+import { MOUSE } from 'three';
 import type {
   HiveNpc,
   HiveSelection,
@@ -25,6 +26,7 @@ type HiveViewportProps = {
   activeTerrain: string;
   npcs: HiveNpc[];
   onErase: (selection: NonNullable<HiveSelection>) => void;
+  onMoveSelection: (position: HiveVector3) => void;
   onPlaceNpc: (position: HiveVector3) => void;
   onPlaceObject: (position: HiveVector3) => void;
   onPlaceTerrain: (position: HiveVector3) => void;
@@ -36,18 +38,55 @@ type HiveViewportProps = {
 
 export function HiveViewport(props: HiveViewportProps) {
   const [hoverPosition, setHoverPosition] = useState<HiveVector3 | null>(null);
+  const [spacePanning, setSpacePanning] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setSpacePanning(true);
+      if (event.key === 'Escape') props.onSelect(null);
+    };
+    const onKeyUp = (event: KeyboardEvent) => {
+      if (event.code === 'Space') setSpacePanning(false);
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [props.onSelect]);
+
+  const commitPosition = (position: HiveVector3) => {
+    if (props.tool === 'terrain') props.onPlaceTerrain({ ...position, y: 0 });
+    if (props.tool === 'object') props.onPlaceObject({ ...position, y: 1 });
+    if (props.tool === 'npc') props.onPlaceNpc({ ...position, y: 1 });
+    if (props.tool === 'move') props.onMoveSelection({ ...position, y: 1 });
+  };
+
+  const resolveBlockId = (position: HiveVector3) =>
+    props.world.blocks.find(
+      (block) =>
+        block.position.x === position.x &&
+        block.position.z === position.z &&
+        block.position.y === 0
+    )?.id ?? null;
 
   return (
-    <div className="relative h-full min-h-[560px] overflow-hidden bg-[#edf3f2]">
+    <div
+      className="relative h-full min-h-[560px] overflow-hidden bg-[#edf3f2]"
+      onContextMenu={(event) => event.preventDefault()}
+    >
       <Canvas
         shadows
-        camera={{ fov: 45, position: [7, 8, 8] }}
+        camera={{ fov: 44, position: [8, 7.5, 8] }}
         onPointerMissed={() => props.onSelect(null)}
       >
         <Suspense fallback={null}>
           <color args={['#edf3f2']} attach="background" />
           <fog args={['#edf3f2', 13, 24]} attach="fog" />
-          <PerspectiveCamera makeDefault fov={45} position={[7, 8, 8]} />
+          <PerspectiveCamera makeDefault fov={44} position={[8, 7.5, 8]} />
           <ambientLight intensity={1.2} />
           <directionalLight
             castShadow
@@ -62,7 +101,7 @@ export function HiveViewport(props: HiveViewportProps) {
             sunPosition={[3, 8, 3]}
             turbidity={4}
           />
-          <group rotation={[0, -Math.PI / 5, 0]}>
+          <group>
             <VoxelTiles
               blocks={props.world.blocks}
               onErase={props.onErase}
@@ -99,10 +138,11 @@ export function HiveViewport(props: HiveViewportProps) {
               />
             ))}
             <PlacementPlane
+              onCommitPosition={commitPosition}
+              onErase={props.onErase}
               onHoverPosition={setHoverPosition}
-              onPlaceNpc={props.onPlaceNpc}
-              onPlaceObject={props.onPlaceObject}
-              onPlaceTerrain={props.onPlaceTerrain}
+              onSelect={props.onSelect}
+              resolveBlockId={resolveBlockId}
               tool={props.tool}
             />
             <GhostPreview
@@ -123,9 +163,15 @@ export function HiveViewport(props: HiveViewportProps) {
             enableDamping
             enablePan
             enableZoom
+            mouseButtons={{
+              LEFT: spacePanning ? MOUSE.PAN : MOUSE.ROTATE,
+              MIDDLE: MOUSE.DOLLY,
+              RIGHT: MOUSE.PAN,
+            }}
             maxDistance={24}
             maxPolarAngle={Math.PI / 2.08}
             minDistance={4}
+            screenSpacePanning
             target={[0, 0, 0]}
           />
         </Suspense>

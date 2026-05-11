@@ -32,8 +32,11 @@ export type HiveTool =
 export type HiveCatalogItem = {
   category: 'building' | 'functional' | 'terrain';
   color: string;
+  description?: string;
   id: string;
   label: string;
+  shortcut?: string;
+  stackable?: boolean;
   tool: HiveTool;
 };
 

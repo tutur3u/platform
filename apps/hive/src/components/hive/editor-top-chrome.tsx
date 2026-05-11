@@ -4,6 +4,7 @@ import { ServerSummary } from './server-summary';
 
 type EditorTopChromeProps = {
   isRunningNpc: boolean;
+  npcLabCollapsed: boolean;
   npcs: HiveNpc[];
   onPatchNpc: (id: string, patch: Partial<HiveNpc>) => void;
   onRunNpc: (
@@ -17,6 +18,7 @@ type EditorTopChromeProps = {
 
 export function EditorTopChrome({
   isRunningNpc,
+  npcLabCollapsed,
   npcs,
   onPatchNpc,
   onRunNpc,
@@ -25,16 +27,18 @@ export function EditorTopChrome({
   world,
 }: EditorTopChromeProps) {
   return (
-    <div className="pointer-events-none absolute top-5 right-5 left-5 z-20 flex items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4 pr-44">
       <ServerSummary npcs={npcs} server={server} world={world} />
-      <NpcLabPanel
-        isRunning={isRunningNpc}
-        npcs={npcs}
-        onPatchNpc={onPatchNpc}
-        onRun={onRunNpc}
-        revision={revision}
-        world={world}
-      />
+      {npcLabCollapsed ? null : (
+        <NpcLabPanel
+          isRunning={isRunningNpc}
+          npcs={npcs}
+          onPatchNpc={onPatchNpc}
+          onRun={onRunNpc}
+          revision={revision}
+          world={world}
+        />
+      )}
     </div>
   );
 }

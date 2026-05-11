@@ -8,6 +8,7 @@ describe('ToolDock', () => {
       <ToolDock
         activeObject="house"
         activeTerrain="grass"
+        onRotateSelection={vi.fn()}
         onSelectObject={vi.fn()}
         onSelectTerrain={vi.fn()}
         onSetTool={vi.fn()}
@@ -19,6 +20,7 @@ describe('ToolDock', () => {
     expect(screen.getByTitle('Terrain')).toBeTruthy();
     expect(screen.getByTitle('Erase')).toBeTruthy();
     expect(screen.getByTitle('NPC')).toBeTruthy();
-    expect(screen.getByText('House 5')).toBeTruthy();
+    expect(screen.getByText('House H')).toBeTruthy();
+    expect(screen.getByText('Bridge B')).toBeTruthy();
   });
 });

@@ -10,11 +10,11 @@ export function ServerSummary({
   world: HiveWorldData;
 }) {
   return (
-    <div className="pointer-events-auto rounded-lg border border-zinc-200/80 bg-white/86 px-4 py-3 text-zinc-900 shadow-lg shadow-zinc-900/10 backdrop-blur-md">
+    <div className="pointer-events-auto rounded-lg border border-border/70 bg-background/88 px-4 py-3 text-foreground shadow-foreground/10 shadow-lg backdrop-blur-md">
       <p className="font-semibold text-sm">
         {server?.name ?? 'No server selected'}
       </p>
-      <p className="mt-1 text-xs text-zinc-500">
+      <p className="mt-1 text-muted-foreground text-xs">
         {world.blocks.length} blocks / {world.objects.length} objects /{' '}
         {npcs.length} NPCs
       </p>

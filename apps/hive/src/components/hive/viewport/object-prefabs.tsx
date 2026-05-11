@@ -44,6 +44,7 @@ export function ObjectPrefab({
       object.position.y - 1,
       object.position.z,
     ] as const,
+    rotation: [0, ((object.rotation ?? 0) * Math.PI) / 180, 0] as const,
   };
   const ringColor = selected ? '#e2c168' : '#47503a';
 
@@ -80,6 +81,77 @@ export function ObjectPrefab({
         <mesh castShadow position={[0, 1.28, 0]}>
           <boxGeometry args={[0.66, 0.36, 0.66]} />
           <meshStandardMaterial color="#a4c968" roughness={0.7} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'rock') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.2, 0]} rotation={[0.15, 0.3, -0.1]}>
+          <boxGeometry args={[0.72, 0.38, 0.56]} />
+          <meshStandardMaterial color="#96988f" roughness={0.86} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'bridge') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.16, 0]}>
+          <boxGeometry args={[1.12, 0.16, 0.76]} />
+          <meshStandardMaterial color="#8a6338" roughness={0.78} />
+        </mesh>
+        <mesh castShadow position={[-0.38, 0.34, 0]}>
+          <boxGeometry args={[0.1, 0.28, 0.84]} />
+          <meshStandardMaterial color="#b8894f" roughness={0.78} />
+        </mesh>
+        <mesh castShadow position={[0.38, 0.34, 0]}>
+          <boxGeometry args={[0.1, 0.28, 0.84]} />
+          <meshStandardMaterial color="#b8894f" roughness={0.78} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'lamp' || object.type === 'marker') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.42, 0]}>
+          <boxGeometry args={[0.16, 0.82, 0.16]} />
+          <meshStandardMaterial color="#6c5738" roughness={0.75} />
+        </mesh>
+        <mesh castShadow position={[0, 0.92, 0]}>
+          <boxGeometry args={[0.38, 0.28, 0.38]} />
+          <meshStandardMaterial
+            color={object.type === 'lamp' ? '#e5c65a' : '#d2a84c'}
+            emissive={object.type === 'lamp' ? '#8d6f1c' : '#000000'}
+            emissiveIntensity={object.type === 'lamp' ? 0.25 : 0}
+            roughness={0.66}
+          />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'well' || object.type === 'npc-spawn') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.22, 0]}>
+          <boxGeometry args={[0.78, 0.34, 0.78]} />
+          <meshStandardMaterial
+            color={object.type === 'well' ? '#9a7b54' : '#c89b45'}
+            roughness={0.8}
+          />
+        </mesh>
+        <mesh castShadow position={[0, 0.52, 0]}>
+          <boxGeometry args={[0.52, 0.24, 0.52]} />
+          <meshStandardMaterial
+            color={object.type === 'well' ? '#6f6f68' : '#e2c168'}
+            roughness={0.74}
+          />
         </mesh>
       </group>
     );

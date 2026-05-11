@@ -15,6 +15,7 @@
     "./create-user-nav-client": "./src/components/create-user-nav-client.tsx",
     "./create-navbar-actions": "./src/components/create-navbar-actions.tsx",
     "./navbar-actions": "./src/components/navbar-actions.tsx",
+    "./workspace-shell": "./src/components/workspace-shell.tsx",
     "./notification-popover": "./src/components/notification-popover.tsx",
     "./language-wrapper": "./src/components/language-wrapper.tsx",
     "./system-language-wrapper": "./src/components/system-language-wrapper.tsx",

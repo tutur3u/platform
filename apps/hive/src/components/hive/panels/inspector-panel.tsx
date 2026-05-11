@@ -20,25 +20,25 @@ export function InspectorPanel({
   const entity = findSelectedEntity(world, npcs, selection);
 
   return (
-    <aside className="flex h-full w-[340px] shrink-0 flex-col border-zinc-800 border-l bg-[#101114]">
-      <div className="border-zinc-800 border-b p-5">
+    <aside className="flex h-full w-full shrink-0 flex-col border-border border-l bg-[#101114] text-zinc-100">
+      <div className="border-border/20 border-b p-5">
         <div className="flex items-center gap-2">
-          <SlidersHorizontal className="h-4 w-4 text-emerald-300" />
+          <SlidersHorizontal className="h-4 w-4 text-dynamic-green" />
           <p className="font-semibold text-base text-zinc-100">Inspector</p>
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5">
         {!entity || !selection ? (
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-4 text-sm text-zinc-500 leading-6">
+          <div className="rounded-lg border border-border/20 bg-white/5 p-4 text-sm text-zinc-400 leading-6">
             Select a block, object, or NPC to inspect its research state.
           </div>
         ) : (
-          <section className="rounded-lg border border-zinc-800 bg-zinc-900/70 p-4">
+          <section className="rounded-lg border border-border/20 bg-white/5 p-4">
             <div className="flex items-center gap-2 text-sm text-zinc-200">
               {selection.kind === 'npc' ? (
-                <Bot className="h-4 w-4 text-emerald-300" />
+                <Bot className="h-4 w-4 text-dynamic-green" />
               ) : (
-                <Box className="h-4 w-4 text-emerald-300" />
+                <Box className="h-4 w-4 text-dynamic-green" />
               )}
               <span className="font-medium">{selection.kind}</span>
             </div>
@@ -65,7 +65,7 @@ export function InspectorPanel({
                 <label className="block text-xs text-zinc-500">
                   Role
                   <input
-                    className="mt-1 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+                    className="mt-1 w-full rounded-md border border-border/20 bg-black/20 px-3 py-2 text-zinc-100"
                     onChange={(event) =>
                       onPatchNpc(entity.id, { role: event.target.value })
                     }
@@ -75,7 +75,7 @@ export function InspectorPanel({
                 <label className="block text-xs text-zinc-500">
                   Back story
                   <textarea
-                    className="mt-1 min-h-24 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+                    className="mt-1 min-h-24 w-full rounded-md border border-border/20 bg-black/20 px-3 py-2 text-zinc-100"
                     onChange={(event) =>
                       onPatchNpc(entity.id, { backstory: event.target.value })
                     }

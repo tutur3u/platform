@@ -1,5 +1,7 @@
 // Shared constants
 // Shared constants
+
+export { SatelliteWorkspaceShell } from './components/workspace-shell';
 export {
   LOCALE_COOKIE_NAME,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,

@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   addObject,
+  canPlaceObject,
   createDefaultWorld,
+  moveObject,
   removeSelection,
+  rotateObject,
   upsertBlock,
 } from '../world';
 
@@ -38,6 +41,39 @@ describe('Hive world helpers', () => {
       )
     ).toHaveLength(1);
     expect(updated.objects.at(-1)).toMatchObject({ type: 'house' });
+  });
+
+  it('enforces terrain-specific object placement rules', () => {
+    const world = createDefaultWorld();
+
+    expect(canPlaceObject(world, { x: 0, y: 1, z: 0 }, 'bridge')).toEqual({
+      allowed: false,
+      reason: 'Bridge objects must be placed on water.',
+    });
+    expect(addObject(world, { x: 0, y: 1, z: 0 }, 'bridge')).toBe(world);
+
+    const waterWorld = upsertBlock(world, { x: 1, y: 0, z: 1 }, 'water');
+    expect(
+      canPlaceObject(waterWorld, { x: 1, y: 1, z: 1 }, 'bridge').allowed
+    ).toBe(true);
+  });
+
+  it('moves and rotates objects through world events', () => {
+    const world = addObject(createDefaultWorld(), { x: 1, y: 1, z: 1 }, 'tree');
+    const tree = world.objects.at(-1);
+    expect(tree).toBeDefined();
+
+    const moved = moveObject(world, tree!.id, { x: 2, y: 1, z: 2 });
+    expect(
+      moved.objects.find((object) => object.id === tree!.id)
+    ).toMatchObject({
+      position: { x: 2, y: 1, z: 2 },
+    });
+
+    const rotated = rotateObject(moved, tree!.id);
+    expect(
+      rotated.objects.find((object) => object.id === tree!.id)?.rotation
+    ).toBe(90);
   });
 
   it('removes selected blocks and objects for eraser actions', () => {
