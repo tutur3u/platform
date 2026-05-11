@@ -1,9 +1,13 @@
 'use client';
 
-import { OrbitControls, PerspectiveCamera, Sky } from '@react-three/drei';
-import { Canvas, type ThreeEvent } from '@react-three/fiber';
-import { Suspense, useMemo } from 'react';
-import { Vector3 } from 'three';
+import {
+  ContactShadows,
+  OrbitControls,
+  PerspectiveCamera,
+  Sky,
+} from '@react-three/drei';
+import { Canvas } from '@react-three/fiber';
+import { Suspense, useState } from 'react';
 import type {
   HiveNpc,
   HiveSelection,
@@ -11,14 +15,16 @@ import type {
   HiveVector3,
   HiveWorldData,
 } from '@/engine/types';
-import { snapVector } from '@/engine/world';
+import { GhostPreview } from './ghost-preview';
 import { NpcPrefab, ObjectPrefab } from './object-prefabs';
+import { PlacementPlane } from './placement-plane';
 import { VoxelTiles } from './voxel-tiles';
 
 type HiveViewportProps = {
   activeObject: string;
   activeTerrain: string;
   npcs: HiveNpc[];
+  onErase: (selection: NonNullable<HiveSelection>) => void;
   onPlaceNpc: (position: HiveVector3) => void;
   onPlaceObject: (position: HiveVector3) => void;
   onPlaceTerrain: (position: HiveVector3) => void;
@@ -28,82 +34,28 @@ type HiveViewportProps = {
   world: HiveWorldData;
 };
 
-function PlacementPlane({
-  onPlaceNpc,
-  onPlaceObject,
-  onPlaceTerrain,
-  tool,
-}: Pick<
-  HiveViewportProps,
-  'onPlaceNpc' | 'onPlaceObject' | 'onPlaceTerrain' | 'tool'
->) {
-  return (
-    <mesh
-      onPointerDown={(event: ThreeEvent<PointerEvent>) => {
-        if (tool !== 'terrain' && tool !== 'object' && tool !== 'npc') return;
-        event.stopPropagation();
-        const point = snapVector(event.point);
-        if (tool === 'terrain') onPlaceTerrain({ ...point, y: 0 });
-        if (tool === 'object') onPlaceObject({ ...point, y: 1 });
-        if (tool === 'npc') onPlaceNpc({ ...point, y: 1 });
-      }}
-      position={[0, -0.51, 0]}
-      rotation={[-Math.PI / 2, 0, 0]}
-    >
-      <planeGeometry args={[48, 48]} />
-      <meshBasicMaterial color="#eef2e4" transparent opacity={0.02} />
-    </mesh>
-  );
-}
-
-function GhostPreview({
-  activeObject,
-  activeTerrain,
-  tool,
-}: Pick<HiveViewportProps, 'activeObject' | 'activeTerrain' | 'tool'>) {
-  const color = tool === 'terrain' ? '#8fbf4f' : '#d8a56a';
-  const position = useMemo(
-    () => new Vector3(0, tool === 'terrain' ? 0.35 : 1.2, 0),
-    [tool]
-  );
-
-  if (tool !== 'terrain' && tool !== 'object') return null;
-
-  return (
-    <mesh
-      name={tool === 'terrain' ? activeTerrain : activeObject}
-      position={position}
-    >
-      <boxGeometry
-        args={tool === 'terrain' ? [0.92, 0.18, 0.92] : [0.8, 0.8, 0.8]}
-      />
-      <meshStandardMaterial color={color} opacity={0.42} transparent />
-      <GhostAnchor position={[0, 0.72, 0]} />
-    </mesh>
-  );
-}
-
-function GhostAnchor({ position }: { position: [number, number, number] }) {
-  return (
-    <mesh position={position}>
-      <boxGeometry args={[0.02, 0.02, 0.02]} />
-      <meshBasicMaterial color="#ffffff" transparent opacity={0} />
-    </mesh>
-  );
-}
-
 export function HiveViewport(props: HiveViewportProps) {
+  const [hoverPosition, setHoverPosition] = useState<HiveVector3 | null>(null);
+
   return (
-    <div className="relative h-full min-h-[560px] overflow-hidden bg-zinc-950">
+    <div className="relative h-full min-h-[560px] overflow-hidden bg-[#edf3f2]">
       <Canvas
         shadows
         camera={{ fov: 45, position: [7, 8, 8] }}
         onPointerMissed={() => props.onSelect(null)}
       >
         <Suspense fallback={null}>
+          <color args={['#edf3f2']} attach="background" />
+          <fog args={['#edf3f2', 13, 24]} attach="fog" />
           <PerspectiveCamera makeDefault fov={45} position={[7, 8, 8]} />
-          <ambientLight intensity={0.85} />
-          <directionalLight castShadow intensity={1.8} position={[6, 9, 4]} />
+          <ambientLight intensity={1.2} />
+          <directionalLight
+            castShadow
+            intensity={1.9}
+            position={[6, 10, 5]}
+            shadow-mapSize-height={2048}
+            shadow-mapSize-width={2048}
+          />
           <Sky
             distance={450000}
             inclination={0.53}
@@ -113,34 +65,41 @@ export function HiveViewport(props: HiveViewportProps) {
           <group rotation={[0, -Math.PI / 5, 0]}>
             <VoxelTiles
               blocks={props.world.blocks}
+              onErase={props.onErase}
               onSelect={(id) => props.onSelect({ id, kind: 'block' })}
               selectedId={
                 props.selection?.kind === 'block' ? props.selection.id : null
               }
+              tool={props.tool}
             />
             {props.world.objects.map((object) => (
               <ObjectPrefab
                 key={object.id}
                 object={object}
+                onErase={props.onErase}
                 onSelect={(id) => props.onSelect({ id, kind: 'object' })}
                 selected={
                   props.selection?.kind === 'object' &&
                   props.selection.id === object.id
                 }
+                tool={props.tool}
               />
             ))}
             {props.npcs.map((npc) => (
               <NpcPrefab
                 key={npc.id}
                 npc={npc}
+                onErase={props.onErase}
                 onSelect={(id) => props.onSelect({ id, kind: 'npc' })}
                 selected={
                   props.selection?.kind === 'npc' &&
                   props.selection.id === npc.id
                 }
+                tool={props.tool}
               />
             ))}
             <PlacementPlane
+              onHoverPosition={setHoverPosition}
               onPlaceNpc={props.onPlaceNpc}
               onPlaceObject={props.onPlaceObject}
               onPlaceTerrain={props.onPlaceTerrain}
@@ -149,9 +108,17 @@ export function HiveViewport(props: HiveViewportProps) {
             <GhostPreview
               activeObject={props.activeObject}
               activeTerrain={props.activeTerrain}
+              hoverPosition={hoverPosition}
               tool={props.tool}
             />
           </group>
+          <ContactShadows
+            blur={2.6}
+            far={12}
+            opacity={0.24}
+            position={[0, -0.02, 0]}
+            scale={18}
+          />
           <OrbitControls
             enableDamping
             enablePan
@@ -163,10 +130,6 @@ export function HiveViewport(props: HiveViewportProps) {
           />
         </Suspense>
       </Canvas>
-      <div className="pointer-events-none absolute top-4 left-4 rounded border border-zinc-700/80 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-300 backdrop-blur">
-        {props.tool.toUpperCase()} / {props.activeTerrain} /{' '}
-        {props.activeObject}
-      </div>
     </div>
   );
 }

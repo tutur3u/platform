@@ -2,14 +2,24 @@
   "auth": {
     "continueWithTuturuuu": "Continue with Tuturuuu",
     "description": "Sign in with the centralized Tuturuuu account system to enter the Hive research engine.",
+    "erase": "Erase",
     "experimentBody": "Whitelisted members can edit voxel worlds, configure NPC prompts, and compare manual agent decisions.",
     "experimentTitle": "Shared simulation lab",
+    "grass": "Grass",
+    "house": "House",
     "logout": "Sign out",
+    "manualRuns": "Manual NPC decision runs",
+    "npcLab": "NPC Lab",
     "notWhitelistedBody": "Your account is authenticated, but it is not enabled in the Hive whitelist yet.",
     "notWhitelistedTitle": "Hive access is restricted",
+    "path": "Path",
     "researchLab": "Tuturuuu Research",
     "restricted": "Production access is limited to enabled Hive members.",
-    "title": "Hive voxel research engine"
+    "softPerspective": "Soft perspective",
+    "title": "Hive voxel research engine",
+    "tree": "Tree",
+    "water": "Water",
+    "worldState": "World state"
   },
   "dashboard": {
     "description": "Build a shared voxel world, configure LLM NPCs, and run manual agent decision experiments.",

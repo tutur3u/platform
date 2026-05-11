@@ -75,3 +75,10 @@ export const npcCatalog: HiveCatalogItem[] = [
 export function getTerrainColor(type: string) {
   return terrainCatalog.find((item) => item.id === type)?.color ?? '#8fbf4f';
 }
+
+export function getTerrainSideColor(type: string) {
+  if (type === 'water') return '#5f91b5';
+  if (type === 'path') return '#9a7846';
+  if (type === 'garden') return '#6f4b31';
+  return '#6f8e3f';
+}

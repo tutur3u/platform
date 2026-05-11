@@ -5,6 +5,7 @@ import {
   createHiveNpc,
   createHiveServer,
   createHiveWorldEvent,
+  deleteHiveNpc,
   getHiveRealtimeToken,
   getHiveSnapshot,
   type HiveNpcPayload,
@@ -73,6 +74,10 @@ export function useHiveMutations(serverId: string | null) {
     createWorldEvent: useMutation({
       mutationFn: (payload: HiveWorldEventPayload) =>
         createHiveWorldEvent(serverId!, payload),
+      onSuccess: invalidateServer,
+    }),
+    deleteNpc: useMutation({
+      mutationFn: (npcId: string) => deleteHiveNpc(serverId!, npcId),
       onSuccess: invalidateServer,
     }),
     runNpc: useMutation({

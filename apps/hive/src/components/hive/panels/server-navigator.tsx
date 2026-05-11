@@ -19,16 +19,16 @@ export function ServerNavigator({
   servers,
 }: ServerNavigatorProps) {
   return (
-    <aside className="flex h-full min-w-64 flex-col border-zinc-800 border-r bg-zinc-950/96">
-      <div className="border-zinc-800 border-b p-4">
+    <aside className="flex h-full w-[280px] shrink-0 flex-col border-zinc-800 border-r bg-[#101114]">
+      <div className="border-zinc-800 border-b p-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="font-semibold text-sm text-zinc-100">Hive</p>
-            <p className="text-xs text-zinc-500">Shared voxel labs</p>
+            <p className="font-semibold text-base text-zinc-100">Hive</p>
+            <p className="text-sm text-zinc-500">Agentic voxel labs</p>
           </div>
           {isAdmin ? (
             <button
-              className="inline-flex h-9 w-9 items-center justify-center rounded border border-zinc-700 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-700 bg-zinc-900 text-zinc-200 transition hover:bg-zinc-800"
               onClick={onCreateServer}
               title="Create server"
               type="button"
@@ -38,7 +38,7 @@ export function ServerNavigator({
           ) : null}
         </div>
       </div>
-      <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
         {servers.map((server) => {
           const active = server.id === activeServerId;
 
@@ -47,7 +47,7 @@ export function ServerNavigator({
               className={[
                 'w-full rounded border p-3 text-left transition',
                 active
-                  ? 'border-emerald-400/70 bg-emerald-950/40 text-zinc-50'
+                  ? 'border-emerald-400/80 bg-emerald-950/35 text-zinc-50 shadow-emerald-950/40 shadow-inner'
                   : 'border-zinc-800 bg-zinc-900/70 text-zinc-300 hover:border-zinc-700',
               ].join(' ')}
               key={server.id}
@@ -60,8 +60,8 @@ export function ServerNavigator({
                   {server.name}
                 </span>
               </span>
-              <span className="mt-2 flex items-center justify-between text-xs text-zinc-500">
-                <span>{server.slug}</span>
+              <span className="mt-3 flex items-center justify-between text-xs text-zinc-500">
+                <span className="truncate">{server.slug}</span>
                 {server.enabled ? 'enabled' : 'paused'}
               </span>
             </button>
@@ -69,7 +69,7 @@ export function ServerNavigator({
         })}
       </div>
       {isAdmin ? (
-        <div className="border-zinc-800 border-t p-3 text-xs text-zinc-500">
+        <div className="border-zinc-800 border-t p-4 text-xs text-zinc-500">
           <ShieldCheck className="mr-2 inline h-4 w-4 text-emerald-300" />
           Platform admin controls enabled
         </div>

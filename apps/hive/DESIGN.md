@@ -16,8 +16,9 @@ Hive is a dense research editor, not a marketing site. The first viewport is the
 - Left side owns server/world navigation and admin-only server controls.
 - Bottom dock owns tools, swatches, object choices, undo, and redo.
 - Right side owns the selected entity inspector.
-- NPC Lab floats near the inspector and exposes role, backstory, prompt mode, memory toggles, model, system prompt, and manual run controls.
+- NPC Lab is anchored in the viewport top chrome and exposes role, backstory, prompt mode, memory toggles, model, system prompt, and manual run controls without overlapping the inspector.
 - Do not use generic three-card rows or explanatory landing sections.
+- The generated visual reference for the current landing/editor direction lives at `public/hive-landing-reference.png`; use it as a mood board, not as a literal UI screenshot to embed.
 
 ## Motion
 

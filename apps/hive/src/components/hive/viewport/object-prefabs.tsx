@@ -1,12 +1,19 @@
 'use client';
 
 import type { ThreeEvent } from '@react-three/fiber';
-import type { HiveNpc, HiveObject } from '@/engine/types';
+import type {
+  HiveNpc,
+  HiveObject,
+  HiveSelection,
+  HiveTool,
+} from '@/engine/types';
 
 type PrefabProps = {
   object: HiveObject;
+  onErase: (selection: NonNullable<HiveSelection>) => void;
   onSelect: (id: string) => void;
   selected: boolean;
+  tool: HiveTool;
 };
 
 function stopSelect(event: ThreeEvent<MouseEvent>, onSelect: () => void) {
@@ -14,13 +21,27 @@ function stopSelect(event: ThreeEvent<MouseEvent>, onSelect: () => void) {
   onSelect();
 }
 
-export function ObjectPrefab({ object, onSelect, selected }: PrefabProps) {
+export function ObjectPrefab({
+  object,
+  onErase,
+  onSelect,
+  selected,
+  tool,
+}: PrefabProps) {
   const common = {
-    onClick: (event: ThreeEvent<MouseEvent>) =>
-      stopSelect(event, () => onSelect(object.id)),
+    onClick: (event: ThreeEvent<MouseEvent>) => {
+      stopSelect(event, () => {
+        if (tool === 'erase') {
+          onErase({ id: object.id, kind: 'object' });
+          return;
+        }
+
+        onSelect(object.id);
+      });
+    },
     position: [
       object.position.x,
-      object.position.y,
+      object.position.y - 1,
       object.position.z,
     ] as const,
   };
@@ -85,19 +106,32 @@ export function ObjectPrefab({ object, onSelect, selected }: PrefabProps) {
 
 export function NpcPrefab({
   npc,
+  onErase,
   onSelect,
   selected,
+  tool,
 }: {
   npc: HiveNpc;
+  onErase: (selection: NonNullable<HiveSelection>) => void;
   onSelect: (id: string) => void;
   selected: boolean;
+  tool: HiveTool;
 }) {
   const color = selected ? '#e2c168' : '#c89b45';
 
   return (
     <group
-      onClick={(event) => stopSelect(event, () => onSelect(npc.id))}
-      position={[npc.position.x, npc.position.y, npc.position.z]}
+      onClick={(event) =>
+        stopSelect(event, () => {
+          if (tool === 'erase') {
+            onErase({ id: npc.id, kind: 'npc' });
+            return;
+          }
+
+          onSelect(npc.id);
+        })
+      }
+      position={[npc.position.x, npc.position.y - 1, npc.position.z]}
     >
       <mesh castShadow position={[0, 0.34, 0]}>
         <boxGeometry args={[0.46, 0.68, 0.46]} />

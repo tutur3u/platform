@@ -29,16 +29,16 @@ export function NpcLabPanel({
   const npc = npcs[0] ?? null;
 
   return (
-    <section className="absolute top-4 right-84 z-10 w-[360px] rounded border border-zinc-800 bg-zinc-950/92 shadow-xl shadow-zinc-950/50 backdrop-blur">
-      <div className="flex items-center justify-between border-zinc-800 border-b px-4 py-3">
+    <section className="pointer-events-auto w-[min(440px,42vw)] overflow-hidden rounded-lg border border-zinc-200/80 bg-white/88 text-zinc-900 shadow-xl shadow-zinc-900/12 backdrop-blur-md">
+      <div className="flex items-center justify-between border-zinc-200 border-b px-4 py-3">
         <div className="flex items-center gap-2">
-          <Brain className="h-4 w-4 text-emerald-300" />
-          <p className="font-semibold text-sm text-zinc-100">NPC Lab</p>
+          <Brain className="h-4 w-4 text-emerald-600" />
+          <p className="font-semibold text-sm">NPC Lab</p>
         </div>
         <p className="text-xs text-zinc-500">rev {revision}</p>
       </div>
       {!npc ? (
-        <div className="p-4 text-sm text-zinc-500">
+        <div className="p-4 text-sm text-zinc-500 leading-6">
           Place an NPC to configure prompts, memory, and manual decision runs.
         </div>
       ) : (
@@ -46,7 +46,7 @@ export function NpcLabPanel({
           <label className="block text-xs text-zinc-500">
             Name
             <input
-              className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+              className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-zinc-900 shadow-inner shadow-zinc-200/40"
               onChange={(event) =>
                 onPatchNpc(npc.id, { name: event.target.value })
               }
@@ -56,7 +56,7 @@ export function NpcLabPanel({
           <div className="grid grid-cols-3 gap-2">
             {npcToggles.map(({ key, label }) => (
               <label
-                className="rounded border border-zinc-800 bg-zinc-900 p-2 text-xs text-zinc-300"
+                className="rounded-md border border-zinc-200 bg-zinc-50 p-2 text-xs text-zinc-600"
                 key={key}
               >
                 <input
@@ -74,7 +74,7 @@ export function NpcLabPanel({
           <label className="block text-xs text-zinc-500">
             System prompt
             <textarea
-              className="mt-1 min-h-28 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+              className="mt-1 min-h-28 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-zinc-900 shadow-inner shadow-zinc-200/40"
               onChange={(event) =>
                 onPatchNpc(npc.id, { systemPrompt: event.target.value })
               }
@@ -84,7 +84,7 @@ export function NpcLabPanel({
           <label className="block text-xs text-zinc-500">
             Model
             <input
-              className="mt-1 w-full rounded border border-zinc-700 bg-zinc-950 px-3 py-2 text-zinc-100"
+              className="mt-1 w-full rounded-md border border-zinc-200 bg-white px-3 py-2 text-zinc-900 shadow-inner shadow-zinc-200/40"
               onChange={(event) =>
                 onPatchNpc(npc.id, { model: event.target.value })
               }
@@ -94,7 +94,7 @@ export function NpcLabPanel({
           <div className="grid grid-cols-3 gap-2">
             {(['default', 'enhanced', 'custom'] as const).map((mode) => (
               <button
-                className="inline-flex items-center justify-center gap-2 rounded border border-emerald-500/50 bg-emerald-500/10 px-2 py-2 text-emerald-100 text-xs disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-2 text-emerald-800 text-xs disabled:opacity-50"
                 disabled={isRunning}
                 key={mode}
                 onClick={() => onRun(npc.id, mode)}

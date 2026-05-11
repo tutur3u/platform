@@ -17,7 +17,8 @@ describe('ToolDock', () => {
 
     expect(screen.getByTitle('Select')).toBeTruthy();
     expect(screen.getByTitle('Terrain')).toBeTruthy();
+    expect(screen.getByTitle('Erase')).toBeTruthy();
     expect(screen.getByTitle('NPC')).toBeTruthy();
-    expect(screen.getByText('House')).toBeTruthy();
+    expect(screen.getByText('House 5')).toBeTruthy();
   });
 });

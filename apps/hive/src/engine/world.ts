@@ -95,13 +95,30 @@ export function addObject(
   return {
     ...world,
     objects: [
-      ...world.objects,
+      ...world.objects.filter(
+        (object) =>
+          object.position.x !== snapped.x || object.position.z !== snapped.z
+      ),
       {
         id: makeObjectId(type, snapped),
         position: snapped,
         type,
       },
     ],
+  };
+}
+
+export function removeBlock(world: HiveWorldData, blockId: string) {
+  return {
+    ...world,
+    blocks: world.blocks.filter((block) => block.id !== blockId),
+  };
+}
+
+export function removeObject(world: HiveWorldData, objectId: string) {
+  return {
+    ...world,
+    objects: world.objects.filter((object) => object.id !== objectId),
   };
 }
 
@@ -117,20 +134,14 @@ export function removeSelection(
   if (selection.kind === 'block') {
     return {
       npcs,
-      world: {
-        ...world,
-        blocks: world.blocks.filter((block) => block.id !== selection.id),
-      },
+      world: removeBlock(world, selection.id),
     };
   }
 
   if (selection.kind === 'object') {
     return {
       npcs,
-      world: {
-        ...world,
-        objects: world.objects.filter((object) => object.id !== selection.id),
-      },
+      world: removeObject(world, selection.id),
     };
   }
 
