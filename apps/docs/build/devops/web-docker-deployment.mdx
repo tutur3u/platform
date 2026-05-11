@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-09'
+updatedAt: '2026-05-11'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -378,6 +378,30 @@ Additional behavior:
   already-removed cache tags are ignored instead of warning in the live watcher
   log.
 
+### Deployment build lock
+
+Blue/green deploys coordinate on a JSON lock file under
+`tmp/docker-web/watch/blue-green-deployment-build.lock` (owner PID, command,
+deployment kind, and a re-entrant token for nested helper calls).
+
+- On **Linux**, the helper compares `/proc/<pid>/cmdline` to the recorded lock
+  so a reused PID after a crash cannot masquerade as an in-flight deploy. When
+  no `web-proxy` / `web-blue` / `web-green` containers exist, the auto-deploy
+  watcher also runs the same stale-lock sweep before cached recovery.
+- **`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`**: optional override for the
+  default eight-hour window used when `/proc` is unreadable but `kill(pid, 0)`
+  still reports a process (for example permission quirks). Set to `0` to
+  disable age-based assists.
+- **`DOCKER_WEB_CANCEL_ACTIVE_BUILD=1`** or **`--cancel-active-build`** on a
+  manual `bun serve:web:docker:bg` run stops the watcher/buildkit services,
+  clears the lock, and records a canceled history row before starting fresh.
+- The **`apps/web` Dockerfile `deps` stage** retries `bun install
+  --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
+  If tarball extraction still fails (for example `@biomejs/cli-linux-x64`),
+  prune BuildKit state (`docker builder prune`) and retry the deploy; the
+  blue/green helper may also restart the Compose-owned `buildkit` service on
+  certain BuildKit cache errors during a deploy attempt.
+
 ### Monitoring Surfaces
 
 The infrastructure monitoring UI in `apps/web` is intentionally split into
@@ -719,6 +743,13 @@ Dashboard details:
   `hive` uses the same Supabase env source as `apps/web`: runtime env files are
   shared, and production image builds mount the `web_env` BuildKit secret so
   hidden-locale auth pages can prerender with the platform Supabase URL.
+  **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
+  prod service in one pass, but `docker compose up` runs in two phases—first
+  `web-proxy`, the target `web-{color}`, MarkItDown, storage-unzip-proxy,
+  `web-cron-runner`, and (when enabled) Redis—then `hive` and `hive-realtime`.
+  Promotion waits only on the first-phase health gates so the main site and
+  proxy can go healthy while Hive finishes booting; nginx upstreams tolerate
+  Hive being temporarily down.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete
