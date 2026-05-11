@@ -6,14 +6,18 @@ const readline = require('node:readline');
 
 const {
   BLUE_GREEN_COLORS,
+  BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
   BLUE_GREEN_PROXY_CONFIG_FILE,
   BLUE_GREEN_PROXY_DRAIN_MS,
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
   BLUE_GREEN_SUPPORT_SERVICES,
+  BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   clearBlueGreenRuntime,
+  DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   ensureBlueGreenRuntime,
+  getBlueGreenBuildTimeoutMs,
   getBlueGreenPaths,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -26,6 +30,7 @@ const {
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
   runBlueGreenProdWorkflow,
+  splitBlueGreenProdServicePhases,
   testBlueGreenProxyRouting,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,
@@ -85,9 +90,10 @@ const {
   acquireDeploymentBuildLock,
   clearDeploymentBuildLock,
   getActiveDeploymentFromStatus,
-  isDeploymentBuildLockLive,
+  isDeploymentBuildLockBlocking,
   isProcessAlive,
   readDeploymentBuildLock,
+  tryInvalidateStaleDeploymentBuildLock,
 } = require('./watch-blue-green/build-lock.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -339,14 +345,28 @@ function formatElapsedDuration(ms) {
 }
 
 function getActiveDeploymentConflict({
+  env = process.env,
   fsImpl = fs,
   now = () => Date.now(),
   paths = getWatchPaths(),
   processImpl = process,
 } = {}) {
-  const lock = readDeploymentBuildLock(paths, fsImpl);
+  let lock = readDeploymentBuildLock(paths, fsImpl);
+  if (lock) {
+    tryInvalidateStaleDeploymentBuildLock(lock, {
+      env,
+      fsImpl,
+      now,
+      paths,
+      processImpl,
+    });
+    lock = readDeploymentBuildLock(paths, fsImpl);
+  }
 
-  if (lock && isDeploymentBuildLockLive(lock, processImpl)) {
+  if (
+    lock &&
+    isDeploymentBuildLockBlocking(lock, { env, fsImpl, now, processImpl })
+  ) {
     return {
       elapsedMs: Math.max(0, now() - (lock.startedAt ?? now())),
       lock,
@@ -515,6 +535,7 @@ async function resolveManualBlueGreenBuildConflict({
   ...promptOptions
 } = {}) {
   const conflict = getActiveDeploymentConflict({
+    env,
     fsImpl,
     now,
     paths,
@@ -855,9 +876,12 @@ module.exports = {
   BLUE_GREEN_PROXY_SERVICE,
   BLUE_GREEN_RUNTIME_DIR,
   BLUE_GREEN_STATE_FILE,
+  BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
   BLUE_GREEN_SUPPORT_SERVICES,
+  BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   CLOUDFLARED_SERVICE,
   COMPOSE_FILE,
+  DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
   DOCKER_MARKITDOWN_SERVICE_URL,
@@ -875,6 +899,7 @@ module.exports = {
   ensureProductionRedisToken,
   ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
+  getBlueGreenBuildTimeoutMs,
   getBlueGreenPaths,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -900,6 +925,7 @@ module.exports = {
   renderBlueGreenProxyConfig,
   resolveBlueGreenActiveColor,
   resolveManualBlueGreenBuildConflict,
+  splitBlueGreenProdServicePhases,
   rewriteLocalhostUrl,
   runDockerWebWorkflow,
   runComposeUpWithNameConflictRecovery,
