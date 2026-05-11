@@ -60,8 +60,23 @@ COPY packages/vercel/package.json ./packages/vercel/package.json
 COPY packages/workflows/package.json ./packages/workflows/package.json
 
 # Keep this install command in sync with scripts/check-docker-web.js.
+# Retries mitigate flaky BuildKit cache / disk pressure (e.g. Biome CLI tarball extract).
 RUN --mount=type=cache,id=platform-web-bun-install,target=/root/.bun/install/cache \
-  bun install --frozen-lockfile
+  set -eu; \
+  attempt=1; \
+  while [ "$attempt" -le 3 ]; do \
+    if bun install --frozen-lockfile; then \
+      break; \
+    fi; \
+    echo "bun install attempt ${attempt} failed; scrubbing Bun install cache before retry..." >&2; \
+    bun pm cache rm 2>/dev/null || true; \
+    if [ "$attempt" -eq 3 ]; then \
+      echo "bun install failed after 3 attempts. Try: docker builder prune" >&2; \
+      exit 1; \
+    fi; \
+    attempt=$((attempt + 1)); \
+    sleep 5; \
+  done
 
 FROM oven/bun:1.3.13 AS dev
 
