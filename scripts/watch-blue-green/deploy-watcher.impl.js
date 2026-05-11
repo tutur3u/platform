@@ -1,0 +1,4792 @@
+#!/usr/bin/env node
+
+const { spawn } = require('node:child_process');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const {
+  getBlueGreenCacheImageTag,
+  getBlueGreenServiceName,
+  readBlueGreenActiveColor,
+  readBlueGreenDeploymentStamp,
+  refreshBlueGreenProxyIfRunning,
+  runBlueGreenCachedRecoveryWorkflow,
+  runBlueGreenStandbyRefreshWorkflow,
+  tagBlueGreenServiceImageForCache,
+} = require('../docker-web/blue-green.js');
+const {
+  DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
+  ensureProductionRedisToken,
+  ensureWebEnvFile,
+  getComposeEnvironment,
+  getDockerWebComposeProjectName,
+  LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  WEB_ENV_FILE,
+} = require('../docker-web/env.js');
+const {
+  getComposeServiceContainerId,
+  getComposeCommandArgs,
+  getComposeFile,
+  getContainerHealthStatus,
+  runChecked,
+  runCommand,
+} = require('../docker-web/compose.js');
+const deployWatcherRuntime = require('./deploy-watcher-runtime.js');
+const {
+  BLUE_GREEN_PROXY_SERVICE,
+  PROD_COMPOSE_FILE,
+  getWatcherComposeEnv,
+  loadRuntimeSnapshot,
+} = deployWatcherRuntime;
+const {
+  ROOT_DIR,
+  WATCH_ARGS_FILE,
+  WATCH_HISTORY_FILE,
+  WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
+  WATCH_RUNTIME_DIR,
+  WATCH_STATUS_FILE,
+  getWatchPaths,
+} = require('./paths.js');
+const {
+  MAX_DEPLOYMENTS,
+  SKIP_WATCH_HISTORY_ENV,
+  appendDeploymentHistory,
+  createPendingDeploymentEntry,
+  getLatestDeploymentSummary,
+  prependPendingDeployment,
+  readDeploymentHistory,
+  writeDeploymentHistory,
+} = require('./history.js');
+const {
+  parseContainerConsoleLogEntries,
+  parseProxyLogEntries,
+  summarizeRequestRate,
+} = require('./telemetry.js');
+const {
+  appendWatcherLogEntry,
+  createWatcherLogEntry,
+  readWatcherLogEntries,
+} = require('./logs.js');
+const {
+  DEFAULT_PROJECT_POLL_INTERVAL_MS,
+  normalizeProjectBranch,
+  processManagedInfrastructureProjects,
+  readPlatformProject,
+  resolvePlatformProjectTarget,
+  updatePlatformProjectDeploymentStatus,
+} = require('./projects.js');
+const {
+  clearInstantRolloutRequest,
+  readDeploymentPin,
+  readInstantRolloutRequest,
+} = require('./control.js');
+const {
+  DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DeploymentBuildLockConflictError,
+  acquireDeploymentBuildLock,
+} = require('./build-lock.js');
+const {
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
+  DEFAULT_INTERVAL_MS,
+  DEFAULT_STALE_GIT_INDEX_LOCK_MS,
+  DISPLAY_DEPLOYMENTS,
+  MAX_EVENTS,
+  MAX_GIT_FAILURE_BACKOFF_MS,
+} = require('./watcher-constants.js');
+const {
+  buildDashboardView,
+  createWatchUi,
+  formatClockTime,
+  formatCountdown,
+  formatDuration,
+  formatRelativeTime,
+  formatRequestsPerMinute,
+  stripAnsi,
+  summarizeBlueGreenRuntime,
+  summarizeResult,
+} = require('./dashboard.js');
+const {
+  checkoutBranch,
+  checkoutRevision,
+  fetchTrackedBranch,
+  getCommitMetadata,
+  getCurrentBranch,
+  getCurrentBranchName,
+  getGitFailureBackoffMs,
+  getRevision,
+  getTrackedUpstream,
+  gitStdout,
+  hasDirtyWorktree,
+  hasWatchedScriptChanges,
+  isAncestor,
+  isGitIndexLockError,
+  isRecoverableGitCommandError,
+  listChangedFilesBetweenRevisions,
+  listDirtyWorktreePaths,
+  parseUpstreamRef,
+  pullTrackedBranch,
+  removeStaleGitIndexLock,
+  resolveLockedBranchTarget,
+} = require('./deploy-watcher-git.js');
+const {
+  acquireWatchLock,
+  clearWatchStatus,
+  isProcessAlive,
+  readWatchLock,
+  readWatchStatus,
+  releaseWatchLock,
+  writeWatchStatus,
+} = require('./deploy-watcher-lock-status.js');
+const {
+  CONTAINER_REFRESH_WATCHED_FILES,
+  SELF_WATCHED_FILES,
+} = require('./deploy-watcher-watched-paths.js');
+const DEFAULT_DEPLOY_COMMAND = ['bun', 'serve:web:docker:bg'];
+const DEFAULT_STANDBY_REFRESH_AFTER_MS = 15 * 60_000;
+const DEFAULT_LOCK_CONFLICT_ACTION = 'fail';
+const DEFAULT_REPLACE_WATCHER_TIMEOUT_MS = 5_000;
+const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
+const CONTAINER_REFRESH_EXIT_CODE = 76;
+const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
+const MAX_RECOVERY_CACHE_IMAGES = 3;
+const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
+const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
+const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
+const WATCHER_CONTAINER_ENV = 'PLATFORM_BLUE_GREEN_WATCHER_CONTAINER';
+const WATCHER_CONTAINER_REFRESH_MESSAGE =
+  'host-supervised watcher service recreation';
+const MIGRATION_PROXY_HANDOFF_TIMEOUT_MS = 3_000;
+const MIGRATION_STAGING_PORT_ENV = {
+  DOCKER_WEB_BUILDKIT_PORT: '17914',
+  DOCKER_WEB_DIRECT_HOST_PORT: '17804',
+  DOCKER_WEB_PROXY_HOST_PORT: '17803',
+  DOCKER_WEB_REDIS_HOST_PORT: '16379',
+  DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '18079',
+};
+const MIGRATION_CANONICAL_PORT_ENV = {
+  DOCKER_WEB_BUILDKIT_PORT: '7914',
+  DOCKER_WEB_DIRECT_HOST_PORT: '7803',
+  DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  DOCKER_WEB_REDIS_HOST_PORT: '6379',
+  DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '8079',
+};
+
+function parseArgs(argv) {
+  const args = [...argv];
+  let intervalMs = DEFAULT_INTERVAL_MS;
+  let lockConflictAction = DEFAULT_LOCK_CONFLICT_ACTION;
+  let once = false;
+
+  for (let index = 0; index < args.length; index += 1) {
+    const arg = args[index];
+
+    if (arg === '--interval-ms') {
+      const value = Number(args[index + 1]);
+
+      if (!Number.isFinite(value) || value <= 0) {
+        throw new Error('Expected --interval-ms to be a positive number.');
+      }
+
+      intervalMs = value;
+      index += 1;
+      continue;
+    }
+
+    if (arg === '--once') {
+      once = true;
+      continue;
+    }
+
+    if (arg === '--resume-if-running') {
+      lockConflictAction = 'resume';
+      continue;
+    }
+
+    if (arg === '--replace-existing') {
+      lockConflictAction = 'replace';
+      continue;
+    }
+
+    if (arg === '--if-locked') {
+      const value = args[index + 1];
+
+      if (!['fail', 'resume', 'replace'].includes(value)) {
+        throw new Error(
+          'Expected --if-locked to be one of: fail, resume, replace.'
+        );
+      }
+
+      lockConflictAction = value;
+      index += 1;
+      continue;
+    }
+
+    throw new Error(`Unsupported argument "${arg}".`);
+  }
+
+  return {
+    intervalMs,
+    lockConflictAction,
+    once,
+  };
+}
+
+function getProjectNameFromEnv(env, key) {
+  return typeof env?.[key] === 'string' ? env[key].trim() : '';
+}
+
+function isLegacyComposeProjectWatcher({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const inheritedProjectName = getProjectNameFromEnv(
+    env,
+    'COMPOSE_PROJECT_NAME'
+  );
+  const explicitProjectName = getProjectNameFromEnv(
+    env,
+    'DOCKER_WEB_COMPOSE_PROJECT_NAME'
+  );
+  const migrationSourceProjectName = getProjectNameFromEnv(
+    env,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+  const hostWorkspaceDir =
+    getProjectNameFromEnv(env, HOST_WORKSPACE_DIR_ENV) || rootDir;
+
+  const hasLegacyProjectName =
+    inheritedProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME ||
+    explicitProjectName === LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME;
+  const isUnmarkedLegacyWatcher =
+    !inheritedProjectName &&
+    !explicitProjectName &&
+    !migrationSourceProjectName;
+
+  return (
+    env[WATCHER_CONTAINER_ENV] === '1' &&
+    path.basename(hostWorkspaceDir) ===
+      LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME &&
+    (hasLegacyProjectName || isUnmarkedLegacyWatcher)
+  );
+}
+
+function getMigrationTargetWatcherEnv({
+  env = process.env,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const targetProjectName = getDockerWebComposeProjectName({
+    baseEnv: {
+      ...env,
+      COMPOSE_PROJECT_NAME: undefined,
+      DOCKER_WEB_COMPOSE_PROJECT_NAME:
+        env.DOCKER_WEB_COMPOSE_PROJECT_NAME ??
+        DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    },
+    rootDir,
+  });
+
+  return {
+    ...env,
+    ...Object.fromEntries(
+      Object.entries(MIGRATION_STAGING_PORT_ENV).map(([key, value]) => [
+        key,
+        env[key] ?? value,
+      ])
+    ),
+    [DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV]:
+      LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: targetProjectName,
+  };
+}
+
+async function handoffLegacyWatcherToTargetProject({
+  argv,
+  env = process.env,
+  envFilePath,
+  fsImpl = fs,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!isLegacyComposeProjectWatcher({ env, rootDir })) {
+    return false;
+  }
+
+  const sourceEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  };
+  const sourceHasContainers = await composeProjectHasContainers({
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    return false;
+  }
+
+  const targetEnv = getMigrationTargetWatcherEnv({ env, rootDir });
+
+  log.warn?.(
+    `Starting ${targetEnv.DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher to migrate the legacy ${LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME} Compose project.`
+  );
+
+  await startBlueGreenWatcherContainer(argv, {
+    env: targetEnv,
+    envFilePath,
+    fsImpl,
+    rootDir:
+      getProjectNameFromEnv(env, HOST_WORKSPACE_DIR_ENV) ||
+      getProjectNameFromEnv(targetEnv, HOST_WORKSPACE_DIR_ENV) ||
+      rootDir,
+    runCommand: run,
+  });
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'stop',
+      '--timeout',
+      '1',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: sourceEnv,
+      runCommand: run,
+    }
+  );
+
+  return true;
+}
+
+async function getWatcherStartupComposeEnv({
+  composeEnv,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const hostWorkspaceDir =
+    getProjectNameFromEnv(composeEnv, HOST_WORKSPACE_DIR_ENV) || rootDir;
+  const projectName = getProjectNameFromEnv(composeEnv, 'COMPOSE_PROJECT_NAME');
+  const migrationSourceProjectName = getProjectNameFromEnv(
+    composeEnv,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+
+  if (
+    composeEnv?.[WATCHER_CONTAINER_ENV] === '1' ||
+    migrationSourceProjectName ||
+    projectName !== DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME ||
+    path.basename(hostWorkspaceDir) !== LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME
+  ) {
+    return composeEnv;
+  }
+
+  const sourceEnv = {
+    ...composeEnv,
+    COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  };
+  const sourceHasContainers = await composeProjectHasContainers({
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    return composeEnv;
+  }
+
+  console.warn(
+    `Detected legacy ${LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME} Compose project while starting ${DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher; staging target watcher on migration ports.`
+  );
+
+  return getMigrationTargetWatcherEnv({
+    env: composeEnv,
+    rootDir: hostWorkspaceDir,
+  });
+}
+
+function writeWatchArgsFile(
+  argv,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(paths.argsFile, JSON.stringify(argv, null, 2), 'utf8');
+}
+
+function readWatchArgsFile({ fsImpl = fs, paths = getWatchPaths() } = {}) {
+  if (!fsImpl.existsSync(paths.argsFile)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(paths.argsFile, 'utf8'));
+    return Array.isArray(parsed) &&
+      parsed.every((value) => typeof value === 'string')
+      ? parsed
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function clearContainerManagedWatcherState({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.lockFile, { force: true });
+  fsImpl.rmSync(paths.statusFile, { force: true });
+}
+
+async function startBlueGreenWatcherContainer(
+  argv,
+  {
+    env = process.env,
+    envFilePath,
+    fsImpl = fs,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  parseArgs(argv);
+
+  await runChecked('docker', ['compose', 'version'], {
+    env,
+    fsImpl,
+    runCommand: run,
+    stdio: 'ignore',
+  });
+
+  const resolvedEnvFilePath = envFilePath ?? path.join(rootDir, '.env.local');
+  ensureWebEnvFile(fsImpl, resolvedEnvFilePath, rootDir);
+  ensureProductionRedisToken(
+    {
+      composeGlobalArgs: ['--profile', 'redis'],
+      mode: 'prod',
+    },
+    env,
+    (composeGlobalArgs, profileName) => composeGlobalArgs.includes(profileName),
+    {
+      fsImpl,
+      rootDir,
+    }
+  );
+
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath: resolvedEnvFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const startupComposeEnv = await getWatcherStartupComposeEnv({
+    composeEnv,
+    rootDir,
+    runCommand: run,
+  });
+
+  clearContainerManagedWatcherState({
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
+  writeWatchArgsFile(argv, {
+    fsImpl,
+    paths: getWatchPaths(rootDir),
+  });
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'up',
+      '--build',
+      '--detach',
+      '--force-recreate',
+      '--remove-orphans',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: startupComposeEnv,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+}
+
+async function getWatcherContainerState({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+
+  let containerId = '';
+  try {
+    containerId = await getComposeServiceContainerId(
+      BLUE_GREEN_WATCHER_SERVICE,
+      {
+        composeFile: PROD_COMPOSE_FILE,
+        composeGlobalArgs: ['--profile', 'redis'],
+        env: composeEnv,
+        includeStopped: true,
+        runCommand: run,
+      }
+    );
+  } catch {
+    return 'missing';
+  }
+
+  if (!containerId) {
+    return 'missing';
+  }
+
+  try {
+    return await getContainerHealthStatus(containerId, {
+      env: composeEnv,
+      runCommand: run,
+    });
+  } catch {
+    return 'unknown';
+  }
+}
+
+async function streamBlueGreenWatcherLogs({
+  env = process.env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+  });
+  const result = await run(
+    'docker',
+    getComposeCommandArgs(
+      PROD_COMPOSE_FILE,
+      ['--profile', 'redis'],
+      'logs',
+      '--follow',
+      '--tail',
+      '100',
+      BLUE_GREEN_WATCHER_SERVICE
+    ),
+    {
+      env: composeEnv,
+      fsImpl,
+    }
+  );
+
+  if (
+    result.signal &&
+    (result.signal === 'SIGINT' || result.signal === 'SIGTERM')
+  ) {
+    return { status: 'interrupted' };
+  }
+
+  if (result.code === 143) {
+    return { status: 'recreated' };
+  }
+
+  if (
+    result.stdout?.includes(WATCHER_CONTAINER_REFRESH_MESSAGE) ||
+    result.stderr?.includes(WATCHER_CONTAINER_REFRESH_MESSAGE)
+  ) {
+    return { status: 'container-refresh-requested' };
+  }
+
+  if (result.code !== 0) {
+    const detail = result.stderr?.trim() || result.stdout?.trim();
+    return {
+      status: 'stream-error',
+      code: result.code,
+      detail: detail || null,
+    };
+  }
+
+  return { status: 'completed' };
+}
+
+async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
+  await startBlueGreenWatcherContainer(argv, options);
+
+  while (true) {
+    const result = await streamBlueGreenWatcherLogs(options);
+
+    if (result?.status === 'interrupted') {
+      return;
+    }
+
+    await sleep(options.reconnectDelayMs ?? 2_000);
+
+    if (result?.status === 'container-refresh-requested') {
+      await startBlueGreenWatcherContainer(argv, options);
+      continue;
+    }
+
+    const state = await getWatcherContainerState(options);
+    if (state === 'missing' || state === 'dead' || state === 'exited') {
+      await startBlueGreenWatcherContainer(argv, options);
+      continue;
+    }
+
+    if (result?.status === 'recreated') {
+      continue;
+    }
+
+    if (result?.status === 'stream-error') {
+      console.warn(
+        `[watch-blue-green-deploy] Watcher log stream exited with code ${result.code}; reconnecting after backoff.${
+          result.detail ? `\n${result.detail}` : ''
+        }`
+      );
+      continue;
+    }
+
+    return;
+  }
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function hasPendingDeployRequest(env = process.env) {
+  return env[WATCH_PENDING_DEPLOY_ENV] === '1';
+}
+
+function readPendingDeployRequest(paths = getWatchPaths(), fsImpl = fs) {
+  if (!fsImpl.existsSync(paths.pendingDeployFile)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fsImpl.readFileSync(paths.pendingDeployFile, 'utf8')
+    );
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writePendingDeployRequest(
+  request,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+  fsImpl.writeFileSync(
+    paths.pendingDeployFile,
+    JSON.stringify(request, null, 2),
+    'utf8'
+  );
+}
+
+function clearPendingDeployRequest({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  fsImpl.rmSync(paths.pendingDeployFile, { force: true });
+}
+
+function hasPersistedPendingDeployRequest(
+  env = process.env,
+  { fsImpl = fs, paths = getWatchPaths() } = {}
+) {
+  return (
+    hasPendingDeployRequest(env) ||
+    readPendingDeployRequest(paths, fsImpl) != null
+  );
+}
+
+function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
+  const latestSuccessfulDeployment = deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.commitHash === 'string' &&
+      entry.commitHash.length > 0
+  );
+
+  return latestSuccessfulDeployment?.commitHash ?? null;
+}
+
+function getLatestCachedSuccessfulDeployment(deployments = [], commitHash) {
+  return deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.imageTag === 'string' &&
+      entry.imageTag.length > 0 &&
+      (!commitHash || entry.commitHash === commitHash)
+  );
+}
+
+function getRecoveryCacheImageTagsToKeep(
+  deployments = [],
+  { extraImageTag = null, max = MAX_RECOVERY_CACHE_IMAGES } = {}
+) {
+  const imageTags = [];
+
+  if (typeof extraImageTag === 'string' && extraImageTag.length > 0) {
+    imageTags.push(extraImageTag);
+  }
+
+  for (const entry of deployments) {
+    if (
+      entry?.status !== 'successful' ||
+      typeof entry.imageTag !== 'string' ||
+      entry.imageTag.length === 0 ||
+      imageTags.includes(entry.imageTag)
+    ) {
+      continue;
+    }
+
+    imageTags.push(entry.imageTag);
+  }
+
+  return imageTags.slice(0, max);
+}
+
+function getPrunableRecoveryCacheImageTags(
+  deployments = [],
+  keptImageTags = []
+) {
+  const kept = new Set(keptImageTags);
+  const prunable = [];
+
+  for (const entry of deployments) {
+    if (
+      entry?.status !== 'successful' ||
+      typeof entry.imageTag !== 'string' ||
+      entry.imageTag.length === 0 ||
+      kept.has(entry.imageTag) ||
+      prunable.includes(entry.imageTag)
+    ) {
+      continue;
+    }
+
+    prunable.push(entry.imageTag);
+  }
+
+  return prunable;
+}
+
+function isMissingDockerImageError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  return /No such image:/iu.test(message);
+}
+
+function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
+  if (!commitHash) {
+    return 0;
+  }
+
+  return deployments.filter(
+    (entry) => entry?.status === 'failed' && entry.commitHash === commitHash
+  ).length;
+}
+
+function hasReachedDeploymentFailureLimit(deployments = [], commitHash) {
+  return (
+    getFailedDeploymentCountForCommit(deployments, commitHash) >=
+    MAX_FAILED_DEPLOYMENTS_PER_COMMIT
+  );
+}
+
+function hasReportedRetryLimitForCommit(commitHash, { fsImpl, paths }) {
+  if (!commitHash) {
+    return false;
+  }
+
+  const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
+
+  return (
+    lastResult?.status === 'retry-limited' &&
+    lastResult?.latestCommit?.hash === commitHash
+  );
+}
+
+function logRetryLimitOnce(message, commitHash, { fsImpl, log, paths }) {
+  if (hasReportedRetryLimitForCommit(commitHash, { fsImpl, paths })) {
+    return;
+  }
+
+  log.warn?.(message);
+}
+
+function hasSuccessfulDeploymentForCommit(deployments = [], commitHash) {
+  if (!commitHash) {
+    return false;
+  }
+
+  return deployments.some(
+    (entry) => entry?.status === 'successful' && entry.commitHash === commitHash
+  );
+}
+
+async function getGitFirstParentRevision(
+  childHash,
+  { env, runCommand: run = runCommand } = {}
+) {
+  if (!childHash) {
+    return null;
+  }
+
+  try {
+    const rev = await gitStdout(['rev-parse', `${childHash}^`], {
+      env,
+      runCommand: run,
+    });
+    const trimmed = rev.trim();
+
+    return trimmed.length > 0 ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveParentFallbackCommitForRetryLimitedHead(
+  headCommit,
+  deploymentHistory,
+  { env, runCommand: run = runCommand } = {}
+) {
+  if (!headCommit?.hash) {
+    return null;
+  }
+
+  if (!hasReachedDeploymentFailureLimit(deploymentHistory, headCommit.hash)) {
+    return null;
+  }
+
+  const parentRev = await getGitFirstParentRevision(headCommit.hash, {
+    env,
+    runCommand: run,
+  });
+
+  if (!parentRev) {
+    return null;
+  }
+
+  if (hasSuccessfulDeploymentForCommit(deploymentHistory, parentRev)) {
+    return null;
+  }
+
+  return getCommitMetadata(parentRev, { env, runCommand: run });
+}
+
+async function runDetachedCommitFullBlueGreenDeploy({
+  afterBunBeforeDeploy = null,
+  checkedAt,
+  deployCommand = DEFAULT_DEPLOY_COMMAND,
+  deployCommit,
+  deploymentKind,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  now = () => Date.now(),
+  onDeploymentStart = () => {},
+  paths = getWatchPaths(),
+  pendingDeploymentStatus = 'deploying',
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  targetBranch,
+} = {}) {
+  if (!deployCommit?.hash || !targetBranch) {
+    throw new Error(
+      'runDetachedCommitFullBlueGreenDeploy requires deployCommit.hash and targetBranch'
+    );
+  }
+
+  await checkoutRevision(deployCommit.hash, { env, runCommand: run });
+
+  try {
+    await runBunUpgradeAndInstall({ env, runCommand: run });
+
+    if (typeof afterBunBeforeDeploy === 'function') {
+      await afterBunBeforeDeploy();
+    }
+
+    const deployStartedAt = now();
+
+    onDeploymentStart({
+      checkedAt,
+      latestCommit: deployCommit,
+      pendingDeployment: createPendingDeploymentEntry({
+        deploymentKind,
+        latestCommit: deployCommit,
+        startedAt: deployStartedAt,
+        status: pendingDeploymentStatus,
+      }),
+    });
+
+    try {
+      await runBlueGreenDeploy({
+        deploymentKind,
+        deployCommand,
+        env,
+        fsImpl,
+        latestCommit: deployCommit,
+        now,
+        paths,
+        runCommand: run,
+      });
+      const deployFinishedAt = now();
+      const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+      const deploymentStamp = readBlueGreenDeploymentStamp(
+        paths.blueGreen,
+        fsImpl
+      );
+      const imageTag = await cacheBlueGreenDeploymentImage({
+        activeColor,
+        env,
+        envFilePath,
+        fsImpl,
+        latestCommit: deployCommit,
+        log,
+        rootDir,
+        runCommand: run,
+      });
+      const history = appendDeploymentHistory(
+        {
+          activatedAt: deployFinishedAt,
+          activeColor,
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind,
+          deploymentStamp,
+          finishedAt: deployFinishedAt,
+          ...(imageTag ? { imageTag } : {}),
+          startedAt: deployStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+      await pruneBlueGreenRecoveryCacheImages(history, {
+        env,
+        extraImageTag: imageTag,
+        log,
+        runCommand: run,
+      });
+
+      return { success: true, history };
+    } catch (error) {
+      const deployFinishedAt = now();
+
+      if (error instanceof DeploymentBuildLockConflictError) {
+        return { buildLockConflict: true, error, history: null };
+      }
+
+      const history = appendDeploymentHistory(
+        {
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind,
+          finishedAt: deployFinishedAt,
+          startedAt: deployStartedAt,
+          status: 'failed',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
+      return { success: false, error, history };
+    }
+  } finally {
+    await checkoutBranch(targetBranch, { env, runCommand: run });
+  }
+}
+
+async function runDetachedParentFallbackStandbyRefresh({
+  checkedAt,
+  deployCommit,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  log = console,
+  now = () => Date.now(),
+  onDeploymentStart = () => {},
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  standbyRefreshCandidate,
+  targetBranch,
+} = {}) {
+  if (!deployCommit?.hash || !targetBranch || !standbyRefreshCandidate) {
+    throw new Error(
+      'runDetachedParentFallbackStandbyRefresh requires deployCommit, targetBranch, and standbyRefreshCandidate'
+    );
+  }
+
+  await checkoutRevision(deployCommit.hash, { env, runCommand: run });
+
+  try {
+    const refreshStartedAt = now();
+
+    onDeploymentStart({
+      checkedAt,
+      latestCommit: deployCommit,
+      pendingDeployment: createPendingDeploymentEntry({
+        activeColor: standbyRefreshCandidate.standbyColor,
+        deploymentKind: 'parent-fallback-standby-refresh',
+        latestCommit: deployCommit,
+        startedAt: refreshStartedAt,
+        status: 'building',
+      }),
+    });
+
+    try {
+      const standbyResult = await runBlueGreenStandbyRefresh({
+        env,
+        envFilePath,
+        fsImpl,
+        latestCommit: deployCommit,
+        now,
+        paths,
+        rootDir,
+        runCommand: run,
+      });
+      const refreshFinishedAt = now();
+      const deploymentStamp = readBlueGreenDeploymentStamp(
+        paths.blueGreen,
+        fsImpl
+      );
+      const imageTag = await cacheBlueGreenDeploymentImage({
+        activeColor:
+          standbyResult.standbyColor ?? standbyRefreshCandidate.standbyColor,
+        env,
+        envFilePath,
+        fsImpl,
+        latestCommit: deployCommit,
+        log,
+        rootDir,
+        runCommand: run,
+      });
+      const history = appendDeploymentHistory(
+        {
+          activatedAt: refreshFinishedAt,
+          activeColor:
+            standbyResult.standbyColor ?? standbyRefreshCandidate.standbyColor,
+          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind: 'parent-fallback-standby-refresh',
+          deploymentStamp,
+          finishedAt: refreshFinishedAt,
+          ...(imageTag ? { imageTag } : {}),
+          startedAt: refreshStartedAt,
+          status: 'successful',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+      await pruneBlueGreenRecoveryCacheImages(history, {
+        env,
+        extraImageTag: imageTag,
+        log,
+        runCommand: run,
+      });
+
+      return { success: true, history };
+    } catch (error) {
+      const refreshFinishedAt = now();
+      const history = appendDeploymentHistory(
+        {
+          activeColor: standbyRefreshCandidate.standbyColor,
+          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+          commitHash: deployCommit.hash,
+          commitShortHash: deployCommit.shortHash,
+          commitSubject: deployCommit.subject,
+          deploymentKind: 'parent-fallback-standby-refresh',
+          finishedAt: refreshFinishedAt,
+          startedAt: refreshStartedAt,
+          status: 'failed',
+        },
+        {
+          fsImpl,
+          paths,
+        }
+      );
+
+      return { success: false, error, history };
+    }
+  } finally {
+    await checkoutBranch(targetBranch, { env, runCommand: run });
+  }
+}
+
+function getRuntimeDeployment(deployments, runtimeState) {
+  return (deployments ?? []).find(
+    (entry) => entry.runtimeState === runtimeState
+  );
+}
+
+function getExpectedStandbyColor(activeColor) {
+  if (activeColor === 'blue') {
+    return 'green';
+  }
+
+  if (activeColor === 'green') {
+    return 'blue';
+  }
+
+  return null;
+}
+
+function needsActiveRuntimeRecovery(runtimeSnapshot) {
+  const currentBlueGreen = runtimeSnapshot?.currentBlueGreen;
+
+  return (
+    currentBlueGreen?.state === 'degraded' &&
+    (!currentBlueGreen.activeColor || !currentBlueGreen.activeServiceRunning)
+  );
+}
+
+function getStandbyRefreshCandidate(
+  runtimeSnapshot,
+  latestCommit,
+  { now = Date.now(), refreshAfterMs = DEFAULT_STANDBY_REFRESH_AFTER_MS } = {}
+) {
+  const activeDeployment = getRuntimeDeployment(
+    runtimeSnapshot?.deployments,
+    'active'
+  );
+
+  if (
+    !runtimeSnapshot?.currentBlueGreen?.activeColor ||
+    !latestCommit?.hash ||
+    !activeDeployment?.activatedAt
+  ) {
+    return null;
+  }
+
+  const standbyDeployment = getRuntimeDeployment(
+    runtimeSnapshot.deployments,
+    'standby'
+  );
+  let standbyColor =
+    runtimeSnapshot.currentBlueGreen.standbyColor ??
+    runtimeSnapshot.currentBlueGreen.liveColors?.find(
+      (color) => color !== runtimeSnapshot.currentBlueGreen.activeColor
+    ) ??
+    null;
+
+  if (!standbyColor) {
+    standbyColor =
+      runtimeSnapshot.currentBlueGreen.activeColor === 'blue'
+        ? 'green'
+        : 'blue';
+  }
+
+  if (!standbyColor) {
+    return null;
+  }
+
+  if (now - activeDeployment.activatedAt < refreshAfterMs) {
+    return null;
+  }
+
+  if (standbyDeployment?.commitHash === latestCommit.hash) {
+    return null;
+  }
+
+  return {
+    activeDeployment,
+    standbyColor,
+    standbyDeployment,
+  };
+}
+
+function formatInstantRolloutRequester(request) {
+  if (!request) {
+    return 'an operator request';
+  }
+
+  return (
+    request.requestedByEmail || request.requestedBy || 'an operator request'
+  );
+}
+
+async function runBlueGreenDeploy({
+  deploymentKind,
+  deployCommand = DEFAULT_DEPLOY_COMMAND,
+  env,
+  fsImpl = fs,
+  latestCommit,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
+  runCommand: run = runCommand,
+} = {}) {
+  const [command, ...args] = deployCommand;
+  const heldLock = acquireDeploymentBuildLock({
+    command: deployCommand,
+    deploymentKind,
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+  });
+
+  try {
+    await runChecked(command, args, {
+      env: {
+        ...(env ?? process.env),
+        [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        [SKIP_WATCH_HISTORY_ENV]: '1',
+      },
+      runCommand: run,
+    });
+  } finally {
+    heldLock.release();
+  }
+}
+
+async function testComposeProxyRouting({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      BLUE_GREEN_PROXY_SERVICE,
+      'wget',
+      '-q',
+      '-O',
+      '/dev/null',
+      'http://127.0.0.1:7803/__platform/drain-status'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function testComposeProxyRoutingWithin({
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  now = () => Date.now(),
+  ...options
+} = {}) {
+  const startedAt = now();
+
+  await testComposeProxyRouting(options);
+
+  const elapsedMs = now() - startedAt;
+  if (elapsedMs > deadlineMs) {
+    throw new Error(
+      `Proxy handoff verification exceeded ${deadlineMs}ms (${elapsedMs}ms).`
+    );
+  }
+}
+
+function getMigrationRequest({ env = process.env, rootDir = ROOT_DIR } = {}) {
+  const sourceProjectName = getProjectNameFromEnv(
+    env,
+    DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV
+  );
+  const targetProjectName = getDockerWebComposeProjectName({
+    baseEnv: env,
+    rootDir,
+  });
+
+  if (!sourceProjectName || !targetProjectName) {
+    return null;
+  }
+
+  if (sourceProjectName === targetProjectName) {
+    return null;
+  }
+
+  return {
+    sourceProjectName,
+    targetProjectName,
+  };
+}
+
+function markComposeProjectMigrationComplete(env) {
+  if (!env || typeof env !== 'object') {
+    return;
+  }
+
+  Object.assign(env, MIGRATION_CANONICAL_PORT_ENV);
+  delete env[DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV];
+}
+
+async function composeProjectHasContainers({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await runChecked(
+    'docker',
+    getComposeCommandArgs(composeFile, composeGlobalArgs, 'ps', '-q'),
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout.trim().length > 0;
+}
+
+async function removeLegacyComposeProject({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis', '--profile', 'cloudflared'],
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'down',
+      '--remove-orphans'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function recoverLegacyProxy({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+  sourceEnv,
+  targetEnv,
+} = {}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'stop',
+      '--timeout',
+      '1',
+      BLUE_GREEN_PROXY_SERVICE
+    ),
+    {
+      env: targetEnv,
+      runCommand: run,
+    }
+  );
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'up',
+      '--detach',
+      '--no-build',
+      BLUE_GREEN_PROXY_SERVICE
+    ),
+    {
+      env: sourceEnv,
+      runCommand: run,
+    }
+  );
+  await testComposeProxyRoutingWithin({
+    composeFile,
+    composeGlobalArgs,
+    deadlineMs,
+    env: sourceEnv,
+    now,
+    runCommand: run,
+  });
+}
+
+async function finalizeComposeProjectMigrationIfRequested({
+  composeFile = PROD_COMPOSE_FILE,
+  composeGlobalArgs = ['--profile', 'redis'],
+  deadlineMs = MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  env = process.env,
+  log = console,
+  now = () => Date.now(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const migration = getMigrationRequest({ env, rootDir });
+
+  if (!migration) {
+    return null;
+  }
+
+  const sourceEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: migration.sourceProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: migration.sourceProjectName,
+    DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  };
+  const targetStagedEnv = {
+    ...env,
+    COMPOSE_PROJECT_NAME: migration.targetProjectName,
+    DOCKER_WEB_COMPOSE_PROJECT_NAME: migration.targetProjectName,
+  };
+  const targetFinalEnv = {
+    ...targetStagedEnv,
+    DOCKER_WEB_PROXY_HOST_PORT: '7803',
+  };
+
+  const sourceHasContainers = await composeProjectHasContainers({
+    composeFile,
+    composeGlobalArgs,
+    env: sourceEnv,
+    runCommand: run,
+  });
+
+  if (!sourceHasContainers) {
+    markComposeProjectMigrationComplete(env);
+
+    return {
+      sourceProjectName: migration.sourceProjectName,
+      status: 'source-absent',
+      targetProjectName: migration.targetProjectName,
+    };
+  }
+
+  await testComposeProxyRouting({
+    composeFile,
+    composeGlobalArgs,
+    env: targetStagedEnv,
+    runCommand: run,
+  });
+
+  const handoffStartedAt = now();
+  log.warn?.(
+    `Switching Docker proxy from ${migration.sourceProjectName} to ${migration.targetProjectName}; rollback threshold is ${deadlineMs}ms.`
+  );
+
+  try {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: sourceEnv,
+        runCommand: run,
+      }
+    );
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'up',
+        '--detach',
+        '--no-build',
+        '--force-recreate',
+        BLUE_GREEN_PROXY_SERVICE
+      ),
+      {
+        env: targetFinalEnv,
+        runCommand: run,
+      }
+    );
+    await testComposeProxyRouting({
+      composeFile,
+      composeGlobalArgs,
+      env: targetFinalEnv,
+      runCommand: run,
+    });
+
+    const verifiedAt = now();
+    const handoffDurationMs = verifiedAt - handoffStartedAt;
+    if (handoffDurationMs > deadlineMs) {
+      throw new Error(
+        `Proxy handoff exceeded ${deadlineMs}ms (${handoffDurationMs}ms).`
+      );
+    }
+  } catch (error) {
+    const failureMessage =
+      error instanceof Error ? error.message : String(error);
+
+    try {
+      await recoverLegacyProxy({
+        composeFile,
+        composeGlobalArgs,
+        deadlineMs,
+        now,
+        runCommand: run,
+        sourceEnv,
+        targetEnv: targetFinalEnv,
+      });
+    } catch (rollbackError) {
+      throw new Error(
+        `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed and rollback also failed: ${failureMessage}; rollback error: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`
+      );
+    }
+
+    log.error?.(
+      `Proxy migration from ${migration.sourceProjectName} to ${migration.targetProjectName} failed; legacy proxy was restored: ${failureMessage}`
+    );
+
+    return {
+      error: failureMessage,
+      sourceProjectName: migration.sourceProjectName,
+      status: 'rolled-back',
+      targetProjectName: migration.targetProjectName,
+    };
+  }
+
+  const handoffDurationMs = now() - handoffStartedAt;
+
+  await removeLegacyComposeProject({
+    composeFile,
+    env: sourceEnv,
+    runCommand: run,
+  });
+  markComposeProjectMigrationComplete(env);
+
+  log.info?.(
+    `Docker proxy migration to ${migration.targetProjectName} completed in ${handoffDurationMs}ms.`
+  );
+
+  return {
+    handoffDurationMs,
+    sourceProjectName: migration.sourceProjectName,
+    status: 'completed',
+    targetProjectName: migration.targetProjectName,
+  };
+}
+
+async function runBunUpgradeAndInstall({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked('bun', ['upgrade'], {
+    env,
+    runCommand: run,
+  });
+  await runChecked('bun', ['i'], {
+    env,
+    runCommand: run,
+  });
+}
+
+async function pruneBlueGreenRecoveryCacheImages(
+  deploymentHistory,
+  {
+    env,
+    extraImageTag = null,
+    log = console,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const keptImageTags = getRecoveryCacheImageTagsToKeep(deploymentHistory, {
+    extraImageTag,
+  });
+  const prunableImageTags = getPrunableRecoveryCacheImageTags(
+    deploymentHistory,
+    keptImageTags
+  );
+
+  for (const imageTag of prunableImageTags) {
+    try {
+      await runChecked('docker', ['image', 'rm', imageTag], {
+        env,
+        runCommand: run,
+      });
+    } catch (error) {
+      if (isMissingDockerImageError(error)) {
+        continue;
+      }
+
+      log.warn?.(
+        `Unable to prune old blue/green recovery cache image ${imageTag}: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  return keptImageTags;
+}
+
+async function cacheBlueGreenDeploymentImage({
+  activeColor,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit,
+  log = console,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!activeColor || !latestCommit?.shortHash) {
+    return null;
+  }
+
+  const composeFile = getComposeFile('prod');
+  const composeEnv = getComposeEnvironment({
+    baseEnv: env ?? process.env,
+    envFilePath,
+    fsImpl,
+    rootDir,
+    withRedis: true,
+    withSupportServices: true,
+  });
+  const serviceName = getBlueGreenServiceName(activeColor);
+  const imageTag = getBlueGreenCacheImageTag(latestCommit.shortHash, {
+    composeFile,
+    env: composeEnv,
+  });
+
+  try {
+    return await tagBlueGreenServiceImageForCache(serviceName, imageTag, {
+      composeFile,
+      env: composeEnv,
+      runCommand: run,
+    });
+  } catch (error) {
+    log.warn?.(
+      `Unable to cache blue/green image ${imageTag} for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return null;
+  }
+}
+
+async function runBlueGreenStandbyRefresh({
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit = null,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const heldLock = acquireDeploymentBuildLock({
+    command: 'standby-refresh',
+    deploymentKind: 'standby-refresh',
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+  });
+
+  try {
+    return await runBlueGreenStandbyRefreshWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        env: {
+          ...(env ?? process.env),
+          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        },
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+  } finally {
+    heldLock.release();
+  }
+}
+
+async function runBlueGreenCachedRecovery({
+  cachedImageTag,
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit = null,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  processImpl = process,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const heldLock = acquireDeploymentBuildLock({
+    command: 'cached-recovery',
+    deploymentKind: 'cached-recovery',
+    env: env ?? process.env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    processImpl,
+  });
+
+  try {
+    return await runBlueGreenCachedRecoveryWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: ['--profile', 'redis'],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        cachedImageTag,
+        env: {
+          ...(env ?? process.env),
+          [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        },
+        envFilePath,
+        fsImpl,
+        rootDir,
+        runCommand: run,
+      }
+    );
+  } finally {
+    heldLock.release();
+  }
+}
+
+const { runMissingActiveDeploymentRecovery } =
+  require('./deploy-watcher-active-recovery.js')({
+    DEFAULT_DEPLOY_COMMAND,
+    cacheBlueGreenDeploymentImage,
+    finalizeComposeProjectMigrationIfRequested,
+    getExpectedStandbyColor,
+    getLatestCachedSuccessfulDeployment,
+    pruneBlueGreenRecoveryCacheImages,
+    runBlueGreenCachedRecovery,
+    runBlueGreenDeploy,
+    runBunUpgradeAndInstall,
+  });
+async function runPendingDeployAfterRestart({
+  deployCommand = DEFAULT_DEPLOY_COMMAND,
+  deploymentKind = 'recovery-bootstrap',
+  env,
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  latestCommit,
+  log = console,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const refreshedProxy = await refreshBlueGreenProxyIfRunning({
+    env,
+    envFilePath,
+    fsImpl,
+    paths: paths.blueGreen,
+    rootDir,
+    runCommand: run,
+  });
+
+  log.info?.(
+    refreshedProxy
+      ? 'Refreshed live blue/green proxy config before deployment.'
+      : 'No live blue/green proxy was running; skipping proxy refresh.'
+  );
+
+  const deployStartedAt = now();
+  await runBlueGreenDeploy({
+    deploymentKind,
+    deployCommand,
+    env,
+    fsImpl,
+    latestCommit,
+    now,
+    paths,
+    runCommand: run,
+  });
+  const deployFinishedAt = now();
+  const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+  const deploymentStamp = readBlueGreenDeploymentStamp(paths.blueGreen, fsImpl);
+  const imageTag = await cacheBlueGreenDeploymentImage({
+    activeColor,
+    env,
+    envFilePath,
+    fsImpl,
+    latestCommit,
+    log,
+    rootDir,
+    runCommand: run,
+  });
+  const history = appendDeploymentHistory(
+    {
+      activatedAt: deployFinishedAt,
+      activeColor,
+      buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+      commitHash: latestCommit.hash,
+      commitShortHash: latestCommit.shortHash,
+      commitSubject: latestCommit.subject,
+      deploymentKind,
+      deploymentStamp,
+      finishedAt: deployFinishedAt,
+      ...(imageTag ? { imageTag } : {}),
+      startedAt: deployStartedAt,
+      status: 'successful',
+    },
+    {
+      fsImpl,
+      paths,
+    }
+  );
+  await pruneBlueGreenRecoveryCacheImages(history, {
+    env,
+    extraImageTag: imageTag,
+    log,
+    runCommand: run,
+  });
+  const migration = await finalizeComposeProjectMigrationIfRequested({
+    env,
+    log,
+    now,
+    rootDir,
+    runCommand: run,
+  });
+
+  return {
+    activeColor,
+    buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+    deployFinishedAt,
+    deployStartedAt,
+    history,
+    migration,
+    refreshedProxy,
+  };
+}
+
+function createQuietRunCommand(baseRun = runCommand) {
+  return (command, args, options = {}) =>
+    baseRun(command, args, {
+      ...options,
+      stdio: options.stdio ?? 'pipe',
+    });
+}
+
+async function spawnReplacementWatcher({
+  argv = process.argv.slice(1),
+  cwd = ROOT_DIR,
+  env = process.env,
+  execPath = process.execPath,
+  spawnImpl = spawn,
+} = {}) {
+  return await new Promise((resolve, reject) => {
+    const child = spawnImpl(execPath, argv, {
+      cwd,
+      detached: true,
+      env,
+      stdio: 'inherit',
+    });
+
+    child.once('error', reject);
+    child.once('spawn', () => {
+      child.unref?.();
+      resolve(child);
+    });
+  });
+}
+
+async function waitForProcessExit(
+  pid,
+  {
+    pollMs = 100,
+    processImpl = process,
+    sleepImpl = sleep,
+    timeoutMs = DEFAULT_REPLACE_WATCHER_TIMEOUT_MS,
+  } = {}
+) {
+  const deadline = Date.now() + timeoutMs;
+
+  while (Date.now() <= deadline) {
+    if (!isProcessAlive(pid, processImpl)) {
+      return true;
+    }
+
+    await sleepImpl(pollMs);
+  }
+
+  return !isProcessAlive(pid, processImpl);
+}
+
+async function terminateExistingWatcher(
+  existingLock,
+  {
+    processImpl = process,
+    sleepImpl = sleep,
+    timeoutMs = DEFAULT_REPLACE_WATCHER_TIMEOUT_MS,
+  } = {}
+) {
+  if (!existingLock?.pid || !isProcessAlive(existingLock.pid, processImpl)) {
+    return false;
+  }
+
+  processImpl.kill(existingLock.pid, 'SIGTERM');
+  const exitedGracefully = await waitForProcessExit(existingLock.pid, {
+    processImpl,
+    sleepImpl,
+    timeoutMs,
+  });
+
+  if (exitedGracefully) {
+    return true;
+  }
+
+  processImpl.kill(existingLock.pid, 'SIGKILL');
+  return waitForProcessExit(existingLock.pid, {
+    processImpl,
+    sleepImpl,
+    timeoutMs: Math.min(timeoutMs, 1_000),
+  });
+}
+
+async function mirrorExistingWatchSession(
+  existingLock,
+  {
+    env,
+    envFilePath,
+    fsImpl = fs,
+    log,
+    now = () => Date.now(),
+    once = false,
+    paths = getWatchPaths(),
+    processImpl = process,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+  } = {}
+) {
+  const ui = log;
+
+  ui.start();
+  ui.info(
+    `Resuming watcher view for PID ${existingLock.pid} on ${existingLock.branch} (${existingLock.upstreamRef}).`
+  );
+
+  while (true) {
+    const status = readWatchStatus(paths, fsImpl);
+
+    if (status) {
+      ui.update({
+        ...status,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
+        lockFile: paths.lockFile,
+      });
+    } else {
+      const runtimeSnapshot = await loadRuntimeSnapshot({
+        env,
+        envFilePath,
+        fsImpl,
+        now: now(),
+        paths,
+        rootDir,
+        runCommand: run,
+      });
+      const deploymentSummary = getLatestDeploymentSummary(
+        runtimeSnapshot.deployments
+      );
+
+      ui.update({
+        currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
+        deployments: runtimeSnapshot.deployments,
+        lastDeployAt: deploymentSummary.lastDeployAt,
+        lastDeployStatus: deploymentSummary.lastDeployStatus,
+        lockFile: paths.lockFile,
+        target: existingLock,
+      });
+    }
+
+    if (once) {
+      return {
+        resumedPid: existingLock.pid,
+        status: readWatchStatus(paths, fsImpl),
+      };
+    }
+
+    const activeLock = readWatchLock(paths, fsImpl);
+    if (
+      !activeLock ||
+      activeLock.pid !== existingLock.pid ||
+      !isProcessAlive(existingLock.pid, processImpl)
+    ) {
+      ui.info(`Watcher PID ${existingLock.pid} is no longer active.`);
+      return {
+        resumedPid: existingLock.pid,
+        status: 'ended',
+      };
+    }
+
+    await sleepImpl(DEFAULT_INTERVAL_MS);
+  }
+}
+
+async function runPinnedDeploymentIteration(
+  target,
+  deploymentPin,
+  {
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const checkedAt = now();
+  const attachRuntime = async (result, history = null) => {
+    const snapshotNow = now();
+
+    return {
+      ...result,
+      deploymentPin: readDeploymentPin(paths, fsImpl),
+      ...(await loadRuntimeSnapshot({
+        env,
+        envFilePath,
+        fsImpl,
+        history,
+        now: snapshotNow,
+        paths,
+        rootDir,
+        runCommand: run,
+      })),
+    };
+  };
+  const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    env,
+    ignoredPaths: ['bun.lock'],
+    runCommand: run,
+  });
+
+  if (hasBlockingDirtyWorktree) {
+    log.warn?.(
+      `Skipping pinned rollback because the worktree has uncommitted changes on ${target.branch}.`
+    );
+    return attachRuntime({
+      checkedAt,
+      status: 'dirty',
+    });
+  }
+
+  const currentHead = await getRevision('HEAD', { env, runCommand: run });
+  if (currentHead !== deploymentPin.commitHash) {
+    log.warn?.(
+      `Deployment pin is active. Checking out ${deploymentPin.commitShortHash ?? deploymentPin.commitHash.slice(0, 12)} in detached mode and pausing normal auto-pulls.`
+    );
+    await checkoutRevision(deploymentPin.commitHash, {
+      env,
+      runCommand: run,
+    });
+  }
+
+  const latestCommit = await getCommitMetadata('HEAD', {
+    env,
+    runCommand: run,
+  });
+  const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+    readDeploymentHistory(paths, fsImpl)
+  );
+  const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+  const failedDeploymentCount = getFailedDeploymentCountForCommit(
+    deploymentHistory,
+    latestCommit.hash
+  );
+
+  if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
+    return attachRuntime({
+      checkedAt,
+      latestCommit,
+      status: 'pinned',
+    });
+  }
+
+  if (hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)) {
+    logRetryLimitOnce(
+      `Skipping pinned rollback for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+      latestCommit.hash,
+      { fsImpl, log, paths }
+    );
+    return attachRuntime({
+      checkedAt,
+      failedDeploymentCount,
+      latestCommit,
+      status: 'retry-limited',
+    });
+  }
+
+  const deployStartedAt = now();
+  onDeploymentStart({
+    checkedAt,
+    latestCommit,
+    pendingDeployment: createPendingDeploymentEntry({
+      deploymentKind: 'rollback-pin',
+      latestCommit,
+      startedAt: deployStartedAt,
+      status: 'deploying',
+    }),
+  });
+
+  try {
+    log.warn?.(
+      `Deploying pinned rollback ${latestCommit.shortHash}; auto-pulls remain paused until the pin is cleared.`
+    );
+    await runBlueGreenDeploy({
+      deploymentKind: 'rollback-pin',
+      deployCommand,
+      env,
+      fsImpl,
+      latestCommit,
+      now,
+      paths,
+      runCommand: run,
+    });
+
+    const deployFinishedAt = now();
+    const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+    const deploymentStamp = readBlueGreenDeploymentStamp(
+      paths.blueGreen,
+      fsImpl
+    );
+    const imageTag = await cacheBlueGreenDeploymentImage({
+      activeColor,
+      env,
+      envFilePath,
+      fsImpl,
+      latestCommit,
+      log,
+      rootDir,
+      runCommand: run,
+    });
+    const history = appendDeploymentHistory(
+      {
+        activatedAt: deployFinishedAt,
+        activeColor,
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'rollback-pin',
+        deploymentStamp,
+        finishedAt: deployFinishedAt,
+        ...(imageTag ? { imageTag } : {}),
+        pinnedBy: deploymentPin.requestedBy,
+        pinnedByEmail: deploymentPin.requestedByEmail,
+        startedAt: deployStartedAt,
+        status: 'successful',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+    await pruneBlueGreenRecoveryCacheImages(history, {
+      env,
+      extraImageTag: imageTag,
+      log,
+      runCommand: run,
+    });
+    const migration = await finalizeComposeProjectMigrationIfRequested({
+      env,
+      log,
+      now,
+      rootDir,
+      runCommand: run,
+    });
+
+    log.info?.(`Pinned rollback deployed for ${latestCommit.shortHash}.`);
+
+    return attachRuntime(
+      {
+        checkedAt,
+        latestCommit,
+        migration,
+        pinnedFromCommitHash: latestDeployedCommitHash,
+        status: 'pinned-deployed',
+      },
+      history
+    );
+  } catch (error) {
+    const deployFinishedAt = now();
+    const history = appendDeploymentHistory(
+      {
+        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+        commitHash: latestCommit.hash,
+        commitShortHash: latestCommit.shortHash,
+        commitSubject: latestCommit.subject,
+        deploymentKind: 'rollback-pin',
+        finishedAt: deployFinishedAt,
+        pinnedBy: deploymentPin.requestedBy,
+        pinnedByEmail: deploymentPin.requestedByEmail,
+        startedAt: deployStartedAt,
+        status: 'failed',
+      },
+      {
+        fsImpl,
+        paths,
+      }
+    );
+
+    log.error?.(
+      `Pinned rollback failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    return attachRuntime(
+      {
+        checkedAt,
+        error,
+        latestCommit,
+        pinnedFromCommitHash: latestDeployedCommitHash,
+        status: 'pin-deploy-failed',
+      },
+      history
+    );
+  }
+}
+
+async function runDeployWatchIteration(
+  target,
+  {
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    log = console,
+    now = () => Date.now(),
+    onDeploymentStart = () => {},
+    paths = getWatchPaths(),
+    platformProjectDeploymentStatusUpdater = updatePlatformProjectDeploymentStatus,
+    platformProjectReader = readPlatformProject,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  const checkedAt = now();
+  const updatePlatformProjectStatus = (payload) =>
+    platformProjectDeploymentStatusUpdater({
+      env,
+      ...payload,
+    });
+  const attachRuntime = async (result, history = null) => {
+    const snapshotNow = now();
+
+    return {
+      ...result,
+      deploymentPin: readDeploymentPin(paths, fsImpl),
+      ...(await loadRuntimeSnapshot({
+        env,
+        envFilePath,
+        fsImpl,
+        now: snapshotNow,
+        paths,
+        rootDir,
+        runCommand: run,
+        history,
+      })),
+    };
+  };
+  const deploymentPin = readDeploymentPin(paths, fsImpl);
+
+  if (deploymentPin) {
+    return runPinnedDeploymentIteration(target, deploymentPin, {
+      deployCommand,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      now,
+      onDeploymentStart,
+      paths,
+      platformProjectDeploymentStatusUpdater:
+        updatePlatformProjectDeploymentStatus,
+      platformProjectReader,
+      rootDir,
+      runCommand: run,
+    });
+  }
+
+  let currentBranch = await getCurrentBranchName({ env, runCommand: run });
+
+  if (currentBranch === 'HEAD') {
+    const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      env,
+      ignoredPaths: ['bun.lock'],
+      runCommand: run,
+    });
+
+    if (hasBlockingDirtyWorktree) {
+      log.warn?.(
+        `Skipping poll because the detached worktree has uncommitted changes before returning to ${target.branch}.`
+      );
+      return attachRuntime({
+        checkedAt,
+        status: 'dirty',
+      });
+    }
+
+    log.info?.(
+      `Deployment pin is clear. Checking out ${target.branch} and resuming normal auto-pulls.`
+    );
+    await checkoutBranch(target.branch, {
+      env,
+      runCommand: run,
+    });
+    currentBranch = await getCurrentBranchName({ env, runCommand: run });
+  }
+
+  if (currentBranch !== target.branch) {
+    throw new Error(
+      `Current branch changed from ${target.branch} to ${currentBranch}. The watcher is locked to ${target.branch} and will stop.`
+    );
+  }
+
+  const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+    env,
+    ignoredPaths: ['bun.lock'],
+    runCommand: run,
+  });
+
+  if (hasBlockingDirtyWorktree) {
+    log.warn?.(
+      `Skipping poll because the worktree has uncommitted changes on ${target.branch}.`
+    );
+    return attachRuntime({
+      checkedAt,
+      status: 'dirty',
+    });
+  }
+
+  try {
+    await fetchTrackedBranch(target, { env, runCommand: run });
+
+    const localHead = await getRevision('HEAD', { env, runCommand: run });
+    const upstreamHead = await getRevision(target.upstreamRef, {
+      env,
+      runCommand: run,
+    });
+
+    if (localHead === upstreamHead) {
+      const latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
+      );
+      const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+      const failedDeploymentCount = getFailedDeploymentCountForCommit(
+        deploymentHistory,
+        latestCommit.hash
+      );
+      const platformProject = await platformProjectReader({ env });
+
+      if (platformProject.deploymentStatus === 'queued') {
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          const parentDeploy =
+            await resolveParentFallbackCommitForRetryLimitedHead(
+              latestCommit,
+              deploymentHistory,
+              { env, runCommand: run }
+            );
+
+          if (!parentDeploy) {
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                failedDeploymentCount,
+                retryLimitedAt: new Date(checkedAt).toISOString(),
+              },
+              status: 'failed',
+            });
+            logRetryLimitOnce(
+              `Skipping queued platform deployment for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+              latestCommit.hash,
+              { fsImpl, log, paths }
+            );
+            return attachRuntime({
+              checkedAt,
+              failedDeploymentCount,
+              latestCommit,
+              status: 'retry-limited',
+            });
+          }
+
+          log.warn?.(
+            `Queued platform deployment for ${latestCommit.shortHash} hit the deploy retry cap; deploying parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+          );
+          log.info?.(
+            `Processing queued parent-fallback platform deployment for ${parentDeploy.shortHash}.`
+          );
+          await updatePlatformProjectStatus({
+            latestCommit: parentDeploy,
+            metadata: {
+              buildStartedAt: new Date(checkedAt).toISOString(),
+              commitHash: parentDeploy.hash,
+              parentFallbackFromHead: latestCommit.hash,
+              parentFallbackFromHeadShort: latestCommit.shortHash,
+            },
+            status: 'building',
+          });
+
+          try {
+            const fb = await runDetachedCommitFullBlueGreenDeploy({
+              afterBunBeforeDeploy: () =>
+                updatePlatformProjectStatus({
+                  latestCommit: parentDeploy,
+                  metadata: {
+                    commitHash: parentDeploy.hash,
+                    deployStartedAt: new Date(now()).toISOString(),
+                    parentFallbackFromHead: latestCommit.hash,
+                  },
+                  status: 'deploying',
+                }),
+              checkedAt,
+              deployCommand,
+              deployCommit: parentDeploy,
+              deploymentKind: 'parent-fallback-manual',
+              env,
+              envFilePath,
+              fsImpl,
+              log,
+              now,
+              onDeploymentStart,
+              paths,
+              rootDir,
+              runCommand: run,
+              targetBranch: target.branch,
+            });
+
+            if (fb.buildLockConflict) {
+              await updatePlatformProjectStatus({
+                latestCommit: parentDeploy,
+                metadata: {
+                  error:
+                    fb.error instanceof Error
+                      ? fb.error.message
+                      : String(fb.error),
+                  failedAt: new Date(now()).toISOString(),
+                },
+                status: 'failed',
+              });
+
+              return attachRuntime({
+                branchTipCommit: latestCommit,
+                checkedAt,
+                error: fb.error,
+                latestCommit: parentDeploy,
+                status: 'deploy-failed',
+              });
+            }
+
+            if (!fb.success) {
+              const fbError = fb.error;
+              await updatePlatformProjectStatus({
+                latestCommit: parentDeploy,
+                metadata: {
+                  error:
+                    fbError instanceof Error
+                      ? fbError.message
+                      : String(fbError),
+                  failedAt: new Date(now()).toISOString(),
+                  parentFallbackFromHead: latestCommit.hash,
+                },
+                status: 'failed',
+              });
+              log.error?.(
+                `Queued parent-fallback platform deployment failed for ${parentDeploy.shortHash}: ${fbError instanceof Error ? fbError.message : String(fbError)}`
+              );
+
+              return attachRuntime(
+                {
+                  branchTipCommit: latestCommit,
+                  checkedAt,
+                  error: fbError,
+                  latestCommit: parentDeploy,
+                  status: 'deploy-failed',
+                },
+                fb.history
+              );
+            }
+
+            const migration = await finalizeComposeProjectMigrationIfRequested({
+              env,
+              log,
+              now,
+              rootDir,
+              runCommand: run,
+            });
+            const parentDeployFinishedAt = now();
+            const parentDeploymentStamp = readBlueGreenDeploymentStamp(
+              paths.blueGreen,
+              fsImpl
+            );
+
+            await updatePlatformProjectStatus({
+              latestCommit: parentDeploy,
+              metadata: {
+                deployedAt: new Date(parentDeployFinishedAt).toISOString(),
+                deployedCommitHash: parentDeploy.hash,
+                deploymentStamp: parentDeploymentStamp,
+                parentFallbackFromHead: latestCommit.hash,
+              },
+              status: 'ready',
+            });
+            log.info?.(
+              `Queued parent-fallback platform deployment completed for ${parentDeploy.shortHash}.`
+            );
+
+            return attachRuntime(
+              {
+                branchTipCommit: latestCommit,
+                checkedAt,
+                latestCommit: parentDeploy,
+                migration,
+                status: 'deployed',
+              },
+              fb.history
+            );
+          } catch (error) {
+            await updatePlatformProjectStatus({
+              latestCommit: parentDeploy,
+              metadata: {
+                error: error instanceof Error ? error.message : String(error),
+                failedAt: new Date(now()).toISOString(),
+              },
+              status: 'failed',
+            });
+            log.error?.(
+              `Queued parent-fallback platform deployment failed before completion: ${error instanceof Error ? error.message : String(error)}`
+            );
+
+            return attachRuntime({
+              branchTipCommit: latestCommit,
+              checkedAt,
+              error,
+              latestCommit: parentDeploy,
+              status: 'deploy-failed',
+            });
+          }
+        }
+
+        log.info?.(
+          `Processing queued platform deployment for ${latestCommit.shortHash}.`
+        );
+        await updatePlatformProjectStatus({
+          latestCommit,
+          metadata: {
+            buildStartedAt: new Date(checkedAt).toISOString(),
+            commitHash: latestCommit.hash,
+          },
+          status: 'building',
+        });
+        await runBunUpgradeAndInstall({
+          env,
+          runCommand: run,
+        });
+
+        const deployStartedAt = now();
+        onDeploymentStart({
+          checkedAt,
+          latestCommit,
+          pendingDeployment: createPendingDeploymentEntry({
+            deploymentKind: 'manual',
+            latestCommit,
+            startedAt: deployStartedAt,
+            status: 'deploying',
+          }),
+        });
+
+        try {
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              deployStartedAt: new Date(deployStartedAt).toISOString(),
+              commitHash: latestCommit.hash,
+            },
+            status: 'deploying',
+          });
+          await runBlueGreenDeploy({
+            deploymentKind: 'queued',
+            deployCommand,
+            env,
+            fsImpl,
+            latestCommit,
+            now,
+            paths,
+            runCommand: run,
+          });
+
+          const deployFinishedAt = now();
+          const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+          const deploymentStamp = readBlueGreenDeploymentStamp(
+            paths.blueGreen,
+            fsImpl
+          );
+          const imageTag = await cacheBlueGreenDeploymentImage({
+            activeColor,
+            env,
+            envFilePath,
+            fsImpl,
+            latestCommit,
+            log,
+            rootDir,
+            runCommand: run,
+          });
+          const history = appendDeploymentHistory(
+            {
+              activatedAt: deployFinishedAt,
+              activeColor,
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'manual',
+              deploymentStamp,
+              finishedAt: deployFinishedAt,
+              ...(imageTag ? { imageTag } : {}),
+              startedAt: deployStartedAt,
+              status: 'successful',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          await pruneBlueGreenRecoveryCacheImages(history, {
+            env,
+            extraImageTag: imageTag,
+            log,
+            runCommand: run,
+          });
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              deployedAt: new Date(deployFinishedAt).toISOString(),
+              deployedCommitHash: latestCommit.hash,
+              deploymentStamp,
+            },
+            status: 'ready',
+          });
+
+          log.info?.(
+            `Queued platform deployment completed for ${latestCommit.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              latestCommit,
+              migration,
+              status: 'deployed',
+            },
+            history
+          );
+        } catch (error) {
+          const deployFinishedAt = now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'manual',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              error: error instanceof Error ? error.message : String(error),
+              failedAt: new Date(deployFinishedAt).toISOString(),
+            },
+            status: 'failed',
+          });
+
+          log.error?.(
+            `Queued platform deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              error,
+              latestCommit,
+              status: 'deploy-failed',
+            },
+            history
+          );
+        }
+      }
+
+      const runtimeSnapshot = await attachRuntime({
+        checkedAt,
+        latestCommit,
+        status: 'up-to-date',
+      });
+
+      if (needsActiveRuntimeRecovery(runtimeSnapshot)) {
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          const parentDeploy =
+            await resolveParentFallbackCommitForRetryLimitedHead(
+              latestCommit,
+              deploymentHistory,
+              { env, runCommand: run }
+            );
+
+          if (!parentDeploy) {
+            logRetryLimitOnce(
+              `Skipping blue/green runtime recovery for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+              latestCommit.hash,
+              { fsImpl, log, paths }
+            );
+            return attachRuntime({
+              checkedAt,
+              failedDeploymentCount,
+              latestCommit,
+              status: 'retry-limited',
+            });
+          }
+
+          log.warn?.(
+            `Blue/green runtime recovery for ${latestCommit.shortHash} hit the deploy retry cap; recovering from parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+          );
+          await checkoutRevision(parentDeploy.hash, { env, runCommand: run });
+
+          try {
+            const recoveryResult = await runMissingActiveDeploymentRecovery(
+              parentDeploy,
+              {
+                attachRuntime,
+                checkedAt,
+                deployCommand,
+                env,
+                envFilePath,
+                fsImpl,
+                log,
+                now,
+                onDeploymentStart,
+                paths,
+                rootDir,
+                runCommand: run,
+                runtimeSnapshot,
+              }
+            );
+
+            return {
+              ...recoveryResult,
+              branchTipCommit: latestCommit,
+            };
+          } finally {
+            await checkoutBranch(target.branch, { env, runCommand: run });
+          }
+        }
+
+        return runMissingActiveDeploymentRecovery(latestCommit, {
+          attachRuntime,
+          checkedAt,
+          deployCommand,
+          env,
+          envFilePath,
+          fsImpl,
+          log,
+          now,
+          onDeploymentStart,
+          paths,
+          rootDir,
+          runCommand: run,
+          runtimeSnapshot,
+        });
+      }
+
+      if (
+        latestDeployedCommitHash &&
+        latestCommit.hash &&
+        latestCommit.hash !== latestDeployedCommitHash
+      ) {
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          const parentDeploy =
+            await resolveParentFallbackCommitForRetryLimitedHead(
+              latestCommit,
+              deploymentHistory,
+              { env, runCommand: run }
+            );
+
+          if (!parentDeploy) {
+            logRetryLimitOnce(
+              `Skipping reconciliation deploy for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+              latestCommit.hash,
+              { fsImpl, log, paths }
+            );
+            return attachRuntime({
+              checkedAt,
+              failedDeploymentCount,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'retry-limited',
+            });
+          }
+
+          log.warn?.(
+            `Reconciliation for ${latestCommit.shortHash} hit the deploy retry cap; reconciling from parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+          );
+          log.warn?.(
+            `Latest successful deployment is ${latestDeployedCommitHash ? latestDeployedCommitHash.slice(0, 12) : 'missing'}. Rebuilding ${parentDeploy.shortHash} to reconcile runtime drift.`
+          );
+
+          const fb = await runDetachedCommitFullBlueGreenDeploy({
+            checkedAt,
+            deployCommand,
+            deployCommit: parentDeploy,
+            deploymentKind: 'parent-fallback-reconcile',
+            env,
+            envFilePath,
+            fsImpl,
+            log,
+            now,
+            onDeploymentStart,
+            paths,
+            pendingDeploymentStatus: 'building',
+            rootDir,
+            runCommand: run,
+            targetBranch: target.branch,
+          });
+
+          if (fb.buildLockConflict) {
+            return attachRuntime({
+              branchTipCommit: latestCommit,
+              checkedAt,
+              error: fb.error,
+              latestCommit: parentDeploy,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deploy-failed',
+            });
+          }
+
+          if (!fb.success) {
+            log.error?.(
+              `Blue/green parent-fallback reconciliation deployment failed for ${parentDeploy.shortHash}: ${fb.error instanceof Error ? fb.error.message : String(fb.error)}`
+            );
+
+            return attachRuntime(
+              {
+                branchTipCommit: latestCommit,
+                checkedAt,
+                error: fb.error,
+                latestCommit: parentDeploy,
+                reconciledFromCommitHash: latestDeployedCommitHash,
+                status: 'deploy-failed',
+              },
+              fb.history
+            );
+          }
+
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
+          log.info?.(
+            `Blue/green parent-fallback reconciliation deployment completed for ${parentDeploy.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              branchTipCommit: latestCommit,
+              checkedAt,
+              latestCommit: parentDeploy,
+              migration,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deployed',
+            },
+            fb.history
+          );
+        }
+
+        log.warn?.(
+          `Latest successful deployment is ${latestDeployedCommitHash ? latestDeployedCommitHash.slice(0, 12) : 'missing'}. Rebuilding ${latestCommit.shortHash} to reconcile runtime drift.`
+        );
+        log.info?.(
+          `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before reconciliation deploy.`
+        );
+
+        await runBunUpgradeAndInstall({
+          env,
+          runCommand: run,
+        });
+
+        const deployStartedAt = now();
+        onDeploymentStart({
+          checkedAt,
+          latestCommit,
+          pendingDeployment: createPendingDeploymentEntry({
+            deploymentKind: 'reconcile',
+            latestCommit,
+            startedAt: deployStartedAt,
+            status: 'building',
+          }),
+        });
+
+        try {
+          await runBlueGreenDeploy({
+            deploymentKind: 'reconcile',
+            deployCommand,
+            env,
+            fsImpl,
+            latestCommit,
+            now,
+            paths,
+            runCommand: run,
+          });
+
+          const deployFinishedAt = now();
+          const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+          const deploymentStamp = readBlueGreenDeploymentStamp(
+            paths.blueGreen,
+            fsImpl
+          );
+          const imageTag = await cacheBlueGreenDeploymentImage({
+            activeColor,
+            env,
+            envFilePath,
+            fsImpl,
+            latestCommit,
+            log,
+            rootDir,
+            runCommand: run,
+          });
+          const history = appendDeploymentHistory(
+            {
+              activatedAt: deployFinishedAt,
+              activeColor,
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              deploymentStamp,
+              finishedAt: deployFinishedAt,
+              ...(imageTag ? { imageTag } : {}),
+              startedAt: deployStartedAt,
+              status: 'successful',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          await pruneBlueGreenRecoveryCacheImages(history, {
+            env,
+            extraImageTag: imageTag,
+            log,
+            runCommand: run,
+          });
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
+
+          log.info?.(
+            `Blue/green reconciliation deployment completed for ${latestCommit.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              latestCommit,
+              migration,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deployed',
+            },
+            history
+          );
+        } catch (error) {
+          const deployFinishedAt = now();
+          const history = appendDeploymentHistory(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'reconcile',
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+
+          log.error?.(
+            `Blue/green reconciliation deployment failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+          );
+
+          return attachRuntime(
+            {
+              checkedAt,
+              error,
+              latestCommit,
+              reconciledFromCommitHash: latestDeployedCommitHash,
+              status: 'deploy-failed',
+            },
+            history
+          );
+        }
+      }
+
+      const instantRolloutRequest = readInstantRolloutRequest(paths, fsImpl);
+      const standbyRefreshCandidate = getStandbyRefreshCandidate(
+        runtimeSnapshot,
+        latestCommit,
+        {
+          now: checkedAt,
+          refreshAfterMs: instantRolloutRequest ? 0 : undefined,
+        }
+      );
+
+      if (!standbyRefreshCandidate) {
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+
+          const standbyDeployment = getRuntimeDeployment(
+            runtimeSnapshot.deployments,
+            'standby'
+          );
+
+          if (
+            standbyDeployment?.commitHash &&
+            latestCommit.hash &&
+            standbyDeployment.commitHash === latestCommit.hash
+          ) {
+            log.info?.(
+              `Ignoring instant standby sync from ${formatInstantRolloutRequester(instantRolloutRequest)} because the standby deployment already matches ${latestCommit.shortHash}.`
+            );
+          } else {
+            log.warn?.(
+              `Ignoring instant standby sync from ${formatInstantRolloutRequester(instantRolloutRequest)} because the blue/green runtime is not ready for a standby refresh.`
+            );
+          }
+        }
+
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+
+        return {
+          ...runtimeSnapshot,
+          migration,
+        };
+      }
+
+      if (
+        hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+      ) {
+        const parentDeploy =
+          await resolveParentFallbackCommitForRetryLimitedHead(
+            latestCommit,
+            deploymentHistory,
+            { env, runCommand: run }
+          );
+
+        if (!parentDeploy) {
+          logRetryLimitOnce(
+            `Skipping standby refresh for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime({
+            checkedAt,
+            failedDeploymentCount,
+            latestCommit,
+            status: 'retry-limited',
+          });
+        }
+
+        log.warn?.(
+          `Standby refresh for ${latestCommit.shortHash} hit the deploy retry cap; refreshing standby ${standbyRefreshCandidate.standbyColor} to parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+        );
+        log.info?.(
+          instantRolloutRequest
+            ? `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${parentDeploy.shortHash} immediately for ${formatInstantRolloutRequester(instantRolloutRequest)}.`
+            : `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${parentDeploy.shortHash} after the 15 minute stale window.`
+        );
+
+        const sb = await runDetachedParentFallbackStandbyRefresh({
+          checkedAt,
+          deployCommit: parentDeploy,
+          env,
+          envFilePath,
+          fsImpl,
+          log,
+          now,
+          onDeploymentStart,
+          paths,
+          rootDir,
+          runCommand: run,
+          standbyRefreshCandidate,
+          targetBranch: target.branch,
+        });
+
+        if (!sb.success) {
+          log.error?.(
+            `Standby ${standbyRefreshCandidate.standbyColor} parent-fallback refresh failed for ${parentDeploy.shortHash}: ${sb.error instanceof Error ? sb.error.message : String(sb.error)}`
+          );
+
+          if (instantRolloutRequest) {
+            clearInstantRolloutRequest({
+              fsImpl,
+              paths,
+            });
+          }
+
+          return attachRuntime(
+            {
+              branchTipCommit: latestCommit,
+              checkedAt,
+              error: sb.error,
+              latestCommit: parentDeploy,
+              status: 'standby-refresh-failed',
+            },
+            sb.history
+          );
+        }
+
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+        log.info?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} now matches ${parentDeploy.shortHash}.`
+        );
+
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+        }
+
+        return attachRuntime(
+          {
+            branchTipCommit: latestCommit,
+            checkedAt,
+            latestCommit: parentDeploy,
+            migration,
+            status: 'standby-refreshed',
+          },
+          sb.history
+        );
+      }
+
+      log.info?.(
+        instantRolloutRequest
+          ? `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} immediately for ${formatInstantRolloutRequester(instantRolloutRequest)}.`
+          : `Refreshing standby ${standbyRefreshCandidate.standbyColor} to ${latestCommit.shortHash} after the 15 minute stale window.`
+      );
+
+      const refreshStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
+          activeColor: standbyRefreshCandidate.standbyColor,
+          deploymentKind: 'standby-refresh',
+          latestCommit,
+          startedAt: refreshStartedAt,
+          status: 'building',
+        }),
+      });
+
+      try {
+        await runBlueGreenStandbyRefresh({
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          now,
+          paths,
+          rootDir,
+          runCommand: run,
+        });
+
+        const refreshFinishedAt = now();
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
+        const imageTag = await cacheBlueGreenDeploymentImage({
+          activeColor: standbyRefreshCandidate.standbyColor,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          log,
+          rootDir,
+          runCommand: run,
+        });
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: refreshFinishedAt,
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            deploymentStamp,
+            finishedAt: refreshFinishedAt,
+            ...(imageTag ? { imageTag } : {}),
+            startedAt: refreshStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+        await pruneBlueGreenRecoveryCacheImages(history, {
+          env,
+          extraImageTag: imageTag,
+          log,
+          runCommand: run,
+        });
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+
+        log.info?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} now matches ${latestCommit.shortHash}.`
+        );
+
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+        }
+
+        return attachRuntime(
+          {
+            checkedAt,
+            latestCommit,
+            migration,
+            status: 'standby-refreshed',
+          },
+          history
+        );
+      } catch (error) {
+        const refreshFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentKind: 'standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Standby ${standbyRefreshCandidate.standbyColor} refresh failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`
+        );
+
+        if (instantRolloutRequest) {
+          clearInstantRolloutRequest({
+            fsImpl,
+            paths,
+          });
+        }
+
+        return attachRuntime(
+          {
+            checkedAt,
+            error,
+            latestCommit,
+            status: 'standby-refresh-failed',
+          },
+          history
+        );
+      }
+    }
+
+    if (await isAncestor(localHead, upstreamHead, { env, runCommand: run })) {
+      await pullTrackedBranch(target, {
+        env,
+        fsImpl,
+        log,
+        now,
+        rootDir,
+        runCommand: run,
+      });
+
+      const updatedHead = await getRevision('HEAD', { env, runCommand: run });
+
+      if (updatedHead === localHead) {
+        return attachRuntime({
+          checkedAt,
+          latestCommit: await getCommitMetadata('HEAD', {
+            env,
+            runCommand: run,
+          }),
+          status: 'up-to-date',
+        });
+      }
+
+      const containerRefreshRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          relativePaths: CONTAINER_REFRESH_WATCHED_FILES,
+          runCommand: run,
+        }
+      );
+      const restartRequired = await hasWatchedScriptChanges(
+        localHead,
+        updatedHead,
+        {
+          env,
+          runCommand: run,
+        }
+      );
+      const latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+      const platformProject = await platformProjectReader({ env });
+      const shouldUpdatePlatformProject =
+        platformProject.source === 'database' ||
+        platformProject.deploymentStatus === 'queued';
+      const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+      const failedDeploymentCount = getFailedDeploymentCountForCommit(
+        deploymentHistory,
+        latestCommit.hash
+      );
+
+      log.info?.(
+        `Pulled ${target.branch} from ${localHead.slice(
+          0,
+          12
+        )} to ${updatedHead.slice(0, 12)}.`
+      );
+
+      log.info?.(
+        `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
+      );
+
+      if (
+        hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+      ) {
+        const parentDeploy =
+          await resolveParentFallbackCommitForRetryLimitedHead(
+            latestCommit,
+            deploymentHistory,
+            { env, runCommand: run }
+          );
+
+        if (!parentDeploy) {
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                failedDeploymentCount,
+                retryLimitedAt: new Date(checkedAt).toISOString(),
+              },
+              status: 'failed',
+            });
+          }
+          logRetryLimitOnce(
+            `Skipping deployment for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`,
+            latestCommit.hash,
+            { fsImpl, log, paths }
+          );
+          return attachRuntime({
+            checkedAt,
+            failedDeploymentCount,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            status: 'retry-limited',
+          });
+        }
+
+        log.warn?.(
+          `Fast-forward deployment for ${latestCommit.shortHash} hit the deploy retry cap; deploying parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+        );
+
+        if (shouldUpdatePlatformProject) {
+          await updatePlatformProjectStatus({
+            latestCommit: parentDeploy,
+            metadata: {
+              buildStartedAt: new Date(checkedAt).toISOString(),
+              commitHash: parentDeploy.hash,
+              oldHead: localHead,
+              parentFallbackFromHead: latestCommit.hash,
+              parentFallbackFromHeadShort: latestCommit.shortHash,
+            },
+            status: 'building',
+          });
+        }
+
+        try {
+          const fb = await runDetachedCommitFullBlueGreenDeploy({
+            afterBunBeforeDeploy: shouldUpdatePlatformProject
+              ? () =>
+                  updatePlatformProjectStatus({
+                    latestCommit: parentDeploy,
+                    metadata: {
+                      commitHash: parentDeploy.hash,
+                      deployStartedAt: new Date(now()).toISOString(),
+                      oldHead: localHead,
+                      parentFallbackFromHead: latestCommit.hash,
+                    },
+                    status: 'deploying',
+                  })
+              : null,
+            checkedAt,
+            deployCommand,
+            deployCommit: parentDeploy,
+            deploymentKind: 'parent-fallback-promotion',
+            env,
+            envFilePath,
+            fsImpl,
+            log,
+            now,
+            onDeploymentStart,
+            paths,
+            rootDir,
+            runCommand: run,
+            targetBranch: target.branch,
+          });
+
+          if (fb.buildLockConflict) {
+            if (shouldUpdatePlatformProject) {
+              await updatePlatformProjectStatus({
+                latestCommit: parentDeploy,
+                metadata: {
+                  error:
+                    fb.error instanceof Error
+                      ? fb.error.message
+                      : String(fb.error),
+                  failedAt: new Date(now()).toISOString(),
+                  parentFallbackFromHead: latestCommit.hash,
+                },
+                status: 'failed',
+              });
+            }
+
+            return attachRuntime({
+              branchTipCommit: latestCommit,
+              checkedAt,
+              error: fb.error,
+              latestCommit: parentDeploy,
+              newHead: updatedHead,
+              oldHead: localHead,
+              status: 'deploy-failed',
+            });
+          }
+
+          if (!fb.success) {
+            if (shouldUpdatePlatformProject) {
+              await updatePlatformProjectStatus({
+                latestCommit: parentDeploy,
+                metadata: {
+                  error:
+                    fb.error instanceof Error
+                      ? fb.error.message
+                      : String(fb.error),
+                  failedAt: new Date(now()).toISOString(),
+                  parentFallbackFromHead: latestCommit.hash,
+                },
+                status: 'failed',
+              });
+            }
+            log.error?.(
+              `Blue/green parent-fallback deployment failed for ${parentDeploy.shortHash}: ${fb.error instanceof Error ? fb.error.message : String(fb.error)}`
+            );
+
+            return attachRuntime(
+              {
+                branchTipCommit: latestCommit,
+                checkedAt,
+                error: fb.error,
+                latestCommit: parentDeploy,
+                newHead: updatedHead,
+                oldHead: localHead,
+                status: 'deploy-failed',
+              },
+              fb.history
+            );
+          }
+
+          const migration = await finalizeComposeProjectMigrationIfRequested({
+            env,
+            log,
+            now,
+            rootDir,
+            runCommand: run,
+          });
+          const deployFinishedAt = now();
+          const parentDeploymentStamp = readBlueGreenDeploymentStamp(
+            paths.blueGreen,
+            fsImpl
+          );
+
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit: parentDeploy,
+              metadata: {
+                deployedAt: new Date(deployFinishedAt).toISOString(),
+                deployedCommitHash: parentDeploy.hash,
+                deploymentStamp: parentDeploymentStamp,
+                oldHead: localHead,
+                parentFallbackFromHead: latestCommit.hash,
+              },
+              status: 'ready',
+            });
+          }
+
+          log.info?.(
+            `Blue/green parent-fallback deployment completed for ${parentDeploy.shortHash}.`
+          );
+
+          return attachRuntime(
+            {
+              branchTipCommit: latestCommit,
+              checkedAt,
+              containerRefreshRequired: false,
+              latestCommit: parentDeploy,
+              migration,
+              newHead: updatedHead,
+              oldHead: localHead,
+              restartRequired: false,
+              status: 'deployed',
+            },
+            fb.history
+          );
+        } catch (error) {
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit: parentDeploy,
+              metadata: {
+                error: error instanceof Error ? error.message : String(error),
+                failedAt: new Date(now()).toISOString(),
+              },
+              status: 'failed',
+            });
+          }
+
+          return attachRuntime({
+            branchTipCommit: latestCommit,
+            checkedAt,
+            error,
+            latestCommit: parentDeploy,
+            newHead: updatedHead,
+            oldHead: localHead,
+            status: 'deploy-failed',
+          });
+        }
+      }
+
+      if (shouldUpdatePlatformProject) {
+        await updatePlatformProjectStatus({
+          latestCommit,
+          metadata: {
+            buildStartedAt: new Date(checkedAt).toISOString(),
+            commitHash: latestCommit.hash,
+            oldHead: localHead,
+          },
+          status: 'building',
+        });
+      }
+
+      await runBunUpgradeAndInstall({
+        env,
+        runCommand: run,
+      });
+
+      const deployStartedAt = now();
+      onDeploymentStart({
+        checkedAt,
+        latestCommit,
+        pendingDeployment: createPendingDeploymentEntry({
+          latestCommit,
+          startedAt: deployStartedAt,
+          status: 'deploying',
+        }),
+      });
+
+      try {
+        if (containerRefreshRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'container-refresh',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          log.warn?.(
+            'Watcher container runtime changed in the pulled revision. Recreating the watcher container before deployment.'
+          );
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                pendingRestartAt: new Date(checkedAt).toISOString(),
+                pendingRestartReason: 'container-refresh',
+              },
+              status: 'queued',
+            });
+          }
+
+          return attachRuntime({
+            checkedAt,
+            containerRefreshRequired,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'restarting',
+          });
+        }
+
+        if (restartRequired) {
+          writePendingDeployRequest(
+            {
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              reason: 'process-restart',
+              requestedAt: new Date(checkedAt).toISOString(),
+            },
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          log.warn?.(
+            'Watcher script changed in the pulled revision. Restarting watcher before deployment.'
+          );
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                pendingRestartAt: new Date(checkedAt).toISOString(),
+                pendingRestartReason: 'process-restart',
+              },
+              status: 'queued',
+            });
+          }
+
+          return attachRuntime({
+            checkedAt,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            containerRefreshRequired: false,
+            restartRequired,
+            status: 'restarting',
+          });
+        }
+
+        log.info?.(
+          `Starting blue/green deployment for ${updatedHead.slice(0, 12)}.`
+        );
+
+        if (shouldUpdatePlatformProject) {
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              deployStartedAt: new Date(deployStartedAt).toISOString(),
+              commitHash: latestCommit.hash,
+              oldHead: localHead,
+            },
+            status: 'deploying',
+          });
+        }
+
+        await runBlueGreenDeploy({
+          deploymentKind: 'promotion',
+          deployCommand,
+          env,
+          fsImpl,
+          latestCommit,
+          now,
+          paths,
+          runCommand: run,
+        });
+
+        const deployFinishedAt = now();
+        const activeColor = readBlueGreenActiveColor(paths.blueGreen, fsImpl);
+        const deploymentStamp = readBlueGreenDeploymentStamp(
+          paths.blueGreen,
+          fsImpl
+        );
+        const imageTag = await cacheBlueGreenDeploymentImage({
+          activeColor,
+          env,
+          envFilePath,
+          fsImpl,
+          latestCommit,
+          log,
+          rootDir,
+          runCommand: run,
+        });
+        const history = appendDeploymentHistory(
+          {
+            activatedAt: deployFinishedAt,
+            activeColor,
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            deploymentStamp,
+            finishedAt: deployFinishedAt,
+            ...(imageTag ? { imageTag } : {}),
+            startedAt: deployStartedAt,
+            status: 'successful',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+        await pruneBlueGreenRecoveryCacheImages(history, {
+          env,
+          extraImageTag: imageTag,
+          log,
+          runCommand: run,
+        });
+        const migration = await finalizeComposeProjectMigrationIfRequested({
+          env,
+          log,
+          now,
+          rootDir,
+          runCommand: run,
+        });
+        if (shouldUpdatePlatformProject) {
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              deployedAt: new Date(deployFinishedAt).toISOString(),
+              deployedCommitHash: latestCommit.hash,
+              deploymentStamp,
+              oldHead: localHead,
+            },
+            status: 'ready',
+          });
+        }
+
+        log.info?.(
+          `Blue/green deployment completed for ${updatedHead.slice(0, 12)}.`
+        );
+
+        return attachRuntime(
+          {
+            checkedAt,
+            containerRefreshRequired: false,
+            latestCommit,
+            migration,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deployed',
+          },
+          history
+        );
+      } catch (error) {
+        const deployFinishedAt = now();
+        const history = appendDeploymentHistory(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: latestCommit.hash,
+            commitShortHash: latestCommit.shortHash,
+            commitSubject: latestCommit.subject,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          {
+            fsImpl,
+            paths,
+          }
+        );
+
+        log.error?.(
+          `Blue/green deployment failed for ${updatedHead.slice(0, 12)}: ${error instanceof Error ? error.message : String(error)}`
+        );
+        if (shouldUpdatePlatformProject) {
+          await updatePlatformProjectStatus({
+            latestCommit,
+            metadata: {
+              error: error instanceof Error ? error.message : String(error),
+              failedAt: new Date(deployFinishedAt).toISOString(),
+              oldHead: localHead,
+            },
+            status: 'failed',
+          });
+        }
+
+        return attachRuntime(
+          {
+            checkedAt,
+            containerRefreshRequired: false,
+            error,
+            latestCommit,
+            newHead: updatedHead,
+            oldHead: localHead,
+            restartRequired: false,
+            status: 'deploy-failed',
+          },
+          history
+        );
+      }
+    }
+
+    if (await isAncestor(upstreamHead, localHead, { env, runCommand: run })) {
+      log.warn?.(
+        `Local branch ${target.branch} is ahead of ${target.upstreamRef}; skipping auto-pull.`
+      );
+      return attachRuntime({
+        checkedAt,
+        latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+        status: 'ahead',
+      });
+    }
+
+    log.warn?.(
+      `Local branch ${target.branch} diverged from ${target.upstreamRef}; skipping auto-pull.`
+    );
+    return attachRuntime({
+      checkedAt,
+      latestCommit: await getCommitMetadata('HEAD', { env, runCommand: run }),
+      status: 'diverged',
+    });
+  } catch (error) {
+    if (!isRecoverableGitCommandError(error)) {
+      throw error;
+    }
+
+    log.warn?.(
+      `Git polling failed on ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
+    );
+
+    let latestCommit = null;
+    try {
+      latestCommit = await getCommitMetadata('HEAD', {
+        env,
+        runCommand: run,
+      });
+    } catch {}
+
+    return attachRuntime({
+      checkedAt,
+      error,
+      latestCommit,
+      status: 'git-failed',
+    });
+  }
+}
+
+async function runDeployWatchLoop(
+  target,
+  {
+    deployCommand = DEFAULT_DEPLOY_COMMAND,
+    env,
+    envFilePath = WEB_ENV_FILE,
+    fsImpl = fs,
+    intervalMs = DEFAULT_INTERVAL_MS,
+    log = console,
+    now = () => Date.now(),
+    once = false,
+    onDeploymentStart = () => {},
+    onIterationResult = () => {},
+    onIterationStart = () => {},
+    paths = getWatchPaths(),
+    platformProjectReader = readPlatformProject,
+    projectPollIntervalMs = DEFAULT_PROJECT_POLL_INTERVAL_MS,
+    rootDir = ROOT_DIR,
+    runCommand: run = runCommand,
+    sleepImpl = sleep,
+  } = {}
+) {
+  let consecutiveGitFailures = 0;
+  let lastProjectPollAt = 0;
+
+  while (true) {
+    const startedAt = now();
+    onIterationStart(startedAt);
+
+    try {
+      const platformProject = await platformProjectReader({ env });
+      const selectedBranch = normalizeProjectBranch(
+        platformProject.selectedBranch
+      );
+
+      if (
+        platformProject.source === 'database' &&
+        selectedBranch !== target.branch
+      ) {
+        log.info?.(
+          `Platform project target changed from ${target.branch} to ${selectedBranch}. Restarting watcher to re-lock the branch.`
+        );
+        return {
+          checkedAt: startedAt,
+          latestCommit: await getCommitMetadata('HEAD', {
+            env,
+            runCommand: run,
+          }).catch(() => null),
+          project: platformProject,
+          restartRequired: true,
+          status: 'project-target-changed',
+          target: {
+            ...target,
+            branch: selectedBranch,
+            upstreamBranch: selectedBranch,
+            upstreamRef: `${target.remote}/${selectedBranch}`,
+          },
+        };
+      }
+    } catch (error) {
+      log.warn?.(
+        `Platform project target check failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+
+    if (startedAt - lastProjectPollAt >= projectPollIntervalMs) {
+      lastProjectPollAt = startedAt;
+      try {
+        const projectResults = await processManagedInfrastructureProjects({
+          env,
+          log,
+          rootDir,
+          runCommand: run,
+        });
+        const deployedProjects = projectResults.filter(
+          (result) => result.status === 'ready'
+        );
+
+        if (deployedProjects.length > 0) {
+          log.info?.(
+            `Processed ${deployedProjects.length} managed project deployment${deployedProjects.length === 1 ? '' : 's'}.`
+          );
+        }
+      } catch (error) {
+        log.warn?.(
+          `Managed project polling failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+    }
+
+    const iterationResult = await runDeployWatchIteration(target, {
+      deployCommand,
+      env,
+      envFilePath,
+      fsImpl,
+      log,
+      now,
+      onDeploymentStart,
+      paths,
+      rootDir,
+      runCommand: run,
+    });
+    const isGitFailure = iterationResult.status === 'git-failed';
+    consecutiveGitFailures = isGitFailure ? consecutiveGitFailures + 1 : 0;
+    const baseSleepMs = isGitFailure
+      ? getGitFailureBackoffMs(consecutiveGitFailures)
+      : intervalMs;
+    const queuePollSleepMs =
+      Number.isFinite(projectPollIntervalMs) && projectPollIntervalMs > 0
+        ? projectPollIntervalMs
+        : baseSleepMs;
+    const sleepMs = Math.min(baseSleepMs, queuePollSleepMs);
+    const result = {
+      ...iterationResult,
+      gitFailureCount: isGitFailure ? consecutiveGitFailures : 0,
+      sleepMs,
+    };
+
+    if (isGitFailure) {
+      log.warn?.(
+        `Retrying Git poll in ${formatDuration(sleepMs)} after ${result.gitFailureCount} consecutive failure${result.gitFailureCount === 1 ? '' : 's'}.`
+      );
+    }
+
+    onIterationResult(result);
+
+    if (once || result.containerRefreshRequired || result.restartRequired) {
+      return result;
+    }
+
+    await sleepImpl(sleepMs);
+  }
+}
+
+async function main(argv = process.argv.slice(2), options = {}) {
+  const parsed = parseArgs(argv);
+  const env = options.env ?? process.env;
+  const fsImpl = options.fsImpl ?? fs;
+  const rootDir = options.rootDir ?? ROOT_DIR;
+  const envFilePath = options.envFilePath ?? path.join(rootDir, '.env.local');
+  const paths = getWatchPaths(rootDir);
+  const processImpl = options.processImpl ?? process;
+  const run = createQuietRunCommand(options.runCommand ?? runCommand);
+  const initialRuntimeSnapshot = await loadRuntimeSnapshot({
+    env,
+    envFilePath,
+    fsImpl,
+    now: Date.now(),
+    paths,
+    rootDir,
+    runCommand: run,
+  });
+  const initialDeploymentSummary = getLatestDeploymentSummary(
+    initialRuntimeSnapshot.deployments
+  );
+  const ui =
+    options.ui ??
+    createWatchUi(
+      {
+        currentBlueGreen: initialRuntimeSnapshot.currentBlueGreen,
+        dockerResources: initialRuntimeSnapshot.dockerResources,
+        deploymentPin: readDeploymentPin(paths, fsImpl),
+        deployments: initialRuntimeSnapshot.deployments,
+        logs: readWatcherLogEntries(paths, fsImpl),
+        intervalMs: parsed.intervalMs,
+        lastDeployAt: initialDeploymentSummary.lastDeployAt,
+        lastDeployStatus: initialDeploymentSummary.lastDeployStatus,
+        lockFile: paths.lockFile,
+        startedAt: Date.now(),
+      },
+      {
+        onEvent: (event, state) => {
+          const nextLogs = appendWatcherLogEntry(
+            createWatcherLogEntry(event, state),
+            {
+              fsImpl,
+              paths,
+            }
+          );
+          state.logs = nextLogs;
+        },
+        onStateChange: (state) => {
+          writeWatchStatus(state, {
+            fsImpl,
+            now: Date.now(),
+            paths,
+            processImpl,
+          });
+        },
+      }
+    );
+  let released = false;
+
+  const cleanup = () => {
+    if (released) {
+      return;
+    }
+
+    released = true;
+    releaseWatchLock({
+      fsImpl,
+      paths,
+      processImpl,
+    });
+    clearWatchStatus({
+      fsImpl,
+      paths,
+      processImpl,
+    });
+  };
+
+  const handleTermination = (signal) => {
+    ui.warn(`Received ${signal}. Shutting down watcher.`);
+    cleanup();
+    ui.close();
+    processImpl.exit(0);
+  };
+
+  try {
+    const migrationHandoffStarted = await handoffLegacyWatcherToTargetProject({
+      argv: options.restartArgv ?? argv,
+      env,
+      envFilePath,
+      fsImpl,
+      log: ui,
+      rootDir,
+      runCommand: run,
+    });
+
+    if (migrationHandoffStarted) {
+      ui.info(
+        `Started ${DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME} watcher for Docker project migration; legacy watcher will stop.`
+      );
+
+      return {
+        sourceProjectName: LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+        status: 'migration-handoff',
+        targetProjectName: DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+      };
+    }
+
+    const initialTarget = await resolveLockedBranchTarget({
+      env,
+      fsImpl,
+      paths,
+      runCommand: run,
+    });
+    const projectTarget = await resolvePlatformProjectTarget(initialTarget, {
+      env,
+      listDirtyWorktreePaths,
+      log: ui,
+      runCommand: run,
+    });
+    const target = projectTarget.target;
+
+    if (projectTarget.blocked) {
+      ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
+      ui.update({
+        lastResult: {
+          project: projectTarget.project,
+          status: 'blocked',
+        },
+        target,
+      });
+      writeWatchStatus(ui.state, {
+        fsImpl,
+        now: Date.now(),
+        paths,
+        processImpl,
+      });
+
+      return {
+        project: projectTarget.project,
+        status: 'blocked',
+      };
+    }
+    const latestCommit = await getCommitMetadata('HEAD', {
+      env,
+      runCommand: run,
+    });
+
+    ui.update({
+      latestCommit,
+      target,
+    });
+    const existingLock = readWatchLock(paths, fsImpl);
+
+    if (existingLock && isProcessAlive(existingLock.pid, processImpl)) {
+      if (parsed.lockConflictAction === 'resume') {
+        await mirrorExistingWatchSession(existingLock, {
+          env,
+          envFilePath,
+          fsImpl,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          once: parsed.once,
+          paths,
+          processImpl,
+          rootDir,
+          runCommand: run,
+          sleepImpl: options.sleepImpl ?? sleep,
+        });
+        return;
+      }
+
+      if (parsed.lockConflictAction === 'replace') {
+        ui.warn(
+          `Replacing existing watcher PID ${existingLock.pid} on ${existingLock.branch}.`
+        );
+        const terminated = await terminateExistingWatcher(existingLock, {
+          processImpl,
+          sleepImpl: options.sleepImpl ?? sleep,
+        });
+
+        if (!terminated) {
+          throw new Error(
+            `Unable to stop existing watcher PID ${existingLock.pid}.`
+          );
+        }
+      }
+    }
+
+    try {
+      acquireWatchLock(target, {
+        fsImpl,
+        paths,
+        processImpl,
+      });
+    } catch (error) {
+      if (parsed.lockConflictAction === 'fail' && error instanceof Error) {
+        error.message = `${error.message} Re-run with --resume-if-running to mirror the existing session or --replace-existing to stop it and take over.`;
+      }
+
+      throw error;
+    }
+
+    ui.start();
+    ui.info(
+      `Watching ${target.branch} (${target.upstreamRef}) every ${parsed.intervalMs}ms.`
+    );
+    ui.update({
+      lockFile: paths.lockFile,
+      nextCheckAt: Date.now(),
+    });
+
+    processImpl.on('SIGINT', () => {
+      handleTermination('SIGINT');
+    });
+    processImpl.on('SIGTERM', () => {
+      handleTermination('SIGTERM');
+    });
+
+    if (
+      hasPersistedPendingDeployRequest(env, {
+        fsImpl,
+        paths,
+      })
+    ) {
+      const latestDeployedCommitHash = getLatestSuccessfulDeploymentCommitHash(
+        readDeploymentHistory(paths, fsImpl)
+      );
+
+      if (latestCommit.hash && latestCommit.hash === latestDeployedCommitHash) {
+        clearPendingDeployRequest({
+          fsImpl,
+          paths,
+        });
+        ui.info(
+          `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
+        );
+      } else {
+        const deploymentHistory = readDeploymentHistory(paths, fsImpl);
+        const failedDeploymentCount = getFailedDeploymentCountForCommit(
+          deploymentHistory,
+          latestCommit.hash
+        );
+
+        const runRecoveredPendingDeployForCommit = async (
+          deployCommit,
+          {
+            deploymentKind = 'recovery-bootstrap',
+            pendingStartedAt,
+            successMessage,
+            failureMessage,
+          }
+        ) => {
+          const buildingDeployment = createPendingDeploymentEntry({
+            deploymentKind,
+            latestCommit: deployCommit,
+            startedAt: pendingStartedAt,
+            status: 'building',
+          });
+          const buildingDeployments = prependPendingDeployment(
+            ui.state.deployments,
+            buildingDeployment
+          );
+          const buildingSummary =
+            getLatestDeploymentSummary(buildingDeployments);
+
+          ui.update({
+            dockerResources: ui.state.dockerResources,
+            deployments: buildingDeployments,
+            lastDeployAt: buildingSummary.lastDeployAt,
+            lastDeployStatus: buildingSummary.lastDeployStatus,
+            nextCheckAt: null,
+          });
+
+          try {
+            const pendingResult = await runPendingDeployAfterRestart({
+              deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+              deploymentKind,
+              env,
+              envFilePath,
+              fsImpl,
+              latestCommit: deployCommit,
+              log: ui,
+              now: options.now ?? (() => Date.now()),
+              paths,
+              rootDir,
+              runCommand: run,
+            });
+            const runtimeSnapshot = await loadRuntimeSnapshot({
+              env,
+              envFilePath,
+              fsImpl,
+              now:
+                typeof options.now === 'function' ? options.now() : Date.now(),
+              paths,
+              rootDir,
+              runCommand: run,
+              history: pendingResult.history,
+            });
+            const latestDeploymentSummary = getLatestDeploymentSummary(
+              runtimeSnapshot.deployments
+            );
+
+            ui.update({
+              currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+              dockerResources: runtimeSnapshot.dockerResources,
+              deployments: runtimeSnapshot.deployments,
+              lastDeployAt: latestDeploymentSummary.lastDeployAt,
+              lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+              lastResult: { status: 'deployed' },
+              nextCheckAt: Date.now() + parsed.intervalMs,
+            });
+            clearPendingDeployRequest({
+              fsImpl,
+              paths,
+            });
+            ui.info(successMessage);
+          } catch (error) {
+            const deployFinishedAt =
+              typeof options.now === 'function' ? options.now() : Date.now();
+            const history = appendDeploymentHistory(
+              {
+                buildDurationMs: Math.max(
+                  0,
+                  deployFinishedAt - pendingStartedAt
+                ),
+                commitHash: deployCommit.hash,
+                commitShortHash: deployCommit.shortHash,
+                commitSubject: deployCommit.subject,
+                finishedAt: deployFinishedAt,
+                startedAt: pendingStartedAt,
+                status: 'failed',
+              },
+              {
+                fsImpl,
+                paths,
+              }
+            );
+            const runtimeSnapshot = await loadRuntimeSnapshot({
+              env,
+              envFilePath,
+              fsImpl,
+              now: deployFinishedAt,
+              paths,
+              rootDir,
+              runCommand: run,
+              history,
+            });
+            const latestDeploymentSummary = getLatestDeploymentSummary(
+              runtimeSnapshot.deployments
+            );
+
+            ui.update({
+              currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+              dockerResources: runtimeSnapshot.dockerResources,
+              deployments: runtimeSnapshot.deployments,
+              lastDeployAt: latestDeploymentSummary.lastDeployAt,
+              lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+              lastResult: { error, status: 'deploy-failed' },
+              nextCheckAt: Date.now() + parsed.intervalMs,
+            });
+            clearPendingDeployRequest({
+              fsImpl,
+              paths,
+            });
+            ui.error(failureMessage(error));
+          }
+        };
+
+        if (
+          hasReachedDeploymentFailureLimit(deploymentHistory, latestCommit.hash)
+        ) {
+          const parentDeploy =
+            await resolveParentFallbackCommitForRetryLimitedHead(
+              latestCommit,
+              deploymentHistory,
+              { env, runCommand: run }
+            );
+
+          if (!parentDeploy) {
+            clearPendingDeployRequest({
+              fsImpl,
+              paths,
+            });
+            ui.warn(
+              `Skipping recovered deploy handoff for ${latestCommit.shortHash} because it already failed ${failedDeploymentCount} deployment attempts.`
+            );
+          } else {
+            ui.warn(
+              `Recovered deploy handoff for ${latestCommit.shortHash} hit the deploy retry cap; deploying parent ${parentDeploy.shortHash} instead because it has no successful deployment yet.`
+            );
+            await checkoutRevision(parentDeploy.hash, { env, runCommand: run });
+
+            try {
+              const pendingStartedAt =
+                typeof options.now === 'function' ? options.now() : Date.now();
+
+              await runRecoveredPendingDeployForCommit(parentDeploy, {
+                deploymentKind: 'parent-fallback-recovery-bootstrap',
+                failureMessage: (error) =>
+                  `Recovered parent-fallback deploy handoff failed for ${parentDeploy.shortHash}: ${error instanceof Error ? error.message : String(error)}`,
+                pendingStartedAt,
+                successMessage: `Blue/green parent-fallback deployment completed for ${parentDeploy.shortHash}.`,
+              });
+            } finally {
+              await checkoutBranch(target.branch, { env, runCommand: run });
+            }
+          }
+        } else {
+          const pendingStartedAt =
+            typeof options.now === 'function' ? options.now() : Date.now();
+
+          await runRecoveredPendingDeployForCommit(latestCommit, {
+            deploymentKind: 'recovery-bootstrap',
+            failureMessage: (error) =>
+              `Recovered deploy handoff failed for ${latestCommit.shortHash}: ${error instanceof Error ? error.message : String(error)}`,
+            pendingStartedAt,
+            successMessage: `Blue/green deployment completed for ${latestCommit.shortHash}.`,
+          });
+        }
+      }
+    }
+
+    const result = await runDeployWatchLoop(target, {
+      deployCommand: options.deployCommand ?? DEFAULT_DEPLOY_COMMAND,
+      env,
+      envFilePath,
+      fsImpl,
+      intervalMs: parsed.intervalMs,
+      log: ui,
+      now: options.now ?? (() => Date.now()),
+      once: parsed.once,
+      projectPollIntervalMs: DEFAULT_PROJECT_POLL_INTERVAL_MS,
+      onDeploymentStart: ({ checkedAt, latestCommit, pendingDeployment }) => {
+        const currentDeployments = ui.state.deployments ?? [];
+        const nextDeployments = prependPendingDeployment(
+          currentDeployments,
+          pendingDeployment
+        );
+        const latestDeploymentSummary =
+          getLatestDeploymentSummary(nextDeployments);
+
+        ui.update({
+          deployments: nextDeployments,
+          lastCheckAt: checkedAt ?? Date.now(),
+          lastDeployAt: latestDeploymentSummary.lastDeployAt,
+          lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+          latestCommit: latestCommit ?? ui.state.latestCommit,
+          nextCheckAt: null,
+        });
+      },
+      onIterationResult: (iterationResult) => {
+        const latestDeploymentSummary = getLatestDeploymentSummary(
+          iterationResult.deployments ?? ui.state.deployments
+        );
+        ui.update({
+          currentBlueGreen:
+            iterationResult.currentBlueGreen ?? ui.state.currentBlueGreen,
+          dockerResources:
+            iterationResult.dockerResources ?? ui.state.dockerResources,
+          deploymentPin: readDeploymentPin(paths, fsImpl),
+          deployments: iterationResult.deployments ?? ui.state.deployments,
+          lastCheckAt: iterationResult.checkedAt ?? Date.now(),
+          lastDeployAt:
+            iterationResult.status === 'deployed' ||
+            iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'pin-deploy-failed' ||
+            iterationResult.status === 'pinned-deployed' ||
+            iterationResult.status === 'recovered' ||
+            iterationResult.status === 'standby-refreshed' ||
+            iterationResult.status === 'standby-refresh-failed' ||
+            iterationResult.status === 'restarting'
+              ? (iterationResult.deployments?.[0]?.finishedAt ??
+                iterationResult.checkedAt ??
+                Date.now())
+              : (ui.state.lastDeployAt ?? latestDeploymentSummary.lastDeployAt),
+          lastDeployStatus:
+            iterationResult.status === 'deploy-failed' ||
+            iterationResult.status === 'pin-deploy-failed' ||
+            iterationResult.status === 'standby-refresh-failed'
+              ? 'failed'
+              : iterationResult.status === 'deploying'
+                ? 'deploying'
+                : iterationResult.status === 'building'
+                  ? 'building'
+                  : iterationResult.status === 'deployed' ||
+                      iterationResult.status === 'pinned-deployed' ||
+                      iterationResult.status === 'recovered' ||
+                      iterationResult.status === 'standby-refreshed' ||
+                      iterationResult.status === 'restarting'
+                    ? 'successful'
+                    : (ui.state.lastDeployStatus ??
+                      latestDeploymentSummary.lastDeployStatus),
+          lastResult: iterationResult,
+          latestCommit: iterationResult.latestCommit ?? ui.state.latestCommit,
+          nextCheckAt:
+            iterationResult.restartRequired || parsed.once
+              ? null
+              : Date.now() + (iterationResult.sleepMs ?? parsed.intervalMs),
+        });
+      },
+      onIterationStart: (startedAt) => {
+        ui.update({
+          deploymentPin: readDeploymentPin(paths, fsImpl),
+          lastCheckAt: startedAt,
+          nextCheckAt: startedAt + parsed.intervalMs,
+        });
+      },
+      paths,
+      rootDir,
+      runCommand: run,
+      sleepImpl: options.sleepImpl ?? sleep,
+    });
+
+    if (result?.restartRequired) {
+      cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Watcher script changed. Restarting the containerized watcher process.'
+        );
+        ui.close();
+        processImpl.exit?.(CONTAINER_SELF_RESTART_EXIT_CODE);
+        return;
+      }
+
+      await spawnReplacementWatcher({
+        argv: options.restartArgv ?? process.argv.slice(1),
+        cwd: rootDir,
+        env: {
+          ...env,
+          [WATCH_PENDING_DEPLOY_ENV]: '1',
+        },
+        execPath: options.execPath ?? process.execPath,
+        spawnImpl: options.spawnImpl ?? spawn,
+      });
+      ui.close();
+      return;
+    }
+
+    if (result?.containerRefreshRequired) {
+      cleanup();
+      if (env[WATCHER_CONTAINER_ENV] === '1') {
+        ui.info(
+          'Critical watcher container files changed. Requesting host-supervised watcher service recreation.'
+        );
+        ui.close();
+        processImpl.exit?.(CONTAINER_REFRESH_EXIT_CODE);
+        return;
+      }
+
+      ui.close();
+      return;
+    }
+  } catch (error) {
+    ui.error(error instanceof Error ? error.message : String(error));
+    processImpl.exitCode =
+      error && typeof error === 'object' && typeof error.exitCode === 'number'
+        ? error.exitCode
+        : 1;
+  } finally {
+    cleanup();
+    ui.close();
+  }
+}
+
+module.exports = {
+  ...deployWatcherRuntime,
+  BLUE_GREEN_WATCHER_SERVICE,
+  CONTAINER_REFRESH_EXIT_CODE,
+  CONTAINER_SELF_RESTART_EXIT_CODE,
+  DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_GIT_FAILURE_BACKOFF_MS,
+  DEFAULT_STALE_GIT_INDEX_LOCK_MS,
+  DEFAULT_INTERVAL_MS,
+  DISPLAY_DEPLOYMENTS,
+  MAX_GIT_FAILURE_BACKOFF_MS,
+  MAX_FAILED_DEPLOYMENTS_PER_COMMIT,
+  MAX_DEPLOYMENTS,
+  MAX_EVENTS,
+  MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
+  MIGRATION_STAGING_PORT_ENV,
+  CONTAINER_REFRESH_WATCHED_FILES,
+  SELF_WATCHED_FILES,
+  WATCH_ARGS_FILE,
+  WATCH_HISTORY_FILE,
+  WATCH_LOCK_FILE,
+  WATCH_LOG_FILE,
+  WATCH_PENDING_DEPLOY_FILE,
+  WATCH_PENDING_DEPLOY_ENV,
+  WATCH_RUNTIME_DIR,
+  WATCH_STATUS_FILE,
+  WATCHER_CONTAINER_ENV,
+  acquireWatchLock,
+  appendDeploymentHistory,
+  buildDashboardView,
+  clearInstantRolloutRequest,
+  clearWatchStatus,
+  clearContainerManagedWatcherState,
+  clearPendingDeployRequest,
+  createWatchUi,
+  fetchTrackedBranch,
+  finalizeComposeProjectMigrationIfRequested,
+  formatClockTime,
+  formatCountdown,
+  formatDuration,
+  formatRelativeTime,
+  formatRequestsPerMinute,
+  getGitFailureBackoffMs,
+  getLatestCachedSuccessfulDeployment,
+  getLatestDeploymentSummary,
+  getFailedDeploymentCountForCommit,
+  getLatestSuccessfulDeploymentCommitHash,
+  getCommitMetadata,
+  getCurrentBranch,
+  getMigrationRequest,
+  getMigrationTargetWatcherEnv,
+  getRevision,
+  getTrackedUpstream,
+  getWatcherContainerState,
+  getWatcherStartupComposeEnv,
+  getWatchPaths,
+  hasDirtyWorktree,
+  handoffLegacyWatcherToTargetProject,
+  listDirtyWorktreePaths,
+  hasWatchedScriptChanges,
+  isRecoverableGitCommandError,
+  isGitIndexLockError,
+  isAncestor,
+  isProcessAlive,
+  listChangedFilesBetweenRevisions,
+  main,
+  mirrorExistingWatchSession,
+  parseArgs,
+  parseContainerConsoleLogEntries,
+  parseProxyLogEntries,
+  parseUpstreamRef,
+  prependPendingDeployment,
+  pullTrackedBranch,
+  readDeploymentHistory,
+  readInstantRolloutRequest,
+  readPendingDeployRequest,
+  readWatchArgsFile,
+  readWatchLock,
+  readWatchStatus,
+  releaseWatchLock,
+  resolveLockedBranchTarget,
+  resolvePlatformProjectTarget,
+  runBunUpgradeAndInstall,
+  runBlueGreenDeploy,
+  runPendingDeployAfterRestart,
+  runDeployWatchIteration,
+  runDeployWatchLoop,
+  runWatcherCommand,
+  removeStaleGitIndexLock,
+  sleep,
+  spawnReplacementWatcher,
+  startBlueGreenWatcherContainer,
+  stripAnsi,
+  summarizeRequestRate,
+  streamBlueGreenWatcherLogs,
+  terminateExistingWatcher,
+  createPendingDeploymentEntry,
+  createQuietRunCommand,
+  hasPersistedPendingDeployRequest,
+  summarizeBlueGreenRuntime,
+  summarizeResult,
+  waitForProcessExit,
+  writeWatchArgsFile,
+  writePendingDeployRequest,
+  writeWatchStatus,
+  writeDeploymentHistory,
+};

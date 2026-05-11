@@ -1,5 +1,11 @@
 const readline = require('node:readline');
 
+const {
+  DEFAULT_INTERVAL_MS,
+  DISPLAY_DEPLOYMENTS,
+  MAX_EVENTS,
+} = require('./watcher-constants.js');
+
 const ANSI = {
   blue: '\x1b[34m',
   bold: '\x1b[1m',
@@ -149,6 +155,36 @@ function formatDailyRequestCount(count) {
   return `${new Intl.NumberFormat('en-US').format(count)} req`;
 }
 
+function formatBytes(bytes) {
+  if (!Number.isFinite(bytes) || bytes < 0) {
+    return 'n/a';
+  }
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let value = bytes;
+  let unitIndex = 0;
+
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: value >= 100 ? 0 : value >= 10 ? 1 : 2,
+  }).format(value)} ${units[unitIndex]}`;
+}
+
+function formatCpuPercent(value) {
+  if (!Number.isFinite(value) || value < 0) {
+    return 'n/a';
+  }
+
+  return `${new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: value >= 100 ? 0 : 1,
+    minimumFractionDigits: value > 0 && value < 10 ? 1 : 0,
+  }).format(value)}%`;
+}
+
 function formatMetric(label, value, color) {
   return `${colorize(color, label)} ${emphasize(color, value)}`;
 }
@@ -194,13 +230,47 @@ function summarizeResult(result) {
       return colorize('yellow', 'Dirty worktree, waiting');
     case 'diverged':
       return colorize('yellow', 'Branch diverged, waiting');
+    case 'git-failed':
+      return colorize('yellow', 'Git failed, retrying');
+    case 'retry-limited':
+      return colorize('yellow', 'Deployment retry limit reached');
+    case 'pin-deploy-failed':
+      return colorize('red', 'Pinned rollback failed');
+    case 'pinned':
+      return colorize('yellow', 'Pinned to rollback');
+    case 'pinned-deployed':
+      return colorize('green', 'Pinned rollback deployed');
+    case 'recovered':
+      return colorize('green', 'Recovered active and standby');
     case 'restarting':
       return colorize('magenta', 'Restarting watcher');
+    case 'standby-refresh-failed':
+      return colorize('red', 'Standby refresh failed');
+    case 'standby-refreshed':
+      return colorize('green', 'Standby refreshed');
     case 'up-to-date':
       return colorize('green', 'Up to date');
     default:
       return colorize('cyan', 'Watching');
   }
+}
+
+function getResultErrorLines(result) {
+  const message =
+    result?.error instanceof Error
+      ? result.error.message
+      : typeof result?.error === 'string'
+        ? result.error
+        : '';
+
+  if (!message) {
+    return [];
+  }
+
+  return stripAnsi(message)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
 }
 
 function summarizeBlueGreenRuntime(
@@ -318,6 +388,62 @@ function summarizeBlueGreenRuntime(
   return `${base} ${colorize('dim', `(${details.join(' · ')})`)}`;
 }
 
+function summarizeDockerResources(resources) {
+  if (!resources || resources.state === 'idle') {
+    return colorize('dim', 'idle');
+  }
+
+  if (resources.state === 'unavailable') {
+    return colorize('yellow', resources.message ?? 'unavailable');
+  }
+
+  const details = [
+    formatMetric('cpu', formatCpuPercent(resources.totalCpuPercent), 'yellow'),
+    formatMetric('mem', formatBytes(resources.totalMemoryBytes), 'magenta'),
+    formatMetric('rx', formatBytes(resources.totalRxBytes), 'cyan'),
+    formatMetric('tx', formatBytes(resources.totalTxBytes), 'blue'),
+    formatMetric(
+      'ctr',
+      new Intl.NumberFormat('en-US').format(resources.containers.length),
+      'green'
+    ),
+  ];
+
+  return (
+    colorize('green', 'live') + colorize('dim', ` (${details.join(' · ')})`)
+  );
+}
+
+function summarizeDockerContainers(resources, maxContainers = 4) {
+  if (!resources || resources.state === 'idle') {
+    return colorize('dim', 'idle');
+  }
+
+  if (resources.state === 'unavailable') {
+    return colorize('yellow', resources.message ?? 'unavailable');
+  }
+
+  if (!resources?.containers?.length) {
+    return colorize('dim', 'none');
+  }
+
+  return resources.containers
+    .slice(0, maxContainers)
+    .map((container) =>
+      [
+        formatBadge(container.label.toUpperCase(), container.color),
+        formatMetric('cpu', formatCpuPercent(container.cpuPercent), 'yellow'),
+        formatMetric('mem', formatBytes(container.memoryBytes), 'magenta'),
+        formatMetric(
+          'net',
+          `${formatBytes(container.rxBytes)} / ${formatBytes(container.txBytes)}`,
+          'cyan'
+        ),
+      ].join(' ')
+    )
+    .join(colorize('dim', '  ·  '));
+}
+
 function padCell(value, width, align = 'left') {
   const rawValue = String(value);
   const visibleValue = stripAnsi(rawValue);
@@ -333,6 +459,187 @@ function padCell(value, width, align = 'left') {
   return `${normalized}${' '.repeat(padding)}`;
 }
 
+function formatBadge(label, color) {
+  return emphasize(color, `[${label}]`);
+}
+
+function getDeploymentStatusMeta(entry) {
+  if (entry.runtimeState) {
+    return {
+      color: entry.runtimeState === 'standby' ? 'blue' : 'green',
+      label: entry.runtimeState === 'standby' ? 'STANDBY' : 'ACTIVE',
+    };
+  }
+
+  if (entry.status === 'failed') {
+    return {
+      color: 'red',
+      label: 'FAILED',
+    };
+  }
+
+  if (entry.status === 'building') {
+    return {
+      color: 'magenta',
+      label: 'BUILDING',
+    };
+  }
+
+  if (entry.status === 'deploying') {
+    return {
+      color: 'cyan',
+      label: 'DEPLOYING',
+    };
+  }
+
+  if (entry.endedAt) {
+    return {
+      color: 'cyan',
+      label: 'ENDED',
+    };
+  }
+
+  return {
+    color: 'green',
+    label: 'ACTIVE',
+  };
+}
+
+function getDeploymentBorderColor(entry) {
+  if (entry.runtimeState === 'active') {
+    return 'green';
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return 'blue';
+  }
+
+  return getDeploymentStatusMeta(entry).color;
+}
+
+function getDeploymentPhaseBadges(entry) {
+  if (entry.deploymentKind === 'standby-refresh') {
+    if (entry.status === 'building' || entry.status === 'deploying') {
+      return [formatBadge('REFRESHING', 'blue')];
+    }
+
+    if (entry.status === 'failed') {
+      return [formatBadge('REFRESH FAILED', 'red')];
+    }
+
+    if (entry.runtimeState === 'standby') {
+      return [formatBadge('STANDBY SYNCED', 'blue')];
+    }
+
+    return [formatBadge('SYNCED', 'blue')];
+  }
+
+  if (entry.status === 'building') {
+    return [formatBadge('PENDING', 'magenta')];
+  }
+
+  if (entry.status === 'deploying') {
+    return [formatBadge('PROMOTING', 'cyan')];
+  }
+
+  if (entry.status === 'failed') {
+    return [formatBadge('FAILED ROLLOUT', 'red')];
+  }
+
+  if (entry.runtimeState === 'active') {
+    return [formatBadge('PROMOTED', 'green')];
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return [formatBadge('STANDBY READY', 'blue')];
+  }
+
+  if (entry.endedAt) {
+    return [formatBadge('RETIRED', 'dim')];
+  }
+
+  return [formatBadge('DEPLOYED', 'green')];
+}
+
+function formatHeaderLine(left, right, width) {
+  const leftText = stripAnsi(left);
+  const rightText = stripAnsi(right);
+
+  if (leftText.length + rightText.length + 3 > width) {
+    return truncateText(`${leftText} ${rightText}`, width);
+  }
+
+  return `${left}${' '.repeat(width - leftText.length - rightText.length)}${right}`;
+}
+
+function buildMetricBand(metrics, width) {
+  return padCell(metrics.join('  '), width);
+}
+
+function getDeploymentSortTime(entry) {
+  return (
+    entry.finishedAt ??
+    entry.activatedAt ??
+    entry.startedAt ??
+    entry.endedAt ??
+    0
+  );
+}
+
+function getDeploymentDisplayPriority(entry) {
+  if (entry.status === 'building' || entry.status === 'deploying') {
+    return 0;
+  }
+
+  if (entry.runtimeState === 'active') {
+    return 1;
+  }
+
+  if (entry.runtimeState === 'standby') {
+    return 2;
+  }
+
+  if (entry.status === 'failed') {
+    return 3;
+  }
+
+  if (!entry.endedAt) {
+    return 4;
+  }
+
+  return 5;
+}
+
+function selectDeploymentsForDisplay(
+  deployments,
+  maxDeployments = DISPLAY_DEPLOYMENTS
+) {
+  if (!deployments?.length) {
+    return [];
+  }
+
+  return deployments
+    .map((entry, index) => ({
+      entry,
+      index,
+      priority: getDeploymentDisplayPriority(entry),
+      sortTime: getDeploymentSortTime(entry),
+    }))
+    .sort((left, right) => {
+      if (left.priority !== right.priority) {
+        return left.priority - right.priority;
+      }
+
+      if (left.sortTime !== right.sortTime) {
+        return right.sortTime - left.sortTime;
+      }
+
+      return left.index - right.index;
+    })
+    .slice(0, maxDeployments)
+    .map((item) => item.entry);
+}
+
 function buildDeploymentTable(
   deployments,
   { now = Date.now(), width = 100 } = {}
@@ -342,25 +649,35 @@ function buildDeploymentTable(
   }
 
   const innerWidth = Math.max(66, Math.min(width, 118));
-  const topBorder = colorize('dim', `┌${'─'.repeat(innerWidth + 2)}┐`);
-  const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
-  const bottomBorder = colorize('dim', `└${'─'.repeat(innerWidth + 2)}┘`);
   const rows = deployments.map((entry) => {
-    const status = entry.runtimeState
-      ? colorize('green', 'ACTIVE')
-      : entry.status === 'failed'
-        ? colorize('red', 'FAILED')
-        : entry.status === 'building'
-          ? colorize('magenta', 'BUILDING')
-          : entry.status === 'deploying'
-            ? colorize('cyan', 'DEPLOYING')
-            : entry.endedAt
-              ? colorize('cyan', 'ENDED')
-              : colorize('green', 'ACTIVE');
+    const statusMeta = getDeploymentStatusMeta(entry);
+    const borderColor = getDeploymentBorderColor(entry);
     const timestamp = entry.finishedAt ?? entry.startedAt;
-    const heading = `[${formatClockTime(timestamp)}] ${status} ${entry.activeColor ?? '-'}`;
-    const commitLine =
-      `${entry.commitShortHash ?? 'unknown'} ${entry.commitSubject ?? ''}`.trim();
+    const heading = formatHeaderLine(
+      `${colorize('dim', `[${formatClockTime(timestamp)}]`)} ${emphasize(
+        'cyan',
+        entry.commitShortHash ?? 'unknown'
+      )}`,
+      [
+        formatBadge(statusMeta.label, statusMeta.color),
+        entry.activeColor ? formatBadge(entry.activeColor, 'cyan') : null,
+      ]
+        .filter(Boolean)
+        .join(' '),
+      innerWidth
+    );
+    const commitLine = `${entry.commitSubject ?? 'Unknown deployment'}`.trim();
+    const metaLine = [
+      ...getDeploymentPhaseBadges(entry),
+      entry.runtimeState
+        ? formatBadge(
+            entry.runtimeState === 'standby' ? 'WARM BACKUP' : 'LIVE TRAFFIC',
+            entry.runtimeState === 'standby' ? 'blue' : 'green'
+          )
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
     const lifecycle = entry.activatedAt
       ? `${colorize('dim', 'since')} ${emphasize(
           'cyan',
@@ -372,13 +689,14 @@ function buildDeploymentTable(
             formatClockTime(entry.startedAt)
           )}`
         : '';
-    const liveBuildDurationMs =
-      getDeploymentElapsedMs(entry, { now }) ?? entry.buildDurationMs;
+    const elapsedMs = getDeploymentElapsedMs(entry, { now });
     const metricsOne = [
-      formatMetric('build', formatDuration(liveBuildDurationMs), 'cyan'),
+      elapsedMs != null
+        ? formatMetric('elapsed', formatDuration(elapsedMs), 'cyan')
+        : formatMetric('build', formatDuration(entry.buildDurationMs), 'cyan'),
       formatMetric('life', formatDuration(entry.lifetimeMs), 'magenta'),
       formatMetric('age', formatRelativeTime(timestamp, { now }), 'dim'),
-    ].join('  ');
+    ];
     const metricsTwo = [
       formatMetric('req', formatRequestCount(entry.requestCount), 'green'),
       formatMetric(
@@ -391,7 +709,7 @@ function buildDeploymentTable(
         formatRequestsPerMinute(entry.peakRequestsPerMinute),
         'yellow'
       ),
-    ].join('  ');
+    ];
     const metricsThree = [
       formatMetric(
         'day',
@@ -408,17 +726,24 @@ function buildDeploymentTable(
         formatRequestsPerDay(entry.dailyPeakRequests),
         'red'
       ),
-    ].join('  ');
+    ];
+    const topBorder = colorize(borderColor, `╭${'─'.repeat(innerWidth + 2)}╮`);
+    const middleBorder = colorize('dim', `├${'─'.repeat(innerWidth + 2)}┤`);
+    const bottomBorder = colorize(
+      borderColor,
+      `╰${'─'.repeat(innerWidth + 2)}╯`
+    );
 
     return [
       topBorder,
-      `│ ${padCell(heading, innerWidth)} │`,
-      `│ ${padCell(commitLine, innerWidth)} │`,
+      `${colorize(borderColor, '│')} ${padCell(heading, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(commitLine, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(metaLine, innerWidth)} ${colorize(borderColor, '│')}`,
       middleBorder,
-      `│ ${padCell(metricsOne, innerWidth)} │`,
-      `│ ${padCell(metricsTwo, innerWidth)} │`,
-      `│ ${padCell(metricsThree, innerWidth)} │`,
-      `│ ${padCell(lifecycle, innerWidth)} │`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsOne, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsTwo, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${buildMetricBand(metricsThree, innerWidth)} ${colorize(borderColor, '│')}`,
+      `${colorize(borderColor, '│')} ${padCell(lifecycle, innerWidth)} ${colorize(borderColor, '│')}`,
       bottomBorder,
     ];
   });
@@ -435,9 +760,10 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         Math.max(24, contentWidth - 32)
       )}`
     : colorize('dim', 'unknown');
+  const deploymentCards = selectDeploymentsForDisplay(state.deployments);
   const deployments =
-    state.deployments?.length > 0
-      ? buildDeploymentTable(state.deployments, {
+    deploymentCards.length > 0
+      ? buildDeploymentTable(deploymentCards, {
           now,
           width: contentWidth,
         })
@@ -457,6 +783,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       : [colorize('dim', 'No events yet.')];
   const activePendingDeployment = state.deployments?.[0];
   const lastDeployDetails = [formatRelativeTime(state.lastDeployAt, { now })];
+  const failureLines = getResultErrorLines(state.lastResult);
 
   if (
     activePendingDeployment &&
@@ -466,7 +793,7 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     const elapsedMs = getDeploymentElapsedMs(activePendingDeployment, { now });
 
     if (elapsedMs != null) {
-      lastDeployDetails.push(`${formatDuration(elapsedMs)} build`);
+      lastDeployDetails.push(`${formatDuration(elapsedMs)} elapsed`);
     }
   }
 
@@ -480,11 +807,44 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
         state.target?.upstreamRef ?? 'unknown'
       )}`
     ),
+    ...(state.deploymentPin
+      ? [
+          formatRow(
+            'Pinned',
+            `${colorize(
+              'yellow',
+              state.deploymentPin.commitShortHash ??
+                state.deploymentPin.commitHash.slice(0, 12)
+            )} ${truncateText(
+              state.deploymentPin.commitSubject ?? 'Selected deployment',
+              Math.max(24, contentWidth - 34)
+            )}`
+          ),
+        ]
+      : []),
     formatRow('Status', summarizeResult(state.lastResult)),
+    ...(failureLines.length > 0
+      ? [
+          formatRow(
+            'Failure',
+            colorize('red', truncateText(failureLines[0], contentWidth - 18))
+          ),
+          ...failureLines
+            .slice(1, 3)
+            .map((line, index) =>
+              formatRow(
+                index === 0 ? 'Detail' : 'Detail+',
+                colorize('dim', truncateText(line, contentWidth - 18))
+              )
+            ),
+        ]
+      : []),
     formatRow(
       'Blue/green',
       summarizeBlueGreenRuntime(state.currentBlueGreen, { now })
     ),
+    formatRow('Docker', summarizeDockerResources(state.dockerResources)),
+    formatRow('Containers', summarizeDockerContainers(state.dockerResources)),
     formatRow('Interval', `${(state.intervalMs / 1_000).toFixed(1)}s`),
     formatRow('Started', formatClockTime(state.startedAt)),
     formatRow(
@@ -499,13 +859,6 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
       `${formatClockTime(state.lastCheckAt)} ${colorize(
         'dim',
         `(${formatRelativeTime(state.lastCheckAt, { now })})`
-      )}`
-    ),
-    formatRow(
-      'Next poll',
-      `${formatCountdown(state.nextCheckAt, { now })} ${colorize(
-        'dim',
-        `(at ${formatClockTime(state.nextCheckAt)})`
       )}`
     ),
     formatRow(
@@ -532,7 +885,11 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     formatRow('Lock file', state.lockFile ?? colorize('dim', 'not acquired')),
     '',
     separator,
-    colorize('bold', 'Last 3 Deployments'),
+    colorize('bold', `Top ${DISPLAY_DEPLOYMENTS} Deployments`),
+    colorize(
+      'dim',
+      'Showing the most relevant cards first: in-progress rollout, live traffic, then warm standby.'
+    ),
     ...deployments,
     '',
     separator,
@@ -545,22 +902,27 @@ function buildDashboardView(state, { now = Date.now(), width = 100 } = {}) {
     ),
   ].join('\n');
 }
-
 function createWatchUi(initialState = {}, options = {}) {
   const stdout = options.stdout ?? process.stdout;
   const stderr = options.stderr ?? process.stderr;
   const now = options.now ?? (() => Date.now());
+  const onStateChange = options.onStateChange ?? null;
+  const refreshIntervalMs = options.refreshIntervalMs ?? 1_000;
+  const setIntervalImpl = options.setIntervalImpl ?? setInterval;
+  const clearIntervalImpl = options.clearIntervalImpl ?? clearInterval;
   const isTTY = options.isTTY ?? Boolean(stdout.isTTY);
-  const maxEvents = options.maxEvents ?? 8;
+  const maxEvents = options.maxEvents ?? MAX_EVENTS;
+  const onEvent = options.onEvent ?? null;
   const state = {
     deployments: [],
     events: [],
-    intervalMs: options.defaultIntervalMs ?? 1_000,
+    intervalMs: DEFAULT_INTERVAL_MS,
     lastResult: null,
     ...initialState,
   };
   let cursorHidden = false;
   let closed = false;
+  let refreshTimer = null;
 
   function render() {
     if (!isTTY || closed) {
@@ -577,23 +939,34 @@ function createWatchUi(initialState = {}, options = {}) {
     stdout.write(output);
   }
 
+  function emitStateChange() {
+    onStateChange?.(state);
+  }
+
   function start() {
     if (isTTY && !cursorHidden) {
       stdout.write('\x1b[?25l');
       cursorHidden = true;
       render();
     }
+
+    if (isTTY && refreshIntervalMs > 0 && !refreshTimer) {
+      refreshTimer = setIntervalImpl(() => {
+        render();
+      }, refreshIntervalMs);
+    }
+
+    emitStateChange();
   }
 
   function pushEvent(level, message) {
-    state.events = [
-      {
-        level,
-        message,
-        time: now(),
-      },
-      ...state.events,
-    ].slice(0, maxEvents);
+    const event = {
+      level,
+      message,
+      time: now(),
+    };
+    state.events = [event, ...state.events].slice(0, maxEvents);
+    onEvent?.(event, state);
 
     if (!isTTY) {
       const writer = level === 'error' ? stderr : stdout;
@@ -601,11 +974,13 @@ function createWatchUi(initialState = {}, options = {}) {
     }
 
     render();
+    emitStateChange();
   }
 
   function update(patch) {
     Object.assign(state, patch);
     render();
+    emitStateChange();
   }
 
   function close() {
@@ -615,11 +990,18 @@ function createWatchUi(initialState = {}, options = {}) {
 
     closed = true;
 
+    if (refreshTimer) {
+      clearIntervalImpl(refreshTimer);
+      refreshTimer = null;
+    }
+
     if (isTTY) {
       render();
       stdout.write(`\n\x1b[?25h`);
       cursorHidden = false;
     }
+
+    emitStateChange();
   }
 
   return {
@@ -657,5 +1039,7 @@ module.exports = {
   getDeploymentElapsedMs,
   stripAnsi,
   summarizeBlueGreenRuntime,
+  summarizeDockerContainers,
+  summarizeDockerResources,
   summarizeResult,
 };
