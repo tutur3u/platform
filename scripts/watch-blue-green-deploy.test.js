@@ -274,6 +274,34 @@ test('runBunUpgradeAndInstall runs bun upgrade before bun i', async () => {
   assert.deepEqual(calls, ['bun upgrade', 'bun i']);
 });
 
+test('runBunUpgradeAndInstall continues when bun upgrade is HTTPForbidden', async () => {
+  const calls = [];
+  const warnings = [];
+
+  await runBunUpgradeAndInstall({
+    log: {
+      warn(message) {
+        warnings.push(message);
+      },
+    },
+    runCommand: async (command, args) => {
+      calls.push(`${command} ${args.join(' ')}`);
+
+      if (command === 'bun' && args[0] === 'upgrade') {
+        return createResult('', {
+          code: 1,
+          stderr: 'Bun upgrade failed with error: HTTPForbidden',
+        });
+      }
+
+      return createResult('');
+    },
+  });
+
+  assert.deepEqual(calls, ['bun upgrade', 'bun i']);
+  assert.match(warnings.join('\n'), /recoverable Bun download error/);
+});
+
 test('getGitFailureBackoffMs starts at one minute and caps exponential retries', () => {
   assert.equal(getGitFailureBackoffMs(1), DEFAULT_GIT_FAILURE_BACKOFF_MS);
   assert.equal(getGitFailureBackoffMs(2), DEFAULT_GIT_FAILURE_BACKOFF_MS * 2);

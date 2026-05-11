@@ -1600,14 +1600,35 @@ async function finalizeComposeProjectMigrationIfRequested({
   };
 }
 
+function isRecoverableBunUpgradeError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return (
+    /HTTPForbidden/iu.test(message) ||
+    /bun\s+upgrade\s+failed\s+with\s+error:\s*HTTPForbidden/iu.test(message)
+  );
+}
+
 async function runBunUpgradeAndInstall({
   env,
+  log = console,
   runCommand: run = runCommand,
 } = {}) {
-  await runChecked('bun', ['upgrade'], {
-    env,
-    runCommand: run,
-  });
+  try {
+    await runChecked('bun', ['upgrade'], {
+      env,
+      runCommand: run,
+    });
+  } catch (error) {
+    if (!isRecoverableBunUpgradeError(error)) {
+      throw error;
+    }
+
+    log.warn?.(
+      `bun upgrade failed with a recoverable Bun download error; continuing with bun i. ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
   await runChecked('bun', ['i'], {
     env,
     runCommand: run,
