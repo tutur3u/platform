@@ -875,11 +875,13 @@ test('deployment build lock supports token re-entry and guarded release', () => 
     });
 
     assert.equal(readDeploymentBuildLock(paths, fs).ownerPid, 4321);
+    const frozenNow = () => 1000;
     assert.throws(
       () =>
         acquireDeploymentBuildLock({
           command: 'another deploy',
           fsImpl: fs,
+          now: frozenNow,
           paths,
           processImpl,
         }),
@@ -892,6 +894,7 @@ test('deployment build lock supports token re-entry and guarded release', () => 
         [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
       },
       fsImpl: fs,
+      now: frozenNow,
       paths,
       processImpl,
     });

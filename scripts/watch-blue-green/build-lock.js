@@ -227,7 +227,9 @@ function lockAgeExceedsThreshold(lock, now, staleAfterMs) {
 /**
  * Clears a deployment build lock file when the recorded owner PID is
  * obviously stale (dead, PID reuse, Docker CLI on Linux) or stale by age
- * when /proc cannot be read.
+ * when /proc cannot be read. On non-Linux hosts, age-based invalidation still
+ * applies so abandoned lock files cannot block deploys indefinitely.
+ * @param {string} [options.platform] Override `os.platform()` (for example in tests).
  * @returns {boolean} true when the lock file was removed
  */
 function tryInvalidateStaleDeploymentBuildLock(
@@ -238,6 +240,7 @@ function tryInvalidateStaleDeploymentBuildLock(
     now = () => Date.now(),
     paths = getWatchPaths(),
     processImpl = process,
+    platform = os.platform(),
   } = {}
 ) {
   const pid = Number(lock?.ownerPid ?? lock?.pid);
@@ -249,7 +252,7 @@ function tryInvalidateStaleDeploymentBuildLock(
     return true;
   }
 
-  const linux = os.platform() === 'linux';
+  const linux = platform === 'linux';
   const cmdline = linux ? readLinuxProcessCmdline(pid, fsImpl) : null;
 
   if (linux) {
@@ -278,6 +281,9 @@ function tryInvalidateStaleDeploymentBuildLock(
       clearDeploymentBuildLock({ fsImpl, paths });
       return true;
     }
+  } else if (lockAgeExceedsThreshold(lock, now, staleAfterMs)) {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return true;
   }
 
   return false;
@@ -286,6 +292,7 @@ function tryInvalidateStaleDeploymentBuildLock(
 /**
  * After stale invalidation, returns true when another actor still holds
  * a legitimate deployment build lock (manual conflict UX / cancel flows).
+ * @param {string} [options.platform] Override `os.platform()` (for example in tests).
  */
 function isDeploymentBuildLockBlocking(
   lock,
@@ -294,9 +301,18 @@ function isDeploymentBuildLockBlocking(
     fsImpl = fs,
     now = () => Date.now(),
     processImpl = process,
+    platform = os.platform(),
   } = {}
 ) {
   if (!lock) {
+    return false;
+  }
+
+  const staleAfterMs = getDeploymentLockStaleAfterMs(env);
+  if (
+    platform !== 'linux' &&
+    lockAgeExceedsThreshold(lock, now, staleAfterMs)
+  ) {
     return false;
   }
 
@@ -306,7 +322,7 @@ function isDeploymentBuildLockBlocking(
     return false;
   }
 
-  if (os.platform() === 'linux') {
+  if (platform === 'linux') {
     const cmd = readLinuxProcessCmdline(pid, fsImpl);
     if (cmd && deploymentLockMatchesProcessCmdline(lock, cmd)) {
       return true;
@@ -316,11 +332,7 @@ function isDeploymentBuildLockBlocking(
       return false;
     }
 
-    return !lockAgeExceedsThreshold(
-      lock,
-      now,
-      getDeploymentLockStaleAfterMs(env)
-    );
+    return !lockAgeExceedsThreshold(lock, now, staleAfterMs);
   }
 
   return sig === 'alive' || sig === 'perm';
@@ -424,7 +436,11 @@ function acquireDeploymentBuildLock({
         throw new DeploymentBuildLockConflictError(currentLock);
       }
     } else if (sig === 'alive' || sig === 'perm') {
-      throw new DeploymentBuildLockConflictError(currentLock);
+      if (lockAgeExceedsThreshold(currentLock, now, staleAfterMs)) {
+        clearDeploymentBuildLock({ fsImpl, paths });
+      } else {
+        throw new DeploymentBuildLockConflictError(currentLock);
+      }
     }
   }
 

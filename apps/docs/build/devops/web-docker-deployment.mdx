@@ -389,9 +389,11 @@ deployment kind, and a re-entrant token for nested helper calls).
   recorded command is the package script name (`bun serve:web:docker:bg`), but
   production deploys usually run as `node scripts/docker-web.js ...`; the
   matcher treats those as the same holder so a live `node` deploy is not cleared
-  as a stale PID reuse. When no `web-proxy` / `web-blue` / `web-green`
-  containers exist, the auto-deploy watcher also runs the same stale-lock sweep
-  before cached recovery.
+  as a stale PID reuse. On **macOS and Windows**, the same age-based stale window
+  (`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`, default eight hours) still clears
+  abandoned locks because `/proc` validation is unavailable. When no `web-proxy`
+  / `web-blue` / `web-green` containers exist, the auto-deploy watcher also runs
+  the same stale-lock sweep before cached recovery.
 - **`DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS`**: optional override for the
   default eight-hour window used when `/proc` is unreadable but `kill(pid, 0)`
   still reports a process (for example permission quirks). Set to `0` to
