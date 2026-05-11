@@ -51,7 +51,10 @@ function broadcast(serverId: string, message: Record<string, unknown>) {
 }
 
 function createSupabaseClient() {
-  const url = process.env.SUPABASE_SERVER_URL || process.env.SUPABASE_URL;
+  const url =
+    process.env.SUPABASE_SERVER_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL;
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SERVICE_KEY ||

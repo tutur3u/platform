@@ -137,11 +137,6 @@ services:
     environment:
       - HIVE_REALTIME_TOKEN_SECRET
       - PORT=7815
-      - SUPABASE_SECRET_KEY
-      - SUPABASE_SERVER_URL
-      - SUPABASE_SERVICE_KEY
-      - SUPABASE_SERVICE_ROLE_KEY
-      - SUPABASE_URL
     healthcheck:
       test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7815/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
       interval: 30s
@@ -160,6 +155,7 @@ services:
     build:
       context: .
       dockerfile: apps/hive/Dockerfile
+      target: dev
     command: ["bun", "--cwd", "apps/hive", "run", "dev"]
     env_file:
       - path: apps/web/.env.local

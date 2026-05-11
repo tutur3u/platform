@@ -14,9 +14,16 @@ only by Hive; do not replace it with Supabase Realtime.
   when they need the service-side endpoint.
 - `NEXT_PUBLIC_HIVE_REALTIME_URL`: browser-facing WebSocket URL, normally
   `wss://hive.tuturuuu.com/realtime` in production.
-- Supabase service credentials already used by the platform, such as
-  `SUPABASE_SERVER_URL` and the service-role secret variable present in the
-  deployment environment.
+- Supabase credentials already used by `apps/web`, especially
+  `NEXT_PUBLIC_SUPABASE_URL` with `SUPABASE_SECRET_KEY`. `SUPABASE_SERVER_URL`
+  may still override the server-side URL when the deployment needs a
+  Docker-internal Supabase origin.
+
+`apps/hive` shares the same Supabase setup as `apps/web`. Docker runtime env
+comes from `.env.local` with the same `apps/web/.env.local` fallback, and the
+production Hive image receives the `web_env` BuildKit secret during `next build`
+so prerendered auth routes can resolve `NEXT_PUBLIC_SUPABASE_URL` and related
+platform Supabase variables.
 
 ## Blue/Green Deployment
 

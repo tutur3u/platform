@@ -166,11 +166,6 @@ services:
       - HIVE_REALTIME_TOKEN_SECRET
       - NODE_ENV=production
       - PORT=7815
-      - SUPABASE_SECRET_KEY
-      - SUPABASE_SERVER_URL
-      - SUPABASE_SERVICE_KEY
-      - SUPABASE_SERVICE_ROLE_KEY
-      - SUPABASE_URL
     expose:
       - "7815"
     healthcheck:
@@ -186,6 +181,9 @@ services:
     build:
       context: .
       dockerfile: apps/hive/Dockerfile
+      target: runner
+      secrets:
+        - web_env
     env_file:
       - path: apps/web/.env.local
         required: false
