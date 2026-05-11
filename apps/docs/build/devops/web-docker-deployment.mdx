@@ -441,18 +441,19 @@ Buildx throttling options instead of letting BuildKit consume the full host.
 Example:
 
 ```bash
-bun serve:web:docker:bg -- --build-memory 8g --build-cpus 2 --build-max-parallelism 1
+bun serve:web:docker:bg -- --build-memory 12g --build-cpus 2 --build-max-parallelism 1
 ```
 
 Current root-script defaults:
 
-- `bun serve:web:docker` defaults to `--build-memory 8g --build-cpus 2 --build-max-parallelism 1`
-- `bun serve:web:docker:bg` defaults to `--build-memory 8g --build-cpus 2 --build-max-parallelism 1`
+- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
+- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
 
-The Compose-owned BuildKit service also defaults `mem_limit` to **8g** when
-`DOCKER_WEB_BUILD_MEMORY` is unset, which reduces swap thrash on shared hosts
-that still run the web stack, Redis, log drain, and other sidecars alongside
-builds. Raise the cap on dedicated builders if you have spare RAM.
+The Compose-owned BuildKit service also defaults `mem_limit` to **12g** when
+`DOCKER_WEB_BUILD_MEMORY` is unset, which balances large monorepo builds with
+shared hosts that still run the web stack, Redis, log drain, and other sidecars
+alongside builds. Raise or lower the cap with env vars or `--build-memory` when
+your machine is tighter or has spare RAM.
 
 You can still override those defaults per run by appending your own flags after
 `--`, for example:

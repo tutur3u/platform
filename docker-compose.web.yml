@@ -15,7 +15,7 @@ services:
       timeout: 5s
       retries: 5
     image: moby/buildkit:buildx-stable-1
-    mem_limit: ${DOCKER_WEB_BUILD_MEMORY:-8g}
+    mem_limit: ${DOCKER_WEB_BUILD_MEMORY:-12g}
     privileged: true
     ports:
       - "127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}:1234"
