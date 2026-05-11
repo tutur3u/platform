@@ -21,4 +21,4 @@ services:
       - "127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}:1234"
     volumes:
       - platform-buildkit-state:/var/lib/buildkit
-      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro
+      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro

@@ -1,14 +1,14 @@
 x-web-service: &web-service
   build:
-    context: .
+    context: ..
     dockerfile: apps/web/Dockerfile
     target: runner
     secrets:
       - web_env
   env_file:
-    - path: apps/web/.env.local
+    - path: ../apps/web/.env.local
       required: false
-    - path: .env.local
+    - path: ../.env.local
       required: false
   environment: &web-environment
     - CRON_SECRET
@@ -47,8 +47,8 @@ x-web-service: &web-service
     retries: 3
   init: true
   volumes:
-    - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control
-    - ./tmp/docker-web:/app/runtime/docker-web:ro
+    - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control
+    - ../tmp/docker-web:/app/runtime/docker-web:ro
   depends_on:
     log-drain-postgres:
       condition: service_healthy

@@ -181,7 +181,7 @@ test('validateDockerProdCompose accepts the current production compose file', ()
 
 test('validateDockerProdCompose reports missing blue-green proxy wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
-    '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n',
+    '      - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro\n',
     ''
   );
 
@@ -191,7 +191,7 @@ test('validateDockerProdCompose reports missing blue-green proxy wiring', () => 
     errors
       .join('\n')
       .includes(
-        './tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
+        '../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro'
       )
   );
 });
@@ -220,7 +220,7 @@ test('validateDockerProdCompose reports missing cron runner wiring', () => {
 
 test('validateDockerProdCompose reports missing watcher host workspace wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replaceAll(
-    '      - .:' +
+    '      - ..:' +
       '${' +
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}\n',
@@ -245,7 +245,7 @@ test('validateDockerProdCompose reports missing watcher project registry wiring'
 
 test('validateDockerProdCompose reports missing monitoring runtime mount', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
-    '    - ./tmp/docker-web:/app/runtime/docker-web:ro\n',
+    '    - ../tmp/docker-web:/app/runtime/docker-web:ro\n',
     ''
   );
 
@@ -253,8 +253,19 @@ test('validateDockerProdCompose reports missing monitoring runtime mount', () =>
 
   assert.match(
     errors.join('\n'),
-    /\.\/tmp\/docker-web:\/app\/runtime\/docker-web:ro/
+    /\.\.\/tmp\/docker-web:\/app\/runtime\/docker-web:ro/
   );
+});
+
+test('validateDockerProdCompose rejects include-relative repo paths', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    '      context: ../apps/storage-unzip-proxy\n',
+    '      context: apps/storage-unzip-proxy\n'
+  );
+
+  const errors = validateDockerProdCompose(composeContent);
+
+  assert.match(errors.join('\n'), /include-relative repo path/);
 });
 
 test('validateDockerProdCompose reports missing monitoring env wiring', () => {

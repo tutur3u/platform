@@ -26,6 +26,7 @@ const DEFAULT_BUILDKIT_HOST_PORT = 7914;
 const BUILDKIT_SERVICE_NAME = 'buildkit';
 const LEGACY_BUILDER_NAMES = ['platform-web-capped-builder'];
 const BUILD_STALL_RECOVERY_REASON = 'build-stall-timeout';
+const CACHED_BUILD_ERROR_RECOVERY_REASON = 'cached-build-error';
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -420,6 +421,12 @@ function isBuildStallTimeoutError(error) {
   return error?.name === 'CommandTimeoutError';
 }
 
+function isCachedBuildError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+
+  return /\bCACHED\s+ERROR\b/iu.test(message);
+}
+
 async function recoverBuildkitBunInstallCache({
   composeFile,
   composeGlobalArgs = [],
@@ -505,6 +512,7 @@ module.exports = {
   BUILDKIT_RUNTIME_DIR,
   BUILDKIT_STATE_FILE,
   BUILDKIT_SERVICE_NAME,
+  CACHED_BUILD_ERROR_RECOVERY_REASON,
   DEFAULT_BUILDKIT_HOST_PORT,
   DEFAULT_BUILDER_NAME,
   LEGACY_BUILDER_NAMES,
@@ -514,6 +522,7 @@ module.exports = {
   getBuilderConfigFingerprint,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
+  isCachedBuildError,
   BUILD_STALL_RECOVERY_REASON,
   normalizeBuilderConfig,
   parsePositiveInteger,

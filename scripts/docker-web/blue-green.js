@@ -23,8 +23,10 @@ const {
 } = require('./env.js');
 const {
   BUILD_STALL_RECOVERY_REASON,
+  CACHED_BUILD_ERROR_RECOVERY_REASON,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
+  isCachedBuildError,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
 
@@ -622,6 +624,13 @@ async function buildBlueGreenServices({
     'build',
     ...services
   );
+  const freshBuildArgs = getComposeCommandArgs(
+    composeFile,
+    composeGlobalArgs,
+    'build',
+    '--no-cache',
+    ...services
+  );
   const timeoutMs = getBlueGreenBuildTimeoutMs(env);
 
   try {
@@ -632,23 +641,29 @@ async function buildBlueGreenServices({
     });
   } catch (error) {
     const isRecoverableBuildError =
-      isBunTarballExtractionError(error) || isBuildStallTimeoutError(error);
+      isBunTarballExtractionError(error) ||
+      isBuildStallTimeoutError(error) ||
+      isCachedBuildError(error);
 
     if (!isRecoverableBuildError) {
       throw error;
     }
 
+    const recoveryReason = isBuildStallTimeoutError(error)
+      ? BUILD_STALL_RECOVERY_REASON
+      : isCachedBuildError(error)
+        ? CACHED_BUILD_ERROR_RECOVERY_REASON
+        : 'bun-tarball-extraction';
+
     await recoverBuildkitBunInstallCache({
       composeFile,
       composeGlobalArgs,
       env,
-      reason: isBuildStallTimeoutError(error)
-        ? BUILD_STALL_RECOVERY_REASON
-        : 'bun-tarball-extraction',
+      reason: recoveryReason,
       runCommand: run,
     });
 
-    await runChecked('docker', buildArgs, {
+    await runChecked('docker', freshBuildArgs, {
       env,
       runCommand: run,
       timeoutMs,

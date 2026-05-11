@@ -66,6 +66,11 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 ## Runtime Requirements
 
 - `.env.local` should be the primary Docker env file. The helper still falls back to `apps/web/.env.local` for older hosts that have not moved their env yet.
+- Production Compose fragments live under `docker-compose/`, so their relative
+  host paths must be written from that directory. Use `..` to reach the repo
+  root for build contexts, env files, and bind mounts; otherwise Docker Compose
+  resolves paths like `apps/...` as `docker-compose/apps/...` and the watcher
+  image fails before the deployment loop starts.
 - Docker BuildKit must be available. The helper sets
   `COMPOSE_DOCKER_CLI_BUILD=1`, `DOCKER_BUILDKIT=1`, and
   `BUILDX_NO_DEFAULT_ATTESTATIONS=1` so local blue/green image exports do not
@@ -407,9 +412,11 @@ deployment kind, and a re-entrant token for nested helper calls).
   after a `git pull`, run `bun install` at the repo root on the host (or in the
   same checkout the image build uses) so `bun.lock` matches `package.json`, then
   retry the deploy. If tarball extraction still fails (for example
-  `@biomejs/cli-linux-x64`), prune BuildKit state (`docker builder prune`) and
-  retry; the blue/green helper may also restart the Compose-owned `buildkit`
-  service on certain BuildKit cache errors during a deploy attempt.
+  `@biomejs/cli-linux-x64`), the blue/green helper prunes BuildKit exec cache
+  mounts, restarts the Compose-owned `buildkit` service, and retries once with
+  `docker compose build --no-cache` so a cached failed deps stage is not reused.
+  The same one-time fresh retry is used for `CACHED ERROR ... COPY --from=deps`
+  and for the build watchdog timeout.
 
 ### Monitoring Surfaces
 
@@ -520,8 +527,12 @@ Operational notes:
   `Fail extracting tarball for "@biomejs/cli-linux-x64"`, the blue/green helper
   treats it as BuildKit exec-cache corruption once per deployment attempt. It
   prunes BuildKit exec cache mounts, restarts the Compose-owned `buildkit`
-  service, and retries the same build once. A second failure is recorded as a
-  real deployment failure with the original command context preserved in logs.
+  service, and retries the build once with `--no-cache`. A second failure is
+  recorded as a real deployment failure with the original command context
+  preserved in logs.
+- If BuildKit reports `CACHED ERROR` after a failed deps stage, or if the
+  compose build exceeds `DOCKER_WEB_BUILD_TIMEOUT_MS` (default 45 minutes), the
+  helper uses the same one-time cache recovery and fresh `--no-cache` retry.
 
 ## Redis Profile
 

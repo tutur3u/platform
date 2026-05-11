@@ -1,12 +1,12 @@
 services:
   web-blue-green-watcher:
     build:
-      context: .
+      context: ..
       dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
     env_file:
-      - path: apps/web/.env.local
+      - path: ../apps/web/.env.local
         required: false
-      - path: .env.local
+      - path: ../.env.local
         required: false
     environment:
       - CLOUDFLARED_TOKEN
@@ -40,8 +40,8 @@ services:
     init: true
     restart: unless-stopped
     volumes:
-      - .:/workspace
-      - .:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - ..:/workspace
+      - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
       - /var/run/docker.sock:/var/run/docker.sock
       - platform-bun-install:/root/.bun/install/cache
       - platform-blue-green-watcher-node_modules:/workspace/node_modules
@@ -49,7 +49,7 @@ services:
 
   web-cron-runner:
     build:
-      context: .
+      context: ..
       dockerfile: apps/web/docker/cron-runner.Dockerfile
     environment:
       - CRON_SECRET
@@ -67,6 +67,6 @@ services:
     init: true
     restart: unless-stopped
     volumes:
-      - .:/workspace:ro
-      - .:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
+      - ..:/workspace:ro
+      - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}
       - /var/run/docker.sock:/var/run/docker.sock

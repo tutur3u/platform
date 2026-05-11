@@ -1,11 +1,11 @@
 services:
   pronunciation-assessor:
     build:
-      context: apps/pronunciation-assessor
+      context: ../apps/pronunciation-assessor
     env_file:
-      - path: apps/web/.env.local
+      - path: ../apps/web/.env.local
         required: false
-      - path: .env.local
+      - path: ../.env.local
         required: false
     environment:
       - PORT=8010

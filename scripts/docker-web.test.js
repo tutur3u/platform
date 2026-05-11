@@ -1144,6 +1144,12 @@ test('buildBlueGreenServices recovers Bun tarball extraction once', async () => 
 
   assert.equal(buildAttempts, 2);
   assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
+      .map(([, args]) => args.includes('--no-cache')),
+    [false, true]
+  );
+  assert.deepEqual(
     calls.map(([command, args]) => [command, args.slice(0, 4)]),
     [
       ['docker', ['compose', '-f', PROD_COMPOSE_FILE, '--profile']],
@@ -1209,8 +1215,63 @@ test('buildBlueGreenServices recovers a stalled compose build once', async () =>
   assert.deepEqual(
     calls
       .filter(([, args]) => args.includes('build'))
+      .map(([, args]) => args.includes('--no-cache')),
+    [false, true]
+  );
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
       .map(([, , timeoutMs]) => timeoutMs),
     [5000, 5000]
+  );
+  assert.ok(
+    calls.some(([, args]) => args[0] === 'buildx' && args[1] === 'prune')
+  );
+});
+
+test('buildBlueGreenServices recovers a cached BuildKit error with a fresh retry', async () => {
+  const calls = [];
+  let buildAttempts = 0;
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('build')) {
+        buildAttempts += 1;
+        return buildAttempts === 1
+          ? {
+              code: 1,
+              signal: null,
+              stderr:
+                'CACHED ERROR [web-green builder 3/5] COPY --from=deps /workspace ./',
+              stdout: '',
+            }
+          : { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      if (args.includes('ps') && args.includes('buildkit')) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
+      if (args[0] === 'inspect') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.equal(buildAttempts, 2);
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
+      .map(([, args]) => args.includes('--no-cache')),
+    [false, true]
   );
   assert.ok(
     calls.some(([, args]) => args[0] === 'buildx' && args[1] === 'prune')

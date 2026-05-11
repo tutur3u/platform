@@ -395,10 +395,10 @@ function validateDockerProdCompose(composeContent) {
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
     '      - platform-buildkit-state:/var/lib/buildkit',
-    '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
+    '      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',
-    '      - path: apps/web/.env.local',
-    '      - path: .env.local',
+    '      - path: ../apps/web/.env.local',
+    '      - path: ../.env.local',
     '      - CLOUDFLARED_TOKEN',
     '      - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234',
     '      - DOCKER_WEB_WITH_CLOUDFLARED',
@@ -410,7 +410,7 @@ function validateDockerProdCompose(composeContent) {
       '}',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
-    '      context: apps/storage-unzip-proxy',
+    '      context: ../apps/storage-unzip-proxy',
     '    - CRON_SECRET',
     '      - CRON_SECRET',
     '      - VERCEL_CRON_SECRET',
@@ -428,7 +428,7 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}',
-    '      - .:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
+    '      - ..:' + '${' + 'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' + '}',
     '      - /var/run/docker.sock:/var/run/docker.sock',
     '      - platform-bun-install:/root/.bun/install/cache',
     '      - platform-blue-green-watcher-node_modules:/workspace/node_modules',
@@ -451,7 +451,7 @@ function validateDockerProdCompose(composeContent) {
     'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
     "ps | grep -q '[w]atch-web-crons.js'",
-    '      - ./tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
+    '      - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: false',
     '    - DISCORD_APP_DEPLOYMENT_URL',
     '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
@@ -480,8 +480,8 @@ function validateDockerProdCompose(composeContent) {
     '    - SUPABASE_SERVER_URL',
     '    - UPSTASH_REDIS_REST_TOKEN',
     '    - UPSTASH_REDIS_REST_URL',
-    '    - ./tmp/docker-web/watch/control:/app/runtime/docker-web-control',
-    '    - ./tmp/docker-web:/app/runtime/docker-web:ro',
+    '    - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control',
+    '    - ../tmp/docker-web:/app/runtime/docker-web:ro',
     '  log-drain-postgres:',
     '    container_name: ' +
       '${' +
@@ -491,7 +491,7 @@ function validateDockerProdCompose(composeContent) {
     '      POSTGRES_DB: platform_log_drain',
     '      POSTGRES_USER: platform_log_drain',
     '      - platform-log-drain-postgres:/var/lib/postgresql/data',
-    '      - ./apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro',
+    '      - ../apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro',
     '  platform-buildkit-state:',
     '  platform-log-drain-postgres:',
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
@@ -506,6 +506,24 @@ function validateDockerProdCompose(composeContent) {
     if (!composeContent.includes(snippet)) {
       errors.push(
         `docker-compose.web.prod.yml is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  const forbiddenSnippets = [
+    '      context: .\n      dockerfile: apps/',
+    '      context: apps/',
+    '      - path: apps/web/.env.local',
+    '      - path: .env.local',
+    '      - ./tmp/docker-web',
+    '      - ./apps/',
+    '      - .:/workspace',
+  ];
+
+  for (const snippet of forbiddenSnippets) {
+    if (composeContent.includes(snippet)) {
+      errors.push(
+        `docker-compose.web.prod.yml still contains an include-relative repo path that resolves from docker-compose/: ${snippet}`
       );
     }
   }

@@ -1,7 +1,7 @@
 services:
   markitdown:
     build:
-      context: apps/discord
+      context: ../apps/discord
       dockerfile: Dockerfile.markitdown
     environment:
       - PORT=8000
@@ -18,7 +18,7 @@ services:
 
   storage-unzip-proxy:
     build:
-      context: apps/storage-unzip-proxy
+      context: ../apps/storage-unzip-proxy
     environment:
       - DRIVE_UNZIP_PROXY_SHARED_TOKEN
       - PORT=8788
@@ -34,12 +34,12 @@ services:
 
   hive-realtime:
     build:
-      context: .
+      context: ..
       dockerfile: apps/hive-realtime/Dockerfile
     env_file:
-      - path: apps/web/.env.local
+      - path: ../apps/web/.env.local
         required: false
-      - path: .env.local
+      - path: ../.env.local
         required: false
     environment:
       - HIVE_REALTIME_TOKEN_SECRET
@@ -58,15 +58,15 @@ services:
 
   hive:
     build:
-      context: .
+      context: ..
       dockerfile: apps/hive/Dockerfile
       target: runner
       secrets:
         - web_env
     env_file:
-      - path: apps/web/.env.local
+      - path: ../apps/web/.env.local
         required: false
-      - path: .env.local
+      - path: ../.env.local
         required: false
     environment:
       - HIVE_REALTIME_TOKEN_SECRET
