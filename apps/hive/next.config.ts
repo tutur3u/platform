@@ -30,8 +30,19 @@ const WEB_APP_URL = trimTrailingSlashes(
       : `http://localhost:${CENTRAL_PORT}`)
 );
 
+const hiveDockerBuild = process.env.HIVE_DOCKER_BUILD === '1';
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  ...(hiveDockerBuild
+    ? {
+        experimental: {
+          staticGenerationMaxConcurrency: 4,
+          staticGenerationMinPagesPerWorker: 8,
+          staticGenerationRetryCount: 2,
+        },
+      }
+    : {}),
   typescript: {
     ignoreBuildErrors: true,
   },

@@ -491,8 +491,9 @@ How it works:
   when that variable is not already set, so Compose does not build multiple
   services at once under the capped builder.
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
-  build dependency graph, caps the web app's V8 heap at 4 GB instead of the
-  local 8 GB build default, and still uses the Turbopack production build.
+  build dependency graph, caps the web app's V8 heap at 8 GB (same
+  `--max-old-space-size` target as local `build`), and still uses the Turbopack
+  production build.
 
 Operational notes:
 

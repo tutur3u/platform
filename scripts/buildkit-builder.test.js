@@ -402,7 +402,7 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.match(
     webPackageJson.scripts['build:docker'],
-    /--max-old-space-size=4096/
+    /--max-old-space-size=8192/
   );
   assert.match(
     webPackageJson.scripts['build:docker'],

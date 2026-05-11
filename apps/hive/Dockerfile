@@ -23,10 +23,13 @@ CMD ["bun", "--cwd", "apps/hive", "run", "dev"]
 FROM base AS builder
 
 ENV NODE_ENV=production
+# Throttle static generation; `build:docker` caps the V8 heap at 8 GB during
+# image builds to reduce Bun Turbopack worker storms (SIGILL / exit 132) under Docker.
+ENV HIVE_DOCKER_BUILD=1
 
 RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.next/cache \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
-  bun --env-file=/tmp/web.env --filter @tuturuuu/hive build
+  bun --env-file=/tmp/web.env --filter @tuturuuu/hive run build:docker
 
 FROM builder AS runner
 
