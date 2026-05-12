@@ -1,4 +1,11 @@
 {
+  "common": {
+    "back": "Quay lại",
+    "completed": "Hoàn thành",
+    "loading": "Đang tải…",
+    "retry": "Thử lại",
+    "untitled": "Chưa đặt tên"
+  },
   "teach": {
     "byline": "bởi Tuturuuu",
     "dashboard": "Dashboard",
@@ -131,5 +138,25 @@
       }
     },
     "workspaceFallback": "Workspace giáo dục"
+  },
+  "teachModules": {
+    "allCourses": "Tất cả khóa học",
+    "allCoursesDescription": "Mỗi nhóm khóa học bên dưới là một workspace user group có module đã xuất bản.",
+    "backToDashboard": "Quay lại dashboard",
+    "courseProgress": "Tiến độ khóa học",
+    "courses": "khóa học",
+    "description": "Xem tất cả nhóm khóa học trong workspace này. Mỗi thẻ là một user group có module học tập đã xuất bản.",
+    "done": "Xong",
+    "loadError": "Không tải được khóa học. Vui lòng thử lại.",
+    "modules": "Module",
+    "noCourses": "Không tìm thấy khóa học. Hãy tạo workspace user groups có module đã xuất bản trên nền tảng trước.",
+    "noDescription": "Chưa có mô tả.",
+    "openModules": "Mở module",
+    "progress": "Tiến độ",
+    "remaining": "Còn lại",
+    "reviewCourse": "Xem lại khóa học",
+    "title": "Module khóa học",
+    "totalModules": "tổng module",
+    "workspace": "Workspace"
   }
 }

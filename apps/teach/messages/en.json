@@ -1,4 +1,11 @@
 {
+  "common": {
+    "back": "Back",
+    "completed": "Completed",
+    "loading": "Loading…",
+    "retry": "Retry",
+    "untitled": "Untitled"
+  },
   "teach": {
     "byline": "by Tuturuuu",
     "dashboard": "Dashboard",
@@ -131,5 +138,25 @@
       }
     },
     "workspaceFallback": "Education workspace"
+  },
+  "teachModules": {
+    "allCourses": "All Courses",
+    "allCoursesDescription": "Each course group below represents a workspace user group with published modules.",
+    "backToDashboard": "Back to dashboard",
+    "courseProgress": "Course progress",
+    "courses": "courses",
+    "description": "Browse all course groups in this workspace. Each card represents a user group with published learning modules.",
+    "done": "Done",
+    "loadError": "Failed to load courses. Please try again.",
+    "modules": "Modules",
+    "noCourses": "No courses found. Create workspace user groups with published modules in the platform first.",
+    "noDescription": "No description provided.",
+    "openModules": "Open modules",
+    "progress": "Progress",
+    "remaining": "Remaining",
+    "reviewCourse": "Review course",
+    "title": "Course Modules",
+    "totalModules": "total modules",
+    "workspace": "Workspace"
   }
 }
