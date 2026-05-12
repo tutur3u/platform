@@ -55,6 +55,30 @@ export interface TutoringQueueItem {
   source_feedback_id: string | null;
 }
 
+export interface TutoringQueueSummary {
+  absent: number;
+  weak: number;
+}
+
+export interface TutoringDetailedExportRow {
+  id: string;
+  date: string;
+  time: string;
+  duration_minutes: number;
+  reason_type: TutoringReasonType;
+  attendance_status: TutoringAttendanceStatus;
+  content: string;
+  group_name: string;
+  student_name: string;
+  teacher_name: string;
+}
+
+export interface TutoringPayrollExportRow {
+  teacher_name: string;
+  completed_sessions: number;
+  total_minutes: number;
+}
+
 export interface ListTutoringSessionsParams extends InternalApiQuery {
   fromDate?: string;
   toDate?: string;
@@ -187,7 +211,11 @@ export async function generateTutoringMessagePreview(
 
 export async function listTutoringQueue(
   workspaceId: string,
-  params: InternalApiQuery & { page?: number; pageSize?: number } = {},
+  params: InternalApiQuery & {
+    page?: number;
+    pageSize?: number;
+    q?: string;
+  } = {},
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
@@ -196,6 +224,7 @@ export async function listTutoringQueue(
     count: number;
     page: number;
     pageSize: number;
+    summary: TutoringQueueSummary;
     totalPages: number;
   }>(`${basePath(workspaceId)}/queue`, {
     cache: 'no-store',
@@ -209,8 +238,8 @@ export async function exportTutoringSessions(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ mode: 'detailed' | 'payroll'; data: unknown[] }>(
-    `${basePath(workspaceId)}/export`,
-    { cache: 'no-store', query: params }
-  );
+  return client.json<
+    | { mode: 'detailed'; data: TutoringDetailedExportRow[] }
+    | { mode: 'payroll'; data: TutoringPayrollExportRow[] }
+  >(`${basePath(workspaceId)}/export`, { cache: 'no-store', query: params });
 }

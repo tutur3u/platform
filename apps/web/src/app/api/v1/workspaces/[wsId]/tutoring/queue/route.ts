@@ -1,5 +1,11 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { TutoringQueueQuerySchema } from '../shared';
@@ -19,6 +25,11 @@ type QueueItem = {
   source_feedback_id: string | null;
 };
 
+type QueueSummary = {
+  absent: number;
+  weak: number;
+};
+
 type IdentityRow = {
   full_name: string | null;
   display_name: string | null;
@@ -34,9 +45,36 @@ function nameOf(value: IdentityRow) {
   );
 }
 
+function isPresentId(value: string | null | undefined): value is string {
+  return Boolean(value && value !== 'null' && value !== 'undefined');
+}
+
+function summarizeQueue(queue: QueueItem[]): QueueSummary {
+  return queue.reduce(
+    (summary, item) => {
+      if (
+        item.reason_type === 'ABSENT_RECOVERY' ||
+        item.reason_type === 'BOTH'
+      ) {
+        summary.absent += 1;
+      }
+      if (item.reason_type === 'WEAK_SUPPORT' || item.reason_type === 'BOTH') {
+        summary.weak += 1;
+      }
+      return summary;
+    },
+    { absent: 0, weak: 0 }
+  );
+}
+
 export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const supabase = await createClient(request);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request,
+  });
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -68,9 +106,11 @@ export async function GET(request: Request, { params }: Params) {
       group:workspace_user_groups!inner(id,ws_id,name),
       user:workspace_users!inner(id,full_name,display_name,email,archived)`
     )
-    .eq('group.ws_id', wsId)
+    .eq('group.ws_id', normalizedWsId)
     .eq('user.archived', false)
-    .in('status', ['ABSENT', 'Absent', 'absent']);
+    .in('status', ['ABSENT', 'Absent', 'absent'])
+    .order('group_id', { ascending: true })
+    .order('user_id', { ascending: true });
 
   if (parsed.data.groupId) {
     attendanceQuery = attendanceQuery.eq('group_id', parsed.data.groupId);
@@ -96,7 +136,7 @@ export async function GET(request: Request, { params }: Params) {
   let completedQuery = sbAdmin
     .from('workspace_tutoring_sessions')
     .select('group_id,student_user_id')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .eq('reason_type', 'ABSENT_RECOVERY')
     .eq('attendance_status', 'DONE');
 
@@ -131,7 +171,7 @@ export async function GET(request: Request, { params }: Params) {
       group:workspace_user_groups!user_feedbacks_group_id_fkey(id,name)`
     )
     .eq('require_attention', true)
-    .eq('user.ws_id', wsId)
+    .eq('user.ws_id', normalizedWsId)
     .eq('user.archived', false)
     .order('created_at', { ascending: false });
 
@@ -177,8 +217,11 @@ export async function GET(request: Request, { params }: Params) {
 
   const keySet = new Set<string>();
   for (const key of absenceCountMap.keys()) keySet.add(key);
-  for (const row of feedbackRows ?? [])
-    keySet.add(`${row.group_id}:${row.user_id}`);
+  for (const row of feedbackRows ?? []) {
+    if (isPresentId(row.group_id) && isPresentId(row.user_id)) {
+      keySet.add(`${row.group_id}:${row.user_id}`);
+    }
+  }
 
   const pairs = [...keySet].map((key) => {
     const [groupId, studentId] = key.split(':');
@@ -187,6 +230,10 @@ export async function GET(request: Request, { params }: Params) {
 
   const latestFeedbackMap = new Map<string, { id: string; content: string }>();
   for (const row of feedbackRows ?? []) {
+    if (!isPresentId(row.group_id) || !isPresentId(row.user_id)) {
+      continue;
+    }
+
     const key = `${row.group_id}:${row.user_id}`;
     if (!latestFeedbackMap.has(key)) {
       latestFeedbackMap.set(key, { id: row.id, content: row.content });
@@ -235,39 +282,70 @@ export async function GET(request: Request, { params }: Params) {
 
   const fullQueue: QueueItem[] = pairs
     .map(({ groupId, studentId, key }) => {
-      if (!groupId || !studentId) return null;
+      if (!isPresentId(groupId) || !isPresentId(studentId)) return null;
       const item = buildQueueItem(groupId, studentId, key);
       if (!item) return null;
-
-      if (
-        parsed.data.reasonType &&
-        item.reason_type !== parsed.data.reasonType
-      ) {
-        return null;
-      }
-      if (parsed.data.groupId && item.group_id !== parsed.data.groupId)
-        return null;
-      if (
-        parsed.data.studentUserId &&
-        item.student_user_id !== parsed.data.studentUserId
-      ) {
-        return null;
-      }
       return item;
     })
-    .filter((value): value is QueueItem => value !== null);
+    .filter((value): value is QueueItem => value !== null)
+    .sort((a, b) => {
+      const groupComparison = a.group_name.localeCompare(b.group_name);
+      if (groupComparison !== 0) return groupComparison;
+      const studentComparison = a.student_name.localeCompare(b.student_name);
+      if (studentComparison !== 0) return studentComparison;
+      return `${a.group_id}:${a.student_user_id}`.localeCompare(
+        `${b.group_id}:${b.student_user_id}`
+      );
+    });
+
+  const searchTerm = (
+    parsed.data.q ??
+    parsed.data.query ??
+    parsed.data.search ??
+    ''
+  )
+    .trim()
+    .toLowerCase();
+  const filteredQueue = fullQueue.filter((item) => {
+    if (parsed.data.reasonType && item.reason_type !== parsed.data.reasonType) {
+      return false;
+    }
+    if (parsed.data.groupId && item.group_id !== parsed.data.groupId) {
+      return false;
+    }
+    if (
+      parsed.data.studentUserId &&
+      item.student_user_id !== parsed.data.studentUserId
+    ) {
+      return false;
+    }
+    if (!searchTerm) {
+      return true;
+    }
+
+    return [
+      item.student_name,
+      item.group_name,
+      item.reason_type,
+      item.feedback_content,
+    ]
+      .join(' ')
+      .toLowerCase()
+      .includes(searchTerm);
+  });
 
   const { page, pageSize } = parsed.data;
-  const totalCount = fullQueue.length;
+  const totalCount = filteredQueue.length;
   const totalPages = Math.max(Math.ceil(totalCount / pageSize), 1);
   const start = (page - 1) * pageSize;
-  const pagedQueue = fullQueue.slice(start, start + pageSize);
+  const pagedQueue = filteredQueue.slice(start, start + pageSize);
 
   return NextResponse.json({
     data: pagedQueue,
     count: totalCount,
     page,
     pageSize,
+    summary: summarizeQueue(filteredQueue),
     totalPages,
   });
 }

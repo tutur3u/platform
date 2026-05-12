@@ -1,6 +1,11 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
-import { format } from 'date-fns';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
@@ -24,15 +29,26 @@ function displayName(
   );
 }
 
+function formatDateOnly(dateString: string) {
+  const [year, month, day] = dateString.split('-');
+  if (!year || !month || !day) return dateString;
+  return `${day}/${month}/${year}`;
+}
+
 export async function POST(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const supabase = await createClient(request);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request,
+  });
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
-  if (permissions.withoutPermission('view_user_groups')) {
+  if (permissions.withoutPermission('update_user_groups_scores')) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }
@@ -54,7 +70,7 @@ export async function POST(request: Request, { params }: Params) {
     `
     )
     .eq('id', id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .maybeSingle();
 
   if (error) {
@@ -71,24 +87,36 @@ export async function POST(request: Request, { params }: Params) {
 
   const reasonLabel =
     data.reason_type === 'ABSENT_RECOVERY'
-      ? 'Absent'
+      ? 'bù buổi vắng'
       : data.reason_type === 'WEAK_SUPPORT'
-        ? 'Weak Support'
-        : 'Tutoring';
+        ? 'hỗ trợ học lực'
+        : 'phụ đạo';
+  const student = data.student as {
+    full_name: string | null;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+  const teacher = data.teacher as {
+    full_name: string | null;
+    display_name: string | null;
+    email: string | null;
+  } | null;
+  const group = data.group as { name: string | null } | null;
+  const studentName = displayName(student);
 
   const preview = [
-    `Xin chao phu huynh ${displayName(data.student as never)},`,
-    `${displayName(data.student as never)} se tham gia buoi ho tro ${reasonLabel.toLowerCase()} vao ${format(new Date(data.session_date), 'dd/MM/yyyy')} luc ${String(data.start_time).slice(0, 5)}.`,
-    `Lop/Nhom: ${(data.group as { name: string | null } | null)?.name ?? 'N/A'}.`,
-    `Giao vien phu trach: ${displayName(data.teacher as never)}.`,
-    'Xin cam on.',
+    `Xin chào phụ huynh ${studentName},`,
+    `${studentName} sẽ tham gia buổi ${reasonLabel} vào ${formatDateOnly(data.session_date)} lúc ${String(data.start_time).slice(0, 5)}.`,
+    `Lớp/Nhóm: ${group?.name ?? 'N/A'}.`,
+    `Giáo viên phụ trách: ${displayName(teacher)}.`,
+    'Xin cảm ơn.',
   ].join(' ');
 
   const { error: updateError } = await sbAdmin
     .from('workspace_tutoring_sessions')
     .update({ parent_message_preview: preview })
     .eq('id', id)
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (updateError) {
     serverLogger.error('Failed to save tutoring message preview', updateError);

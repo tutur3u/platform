@@ -21,6 +21,9 @@ interface Params {
   }>;
 }
 
+const DEFAULT_PAGE_SIZE = 50;
+const MAX_PAGE_SIZE = 200;
+
 function buildWorkspaceUsersRpcQuery(
   sbAdmin: TypedSupabaseClient,
   wsId: string,
@@ -54,19 +57,18 @@ function applyPagination({
   limit: number;
   to: number;
 }) {
-  if (!Number.isNaN(from) && !Number.isNaN(to) && to >= from) {
-    query.range(from, to);
+  const safeFrom = Number.isFinite(from) && from >= 0 ? Math.floor(from) : 0;
+  const safeLimit =
+    Number.isFinite(limit) && limit > 0
+      ? Math.min(Math.floor(limit), MAX_PAGE_SIZE)
+      : DEFAULT_PAGE_SIZE;
+
+  if (Number.isFinite(to) && to >= safeFrom) {
+    query.range(safeFrom, Math.min(Math.floor(to), safeFrom + safeLimit - 1));
     return;
   }
 
-  if (!Number.isNaN(from) && !Number.isNaN(limit) && limit > 0) {
-    query.range(from, from + limit - 1);
-    return;
-  }
-
-  if (!Number.isNaN(limit) && limit > 0) {
-    query.limit(limit);
-  }
+  query.range(safeFrom, safeFrom + safeLimit - 1);
 }
 
 const CreateUserSchema = z.object({

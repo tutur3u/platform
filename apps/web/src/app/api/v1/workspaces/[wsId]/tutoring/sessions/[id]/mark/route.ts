@@ -1,5 +1,11 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { TutoringMarkSchema } from '../../../shared';
@@ -10,7 +16,12 @@ interface Params {
 
 export async function POST(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const supabase = await createClient(request);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request,
+  });
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -48,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
       resolved_at: resolvedAt,
     })
     .eq('id', id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .select('id')
     .maybeSingle();
 

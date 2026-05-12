@@ -1,5 +1,46 @@
 import { z } from 'zod';
 
+const TIME_FORMAT_REGEX = /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/;
+
+export function parseTimeToMinutes(time: string) {
+  const normalized = time.trim();
+  const meridiemMatch = normalized.match(/\s?(AM|PM)$/i);
+  const meridiem = meridiemMatch?.[1]?.toUpperCase();
+  const timePart = meridiem
+    ? normalized.slice(0, meridiemMatch?.index ?? normalized.length).trim()
+    : normalized;
+  const [rawHour = '0', rawMinute = '0'] = timePart.split(':');
+  let hour = Number.parseInt(rawHour, 10);
+  const minute = Number.parseInt(rawMinute, 10);
+
+  if (Number.isNaN(hour) || Number.isNaN(minute) || minute < 0 || minute > 59) {
+    return null;
+  }
+
+  if (meridiem) {
+    if (hour < 1 || hour > 12) {
+      return null;
+    }
+
+    if (meridiem === 'AM') {
+      hour %= 12;
+    } else {
+      hour = (hour % 12) + 12;
+    }
+  } else if (hour < 0 || hour > 23) {
+    return null;
+  }
+
+  return hour * 60 + minute;
+}
+
+const TimeStringSchema = z
+  .string()
+  .regex(TIME_FORMAT_REGEX, 'Invalid time format')
+  .refine((value) => parseTimeToMinutes(value) !== null, {
+    message: 'Invalid time value',
+  });
+
 export const TutoringReasonTypeSchema = z.enum([
   'ABSENT_RECOVERY',
   'WEAK_SUPPORT',
@@ -21,12 +62,7 @@ export const TutoringSessionCreateSchema = z.object({
     .array(
       z.object({
         sessionDate: z.string().date(),
-        startTime: z
-          .string()
-          .regex(
-            /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
-            'Invalid time format'
-          ),
+        startTime: TimeStringSchema,
         durationMinutes: z.number().int().positive().max(480).default(45),
         teacherUserId: z.string().uuid().nullable().optional(),
       })
@@ -35,13 +71,7 @@ export const TutoringSessionCreateSchema = z.object({
     .max(50)
     .optional(),
   sessionDate: z.string().date().optional(),
-  startTime: z
-    .string()
-    .regex(
-      /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
-      'Invalid time format'
-    )
-    .optional(),
+  startTime: TimeStringSchema.optional(),
   durationMinutes: z.number().int().positive().max(480).default(45),
   sessionCount: z.number().int().positive().max(50).default(1),
   reasonType: TutoringReasonTypeSchema,
@@ -55,13 +85,7 @@ export const TutoringSessionUpdateSchema = z
   .object({
     teacherUserId: z.string().uuid().nullable().optional(),
     sessionDate: z.string().date().optional(),
-    startTime: z
-      .string()
-      .regex(
-        /^\d{1,2}:\d{2}(?::\d{2})?(?:\s?(?:AM|PM|am|pm))?$/,
-        'Invalid time format'
-      )
-      .optional(),
+    startTime: TimeStringSchema.optional(),
     durationMinutes: z.number().int().positive().max(480).optional(),
     reasonType: TutoringReasonTypeSchema.optional(),
     reasonDetail: z.string().max(5000).optional(),
@@ -90,6 +114,9 @@ export const TutoringQueueQuerySchema = z.object({
   groupId: z.string().uuid().optional(),
   studentUserId: z.string().uuid().optional(),
   reasonType: z.enum(['ABSENT_RECOVERY', 'WEAK_SUPPORT', 'BOTH']).optional(),
+  q: z.string().max(200).optional(),
+  query: z.string().max(200).optional(),
+  search: z.string().max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
@@ -114,38 +141,6 @@ export interface TutoringSessionConflict {
   conflictWithId?: string;
   teacherUserId?: string | null;
   studentUserId: string;
-}
-
-function parseTimeToMinutes(time: string) {
-  const normalized = time.trim();
-  const meridiemMatch = normalized.match(/\s?(AM|PM)$/i);
-  const meridiem = meridiemMatch?.[1]?.toUpperCase();
-  const timePart = meridiem
-    ? normalized.slice(0, meridiemMatch?.index ?? normalized.length).trim()
-    : normalized;
-  const [rawHour = '0', rawMinute = '0'] = timePart.split(':');
-  let hour = Number.parseInt(rawHour, 10);
-  const minute = Number.parseInt(rawMinute, 10);
-
-  if (Number.isNaN(hour) || Number.isNaN(minute) || minute < 0 || minute > 59) {
-    return null;
-  }
-
-  if (meridiem) {
-    if (hour < 1 || hour > 12) {
-      return null;
-    }
-
-    if (meridiem === 'AM') {
-      hour = hour % 12;
-    } else {
-      hour = (hour % 12) + 12;
-    }
-  } else if (hour < 0 || hour > 23) {
-    return null;
-  }
-
-  return hour * 60 + minute;
 }
 
 function rangesOverlap(

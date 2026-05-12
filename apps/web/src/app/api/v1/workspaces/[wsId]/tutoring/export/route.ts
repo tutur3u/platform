@@ -1,14 +1,29 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const QuerySchema = z.object({
+  attendanceStatus: z
+    .enum(['PENDING', 'DONE', 'NO_SHOW', 'CANCELLED'])
+    .optional(),
   fromDate: z.string().date().optional(),
+  groupId: z.string().uuid().optional(),
   toDate: z.string().date().optional(),
   mode: z.enum(['detailed', 'payroll']).default('detailed'),
+  reasonType: z.enum(['ABSENT_RECOVERY', 'WEAK_SUPPORT', 'CUSTOM']).optional(),
+  studentUserId: z.string().uuid().optional(),
+  teacherId: z.string().uuid().optional(),
 });
+
+const EXPORT_PAGE_SIZE = 1000;
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -32,7 +47,12 @@ function nameOf(
 
 export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const supabase = await createClient(request);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request,
+  });
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -56,10 +76,14 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  let query = sbAdmin
-    .from('workspace_tutoring_sessions')
-    .select(
-      `
+  const data = [];
+
+  for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
+    const to = from + EXPORT_PAGE_SIZE - 1;
+    let query = sbAdmin
+      .from('workspace_tutoring_sessions')
+      .select(
+        `
       id,
       session_date,
       start_time,
@@ -69,21 +93,39 @@ export async function GET(request: Request, { params }: Params) {
       attendance_status,
       group:workspace_user_groups!workspace_tutoring_sessions_group_id_fkey(name),
       student:workspace_users!workspace_tutoring_sessions_student_user_id_fkey(full_name,display_name,email),
-      teacher:workspace_users!workspace_tutoring_sessions_teacher_user_id_fkey(full_name,display_name,email)
+      teacher:workspace_users!workspace_tutoring_sessions_teacher_user_id_fkey(id,full_name,display_name,email)
     `
-    )
-    .eq('ws_id', wsId)
-    .order('session_date', { ascending: true })
-    .order('start_time', { ascending: true });
+      )
+      .eq('ws_id', normalizedWsId)
+      .order('session_date', { ascending: true })
+      .order('start_time', { ascending: true })
+      .range(from, to);
 
-  if (parsed.data.fromDate)
-    query = query.gte('session_date', parsed.data.fromDate);
-  if (parsed.data.toDate) query = query.lte('session_date', parsed.data.toDate);
+    if (parsed.data.fromDate)
+      query = query.gte('session_date', parsed.data.fromDate);
+    if (parsed.data.toDate)
+      query = query.lte('session_date', parsed.data.toDate);
+    if (parsed.data.teacherId)
+      query = query.eq('teacher_user_id', parsed.data.teacherId);
+    if (parsed.data.groupId) query = query.eq('group_id', parsed.data.groupId);
+    if (parsed.data.studentUserId)
+      query = query.eq('student_user_id', parsed.data.studentUserId);
+    if (parsed.data.reasonType)
+      query = query.eq('reason_type', parsed.data.reasonType);
+    if (parsed.data.attendanceStatus)
+      query = query.eq('attendance_status', parsed.data.attendanceStatus);
 
-  const { data, error } = await query;
-  if (error) {
-    serverLogger.error('Failed to export tutoring sessions', error);
-    return NextResponse.json({ message: 'Export failed' }, { status: 500 });
+    const { data: pageData, error } = await query;
+    if (error) {
+      serverLogger.error('Failed to export tutoring sessions', error);
+      return NextResponse.json({ message: 'Export failed' }, { status: 500 });
+    }
+
+    data.push(...(pageData ?? []));
+
+    if ((pageData ?? []).length < EXPORT_PAGE_SIZE) {
+      break;
+    }
   }
 
   if (parsed.data.mode === 'payroll') {
@@ -96,10 +138,16 @@ export async function GET(request: Request, { params }: Params) {
       }
     >();
 
-    for (const row of data ?? []) {
+    for (const row of data) {
       if (row.attendance_status !== 'DONE') continue;
-      const teacherName = nameOf(row.teacher as never);
-      const key = teacherName;
+      const teacher = row.teacher as {
+        id: string;
+        full_name: string | null;
+        display_name: string | null;
+        email: string | null;
+      } | null;
+      const teacherName = nameOf(teacher);
+      const key = teacher?.id ?? `unassigned:${row.id}`;
       const current = byTeacher.get(key) ?? {
         teacher_name: teacherName,
         completed_sessions: 0,
@@ -120,7 +168,7 @@ export async function GET(request: Request, { params }: Params) {
 
   return NextResponse.json({
     mode: 'detailed',
-    data: (data ?? []).map((row) => ({
+    data: data.map((row) => ({
       id: row.id,
       date: row.session_date,
       time: String(row.start_time).slice(0, 5),
@@ -129,8 +177,8 @@ export async function GET(request: Request, { params }: Params) {
       attendance_status: row.attendance_status,
       content: row.content,
       group_name: (row.group as { name: string | null } | null)?.name ?? 'N/A',
-      student_name: nameOf(row.student as never),
-      teacher_name: nameOf(row.teacher as never),
+      student_name: nameOf(row.student),
+      teacher_name: nameOf(row.teacher),
     })),
   });
 }

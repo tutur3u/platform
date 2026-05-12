@@ -1,7 +1,13 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesUpdate } from '@tuturuuu/types';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
@@ -38,7 +44,12 @@ async function isGroupTeacher(
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, id } = await params;
-  const permissions = await getPermissions({ wsId, request });
+  const supabase = await createClient(request);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const permissions = await getPermissions({
+    wsId: normalizedWsId,
+    request,
+  });
 
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
@@ -80,8 +91,15 @@ export async function PUT(request: Request, { params }: Params) {
   if (parsed.data.reasonDetail !== undefined)
     updates.reason_detail = parsed.data.reasonDetail;
   if (parsed.data.content !== undefined) updates.content = parsed.data.content;
-  if (parsed.data.attendanceStatus !== undefined)
+  if (parsed.data.attendanceStatus !== undefined) {
     updates.attendance_status = parsed.data.attendanceStatus;
+    if (parsed.data.resolvedAt === undefined) {
+      updates.resolved_at =
+        parsed.data.attendanceStatus === 'DONE'
+          ? new Date().toISOString()
+          : null;
+    }
+  }
   if (parsed.data.parentMessagePreview !== undefined)
     updates.parent_message_preview = parsed.data.parentMessagePreview;
   if (parsed.data.resolvedAt !== undefined)
@@ -95,14 +113,14 @@ export async function PUT(request: Request, { params }: Params) {
       'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
     )
     .eq('id', id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .maybeSingle();
 
   if (currentSessionError) {
     serverLogger.error('Failed to load tutoring session for update', {
       error: currentSessionError,
       sessionId: id,
-      wsId,
+      wsId: normalizedWsId,
     });
 
     return NextResponse.json(
@@ -117,7 +135,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   if (parsed.data.teacherUserId) {
     const teacherCheck = await isGroupTeacher(
-      wsId,
+      normalizedWsId,
       currentSession.group_id,
       parsed.data.teacherUserId,
       sbAdmin
@@ -128,7 +146,7 @@ export async function PUT(request: Request, { params }: Params) {
         error: teacherCheck.error,
         sessionId: id,
         teacherUserId: parsed.data.teacherUserId,
-        wsId,
+        wsId: normalizedWsId,
       });
 
       return NextResponse.json(
@@ -169,7 +187,7 @@ export async function PUT(request: Request, { params }: Params) {
           .select(
             'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
-          .eq('ws_id', wsId)
+          .eq('ws_id', normalizedWsId)
           .eq('session_date', nextSlot.sessionDate)
           .eq('teacher_user_id', nextSlot.teacherUserId)
           .neq('id', id)
@@ -180,7 +198,7 @@ export async function PUT(request: Request, { params }: Params) {
       .select(
         'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
       )
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .eq('session_date', nextSlot.sessionDate)
       .eq('student_user_id', nextSlot.studentUserId)
       .neq('id', id);
@@ -194,7 +212,7 @@ export async function PUT(request: Request, { params }: Params) {
       serverLogger.error('Failed to validate tutoring scheduling conflicts', {
         error: teacherResult.error ?? studentResult.error,
         sessionId: id,
-        wsId,
+        wsId: normalizedWsId,
       });
 
       return NextResponse.json(
@@ -235,7 +253,7 @@ export async function PUT(request: Request, { params }: Params) {
     .from('workspace_tutoring_sessions')
     .update(updates)
     .eq('id', id)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .select('id')
     .maybeSingle();
 
