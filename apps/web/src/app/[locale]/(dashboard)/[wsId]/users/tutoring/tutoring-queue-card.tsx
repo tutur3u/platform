@@ -93,6 +93,7 @@ export function TutoringQueueCard({
       filters.reasonType,
       filters.groupId,
       filters.studentUserId,
+      filters.search,
       pagination.page,
       pagination.pageSize,
     ],
@@ -101,6 +102,7 @@ export function TutoringQueueCard({
         reasonType:
           filters.reasonType === 'all' ? undefined : filters.reasonType,
         groupId: filters.groupId === 'all' ? undefined : filters.groupId,
+        q: filters.search.trim() || undefined,
         studentUserId:
           filters.studentUserId === 'all' ? undefined : filters.studentUserId,
         page: pagination.page,
@@ -109,25 +111,8 @@ export function TutoringQueueCard({
     placeholderData: keepPreviousData,
     enabled,
   });
-  const queueRows = useMemo(() => {
-    if (queueQuery.isLoading) return undefined;
-    const rows = queueQuery.data?.data ?? [];
-    const keyword = filters.search.trim().toLowerCase();
-    if (!keyword) return rows;
-
-    return rows.filter((item) => {
-      const haystack = [
-        item.student_name,
-        item.group_name,
-        item.reason_type,
-        item.feedback_content,
-      ]
-        .join(' ')
-        .toLowerCase();
-      return haystack.includes(keyword);
-    });
-  }, [filters.search, queueQuery.data?.data, queueQuery.isLoading]);
-  const summary = queueSummary(queueRows ?? []);
+  const queueRows = queueQuery.isLoading ? undefined : queueQuery.data?.data;
+  const summary = queueQuery.data?.summary ?? queueSummary([]);
   const isFetching = queueQuery.isFetching && !queueQuery.isLoading;
   const [groupSearch, setGroupSearch] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
@@ -360,7 +345,12 @@ export function TutoringQueueCard({
     <section className="space-y-3">
       <FeatureSummary
         title={
-          <h3 className="font-semibold text-lg">{t('queue_title', summary)}</h3>
+          <h3 className="font-semibold text-lg">
+            {t('queue_title', {
+              absent: summary.absent,
+              weak: summary.weak,
+            })}
+          </h3>
         }
       />
 

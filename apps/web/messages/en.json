@@ -16434,6 +16434,7 @@
     "group_id": "Group ID",
     "invalid_duration": "Duration must be between 1 and 480 minutes",
     "invalid_session_count": "Session count must be between 1 and 50",
+    "mark_failed": "Failed to update session status",
     "missing_required": "Group, student, and at least one valid session are required",
     "no_groups": "No groups found",
     "no_queue": "No pending tutoring candidates",

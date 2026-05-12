@@ -16434,6 +16434,7 @@
     "group_id": "ID nhóm",
     "invalid_duration": "Thời lượng phải trong khoảng từ 1 đến 480 phút",
     "invalid_session_count": "Số buổi phải trong khoảng từ 1 đến 50",
+    "mark_failed": "Không thể cập nhật trạng thái buổi học",
     "missing_required": "Nhóm, học viên và ít nhất một buổi hợp lệ là bắt buộc",
     "no_groups": "Không tìm thấy nhóm",
     "no_queue": "Không có ứng viên phụ đạo đang chờ",

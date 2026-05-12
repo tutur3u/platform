@@ -90,14 +90,15 @@ export function toPayrollRows(sessions: TutoringSessionRecord[]) {
   for (const session of sessions) {
     if (session.attendance_status !== 'DONE') continue;
     const teacherName = getDisplayName(session.teacher);
-    const current = map.get(teacherName) ?? {
+    const teacherKey = session.teacher?.id ?? `unassigned:${session.id}`;
+    const current = map.get(teacherKey) ?? {
       completed_sessions: 0,
       teacher_name: teacherName,
       total_minutes: 0,
     };
     current.completed_sessions += 1;
     current.total_minutes += session.duration_minutes;
-    map.set(teacherName, current);
+    map.set(teacherKey, current);
   }
 
   return [...map.values()].sort((a, b) =>
@@ -107,10 +108,11 @@ export function toPayrollRows(sessions: TutoringSessionRecord[]) {
 
 export function queueSummary(queue: TutoringQueueItem[]) {
   const absent = queue.filter(
-    (item) => item.reason_type !== 'WEAK_SUPPORT'
+    (item) =>
+      item.reason_type === 'ABSENT_RECOVERY' || item.reason_type === 'BOTH'
   ).length;
   const weak = queue.filter(
-    (item) => item.reason_type !== 'ABSENT_RECOVERY'
+    (item) => item.reason_type === 'WEAK_SUPPORT' || item.reason_type === 'BOTH'
   ).length;
   return { absent, weak };
 }

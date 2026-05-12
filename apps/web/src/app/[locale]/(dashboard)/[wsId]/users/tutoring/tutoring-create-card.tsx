@@ -403,9 +403,11 @@ export function TutoringCreateCard({
                             i === index
                               ? {
                                   ...current,
-                                  durationMinutes:
-                                    Number.parseInt(event.target.value, 10) ||
-                                    DEFAULT_DURATION_MINUTES,
+                                  durationMinutes: Number.isNaN(
+                                    Number.parseInt(event.target.value, 10)
+                                  )
+                                    ? 0
+                                    : Number.parseInt(event.target.value, 10),
                                 }
                               : current
                           ),

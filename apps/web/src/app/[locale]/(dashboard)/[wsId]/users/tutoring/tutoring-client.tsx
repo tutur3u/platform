@@ -3,10 +3,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createTutoringSession,
+  listAllWorkspaceUserGroups,
   listTutoringSessions,
   listWorkspaceBasicUsers,
-  listWorkspaceUserGroups,
   markTutoringSession,
+  type WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -20,6 +21,26 @@ import {
   findSessionSlotConflicts,
   type TutoringFormValues,
 } from './tutoring-types';
+
+async function listAllWorkspaceBasicUsers(wsId: string) {
+  const users: WorkspaceBasicUserRecord[] = [];
+  const pageSize = 200;
+
+  for (let from = 0; ; from += pageSize) {
+    const response = await listWorkspaceBasicUsers(wsId, {
+      from,
+      limit: pageSize,
+    });
+    users.push(...response.data);
+
+    if (response.data.length < pageSize || users.length >= response.count) {
+      return {
+        count: users.length,
+        data: users,
+      };
+    }
+  }
+}
 
 interface Props {
   wsId: string;
@@ -124,15 +145,13 @@ export function TutoringClient({ wsId, canManage }: Props) {
   const groupsQuery = useQuery({
     queryKey: ['tutoring-groups', wsId],
     queryFn: () =>
-      listWorkspaceUserGroups(wsId, {
+      listAllWorkspaceUserGroups(wsId, {
         status: 'active',
-        page: 1,
-        pageSize: 200,
-      }).then((response) => response.data),
+      }),
   });
   const studentsQuery = useQuery({
     queryKey: ['tutoring-students', wsId],
-    queryFn: () => listWorkspaceBasicUsers(wsId, { limit: 200 }),
+    queryFn: () => listAllWorkspaceBasicUsers(wsId),
   });
 
   const createMutation = useMutation({
@@ -210,6 +229,9 @@ export function TutoringClient({ wsId, canManage }: Props) {
       void queryClient.invalidateQueries({
         queryKey: ['tutoring-queue', wsId],
       });
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : t('mark_failed'));
     },
   });
 
