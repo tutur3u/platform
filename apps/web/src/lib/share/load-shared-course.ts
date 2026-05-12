@@ -1,10 +1,11 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+  getSharedCourseContent,
+  InternalApiError,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { headers } from 'next/headers';
 import { validate as validateUuid } from 'uuid';
 
 interface SharedCourseContent {
@@ -12,14 +13,11 @@ interface SharedCourseContent {
   modules: SharedCourseModule[];
 }
 
-function toRichTextContent(value: unknown): JSONContent | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-
-  return value as JSONContent;
-}
-
+/**
+ * Loads shared course content by calling the centralized `/api/v1/course` route.
+ * This keeps all DB fetching in the route handler so satellite apps (learn, etc.)
+ * can consume the same endpoint via internal-api.
+ */
 export async function loadSharedCourseContent(
   groupId: string,
   request?: Request
@@ -28,132 +26,32 @@ export async function loadSharedCourseContent(
     return null;
   }
 
-  const sessionSupabase = request
-    ? await createClient(request)
-    : await createClient();
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(sessionSupabase);
+  const requestHeaders = request?.headers ?? (await headers());
+  const options = withForwardedInternalApiAuth(requestHeaders);
 
-  if (userError) throw userError;
-  if (!user) return null;
-
-  const sbAdmin = await createAdminClient();
-  const { data: group, error: groupError } = await sbAdmin
-    .from('workspace_user_groups')
-    .select('id, ws_id, name, description')
-    .eq('id', groupId)
-    .maybeSingle();
-
-  if (groupError) throw groupError;
-  if (!group) return null;
-
-  const { data: membership, error: membershipError } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', group.ws_id)
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (membershipError) throw membershipError;
-
-  let hasAccess = Boolean(membership);
-
-  if (!hasAccess) {
-    const { data: guest, error: guestError } = await sbAdmin
-      .from('workspace_guests')
-      .select('id')
-      .eq('ws_id', group.ws_id)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (guestError) throw guestError;
-
-    if (guest) {
-      const { data: permissions, error: permissionError } = await sbAdmin
-        .from('workspace_guest_permissions')
-        .select('enable, resource_id')
-        .eq('guest_id', guest.id)
-        .eq('permission', 'course:view')
-        .or(`resource_id.is.null,resource_id.eq.${groupId}`);
-
-      if (permissionError) throw permissionError;
-
-      hasAccess = (permissions ?? []).some((permission) => permission.enable);
+  try {
+    const sharedCourse = await getSharedCourseContent(groupId, options);
+    return {
+      group: {
+        description: sharedCourse.group.description,
+        name: sharedCourse.group.name ?? '',
+      },
+      modules: sharedCourse.modules.map((courseModule) => ({
+        ...courseModule,
+        content: courseModule.content as JSONContent | null,
+        extra_content:
+          courseModule.extra_content as SharedCourseModule['extra_content'],
+        name: courseModule.name ?? '',
+        sort_key: courseModule.sort_key ?? 0,
+      })),
+    };
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      [401, 403, 404].includes(error.status)
+    ) {
+      return null;
     }
+    throw error;
   }
-
-  if (!hasAccess) return null;
-
-  const { data: modules, error: modulesError } = await sbAdmin
-    .from('workspace_course_modules')
-    .select(
-      'id, name, content, extra_content, youtube_links, group_id, created_at, is_public, is_published, sort_key'
-    )
-    .eq('group_id', groupId)
-    .eq('is_published', true)
-    .order('sort_key', { ascending: true, nullsFirst: false })
-    .order('created_at', { ascending: true });
-
-  if (modulesError) throw modulesError;
-
-  const publishedModules = modules ?? [];
-  const moduleIds = publishedModules.map((module) => module.id);
-
-  const [quizzesRes, flashcardsRes, quizSetsRes] =
-    moduleIds.length > 0
-      ? await Promise.all([
-          sbAdmin
-            .from('course_module_quizzes')
-            .select('module_id')
-            .in('module_id', moduleIds),
-          sbAdmin
-            .from('course_module_flashcards')
-            .select('module_id')
-            .in('module_id', moduleIds),
-          sbAdmin
-            .from('course_module_quiz_sets')
-            .select('module_id')
-            .in('module_id', moduleIds),
-        ])
-      : [
-          { data: [], error: null },
-          { data: [], error: null },
-          { data: [], error: null },
-        ];
-
-  if (quizzesRes.error) throw quizzesRes.error;
-  if (flashcardsRes.error) throw flashcardsRes.error;
-  if (quizSetsRes.error) throw quizSetsRes.error;
-
-  const quizCount = new Map<string, number>();
-  for (const row of quizzesRes.data ?? []) {
-    quizCount.set(row.module_id, (quizCount.get(row.module_id) ?? 0) + 1);
-  }
-
-  const flashcardCount = new Map<string, number>();
-  for (const row of flashcardsRes.data ?? []) {
-    flashcardCount.set(
-      row.module_id,
-      (flashcardCount.get(row.module_id) ?? 0) + 1
-    );
-  }
-
-  const quizSetCount = new Map<string, number>();
-  for (const row of quizSetsRes.data ?? []) {
-    quizSetCount.set(row.module_id, (quizSetCount.get(row.module_id) ?? 0) + 1);
-  }
-
-  return {
-    group: {
-      description: group.description,
-      name: group.name,
-    },
-    modules: publishedModules.map((module) => ({
-      ...module,
-      content: toRichTextContent(module.content),
-      flashcards: flashcardCount.get(module.id) ?? 0,
-      quizzes: quizCount.get(module.id) ?? 0,
-      quizSets: quizSetCount.get(module.id) ?? 0,
-    })),
-  };
 }
