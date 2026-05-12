@@ -4,6 +4,7 @@ const path = require('node:path');
 const {
   getComposeCommandArgs,
   getComposeFile,
+  getComposeServiceContainerId,
   getComposeServiceContainerName,
   hasComposeProfile,
   hasComposeServiceContainer,
@@ -75,10 +76,23 @@ const DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS = 45 * 60_000;
 const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
   DOCKER_WEB_DIRECT_HOST_PORT: '17804',
+  DOCKER_HIVE_PROXY_HOST_PORT: '17814',
   DOCKER_WEB_PROXY_HOST_PORT: '17803',
   DOCKER_WEB_REDIS_HOST_PORT: '16379',
   DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '18079',
 };
+const BLUE_GREEN_PROXY_REQUIRED_HOST_PORTS = Object.freeze([
+  {
+    containerPort: '7803',
+    defaultHostPort: '7803',
+    envKey: 'DOCKER_WEB_PROXY_HOST_PORT',
+  },
+  {
+    containerPort: '7814',
+    defaultHostPort: '7814',
+    envKey: 'DOCKER_HIVE_PROXY_HOST_PORT',
+  },
+]);
 
 function sleep(ms) {
   return new Promise((resolve) => {
@@ -109,6 +123,7 @@ function getBlueGreenMigrationSourceEnv(env, sourceProjectName) {
     ...env,
     COMPOSE_PROJECT_NAME: sourceProjectName,
     DOCKER_WEB_COMPOSE_PROJECT_NAME: sourceProjectName,
+    DOCKER_HIVE_PROXY_HOST_PORT: '7814',
     DOCKER_WEB_PROXY_HOST_PORT: '7803',
   };
 }
@@ -184,6 +199,7 @@ async function getBlueGreenComposeMigration({
     targetEnv,
     targetFinalEnv: {
       ...targetEnv,
+      DOCKER_HIVE_PROXY_HOST_PORT: '7814',
       DOCKER_WEB_PROXY_HOST_PORT: '7803',
     },
     targetProjectName,
@@ -596,6 +612,68 @@ function getBlueGreenProdServicesWithProxyOption(
   }
 
   return services;
+}
+
+function getExpectedBlueGreenProxyHostPortBindings(env = {}) {
+  return BLUE_GREEN_PROXY_REQUIRED_HOST_PORTS.map(
+    ({ containerPort, defaultHostPort, envKey }) => {
+      const hostPort =
+        typeof env[envKey] === 'string' && env[envKey].trim().length > 0
+          ? env[envKey].trim()
+          : defaultHostPort;
+
+      return { containerPort, hostPort };
+    }
+  );
+}
+
+function hasExpectedHostPortBinding(ports, { containerPort, hostPort }) {
+  const bindings = ports?.[`${containerPort}/tcp`];
+
+  return (
+    Array.isArray(bindings) &&
+    bindings.some((binding) => String(binding?.HostPort ?? '') === hostPort)
+  );
+}
+
+async function hasBlueGreenProxyHostPortBindings({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  const containerId = await getComposeServiceContainerId(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+
+  if (!containerId) {
+    return false;
+  }
+
+  try {
+    const result = await runChecked(
+      'docker',
+      ['inspect', '-f', '{{json .NetworkSettings.Ports}}', containerId],
+      {
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+    const ports = JSON.parse(result.stdout.trim() || '{}');
+
+    return getExpectedBlueGreenProxyHostPortBindings(env).every((binding) =>
+      hasExpectedHostPortBinding(ports, binding)
+    );
+  } catch {
+    return false;
+  }
 }
 
 async function validateBlueGreenProxyConfig({
@@ -1189,6 +1267,24 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       runCommand: run,
     }
   );
+  const proxyRunning = await hasComposeServiceContainer(
+    BLUE_GREEN_PROXY_SERVICE,
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+  const proxyHasRequiredHostPorts =
+    proxyRunning &&
+    (await hasBlueGreenProxyHostPortBindings({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }));
+  const needsProxyHostPortRefresh = proxyRunning && !proxyHasRequiredHostPorts;
   const targetColor = getNextBlueGreenColor(activeColor);
   const initialProxyColor = activeColor ?? targetColor;
   const standbyColor = activeColor;
@@ -1198,13 +1294,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
   const needsProxyBootstrap =
-    !!migration ||
-    !(await hasComposeServiceContainer(BLUE_GREEN_PROXY_SERVICE, {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env,
-      runCommand: run,
-    }));
+    !!migration || !proxyRunning || needsProxyHostPortRefresh;
 
   if (needsProxyBootstrap) {
     writeBlueGreenProxyConfig(initialProxyColor, {
@@ -1288,6 +1378,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       'up',
       '--detach',
       '--no-build',
+      ...(needsProxyHostPortRefresh ? ['--force-recreate'] : []),
       '--remove-orphans',
       ...parsed.composeArgs,
       ...phase1Services,
@@ -1806,6 +1897,7 @@ module.exports = {
   getBlueGreenHiveServiceName,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
+  hasBlueGreenProxyHostPortBindings,
   readBlueGreenDeploymentStamp,
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
