@@ -394,11 +394,11 @@ test('production Docker root scripts keep the default build caps', () => {
 
   assert.match(
     packageJson.scripts['serve:web:docker'],
-    /--build-memory 12g --build-cpus 2 --build-max-parallelism 1/
+    /--build-memory 12g --build-cpus 8 --build-max-parallelism 1/
   );
   assert.match(
     packageJson.scripts['serve:web:docker:bg'],
-    /--build-memory 12g --build-cpus 2 --build-max-parallelism 1/
+    /--build-memory 12g --build-cpus 8 --build-max-parallelism 1/
   );
   assert.equal(
     packageJson.scripts['build:web:docker'],
@@ -416,7 +416,15 @@ test('production Docker root scripts keep the default build caps', () => {
   assert.match(buildWebDockerScript, /build:web:docker/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
+  assert.match(
+    webNextConfig,
+    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 8 : undefined/
+  );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
+  assert.match(
+    webNextConfig,
+    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 8 : undefined/
+  );
   assert.match(webNextConfig, /staticPageGenerationTimeout/);
   assert.match(webNextConfig, /staticGenerationMaxConcurrency/);
 });

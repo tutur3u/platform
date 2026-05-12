@@ -312,6 +312,7 @@ function validateDockerCompose(
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-8' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '  platform-buildkit-state:',
@@ -398,6 +399,7 @@ function validateDockerProdCompose(composeContent) {
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-8' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',

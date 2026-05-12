@@ -28,11 +28,11 @@ const staticPageGenerationTimeout = parsePositiveIntegerEnv(
 );
 const staticGenerationMaxConcurrency = parsePositiveIntegerEnv(
   'DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY',
-  isDockerStandaloneBuild ? 4 : undefined
+  isDockerStandaloneBuild ? 8 : undefined
 );
 const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
-  isDockerStandaloneBuild ? 4 : undefined
+  isDockerStandaloneBuild ? 8 : undefined
 );
 
 const nextConfig: NextConfig = {
