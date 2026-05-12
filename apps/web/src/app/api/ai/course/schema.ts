@@ -52,7 +52,10 @@ export const QuizSchema = z.object({
     .max(6)
     .describe(
       'Answer options for this quiz question. At least one must be correct.'
-    ),
+    )
+    .refine((options) => options.some((option) => option.is_correct), {
+      error: 'At least one quiz option must be marked as correct.',
+    }),
 });
 
 export const FlashcardSchema = z.object({
@@ -69,7 +72,7 @@ export const ModuleSchema = z.object({
   content: z
     .string()
     .describe(
-      'The detailed learning content formatted as markdown. This is the main lesson body.'
+      'The detailed learning content formatted as markdown. The server converts this to TipTap JSON before storing it.'
     ),
   extra_content: z
     .string()
@@ -109,7 +112,7 @@ export const CourseGenerationSchema = z.object({
 
 export const GenerateCourseRequestSchema = z.object({
   fileName: z.string().max(255).optional(),
-  groupId: z.string().uuid(),
+  groupId: z.uuid(),
   maxCharacters: z.number().int().positive().max(1_000_000).optional(),
   storagePath: z.string().min(1).max(1024),
   wsId: z.string().min(1),

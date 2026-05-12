@@ -1,9 +1,10 @@
 import {
-  createInternalApiClient,
-  getConfiguredInternalApiBaseUrl,
+  getSharedCourseContent,
+  InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import type { SharedCourseGroup, SharedCourseModule } from '@tuturuuu/types';
+import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { headers } from 'next/headers';
 import { validate as validateUuid } from 'uuid';
 
@@ -19,32 +20,38 @@ interface SharedCourseContent {
  */
 export async function loadSharedCourseContent(
   groupId: string,
-  _request?: Request
+  request?: Request
 ): Promise<SharedCourseContent | null> {
   if (!validateUuid(groupId)) {
     return null;
   }
 
-  const requestHeaders = await headers();
+  const requestHeaders = request?.headers ?? (await headers());
   const options = withForwardedInternalApiAuth(requestHeaders);
-  const client = createInternalApiClient(options);
 
-  const baseUrl = getConfiguredInternalApiBaseUrl();
-  const url = `${baseUrl}/api/v1/course?courseId=${encodeURIComponent(groupId)}`;
-
-  const response = await client.fetch(url, { cache: 'no-store' });
-
-  if (response.status === 401 || response.status === 403) {
-    return null;
+  try {
+    const sharedCourse = await getSharedCourseContent(groupId, options);
+    return {
+      group: {
+        description: sharedCourse.group.description,
+        name: sharedCourse.group.name ?? '',
+      },
+      modules: sharedCourse.modules.map((courseModule) => ({
+        ...courseModule,
+        content: courseModule.content as JSONContent | null,
+        extra_content:
+          courseModule.extra_content as SharedCourseModule['extra_content'],
+        name: courseModule.name ?? '',
+        sort_key: courseModule.sort_key ?? 0,
+      })),
+    };
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      [401, 403, 404].includes(error.status)
+    ) {
+      return null;
+    }
+    throw error;
   }
-
-  if (response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw new Error(`Failed to load shared course content: ${response.status}`);
-  }
-
-  return (await response.json()) as SharedCourseContent;
 }

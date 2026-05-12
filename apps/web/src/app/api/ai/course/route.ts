@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import {
@@ -12,6 +13,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   COURSE_GENERATION_PROMPT,
   CourseGenerationSchema,
@@ -29,6 +31,81 @@ function isGroupStoragePath(
     storagePath.startsWith(`${normalizedWsId}/user-groups/${groupId}/`) ||
     storagePath.startsWith(`user-groups/${groupId}/`)
   );
+}
+
+type TipTapTextNode = {
+  type: 'text';
+  text: string;
+};
+
+type TipTapBlockNode = {
+  type: 'heading' | 'paragraph';
+  attrs?: { level: number };
+  content?: TipTapTextNode[];
+};
+
+function textContent(text: string): TipTapTextNode[] | undefined {
+  return text.trim() ? [{ type: 'text', text: text.trim() }] : undefined;
+}
+
+function markdownToTipTapDocument(markdown: string) {
+  const content: TipTapBlockNode[] = markdown
+    .split(/\n{2,}/u)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => {
+      const heading = block.match(/^(#{1,3})\s+(.+)$/u);
+      if (heading?.[1] && heading[2]) {
+        return {
+          type: 'heading',
+          attrs: { level: heading[1].length },
+          content: textContent(heading[2]),
+        };
+      }
+
+      return {
+        type: 'paragraph',
+        content: textContent(block.replace(/\n+/gu, '\n')),
+      };
+    });
+
+  return {
+    type: 'doc',
+    content:
+      content.length > 0
+        ? content
+        : [{ type: 'paragraph', content: textContent(markdown) }],
+  };
+}
+
+async function cleanupGeneratedCourseArtifacts({
+  flashcardIds,
+  moduleIds,
+  quizIds,
+  sbAdmin,
+}: {
+  flashcardIds: string[];
+  moduleIds: string[];
+  quizIds: string[];
+  sbAdmin: TypedSupabaseClient;
+}) {
+  if (quizIds.length) {
+    await sbAdmin.from('quiz_options').delete().in('quiz_id', quizIds);
+    await sbAdmin.from('course_module_quizzes').delete().in('quiz_id', quizIds);
+    await sbAdmin.from('workspace_quizzes').delete().in('id', quizIds);
+  }
+
+  if (flashcardIds.length) {
+    await sbAdmin
+      .from('course_module_flashcards')
+      .delete()
+      .in('flashcard_id', flashcardIds);
+    await sbAdmin.from('workspace_flashcards').delete().in('id', flashcardIds);
+  }
+
+  if (moduleIds.length) {
+    await sbAdmin.from('workspace_course_modules').delete().in('id', moduleIds);
+  }
 }
 
 // ─── Route Handler ───────────────────────────────────────────────────────────
@@ -222,8 +299,10 @@ export async function POST(request: Request) {
     // 9. Insert modules
     const moduleInsertPayload: TablesInsert<'workspace_course_modules'>[] =
       object.modules.map((mod, index) => ({
-        content: mod.content,
-        extra_content: mod.extra_content ? { text: mod.extra_content } : null,
+        content: markdownToTipTapDocument(mod.content),
+        extra_content: mod.extra_content
+          ? markdownToTipTapDocument(mod.extra_content)
+          : null,
         group_id: groupId,
         module_group_id: moduleGroupId,
         name: mod.name,
@@ -236,12 +315,12 @@ export async function POST(request: Request) {
       .insert(moduleInsertPayload)
       .select('id, name, sort_key');
 
-    if (insertError) {
+    if (insertError || !createdModules) {
       return NextResponse.json(
         {
           data: object,
           error: 'Failed to save generated modules',
-          message: insertError.message,
+          message: insertError?.message ?? 'No modules were returned.',
         },
         { status: 500 }
       );
@@ -253,73 +332,140 @@ export async function POST(request: Request) {
       moduleId: string;
       flashcardCount: number;
     }> = [];
+    const createdFlashcardIds: string[] = [];
+    const createdModuleIds = createdModules.map(
+      (courseModule) => courseModule.id
+    );
+    const createdQuizIds: string[] = [];
 
-    for (let i = 0; i < createdModules.length; i++) {
-      const dbModule = createdModules[i]!;
-      const generatedModule = object.modules[i]!;
+    try {
+      for (const [index, dbModule] of createdModules.entries()) {
+        const generatedModule = object.modules[index];
+        if (!generatedModule) {
+          throw new Error(
+            'Generated module result did not match saved modules'
+          );
+        }
 
-      // Insert quizzes
-      if (generatedModule.quizzes?.length) {
-        let quizCount = 0;
-        for (const quiz of generatedModule.quizzes) {
-          const { data: createdQuiz, error: quizError } = await sbAdmin
+        // Insert quizzes
+        if (generatedModule.quizzes?.length) {
+          const { data: createdQuizzes, error: quizError } = await sbAdmin
             .from('workspace_quizzes')
-            .insert({
-              question: quiz.question,
-              score: quiz.score,
-              ws_id: normalizedWsId,
-            })
-            .select('id')
-            .single();
-
-          if (quizError || !createdQuiz) continue;
-
-          await sbAdmin.from('course_module_quizzes').insert({
-            module_id: dbModule.id,
-            quiz_id: createdQuiz.id,
-          });
-
-          if (quiz.quiz_options.length) {
-            await sbAdmin.from('quiz_options').insert(
-              quiz.quiz_options.map((opt) => ({
-                quiz_id: createdQuiz.id,
-                value: opt.value,
-                is_correct: opt.is_correct,
-                explanation: opt.explanation ?? null,
+            .insert(
+              generatedModule.quizzes.map((quiz) => ({
+                question: quiz.question,
+                score: quiz.score,
+                ws_id: normalizedWsId,
               }))
+            )
+            .select('id');
+
+          if (quizError || !createdQuizzes) {
+            throw quizError ?? new Error('Failed to create generated quizzes');
+          }
+
+          if (createdQuizzes.length !== generatedModule.quizzes.length) {
+            throw new Error(
+              'Generated quiz insert returned an unexpected count'
             );
           }
 
-          quizCount++;
-        }
-        quizResults.push({ moduleId: dbModule.id, quizCount });
-      }
+          createdQuizIds.push(...createdQuizzes.map((quiz) => quiz.id));
 
-      // Insert flashcards
-      if (generatedModule.flashcards?.length) {
-        let flashcardCount = 0;
-        for (const card of generatedModule.flashcards) {
-          const { data: createdCard, error: cardError } = await sbAdmin
-            .from('workspace_flashcards')
-            .insert({
-              front: card.front,
-              back: card.back,
-              ws_id: normalizedWsId,
-            })
-            .select('id')
-            .single();
+          const { error: quizLinkError } = await sbAdmin
+            .from('course_module_quizzes')
+            .insert(
+              createdQuizzes.map((createdQuiz) => ({
+                module_id: dbModule.id,
+                quiz_id: createdQuiz.id,
+              }))
+            );
 
-          if (cardError || !createdCard) continue;
+          if (quizLinkError) throw quizLinkError;
 
-          await sbAdmin.from('course_module_flashcards').insert({
-            module_id: dbModule.id,
-            flashcard_id: createdCard.id,
+          const quizOptions = generatedModule.quizzes.flatMap(
+            (quiz, quizIndex) => {
+              const createdQuiz = createdQuizzes[quizIndex];
+              if (!createdQuiz) {
+                throw new Error('Generated quiz option mapping failed');
+              }
+              return quiz.quiz_options.map((option) => ({
+                quiz_id: createdQuiz.id,
+                value: option.value,
+                is_correct: option.is_correct,
+                explanation: option.explanation ?? null,
+              }));
+            }
+          );
+
+          if (quizOptions.length) {
+            const { error: quizOptionsError } = await sbAdmin
+              .from('quiz_options')
+              .insert(quizOptions);
+
+            if (quizOptionsError) throw quizOptionsError;
+          }
+
+          quizResults.push({
+            moduleId: dbModule.id,
+            quizCount: createdQuizzes.length,
           });
-
-          flashcardCount++;
         }
-        flashcardResults.push({ moduleId: dbModule.id, flashcardCount });
+
+        // Insert flashcards
+        if (generatedModule.flashcards?.length) {
+          const { data: createdFlashcards, error: flashcardError } =
+            await sbAdmin
+              .from('workspace_flashcards')
+              .insert(
+                generatedModule.flashcards.map((card) => ({
+                  front: card.front,
+                  back: card.back,
+                  ws_id: normalizedWsId,
+                }))
+              )
+              .select('id');
+
+          if (flashcardError || !createdFlashcards) {
+            throw (
+              flashcardError ??
+              new Error('Failed to create generated flashcards')
+            );
+          }
+
+          if (createdFlashcards.length !== generatedModule.flashcards.length) {
+            throw new Error(
+              'Generated flashcard insert returned an unexpected count'
+            );
+          }
+
+          createdFlashcardIds.push(...createdFlashcards.map((card) => card.id));
+
+          const { error: flashcardLinkError } = await sbAdmin
+            .from('course_module_flashcards')
+            .insert(
+              createdFlashcards.map((createdCard) => ({
+                module_id: dbModule.id,
+                flashcard_id: createdCard.id,
+              }))
+            );
+
+          if (flashcardLinkError) throw flashcardLinkError;
+
+          flashcardResults.push({
+            flashcardCount: createdFlashcards.length,
+            moduleId: dbModule.id,
+          });
+        }
       }
+    } catch (error) {
+      await cleanupGeneratedCourseArtifacts({
+        flashcardIds: createdFlashcardIds,
+        moduleIds: createdModuleIds,
+        quizIds: createdQuizIds,
+        sbAdmin,
+      });
+      throw error;
     }
 
     // 11. Return result
@@ -340,7 +486,7 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error('Failed to generate course:', error);
+    serverLogger.error('Failed to generate course', { error });
     return NextResponse.json(
       {
         error: 'Internal Server Error',

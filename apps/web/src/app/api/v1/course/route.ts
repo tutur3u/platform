@@ -3,20 +3,55 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { resolveTulearnSubject } from '@/lib/tulearn/service';
 
 const DetailQuerySchema = z.object({
   courseId: z.guid(),
 });
 
 const ListQuerySchema = z.object({
-  wsId: z.guid(),
+  studentId: z.guid().optional(),
+  wsId: z.string().min(1),
 });
+
+class CourseRouteError extends Error {
+  constructor(
+    message: string,
+    public readonly code: string,
+    public readonly status = 500,
+    cause?: unknown
+  ) {
+    super(message);
+    this.cause = cause;
+    this.name = 'CourseRouteError';
+  }
+}
+
+function courseRouteError(code: string, cause: unknown) {
+  return new CourseRouteError(
+    'Failed to load course content',
+    code,
+    500,
+    cause
+  );
+}
 
 function toRichTextContent(value: unknown): JSONContent | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  if (
+    !('type' in value) ||
+    value.type !== 'doc' ||
+    ('content' in value && !Array.isArray(value.content))
+  ) {
     return null;
   }
   return value as JSONContent;
@@ -43,15 +78,21 @@ export async function GET(request: Request) {
 
     const courseId = searchParams.get('courseId');
     const wsId = searchParams.get('wsId');
+    const studentId = searchParams.get('studentId') ?? undefined;
 
     // If courseId is provided, return detailed content for a single course
     if (courseId) {
-      return handleCourseDetail(courseId, user.id);
+      return handleCourseDetail(courseId, user.id, sessionSupabase);
     }
 
     // If wsId is provided, return list of courses for the workspace
     if (wsId) {
-      return handleCourseList(wsId, user.id);
+      return handleCourseList({
+        sessionSupabase,
+        studentId,
+        user,
+        wsId,
+      });
     }
 
     return NextResponse.json(
@@ -59,7 +100,17 @@ export async function GET(request: Request) {
       { status: 400 }
     );
   } catch (error) {
-    console.error('Failed to load course content', error);
+    if (error instanceof CourseRouteError) {
+      serverLogger.error('Failed to load course content', {
+        code: error.code,
+        error,
+      });
+      return NextResponse.json(
+        { code: error.code, error: error.message },
+        { status: error.status }
+      );
+    }
+    serverLogger.error('Failed to load course content', { error });
     return NextResponse.json(
       { error: 'Internal Server Error' },
       { status: 500 }
@@ -69,8 +120,18 @@ export async function GET(request: Request) {
 
 // ─── List all courses for a workspace ────────────────────────────────────────
 
-async function handleCourseList(wsId: string, userId: string) {
-  const parsed = ListQuerySchema.safeParse({ wsId });
+async function handleCourseList({
+  sessionSupabase,
+  studentId,
+  user,
+  wsId,
+}: {
+  sessionSupabase: TypedSupabaseClient;
+  studentId?: string;
+  user: SupabaseUser;
+  wsId: string;
+}) {
+  const parsed = ListQuerySchema.safeParse({ studentId, wsId });
   if (!parsed.success) {
     return NextResponse.json(
       { error: 'Invalid wsId', errors: parsed.error.issues },
@@ -78,69 +139,115 @@ async function handleCourseList(wsId: string, userId: string) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const normalizedWsId = await normalizeWorkspaceId(
+    parsed.data.wsId,
+    sessionSupabase
+  );
+  let progressUserId = user.id;
+  let hasAccess = false;
+
+  if (parsed.data.studentId) {
+    const subject = await resolveTulearnSubject({
+      requestSupabase: sessionSupabase,
+      studentId: parsed.data.studentId,
+      user,
+      wsId: normalizedWsId,
+    });
+    progressUserId = subject.studentPlatformUserId;
+    hasAccess = true;
+  }
 
   // Verify workspace membership
-  const { data: membership, error: membershipError } = await sbAdmin
-    .from('workspace_members')
-    .select('user_id')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (membershipError) throw membershipError;
-
-  let hasAccess = Boolean(membership);
-
   if (!hasAccess) {
-    const { data: guest, error: guestError } = await sbAdmin
-      .from('workspace_guests')
-      .select('id')
-      .eq('ws_id', wsId)
-      .eq('user_id', userId)
+    const { data: membership, error: membershipError } = await sessionSupabase
+      .from('workspace_members')
+      .select('user_id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
       .maybeSingle();
 
-    if (guestError) throw guestError;
-    if (guest) hasAccess = true;
+    if (membershipError) {
+      throw courseRouteError(
+        'workspace_membership_lookup_failed',
+        membershipError
+      );
+    }
+    hasAccess = Boolean(membership);
+  }
+
+  if (!hasAccess) {
+    const { data: guest, error: guestError } = await sessionSupabase
+      .from('workspace_guests')
+      .select('id')
+      .eq('ws_id', normalizedWsId)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (guestError) {
+      throw courseRouteError('workspace_guest_lookup_failed', guestError);
+    }
+    if (guest) {
+      const { data: permission, error: permissionError } = await sessionSupabase
+        .from('workspace_guest_permissions')
+        .select('id')
+        .eq('guest_id', guest.id)
+        .eq('permission', 'course:view')
+        .eq('enable', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (permissionError) {
+        throw courseRouteError(
+          'workspace_guest_permission_lookup_failed',
+          permissionError
+        );
+      }
+      hasAccess = Boolean(permission);
+    }
   }
 
   if (!hasAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
 
-  // Get all user groups that have published course modules (i.e. are courses)
-  const { data: modules, error: modulesError } = await sbAdmin
-    .from('workspace_course_modules')
-    .select('id, group_id')
-    .eq('is_published', true);
+  const sbAdmin = await createAdminClient();
 
-  if (modulesError) throw modulesError;
-
-  const courseGroupIds = [...new Set((modules ?? []).map((m) => m.group_id))];
-
-  if (!courseGroupIds.length) {
-    return NextResponse.json({ courses: [] });
-  }
-
-  // Fetch the groups that belong to this workspace
+  // Fetch workspace groups first, then scope module lookup to those groups.
   const { data: groups, error: groupsError } = await sbAdmin
     .from('workspace_user_groups')
     .select('id, name, description')
-    .eq('ws_id', wsId)
-    .in('id', courseGroupIds)
+    .eq('ws_id', normalizedWsId)
     .order('name', { ascending: true });
 
-  if (groupsError) throw groupsError;
+  if (groupsError)
+    throw courseRouteError('course_groups_lookup_failed', groupsError);
+
+  const workspaceGroupIds = (groups ?? []).map((group) => group.id);
+
+  if (!workspaceGroupIds.length) {
+    return NextResponse.json({ courses: [] });
+  }
+
+  const { data: modules, error: modulesError } = await sbAdmin
+    .from('workspace_course_modules')
+    .select('id, group_id')
+    .in('group_id', workspaceGroupIds)
+    .eq('is_published', true);
+
+  if (modulesError) {
+    throw courseRouteError('course_modules_lookup_failed', modulesError);
+  }
+
+  const courseGroupIds = [...new Set((modules ?? []).map((m) => m.group_id))];
+  const courseGroupIdSet = new Set(courseGroupIds);
 
   // Count modules per course
   const moduleCountByCourse = new Map<string, number>();
   for (const mod of modules ?? []) {
-    if (courseGroupIds.includes(mod.group_id)) {
-      moduleCountByCourse.set(
-        mod.group_id,
-        (moduleCountByCourse.get(mod.group_id) ?? 0) + 1
-      );
-    }
+    moduleCountByCourse.set(
+      mod.group_id,
+      (moduleCountByCourse.get(mod.group_id) ?? 0) + 1
+    );
   }
 
   // Get completion status for this user
@@ -150,12 +257,17 @@ async function handleCourseList(wsId: string, userId: string) {
       ? await sbAdmin
           .from('course_module_completion_status')
           .select('module_id')
-          .eq('user_id', userId)
+          .eq('user_id', progressUserId)
           .eq('completion_status', true)
           .in('module_id', allModuleIds)
       : { data: [], error: null };
 
-  if (completionsError) throw completionsError;
+  if (completionsError) {
+    throw courseRouteError(
+      'course_completions_lookup_failed',
+      completionsError
+    );
+  }
 
   const completedModuleIds = new Set(
     (completions ?? []).map((r) => r.module_id)
@@ -178,29 +290,35 @@ async function handleCourseList(wsId: string, userId: string) {
     }
   }
 
-  const courses = (groups ?? []).map((group) => {
-    const totalModules = moduleCountByCourse.get(group.id) ?? 0;
-    const completedModules = completedByCourse.get(group.id) ?? 0;
-    const progress = totalModules
-      ? Math.round((completedModules / totalModules) * 100)
-      : 0;
+  const courses = (groups ?? [])
+    .filter((group) => courseGroupIdSet.has(group.id))
+    .map((group) => {
+      const totalModules = moduleCountByCourse.get(group.id) ?? 0;
+      const completedModules = completedByCourse.get(group.id) ?? 0;
+      const progress = totalModules
+        ? Math.round((completedModules / totalModules) * 100)
+        : 0;
 
-    return {
-      id: group.id,
-      name: group.name,
-      description: group.description,
-      totalModules,
-      completedModules,
-      progress,
-    };
-  });
+      return {
+        id: group.id,
+        name: group.name,
+        description: group.description,
+        totalModules,
+        completedModules,
+        progress,
+      };
+    });
 
   return NextResponse.json({ courses });
 }
 
 // ─── Get detailed content for a single course ────────────────────────────────
 
-async function handleCourseDetail(courseId: string, userId: string) {
+async function handleCourseDetail(
+  courseId: string,
+  userId: string,
+  sessionSupabase: TypedSupabaseClient
+) {
   const parsed = DetailQuerySchema.safeParse({ courseId });
   if (!parsed.success) {
     return NextResponse.json(
@@ -219,43 +337,57 @@ async function handleCourseDetail(courseId: string, userId: string) {
     .eq('id', groupId)
     .maybeSingle();
 
-  if (groupError) throw groupError;
+  if (groupError)
+    throw courseRouteError('course_group_lookup_failed', groupError);
   if (!group) {
     return NextResponse.json({ error: 'Course not found' }, { status: 404 });
   }
 
   // Check workspace membership
-  const { data: membership, error: membershipError } = await sbAdmin
+  const { data: membership, error: membershipError } = await sessionSupabase
     .from('workspace_members')
     .select('user_id')
     .eq('ws_id', group.ws_id)
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (membershipError) throw membershipError;
+  if (membershipError) {
+    throw courseRouteError(
+      'workspace_membership_lookup_failed',
+      membershipError
+    );
+  }
 
   let hasAccess = Boolean(membership);
 
   // Fallback: check guest permissions
   if (!hasAccess) {
-    const { data: guest, error: guestError } = await sbAdmin
+    const { data: guest, error: guestError } = await sessionSupabase
       .from('workspace_guests')
       .select('id')
       .eq('ws_id', group.ws_id)
       .eq('user_id', userId)
       .maybeSingle();
 
-    if (guestError) throw guestError;
+    if (guestError) {
+      throw courseRouteError('workspace_guest_lookup_failed', guestError);
+    }
 
     if (guest) {
-      const { data: permissions, error: permissionError } = await sbAdmin
-        .from('workspace_guest_permissions')
-        .select('enable, resource_id')
-        .eq('guest_id', guest.id)
-        .eq('permission', 'course:view')
-        .or(`resource_id.is.null,resource_id.eq.${groupId}`);
+      const { data: permissions, error: permissionError } =
+        await sessionSupabase
+          .from('workspace_guest_permissions')
+          .select('enable, resource_id')
+          .eq('guest_id', guest.id)
+          .eq('permission', 'course:view')
+          .or(`resource_id.is.null,resource_id.eq.${groupId}`);
 
-      if (permissionError) throw permissionError;
+      if (permissionError) {
+        throw courseRouteError(
+          'workspace_guest_permission_lookup_failed',
+          permissionError
+        );
+      }
 
       hasAccess = (permissions ?? []).some((p) => p.enable);
     }
@@ -269,14 +401,16 @@ async function handleCourseDetail(courseId: string, userId: string) {
   const { data: modulesData, error: modulesError } = await sbAdmin
     .from('workspace_course_modules')
     .select(
-      'id, name, content, extra_content, youtube_links, group_id, created_at, is_public, is_published, sort_key'
+      'id, name, content, extra_content, youtube_links, group_id, module_group_id, created_at, is_public, is_published, sort_key'
     )
     .eq('group_id', groupId)
     .eq('is_published', true)
     .order('sort_key', { ascending: true, nullsFirst: false })
     .order('created_at', { ascending: true });
 
-  if (modulesError) throw modulesError;
+  if (modulesError) {
+    throw courseRouteError('course_modules_lookup_failed', modulesError);
+  }
 
   const publishedModules = modulesData ?? [];
   const moduleIds = publishedModules.map((m) => m.id);
@@ -304,9 +438,18 @@ async function handleCourseDetail(courseId: string, userId: string) {
           { data: [], error: null },
         ];
 
-  if (quizzesRes.error) throw quizzesRes.error;
-  if (flashcardsRes.error) throw flashcardsRes.error;
-  if (quizSetsRes.error) throw quizSetsRes.error;
+  if (quizzesRes.error) {
+    throw courseRouteError('course_quizzes_lookup_failed', quizzesRes.error);
+  }
+  if (flashcardsRes.error) {
+    throw courseRouteError(
+      'course_flashcards_lookup_failed',
+      flashcardsRes.error
+    );
+  }
+  if (quizSetsRes.error) {
+    throw courseRouteError('course_quiz_sets_lookup_failed', quizSetsRes.error);
+  }
 
   const quizCount = new Map<string, number>();
   for (const row of quizzesRes.data ?? []) {
