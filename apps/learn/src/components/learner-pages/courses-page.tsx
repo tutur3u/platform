@@ -9,7 +9,7 @@ import {
   Play,
   Zap,
 } from '@tuturuuu/icons';
-import { type CourseListItem, listCourses } from '@tuturuuu/internal-api';
+import { type CourseListItem, listSharedCourses } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
@@ -21,13 +21,17 @@ import {
   EmptyState,
   LoadingState,
   Section,
+  useStudentHref,
+  useStudentId,
 } from './shared';
 
 export function CoursesPage({ wsId }: { wsId: string }) {
   const t = useTranslations();
+  const studentId = useStudentId();
   const courses = useQuery({
-    queryFn: () => listCourses(wsId),
-    queryKey: ['courses', wsId],
+    enabled: Boolean(wsId),
+    queryFn: () => listSharedCourses(wsId, studentId),
+    queryKey: ['courses', wsId, studentId],
   });
 
   if (courses.isLoading) return <LoadingState />;
@@ -66,6 +70,7 @@ function CanvasCourseCard({
   const t = useTranslations();
   const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
   const Icon = theme.icon;
+  const courseHref = useStudentHref(`/${wsId}/courses/${course.id}`);
 
   const remaining = course.totalModules - course.completedModules;
   const isComplete = course.progress >= 100;
@@ -114,10 +119,14 @@ function CanvasCourseCard({
             label={t('courses.modules')}
             value={`${course.completedModules}/${course.totalModules}`}
           />
-          <StatChip icon={Zap} label="XP" value={`${course.progress}%`} />
+          <StatChip
+            icon={Zap}
+            label={t('courses.xp')}
+            value={`${course.progress}%`}
+          />
           <StatChip
             icon={FileText}
-            label={remaining > 0 ? 'Left' : 'Done'}
+            label={remaining > 0 ? t('courses.left') : t('courses.done')}
             value={`${remaining}`}
           />
         </div>
@@ -164,7 +173,7 @@ function CanvasCourseCard({
       {/* Canvas-style footer action */}
       <div className="mt-auto border-border border-t-2 px-5 py-3">
         <Link
-          href={`/${wsId}/courses/${course.id}`}
+          href={courseHref}
           className="group/btn flex w-full items-center gap-2 font-bold text-sm transition hover:text-primary"
         >
           <Play className="h-4 w-4" />
