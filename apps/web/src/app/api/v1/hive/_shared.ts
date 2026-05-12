@@ -137,14 +137,20 @@ function fromBase64Url(value: string) {
 }
 
 function getRealtimeSecret() {
-  const secret = process.env.HIVE_REALTIME_TOKEN_SECRET;
+  const secret =
+    process.env.HIVE_REALTIME_TOKEN_SECRET ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY;
 
   if (secret?.trim()) {
     return secret.trim();
   }
 
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('HIVE_REALTIME_TOKEN_SECRET is required in production');
+    throw new Error(
+      'Hive realtime token signing requires HIVE_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
+    );
   }
 
   return 'hive-local-development-token-secret';

@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   requireHiveAccess,
+  serverLogger,
   signHiveRealtimeToken,
   withHiveRoute,
 } from '../../../_shared';
@@ -19,13 +20,27 @@ async function createToken(request: NextRequest, serverId: string) {
   if (!result.ok) return result.response;
 
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-  const token = signHiveRealtimeToken({
-    exp: Math.floor(expiresAt.getTime() / 1000),
-    role: result.access.isAdmin ? 'admin' : 'member',
-    scopes: ['presence', 'world:write', 'npc:write'],
-    serverId,
-    userId: result.access.user.id,
-  });
+  let token: string;
+
+  try {
+    token = signHiveRealtimeToken({
+      exp: Math.floor(expiresAt.getTime() / 1000),
+      role: result.access.isAdmin ? 'admin' : 'member',
+      scopes: ['presence', 'world:write', 'npc:write'],
+      serverId,
+      userId: result.access.user.id,
+    });
+  } catch (error) {
+    serverLogger.error('Failed to sign Hive realtime token', {
+      error: error instanceof Error ? error.message : String(error),
+      serverId,
+    });
+
+    return NextResponse.json(
+      { error: 'Hive realtime token signing is not configured' },
+      { status: 503 }
+    );
+  }
 
   return NextResponse.json({
     expiresAt: expiresAt.toISOString(),

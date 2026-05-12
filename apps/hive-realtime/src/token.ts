@@ -14,10 +14,20 @@ export type HiveRealtimeTokenPayload = z.infer<
 >;
 
 function getSecret(secret = process.env.HIVE_REALTIME_TOKEN_SECRET) {
-  if (secret?.trim()) return secret.trim();
+  const resolvedSecret =
+    secret ||
+    process.env.SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SERVICE_KEY;
+
+  if (resolvedSecret?.trim()) return resolvedSecret.trim();
+
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('HIVE_REALTIME_TOKEN_SECRET is required in production');
+    throw new Error(
+      'Hive realtime token validation requires HIVE_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
+    );
   }
+
   return 'hive-local-development-token-secret';
 }
 

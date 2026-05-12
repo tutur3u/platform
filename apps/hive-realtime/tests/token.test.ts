@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { verifyHiveRealtimeToken } from '../src/token';
 
 function sign(payload: Record<string, unknown>, secret: string) {
@@ -19,6 +19,11 @@ function sign(payload: Record<string, unknown>, secret: string) {
 }
 
 describe('Hive realtime token validation', () => {
+  afterEach(() => {
+    delete process.env.HIVE_REALTIME_TOKEN_SECRET;
+    delete process.env.SUPABASE_SECRET_KEY;
+  });
+
   it('accepts valid scoped tokens', () => {
     const token = sign(
       {
@@ -51,5 +56,24 @@ describe('Hive realtime token validation', () => {
 
     expect(verifyHiveRealtimeToken(token, 'secret', 20_000)).toBeNull();
     expect(verifyHiveRealtimeToken(`${token}x`, 'secret', 1_000)).toBeNull();
+  });
+
+  it('falls back to the platform Supabase service secret in production', () => {
+    process.env.SUPABASE_SECRET_KEY = 'supabase-service-secret';
+
+    const token = sign(
+      {
+        exp: 2_000_000_000,
+        role: 'member',
+        scopes: ['world:event'],
+        serverId: '8f7fa5cf-8bb1-446a-9c51-f4222f452f4d',
+        userId: '00000000-0000-4000-8000-000000000001',
+      },
+      'supabase-service-secret'
+    );
+
+    expect(verifyHiveRealtimeToken(token, undefined, 1_000)).toMatchObject({
+      userId: '00000000-0000-4000-8000-000000000001',
+    });
   });
 });
