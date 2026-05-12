@@ -7,7 +7,6 @@ import { snapVector } from '@/engine/world';
 
 type PlacementPlaneProps = {
   onCommitPosition: (position: HiveVector3) => void;
-  onErase: (selection: NonNullable<HiveSelection>) => void;
   onHoverPosition: (position: HiveVector3 | null) => void;
   onSelect: (selection: HiveSelection) => void;
   tool: HiveTool;
@@ -16,7 +15,6 @@ type PlacementPlaneProps = {
 
 export function PlacementPlane({
   onCommitPosition,
-  onErase,
   onHoverPosition,
   onSelect,
   resolveBlockId,
@@ -24,36 +22,19 @@ export function PlacementPlane({
 }: PlacementPlaneProps) {
   const pointerStart = useRef<{ x: number; y: number } | null>(null);
 
-  const canEdit =
-    tool === 'terrain' ||
-    tool === 'object' ||
-    tool === 'npc' ||
-    tool === 'move' ||
-    tool === 'erase' ||
-    tool === 'select';
+  const canEdit = tool === 'build' || tool === 'move' || tool === 'select';
 
   const commitAtPoint = (
     event: ThreeEvent<PointerEvent>,
     position: HiveVector3
   ) => {
-    if (tool === 'erase') {
-      const blockId = resolveBlockId(position);
-      if (blockId) onErase({ id: blockId, kind: 'block' });
-      return;
-    }
-
     if (tool === 'select') {
       const blockId = resolveBlockId(position);
       onSelect(blockId ? { id: blockId, kind: 'block' } : null);
       return;
     }
 
-    if (
-      tool === 'terrain' ||
-      tool === 'object' ||
-      tool === 'npc' ||
-      tool === 'move'
-    ) {
+    if (tool === 'build' || tool === 'move') {
       event.stopPropagation();
       onCommitPosition(position);
     }

@@ -18,6 +18,12 @@ const npcToggles = [
   { key: 'customPromptEnabled', label: 'Custom' },
 ] as const;
 
+const agentModes = [
+  { id: 'algorithmic', label: 'Algorithmic' },
+  { id: 'llm', label: 'LLM' },
+  { id: 'hybrid', label: 'Hybrid' },
+] as const;
+
 export function NpcLabPanel({
   isRunning,
   npcs,
@@ -27,6 +33,11 @@ export function NpcLabPanel({
   world,
 }: NpcLabPanelProps) {
   const npc = npcs[0] ?? null;
+  const agentMode =
+    npc && typeof npc.settings.agentMode === 'string'
+      ? npc.settings.agentMode
+      : 'llm';
+  const autonomous = Boolean(npc?.settings.autonomous);
 
   return (
     <section className="pointer-events-auto w-[min(420px,38vw)] overflow-hidden rounded-lg border border-border/70 bg-background/90 text-foreground shadow-foreground/12 shadow-xl backdrop-blur-md">
@@ -70,6 +81,47 @@ export function NpcLabPanel({
                 {label}
               </label>
             ))}
+          </div>
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="font-medium text-xs">Decision engine</p>
+              <label className="flex items-center gap-2 text-muted-foreground text-xs">
+                <input
+                  checked={autonomous}
+                  onChange={(event) =>
+                    onPatchNpc(npc.id, {
+                      settings: {
+                        ...npc.settings,
+                        autonomous: event.target.checked,
+                      },
+                    })
+                  }
+                  type="checkbox"
+                />
+                Autonomous
+              </label>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {agentModes.map((mode) => (
+                <button
+                  className={[
+                    'rounded-md border px-2 py-2 text-xs transition',
+                    agentMode === mode.id
+                      ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green'
+                      : 'border-border bg-background text-muted-foreground hover:text-foreground',
+                  ].join(' ')}
+                  key={mode.id}
+                  onClick={() =>
+                    onPatchNpc(npc.id, {
+                      settings: { ...npc.settings, agentMode: mode.id },
+                    })
+                  }
+                  type="button"
+                >
+                  {mode.label}
+                </button>
+              ))}
+            </div>
           </div>
           <label className="block text-muted-foreground text-xs">
             System prompt

@@ -74,3 +74,10 @@ Accepted client messages are typed commands:
 
 World events are persisted through the central `apply_hive_world_event(...)`
 RPC so stale revisions are rejected before broadcast.
+
+When an edit is accepted by the central API first, the Hive app emits
+`world.event.applied` to the WebSocket service. The realtime service validates
+that the token server ID matches the event server ID, then broadcasts the event
+and full accepted world snapshot to that server room. This keeps other clients
+from resurrecting deleted blocks by refetching a stale snapshot before the
+accepted revision is visible.

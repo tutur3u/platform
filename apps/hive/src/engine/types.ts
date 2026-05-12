@@ -20,14 +20,16 @@ export type {
   HiveWorldEvent,
 };
 
-export type HiveTool =
-  | 'select'
-  | 'terrain'
-  | 'object'
-  | 'npc'
-  | 'erase'
-  | 'move'
-  | 'rotate';
+export type HiveTool = 'select' | 'build' | 'erase' | 'move' | 'rotate';
+
+export type HiveBuildMode = 'npc' | 'object' | 'terrain';
+
+export type HiveTimeTheme =
+  | 'afternoon'
+  | 'evening'
+  | 'midnight'
+  | 'morning'
+  | 'noon';
 
 export type HiveCatalogItem = {
   category: 'building' | 'functional' | 'terrain';

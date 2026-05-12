@@ -4,26 +4,33 @@ import {
   ContactShadows,
   OrbitControls,
   PerspectiveCamera,
-  Sky,
 } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useEffect, useState } from 'react';
-import { MOUSE } from 'three';
+import { Suspense, useEffect, useMemo, useState } from 'react';
+import { MOUSE, PCFShadowMap, TOUCH } from 'three';
+import { timeThemePresets } from '@/engine/time-themes';
 import type {
+  HiveBuildMode,
   HiveNpc,
   HiveSelection,
+  HiveTimeTheme,
   HiveTool,
   HiveVector3,
   HiveWorldData,
 } from '@/engine/types';
+import { CloudLayer } from './cloud-layer';
 import { GhostPreview } from './ghost-preview';
-import { NpcPrefab, ObjectPrefab } from './object-prefabs';
+import { NpcPrefab } from './npc-prefab';
+import { ObjectPrefab } from './object-prefabs';
 import { PlacementPlane } from './placement-plane';
+import { ThemedEnvironment } from './themed-environment';
 import { VoxelTiles } from './voxel-tiles';
 
 type HiveViewportProps = {
+  activeBuildMode: HiveBuildMode;
   activeObject: string;
   activeTerrain: string;
+  gaplessMode: boolean;
   npcs: HiveNpc[];
   onErase: (selection: NonNullable<HiveSelection>) => void;
   onMoveSelection: (position: HiveVector3) => void;
@@ -32,12 +39,17 @@ type HiveViewportProps = {
   onPlaceTerrain: (position: HiveVector3) => void;
   onSelect: (selection: HiveSelection) => void;
   selection: HiveSelection;
+  timeTheme: HiveTimeTheme;
   tool: HiveTool;
   world: HiveWorldData;
 };
 
 export function HiveViewport(props: HiveViewportProps) {
   const [hoverPosition, setHoverPosition] = useState<HiveVector3 | null>(null);
+  const theme = useMemo(
+    () => timeThemePresets[props.timeTheme],
+    [props.timeTheme]
+  );
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -52,9 +64,15 @@ export function HiveViewport(props: HiveViewportProps) {
   }, [props.onSelect]);
 
   const commitPosition = (position: HiveVector3) => {
-    if (props.tool === 'terrain') props.onPlaceTerrain({ ...position, y: 0 });
-    if (props.tool === 'object') props.onPlaceObject({ ...position, y: 1 });
-    if (props.tool === 'npc') props.onPlaceNpc({ ...position, y: 1 });
+    if (props.tool === 'build' && props.activeBuildMode === 'terrain') {
+      props.onPlaceTerrain({ ...position, y: 0 });
+    }
+    if (props.tool === 'build' && props.activeBuildMode === 'object') {
+      props.onPlaceObject({ ...position, y: 1 });
+    }
+    if (props.tool === 'build' && props.activeBuildMode === 'npc') {
+      props.onPlaceNpc({ ...position, y: 1 });
+    }
     if (props.tool === 'move') props.onMoveSelection({ ...position, y: 1 });
   };
 
@@ -68,35 +86,26 @@ export function HiveViewport(props: HiveViewportProps) {
 
   return (
     <div
-      className="relative h-full min-h-[560px] overflow-hidden bg-[#edf3f2]"
+      className="relative h-full min-h-[560px] overflow-hidden"
       onContextMenu={(event) => event.preventDefault()}
+      style={{
+        backgroundColor: theme.background,
+        transition: 'background-color 700ms ease',
+      }}
     >
       <Canvas
-        shadows
+        shadows={{ enabled: true, type: PCFShadowMap }}
         camera={{ fov: 44, position: [8, 7.5, 8] }}
         onPointerMissed={() => props.onSelect(null)}
       >
         <Suspense fallback={null}>
-          <color args={['#edf3f2']} attach="background" />
-          <fog args={['#edf3f2', 20, 60]} attach="fog" />
           <PerspectiveCamera makeDefault fov={44} position={[8, 7.5, 8]} />
-          <ambientLight intensity={1.2} />
-          <directionalLight
-            castShadow
-            intensity={1.9}
-            position={[6, 10, 5]}
-            shadow-mapSize-height={2048}
-            shadow-mapSize-width={2048}
-          />
-          <Sky
-            distance={450000}
-            inclination={0.53}
-            sunPosition={[3, 8, 3]}
-            turbidity={4}
-          />
+          <ThemedEnvironment timeTheme={props.timeTheme} />
+          <CloudLayer timeTheme={props.timeTheme} />
           <group>
             <VoxelTiles
               blocks={props.world.blocks}
+              gaplessMode={props.gaplessMode}
               onErase={props.onErase}
               onSelect={(id) => props.onSelect({ id, kind: 'block' })}
               selectedId={
@@ -132,15 +141,16 @@ export function HiveViewport(props: HiveViewportProps) {
             ))}
             <PlacementPlane
               onCommitPosition={commitPosition}
-              onErase={props.onErase}
               onHoverPosition={setHoverPosition}
               onSelect={props.onSelect}
               resolveBlockId={resolveBlockId}
               tool={props.tool}
             />
             <GhostPreview
+              activeBuildMode={props.activeBuildMode}
               activeObject={props.activeObject}
               activeTerrain={props.activeTerrain}
+              gaplessMode={props.gaplessMode}
               hoverPosition={hoverPosition}
               tool={props.tool}
             />
@@ -148,7 +158,7 @@ export function HiveViewport(props: HiveViewportProps) {
           <ContactShadows
             blur={2.6}
             far={12}
-            opacity={0.24}
+            opacity={theme.shadowOpacity}
             position={[0, -0.02, 0]}
             scale={18}
           />
@@ -156,6 +166,7 @@ export function HiveViewport(props: HiveViewportProps) {
             enableDamping
             enablePan
             enableZoom
+            makeDefault
             mouseButtons={{
               LEFT: MOUSE.ROTATE,
               MIDDLE: MOUSE.DOLLY,
@@ -166,6 +177,10 @@ export function HiveViewport(props: HiveViewportProps) {
             minDistance={4}
             screenSpacePanning
             target={[0, 0, 0]}
+            touches={{
+              ONE: TOUCH.ROTATE,
+              TWO: TOUCH.DOLLY_PAN,
+            }}
           />
         </Suspense>
       </Canvas>

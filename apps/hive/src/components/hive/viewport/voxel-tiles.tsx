@@ -1,6 +1,5 @@
 'use client';
 
-import { useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef } from 'react';
 import { Color, type InstancedMesh, Object3D } from 'three';
 import {
@@ -12,6 +11,7 @@ import type { HiveBlock, HiveSelection, HiveTool } from '@/engine/types';
 
 type VoxelTilesProps = {
   blocks: HiveBlock[];
+  gaplessMode: boolean;
   onErase: (selection: NonNullable<HiveSelection>) => void;
   onSelect: (id: string) => void;
   selectedId?: string | null;
@@ -20,30 +20,31 @@ type VoxelTilesProps = {
 
 export function VoxelTiles({
   blocks,
+  gaplessMode,
   onErase,
   onSelect,
   selectedId,
   tool,
 }: VoxelTilesProps) {
   const meshRef = useRef<InstancedMesh>(null);
-  const edgeRef = useRef<InstancedMesh>(null);
   const sideRef = useRef<InstancedMesh>(null);
   const dummy = useMemo(() => new Object3D(), []);
 
   useEffect(() => {
-    if (!meshRef.current || !edgeRef.current || !sideRef.current) return;
+    if (!meshRef.current || !sideRef.current) return;
+    const tileSize = gaplessMode ? 1 : 0.9;
 
     blocks.forEach((block, index) => {
       const height = getTerrainHeight(block.type);
       dummy.position.set(
         block.position.x,
-        block.position.y + height / 2 - 0.07,
+        block.position.y + height / 2,
         block.position.z
       );
       dummy.scale.set(
-        0.96,
+        tileSize,
         selectedId === block.id ? height + 0.06 : height,
-        0.96
+        tileSize
       );
       dummy.updateMatrix();
       meshRef.current?.setMatrixAt(index, dummy.matrix);
@@ -54,44 +55,25 @@ export function VoxelTiles({
 
       dummy.position.set(
         block.position.x,
-        block.position.y - 0.28 + height / 2,
+        block.position.y - 0.21,
         block.position.z
       );
-      dummy.scale.set(0.96, 0.42 + height, 0.96);
+      dummy.scale.set(tileSize, 0.42, tileSize);
       dummy.updateMatrix();
       sideRef.current?.setMatrixAt(index, dummy.matrix);
       sideRef.current?.setColorAt(
         index,
         new Color(getTerrainSideColor(block.type))
       );
-
-      dummy.position.set(
-        block.position.x,
-        block.position.y - 0.03,
-        block.position.z
-      );
-      dummy.scale.set(0.98, 0.08, 0.98);
-      dummy.updateMatrix();
-      edgeRef.current?.setMatrixAt(index, dummy.matrix);
-      edgeRef.current?.setColorAt(index, new Color('#52602f'));
     });
 
     meshRef.current.instanceMatrix.needsUpdate = true;
-    edgeRef.current.instanceMatrix.needsUpdate = true;
     sideRef.current.instanceMatrix.needsUpdate = true;
     if (meshRef.current.instanceColor)
       meshRef.current.instanceColor.needsUpdate = true;
-    if (edgeRef.current.instanceColor)
-      edgeRef.current.instanceColor.needsUpdate = true;
     if (sideRef.current.instanceColor)
       sideRef.current.instanceColor.needsUpdate = true;
-  }, [blocks, dummy, selectedId]);
-
-  useFrame(({ clock }) => {
-    const material = meshRef.current?.material;
-    if (!material || Array.isArray(material)) return;
-    material.opacity = 0.94 + Math.sin(clock.elapsedTime * 1.4) * 0.035;
-  });
+  }, [blocks, dummy, gaplessMode, selectedId]);
 
   return (
     <>
@@ -110,27 +92,17 @@ export function VoxelTiles({
         }}
         ref={meshRef}
         receiveShadow
-        castShadow
       >
         <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial roughness={0.6} transparent metalness={0.1} />
+        <meshStandardMaterial roughness={0.68} metalness={0.04} />
       </instancedMesh>
       <instancedMesh
         args={[undefined, undefined, blocks.length]}
         ref={sideRef}
         receiveShadow
-        castShadow
       >
         <boxGeometry args={[1, 1, 1]} />
         <meshStandardMaterial roughness={0.8} />
-      </instancedMesh>
-      <instancedMesh
-        args={[undefined, undefined, blocks.length]}
-        ref={edgeRef}
-        receiveShadow
-      >
-        <boxGeometry args={[1.02, 0.08, 1.02]} />
-        <meshStandardMaterial roughness={0.9} color="#4a5a25" />
       </instancedMesh>
     </>
   );

@@ -26,27 +26,58 @@ export function SatelliteWorkspaceShell({
   topCollapsed = false,
 }: SatelliteWorkspaceShellProps) {
   return (
-    <main
-      className="grid h-dvh overflow-hidden bg-background text-foreground"
-      style={{
-        gridTemplateColumns: `${left && !leftCollapsed ? 'minmax(260px, 300px)' : '0px'} minmax(0, 1fr) ${right && !rightCollapsed ? 'minmax(300px, 360px)' : '0px'}`,
-      }}
-    >
-      <div className="min-h-0 overflow-hidden">{left}</div>
-      <section className="relative min-w-0 overflow-hidden">
+    <main className="relative h-dvh overflow-hidden bg-background text-foreground">
+      <section className="absolute inset-0 min-w-0 overflow-hidden">
         {center}
-        {top && !topCollapsed ? (
-          <div className="pointer-events-none absolute top-4 right-4 left-4 z-20">
+        {top ? (
+          <div
+            className={[
+              'pointer-events-none absolute top-4 right-4 left-4 z-20 transition duration-300 ease-out',
+              topCollapsed
+                ? '-translate-y-4 opacity-0'
+                : 'translate-y-0 opacity-100',
+            ].join(' ')}
+          >
             {top}
           </div>
         ) : null}
-        {bottom && !bottomCollapsed ? (
-          <div className="pointer-events-none absolute right-4 bottom-4 left-4 z-20">
+        {bottom ? (
+          <div
+            className={[
+              'pointer-events-none absolute right-4 bottom-4 left-4 z-20 transition duration-300 ease-out',
+              bottomCollapsed
+                ? 'translate-y-4 opacity-0'
+                : 'translate-y-0 opacity-100',
+            ].join(' ')}
+          >
             {bottom}
           </div>
         ) : null}
       </section>
-      <div className="min-h-0 overflow-hidden">{right}</div>
+      {left ? (
+        <div
+          className={[
+            'absolute top-4 bottom-4 left-4 z-30 w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 shadow-2xl shadow-foreground/15 transition duration-300 ease-out',
+            leftCollapsed
+              ? 'pointer-events-none -translate-x-[calc(100%+2rem)] opacity-0'
+              : 'translate-x-0 opacity-100',
+          ].join(' ')}
+        >
+          {left}
+        </div>
+      ) : null}
+      {right ? (
+        <div
+          className={[
+            'absolute top-4 right-4 bottom-4 z-30 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 shadow-2xl shadow-foreground/15 transition duration-300 ease-out',
+            rightCollapsed
+              ? 'pointer-events-none translate-x-[calc(100%+2rem)] opacity-0'
+              : 'translate-x-0 opacity-100',
+          ].join(' ')}
+        >
+          {right}
+        </div>
+      ) : null}
     </main>
   );
 }

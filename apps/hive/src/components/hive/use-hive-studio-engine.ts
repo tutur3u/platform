@@ -2,8 +2,8 @@
 
 import type { HiveServersResponse } from '@tuturuuu/internal-api';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { objectCatalog, terrainCatalog } from '@/engine/catalog';
 import type {
+  HiveBuildMode,
   HiveNpc,
   HiveSelection,
   HiveServer,
@@ -27,7 +27,13 @@ import {
   useHiveServers,
   useHiveSnapshot,
 } from '@/hooks/use-hive-data';
-import { connectHiveRealtime } from '@/realtime/hive-realtime-client';
+import {
+  connectHiveRealtime,
+  type HiveRealtimeClient,
+  type HiveRealtimeStatus,
+} from '@/realtime/hive-realtime-client';
+import { useHiveKeyboardShortcuts } from './use-hive-keyboard-shortcuts';
+import { useHiveTimeOfDay } from './use-hive-time-of-day';
 import { createWorldEventPersistence } from './use-world-event-persistence';
 
 type UseHiveStudioEngineProps = {
@@ -52,12 +58,19 @@ export function useHiveStudioEngine({
   const [npcs, setNpcs] = useState<HiveNpc[]>([]);
   const [revision, setRevision] = useState(0);
   const revisionRef = useRef(0);
-  const rotateSelectionRef = useRef<() => void>(() => undefined);
   const [selection, setSelection] = useState<HiveSelection>(null);
   const [tool, setTool] = useState<HiveTool>('select');
+  const [activeBuildMode, setActiveBuildMode] =
+    useState<HiveBuildMode>('terrain');
   const [activeTerrain, setActiveTerrain] = useState('grass');
   const [activeObject, setActiveObject] = useState('house');
+  const [gaplessMode, setGaplessMode] = useState(true);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
+  const [realtimeStatus, setRealtimeStatus] =
+    useState<HiveRealtimeStatus>('disconnected');
+  const [presenceCount, setPresenceCount] = useState(0);
+  const realtimeClientRef = useRef<HiveRealtimeClient | null>(null);
+  const timeOfDay = useHiveTimeOfDay();
 
   useEffect(() => {
     revisionRef.current = revision;
@@ -75,11 +88,20 @@ export function useHiveStudioEngine({
     if (!tokenQuery.data?.token || !serverId) return;
     const client = connectHiveRealtime({
       onMessage: (message) => {
-        if (message.type === 'world.event') setRevision(message.event.revision);
+        if (message.type === 'world.event') {
+          if (message.world) setWorld(message.world);
+          setRevision(message.event.revision);
+          revisionRef.current = message.event.revision;
+        }
+        if (message.type === 'presence') {
+          setPresenceCount(message.users.length);
+        }
       },
+      onStatus: setRealtimeStatus,
       token: tokenQuery.data.token,
       url: tokenQuery.data.url || realtimeUrl,
     });
+    realtimeClientRef.current = client;
 
     client.send({
       selection: null,
@@ -87,7 +109,12 @@ export function useHiveStudioEngine({
       userId: currentUser.id,
     });
 
-    return () => client.close();
+    return () => {
+      realtimeClientRef.current = null;
+      setRealtimeStatus('disconnected');
+      setPresenceCount(0);
+      client.close();
+    };
   }, [currentUser.id, realtimeUrl, serverId, tokenQuery.data]);
 
   const selectedServer = useMemo(
@@ -106,6 +133,13 @@ export function useHiveStudioEngine({
     setWorld,
     snapshotQuery,
     tool,
+    onPersisted: ({ event, world }) => {
+      realtimeClientRef.current?.send({
+        event,
+        type: 'world.event.applied',
+        world,
+      });
+    },
   });
 
   const placeTerrain = (position: HiveVector3) => {
@@ -149,6 +183,11 @@ export function useHiveStudioEngine({
       name: `NPC ${npcs.length + 1}`,
       position,
       role: 'settlement observer',
+      settings: {
+        agentMode: 'llm',
+        autonomous: false,
+        decisionPolicy: 'manual',
+      },
       systemPrompt:
         'Observe nearby voxel entities and decide one grounded action at a time.',
     });
@@ -226,51 +265,14 @@ export function useHiveStudioEngine({
       }
     );
   };
-  rotateSelectionRef.current = rotateSelection;
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
-
-      const key = event.key.toLowerCase();
-      const terrain = terrainCatalog.find(
-        (item) => item.shortcut?.toLowerCase() === key
-      );
-      if (terrain) {
-        setActiveTerrain(terrain.id);
-        setTool('terrain');
-        return;
-      }
-
-      const object = objectCatalog.find(
-        (item) => item.shortcut?.toLowerCase() === key
-      );
-      if (object) {
-        setActiveObject(object.id);
-        setTool('object');
-        return;
-      }
-
-      if (key === 'v') setTool('select');
-      if (key === 'e') setTool('erase');
-      if (key === 'm') setTool('move');
-      if (key === 'n') setTool('npc');
-      if (key === 'r') {
-        rotateSelectionRef.current();
-        setTool('rotate');
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, []);
+  useHiveKeyboardShortcuts({
+    onRotateSelection: rotateSelection,
+    setActiveBuildMode,
+    setActiveObject,
+    setActiveTerrain,
+    setTool,
+  });
 
   const patchNpc = (id: string, patch: Partial<HiveNpc>) => {
     setNpcs((items) =>
@@ -287,20 +289,6 @@ export function useHiveStudioEngine({
       npcId,
       payload: { expectedRevision: revision, promptMode, world },
     });
-  };
-
-  const createServer = () => {
-    mutations.createServer.mutate(
-      {
-        description: 'Shared Hive research world',
-        enabled: true,
-        maxPlayers: 32,
-        name: `Hive Lab ${serversQuery.data.servers.length + 1}`,
-      },
-      {
-        onSuccess: ({ server }) => setServerId(server.id),
-      }
-    );
   };
 
   const createServerWithPayload = (
@@ -346,12 +334,16 @@ export function useHiveStudioEngine({
   };
 
   return {
+    activeBuildMode,
     activeObject,
     activeTerrain,
-    createServer,
+    autoTimeEnabled: timeOfDay.autoTimeEnabled,
+    autoTimeSpeed: timeOfDay.autoTimeSpeed,
     createServerWithPayload,
     deleteServer,
     eraseSelection,
+    eventsCount: snapshotQuery.data?.events.length ?? 0,
+    gaplessMode,
     isRunningNpc: mutations.runNpc.isPending,
     moveSelection,
     npcs,
@@ -359,6 +351,8 @@ export function useHiveStudioEngine({
     placeNpc,
     placeObject,
     placeTerrain,
+    presenceCount,
+    realtimeStatus,
     revision,
     resetWorld,
     rotateSelection,
@@ -367,12 +361,19 @@ export function useHiveStudioEngine({
     selection,
     serverId,
     servers: serversQuery.data.servers,
+    setActiveBuildMode,
     setActiveObject,
     setActiveTerrain,
+    setAutoTimeSpeed: timeOfDay.setAutoTimeSpeed,
+    setGaplessMode,
     setSelection,
     setServerId,
     setTool,
+    setTimeTheme: timeOfDay.setTimeTheme,
+    setAutoTimeEnabled: timeOfDay.setAutoTimeEnabled,
+    simulatedMinutes: timeOfDay.simulatedMinutes,
     syncNotice,
+    timeTheme: timeOfDay.timeTheme,
     tool,
     updateServer,
     world,

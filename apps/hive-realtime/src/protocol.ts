@@ -19,9 +19,20 @@ const worldSchema = z.object({
       id: z.string().min(1),
       position: vectorSchema,
       rotation: z.number().optional(),
+      state: z.record(z.string(), z.unknown()).optional(),
       type: z.string().min(1),
     })
   ),
+});
+
+const eventSchema = z.object({
+  actorUserId: z.string().uuid().nullable(),
+  createdAt: z.string(),
+  eventType: z.string().min(1),
+  id: z.string().uuid(),
+  payload: z.record(z.string(), z.unknown()).default({}),
+  revision: z.number().int().min(0),
+  serverId: z.string().uuid(),
 });
 
 export const hiveRealtimeClientMessageSchema = z.discriminatedUnion('type', [
@@ -42,6 +53,11 @@ export const hiveRealtimeClientMessageSchema = z.discriminatedUnion('type', [
     expectedRevision: z.number().int().min(0),
     payload: z.record(z.string(), z.unknown()).default({}),
     type: z.literal('world.event'),
+    world: worldSchema,
+  }),
+  z.object({
+    event: eventSchema,
+    type: z.literal('world.event.applied'),
     world: worldSchema,
   }),
   z.object({

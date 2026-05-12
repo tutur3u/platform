@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  PanelLeftClose,
   Pencil,
   Plus,
   RefreshCcw,
@@ -20,6 +21,7 @@ type ServerNavigatorProps = {
   onEditServer: (server: HiveServer) => void;
   onResetWorld: (mode: 'clear' | 'reseed') => void;
   onSelectServer: (id: string) => void;
+  onToggle: () => void;
   servers: HiveServer[];
 };
 
@@ -32,6 +34,7 @@ export function ServerNavigator({
   onEditServer,
   onResetWorld,
   onSelectServer,
+  onToggle,
   servers,
 }: ServerNavigatorProps) {
   const activeServer = servers.find((server) => server.id === activeServerId);
@@ -44,16 +47,26 @@ export function ServerNavigator({
             <p className="font-semibold text-base text-zinc-100">Hive</p>
             <p className="text-sm text-zinc-400">Shared voxel labs</p>
           </div>
-          {isAdmin ? (
+          <div className="flex items-center gap-2">
+            {isAdmin ? (
+              <button
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/25 bg-white/5 text-zinc-100 transition hover:bg-white/10"
+                onClick={onCreateServer}
+                title="Create server"
+                type="button"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : null}
             <button
               className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border/25 bg-white/5 text-zinc-100 transition hover:bg-white/10"
-              onClick={onCreateServer}
-              title="Create server"
+              onClick={onToggle}
+              title="Collapse servers"
               type="button"
             >
-              <Plus className="h-4 w-4" />
+              <PanelLeftClose className="h-4 w-4" />
             </button>
-          ) : null}
+          </div>
         </div>
       </div>
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">

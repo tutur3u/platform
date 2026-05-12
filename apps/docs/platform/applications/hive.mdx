@@ -53,6 +53,13 @@ The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World
 edits should commit only after click/drag threshold handling so orbit, pan,
 zoom, placement, erasing, moving, and rotating do not conflict with each other.
+The toolbar opens with build tools only; block, object, system, and agent
+catalogs appear only while the Build tool is active. Gapless tile rendering is
+enabled by default and lives with time-of-day controls in the Settings dock tab.
+Manual morning, noon, afternoon, evening, and midnight modes use authored scene
+backdrops rather than a generic sky preset. Auto 24h mode advances a fast
+simulated day, shows the in-world clock in the summary overlay, and smoothly
+lerps scene lighting, fog, background, and cloud tint between themes.
 When a world edit fails because the local revision is stale, the Hive editor
 refetches the latest snapshot, rebases the intended edit once, and then either
 advances the revision from the successful response or shows a non-blocking sync

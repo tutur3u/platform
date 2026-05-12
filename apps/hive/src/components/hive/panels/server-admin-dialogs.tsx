@@ -66,7 +66,7 @@ export function ServerEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="z-[80] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {mode === 'create' ? 'Create Hive server' : 'Edit Hive server'}
@@ -176,7 +176,7 @@ export function ConfirmActionDialog({
 }: ConfirmActionDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent className="z-[80]">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

@@ -1,6 +1,6 @@
 'use client';
 
-import type { HiveServer } from '@/engine/types';
+import type { HiveSelection, HiveServer } from '@/engine/types';
 import {
   ConfirmActionDialog,
   ServerEditorDialog,
@@ -12,10 +12,15 @@ type ServerPayload = Pick<
 >;
 
 type HiveStudioDialogsProps = {
+  deleteSelectionTarget: NonNullable<HiveSelection> | null;
   deleteServerOpen: boolean;
   onCreateServer: (payload: ServerPayload) => void;
+  onDeleteSelection: (selection: NonNullable<HiveSelection>) => void;
   onDeleteServer: (serverId: string) => void;
   onResetWorld: (mode: 'clear' | 'reseed') => void;
+  onSetDeleteSelectionTarget: (
+    selection: NonNullable<HiveSelection> | null
+  ) => void;
   onSetDeleteServerOpen: (open: boolean) => void;
   onSetServerActionTarget: (server: HiveServer | null) => void;
   onSetServerDialogMode: (mode: 'create' | 'edit' | null) => void;
@@ -28,10 +33,13 @@ type HiveStudioDialogsProps = {
 };
 
 export function HiveStudioDialogs({
+  deleteSelectionTarget,
   deleteServerOpen,
   onCreateServer,
+  onDeleteSelection,
   onDeleteServer,
   onResetWorld,
+  onSetDeleteSelectionTarget,
   onSetDeleteServerOpen,
   onSetServerActionTarget,
   onSetServerDialogMode,
@@ -63,6 +71,18 @@ export function HiveStudioDialogs({
         }}
         open={serverDialogMode !== null}
         server={serverDialogMode === 'edit' ? editServer : null}
+      />
+      <ConfirmActionDialog
+        description={`Delete selected ${deleteSelectionTarget?.kind ?? 'entity'} from the Hive world.`}
+        onConfirm={() => {
+          if (deleteSelectionTarget) onDeleteSelection(deleteSelectionTarget);
+          onSetDeleteSelectionTarget(null);
+        }}
+        onOpenChange={(open) => {
+          if (!open) onSetDeleteSelectionTarget(null);
+        }}
+        open={deleteSelectionTarget !== null}
+        title="Delete selected entity?"
       />
       <ConfirmActionDialog
         description={`Delete ${serverActionTarget?.name ?? 'this server'} and its Hive world history. This cannot be undone.`}

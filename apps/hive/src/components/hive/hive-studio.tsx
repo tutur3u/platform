@@ -2,8 +2,8 @@
 
 import type { HiveServersResponse } from '@tuturuuu/internal-api';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
-import { useState } from 'react';
-import type { HiveServer, HiveUser } from '@/engine/types';
+import { useEffect, useState } from 'react';
+import type { HiveSelection, HiveServer, HiveUser } from '@/engine/types';
 import { EditorChromeControls } from './editor-chrome-controls';
 import { EditorTopChrome } from './editor-top-chrome';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
@@ -31,11 +31,11 @@ export function HiveStudio({
     initialServers,
     realtimeUrl,
   });
-  const [leftCollapsed, setLeftCollapsed] = useState(false);
-  const [rightCollapsed, setRightCollapsed] = useState(false);
+  const [leftCollapsed, setLeftCollapsed] = useState(true);
+  const [rightCollapsed, setRightCollapsed] = useState(true);
   const [topCollapsed, setTopCollapsed] = useState(false);
   const [bottomCollapsed, setBottomCollapsed] = useState(false);
-  const [npcLabCollapsed, setNpcLabCollapsed] = useState(false);
+  const [npcLabCollapsed, setNpcLabCollapsed] = useState(true);
   const [serverDialogMode, setServerDialogMode] = useState<
     'create' | 'edit' | null
   >(null);
@@ -45,18 +45,61 @@ export function HiveStudio({
   const [worldAction, setWorldAction] = useState<'clear' | 'reseed' | null>(
     null
   );
+  const [deleteSelectionTarget, setDeleteSelectionTarget] =
+    useState<NonNullable<HiveSelection> | null>(null);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (
+        target?.tagName === 'INPUT' ||
+        target?.tagName === 'TEXTAREA' ||
+        target?.isContentEditable
+      ) {
+        return;
+      }
+
+      if (
+        (event.key === 'Delete' || event.key === 'Backspace') &&
+        engine.selection
+      ) {
+        event.preventDefault();
+        if (event.metaKey || event.ctrlKey) {
+          engine.eraseSelection(engine.selection);
+          return;
+        }
+        setDeleteSelectionTarget(engine.selection);
+      }
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [engine]);
 
   return (
     <>
       <SatelliteWorkspaceShell
         bottom={
           <ToolDock
+            activeBuildMode={engine.activeBuildMode}
             activeObject={engine.activeObject}
             activeTerrain={engine.activeTerrain}
+            autoTimeEnabled={engine.autoTimeEnabled}
+            autoTimeSpeed={engine.autoTimeSpeed}
+            gaplessMode={engine.gaplessMode}
             onRotateSelection={engine.rotateSelection}
+            onSelectBuildMode={engine.setActiveBuildMode}
             onSelectObject={engine.setActiveObject}
             onSelectTerrain={engine.setActiveTerrain}
             onSetTool={engine.setTool}
+            onToggle={() => setBottomCollapsed(true)}
+            onToggleGapless={() => engine.setGaplessMode((value) => !value)}
+            onSelectTimeTheme={engine.setTimeTheme}
+            onSetAutoTimeSpeed={engine.setAutoTimeSpeed}
+            onToggleAutoTime={() =>
+              engine.setAutoTimeEnabled((value) => !value)
+            }
+            timeTheme={engine.timeTheme}
             tool={engine.tool}
           />
         }
@@ -64,8 +107,10 @@ export function HiveStudio({
         center={
           <>
             <HiveViewport
+              activeBuildMode={engine.activeBuildMode}
               activeObject={engine.activeObject}
               activeTerrain={engine.activeTerrain}
+              gaplessMode={engine.gaplessMode}
               npcs={engine.npcs}
               onErase={engine.eraseSelection}
               onMoveSelection={engine.moveSelection}
@@ -75,6 +120,7 @@ export function HiveStudio({
               onSelect={engine.setSelection}
               selection={engine.selection}
               tool={engine.tool}
+              timeTheme={engine.timeTheme}
               world={engine.world}
             />
             <EditorChromeControls
@@ -117,14 +163,21 @@ export function HiveStudio({
             }}
             onResetWorld={setWorldAction}
             onSelectServer={engine.setServerId}
+            onToggle={() => setLeftCollapsed(true)}
             servers={engine.servers}
           />
         }
         leftCollapsed={leftCollapsed}
         right={
           <InspectorPanel
+            eventsCount={engine.eventsCount}
             npcs={engine.npcs}
             onPatchNpc={engine.patchNpc}
+            onRequestDelete={setDeleteSelectionTarget}
+            onToggle={() => setRightCollapsed(true)}
+            presenceCount={engine.presenceCount}
+            realtimeStatus={engine.realtimeStatus}
+            revision={engine.revision}
             selection={engine.selection}
             world={engine.world}
           />
@@ -137,8 +190,15 @@ export function HiveStudio({
             npcs={engine.npcs}
             onPatchNpc={engine.patchNpc}
             onRunNpc={engine.runNpc}
+            onToggleNpcLab={() => setNpcLabCollapsed(true)}
+            presenceCount={engine.presenceCount}
+            realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
+            rightCollapsed={rightCollapsed}
             server={engine.selectedServer}
+            simulatedMinutes={engine.simulatedMinutes}
+            autoTimeEnabled={engine.autoTimeEnabled}
+            timeTheme={engine.timeTheme}
             world={engine.world}
           />
         }
@@ -153,6 +213,9 @@ export function HiveStudio({
         onSetServerActionTarget={setServerActionTarget}
         onSetServerDialogMode={setServerDialogMode}
         onSetWorldAction={setWorldAction}
+        deleteSelectionTarget={deleteSelectionTarget}
+        onDeleteSelection={(target) => engine.eraseSelection(target)}
+        onSetDeleteSelectionTarget={setDeleteSelectionTarget}
         onUpdateServer={engine.updateServer}
         selectedServer={engine.selectedServer}
         serverActionTarget={serverActionTarget}

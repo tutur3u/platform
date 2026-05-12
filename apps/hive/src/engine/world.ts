@@ -1,3 +1,4 @@
+import type { Json } from '@tuturuuu/types/db';
 import { getObjectCatalogItem } from './catalog';
 import type {
   HiveBlock,
@@ -57,6 +58,7 @@ export function createDefaultWorld(): HiveWorldData {
       {
         id: 'object:crop:seed:a',
         position: { x: 3, y: 1, z: 3 },
+        state: createObjectState('crop'),
         type: 'crop',
       },
       {
@@ -114,6 +116,7 @@ export function addObject(
 
   const catalogItem = getObjectCatalogItem(type);
   const stackable = catalogItem?.stackable ?? false;
+  const state = createObjectState(type);
 
   return {
     ...world,
@@ -130,10 +133,49 @@ export function addObject(
           ...snapped,
           y: targetBlock?.type === 'raised-grass' ? 1.16 : 1,
         },
+        ...(state ? { state } : {}),
         type,
       },
     ],
   };
+}
+
+export function createObjectState(
+  type: string
+): { [key: string]: Json | undefined } | undefined {
+  if (type === 'crop') {
+    return {
+      growthRate: 0.08,
+      growthStage: 0.25,
+      mode: 'seasonal',
+      plantedAt: new Date().toISOString(),
+    };
+  }
+
+  if (type === 'sensor') {
+    return {
+      metric: 'presence',
+      sampleRateSeconds: 30,
+      status: 'listening',
+    };
+  }
+
+  if (type === 'greenhouse') {
+    return {
+      growthMultiplier: 1.4,
+      radius: 2,
+      status: 'active',
+    };
+  }
+
+  if (type === 'workshop') {
+    return {
+      queueDepth: 0,
+      role: 'algorithmic-agent-station',
+    };
+  }
+
+  return undefined;
 }
 
 export function removeBlock(world: HiveWorldData, blockId: string) {

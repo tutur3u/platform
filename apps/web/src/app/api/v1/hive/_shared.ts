@@ -9,6 +9,7 @@ import type {
   HiveNpc,
   HiveServer,
   HiveWorldEvent,
+  Json,
 } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -24,6 +25,19 @@ export const hiveVectorSchema = z.object({
   y: z.number().finite(),
   z: z.number().finite(),
 });
+
+export const hiveJsonSchema: z.ZodType<Json> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(hiveJsonSchema),
+    z.record(z.string(), hiveJsonSchema),
+  ])
+);
+
+export const hiveJsonObjectSchema = z.record(z.string(), hiveJsonSchema);
 
 export const hiveWorldSchema = z.object({
   blocks: z
@@ -41,6 +55,7 @@ export const hiveWorldSchema = z.object({
         id: z.string().trim().min(1).max(120),
         position: hiveVectorSchema,
         rotation: z.number().finite().optional(),
+        state: hiveJsonObjectSchema.optional(),
         type: z.string().trim().min(1).max(80),
       })
     )
@@ -56,7 +71,7 @@ export const hiveNpcSchema = z.object({
   name: z.string().trim().min(1).max(120),
   position: hiveVectorSchema.default({ x: 0, y: 1, z: 0 }),
   role: z.string().trim().min(1).max(200).default('resident'),
-  settings: z.record(z.string(), z.unknown()).default({}),
+  settings: hiveJsonObjectSchema.default({}),
   systemPrompt: z.string().max(20_000).default(''),
 });
 
@@ -69,12 +84,13 @@ export const hiveEventSchema = z.object({
       'object.remove',
       'object.move',
       'npc.move',
+      'npc.config',
       'npc.decision',
       'server.metadata',
     ])
     .or(z.string().trim().min(1).max(80)),
   expectedRevision: z.number().int().min(0),
-  payload: z.record(z.string(), z.unknown()).default({}),
+  payload: hiveJsonObjectSchema.default({}),
   world: hiveWorldSchema,
 });
 

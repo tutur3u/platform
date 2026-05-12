@@ -25,6 +25,8 @@ type ServerOptions = {
 };
 type HiveJson =
   Database['public']['Tables']['hive_world_events']['Row']['payload'];
+type HiveWorldEventRow =
+  Database['public']['Tables']['hive_world_events']['Row'];
 
 const rooms = new Map<string, RoomState>();
 
@@ -48,6 +50,18 @@ function broadcast(serverId: string, message: Record<string, unknown>) {
   for (const client of room.clients) {
     client.send(payload);
   }
+}
+
+function mapHiveWorldEvent(row: HiveWorldEventRow) {
+  return {
+    actorUserId: row.actor_user_id,
+    createdAt: row.created_at,
+    eventType: row.event_type,
+    id: row.id,
+    payload: (row.payload ?? {}) as Record<string, unknown>,
+    revision: Number(row.revision ?? 0),
+    serverId: row.server_id,
+  };
 }
 
 function createSupabaseClient() {
@@ -90,7 +104,7 @@ async function persistWorldEvent(
     return { error: error.message };
   }
 
-  return { event: data };
+  return { event: data?.[0] ? mapHiveWorldEvent(data[0]) : null };
 }
 
 async function handleMessage(
@@ -130,6 +144,20 @@ async function handleMessage(
     return;
   }
 
+  if (parsed.data.type === 'world.event.applied') {
+    if (parsed.data.event.serverId !== token.serverId) {
+      ws.send(JSON.stringify({ error: 'server_mismatch', type: 'error' }));
+      return;
+    }
+
+    broadcast(token.serverId, {
+      event: parsed.data.event,
+      type: 'world.event',
+      world: parsed.data.world,
+    });
+    return;
+  }
+
   const persisted = await persistWorldEvent(supabase, token, parsed.data);
   if (persisted?.error) {
     ws.send(JSON.stringify({ error: persisted.error, type: 'error' }));
@@ -138,12 +166,16 @@ async function handleMessage(
 
   broadcast(token.serverId, {
     event: persisted?.event ?? {
+      actorUserId: token.userId,
+      createdAt: new Date().toISOString(),
       eventType: parsed.data.eventType,
+      id: crypto.randomUUID(),
       payload: parsed.data.payload,
       revision: parsed.data.expectedRevision + 1,
       serverId: token.serverId,
     },
     type: 'world.event',
+    world: parsed.data.world,
   });
 }
 
@@ -183,6 +215,16 @@ export function createHiveRealtimeServer(options: ServerOptions = {}) {
         const room = rooms.get(ws.data.token.serverId);
         room?.clients.delete(ws);
         room?.presence.delete(ws.data.token.userId);
+        broadcast(ws.data.token.serverId, {
+          serverId: ws.data.token.serverId,
+          type: 'presence',
+          users: Array.from(room?.presence.entries() ?? []).map(
+            ([id, lastSeenAt]) => ({
+              id,
+              lastSeenAt,
+            })
+          ),
+        });
       },
       message(ws, message) {
         handleMessage(ws, String(message), supabase).catch((error) => {

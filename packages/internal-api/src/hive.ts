@@ -1,4 +1,7 @@
+import type { Json } from '@tuturuuu/types/db';
 import { getInternalApiClient, type InternalApiClientOptions } from './client';
+
+export type HiveJsonObject = { [key: string]: Json | undefined };
 
 export type HiveVector3 = {
   x: number;
@@ -17,6 +20,7 @@ export type HiveObject = {
   type: string;
   position: HiveVector3;
   rotation?: number;
+  state?: HiveJsonObject;
 };
 
 export type HiveWorldData = {
@@ -39,7 +43,7 @@ export type HiveWorldEvent = {
   createdAt: string;
   eventType: string;
   id: string;
-  payload: Record<string, unknown>;
+  payload: HiveJsonObject;
   revision: number;
   serverId: string;
 };
@@ -55,7 +59,7 @@ export type HiveNpc = {
   position: HiveVector3;
   role: string;
   serverId: string;
-  settings: Record<string, unknown>;
+  settings: HiveJsonObject;
   systemPrompt: string;
 };
 
@@ -70,9 +74,9 @@ export type HiveNpcMemory = {
 export type HiveNpcRun = {
   createdAt: string;
   id: string;
-  inputContext: Record<string, unknown>;
+  inputContext: HiveJsonObject;
   npcId: string;
-  outputDecision: Record<string, unknown>;
+  outputDecision: HiveJsonObject;
 };
 
 export type HiveMember = {
@@ -105,7 +109,7 @@ export type HiveRealtimeTokenResponse = {
 export type HiveWorldEventPayload = {
   eventType: string;
   expectedRevision: number;
-  payload: Record<string, unknown>;
+  payload: HiveJsonObject;
   world: HiveWorldData;
 };
 
@@ -118,7 +122,7 @@ export type HiveNpcPayload = {
   name: string;
   position?: HiveVector3;
   role?: string;
-  settings?: Record<string, unknown>;
+  settings?: HiveJsonObject;
   systemPrompt?: string;
 };
 

@@ -7,44 +7,50 @@ import {
   getTerrainColor,
   getTerrainHeight,
 } from '@/engine/catalog';
-import type { HiveTool, HiveVector3 } from '@/engine/types';
+import type { HiveBuildMode, HiveTool, HiveVector3 } from '@/engine/types';
 
 type GhostPreviewProps = {
+  activeBuildMode: HiveBuildMode;
   activeObject: string;
   activeTerrain: string;
+  gaplessMode: boolean;
   hoverPosition: HiveVector3 | null;
   tool: HiveTool;
 };
 
 export function GhostPreview({
+  activeBuildMode,
   activeObject,
   activeTerrain,
+  gaplessMode,
   hoverPosition,
   tool,
 }: GhostPreviewProps) {
+  const tileSize = gaplessMode ? 1 : 0.94;
   const position = useMemo(
     () =>
       hoverPosition
         ? new Vector3(
             hoverPosition.x,
-            tool === 'terrain' ? getTerrainHeight(activeTerrain) / 2 : 0,
+            activeBuildMode === 'terrain'
+              ? getTerrainHeight(activeTerrain) / 2
+              : 0,
             hoverPosition.z
           )
         : null,
-    [activeTerrain, hoverPosition, tool]
+    [activeBuildMode, activeTerrain, hoverPosition]
   );
 
-  if (
-    !position ||
-    (tool !== 'terrain' && tool !== 'object' && tool !== 'npc')
-  ) {
+  if (!position || tool !== 'build') {
     return null;
   }
 
-  if (tool === 'terrain') {
+  if (activeBuildMode === 'terrain') {
     return (
       <mesh name={activeTerrain} position={position}>
-        <boxGeometry args={[0.94, getTerrainHeight(activeTerrain), 0.94]} />
+        <boxGeometry
+          args={[tileSize, getTerrainHeight(activeTerrain), tileSize]}
+        />
         <meshStandardMaterial
           color={getTerrainColor(activeTerrain)}
           opacity={0.56}
@@ -54,7 +60,7 @@ export function GhostPreview({
     );
   }
 
-  if (tool === 'npc') {
+  if (activeBuildMode === 'npc') {
     return (
       <group name="npc-preview" position={position}>
         <mesh position={[0, 0.34, 0]}>

@@ -8,7 +8,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'grass',
     label: 'Grass',
     shortcut: '1',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -17,7 +17,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'path',
     label: 'Path',
     shortcut: '2',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -26,7 +26,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'dirt',
     label: 'Dirt',
     shortcut: '3',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -35,7 +35,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'water',
     label: 'Water',
     shortcut: '4',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -44,7 +44,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'garden',
     label: 'Garden',
     shortcut: '5',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -53,7 +53,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'stone',
     label: 'Stone',
     shortcut: '6',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -62,7 +62,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'sand',
     label: 'Sand',
     shortcut: '7',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -71,7 +71,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'raised-grass',
     label: 'Raised',
     shortcut: '8',
-    tool: 'terrain',
+    tool: 'build',
   },
   {
     category: 'terrain',
@@ -80,7 +80,7 @@ export const terrainCatalog: HiveCatalogItem[] = [
     id: 'crop-soil',
     label: 'Soil',
     shortcut: '9',
-    tool: 'terrain',
+    tool: 'build',
   },
 ];
 
@@ -92,7 +92,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'house',
     label: 'House',
     shortcut: 'H',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'building',
@@ -101,7 +101,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'tree',
     label: 'Tree',
     shortcut: 'T',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -111,16 +111,44 @@ export const objectCatalog: HiveCatalogItem[] = [
     label: 'Fence',
     shortcut: 'F',
     stackable: true,
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
     color: '#6ea94d',
-    description: 'Requires soil or garden',
+    description: 'Requires soil or garden, tracks growth rate',
     id: 'crop',
     label: 'Crop',
     shortcut: 'C',
-    tool: 'object',
+    tool: 'build',
+  },
+  {
+    category: 'functional',
+    color: '#7fb56a',
+    description: 'Accelerates crop growth in adjacent tiles',
+    id: 'greenhouse',
+    label: 'Greenhouse',
+    shortcut: 'G',
+    tool: 'build',
+  },
+  {
+    category: 'functional',
+    color: '#5f7c8a',
+    description: 'Observability marker for experiment metrics',
+    id: 'sensor',
+    label: 'Sensor',
+    shortcut: 'Y',
+    stackable: true,
+    tool: 'build',
+  },
+  {
+    category: 'building',
+    color: '#b76b55',
+    description: 'Agent workplace for algorithmic NPCs',
+    id: 'workshop',
+    label: 'Workshop',
+    shortcut: 'P',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -129,7 +157,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'rock',
     label: 'Rock',
     shortcut: 'K',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -137,8 +165,8 @@ export const objectCatalog: HiveCatalogItem[] = [
     description: 'Spans water',
     id: 'bridge',
     label: 'Bridge',
-    shortcut: 'B',
-    tool: 'object',
+    shortcut: 'J',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -147,7 +175,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'lamp',
     label: 'Lamp',
     shortcut: 'L',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -156,7 +184,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'well',
     label: 'Well',
     shortcut: 'W',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -165,7 +193,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'marker',
     label: 'Marker',
     shortcut: 'I',
-    tool: 'object',
+    tool: 'build',
   },
   {
     category: 'functional',
@@ -174,7 +202,7 @@ export const objectCatalog: HiveCatalogItem[] = [
     id: 'npc-spawn',
     label: 'Spawn',
     shortcut: 'S',
-    tool: 'object',
+    tool: 'build',
   },
 ];
 
@@ -184,7 +212,7 @@ export const npcCatalog: HiveCatalogItem[] = [
     color: '#c89b45',
     id: 'resident',
     label: 'NPC',
-    tool: 'npc',
+    tool: 'build',
   },
 ];
 

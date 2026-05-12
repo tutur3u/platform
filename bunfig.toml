@@ -8,3 +8,5 @@ preload = ["./tests/bun-test-redirect.ts"]
 [install]
 # Explicitly set the linker to isolated
 linker = "isolated"
+# Require npm releases to be at least 1 day old before Bun can install them
+minimumReleaseAge = 86400

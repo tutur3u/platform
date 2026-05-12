@@ -33,6 +33,7 @@ describe('ServerNavigator', () => {
         onEditServer={onEditServer}
         onResetWorld={onResetWorld}
         onSelectServer={vi.fn()}
+        onToggle={vi.fn()}
         servers={[server]}
       />
     );
@@ -56,6 +57,7 @@ describe('ServerNavigator', () => {
         onEditServer={vi.fn()}
         onResetWorld={vi.fn()}
         onSelectServer={vi.fn()}
+        onToggle={vi.fn()}
         servers={[server]}
       />
     );

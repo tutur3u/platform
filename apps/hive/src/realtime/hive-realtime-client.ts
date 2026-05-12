@@ -1,9 +1,16 @@
-import type { HiveWorldEvent } from '@tuturuuu/internal-api';
+import type { HiveWorldData, HiveWorldEvent } from '@tuturuuu/internal-api';
+
+export type HiveRealtimeStatus =
+  | 'connected'
+  | 'connecting'
+  | 'disconnected'
+  | 'error';
 
 export type HiveRealtimeMessage =
   | {
       event: HiveWorldEvent;
       type: 'world.event';
+      world?: HiveWorldData;
     }
   | {
       serverId: string;
@@ -18,11 +25,12 @@ export type HiveRealtimeMessage =
 
 export type HiveRealtimeClient = {
   close: () => void;
-  send: (message: Record<string, unknown>) => void;
+  send: (message: Record<string, unknown>) => boolean;
 };
 
 export function connectHiveRealtime(args: {
   onMessage: (message: HiveRealtimeMessage) => void;
+  onStatus?: (status: HiveRealtimeStatus) => void;
   token: string;
   url: string;
 }): HiveRealtimeClient {
@@ -31,6 +39,18 @@ export function connectHiveRealtime(args: {
   endpoint.searchParams.set('token', args.token);
 
   const socket = new WebSocket(endpoint);
+  const queue: Record<string, unknown>[] = [];
+
+  args.onStatus?.('connecting');
+
+  socket.addEventListener('open', () => {
+    args.onStatus?.('connected');
+    while (queue.length > 0 && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify(queue.shift()));
+    }
+  });
+  socket.addEventListener('close', () => args.onStatus?.('disconnected'));
+  socket.addEventListener('error', () => args.onStatus?.('error'));
   socket.addEventListener('message', (event) => {
     try {
       args.onMessage(JSON.parse(event.data) as HiveRealtimeMessage);
@@ -44,7 +64,13 @@ export function connectHiveRealtime(args: {
     send: (message) => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify(message));
+        return true;
       }
+      if (socket.readyState === WebSocket.CONNECTING) {
+        queue.push(message);
+        return true;
+      }
+      return false;
     },
   };
 }

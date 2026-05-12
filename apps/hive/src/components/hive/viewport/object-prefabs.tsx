@@ -1,12 +1,9 @@
 'use client';
 
-import type { ThreeEvent } from '@react-three/fiber';
-import type {
-  HiveNpc,
-  HiveObject,
-  HiveSelection,
-  HiveTool,
-} from '@/engine/types';
+import { type ThreeEvent, useFrame } from '@react-three/fiber';
+import { useRef } from 'react';
+import type { Group } from 'three';
+import type { HiveObject, HiveSelection, HiveTool } from '@/engine/types';
 
 type PrefabProps = {
   object: HiveObject;
@@ -28,6 +25,22 @@ export function ObjectPrefab({
   selected,
   tool,
 }: PrefabProps) {
+  const groupRef = useRef<Group>(null);
+  const phase = useRef(Math.random() * Math.PI * 2);
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    const elapsed = performance.now() / 1000;
+    const pulse = selected
+      ? 1 + Math.sin(elapsed * 4 + phase.current) * 0.018
+      : 1;
+    groupRef.current.scale.setScalar(pulse);
+    if (object.type === 'crop' || object.type === 'sensor') {
+      groupRef.current.position.y =
+        object.position.y - 1 + Math.sin(elapsed * 2.2 + phase.current) * 0.018;
+    }
+  });
+
   const common = {
     onClick: (event: ThreeEvent<MouseEvent>) => {
       stopSelect(event, () => {
@@ -44,6 +57,7 @@ export function ObjectPrefab({
       object.position.y - 1,
       object.position.z,
     ] as const,
+    ref: groupRef,
     rotation: [0, ((object.rotation ?? 0) * Math.PI) / 180, 0] as const,
   };
   const ringColor = selected ? '#e2c168' : '#47503a';
@@ -243,6 +257,68 @@ export function ObjectPrefab({
     );
   }
 
+  if (object.type === 'greenhouse' || object.type === 'workshop') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.34, 0]}>
+          <boxGeometry args={[1.18, 0.52, 1.02]} />
+          <meshStandardMaterial
+            color={object.type === 'greenhouse' ? '#7fb56a' : '#b76b55'}
+            roughness={0.72}
+          />
+        </mesh>
+        <mesh castShadow position={[0, 0.78, 0]}>
+          <boxGeometry args={[1.02, 0.24, 0.86]} />
+          <meshStandardMaterial
+            color={object.type === 'greenhouse' ? '#b9d8a7' : '#6d7180'}
+            roughness={0.58}
+            transparent={object.type === 'greenhouse'}
+            opacity={object.type === 'greenhouse' ? 0.78 : 1}
+          />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'sensor') {
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.34, 0]}>
+          <boxGeometry args={[0.24, 0.68, 0.24]} />
+          <meshStandardMaterial color="#5f7c8a" roughness={0.65} />
+        </mesh>
+        <mesh castShadow position={[0, 0.78, 0]}>
+          <boxGeometry args={[0.44, 0.2, 0.44]} />
+          <meshStandardMaterial color="#a8c8d1" roughness={0.48} />
+        </mesh>
+      </group>
+    );
+  }
+
+  if (object.type === 'crop') {
+    const growthStage =
+      typeof object.state?.growthStage === 'number'
+        ? Math.max(0.15, Math.min(1, object.state.growthStage))
+        : 0.35;
+
+    return (
+      <group {...common}>
+        <mesh castShadow position={[0, 0.12 * growthStage, 0]}>
+          <boxGeometry args={[0.62, 0.24 * growthStage, 0.62]} />
+          <meshStandardMaterial color="#6ea94d" roughness={0.75} />
+        </mesh>
+        <mesh castShadow position={[-0.16, 0.24 * growthStage, 0.12]}>
+          <boxGeometry args={[0.24, 0.22 * growthStage, 0.24]} />
+          <meshStandardMaterial color="#9ccb62" roughness={0.75} />
+        </mesh>
+        <mesh castShadow position={[0.18, 0.28 * growthStage, -0.1]}>
+          <boxGeometry args={[0.22, 0.24 * growthStage, 0.22]} />
+          <meshStandardMaterial color="#8fbd4f" roughness={0.75} />
+        </mesh>
+      </group>
+    );
+  }
+
   return (
     <group {...common}>
       <mesh castShadow position={[0, 0.26, 0]}>
@@ -264,56 +340,6 @@ export function ObjectPrefab({
         <boxGeometry args={[0.86, 0.08, 0.86]} />
         <meshStandardMaterial color={ringColor} transparent opacity={0.6} />
       </mesh>
-    </group>
-  );
-}
-
-export function NpcPrefab({
-  npc,
-  onErase,
-  onSelect,
-  selected,
-  tool,
-}: {
-  npc: HiveNpc;
-  onErase: (selection: NonNullable<HiveSelection>) => void;
-  onSelect: (id: string) => void;
-  selected: boolean;
-  tool: HiveTool;
-}) {
-  const color = selected ? '#e2c168' : '#c89b45';
-
-  return (
-    <group
-      onClick={(event) =>
-        stopSelect(event, () => {
-          if (tool === 'erase') {
-            onErase({ id: npc.id, kind: 'npc' });
-            return;
-          }
-
-          onSelect(npc.id);
-        })
-      }
-      position={[npc.position.x, npc.position.y - 1, npc.position.z]}
-    >
-      {/* Body */}
-      <mesh castShadow position={[0, 0.35, 0]}>
-        <cylinderGeometry args={[0.25, 0.25, 0.7, 8]} />
-        <meshStandardMaterial color={color} roughness={0.7} />
-      </mesh>
-      {/* Head */}
-      <mesh castShadow position={[0, 0.85, 0]}>
-        <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color="#ebcdab" roughness={0.6} />
-      </mesh>
-      {/* Selection ring */}
-      {selected && (
-        <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[0.4, 0.45, 16]} />
-          <meshBasicMaterial color="#e2c168" />
-        </mesh>
-      )}
     </group>
   );
 }

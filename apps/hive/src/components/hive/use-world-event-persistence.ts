@@ -1,6 +1,9 @@
 'use client';
 
-import type { HiveWorldEventPayload } from '@tuturuuu/internal-api';
+import type {
+  HiveWorldEvent,
+  HiveWorldEventPayload,
+} from '@tuturuuu/internal-api';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { HiveNpc, HiveTool, HiveWorldData } from '@/engine/types';
 import { createDefaultWorld } from '@/engine/world';
@@ -14,7 +17,7 @@ type WorldEventMutation = {
     payload: HiveWorldEventPayload,
     options: {
       onError: () => Promise<void>;
-      onSuccess: (data: { revision: number }) => void;
+      onSuccess: (data: { event: HiveWorldEvent; revision: number }) => void;
     }
   ) => void;
 };
@@ -40,6 +43,11 @@ type CreateWorldEventPersistenceOptions = {
   setWorld: Dispatch<SetStateAction<HiveWorldData>>;
   snapshotQuery: SnapshotQuery;
   tool: HiveTool;
+  onPersisted?: (data: {
+    event: HiveWorldEvent;
+    revision: number;
+    world: HiveWorldData;
+  }) => void;
 };
 
 export function createWorldEventPersistence({
@@ -53,6 +61,7 @@ export function createWorldEventPersistence({
   setWorld,
   snapshotQuery,
   tool,
+  onPersisted,
 }: CreateWorldEventPersistenceOptions) {
   return function persistWorld(
     nextWorld: HiveWorldData,
@@ -105,6 +114,7 @@ export function createWorldEventPersistence({
             setRevision(data.revision);
             revisionRef.current = data.revision;
             setSyncNotice(null);
+            onPersisted?.({ ...data, world: worldToPersist });
           },
         }
       );
