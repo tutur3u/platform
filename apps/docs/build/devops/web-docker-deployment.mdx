@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-11'
+updatedAt: '2026-05-12'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -47,7 +47,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
 | `--profile cloudflared` | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly |
 | `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
-| `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
+| `--build-cpus 8` | Run builds through a capped Buildx builder with an approximate CPU limit |
 | `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
 | `--build-builder-name tuturuuu` | Override the throttled Buildx builder name |
 | `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
@@ -406,6 +406,10 @@ deployment kind, and a re-entrant token for nested helper calls).
 - **`DOCKER_WEB_CANCEL_ACTIVE_BUILD=1`** or **`--cancel-active-build`** on a
   manual `bun serve:web:docker:bg` run stops the watcher/buildkit services,
   clears the lock, and records a canceled history row before starting fresh.
+- The auto-deploy watcher treats an active deployment lock as a wait state, not
+  a failed deploy attempt. Recovered pending handoffs, reconcile builds, standby
+  refreshes, platform promotions, and imported Infrastructure project builds all
+  defer behind the same lock so only one deployment build runs across the stack.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
   --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
   If the build still exits with `bun install --frozen-lockfile` **exit code 1**
@@ -448,38 +452,39 @@ Buildx throttling options instead of letting BuildKit consume the full host.
 Example:
 
 ```bash
-bun serve:web:docker:bg -- --build-memory 12g --build-cpus 2 --build-max-parallelism 1
+bun serve:web:docker:bg -- --build-memory 12g --build-cpus 8 --build-max-parallelism 1
 ```
 
 Current root-script defaults:
 
-- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
-- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
+- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 8 --build-max-parallelism 1`
+- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 8 --build-max-parallelism 1`
 
-The Compose-owned BuildKit service also defaults `mem_limit` to **12g** when
-`DOCKER_WEB_BUILD_MEMORY` is unset, which balances large monorepo builds with
-shared hosts that still run the web stack, Redis, log drain, and other sidecars
-alongside builds. Raise or lower the cap with env vars or `--build-memory` when
-your machine is tighter or has spare RAM.
+The Compose-owned BuildKit service also defaults `mem_limit` to **12g** and
+`cpus` to **8** when `DOCKER_WEB_BUILD_MEMORY` and `DOCKER_WEB_BUILD_CPUS` are
+unset, which balances large monorepo builds with shared hosts that still run the
+web stack, Redis, log drain, and other sidecars alongside builds. Raise or lower
+the caps with env vars or helper flags when your machine is tighter or has spare
+capacity.
 
 You can still override those defaults per run by appending your own flags after
 `--`, for example:
 
 ```bash
-bun serve:web:docker:bg -- --build-memory 16g --build-cpus 4 --build-max-parallelism 2
+bun serve:web:docker:bg -- --build-memory 16g --build-cpus 8 --build-max-parallelism 2
 ```
 
 Equivalent environment variables:
 
 - `DOCKER_WEB_BUILD_MEMORY=4g`
-- `DOCKER_WEB_BUILD_CPUS=2`
+- `DOCKER_WEB_BUILD_CPUS=8`
 - `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
-- `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=4`
-- `DOCKER_WEB_NEXT_BUILD_CPUS=4`
+- `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=8`
+- `DOCKER_WEB_NEXT_BUILD_CPUS=8`
 
 How it works:
 
@@ -505,8 +510,8 @@ How it works:
   `--max-old-space-size` target as local `build`), and still uses the Turbopack
   production build.
 - Docker standalone Next builds default static page generation to a 180 second
-  timeout with static generation concurrency and Next build CPU count capped at
-  4. This avoids false `Failed to build ... because it took more than 60
+  timeout, static generation concurrency capped at 8, and Next build CPU count
+  capped at 8. This avoids false `Failed to build ... because it took more than 60
   seconds` failures when the same host is also running blue/green sidecars and
   BuildKit. Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
@@ -683,6 +688,10 @@ Behavior:
     fast-forward deploys, so a successful pull/deploy clears `queued` and
     refreshes the latest commit columns instead of relying only on deployment
     history.
+    Imported project builds share the same deployment build lock as platform
+    blue/green builds. If platform, standby, recovery, or another imported
+    project build is already active, the project poll is deferred instead of
+    starting a second Docker build.
 15. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
    `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
    in the pulled revision, the current watcher does not deploy from the old
@@ -792,6 +801,10 @@ Dashboard details:
   Production compose publishes **`7814:7814`** from `web-proxy`, not from a
   direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
   reaches the currently promoted Hive color.
+  Deploys verify that the running `web-proxy` container has both host bindings
+  (`7803` and `7814`) before reusing it; if an older proxy was created before
+  Hive moved behind blue/green, the next deploy force-recreates the proxy so the
+  host-level Cloudflare Tunnel route can reach Hive.
   The Hive color services use the same Supabase env source as `apps/web`:
   runtime env files are shared, and production image builds mount the `web_env`
   BuildKit secret so hidden-locale auth pages can prerender with the platform
@@ -967,6 +980,12 @@ Dashboard details:
   deployment is different, and keeps production on that commit until the pin is
   removed from the dashboard. Removing the pin lets the watcher check out its
   locked branch again and resume normal fast-forward polling.
+- In-container watcher child restarts preserve the locked branch/upstream
+  metadata even when the child is killed while Git is detached for a rollback or
+  parent-fallback build. The replacement child can recover `production` from the
+  target-only lock instead of trying to poll detached `HEAD`. If an older child
+  already removed the lock, a clean detached startup falls back to the selected
+  platform branch (`production` by default) before locking and polling.
 - The watcher image must also include both the Docker Compose and Buildx CLI
   plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
   rollout handoff shells into `docker compose ...`, and capped production
