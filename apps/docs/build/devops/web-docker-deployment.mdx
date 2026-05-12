@@ -810,11 +810,15 @@ Dashboard details:
   BuildKit secret so hidden-locale auth pages can prerender with the platform
   Supabase URL.
   **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
-  prod service in one pass, but `docker compose up` runs in two phases—first
-  `web-proxy`, the target `web-{color}`, MarkItDown, storage-unzip-proxy,
-  `web-cron-runner`, and (when enabled) Redis—then `hive-{color}` and
-  `hive-realtime`. Promotion waits for the target web color, target Hive color,
-  Hive realtime, and the first-phase support services before switching nginx.
+  prod service in one pass, but runtime services come up before proxy handoff:
+  first the target `web-{color}`, MarkItDown, storage-unzip-proxy,
+  `web-cron-runner`, and (when enabled) Redis, then `hive-{color}` and
+  `hive-realtime`. If `web-proxy` or `cloudflared` must be bootstrapped or
+  recreated for host-port changes, they start only after the target web and Hive
+  services are healthy, so `hive.tuturuuu.com` is not exposed with an empty
+  `hive_app_upstream`. Promotion waits for the target web color, target Hive
+  color, Hive realtime, and the first-phase support services before switching
+  nginx.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete
@@ -1059,6 +1063,12 @@ Dashboard details:
 If some normal browsers still return Cloudflare `502 Host Error` while
 incognito works, treat it as stale client state or an auth-cookie/header-size
 problem before assuming the tunnel itself is broken.
+For Hive, the production nginx proxy serves
+`https://hive.tuturuuu.com/~recover-browser-state` directly with
+`Clear-Site-Data` so the reset path still works when stale cookies are too large
+for the Next.js app server to accept. Hive's `next start` command also runs with
+`NODE_OPTIONS=--max-http-header-size=65536` so ordinary Supabase auth-cookie
+chunking has more headroom before the app server returns `431`.
 
 How to recognize each failure mode:
 
@@ -1072,7 +1082,9 @@ How to recognize each failure mode:
 
 Recovery path:
 
-- Send affected users to `https://tuturuuu.com/~recover-browser-state`.
+- Send affected users to the recovery route on the affected origin:
+  `https://tuturuuu.com/~recover-browser-state` for the main app, or
+  `https://hive.tuturuuu.com/~recover-browser-state` for Hive.
 - That route is public and bypasses auth/onboarding middleware.
 - It responds with `Clear-Site-Data: "cache", "cookies", "storage",
   "executionContexts"` and explicitly expires all Supabase auth cookie variants
