@@ -30,6 +30,28 @@ async function createEvent(request: NextRequest, serverId: string) {
     );
   }
 
+  const { data: currentState, error: currentStateError } =
+    await result.access.sbAdmin
+      .from('hive_world_states')
+      .select('revision')
+      .eq('server_id', serverId)
+      .maybeSingle();
+
+  if (!currentStateError && currentState) {
+    const currentRevision = Number(currentState.revision ?? 0);
+
+    if (currentRevision !== parsed.data.expectedRevision) {
+      return NextResponse.json(
+        {
+          code: 'hive_revision_conflict',
+          currentRevision,
+          error: 'Hive world revision conflict',
+        },
+        { status: 409 }
+      );
+    }
+  }
+
   const { data, error } = await result.access.sbAdmin.rpc(
     'apply_hive_world_event',
     {
@@ -41,9 +63,13 @@ async function createEvent(request: NextRequest, serverId: string) {
       p_world_data: parsed.data.world as Json,
     }
   );
+  const isRevisionConflict =
+    error?.message === 'hive_revision_conflict' ||
+    error?.code === '40001' ||
+    (!error && !data?.[0]);
 
   if (error || !data?.[0]) {
-    if (error) {
+    if (error && !isRevisionConflict) {
       serverLogger.warn('Failed to create Hive world event', {
         code: error.code,
         details: error.details,
@@ -53,8 +79,6 @@ async function createEvent(request: NextRequest, serverId: string) {
       });
     }
 
-    const isRevisionConflict =
-      error?.message === 'hive_revision_conflict' || error?.code === '40001';
     const isAccessDenied =
       error?.message === 'hive_access_denied' || error?.code === '42501';
     const isMissingServer =

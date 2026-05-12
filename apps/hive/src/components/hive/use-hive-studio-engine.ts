@@ -70,6 +70,8 @@ export function useHiveStudioEngine({
     useState<HiveRealtimeStatus>('disconnected');
   const [presenceCount, setPresenceCount] = useState(0);
   const realtimeClientRef = useRef<HiveRealtimeClient | null>(null);
+  const worldEventConflictCooldownRef = useRef(0);
+  const worldEventInFlightRef = useRef(false);
   const timeOfDay = useHiveTimeOfDay();
 
   useEffect(() => {
@@ -123,8 +125,10 @@ export function useHiveStudioEngine({
   );
 
   const persistWorld = createWorldEventPersistence({
+    conflictCooldownRef: worldEventConflictCooldownRef,
     createWorldEvent: mutations.createWorldEvent,
     currentUserId: currentUser.id,
+    inFlightRef: worldEventInFlightRef,
     revisionRef,
     serverId,
     setNpcs,
