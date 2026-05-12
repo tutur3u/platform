@@ -547,6 +547,9 @@ Operational notes:
 ## Redis Profile
 
 Redis is enabled by default in both dev and production-style Docker web stacks.
+The Redis and `serverless-redis-http` host ports bind to `127.0.0.1` only; do
+not expose them through Cloudflare Tunnel, public firewall rules, or
+all-interface Docker port mappings.
 
 The helper persists the generated token in:
 
@@ -556,6 +559,12 @@ and injects these values into `apps/web` automatically:
 
 - `UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80`
 - `UPSTASH_REDIS_REST_TOKEN=&lt;generated local token&gt;`
+
+The production Redis compose fragment requires `UPSTASH_REDIS_REST_TOKEN` during
+Compose interpolation. Use the Docker web helper, which injects the generated
+token automatically, or export a strong token before running direct
+`docker compose --profile redis ...` commands. Service `env_file` entries do
+not satisfy Compose interpolation for the Redis HTTP bridge token.
 
 Docker Redis mode intentionally ignores generic `UPSTASH_REDIS_REST_URL` and
 `UPSTASH_REDIS_REST_TOKEN` values from the host shell. This prevents old Upstash
@@ -866,10 +875,11 @@ Dashboard details:
   health check that posts `["PING"]` to `/` with the generated `SRH_TOKEN`;
   do not use a Node-based probe for that image because it is an Erlang release
   image, and do not probe `/ping` because SRH does not expose that route.
-- `SRH_TOKEN` falls back to `platform-local-redis-token` in the Compose files
-  when `UPSTASH_REDIS_REST_TOKEN` is not exported. Keep that fallback so
-  watcher and cron recovery can run Docker Compose commands before the web
-  helper has injected a generated token.
+- Production Redis compose requires `UPSTASH_REDIS_REST_TOKEN` and binds Redis
+  host ports to `127.0.0.1`. Do not reintroduce the
+  `platform-local-redis-token` fallback in production fragments or remove the
+  loopback host bind; direct Compose users must export a strong token before
+  enabling the `redis` profile.
 - After a successful host-triggered `serve:web:docker:bg` rollout, the Docker
   helper starts or resumes the containerized `web-blue-green-watcher` with
   `--resume-if-running`. Deploys that are already running inside the watcher

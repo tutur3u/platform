@@ -144,6 +144,18 @@ test('validateDockerCompose accepts the current compose file', () => {
   assert.deepEqual(validateDockerCompose(composeContent), []);
 });
 
+test('validateDockerCompose reports public local Redis port mappings', () => {
+  const composeContent = fs
+    .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
+    .replace('"127.0.0.1:6379:6379"', '"6379:6379"')
+    .replace('"127.0.0.1:8079:80"', '"8079:80"');
+
+  const errors = validateDockerCompose(composeContent).join('\n');
+
+  assert.match(errors, /127\.0\.0\.1:6379:6379/);
+  assert.match(errors, /127\.0\.0\.1:8079:80/);
+});
+
 test('validateDockerCompose reports missing bind mounts', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
@@ -177,6 +189,40 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '"127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"',
+      '"$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"'
+    )
+    .replace(
+      '"127.0.0.1:$' +
+        '{' +
+        'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+        '}:80"',
+      '"$' + '{' + 'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' + '}:80"'
+    )
+    .replace(
+      '$' +
+        '{' +
+        'UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required' +
+        '}',
+      '$' + '{' + 'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' + '}'
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(
+    errors,
+    /production Redis native port must bind to 127\.0\.0\.1/
+  );
+  assert.match(
+    errors,
+    /production Redis HTTP bridge port must bind to 127\.0\.0\.1/
+  );
+  assert.match(errors, /must not use the local fallback token/);
 });
 
 test('validateDockerProdCompose reports missing blue-green proxy wiring', () => {

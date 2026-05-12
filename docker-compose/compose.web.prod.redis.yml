@@ -3,7 +3,7 @@ services:
     profiles: ["redis"]
     image: redis:7-alpine
     ports:
-      - "${DOCKER_WEB_REDIS_HOST_PORT:-6379}:6379"
+      - "127.0.0.1:${DOCKER_WEB_REDIS_HOST_PORT:-6379}:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -18,10 +18,10 @@ services:
     environment:
       SRH_CONNECTION_STRING: redis://redis:6379
       SRH_MODE: env
-      SRH_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token}
+      SRH_TOKEN: ${UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required}
     image: hiett/serverless-redis-http:latest
     ports:
-      - "${DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079}:80"
+      - "127.0.0.1:${DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079}:80"
     healthcheck:
       test:
         [

@@ -325,6 +325,8 @@ function validateDockerCompose(
     '      - UPSTASH_REDIS_REST_URL',
     '      - "host.docker.internal:host-gateway"',
     '    init: true',
+    '      - "127.0.0.1:6379:6379"',
+    '      - "127.0.0.1:8079:80"',
     '      SRH_TOKEN: ' +
       '${' +
       'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
@@ -441,8 +443,11 @@ function validateDockerProdCompose(composeContent) {
     '    image: cloudflare/cloudflared:latest',
     '${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
-    '${' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
-    '${' + 'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' + '}:80',
+    '127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
+    '127.0.0.1:$' +
+      '{' +
+      'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+      '}:80',
     'http://127.0.0.1:7803/__platform/drain-status',
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:7815/health',
@@ -497,7 +502,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
     '      SRH_TOKEN: ' +
       '${' +
-      'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
+      'UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required' +
       '}',
     '    file: $' + '{' + 'DOCKER_WEB_ENV_FILE:-apps/web/.env.local' + '}',
   ];
@@ -507,6 +512,40 @@ function validateDockerProdCompose(composeContent) {
       errors.push(
         `docker-compose.web.prod.yml is missing the expected snippet: ${snippet}`
       );
+    }
+  }
+
+  const forbiddenSecuritySnippets = [
+    {
+      message:
+        'production Redis native port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"',
+    },
+    {
+      message:
+        'production Redis HTTP bridge port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' +
+        '{' +
+        'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+        '}:80"',
+    },
+    {
+      message:
+        'production Redis HTTP bridge must require UPSTASH_REDIS_REST_TOKEN and must not use the local fallback token',
+      snippet:
+        '      SRH_TOKEN: ' +
+        '$' +
+        '{' +
+        'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
+        '}',
+    },
+  ];
+
+  for (const { message, snippet } of forbiddenSecuritySnippets) {
+    if (composeContent.includes(snippet)) {
+      errors.push(`${message}: ${snippet}`);
     }
   }
 
