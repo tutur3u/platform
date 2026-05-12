@@ -1,6 +1,7 @@
 'use client';
 
 import { useSortable } from '@dnd-kit/sortable';
+import Link from 'next/link';
 import { CSS } from '@dnd-kit/utilities';
 import {
   Eye,
@@ -26,6 +27,8 @@ interface ModuleItemRowProps {
 export function ModuleItemRow({
   module,
   index,
+  wsId,
+  courseId,
   onRename,
   onDelete,
   onTogglePublished,
@@ -99,9 +102,12 @@ export function ModuleItemRow({
           }}
         />
       ) : (
-        <span className="min-w-0 flex-1 truncate text-sm">
+        <Link
+          className="min-w-0 flex-1 truncate text-sm hover:text-primary hover:underline"
+          href={`/${wsId}/modules/${courseId}/${module.id}`}
+        >
           {module.name ?? 'Untitled'}
-        </span>
+        </Link>
       )}
 
 

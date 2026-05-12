@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 import { ArrowLeft, BookOpenCheck, GraduationCap, Plus, Sparkles } from '@tuturuuu/icons';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { ModuleGroupSection } from './module-group-section';
 import { useModuleDetail, type ModuleGroupWithModules } from './use-module-detail';
 
@@ -109,6 +109,9 @@ export function ModuleDetailClient({
 
   const [addingSectionName, setAddingSectionName] = useState('');
   const [showAddSection, setShowAddSection] = useState(false);
+  const sectionInputRef = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
 
   function commitAddSection() {
     const trimmed = addingSectionName.trim();
@@ -239,7 +242,7 @@ export function ModuleDetailClient({
           {showAddSection ? (
             <div className="flex items-center gap-2">
               <input
-                autoFocus
+                ref={sectionInputRef}
                 className="border-2 border-border bg-background px-3 py-1.5 text-sm shadow-[2px_2px_0_var(--border)] outline-none focus:border-primary"
                 placeholder="Section name…"
                 value={addingSectionName}
