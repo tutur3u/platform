@@ -143,25 +143,40 @@ export interface TutoringSessionConflict {
   studentUserId: string;
 }
 
+function dateStringToDayNumber(dateString: string) {
+  const [year, month, day] = dateString
+    .split('-')
+    .map((part) => Number.parseInt(part, 10));
+
+  if (!(year && month && day)) {
+    return null;
+  }
+
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
 function rangesOverlap(
   startA: number,
-  durationA: number,
+  endA: number,
   startB: number,
-  durationB: number
+  endB: number
 ) {
-  const endA = startA + durationA;
-  const endB = startB + durationB;
   return startA < endB && startB < endA;
 }
 
 function toComparableSlot<T extends TutoringSessionSlotInput>(slot: T) {
   const startMinutes = parseTimeToMinutes(slot.startTime);
-  if (startMinutes === null) {
+  const dayNumber = dateStringToDayNumber(slot.sessionDate);
+  if (startMinutes === null || dayNumber === null) {
     return null;
   }
 
+  const absoluteStartMinutes = dayNumber * 1440 + startMinutes;
+
   return {
     ...slot,
+    absoluteEndMinutes: absoluteStartMinutes + slot.durationMinutes,
+    absoluteStartMinutes,
     startMinutes,
   };
 }
@@ -180,16 +195,12 @@ export function findConflictsWithinSlots(slots: TutoringSessionSlotInput[]) {
       const candidate = normalized[j];
       if (!candidate) continue;
 
-      if (current.sessionDate !== candidate.sessionDate) {
-        continue;
-      }
-
       if (
         !rangesOverlap(
-          current.startMinutes,
-          current.durationMinutes,
-          candidate.startMinutes,
-          candidate.durationMinutes
+          current.absoluteStartMinutes,
+          current.absoluteEndMinutes,
+          candidate.absoluteStartMinutes,
+          candidate.absoluteEndMinutes
         )
       ) {
         continue;
@@ -269,16 +280,12 @@ export function findConflictsWithExistingSessions(
       const existing = existingEntry.normalized;
       const existingRaw = existingEntry.raw;
 
-      if (incoming.sessionDate !== existing.sessionDate) {
-        continue;
-      }
-
       if (
         !rangesOverlap(
-          incoming.startMinutes,
-          incoming.durationMinutes,
-          existing.startMinutes,
-          existing.durationMinutes
+          incoming.absoluteStartMinutes,
+          incoming.absoluteEndMinutes,
+          existing.absoluteStartMinutes,
+          existing.absoluteEndMinutes
         )
       ) {
         continue;

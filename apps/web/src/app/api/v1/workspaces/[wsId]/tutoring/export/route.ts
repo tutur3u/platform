@@ -147,7 +147,7 @@ export async function GET(request: Request, { params }: Params) {
         email: string | null;
       } | null;
       const teacherName = nameOf(teacher);
-      const key = teacher?.id ?? `unassigned:${row.id}`;
+      const key = teacher?.id ?? 'unassigned';
       const current = byTeacher.get(key) ?? {
         teacher_name: teacherName,
         completed_sessions: 0,

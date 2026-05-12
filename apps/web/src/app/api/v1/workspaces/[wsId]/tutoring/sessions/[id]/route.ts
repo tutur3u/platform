@@ -15,6 +15,7 @@ import {
   type TutoringSessionSlotInput,
   TutoringSessionUpdateSchema,
 } from '../../shared';
+import { getAdjacentSessionDates } from '../session-create-helpers';
 
 interface Params {
   params: Promise<{ wsId: string; id: string }>;
@@ -180,6 +181,7 @@ export async function PUT(request: Request, { params }: Params) {
           ? currentSession.teacher_user_id
           : parsed.data.teacherUserId,
     };
+    const sessionDates = getAdjacentSessionDates(nextSlot.sessionDate);
 
     const teacherQuery = nextSlot.teacherUserId
       ? sbAdmin
@@ -188,7 +190,7 @@ export async function PUT(request: Request, { params }: Params) {
             'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
           )
           .eq('ws_id', normalizedWsId)
-          .eq('session_date', nextSlot.sessionDate)
+          .in('session_date', sessionDates)
           .eq('teacher_user_id', nextSlot.teacherUserId)
           .neq('id', id)
       : Promise.resolve({ data: [], error: null });
@@ -199,7 +201,7 @@ export async function PUT(request: Request, { params }: Params) {
         'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
       )
       .eq('ws_id', normalizedWsId)
-      .eq('session_date', nextSlot.sessionDate)
+      .in('session_date', sessionDates)
       .eq('student_user_id', nextSlot.studentUserId)
       .neq('id', id);
 

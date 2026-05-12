@@ -19,6 +19,7 @@ export interface TutoringFormValues {
   reasonType: TutoringReasonType;
   reasonDetail: string;
   content: string;
+  sourceFeedbackId?: string | null;
 }
 
 export interface TutoringSessionSlotConflict {
@@ -42,6 +43,7 @@ export const DEFAULT_FORM: TutoringFormValues = {
   reasonType: 'CUSTOM',
   reasonDetail: '',
   content: '',
+  sourceFeedbackId: null,
 };
 
 export const STATUS_ACTIONS: TutoringAttendanceStatus[] = [
@@ -149,15 +151,28 @@ function parseTimeToMinutes(time: string) {
   return hour * 60 + minute;
 }
 
+function dateStringToDayNumber(dateString: string) {
+  const [year, month, day] = dateString
+    .split('-')
+    .map((part) => Number.parseInt(part, 10));
+
+  if (!(year && month && day)) {
+    return null;
+  }
+
+  return Math.floor(Date.UTC(year, month - 1, day) / 86_400_000);
+}
+
 function slotsOverlap(
-  startMinutesA: number,
-  durationMinutesA: number,
-  startMinutesB: number,
-  durationMinutesB: number
+  absoluteStartMinutesA: number,
+  absoluteEndMinutesA: number,
+  absoluteStartMinutesB: number,
+  absoluteEndMinutesB: number
 ) {
-  const endA = startMinutesA + durationMinutesA;
-  const endB = startMinutesB + durationMinutesB;
-  return startMinutesA < endB && startMinutesB < endA;
+  return (
+    absoluteStartMinutesA < absoluteEndMinutesB &&
+    absoluteStartMinutesB < absoluteEndMinutesA
+  );
 }
 
 export function findSessionSlotConflicts(
@@ -169,29 +184,43 @@ export function findSessionSlotConflicts(
   for (let i = 0; i < sessionSlots.length; i += 1) {
     const current = sessionSlots[i];
     const currentStart = current ? parseTimeToMinutes(current.startTime) : null;
+    const currentDay = current
+      ? dateStringToDayNumber(current.sessionDate)
+      : null;
 
-    if (!current || currentStart === null || !current.sessionDate) {
+    if (
+      !current ||
+      currentStart === null ||
+      currentDay === null ||
+      !current.sessionDate
+    ) {
       continue;
     }
+    const currentAbsoluteStart = currentDay * 1440 + currentStart;
+    const currentAbsoluteEnd = currentAbsoluteStart + current.durationMinutes;
 
     for (let j = i + 1; j < sessionSlots.length; j += 1) {
       const next = sessionSlots[j];
       const nextStart = next ? parseTimeToMinutes(next.startTime) : null;
+      const nextDay = next ? dateStringToDayNumber(next.sessionDate) : null;
 
-      if (!next || nextStart === null || !next.sessionDate) {
+      if (
+        !next ||
+        nextStart === null ||
+        nextDay === null ||
+        !next.sessionDate
+      ) {
         continue;
       }
-
-      if (current.sessionDate !== next.sessionDate) {
-        continue;
-      }
+      const nextAbsoluteStart = nextDay * 1440 + nextStart;
+      const nextAbsoluteEnd = nextAbsoluteStart + next.durationMinutes;
 
       if (
         !slotsOverlap(
-          currentStart,
-          current.durationMinutes,
-          nextStart,
-          next.durationMinutes
+          currentAbsoluteStart,
+          currentAbsoluteEnd,
+          nextAbsoluteStart,
+          nextAbsoluteEnd
         )
       ) {
         continue;

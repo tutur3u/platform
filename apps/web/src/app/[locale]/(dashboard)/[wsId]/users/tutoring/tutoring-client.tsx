@@ -192,6 +192,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
         reasonType: form.reasonType,
         reasonDetail: form.reasonDetail,
         content: form.content,
+        sourceFeedbackId: form.sourceFeedbackId ?? null,
       });
     },
     onSuccess: ({ createdCount }) => {
@@ -369,6 +370,7 @@ export function TutoringClient({ wsId, canManage }: Props) {
                 groupId: item.group_id,
                 studentUserId: item.student_user_id,
                 studentLabel: item.student_name,
+                sourceFeedbackId: item.source_feedback_id,
                 sessionSlots: Array.from(
                   { length: Math.max(1, item.absence_deficit) },
                   () => ({

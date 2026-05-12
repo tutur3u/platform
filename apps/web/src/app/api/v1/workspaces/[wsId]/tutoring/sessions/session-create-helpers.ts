@@ -18,6 +18,14 @@ function addDaysToDateString(dateString: string, days: number) {
   return date.toISOString().slice(0, 10);
 }
 
+export function getAdjacentSessionDates(dateString: string) {
+  return [
+    addDaysToDateString(dateString, -1),
+    dateString,
+    addDaysToDateString(dateString, 1),
+  ];
+}
+
 function formatMinutesAsTime(totalMinutes: number) {
   const normalizedMinutes = ((totalMinutes % 1440) + 1440) % 1440;
   const hours = Math.floor(normalizedMinutes / 60);
@@ -245,7 +253,11 @@ export async function listPotentialSchedulingConflicts({
   sbAdmin: TypedSupabaseClient;
   slots: TutoringSessionSlotInput[];
 }) {
-  const sessionDates = [...new Set(slots.map((slot) => slot.sessionDate))];
+  const sessionDates = [
+    ...new Set(
+      slots.flatMap((slot) => getAdjacentSessionDates(slot.sessionDate))
+    ),
+  ];
   const teacherIds = [
     ...new Set(
       slots

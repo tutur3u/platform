@@ -226,6 +226,7 @@ export function TutoringCreateCard({
               onChange({
                 ...form,
                 groupId: nextGroupId,
+                sourceFeedbackId: null,
                 sessionSlots: form.sessionSlots.map((slot) => {
                   if (nextSingleTeacherId) {
                     return { ...slot, teacherUserId: nextSingleTeacherId };
@@ -260,6 +261,7 @@ export function TutoringCreateCard({
                 ...form,
                 studentUserId: selectedValue,
                 studentLabel: selectedOption?.label || form.studentLabel,
+                sourceFeedbackId: null,
               });
             }}
             placeholder={t('select_student')}
