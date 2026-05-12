@@ -1,6 +1,6 @@
 'use client';
 
-import type { HiveServersResponse } from '@tuturuuu/internal-api';
+import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type {
   HiveBuildMode,

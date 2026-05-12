@@ -7,7 +7,7 @@ import type {
   HiveVector3,
   HiveWorldData,
   HiveWorldEvent,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/hive';
 
 export type {
   HiveBlock,

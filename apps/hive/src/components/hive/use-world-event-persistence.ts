@@ -3,7 +3,7 @@
 import type {
   HiveWorldEvent,
   HiveWorldEventPayload,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/hive';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import type { HiveNpc, HiveTool, HiveWorldData } from '@/engine/types';
 import { createDefaultWorld } from '@/engine/world';

@@ -1,7 +1,5 @@
-import {
-  listHiveServers,
-  withForwardedInternalApiAuth,
-} from '@tuturuuu/internal-api';
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
+import { listHiveServers } from '@tuturuuu/internal-api/hive';
 import { headers } from 'next/headers';
 import { HiveStudio } from '@/components/hive/hive-studio';
 import { HIVE_REALTIME_URL } from '@/constants/common';

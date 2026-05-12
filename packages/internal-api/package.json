@@ -52,6 +52,11 @@
       "import": "./dist/finance.js",
       "require": "./dist/finance.js"
     },
+    "./hive": {
+      "types": "./dist/hive.d.ts",
+      "import": "./dist/hive.js",
+      "require": "./dist/hive.js"
+    },
     "./infrastructure": {
       "types": "./dist/infrastructure.d.ts",
       "import": "./dist/infrastructure.js",

@@ -19,7 +19,7 @@ import {
   runHiveNpcDecision,
   updateHiveNpc,
   updateHiveServer,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/hive';
 
 export const hiveQueryKeys = {
   realtimeToken: (serverId: string) => ['hive', 'realtime-token', serverId],

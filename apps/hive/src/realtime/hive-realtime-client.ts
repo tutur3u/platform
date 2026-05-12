@@ -1,4 +1,7 @@
-import type { HiveWorldData, HiveWorldEvent } from '@tuturuuu/internal-api';
+import type {
+  HiveWorldData,
+  HiveWorldEvent,
+} from '@tuturuuu/internal-api/hive';
 
 export type HiveRealtimeStatus =
   | 'connected'

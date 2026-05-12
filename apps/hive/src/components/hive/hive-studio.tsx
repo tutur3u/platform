@@ -1,6 +1,6 @@
 'use client';
 
-import type { HiveServersResponse } from '@tuturuuu/internal-api';
+import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
 import { useEffect, useState } from 'react';
 import type { HiveSelection, HiveServer, HiveUser } from '@/engine/types';
