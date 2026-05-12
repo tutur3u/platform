@@ -1614,8 +1614,21 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
       .trim();
 
     assert.match(token, /^[a-f0-9]{64}$/u);
-    assert.equal(calls.at(-1).env.UPSTASH_REDIS_REST_TOKEN, token);
-    assert.equal(calls.at(-1).env.SRH_TOKEN, token);
+    const deploymentComposeCalls = calls.filter(
+      ({ args, command }) =>
+        command === 'docker' && args.includes('-f') && args.includes('compose')
+    );
+
+    assert.ok(deploymentComposeCalls.length > 0);
+
+    for (const call of deploymentComposeCalls) {
+      assert.equal(call.env.UPSTASH_REDIS_REST_TOKEN, token);
+      assert.equal(
+        call.env.UPSTASH_REDIS_REST_URL,
+        'http://serverless-redis-http:80'
+      );
+      assert.equal(call.env.SRH_TOKEN, token);
+    }
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
