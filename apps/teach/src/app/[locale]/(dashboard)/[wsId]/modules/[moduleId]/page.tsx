@@ -3,8 +3,8 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
-import { ModuleDetailClient } from './client';
 import { redirect } from '@/i18n/navigation';
+import { ModuleDetailClient } from './client';
 
 export default async function ModuleDetailPage({
   params,

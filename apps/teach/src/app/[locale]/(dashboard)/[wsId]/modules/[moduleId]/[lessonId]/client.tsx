@@ -37,13 +37,7 @@ function LessonSkeleton() {
 
 // ─── YouTube link row ─────────────────────────────────────────────────────────
 
-function YoutubeRow({
-  url,
-  onRemove,
-}: {
-  url: string;
-  onRemove: () => void;
-}) {
+function YoutubeRow({ url, onRemove }: { url: string; onRemove: () => void }) {
   const videoId = url.match(
     /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/
   )?.[1];
@@ -66,7 +60,7 @@ function YoutubeRow({
         </span>
       )}
       <button
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/yt:opacity-100 hover:text-destructive"
+        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/yt:opacity-100"
         onClick={onRemove}
         type="button"
         aria-label="Remove YouTube link"
@@ -133,8 +127,6 @@ export function LessonDetailClient({
   const [youtubeLinks, setYoutubeLinks] = useState<string[] | null>(null);
   const [addingYoutube, setAddingYoutube] = useState(false);
   const [youtubeDraft, setYoutubeDraft] = useState('');
-
-
 
   // ─── Name editing ───────────────────────────────────────────────────────────
 
@@ -261,7 +253,7 @@ export function LessonDetailClient({
             <div className="flex min-w-0 flex-1 items-center gap-2">
               <input
                 ref={nameInputRef}
-                className="min-w-0 flex-1 border-b-2 border-primary bg-transparent font-black text-2xl outline-none md:text-3xl"
+                className="min-w-0 flex-1 border-primary border-b-2 bg-transparent font-black text-2xl outline-none md:text-3xl"
                 value={nameDraft ?? lesson.name ?? ''}
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={commitName}
@@ -299,7 +291,7 @@ export function LessonDetailClient({
                 {lesson.name ?? 'Untitled lesson'}
               </h1>
               <button
-                className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/title:opacity-100 hover:text-foreground"
+                className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/title:opacity-100"
                 onClick={() => {
                   setNameDraft(lesson.name ?? '');
                   setEditingName(true);

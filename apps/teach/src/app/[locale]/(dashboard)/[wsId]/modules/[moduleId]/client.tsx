@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, BookOpenCheck, GraduationCap, Plus, Sparkles } from '@tuturuuu/icons';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
+import { AiGenerateDialog } from './ai-generate-dialog';
 import { ModuleGroupSection } from './module-group-section';
 import { useModuleDetail, type ModuleGroupWithModules } from './use-module-detail';
 
@@ -109,6 +110,7 @@ export function ModuleDetailClient({
 
   const [addingSectionName, setAddingSectionName] = useState('');
   const [showAddSection, setShowAddSection] = useState(false);
+  const [showAiDialog, setShowAiDialog] = useState(false);
   const sectionInputRef = useCallback((node: HTMLInputElement | null) => {
     node?.focus();
   }, []);
@@ -195,6 +197,7 @@ export function ModuleDetailClient({
   // ─── Render ───────────────────────────────────────────────────────────────────
 
   return (
+    <>
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
 
@@ -275,14 +278,24 @@ export function ModuleDetailClient({
               </button>
             </div>
           ) : (
-            <button
-              className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
-              onClick={() => setShowAddSection(true)}
-              type="button"
-            >
-              <Plus className="h-4 w-4" />
-              Add section
-            </button>
+  <div className="flex items-center gap-2">
+              <button
+                className="inline-flex items-center gap-2 border-2 border-border bg-dynamic-yellow/15 px-4 py-2 font-bold text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                onClick={() => setShowAiDialog(true)}
+                type="button"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate with AI
+              </button>
+              <button
+                className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
+                onClick={() => setShowAddSection(true)}
+                type="button"
+              >
+                <Plus className="h-4 w-4" />
+                Add section
+              </button>
+            </div>
           )}
         </div>
 
@@ -352,5 +365,15 @@ export function ModuleDetailClient({
         )}
       </div>
     </main>
+
+      {/* AI generate dialog — rendered as a portal-style overlay outside the scroll container */}
+      {showAiDialog && (
+        <AiGenerateDialog
+          wsId={wsId}
+          courseId={courseId}
+          onClose={() => setShowAiDialog(false)}
+        />
+      )}
+    </>
   );
 }
