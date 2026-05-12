@@ -23433,6 +23433,252 @@ export type Database = {
           },
         ];
       };
+      workspace_tutoring_sessions: {
+        Row: {
+          attendance_status: string;
+          content: string;
+          created_at: string;
+          created_by: string | null;
+          duration_minutes: number;
+          group_id: string;
+          id: string;
+          parent_message_preview: string;
+          reason_detail: string;
+          reason_type: string;
+          resolved_at: string | null;
+          session_date: string;
+          source_feedback_id: string | null;
+          start_time: string;
+          student_user_id: string;
+          teacher_user_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          attendance_status?: string;
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          duration_minutes?: number;
+          group_id: string;
+          id?: string;
+          parent_message_preview?: string;
+          reason_detail?: string;
+          reason_type: string;
+          resolved_at?: string | null;
+          session_date: string;
+          source_feedback_id?: string | null;
+          start_time: string;
+          student_user_id: string;
+          teacher_user_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          attendance_status?: string;
+          content?: string;
+          created_at?: string;
+          created_by?: string | null;
+          duration_minutes?: number;
+          group_id?: string;
+          id?: string;
+          parent_message_preview?: string;
+          reason_detail?: string;
+          reason_type?: string;
+          resolved_at?: string | null;
+          session_date?: string;
+          source_feedback_id?: string | null;
+          start_time?: string;
+          student_user_id?: string;
+          teacher_user_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_source_feedback_id_fkey';
+            columns: ['source_feedback_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_feedbacks';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_student_user_id_fkey';
+            columns: ['student_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_student_user_id_fkey';
+            columns: ['student_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_student_user_id_fkey';
+            columns: ['student_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_student_user_id_fkey';
+            columns: ['student_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_student_user_id_fkey';
+            columns: ['student_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_teacher_user_id_fkey';
+            columns: ['teacher_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_invoice_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_teacher_user_id_fkey';
+            columns: ['teacher_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'distinct_transaction_creators';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_teacher_user_id_fkey';
+            columns: ['teacher_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_user_with_attendance';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_teacher_user_id_fkey';
+            columns: ['teacher_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_teacher_user_id_fkey';
+            columns: ['teacher_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_users_with_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_tutoring_sessions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_user_fields: {
         Row: {
           created_at: string;

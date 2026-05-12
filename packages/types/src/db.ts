@@ -77,6 +77,10 @@ export interface FinanceBudgetStatus {
 }
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
+export type WorkspaceTutoringSession = Tables<'workspace_tutoring_sessions'> & {
+  attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
+  reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
+};
 export interface WorkspaceStorageFileMetadata {
   size?: number;
   mimetype?: string;
