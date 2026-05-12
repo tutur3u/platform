@@ -10,7 +10,10 @@ import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { resolveTulearnSubject } from '@/lib/tulearn/service';
+import {
+  resolveTulearnSubject,
+  tulearnAccessErrorResponse,
+} from '@/lib/tulearn/service';
 
 const DetailQuerySchema = z.object({
   courseId: z.guid(),
@@ -100,6 +103,9 @@ export async function GET(request: Request) {
       { status: 400 }
     );
   } catch (error) {
+    const tulearnErrorResponse = tulearnAccessErrorResponse(error);
+    if (tulearnErrorResponse) return tulearnErrorResponse;
+
     if (error instanceof CourseRouteError) {
       serverLogger.error('Failed to load course content', {
         code: error.code,

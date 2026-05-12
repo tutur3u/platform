@@ -33,15 +33,25 @@ function isSafeYoutubeId(videoId: string) {
   return /^[A-Za-z0-9_-]{6,32}$/u.test(videoId);
 }
 
+function isSafeFallbackHref(href: string) {
+  try {
+    const url = new URL(href);
+    return ['http:', 'https:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 export function YoutubeCard({ url }: { url: string }) {
   const t = useTranslations();
   const videoId = extractYoutubeId(url);
+  const fallbackHref = isSafeFallbackHref(url) ? url : '#';
 
   if (!videoId || !isSafeYoutubeId(videoId)) {
     return (
       <a
         className="flex items-center gap-2 border-2 border-border bg-muted/40 px-4 py-3 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5"
-        href={url}
+        href={fallbackHref}
         rel="noopener noreferrer"
         target="_blank"
       >

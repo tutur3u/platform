@@ -89,22 +89,53 @@ async function cleanupGeneratedCourseArtifacts({
   quizIds: string[];
   sbAdmin: TypedSupabaseClient;
 }) {
+  const cleanupErrors: Array<{ label: string; error: unknown }> = [];
+  const runCleanup = async (
+    label: string,
+    operation: () => PromiseLike<{ error: unknown }>
+  ) => {
+    try {
+      const { error } = await operation();
+      if (error) cleanupErrors.push({ label, error });
+    } catch (error) {
+      cleanupErrors.push({ label, error });
+    }
+  };
+
   if (quizIds.length) {
-    await sbAdmin.from('quiz_options').delete().in('quiz_id', quizIds);
-    await sbAdmin.from('course_module_quizzes').delete().in('quiz_id', quizIds);
-    await sbAdmin.from('workspace_quizzes').delete().in('id', quizIds);
+    await runCleanup('quiz_options', () =>
+      sbAdmin.from('quiz_options').delete().in('quiz_id', quizIds)
+    );
+    await runCleanup('course_module_quizzes', () =>
+      sbAdmin.from('course_module_quizzes').delete().in('quiz_id', quizIds)
+    );
+    await runCleanup('workspace_quizzes', () =>
+      sbAdmin.from('workspace_quizzes').delete().in('id', quizIds)
+    );
   }
 
   if (flashcardIds.length) {
-    await sbAdmin
-      .from('course_module_flashcards')
-      .delete()
-      .in('flashcard_id', flashcardIds);
-    await sbAdmin.from('workspace_flashcards').delete().in('id', flashcardIds);
+    await runCleanup('course_module_flashcards', () =>
+      sbAdmin
+        .from('course_module_flashcards')
+        .delete()
+        .in('flashcard_id', flashcardIds)
+    );
+    await runCleanup('workspace_flashcards', () =>
+      sbAdmin.from('workspace_flashcards').delete().in('id', flashcardIds)
+    );
   }
 
   if (moduleIds.length) {
-    await sbAdmin.from('workspace_course_modules').delete().in('id', moduleIds);
+    await runCleanup('workspace_course_modules', () =>
+      sbAdmin.from('workspace_course_modules').delete().in('id', moduleIds)
+    );
+  }
+
+  if (cleanupErrors.length) {
+    serverLogger.error('Failed to clean up generated course artifacts', {
+      cleanupErrors,
+    });
   }
 }
 
@@ -459,12 +490,19 @@ export async function POST(request: Request) {
         }
       }
     } catch (error) {
-      await cleanupGeneratedCourseArtifacts({
-        flashcardIds: createdFlashcardIds,
-        moduleIds: createdModuleIds,
-        quizIds: createdQuizIds,
-        sbAdmin,
-      });
+      try {
+        await cleanupGeneratedCourseArtifacts({
+          flashcardIds: createdFlashcardIds,
+          moduleIds: createdModuleIds,
+          quizIds: createdQuizIds,
+          sbAdmin,
+        });
+      } catch (cleanupError) {
+        serverLogger.error('Generated course cleanup failed unexpectedly', {
+          cleanupError,
+          originalError: error,
+        });
+      }
       throw error;
     }
 
