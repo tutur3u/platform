@@ -9,8 +9,12 @@ only by Hive; do not replace it with Supabase Realtime.
 
 ## Required Environment
 
-- `HIVE_REALTIME_TOKEN_SECRET`: shared HMAC secret used by `apps/web` to mint
-  short-lived join tokens and by `apps/hive-realtime` to validate them.
+- `HIVE_REALTIME_TOKEN_SECRET`: preferred shared HMAC secret used by `apps/web`
+  to mint short-lived join tokens and by `apps/hive-realtime` to validate them.
+  If this is not set, both services fall back to the existing platform
+  Supabase service secret from the shared `apps/web` environment. This keeps
+  Hive deployable with the same Supabase setup as `apps/web`, while still
+  allowing operators to rotate Hive realtime signing independently later.
 - `HIVE_REALTIME_URL`: internal server URL used by `apps/web` and `apps/hive`
   when they need the service-side endpoint.
 - `NEXT_PUBLIC_HIVE_REALTIME_URL`: browser-facing WebSocket URL, normally
@@ -73,7 +77,16 @@ Accepted client messages are typed commands:
 - `presence.join`
 
 World events are persisted through the central `apply_hive_world_event(...)`
-RPC so stale revisions are rejected before broadcast.
+RPC so stale revisions are rejected before broadcast. Revision conflicts are a
+normal editor sync condition, not an operational error. The web API checks the
+current revision before calling the RPC, and the RPC returns an empty result for
+last-moment conflicts instead of raising `hive_revision_conflict`; this prevents
+stale editors from flooding Postgres logs and database usage.
+
+The Hive client also serializes world-edit saves and applies a short cooldown
+after a conflict. If a user edits against an old revision, Hive reloads the
+latest snapshot and waits for the next explicit edit instead of immediately
+retrying a rebased mutation loop.
 
 When an edit is accepted by the central API first, the Hive app emits
 `world.event.applied` to the WebSocket service. The realtime service validates
