@@ -112,7 +112,7 @@
     "react-markdown": "^10.1.0",
     "react-papaparse": "^4.4.0",
     "react-pdf": "^10.4.1",
-    "react-resizable": "^3.2.0",
+    "react-resizable": "^4.0.1",
     "react-resizable-panels": "^4.11.0",
     "react-syntax-highlighter": "^16.1.1",
     "recharts": "3.8.1",
