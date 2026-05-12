@@ -25,6 +25,7 @@ const {
   ensureRequiredComposeEnvironment,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getComposeEnvironment,
   getComposeFile,
@@ -913,6 +914,16 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
     config,
     /server web-blue:7803 backup resolve max_fails=1 fail_timeout=5s;/
   );
+  assert.match(config, /upstream hive_app_upstream {/);
+  assert.match(
+    config,
+    /server hive-green:7814 resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(
+    config,
+    /server hive-blue:7814 backup resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(config, /listen 7814;/);
   assert.match(config, /client_header_buffer_size 16k;/);
   assert.match(config, /keepalive_timeout 15s;/);
   assert.match(config, /large_client_header_buffers 8 16k;/);
@@ -1736,7 +1747,9 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args[1] === '-f' &&
           args[2] === PROD_COMPOSE_FILE &&
           args.includes('up') &&
-          BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.every((service) =>
+          args.includes(getBlueGreenHiveServiceName('blue')) &&
+          args.includes('hive-realtime') &&
+          !BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
             args.includes(service)
           )
       )
@@ -2132,6 +2145,10 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
     const env = options.env ?? {};
     calls.push({ env, key });
 
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
     if (
       key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q` &&
       env.COMPOSE_PROJECT_NAME === 'platform'
@@ -2169,7 +2186,7 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
 
     if (
       args.includes('up') &&
-      args.includes('hive') &&
+      args.some((arg) => typeof arg === 'string' && arg.startsWith('hive')) &&
       env.COMPOSE_PROJECT_NAME === 'tuturuuu'
     ) {
       assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
@@ -2659,6 +2676,10 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 
+    if (command === 'docker' && args[0] === 'ps') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
     if (
       command === 'docker' &&
       args[0] === 'compose' &&
@@ -2697,12 +2718,39 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       };
     }
 
+    if (args.includes('ps') && args.at(-1) === 'hive-blue') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'hive-blue-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-realtime') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'hive-realtime-123\n' : '',
+      };
+    }
+
     if (args.includes('ps') && args.at(-1) === 'web-green') {
       return {
         code: 0,
         signal: null,
         stderr: '',
         stdout: standbyBootstrapped ? 'green-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-green') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: standbyBootstrapped ? 'hive-green-123\n' : '',
       };
     }
 

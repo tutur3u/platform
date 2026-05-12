@@ -1,3 +1,37 @@
+x-hive-service: &hive-service
+  build:
+    context: ..
+    dockerfile: apps/hive/Dockerfile
+    target: runner
+    secrets:
+      - web_env
+  env_file:
+    - path: ../apps/web/.env.local
+      required: false
+    - path: ../.env.local
+      required: false
+  environment:
+    - HIVE_REALTIME_TOKEN_SECRET
+    - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
+    - HOSTNAME=0.0.0.0
+    - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
+    - NEXT_TELEMETRY_DISABLED=1
+    - NODE_ENV=production
+    - PLATFORM_BLUE_GREEN_COLOR
+    - PLATFORM_DEPLOYMENT_STAMP
+    - PORT=7814
+    - SUPABASE_SERVER_URL
+  expose:
+    - "7814"
+  healthcheck:
+    test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
+    interval: 30s
+    timeout: 5s
+    start_period: 10s
+    retries: 3
+  init: true
+  restart: unless-stopped
+
 services:
   markitdown:
     build:
@@ -56,34 +90,8 @@ services:
     init: true
     restart: unless-stopped
 
-  hive:
-    build:
-      context: ..
-      dockerfile: apps/hive/Dockerfile
-      target: runner
-      secrets:
-        - web_env
-    env_file:
-      - path: ../apps/web/.env.local
-        required: false
-      - path: ../.env.local
-        required: false
-    environment:
-      - HIVE_REALTIME_TOKEN_SECRET
-      - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
-      - HOSTNAME=0.0.0.0
-      - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
-      - NEXT_TELEMETRY_DISABLED=1
-      - NODE_ENV=production
-      - PORT=7814
-      - SUPABASE_SERVER_URL
-    ports:
-      - "7814:7814"
-    healthcheck:
-      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
-      interval: 30s
-      timeout: 5s
-      start_period: 10s
-      retries: 3
-    init: true
-    restart: unless-stopped
+  hive-blue:
+    <<: *hive-service
+
+  hive-green:
+    <<: *hive-service

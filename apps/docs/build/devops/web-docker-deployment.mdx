@@ -785,23 +785,23 @@ Dashboard details:
   callback route and uploads extracted files directly to the active storage
   backend, which avoids nginx body-size limits for large WebGL artifacts while
   keeping folder creation and auth checks in the backend callback.
-- Hive is part of the web blue/green support-service set: `hive` is routed from
-  `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
+- Hive is promoted with the web blue/green color: `hive-blue` and `hive-green`
+  are routed from `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
   `NEXT_PUBLIC_HIVE_REALTIME_URL` configured in the same production stack.
-  Production compose publishes **`7814:7814`** so Hive is reachable on the host
-  at `http://localhost:7814` for local debugging, not only via the Docker
-  network and nginx.
-  `hive` uses the same Supabase env source as `apps/web`: runtime env files are
-  shared, and production image builds mount the `web_env` BuildKit secret so
-  hidden-locale auth pages can prerender with the platform Supabase URL.
+  Production compose publishes **`7814:7814`** from `web-proxy`, not from a
+  direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
+  reaches the currently promoted Hive color.
+  The Hive color services use the same Supabase env source as `apps/web`:
+  runtime env files are shared, and production image builds mount the `web_env`
+  BuildKit secret so hidden-locale auth pages can prerender with the platform
+  Supabase URL.
   **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
   prod service in one pass, but `docker compose up` runs in two phases—first
   `web-proxy`, the target `web-{color}`, MarkItDown, storage-unzip-proxy,
-  `web-cron-runner`, and (when enabled) Redis—then `hive` and `hive-realtime`.
-  Promotion waits only on the first-phase health gates so the main site and
-  proxy can go healthy while Hive finishes booting; nginx upstreams tolerate
-  Hive being temporarily down.
+  `web-cron-runner`, and (when enabled) Redis—then `hive-{color}` and
+  `hive-realtime`. Promotion waits for the target web color, target Hive color,
+  Hive realtime, and the first-phase support services before switching nginx.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete

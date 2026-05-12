@@ -4,6 +4,7 @@ const path = require('node:path');
 const {
   getComposeCommandArgs,
   getComposeFile,
+  getComposeServiceContainerName,
   hasComposeProfile,
   hasComposeServiceContainer,
   isComposeServiceHealthy,
@@ -49,7 +50,8 @@ const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
 /** Started in a second compose phase so web/proxy/redis can become healthy first. */
 const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
-  'hive',
+  'hive-blue',
+  'hive-green',
   'hive-realtime',
 ]);
 /** Support sidecars that gate blue/green promotion (Hive warms independently). */
@@ -63,6 +65,7 @@ const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
   ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
 ]);
 const BLUE_GREEN_COLORS = ['blue', 'green'];
+const LEGACY_HIVE_SERVICE = 'hive';
 const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFERS = '8 128k';
@@ -313,6 +316,26 @@ function getBlueGreenServiceName(color) {
   return `web-${color}`;
 }
 
+function getBlueGreenHiveServiceName(color) {
+  if (!isBlueGreenColor(color)) {
+    throw new Error(`Unsupported blue/green color "${color}".`);
+  }
+
+  return `hive-${color}`;
+}
+
+function getBlueGreenColorScopedSupportServices(color) {
+  return [getBlueGreenHiveServiceName(color), 'hive-realtime'];
+}
+
+function getBlueGreenPromotionHealthGateServices(color) {
+  return [
+    getBlueGreenHiveServiceName(color),
+    'hive-realtime',
+    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+  ];
+}
+
 function getComposeProjectName(composeFile, env = {}) {
   if (
     typeof env.COMPOSE_PROJECT_NAME === 'string' &&
@@ -401,8 +424,12 @@ function renderBlueGreenProxyConfig(
   { deploymentStamp = null, extraServerBlocks = [], standbyColor = null } = {}
 ) {
   const primaryServiceName = getBlueGreenServiceName(color);
+  const primaryHiveServiceName = getBlueGreenHiveServiceName(color);
   const backupServiceName = standbyColor
     ? getBlueGreenServiceName(standbyColor)
+    : null;
+  const backupHiveServiceName = standbyColor
+    ? getBlueGreenHiveServiceName(standbyColor)
     : null;
   const projectServerBlocks = Array.isArray(extraServerBlocks)
     ? extraServerBlocks.filter(
@@ -435,7 +462,12 @@ function renderBlueGreenProxyConfig(
     '',
     'upstream hive_app_upstream {',
     '  zone hive_app_upstream 64k;',
-    '  server hive:7814 resolve max_fails=1 fail_timeout=5s;',
+    `  server ${primaryHiveServiceName}:7814 resolve max_fails=1 fail_timeout=5s;`,
+    ...(backupHiveServiceName
+      ? [
+          `  server ${backupHiveServiceName}:7814 backup resolve max_fails=1 fail_timeout=5s;`,
+        ]
+      : []),
     '}',
     '',
     'upstream hive_realtime_upstream {',
@@ -475,14 +507,17 @@ function renderBlueGreenProxyConfig(
     '',
     'server {',
     '  listen 7803;',
+    '  listen 7814;',
     '  server_name hive.tuturuuu.com;',
     '  set $platform_project_id "hive";',
     '  set $platform_selected_branch "production";',
-    '  set $platform_upstream_service "hive";',
+    `  set $platform_upstream_service "${primaryHiveServiceName}";`,
     '  client_header_buffer_size 16k;',
     '  keepalive_timeout 15s;',
     '  large_client_header_buffers 8 16k;',
     `  add_header X-Platform-Deployment-Stamp "${deploymentStamp ?? 'unknown'}" always;`,
+    `  add_header X-Platform-Blue-Green-Primary "${color}" always;`,
+    `  add_header X-Platform-Blue-Green-Standby "${standbyColor ?? 'none'}" always;`,
     '',
     '  location /realtime {',
     '    proxy_http_version 1.1;',
@@ -544,7 +579,8 @@ function getBlueGreenProdServicesWithProxyOption(
 ) {
   const services = [
     getBlueGreenServiceName(targetColor),
-    ...BLUE_GREEN_SUPPORT_SERVICES,
+    ...getBlueGreenColorScopedSupportServices(targetColor),
+    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   ];
 
   if (includeProxy) {
@@ -781,6 +817,70 @@ async function testBlueGreenProxyRouting({
       runCommand: run,
     }
   );
+}
+
+async function testBlueGreenHiveProxyRouting({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'exec',
+      '-T',
+      BLUE_GREEN_PROXY_SERVICE,
+      'wget',
+      '-q',
+      '-O',
+      '/dev/null',
+      'http://127.0.0.1:7814/login'
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
+async function removeLegacyHiveContainerIfPresent({
+  composeFile,
+  env,
+  runCommand: run,
+}) {
+  const containerName = getComposeServiceContainerName(LEGACY_HIVE_SERVICE, {
+    composeFile,
+    env,
+  });
+  const inspect = await run(
+    'docker',
+    [
+      'ps',
+      '-aq',
+      '--filter',
+      `name=^/${containerName}$`,
+      '--format',
+      '{{.ID}}',
+    ],
+    {
+      env,
+      stdio: 'pipe',
+    }
+  );
+
+  if (inspect.code !== 0 || inspect.stdout.trim().length === 0) {
+    return false;
+  }
+
+  await runChecked('docker', ['rm', '-f', containerName], {
+    env,
+    runCommand: run,
+  });
+
+  return true;
 }
 
 async function finalizeBlueGreenComposeMigration({
@@ -1139,6 +1239,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     services: targetServices,
   });
 
+  await removeLegacyHiveContainerIfPresent({
+    composeFile,
+    env,
+    runCommand: run,
+  });
+
   await stopComposeServicesIfPresent(['web'], {
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1146,18 +1252,30 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  await stopComposeServicesIfPresent([getBlueGreenServiceName(targetColor)], {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
-  await removeComposeServicesIfPresent([getBlueGreenServiceName(targetColor)], {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
+  await stopComposeServicesIfPresent(
+    [
+      getBlueGreenServiceName(targetColor),
+      getBlueGreenHiveServiceName(targetColor),
+    ],
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
+  await removeComposeServicesIfPresent(
+    [
+      getBlueGreenServiceName(targetColor),
+      getBlueGreenHiveServiceName(targetColor),
+    ],
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
 
   await runComposeUpWithNameConflictRecovery({
     composeFile,
@@ -1202,7 +1320,9 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE) {
+  for (const serviceName of getBlueGreenPromotionHealthGateServices(
+    targetColor
+  )) {
     await waitForComposeServiceHealthy(serviceName, {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1258,6 +1378,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   }
 
   await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: targetEnv,
+    runCommand: run,
+  });
+  await testBlueGreenHiveProxyRouting({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
     env: targetEnv,
@@ -1347,14 +1473,23 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     services: standbyServices,
   });
 
-  await stopComposeServicesIfPresent([getBlueGreenServiceName(standbyColor)], {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
+  await stopComposeServicesIfPresent(
+    [
+      getBlueGreenServiceName(standbyColor),
+      getBlueGreenHiveServiceName(standbyColor),
+    ],
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
   await removeComposeServicesIfPresent(
-    [getBlueGreenServiceName(standbyColor)],
+    [
+      getBlueGreenServiceName(standbyColor),
+      getBlueGreenHiveServiceName(standbyColor),
+    ],
     {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1409,7 +1544,9 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     runCommand: run,
   });
 
-  for (const serviceName of BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE) {
+  for (const serviceName of getBlueGreenPromotionHealthGateServices(
+    standbyColor
+  )) {
     await waitForComposeServiceHealthy(serviceName, {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -1473,7 +1610,15 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     PLATFORM_BLUE_GREEN_COLOR: standbyColor,
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
-  const activeServices = [BLUE_GREEN_PROXY_SERVICE, activeServiceName];
+  const activeServices = [
+    BLUE_GREEN_PROXY_SERVICE,
+    activeServiceName,
+    ...getBlueGreenColorScopedSupportServices(activeColor),
+  ];
+  const standbyServices = [
+    standbyServiceName,
+    getBlueGreenHiveServiceName(standbyColor),
+  ];
 
   writeBlueGreenProxyConfig(activeColor, {
     deploymentStamp,
@@ -1485,6 +1630,11 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   await retagCachedImageForService(cachedImageTag, activeServiceName, {
     composeFile,
     env: activeEnv,
+    runCommand: run,
+  });
+  await removeLegacyHiveContainerIfPresent({
+    composeFile,
+    env,
     runCommand: run,
   });
   await runComposeUpWithNameConflictRecovery({
@@ -1515,6 +1665,16 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     env: activeEnv,
     runCommand: run,
   });
+  for (const serviceName of getBlueGreenColorScopedSupportServices(
+    activeColor
+  )) {
+    await waitForComposeServiceHealthy(serviceName, {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: activeEnv,
+      runCommand: run,
+    });
+  }
 
   writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
   writeBlueGreenActiveColor(activeColor, paths, fsImpl);
@@ -1536,6 +1696,12 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     env: activeEnv,
     runCommand: run,
   });
+  await testBlueGreenHiveProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
+  });
 
   await retagCachedImageForService(cachedImageTag, standbyServiceName, {
     composeFile,
@@ -1548,13 +1714,13 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     env: standbyEnv,
     fsImpl,
     runCommand: run,
-    services: [standbyServiceName],
+    services: standbyServices,
     upArgs: [
       'up',
       '--detach',
       '--no-build',
       '--remove-orphans',
-      standbyServiceName,
+      ...standbyServices,
     ],
   });
   await waitForComposeServiceHealthy(standbyServiceName, {
@@ -1563,6 +1729,15 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     env: standbyEnv,
     runCommand: run,
   });
+  await waitForComposeServiceHealthy(
+    getBlueGreenHiveServiceName(standbyColor),
+    {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: standbyEnv,
+      runCommand: run,
+    }
+  );
 
   writeBlueGreenProxyConfig(activeColor, {
     deploymentStamp,
@@ -1583,6 +1758,12 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     runCommand: run,
   });
   await testBlueGreenProxyRouting({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: standbyEnv,
+    runCommand: run,
+  });
+  await testBlueGreenHiveProxyRouting({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
     env: standbyEnv,
@@ -1622,6 +1803,7 @@ module.exports = {
   getBlueGreenPaths,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenComposeMigration,
+  getBlueGreenHiveServiceName,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
   readBlueGreenDeploymentStamp,
@@ -1644,6 +1826,7 @@ module.exports = {
   splitBlueGreenProdServicePhases,
   tagBlueGreenServiceImageForCache,
   testBlueGreenProxyRouting,
+  testBlueGreenHiveProxyRouting,
   validateBlueGreenProxyConfig,
   waitForBlueGreenServiceDrain,
   writeBlueGreenActiveColor,

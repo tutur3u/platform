@@ -2871,7 +2871,23 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult('blue-123\n'),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
+        createResult('hive-realtime-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
         createResult(''),
       ],
       [
@@ -2879,11 +2895,15 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
+        createResult(''),
+      ],
+      [
         'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -2891,7 +2911,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime`,
         createResult(''),
       ],
       [
@@ -2908,6 +2928,14 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
         createResult('healthy\n'),
       ],
       [
@@ -2940,6 +2968,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
         createResult(''),
       ],
     ]);
@@ -3094,6 +3126,13 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         return createResult('');
       }
 
+      if (
+        key ===
+        `docker ps -aq --filter name=^/${composeProjectName}-hive-1$ --format {{.ID}}`
+      ) {
+        return createResult('');
+      }
+
       if (key === `docker tag ${cachedImageTag} ${activeServiceImageName}`) {
         activeBootstrapped = true;
         fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
@@ -3136,14 +3175,14 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
 
       if (
         key ===
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime`
       ) {
         return createResult('');
       }
 
       if (
         key ===
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
       ) {
         return createResult('');
       }
@@ -3164,9 +3203,30 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
 
       if (
         key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`
+      ) {
+        return createResult(activeBootstrapped ? 'hive-blue-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`
+      ) {
+        return createResult(activeBootstrapped ? 'hive-realtime-123\n' : '');
+      }
+
+      if (
+        key ===
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`
       ) {
         return createResult(standbyBootstrapped ? 'green-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-green`
+      ) {
+        return createResult(standbyBootstrapped ? 'hive-green-123\n' : '');
       }
 
       if (
@@ -3180,7 +3240,13 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         key ===
           'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123' ||
         key ===
-          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-green-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123'
       ) {
         return createResult('healthy\n');
       }
@@ -3191,7 +3257,9 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         key ===
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload` ||
         key ===
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`
       ) {
         return createResult('');
       }
@@ -3231,12 +3299,12 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
     );
     assert.ok(
       calls.includes(
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime`
       )
     );
     assert.ok(
       calls.includes(
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
       )
     );
     assert.equal(
@@ -3357,7 +3425,23 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult('blue-123\n'),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
+          createResult('hive-blue-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
+          createResult('hive-realtime-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
+          createResult('hive-blue-123\n'),
+        ],
+        [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+          createResult(''),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
           createResult(''),
         ],
         [
@@ -3365,11 +3449,15 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
+          createResult(''),
+        ],
+        [
           'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
           createResult(''),
         ],
         [
@@ -3377,7 +3465,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime`,
           createResult(''),
         ],
         [
@@ -3394,6 +3482,14 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
           createResult('healthy\n'),
         ],
         [
@@ -3426,6 +3522,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
+          createResult(''),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
           createResult(''),
         ],
       ])

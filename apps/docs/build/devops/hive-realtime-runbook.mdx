@@ -43,14 +43,20 @@ each process (see `turbo.json` tasks `@tuturuuu/hive#serve:hive` and
 
 ## Blue/Green Deployment
 
-`docker-compose.web.prod.yml` runs both `hive` and `hive-realtime` as
-blue/green support services. `scripts/docker-web/blue-green.js` waits for them
-alongside `apps/web` support services before proxy handoff.
+`docker-compose.web.prod.yml` runs `hive-blue`, `hive-green`, and
+`hive-realtime` with the same production Supabase environment as `apps/web`.
+`scripts/docker-web/blue-green.js` promotes Hive with the same active color as
+web and waits for the target Hive color before proxy handoff.
 
 The generated nginx config routes:
 
-- `hive.tuturuuu.com/` to the `hive` satellite app on port `7814`.
+- `hive.tuturuuu.com/` to the active `hive-{color}` satellite app on port
+  `7814`.
 - `hive.tuturuuu.com/realtime` to `hive-realtime` on port `7815`.
+
+The production proxy also listens on host port `7814`, so a Cloudflare tunnel
+mapping `hive.tuturuuu.com` to `localhost:7814` still goes through the
+blue/green proxy instead of bypassing it to a stale single Hive container.
 
 `scripts/watch-blue-green-deploy.js` watches the Hive Dockerfiles, package
 manifests, realtime source files, and `docker-compose.web.prod.yml`; changes to
