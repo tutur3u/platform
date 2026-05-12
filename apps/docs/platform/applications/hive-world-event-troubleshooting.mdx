@@ -31,3 +31,13 @@ on conflict on constraint hive_world_states_pkey do nothing;
 ```
 
 Apply the migration and re-run Hive event creation after the updated function is live.
+
+## Actor Authorization
+
+The actor-accepting `apply_hive_world_event(uuid, uuid, bigint, text, jsonb,
+jsonb)` overload should not be exposed to browser roles. Keep direct execution
+revoked from `public`, `anon`, and `authenticated`; server-side API and realtime
+paths call it with `service_role` after validating the user session or signed
+Hive realtime token. If a non-service role ever reaches the function, it must
+derive the actor from `auth.uid()` and reject mismatched `p_actor_user_id`
+values with `hive_actor_mismatch`.

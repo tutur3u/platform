@@ -29,6 +29,12 @@ Hive stores shared world state as revisioned snapshots and events:
 
 World edits should be persisted through `apply_hive_world_event(...)` so stale
 revision writes are rejected consistently.
+The actor-accepting RPC is a server-mediated write path only: direct browser
+roles must call the `apps/web` Hive API or Hive realtime service, and database
+grants should keep `apply_hive_world_event(uuid, uuid, bigint, text, jsonb,
+jsonb)` executable only by `service_role`. The function still derives
+`auth.uid()` for non-service execution and rejects actor mismatches as a
+defense-in-depth guard.
 The API maps RPC failures into explicit response codes, including
 `hive_revision_conflict`, `hive_access_denied`, and `hive_server_not_found`, so
 clients can distinguish sync conflicts from invalid edit payloads.
