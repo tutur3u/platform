@@ -93,7 +93,7 @@ RUN chmod +x apps/web/docker/dev-entrypoint.sh
 ENTRYPOINT ["./apps/web/docker/dev-entrypoint.sh"]
 CMD ["bun", "run", "dev:web"]
 
-FROM oven/bun:1.3.13 AS builder
+FROM node:22-bookworm-slim AS builder
 
 WORKDIR /workspace
 
@@ -102,6 +102,7 @@ ENV DOCKER_WEB_STANDALONE=1
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=deps /workspace ./
 COPY . .
 

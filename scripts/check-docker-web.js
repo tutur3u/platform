@@ -265,6 +265,22 @@ function validateDockerfile({
   }
 
   if (builderStage) {
+    if (!builderStage.includes('FROM node:22-bookworm-slim AS builder')) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must use node:22-bookworm-slim so next build runs under real Node instead of Bun node-shim.'
+      );
+    }
+
+    if (
+      !builderStage.includes(
+        'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun'
+      )
+    ) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must copy Bun from deps for workspace scripts while keeping Node as the build runtime.'
+      );
+    }
+
     if (
       !builderStage.includes(
         '--mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo'

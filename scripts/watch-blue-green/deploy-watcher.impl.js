@@ -84,11 +84,15 @@ const {
   readInstantRolloutRequest,
 } = require('./control.js');
 const {
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
   describeActiveDeploymentConflict,
   getActiveDeploymentConflict,
+  getDeploymentBuildTimeoutMs,
+  readDeploymentBuildLock,
+  tryTerminateTimedOutDeploymentBuildLock,
 } = require('./build-lock.js');
 const {
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
@@ -796,6 +800,116 @@ function isMissingDockerImageError(error) {
   return /No such image:/iu.test(message);
 }
 
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function summarizeDeploymentFailure(error) {
+  const rawMessage = stripAnsi(getErrorMessage(error));
+  const lines = rawMessage
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) {
+    return null;
+  }
+
+  const relevantLines = lines.filter((line) =>
+    /bun has crashed|cannot allocate memory|command failed|crashed while loading native module|error:|exit code|exited \([0-9]+\)|failed to compile|failed to solve|illegal instruction|javascript heap out of memory|no space left|panic|resourceexhausted|segmentation fault|sig(?:ill|kill|term)|terminated by signal|timed out/iu.test(
+      line
+    )
+  );
+  const selected = relevantLines.length > 0 ? relevantLines : lines.slice(-4);
+  const summary = selected.slice(-6).join('\n');
+
+  return summary.length > 1800 ? `${summary.slice(0, 1800)}...` : summary;
+}
+
+function withDeploymentFailureDetails(entry, error) {
+  const failureReason = summarizeDeploymentFailure(error);
+  const exitCode =
+    error && typeof error === 'object' && Number.isFinite(error.exitCode)
+      ? error.exitCode
+      : null;
+  const signal =
+    error && typeof error === 'object' && typeof error.signal === 'string'
+      ? error.signal
+      : null;
+
+  return {
+    ...entry,
+    ...(exitCode != null ? { exitCode } : {}),
+    ...(failureReason ? { failureReason } : {}),
+    ...(signal ? { signal } : {}),
+  };
+}
+
+function describeTimedOutDeploymentBuild(result) {
+  const lock = result?.lock ?? {};
+  const timeoutMs = result?.timeoutMs ?? DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS;
+  const elapsedMs = result?.elapsedMs ?? 0;
+  const signal = result?.signal ?? 'SIGTERM';
+
+  return `Deployment build exceeded ${formatDuration(timeoutMs)} while still building; sent ${signal} to PID ${lock.ownerPid ?? lock.pid ?? 'unknown'} after ${formatDuration(elapsedMs)}.`;
+}
+
+function stopTimedOutDeploymentBuildIfNeeded({
+  env,
+  fsImpl,
+  log = console,
+  now = () => Date.now(),
+  paths,
+  processImpl,
+} = {}) {
+  const lock = readDeploymentBuildLock(paths, fsImpl);
+  const result = tryTerminateTimedOutDeploymentBuildLock(lock, {
+    env,
+    fsImpl,
+    now,
+    paths,
+    processImpl,
+  });
+
+  if (result.action === 'failed') {
+    log.warn?.(
+      `Deployment build exceeded ${formatDuration(result.timeoutMs)} but could not be stopped: ${getErrorMessage(result.error)}`
+    );
+    return result;
+  }
+
+  if (result.action !== 'terminated') {
+    return result;
+  }
+
+  const finishedAt = now();
+  const reason = describeTimedOutDeploymentBuild(result);
+  const timedOutError = new Error(reason);
+
+  appendDeploymentHistory(
+    withDeploymentFailureDetails(
+      {
+        buildDurationMs: result.elapsedMs,
+        commitHash: result.lock?.commitHash ?? null,
+        commitShortHash: result.lock?.commitShortHash ?? null,
+        commitSubject: result.lock?.commitSubject ?? null,
+        deploymentKind: result.lock?.deploymentKind ?? 'watcher-timeout',
+        finishedAt,
+        startedAt: result.lock?.startedAt ?? finishedAt,
+        status: 'failed',
+      },
+      timedOutError
+    ),
+    {
+      fsImpl,
+      paths,
+    }
+  );
+  log.warn?.(reason);
+
+  return { ...result, reason };
+}
+
 function getFailedDeploymentCountForCommit(deployments = [], commitHash) {
   if (!commitHash) {
     return 0;
@@ -1061,16 +1175,19 @@ async function runDetachedCommitFullBlueGreenDeploy({
       }
 
       const history = appendDeploymentHistory(
-        {
-          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-          commitHash: deployCommit.hash,
-          commitShortHash: deployCommit.shortHash,
-          commitSubject: deployCommit.subject,
-          deploymentKind,
-          finishedAt: deployFinishedAt,
-          startedAt: deployStartedAt,
-          status: 'failed',
-        },
+        withDeploymentFailureDetails(
+          {
+            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+            commitHash: deployCommit.hash,
+            commitShortHash: deployCommit.shortHash,
+            commitSubject: deployCommit.subject,
+            deploymentKind,
+            finishedAt: deployFinishedAt,
+            startedAt: deployStartedAt,
+            status: 'failed',
+          },
+          error
+        ),
         {
           fsImpl,
           paths,
@@ -1181,17 +1298,20 @@ async function runDetachedParentFallbackStandbyRefresh({
     } catch (error) {
       const refreshFinishedAt = now();
       const history = appendDeploymentHistory(
-        {
-          activeColor: standbyRefreshCandidate.standbyColor,
-          buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-          commitHash: deployCommit.hash,
-          commitShortHash: deployCommit.shortHash,
-          commitSubject: deployCommit.subject,
-          deploymentKind: 'parent-fallback-standby-refresh',
-          finishedAt: refreshFinishedAt,
-          startedAt: refreshStartedAt,
-          status: 'failed',
-        },
+        withDeploymentFailureDetails(
+          {
+            activeColor: standbyRefreshCandidate.standbyColor,
+            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
+            commitHash: deployCommit.hash,
+            commitShortHash: deployCommit.shortHash,
+            commitSubject: deployCommit.subject,
+            deploymentKind: 'parent-fallback-standby-refresh',
+            finishedAt: refreshFinishedAt,
+            startedAt: refreshStartedAt,
+            status: 'failed',
+          },
+          error
+        ),
         {
           fsImpl,
           paths,
@@ -1321,6 +1441,7 @@ async function runBlueGreenDeploy({
   });
 
   try {
+    const timeoutMs = getDeploymentBuildTimeoutMs(env ?? process.env);
     await runChecked(command, args, {
       env: {
         ...(env ?? process.env),
@@ -1328,6 +1449,9 @@ async function runBlueGreenDeploy({
         [SKIP_WATCH_HISTORY_ENV]: '1',
       },
       runCommand: run,
+      stdio: 'pipe',
+      teeOutput: true,
+      timeoutMs,
     });
   } finally {
     heldLock.release();
@@ -2358,18 +2482,21 @@ async function runPinnedDeploymentIteration(
 
     const deployFinishedAt = now();
     const history = appendDeploymentHistory(
-      {
-        buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-        commitHash: latestCommit.hash,
-        commitShortHash: latestCommit.shortHash,
-        commitSubject: latestCommit.subject,
-        deploymentKind: 'rollback-pin',
-        finishedAt: deployFinishedAt,
-        pinnedBy: deploymentPin.requestedBy,
-        pinnedByEmail: deploymentPin.requestedByEmail,
-        startedAt: deployStartedAt,
-        status: 'failed',
-      },
+      withDeploymentFailureDetails(
+        {
+          buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+          commitHash: latestCommit.hash,
+          commitShortHash: latestCommit.shortHash,
+          commitSubject: latestCommit.subject,
+          deploymentKind: 'rollback-pin',
+          finishedAt: deployFinishedAt,
+          pinnedBy: deploymentPin.requestedBy,
+          pinnedByEmail: deploymentPin.requestedByEmail,
+          startedAt: deployStartedAt,
+          status: 'failed',
+        },
+        error
+      ),
       {
         fsImpl,
         paths,
@@ -2435,6 +2562,23 @@ async function runDeployWatchIteration(
       })),
     };
   };
+  const timedOutBuild = stopTimedOutDeploymentBuildIfNeeded({
+    env,
+    fsImpl,
+    log,
+    now,
+    paths,
+    processImpl,
+  });
+
+  if (timedOutBuild.action === 'terminated') {
+    return attachRuntime({
+      checkedAt,
+      error: new Error(timedOutBuild.reason),
+      status: 'deploy-failed',
+    });
+  }
+
   const activeDeploymentConflict = getActiveDeploymentConflict({
     env,
     fsImpl,
@@ -2902,16 +3046,22 @@ async function runDeployWatchIteration(
 
           const deployFinishedAt = now();
           const history = appendDeploymentHistory(
-            {
-              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-              commitHash: latestCommit.hash,
-              commitShortHash: latestCommit.shortHash,
-              commitSubject: latestCommit.subject,
-              deploymentKind: 'manual',
-              finishedAt: deployFinishedAt,
-              startedAt: deployStartedAt,
-              status: 'failed',
-            },
+            withDeploymentFailureDetails(
+              {
+                buildDurationMs: Math.max(
+                  0,
+                  deployFinishedAt - deployStartedAt
+                ),
+                commitHash: latestCommit.hash,
+                commitShortHash: latestCommit.shortHash,
+                commitSubject: latestCommit.subject,
+                deploymentKind: 'manual',
+                finishedAt: deployFinishedAt,
+                startedAt: deployStartedAt,
+                status: 'failed',
+              },
+              error
+            ),
             {
               fsImpl,
               paths,
@@ -3267,16 +3417,22 @@ async function runDeployWatchIteration(
 
           const deployFinishedAt = now();
           const history = appendDeploymentHistory(
-            {
-              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-              commitHash: latestCommit.hash,
-              commitShortHash: latestCommit.shortHash,
-              commitSubject: latestCommit.subject,
-              deploymentKind: 'reconcile',
-              finishedAt: deployFinishedAt,
-              startedAt: deployStartedAt,
-              status: 'failed',
-            },
+            withDeploymentFailureDetails(
+              {
+                buildDurationMs: Math.max(
+                  0,
+                  deployFinishedAt - deployStartedAt
+                ),
+                commitHash: latestCommit.hash,
+                commitShortHash: latestCommit.shortHash,
+                commitSubject: latestCommit.subject,
+                deploymentKind: 'reconcile',
+                finishedAt: deployFinishedAt,
+                startedAt: deployStartedAt,
+                status: 'failed',
+              },
+              error
+            ),
             {
               fsImpl,
               paths,
@@ -3577,17 +3733,23 @@ async function runDeployWatchIteration(
 
         const refreshFinishedAt = now();
         const history = appendDeploymentHistory(
-          {
-            activeColor: standbyRefreshCandidate.standbyColor,
-            buildDurationMs: Math.max(0, refreshFinishedAt - refreshStartedAt),
-            commitHash: latestCommit.hash,
-            commitShortHash: latestCommit.shortHash,
-            commitSubject: latestCommit.subject,
-            deploymentKind: 'standby-refresh',
-            finishedAt: refreshFinishedAt,
-            startedAt: refreshStartedAt,
-            status: 'failed',
-          },
+          withDeploymentFailureDetails(
+            {
+              activeColor: standbyRefreshCandidate.standbyColor,
+              buildDurationMs: Math.max(
+                0,
+                refreshFinishedAt - refreshStartedAt
+              ),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              deploymentKind: 'standby-refresh',
+              finishedAt: refreshFinishedAt,
+              startedAt: refreshStartedAt,
+              status: 'failed',
+            },
+            error
+          ),
           {
             fsImpl,
             paths,
@@ -4155,15 +4317,18 @@ async function runDeployWatchIteration(
 
         const deployFinishedAt = now();
         const history = appendDeploymentHistory(
-          {
-            buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
-            commitHash: latestCommit.hash,
-            commitShortHash: latestCommit.shortHash,
-            commitSubject: latestCommit.subject,
-            finishedAt: deployFinishedAt,
-            startedAt: deployStartedAt,
-            status: 'failed',
-          },
+          withDeploymentFailureDetails(
+            {
+              buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
+              commitHash: latestCommit.hash,
+              commitShortHash: latestCommit.shortHash,
+              commitSubject: latestCommit.subject,
+              finishedAt: deployFinishedAt,
+              startedAt: deployStartedAt,
+              status: 'failed',
+            },
+            error
+          ),
           {
             fsImpl,
             paths,
@@ -4680,6 +4845,14 @@ async function main(argv = process.argv.slice(2), options = {}) {
           `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
       } else {
+        stopTimedOutDeploymentBuildIfNeeded({
+          env,
+          fsImpl,
+          log: ui,
+          now: options.now ?? (() => Date.now()),
+          paths,
+          processImpl,
+        });
         let activeDeploymentConflict = getActiveDeploymentConflict({
           env,
           fsImpl,
@@ -4708,6 +4881,14 @@ async function main(argv = process.argv.slice(2), options = {}) {
           }
 
           await (options.sleepImpl ?? sleep)(parsed.intervalMs);
+          stopTimedOutDeploymentBuildIfNeeded({
+            env,
+            fsImpl,
+            log: ui,
+            now: options.now ?? (() => Date.now()),
+            paths,
+            processImpl,
+          });
           activeDeploymentConflict = getActiveDeploymentConflict({
             env,
             fsImpl,
@@ -4839,18 +5020,21 @@ async function main(argv = process.argv.slice(2), options = {}) {
             }
 
             const history = appendDeploymentHistory(
-              {
-                buildDurationMs: Math.max(
-                  0,
-                  deployFinishedAt - pendingStartedAt
-                ),
-                commitHash: deployCommit.hash,
-                commitShortHash: deployCommit.shortHash,
-                commitSubject: deployCommit.subject,
-                finishedAt: deployFinishedAt,
-                startedAt: pendingStartedAt,
-                status: 'failed',
-              },
+              withDeploymentFailureDetails(
+                {
+                  buildDurationMs: Math.max(
+                    0,
+                    deployFinishedAt - pendingStartedAt
+                  ),
+                  commitHash: deployCommit.hash,
+                  commitShortHash: deployCommit.shortHash,
+                  commitSubject: deployCommit.subject,
+                  finishedAt: deployFinishedAt,
+                  startedAt: pendingStartedAt,
+                  status: 'failed',
+                },
+                error
+              ),
               {
                 fsImpl,
                 paths,

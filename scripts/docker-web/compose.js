@@ -9,6 +9,7 @@ const BLUE_GREEN_HEALTH_TIMEOUT_MS = 180_000;
 const DOCKER_NAME_CONFLICT_PATTERN =
   /container name\s+"\/?([^"]+)"\s+is already in use/giu;
 const DEFAULT_COMMAND_KILL_TIMEOUT_MS = 10_000;
+const DEFAULT_MAX_CAPTURED_OUTPUT_BYTES = 512_000;
 
 class CommandTimeoutError extends Error {
   constructor(command, args, timeoutMs) {
@@ -70,13 +71,34 @@ function runCommand(command, args, options = {}) {
         clearTimeout(killTimeout);
       }
     };
+    const appendCapturedOutput = (current, chunk) => {
+      const next = `${current}${chunk}`;
+      const maxBytes =
+        options.maxCapturedOutputBytes ?? DEFAULT_MAX_CAPTURED_OUTPUT_BYTES;
+
+      if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+        return next;
+      }
+
+      if (Buffer.byteLength(next, 'utf8') <= maxBytes) {
+        return next;
+      }
+
+      return next.slice(-maxBytes);
+    };
 
     child.stdout?.on('data', (chunk) => {
-      stdout += chunk;
+      stdout = appendCapturedOutput(stdout, chunk);
+      if (options.teeOutput) {
+        (options.stdout ?? process.stdout).write(chunk);
+      }
     });
 
     child.stderr?.on('data', (chunk) => {
-      stderr += chunk;
+      stderr = appendCapturedOutput(stderr, chunk);
+      if (options.teeOutput) {
+        (options.stderr ?? process.stderr).write(chunk);
+      }
     });
 
     if (Number.isFinite(options.timeoutMs) && options.timeoutMs > 0) {

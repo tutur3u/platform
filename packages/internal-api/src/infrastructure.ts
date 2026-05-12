@@ -129,6 +129,7 @@ export interface BlueGreenMonitoringDeployment {
   deploymentStamp?: string | null;
   endedAt?: number | null;
   errorCount?: number | null;
+  failureReason?: string | null;
   finishedAt?: number | null;
   firstRequestAt?: number | null;
   imageTag?: string | null;
@@ -697,6 +698,7 @@ export interface ObservabilityDeployment {
   deploymentStamp: string | null;
   durationMs: number | null;
   errorCount: number;
+  failureReason: string | null;
   lastRequestAt: number | null;
   runtimeState: 'active' | 'standby' | null;
   requestCount: number;

@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
 const {
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
@@ -2863,6 +2864,121 @@ test('runDeployWatchIteration waits instead of retrying while a deployment build
     assert.equal(result.activeDeployment?.ownerPid, 9876);
     assert.equal(result.deployments.length, 1);
     assert.equal(readDeploymentHistory(paths, fs).length, 1);
+    assert.ok(
+      calls.every(
+        (call) =>
+          call !==
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration terminates a timed-out deployment build lock', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-timeout-deploy-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const signals = [];
+  const startedAt = 1000;
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        commitSubject: 'Current deployment',
+        deploymentKind: 'promotion',
+        lockToken: 'timeout-token',
+        ownerPid: 9876,
+        startedAt,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        env: { PATH: process.env.PATH },
+        fsImpl: fs,
+        log: {
+          info() {},
+          warn() {},
+        },
+        now: () => startedAt + DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS + 1,
+        paths,
+        processImpl: {
+          kill(pid, signal) {
+            if (pid !== 9876) {
+              const error = new Error('missing');
+              error.code = 'ESRCH';
+              throw error;
+            }
+
+            signals.push(signal ?? 0);
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+    assert.equal(result.status, 'deploy-failed');
+    assert.deepEqual(signals, [0, 'SIGTERM']);
+    assert.equal(readDeploymentBuildLock(paths, fs), null);
+    assert.equal(history[0].status, 'failed');
+    assert.equal(history[0].commitShortHash, 'bbb222');
+    assert.match(history[0].failureReason, /exceeded 30m/iu);
     assert.ok(
       calls.every(
         (call) =>

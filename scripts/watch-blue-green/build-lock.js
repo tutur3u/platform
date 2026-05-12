@@ -7,8 +7,10 @@ const { getWatchPaths } = require('./paths.js');
 
 const DEPLOYMENT_BUILD_LOCK_TOKEN_ENV = 'DOCKER_WEB_DEPLOYMENT_LOCK_TOKEN';
 const CANCEL_ACTIVE_BUILD_ENV = 'DOCKER_WEB_CANCEL_ACTIVE_BUILD';
+const DEPLOYMENT_BUILD_TIMEOUT_MS_ENV = 'DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS';
 const DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV =
   'DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS';
+const DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS = 8 * 60 * 60 * 1000;
 const ACTIVE_DEPLOYMENT_STATUSES = new Set(['building', 'deploying']);
 
@@ -110,6 +112,20 @@ function getDeploymentLockStaleAfterMs(env = process.env) {
   const raw = env?.[DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV];
   if (raw == null || String(raw).trim() === '') {
     return DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS;
+  }
+
+  const parsed = Number.parseInt(String(raw).trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function getDeploymentBuildTimeoutMs(env = process.env) {
+  const raw = env?.[DEPLOYMENT_BUILD_TIMEOUT_MS_ENV];
+  if (raw == null || String(raw).trim() === '') {
+    return DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS;
   }
 
   const parsed = Number.parseInt(String(raw).trim(), 10);
@@ -342,6 +358,67 @@ function isDeploymentBuildLockBlocking(
 function isDeploymentBuildLockLive(lock, processImpl = process) {
   const pid = Number(lock?.ownerPid ?? lock?.pid);
   return isProcessAlive(pid, processImpl);
+}
+
+/**
+ * Terminates a live deployment build owner after the watcher timeout elapses.
+ * This is deliberately separate from stale-lock invalidation: stale cleanup is
+ * conservative and lock-only, while timeout handling actively stops a build
+ * that is still recorded as in progress.
+ */
+function tryTerminateTimedOutDeploymentBuildLock(
+  lock,
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = () => Date.now(),
+    paths = getWatchPaths(),
+    processImpl = process,
+    signal = 'SIGTERM',
+  } = {}
+) {
+  if (!lock) {
+    return { action: 'none', elapsedMs: 0, lock: null, timeoutMs: null };
+  }
+
+  const timeoutMs = getDeploymentBuildTimeoutMs(env);
+  const startedAt = Number(lock?.startedAt);
+  const elapsedMs = Number.isFinite(startedAt)
+    ? Math.max(0, now() - startedAt)
+    : 0;
+
+  if (timeoutMs == null || elapsedMs <= timeoutMs) {
+    return { action: 'none', elapsedMs, lock, timeoutMs };
+  }
+
+  const pid = Number(lock.ownerPid ?? lock.pid);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'cleared', elapsedMs, lock, timeoutMs };
+  }
+
+  if (pid === processImpl.pid) {
+    return { action: 'self', elapsedMs, lock, timeoutMs };
+  }
+
+  const aliveState = signalPidZero(pid, processImpl);
+  if (aliveState === 'dead') {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'cleared', elapsedMs, lock, timeoutMs };
+  }
+
+  try {
+    processImpl.kill(pid, signal);
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'terminated', elapsedMs, lock, signal, timeoutMs };
+  } catch (error) {
+    if (error?.code === 'ESRCH') {
+      clearDeploymentBuildLock({ fsImpl, paths });
+      return { action: 'cleared', elapsedMs, lock, timeoutMs };
+    }
+
+    return { action: 'failed', elapsedMs, error, lock, timeoutMs };
+  }
 }
 
 function createDeploymentBuildLock({
@@ -598,7 +675,9 @@ function describeActiveDeploymentConflict(conflict) {
 module.exports = {
   ACTIVE_DEPLOYMENT_STATUSES,
   CANCEL_ACTIVE_BUILD_ENV,
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DEPLOYMENT_BUILD_TIMEOUT_MS_ENV,
   DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
@@ -609,6 +688,7 @@ module.exports = {
   deploymentLockMatchesProcessCmdline,
   getActiveDeploymentConflict,
   getActiveDeploymentFromStatus,
+  getDeploymentBuildTimeoutMs,
   getDeploymentLockStaleAfterMs,
   isActiveDeploymentStatus,
   isDeploymentBuildLockBlocking,
@@ -618,5 +698,6 @@ module.exports = {
   readLinuxProcessCmdline,
   releaseDeploymentBuildLock,
   tryInvalidateStaleDeploymentBuildLock,
+  tryTerminateTimedOutDeploymentBuildLock,
   writeDeploymentBuildLock,
 };

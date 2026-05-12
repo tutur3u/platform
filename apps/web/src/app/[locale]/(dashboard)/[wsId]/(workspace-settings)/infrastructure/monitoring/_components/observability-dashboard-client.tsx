@@ -21,6 +21,7 @@ import {
   RefreshCw,
   Search,
   Trash2,
+  TriangleAlert,
 } from '@tuturuuu/icons';
 import {
   type CronExecutionRecord,
@@ -943,10 +944,12 @@ function RequestRow({ request }: { request: ObservabilityRequest }) {
 
 function DeploymentRow({
   deployment,
+  failureCauseLabel,
   now,
   stateLabels,
 }: {
   deployment: ObservabilityDeployment;
+  failureCauseLabel: string;
   now: number;
   stateLabels: Record<
     'building' | 'deploying' | 'error' | 'queued' | 'ready',
@@ -958,48 +961,69 @@ function DeploymentRow({
     state.tone === 'amber' ? getElapsedTime(deployment, now) : null;
   const hash =
     deployment.commitShortHash ?? deployment.commitHash?.slice(0, 10) ?? '-';
+  const failureReason =
+    state.tone === 'red' && deployment.failureReason
+      ? deployment.failureReason
+      : null;
 
   return (
-    <div className="grid h-full grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] items-center gap-4 border-border/50 border-b px-4 py-3 text-sm">
-      <div className="min-w-0">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="shrink-0 rounded border border-border/70 bg-muted/30 px-1.5 py-0.5 font-mono text-muted-foreground text-xs">
-            {hash}
-          </span>
-          <span className="truncate font-semibold">
-            {deployment.commitSubject ?? tFallbackDeployment(deployment)}
+    <div className="h-full border-border/50 border-b px-4 py-3 text-sm">
+      <div className="grid grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] items-center gap-4">
+        <div className="min-w-0">
+          <div className="flex min-w-0 items-center gap-2">
+            <span className="shrink-0 rounded border border-border/70 bg-muted/30 px-1.5 py-0.5 font-mono text-muted-foreground text-xs">
+              {hash}
+            </span>
+            <span className="truncate font-semibold">
+              {deployment.commitSubject ?? tFallbackDeployment(deployment)}
+            </span>
+          </div>
+          <p className="mt-1 truncate font-mono text-muted-foreground text-xs">
+            {deployment.deploymentStamp ??
+              deployment.color ??
+              deployment.commitHash ??
+              'unknown'}
+          </p>
+        </div>
+        <div className="min-w-0">
+          <span
+            className={cn(
+              'inline-flex items-center gap-2 font-medium',
+              toneClasses[state.tone].text
+            )}
+          >
+            <span
+              className={cn(
+                'h-2 w-2 rounded-full',
+                toneClasses[state.tone].dot
+              )}
+            />
+            {state.label}
           </span>
         </div>
-        <p className="mt-1 truncate font-mono text-muted-foreground text-xs">
-          {deployment.deploymentStamp ??
-            deployment.color ??
-            deployment.commitHash ??
-            'unknown'}
-        </p>
-      </div>
-      <div className="min-w-0">
-        <span
-          className={cn(
-            'inline-flex items-center gap-2 font-medium',
-            toneClasses[state.tone].text
-          )}
-        >
-          <span
-            className={cn('h-2 w-2 rounded-full', toneClasses[state.tone].dot)}
-          />
-          {state.label}
+        <span className="font-mono text-muted-foreground text-xs">
+          {elapsed ?? formatDuration(deployment.durationMs)}
+        </span>
+        <span>{formatNumber(deployment.requestCount)}</span>
+        <span className="text-dynamic-red">
+          {formatNumber(deployment.errorCount)}
+        </span>
+        <span className="text-muted-foreground text-xs">
+          {formatTime(deployment.lastRequestAt)}
         </span>
       </div>
-      <span className="font-mono text-muted-foreground text-xs">
-        {elapsed ?? formatDuration(deployment.durationMs)}
-      </span>
-      <span>{formatNumber(deployment.requestCount)}</span>
-      <span className="text-dynamic-red">
-        {formatNumber(deployment.errorCount)}
-      </span>
-      <span className="text-muted-foreground text-xs">
-        {formatTime(deployment.lastRequestAt)}
-      </span>
+
+      {failureReason ? (
+        <div className="mt-3 flex gap-2 rounded-md border border-dynamic-red/25 bg-dynamic-red/5 px-3 py-2 text-dynamic-red text-xs">
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="min-w-0">
+            <p className="font-medium">{failureCauseLabel}</p>
+            <p className="mt-1 line-clamp-2 whitespace-pre-wrap font-mono text-[11px] text-foreground">
+              {failureReason}
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -2447,7 +2471,7 @@ export function ObservabilityDashboardClient({
           ) : (
             <VirtualizedList
               empty={t('empty.deployments')}
-              estimateRowHeight={78}
+              estimateRowHeight={132}
               hasMore={deploymentsQuery.hasNextPage}
               isFetchingMore={deploymentsQuery.isFetchingNextPage}
               items={deployments}
@@ -2455,6 +2479,7 @@ export function ObservabilityDashboardClient({
               renderRow={(deployment) => (
                 <DeploymentRow
                   deployment={deployment}
+                  failureCauseLabel={t('deployments.failure_cause')}
                   key={
                     deployment.commitHash ??
                     deployment.deploymentStamp ??

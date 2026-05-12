@@ -1857,6 +1857,7 @@
       },
       "deployments": {
         "description": "Deployment stamps grouped by request traffic and server errors.",
+        "failure_cause": "Failure cause",
         "title": "Deployments"
       },
       "empty": {

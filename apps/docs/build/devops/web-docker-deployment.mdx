@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-12'
+updatedAt: '2026-05-13'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -410,6 +410,12 @@ deployment kind, and a re-entrant token for nested helper calls).
   a failed deploy attempt. Recovered pending handoffs, reconcile builds, standby
   refreshes, platform promotions, and imported Infrastructure project builds all
   defer behind the same lock so only one deployment build runs across the stack.
+- The watcher also treats a build lock older than 30 minutes as a timed-out
+  build. It sends `SIGTERM` to the recorded deployment PID, clears the lock,
+  records a failed deployment history row with the timeout reason, and waits
+  until the next polling cycle before retrying. Override the window with
+  `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS`; set it to `0` only when an operator
+  explicitly wants to disable watcher-side build termination.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
   --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
   If the build still exits with `bun install --frozen-lockfile` **exit code 1**
@@ -508,7 +514,11 @@ How it works:
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
   build dependency graph, caps the web app's V8 heap at 8 GB (same
   `--max-old-space-size` target as local `build`), and still uses the Turbopack
-  production build.
+  production build. The Docker `builder` stage is based on
+  `node:22-bookworm-slim` and copies the Bun binary in only for workspace script
+  orchestration, so the actual `next build` process runs under real Node instead
+  of Bun's `node` shim. This avoids Bun runtime crashes while loading native
+  Next SWC modules.
 - Docker standalone Next builds default static page generation to a 180 second
   timeout, static generation concurrency capped at 8, and Next build CPU count
   capped at 8. This avoids false `Failed to build ... because it took more than 60
@@ -548,6 +558,11 @@ Operational notes:
 - If BuildKit reports `CACHED ERROR` after a failed deps stage, or if the
   compose build exceeds `DOCKER_WEB_BUILD_TIMEOUT_MS` (default 45 minutes), the
   helper uses the same one-time cache recovery and fresh `--no-cache` retry.
+- If a deployment fails during the build, the watcher captures the actionable
+  failure lines into the retained deployment history as `failureReason`. The
+  Infrastructure → Monitoring → Deployments page and rollout ledger display that
+  reason inline so operators do not need to reconstruct failures from a terminal
+  scrollback.
 
 ## Redis Profile
 
