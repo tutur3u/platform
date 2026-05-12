@@ -991,6 +991,7 @@ test('manual blue-green conflict refusal reports the active deployment', async (
       fsImpl: fs,
       now: () => 5000,
       paths,
+      platform: 'darwin',
       processImpl,
     });
     assert.match(describeActiveDeploymentConflict(conflict), /commit=abc123/);
@@ -1004,6 +1005,7 @@ test('manual blue-green conflict refusal reports the active deployment', async (
           now: () => 5000,
           parsed: { cancelActiveBuild: false },
           paths,
+          platform: 'darwin',
           processImpl,
           runCommand: async () => ({
             code: 0,
@@ -1068,6 +1070,7 @@ test('manual blue-green override cancels active build and records history', asyn
       now: () => 5000,
       parsed: { cancelActiveBuild: true },
       paths,
+      platform: 'darwin',
       processImpl,
       runCommand: async (command, args) => {
         calls.push([command, args]);

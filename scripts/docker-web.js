@@ -349,6 +349,7 @@ function getActiveDeploymentConflict({
   fsImpl = fs,
   now = () => Date.now(),
   paths = getWatchPaths(),
+  platform,
   processImpl = process,
 } = {}) {
   let lock = readDeploymentBuildLock(paths, fsImpl);
@@ -358,6 +359,7 @@ function getActiveDeploymentConflict({
       fsImpl,
       now,
       paths,
+      platform,
       processImpl,
     });
     lock = readDeploymentBuildLock(paths, fsImpl);
@@ -365,7 +367,13 @@ function getActiveDeploymentConflict({
 
   if (
     lock &&
-    isDeploymentBuildLockBlocking(lock, { env, fsImpl, now, processImpl })
+    isDeploymentBuildLockBlocking(lock, {
+      env,
+      fsImpl,
+      now,
+      platform,
+      processImpl,
+    })
   ) {
     return {
       elapsedMs: Math.max(0, now() - (lock.startedAt ?? now())),
@@ -529,6 +537,7 @@ async function resolveManualBlueGreenBuildConflict({
   now = () => Date.now(),
   parsed,
   paths = getWatchPaths(),
+  platform,
   processImpl = process,
   rootDir = ROOT_DIR,
   runCommand: run = runCommand,
@@ -539,6 +548,7 @@ async function resolveManualBlueGreenBuildConflict({
     fsImpl,
     now,
     paths,
+    platform,
     processImpl,
   });
 
