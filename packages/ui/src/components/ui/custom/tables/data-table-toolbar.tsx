@@ -10,6 +10,15 @@ import { DataTableCreateButton } from './data-table-create-button';
 import { DataTableRefreshButton } from './data-table-refresh-button';
 import { DataTableViewOptions } from './data-table-view-options';
 
+type DataTableExtraColumn = {
+  id: string;
+  name?: string;
+};
+
+type DataTableTranslator = ((key: string) => string) & {
+  has?: (key: string) => boolean;
+};
+
 interface DataTableToolbarProps<TData> {
   hasData: boolean;
   newObjectTitle?: string;
@@ -17,11 +26,11 @@ interface DataTableToolbarProps<TData> {
   namespace: string | undefined;
   table: Table<TData>;
   filters?: ReactNode[] | ReactNode;
-  extraColumns?: any[];
+  extraColumns?: DataTableExtraColumn[];
   defaultQuery?: string;
   disableSearch?: boolean;
   isFiltered?: boolean;
-  t?: any;
+  t?: DataTableTranslator;
   importContent?: ReactNode;
   exportContent?: ReactNode;
   /** Custom toolbar actions rendered directly (not wrapped in dialogs) */
