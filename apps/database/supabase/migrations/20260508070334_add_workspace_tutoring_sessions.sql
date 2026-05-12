@@ -46,6 +46,63 @@ create trigger workspace_tutoring_sessions_updated_at
   for each row
   execute function public.update_updated_at_column();
 
+create or replace function public.enforce_workspace_tutoring_session_scope()
+returns trigger
+language plpgsql
+as $$
+begin
+  if not exists (
+    select 1
+    from public.workspace_user_groups group_row
+    where group_row.id = new.group_id
+      and group_row.ws_id = new.ws_id
+  ) then
+    raise exception 'group_id does not belong to ws_id';
+  end if;
+
+  if not exists (
+    select 1
+    from public.workspace_users student_row
+    where student_row.id = new.student_user_id
+      and student_row.ws_id = new.ws_id
+  ) then
+    raise exception 'student_user_id does not belong to ws_id';
+  end if;
+
+  if new.teacher_user_id is not null and not exists (
+    select 1
+    from public.workspace_users teacher_row
+    where teacher_row.id = new.teacher_user_id
+      and teacher_row.ws_id = new.ws_id
+  ) then
+    raise exception 'teacher_user_id does not belong to ws_id';
+  end if;
+
+  if new.source_feedback_id is not null and not exists (
+    select 1
+    from public.user_feedbacks feedback_row
+    join public.workspace_users feedback_user
+      on feedback_user.id = feedback_row.user_id
+    where feedback_row.id = new.source_feedback_id
+      and feedback_row.group_id = new.group_id
+      and feedback_row.user_id = new.student_user_id
+      and feedback_user.ws_id = new.ws_id
+  ) then
+    raise exception 'source_feedback_id does not belong to ws_id/group/student';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists workspace_tutoring_sessions_scope_guard
+  on public.workspace_tutoring_sessions;
+
+create trigger workspace_tutoring_sessions_scope_guard
+  before insert or update on public.workspace_tutoring_sessions
+  for each row
+  execute function public.enforce_workspace_tutoring_session_scope();
+
 alter table public.workspace_tutoring_sessions enable row level security;
 
 drop policy if exists "Allow workspace members to view tutoring sessions"
