@@ -106,6 +106,24 @@ function createFixtureRoot() {
   return rootDir;
 }
 
+function readWorkflowJobBlock(workflowName, jobName) {
+  const source = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', workflowName),
+    'utf8'
+  );
+  const lines = source.split('\n');
+  const start = lines.indexOf(`  ${jobName}:`);
+
+  assert.notEqual(start, -1, `Expected ${workflowName} to define ${jobName}`);
+
+  const nextJob = lines.findIndex(
+    (line, index) => index > start && /^ {2}[A-Za-z0-9_-]+:$/.test(line)
+  );
+  const end = nextJob === -1 ? lines.length : nextJob;
+
+  return lines.slice(start, end).join('\n');
+}
+
 function runWorkflowDecision({
   changedFiles,
   eventName = 'push',
@@ -265,6 +283,33 @@ test('workflow_dispatch bypasses affected gating', () => {
     },
     true
   );
+});
+
+test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () => {
+  const prepareJob = readWorkflowJobBlock(
+    'release-sdk-package.yaml',
+    'prepare-publish-npm'
+  );
+  const publishJob = readWorkflowJobBlock(
+    'release-sdk-package.yaml',
+    'publish-npm'
+  );
+
+  assert.doesNotMatch(prepareJob, /id-token:\s*write/);
+  assert.match(prepareJob, /npm pack --pack-destination/);
+  assert.match(prepareJob, /actions\/upload-artifact@/);
+
+  assert.match(publishJob, /id-token:\s*write/);
+  assert.match(publishJob, /actions\/download-artifact@/);
+  assert.match(publishJob, /Verify package artifact/);
+  assert.match(
+    publishJob,
+    /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
+  );
+  assert.doesNotMatch(publishJob, /actions\/checkout@/);
+  assert.doesNotMatch(publishJob, /setup-bun/);
+  assert.doesNotMatch(publishJob, /\bbun install\b/);
+  assert.doesNotMatch(publishJob, /\bnpm install\b/);
 });
 
 test('disabled ci entries still skip regardless of affected status', () => {
