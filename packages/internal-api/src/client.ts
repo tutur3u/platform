@@ -21,6 +21,16 @@ export type InternalApiClientOptions = {
 
 type HeaderAccessor = Pick<Headers, 'get'>;
 
+export class InternalApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number
+  ) {
+    super(message);
+    this.name = 'InternalApiError';
+  }
+}
+
 function tryParseAbsoluteUrl(value: string): URL | null {
   try {
     return new URL(value);
@@ -191,7 +201,7 @@ export function createInternalApiClient(
           message = fallbackMessage;
         }
 
-        throw new Error(message);
+        throw new InternalApiError(message, response.status);
       }
 
       if (response.status === 204) {

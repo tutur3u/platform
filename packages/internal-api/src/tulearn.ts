@@ -344,6 +344,7 @@ export interface SharedCourseContentResponse {
     extra_content: unknown;
     youtube_links: string[] | null;
     group_id: string;
+    module_group_id: string;
     created_at: string;
     is_public: boolean;
     is_published: boolean;
@@ -359,10 +360,10 @@ export async function getSharedCourseContent(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<SharedCourseContentResponse>(
-    `/api/v1/course?courseId=${encodePathSegment(courseId)}`,
-    { cache: 'no-store' }
-  );
+  return client.json<SharedCourseContentResponse>('/api/v1/course', {
+    cache: 'no-store',
+    query: { courseId },
+  });
 }
 
 export interface CourseListItem {
@@ -378,13 +379,14 @@ export interface CourseListResponse {
   courses: CourseListItem[];
 }
 
-export async function listCourses(
+export async function listSharedCourses(
   wsId: string,
+  studentId?: string | null,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<CourseListResponse>(
-    `/api/v1/course?wsId=${encodePathSegment(wsId)}`,
-    { cache: 'no-store' }
-  );
+  return client.json<CourseListResponse>('/api/v1/course', {
+    cache: 'no-store',
+    query: { ...studentQuery(studentId), wsId },
+  });
 }

@@ -74,6 +74,7 @@ export type {
 export {
   createInternalApiClient,
   getConfiguredInternalApiBaseUrl,
+  InternalApiError,
   internalApiClient,
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
@@ -380,7 +381,7 @@ export {
   getTulearnCourseModule,
   getTulearnHome,
   getTulearnPractice,
-  listCourses,
+  listSharedCourses,
   listTulearnAssignments,
   listTulearnCourses,
   listTulearnMarks,
