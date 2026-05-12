@@ -41,6 +41,7 @@ function StatChip({
 export function CourseGroupCard({
   course,
   index,
+  wsId,
 }: {
   course: CourseGroupItem;
   index: number;
@@ -52,7 +53,7 @@ export function CourseGroupCard({
 
   const remaining = course.totalModules - course.completedModules;
   const isComplete = course.progress >= 100;
-  const courseHref = `/modules/${course.id}`;
+  const courseHref = `/${wsId}/modules/${course.id}`;
 
   return (
     <BrutalCard className="flex flex-col overflow-hidden p-0">
