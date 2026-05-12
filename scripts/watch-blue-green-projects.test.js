@@ -1,8 +1,16 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const test = require('node:test');
+const {
+  writeDeploymentBuildLock,
+} = require('./watch-blue-green/build-lock.js');
+const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
   DEFAULT_PLATFORM_BRANCH,
   normalizeProjectBranch,
+  processManagedInfrastructureProjects,
   renderManagedProjectCompose,
   renderManagedProjectProxyServerBlocks,
   resolvePlatformProjectTarget,
@@ -82,6 +90,101 @@ test('resolvePlatformProjectTarget switches a clean branch mismatch', async () =
     ['git', ['fetch', 'origin', 'production']],
     ['git', ['checkout', 'production']],
   ]);
+});
+
+test('processManagedInfrastructureProjects defers while a deployment build lock is active', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'managed-project-active-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'abc123',
+        commitShortHash: 'abc123',
+        commitSubject: 'Platform deploy',
+        deploymentKind: 'promotion',
+        lockToken: 'active-token',
+        ownerPid: 2468,
+        startedAt: 1000,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const sql = async (strings) => {
+      const query = strings.join('');
+
+      if (query.includes('FROM infrastructure_projects')) {
+        return [
+          {
+            app_root: '',
+            auto_deploy_enabled: true,
+            cron_enabled: false,
+            deployment_status: 'queued',
+            github_owner: 'tutur3u',
+            github_repo: 'example',
+            hostnames: ['example.tuturuuu.com'],
+            id: 'example',
+            latest_commit_hash: null,
+            latest_commit_short_hash: null,
+            latest_commit_subject: null,
+            log_drain_enabled: true,
+            metadata: {},
+            port: 3000,
+            redis_enabled: true,
+            repo_url: 'https://github.com/tutur3u/example.git',
+            selected_branch: 'main',
+          },
+        ];
+      }
+
+      throw new Error(`Unexpected SQL: ${query}`);
+    };
+    sql.end = async () => {};
+
+    const results = await processManagedInfrastructureProjects({
+      env: { PLATFORM_LOG_DRAIN_DATABASE_URL: 'postgres://local/test' },
+      fsImpl: fs,
+      now: () => 2000,
+      paths,
+      postgresFactory: () => sql,
+      processImpl: {
+        kill(pid) {
+          if (pid !== 2468) {
+            const error = new Error('missing');
+            error.code = 'ESRCH';
+            throw error;
+          }
+        },
+        pid: 1357,
+      },
+      rootDir: tempDir,
+      runCommand: async () => {
+        throw new Error('managed project deploy should not run');
+      },
+    });
+
+    assert.deepEqual(results, [
+      {
+        activeDeployment: {
+          command: 'bun serve:web:docker:bg',
+          commitHash: 'abc123',
+          commitShortHash: 'abc123',
+          commitSubject: 'Platform deploy',
+          deploymentKind: 'promotion',
+          lockToken: 'active-token',
+          ownerPid: 2468,
+          startedAt: 1000,
+        },
+        projectId: 'example',
+        status: 'deferred',
+      },
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('resolvePlatformProjectTarget allows manual queued deployment when auto deploy is disabled', async () => {

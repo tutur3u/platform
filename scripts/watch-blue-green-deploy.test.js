@@ -829,6 +829,58 @@ test('acquireWatchLock writes a PID-backed lock and releaseWatchLock removes it'
   }
 });
 
+test('releaseWatchLock can preserve target metadata without a stale PID', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-lock-preserve-target-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const processImpl = {
+    kill(pid) {
+      if (pid !== 4321) {
+        const error = new Error('missing');
+        error.code = 'ESRCH';
+        throw error;
+      }
+    },
+    pid: 4321,
+  };
+
+  try {
+    acquireWatchLock(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        fsImpl: fs,
+        paths,
+        processImpl,
+      }
+    );
+
+    releaseWatchLock({
+      fsImpl: fs,
+      now: () => 1234,
+      paths,
+      preserveTarget: true,
+      processImpl,
+    });
+
+    assert.deepEqual(readWatchLock(paths), {
+      branch: 'production',
+      createdAt: readWatchLock(paths).createdAt,
+      releasedAt: 1234,
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    });
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('acquireWatchLock rejects a live existing watcher', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-lock-live-'));
   const paths = getWatchPaths(tempDir);
@@ -2713,6 +2765,114 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
     'bbb222222222222222222'
   );
   assert.equal(result.status, 'deployed');
+});
+
+test('runDeployWatchIteration waits instead of retrying while a deployment build is active', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-active-deploy-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        commitSubject: 'Current deployment',
+        deploymentKind: 'promotion',
+        lockToken: 'active-token',
+        ownerPid: 9876,
+        startedAt: 1000,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        env: { PATH: process.env.PATH },
+        fsImpl: fs,
+        log: {
+          info() {},
+          warn() {},
+        },
+        now: () => 2000,
+        paths,
+        processImpl: {
+          kill(pid) {
+            if (pid !== 9876) {
+              const error = new Error('missing');
+              error.code = 'ESRCH';
+              throw error;
+            }
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    assert.equal(result.status, 'deployment-active');
+    assert.equal(result.activeDeployment?.ownerPid, 9876);
+    assert.equal(result.deployments.length, 1);
+    assert.equal(readDeploymentHistory(paths, fs).length, 1);
+    assert.ok(
+      calls.every(
+        (call) =>
+          call !==
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
@@ -5779,6 +5939,232 @@ test('main skips recovery deploys when the latest successful build already match
       false
     );
     assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main checks out production when startup is detached and no target lock remains', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-detached-no-lock-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+  let checkedOutBranch = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult(checkedOutBranch ? 'production\n' : 'HEAD\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('', {
+            code: 1,
+            stderr: 'fatal: HEAD has no upstream configured\n',
+          });
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git checkout production') {
+          checkedOutBranch = true;
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin production') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git rev-parse origin/production') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRecover production\n2026-05-12T15:23:00.000Z\n'
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error(message) {
+          throw new Error(message);
+        },
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('git checkout production'));
+    assert.ok(calls.includes('git fetch origin production'));
+    assert.equal(readWatchLock(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main recovers the locked branch from target metadata when the checkout is detached', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-detached-lock-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+  let checkedOutBranch = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(
+        {
+          branch: 'production',
+          releasedAt: 1000,
+          remote: 'origin',
+          upstreamBranch: 'production',
+          upstreamRef: 'origin/production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_CONTAINER_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      now: () => 2000,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult(checkedOutBranch ? 'production\n' : 'HEAD\n');
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git checkout production') {
+          checkedOutBranch = true;
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin production') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git rev-parse origin/production') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nStay on production\n2026-05-12T15:22:00.000Z\n'
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error(message) {
+          throw new Error(message);
+        },
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('git checkout production'));
+    assert.ok(calls.includes('git fetch origin production'));
+    assert.equal(
+      calls.includes('git rev-parse --abbrev-ref --symbolic-full-name @{u}'),
+      false
+    );
+    assert.deepEqual(readWatchLock(paths), {
+      branch: 'production',
+      createdAt: readWatchLock(paths).createdAt,
+      releasedAt: 2000,
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    });
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

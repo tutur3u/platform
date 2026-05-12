@@ -87,6 +87,8 @@ const {
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
+  describeActiveDeploymentConflict,
+  getActiveDeploymentConflict,
 } = require('./build-lock.js');
 const {
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
@@ -830,6 +832,64 @@ function logRetryLimitOnce(message, commitHash, { fsImpl, log, paths }) {
   }
 
   log.warn?.(message);
+}
+
+function getActiveDeploymentConflictKey(conflict) {
+  const lock = conflict?.lock ?? {};
+
+  return [
+    conflict?.source ?? 'unknown',
+    conflict?.status ?? 'unknown',
+    lock.ownerPid ?? 'unknown',
+    lock.command ?? 'unknown',
+    lock.deploymentKind ?? 'unknown',
+    lock.commitHash ?? lock.commitShortHash ?? 'unknown',
+    lock.startedAt ?? 'unknown',
+  ].join('|');
+}
+
+function getConflictFromDeploymentBuildLockError(
+  error,
+  now = () => Date.now()
+) {
+  return {
+    elapsedMs: Math.max(0, now() - (error?.lock?.startedAt ?? now())),
+    lock: error?.lock ?? null,
+    source: 'lock',
+    status: 'building',
+  };
+}
+
+function createDeploymentActiveResult(conflict, result = {}) {
+  return {
+    ...result,
+    activeDeployment: conflict?.lock ?? null,
+    activeDeploymentKey: getActiveDeploymentConflictKey(conflict),
+    activeDeploymentSource: conflict?.source ?? null,
+    activeDeploymentStatus: conflict?.status ?? null,
+    status: 'deployment-active',
+  };
+}
+
+function hasReportedActiveDeploymentConflict(conflict, { fsImpl, paths }) {
+  const lastResult = readWatchStatus(paths, fsImpl)?.lastResult;
+
+  return (
+    lastResult?.status === 'deployment-active' &&
+    lastResult?.activeDeploymentKey === getActiveDeploymentConflictKey(conflict)
+  );
+}
+
+function logActiveDeploymentDeferralOnce(
+  message,
+  conflict,
+  { fsImpl, log, paths }
+) {
+  if (hasReportedActiveDeploymentConflict(conflict, { fsImpl, paths })) {
+    return;
+  }
+
+  log.info?.(`${message} (${describeActiveDeploymentConflict(conflict)}).`);
 }
 
 function hasSuccessfulDeploymentForCommit(deployments = [], commitHash) {
@@ -2274,6 +2334,28 @@ async function runPinnedDeploymentIteration(
       history
     );
   } catch (error) {
+    if (error instanceof DeploymentBuildLockConflictError) {
+      const activeConflict = getConflictFromDeploymentBuildLockError(
+        error,
+        now
+      );
+
+      logActiveDeploymentDeferralOnce(
+        `Pinned rollback for ${latestCommit.shortHash} is waiting because another deployment is already active`,
+        activeConflict,
+        { fsImpl, log, paths }
+      );
+
+      return attachRuntime(
+        createDeploymentActiveResult(activeConflict, {
+          checkedAt,
+          error,
+          latestCommit,
+          pinnedFromCommitHash: latestDeployedCommitHash,
+        })
+      );
+    }
+
     const deployFinishedAt = now();
     const history = appendDeploymentHistory(
       {
@@ -2322,6 +2404,7 @@ async function runDeployWatchIteration(
     now = () => Date.now(),
     onDeploymentStart = () => {},
     paths = getWatchPaths(),
+    processImpl = process,
     platformProjectDeploymentStatusUpdater = updatePlatformProjectDeploymentStatus,
     platformProjectReader = readPlatformProject,
     rootDir = ROOT_DIR,
@@ -2352,6 +2435,26 @@ async function runDeployWatchIteration(
       })),
     };
   };
+  const activeDeploymentConflict = getActiveDeploymentConflict({
+    env,
+    fsImpl,
+    now,
+    paths,
+    processImpl,
+  });
+
+  if (activeDeploymentConflict) {
+    logActiveDeploymentDeferralOnce(
+      'Skipping watcher deployment poll because another deployment is already active',
+      activeDeploymentConflict,
+      { fsImpl, log, paths }
+    );
+
+    return attachRuntime(
+      createDeploymentActiveResult(activeDeploymentConflict, { checkedAt })
+    );
+  }
+
   const deploymentPin = readDeploymentPin(paths, fsImpl);
 
   if (deploymentPin) {
@@ -2526,25 +2629,35 @@ async function runDeployWatchIteration(
             });
 
             if (fb.buildLockConflict) {
+              const activeConflict = getConflictFromDeploymentBuildLockError(
+                fb.error,
+                now
+              );
               await updatePlatformProjectStatus({
                 latestCommit: parentDeploy,
                 metadata: {
-                  error:
+                  deferredAt: new Date(now()).toISOString(),
+                  deferredReason:
                     fb.error instanceof Error
                       ? fb.error.message
                       : String(fb.error),
-                  failedAt: new Date(now()).toISOString(),
                 },
-                status: 'failed',
+                status: 'queued',
               });
+              logActiveDeploymentDeferralOnce(
+                `Queued parent-fallback platform deployment for ${parentDeploy.shortHash} is waiting because another deployment is already active`,
+                activeConflict,
+                { fsImpl, log, paths }
+              );
 
-              return attachRuntime({
-                branchTipCommit: latestCommit,
-                checkedAt,
-                error: fb.error,
-                latestCommit: parentDeploy,
-                status: 'deploy-failed',
-              });
+              return attachRuntime(
+                createDeploymentActiveResult(activeConflict, {
+                  branchTipCommit: latestCommit,
+                  checkedAt,
+                  error: fb.error,
+                  latestCommit: parentDeploy,
+                })
+              );
             }
 
             if (!fb.success) {
@@ -2758,6 +2871,35 @@ async function runDeployWatchIteration(
             history
           );
         } catch (error) {
+          if (error instanceof DeploymentBuildLockConflictError) {
+            const activeConflict = getConflictFromDeploymentBuildLockError(
+              error,
+              now
+            );
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                deferredAt: new Date(now()).toISOString(),
+                deferredReason:
+                  error instanceof Error ? error.message : String(error),
+              },
+              status: 'queued',
+            });
+            logActiveDeploymentDeferralOnce(
+              `Queued platform deployment for ${latestCommit.shortHash} is waiting because another deployment is already active`,
+              activeConflict,
+              { fsImpl, log, paths }
+            );
+
+            return attachRuntime(
+              createDeploymentActiveResult(activeConflict, {
+                checkedAt,
+                error,
+                latestCommit,
+              })
+            );
+          }
+
           const deployFinishedAt = now();
           const history = appendDeploymentHistory(
             {
@@ -2938,14 +3080,25 @@ async function runDeployWatchIteration(
           });
 
           if (fb.buildLockConflict) {
-            return attachRuntime({
-              branchTipCommit: latestCommit,
-              checkedAt,
-              error: fb.error,
-              latestCommit: parentDeploy,
-              reconciledFromCommitHash: latestDeployedCommitHash,
-              status: 'deploy-failed',
-            });
+            const activeConflict = getConflictFromDeploymentBuildLockError(
+              fb.error,
+              now
+            );
+            logActiveDeploymentDeferralOnce(
+              `Parent-fallback reconciliation for ${parentDeploy.shortHash} is waiting because another deployment is already active`,
+              activeConflict,
+              { fsImpl, log, paths }
+            );
+
+            return attachRuntime(
+              createDeploymentActiveResult(activeConflict, {
+                branchTipCommit: latestCommit,
+                checkedAt,
+                error: fb.error,
+                latestCommit: parentDeploy,
+                reconciledFromCommitHash: latestDeployedCommitHash,
+              })
+            );
           }
 
           if (!fb.success) {
@@ -3091,6 +3244,27 @@ async function runDeployWatchIteration(
             history
           );
         } catch (error) {
+          if (error instanceof DeploymentBuildLockConflictError) {
+            const activeConflict = getConflictFromDeploymentBuildLockError(
+              error,
+              now
+            );
+            logActiveDeploymentDeferralOnce(
+              `Reconciliation for ${latestCommit.shortHash} is waiting because another deployment is already active`,
+              activeConflict,
+              { fsImpl, log, paths }
+            );
+
+            return attachRuntime(
+              createDeploymentActiveResult(activeConflict, {
+                checkedAt,
+                error,
+                latestCommit,
+                reconciledFromCommitHash: latestDeployedCommitHash,
+              })
+            );
+          }
+
           const deployFinishedAt = now();
           const history = appendDeploymentHistory(
             {
@@ -3381,6 +3555,26 @@ async function runDeployWatchIteration(
           history
         );
       } catch (error) {
+        if (error instanceof DeploymentBuildLockConflictError) {
+          const activeConflict = getConflictFromDeploymentBuildLockError(
+            error,
+            now
+          );
+          logActiveDeploymentDeferralOnce(
+            `Standby ${standbyRefreshCandidate.standbyColor} refresh for ${latestCommit.shortHash} is waiting because another deployment is already active`,
+            activeConflict,
+            { fsImpl, log, paths }
+          );
+
+          return attachRuntime(
+            createDeploymentActiveResult(activeConflict, {
+              checkedAt,
+              error,
+              latestCommit,
+            })
+          );
+        }
+
         const refreshFinishedAt = now();
         const history = appendDeploymentHistory(
           {
@@ -3574,30 +3768,40 @@ async function runDeployWatchIteration(
           });
 
           if (fb.buildLockConflict) {
+            const activeConflict = getConflictFromDeploymentBuildLockError(
+              fb.error,
+              now
+            );
             if (shouldUpdatePlatformProject) {
               await updatePlatformProjectStatus({
                 latestCommit: parentDeploy,
                 metadata: {
-                  error:
+                  deferredAt: new Date(now()).toISOString(),
+                  deferredReason:
                     fb.error instanceof Error
                       ? fb.error.message
                       : String(fb.error),
-                  failedAt: new Date(now()).toISOString(),
                   parentFallbackFromHead: latestCommit.hash,
                 },
-                status: 'failed',
+                status: 'queued',
               });
             }
+            logActiveDeploymentDeferralOnce(
+              `Parent-fallback deployment for ${parentDeploy.shortHash} is waiting because another deployment is already active`,
+              activeConflict,
+              { fsImpl, log, paths }
+            );
 
-            return attachRuntime({
-              branchTipCommit: latestCommit,
-              checkedAt,
-              error: fb.error,
-              latestCommit: parentDeploy,
-              newHead: updatedHead,
-              oldHead: localHead,
-              status: 'deploy-failed',
-            });
+            return attachRuntime(
+              createDeploymentActiveResult(activeConflict, {
+                branchTipCommit: latestCommit,
+                checkedAt,
+                error: fb.error,
+                latestCommit: parentDeploy,
+                newHead: updatedHead,
+                oldHead: localHead,
+              })
+            );
           }
 
           if (!fb.success) {
@@ -3913,6 +4117,42 @@ async function runDeployWatchIteration(
           history
         );
       } catch (error) {
+        if (error instanceof DeploymentBuildLockConflictError) {
+          const activeConflict = getConflictFromDeploymentBuildLockError(
+            error,
+            now
+          );
+          if (shouldUpdatePlatformProject) {
+            await updatePlatformProjectStatus({
+              latestCommit,
+              metadata: {
+                deferredAt: new Date(now()).toISOString(),
+                deferredReason:
+                  error instanceof Error ? error.message : String(error),
+                oldHead: localHead,
+              },
+              status: 'queued',
+            });
+          }
+          logActiveDeploymentDeferralOnce(
+            `Blue/green deployment for ${updatedHead.slice(0, 12)} is waiting because another deployment is already active`,
+            activeConflict,
+            { fsImpl, log, paths }
+          );
+
+          return attachRuntime(
+            createDeploymentActiveResult(activeConflict, {
+              checkedAt,
+              containerRefreshRequired: false,
+              error,
+              latestCommit,
+              newHead: updatedHead,
+              oldHead: localHead,
+              restartRequired: false,
+            })
+          );
+        }
+
         const deployFinishedAt = now();
         const history = appendDeploymentHistory(
           {
@@ -4022,6 +4262,7 @@ async function runDeployWatchLoop(
     onIterationStart = () => {},
     paths = getWatchPaths(),
     platformProjectReader = readPlatformProject,
+    processImpl = process,
     projectPollIntervalMs = DEFAULT_PROJECT_POLL_INTERVAL_MS,
     rootDir = ROOT_DIR,
     runCommand: run = runCommand,
@@ -4076,7 +4317,11 @@ async function runDeployWatchLoop(
       try {
         const projectResults = await processManagedInfrastructureProjects({
           env,
+          fsImpl,
           log,
+          now,
+          paths,
+          processImpl,
           rootDir,
           runCommand: run,
         });
@@ -4105,6 +4350,7 @@ async function runDeployWatchLoop(
       now,
       onDeploymentStart,
       paths,
+      processImpl,
       rootDir,
       runCommand: run,
     });
@@ -4137,6 +4383,60 @@ async function runDeployWatchLoop(
     }
 
     await sleepImpl(sleepMs);
+  }
+}
+
+async function resolveInitialWatcherTarget({
+  env,
+  fsImpl,
+  log,
+  paths,
+  runCommand: run,
+} = {}) {
+  try {
+    return await resolveLockedBranchTarget({
+      env,
+      fsImpl,
+      paths,
+      runCommand: run,
+    });
+  } catch (error) {
+    const currentBranch = await getCurrentBranchName({
+      env,
+      runCommand: run,
+    }).catch(() => null);
+
+    if (currentBranch !== 'HEAD') {
+      throw error;
+    }
+
+    const hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      env,
+      ignoredPaths: ['bun.lock'],
+      runCommand: run,
+    });
+    const platformProject = await readPlatformProject({ env });
+    const selectedBranch = normalizeProjectBranch(
+      platformProject.selectedBranch
+    );
+
+    if (hasBlockingDirtyWorktree) {
+      throw new Error(
+        `Watcher started from detached HEAD without a persisted target lock, but the worktree has uncommitted changes. Check out ${selectedBranch} manually after preserving those changes.`
+      );
+    }
+
+    log?.warn?.(
+      `Watcher started from detached HEAD without a persisted target lock. Checking out ${selectedBranch} before locking the branch.`
+    );
+    await checkoutBranch(selectedBranch, { env, runCommand: run });
+
+    return {
+      branch: selectedBranch,
+      remote: 'origin',
+      upstreamBranch: selectedBranch,
+      upstreamRef: `origin/${selectedBranch}`,
+    };
   }
 }
 
@@ -4207,6 +4507,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
     released = true;
     releaseWatchLock({
       fsImpl,
+      now: options.now ?? Date.now(),
+      preserveTarget: env[WATCHER_CONTAINER_ENV] === '1',
       paths,
       processImpl,
     });
@@ -4247,9 +4549,10 @@ async function main(argv = process.argv.slice(2), options = {}) {
       };
     }
 
-    const initialTarget = await resolveLockedBranchTarget({
+    const initialTarget = await resolveInitialWatcherTarget({
       env,
       fsImpl,
+      log: ui,
       paths,
       runCommand: run,
     });
@@ -4377,6 +4680,43 @@ async function main(argv = process.argv.slice(2), options = {}) {
           `Recovered watcher is already serving ${latestCommit.shortHash}; skipping the pending deploy handoff.`
         );
       } else {
+        let activeDeploymentConflict = getActiveDeploymentConflict({
+          env,
+          fsImpl,
+          now: options.now ?? (() => Date.now()),
+          paths,
+          processImpl,
+        });
+
+        while (activeDeploymentConflict) {
+          logActiveDeploymentDeferralOnce(
+            'Recovered pending deploy handoff is waiting because another deployment is already active',
+            activeDeploymentConflict,
+            { fsImpl, log: ui, paths }
+          );
+          ui.update({
+            lastResult: createDeploymentActiveResult(activeDeploymentConflict, {
+              checkedAt:
+                typeof options.now === 'function' ? options.now() : Date.now(),
+              latestCommit,
+            }),
+            nextCheckAt: Date.now() + parsed.intervalMs,
+          });
+
+          if (parsed.once) {
+            return;
+          }
+
+          await (options.sleepImpl ?? sleep)(parsed.intervalMs);
+          activeDeploymentConflict = getActiveDeploymentConflict({
+            env,
+            fsImpl,
+            now: options.now ?? (() => Date.now()),
+            paths,
+            processImpl,
+          });
+        }
+
         const deploymentHistory = readDeploymentHistory(paths, fsImpl);
         const failedDeploymentCount = getFailedDeploymentCountForCommit(
           deploymentHistory,
@@ -4459,6 +4799,45 @@ async function main(argv = process.argv.slice(2), options = {}) {
           } catch (error) {
             const deployFinishedAt =
               typeof options.now === 'function' ? options.now() : Date.now();
+            if (error instanceof DeploymentBuildLockConflictError) {
+              const activeConflict = getConflictFromDeploymentBuildLockError(
+                error,
+                options.now ?? (() => Date.now())
+              );
+              const runtimeSnapshot = await loadRuntimeSnapshot({
+                env,
+                envFilePath,
+                fsImpl,
+                now: deployFinishedAt,
+                paths,
+                rootDir,
+                runCommand: run,
+              });
+              const latestDeploymentSummary = getLatestDeploymentSummary(
+                runtimeSnapshot.deployments
+              );
+
+              logActiveDeploymentDeferralOnce(
+                'Recovered pending deploy handoff is waiting because another deployment is already active',
+                activeConflict,
+                { fsImpl, log: ui, paths }
+              );
+              ui.update({
+                currentBlueGreen: runtimeSnapshot.currentBlueGreen,
+                dockerResources: runtimeSnapshot.dockerResources,
+                deployments: runtimeSnapshot.deployments,
+                lastDeployAt: latestDeploymentSummary.lastDeployAt,
+                lastDeployStatus: latestDeploymentSummary.lastDeployStatus,
+                lastResult: createDeploymentActiveResult(activeConflict, {
+                  checkedAt: deployFinishedAt,
+                  error,
+                  latestCommit: deployCommit,
+                }),
+                nextCheckAt: Date.now() + parsed.intervalMs,
+              });
+              return;
+            }
+
             const history = appendDeploymentHistory(
               {
                 buildDurationMs: Math.max(
@@ -4572,6 +4951,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       now: options.now ?? (() => Date.now()),
       once: parsed.once,
       projectPollIntervalMs: DEFAULT_PROJECT_POLL_INTERVAL_MS,
+      processImpl,
       onDeploymentStart: ({ checkedAt, latestCommit, pendingDeployment }) => {
         const currentDeployments = ui.state.deployments ?? [];
         const nextDeployments = prependPendingDeployment(

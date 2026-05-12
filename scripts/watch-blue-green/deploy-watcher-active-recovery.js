@@ -14,6 +14,7 @@ const {
 } = require('./history.js');
 const {
   DeploymentBuildLockConflictError,
+  describeActiveDeploymentConflict,
   readDeploymentBuildLock,
   tryInvalidateStaleDeploymentBuildLock,
 } = require('./build-lock.js');
@@ -229,15 +230,25 @@ module.exports = function createActiveRecovery({
       } catch (error) {
         const activeFinishedAt = now();
         if (error instanceof DeploymentBuildLockConflictError) {
+          const conflict = {
+            elapsedMs: Math.max(0, now() - (error.lock?.startedAt ?? now())),
+            lock: error.lock ?? null,
+            source: 'lock',
+            status: 'building',
+          };
+
           log.warn?.(
-            `Cached blue/green runtime recovery skipped for ${latestCommit.shortHash} due to an active deployment build lock (${error.message}). If no deploy is running, clear tmp/docker-web/watch/blue-green-deployment-build.lock or set DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 on the next manual deploy.`
+            `Cached blue/green runtime recovery skipped for ${latestCommit.shortHash} because another deployment is active (${describeActiveDeploymentConflict(conflict)}).`
           );
 
           return attachRuntime({
+            activeDeployment: conflict.lock,
+            activeDeploymentSource: conflict.source,
+            activeDeploymentStatus: conflict.status,
             checkedAt,
             error,
             latestCommit,
-            status: 'deploy-failed',
+            status: 'deployment-active',
           });
         }
 
@@ -350,15 +361,25 @@ module.exports = function createActiveRecovery({
     } catch (error) {
       const deployFinishedAt = now();
       if (error instanceof DeploymentBuildLockConflictError) {
+        const conflict = {
+          elapsedMs: Math.max(0, now() - (error.lock?.startedAt ?? now())),
+          lock: error.lock ?? null,
+          source: 'lock',
+          status: 'building',
+        };
+
         log.warn?.(
-          `Blue/green runtime recovery skipped for ${latestCommit.shortHash} due to an active deployment build lock (${error.message}). If no deploy is running, clear tmp/docker-web/watch/blue-green-deployment-build.lock or set DOCKER_WEB_CANCEL_ACTIVE_BUILD=1 on the next manual deploy.`
+          `Blue/green runtime recovery skipped for ${latestCommit.shortHash} because another deployment is active (${describeActiveDeploymentConflict(conflict)}).`
         );
 
         return attachRuntime({
+          activeDeployment: conflict.lock,
+          activeDeploymentSource: conflict.source,
+          activeDeploymentStatus: conflict.status,
           checkedAt,
           error,
           latestCommit,
-          status: 'deploy-failed',
+          status: 'deployment-active',
         });
       }
 

@@ -19,6 +19,13 @@ const {
   runChecked,
 } = require('../docker-web/compose.js');
 const { getDockerWebComposeProjectName } = require('../docker-web/env.js');
+const {
+  DeploymentBuildLockConflictError,
+  acquireDeploymentBuildLock,
+  describeActiveDeploymentConflict,
+  getActiveDeploymentConflict,
+} = require('./build-lock.js');
+const { getWatchPaths } = require('./paths.js');
 
 const DEFAULT_PROJECT_POLL_INTERVAL_MS = 60_000;
 function normalizeProjectId(value) {
@@ -719,11 +726,28 @@ async function refreshManagedProjectProxyRoutes({
   return true;
 }
 
+function createManagedProjectCommit(project, currentCommit) {
+  if (!currentCommit) {
+    return null;
+  }
+
+  return {
+    hash: currentCommit,
+    shortHash: currentCommit.slice(0, 12),
+    subject: `${project.github_owner ?? 'unknown'}/${project.github_repo ?? project.id}`,
+  };
+}
+
 async function processManagedInfrastructureProjects({
   env = process.env,
+  fsImpl = fs,
   log = null,
-  postgresFactory = null,
+  now = () => Date.now(),
   rootDir = process.cwd(),
+  paths = getWatchPaths(rootDir),
+  platform,
+  postgresFactory = null,
+  processImpl = process,
   runCommand,
 } = {}) {
   if (typeof runCommand !== 'function') {
@@ -736,18 +760,40 @@ async function processManagedInfrastructureProjects({
       async (sql) => {
         const projects = await readManagedInfrastructureProjectsFromSql(sql);
         const results = [];
+        const activeDeployment = getActiveDeploymentConflict({
+          env,
+          fsImpl,
+          now,
+          paths,
+          platform,
+          processImpl,
+        });
+
+        if (activeDeployment) {
+          log?.info?.(
+            `Skipping managed project deployment poll because another deployment is active (${describeActiveDeploymentConflict(activeDeployment)}).`
+          );
+
+          return projects.map((project) => ({
+            activeDeployment: activeDeployment.lock,
+            projectId: project.id,
+            status: 'deferred',
+          }));
+        }
 
         for (const project of projects) {
           const previousCommit =
             project.metadata?.deployedCommitHash ??
             project.metadata?.lastCheckedCommitHash ??
             null;
+          let currentCommit = null;
+          let heldLock = null;
 
           try {
             await updateManagedProjectStatus(sql, project.id, 'synced', {
               checkedAt: new Date().toISOString(),
             });
-            const currentCommit = await syncManagedProjectCheckout(project, {
+            currentCommit = await syncManagedProjectCheckout(project, {
               env,
               rootDir,
               runCommand,
@@ -765,6 +811,17 @@ async function processManagedInfrastructureProjects({
               continue;
             }
 
+            const serviceName = getProjectServiceName(project.id);
+            heldLock = acquireDeploymentBuildLock({
+              command: `docker compose up --build ${serviceName}`,
+              deploymentKind: 'managed-project',
+              env,
+              fsImpl,
+              latestCommit: createManagedProjectCommit(project, currentCommit),
+              now,
+              paths,
+              processImpl,
+            });
             await updateManagedProjectStatus(sql, project.id, 'building', {
               buildStartedAt: new Date().toISOString(),
               commitHash: currentCommit,
@@ -782,6 +839,39 @@ async function processManagedInfrastructureProjects({
           } catch (error) {
             const message =
               error instanceof Error ? error.message : String(error);
+            if (error instanceof DeploymentBuildLockConflictError) {
+              const deferredMetadata = {
+                deferredAt: new Date().toISOString(),
+                deferredReason: message,
+                ...(currentCommit ? { commitHash: currentCommit } : {}),
+              };
+
+              if (project.deployment_status === 'queued') {
+                await updateManagedProjectStatus(
+                  sql,
+                  project.id,
+                  'queued',
+                  deferredMetadata
+                );
+              } else {
+                await updateManagedProjectMetadata(
+                  sql,
+                  project.id,
+                  deferredMetadata
+                );
+              }
+
+              log?.info?.(
+                `Managed project ${project.id} deployment deferred: ${message}`
+              );
+              results.push({
+                error: message,
+                projectId: project.id,
+                status: 'deferred',
+              });
+              continue;
+            }
+
             await updateManagedProjectStatus(sql, project.id, 'failed', {
               error: message,
               failedAt: new Date().toISOString(),
@@ -794,6 +884,8 @@ async function processManagedInfrastructureProjects({
               projectId: project.id,
               status: 'failed',
             });
+          } finally {
+            heldLock?.release();
           }
         }
 
