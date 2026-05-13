@@ -8669,8 +8669,30 @@
     "platform_role": "Permissions"
   },
   "platform-roles": {
+    "active_users": "Active users",
+    "admins": "Admins",
+    "challenge_managers": "Challenge managers",
     "description": "Manage platform-wide user roles and permissions across all services.",
-    "plural": "Platform Roles"
+    "global_managers": "Global managers",
+    "hive_access_description": "Grant research playground access without leaving the platform roles directory.",
+    "hive_access_disabled": "No Hive access",
+    "hive_access_disabled_toast": "Hive access disabled.",
+    "hive_access_empty": "No matching platform users found.",
+    "hive_access_enabled": "Hive access",
+    "hive_access_enabled_toast": "Hive access enabled.",
+    "hive_access_title": "Hive research access",
+    "hive_access_toggle_label": "Toggle Hive access",
+    "hive_access_total": "Hive members",
+    "hive_access_unavailable": "Hive database is not available in this environment.",
+    "hive_access_update_failed": "Failed to update Hive access.",
+    "hive_access_visible": "Visible enabled",
+    "hive_researchers": "Hive researchers",
+    "inactive": "Inactive",
+    "matching_users": "Matching users",
+    "members": "Members",
+    "platform_coverage": "Platform access coverage",
+    "plural": "Platform Roles",
+    "workspace_creators": "Workspace creators"
   },
   "platform-token-usage": {
     "completion_tokens": "Completion tokens",

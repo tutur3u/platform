@@ -8669,8 +8669,30 @@
     "platform_role": "Quyền"
   },
   "platform-roles": {
+    "active_users": "Người dùng đang hoạt động",
+    "admins": "Quản trị viên",
+    "challenge_managers": "Người quản lý thử thách",
     "description": "Quản lý vai trò và quyền của người dùng trên toàn nền tảng qua tất cả các dịch vụ.",
-    "plural": "Vai trò nền tảng"
+    "global_managers": "Người quản lý toàn cục",
+    "hive_access_description": "Cấp quyền vào sân chơi nghiên cứu mà không cần rời khỏi danh bạ vai trò nền tảng.",
+    "hive_access_disabled": "Không có quyền Hive",
+    "hive_access_disabled_toast": "Đã tắt quyền Hive.",
+    "hive_access_empty": "Không tìm thấy người dùng nền tảng phù hợp.",
+    "hive_access_enabled": "Có quyền Hive",
+    "hive_access_enabled_toast": "Đã bật quyền Hive.",
+    "hive_access_title": "Quyền truy cập nghiên cứu Hive",
+    "hive_access_toggle_label": "Bật hoặc tắt quyền Hive",
+    "hive_access_total": "Thành viên Hive",
+    "hive_access_unavailable": "Cơ sở dữ liệu Hive chưa khả dụng trong môi trường này.",
+    "hive_access_update_failed": "Cập nhật quyền Hive thất bại.",
+    "hive_access_visible": "Đang bật trong trang",
+    "hive_researchers": "Nhà nghiên cứu Hive",
+    "inactive": "Không hoạt động",
+    "matching_users": "Người dùng phù hợp",
+    "members": "Thành viên",
+    "platform_coverage": "Phạm vi truy cập nền tảng",
+    "plural": "Vai trò nền tảng",
+    "workspace_creators": "Người tạo không gian làm việc"
   },
   "platform-token-usage": {
     "completion_tokens": "Token hoàn thành",

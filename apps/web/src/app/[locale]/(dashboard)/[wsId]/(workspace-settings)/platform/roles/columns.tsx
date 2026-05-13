@@ -14,6 +14,7 @@ import {
   Shield,
   Users,
 } from '@tuturuuu/icons';
+import { updatePlatformUserRoles } from '@tuturuuu/internal-api';
 import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -38,7 +39,7 @@ import {
 import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import { useRouter } from 'next/navigation';
-import type { PlatformUserWithDetails } from './page';
+import type { PlatformUserWithDetails } from './types';
 
 interface PlatformRoleExtraData {
   locale: string;
@@ -68,27 +69,14 @@ export const getPlatformRoleColumns = ({
       allow_manage_all_challenges: boolean;
       allow_role_management: boolean;
       allow_workspace_creation: boolean;
-    }) => {
-      const res = await fetch(`/api/v1/platform/users/${userId}/roles`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          enabled,
-          allow_challenge_management,
-          allow_manage_all_challenges,
-          allow_role_management,
-          allow_workspace_creation,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to update user role');
-      }
-
-      return res.json();
-    },
+    }) =>
+      updatePlatformUserRoles(userId, {
+        allow_challenge_management,
+        allow_manage_all_challenges,
+        allow_role_management,
+        allow_workspace_creation,
+        enabled,
+      }),
     onMutate: async (variables) => {
       await queryClient.cancelQueries({ queryKey: ['platform-roles'] });
 
@@ -394,16 +382,6 @@ export const getPlatformRoleColumns = ({
                     <Switch
                       checked={user.allow_role_management}
                       onCheckedChange={(checked) => {
-                        // Add confirmation for admin role changes
-                        if (checked && !user.allow_role_management) {
-                          if (
-                            !confirm(
-                              'Are you sure you want to grant admin privileges? This gives full platform access.'
-                            )
-                          ) {
-                            return;
-                          }
-                        }
                         toggleMutation.mutate({
                           userId,
                           enabled: user.enabled || false,
@@ -729,14 +707,6 @@ export const getPlatformRoleColumns = ({
           // Update the specific permission
           switch (permission) {
             case 'admin':
-              if (
-                !currentValue &&
-                !confirm(
-                  'Are you sure you want to grant admin privileges? This gives complete platform control.'
-                )
-              ) {
-                return;
-              }
               updates.allow_role_management = !currentValue;
               break;
             case 'global_manager':
@@ -754,14 +724,6 @@ export const getPlatformRoleColumns = ({
         };
 
         const clearAllPermissions = () => {
-          if (
-            !confirm(
-              'Are you sure you want to remove all permissions? This will make the user a regular member.'
-            )
-          ) {
-            return;
-          }
-
           toggleMutation.mutate({
             userId,
             enabled: user.enabled || false,
