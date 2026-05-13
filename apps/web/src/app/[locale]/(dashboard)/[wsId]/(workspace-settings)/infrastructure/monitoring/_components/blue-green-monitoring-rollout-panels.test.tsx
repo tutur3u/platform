@@ -139,4 +139,53 @@ describe('RolloutStagePanel', () => {
       screen.getByText('Canceled active deployment before manual run.')
     ).toBeInTheDocument();
   });
+
+  it('shows persisted failure details for failed deployments', () => {
+    const startedAt = new Date('2026-01-01T00:00:00.000Z').getTime();
+
+    const deployments: BlueGreenMonitoringDeploymentRollup[] = [
+      {
+        activeColor: null,
+        activeColors: [],
+        averageLatencyMs: null,
+        averageRequestsPerMinute: null,
+        buildDurationMs: 4000,
+        commitHash: 'failed-commit',
+        commitShortHash: 'fail1',
+        commitSubject: 'Failed deployment',
+        deploymentKind: 'promotion',
+        deploymentStamp: null,
+        deploymentStamps: [],
+        errorCount: null,
+        failureReason: 'Bun has crashed while loading next-swc.',
+        firstRequestAt: null,
+        lastRequestAt: null,
+        lifetimeMs: null,
+        mergedDeploymentCount: 1,
+        peakRequestsPerMinute: null,
+        requestCount: null,
+        runtimeState: null,
+        runtimeStates: [],
+        startedAt,
+        status: 'failed',
+      },
+    ];
+
+    render(
+      <RolloutStagePanel
+        deployments={deployments}
+        watcher={
+          {
+            lastDeployAt: startedAt,
+            lastDeployStatus: 'failed',
+          } as BlueGreenMonitoringSnapshot['watcher']
+        }
+      />
+    );
+
+    expect(screen.getByText('Rollout failed')).toBeInTheDocument();
+    expect(
+      screen.getByText('Bun has crashed while loading next-swc.')
+    ).toBeInTheDocument();
+  });
 });

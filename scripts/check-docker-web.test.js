@@ -78,6 +78,25 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
   );
 });
 
+test('web Docker build script delegates Next to the real Node wrapper', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, 'apps', 'web', 'package.json'), 'utf8')
+  );
+  const wrapper = fs.readFileSync(
+    path.join(ROOT_DIR, 'scripts', 'run-web-docker-next-build.js'),
+    'utf8'
+  );
+
+  assert.equal(
+    packageJson.scripts['build:docker'],
+    'bun ../../scripts/run-web-docker-next-build.js'
+  );
+  assert.match(wrapper, /process\.env\.DOCKER_WEB_NODE_BINARY \|\| 'node'/u);
+  assert.match(wrapper, /DEFAULT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096/u);
+  assert.match(wrapper, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/u);
+  assert.match(wrapper, /NEXT_BIN, 'build', '--turbopack'/u);
+});
+
 test('validateDockerfile reports missing workspace manifest copies', () => {
   const dockerfileContent = fs
     .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
@@ -144,6 +163,18 @@ test('validateDockerCompose accepts the current compose file', () => {
   assert.deepEqual(validateDockerCompose(composeContent), []);
 });
 
+test('validateDockerCompose reports public local Redis port mappings', () => {
+  const composeContent = fs
+    .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
+    .replace('"127.0.0.1:6379:6379"', '"6379:6379"')
+    .replace('"127.0.0.1:8079:80"', '"8079:80"');
+
+  const errors = validateDockerCompose(composeContent).join('\n');
+
+  assert.match(errors, /127\.0\.0\.1:6379:6379/);
+  assert.match(errors, /127\.0\.0\.1:8079:80/);
+});
+
 test('validateDockerCompose reports missing bind mounts', () => {
   const composeContent = fs
     .readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8')
@@ -177,6 +208,40 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '"127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"',
+      '"$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"'
+    )
+    .replace(
+      '"127.0.0.1:$' +
+        '{' +
+        'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+        '}:80"',
+      '"$' + '{' + 'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' + '}:80"'
+    )
+    .replace(
+      '$' +
+        '{' +
+        'UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required' +
+        '}',
+      '$' + '{' + 'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' + '}'
+    );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(
+    errors,
+    /production Redis native port must bind to 127\.0\.0\.1/
+  );
+  assert.match(
+    errors,
+    /production Redis HTTP bridge port must bind to 127\.0\.0\.1/
+  );
+  assert.match(errors, /must not use the local fallback token/);
 });
 
 test('validateDockerProdCompose reports missing blue-green proxy wiring', () => {

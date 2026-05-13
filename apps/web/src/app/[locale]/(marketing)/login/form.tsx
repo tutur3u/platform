@@ -114,36 +114,6 @@ function getReturnAppName(returnApp: string | null) {
   return returnApp ?? 'the app';
 }
 
-function getUserMetadataString(user: SupabaseUser, keys: string[]) {
-  for (const key of keys) {
-    const value = user.user_metadata?.[key];
-
-    if (typeof value === 'string' && value.trim().length > 0) {
-      return value.trim();
-    }
-  }
-
-  return null;
-}
-
-function getUserDisplayName(user: SupabaseUser) {
-  return getUserMetadataString(user, [
-    'display_name',
-    'full_name',
-    'name',
-    'preferred_username',
-  ]);
-}
-
-function getUserAvatarUrl(user: SupabaseUser) {
-  return getUserMetadataString(user, [
-    'avatar_url',
-    'picture',
-    'photo_url',
-    'image_url',
-  ]);
-}
-
 function SocialLogoMask({ src, alt }: { src: string; alt: string }) {
   return (
     <span
@@ -310,6 +280,7 @@ export default function LoginForm() {
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
     enabled: Boolean(user && isInternalAppReturn && !requiresMFA),
+    userId: user?.id,
   });
   const otpSettingsQuery = useQuery({
     queryFn: () => getOtpSettings({ client: 'web' }),
@@ -1203,6 +1174,12 @@ export default function LoginForm() {
 
   if (user && !requiresMFA && isInternalAppReturn) {
     const currentUserProfile = currentUserProfileQuery.data;
+    const hasMatchingCurrentProfile = currentUserProfile?.id === user.id;
+    const currentProfileIsLoading =
+      currentUserProfileQuery.isLoading ||
+      (!hasMatchingCurrentProfile && currentUserProfileQuery.isFetching);
+    const currentProfileIsReady =
+      hasMatchingCurrentProfile && !currentProfileIsLoading;
 
     return (
       <InternalAppAccountConfirmation
@@ -1210,22 +1187,24 @@ export default function LoginForm() {
         activeAccountId={activeAccountId}
         appName={returnAppName}
         confirming={confirmingReturn}
-        currentAvatarUrl={
-          currentUserProfile?.avatar_url ?? getUserAvatarUrl(user)
-        }
+        currentAvatarUrl={currentUserProfile?.avatar_url}
         currentDisplayName={
-          currentUserProfile?.display_name ??
-          currentUserProfile?.full_name ??
-          getUserDisplayName(user)
+          currentUserProfile?.display_name ?? currentUserProfile?.full_name
         }
-        currentEmail={
-          currentUserProfile?.email ?? user.email ?? t('login.unknown_account')
-        }
+        currentEmail={currentUserProfile?.email}
         currentUserId={user.id}
         isAccountSwitcherReady={accountSwitcherInitialized}
         onContinue={() => void continueToInternalApp()}
+        onRetryProfile={() => void currentUserProfileQuery.refetch()}
         onSwitchAccount={(accountId) => void switchToStoredAccount(accountId)}
         onUseAnotherAccount={() => void handleUseAnotherAccount()}
+        profileState={
+          currentProfileIsReady
+            ? 'ready'
+            : currentProfileIsLoading
+              ? 'loading'
+              : 'unavailable'
+        }
         switchingAccountId={switchingAccountId}
       />
     );

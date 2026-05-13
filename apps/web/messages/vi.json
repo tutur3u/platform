@@ -1857,6 +1857,7 @@
       },
       "deployments": {
         "description": "Dấu triển khai được nhóm theo lưu lượng request và lỗi server.",
+        "failure_cause": "Nguyên nhân lỗi",
         "title": "Deployments"
       },
       "empty": {
@@ -7509,6 +7510,9 @@
     "internal_app_continue_failed": "Không thể tiếp tục đến ứng dụng. Vui lòng thử lại.",
     "invalid_credentials": "Email hoặc mật khẩu không đúng.",
     "invalid_verification_code": "Mã xác thực không hợp lệ.",
+    "loading_account_profile_description": "Đang tải hồ sơ Tuturuuu của bạn trước khi quay lại {app}.",
+    "loading_account_profile_title": "Đang tải hồ sơ tài khoản",
+    "loading_profile": "Đang tải hồ sơ",
     "mobile_mfa_approved": "Đã nhận phê duyệt từ di động.",
     "mobile_mfa_button": "Phê duyệt bằng ứng dụng di động",
     "mobile_mfa_description": "Mở Tuturuuu trên di động, vào Cài đặt > Phiên, rồi phê duyệt mã ghép đôi khớp.",
@@ -7539,6 +7543,9 @@
     "passwordless": "Không mật khẩu",
     "powered-by": "Tuturuuu cung cấp hệ thống xác thực phía sau {domain}.",
     "processing": "Đang xử lý...",
+    "profile_source_label": "Hồ sơ Tuturuuu",
+    "profile_unavailable_description": "Không thể tải hồ sơ Tuturuuu của bạn. Hãy thử lại hoặc đăng nhập bằng tài khoản khác.",
+    "profile_unavailable_title": "Không thể tải hồ sơ",
     "qr_approving": "Đang hoàn tất đăng nhập...",
     "qr_description": "Mở Tuturuuu trên điện thoại, bật khóa ứng dụng, rồi quét mã này từ Cài đặt > Phiên.",
     "qr_expired": "Mã QR này đã hết hạn.",
@@ -7552,6 +7559,7 @@
     "qr_unavailable_title": "Không thể đăng nhập bằng QR",
     "resend": "Gửi lại",
     "resend_available_in": "Có thể gửi lại sau {seconds} giây",
+    "retry_profile_load": "Tải lại hồ sơ",
     "secure_sign_in": "Đăng nhập an toàn",
     "send_code": "Gửi mã",
     "sign_in": "Đăng nhập",

@@ -156,13 +156,18 @@ SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` after a merged version-bump PR
 updates `packages/sdk/package.json` and includes `chore(tuturuuu)` in the PR
 title. The workflow runs the SDK tests, skips publication if the exact package
-version already exists on npm, and otherwise publishes `packages/sdk` to npm
-through [npm trusted publishing](https://docs.npmjs.com/trusted-publishers): the
-`publish-npm` job requests `id-token: write` so GitHub Actions mints a short-lived
-OIDC token, upgrades to the latest `npm` CLI (trusted publishing requires
-npm 11.5.1+), and runs `npm publish` without an `NPM_TOKEN`. Because the
-`tuturuuu` package is public and `tutur3u/platform` is a public repository, npm
-also generates and attaches build provenance attestations automatically.
+version already exists on npm, prepares a tarball with `npm pack` outside the
+trusted-publish job, and then publishes that tarball through
+[npm trusted publishing](https://docs.npmjs.com/trusted-publishers). Only the
+final `publish-npm` job requests `id-token: write`, so GitHub Actions mints the
+short-lived OIDC token after dependency installation, package builds, and version
+checks have already finished. That job downloads the prepared artifact, verifies
+its package `name` and `version`, confirms the bundled `npm` CLI supports trusted
+publishing, and runs `npm publish <tarball> --ignore-scripts` without an
+`NPM_TOKEN`. Do not add `bun install`, `npm install -g`, package builds, or
+package lifecycle scripts to the OIDC-enabled job. Because the `tuturuuu`
+package is public and `tutur3u/platform` is a public repository, npm also
+generates and attaches build provenance attestations automatically.
 
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:

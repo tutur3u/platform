@@ -22,7 +22,8 @@ Before publishing, ensure:
 - [ ] CHANGELOG or release notes are updated
 - [ ] README.md is up to date
 - [ ] LICENSE file exists
-- [ ] `npm pack --dry-run` includes both `dist/` and `src/`
+- [ ] `npm pack --dry-run` includes `dist/`, `README.md`, `LICENSE`, and
+      package metadata
 
 ## Publishing Steps
 
@@ -114,16 +115,20 @@ The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
 SDK automatically to npm when a merged version-bump PR updates
 `packages/sdk/package.json` and the PR title matches `chore(tuturuuu)`. The
 workflow runs the SDK test suite, checks whether the exact package version is
-already present on npm, and publishes `packages/sdk` with `npm publish` only
-when that version does not exist yet.
+already present on npm, and prepares a package tarball with `npm pack` outside
+the trusted-publish job.
 
-The publish job authenticates with npm through
+The final publish job authenticates with npm through
 [trusted publishing](https://docs.npmjs.com/trusted-publishers): GitHub Actions
 mints a short-lived OIDC token (`id-token: write`) and the npm CLI exchanges it
-for a one-shot publish credential. The job does **not** read an `NPM_TOKEN`
-secret. Because `tuturuuu` is a public package and `tutur3u/platform` is a
-public repository, npm also generates and attaches build provenance
-attestations automatically.
+for a one-shot publish credential. Keep that job limited to downloading the
+prepared tarball, verifying its `name` and `version`, checking that the bundled
+npm CLI supports trusted publishing, and running
+`npm publish <tarball> --ignore-scripts`. Do not add dependency installation,
+`npm install -g`, `bun install`, package builds, or package lifecycle scripts to
+the OIDC-enabled job. The job does **not** read an `NPM_TOKEN` secret. Because
+`tuturuuu` is a public package and `tutur3u/platform` is a public repository,
+npm also generates and attaches build provenance attestations automatically.
 
 To publish a new release:
 
@@ -222,11 +227,6 @@ tuturuuu/
 │   ├── types.d.ts
 │   ├── errors.js
 │   └── errors.d.ts
-├── src/            # Source entrypoints for Bun/type resolution
-│   ├── index.ts
-│   ├── storage.ts
-│   ├── types.ts
-│   └── errors.ts
 ├── README.md       # Package documentation
 ├── LICENSE         # MIT License
 └── package.json    # Package manifest

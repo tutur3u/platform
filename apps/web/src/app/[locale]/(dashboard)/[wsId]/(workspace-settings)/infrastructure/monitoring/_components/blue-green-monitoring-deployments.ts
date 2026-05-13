@@ -38,6 +38,24 @@ function mergeUniqueStrings(left: string[], value: string | null | undefined) {
   return value && !left.includes(value) ? [...left, value] : left;
 }
 
+function mergeText(
+  left: string | null | undefined,
+  right: string | null | undefined,
+  separator = '\n'
+) {
+  if (!right) {
+    return left ?? null;
+  }
+
+  if (!left) {
+    return right;
+  }
+
+  return left.split(separator).includes(right)
+    ? left
+    : `${left}${separator}${right}`;
+}
+
 function mergeUniqueRuntimeStates(
   left: Array<'active' | 'standby'>,
   value: BlueGreenMonitoringDeployment['runtimeState']
@@ -151,6 +169,7 @@ function mergeDeployments(
     deploymentStamps,
     endedAt: maxNullableNumber(left.endedAt, right.endedAt),
     errorCount: sumNullableNumbers(left.errorCount, right.errorCount),
+    failureReason: mergeText(left.failureReason, right.failureReason),
     finishedAt: maxNullableNumber(left.finishedAt, right.finishedAt),
     firstRequestAt: minNullableNumber(
       left.firstRequestAt,

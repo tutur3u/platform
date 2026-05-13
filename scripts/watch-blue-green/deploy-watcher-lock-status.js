@@ -128,7 +128,9 @@ function acquireWatchLock(
 
 function releaseWatchLock({
   fsImpl = fs,
+  now = Date.now(),
   paths = getWatchPaths(),
+  preserveTarget = false,
   processImpl = process,
 } = {}) {
   const existing = readWatchLock(paths, fsImpl);
@@ -137,6 +139,23 @@ function releaseWatchLock({
   }
 
   if (existing.pid !== processImpl.pid) {
+    return;
+  }
+
+  if (preserveTarget) {
+    const { pid: _pid, ...targetLock } = existing;
+    fsImpl.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(
+        {
+          ...targetLock,
+          releasedAt: typeof now === 'function' ? now() : now,
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
     return;
   }
 

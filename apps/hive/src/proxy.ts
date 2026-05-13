@@ -57,7 +57,8 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
     unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/verify-token');
+    unlocalizedPath.startsWith('/verify-token') ||
+    unlocalizedPath.startsWith('/~recover-browser-state');
 
   if (!isPublicPath) {
     const supabase = await createClient(request);

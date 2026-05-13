@@ -172,9 +172,11 @@ export function RolloutStagePanel({
       ? t('stats.served_requests')
       : t('rollout.in_progress_meta');
   const failureDetail =
-    typeof watcher.lastResult?.error === 'string'
-      ? (watcher.lastResult.error.split('\n')[0]?.trim() ?? null)
-      : null;
+    latestDeployment?.status === 'failed' && latestDeployment.failureReason
+      ? latestDeployment.failureReason
+      : typeof watcher.lastResult?.error === 'string'
+        ? (watcher.lastResult.error.split('\n')[0]?.trim() ?? null)
+        : null;
   const cancellationDetail =
     latestDeployment?.status === 'canceled'
       ? (latestDeployment.cancellationReason ?? null)
@@ -279,7 +281,9 @@ export function RolloutStagePanel({
         <Alert className="mt-5 rounded-lg border-dynamic-red/25 bg-dynamic-red/5">
           <TriangleAlert className="h-4 w-4" />
           <AlertTitle>{t('rollout.failure_title')}</AlertTitle>
-          <AlertDescription>{failureDetail}</AlertDescription>
+          <AlertDescription className="whitespace-pre-wrap">
+            {failureDetail}
+          </AlertDescription>
         </Alert>
       ) : null}
 
@@ -473,6 +477,15 @@ export function DeploymentLedger({
                   <AlertTitle>{t('rollout.canceled_title')}</AlertTitle>
                   <AlertDescription>
                     {deployment.cancellationReason}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {deployment.status === 'failed' && deployment.failureReason ? (
+                <Alert className="mt-5 rounded-lg border-dynamic-red/25 bg-dynamic-red/5">
+                  <TriangleAlert className="h-4 w-4" />
+                  <AlertTitle>{t('rollout.failure_title')}</AlertTitle>
+                  <AlertDescription className="whitespace-pre-wrap">
+                    {deployment.failureReason}
                   </AlertDescription>
                 </Alert>
               ) : null}

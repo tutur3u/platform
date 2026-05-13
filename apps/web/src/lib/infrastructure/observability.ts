@@ -834,6 +834,7 @@ export async function readObservabilityDeployments(
       deploymentStamp: mergeText(left.deploymentStamp, right.deploymentStamp),
       durationMs: Math.max(left.durationMs ?? 0, right.durationMs ?? 0) || null,
       errorCount: left.errorCount + right.errorCount,
+      failureReason: mergeText(left.failureReason, right.failureReason, '\n'),
       lastRequestAt:
         Math.max(left.lastRequestAt ?? 0, right.lastRequestAt ?? 0) || null,
       requestCount: left.requestCount + right.requestCount,
@@ -876,6 +877,7 @@ export async function readObservabilityDeployments(
       deploymentStamp: deployment.deploymentStamp ?? null,
       durationMs: deployment.buildDurationMs ?? deployment.lifetimeMs ?? null,
       errorCount: deployment.errorCount ?? 0,
+      failureReason: deployment.failureReason ?? null,
       lastRequestAt: deployment.lastRequestAt ?? null,
       requestCount: deployment.requestCount ?? 0,
       runtimeState: deployment.runtimeState ?? null,
@@ -903,6 +905,7 @@ export async function readObservabilityDeployments(
       deploymentStamp: request.deploymentStamp,
       durationMs: null,
       errorCount: 0,
+      failureReason: null,
       lastRequestAt: null,
       runtimeState: null,
       requestCount: 0,

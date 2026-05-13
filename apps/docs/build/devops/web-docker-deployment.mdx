@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-11'
+updatedAt: '2026-05-13'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -47,7 +47,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
 | `--profile cloudflared` | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly |
 | `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
-| `--build-cpus 2` | Run builds through a capped Buildx builder with an approximate CPU limit |
+| `--build-cpus 4` | Run builds through a capped Buildx builder with an approximate CPU limit |
 | `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
 | `--build-builder-name tuturuuu` | Override the throttled Buildx builder name |
 | `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
@@ -406,6 +406,16 @@ deployment kind, and a re-entrant token for nested helper calls).
 - **`DOCKER_WEB_CANCEL_ACTIVE_BUILD=1`** or **`--cancel-active-build`** on a
   manual `bun serve:web:docker:bg` run stops the watcher/buildkit services,
   clears the lock, and records a canceled history row before starting fresh.
+- The auto-deploy watcher treats an active deployment lock as a wait state, not
+  a failed deploy attempt. Recovered pending handoffs, reconcile builds, standby
+  refreshes, platform promotions, and imported Infrastructure project builds all
+  defer behind the same lock so only one deployment build runs across the stack.
+- The watcher also treats a build lock older than 30 minutes as a timed-out
+  build. It sends `SIGTERM` to the recorded deployment PID, clears the lock,
+  records a failed deployment history row with the timeout reason, and waits
+  until the next polling cycle before retrying. Override the window with
+  `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS`; set it to `0` only when an operator
+  explicitly wants to disable watcher-side build termination.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
   --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
   If the build still exits with `bun install --frozen-lockfile` **exit code 1**
@@ -448,19 +458,20 @@ Buildx throttling options instead of letting BuildKit consume the full host.
 Example:
 
 ```bash
-bun serve:web:docker:bg -- --build-memory 12g --build-cpus 2 --build-max-parallelism 1
+bun serve:web:docker:bg -- --build-memory 12g --build-cpus 4 --build-max-parallelism 1
 ```
 
 Current root-script defaults:
 
-- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
-- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 2 --build-max-parallelism 1`
+- `bun serve:web:docker` defaults to `--build-memory 12g --build-cpus 4 --build-max-parallelism 1`
+- `bun serve:web:docker:bg` defaults to `--build-memory 12g --build-cpus 4 --build-max-parallelism 1`
 
-The Compose-owned BuildKit service also defaults `mem_limit` to **12g** when
-`DOCKER_WEB_BUILD_MEMORY` is unset, which balances large monorepo builds with
-shared hosts that still run the web stack, Redis, log drain, and other sidecars
-alongside builds. Raise or lower the cap with env vars or `--build-memory` when
-your machine is tighter or has spare RAM.
+The Compose-owned BuildKit service also defaults `mem_limit` to **12g** and
+`cpus` to **4** when `DOCKER_WEB_BUILD_MEMORY` and `DOCKER_WEB_BUILD_CPUS` are
+unset, which keeps large monorepo builds from overcommitting shared hosts that
+still run the web stack, Redis, log drain, and other sidecars alongside builds.
+Raise or lower the caps with env vars or helper flags when your machine is
+tighter or has spare capacity.
 
 You can still override those defaults per run by appending your own flags after
 `--`, for example:
@@ -472,7 +483,7 @@ bun serve:web:docker:bg -- --build-memory 16g --build-cpus 4 --build-max-paralle
 Equivalent environment variables:
 
 - `DOCKER_WEB_BUILD_MEMORY=4g`
-- `DOCKER_WEB_BUILD_CPUS=2`
+- `DOCKER_WEB_BUILD_CPUS=4`
 - `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
@@ -480,6 +491,7 @@ Equivalent environment variables:
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
 - `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=4`
 - `DOCKER_WEB_NEXT_BUILD_CPUS=4`
+- `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096`
 
 How it works:
 
@@ -498,15 +510,24 @@ How it works:
   `tcp://127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}`). The watcher container
   uses `tcp://buildkit:1234` on the Compose network.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
-  when that variable is not already set, so Compose does not build multiple
-  services at once under the capped builder.
+  when that variable is not already set. When the limit is `1`, the blue/green
+  workflow builds each service image in its own Compose build call so image
+  export and web compilation do not overlap on memory-constrained hosts.
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
-  build dependency graph, caps the web app's V8 heap at 8 GB (same
-  `--max-old-space-size` target as local `build`), and still uses the Turbopack
-  production build.
+  build dependency graph, caps the Docker-only web app V8 heap at 4 GB, and
+  still uses the Turbopack production build. The Docker `builder` stage is based
+  on `node:24-bookworm-slim` and copies the Bun binary in only for workspace
+  script orchestration, so the actual `next build` process runs under real Node
+  instead of Bun's `node` shim. The `@tuturuuu/web` `build:docker` script
+  delegates to `scripts/run-web-docker-next-build.js`, which spawns
+  `DOCKER_WEB_NODE_BINARY` (pinned by the Dockerfile to `/usr/local/bin/node`)
+  for the Next CLI and honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE` when a larger
+  Docker host can safely allocate more heap. This avoids Bun runtime crashes
+  while loading native Next SWC modules and avoids host OOM kills on smaller
+  Docker Desktop allocations.
 - Docker standalone Next builds default static page generation to a 180 second
-  timeout with static generation concurrency and Next build CPU count capped at
-  4. This avoids false `Failed to build ... because it took more than 60
+  timeout, static generation concurrency capped at 4, and Next build CPU count
+  capped at 4. This avoids false `Failed to build ... because it took more than 60
   seconds` failures when the same host is also running blue/green sidecars and
   BuildKit. Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
@@ -543,10 +564,18 @@ Operational notes:
 - If BuildKit reports `CACHED ERROR` after a failed deps stage, or if the
   compose build exceeds `DOCKER_WEB_BUILD_TIMEOUT_MS` (default 45 minutes), the
   helper uses the same one-time cache recovery and fresh `--no-cache` retry.
+- If a deployment fails during the build, the watcher captures the actionable
+  failure lines into the retained deployment history as `failureReason`. The
+  Infrastructure → Monitoring → Deployments page and rollout ledger display that
+  reason inline so operators do not need to reconstruct failures from a terminal
+  scrollback.
 
 ## Redis Profile
 
 Redis is enabled by default in both dev and production-style Docker web stacks.
+The Redis and `serverless-redis-http` host ports bind to `127.0.0.1` only; do
+not expose them through Cloudflare Tunnel, public firewall rules, or
+all-interface Docker port mappings.
 
 The helper persists the generated token in:
 
@@ -556,6 +585,12 @@ and injects these values into `apps/web` automatically:
 
 - `UPSTASH_REDIS_REST_URL=http://serverless-redis-http:80`
 - `UPSTASH_REDIS_REST_TOKEN=&lt;generated local token&gt;`
+
+The production Redis compose fragment requires `UPSTASH_REDIS_REST_TOKEN` during
+Compose interpolation. Use the Docker web helper, which injects the generated
+token automatically, or export a strong token before running direct
+`docker compose --profile redis ...` commands. Service `env_file` entries do
+not satisfy Compose interpolation for the Redis HTTP bridge token.
 
 Docker Redis mode intentionally ignores generic `UPSTASH_REDIS_REST_URL` and
 `UPSTASH_REDIS_REST_TOKEN` values from the host shell. This prevents old Upstash
@@ -674,6 +709,10 @@ Behavior:
     fast-forward deploys, so a successful pull/deploy clears `queued` and
     refreshes the latest commit columns instead of relying only on deployment
     history.
+    Imported project builds share the same deployment build lock as platform
+    blue/green builds. If platform, standby, recovery, or another imported
+    project build is already active, the project poll is deferred instead of
+    starting a second Docker build.
 15. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
    `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
    in the pulled revision, the current watcher does not deploy from the old
@@ -776,23 +815,31 @@ Dashboard details:
   callback route and uploads extracted files directly to the active storage
   backend, which avoids nginx body-size limits for large WebGL artifacts while
   keeping folder creation and auth checks in the backend callback.
-- Hive is part of the web blue/green support-service set: `hive` is routed from
-  `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
+- Hive is promoted with the web blue/green color: `hive-blue` and `hive-green`
+  are routed from `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
   `NEXT_PUBLIC_HIVE_REALTIME_URL` configured in the same production stack.
-  Production compose publishes **`7814:7814`** so Hive is reachable on the host
-  at `http://localhost:7814` for local debugging, not only via the Docker
-  network and nginx.
-  `hive` uses the same Supabase env source as `apps/web`: runtime env files are
-  shared, and production image builds mount the `web_env` BuildKit secret so
-  hidden-locale auth pages can prerender with the platform Supabase URL.
+  Production compose publishes **`7814:7814`** from `web-proxy`, not from a
+  direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
+  reaches the currently promoted Hive color.
+  Deploys verify that the running `web-proxy` container has both host bindings
+  (`7803` and `7814`) before reusing it; if an older proxy was created before
+  Hive moved behind blue/green, the next deploy force-recreates the proxy so the
+  host-level Cloudflare Tunnel route can reach Hive.
+  The Hive color services use the same Supabase env source as `apps/web`:
+  runtime env files are shared, and production image builds mount the `web_env`
+  BuildKit secret so hidden-locale auth pages can prerender with the platform
+  Supabase URL.
   **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
-  prod service in one pass, but `docker compose up` runs in two phases—first
-  `web-proxy`, the target `web-{color}`, MarkItDown, storage-unzip-proxy,
-  `web-cron-runner`, and (when enabled) Redis—then `hive` and `hive-realtime`.
-  Promotion waits only on the first-phase health gates so the main site and
-  proxy can go healthy while Hive finishes booting; nginx upstreams tolerate
-  Hive being temporarily down.
+  prod service in one pass, but runtime services come up before proxy handoff:
+  first the target `web-{color}`, MarkItDown, storage-unzip-proxy,
+  `web-cron-runner`, and (when enabled) Redis, then `hive-{color}` and
+  `hive-realtime`. If `web-proxy` or `cloudflared` must be bootstrapped or
+  recreated for host-port changes, they start only after the target web and Hive
+  services are healthy, so `hive.tuturuuu.com` is not exposed with an empty
+  `hive_app_upstream`. Promotion waits for the target web color, target Hive
+  color, Hive realtime, and the first-phase support services before switching
+  nginx.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
   healthcheck, either directly in compose or in the image. The monitoring page
   treats containers without Docker health metadata as external or incomplete
@@ -866,10 +913,11 @@ Dashboard details:
   health check that posts `["PING"]` to `/` with the generated `SRH_TOKEN`;
   do not use a Node-based probe for that image because it is an Erlang release
   image, and do not probe `/ping` because SRH does not expose that route.
-- `SRH_TOKEN` falls back to `platform-local-redis-token` in the Compose files
-  when `UPSTASH_REDIS_REST_TOKEN` is not exported. Keep that fallback so
-  watcher and cron recovery can run Docker Compose commands before the web
-  helper has injected a generated token.
+- Production Redis compose requires `UPSTASH_REDIS_REST_TOKEN` and binds Redis
+  host ports to `127.0.0.1`. Do not reintroduce the
+  `platform-local-redis-token` fallback in production fragments or remove the
+  loopback host bind; direct Compose users must export a strong token before
+  enabling the `redis` profile.
 - After a successful host-triggered `serve:web:docker:bg` rollout, the Docker
   helper starts or resumes the containerized `web-blue-green-watcher` with
   `--resume-if-running`. Deploys that are already running inside the watcher
@@ -957,6 +1005,12 @@ Dashboard details:
   deployment is different, and keeps production on that commit until the pin is
   removed from the dashboard. Removing the pin lets the watcher check out its
   locked branch again and resume normal fast-forward polling.
+- In-container watcher child restarts preserve the locked branch/upstream
+  metadata even when the child is killed while Git is detached for a rollback or
+  parent-fallback build. The replacement child can recover `production` from the
+  target-only lock instead of trying to poll detached `HEAD`. If an older child
+  already removed the lock, a clean detached startup falls back to the selected
+  platform branch (`production` by default) before locking and polling.
 - The watcher image must also include both the Docker Compose and Buildx CLI
   plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
   rollout handoff shells into `docker compose ...`, and capped production
@@ -1030,6 +1084,12 @@ Dashboard details:
 If some normal browsers still return Cloudflare `502 Host Error` while
 incognito works, treat it as stale client state or an auth-cookie/header-size
 problem before assuming the tunnel itself is broken.
+For Hive, the production nginx proxy serves
+`https://hive.tuturuuu.com/~recover-browser-state` directly with
+`Clear-Site-Data` so the reset path still works when stale cookies are too large
+for the Next.js app server to accept. Hive's `next start` command also runs with
+`NODE_OPTIONS=--max-http-header-size=65536` so ordinary Supabase auth-cookie
+chunking has more headroom before the app server returns `431`.
 
 How to recognize each failure mode:
 
@@ -1043,7 +1103,9 @@ How to recognize each failure mode:
 
 Recovery path:
 
-- Send affected users to `https://tuturuuu.com/~recover-browser-state`.
+- Send affected users to the recovery route on the affected origin:
+  `https://tuturuuu.com/~recover-browser-state` for the main app, or
+  `https://hive.tuturuuu.com/~recover-browser-state` for Hive.
 - That route is public and bypasses auth/onboarding middleware.
 - It responds with `Clear-Site-Data: "cache", "cookies", "storage",
   "executionContexts"` and explicitly expires all Supabase auth cookie variants

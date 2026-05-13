@@ -265,6 +265,36 @@ function validateDockerfile({
   }
 
   if (builderStage) {
+    if (!builderStage.includes('FROM node:24-bookworm-slim AS builder')) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must use node:24-bookworm-slim so next build runs under real Node instead of Bun node-shim.'
+      );
+    }
+
+    if (
+      !builderStage.includes(
+        'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun'
+      )
+    ) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must copy Bun from deps for workspace scripts while keeping Node as the build runtime.'
+      );
+    }
+
+    if (
+      !builderStage.includes('ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node')
+    ) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must force Docker web build scripts to use the real Node binary for next build.'
+      );
+    }
+
+    if (!builderStage.includes('ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096')) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must default Docker next build heap to 4096 MB.'
+      );
+    }
+
     if (
       !builderStage.includes(
         '--mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo'
@@ -312,6 +342,7 @@ function validateDockerCompose(
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-4' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '  platform-buildkit-state:',
@@ -325,6 +356,8 @@ function validateDockerCompose(
     '      - UPSTASH_REDIS_REST_URL',
     '      - "host.docker.internal:host-gateway"',
     '    init: true',
+    '      - "127.0.0.1:6379:6379"',
+    '      - "127.0.0.1:8079:80"',
     '      SRH_TOKEN: ' +
       '${' +
       'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
@@ -379,13 +412,15 @@ function validateDockerProdCompose(composeContent) {
     '  web-blue-green-watcher:',
     '  web-cron-runner:',
     '  cloudflared:',
-    '  hive:',
+    'x-hive-service: &hive-service',
+    '  hive-blue:',
+    '  hive-green:',
     '  hive-realtime:',
     '  markitdown:',
     '  storage-unzip-proxy:',
     '  web-proxy:',
     '      dockerfile: Dockerfile.markitdown',
-    '      dockerfile: apps/hive/Dockerfile\n      target: runner\n      secrets:\n        - web_env',
+    '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
@@ -394,6 +429,7 @@ function validateDockerProdCompose(composeContent) {
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-4' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',
@@ -441,8 +477,12 @@ function validateDockerProdCompose(composeContent) {
     '    image: cloudflare/cloudflared:latest',
     '${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
-    '${' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
-    '${' + 'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' + '}:80',
+    '${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',
+    '127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
+    '127.0.0.1:$' +
+      '{' +
+      'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+      '}:80',
     'http://127.0.0.1:7803/__platform/drain-status',
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:7815/health',
@@ -497,7 +537,7 @@ function validateDockerProdCompose(composeContent) {
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
     '      SRH_TOKEN: ' +
       '${' +
-      'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
+      'UPSTASH_REDIS_REST_TOKEN:?UPSTASH_REDIS_REST_TOKEN is required' +
       '}',
     '    file: $' + '{' + 'DOCKER_WEB_ENV_FILE:-apps/web/.env.local' + '}',
   ];
@@ -507,6 +547,40 @@ function validateDockerProdCompose(composeContent) {
       errors.push(
         `docker-compose.web.prod.yml is missing the expected snippet: ${snippet}`
       );
+    }
+  }
+
+  const forbiddenSecuritySnippets = [
+    {
+      message:
+        'production Redis native port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379"',
+    },
+    {
+      message:
+        'production Redis HTTP bridge port must bind to 127.0.0.1 instead of all host interfaces',
+      snippet:
+        '      - "$' +
+        '{' +
+        'DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT:-8079' +
+        '}:80"',
+    },
+    {
+      message:
+        'production Redis HTTP bridge must require UPSTASH_REDIS_REST_TOKEN and must not use the local fallback token',
+      snippet:
+        '      SRH_TOKEN: ' +
+        '$' +
+        '{' +
+        'UPSTASH_REDIS_REST_TOKEN:-platform-local-redis-token' +
+        '}',
+    },
+  ];
+
+  for (const { message, snippet } of forbiddenSecuritySnippets) {
+    if (composeContent.includes(snippet)) {
+      errors.push(`${message}: ${snippet}`);
     }
   }
 

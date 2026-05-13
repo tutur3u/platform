@@ -2,12 +2,15 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 
+const { readWatchStatus } = require('./deploy-watcher-lock-status.js');
 const { getWatchPaths } = require('./paths.js');
 
 const DEPLOYMENT_BUILD_LOCK_TOKEN_ENV = 'DOCKER_WEB_DEPLOYMENT_LOCK_TOKEN';
 const CANCEL_ACTIVE_BUILD_ENV = 'DOCKER_WEB_CANCEL_ACTIVE_BUILD';
+const DEPLOYMENT_BUILD_TIMEOUT_MS_ENV = 'DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS';
 const DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV =
   'DOCKER_WEB_DEPLOYMENT_LOCK_STALE_AFTER_MS';
+const DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS = 30 * 60 * 1000;
 const DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS = 8 * 60 * 60 * 1000;
 const ACTIVE_DEPLOYMENT_STATUSES = new Set(['building', 'deploying']);
 
@@ -109,6 +112,20 @@ function getDeploymentLockStaleAfterMs(env = process.env) {
   const raw = env?.[DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV];
   if (raw == null || String(raw).trim() === '') {
     return DEFAULT_DEPLOYMENT_LOCK_STALE_AFTER_MS;
+  }
+
+  const parsed = Number.parseInt(String(raw).trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return parsed;
+}
+
+function getDeploymentBuildTimeoutMs(env = process.env) {
+  const raw = env?.[DEPLOYMENT_BUILD_TIMEOUT_MS_ENV];
+  if (raw == null || String(raw).trim() === '') {
+    return DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS;
   }
 
   const parsed = Number.parseInt(String(raw).trim(), 10);
@@ -343,6 +360,67 @@ function isDeploymentBuildLockLive(lock, processImpl = process) {
   return isProcessAlive(pid, processImpl);
 }
 
+/**
+ * Terminates a live deployment build owner after the watcher timeout elapses.
+ * This is deliberately separate from stale-lock invalidation: stale cleanup is
+ * conservative and lock-only, while timeout handling actively stops a build
+ * that is still recorded as in progress.
+ */
+function tryTerminateTimedOutDeploymentBuildLock(
+  lock,
+  {
+    env = process.env,
+    fsImpl = fs,
+    now = () => Date.now(),
+    paths = getWatchPaths(),
+    processImpl = process,
+    signal = 'SIGTERM',
+  } = {}
+) {
+  if (!lock) {
+    return { action: 'none', elapsedMs: 0, lock: null, timeoutMs: null };
+  }
+
+  const timeoutMs = getDeploymentBuildTimeoutMs(env);
+  const startedAt = Number(lock?.startedAt);
+  const elapsedMs = Number.isFinite(startedAt)
+    ? Math.max(0, now() - startedAt)
+    : 0;
+
+  if (timeoutMs == null || elapsedMs <= timeoutMs) {
+    return { action: 'none', elapsedMs, lock, timeoutMs };
+  }
+
+  const pid = Number(lock.ownerPid ?? lock.pid);
+  if (!Number.isInteger(pid) || pid <= 0) {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'cleared', elapsedMs, lock, timeoutMs };
+  }
+
+  if (pid === processImpl.pid) {
+    return { action: 'self', elapsedMs, lock, timeoutMs };
+  }
+
+  const aliveState = signalPidZero(pid, processImpl);
+  if (aliveState === 'dead') {
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'cleared', elapsedMs, lock, timeoutMs };
+  }
+
+  try {
+    processImpl.kill(pid, signal);
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'terminated', elapsedMs, lock, signal, timeoutMs };
+  } catch (error) {
+    if (error?.code === 'ESRCH') {
+      clearDeploymentBuildLock({ fsImpl, paths });
+      return { action: 'cleared', elapsedMs, lock, timeoutMs };
+    }
+
+    return { action: 'failed', elapsedMs, error, lock, timeoutMs };
+  }
+}
+
 function createDeploymentBuildLock({
   command,
   deploymentKind = 'manual',
@@ -466,6 +544,18 @@ function isActiveDeploymentStatus(value) {
   return ACTIVE_DEPLOYMENT_STATUSES.has(String(value ?? '').trim());
 }
 
+function formatElapsedDuration(ms) {
+  const seconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  if (minutes <= 0) {
+    return `${remainingSeconds}s`;
+  }
+
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
 function getActiveDeploymentFromStatus(status) {
   const deployments = Array.isArray(status?.deployments)
     ? status.deployments
@@ -492,18 +582,113 @@ function getActiveDeploymentFromStatus(status) {
   return null;
 }
 
+function getActiveDeploymentConflict({
+  env = process.env,
+  fsImpl = fs,
+  now = () => Date.now(),
+  paths = getWatchPaths(),
+  platform,
+  processImpl = process,
+  readStatus = readWatchStatus,
+} = {}) {
+  let lock = readDeploymentBuildLock(paths, fsImpl);
+  if (lock) {
+    tryInvalidateStaleDeploymentBuildLock(lock, {
+      env,
+      fsImpl,
+      now,
+      paths,
+      platform,
+      processImpl,
+    });
+    lock = readDeploymentBuildLock(paths, fsImpl);
+  }
+
+  if (
+    lock &&
+    isDeploymentBuildLockBlocking(lock, {
+      env,
+      fsImpl,
+      now,
+      platform,
+      processImpl,
+    })
+  ) {
+    return {
+      elapsedMs: Math.max(0, now() - (lock.startedAt ?? now())),
+      lock,
+      source: 'lock',
+      status: 'building',
+    };
+  }
+
+  const status = readStatus(paths, fsImpl);
+  const activeDeployment = getActiveDeploymentFromStatus(status);
+
+  if (!activeDeployment) {
+    return null;
+  }
+
+  const ownerPid = Number(status?.ownerPid ?? status?.pid);
+  if (
+    Number.isInteger(ownerPid) &&
+    ownerPid > 0 &&
+    !isProcessAlive(ownerPid, processImpl)
+  ) {
+    return null;
+  }
+
+  return {
+    elapsedMs: Math.max(0, now() - (activeDeployment.startedAt ?? now())),
+    lock: {
+      command: 'blue/green watcher',
+      commitHash: activeDeployment.commitHash ?? null,
+      commitShortHash: activeDeployment.commitShortHash ?? null,
+      commitSubject: activeDeployment.commitSubject ?? null,
+      deploymentKind: activeDeployment.deploymentKind ?? 'watcher',
+      ownerPid: Number.isInteger(ownerPid) && ownerPid > 0 ? ownerPid : null,
+      startedAt: activeDeployment.startedAt ?? null,
+    },
+    source: 'watch-status',
+    status: activeDeployment.status,
+  };
+}
+
+function describeActiveDeploymentConflict(conflict) {
+  const lock = conflict?.lock ?? {};
+  const details = [
+    `status=${conflict?.status ?? 'unknown'}`,
+    `source=${conflict?.source ?? 'unknown'}`,
+    lock.ownerPid ? `pid=${lock.ownerPid}` : null,
+    lock.command ? `command=${lock.command}` : null,
+    lock.deploymentKind ? `kind=${lock.deploymentKind}` : null,
+    lock.commitShortHash ? `commit=${lock.commitShortHash}` : null,
+    lock.commitSubject ? `subject=${lock.commitSubject}` : null,
+    conflict?.elapsedMs != null
+      ? `elapsed=${formatElapsedDuration(conflict.elapsedMs)}`
+      : null,
+  ].filter(Boolean);
+
+  return details.join(', ');
+}
+
 module.exports = {
   ACTIVE_DEPLOYMENT_STATUSES,
   CANCEL_ACTIVE_BUILD_ENV,
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
+  DEPLOYMENT_BUILD_TIMEOUT_MS_ENV,
   DEPLOYMENT_LOCK_STALE_AFTER_MS_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
   clearDeploymentBuildLock,
   createDeploymentBuildLock,
   createDeploymentBuildLockToken,
+  describeActiveDeploymentConflict,
   deploymentLockMatchesProcessCmdline,
+  getActiveDeploymentConflict,
   getActiveDeploymentFromStatus,
+  getDeploymentBuildTimeoutMs,
   getDeploymentLockStaleAfterMs,
   isActiveDeploymentStatus,
   isDeploymentBuildLockBlocking,
@@ -513,5 +698,6 @@ module.exports = {
   readLinuxProcessCmdline,
   releaseDeploymentBuildLock,
   tryInvalidateStaleDeploymentBuildLock,
+  tryTerminateTimedOutDeploymentBuildLock,
   writeDeploymentBuildLock,
 };

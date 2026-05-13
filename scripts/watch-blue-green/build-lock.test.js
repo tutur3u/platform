@@ -4,10 +4,12 @@ const os = require('node:os');
 const path = require('node:path');
 const { describe, it } = require('node:test');
 const {
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   deploymentLockMatchesProcessCmdline,
   isDeploymentBuildLockBlocking,
   readDeploymentBuildLock,
   tryInvalidateStaleDeploymentBuildLock,
+  tryTerminateTimedOutDeploymentBuildLock,
 } = require('./build-lock.js');
 
 describe('deploymentLockMatchesProcessCmdline', () => {
@@ -167,5 +169,115 @@ describe('isDeploymentBuildLockBlocking (non-Linux age)', () => {
       }),
       true
     );
+  });
+});
+
+describe('tryTerminateTimedOutDeploymentBuildLock', () => {
+  it('sends SIGTERM and clears the lock after the watcher build timeout', () => {
+    const runtimeDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'build-lock-timeout-')
+    );
+    const deploymentBuildLockFile = path.join(
+      runtimeDir,
+      'blue-green-deployment-build.lock'
+    );
+    const paths = { deploymentBuildLockFile, runtimeDir };
+    const startedAt = 1_700_000_000_000;
+    const signals = [];
+    const processImpl = {
+      kill(pid, signal) {
+        if (pid !== 9876) {
+          const error = new Error('missing');
+          error.code = 'ESRCH';
+          throw error;
+        }
+
+        signals.push(signal ?? 0);
+      },
+      pid: 4321,
+    };
+    const lock = {
+      command: 'bun serve:web:docker:bg',
+      deploymentKind: 'promotion',
+      lockToken: 'timeout-token',
+      ownerPid: 9876,
+      startedAt,
+    };
+
+    fs.mkdirSync(runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      deploymentBuildLockFile,
+      JSON.stringify(lock, null, 2),
+      'utf8'
+    );
+
+    try {
+      const result = tryTerminateTimedOutDeploymentBuildLock(lock, {
+        fsImpl: fs,
+        now: () => startedAt + DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS + 1,
+        paths,
+        processImpl,
+      });
+
+      assert.equal(result.action, 'terminated');
+      assert.deepEqual(signals, [0, 'SIGTERM']);
+      assert.equal(fs.existsSync(deploymentBuildLockFile), false);
+    } finally {
+      fs.rmSync(runtimeDir, { force: true, recursive: true });
+    }
+  });
+
+  it('leaves a young live lock untouched', () => {
+    const runtimeDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'build-lock-timeout-young-')
+    );
+    const deploymentBuildLockFile = path.join(
+      runtimeDir,
+      'blue-green-deployment-build.lock'
+    );
+    const paths = { deploymentBuildLockFile, runtimeDir };
+    const startedAt = 1_700_000_000_000;
+    const signals = [];
+    const processImpl = {
+      kill(pid, signal) {
+        if (pid !== 9876) {
+          const error = new Error('missing');
+          error.code = 'ESRCH';
+          throw error;
+        }
+
+        signals.push(signal ?? 0);
+      },
+      pid: 4321,
+    };
+    const lock = {
+      command: 'bun serve:web:docker:bg',
+      deploymentKind: 'promotion',
+      lockToken: 'young-timeout-token',
+      ownerPid: 9876,
+      startedAt,
+    };
+
+    fs.mkdirSync(runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      deploymentBuildLockFile,
+      JSON.stringify(lock, null, 2),
+      'utf8'
+    );
+
+    try {
+      const result = tryTerminateTimedOutDeploymentBuildLock(lock, {
+        fsImpl: fs,
+        now: () => startedAt + 60_000,
+        paths,
+        processImpl,
+      });
+
+      assert.equal(result.action, 'none');
+      assert.deepEqual(signals, []);
+      assert.notEqual(readDeploymentBuildLock(paths, fs), null);
+    } finally {
+      fs.rmSync(runtimeDir, { force: true, recursive: true });
+    }
   });
 });

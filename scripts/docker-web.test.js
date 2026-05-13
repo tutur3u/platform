@@ -25,6 +25,7 @@ const {
   ensureRequiredComposeEnvironment,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getComposeEnvironment,
   getComposeFile,
@@ -45,6 +46,7 @@ const {
 const {
   buildBlueGreenServices,
   getBlueGreenComposeMigration,
+  hasBlueGreenProxyHostPortBindings,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
@@ -58,6 +60,11 @@ const {
   shouldRestartWatcherExit,
 } = require('../apps/web/docker/blue-green-watcher-entrypoint.js');
 const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
+
+const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
+  '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+  '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+});
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {
   return {
@@ -913,6 +920,19 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
     config,
     /server web-blue:7803 backup resolve max_fails=1 fail_timeout=5s;/
   );
+  assert.match(config, /upstream hive_app_upstream {/);
+  assert.match(
+    config,
+    /server hive-green:7814 resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(
+    config,
+    /server hive-blue:7814 backup resolve max_fails=1 fail_timeout=5s;/
+  );
+  assert.match(config, /listen 7814;/);
+  assert.match(config, /location = \/~recover-browser-state \{/);
+  assert.match(config, /add_header Clear-Site-Data/);
+  assert.match(config, /return 302 \/login\?browserStateReset=1;/);
   assert.match(config, /client_header_buffer_size 16k;/);
   assert.match(config, /keepalive_timeout 15s;/);
   assert.match(config, /large_client_header_buffers 8 16k;/);
@@ -1281,6 +1301,32 @@ test('buildBlueGreenServices recovers a cached BuildKit error with a fresh retry
   );
 });
 
+test('buildBlueGreenServices builds services sequentially when compose parallelism is one', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      COMPOSE_PARALLEL_LIMIT: '1',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.timeoutMs]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-blue', 'hive-blue', 'hive-realtime'],
+  });
+
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
+      .map(([, args]) => args.slice(-1)),
+    [['web-blue'], ['hive-blue'], ['hive-realtime']]
+  );
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -1603,8 +1649,21 @@ test('runDockerWebWorkflow auto-generates redis credentials for production docke
       .trim();
 
     assert.match(token, /^[a-f0-9]{64}$/u);
-    assert.equal(calls.at(-1).env.UPSTASH_REDIS_REST_TOKEN, token);
-    assert.equal(calls.at(-1).env.SRH_TOKEN, token);
+    const deploymentComposeCalls = calls.filter(
+      ({ args, command }) =>
+        command === 'docker' && args.includes('-f') && args.includes('compose')
+    );
+
+    assert.ok(deploymentComposeCalls.length > 0);
+
+    for (const call of deploymentComposeCalls) {
+      assert.equal(call.env.UPSTASH_REDIS_REST_TOKEN, token);
+      assert.equal(
+        call.env.UPSTASH_REDIS_REST_URL,
+        'http://serverless-redis-http:80'
+      );
+      assert.equal(call.env.SRH_TOKEN, token);
+    }
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -1625,8 +1684,8 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options.env]);
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -1640,6 +1699,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
         stderr: '',
         stdout: webProxyPsCalls === 1 ? '' : 'proxy-123\n',
       };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'buildkit') {
+      return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
     }
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
@@ -1667,7 +1730,19 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
   try {
     await runDockerWebWorkflow(
-      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      parseArgs([
+        'up',
+        '--mode',
+        'prod',
+        '--strategy',
+        'blue-green',
+        '--build-memory',
+        '12g',
+        '--build-cpus',
+        '4',
+        '--build-max-parallelism',
+        '1',
+      ]),
       {
         env: { PATH: 'test-path' },
         envFilePath,
@@ -1710,36 +1785,69 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
           args.at(-1) === 'web'
       )
     );
-    assert.ok(
-      calls.some(
-        ([command, args]) =>
-          command === 'docker' &&
-          args[0] === 'compose' &&
-          args[1] === '-f' &&
-          args[2] === PROD_COMPOSE_FILE &&
-          args.includes('up') &&
-          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-          args.includes('web-blue') &&
-          BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.every((service) =>
-            args.includes(service)
-          ) &&
-          !BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.some((service) =>
-            args.includes(service)
-          )
-      )
+    const runtimeUpIndex = calls.findIndex(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up') &&
+        args.includes('web-blue') &&
+        !args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+        BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.every((service) =>
+          args.includes(service)
+        ) &&
+        !BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.some((service) =>
+          args.includes(service)
+        )
     );
+    const hiveUpIndex = calls.findIndex(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up') &&
+        args.includes(getBlueGreenHiveServiceName('blue')) &&
+        args.includes('hive-realtime') &&
+        !BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+          args.includes(service)
+        )
+    );
+    const proxyUpIndex = calls.findIndex(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up') &&
+        args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+        !args.includes('web-blue') &&
+        !args.includes(getBlueGreenHiveServiceName('blue'))
+    );
+
+    assert.notEqual(runtimeUpIndex, -1);
+    assert.notEqual(hiveUpIndex, -1);
+    assert.notEqual(proxyUpIndex, -1);
+    assert.ok(runtimeUpIndex < hiveUpIndex);
+    assert.ok(hiveUpIndex < proxyUpIndex);
+    const buildCalls = calls.filter(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('build') &&
+        !args.includes('--no-cache')
+    );
+    assert.ok(buildCalls.length > 1);
     assert.ok(
-      calls.some(
-        ([command, args]) =>
-          command === 'docker' &&
-          args[0] === 'compose' &&
-          args[1] === '-f' &&
-          args[2] === PROD_COMPOSE_FILE &&
-          args.includes('up') &&
-          BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.every((service) =>
-            args.includes(service)
-          )
-      )
+      buildCalls.every(([, args, callEnv]) => {
+        const buildIndex = args.indexOf('build');
+        return (
+          args.slice(buildIndex + 1).length === 1 &&
+          callEnv.BUILDX_BUILDER === DEFAULT_BUILDER_NAME &&
+          callEnv.COMPOSE_PARALLEL_LIMIT === '1'
+        );
+      })
     );
     assert.ok(
       calls.some(
@@ -1955,7 +2063,7 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
         ([command, args]) =>
           command === 'docker' && args[0] === 'compose' && args.includes('up')
       ).length,
-      3
+      4
     );
     assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
   } finally {
@@ -1996,6 +2104,19 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
 
     if (args.includes('ps') && args.at(-1) === 'web-green') {
       return { code: 0, signal: null, stderr: '', stdout: 'green-123\n' };
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `${BLUE_GREEN_PROXY_PORTS_JSON}\n`,
+      };
     }
 
     if (args[0] === 'inspect' && args.at(-1) === 'blue-123') {
@@ -2100,11 +2221,217 @@ test('getBlueGreenComposeMigration stages target ports while the legacy project 
   assert.equal(migration.targetProjectName, 'tuturuuu');
   assert.equal(migration.targetEnv.COMPOSE_PROJECT_NAME, 'tuturuuu');
   assert.equal(migration.targetEnv.DOCKER_WEB_REDIS_HOST_PORT, '16379');
+  assert.equal(migration.targetEnv.DOCKER_HIVE_PROXY_HOST_PORT, '17814');
   assert.equal(migration.targetEnv.DOCKER_WEB_PROXY_HOST_PORT, '17803');
+  assert.equal(migration.targetFinalEnv.DOCKER_HIVE_PROXY_HOST_PORT, '7814');
+  assert.equal(migration.targetFinalEnv.DOCKER_WEB_PROXY_HOST_PORT, '7803');
   assert.equal(
     migration.targetEnv.DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT,
     'platform'
   );
+});
+
+test('hasBlueGreenProxyHostPortBindings requires the Hive host port on web-proxy', async () => {
+  let inspectPorts = {
+    '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+  };
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (
+      key ===
+      `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${BLUE_GREEN_PROXY_SERVICE}`
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: 'proxy-123\n' };
+    }
+
+    if (key === 'docker inspect -f {{json .NetworkSettings.Ports}} proxy-123') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `${JSON.stringify(inspectPorts)}\n`,
+      };
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  assert.equal(
+    await hasBlueGreenProxyHostPortBindings({
+      composeFile: PROD_COMPOSE_FILE,
+      env: { PATH: 'test-path' },
+      runCommand,
+    }),
+    false
+  );
+
+  inspectPorts = {
+    ...inspectPorts,
+    '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+  };
+
+  assert.equal(
+    await hasBlueGreenProxyHostPortBindings({
+      composeFile: PROD_COMPOSE_FILE,
+      env: { PATH: 'test-path' },
+      runCommand,
+    }),
+    true
+  );
+});
+
+test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is missing', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-hive-port-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let targetStarted = false;
+  let forcedProxyRefresh = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor('proxy-123\n');
+      }
+      if (serviceName === 'web') return resultFor('');
+      if (serviceName === 'web-green') {
+        return resultFor(targetStarted ? 'green-123\n' : '');
+      }
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor(targetStarted ? `${serviceName}-123\n` : '');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(
+        `${JSON.stringify({
+          '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
+        })}\n`
+      );
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      targetStarted = true;
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('hive-green')) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      forcedProxyRefresh =
+        forcedProxyRefresh || args.includes('--force-recreate');
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      (args.includes('wget') || args.includes('nginx'))
+    ) {
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
+        env: { PATH: 'test-path' },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.equal(forcedProxyRefresh, true);
+    assert.ok(
+      calls.some(
+        (call) =>
+          call.includes(' up --detach --no-build --force-recreate') &&
+          (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+            call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+      )
+    );
+    assert.ok(
+      calls.findIndex((call) => call.includes(' hive-green')) <
+        calls.findIndex(
+          (call) =>
+            call.includes(' up --detach --no-build --force-recreate') &&
+            (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+              call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+        )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy handoff', async () => {
@@ -2131,6 +2458,10 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
     const key = `${command} ${args.join(' ')}`;
     const env = options.env ?? {};
     calls.push({ env, key });
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
 
     if (
       key === `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q` &&
@@ -2169,7 +2500,7 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
 
     if (
       args.includes('up') &&
-      args.includes('hive') &&
+      args.some((arg) => typeof arg === 'string' && arg.startsWith('hive')) &&
       env.COMPOSE_PROJECT_NAME === 'tuturuuu'
     ) {
       assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
@@ -2189,6 +2520,16 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
       args.includes('--timeout') &&
       args.includes(BLUE_GREEN_PROXY_SERVICE)
     ) {
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      env.COMPOSE_PROJECT_NAME === 'tuturuuu' &&
+      !args.includes('--force-recreate')
+    ) {
+      assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '17803');
       return resultFor('');
     }
 
@@ -2358,6 +2699,19 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
         signal: null,
         stderr: '',
         stdout: `container-${args.at(-1)}\n`,
+      };
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `${BLUE_GREEN_PROXY_PORTS_JSON}\n`,
       };
     }
 
@@ -2605,18 +2959,30 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
     );
 
     assert.equal(readBlueGreenActiveColor(paths), 'blue');
-    assert.ok(
-      calls.some(
-        ([command, args]) =>
-          command === 'docker' &&
-          args[0] === 'compose' &&
-          args[1] === '-f' &&
-          args[2] === PROD_COMPOSE_FILE &&
-          args.includes('up') &&
-          args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-          args.includes('web-blue')
-      )
+    const runtimeUpIndex = calls.findIndex(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up') &&
+        args.includes('web-blue') &&
+        !args.includes(BLUE_GREEN_PROXY_SERVICE)
     );
+    const proxyUpIndex = calls.findIndex(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args[1] === '-f' &&
+        args[2] === PROD_COMPOSE_FILE &&
+        args.includes('up') &&
+        args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+        !args.includes('web-blue')
+    );
+
+    assert.notEqual(runtimeUpIndex, -1);
+    assert.notEqual(proxyUpIndex, -1);
+    assert.ok(runtimeUpIndex < proxyUpIndex);
     assert.ok(
       !calls.some(
         ([command, args]) =>
@@ -2659,6 +3025,10 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 
+    if (command === 'docker' && args[0] === 'ps') {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
     if (
       command === 'docker' &&
       args[0] === 'compose' &&
@@ -2697,12 +3067,39 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       };
     }
 
+    if (args.includes('ps') && args.at(-1) === 'hive-blue') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'hive-blue-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-realtime') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'hive-realtime-123\n' : '',
+      };
+    }
+
     if (args.includes('ps') && args.at(-1) === 'web-green') {
       return {
         code: 0,
         signal: null,
         stderr: '',
         stdout: standbyBootstrapped ? 'green-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-green') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: standbyBootstrapped ? 'hive-green-123\n' : '',
       };
     }
 

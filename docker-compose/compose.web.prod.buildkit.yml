@@ -8,7 +8,7 @@ services:
         "/etc/buildkit/buildkitd.toml",
       ]
     container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-buildkit-1
-    cpus: ${DOCKER_WEB_BUILD_CPUS:-2}
+    cpus: ${DOCKER_WEB_BUILD_CPUS:-4}
     healthcheck:
       test: ["CMD", "buildctl", "--addr", "tcp://127.0.0.1:1234", "debug", "workers"]
       interval: 10s

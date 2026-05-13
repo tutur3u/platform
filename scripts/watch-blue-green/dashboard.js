@@ -224,6 +224,8 @@ function summarizeResult(result) {
       return colorize('yellow', 'Local branch ahead, waiting');
     case 'deploy-failed':
       return colorize('red', 'Deploy failed, watching');
+    case 'deployment-active':
+      return colorize('yellow', 'Deployment already active, waiting');
     case 'deployed':
       return colorize('green', 'Deploy succeeded');
     case 'dirty':

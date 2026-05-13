@@ -6,6 +6,7 @@ const path = require('node:path');
 
 const { renderBlueGreenProxyConfig } = require('./docker-web/blue-green.js');
 const {
+  DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS,
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   DeploymentBuildLockConflictError,
   acquireDeploymentBuildLock,
@@ -824,6 +825,58 @@ test('acquireWatchLock writes a PID-backed lock and releaseWatchLock removes it'
     });
 
     assert.equal(readWatchLock(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('releaseWatchLock can preserve target metadata without a stale PID', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-lock-preserve-target-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const processImpl = {
+    kill(pid) {
+      if (pid !== 4321) {
+        const error = new Error('missing');
+        error.code = 'ESRCH';
+        throw error;
+      }
+    },
+    pid: 4321,
+  };
+
+  try {
+    acquireWatchLock(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        fsImpl: fs,
+        paths,
+        processImpl,
+      }
+    );
+
+    releaseWatchLock({
+      fsImpl: fs,
+      now: () => 1234,
+      paths,
+      preserveTarget: true,
+      processImpl,
+    });
+
+    assert.deepEqual(readWatchLock(paths), {
+      branch: 'production',
+      createdAt: readWatchLock(paths).createdAt,
+      releasedAt: 1234,
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    });
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2715,6 +2768,229 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
   assert.equal(result.status, 'deployed');
 });
 
+test('runDeployWatchIteration waits instead of retrying while a deployment build is active', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-active-deploy-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        commitSubject: 'Current deployment',
+        deploymentKind: 'promotion',
+        lockToken: 'active-token',
+        ownerPid: 9876,
+        startedAt: 1000,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        env: { PATH: process.env.PATH },
+        fsImpl: fs,
+        log: {
+          info() {},
+          warn() {},
+        },
+        now: () => 2000,
+        paths,
+        processImpl: {
+          kill(pid) {
+            if (pid !== 9876) {
+              const error = new Error('missing');
+              error.code = 'ESRCH';
+              throw error;
+            }
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    assert.equal(result.status, 'deployment-active');
+    assert.equal(result.activeDeployment?.ownerPid, 9876);
+    assert.equal(result.deployments.length, 1);
+    assert.equal(readDeploymentHistory(paths, fs).length, 1);
+    assert.ok(
+      calls.every(
+        (call) =>
+          call !==
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration terminates a timed-out deployment build lock', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-timeout-deploy-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const signals = [];
+  const startedAt = 1000;
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          activatedAt: 500,
+          activeColor: 'blue',
+          commitHash: 'aaa111111111111111111',
+          commitShortHash: 'aaa111',
+          commitSubject: 'Previous successful deployment',
+          finishedAt: 500,
+          startedAt: 100,
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+    writeDeploymentBuildLock(
+      {
+        command: 'bun serve:web:docker:bg',
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        commitSubject: 'Current deployment',
+        deploymentKind: 'promotion',
+        lockToken: 'timeout-token',
+        ownerPid: 9876,
+        startedAt,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        env: { PATH: process.env.PATH },
+        fsImpl: fs,
+        log: {
+          info() {},
+          warn() {},
+        },
+        now: () => startedAt + DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS + 1,
+        paths,
+        processImpl: {
+          kill(pid, signal) {
+            if (pid !== 9876) {
+              const error = new Error('missing');
+              error.code = 'ESRCH';
+              throw error;
+            }
+
+            signals.push(signal ?? 0);
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+    assert.equal(result.status, 'deploy-failed');
+    assert.deepEqual(signals, [0, 'SIGTERM']);
+    assert.equal(readDeploymentBuildLock(paths, fs), null);
+    assert.equal(history[0].status, 'failed');
+    assert.equal(history[0].commitShortHash, 'bbb222');
+    assert.match(history[0].failureReason, /exceeded 30m/iu);
+    assert.ok(
+      calls.every(
+        (call) =>
+          call !==
+          `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
+      )
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-bun-lock-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
@@ -2871,7 +3147,23 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult('blue-123\n'),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
+        createResult('hive-realtime-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
+        createResult('hive-blue-123\n'),
+      ],
+      [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
         createResult(''),
       ],
       [
@@ -2879,11 +3171,15 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
+        createResult(''),
+      ],
+      [
         'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -2891,7 +3187,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime`,
         createResult(''),
       ],
       [
@@ -2908,6 +3204,14 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
         createResult('healthy\n'),
       ],
       [
@@ -2940,6 +3244,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
+        createResult(''),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
         createResult(''),
       ],
     ]);
@@ -3094,6 +3402,13 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         return createResult('');
       }
 
+      if (
+        key ===
+        `docker ps -aq --filter name=^/${composeProjectName}-hive-1$ --format {{.ID}}`
+      ) {
+        return createResult('');
+      }
+
       if (key === `docker tag ${cachedImageTag} ${activeServiceImageName}`) {
         activeBootstrapped = true;
         fs.writeFileSync(paths.blueGreen.stateFile, 'blue\n', 'utf8');
@@ -3136,14 +3451,14 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
 
       if (
         key ===
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime`
       ) {
         return createResult('');
       }
 
       if (
         key ===
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
       ) {
         return createResult('');
       }
@@ -3164,9 +3479,30 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
 
       if (
         key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`
+      ) {
+        return createResult(activeBootstrapped ? 'hive-blue-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`
+      ) {
+        return createResult(activeBootstrapped ? 'hive-realtime-123\n' : '');
+      }
+
+      if (
+        key ===
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-green`
       ) {
         return createResult(standbyBootstrapped ? 'green-123\n' : '');
+      }
+
+      if (
+        key ===
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-green`
+      ) {
+        return createResult(standbyBootstrapped ? 'hive-green-123\n' : '');
       }
 
       if (
@@ -3180,7 +3516,13 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         key ===
           'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123' ||
         key ===
-          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123'
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} green-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-green-123' ||
+        key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123'
       ) {
         return createResult('healthy\n');
       }
@@ -3191,7 +3533,9 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         key ===
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} nginx -s reload` ||
         key ===
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status` ||
+        key ===
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`
       ) {
         return createResult('');
       }
@@ -3231,12 +3575,12 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
     );
     assert.ok(
       calls.includes(
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime`
       )
     );
     assert.ok(
       calls.includes(
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green`
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-green hive-green`
       )
     );
     assert.equal(
@@ -3357,7 +3701,23 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult('blue-123\n'),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-blue`,
+          createResult('hive-blue-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q hive-realtime`,
+          createResult('hive-realtime-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
+          createResult('hive-blue-123\n'),
+        ],
+        [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
+          createResult(''),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop hive-blue`,
           createResult(''),
         ],
         [
@@ -3365,11 +3725,15 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f hive-blue`,
+          createResult(''),
+        ],
+        [
           'docker logs --timestamps --since 2026-04-18T10:30:00.000Z proxy-123',
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
           createResult(''),
         ],
         [
@@ -3377,7 +3741,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive hive-realtime`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans hive-blue hive-realtime`,
           createResult(''),
         ],
         [
@@ -3394,6 +3758,14 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-blue-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} hive-realtime-123`,
           createResult('healthy\n'),
         ],
         [
@@ -3426,6 +3798,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`,
+          createResult(''),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7814/login`,
           createResult(''),
         ],
       ])
@@ -5679,6 +6055,232 @@ test('main skips recovery deploys when the latest successful build already match
       false
     );
     assert.equal(readPendingDeployRequest(paths, fs), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main checks out production when startup is detached and no target lock remains', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-detached-no-lock-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+  let checkedOutBranch = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult(checkedOutBranch ? 'production\n' : 'HEAD\n');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref --symbolic-full-name @{u}') {
+          return createResult('', {
+            code: 1,
+            stderr: 'fatal: HEAD has no upstream configured\n',
+          });
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git checkout production') {
+          checkedOutBranch = true;
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin production') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git rev-parse origin/production') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nRecover production\n2026-05-12T15:23:00.000Z\n'
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error(message) {
+          throw new Error(message);
+        },
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('git checkout production'));
+    assert.ok(calls.includes('git fetch origin production'));
+    assert.equal(readWatchLock(paths), null);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('main recovers the locked branch from target metadata when the checkout is detached', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-main-detached-lock-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const uiState = {};
+  let checkedOutBranch = false;
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(
+        {
+          branch: 'production',
+          releasedAt: 1000,
+          remote: 'origin',
+          upstreamBranch: 'production',
+          upstreamRef: 'origin/production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+
+    await main(['--once'], {
+      env: {
+        PATH: process.env.PATH,
+        [WATCHER_CONTAINER_ENV]: '1',
+      },
+      envFilePath,
+      fsImpl: fs,
+      now: () => 2000,
+      processImpl: {
+        argv: ['node', 'scripts/watch-blue-green-deploy.js'],
+        exit() {},
+        on() {},
+        pid: 4321,
+      },
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult(checkedOutBranch ? 'production\n' : 'HEAD\n');
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git checkout production') {
+          checkedOutBranch = true;
+          return createResult('');
+        }
+
+        if (key === 'git fetch origin production') {
+          return createResult('');
+        }
+
+        if (key === 'git rev-parse HEAD') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git rev-parse origin/production') {
+          return createResult('bbb222222222222222222\n');
+        }
+
+        if (key === 'git log -1 --format=%H%n%h%n%s%n%cI HEAD') {
+          return createResult(
+            'bbb222222222222222222\nbbb222\nStay on production\n2026-05-12T15:22:00.000Z\n'
+          );
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      ui: {
+        close() {},
+        error(message) {
+          throw new Error(message);
+        },
+        info() {},
+        render() {},
+        start() {},
+        state: uiState,
+        update(patch) {
+          Object.assign(uiState, patch);
+        },
+        warn() {},
+      },
+    });
+
+    assert.ok(calls.includes('git checkout production'));
+    assert.ok(calls.includes('git fetch origin production'));
+    assert.equal(
+      calls.includes('git rev-parse --abbrev-ref --symbolic-full-name @{u}'),
+      false
+    );
+    assert.deepEqual(readWatchLock(paths), {
+      branch: 'production',
+      createdAt: readWatchLock(paths).createdAt,
+      releasedAt: 2000,
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    });
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

@@ -18,6 +18,7 @@ const {
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   ensureBlueGreenRuntime,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -32,6 +33,7 @@ const {
   runBlueGreenProdWorkflow,
   splitBlueGreenProdServicePhases,
   testBlueGreenProxyRouting,
+  testBlueGreenHiveProxyRouting,
   writeBlueGreenActiveColor,
   writeBlueGreenProxyConfig,
 } = require('./docker-web/blue-green.js');
@@ -79,7 +81,6 @@ const {
 } = require('./watch-blue-green/history.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
-  readWatchStatus,
   WATCHER_CONTAINER_ENV,
   BLUE_GREEN_WATCHER_SERVICE,
   startBlueGreenWatcherContainer,
@@ -89,11 +90,8 @@ const {
   DEPLOYMENT_BUILD_LOCK_TOKEN_ENV,
   acquireDeploymentBuildLock,
   clearDeploymentBuildLock,
-  getActiveDeploymentFromStatus,
-  isDeploymentBuildLockBlocking,
-  isProcessAlive,
-  readDeploymentBuildLock,
-  tryInvalidateStaleDeploymentBuildLock,
+  describeActiveDeploymentConflict,
+  getActiveDeploymentConflict,
 } = require('./watch-blue-green/build-lock.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
@@ -330,105 +328,6 @@ function getInPlaceProdServices(parsed) {
   }
 
   return services;
-}
-
-function formatElapsedDuration(ms) {
-  const seconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  if (minutes <= 0) {
-    return `${remainingSeconds}s`;
-  }
-
-  return `${minutes}m ${remainingSeconds}s`;
-}
-
-function getActiveDeploymentConflict({
-  env = process.env,
-  fsImpl = fs,
-  now = () => Date.now(),
-  paths = getWatchPaths(),
-  platform,
-  processImpl = process,
-} = {}) {
-  let lock = readDeploymentBuildLock(paths, fsImpl);
-  if (lock) {
-    tryInvalidateStaleDeploymentBuildLock(lock, {
-      env,
-      fsImpl,
-      now,
-      paths,
-      platform,
-      processImpl,
-    });
-    lock = readDeploymentBuildLock(paths, fsImpl);
-  }
-
-  if (
-    lock &&
-    isDeploymentBuildLockBlocking(lock, {
-      env,
-      fsImpl,
-      now,
-      platform,
-      processImpl,
-    })
-  ) {
-    return {
-      elapsedMs: Math.max(0, now() - (lock.startedAt ?? now())),
-      lock,
-      source: 'lock',
-      status: 'building',
-    };
-  }
-
-  const status = readWatchStatus(paths, fsImpl);
-  const activeDeployment = getActiveDeploymentFromStatus(status);
-
-  if (!activeDeployment) {
-    return null;
-  }
-
-  const ownerPid = Number(status?.ownerPid ?? status?.pid);
-  if (Number.isInteger(ownerPid) && ownerPid > 0) {
-    if (!isProcessAlive(ownerPid, processImpl)) {
-      return null;
-    }
-  }
-
-  return {
-    elapsedMs: Math.max(0, now() - (activeDeployment.startedAt ?? now())),
-    lock: {
-      command: 'blue/green watcher',
-      commitHash: activeDeployment.commitHash ?? null,
-      commitShortHash: activeDeployment.commitShortHash ?? null,
-      commitSubject: activeDeployment.commitSubject ?? null,
-      deploymentKind: activeDeployment.deploymentKind ?? 'watcher',
-      ownerPid: Number.isInteger(ownerPid) && ownerPid > 0 ? ownerPid : null,
-      startedAt: activeDeployment.startedAt ?? null,
-    },
-    source: 'watch-status',
-    status: activeDeployment.status,
-  };
-}
-
-function describeActiveDeploymentConflict(conflict) {
-  const lock = conflict?.lock ?? {};
-  const details = [
-    `status=${conflict?.status ?? 'unknown'}`,
-    `source=${conflict?.source ?? 'unknown'}`,
-    lock.ownerPid ? `pid=${lock.ownerPid}` : null,
-    lock.command ? `command=${lock.command}` : null,
-    lock.deploymentKind ? `kind=${lock.deploymentKind}` : null,
-    lock.commitShortHash ? `commit=${lock.commitShortHash}` : null,
-    lock.commitSubject ? `subject=${lock.commitSubject}` : null,
-    conflict?.elapsedMs != null
-      ? `elapsed=${formatElapsedDuration(conflict.elapsedMs)}`
-      : null,
-  ].filter(Boolean);
-
-  return details.join(', ');
 }
 
 async function promptForActiveDeploymentCancellation(
@@ -757,10 +656,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       }));
     const workflowEnv = blueGreenBuildLock
       ? {
-          ...env,
+          ...composeEnv,
           [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
         }
-      : env;
+      : composeEnv;
 
     try {
       await runBlueGreenProdWorkflow(parsed, {
@@ -926,6 +825,7 @@ module.exports = {
   ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
@@ -958,6 +858,7 @@ module.exports = {
   runChecked,
   stripUnquotedInlineComment,
   testBlueGreenProxyRouting,
+  testBlueGreenHiveProxyRouting,
   usesBlueGreenStrategy,
   waitForComposeServiceHealthy,
   writeBlueGreenActiveColor,

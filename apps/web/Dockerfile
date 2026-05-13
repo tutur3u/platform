@@ -93,15 +93,18 @@ RUN chmod +x apps/web/docker/dev-entrypoint.sh
 ENTRYPOINT ["./apps/web/docker/dev-entrypoint.sh"]
 CMD ["bun", "run", "dev:web"]
 
-FROM oven/bun:1.3.13 AS builder
+FROM node:24-bookworm-slim AS builder
 
 WORKDIR /workspace
 
 ENV CI=1
 ENV DOCKER_WEB_STANDALONE=1
+ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node
+ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=deps /workspace ./
 COPY . .
 
@@ -110,7 +113,7 @@ RUN --mount=type=cache,id=platform-web-turbo,target=/workspace/.turbo \
   --mount=type=secret,id=web_env,target=/tmp/web.env \
   bun --env-file=/tmp/web.env ./scripts/build-web-docker.js
 
-FROM node:22-bookworm-slim AS runner
+FROM node:24-bookworm-slim AS runner
 
 WORKDIR /app
 

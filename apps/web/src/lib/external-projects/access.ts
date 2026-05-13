@@ -304,12 +304,12 @@ async function getPermissionsForUserId({
   });
 }
 
-function appTokenHasRequiredScope(
+export function appTokenHasRequiredScope(
   claims: AppCoordinationTokenClaims,
   mode: WorkspaceExternalProjectMode
 ) {
   if (claims.scopes.length === 0) {
-    return true;
+    return false;
   }
 
   const requiredScope =

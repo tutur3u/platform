@@ -134,8 +134,8 @@ async function resolveExchangeTarget({
   }
 
   return {
-    scopes: requestedScopes,
-    targetApp: resolvedTargetApp,
+    error: 'Missing app credentials',
+    status: 401,
   } as const;
 }
 
