@@ -5,7 +5,9 @@ updatedAt: '2026-05-13'
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
-only by Hive; do not replace it with Supabase Realtime.
+only by Hive; do not replace it with Supabase Realtime. The shared protocol and
+Yjs helpers live in `@tuturuuu/realtime/hive` so `apps/hive`,
+`apps/hive-realtime`, and `apps/web` use the same message schemas.
 
 ## Required Environment
 
@@ -19,10 +21,15 @@ only by Hive; do not replace it with Supabase Realtime.
   when they need the service-side endpoint.
 - `NEXT_PUBLIC_HIVE_REALTIME_URL`: browser-facing WebSocket URL, normally
   `wss://hive.tuturuuu.com/realtime` in production.
+- `HIVE_DATABASE_URL`: Postgres URL for the dedicated Hive product database.
+  Realtime uses this database to load compacted CRDT snapshots, append Yjs
+  update bytes, and persist audit events. Supabase is not the Hive product store
+  after backfill.
 - Supabase credentials already used by `apps/web`, especially
   `NEXT_PUBLIC_SUPABASE_URL` with `SUPABASE_SECRET_KEY`. `SUPABASE_SERVER_URL`
   may still override the server-side URL when the deployment needs a
-  Docker-internal Supabase origin.
+  Docker-internal Supabase origin. These credentials are identity/session
+  infrastructure only for Hive realtime token validation and web auth.
 
 `apps/hive` shares the same Supabase setup as `apps/web`. Docker runtime env
 comes from `.env.local` with the same `apps/web/.env.local` fallback, and the
@@ -76,35 +83,42 @@ Clients connect with a short-lived token from
 `POST /api/v1/hive/servers/:serverId/realtime-token`. Tokens include user ID,
 server ID, role, expiry, and event scopes.
 
-Accepted client messages are typed commands:
+Accepted client messages are CRDT sync, awareness, compatibility, and health
+messages:
 
-- `block.place`
-- `block.remove`
-- `object.place`
-- `object.remove`
-- `object.move`
-- `npc.move`
-- `npc.config`
-- `npc.decision`
-- `server.metadata`
-- `selection`
-- `presence.join`
+- `sync.hello`
+- `sync.update`
+- `sync.diff`
+- `sync.compacted`
+- `awareness.update`
+- `presence`
+- `server.status`
+- `error`
+- `world.event`
+- `world.event.applied`
 
-World events are persisted through the central `apply_hive_world_event(...)`
-RPC so stale revisions are rejected before broadcast. Revision conflicts are a
-normal editor sync condition, not an operational error. The web API checks the
-current revision before calling the RPC, and the RPC returns an empty result for
-last-moment conflicts instead of raising `hive_revision_conflict`; this prevents
-stale editors from flooding Postgres logs and database usage.
+The durable shared world is a Yjs document per server. Clients send encoded Yjs
+deltas as base64 in `sync.update`, and the realtime service appends those bytes
+to `hive_crdt_updates`. State-vector sync lets a reconnecting client request
+only missing updates, while periodic compaction stores merged snapshots in
+`hive_world_states.crdt_snapshot`.
 
-The Hive client also serializes world-edit saves and applies a short cooldown
-after a conflict. If a user edits against an old revision, Hive reloads the
-latest snapshot and waits for the next explicit edit instead of immediately
-retrying a rebased mutation loop.
+`revision` is a compatibility display value backed by `op_seq`; it is not a
+write precondition for commutative CRDT world edits. Money, item ownership,
+warehouses, trades, LLM spend, and bankruptcy still go through the `apps/web`
+Hive APIs and Hive Postgres transactions. Realtime broadcasts only the committed
+visual projections for those authoritative writes.
 
-When an edit is accepted by the central API first, the Hive app emits
-`world.event.applied` to the WebSocket service. The realtime service validates
-that the token server ID matches the event server ID, then broadcasts the event
-and full accepted world snapshot to that server room. This keeps other clients
-from resurrecting deleted blocks by refetching a stale snapshot before the
-accepted revision is visible.
+`world.event` and `world.event.applied` remain as temporary compatibility
+wrappers for older full-world edit flows. The service converts accepted payloads
+into CRDT updates before broadcasting them to the room.
+
+Awareness is ephemeral and TTL-based. It includes user ID, display name, avatar
+URL, role, color, active tool, selected entity, terrain cursor, camera position,
+world avatar position, viewport focus, and `lastSeenAt`. Do not persist
+awareness state into `hive_world_states`, `hive_crdt_updates`, or audit events.
+
+Operationally, the client should expect token refresh on reconnect,
+exponential backoff, heartbeat/TTL presence cleanup, actor echo suppression,
+offline edit queue replay, cursor/position throttling, and slow-client
+backpressure handling.

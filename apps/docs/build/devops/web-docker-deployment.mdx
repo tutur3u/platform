@@ -573,13 +573,13 @@ How it works:
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
   `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
 - Hive Docker images use a filtered workspace install and a Next standalone
-  runner, while Hive realtime installs only its filtered production workspace
-  with Bun's hoisted linker so the direct `bun apps/hive-realtime/src/index.ts`
-  runtime can resolve top-level production packages such as
-  `@supabase/supabase-js`. Keep `.dockerignore` explicit about recursive
-  generated directories such as `**/.next/**`, `tmp/**`, `apps/mobile/build/**`,
-  and `apps/backend/target/**`; otherwise previous local builds can be copied
-  into the next Docker context and inflate small sidecar images by several
+  runner, while Hive realtime installs its filtered production workspace with
+  Bun's hoisted linker so the direct `bun apps/hive-realtime/src/index.ts`
+  runtime can resolve top-level production packages such as `postgres` and
+  `@tuturuuu/realtime`. Keep `.dockerignore` explicit about recursive generated
+  directories such as `**/.next/**`, `tmp/**`, `apps/mobile/build/**`, and
+  `apps/backend/target/**`; otherwise previous local builds can be copied into
+  the next Docker context and inflate small sidecar images by several
   gigabytes.
 
 Operational notes:
@@ -887,6 +887,14 @@ Dashboard details:
   are routed from `hive.tuturuuu.com`, and `hive-realtime` serves `/realtime` with
   `HIVE_REALTIME_TOKEN_SECRET`, `HIVE_REALTIME_URL`, and
   `NEXT_PUBLIC_HIVE_REALTIME_URL` configured in the same production stack.
+  Hive product data is stored in the Docker-managed `hive-postgres` service via
+  `HIVE_DATABASE_URL`; Supabase remains the identity/session source only. The
+  `web`, `web-cron-runner`, `hive-{color}`, and `hive-realtime` services must
+  all receive that URL so API routes, disabled-by-default simulation cron, the
+  editor, and the CRDT realtime service share the same Hive product database.
+  Optional local LLM support runs behind the `hive-ollama` profile and is
+  disabled unless operators enable the profile and Hive settings enable the
+  exact `gemma4` model.
   Production compose publishes **`7814:7814`** from `web-proxy`, not from a
   direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
   reaches the currently promoted Hive color.

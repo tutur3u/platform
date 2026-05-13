@@ -1,6 +1,6 @@
 ---
 title: Hive
-description: Voxel research editor for shared simulated environments and manual NPC decision experiments.
+description: Voxel research playground for CRDT worlds, farming simulation, NPC economies, and manual or autonomous society experiments.
 ---
 
 Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
@@ -15,35 +15,59 @@ cookie can mask a valid central login handoff.
 
 ## Access Model
 
-- Production access requires a row in `hive_members` with `enabled = true`.
+- Production access requires a row in the Hive Postgres `hive_members` table
+  with `enabled = true`.
 - Platform admins are users whose `platform_user_roles.allow_role_management`
   value is `true`; they can create and manage Hive servers and Hive members.
+- Root workspace admins can enable or disable Hive access from
+  `/{rootWorkspaceId}/platform/roles` without opening the Hive satellite app.
 - V1 server policy is intentionally broad: every enabled Hive member can join
   every enabled Hive server.
+- Supabase remains the identity, session, and platform-admin source. Hive
+  product data belongs in the dedicated Docker-managed Hive Postgres database
+  and is accessed through `HIVE_DATABASE_URL`.
 
 ## Data Model
 
-Hive stores shared world state as revisioned snapshots and events:
+Hive stores product state in the dedicated Hive Postgres database:
 
 - `hive_servers`
 - `hive_world_states`
 - `hive_world_events`
+- `hive_crdt_updates`
 - `hive_npcs`
+- `hive_npc_needs`
+- `hive_npc_wallets`
 - `hive_npc_memories`
 - `hive_npc_runs`
+- `hive_ledger_entries`
+- `hive_inventory_items`
+- `hive_warehouses`
+- `hive_trade_offers`
+- `hive_crop_instances`
+- `hive_simulation_ticks`
 - `hive_members`
 
-World edits should be persisted through `apply_hive_world_event(...)` so stale
-revision writes are rejected consistently.
-The actor-accepting RPC is a server-mediated write path only: direct browser
-roles must call the `apps/web` Hive API or Hive realtime service, and database
-grants should keep `apply_hive_world_event(uuid, uuid, bigint, text, jsonb,
-jsonb)` executable only by `service_role`. The function still derives
-`auth.uid()` for non-service execution and rejects actor mismatches as a
-defense-in-depth guard.
-The API maps RPC failures into explicit response codes, including
-`hive_revision_conflict`, `hive_access_denied`, and `hive_server_not_found`, so
-clients can distinguish sync conflicts from invalid edit payloads.
+Shared editor state is a Yjs CRDT document per Hive server. Terrain blocks,
+objects, public NPC projections, farm tiles, and visual warehouse/crop
+projections live in keyed CRDT maps. Money, item ownership, trade settlement,
+warehouse transfers, LLM spend, and bankrupt elimination stay relational and
+transactional in Postgres so currency and inventory cannot be duplicated by CRDT
+merge behavior.
+
+`revision` is now a compatibility display value backed by the monotonic `op_seq`
+audit counter. It is not a write precondition for normal CRDT world edits.
+Authoritative economy writes must use SQL transactions, idempotency keys where
+available, and ledger rows.
+
+The one-shot Hive backfill path copies legacy Supabase Hive rows into Hive
+Postgres. After backfill, `/api/v1/hive/*` routes should write Hive Postgres
+only, while Supabase is used only to authenticate the caller and resolve
+platform-admin status.
+
+Shared realtime payloads and Hive CRDT helpers live in
+`@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,
+`apps/hive-realtime`, or `apps/web` need the same message or document contract.
 
 ## Editor Surface
 
@@ -56,10 +80,10 @@ uses that shell for collapsible left/right rails, top research overlays, and the
 bottom tool dock so satellite apps can share layout mechanics while keeping
 Hive-specific tool density and viewport behavior.
 
-Hive V1 keeps one editable world per server. Admins manage that world through
+Hive keeps one editable CRDT world per server. Admins manage that world through
 server controls: creating a server creates its world, deleting a server deletes
-the world through database cascade, and clear/reseed actions persist typed world
-events against the current server snapshot.
+the world through database cascade, and clear/reseed actions persist typed audit
+events plus CRDT updates against the current server document.
 
 The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World
@@ -72,19 +96,43 @@ Manual morning, noon, afternoon, evening, and midnight modes use authored scene
 backdrops rather than a generic sky preset. Auto 24h mode advances a fast
 simulated day, shows the in-world clock in the summary overlay, and smoothly
 lerps scene lighting, fog, background, and cloud tint between themes.
-When a world edit fails because the local revision is stale, the Hive editor
-refetches the latest snapshot, rebases the intended edit once, and then either
-advances the revision from the successful response or shows a non-blocking sync
-notice.
+Realtime multiplayer awareness is ephemeral. Avatar badges, terrain cursors,
+selection rings, active tool state, camera focus, and in-world user markers are
+sent as TTL-based awareness updates and must not be persisted into durable
+world snapshots.
+
+Offline world edits are queued as CRDT updates and replayed on reconnect. The
+client uses token refresh, exponential backoff, state-vector resync, throttled
+cursor/position updates, and local actor echo suppression to keep the research
+surface responsive during reconnects and slow-client conditions.
 
 Client data access must go through `@tuturuuu/internal-api` helpers and
 TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
 
-## NPC Research Runs
+## Economy And Farming
 
-V1 supports manual NPC decision runs only. A run captures the current world,
-nearby entities, selected prompt mode, optional backstory, and active memories.
-The API persists the decision in `hive_npc_runs`, appends a typed
-`npc.decision` event, and lets realtime clients broadcast the result.
+Each Hive server has a total currency pool, NPC wallets, inventories,
+warehouses, trade offers, crops, and ledger-backed transfers. NPCs have hunger,
+energy, morale, upkeep, and optional LLM spend budgets. Crop rules cover
+soil/water/fertilizer state, growth stages, harvest yields, and day-cycle
+simulation.
 
-Autonomous simulation ticks are intentionally deferred to a later phase.
+Manual tools can plant, water, harvest, deposit, withdraw, and settle trades.
+Autonomous ticks can advance crops, choose NPC jobs, apply upkeep, record LLM
+run costs, credit earnings, and eliminate NPCs whose wallets cannot cover
+required costs.
+
+Cron-backed Hive simulation is intentionally disabled by default. Enable global
+Hive cron and per-server autonomous simulation through Hive settings only after
+budget limits, tick interval, and max LLM spend have been reviewed.
+
+## LLM Providers
+
+Ollama is optional and disabled by default. Docker can start the
+`hive-ollama` profile, and Hive settings can enable the local model id exactly
+as `gemma4`. The app loads the model through Ollama's generate API, generates
+through `/api/generate`, and unloads by sending `keep_alive: 0`.
+
+Every Mira-powered LLM path must be gated by an exact `@tuturuuu.com` email
+check. Subdomains such as `@xwf.tuturuuu.com` are not Tuturuuu-internal for
+Mira access.
