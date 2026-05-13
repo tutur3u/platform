@@ -197,6 +197,14 @@ export type UpdateCurrentUserProfilePayload = {
   full_name?: string | null;
 };
 
+export type UpdatePlatformUserRolesPayload = {
+  allow_challenge_management: boolean;
+  allow_manage_all_challenges: boolean;
+  allow_role_management: boolean;
+  allow_workspace_creation: boolean;
+  enabled: boolean;
+};
+
 export interface CreateSupportInquiryPayload {
   name: string;
   email: string;
@@ -351,6 +359,25 @@ export async function updateCurrentUserProfile(
     },
     body: JSON.stringify(payload),
     cache: 'no-store',
+  });
+}
+
+export async function updatePlatformUserRoles(
+  userId: string,
+  payload: UpdatePlatformUserRolesPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    data: unknown;
+    message: string;
+  }>(`/api/v1/platform/users/${encodePathSegment(userId)}/roles`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
   });
 }
 

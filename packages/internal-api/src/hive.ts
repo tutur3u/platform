@@ -28,6 +28,19 @@ export type HiveWorldData = {
   objects: HiveObject[];
 };
 
+export type HiveServerSettings = {
+  autonomousNpcEnabled?: boolean;
+  cronEnabled?: boolean;
+  llmProvider?: 'disabled' | 'ollama' | 'mira';
+  maxLlmSpendPerTick?: number;
+  maxTickBudget?: number;
+  ollamaEnabled?: boolean;
+  ollamaKeepAlive?: string;
+  ollamaModel?: 'gemma4';
+  simulationCronEnabled?: boolean;
+  tickIntervalSeconds?: number;
+};
+
 export type HiveServer = {
   createdAt: string;
   description: string | null;
@@ -35,7 +48,10 @@ export type HiveServer = {
   id: string;
   maxPlayers: number;
   name: string;
+  ollamaState?: HiveJsonObject;
+  settings?: HiveServerSettings;
   slug: string;
+  totalCurrency?: number;
 };
 
 export type HiveWorldEvent = {
@@ -60,8 +76,50 @@ export type HiveNpc = {
   role: string;
   serverId: string;
   settings: HiveJsonObject;
+  status?: string;
   systemPrompt: string;
 };
+
+export type HiveRealtimeAwareness = {
+  activeTool?: string;
+  avatarUrl?: string | null;
+  camera?: HiveVector3;
+  color: string;
+  cursor?: HiveVector3 | null;
+  displayName: string;
+  focus?: string;
+  lastSeenAt: string;
+  role: 'admin' | 'member' | 'researcher';
+  selection?: { id: string; kind: string } | null;
+  userId: string;
+  worldPosition?: HiveVector3 | null;
+};
+
+export type HiveEconomySnapshot = {
+  inventories?: Array<{
+    item_type: string;
+    owner_id: string;
+    owner_type: string;
+    quantity: number;
+  }>;
+  totalCurrency: number;
+  warehouses?: Array<{
+    capacity: number;
+    id: string;
+    name: string;
+    position: HiveJsonObject;
+  }>;
+};
+
+export type HiveCropSnapshot = Array<{
+  crop_type: string;
+  growth_stage: number;
+  health: number;
+  id: string;
+  max_growth_stage: number;
+  needs_water: boolean;
+  position: HiveJsonObject;
+}>;
 
 export type HiveNpcMemory = {
   content: string;
@@ -88,6 +146,12 @@ export type HiveMember = {
 };
 
 export type HiveSnapshotResponse = {
+  crdt?: {
+    state: string | null;
+    stateVector: string | null;
+  };
+  crops?: HiveCropSnapshot;
+  economy?: HiveEconomySnapshot;
   events: HiveWorldEvent[];
   npcs: HiveNpc[];
   revision: number;
@@ -112,6 +176,62 @@ export type HiveWorldEventPayload = {
   payload: HiveJsonObject;
   world: HiveWorldData;
 };
+
+export type HiveCrdtUpdatePayload = {
+  update: string;
+  world?: HiveWorldData;
+};
+
+export type HiveFarmingActionPayload =
+  | {
+      action: 'plant';
+      cropType?: string;
+      npcId?: string;
+      position: HiveVector3;
+    }
+  | {
+      action: 'water';
+      cropId: string;
+    }
+  | {
+      action: 'harvest';
+      cropId: string;
+      npcId?: string;
+    };
+
+export type HiveWarehouseActionPayload =
+  | {
+      action: 'create';
+      capacity?: number;
+      name: string;
+      position: HiveVector3;
+    }
+  | {
+      action: 'transfer';
+      fromOwnerId: string;
+      fromOwnerType: 'npc' | 'warehouse';
+      itemType: string;
+      quantity: number;
+      toOwnerId: string;
+      toOwnerType: 'npc' | 'warehouse';
+    };
+
+export type HiveTradeActionPayload =
+  | {
+      action: 'create';
+      expiresAt?: string | null;
+      fromNpcId: string;
+      offeredCurrency?: number;
+      offeredItems?: Json[];
+      requestedCurrency?: number;
+      requestedItems?: Json[];
+      toNpcId?: string | null;
+    }
+  | {
+      acceptingNpcId: string;
+      action: 'accept';
+      tradeId: string;
+    };
 
 export type HiveNpcPayload = {
   backstory?: string;
@@ -216,6 +336,119 @@ export async function createHiveWorldEvent(
     revision: number;
   }>(`/api/v1/hive/servers/${encodeURIComponent(serverId)}/events`, {
     body: JSON.stringify(payload),
+    cache: 'no-store',
+    method: 'POST',
+  });
+}
+
+export async function getHiveCrdtSnapshot(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    opSeq: number;
+    state: string | null;
+    stateVector: string | null;
+    world: HiveWorldData;
+  }>(`/api/v1/hive/servers/${encodeURIComponent(serverId)}/crdt`, {
+    cache: 'no-store',
+  });
+}
+
+export async function postHiveCrdtUpdate(
+  serverId: string,
+  payload: HiveCrdtUpdatePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    opSeq: number;
+    stateVector: string | null;
+    world: HiveWorldData;
+  }>(`/api/v1/hive/servers/${encodeURIComponent(serverId)}/crdt`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    method: 'POST',
+  });
+}
+
+export async function updateHiveServerSettings(
+  serverId: string,
+  payload: HiveServerSettings,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ server: HiveServer }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/settings`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function getHiveEconomy(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    economy: HiveEconomySnapshot & { ledger?: Json[] };
+  }>(`/api/v1/hive/servers/${encodeURIComponent(serverId)}/economy`, {
+    cache: 'no-store',
+  });
+}
+
+export async function runHiveFarmingAction(
+  serverId: string,
+  payload: HiveFarmingActionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<Json>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/farming`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function runHiveWarehouseAction(
+  serverId: string,
+  payload: HiveWarehouseActionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<Json>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/warehouses`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function runHiveTradeAction(
+  serverId: string,
+  payload: HiveTradeActionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<Json>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/trades`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function runHiveSimulationTick(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    result: { actions: number; serverId: string; status: string };
+  }>(`/api/v1/hive/servers/${encodeURIComponent(serverId)}/simulate`, {
     cache: 'no-store',
     method: 'POST',
   });
