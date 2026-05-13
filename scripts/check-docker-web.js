@@ -44,10 +44,18 @@ const DRAIN_STATUS_HEALTHCHECK_PATTERN =
   /fetch\(`http:\/\/127\.0\.0\.1:\$\{process\.env\.PORT \|\| 7803\}\/__platform\/drain-status`\)/;
 const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   '**/.next',
+  '**/.next/**',
   '**/.turbo',
+  '**/.turbo/**',
   '**/coverage',
+  '**/coverage/**',
+  '**/node_modules/**',
+  'tmp/**',
   'apps/mobile/.dart_tool',
+  'apps/mobile/.dart_tool/**',
   'apps/mobile/build',
+  'apps/mobile/build/**',
+  'apps/backend/target/**',
 ];
 
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
@@ -312,16 +320,24 @@ function validateDockerfile({
       !/ENV DOCKER_WEB_DOCKER_MEMORY_LIMIT=\$\{DOCKER_WEB_DOCKER_MEMORY_LIMIT\}/u.test(
         builderStage
       ) ||
-      !builderStage.includes('ARG DOCKER_WEB_NEXT_BUILD_ENGINE=webpack') ||
+      !builderStage.includes('ARG DOCKER_WEB_NEXT_APP_ONLY=1') ||
+      !/ENV DOCKER_WEB_NEXT_APP_ONLY=\$\{DOCKER_WEB_NEXT_APP_ONLY\}/u.test(
+        builderStage
+      ) ||
+      !builderStage.includes('ARG DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack') ||
       !/ENV DOCKER_WEB_NEXT_BUILD_ENGINE=\$\{DOCKER_WEB_NEXT_BUILD_ENGINE\}/u.test(
         builderStage
       ) ||
       !/ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=\$\{DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE\}/u.test(
         builderStage
+      ) ||
+      !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
+      !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
+        builderStage
       )
     ) {
       errors.push(
-        'apps/web/Dockerfile builder stage must expose Docker build memory, next build engine, and heap build args.'
+        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, and React Compiler build args.'
       );
     }
 
@@ -462,13 +478,21 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
       '}',
+    '      DOCKER_WEB_NEXT_APP_ONLY: ' +
+      '${' +
+      'DOCKER_WEB_NEXT_APP_ONLY:-1' +
+      '}',
     '      DOCKER_WEB_NEXT_BUILD_ENGINE: ' +
       '${' +
-      'DOCKER_WEB_NEXT_BUILD_ENGINE:-webpack' +
+      'DOCKER_WEB_NEXT_BUILD_ENGINE:-turbopack' +
       '}',
     '      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: ' +
       '${' +
       'DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE:-auto' +
+      '}',
+    '      DOCKER_WEB_REACT_COMPILER: ' +
+      '${' +
+      'DOCKER_WEB_REACT_COMPILER:-0' +
       '}',
     '  web:',
     '  web-blue:',
@@ -673,7 +697,7 @@ function validateDockerProdCompose(composeContent) {
 function validateWatcherDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.13-alpine',
+    'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-buildx docker-cli-compose git openssh-client',
     'COPY apps/web/docker/blue-green-watcher-entrypoint.js /usr/local/bin/blue-green-watcher-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/blue-green-watcher-entrypoint.js"]',
@@ -693,7 +717,7 @@ function validateWatcherDockerfile(dockerfileContent) {
 function validateCronRunnerDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'FROM oven/bun:1.3.13-alpine',
+    'FROM oven/bun:1.3.14-alpine',
     'RUN apk add --no-cache docker-cli docker-cli-compose',
     'COPY apps/web/docker/cron-runner-entrypoint.js /usr/local/bin/cron-runner-entrypoint.js',
     'CMD ["bun", "/usr/local/bin/cron-runner-entrypoint.js"]',

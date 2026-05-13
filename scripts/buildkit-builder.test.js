@@ -14,8 +14,10 @@ const {
   normalizeBuilderConfig,
   parsePositiveInteger,
   parsePositiveNumber,
+  pruneBuildkitCacheAfterBuild,
   readBuilderState,
   renderBuildkitConfig,
+  shouldPruneBuildkitAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
 
 test('parsePositiveNumber accepts positive numeric values and rejects invalid ones', () => {
@@ -74,6 +76,84 @@ test('renderBuildkitConfig writes max parallelism in BuildKit TOML format', () =
     renderBuildkitConfig(2),
     ['[worker.oci]', '  max-parallelism = 2', ''].join('\n')
   );
+});
+
+test('shouldPruneBuildkitAfterBuild defaults on and accepts explicit opt-out', () => {
+  assert.equal(shouldPruneBuildkitAfterBuild({}), true);
+  assert.equal(
+    shouldPruneBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: '1',
+    }),
+    true
+  );
+  assert.equal(
+    shouldPruneBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: 'false',
+    }),
+    false
+  );
+  assert.equal(
+    shouldPruneBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: ' off ',
+    }),
+    false
+  );
+});
+
+test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', async () => {
+  const calls = [];
+
+  const result = await pruneBuildkitCacheAfterBuild({
+    env: { BUILDX_BUILDER: 'platform-test-builder' },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({
+        args,
+        command,
+        env: options.env,
+      });
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(result, {
+    builderName: 'platform-test-builder',
+    pruned: true,
+    skipped: false,
+  });
+  assert.deepEqual(calls, [
+    {
+      args: [
+        'buildx',
+        'prune',
+        '--builder',
+        'platform-test-builder',
+        '--all',
+        '--force',
+      ],
+      command: 'docker',
+      env: { BUILDX_BUILDER: 'platform-test-builder' },
+    },
+  ]);
+});
+
+test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
+  const calls = [];
+
+  const result = await pruneBuildkitCacheAfterBuild({
+    env: { DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD: '0' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(result, {
+    builderName: null,
+    pruned: false,
+    skipped: true,
+  });
+  assert.deepEqual(calls, []);
 });
 
 test('getBuilderConfigFingerprint is stable for the same config', () => {
@@ -418,7 +498,7 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.match(
     runWebDockerNextBuildScript,
-    /DEFAULT_NEXT_BUILD_ENGINE = 'webpack'/
+    /DEFAULT_NEXT_BUILD_ENGINE = 'turbopack'/
   );
   assert.match(
     runWebDockerNextBuildScript,

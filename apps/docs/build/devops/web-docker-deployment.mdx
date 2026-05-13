@@ -492,12 +492,15 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
+- `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1`
 - `DOCKER_WEB_DOCKER_MEMORY_LIMIT=<bytes from docker info>`
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
-- `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=4`
-- `DOCKER_WEB_NEXT_BUILD_CPUS=4`
+- `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=auto`
+- `DOCKER_WEB_NEXT_BUILD_CPUS=auto`
+- `DOCKER_WEB_NEXT_APP_ONLY=1`
 - `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto`
-- `DOCKER_WEB_NEXT_BUILD_ENGINE=webpack`
+- `DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack`
+- `DOCKER_WEB_REACT_COMPILER=0`
 
 How it works:
 
@@ -515,19 +518,37 @@ How it works:
   `DOCKER_WEB_BUILDKIT_ENDPOINT` (default
   `tcp://127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}`). The watcher container
   uses `tcp://buildkit:1234` on the Compose network.
+- After each blue/green deployment handoff finishes, the helper runs
+  `docker buildx prune --builder <builder> --all --force` against the active
+  Compose-owned builder so the `platform-buildkit-state` volume does not keep
+  multi-gigabyte build cache indefinitely. The CLI runs this cleanup again
+  after starting the watcher container, so watcher-image build cache is also
+  removed before the command exits. Set
+  `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` only when you are intentionally
+  preserving BuildKit cache for repeated local diagnostics.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
   workflow builds each service image in its own Compose build call so image
   export and web compilation do not overlap on memory-constrained hosts.
+- When Docker reports less than 10 GB of total memory for a blue/green run, the
+  helper also restarts the Compose-owned `buildkit` service immediately before
+  the build batch. This clears long-lived BuildKit RSS before the replacement
+  web image builds while the active lane is still running. Set
+  `DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD=0` to skip that low-memory
+  restart, or `1` to force it on a larger host.
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
   build dependency graph, sets `NODE_OPTIONS=--max-old-space-size` to at least
   4 GB, and auto-scales the heap to 4 GB, 6 GB, 8 GB, 12 GB, or 16 GB based on
-  the smaller of `DOCKER_WEB_BUILD_MEMORY` and Docker's reported memory limit.
-  The helper reads Docker's `MemTotal` and forwards it as
-  `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets never use more than half of
-  that effective Docker memory budget once the machine is eligible for a larger
-  bucket. Docker production builds default to webpack to avoid Turbopack memory
-  spikes on smaller watcher hosts. The Docker `builder` stage is based on
+  Docker's reported memory limit when available, falling back to
+  `DOCKER_WEB_BUILD_MEMORY` for environments where Docker memory cannot be
+  detected. The helper reads Docker's `MemTotal` and forwards it as
+  `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets reserve 4 GB of Docker memory
+  for BuildKit, the active runtime lane, and sidecar overhead before selecting
+  the Node heap bucket. Docker production builds default to Turbopack under the
+  real Node 24 runtime with App Router-only compilation and React
+  Compiler disabled. This avoids Bun runtime crashes while loading native Next
+  SWC modules and avoids Webpack heap exhaustion on smaller watcher hosts. The
+  Docker `builder` stage is based on
   `node:24-bookworm-slim` and copies the Bun binary in only for workspace script
   orchestration, so the actual `next build` process runs under real Node instead
   of Bun's `node` shim. The `@tuturuuu/web` `build:docker` script delegates to
@@ -535,17 +556,31 @@ How it works:
   (pinned by the Dockerfile to `/usr/local/bin/node`) for the Next CLI and
   honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto` by default. Set a numeric
   heap value only when you need to override the bucket selection; values below
-  4096 MB are rejected. Set `DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack` only on
-  hosts with enough memory headroom for Turbopack. This avoids Bun runtime
-  crashes while loading native Next SWC modules and avoids host OOM kills on
-  smaller Docker Desktop allocations.
+  4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0`,
+  `DOCKER_WEB_REACT_COMPILER=1`, or `DOCKER_WEB_NEXT_BUILD_ENGINE=webpack` only
+  on hosts with enough memory headroom for those build paths. Keep the default
+  Turbopack path for local Docker Desktop allocations and watcher hosts unless
+  Webpack-specific diagnostics are needed.
 - Docker standalone Next builds default static page generation to a 180 second
-  timeout, static generation concurrency capped at 4, and Next build CPU count
-  capped at 4. This avoids false `Failed to build ... because it took more than 60
-  seconds` failures when the same host is also running blue/green sidecars and
-  BuildKit. Override those with `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
+  timeout, and auto-scale the inner Next build CPU count plus static generation
+  concurrency from Docker memory. Docker allocations below 10 GB use 1 Next
+  build CPU and static generation concurrency 1; 10-16 GB allocations use 2
+  for both; 16 GB and larger allocations use 4 for both. The Compose-owned
+  BuildKit service still defaults to a 4 CPU budget, while the inner Next
+  workers stay lower on smaller hosts to avoid OOM kills when the same machine
+  is also running the active blue/green lane and sidecars. Override those with
+  `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT`,
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
   `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
+- Hive Docker images use a filtered workspace install and a Next standalone
+  runner, while Hive realtime installs only its filtered production workspace
+  with Bun's hoisted linker so the direct `bun apps/hive-realtime/src/index.ts`
+  runtime can resolve top-level production packages such as
+  `@supabase/supabase-js`. Keep `.dockerignore` explicit about recursive
+  generated directories such as `**/.next/**`, `tmp/**`, `apps/mobile/build/**`,
+  and `apps/backend/target/**`; otherwise previous local builds can be copied
+  into the next Docker context and inflate small sidecar images by several
+  gigabytes.
 
 Operational notes:
 

@@ -34,6 +34,7 @@ const hiveDockerBuild = process.env.HIVE_DOCKER_BUILD === '1';
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  ...(hiveDockerBuild ? { output: 'standalone' } : {}),
   ...(hiveDockerBuild
     ? {
         experimental: {

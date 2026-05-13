@@ -74,6 +74,7 @@ const {
   DEFAULT_BUILDER_NAME,
   BUILDKIT_SERVICE_NAME,
   ensureBuildkitBuilder,
+  pruneBuildkitCacheAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
 const {
   SKIP_WATCH_HISTORY_ENV,
@@ -96,6 +97,8 @@ const {
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLOUDFLARED_SERVICE = 'cloudflared';
+const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
+  10 * 1024 * 1024 * 1024;
 
 async function getCurrentGitCommitMetadata({
   env,
@@ -170,6 +173,32 @@ async function applyDockerMemoryLimitEnv(composeEnv, { env, runCommand: run }) {
   return {
     ...composeEnv,
     DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+  };
+}
+
+function applyLowMemoryBuildkitRestartEnv(composeEnv, parsed) {
+  if (
+    !usesBlueGreenStrategy(parsed) ||
+    composeEnv.DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD != null
+  ) {
+    return composeEnv;
+  }
+
+  const dockerMemoryLimit = Number.parseInt(
+    String(composeEnv.DOCKER_WEB_DOCKER_MEMORY_LIMIT ?? ''),
+    10
+  );
+
+  if (
+    !Number.isFinite(dockerMemoryLimit) ||
+    dockerMemoryLimit >= LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES
+  ) {
+    return composeEnv;
+  }
+
+  return {
+    ...composeEnv,
+    DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD: '1',
   };
 }
 
@@ -351,6 +380,32 @@ function usesBlueGreenStrategy(parsed) {
 
 function isTruthyEnv(value) {
   return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
+}
+
+async function pruneDockerWebBuildkitCacheAfterWorkflow({
+  env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+}) {
+  if (!env?.BUILDX_BUILDER && !env?.DOCKER_WEB_BUILD_BUILDER_NAME) {
+    return;
+  }
+
+  try {
+    await pruneBuildkitCacheAfterBuild({
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  } catch (cleanupError) {
+    const message =
+      cleanupError instanceof Error
+        ? cleanupError.message
+        : String(cleanupError);
+    process.stderr.write(
+      `[docker-web] Warning: failed to prune BuildKit cache after workflow: ${message}\n`
+    );
+  }
 }
 
 function ensureCloudflaredProfileFromEnv(parsed, env) {
@@ -601,6 +656,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     env,
     runCommand: run,
   });
+  composeEnv = applyLowMemoryBuildkitRestartEnv(composeEnv, parsed);
   const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   let blueGreenBuildLock = null;
   let deployLockSignalCleanup = null;
@@ -783,6 +839,12 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
       throw error;
     } finally {
+      await pruneDockerWebBuildkitCacheAfterWorkflow({
+        env: workflowEnv,
+        fsImpl,
+        runCommand: run,
+      });
+
       if (deployLockSignalCleanup) {
         process.off('SIGTERM', deployLockSignalCleanup);
         process.off('SIGINT', deployLockSignalCleanup);

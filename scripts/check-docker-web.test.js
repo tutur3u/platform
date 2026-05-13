@@ -10,7 +10,10 @@ const {
 
 const {
   getAutoDockerNodeMaxOldSpaceSizeMb,
+  getDockerNextBuildArgs,
+  getDockerNextBuildCpus,
   getDockerNodeMaxOldSpaceSizeMb,
+  getDockerStaticGenerationMaxConcurrency,
   mergeNodeOptions,
   parseMemoryToMb,
 } = require('./run-web-docker-next-build.js');
@@ -97,11 +100,13 @@ test('validateDockerignore reports generated app artifacts in the context', () =
   const dockerignoreContent = fs
     .readFileSync(DOCKERIGNORE_PATH, 'utf8')
     .replace('**/.next\n', '')
+    .replace('**/.next/**\n', '')
     .replace('apps/mobile/build\n', '');
 
   const errors = validateDockerignore(dockerignoreContent).join('\n');
 
   assert.match(errors, /\.dockerignore must exclude \*\*\/\.next/);
+  assert.match(errors, /\.dockerignore must exclude \*\*\/\.next\/\*\*/);
   assert.match(errors, /\.dockerignore must exclude apps\/mobile\/build/);
 });
 
@@ -120,10 +125,38 @@ test('web Docker build script delegates Next to the real Node wrapper', () => {
   );
   assert.match(wrapper, /process\.env\.DOCKER_WEB_NODE_BINARY \|\| 'node'/u);
   assert.match(wrapper, /NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB/u);
-  assert.match(wrapper, /DEFAULT_NEXT_BUILD_ENGINE = 'webpack'/u);
+  assert.match(wrapper, /DEFAULT_NEXT_BUILD_ENGINE = 'turbopack'/u);
   assert.match(wrapper, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/u);
+  assert.match(wrapper, /DOCKER_WEB_NEXT_APP_ONLY/u);
   assert.match(wrapper, /DOCKER_WEB_NEXT_BUILD_ENGINE/u);
-  assert.match(wrapper, /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/u);
+  assert.match(wrapper, /getDockerNextBuildArgs/u);
+  assert.match(wrapper, /--experimental-app-only/u);
+});
+
+test('Hive realtime Docker image hoists production dependencies for Bun runtime resolution', () => {
+  const dockerfileContent = fs.readFileSync(
+    path.join(ROOT_DIR, 'apps', 'hive-realtime', 'Dockerfile'),
+    'utf8'
+  );
+
+  assert.match(
+    dockerfileContent,
+    /bun install --frozen-lockfile --production --filter @tuturuuu\/hive-realtime --linker hoisted/u
+  );
+});
+
+test('Docker web build args default to App Router only builds', () => {
+  const defaultArgs = getDockerNextBuildArgs({});
+
+  assert.ok(defaultArgs.includes('--turbopack'));
+  assert.ok(defaultArgs.includes('--experimental-app-only'));
+
+  assert.equal(
+    getDockerNextBuildArgs({ DOCKER_WEB_NEXT_APP_ONLY: '0' }).includes(
+      '--experimental-app-only'
+    ),
+    false
+  );
 });
 
 test('Docker web build heap auto-scales from Docker memory buckets', () => {
@@ -137,16 +170,20 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
     4096
   );
   assert.equal(
-    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '12g' }),
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '10g' }),
     6144
   );
   assert.equal(
-    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '16g' }),
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '12g' }),
     8192
   );
   assert.equal(
-    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '24g' }),
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '16g' }),
     12288
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '24g' }),
+    16384
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '32g' }),
@@ -165,10 +202,17 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({
+      DOCKER_WEB_BUILD_MEMORY: '12g',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
+    }),
+    12288
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({
       DOCKER_WEB_BUILD_MEMORY: '24g',
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
     }),
-    8192
+    12288
   );
 });
 
@@ -178,13 +222,13 @@ test('Docker web build NODE_OPTIONS always includes at least a 4 GB heap', () =>
       DOCKER_WEB_BUILD_MEMORY: '16g',
       DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: 'auto',
     }),
-    8192
+    12288
   );
   assert.equal(
     mergeNodeOptions('--max-old-space-size=2048 --trace-warnings', {
       DOCKER_WEB_BUILD_MEMORY: '12g',
     }),
-    '--trace-warnings --max-old-space-size=6144 --experimental-require-module'
+    '--trace-warnings --max-old-space-size=8192 --experimental-require-module'
   );
   assert.throws(
     () =>
@@ -192,6 +236,62 @@ test('Docker web build NODE_OPTIONS always includes at least a 4 GB heap', () =>
         DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: '2048',
       }),
     /at least 4096/
+  );
+});
+
+test('Docker web build static generation concurrency leaves room on small Docker allocations', () => {
+  assert.equal(
+    getDockerStaticGenerationMaxConcurrency({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
+    }),
+    1
+  );
+  assert.equal(
+    getDockerStaticGenerationMaxConcurrency({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '12g',
+    }),
+    2
+  );
+  assert.equal(
+    getDockerStaticGenerationMaxConcurrency({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
+    }),
+    4
+  );
+  assert.equal(
+    getDockerStaticGenerationMaxConcurrency({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
+      DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: '3',
+    }),
+    3
+  );
+});
+
+test('Docker web build CPU count leaves room on small Docker allocations', () => {
+  assert.equal(
+    getDockerNextBuildCpus({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
+    }),
+    1
+  );
+  assert.equal(
+    getDockerNextBuildCpus({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '12g',
+    }),
+    2
+  );
+  assert.equal(
+    getDockerNextBuildCpus({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
+    }),
+    4
+  );
+  assert.equal(
+    getDockerNextBuildCpus({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
+      DOCKER_WEB_NEXT_BUILD_CPUS: '3',
+    }),
+    3
   );
 });
 
@@ -320,13 +420,21 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
         '}',
+      '      DOCKER_WEB_NEXT_APP_ONLY: $' +
+        '{' +
+        'DOCKER_WEB_NEXT_APP_ONLY:-1' +
+        '}',
       '      DOCKER_WEB_NEXT_BUILD_ENGINE: $' +
         '{' +
-        'DOCKER_WEB_NEXT_BUILD_ENGINE:-webpack' +
+        'DOCKER_WEB_NEXT_BUILD_ENGINE:-turbopack' +
         '}',
       '      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: $' +
         '{' +
         'DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE:-auto' +
+        '}',
+      '      DOCKER_WEB_REACT_COMPILER: $' +
+        '{' +
+        'DOCKER_WEB_REACT_COMPILER:-0' +
         '}',
       '',
     ].join('\n'),
@@ -337,8 +445,10 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
 
   assert.match(errors, /DOCKER_WEB_BUILD_MEMORY/);
   assert.match(errors, /DOCKER_WEB_DOCKER_MEMORY_LIMIT/);
+  assert.match(errors, /DOCKER_WEB_NEXT_APP_ONLY/);
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
+  assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
 });
 
 test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {

@@ -1327,6 +1327,68 @@ test('buildBlueGreenServices builds services sequentially when compose paralleli
   );
 });
 
+test('buildBlueGreenServices leaves BuildKit cache pruning to deployment cleanup', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.deepEqual(
+    calls.map(([command, args]) => [command, args.slice(0, 6)]),
+    [
+      [
+        'docker',
+        ['compose', '-f', PROD_COMPOSE_FILE, '--profile', 'redis', 'build'],
+      ],
+    ]
+  );
+});
+
+test('buildBlueGreenServices restarts BuildKit when low-memory restart is requested', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD: '1',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('ps') && args.includes('buildkit')) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
+      if (args[0] === 'inspect') {
+        return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  const restartIndex = calls.findIndex(
+    ([, args]) => args.includes('restart') && args.includes('buildkit')
+  );
+  const buildIndex = calls.findIndex(([, args]) => args.includes('build'));
+
+  assert.notEqual(restartIndex, -1);
+  assert.notEqual(buildIndex, -1);
+  assert.ok(restartIndex < buildIndex);
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -2399,6 +2461,10 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       return resultFor('');
     }
 
+    if (args[0] === 'buildx' && args[1] === 'prune') {
+      return resultFor('');
+    }
+
     if (args.includes('up') && args.includes('web-green')) {
       targetStarted = true;
       return resultFor('');
@@ -2449,7 +2515,7 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       {
         drainPollMs: 0,
         drainTimeoutMs: 5_000,
-        env: { PATH: 'test-path' },
+        env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
         envFilePath,
         proxyDrainMs: 0,
         rootDir: tempDir,
@@ -2469,6 +2535,15 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     );
     assert.ok(
       calls.findIndex((call) => call.includes(' hive-green')) <
+        calls.findIndex(
+          (call) =>
+            call.includes(' up --detach --no-build --force-recreate') &&
+            (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+              call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+        )
+    );
+    assert.ok(
+      calls.findIndex((call) => call.includes(' buildx prune ')) >
         calls.findIndex(
           (call) =>
             call.includes(' up --detach --no-build --force-recreate') &&

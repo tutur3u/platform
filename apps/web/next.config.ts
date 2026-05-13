@@ -5,6 +5,8 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const withNextIntl = createNextIntlPlugin();
 const serwistConfig = getTurbopackConfig();
 const isDockerStandaloneBuild = process.env.DOCKER_WEB_STANDALONE === '1';
+const reactCompilerEnabled =
+  !isDockerStandaloneBuild || process.env.DOCKER_WEB_REACT_COMPILER === '1';
 
 function parsePositiveIntegerEnv(name: string, fallback?: number) {
   const rawValue = process.env[name]?.trim();
@@ -39,7 +41,7 @@ const nextConfig: NextConfig = {
   ...serwistConfig,
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
-  reactCompiler: true,
+  reactCompiler: reactCompilerEnabled,
   reactStrictMode: true,
   poweredByHeader: false,
   typescript: {
@@ -48,6 +50,12 @@ const nextConfig: NextConfig = {
   serverExternalPackages: [...(serwistConfig.serverExternalPackages ?? [])],
   experimental: {
     ...(serwistConfig.experimental ?? {}),
+    ...(isDockerStandaloneBuild
+      ? {
+          webpackBuildWorker: true,
+          webpackMemoryOptimizations: true,
+        }
+      : {}),
     ...(staticGenerationMaxConcurrency
       ? { staticGenerationMaxConcurrency }
       : {}),

@@ -25,10 +25,12 @@ const {
 } = require('./env.js');
 const {
   BUILD_STALL_RECOVERY_REASON,
+  BUILDKIT_SERVICE_NAME,
   CACHED_BUILD_ERROR_RECOVERY_REASON,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
+  pruneBuildkitCacheAfterBuild,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
 
@@ -778,6 +780,37 @@ async function reloadBlueGreenProxy({
   );
 }
 
+async function restartBuildkitBeforeBlueGreenBuild({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  if (String(env?.DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD ?? '') !== '1') {
+    return;
+  }
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'restart',
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+  await waitForComposeServiceHealthy(BUILDKIT_SERVICE_NAME, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+}
+
 async function buildBlueGreenServices({
   composeFile,
   composeGlobalArgs = [],
@@ -807,6 +840,13 @@ async function buildBlueGreenServices({
     }
   };
 
+  await restartBuildkitBeforeBlueGreenBuild({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
   try {
     await runBuildBatches();
   } catch (error) {
@@ -834,6 +874,32 @@ async function buildBlueGreenServices({
     });
 
     await runBuildBatches({ noCache: true });
+  }
+}
+
+async function pruneBlueGreenBuildkitCacheAfterWorkflow({
+  env,
+  fsImpl = fs,
+  runCommand: run,
+}) {
+  if (!env?.BUILDX_BUILDER && !env?.DOCKER_WEB_BUILD_BUILDER_NAME) {
+    return;
+  }
+
+  try {
+    await pruneBuildkitCacheAfterBuild({
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  } catch (cleanupError) {
+    const message =
+      cleanupError instanceof Error
+        ? cleanupError.message
+        : String(cleanupError);
+    process.stderr.write(
+      `[docker-web] Warning: failed to prune BuildKit cache after deployment: ${message}\n`
+    );
   }
 }
 
@@ -1365,228 +1431,240 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const needsProxyBootstrap =
     !!migration || !proxyRunning || needsProxyHostPortRefresh;
 
-  if (needsProxyBootstrap) {
-    writeBlueGreenProxyConfig(initialProxyColor, {
-      deploymentStamp:
-        readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
-      fsImpl,
-      paths,
-      standbyColor:
-        activeColor &&
-        (await resolveBlueGreenStandbyColor(activeColor, {
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env,
-          runCommand: run,
-        })),
+  try {
+    if (needsProxyBootstrap) {
+      writeBlueGreenProxyConfig(initialProxyColor, {
+        deploymentStamp:
+          readBlueGreenDeploymentStamp(paths, fsImpl) ?? deploymentStamp,
+        fsImpl,
+        paths,
+        standbyColor:
+          activeColor &&
+          (await resolveBlueGreenStandbyColor(activeColor, {
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env,
+            runCommand: run,
+          })),
+      });
+    }
+
+    const targetServices = getBlueGreenProdServicesWithProxyOption(
+      parsed,
+      targetColor,
+      needsProxyBootstrap
+    );
+    const { proxyBootstrapServices, runtimeServices } =
+      splitBlueGreenProxyBootstrapServices(targetServices, needsProxyBootstrap);
+    const { phase1Services, phase2Services } =
+      splitBlueGreenProdServicePhases(runtimeServices);
+
+    await buildBlueGreenServices({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      runCommand: run,
+      services: targetServices,
     });
-  }
 
-  const targetServices = getBlueGreenProdServicesWithProxyOption(
-    parsed,
-    targetColor,
-    needsProxyBootstrap
-  );
-  const { proxyBootstrapServices, runtimeServices } =
-    splitBlueGreenProxyBootstrapServices(targetServices, needsProxyBootstrap);
-  const { phase1Services, phase2Services } =
-    splitBlueGreenProdServicePhases(runtimeServices);
+    await removeLegacyHiveContainerIfPresent({
+      composeFile,
+      env,
+      runCommand: run,
+    });
 
-  await buildBlueGreenServices({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: targetEnv,
-    runCommand: run,
-    services: targetServices,
-  });
-
-  await removeLegacyHiveContainerIfPresent({
-    composeFile,
-    env,
-    runCommand: run,
-  });
-
-  await stopComposeServicesIfPresent(['web'], {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
-
-  await stopComposeServicesIfPresent(
-    [
-      getBlueGreenServiceName(targetColor),
-      getBlueGreenHiveServiceName(targetColor),
-    ],
-    {
+    await stopComposeServicesIfPresent(['web'], {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env,
       runCommand: run,
-    }
-  );
-  await removeComposeServicesIfPresent(
-    [
-      getBlueGreenServiceName(targetColor),
-      getBlueGreenHiveServiceName(targetColor),
-    ],
-    {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env,
-      runCommand: run,
-    }
-  );
+    });
 
-  await runComposeUpWithNameConflictRecovery({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: targetEnv,
-    fsImpl,
-    runCommand: run,
-    services: phase1Services,
-    upArgs: [
-      'up',
-      '--detach',
-      '--no-build',
-      ...(needsProxyHostPortRefresh ? ['--force-recreate'] : []),
-      '--remove-orphans',
-      ...parsed.composeArgs,
-      ...phase1Services,
-    ],
-  });
+    await stopComposeServicesIfPresent(
+      [
+        getBlueGreenServiceName(targetColor),
+        getBlueGreenHiveServiceName(targetColor),
+      ],
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
+    await removeComposeServicesIfPresent(
+      [
+        getBlueGreenServiceName(targetColor),
+        getBlueGreenHiveServiceName(targetColor),
+      ],
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
 
-  if (phase2Services.length > 0) {
     await runComposeUpWithNameConflictRecovery({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: targetEnv,
       fsImpl,
       runCommand: run,
-      services: phase2Services,
+      services: phase1Services,
       upArgs: [
         'up',
         '--detach',
         '--no-build',
+        ...(needsProxyHostPortRefresh ? ['--force-recreate'] : []),
         '--remove-orphans',
         ...parsed.composeArgs,
-        ...phase2Services,
+        ...phase1Services,
       ],
     });
-  }
 
-  await waitForComposeServiceHealthy(getBlueGreenServiceName(targetColor), {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: targetEnv,
-    runCommand: run,
-  });
+    if (phase2Services.length > 0) {
+      await runComposeUpWithNameConflictRecovery({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        fsImpl,
+        runCommand: run,
+        services: phase2Services,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--remove-orphans',
+          ...parsed.composeArgs,
+          ...phase2Services,
+        ],
+      });
+    }
 
-  for (const serviceName of getBlueGreenPromotionHealthGateServices(
-    targetColor
-  )) {
-    await waitForComposeServiceHealthy(serviceName, {
+    await waitForComposeServiceHealthy(getBlueGreenServiceName(targetColor), {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: targetEnv,
       runCommand: run,
     });
-  }
 
-  if (proxyBootstrapServices.length > 0) {
-    await runComposeUpWithNameConflictRecovery({
+    for (const serviceName of getBlueGreenPromotionHealthGateServices(
+      targetColor
+    )) {
+      await waitForComposeServiceHealthy(serviceName, {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        runCommand: run,
+      });
+    }
+
+    if (proxyBootstrapServices.length > 0) {
+      await runComposeUpWithNameConflictRecovery({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        fsImpl,
+        runCommand: run,
+        services: proxyBootstrapServices,
+        upArgs: getBlueGreenProxyBootstrapUpArgs(
+          parsed,
+          proxyBootstrapServices,
+          {
+            forceRecreate: needsProxyHostPortRefresh,
+          }
+        ),
+      });
+
+      await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        runCommand: run,
+      });
+    }
+
+    writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+
+    if (initialProxyColor !== targetColor) {
+      writeBlueGreenProxyConfig(targetColor, {
+        deploymentStamp,
+        fsImpl,
+        paths,
+        standbyColor,
+      });
+      await validateBlueGreenProxyConfig({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        runCommand: run,
+      });
+      await reloadBlueGreenProxy({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: targetEnv,
+        runCommand: run,
+      });
+    } else {
+      writeBlueGreenProxyConfig(targetColor, {
+        deploymentStamp,
+        fsImpl,
+        paths,
+        standbyColor:
+          standbyColor ??
+          (await resolveBlueGreenStandbyColor(targetColor, {
+            composeFile,
+            composeGlobalArgs: parsed.composeGlobalArgs,
+            env: targetEnv,
+            runCommand: run,
+          })),
+      });
+    }
+
+    await testBlueGreenProxyRouting({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: targetEnv,
-      fsImpl,
       runCommand: run,
-      services: proxyBootstrapServices,
-      upArgs: getBlueGreenProxyBootstrapUpArgs(parsed, proxyBootstrapServices, {
-        forceRecreate: needsProxyHostPortRefresh,
+    });
+    await testBlueGreenHiveProxyRouting({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      runCommand: run,
+    });
+
+    writeBlueGreenActiveColor(targetColor, paths, fsImpl);
+
+    if (activeColor && activeColor !== targetColor) {
+      await waitForBlueGreenServiceDrain(getBlueGreenServiceName(activeColor), {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        pollMs: drainPollMs,
+        proxyDrainMs,
+        runCommand: run,
+        timeoutMs: drainTimeoutMs,
+      });
+    }
+
+    return {
+      migration: await finalizeBlueGreenComposeMigration({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        migration,
+        now: options.now,
+        runCommand: run,
       }),
-    });
-
-    await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
+    };
+  } finally {
+    await pruneBlueGreenBuildkitCacheAfterWorkflow({
       env: targetEnv,
-      runCommand: run,
-    });
-  }
-
-  writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-
-  if (initialProxyColor !== targetColor) {
-    writeBlueGreenProxyConfig(targetColor, {
-      deploymentStamp,
       fsImpl,
-      paths,
-      standbyColor,
-    });
-    await validateBlueGreenProxyConfig({
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env: targetEnv,
       runCommand: run,
-    });
-    await reloadBlueGreenProxy({
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env: targetEnv,
-      runCommand: run,
-    });
-  } else {
-    writeBlueGreenProxyConfig(targetColor, {
-      deploymentStamp,
-      fsImpl,
-      paths,
-      standbyColor:
-        standbyColor ??
-        (await resolveBlueGreenStandbyColor(targetColor, {
-          composeFile,
-          composeGlobalArgs: parsed.composeGlobalArgs,
-          env: targetEnv,
-          runCommand: run,
-        })),
     });
   }
-
-  await testBlueGreenProxyRouting({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: targetEnv,
-    runCommand: run,
-  });
-  await testBlueGreenHiveProxyRouting({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: targetEnv,
-    runCommand: run,
-  });
-
-  writeBlueGreenActiveColor(targetColor, paths, fsImpl);
-
-  if (activeColor && activeColor !== targetColor) {
-    await waitForBlueGreenServiceDrain(getBlueGreenServiceName(activeColor), {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env,
-      pollMs: drainPollMs,
-      proxyDrainMs,
-      runCommand: run,
-      timeoutMs: drainTimeoutMs,
-    });
-  }
-
-  return {
-    migration: await finalizeBlueGreenComposeMigration({
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      migration,
-      now: options.now,
-      runCommand: run,
-    }),
-  };
 }
 
 async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
@@ -1639,113 +1717,121 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     false
   );
 
-  await buildBlueGreenServices({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: standbyEnv,
-    runCommand: run,
-    services: standbyServices,
-  });
-
-  await stopComposeServicesIfPresent(
-    [
-      getBlueGreenServiceName(standbyColor),
-      getBlueGreenHiveServiceName(standbyColor),
-    ],
-    {
+  try {
+    await buildBlueGreenServices({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
-      env,
+      env: standbyEnv,
       runCommand: run,
-    }
-  );
-  await removeComposeServicesIfPresent(
-    [
-      getBlueGreenServiceName(standbyColor),
-      getBlueGreenHiveServiceName(standbyColor),
-    ],
-    {
-      composeFile,
-      composeGlobalArgs: parsed.composeGlobalArgs,
-      env,
-      runCommand: run,
-    }
-  );
+      services: standbyServices,
+    });
 
-  const { phase1Services: standbyPhase1, phase2Services: standbyPhase2 } =
-    splitBlueGreenProdServicePhases(standbyServices);
+    await stopComposeServicesIfPresent(
+      [
+        getBlueGreenServiceName(standbyColor),
+        getBlueGreenHiveServiceName(standbyColor),
+      ],
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
+    await removeComposeServicesIfPresent(
+      [
+        getBlueGreenServiceName(standbyColor),
+        getBlueGreenHiveServiceName(standbyColor),
+      ],
+      {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env,
+        runCommand: run,
+      }
+    );
 
-  await runComposeUpWithNameConflictRecovery({
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: standbyEnv,
-    fsImpl,
-    runCommand: run,
-    services: standbyPhase1,
-    upArgs: [
-      'up',
-      '--detach',
-      '--no-build',
-      '--remove-orphans',
-      ...parsed.composeArgs,
-      ...standbyPhase1,
-    ],
-  });
+    const { phase1Services: standbyPhase1, phase2Services: standbyPhase2 } =
+      splitBlueGreenProdServicePhases(standbyServices);
 
-  if (standbyPhase2.length > 0) {
     await runComposeUpWithNameConflictRecovery({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       fsImpl,
       runCommand: run,
-      services: standbyPhase2,
+      services: standbyPhase1,
       upArgs: [
         'up',
         '--detach',
         '--no-build',
         '--remove-orphans',
         ...parsed.composeArgs,
-        ...standbyPhase2,
+        ...standbyPhase1,
       ],
     });
-  }
 
-  await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
-    composeFile,
-    composeGlobalArgs: parsed.composeGlobalArgs,
-    env: standbyEnv,
-    runCommand: run,
-  });
+    if (standbyPhase2.length > 0) {
+      await runComposeUpWithNameConflictRecovery({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: standbyEnv,
+        fsImpl,
+        runCommand: run,
+        services: standbyPhase2,
+        upArgs: [
+          'up',
+          '--detach',
+          '--no-build',
+          '--remove-orphans',
+          ...parsed.composeArgs,
+          ...standbyPhase2,
+        ],
+      });
+    }
 
-  for (const serviceName of getBlueGreenPromotionHealthGateServices(
-    standbyColor
-  )) {
-    await waitForComposeServiceHealthy(serviceName, {
+    await waitForComposeServiceHealthy(getBlueGreenServiceName(standbyColor), {
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       runCommand: run,
     });
+
+    for (const serviceName of getBlueGreenPromotionHealthGateServices(
+      standbyColor
+    )) {
+      await waitForComposeServiceHealthy(serviceName, {
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
+        env: standbyEnv,
+        runCommand: run,
+      });
+    }
+
+    writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+
+    await refreshBlueGreenProxyIfRunning({
+      env: standbyEnv,
+      envFilePath: options.envFilePath,
+      fsImpl,
+      paths,
+      rootDir: options.rootDir ?? ROOT_DIR,
+      runCommand: run,
+    });
+
+    return {
+      activeColor,
+      deploymentStamp,
+      refreshedStandby: true,
+      standbyColor,
+    };
+  } finally {
+    await pruneBlueGreenBuildkitCacheAfterWorkflow({
+      env: standbyEnv,
+      fsImpl,
+      runCommand: run,
+    });
   }
-
-  writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
-
-  await refreshBlueGreenProxyIfRunning({
-    env: standbyEnv,
-    envFilePath: options.envFilePath,
-    fsImpl,
-    paths,
-    rootDir: options.rootDir ?? ROOT_DIR,
-    runCommand: run,
-  });
-
-  return {
-    activeColor,
-    deploymentStamp,
-    refreshedStandby: true,
-    standbyColor,
-  };
 }
 
 async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {

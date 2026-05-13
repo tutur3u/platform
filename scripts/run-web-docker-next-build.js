@@ -16,7 +16,17 @@ const NEXT_BIN = path.join(
 const AUTO_NODE_MAX_OLD_SPACE_SIZE = 'auto';
 const NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = [16384, 12288, 8192, 6144, 4096];
 const MIN_NODE_MAX_OLD_SPACE_SIZE_MB = 4096;
-const DEFAULT_NEXT_BUILD_ENGINE = 'webpack';
+const DOCKER_MEMORY_RESERVE_MB = 4096;
+const SMALL_DOCKER_MEMORY_THRESHOLD_MB = 10 * 1024;
+const LARGE_DOCKER_MEMORY_THRESHOLD_MB = 16 * 1024;
+const TINY_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY = 1;
+const SMALL_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY = 2;
+const LARGE_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY = 4;
+const TINY_DOCKER_NEXT_BUILD_CPUS = 1;
+const SMALL_DOCKER_NEXT_BUILD_CPUS = 2;
+const LARGE_DOCKER_NEXT_BUILD_CPUS = 4;
+const DEFAULT_NEXT_BUILD_ENGINE = 'turbopack';
+const DEFAULT_NEXT_APP_ONLY = true;
 const NEXT_BUILD_ENGINES = new Map([
   ['turbopack', '--turbopack'],
   ['turbo', '--turbopack'],
@@ -62,23 +72,23 @@ function parseMemoryToMb(value) {
 }
 
 function getAutoDockerNodeMaxOldSpaceSizeMb(env) {
-  const memoryLimitsMb = [
-    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT),
-    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY),
-  ].filter(Boolean);
-  const availableMemoryMb =
-    memoryLimitsMb.length > 0 ? Math.min(...memoryLimitsMb) : null;
-  const halfDockerMemoryMb = availableMemoryMb
-    ? Math.floor(availableMemoryMb / 2)
+  const dockerMemoryMb = parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT);
+  const buildMemoryMb = parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
+  const availableMemoryMb = dockerMemoryMb ?? buildMemoryMb;
+  const buildHeapBudgetMb = availableMemoryMb
+    ? availableMemoryMb - DOCKER_MEMORY_RESERVE_MB
     : null;
 
-  if (!halfDockerMemoryMb) {
+  if (
+    !buildHeapBudgetMb ||
+    buildHeapBudgetMb < MIN_NODE_MAX_OLD_SPACE_SIZE_MB
+  ) {
     return MIN_NODE_MAX_OLD_SPACE_SIZE_MB;
   }
 
   return (
     NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB.find(
-      (bucket) => bucket <= halfDockerMemoryMb
+      (bucket) => bucket <= buildHeapBudgetMb
     ) ?? MIN_NODE_MAX_OLD_SPACE_SIZE_MB
   );
 }
@@ -103,6 +113,69 @@ function getDockerNodeMaxOldSpaceSizeMb(env) {
   }
 
   return parsed;
+}
+
+function parsePositiveIntegerEnv(env, name) {
+  const rawValue = String(env[name] ?? '').trim();
+
+  if (!rawValue) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(rawValue, 10);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+
+  return parsed;
+}
+
+function getDockerStaticGenerationMaxConcurrency(env) {
+  const override = parsePositiveIntegerEnv(
+    env,
+    'DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'
+  );
+
+  if (override) {
+    return override;
+  }
+
+  const dockerMemoryMb =
+    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT) ??
+    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
+
+  if (dockerMemoryMb && dockerMemoryMb < SMALL_DOCKER_MEMORY_THRESHOLD_MB) {
+    return TINY_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY;
+  }
+
+  if (dockerMemoryMb && dockerMemoryMb < LARGE_DOCKER_MEMORY_THRESHOLD_MB) {
+    return SMALL_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY;
+  }
+
+  return LARGE_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY;
+}
+
+function getDockerNextBuildCpus(env) {
+  const override = parsePositiveIntegerEnv(env, 'DOCKER_WEB_NEXT_BUILD_CPUS');
+
+  if (override) {
+    return override;
+  }
+
+  const dockerMemoryMb =
+    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT) ??
+    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
+
+  if (dockerMemoryMb && dockerMemoryMb < SMALL_DOCKER_MEMORY_THRESHOLD_MB) {
+    return TINY_DOCKER_NEXT_BUILD_CPUS;
+  }
+
+  if (dockerMemoryMb && dockerMemoryMb < LARGE_DOCKER_MEMORY_THRESHOLD_MB) {
+    return SMALL_DOCKER_NEXT_BUILD_CPUS;
+  }
+
+  return LARGE_DOCKER_NEXT_BUILD_CPUS;
 }
 
 function splitNodeOptions(currentOptions) {
@@ -173,21 +246,51 @@ function getDockerNextBuildEngine(env) {
   return normalizedValue;
 }
 
+function getBooleanEnv(env, name, fallback) {
+  const rawValue = String(env[name] ?? '')
+    .trim()
+    .toLowerCase();
+
+  if (!rawValue) {
+    return fallback;
+  }
+
+  if (['1', 'true', 'yes', 'on'].includes(rawValue)) {
+    return true;
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(rawValue)) {
+    return false;
+  }
+
+  throw new Error(`${name} must be a boolean value.`);
+}
+
+function getDockerNextBuildArgs(env) {
+  const nextBuildEngine = getDockerNextBuildEngine(env);
+  const args = [NEXT_BIN, 'build', NEXT_BUILD_ENGINES.get(nextBuildEngine)];
+
+  if (getBooleanEnv(env, 'DOCKER_WEB_NEXT_APP_ONLY', DEFAULT_NEXT_APP_ONLY)) {
+    args.push('--experimental-app-only');
+  }
+
+  return args;
+}
+
 function main() {
   const nodeBinary = process.env.DOCKER_WEB_NODE_BINARY || 'node';
-  const nextBuildEngine = getDockerNextBuildEngine(process.env);
-  const result = spawnSync(
-    nodeBinary,
-    [NEXT_BIN, 'build', NEXT_BUILD_ENGINES.get(nextBuildEngine)],
-    {
-      cwd: WEB_DIR,
-      env: {
-        ...process.env,
-        NODE_OPTIONS: mergeNodeOptions(process.env.NODE_OPTIONS, process.env),
-      },
-      stdio: 'inherit',
-    }
-  );
+  const result = spawnSync(nodeBinary, getDockerNextBuildArgs(process.env), {
+    cwd: WEB_DIR,
+    env: {
+      ...process.env,
+      DOCKER_WEB_NEXT_BUILD_CPUS: String(getDockerNextBuildCpus(process.env)),
+      DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY: String(
+        getDockerStaticGenerationMaxConcurrency(process.env)
+      ),
+      NODE_OPTIONS: mergeNodeOptions(process.env.NODE_OPTIONS, process.env),
+    },
+    stdio: 'inherit',
+  });
 
   if (result.error) {
     throw result.error;
@@ -206,7 +309,10 @@ if (require.main === module) {
 
 module.exports = {
   getAutoDockerNodeMaxOldSpaceSizeMb,
+  getDockerNextBuildArgs,
+  getDockerNextBuildCpus,
   getDockerNodeMaxOldSpaceSizeMb,
+  getDockerStaticGenerationMaxConcurrency,
   mergeNodeOptions,
   parseMemoryToMb,
 };

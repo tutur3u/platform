@@ -27,6 +27,7 @@ const BUILDKIT_SERVICE_NAME = 'buildkit';
 const LEGACY_BUILDER_NAMES = ['platform-web-capped-builder'];
 const BUILD_STALL_RECOVERY_REASON = 'build-stall-timeout';
 const CACHED_BUILD_ERROR_RECOVERY_REASON = 'cached-build-error';
+const DISABLED_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -507,6 +508,51 @@ async function recoverBuildkitBunInstallCache({
   };
 }
 
+function shouldPruneBuildkitAfterBuild(env = process.env) {
+  const rawValue = env.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD;
+
+  if (rawValue == null || String(rawValue).trim() === '') {
+    return true;
+  }
+
+  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
+}
+
+async function pruneBuildkitCacheAfterBuild({
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!shouldPruneBuildkitAfterBuild(env)) {
+    return {
+      builderName: null,
+      pruned: false,
+      skipped: true,
+    };
+  }
+
+  const builderName =
+    env.BUILDX_BUILDER ||
+    env.DOCKER_WEB_BUILD_BUILDER_NAME ||
+    DEFAULT_BUILDER_NAME;
+
+  await runChecked(
+    'docker',
+    ['buildx', 'prune', '--builder', builderName, '--all', '--force'],
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  return {
+    builderName,
+    pruned: true,
+    skipped: false,
+  };
+}
+
 module.exports = {
   BUILDKIT_CONFIG_FILE,
   BUILDKIT_RUNTIME_DIR,
@@ -527,8 +573,10 @@ module.exports = {
   normalizeBuilderConfig,
   parsePositiveInteger,
   parsePositiveNumber,
+  pruneBuildkitCacheAfterBuild,
   recoverBuildkitBunInstallCache,
   renderBuildkitConfig,
   readBuilderState,
+  shouldPruneBuildkitAfterBuild,
   writeBuilderState,
 };
