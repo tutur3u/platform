@@ -6,95 +6,17 @@ import {
   Check,
   Eye,
   EyeOff,
-  Loader2,
   Pencil,
   Plus,
-  Trash2,
   X,
-  Youtube,
 } from '@tuturuuu/icons';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
 import { useLessonDetail } from './use-lesson-detail';
-
-// ─── Loading skeleton ─────────────────────────────────────────────────────────
-
-function LessonSkeleton() {
-  return (
-    <div className="mx-auto max-w-4xl space-y-6 px-5 py-5 md:px-8">
-      <div className="h-10 w-48 animate-pulse border-2 border-border bg-card shadow-[2px_2px_0_var(--border)]" />
-      <div className="space-y-4 border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)]">
-        <div className="h-8 w-3/4 animate-pulse bg-muted" />
-        <div className="h-4 w-1/2 animate-pulse bg-muted" />
-        <div className="mt-6 h-64 animate-pulse bg-muted/60" />
-      </div>
-    </div>
-  );
-}
-
-// ─── YouTube link row ─────────────────────────────────────────────────────────
-
-function YoutubeRow({ url, onRemove }: { url: string; onRemove: () => void }) {
-  const videoId = url.match(
-    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([A-Za-z0-9_-]{11})/
-  )?.[1];
-
-  return (
-    <div className="group/yt flex items-center gap-2 border-2 border-border bg-card px-3 py-2 shadow-[2px_2px_0_var(--border)]">
-      <Youtube className="h-4 w-4 shrink-0 text-dynamic-red" />
-      {videoId ? (
-        <a
-          className="min-w-0 flex-1 truncate text-sm hover:underline"
-          href={url}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          {url}
-        </a>
-      ) : (
-        <span className="min-w-0 flex-1 truncate text-muted-foreground text-sm">
-          {url}
-        </span>
-      )}
-      <button
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/yt:opacity-100"
-        onClick={onRemove}
-        type="button"
-        aria-label="Remove YouTube link"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
-    </div>
-  );
-}
-
-// ─── Save status indicator ────────────────────────────────────────────────────
-
-function SaveStatus({ isSaving }: { isSaving: boolean }) {
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center gap-1.5 text-xs transition-opacity',
-        isSaving ? 'text-muted-foreground' : 'text-dynamic-green'
-      )}
-    >
-      {isSaving ? (
-        <>
-          <Loader2 className="h-3 w-3 animate-spin" />
-          Saving…
-        </>
-      ) : (
-        <>
-          <Check className="h-3 w-3" />
-          Saved
-        </>
-      )}
-    </span>
-  );
-}
 
 // ─── Main client component ────────────────────────────────────────────────────
 
@@ -127,6 +49,7 @@ export function LessonDetailClient({
   const [youtubeLinks, setYoutubeLinks] = useState<string[] | null>(null);
   const [addingYoutube, setAddingYoutube] = useState(false);
   const [youtubeDraft, setYoutubeDraft] = useState('');
+  const skipNameBlurRef = useRef(false);
 
   // ─── Name editing ───────────────────────────────────────────────────────────
 
@@ -135,6 +58,7 @@ export function LessonDetailClient({
   }, []);
 
   function commitName() {
+    skipNameBlurRef.current = false;
     const trimmed = (nameDraft ?? lesson?.name ?? '').trim();
     if (trimmed && trimmed !== lesson?.name) {
       saveName(trimmed);
@@ -142,6 +66,19 @@ export function LessonDetailClient({
       setNameDraft(null);
     }
     setEditingName(false);
+  }
+
+  function cancelNameEdit() {
+    setNameDraft(null);
+    setEditingName(false);
+  }
+
+  function handleNameBlur() {
+    if (skipNameBlurRef.current) {
+      skipNameBlurRef.current = false;
+      return;
+    }
+    commitName();
   }
 
   // ─── Content change ─────────────────────────────────────────────────────────
@@ -156,7 +93,7 @@ export function LessonDetailClient({
     node?.focus();
   }, []);
 
-  const effectiveLinks = youtubeLinks ?? lesson?.youtube_links ?? [];
+  const effectiveLinks: string[] = youtubeLinks ?? lesson?.youtube_links ?? [];
 
   function commitYoutubeLink() {
     const trimmed = youtubeDraft.trim();
@@ -169,7 +106,7 @@ export function LessonDetailClient({
   }
 
   function removeYoutubeLink(index: number) {
-    const next = effectiveLinks.filter((_, i) => i !== index);
+    const next = effectiveLinks.filter((_: string, i: number) => i !== index);
     setYoutubeLinks(next);
     saveYoutubeLinks(next);
   }
@@ -256,12 +193,12 @@ export function LessonDetailClient({
                 className="min-w-0 flex-1 border-primary border-b-2 bg-transparent font-black text-2xl outline-none md:text-3xl"
                 value={nameDraft ?? lesson.name ?? ''}
                 onChange={(e) => setNameDraft(e.target.value)}
-                onBlur={commitName}
+                onBlur={handleNameBlur}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') commitName();
                   if (e.key === 'Escape') {
-                    setNameDraft(null);
-                    setEditingName(false);
+                    skipNameBlurRef.current = true;
+                    cancelNameEdit();
                   }
                 }}
               />
@@ -275,9 +212,9 @@ export function LessonDetailClient({
               </button>
               <button
                 className="shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  setNameDraft(null);
-                  setEditingName(false);
+                onClick={cancelNameEdit}
+                onPointerDown={() => {
+                  skipNameBlurRef.current = true;
                 }}
                 type="button"
                 aria-label="Cancel rename"
@@ -293,6 +230,7 @@ export function LessonDetailClient({
               <button
                 className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/title:opacity-100"
                 onClick={() => {
+                  skipNameBlurRef.current = false;
                   setNameDraft(lesson.name ?? '');
                   setEditingName(true);
                 }}

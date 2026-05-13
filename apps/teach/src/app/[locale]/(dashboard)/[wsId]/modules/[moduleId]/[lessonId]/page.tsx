@@ -3,8 +3,8 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
-import { LessonDetailClient } from './client';
 import { redirect } from '@/i18n/navigation';
+import { LessonDetailClient } from './client';
 
 export default async function LessonDetailPage({
   params,

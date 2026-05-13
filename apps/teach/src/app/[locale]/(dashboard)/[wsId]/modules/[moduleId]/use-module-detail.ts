@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createWorkspaceCourseModule,
   createWorkspaceCourseModuleGroup,
@@ -17,8 +13,10 @@ import {
   updateWorkspaceCourseModule,
   updateWorkspaceCourseModuleGroup,
 } from '@tuturuuu/internal-api';
-import type { WorkspaceCourseModuleGroup } from '@tuturuuu/types/db';
-import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import type {
+  WorkspaceCourseModule,
+  WorkspaceCourseModuleGroup,
+} from '@tuturuuu/types/db';
 
 // ─── Query keys ───────────────────────────────────────────────────────────────
 
@@ -153,13 +151,8 @@ export function useModuleDetail(wsId: string, courseId: string) {
   });
 
   const renameModule = useMutation({
-    mutationFn: ({
-      moduleId,
-      name,
-    }: {
-      moduleId: string;
-      name: string;
-    }) => updateWorkspaceCourseModule(wsId, moduleId, { name }),
+    mutationFn: ({ moduleId, name }: { moduleId: string; name: string }) =>
+      updateWorkspaceCourseModule(wsId, moduleId, { name }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: modulesKey(wsId, courseId) });
     },
@@ -224,10 +217,17 @@ export function useModuleDetail(wsId: string, courseId: string) {
         modulesKey(wsId, courseId),
         (old: WorkspaceCourseModule[] | undefined) => {
           if (!old) return old;
-          const inGroup = old.filter((m) => m.module_group_id === moduleGroupId);
-          const outside = old.filter((m) => m.module_group_id !== moduleGroupId);
+          const inGroup = old.filter(
+            (m) => m.module_group_id === moduleGroupId
+          );
+          const outside = old.filter(
+            (m) => m.module_group_id !== moduleGroupId
+          );
           const reordered = moduleIds
-            .map((id) => inGroup.find((m) => m.id === id))
+            .map((id, index) => {
+              const module = inGroup.find((m) => m.id === id);
+              return module ? { ...module, sort_key: index + 1 } : null;
+            })
             .filter(Boolean) as WorkspaceCourseModule[];
           return [...outside, ...reordered];
         }

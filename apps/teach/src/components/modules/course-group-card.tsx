@@ -31,7 +31,9 @@ function StatChip({
     <div className="flex flex-col items-center gap-0.5 border-2 border-border bg-muted/40 px-2 py-2 text-center">
       <Icon className="h-3.5 w-3.5 text-muted-foreground" />
       <span className="font-bold text-sm leading-none">{value}</span>
-      <span className="text-[10px] text-muted-foreground leading-none">{label}</span>
+      <span className="text-[10px] text-muted-foreground leading-none">
+        {label}
+      </span>
     </div>
   );
 }
@@ -101,7 +103,11 @@ export function CourseGroupCard({
           />
           <StatChip
             icon={Users}
-            label={remaining > 0 ? t('teachModules.remaining') : t('teachModules.done')}
+            label={
+              remaining > 0
+                ? t('teachModules.remaining')
+                : t('teachModules.done')
+            }
             value={`${remaining}`}
           />
         </div>
@@ -118,21 +124,24 @@ export function CourseGroupCard({
 
         {/* Module checkpoint dots — Canvas style */}
         <div className="flex flex-wrap gap-1.5">
-          {Array.from({ length: Math.min(course.totalModules, 12) }).map((_, i) => {
-            const completed = i < course.completedModules;
-            const current = i === course.completedModules;
-            return (
-              <div
-                className={cn(
-                  'h-2.5 w-2.5 border border-border transition-all',
-                  completed && 'bg-primary',
-                  current && 'bg-dynamic-yellow ring-1 ring-dynamic-yellow/50',
-                  !completed && !current && 'bg-muted'
-                )}
-                key={`dot-${course.id}-${i}`}
-              />
-            );
-          })}
+          {Array.from({ length: Math.min(course.totalModules, 12) }).map(
+            (_, i) => {
+              const completed = i < course.completedModules;
+              const current = i === course.completedModules;
+              return (
+                <div
+                  className={cn(
+                    'h-2.5 w-2.5 border border-border transition-all',
+                    completed && 'bg-primary',
+                    current &&
+                      'bg-dynamic-yellow ring-1 ring-dynamic-yellow/50',
+                    !completed && !current && 'bg-muted'
+                  )}
+                  key={`dot-${course.id}-${i}`}
+                />
+              );
+            }
+          )}
           {course.totalModules > 12 ? (
             <span className="text-muted-foreground text-xs">
               +{course.totalModules - 12}
@@ -149,7 +158,9 @@ export function CourseGroupCard({
         >
           <Play className="h-4 w-4" />
           <span>
-            {isComplete ? t('teachModules.reviewCourse') : t('teachModules.openModules')}
+            {isComplete
+              ? t('teachModules.reviewCourse')
+              : t('teachModules.openModules')}
           </span>
           <ArrowRight className="ml-auto h-4 w-4 transition group-hover/btn:translate-x-0.5" />
         </Link>

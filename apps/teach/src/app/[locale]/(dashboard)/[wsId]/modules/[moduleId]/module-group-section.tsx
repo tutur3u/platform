@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  useSortable,
   SortableContext,
+  useSortable,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -15,9 +15,10 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
-import type { ModuleGroupWithModules } from './use-module-detail';
+import { useCallback, useEffect, useState } from 'react';
+import { AddModuleRow } from './add-module-row';
 import { ModuleItemRow } from './module-item-row';
+import type { ModuleGroupWithModules } from './use-module-detail';
 
 interface ModuleGroupSectionProps {
   group: ModuleGroupWithModules;
@@ -50,7 +51,9 @@ export function ModuleGroupSection({
   const [editingTitle, setEditingTitle] = useState(false);
   const [titleDraft, setTitleDraft] = useState(group.title);
   const [addingModule, setAddingModule] = useState(false);
-  const [newModuleName, setNewModuleName] = useState('');
+  const titleInputRef = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
 
   // Drag handle for the group itself
   const {
@@ -67,6 +70,10 @@ export function ModuleGroupSection({
     transition,
   };
 
+  useEffect(() => {
+    if (!editingTitle) setTitleDraft(group.title);
+  }, [editingTitle, group.title]);
+
   function commitTitle() {
     const trimmed = titleDraft.trim();
     if (trimmed && trimmed !== group.title) {
@@ -75,15 +82,6 @@ export function ModuleGroupSection({
       setTitleDraft(group.title);
     }
     setEditingTitle(false);
-  }
-
-  function commitNewModule() {
-    const trimmed = newModuleName.trim();
-    if (trimmed) {
-      onAddModule(group.id, trimmed);
-      setNewModuleName('');
-      setAddingModule(false);
-    }
   }
 
   const moduleIds = group.modules.map((m) => m.id);
@@ -132,8 +130,8 @@ export function ModuleGroupSection({
         {/* Title — inline edit */}
         {editingTitle ? (
           <input
-            autoFocus
-            className="min-w-0 flex-1 border-b-2 border-primary bg-transparent font-bold text-sm outline-none"
+            ref={titleInputRef}
+            className="min-w-0 flex-1 border-primary border-b-2 bg-transparent font-bold text-sm outline-none"
             value={titleDraft}
             onChange={(e) => setTitleDraft(e.target.value)}
             onBlur={commitTitle}
@@ -148,7 +146,10 @@ export function ModuleGroupSection({
         ) : (
           <button
             className="min-w-0 flex-1 truncate text-left font-bold text-sm hover:text-primary"
-            onClick={() => setEditingTitle(true)}
+            onClick={() => {
+              setTitleDraft(group.title);
+              setEditingTitle(true);
+            }}
             type="button"
           >
             {group.title}
@@ -209,43 +210,14 @@ export function ModuleGroupSection({
 
           {/* Inline add-module row */}
           {addingModule ? (
-            <div className="flex items-center gap-2 border-border border-t px-4 py-2">
-              <input
-                autoFocus
-                className="min-w-0 flex-1 border-b-2 border-primary bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-                placeholder="Module name…"
-                value={newModuleName}
-                onChange={(e) => setNewModuleName(e.target.value)}
-                onBlur={() => {
-                  if (!newModuleName.trim()) setAddingModule(false);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitNewModule();
-                  if (e.key === 'Escape') {
-                    setNewModuleName('');
-                    setAddingModule(false);
-                  }
-                }}
-              />
-              <button
-                className="shrink-0 border-2 border-border bg-primary px-3 py-1 font-bold text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
-                disabled={!newModuleName.trim() || isAddingModule}
-                onClick={commitNewModule}
-                type="button"
-              >
-                Add
-              </button>
-              <button
-                className="shrink-0 text-muted-foreground hover:text-foreground"
-                onClick={() => {
-                  setNewModuleName('');
-                  setAddingModule(false);
-                }}
-                type="button"
-              >
-                Cancel
-              </button>
-            </div>
+            <AddModuleRow
+              isAdding={isAddingModule}
+              onAdd={(name) => {
+                onAddModule(group.id, name);
+                setAddingModule(false);
+              }}
+              onCancel={() => setAddingModule(false)}
+            />
           ) : (
             <button
               className="flex w-full items-center gap-2 px-4 py-2 text-muted-foreground text-sm hover:bg-muted/40 hover:text-foreground"

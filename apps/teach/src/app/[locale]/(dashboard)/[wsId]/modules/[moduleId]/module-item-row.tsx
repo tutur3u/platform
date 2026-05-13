@@ -1,18 +1,12 @@
 'use client';
 
 import { useSortable } from '@dnd-kit/sortable';
-import Link from 'next/link';
 import { CSS } from '@dnd-kit/utilities';
-import {
-  Eye,
-  EyeOff,
-  GripVertical,
-  Pencil,
-  Trash2,
-} from '@tuturuuu/icons';
-import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { Eye, EyeOff, GripVertical, Pencil, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceCourseModule } from '@tuturuuu/types/db';
+import { cn } from '@tuturuuu/utils/format';
+import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 
 interface ModuleItemRowProps {
   module: WorkspaceCourseModule;
@@ -35,6 +29,9 @@ export function ModuleItemRow({
 }: ModuleItemRowProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(module.name ?? '');
+  const inputRef = useCallback((node: HTMLInputElement | null) => {
+    node?.focus();
+  }, []);
 
   const {
     attributes,
@@ -49,6 +46,10 @@ export function ModuleItemRow({
     transform: CSS.Transform.toString(transform),
     transition,
   };
+
+  useEffect(() => {
+    if (!editing) setDraft(module.name ?? '');
+  }, [editing, module.name]);
 
   function commitRename() {
     const trimmed = draft.trim();
@@ -73,7 +74,7 @@ export function ModuleItemRow({
       <button
         {...attributes}
         {...listeners}
-        className="shrink-0 cursor-grab touch-none text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none text-muted-foreground opacity-0 transition-opacity active:cursor-grabbing group-hover/row:opacity-100"
         type="button"
         aria-label="Drag to reorder module"
       >
@@ -88,8 +89,8 @@ export function ModuleItemRow({
       {/* Name — inline edit */}
       {editing ? (
         <input
-          autoFocus
-          className="min-w-0 flex-1 border-b-2 border-primary bg-transparent text-sm outline-none"
+          ref={inputRef}
+          className="min-w-0 flex-1 border-primary border-b-2 bg-transparent text-sm outline-none"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onBlur={commitRename}
@@ -109,8 +110,6 @@ export function ModuleItemRow({
           {module.name ?? 'Untitled'}
         </Link>
       )}
-
-
 
       {/* Published toggle */}
       <button
@@ -133,8 +132,11 @@ export function ModuleItemRow({
 
       {/* Rename */}
       <button
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:text-foreground"
-        onClick={() => setEditing(true)}
+        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-foreground group-hover/row:opacity-100"
+        onClick={() => {
+          setDraft(module.name ?? '');
+          setEditing(true);
+        }}
         type="button"
         aria-label="Rename module"
       >
@@ -143,7 +145,7 @@ export function ModuleItemRow({
 
       {/* Delete */}
       <button
-        className="shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover/row:opacity-100 hover:text-destructive"
+        className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/row:opacity-100"
         onClick={onDelete}
         type="button"
         aria-label="Delete module"

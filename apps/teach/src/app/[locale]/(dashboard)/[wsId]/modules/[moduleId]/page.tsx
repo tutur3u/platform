@@ -18,19 +18,20 @@ export default async function ModuleDetailPage({
   const bootstrap = await getTulearnBootstrap(authOptions).catch(() => null);
 
   if (!bootstrap) {
-    redirect({ href: `/login?next=/${wsId}/modules/${moduleId}`, locale });
-    throw new Error('Redirecting to Teach login');
+    return redirect({
+      href: `/login?next=/${wsId}/modules/${moduleId}`,
+      locale,
+    });
   }
 
   const workspace = bootstrap.workspaces.find((w) => w.id === wsId);
 
   if (!workspace) {
     const fallbackId = bootstrap.workspaces[0]?.id;
-    redirect({
+    return redirect({
       href: fallbackId ? `/${fallbackId}/modules` : '/dashboard',
       locale,
     });
-    throw new Error('Workspace not found');
   }
 
   return (

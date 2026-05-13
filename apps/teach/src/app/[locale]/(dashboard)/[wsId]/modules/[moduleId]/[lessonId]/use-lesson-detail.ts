@@ -36,7 +36,8 @@ export function useLessonDetail(
     queryKey: lessonQueryKey(wsId, courseId),
   });
 
-  const lesson = (modulesQuery.data ?? []).find((m) => m.id === lessonId) ?? null;
+  const lesson =
+    (modulesQuery.data ?? []).find((m) => m.id === lessonId) ?? null;
 
   // ─── Save mutation ──────────────────────────────────────────────────────────
 

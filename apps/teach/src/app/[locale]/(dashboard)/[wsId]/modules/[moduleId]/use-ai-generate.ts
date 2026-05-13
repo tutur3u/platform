@@ -54,9 +54,7 @@ export function useAiGenerate(wsId: string, courseId: string) {
       });
 
       return {
-        totalModules: response.metadata?.title
-          ? (response.createdModules?.length ?? 0)
-          : (response.createdModules?.length ?? 0),
+        totalModules: response.createdModules?.length ?? 0,
         totalQuizzes: 0,
         totalFlashcards: 0,
         creditsCharged: response.metadata?.creditsCharged,

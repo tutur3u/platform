@@ -343,7 +343,7 @@ function CourseUserGroupCard({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <InternalDashboardLink href={`/${wsId}/modules`} label={t('courseModules')} />
+        <DashboardLink href={`${baseUrl}/content`} label={t('courseModules')} />
         <DashboardLink href={`${baseUrl}/attendance`} label={t('attendance')} />
         <DashboardLink href={`${baseUrl}/reports`} label={t('reports')} />
         <DashboardLink href={`${baseUrl}/indicators`} label={t('metrics')} />
@@ -370,24 +370,5 @@ function DashboardLink({ href, label }: { href: string; label: string }) {
       {label}
       <ArrowRight className="h-3.5 w-3.5" />
     </a>
-  );
-}
-
-// Locale-aware internal link for teach app routes
-function InternalDashboardLink({
-  href,
-  label,
-}: {
-  href: string;
-  label: string;
-}) {
-  return (
-    <Link
-      className="inline-flex min-h-10 items-center justify-between gap-2 border-2 border-border bg-dynamic-cyan/15 px-3 py-2 font-black text-xs shadow-[2px_2px_0_var(--border)] transition active:translate-x-1 active:translate-y-1 active:shadow-none"
-      href={href}
-    >
-      {label}
-      <ArrowRight className="h-3.5 w-3.5" />
-    </Link>
   );
 }

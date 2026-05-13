@@ -10,7 +10,7 @@ import {
   X,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useAiGenerate } from './use-ai-generate';
 
 const ACCEPTED_TYPES = [
@@ -21,7 +21,8 @@ const ACCEPTED_TYPES = [
   'text/markdown',
 ];
 
-const ACCEPTED_EXTENSIONS = '.pdf,.docx,.doc,.txt,.md';
+const ACCEPTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md'];
+const ACCEPTED_EXTENSIONS = ACCEPTED_FILE_EXTENSIONS.join(',');
 const MAX_SIZE_MB = 50;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
@@ -29,6 +30,13 @@ function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function hasAcceptedExtension(fileName: string) {
+  const lowerName = fileName.toLowerCase();
+  return ACCEPTED_FILE_EXTENSIONS.some((extension) =>
+    lowerName.endsWith(extension)
+  );
 }
 
 interface AiGenerateDialogProps {
@@ -61,7 +69,11 @@ export function AiGenerateDialog({
         : 'idle';
 
   function validateFile(f: File): string | null {
-    if (!ACCEPTED_TYPES.includes(f.type) && f.type !== '') {
+    const hasAcceptedType = f.type
+      ? ACCEPTED_TYPES.includes(f.type)
+      : hasAcceptedExtension(f.name);
+
+    if (!hasAcceptedType) {
       return `Unsupported file type. Please upload a PDF, Word document, or text file.`;
     }
     if (f.size > MAX_SIZE_BYTES) {
@@ -76,12 +88,12 @@ export function AiGenerateDialog({
     if (!err) setFile(f);
   }
 
-  const onDrop = useCallback((e: React.DragEvent) => {
+  function onDrop(e: React.DragEvent) {
     e.preventDefault();
     setDragOver(false);
     const dropped = e.dataTransfer.files[0];
     if (dropped) pickFile(dropped);
-  }, []);
+  }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const picked = e.target.files?.[0];
@@ -166,10 +178,12 @@ export function AiGenerateDialog({
               <div className="border-2 border-border bg-muted/40 px-4 py-3">
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-bold">
-                    {stage === 'uploading' ? 'Uploading file…' : 'Generating modules…'}
+                    {stage === 'uploading'
+                      ? 'Uploading file…'
+                      : 'Generating modules…'}
                   </span>
                   {stage === 'uploading' && (
-                    <span className="tabular-nums text-muted-foreground">
+                    <span className="text-muted-foreground tabular-nums">
                       {uploadProgress}%
                     </span>
                   )}
@@ -197,22 +211,15 @@ export function AiGenerateDialog({
               {/* Drop zone */}
               <div
                 className={cn(
-                  'cursor-pointer border-2 border-border border-dashed bg-muted/30 p-6 text-center transition-colors hover:bg-muted/50',
+                  'border-2 border-border border-dashed bg-muted/30 p-6 text-center transition-colors hover:bg-muted/50',
                   dragOver && 'border-primary bg-primary/5'
                 )}
-                onClick={() => inputRef.current?.click()}
                 onDragOver={(e) => {
                   e.preventDefault();
                   setDragOver(true);
                 }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={onDrop}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
-                }}
-                aria-label="Upload file"
               >
                 <input
                   ref={inputRef}
@@ -244,7 +251,12 @@ export function AiGenerateDialog({
                     </button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <button
+                    className="w-full space-y-2"
+                    onClick={() => inputRef.current?.click()}
+                    type="button"
+                    aria-label="Upload file"
+                  >
                     <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
                     <p className="font-bold text-sm">
                       Drop a file here or click to browse
@@ -252,7 +264,7 @@ export function AiGenerateDialog({
                     <p className="text-muted-foreground text-xs">
                       PDF, Word (.docx), or plain text · max {MAX_SIZE_MB} MB
                     </p>
-                  </div>
+                  </button>
                 )}
               </div>
 

@@ -48,7 +48,9 @@ export function ModulesEmptyState({
       <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center border-2 border-border bg-background shadow-[4px_4px_0_var(--border)]">
         <Sparkles className="h-7 w-7" />
       </div>
-      <p className="mx-auto max-w-md text-muted-foreground leading-7">{label}</p>
+      <p className="mx-auto max-w-md text-muted-foreground leading-7">
+        {label}
+      </p>
       {action ? <div className="mt-5">{action}</div> : null}
     </div>
   );

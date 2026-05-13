@@ -133,7 +133,10 @@ export function ModulesPageClient({
   });
 
   const courses = coursesQuery.data?.courses ?? [];
-  const totalModules = courses.reduce((sum: number, c) => sum + c.totalModules, 0);
+  const totalModules = courses.reduce(
+    (sum: number, c) => sum + c.totalModules,
+    0
+  );
 
   return (
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
