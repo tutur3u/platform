@@ -125,6 +125,13 @@ browser-safe host such as `http://localhost:7803`. The CLI normalizes
 `0.0.0.0` and unspecified IPv6 origins to `localhost` so the browser login flow
 does not open a blocked address.
 
+On Dockerized production deployments, the web auth start route also rewrites
+wildcard bind origins such as `0.0.0.0:7803` to the forwarded public host or the
+configured app URL (`WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`,
+`NEXT_PUBLIC_APP_URL`, `COOLIFY_URL`, or `COOLIFY_FQDN`) before sending users to
+`/login`. If those environment values are unset and no public forwarded host is
+available, `https://tuturuuu.com` is the default fallback.
+
 - macOS: `~/Library/Application Support/Tuturuuu/config.json`
 - Linux: `$XDG_CONFIG_HOME/tuturuuu/config.json` or `~/.config/tuturuuu/config.json`
 - Windows: `%APPDATA%\Tuturuuu\config.json`

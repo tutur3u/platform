@@ -16,9 +16,116 @@ function isLoopbackCallback(value: string) {
   }
 }
 
+function firstHeaderValue(value: string | null) {
+  return value
+    ?.split(',')
+    .map((entry) => entry.trim())
+    .find(Boolean);
+}
+
+function normalizeOrigin(value: string | undefined | null) {
+  if (!value?.trim()) {
+    return null;
+  }
+
+  const [firstValue] = value
+    .split(/[,\n]/u)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+  if (!firstValue) {
+    return null;
+  }
+
+  const normalized = /^[a-z][a-z0-9+.-]*:\/\//iu.test(firstValue)
+    ? firstValue
+    : `https://${firstValue}`;
+
+  try {
+    const url = new URL(normalized);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return url.origin;
+  } catch {
+    return null;
+  }
+}
+
+function isWildcardOrigin(origin: string) {
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === '0.0.0.0' || hostname === '::' || hostname === '[::]';
+  } catch {
+    return true;
+  }
+}
+
+function resolveConfiguredAppOrigin() {
+  const origin =
+    normalizeOrigin(process.env.WEB_APP_URL) ||
+    normalizeOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
+    normalizeOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
+    normalizeOrigin(process.env.COOLIFY_URL) ||
+    normalizeOrigin(process.env.COOLIFY_FQDN);
+
+  return origin && !isWildcardOrigin(origin) ? origin : null;
+}
+
+function resolveForwardedOrigin(request: NextRequest) {
+  const forwardedHost = firstHeaderValue(
+    request.headers.get('x-forwarded-host')
+  );
+  if (!forwardedHost) {
+    return null;
+  }
+
+  const forwardedProto = firstHeaderValue(
+    request.headers.get('x-forwarded-proto')
+  );
+  const protocol =
+    forwardedProto === 'http' || forwardedProto === 'https'
+      ? forwardedProto
+      : 'https';
+  const origin = normalizeOrigin(`${protocol}://${forwardedHost}`);
+
+  return origin && !isWildcardOrigin(origin) ? origin : null;
+}
+
+function resolveLoginOrigin(request: NextRequest) {
+  const requestOrigin = request.nextUrl.origin;
+  if (!isWildcardOrigin(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  const configuredOrigin = resolveConfiguredAppOrigin();
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  const forwardedOrigin = resolveForwardedOrigin(request);
+  if (forwardedOrigin) {
+    return forwardedOrigin;
+  }
+
+  return 'https://tuturuuu.com';
+}
+
+function resolvePublicRequestUrl(request: NextRequest, origin: string) {
+  return new URL(
+    `${request.nextUrl.pathname}${request.nextUrl.search}`,
+    origin
+  ).toString();
+}
+
 function redirectToLogin(request: NextRequest) {
-  const loginUrl = new URL('/login', request.url);
-  loginUrl.searchParams.set('returnUrl', request.nextUrl.toString());
+  const origin = resolveLoginOrigin(request);
+  const loginUrl = new URL('/login', origin);
+  loginUrl.searchParams.set(
+    'returnUrl',
+    resolvePublicRequestUrl(request, origin)
+  );
   return NextResponse.redirect(loginUrl);
 }
 
