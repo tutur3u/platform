@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions, audit;
 
-select plan(15);
+select plan(23);
 
 insert into public.users (id)
 values
@@ -74,6 +74,38 @@ values (
   '00000000-0000-0000-0000-000000000710'
 )
 on conflict do nothing;
+
+insert into public.workspace_members (ws_id, user_id)
+values (
+  '00000000-0000-0000-0000-000000000710',
+  '00000000-0000-0000-0000-000000000701'
+)
+on conflict do nothing;
+
+insert into public.workspace_roles (id, ws_id, name)
+values (
+  '00000000-0000-0000-0000-000000000730',
+  '00000000-0000-0000-0000-000000000710',
+  'Audit Managers'
+)
+on conflict (id) do nothing;
+
+insert into public.workspace_role_members (role_id, user_id)
+values (
+  '00000000-0000-0000-0000-000000000730',
+  '00000000-0000-0000-0000-000000000701'
+)
+on conflict do nothing;
+
+insert into public.workspace_role_permissions (ws_id, permission, role_id, enabled)
+values (
+  '00000000-0000-0000-0000-000000000710',
+  'manage_workspace_audit_logs',
+  '00000000-0000-0000-0000-000000000730',
+  true
+)
+on conflict (ws_id, permission, role_id) do update
+set enabled = excluded.enabled;
 
 insert into audit.record_version (
   op,
@@ -356,6 +388,239 @@ values (
   '00000000-0000-0000-0000-000000000701',
   'backfilled',
   '2026-03-15T08:00:00Z'
+);
+
+select ok(
+  not has_function_privilege(
+    'anon',
+    'public.workspace_user_audit_feed(uuid,timestamptz,timestamptz)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.workspace_user_audit_filtered_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.list_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text,integer,integer)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.summarize_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.list_workspace_user_audit_bucket_counts(uuid,timestamptz,timestamptz,text,text,text,text,text)',
+    'execute'
+  )
+  and not has_function_privilege(
+    'anon',
+    'public.get_workspace_user_audit_view(uuid,timestamptz,timestamptz,text,text,text,text,text,integer,integer)',
+    'execute'
+  ),
+  'anon cannot execute workspace user audit RPCs'
+);
+
+select ok(
+  not has_function_privilege(
+    'authenticated',
+    'public.workspace_user_audit_feed(uuid,timestamptz,timestamptz)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.workspace_user_audit_filtered_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.list_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text,integer,integer)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.summarize_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.list_workspace_user_audit_bucket_counts(uuid,timestamptz,timestamptz,text,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'authenticated',
+    'public.get_workspace_user_audit_view(uuid,timestamptz,timestamptz,text,text,text,text,text,integer,integer)',
+    'execute'
+  ),
+  'authenticated can execute only guarded workspace user audit RPCs'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.workspace_user_audit_feed(uuid,timestamptz,timestamptz)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.workspace_user_audit_filtered_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.list_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text,integer,integer)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.summarize_workspace_user_audit_feed(uuid,timestamptz,timestamptz,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.list_workspace_user_audit_bucket_counts(uuid,timestamptz,timestamptz,text,text,text,text,text)',
+    'execute'
+  )
+  and has_function_privilege(
+    'service_role',
+    'public.get_workspace_user_audit_view(uuid,timestamptz,timestamptz,text,text,text,text,text,integer,integer)',
+    'execute'
+  ),
+  'service_role can execute workspace user audit RPCs for server-side access'
+);
+
+set local role authenticated;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000702',
+    'role', 'authenticated'
+  )::text,
+  true
+);
+
+select throws_ok(
+  $$
+    select count(*)
+    from public.workspace_user_audit_filtered_feed(
+      '00000000-0000-0000-0000-000000000710'::uuid,
+      '2026-03-01T00:00:00Z'::timestamptz,
+      '2026-04-01T00:00:00Z'::timestamptz,
+      'all',
+      'all',
+      null,
+      null
+    )
+  $$,
+  '42501',
+  'workspace_user_audit_permission_denied',
+  'authenticated callers without audit-log permission cannot read filtered audit rows'
+);
+
+select throws_ok(
+  $$
+    select public.get_workspace_user_audit_view(
+      '00000000-0000-0000-0000-000000000710'::uuid,
+      '2026-03-01T00:00:00Z'::timestamptz,
+      '2026-04-01T00:00:00Z'::timestamptz,
+      'monthly',
+      'all',
+      'all',
+      null,
+      null,
+      2,
+      0
+    )
+  $$,
+  '42501',
+  'workspace_user_audit_permission_denied',
+  'authenticated callers without audit-log permission cannot read the audit view'
+);
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000701',
+    'role', 'authenticated'
+  )::text,
+  true
+);
+
+select lives_ok(
+  $$
+    select count(*)
+    from public.workspace_user_audit_filtered_feed(
+      '00000000-0000-0000-0000-000000000710'::uuid,
+      '2026-03-01T00:00:00Z'::timestamptz,
+      '2026-04-01T00:00:00Z'::timestamptz,
+      'all',
+      'all',
+      null,
+      null
+    )
+  $$,
+  'authenticated callers with audit-log permission can read filtered audit rows'
+);
+
+select lives_ok(
+  $$
+    select public.get_workspace_user_audit_view(
+      '00000000-0000-0000-0000-000000000710'::uuid,
+      '2026-03-01T00:00:00Z'::timestamptz,
+      '2026-04-01T00:00:00Z'::timestamptz,
+      'monthly',
+      'all',
+      'all',
+      null,
+      null,
+      2,
+      0
+    )
+  $$,
+  'authenticated callers with audit-log permission can read the audit view'
+);
+
+reset role;
+set local role service_role;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object('role', 'service_role')::text,
+  true
+);
+
+select lives_ok(
+  $$
+    select public.get_workspace_user_audit_view(
+      '00000000-0000-0000-0000-000000000710'::uuid,
+      '2026-03-01T00:00:00Z'::timestamptz,
+      '2026-04-01T00:00:00Z'::timestamptz,
+      'monthly',
+      'all',
+      'all',
+      null,
+      null,
+      2,
+      0
+    )
+  $$,
+  'service_role callers retain server-side audit view access'
+);
+
+reset role;
+set local role authenticated;
+
+select set_config(
+  'request.jwt.claims',
+  jsonb_build_object(
+    'sub', '00000000-0000-0000-0000-000000000701',
+    'role', 'authenticated'
+  )::text,
+  true
 );
 
 select is(

@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2025-11-16'
+updatedAt: '2026-05-13'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -198,6 +198,70 @@ USING (
     -- task_projects has its own RLS policy checking workspace membership
   )
 );
+```
+
+### Pattern 7: Workspace-Scoped Security Definer RPCs
+
+**Use Case:** An RPC must run with elevated database privileges to read audit,
+private, or RLS-protected tables.
+
+Every workspace-scoped `SECURITY DEFINER` RPC that is reachable through the
+Supabase Data API must enforce authorization inside the database function. Page,
+route, or server action permission checks are not sufficient because clients can
+call exposed RPCs directly.
+
+Required controls:
+
+- Read the caller with `auth.uid()` and deny missing callers unless the JWT role
+  is `service_role`.
+- Verify workspace membership and the workspace permission in the function
+  before reading sensitive rows. Do not rely on permission helpers alone when a
+  default permission could be enabled workspace-wide.
+- Revoke direct execution from `public` and `anon`.
+- Avoid exposing lower-level privileged helper functions to `authenticated` when
+  they do not perform their own permission check.
+- Cover the grant matrix and allowed/denied calls with pgTAP when practical.
+
+```sql
+create or replace function public.authorize_workspace_sensitive_rpc(
+  p_ws_id uuid
+)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.role() = 'service_role' then
+    return;
+  end if;
+
+  if auth.uid() is null then
+    raise exception 'auth_required' using errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1
+    from public.workspace_members workspace_member
+    where workspace_member.ws_id = p_ws_id
+      and workspace_member.user_id = auth.uid()
+  ) then
+    raise exception 'permission_denied' using errcode = '42501';
+  end if;
+
+  if not public.has_workspace_permission(
+    p_ws_id,
+    auth.uid(),
+    'manage_workspace_audit_logs'
+  ) then
+    raise exception 'permission_denied' using errcode = '42501';
+  end if;
+end;
+$$;
+
+revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from public;
+revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from anon;
+revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from authenticated;
 ```
 
 ## Common RLS Helpers

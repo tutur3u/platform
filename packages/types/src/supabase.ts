@@ -26977,6 +26977,10 @@ export type Database = {
           sync_token: string;
         }[];
       };
+      authorize_workspace_user_audit_access: {
+        Args: { p_ws_id: string };
+        Returns: undefined;
+      };
       award_mira_xp: {
         Args: { p_source?: string; p_user_id: string; p_xp: number };
         Returns: {
