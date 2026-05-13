@@ -59,6 +59,7 @@ import {
 } from '@/lib/auth/oauth-providers';
 import { passwordLoginAction } from './actions';
 import { InternalAppAccountConfirmation } from './internal-app-account-confirmation';
+import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { LoginQrCard } from './login-qr-card';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
 import { SocialLoginButton } from './social-login-button';
@@ -103,6 +104,11 @@ interface MobileMfaApprovalChallenge {
   id: string;
   pairCode: string;
   secret: string;
+}
+
+interface ReturnUrlValidationFailure {
+  reason?: string;
+  returnUrl: string;
 }
 
 function getReturnAppName(returnApp: string | null) {
@@ -169,12 +175,23 @@ export default function LoginForm() {
   );
   const {
     data: resolvedReturnApp,
+    error: resolvedReturnAppError,
+    isError: didFailToResolveReturnApp,
     isLoading: isResolvingConfiguredReturnApp,
     refetch: refetchResolvedReturnApp,
   } = useQuery({
     enabled: shouldResolveReturnApp,
-    queryFn: () =>
-      resolveCrossAppReturnUrlWithInternalApi({ returnUrl: returnUrl ?? '' }),
+    queryFn: async () => {
+      const result = await resolveCrossAppReturnUrlWithInternalApi({
+        returnUrl: returnUrl ?? '',
+      });
+
+      if (!result.targetApp) {
+        throw new Error(result.error ?? 'Invalid returnUrl');
+      }
+
+      return result;
+    },
     queryKey: ['auth', 'cross-app-return', returnUrl],
     retry: false,
     staleTime: 60_000,
@@ -272,6 +289,8 @@ export default function LoginForm() {
     useState<MobileMfaApprovalChallenge | null>(null);
   const [mobileMfaHandled, setMobileMfaHandled] = useState(false);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
+  const [returnUrlValidationFailure, setReturnUrlValidationFailure] =
+    useState<ReturnUrlValidationFailure | null>(null);
   const [switchingAccountId, setSwitchingAccountId] = useState<string | null>(
     null
   );
@@ -309,6 +328,21 @@ export default function LoginForm() {
     (!turnstileClientState.canRenderWidget ||
       !turnstileSiteKey ||
       !captchaToken);
+  const resolvedReturnUrlFailure =
+    shouldResolveReturnApp && didFailToResolveReturnApp && returnUrl
+      ? {
+          reason:
+            resolvedReturnAppError instanceof Error
+              ? resolvedReturnAppError.message
+              : undefined,
+          returnUrl,
+        }
+      : null;
+  const activeReturnUrlFailure =
+    returnUrlValidationFailure?.returnUrl === returnUrl
+      ? returnUrlValidationFailure
+      : resolvedReturnUrlFailure;
+  const hasActiveReturnUrlFailure = Boolean(activeReturnUrlFailure);
 
   const createMobileMfaChallengeMutation = useMutation({
     mutationFn: () =>
@@ -388,6 +422,19 @@ export default function LoginForm() {
     setCaptchaToken(undefined);
   }, []);
 
+  const markReturnUrlValidationFailure = useCallback(
+    (failedReturnUrl: string, error?: unknown) => {
+      setReturnUrlValidationFailure({
+        reason: error instanceof Error ? error.message : undefined,
+        returnUrl: failedReturnUrl,
+      });
+      setConfirmingReturn(false);
+      setLoading(false);
+      setReadyForAuth(true);
+    },
+    []
+  );
+
   const handleCaptchaSuccess = useCallback((token: string) => {
     setCaptchaToken(token);
     setCaptchaError(undefined);
@@ -429,8 +476,23 @@ export default function LoginForm() {
       return false;
     }
 
-    const resolvedReturnApp =
-      returnApp ?? (await refetchResolvedReturnApp()).data?.targetApp ?? null;
+    let resolvedReturnApp = returnApp;
+
+    if (!resolvedReturnApp && shouldResolveReturnApp) {
+      const refetchResult = await refetchResolvedReturnApp();
+
+      if (refetchResult.error) {
+        markReturnUrlValidationFailure(returnUrl, refetchResult.error);
+        return true;
+      }
+
+      resolvedReturnApp = refetchResult.data?.targetApp ?? null;
+    }
+
+    if (!resolvedReturnApp) {
+      markReturnUrlValidationFailure(returnUrl);
+      return true;
+    }
 
     if (!resolvedReturnApp || ['platform', 'web'].includes(resolvedReturnApp)) {
       return false;
@@ -448,7 +510,14 @@ export default function LoginForm() {
     setReadyForAuth(true);
     setLoading(false);
     return true;
-  }, [refetchResolvedReturnApp, returnApp, searchParams, supabase.auth]);
+  }, [
+    markReturnUrlValidationFailure,
+    refetchResolvedReturnApp,
+    returnApp,
+    searchParams,
+    shouldResolveReturnApp,
+    supabase.auth,
+  ]);
 
   const processNextUrl = useCallback(async () => {
     const returnUrl = searchParams.get('returnUrl');
@@ -471,11 +540,17 @@ export default function LoginForm() {
         return;
       }
 
-      const { returnUrl: crossAppReturnUrl } =
-        await createCrossAppReturnUrlWithInternalApi({ returnUrl });
+      const crossAppReturn = await createCrossAppReturnUrlWithInternalApi({
+        returnUrl,
+      });
+
+      if (!crossAppReturn.returnUrl || !crossAppReturn.targetApp) {
+        throw new Error(crossAppReturn.error ?? 'Invalid returnUrl');
+      }
+
       await supabase.auth.refreshSession();
 
-      const nextUrl = new URL(crossAppReturnUrl);
+      const nextUrl = new URL(crossAppReturn.returnUrl);
 
       if (multiAccount === 'true') {
         nextUrl.searchParams.set('multiAccount', 'true');
@@ -558,6 +633,11 @@ export default function LoginForm() {
             navError
           );
 
+          if (returnUrl && !returnUrl.startsWith('/')) {
+            markReturnUrlValidationFailure(returnUrl, navError);
+            return;
+          }
+
           if (multiAccount === 'true') {
             window.location.href = `/add-account${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`;
           } else {
@@ -571,6 +651,7 @@ export default function LoginForm() {
     },
     [
       needsMFA,
+      markReturnUrlValidationFailure,
       prepareReturnAppConfirmation,
       processNextUrl,
       router,
@@ -585,10 +666,16 @@ export default function LoginForm() {
       await processNextUrl();
     } catch (error) {
       console.error('[login] Failed to continue to internal app:', error);
+      const returnUrl = searchParams.get('returnUrl');
+
+      if (returnUrl && !returnUrl.startsWith('/')) {
+        markReturnUrlValidationFailure(returnUrl, error);
+      }
+
       toast.error(t('login.internal_app_continue_failed'));
       setConfirmingReturn(false);
     }
-  }, [processNextUrl, t]);
+  }, [markReturnUrlValidationFailure, processNextUrl, searchParams, t]);
 
   const switchToStoredAccount = useCallback(
     async (accountId: string) => {
@@ -616,6 +703,28 @@ export default function LoginForm() {
     setReadyForAuth(true);
     setLoading(false);
   }, [supabase.auth]);
+
+  const clearInvalidReturnUrl = useCallback(() => {
+    setReturnUrlValidationFailure(null);
+    setConfirmingReturn(false);
+    setLoading(false);
+
+    if (user && !requiresMFA) {
+      router.replace('/');
+      router.refresh();
+      return;
+    }
+
+    const currentUrl = new URL(window.location.href);
+    currentUrl.searchParams.delete('returnUrl');
+    currentUrl.searchParams.delete('provider');
+    currentUrl.searchParams.delete('error');
+    currentUrl.searchParams.delete('error_description');
+
+    const nextPath = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
+    router.replace(nextPath);
+    router.refresh();
+  }, [requiresMFA, router, user]);
 
   const handleQrAuthenticated = useCallback(
     async (session: QrLoginSessionPayload) => {
@@ -1061,6 +1170,11 @@ export default function LoginForm() {
         return;
       }
 
+      if (hasActiveReturnUrlFailure) {
+        setReadyForAuth(true);
+        return;
+      }
+
       const multiAccount = searchParams.get('multiAccount');
 
       if (multiAccount === 'true') {
@@ -1081,6 +1195,13 @@ export default function LoginForm() {
             '[login] Failed to process authenticated returnUrl navigation:',
             error
           );
+          const returnUrl = searchParams.get('returnUrl');
+
+          if (returnUrl && !returnUrl.startsWith('/')) {
+            markReturnUrlValidationFailure(returnUrl, error);
+            return;
+          }
+
           setReadyForAuth(true);
         }
       } else {
@@ -1092,9 +1213,11 @@ export default function LoginForm() {
       void processUrl();
     }
   }, [
+    hasActiveReturnUrlFailure,
     initialized,
     isInternalAppReturn,
     isResolvingReturnApp,
+    markReturnUrlValidationFailure,
     processNextUrl,
     requiresMFA,
     searchParams,
@@ -1169,6 +1292,15 @@ export default function LoginForm() {
       <div className="flex h-full w-full items-center justify-center">
         <LoadingIndicator />
       </div>
+    );
+  }
+
+  if (activeReturnUrlFailure) {
+    return (
+      <InvalidReturnUrlWarning
+        onClear={clearInvalidReturnUrl}
+        returnUrl={activeReturnUrlFailure.returnUrl}
+      />
     );
   }
 

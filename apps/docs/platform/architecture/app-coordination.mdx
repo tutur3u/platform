@@ -35,6 +35,12 @@ External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
 never require production Supabase keys.
 
+The centralized login page validates external and internal `returnUrl` targets
+before it renders the normal sign-in form or account-confirmation handoff. If the
+target origin is not registered or cannot be resolved, the page shows a warning
+and asks the user to clear the broken return URL instead of silently falling back
+to the generic login form.
+
 ## Operational notes
 
 The bearer token is signed with `TUTURUUU_APP_COORDINATION_SECRET` and defaults

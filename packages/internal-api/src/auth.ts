@@ -154,8 +154,9 @@ export interface CreateCrossAppReturnUrlPayload {
 
 export interface CreateCrossAppReturnUrlResponse {
   appName?: string | null;
-  returnUrl: string;
-  targetApp: string;
+  error?: string;
+  returnUrl?: string;
+  targetApp?: string;
 }
 
 export interface ResolveCrossAppReturnUrlPayload {
@@ -164,7 +165,8 @@ export interface ResolveCrossAppReturnUrlPayload {
 
 export interface ResolveCrossAppReturnUrlResponse {
   appName?: string | null;
-  targetApp: string;
+  error?: string;
+  targetApp?: string;
 }
 
 async function parseAuthResponse<T>(response: Response): Promise<T> {
