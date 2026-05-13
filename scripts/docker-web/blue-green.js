@@ -785,27 +785,30 @@ async function buildBlueGreenServices({
   runCommand: run,
   services,
 }) {
-  const buildArgs = getComposeCommandArgs(
-    composeFile,
-    composeGlobalArgs,
-    'build',
-    ...services
-  );
-  const freshBuildArgs = getComposeCommandArgs(
-    composeFile,
-    composeGlobalArgs,
-    'build',
-    '--no-cache',
-    ...services
-  );
   const timeoutMs = getBlueGreenBuildTimeoutMs(env);
+  const buildServiceBatches = getBlueGreenBuildServiceBatches(services, env);
+  const runBuildBatches = async ({ noCache = false } = {}) => {
+    for (const serviceBatch of buildServiceBatches) {
+      await runChecked(
+        'docker',
+        getComposeCommandArgs(
+          composeFile,
+          composeGlobalArgs,
+          'build',
+          ...(noCache ? ['--no-cache'] : []),
+          ...serviceBatch
+        ),
+        {
+          env,
+          runCommand: run,
+          timeoutMs,
+        }
+      );
+    }
+  };
 
   try {
-    await runChecked('docker', buildArgs, {
-      env,
-      runCommand: run,
-      timeoutMs,
-    });
+    await runBuildBatches();
   } catch (error) {
     const isRecoverableBuildError =
       isBunTarballExtractionError(error) ||
@@ -830,12 +833,25 @@ async function buildBlueGreenServices({
       runCommand: run,
     });
 
-    await runChecked('docker', freshBuildArgs, {
-      env,
-      runCommand: run,
-      timeoutMs,
-    });
+    await runBuildBatches({ noCache: true });
   }
+}
+
+function getBlueGreenBuildServiceBatches(services, env) {
+  const composeParallelLimit = Number.parseInt(
+    String(env?.COMPOSE_PARALLEL_LIMIT ?? '').trim(),
+    10
+  );
+
+  if (
+    Number.isFinite(composeParallelLimit) &&
+    composeParallelLimit <= 1 &&
+    services.length > 1
+  ) {
+    return services.map((service) => [service]);
+  }
+
+  return [services];
 }
 
 async function refreshBlueGreenProxyIfRunning({

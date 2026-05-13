@@ -1301,6 +1301,32 @@ test('buildBlueGreenServices recovers a cached BuildKit error with a fresh retry
   );
 });
 
+test('buildBlueGreenServices builds services sequentially when compose parallelism is one', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: {
+      BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+      COMPOSE_PARALLEL_LIMIT: '1',
+    },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.timeoutMs]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-blue', 'hive-blue', 'hive-realtime'],
+  });
+
+  assert.deepEqual(
+    calls
+      .filter(([, args]) => args.includes('build'))
+      .map(([, args]) => args.slice(-1)),
+    [['web-blue'], ['hive-blue'], ['hive-realtime']]
+  );
+});
+
 test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -1658,8 +1684,8 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args) => {
-    calls.push([command, args]);
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options.env]);
 
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
@@ -1673,6 +1699,10 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
         stderr: '',
         stdout: webProxyPsCalls === 1 ? '' : 'proxy-123\n',
       };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'buildkit') {
+      return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
     }
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
@@ -1700,7 +1730,19 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 
   try {
     await runDockerWebWorkflow(
-      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      parseArgs([
+        'up',
+        '--mode',
+        'prod',
+        '--strategy',
+        'blue-green',
+        '--build-memory',
+        '12g',
+        '--build-cpus',
+        '4',
+        '--build-max-parallelism',
+        '1',
+      ]),
       {
         env: { PATH: 'test-path' },
         envFilePath,
@@ -1789,6 +1831,24 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.notEqual(proxyUpIndex, -1);
     assert.ok(runtimeUpIndex < hiveUpIndex);
     assert.ok(hiveUpIndex < proxyUpIndex);
+    const buildCalls = calls.filter(
+      ([command, args]) =>
+        command === 'docker' &&
+        args[0] === 'compose' &&
+        args.includes('build') &&
+        !args.includes('--no-cache')
+    );
+    assert.ok(buildCalls.length > 1);
+    assert.ok(
+      buildCalls.every(([, args, callEnv]) => {
+        const buildIndex = args.indexOf('build');
+        return (
+          args.slice(buildIndex + 1).length === 1 &&
+          callEnv.BUILDX_BUILDER === DEFAULT_BUILDER_NAME &&
+          callEnv.COMPOSE_PARALLEL_LIMIT === '1'
+        );
+      })
+    );
     assert.ok(
       calls.some(
         ([command, args]) =>

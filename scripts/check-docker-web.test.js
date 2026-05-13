@@ -78,6 +78,25 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
   );
 });
 
+test('web Docker build script delegates Next to the real Node wrapper', () => {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, 'apps', 'web', 'package.json'), 'utf8')
+  );
+  const wrapper = fs.readFileSync(
+    path.join(ROOT_DIR, 'scripts', 'run-web-docker-next-build.js'),
+    'utf8'
+  );
+
+  assert.equal(
+    packageJson.scripts['build:docker'],
+    'bun ../../scripts/run-web-docker-next-build.js'
+  );
+  assert.match(wrapper, /process\.env\.DOCKER_WEB_NODE_BINARY \|\| 'node'/u);
+  assert.match(wrapper, /DEFAULT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096/u);
+  assert.match(wrapper, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/u);
+  assert.match(wrapper, /NEXT_BIN, 'build', '--turbopack'/u);
+});
+
 test('validateDockerfile reports missing workspace manifest copies', () => {
   const dockerfileContent = fs
     .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')

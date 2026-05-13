@@ -387,6 +387,10 @@ test('production Docker root scripts keep the default build caps', () => {
     path.join(__dirname, 'build-web-docker.js'),
     'utf8'
   );
+  const runWebDockerNextBuildScript = fs.readFileSync(
+    path.join(__dirname, 'run-web-docker-next-build.js'),
+    'utf8'
+  );
   const webNextConfig = fs.readFileSync(
     path.join(__dirname, '..', 'apps', 'web', 'next.config.ts'),
     'utf8'
@@ -394,36 +398,44 @@ test('production Docker root scripts keep the default build caps', () => {
 
   assert.match(
     packageJson.scripts['serve:web:docker'],
-    /--build-memory 12g --build-cpus 8 --build-max-parallelism 1/
+    /--build-memory 12g --build-cpus 4 --build-max-parallelism 1/
   );
   assert.match(
     packageJson.scripts['serve:web:docker:bg'],
-    /--build-memory 12g --build-cpus 8 --build-max-parallelism 1/
+    /--build-memory 12g --build-cpus 4 --build-max-parallelism 1/
   );
   assert.equal(
     packageJson.scripts['build:web:docker'],
     'turbo run build:docker -F @tuturuuu/web'
   );
-  assert.match(
+  assert.equal(
     webPackageJson.scripts['build:docker'],
-    /--max-old-space-size=8192/
+    'bun ../../scripts/run-web-docker-next-build.js'
   );
   assert.match(
-    webPackageJson.scripts['build:docker'],
-    /next build --turbopack/
+    runWebDockerNextBuildScript,
+    /DEFAULT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096/
   );
+  assert.match(
+    runWebDockerNextBuildScript,
+    /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/
+  );
+  assert.match(runWebDockerNextBuildScript, /--max-old-space-size=\$\{/);
+  assert.match(runWebDockerNextBuildScript, /--experimental-require-module/);
+  assert.match(runWebDockerNextBuildScript, /DOCKER_WEB_NODE_BINARY/);
+  assert.match(runWebDockerNextBuildScript, /NEXT_BIN, 'build', '--turbopack'/);
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
   assert.match(buildWebDockerScript, /build:web:docker/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 8 : undefined/
+    /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
   assert.match(
     webNextConfig,
-    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 8 : undefined/
+    /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /staticPageGenerationTimeout/);
   assert.match(webNextConfig, /staticGenerationMaxConcurrency/);

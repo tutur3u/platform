@@ -265,9 +265,9 @@ function validateDockerfile({
   }
 
   if (builderStage) {
-    if (!builderStage.includes('FROM node:22-bookworm-slim AS builder')) {
+    if (!builderStage.includes('FROM node:24-bookworm-slim AS builder')) {
       errors.push(
-        'apps/web/Dockerfile builder stage must use node:22-bookworm-slim so next build runs under real Node instead of Bun node-shim.'
+        'apps/web/Dockerfile builder stage must use node:24-bookworm-slim so next build runs under real Node instead of Bun node-shim.'
       );
     }
 
@@ -278,6 +278,20 @@ function validateDockerfile({
     ) {
       errors.push(
         'apps/web/Dockerfile builder stage must copy Bun from deps for workspace scripts while keeping Node as the build runtime.'
+      );
+    }
+
+    if (
+      !builderStage.includes('ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node')
+    ) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must force Docker web build scripts to use the real Node binary for next build.'
+      );
+    }
+
+    if (!builderStage.includes('ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096')) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must default Docker next build heap to 4096 MB.'
       );
     }
 
@@ -328,7 +342,7 @@ function validateDockerCompose(
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
-    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-8' + '}',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-4' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '  platform-buildkit-state:',
@@ -415,7 +429,7 @@ function validateDockerProdCompose(composeContent) {
       'COMPOSE_PROJECT_NAME:-tuturuuu' +
       '}-buildkit-1',
     '    image: moby/buildkit:buildx-stable-1',
-    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-8' + '}',
+    '    cpus: $' + '{' + 'DOCKER_WEB_BUILD_CPUS:-4' + '}',
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',

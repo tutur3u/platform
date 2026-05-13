@@ -656,10 +656,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       }));
     const workflowEnv = blueGreenBuildLock
       ? {
-          ...env,
+          ...composeEnv,
           [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
         }
-      : env;
+      : composeEnv;
 
     try {
       await runBlueGreenProdWorkflow(parsed, {
