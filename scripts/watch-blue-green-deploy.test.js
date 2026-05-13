@@ -5083,6 +5083,114 @@ test('runWatcherCommand reconnects log tail after a transient docker logs failur
   }
 });
 
+test('runWatcherCommand waits for Docker daemon recovery before recreating watcher', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-docker-recovery-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const calls = [];
+
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
+
+    await runWatcherCommand(['--once'], {
+      env: { PATH: process.env.PATH },
+      envFilePath,
+      fsImpl: fs,
+      reconnectDelayMs: 0,
+      rootDir: tempDir,
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'docker compose version') {
+          const versionCalls = calls.filter(
+            (call) => call === 'docker compose version'
+          ).length;
+          return versionCalls === 2
+            ? createResult('', {
+                code: 1,
+                stderr: 'Cannot connect to the Docker daemon',
+              })
+            : createResult('');
+        }
+
+        if (key === 'docker info') {
+          const infoCalls = calls.filter(
+            (call) => call === 'docker info'
+          ).length;
+          return infoCalls === 1
+            ? createResult('', {
+                code: 1,
+                stderr: 'Cannot connect to the Docker daemon',
+              })
+            : createResult('');
+        }
+
+        if (key === prodComposeWatcherUpKey()) {
+          return createResult('');
+        }
+
+        if (key === prodComposeWatcherLogsKey()) {
+          const logCalls = calls.filter(
+            (call) => call === prodComposeWatcherLogsKey()
+          ).length;
+          return logCalls === 1
+            ? createResult('', {
+                code: 1,
+                stderr: 'Cannot connect to the Docker daemon',
+              })
+            : createResult('');
+        }
+
+        if (key === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)) {
+          const psCalls = calls.filter(
+            (call) => call === prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE)
+          ).length;
+          return psCalls === 1
+            ? createResult('', {
+                code: 1,
+                stderr: 'Cannot connect to the Docker daemon',
+              })
+            : createResult('watcher-123\n');
+        }
+
+        if (
+          key ===
+          'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123'
+        ) {
+          return createResult('healthy\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      sleepImpl: async () => {},
+    });
+
+    assert.deepEqual(calls, [
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker compose version',
+      'docker info',
+      'docker info',
+      'docker compose version',
+      prodComposeWatcherUpKey(),
+      prodComposeWatcherLogsKey(),
+      prodComposePsAllKey(BLUE_GREEN_WATCHER_SERVICE),
+      'docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} watcher-123',
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
 test('getWatcherContainerState reads stopped watcher containers by compose service', async () => {
   const calls = [];
   const state = await getWatcherContainerState({

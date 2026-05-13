@@ -158,6 +158,12 @@ const CONTAINER_SELF_RESTART_EXIT_CODE = 75;
 const CONTAINER_REFRESH_EXIT_CODE = 76;
 const MAX_FAILED_DEPLOYMENTS_PER_COMMIT = 3;
 const MAX_RECOVERY_CACHE_IMAGES = 3;
+const DOCKER_DAEMON_RECOVERY_POLL_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS';
+const DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS';
+const DEFAULT_DOCKER_DAEMON_RECOVERY_POLL_MS = 5_000;
+const DEFAULT_DOCKER_DAEMON_RECOVERY_TIMEOUT_MS = 0;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
@@ -524,6 +530,33 @@ async function startBlueGreenWatcherContainer(
   );
 }
 
+async function startBlueGreenWatcherContainerWithRecovery(argv, options = {}) {
+  const log = options.log ?? console;
+  const sleepImpl = options.sleepImpl ?? sleep;
+
+  while (true) {
+    try {
+      await startBlueGreenWatcherContainer(argv, options);
+      return;
+    } catch (error) {
+      if (!isDockerDaemonUnavailableError(error)) {
+        throw error;
+      }
+
+      const recovered = await waitForDockerDaemonRecovery({
+        env: options.env ?? process.env,
+        log,
+        runCommand: options.runCommand ?? runCommand,
+        sleepImpl,
+      });
+
+      if (!recovered) {
+        throw error;
+      }
+    }
+  }
+}
+
 async function getWatcherContainerState({
   env = process.env,
   envFilePath = WEB_ENV_FILE,
@@ -629,7 +662,7 @@ async function streamBlueGreenWatcherLogs({
 }
 
 async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
-  await startBlueGreenWatcherContainer(argv, options);
+  await startBlueGreenWatcherContainerWithRecovery(argv, options);
 
   while (true) {
     const result = await streamBlueGreenWatcherLogs(options);
@@ -641,13 +674,13 @@ async function runWatcherCommand(argv = process.argv.slice(2), options = {}) {
     await sleep(options.reconnectDelayMs ?? 2_000);
 
     if (result?.status === 'container-refresh-requested') {
-      await startBlueGreenWatcherContainer(argv, options);
+      await startBlueGreenWatcherContainerWithRecovery(argv, options);
       continue;
     }
 
     const state = await getWatcherContainerState(options);
     if (state === 'missing' || state === 'dead' || state === 'exited') {
-      await startBlueGreenWatcherContainer(argv, options);
+      await startBlueGreenWatcherContainerWithRecovery(argv, options);
       continue;
     }
 
@@ -802,6 +835,99 @@ function isMissingDockerImageError(error) {
 
 function getErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
+}
+
+function getPositiveIntegerEnv(env, name, fallback) {
+  const raw = env?.[name];
+
+  if (raw == null || String(raw).trim() === '') {
+    return fallback;
+  }
+
+  const parsed = Number.parseInt(String(raw).trim(), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getDockerDaemonRecoveryPollMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      DOCKER_DAEMON_RECOVERY_POLL_MS_ENV,
+      DEFAULT_DOCKER_DAEMON_RECOVERY_POLL_MS
+    ) ?? DEFAULT_DOCKER_DAEMON_RECOVERY_POLL_MS
+  );
+}
+
+function getDockerDaemonRecoveryTimeoutMs(env = process.env) {
+  const timeoutMs = getPositiveIntegerEnv(
+    env,
+    DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV,
+    DEFAULT_DOCKER_DAEMON_RECOVERY_TIMEOUT_MS
+  );
+
+  return timeoutMs && timeoutMs > 0 ? timeoutMs : null;
+}
+
+function isDockerDaemonUnavailableError(error) {
+  const message = stripAnsi(getErrorMessage(error)).toLowerCase();
+
+  return /cannot connect to the docker daemon|connection refused|context canceled|context cancelled|docker daemon is not running|error during connect|is the docker daemon running|request returned (?:internal server error|bad gateway)|server misbehaving|use of closed network connection/u.test(
+    message
+  );
+}
+
+async function waitForDockerDaemonRecovery({
+  env = process.env,
+  log = console,
+  now = () => Date.now(),
+  runCommand: run = runCommand,
+  sleepImpl = sleep,
+} = {}) {
+  const timeoutMs = getDockerDaemonRecoveryTimeoutMs(env);
+  const pollMs = getDockerDaemonRecoveryPollMs(env);
+  const startedAt = now();
+  const deadline = timeoutMs == null ? null : startedAt + timeoutMs;
+  let attempts = 0;
+  let lastError = null;
+
+  while (deadline == null || now() <= deadline) {
+    try {
+      await runChecked('docker', ['info'], {
+        env,
+        runCommand: run,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch (error) {
+      lastError = error;
+      attempts += 1;
+
+      if (attempts === 1 || attempts % 12 === 0) {
+        const windowLabel =
+          timeoutMs == null
+            ? 'without a timeout'
+            : `for ${formatDuration(timeoutMs)}`;
+        log.warn?.(
+          `Docker daemon is unavailable; waiting ${windowLabel} before restarting the watcher stack: ${getErrorMessage(error)}`
+        );
+      }
+
+      const remainingMs = deadline == null ? pollMs : deadline - now();
+
+      if (remainingMs <= 0) {
+        break;
+      }
+
+      await sleepImpl(Math.min(pollMs, remainingMs));
+    }
+  }
+
+  log.warn?.(
+    `Docker daemon did not recover: ${lastError ? getErrorMessage(lastError) : 'unknown error'}`
+  );
+
+  return false;
 }
 
 function summarizeDeploymentFailure(error) {

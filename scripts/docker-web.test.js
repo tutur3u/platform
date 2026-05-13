@@ -300,6 +300,48 @@ test('watcher entrypoint detects stale status snapshots from watcher interval', 
   assert.match(health.reason, /status snapshot stale/);
 });
 
+test('watcher entrypoint allows stale snapshots during active deployments until the build timeout', () => {
+  const activeSnapshot = {
+    deployments: [
+      {
+        startedAt: 20_000,
+        status: 'building',
+      },
+    ],
+    intervalMs: 5_000,
+    updatedAt: 20_000,
+  };
+
+  assert.deepEqual(
+    getStatusSnapshotHealth({
+      activeDeploymentGraceMs: 1_000,
+      env: { DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS: '30000' },
+      fsImpl: createSnapshotFsStub(activeSnapshot),
+      now: 45_001,
+      startedAt: 0,
+      staleGraceMs: 1_000,
+      statusFile: '/tmp/status.json',
+    }),
+    {
+      reason: null,
+      status: 'active-deployment',
+    }
+  );
+
+  const health = getStatusSnapshotHealth({
+    activeDeploymentGraceMs: 1_000,
+    env: { DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS: '30000' },
+    fsImpl: createSnapshotFsStub(activeSnapshot),
+    now: 51_001,
+    startedAt: 0,
+    staleGraceMs: 1_000,
+    statusFile: '/tmp/status.json',
+  });
+
+  assert.equal(health.status, 'stale');
+  assert.match(health.reason, /status snapshot stale/);
+});
+
 test('watcher entrypoint restarts crashed or stale child processes', () => {
   assert.equal(
     shouldRestartWatcherExit(

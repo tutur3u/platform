@@ -47,6 +47,12 @@ const WATCHDOG_STALE_GRACE_MS = parsePositiveInteger(
   process.env.PLATFORM_BLUE_GREEN_WATCHDOG_STALE_GRACE_MS,
   240_000
 );
+const ACTIVE_DEPLOYMENT_WATCHDOG_GRACE_MS = parsePositiveInteger(
+  process.env.PLATFORM_BLUE_GREEN_ACTIVE_DEPLOYMENT_WATCHDOG_GRACE_MS,
+  60_000
+);
+const DEPLOYMENT_BUILD_TIMEOUT_MS_ENV = 'DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS';
+const DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS = 30 * 60 * 1000;
 const RESTART_DELAY_MS = parsePositiveInteger(
   process.env.PLATFORM_BLUE_GREEN_WATCHER_RESTART_DELAY_MS,
   5_000
@@ -115,7 +121,55 @@ function getSnapshotStaleAfterMs(
   return Math.max((intervalMs ?? 0) * 4, 15_000, fallbackMs);
 }
 
+function getDeploymentBuildTimeoutMs(env = process.env) {
+  const raw = env?.[DEPLOYMENT_BUILD_TIMEOUT_MS_ENV];
+
+  if (raw == null || String(raw).trim() === '') {
+    return DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS;
+  }
+
+  const parsed = Number.parseInt(String(raw).trim(), 10);
+
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isActiveDeploymentStatus(status) {
+  return status === 'building' || status === 'deploying';
+}
+
+function normalizeTimestamp(value) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function getActiveDeploymentStartedAt(snapshot) {
+  const deployments = Array.isArray(snapshot?.deployments)
+    ? snapshot.deployments
+    : [];
+  const activeDeployment = deployments.find((deployment) =>
+    isActiveDeploymentStatus(String(deployment?.status ?? ''))
+  );
+
+  if (activeDeployment) {
+    return (
+      normalizeTimestamp(activeDeployment.startedAt) ??
+      normalizeTimestamp(snapshot.updatedAt)
+    );
+  }
+
+  if (isActiveDeploymentStatus(String(snapshot?.lastDeployStatus ?? ''))) {
+    return (
+      normalizeTimestamp(snapshot.lastDeployAt) ??
+      normalizeTimestamp(snapshot.startedAt) ??
+      normalizeTimestamp(snapshot.updatedAt)
+    );
+  }
+
+  return null;
+}
+
 function getStatusSnapshotHealth({
+  activeDeploymentGraceMs = ACTIVE_DEPLOYMENT_WATCHDOG_GRACE_MS,
+  env = process.env,
   fsImpl = fs,
   now = Date.now(),
   startGraceMs = WATCHDOG_START_GRACE_MS,
@@ -150,12 +204,28 @@ function getStatusSnapshotHealth({
   const ageMs = now - updatedAt;
   const staleAfterMs = getSnapshotStaleAfterMs(snapshot, staleGraceMs);
 
-  return ageMs > staleAfterMs
-    ? {
-        reason: `status snapshot stale for ${ageMs}ms`,
-        status: 'stale',
-      }
-    : { reason: null, status: 'live' };
+  if (ageMs <= staleAfterMs) {
+    return { reason: null, status: 'live' };
+  }
+
+  const activeDeploymentStartedAt = getActiveDeploymentStartedAt(snapshot);
+
+  if (activeDeploymentStartedAt != null) {
+    const timeoutMs = getDeploymentBuildTimeoutMs(env);
+    const deploymentAgeMs = now - activeDeploymentStartedAt;
+
+    if (
+      timeoutMs == null ||
+      deploymentAgeMs <= timeoutMs + activeDeploymentGraceMs
+    ) {
+      return { reason: null, status: 'active-deployment' };
+    }
+  }
+
+  return {
+    reason: `status snapshot stale for ${ageMs}ms`,
+    status: 'stale',
+  };
 }
 
 function hasOnceArg(args) {
@@ -237,7 +307,11 @@ function runWatcherOnce(args, options = {}) {
         startedAt,
       });
 
-      if (health.status === 'live' || health.status === 'starting') {
+      if (
+        health.status === 'live' ||
+        health.status === 'starting' ||
+        health.status === 'active-deployment'
+      ) {
         return;
       }
 
@@ -346,6 +420,7 @@ if (require.main === module) {
 
 module.exports = {
   CONTAINER_REFRESH_EXIT_CODE,
+  getDeploymentBuildTimeoutMs,
   getSnapshotStaleAfterMs,
   getStatusSnapshotHealth,
   hasOnceArg,

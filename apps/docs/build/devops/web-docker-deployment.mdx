@@ -823,6 +823,19 @@ Operational notes for the containerized watcher:
   image/runtime.
 - Git fetch/pull credentials now need to be usable inside the watcher
   container because the watcher no longer runs directly on the host.
+- Full Docker daemon or Docker Desktop crashes cannot be recovered by a watcher
+  that is itself running inside Docker. Keep `bun serve:web:docker:bg:watch`
+  running from the host, ideally under `systemd`, `launchd`, or another host
+  process supervisor. That host command waits for the Docker daemon to respond
+  again, reruns the watcher compose `up --build --detach --force-recreate`, and
+  then resumes tailing logs. Every hosted project with its own Docker watcher
+  needs its own host-side watch process; container `restart:` policies only help
+  after Docker is already healthy again.
+- The host Docker recovery loop polls `docker info` every 5 seconds by default.
+  Override with `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS`. By default it
+  waits indefinitely because a host process manager is expected to own the
+  terminal process; set `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS` to a
+  positive value to fail after a bounded recovery window.
 - The watcher image lives at `apps/web/docker/blue-green-watcher.Dockerfile`.
 - Its entrypoint wrapper relaunches the watcher in-place when
   `scripts/watch-blue-green-deploy.js` requests a self-restart after pulling a
@@ -832,6 +845,12 @@ Operational notes for the containerized watcher:
   after `blue-green-auto-deploy.status.json` becomes stale. The compose service
   uses `restart: unless-stopped` so Docker also brings the watcher back after a
   daemon or container failure.
+- A stale status snapshot is tolerated while the snapshot already shows an
+  active `building` or `deploying` deployment. During a long `docker compose
+  build`, the watcher child is intentionally busy inside the deploy command and
+  may not rewrite the status file until the command exits. The wrapper keeps the
+  child alive until `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS` plus a short grace
+  window, then treats the stale snapshot as unhealthy.
 - `bun serve:web:docker:bg:down` also stops the watcher service because it is
   part of the production compose stack now.
 
