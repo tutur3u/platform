@@ -12,13 +12,16 @@ import {
   type HiveNpcPayload,
   type HiveNpcRunPayload,
   type HiveServerPayload,
+  type HiveServerSettings,
   type HiveServersResponse,
   type HiveSnapshotResponse,
   type HiveWorldEventPayload,
   listHiveServers,
   runHiveNpcDecision,
+  runHiveSimulationTick,
   updateHiveNpc,
   updateHiveServer,
+  updateHiveServerSettings,
 } from '@tuturuuu/internal-api/hive';
 
 export const hiveQueryKeys = {
@@ -121,6 +124,10 @@ export function useHiveMutations(serverId: string | null) {
       }) => runHiveNpcDecision(serverId!, npcId, payload),
       onSuccess: () => invalidateServer(),
     }),
+    runSimulationTick: useMutation({
+      mutationFn: () => runHiveSimulationTick(serverId!),
+      onSuccess: () => invalidateServer(),
+    }),
     updateNpc: useMutation({
       mutationFn: ({
         npcId,
@@ -139,6 +146,11 @@ export function useHiveMutations(serverId: string | null) {
         payload: Partial<HiveServerPayload>;
         server: string;
       }) => updateHiveServer(server, payload),
+      onSuccess: () => invalidateServer(),
+    }),
+    updateServerSettings: useMutation({
+      mutationFn: (payload: HiveServerSettings) =>
+        updateHiveServerSettings(serverId!, payload),
       onSuccess: () => invalidateServer(),
     }),
   };

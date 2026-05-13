@@ -12,7 +12,12 @@ import {
   Undo2,
 } from '@tuturuuu/icons';
 import { useState } from 'react';
-import type { HiveBuildMode, HiveTimeTheme, HiveTool } from '@/engine/types';
+import type {
+  HiveBuildMode,
+  HiveServer,
+  HiveTimeTheme,
+  HiveTool,
+} from '@/engine/types';
 import { ToolDockCatalogPanel } from './tool-dock-catalog-panel';
 import { ToolDockSettingsPanel } from './tool-dock-settings-panel';
 
@@ -23,16 +28,22 @@ type ToolDockProps = {
   gaplessMode: boolean;
   autoTimeEnabled: boolean;
   autoTimeSpeed: number;
+  isRunningSimulationTick: boolean;
   onSelectBuildMode: (mode: HiveBuildMode) => void;
   onSelectObject: (id: string) => void;
   onSelectTerrain: (id: string) => void;
   onRotateSelection: () => void;
+  onRunSimulationTick: () => void;
   onSetTool: (tool: HiveTool) => void;
   onToggle: () => void;
   onToggleGapless: () => void;
   onSelectTimeTheme: (theme: HiveTimeTheme) => void;
   onSetAutoTimeSpeed: (speed: number) => void;
   onToggleAutoTime: () => void;
+  onUpdateServerSettings: (
+    settings: NonNullable<HiveServer['settings']>
+  ) => void;
+  server?: HiveServer | null;
   timeTheme: HiveTimeTheme;
   tool: HiveTool;
 };
@@ -119,6 +130,10 @@ export function ToolDock(props: ToolDockProps) {
             onSetAutoTimeSpeed={props.onSetAutoTimeSpeed}
             onToggleAutoTime={props.onToggleAutoTime}
             onToggleGapless={props.onToggleGapless}
+            onRunSimulationTick={props.onRunSimulationTick}
+            onUpdateServerSettings={props.onUpdateServerSettings}
+            isRunningSimulationTick={props.isRunningSimulationTick}
+            server={props.server}
             timeTheme={props.timeTheme}
           />
         ) : null}

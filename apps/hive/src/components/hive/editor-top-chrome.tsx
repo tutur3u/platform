@@ -1,6 +1,7 @@
 import { X } from '@tuturuuu/icons';
 import type {
   HiveNpc,
+  HiveRealtimeAwareness,
   HiveServer,
   HiveTimeTheme,
   HiveWorldData,
@@ -21,6 +22,7 @@ type EditorTopChromeProps = {
     promptMode: 'custom' | 'default' | 'enhanced'
   ) => void;
   presenceCount: number;
+  remoteAwareness: HiveRealtimeAwareness[];
   realtimeStatus: HiveRealtimeStatus;
   revision: number;
   rightCollapsed: boolean;
@@ -39,6 +41,7 @@ export function EditorTopChrome({
   onPatchNpc,
   onRunNpc,
   presenceCount,
+  remoteAwareness,
   realtimeStatus,
   revision,
   rightCollapsed,
@@ -58,6 +61,7 @@ export function EditorTopChrome({
         autoTimeEnabled={autoTimeEnabled}
         npcs={npcs}
         presenceCount={presenceCount}
+        remoteAwareness={remoteAwareness}
         realtimeStatus={realtimeStatus}
         server={server}
         simulatedMinutes={simulatedMinutes}

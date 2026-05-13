@@ -17,6 +17,40 @@ type ToolDockCatalogPanelProps = {
   onUseBuildTool: () => void;
 };
 
+const ASSET_SHEET = '/assets/hive/hive-voxel-asset-sheet.png';
+const assetIndexById: Record<string, number> = {
+  bridge: 13,
+  'crop-soil': 2,
+  crop: 16,
+  fence: 12,
+  garden: 3,
+  grass: 0,
+  greenhouse: 7,
+  house: 6,
+  lamp: 11,
+  path: 1,
+  resident: 21,
+  sensor: 23,
+  stone: 5,
+  warehouse: 9,
+  water: 4,
+  well: 10,
+  workshop: 8,
+};
+
+function getAssetPreviewStyle(id: string) {
+  const index = assetIndexById[id];
+  if (index === undefined) return null;
+  const column = index % 6;
+  const row = Math.floor(index / 6);
+
+  return {
+    backgroundImage: `url(${ASSET_SHEET})`,
+    backgroundPosition: `${(column / 5) * 100}% ${(row / 4) * 100}%`,
+    backgroundSize: '600% 500%',
+  };
+}
+
 export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
   const [folder, setFolder] = useState<CatalogFolder>('blocks');
   const objectFolders = useMemo(
@@ -74,6 +108,7 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
       <div className="my-1 w-px shrink-0 bg-border" />
       <div className="flex max-w-[42vw] items-center gap-1.5 overflow-x-auto">
         {activeItems.map((item, index) => {
+          const previewStyle = getAssetPreviewStyle(item.id);
           const selected =
             folder === 'blocks'
               ? props.activeTerrain === item.id
@@ -105,8 +140,8 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
               type="button"
             >
               <span
-                className="h-5 w-8 rounded-md border border-black/10 shadow-sm"
-                style={{ backgroundColor: item.color }}
+                className="h-8 w-10 rounded-md border border-black/10 bg-center bg-cover shadow-sm"
+                style={previewStyle ?? { backgroundColor: item.color }}
               />
               <span className="mt-1 leading-none">
                 {item.label} {item.shortcut ?? index + 1}

@@ -6,12 +6,13 @@ import {
   PerspectiveCamera,
 } from '@react-three/drei';
 import { Canvas } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MOUSE, PCFShadowMap, TOUCH } from 'three';
 import { timeThemePresets } from '@/engine/time-themes';
 import type {
   HiveBuildMode,
   HiveNpc,
+  HiveRealtimeAwareness,
   HiveSelection,
   HiveTimeTheme,
   HiveTool,
@@ -23,6 +24,7 @@ import { GhostPreview } from './ghost-preview';
 import { NpcPrefab } from './npc-prefab';
 import { ObjectPrefab } from './object-prefabs';
 import { PlacementPlane } from './placement-plane';
+import { RealtimePresenceMarkers } from './realtime-presence-markers';
 import { ThemedEnvironment } from './themed-environment';
 import { VoxelTiles } from './voxel-tiles';
 
@@ -37,7 +39,9 @@ type HiveViewportProps = {
   onPlaceNpc: (position: HiveVector3) => void;
   onPlaceObject: (position: HiveVector3) => void;
   onPlaceTerrain: (position: HiveVector3) => void;
+  onRealtimeCursor: (position: HiveVector3 | null) => void;
   onSelect: (selection: HiveSelection) => void;
+  remoteAwareness: HiveRealtimeAwareness[];
   selection: HiveSelection;
   timeTheme: HiveTimeTheme;
   tool: HiveTool;
@@ -46,6 +50,7 @@ type HiveViewportProps = {
 
 export function HiveViewport(props: HiveViewportProps) {
   const [hoverPosition, setHoverPosition] = useState<HiveVector3 | null>(null);
+  const cursorSentAtRef = useRef(0);
   const theme = useMemo(
     () => timeThemePresets[props.timeTheme],
     [props.timeTheme]
@@ -74,6 +79,14 @@ export function HiveViewport(props: HiveViewportProps) {
       props.onPlaceNpc({ ...position, y: 1 });
     }
     if (props.tool === 'move') props.onMoveSelection({ ...position, y: 1 });
+  };
+
+  const setRealtimeHoverPosition = (position: HiveVector3 | null) => {
+    setHoverPosition(position);
+    const now = Date.now();
+    if (position && now - cursorSentAtRef.current < 140) return;
+    cursorSentAtRef.current = now;
+    props.onRealtimeCursor(position);
   };
 
   const resolveBlockId = (position: HiveVector3) =>
@@ -141,11 +154,12 @@ export function HiveViewport(props: HiveViewportProps) {
             ))}
             <PlacementPlane
               onCommitPosition={commitPosition}
-              onHoverPosition={setHoverPosition}
+              onHoverPosition={setRealtimeHoverPosition}
               onSelect={props.onSelect}
               resolveBlockId={resolveBlockId}
               tool={props.tool}
             />
+            <RealtimePresenceMarkers awareness={props.remoteAwareness} />
             <GhostPreview
               activeBuildMode={props.activeBuildMode}
               activeObject={props.activeObject}

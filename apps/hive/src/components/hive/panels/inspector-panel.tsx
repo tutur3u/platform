@@ -2,7 +2,12 @@
 
 import { Bot, Box, Trash2 } from '@tuturuuu/icons';
 import { getObjectCatalogItem, getTerrainHeight } from '@/engine/catalog';
-import type { HiveNpc, HiveSelection, HiveWorldData } from '@/engine/types';
+import type {
+  HiveNpc,
+  HiveRealtimeAwareness,
+  HiveSelection,
+  HiveWorldData,
+} from '@/engine/types';
 import { findSelectedEntity } from '@/engine/world';
 import type { HiveRealtimeStatus } from '@/realtime/hive-realtime-client';
 import { InspectorHeader } from './inspector-header';
@@ -15,6 +20,7 @@ type InspectorPanelProps = {
   onRequestDelete: (selection: NonNullable<HiveSelection>) => void;
   onToggle: () => void;
   presenceCount: number;
+  remoteAwareness: HiveRealtimeAwareness[];
   realtimeStatus: HiveRealtimeStatus;
   revision: number;
   selection: HiveSelection;
@@ -28,6 +34,7 @@ export function InspectorPanel({
   onRequestDelete,
   onToggle,
   presenceCount,
+  remoteAwareness,
   realtimeStatus,
   revision,
   selection,
@@ -55,6 +62,34 @@ export function InspectorPanel({
           realtimeStatus={realtimeStatus}
           revision={revision}
         />
+        {remoteAwareness.length > 0 ? (
+          <section className="rounded-lg border border-border/20 bg-white/5 p-4">
+            <p className="font-medium text-sm text-zinc-200">
+              Researchers online
+            </p>
+            <div className="mt-3 space-y-2">
+              {remoteAwareness.map((user) => (
+                <div
+                  className="flex items-center justify-between gap-3 rounded-md border border-border/15 bg-black/15 px-3 py-2"
+                  key={user.userId}
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className="h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: user.color }}
+                    />
+                    <span className="truncate text-xs text-zinc-200">
+                      {user.displayName}
+                    </span>
+                  </div>
+                  <span className="text-[11px] text-zinc-500">
+                    {user.activeTool ?? 'viewing'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        ) : null}
         {!entity || !selection ? (
           <div className="rounded-lg border border-border/20 bg-white/5 p-4 text-sm text-zinc-400 leading-6">
             Select a block, object, or NPC to inspect its research state.

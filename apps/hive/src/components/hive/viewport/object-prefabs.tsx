@@ -295,7 +295,7 @@ export function ObjectPrefab({
     );
   }
 
-  if (object.type === 'crop') {
+  if (object.type === 'crop' || object.type === 'flower-crop') {
     const growthStage =
       typeof object.state?.growthStage === 'number'
         ? Math.max(0.15, Math.min(1, object.state.growthStage))
@@ -305,7 +305,10 @@ export function ObjectPrefab({
       <group {...common}>
         <mesh castShadow position={[0, 0.12 * growthStage, 0]}>
           <boxGeometry args={[0.62, 0.24 * growthStage, 0.62]} />
-          <meshStandardMaterial color="#6ea94d" roughness={0.75} />
+          <meshStandardMaterial
+            color={object.type === 'flower-crop' ? '#bc6fc5' : '#6ea94d'}
+            roughness={0.75}
+          />
         </mesh>
         <mesh castShadow position={[-0.16, 0.24 * growthStage, 0.12]}>
           <boxGeometry args={[0.24, 0.22 * growthStage, 0.24]} />

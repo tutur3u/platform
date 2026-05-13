@@ -1,6 +1,8 @@
+import Image from 'next/image';
 import { formatSimulatedClock, timeThemeLabels } from '@/engine/time-themes';
 import type {
   HiveNpc,
+  HiveRealtimeAwareness,
   HiveServer,
   HiveTimeTheme,
   HiveWorldData,
@@ -11,6 +13,7 @@ export function ServerSummary({
   autoTimeEnabled,
   npcs,
   presenceCount,
+  remoteAwareness,
   realtimeStatus,
   server,
   simulatedMinutes,
@@ -20,6 +23,7 @@ export function ServerSummary({
   autoTimeEnabled: boolean;
   npcs: HiveNpc[];
   presenceCount: number;
+  remoteAwareness: HiveRealtimeAwareness[];
   realtimeStatus: HiveRealtimeStatus;
   server?: HiveServer | null;
   simulatedMinutes: number;
@@ -55,6 +59,41 @@ export function ServerSummary({
         {world.blocks.length} blocks / {world.objects.length} objects /{' '}
         {npcs.length} NPCs / {presenceCount} online
       </p>
+      {typeof server?.totalCurrency === 'number' ? (
+        <p className="mt-1 text-dynamic-green text-xs">
+          {server.totalCurrency.toLocaleString()} server credits tracked
+        </p>
+      ) : null}
+      {remoteAwareness.length > 0 ? (
+        <div className="mt-3 flex items-center gap-1.5">
+          {remoteAwareness.slice(0, 6).map((user) => (
+            <div
+              className="grid h-7 w-7 place-items-center rounded-full border border-background font-semibold text-[10px] text-white shadow-sm"
+              key={user.userId}
+              style={{ backgroundColor: user.color }}
+              title={`${user.displayName} - ${user.activeTool ?? 'watching'}`}
+            >
+              {user.avatarUrl ? (
+                <Image
+                  alt={user.displayName}
+                  className="h-full w-full rounded-full object-cover"
+                  height={28}
+                  src={user.avatarUrl}
+                  unoptimized
+                  width={28}
+                />
+              ) : (
+                user.displayName.slice(0, 2).toUpperCase()
+              )}
+            </div>
+          ))}
+          {remoteAwareness.length > 6 ? (
+            <span className="text-muted-foreground text-xs">
+              +{remoteAwareness.length - 6}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
       {autoTimeEnabled ? (
         <div className="mt-3 flex items-center gap-2 text-xs">
           <span className="rounded-md border border-border bg-muted/60 px-2 py-1 font-mono text-foreground">

@@ -145,10 +145,25 @@ export function createObjectState(
 ): { [key: string]: Json | undefined } | undefined {
   if (type === 'crop') {
     return {
+      health: 100,
       growthRate: 0.08,
       growthStage: 0.25,
       mode: 'seasonal',
+      needsWater: true,
       plantedAt: new Date().toISOString(),
+      yieldItem: 'turnip',
+    };
+  }
+
+  if (type === 'flower-crop') {
+    return {
+      health: 100,
+      growthRate: 0.05,
+      growthStage: 0.2,
+      mode: 'seasonal',
+      needsWater: true,
+      plantedAt: new Date().toISOString(),
+      yieldItem: 'flowers',
     };
   }
 
@@ -172,6 +187,28 @@ export function createObjectState(
     return {
       queueDepth: 0,
       role: 'algorithmic-agent-station',
+    };
+  }
+
+  if (type === 'warehouse') {
+    return {
+      capacity: 500,
+      storedItems: 0,
+      status: 'accepting',
+    };
+  }
+
+  if (type === 'market-stall') {
+    return {
+      openOffers: 0,
+      status: 'open',
+    };
+  }
+
+  if (type === 'compost-bin') {
+    return {
+      fertilizer: 0,
+      status: 'idle',
     };
   }
 
@@ -262,7 +299,7 @@ export function canPlaceObject(
   }
 
   if (
-    type === 'crop' &&
+    (type === 'crop' || type === 'flower-crop') &&
     block.type !== 'crop-soil' &&
     block.type !== 'garden'
   ) {

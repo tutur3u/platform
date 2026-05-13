@@ -47,6 +47,7 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  transpilePackages: ['@tuturuuu/internal-api', '@tuturuuu/realtime'],
   async rewrites() {
     return {
       beforeFiles: [

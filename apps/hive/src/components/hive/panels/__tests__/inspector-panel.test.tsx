@@ -31,6 +31,7 @@ describe('InspectorPanel', () => {
         onRequestDelete={onRequestDelete}
         onToggle={vi.fn()}
         presenceCount={2}
+        remoteAwareness={[]}
         realtimeStatus="connected"
         revision={7}
         selection={{ id: 'block:0:0:0', kind: 'block' }}

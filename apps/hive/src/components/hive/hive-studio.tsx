@@ -99,6 +99,10 @@ export function HiveStudio({
             onToggleAutoTime={() =>
               engine.setAutoTimeEnabled((value) => !value)
             }
+            onRunSimulationTick={engine.runSimulationTick}
+            onUpdateServerSettings={engine.updateServerSettings}
+            isRunningSimulationTick={engine.isRunningSimulationTick}
+            server={engine.selectedServer}
             timeTheme={engine.timeTheme}
             tool={engine.tool}
           />
@@ -117,7 +121,9 @@ export function HiveStudio({
               onPlaceNpc={engine.placeNpc}
               onPlaceObject={engine.placeObject}
               onPlaceTerrain={engine.placeTerrain}
+              onRealtimeCursor={engine.sendCursorPosition}
               onSelect={engine.setSelection}
+              remoteAwareness={engine.remoteAwareness}
               selection={engine.selection}
               tool={engine.tool}
               timeTheme={engine.timeTheme}
@@ -176,6 +182,7 @@ export function HiveStudio({
             onRequestDelete={setDeleteSelectionTarget}
             onToggle={() => setRightCollapsed(true)}
             presenceCount={engine.presenceCount}
+            remoteAwareness={engine.remoteAwareness}
             realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
             selection={engine.selection}
@@ -192,6 +199,7 @@ export function HiveStudio({
             onRunNpc={engine.runNpc}
             onToggleNpcLab={() => setNpcLabCollapsed(true)}
             presenceCount={engine.presenceCount}
+            remoteAwareness={engine.remoteAwareness}
             realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
             rightCollapsed={rightCollapsed}
