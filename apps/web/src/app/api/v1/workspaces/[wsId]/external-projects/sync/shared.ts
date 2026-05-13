@@ -1,5 +1,6 @@
 import type { ExternalProjectSyncManifest } from '@tuturuuu/types';
 import { z } from 'zod';
+import { EXTERNAL_PROJECT_ADAPTER_OPTIONS } from '@/lib/external-projects/constants';
 
 const syncFieldSchema = z
   .object({
@@ -61,7 +62,7 @@ const assetSchema = z
 
 export const syncManifestSchema = z
   .object({
-    adapter: z.enum(['junly', 'yoola', 'theguyser', 'exocorpse']),
+    adapter: z.enum(EXTERNAL_PROJECT_ADAPTER_OPTIONS),
     canonicalProjectId: z.string().nullable().optional(),
     content: z.object({
       entries: z.array(

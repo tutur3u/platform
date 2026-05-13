@@ -11,6 +11,8 @@ export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
   'yoola',
   'theguyser',
   'exocorpse',
+  'shu',
+  'yashie',
 ];
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
@@ -29,6 +31,22 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'gallery',
     'experience',
     'contact-social',
+  ],
+  shu: [
+    'profile',
+    'projects',
+    'games',
+    'contact',
+    'town-stops',
+    'asset-library',
+  ],
+  yashie: [
+    'profile',
+    'writing-worlds',
+    'gallery',
+    'blog-posts',
+    'shop-products',
+    'social-links',
   ],
   yoola: ['artworks', 'lore-capsules', 'singleton-sections'],
 } satisfies Record<ExternalProjectAdapterKind, string[]>;

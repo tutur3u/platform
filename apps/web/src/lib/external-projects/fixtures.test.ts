@@ -2,17 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { externalProjectAdapterFixtures } from './fixtures';
 
 describe('external project adapter fixtures', () => {
-  it('covers all four adapters with source references', () => {
+  it('covers all supported adapters with source references', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
       'exocorpse',
       'junly',
+      'shu',
       'theguyser',
+      'yashie',
       'yoola',
     ]);
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(junly|yoola|theguyser|exocorpse)/
+        /(junly|yoola|theguyser|exocorpse|shu|yashie)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -55,5 +57,17 @@ describe('external project adapter fixtures', () => {
         (collection) => collection.slug
       )
     ).toEqual(['portfolio-art', 'writing', 'games']);
+
+    expect(
+      externalProjectAdapterFixtures.shu.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual(['games']);
+
+    expect(
+      externalProjectAdapterFixtures.yashie.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual(['gallery']);
   });
 });

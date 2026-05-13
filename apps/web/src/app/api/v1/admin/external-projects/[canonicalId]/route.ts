@@ -2,10 +2,11 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireRootExternalProjectsAdmin } from '@/lib/external-projects/access';
+import { EXTERNAL_PROJECT_ADAPTER_OPTIONS } from '@/lib/external-projects/constants';
 import { updateCanonicalExternalProject } from '@/lib/external-projects/store';
 
 const updateCanonicalProjectSchema = z.object({
-  adapter: z.enum(['junly', 'yoola', 'theguyser', 'exocorpse']).optional(),
+  adapter: z.enum(EXTERNAL_PROJECT_ADAPTER_OPTIONS).optional(),
   allowed_collections: z.array(z.string()).optional(),
   allowed_features: z.array(z.string()).optional(),
   delivery_profile: z.record(z.string(), z.unknown()).optional(),

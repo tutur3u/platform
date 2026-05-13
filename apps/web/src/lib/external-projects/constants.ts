@@ -6,12 +6,14 @@ export const EXTERNAL_PROJECT_CANONICAL_ID_SECRET =
 
 export const EXTERNAL_PROJECT_PREVIEW_QUERY_PARAM = 'preview';
 
-export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
+export const EXTERNAL_PROJECT_ADAPTER_OPTIONS = [
   'junly',
   'yoola',
   'theguyser',
   'exocorpse',
-];
+  'shu',
+  'yashie',
+] as const satisfies readonly ExternalProjectAdapterKind[];
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
   exocorpse: ['portfolio-art', 'writing', 'games'],
@@ -30,5 +32,30 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'experience',
     'contact-social',
   ],
+  shu: [
+    'profile',
+    'projects',
+    'games',
+    'contact',
+    'town-stops',
+    'asset-library',
+  ],
+  yashie: [
+    'profile',
+    'writing-worlds',
+    'gallery',
+    'blog-posts',
+    'shop-products',
+    'social-links',
+  ],
   yoola: ['artworks', 'lore-capsules', 'singleton-sections'],
 } satisfies Record<ExternalProjectAdapterKind, string[]>;
+
+export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
+  exocorpse: 'Exocorpse',
+  junly: 'Junly',
+  shu: 'Shu',
+  theguyser: 'TheGuyser',
+  yashie: 'Yashie',
+  yoola: 'Yoola',
+} satisfies Record<ExternalProjectAdapterKind, string>;

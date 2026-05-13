@@ -18,6 +18,7 @@ import type {
   EpmEntryPayload,
   EpmEntryUpdatePayload,
   EpmPublishEventKind,
+  ExternalProjectAdapterKind,
   ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
   ExternalProjectDeliveryOptions,
@@ -28,6 +29,7 @@ import type {
   ExternalProjectSyncApplyResult,
   ExternalProjectSyncDiff,
   ExternalProjectSyncManifest,
+  ExternalProjectSyncSchema,
   ExternalProjectSyncSnapshot,
   WorkspaceExternalProjectBinding,
   YoolaExternalProjectLoadingData,
@@ -290,6 +292,19 @@ export class EpmClient {
       manifest: ExternalProjectSyncManifest
     ) => Promise<ExternalProjectSyncDiff>;
     getSnapshot: (workspaceId: string) => Promise<ExternalProjectSyncSnapshot>;
+    setup: (
+      workspaceId: string,
+      options: {
+        adapter?: ExternalProjectAdapterKind;
+        manifest?: ExternalProjectSyncManifest;
+        schema?: ExternalProjectSyncSchema;
+      }
+    ) => Promise<{
+      autoSetup: true;
+      binding: WorkspaceExternalProjectBinding;
+      createdBinding: boolean;
+      createdCanonicalProject: boolean;
+    }>;
   };
 
   constructor(config: EpmClientConfig = {}) {
@@ -303,6 +318,8 @@ export class EpmClient {
       diff: (workspaceId, manifest) =>
         this.diffSyncManifest(workspaceId, manifest),
       getSnapshot: (workspaceId) => this.getSyncSnapshot(workspaceId),
+      setup: (workspaceId, options) =>
+        this.setupExternalProjectStudio(workspaceId, options),
     };
   }
 
@@ -427,6 +444,30 @@ export class EpmClient {
     return this.request(
       `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/sync/snapshot`,
       {
+        requiresAuth: true,
+      }
+    );
+  }
+
+  async setupExternalProjectStudio(
+    workspaceId: string,
+    options: {
+      adapter?: ExternalProjectAdapterKind;
+      manifest?: ExternalProjectSyncManifest;
+      schema?: ExternalProjectSyncSchema;
+    }
+  ): Promise<{
+    autoSetup: true;
+    binding: WorkspaceExternalProjectBinding;
+    createdBinding: boolean;
+    createdCanonicalProject: boolean;
+  }> {
+    return this.request(
+      `/workspaces/${encodeURIComponent(workspaceId)}/external-projects/setup`,
+      {
+        body: JSON.stringify(options),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST',
         requiresAuth: true,
       }
     );

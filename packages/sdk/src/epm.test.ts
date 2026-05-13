@@ -329,6 +329,56 @@ describe('EpmClient', () => {
     );
   });
 
+  it('posts external project studio setup payloads', async () => {
+    const manifest = {
+      adapter: 'yashie',
+      content: {
+        entries: [],
+      },
+      schema: {
+        collections: [
+          {
+            collection_type: 'gallery',
+            slug: 'gallery',
+            title: 'Gallery',
+          },
+        ],
+      },
+      version: 1,
+    } as const;
+
+    mockFetch.mockResolvedValueOnce(
+      createMockResponse({
+        autoSetup: true,
+        binding: {
+          adapter: 'yashie',
+          canonical_id: 'yashie-main',
+          canonical_project: null,
+          enabled: true,
+          workspace_id: 'ws_123',
+        },
+        createdBinding: true,
+        createdCanonicalProject: true,
+      })
+    );
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+
+    await client.sync.setup('ws_123', { manifest });
+
+    expect(mockFetch.mock.calls[0]?.[0]).toBe(
+      'https://example.com/api/v1/workspaces/ws_123/external-projects/setup'
+    );
+    expect(mockFetch.mock.calls[0]?.[1]?.method).toBe('POST');
+    expect(mockFetch.mock.calls[0]?.[1]?.body).toBe(
+      JSON.stringify({ manifest })
+    );
+  });
+
   it('uploads asset files through signed upload URLs', async () => {
     mockFetch
       .mockResolvedValueOnce(

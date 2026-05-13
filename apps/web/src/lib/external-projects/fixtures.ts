@@ -932,4 +932,76 @@ export const externalProjectAdapterFixtures: Record<
       },
     ],
   },
+  shu: {
+    adapter: 'shu',
+    sourceReference:
+      '/Users/vhpx/Documents/GitHub/shu/lib/shu-external-project-manifest.ts',
+    profileData: {
+      brand: 'Shu',
+      deliveryPreset: 'game-portfolio',
+    },
+    collections: [
+      {
+        collectionType: 'games',
+        slug: 'games',
+        sourceId: 'shu:collection:games',
+        title: 'Games',
+        entries: [
+          {
+            sourceId: 'shu:game:portfolio-showcase',
+            slug: 'portfolio-showcase',
+            title: 'Portfolio Showcase',
+            summary: 'Playable and interactive work synchronized from Shu.',
+            status: 'published',
+            blocks: [
+              {
+                sourceId: 'shu:game:portfolio-showcase:overview',
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'A representative Shu game portfolio entry for external project setup.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  yashie: {
+    adapter: 'yashie',
+    sourceReference:
+      '/Users/vhpx/Documents/GitHub/yashie/lib/yashie-external-project-manifest.ts',
+    profileData: {
+      brand: 'InkedByYashie',
+      deliveryPreset: 'portfolio-shop',
+    },
+    collections: [
+      {
+        collectionType: 'gallery',
+        slug: 'gallery',
+        sourceId: 'yashie:collection:gallery',
+        title: 'Gallery',
+        entries: [
+          {
+            sourceId: 'yashie:gallery:featured-work',
+            slug: 'featured-work',
+            title: 'Featured Work',
+            summary: 'Representative gallery entry synchronized from Yashie.',
+            status: 'published',
+            blocks: [
+              {
+                sourceId: 'yashie:gallery:featured-work:overview',
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'A representative Yashie gallery entry for external project setup.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 };
