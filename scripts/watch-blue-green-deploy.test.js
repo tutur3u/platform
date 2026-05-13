@@ -4448,7 +4448,7 @@ test('getMigrationTargetWatcherEnv stages the tuturuuu stack on non-conflicting 
     env: {
       COMPOSE_PROJECT_NAME: 'platform',
       PATH: 'test-path',
-      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
     },
     rootDir: '/workspace',
   });
@@ -4467,7 +4467,7 @@ test('getWatcherStartupComposeEnv stages host watcher startup when the legacy pr
       COMPOSE_PROJECT_NAME: 'tuturuuu',
       DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
       PATH: process.env.PATH,
-      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
     },
     runCommand: async (command, args, options = {}) => {
       calls.push({
@@ -4485,7 +4485,7 @@ test('getWatcherStartupComposeEnv stages host watcher startup when the legacy pr
         COMPOSE_PROJECT_NAME: 'platform',
         DOCKER_WEB_COMPOSE_PROJECT_NAME: 'platform',
         PATH: process.env.PATH,
-        [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+        [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
       },
     },
   ]);
@@ -4502,7 +4502,7 @@ test('getWatcherStartupComposeEnv keeps canonical ports when no legacy project e
       COMPOSE_PROJECT_NAME: 'tuturuuu',
       DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
       PATH: process.env.PATH,
-      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
     },
     runCommand: async () => createResult(''),
   });
@@ -4624,7 +4624,7 @@ test('handoffLegacyWatcherToTargetProject keeps a fully migrated unmarked target
     env: {
       PATH: process.env.PATH,
       PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
-      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
     },
     rootDir: '/workspace',
     runCommand: async (command, args) => {
@@ -4647,7 +4647,7 @@ test('handoffLegacyWatcherToTargetProject does not re-handoff a staged target wa
       DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT: 'platform',
       PATH: process.env.PATH,
       PLATFORM_BLUE_GREEN_WATCHER_CONTAINER: '1',
-      [HOST_WORKSPACE_DIR_ENV]: '/Users/vhpx/Documents/GitHub/platform',
+      [HOST_WORKSPACE_DIR_ENV]: '/workspace/platform',
     },
     rootDir: '/workspace',
     runCommand: async () => {

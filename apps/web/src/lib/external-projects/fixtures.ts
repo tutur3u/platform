@@ -50,8 +50,7 @@ export const externalProjectAdapterFixtures: Record<
 > = {
   junly: {
     adapter: 'junly',
-    sourceReference:
-      '/Users/vhpx/Documents/GitHub/junly/components/launcher/content-data.ts',
+    sourceReference: '../junly/components/launcher/content-data.ts',
     profileData: {
       brand: 'Junly',
       deliveryPreset: 'launcher',
@@ -262,7 +261,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   yoola: {
     adapter: 'yoola',
-    sourceReference: '/Users/vhpx/Documents/GitHub/yoola/lib/archive-data.ts',
+    sourceReference: '../yoola/lib/archive-data.ts',
     profileData: {
       brand: 'Yoola',
       deliveryPreset: 'archive',
@@ -702,8 +701,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   theguyser: {
     adapter: 'theguyser',
-    sourceReference:
-      '/Users/vhpx/Documents/GitHub/theguyser/components/portfolio/data.ts',
+    sourceReference: '../theguyser/components/portfolio/data.ts',
     profileData: {
       brand: 'Theguyser',
       deliveryPreset: 'dashboard',
@@ -847,8 +845,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   exocorpse: {
     adapter: 'exocorpse',
-    sourceReference:
-      '/Users/vhpx/Documents/GitHub/exocorpse/src/components/apps/Portfolio.tsx',
+    sourceReference: '../exocorpse/src/components/apps/Portfolio.tsx',
     profileData: {
       brand: 'EXOCORPSE',
       deliveryPreset: 'desktop-os',
@@ -934,8 +931,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   shu: {
     adapter: 'shu',
-    sourceReference:
-      '/Users/vhpx/Documents/GitHub/shu/lib/shu-external-project-manifest.ts',
+    sourceReference: '../shu/lib/shu-external-project-manifest.ts',
     profileData: {
       brand: 'Shu',
       deliveryPreset: 'game-portfolio',
@@ -970,8 +966,7 @@ export const externalProjectAdapterFixtures: Record<
   },
   yashie: {
     adapter: 'yashie',
-    sourceReference:
-      '/Users/vhpx/Documents/GitHub/yashie/lib/yashie-external-project-manifest.ts',
+    sourceReference: '../yashie/lib/yashie-external-project-manifest.ts',
     profileData: {
       brand: 'InkedByYashie',
       deliveryPreset: 'portfolio-shop',
