@@ -149,7 +149,7 @@
         "removeFile": "Remove file",
         "uploadFile": "Upload file"
       },
-      "description": "Upload a PDF or Word document. AI will create structured modules, quizzes, and flashcards.",
+      "description": "Upload a PDF, Word document, or text file. AI will create structured modules, quizzes, and flashcards.",
       "dropzone": {
         "description": "PDF, Word (.docx), or plain text · max {maxSize} MB",
         "title": "Drop a file here or click to browse"

@@ -149,7 +149,7 @@
         "removeFile": "Gỡ tệp",
         "uploadFile": "Tải tệp lên"
       },
-      "description": "Tải lên tệp PDF hoặc Word. AI sẽ tạo module có cấu trúc, câu hỏi kiểm tra và flashcard.",
+      "description": "Tải lên tệp PDF, Word hoặc văn bản. AI sẽ tạo module có cấu trúc, câu hỏi kiểm tra và flashcard.",
       "dropzone": {
         "description": "PDF, Word (.docx), hoặc văn bản thuần · tối đa {maxSize} MB",
         "title": "Thả tệp vào đây hoặc bấm để chọn"
