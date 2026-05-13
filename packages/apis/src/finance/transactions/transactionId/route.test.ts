@@ -6,6 +6,24 @@ const mocks = vi.hoisted(() => {
   const linkedTransactionMaybeSingle = vi.fn();
   const walletMaybeSingle = vi.fn();
   const transactionTagsIn = vi.fn();
+  const walletTransactionsSelect = vi.fn((query: string) => {
+    if (query.includes('workspace_wallets!wallet_id')) {
+      return {
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            single: verifyWorkspaceSingle,
+          })),
+        })),
+      };
+    }
+
+    return {
+      eq: vi.fn(() => ({
+        single: confidentialSingle,
+        maybeSingle: linkedTransactionMaybeSingle,
+      })),
+    };
+  });
   const deleteEq = vi.fn();
   const updateEq = vi.fn();
   const tagDeleteEq = vi.fn();
@@ -53,24 +71,7 @@ const mocks = vi.hoisted(() => {
       }
 
       return {
-        select: vi.fn((query: string) => {
-          if (query.includes('workspace_wallets!wallet_id')) {
-            return {
-              eq: vi.fn(() => ({
-                eq: vi.fn(() => ({
-                  single: verifyWorkspaceSingle,
-                })),
-              })),
-            };
-          }
-
-          return {
-            eq: vi.fn(() => ({
-              single: confidentialSingle,
-              maybeSingle: linkedTransactionMaybeSingle,
-            })),
-          };
-        }),
+        select: walletTransactionsSelect,
         delete: vi.fn(() => ({
           eq: deleteEq,
         })),
@@ -95,6 +96,7 @@ const mocks = vi.hoisted(() => {
     transactionTagsIn,
     updateEq,
     verifyWorkspaceSingle,
+    walletTransactionsSelect,
     walletMaybeSingle,
   };
 });
@@ -395,5 +397,72 @@ describe('transaction detail route', () => {
     await expect(response.json()).resolves.toEqual({
       message: 'Insufficient permissions to change the wallet for transactions',
     });
+  });
+
+  it('uses an inner wallet join when verifying transaction workspace', async () => {
+    const { PUT } = await import('./route.js');
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: -45,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(
+      mocks.walletTransactionsSelect.mock.calls.some(([query]) =>
+        query.includes('workspace_wallets!wallet_id!inner')
+      )
+    ).toBe(true);
+  });
+
+  it('returns 404 when transaction wallet is outside the requested workspace', async () => {
+    const { PUT } = await import('./route.js');
+
+    mocks.verifyWorkspaceSingle.mockResolvedValueOnce({
+      data: {
+        id: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+        workspace_wallets: null,
+      },
+      error: null,
+    });
+
+    const response = await PUT(
+      new Request('http://localhost/api/workspaces/ws-1/transactions/tx-1', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: -45,
+        }),
+      }),
+      {
+        params: Promise.resolve({
+          transactionId: '8206f54b-4cae-4373-9a89-d09f80dd017d',
+          wsId: '00000000-0000-0000-0000-000000000000',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Transaction not found',
+    });
+    expect(mocks.updateEq).not.toHaveBeenCalled();
+    expect(mocks.tagDeleteEq).not.toHaveBeenCalled();
+    expect(mocks.tagInsert).not.toHaveBeenCalled();
   });
 });

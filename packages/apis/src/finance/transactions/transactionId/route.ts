@@ -23,7 +23,7 @@ async function verifyTransactionWorkspace(
     .from('wallet_transactions')
     .select(`
       id,
-      workspace_wallets!wallet_id (
+      workspace_wallets!wallet_id!inner (
         ws_id
       )
     `)
@@ -31,7 +31,7 @@ async function verifyTransactionWorkspace(
     .eq('workspace_wallets.ws_id', wsId)
     .single();
 
-  if (error || !data) {
+  if (error || !data || data.workspace_wallets?.ws_id !== wsId) {
     console.error('Error verifying transaction workspace:', {
       transactionId,
       wsId,
