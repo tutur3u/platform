@@ -5,6 +5,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PatchProfileSchema = z.object({
   display_name: z.string().min(1).max(MAX_DISPLAY_NAME_LENGTH).optional(),
@@ -23,7 +24,7 @@ export const GET = withSessionAuth(
         .single();
 
       if (userError) {
-        console.error('Error fetching user:', userError);
+        serverLogger.error('Error fetching user profile:', userError);
         return NextResponse.json(
           { message: 'Error fetching user profile' },
           { status: 500 }
@@ -31,24 +32,35 @@ export const GET = withSessionAuth(
       }
 
       // Fetch private details (includes email)
-      const { data: privateData } = await supabase
+      const { data: privateData, error: privateError } = await supabase
         .from('user_private_details')
         .select('full_name, new_email, email, default_workspace_id')
         .eq('user_id', user.id)
         .maybeSingle();
 
+      if (privateError) {
+        serverLogger.error('Error fetching user private profile details:', {
+          error: privateError.message,
+          userId: user.id,
+        });
+        return NextResponse.json(
+          { message: 'Error fetching user profile' },
+          { status: 500 }
+        );
+      }
+
       return NextResponse.json({
         id: userData.id,
-        email: privateData?.email || user.email || null,
+        email: privateData?.email ?? null,
         display_name: userData.display_name,
         avatar_url: userData.avatar_url,
-        full_name: privateData?.full_name || null,
-        new_email: privateData?.new_email || null,
+        full_name: privateData?.full_name ?? null,
+        new_email: privateData?.new_email ?? null,
         created_at: userData.created_at,
-        default_workspace_id: privateData?.default_workspace_id || null,
+        default_workspace_id: privateData?.default_workspace_id ?? null,
       });
     } catch (error) {
-      console.error('Request error:', error);
+      serverLogger.error('Request error while fetching user profile:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
@@ -80,7 +92,7 @@ export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
       .eq('id', user.id);
 
     if (error) {
-      console.error('Error updating user:', error);
+      serverLogger.error('Error updating user profile:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
@@ -96,7 +108,7 @@ export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
       );
     }
 
-    console.error('Request error:', error);
+    serverLogger.error('Request error while updating user profile:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

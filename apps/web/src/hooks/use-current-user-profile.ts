@@ -6,9 +6,14 @@ import type { CurrentUserProfileResponse } from '@tuturuuu/internal-api/users';
 
 export const currentUserProfileQueryKey = ['user', 'me'] as const;
 
-export function useCurrentUserProfile(options?: { enabled?: boolean }) {
+export function useCurrentUserProfile(options?: {
+  enabled?: boolean;
+  userId?: string | null;
+}) {
   return useQuery<CurrentUserProfileResponse | null>({
-    queryKey: [...currentUserProfileQueryKey],
+    queryKey: options?.userId
+      ? [...currentUserProfileQueryKey, options.userId]
+      : [...currentUserProfileQueryKey],
     queryFn: async () => {
       try {
         return await getCurrentUserProfile();
