@@ -140,6 +140,35 @@
     "workspaceFallback": "Education workspace"
   },
   "teachModules": {
+    "aiGenerate": {
+      "actions": {
+        "cancel": "Cancel",
+        "close": "Close",
+        "done": "Done",
+        "generate": "Generate modules",
+        "removeFile": "Remove file",
+        "uploadFile": "Upload file"
+      },
+      "description": "Upload a PDF or Word document. AI will create structured modules, quizzes, and flashcards.",
+      "dropzone": {
+        "description": "PDF, Word (.docx), or plain text · max {maxSize} MB",
+        "title": "Drop a file here or click to browse"
+      },
+      "errors": {
+        "fileTooLarge": "File is too large ({fileSize}). Maximum size is {maxSize} MB.",
+        "unsupportedFileType": "Unsupported file type. Please upload a PDF, Word document, or text file."
+      },
+      "status": {
+        "analyzing": "AI is analyzing your document and creating course content...",
+        "generating": "Generating modules...",
+        "uploading": "Uploading file..."
+      },
+      "success": {
+        "description": "The new modules have been added to this course.",
+        "title": "Modules generated"
+      },
+      "title": "Generate modules with AI"
+    },
     "allCourses": "All Courses",
     "allCoursesDescription": "Each course group below represents a workspace user group with published modules.",
     "backToDashboard": "Back to dashboard",
@@ -147,6 +176,11 @@
     "courses": "courses",
     "description": "Browse all course groups in this workspace. Each card represents a user group with published learning modules.",
     "done": "Done",
+    "lessonEditor": {
+      "removeYoutubeLink": "Remove YouTube link",
+      "saved": "Saved",
+      "saving": "Saving..."
+    },
     "loadError": "Failed to load courses. Please try again.",
     "modules": "Modules",
     "noCourses": "No courses found. Create workspace user groups with published modules in the platform first.",

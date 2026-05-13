@@ -2,6 +2,7 @@
 
 import { Check, Loader2, Trash2, Youtube } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 
 const YOUTUBE_VIDEO_ID_PATTERN = /^[A-Za-z0-9_-]{11}$/;
 const YOUTUBE_HOSTS = new Set(['youtube.com', 'www.youtube.com']);
@@ -48,6 +49,7 @@ export function YoutubeRow({
   url: string;
   onRemove: () => void;
 }) {
+  const t = useTranslations('teachModules.lessonEditor');
   const videoId = getYoutubeVideoId(url);
 
   return (
@@ -71,7 +73,7 @@ export function YoutubeRow({
         className="shrink-0 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/yt:opacity-100"
         onClick={onRemove}
         type="button"
-        aria-label="Remove YouTube link"
+        aria-label={t('removeYoutubeLink')}
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -80,6 +82,8 @@ export function YoutubeRow({
 }
 
 export function SaveStatus({ isSaving }: { isSaving: boolean }) {
+  const t = useTranslations('teachModules.lessonEditor');
+
   return (
     <span
       className={cn(
@@ -90,12 +94,12 @@ export function SaveStatus({ isSaving }: { isSaving: boolean }) {
       {isSaving ? (
         <>
           <Loader2 className="h-3 w-3 animate-spin" />
-          Saving…
+          {t('saving')}
         </>
       ) : (
         <>
           <Check className="h-3 w-3" />
-          Saved
+          {t('saved')}
         </>
       )}
     </span>

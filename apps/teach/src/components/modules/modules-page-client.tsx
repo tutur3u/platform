@@ -3,8 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, BookOpenCheck, GraduationCap } from '@tuturuuu/icons';
 import { listSharedCourses } from '@tuturuuu/internal-api';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { CourseGroupCard } from './course-group-card';
 import { ModulesEmptyState, ModulesLoadingState } from './modules-shared';
 

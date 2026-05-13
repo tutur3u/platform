@@ -140,6 +140,35 @@
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachModules": {
+    "aiGenerate": {
+      "actions": {
+        "cancel": "Hủy",
+        "close": "Đóng",
+        "done": "Xong",
+        "generate": "Tạo module",
+        "removeFile": "Gỡ tệp",
+        "uploadFile": "Tải tệp lên"
+      },
+      "description": "Tải lên tệp PDF hoặc Word. AI sẽ tạo module có cấu trúc, câu hỏi kiểm tra và flashcard.",
+      "dropzone": {
+        "description": "PDF, Word (.docx), hoặc văn bản thuần · tối đa {maxSize} MB",
+        "title": "Thả tệp vào đây hoặc bấm để chọn"
+      },
+      "errors": {
+        "fileTooLarge": "Tệp quá lớn ({fileSize}). Kích thước tối đa là {maxSize} MB.",
+        "unsupportedFileType": "Định dạng tệp không được hỗ trợ. Vui lòng tải lên PDF, tài liệu Word hoặc tệp văn bản."
+      },
+      "status": {
+        "analyzing": "AI đang phân tích tài liệu và tạo nội dung khóa học...",
+        "generating": "Đang tạo module...",
+        "uploading": "Đang tải tệp lên..."
+      },
+      "success": {
+        "description": "Các module mới đã được thêm vào khóa học này.",
+        "title": "Đã tạo module"
+      },
+      "title": "Tạo module bằng AI"
+    },
     "allCourses": "Tất cả khóa học",
     "allCoursesDescription": "Mỗi nhóm khóa học bên dưới là một workspace user group có module đã xuất bản.",
     "backToDashboard": "Quay lại dashboard",
@@ -147,6 +176,11 @@
     "courses": "khóa học",
     "description": "Xem tất cả nhóm khóa học trong workspace này. Mỗi thẻ là một user group có module học tập đã xuất bản.",
     "done": "Xong",
+    "lessonEditor": {
+      "removeYoutubeLink": "Gỡ liên kết YouTube",
+      "saved": "Đã lưu",
+      "saving": "Đang lưu..."
+    },
     "loadError": "Không tải được khóa học. Vui lòng thử lại.",
     "modules": "Module",
     "noCourses": "Không tìm thấy khóa học. Hãy tạo workspace user groups có module đã xuất bản trên nền tảng trước.",

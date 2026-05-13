@@ -10,6 +10,7 @@ import {
   X,
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
 import { useAiGenerate } from './use-ai-generate';
 
@@ -50,6 +51,7 @@ export function AiGenerateDialog({
   courseId,
   onClose,
 }: AiGenerateDialogProps) {
+  const t = useTranslations('teachModules.aiGenerate');
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -58,26 +60,27 @@ export function AiGenerateDialog({
 
   const mutation = useAiGenerate(wsId, courseId);
 
-  const stage = mutation.isPending
-    ? uploadProgress < 100
-      ? 'uploading'
-      : 'generating'
-    : mutation.isSuccess
-      ? 'done'
-      : mutation.isError
-        ? 'error'
-        : 'idle';
+  const stage = (() => {
+    if (mutation.isPending) {
+      return uploadProgress < 100 ? 'uploading' : 'generating';
+    }
+    if (mutation.isSuccess) return 'done';
+    if (mutation.isError) return 'error';
+    return 'idle';
+  })();
 
   function validateFile(f: File): string | null {
-    const hasAcceptedType = f.type
-      ? ACCEPTED_TYPES.includes(f.type)
-      : hasAcceptedExtension(f.name);
+    const hasAcceptedType =
+      ACCEPTED_TYPES.includes(f.type) || hasAcceptedExtension(f.name);
 
     if (!hasAcceptedType) {
-      return `Unsupported file type. Please upload a PDF, Word document, or text file.`;
+      return t('errors.unsupportedFileType');
     }
     if (f.size > MAX_SIZE_BYTES) {
-      return `File is too large (${formatBytes(f.size)}). Maximum size is ${MAX_SIZE_MB} MB.`;
+      return t('errors.fileTooLarge', {
+        fileSize: formatBytes(f.size),
+        maxSize: MAX_SIZE_MB,
+      });
     }
     return null;
   }
@@ -129,20 +132,15 @@ export function AiGenerateDialog({
             <Sparkles className="h-4 w-4" />
           </span>
           <div className="min-w-0 flex-1">
-            <h2 className="font-black text-lg leading-tight">
-              Generate modules with AI
-            </h2>
-            <p className="text-muted-foreground text-xs">
-              Upload a PDF or Word document — AI will create structured modules,
-              quizzes, and flashcards.
-            </p>
+            <h2 className="font-black text-lg leading-tight">{t('title')}</h2>
+            <p className="text-muted-foreground text-xs">{t('description')}</p>
           </div>
           {!isActive && (
             <button
               className="shrink-0 text-muted-foreground hover:text-foreground"
               onClick={onClose}
               type="button"
-              aria-label="Close"
+              aria-label={t('actions.close')}
             >
               <X className="h-5 w-5" />
             </button>
@@ -156,9 +154,9 @@ export function AiGenerateDialog({
               <div className="flex items-center gap-3 border-2 border-border bg-dynamic-green/15 px-4 py-3 shadow-[3px_3px_0_var(--border)]">
                 <Check className="h-5 w-5 shrink-0 text-dynamic-green" />
                 <div>
-                  <p className="font-bold text-sm">Modules generated</p>
+                  <p className="font-bold text-sm">{t('success.title')}</p>
                   <p className="text-muted-foreground text-xs">
-                    The new modules have been added to this course.
+                    {t('success.description')}
                   </p>
                 </div>
               </div>
@@ -167,7 +165,7 @@ export function AiGenerateDialog({
                 onClick={onClose}
                 type="button"
               >
-                Done
+                {t('actions.done')}
               </button>
             </div>
           )}
@@ -179,8 +177,8 @@ export function AiGenerateDialog({
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span className="font-bold">
                     {stage === 'uploading'
-                      ? 'Uploading file…'
-                      : 'Generating modules…'}
+                      ? t('status.uploading')
+                      : t('status.generating')}
                   </span>
                   {stage === 'uploading' && (
                     <span className="text-muted-foreground tabular-nums">
@@ -198,7 +196,7 @@ export function AiGenerateDialog({
                 ) : (
                   <div className="flex items-center gap-2 text-muted-foreground text-xs">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    AI is analyzing your document and creating course content…
+                    {t('status.analyzing')}
                   </div>
                 )}
               </div>
@@ -245,7 +243,7 @@ export function AiGenerateDialog({
                         setFileError(null);
                       }}
                       type="button"
-                      aria-label="Remove file"
+                      aria-label={t('actions.removeFile')}
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -255,14 +253,12 @@ export function AiGenerateDialog({
                     className="w-full space-y-2"
                     onClick={() => inputRef.current?.click()}
                     type="button"
-                    aria-label="Upload file"
+                    aria-label={t('actions.uploadFile')}
                   >
                     <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
-                    <p className="font-bold text-sm">
-                      Drop a file here or click to browse
-                    </p>
+                    <p className="font-bold text-sm">{t('dropzone.title')}</p>
                     <p className="text-muted-foreground text-xs">
-                      PDF, Word (.docx), or plain text · max {MAX_SIZE_MB} MB
+                      {t('dropzone.description', { maxSize: MAX_SIZE_MB })}
                     </p>
                   </button>
                 )}
@@ -291,7 +287,7 @@ export function AiGenerateDialog({
                   onClick={onClose}
                   type="button"
                 >
-                  Cancel
+                  {t('actions.cancel')}
                 </button>
                 <button
                   className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 disabled:hover:shadow-[3px_3px_0_var(--border)]"
@@ -300,7 +296,7 @@ export function AiGenerateDialog({
                   type="button"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Generate modules
+                  {t('actions.generate')}
                 </button>
               </div>
             </>

@@ -3,8 +3,8 @@
 import { ArrowRight, BookOpen, Play, Users } from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
-import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
 import { BrutalCard, courseThemes } from './modules-shared';
 
 export interface CourseGroupItem {
@@ -53,8 +53,9 @@ export function CourseGroupCard({
   const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
   const Icon = theme.icon;
 
-  const remaining = course.totalModules - course.completedModules;
-  const isComplete = course.progress >= 100;
+  const boundedProgress = Math.min(100, Math.max(0, course.progress));
+  const remaining = Math.max(0, course.totalModules - course.completedModules);
+  const isComplete = boundedProgress >= 100;
   const courseHref = `/${wsId}/modules/${course.id}`;
 
   return (
@@ -99,7 +100,7 @@ export function CourseGroupCard({
           <StatChip
             icon={Play}
             label={t('teachModules.progress')}
-            value={`${course.progress}%`}
+            value={`${boundedProgress}%`}
           />
           <StatChip
             icon={Users}
@@ -117,9 +118,9 @@ export function CourseGroupCard({
             <span className="font-semibold text-muted-foreground">
               {t('teachModules.courseProgress')}
             </span>
-            <span className="font-bold">{course.progress}%</span>
+            <span className="font-bold">{boundedProgress}%</span>
           </div>
-          <Progress className="h-2.5" value={course.progress} />
+          <Progress className="h-2.5" value={boundedProgress} />
         </div>
 
         {/* Module checkpoint dots — Canvas style */}
