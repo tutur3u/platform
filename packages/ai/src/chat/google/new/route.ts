@@ -9,7 +9,10 @@ import {
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
-import { resolveSupabaseSessionUser } from '../route-auth';
+import {
+  isInternalTuturuuuAiUser,
+  resolveSupabaseSessionUser,
+} from '../route-auth';
 
 const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
@@ -104,6 +107,23 @@ export function createPOST(
       }
 
       if (!user) return NextResponse.json('Unauthorized', { status: 401 });
+
+      if (isMiraMode) {
+        const allowed = await isInternalTuturuuuAiUser({
+          ok: true,
+          supabase,
+          user,
+          ...(tempAuth.status === 'valid'
+            ? { tempAuthContext: tempAuth.context }
+            : {}),
+        });
+        if (!allowed) {
+          return NextResponse.json(
+            { error: 'Mira mode is limited to @tuturuuu.com accounts' },
+            { status: 403 }
+          );
+        }
+      }
 
       const prompt = buildPrompt([
         {

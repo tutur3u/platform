@@ -22,7 +22,7 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
-import { resolveAiRouteAuth } from './route-auth';
+import { isInternalTuturuuuAiUser, resolveAiRouteAuth } from './route-auth';
 import {
   moveTempFilesToThread,
   resolveChatIdForUser,
@@ -97,6 +97,13 @@ export function createPOST(
       const auth = await resolveAiRouteAuth(req);
       if (!auth.ok) return auth.response;
       const { supabase, user } = auth;
+
+      if (isMiraMode && !(await isInternalTuturuuuAiUser(auth))) {
+        return NextResponse.json(
+          { error: 'Mira mode is limited to @tuturuuu.com accounts' },
+          { status: 403 }
+        );
+      }
 
       // Normalize both workspace identifiers so slugs like 'personal' resolve to UUIDs.
       let normalizedWsId: string | null = null;

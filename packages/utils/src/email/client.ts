@@ -26,6 +26,11 @@ export const isValidTuturuuuEmail = (email?: string | null): boolean => {
   return emailRegex.test(email);
 };
 
+export const isExactTuturuuuDotComEmail = (email?: string | null): boolean => {
+  if (!email) return false;
+  return /^[^\s@]+@tuturuuu\.com$/i.test(email.trim());
+};
+
 export const isEmail = (text: string): boolean => {
   const emailRegex =
     /^(?:[^<>()[\]\\.,;:\s@"]+(?:\.[^<>()[\]\\.,;:\s@"]+)*|".+")@(?:\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}]|(?:[a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,})$/;

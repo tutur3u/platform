@@ -9,6 +9,7 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
@@ -434,17 +435,32 @@ async function readDriveAudioFile({
 
 async function generateMiraSentimentLayer({
   context,
+  isMiraAllowed,
   sourceText,
   stages,
   wsId,
 }: {
   context: AuthorizedRequest;
+  isMiraAllowed: boolean;
   sourceText: string;
   stages: ObservabilityStage[];
   wsId: string;
 }) {
   const startedAt = performance.now();
   const resolvedWsId = resolveWorkspaceId(wsId);
+
+  if (!isMiraAllowed) {
+    stages.push({
+      durationMs: Math.round(performance.now() - startedAt),
+      id: 'mira-sentiment',
+      inputSummary: summarizeText(sourceText),
+      label: 'Mira sentiment lab',
+      outputSummary: 'Mira is limited to @tuturuuu.com accounts',
+      provider: 'mira',
+      status: 'skipped',
+    });
+    return null;
+  }
 
   try {
     const resolvedModel = await resolvePlanModel({
@@ -530,6 +546,20 @@ Return observable sentiment dimensions, short evidence spans copied from the tra
     serverLogger.warn('Mira sentiment layer unavailable', error);
     return null;
   }
+}
+
+async function isInternalMiraUser(context: AuthorizedRequest) {
+  if (isExactTuturuuuDotComEmail(context.user.email)) {
+    return true;
+  }
+
+  const { data } = await context.supabase
+    .from('user_private_details')
+    .select('email')
+    .eq('user_id', context.user.id)
+    .maybeSingle();
+
+  return isExactTuturuuuDotComEmail(data?.email);
 }
 
 async function parsePayload(request: NextRequest): Promise<ParsePayloadResult> {
@@ -783,6 +813,7 @@ export const POST = withSessionAuth<Params>(
       ]);
       const miraSentiment = await generateMiraSentimentLayer({
         context,
+        isMiraAllowed: await isInternalMiraUser(context),
         sourceText: clarifiedText,
         stages,
         wsId,

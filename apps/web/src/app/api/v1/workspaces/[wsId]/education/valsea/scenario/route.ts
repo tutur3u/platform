@@ -9,6 +9,7 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
@@ -254,10 +255,34 @@ function pickFallbackScenario(seed: string | undefined) {
   return FALLBACK_SCENARIOS[index] ?? FALLBACK_SCENARIOS[0];
 }
 
+async function isInternalMiraUser(context: AuthorizedRequest) {
+  if (isExactTuturuuuDotComEmail(context.user.email)) {
+    return true;
+  }
+
+  const { data } = await context.supabase
+    .from('user_private_details')
+    .select('email')
+    .eq('user_id', context.user.id)
+    .maybeSingle();
+
+  return isExactTuturuuuDotComEmail(data?.email);
+}
+
 export const POST = withSessionAuth<Params>(
   async (request, context, { wsId }) => {
     const accessError = await verifyAccess(context, wsId);
     if (accessError) return accessError;
+
+    if (!(await isInternalMiraUser(context))) {
+      return NextResponse.json(
+        {
+          error:
+            'Mira scenario generation is limited to @tuturuuu.com accounts',
+        },
+        { status: 403 }
+      );
+    }
 
     const rawBody = (await request.json().catch(() => ({}))) as unknown;
     const parsed = ScenarioRequestSchema.safeParse(rawBody);

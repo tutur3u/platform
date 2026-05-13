@@ -6,13 +6,12 @@
 import { Modality, ThinkingLevel } from '@google/genai';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
-  getWorkspaceTier,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { isFeatureAvailable } from '@/lib/feature-tiers';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { MIRA_LIVE_SCOPE_KEY } from '@/lib/live/session-scope';
 import { createConstrainedLiveToken } from '@/lib/live/token-builder';
 
@@ -178,21 +177,18 @@ export async function POST(request: Request) {
       );
     }
 
-    const [currentTier, emailResult] = await Promise.all([
-      getWorkspaceTier(normalizedWsId, { useAdmin: true }),
-      supabase
-        .from('user_private_details')
-        .select('email')
-        .eq('user_id', user.id)
-        .single(),
-    ]);
+    const emailResult = await supabase
+      .from('user_private_details')
+      .select('email')
+      .eq('user_id', user.id)
+      .single();
 
     const userEmail = emailResult.data?.email;
-    const isTuturuuuEmployee = isValidTuturuuuEmail(userEmail);
+    const isTuturuuuEmployee = isExactTuturuuuDotComEmail(userEmail);
 
-    if (!isFeatureAvailable('mira', currentTier) && !isTuturuuuEmployee) {
+    if (!isTuturuuuEmployee) {
       return Response.json(
-        { error: 'Mira requires PRO tier or higher' },
+        { error: 'Mira is limited to @tuturuuu.com accounts' },
         { status: 403 }
       );
     }
@@ -216,7 +212,7 @@ export async function POST(request: Request) {
       model: MIRA_LIVE_MODEL,
     });
   } catch (error) {
-    console.error('Error generating Mira token:', error);
+    serverLogger.error('Error generating Mira token', error);
     return Response.json(
       { error: 'Failed to generate token' },
       { status: 500 }

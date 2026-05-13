@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatEmailAddresses,
   isEmail,
+  isExactTuturuuuDotComEmail,
   isIncompleteEmail,
   isValidTuturuuuEmail,
   suggestEmails,
@@ -76,6 +77,16 @@ describe('isValidTuturuuuEmail', () => {
     expect(isValidTuturuuuEmail('member@sub.tuturuuu.com')).toBe(false);
     expect(isValidTuturuuuEmail(null)).toBe(false);
     expect(isValidTuturuuuEmail(undefined)).toBe(false);
+  });
+});
+
+describe('isExactTuturuuuDotComEmail', () => {
+  it('accepts only exact tuturuuu.com accounts', () => {
+    expect(isExactTuturuuuDotComEmail('member@tuturuuu.com')).toBe(true);
+    expect(isExactTuturuuuDotComEmail('MEMBER@TUTURUUU.COM')).toBe(true);
+    expect(isExactTuturuuuDotComEmail('member@xwf.tuturuuu.com')).toBe(false);
+    expect(isExactTuturuuuDotComEmail('member@sub.tuturuuu.com')).toBe(false);
+    expect(isExactTuturuuuDotComEmail('member@example.com')).toBe(false);
   });
 });
 
