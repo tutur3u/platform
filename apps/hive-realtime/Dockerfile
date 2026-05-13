@@ -41,6 +41,7 @@ COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
+COPY packages/realtime/package.json ./packages/realtime/package.json
 COPY packages/satellite/package.json ./packages/satellite/package.json
 COPY packages/sdk/package.json ./packages/sdk/package.json
 COPY packages/supabase/package.json ./packages/supabase/package.json
@@ -69,8 +70,7 @@ COPY --from=deps /workspace/node_modules ./node_modules
 COPY --from=deps /workspace/package.json ./package.json
 COPY --from=deps /workspace/apps/hive-realtime/package.json ./apps/hive-realtime/package.json
 COPY apps/hive-realtime/src ./apps/hive-realtime/src
-COPY packages/supabase ./packages/supabase
-COPY packages/types ./packages/types
+COPY packages/realtime ./packages/realtime
 
 EXPOSE 7815
 

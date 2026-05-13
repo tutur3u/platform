@@ -69,7 +69,9 @@ const nextConfig: NextConfig = {
     '@tuturuuu/supabase',
     '@tuturuuu/microsoft',
     '@tuturuuu/google',
+    '@tuturuuu/internal-api',
     '@tuturuuu/offline',
+    '@tuturuuu/realtime',
   ],
   images: {
     remotePatterns: [

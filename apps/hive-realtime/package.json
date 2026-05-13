@@ -12,10 +12,9 @@
     "type-check": "tsgo --project tsconfig.json"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.105.4",
-    "@tuturuuu/supabase": "workspace:*",
-    "@tuturuuu/types": "workspace:*",
+    "@tuturuuu/realtime": "workspace:*",
     "jose": "^6.2.3",
+    "postgres": "^3.4.9",
     "zod": "^4.4.3"
   },
   "devDependencies": {

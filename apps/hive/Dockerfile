@@ -42,6 +42,7 @@ COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
+COPY packages/realtime/package.json ./packages/realtime/package.json
 COPY packages/satellite/package.json ./packages/satellite/package.json
 COPY packages/sdk/package.json ./packages/sdk/package.json
 COPY packages/supabase/package.json ./packages/supabase/package.json

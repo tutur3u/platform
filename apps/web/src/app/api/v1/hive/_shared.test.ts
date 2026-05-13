@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { signHiveRealtimeToken, verifyHiveRealtimeToken } from './_shared';
+import {
+  signHiveRealtimeToken,
+  verifyHiveRealtimeToken,
+} from './_realtime-token';
 
 describe('Hive realtime token signing', () => {
   afterEach(() => {

@@ -219,6 +219,7 @@
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/types": "workspace:*",
@@ -256,10 +257,9 @@
       "name": "@tuturuuu/hive-realtime",
       "version": "0.1.0",
       "dependencies": {
-        "@supabase/supabase-js": "^2.105.4",
-        "@tuturuuu/supabase": "workspace:*",
-        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "jose": "^6.2.3",
+        "postgres": "^3.4.9",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -755,6 +755,7 @@
         "@tuturuuu/microsoft": "workspace:*",
         "@tuturuuu/offline": "workspace:*",
         "@tuturuuu/payment": "workspace:*",
+        "@tuturuuu/realtime": "workspace:*",
         "@tuturuuu/supabase": "workspace:*",
         "@tuturuuu/transactional": "workspace:*",
         "@tuturuuu/trigger": "workspace:*",
@@ -1151,6 +1152,20 @@
       },
       "devDependencies": {
         "@tuturuuu/typescript-config": "workspace:*",
+      },
+    },
+    "packages/realtime": {
+      "name": "@tuturuuu/realtime",
+      "version": "0.0.1",
+      "dependencies": {
+        "yjs": "^13.6.30",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.7.0",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.6",
       },
     },
     "packages/satellite": {
@@ -2976,6 +2991,8 @@
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
+
+    "@tuturuuu/realtime": ["@tuturuuu/realtime@workspace:packages/realtime"],
 
     "@tuturuuu/redis": ["@tuturuuu/redis@workspace:apps/redis"],
 

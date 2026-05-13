@@ -17,6 +17,8 @@ secrets:
 volumes:
   platform-buildkit-state:
   platform-log-drain-postgres:
+  platform-hive-ollama:
+  platform-hive-postgres:
   platform-bun-install:
   platform-blue-green-watcher-node_modules:
   platform-pronunciation-assessor-cache:

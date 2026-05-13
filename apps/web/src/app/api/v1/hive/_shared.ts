@@ -1,22 +1,27 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import type {
-  HiveMember,
-  HiveNpc,
-  HiveServer,
-  HiveWorldEvent,
-  Json,
-} from '@tuturuuu/types/db';
+import type { Json } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getHiveMemberByUserId } from '@/lib/hive/hive-db';
+import type {
+  HiveMemberRow,
+  HiveNpcRow,
+  HiveServerRow,
+  HiveWorldEventRow,
+} from '@/lib/hive/types';
 import {
   serverLogger,
   withRequestLogDrain,
 } from '@/lib/infrastructure/log-drain';
+
+export {
+  signHiveRealtimeToken,
+  verifyHiveRealtimeToken,
+} from './_realtime-token';
 
 export { serverLogger };
 
@@ -62,6 +67,15 @@ export const hiveWorldSchema = z.object({
     .max(2_000),
 });
 
+export const hiveCrdtSyncSchema = z.object({
+  stateVector: z.string().optional(),
+});
+
+export const hiveCrdtUpdateSchema = z.object({
+  update: z.string().min(1),
+  world: hiveWorldSchema.optional(),
+});
+
 export const hiveNpcSchema = z.object({
   backstory: z.string().max(10_000).default(''),
   backstoryEnabled: z.boolean().default(true),
@@ -87,6 +101,12 @@ export const hiveEventSchema = z.object({
       'npc.config',
       'npc.decision',
       'server.metadata',
+      'crop.plant',
+      'crop.water',
+      'crop.harvest',
+      'inventory.transfer',
+      'trade.create',
+      'trade.accept',
     ])
     .or(z.string().trim().min(1).max(80)),
   expectedRevision: z.number().int().min(0),
@@ -99,6 +119,19 @@ export const hiveServerSchema = z.object({
   enabled: z.boolean().default(true),
   maxPlayers: z.number().int().min(1).max(256).default(32),
   name: z.string().trim().min(1).max(120),
+});
+
+export const hiveServerSettingsSchema = z.object({
+  autonomousNpcEnabled: z.boolean().optional(),
+  cronEnabled: z.boolean().optional(),
+  llmProvider: z.enum(['disabled', 'ollama', 'mira']).optional(),
+  maxLlmSpendPerTick: z.number().min(0).optional(),
+  maxTickBudget: z.number().int().min(1).max(500).optional(),
+  ollamaEnabled: z.boolean().optional(),
+  ollamaKeepAlive: z.string().trim().min(1).max(40).optional(),
+  ollamaModel: z.literal('gemma4').optional(),
+  simulationCronEnabled: z.boolean().optional(),
+  tickIntervalSeconds: z.number().int().min(30).max(86_400).optional(),
 });
 
 export const hiveNpcRunSchema = z.object({
@@ -123,72 +156,6 @@ export type HiveAccess = {
   };
 };
 
-function toBase64Url(value: string | Buffer) {
-  return Buffer.from(value)
-    .toString('base64')
-    .replace(/=/gu, '')
-    .replace(/\+/gu, '-')
-    .replace(/\//gu, '_');
-}
-
-function fromBase64Url(value: string) {
-  const normalized = value.replace(/-/gu, '+').replace(/_/gu, '/');
-  return Buffer.from(normalized, 'base64').toString('utf8');
-}
-
-function getRealtimeSecret() {
-  const secret =
-    process.env.HIVE_REALTIME_TOKEN_SECRET ||
-    process.env.SUPABASE_SECRET_KEY ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY;
-
-  if (secret?.trim()) {
-    return secret.trim();
-  }
-
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error(
-      'Hive realtime token signing requires HIVE_REALTIME_TOKEN_SECRET or the platform Supabase service secret in production'
-    );
-  }
-
-  return 'hive-local-development-token-secret';
-}
-
-export function signHiveRealtimeToken(payload: Record<string, unknown>) {
-  const encodedPayload = toBase64Url(JSON.stringify(payload));
-  const signature = createHmac('sha256', getRealtimeSecret())
-    .update(encodedPayload)
-    .digest();
-  return `${encodedPayload}.${toBase64Url(signature)}`;
-}
-
-export function verifyHiveRealtimeToken(token: string) {
-  const [encodedPayload, signature] = token.split('.');
-
-  if (!encodedPayload || !signature) {
-    return null;
-  }
-
-  const expected = createHmac('sha256', getRealtimeSecret())
-    .update(encodedPayload)
-    .digest();
-  const received = Buffer.from(
-    signature.replace(/-/gu, '+').replace(/_/gu, '/'),
-    'base64'
-  );
-
-  if (
-    expected.byteLength !== received.byteLength ||
-    !timingSafeEqual(expected, received)
-  ) {
-    return null;
-  }
-
-  return JSON.parse(fromBase64Url(encodedPayload)) as Record<string, unknown>;
-}
-
 export function withHiveRoute(
   request: NextRequest,
   route: string,
@@ -212,21 +179,20 @@ export async function requireHiveAccess(request: NextRequest) {
   }
 
   const sbAdmin = await createAdminClient();
-  const [
-    { data: member, error: memberError },
-    { data: role, error: roleError },
-  ] = await Promise.all([
-    sbAdmin
-      .from('hive_members')
-      .select('enabled')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-    sbAdmin
-      .from('platform_user_roles')
-      .select('enabled, allow_role_management')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
+  let member: Awaited<ReturnType<typeof getHiveMemberByUserId>> | null = null;
+  let memberError: Error | null = null;
+  const { data: role, error: roleError } = await sbAdmin
+    .from('platform_user_roles')
+    .select('enabled, allow_role_management')
+    .eq('user_id', user.id)
+    .maybeSingle();
+
+  try {
+    member = await getHiveMemberByUserId(user.id);
+  } catch (error) {
+    memberError =
+      error instanceof Error ? error : new Error('Hive DB lookup failed');
+  }
 
   if (memberError || roleError) {
     serverLogger.error('Failed to resolve Hive access', {
@@ -297,7 +263,7 @@ export function slugifyHiveServerName(name: string) {
   return slug || 'hive-server';
 }
 
-export function mapHiveServer(row: HiveServer) {
+export function mapHiveServer(row: HiveServerRow) {
   return {
     createdAt: row.created_at,
     description: row.description,
@@ -305,23 +271,26 @@ export function mapHiveServer(row: HiveServer) {
     id: row.id,
     maxPlayers: row.max_players,
     name: row.name,
+    ollamaState: row.ollama_state ?? {},
+    settings: row.settings ?? {},
     slug: row.slug,
+    totalCurrency: Number(row.total_currency ?? 0),
   };
 }
 
-export function mapHiveEvent(row: HiveWorldEvent) {
+export function mapHiveEvent(row: HiveWorldEventRow) {
   return {
     actorUserId: row.actor_user_id,
     createdAt: row.created_at,
     eventType: row.event_type,
     id: row.id,
     payload: row.payload ?? {},
-    revision: Number(row.revision ?? 0),
+    revision: Number(row.revision ?? row.op_seq ?? 0),
     serverId: row.server_id,
   };
 }
 
-export function mapHiveNpc(row: HiveNpc) {
+export function mapHiveNpc(row: HiveNpcRow) {
   return {
     backstory: row.backstory ?? '',
     backstoryEnabled: !!row.backstory_enabled,
@@ -334,13 +303,12 @@ export function mapHiveNpc(row: HiveNpc) {
     role: row.role,
     serverId: row.server_id,
     settings: row.settings ?? {},
+    status: row.status ?? 'active',
     systemPrompt: row.system_prompt ?? '',
   };
 }
 
-export function mapHiveMember(
-  row: Pick<HiveMember, 'created_at' | 'enabled' | 'id' | 'notes' | 'user_id'>
-) {
+export function mapHiveMember(row: HiveMemberRow) {
   return {
     createdAt: row.created_at,
     enabled: row.enabled,

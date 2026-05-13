@@ -1,5 +1,5 @@
-import type { Json } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
+import { createHiveNpc } from '@/lib/hive/npcs';
 import {
   hiveNpcSchema,
   mapHiveNpc,
@@ -29,33 +29,20 @@ async function createNpc(request: NextRequest, serverId: string) {
     );
   }
 
-  const { data, error } = await result.access.sbAdmin
-    .from('hive_npcs')
-    .insert({
-      backstory: parsed.data.backstory,
-      backstory_enabled: parsed.data.backstoryEnabled,
-      created_by: result.access.user.id,
-      custom_prompt_enabled: parsed.data.customPromptEnabled,
-      memory_enabled: parsed.data.memoryEnabled,
-      model: parsed.data.model,
-      name: parsed.data.name,
-      position: parsed.data.position as Json,
-      role: parsed.data.role,
-      server_id: serverId,
-      settings: parsed.data.settings as Json,
-      system_prompt: parsed.data.systemPrompt,
-    })
-    .select('*')
-    .single();
+  const npc = await createHiveNpc({
+    createdBy: result.access.user.id,
+    npc: parsed.data,
+    serverId,
+  });
 
-  if (error || !data) {
+  if (!npc) {
     return NextResponse.json(
       { error: 'Failed to create Hive NPC' },
       { status: 400 }
     );
   }
 
-  return NextResponse.json({ npc: mapHiveNpc(data) }, { status: 201 });
+  return NextResponse.json({ npc: mapHiveNpc(npc) }, { status: 201 });
 }
 
 export async function POST(request: NextRequest, { params }: Params) {

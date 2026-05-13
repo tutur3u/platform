@@ -11,6 +11,8 @@ x-hive-service: &hive-service
     - path: ../.env.local
       required: false
   environment:
+    - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+    - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
     - HIVE_REALTIME_TOKEN_SECRET
     - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
     - HOSTNAME=0.0.0.0
@@ -31,8 +33,37 @@ x-hive-service: &hive-service
     retries: 3
   init: true
   restart: unless-stopped
+  depends_on:
+    hive-postgres:
+      condition: service_healthy
 
 services:
+  hive-postgres:
+    container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-hive-postgres-1
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_USER: hive
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d hive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    volumes:
+      - platform-hive-postgres:/var/lib/postgresql/data
+      - ../apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro
+
+  hive-ollama:
+    profiles: ["hive-ollama"]
+    image: ollama/ollama:latest
+    expose:
+      - "11434"
+    volumes:
+      - platform-hive-ollama:/root/.ollama
+
   markitdown:
     build:
       context: ../apps/discord
@@ -76,6 +107,7 @@ services:
       - path: ../.env.local
         required: false
     environment:
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
       - HIVE_REALTIME_TOKEN_SECRET
       - NODE_ENV=production
       - PORT=7815
@@ -89,6 +121,9 @@ services:
       retries: 3
     init: true
     restart: unless-stopped
+    depends_on:
+      hive-postgres:
+        condition: service_healthy
 
   hive-blue:
     <<: *hive-service

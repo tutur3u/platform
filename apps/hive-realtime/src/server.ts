@@ -1,8 +1,15 @@
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@tuturuuu/types';
 import type { ServerWebSocket } from 'bun';
 import {
+  loadHiveCrdtSnapshot,
+  persistHiveCrdtUpdate,
+  persistHiveWorldEvent,
+} from './hive-db';
+import {
+  base64ToBytes,
+  bytesToBase64,
+  type HiveRealtimeAwareness,
   type HiveRealtimeClientMessage,
+  type HiveRealtimeServerMessage,
   hiveRealtimeClientMessageSchema,
 } from './protocol';
 import {
@@ -15,138 +22,212 @@ type HiveWebSocket = ServerWebSocket<{
 }>;
 
 type RoomState = {
+  awareness: Map<string, HiveRealtimeAwareness>;
   clients: Set<HiveWebSocket>;
-  presence: Map<string, string>;
 };
 
 type ServerOptions = {
   port?: number;
-  supabase?: SupabaseClient<Database>;
 };
-type HiveJson =
-  Database['public']['Tables']['hive_world_events']['Row']['payload'];
-type HiveWorldEventRow =
-  Database['public']['Tables']['hive_world_events']['Row'];
 
 const rooms = new Map<string, RoomState>();
+const PRESENCE_TTL_MS = 30_000;
 
 function getRoom(serverId: string) {
   const existing = rooms.get(serverId);
   if (existing) return existing;
 
   const created = {
+    awareness: new Map<string, HiveRealtimeAwareness>(),
     clients: new Set<HiveWebSocket>(),
-    presence: new Map<string, string>(),
   };
   rooms.set(serverId, created);
   return created;
 }
 
-function broadcast(serverId: string, message: Record<string, unknown>) {
+function send(ws: HiveWebSocket, message: HiveRealtimeServerMessage) {
+  ws.send(JSON.stringify(message));
+}
+
+function broadcast(
+  serverId: string,
+  message: HiveRealtimeServerMessage,
+  except?: HiveWebSocket
+) {
   const room = rooms.get(serverId);
   if (!room) return;
 
   const payload = JSON.stringify(message);
   for (const client of room.clients) {
-    client.send(payload);
+    if (client === except) continue;
+    if (client.readyState === 1) client.send(payload);
   }
 }
 
-function mapHiveWorldEvent(row: HiveWorldEventRow) {
+function presencePayload(serverId: string): HiveRealtimeServerMessage {
+  const room = getRoom(serverId);
+  const now = Date.now();
+
+  for (const [userId, awareness] of room.awareness.entries()) {
+    if (Date.parse(awareness.lastSeenAt) + PRESENCE_TTL_MS < now) {
+      room.awareness.delete(userId);
+    }
+  }
+
   return {
-    actorUserId: row.actor_user_id,
-    createdAt: row.created_at,
-    eventType: row.event_type,
-    id: row.id,
-    payload: (row.payload ?? {}) as Record<string, unknown>,
-    revision: Number(row.revision ?? 0),
-    serverId: row.server_id,
+    awareness: Array.from(room.awareness.values()),
+    serverId,
+    type: 'presence',
   };
 }
 
-function createSupabaseClient() {
-  const url =
-    process.env.SUPABASE_SERVER_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.SUPABASE_SERVICE_KEY ||
-    process.env.SUPABASE_SECRET_KEY;
+function publishPresence(serverId: string) {
+  broadcast(serverId, presencePayload(serverId));
+}
 
-  if (!(url && key)) return null;
+function createDefaultAwareness(token: HiveRealtimeTokenPayload) {
+  return {
+    color: token.role === 'admin' ? '#7cba62' : '#65a5d8',
+    displayName: token.role === 'admin' ? 'Hive researcher' : 'Hive member',
+    lastSeenAt: new Date().toISOString(),
+    role: token.role === 'admin' ? 'admin' : 'member',
+    userId: token.userId,
+  } satisfies HiveRealtimeAwareness;
+}
 
-  return createClient<Database>(url, key, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+async function handleSyncHello(ws: HiveWebSocket) {
+  const snapshot = await loadHiveCrdtSnapshot(ws.data.token.serverId);
+
+  send(ws, {
+    opSeq: Number(snapshot?.op_seq ?? 0),
+    state: snapshot?.crdt_state ? bytesToBase64(snapshot.crdt_state) : null,
+    stateVector: snapshot?.crdt_state_vector
+      ? bytesToBase64(snapshot.crdt_state_vector)
+      : null,
+    type: 'sync.snapshot',
+    world: snapshot?.world_data ?? { blocks: [], objects: [] },
   });
 }
 
-async function persistWorldEvent(
-  supabase: SupabaseClient<Database> | null,
-  token: HiveRealtimeTokenPayload,
+async function handleCrdtUpdate(
+  ws: HiveWebSocket,
+  message: Extract<HiveRealtimeClientMessage, { type: 'sync.update' }>
+) {
+  const persisted = await persistHiveCrdtUpdate({
+    actorUserId: ws.data.token.userId,
+    serverId: ws.data.token.serverId,
+    update: base64ToBytes(message.update),
+    world: message.world,
+  });
+
+  broadcast(
+    ws.data.token.serverId,
+    {
+      opSeq: persisted?.opSeq ?? 0,
+      stateVector: persisted?.stateVector
+        ? bytesToBase64(persisted.stateVector)
+        : message.stateVector,
+      type: 'sync.update',
+      update: message.update,
+      world: persisted?.world ?? message.world,
+    },
+    ws
+  );
+}
+
+async function handleLegacyWorldEvent(
+  ws: HiveWebSocket,
   message: Extract<HiveRealtimeClientMessage, { type: 'world.event' }>
 ) {
-  if (!supabase) return null;
-
-  const { data, error } = await supabase.rpc('apply_hive_world_event', {
-    p_actor_user_id: token.userId,
-    p_event_type: message.eventType,
-    p_expected_revision: message.expectedRevision,
-    p_payload: message.payload as HiveJson,
-    p_server_id: token.serverId,
-    p_world_data: message.world as HiveJson,
+  const event = await persistHiveWorldEvent({
+    actorUserId: ws.data.token.userId,
+    eventType: message.eventType,
+    payload: {
+      expectedRevision: message.expectedRevision,
+      ...message.payload,
+    },
+    serverId: ws.data.token.serverId,
+    world: message.world,
   });
 
-  if (error) {
-    return { error: error.message };
-  }
-
-  return { event: data?.[0] ? mapHiveWorldEvent(data[0]) : null };
+  broadcast(ws.data.token.serverId, {
+    event:
+      event ??
+      ({
+        actorUserId: ws.data.token.userId,
+        createdAt: new Date().toISOString(),
+        eventType: message.eventType,
+        id: crypto.randomUUID(),
+        payload: message.payload,
+        revision: message.expectedRevision + 1,
+        serverId: ws.data.token.serverId,
+      } as NonNullable<
+        Extract<HiveRealtimeServerMessage, { type: 'world.event' }>['event']
+      >),
+    type: 'world.event',
+    world: message.world,
+  });
 }
 
-async function handleMessage(
-  ws: HiveWebSocket,
-  raw: string,
-  supabase: SupabaseClient<Database> | null
-) {
+async function handleMessage(ws: HiveWebSocket, raw: string) {
   const parsed = hiveRealtimeClientMessageSchema.safeParse(JSON.parse(raw));
 
   if (!parsed.success) {
-    ws.send(JSON.stringify({ error: 'malformed_event', type: 'error' }));
+    send(ws, { error: 'malformed_event', type: 'error' });
     return;
   }
 
   const { token } = ws.data;
 
-  if (parsed.data.type === 'selection') {
-    broadcast(token.serverId, {
-      selection: parsed.data.selection,
-      type: 'selection',
+  if (parsed.data.type === 'sync.hello') {
+    await handleSyncHello(ws);
+    return;
+  }
+
+  if (parsed.data.type === 'sync.update') {
+    await handleCrdtUpdate(ws, parsed.data);
+    return;
+  }
+
+  if (parsed.data.type === 'awareness.update') {
+    const room = getRoom(token.serverId);
+    const awareness = {
+      ...parsed.data.awareness,
+      lastSeenAt: new Date().toISOString(),
+      role: token.role === 'admin' ? parsed.data.awareness.role : 'member',
       userId: token.userId,
-    });
+    };
+    room.awareness.set(token.userId, awareness);
+    broadcast(token.serverId, { awareness, type: 'awareness.update' }, ws);
+    publishPresence(token.serverId);
     return;
   }
 
   if (parsed.data.type === 'presence.join') {
     const room = getRoom(token.serverId);
-    room.presence.set(token.userId, new Date().toISOString());
-    broadcast(token.serverId, {
-      serverId: token.serverId,
-      type: 'presence',
-      users: Array.from(room.presence.entries()).map(([id, lastSeenAt]) => ({
-        id,
-        lastSeenAt,
-      })),
-    });
+    room.awareness.set(token.userId, createDefaultAwareness(token));
+    publishPresence(token.serverId);
+    return;
+  }
+
+  if (parsed.data.type === 'selection') {
+    const room = getRoom(token.serverId);
+    const current =
+      room.awareness.get(token.userId) ?? createDefaultAwareness(token);
+    const awareness = {
+      ...current,
+      lastSeenAt: new Date().toISOString(),
+      selection: parsed.data.selection,
+    };
+    room.awareness.set(token.userId, awareness);
+    broadcast(token.serverId, { awareness, type: 'awareness.update' }, ws);
+    publishPresence(token.serverId);
     return;
   }
 
   if (parsed.data.type === 'world.event.applied') {
     if (parsed.data.event.serverId !== token.serverId) {
-      ws.send(JSON.stringify({ error: 'server_mismatch', type: 'error' }));
+      send(ws, { error: 'server_mismatch', type: 'error' });
       return;
     }
 
@@ -158,29 +239,15 @@ async function handleMessage(
     return;
   }
 
-  const persisted = await persistWorldEvent(supabase, token, parsed.data);
-  if (persisted?.error) {
-    ws.send(JSON.stringify({ error: persisted.error, type: 'error' }));
-    return;
-  }
-
-  broadcast(token.serverId, {
-    event: persisted?.event ?? {
-      actorUserId: token.userId,
-      createdAt: new Date().toISOString(),
-      eventType: parsed.data.eventType,
-      id: crypto.randomUUID(),
-      payload: parsed.data.payload,
-      revision: parsed.data.expectedRevision + 1,
-      serverId: token.serverId,
-    },
-    type: 'world.event',
-    world: parsed.data.world,
-  });
+  await handleLegacyWorldEvent(ws, parsed.data);
 }
 
 export function createHiveRealtimeServer(options: ServerOptions = {}) {
-  const supabase = options.supabase ?? createSupabaseClient();
+  setInterval(() => {
+    for (const serverId of rooms.keys()) {
+      publishPresence(serverId);
+    }
+  }, 10_000);
 
   return Bun.serve<{ token: HiveRealtimeTokenPayload }>({
     fetch(request, server) {
@@ -214,32 +281,26 @@ export function createHiveRealtimeServer(options: ServerOptions = {}) {
       close(ws) {
         const room = rooms.get(ws.data.token.serverId);
         room?.clients.delete(ws);
-        room?.presence.delete(ws.data.token.userId);
-        broadcast(ws.data.token.serverId, {
-          serverId: ws.data.token.serverId,
-          type: 'presence',
-          users: Array.from(room?.presence.entries() ?? []).map(
-            ([id, lastSeenAt]) => ({
-              id,
-              lastSeenAt,
-            })
-          ),
-        });
+        room?.awareness.delete(ws.data.token.userId);
+        publishPresence(ws.data.token.serverId);
       },
       message(ws, message) {
-        handleMessage(ws, String(message), supabase).catch((error) => {
-          ws.send(
-            JSON.stringify({
-              error: error instanceof Error ? error.message : 'unknown_error',
-              type: 'error',
-            })
-          );
+        handleMessage(ws, String(message)).catch((error) => {
+          send(ws, {
+            error: error instanceof Error ? error.message : 'unknown_error',
+            type: 'error',
+          });
         });
       },
       open(ws) {
         const room = getRoom(ws.data.token.serverId);
         room.clients.add(ws);
-        room.presence.set(ws.data.token.userId, new Date().toISOString());
+        room.awareness.set(
+          ws.data.token.userId,
+          createDefaultAwareness(ws.data.token)
+        );
+        void handleSyncHello(ws);
+        publishPresence(ws.data.token.serverId);
       },
     },
   });

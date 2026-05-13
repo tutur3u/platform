@@ -23,6 +23,35 @@ const world = {
 };
 
 describe('Hive realtime protocol', () => {
+  it('accepts CRDT update messages with optional world projections', () => {
+    expect(
+      hiveRealtimeClientMessageSchema.safeParse({
+        stateVector: 'AQID',
+        type: 'sync.update',
+        update: 'BAUG',
+        world,
+      }).success
+    ).toBe(true);
+  });
+
+  it('accepts ephemeral awareness without persisting it into world data', () => {
+    expect(
+      hiveRealtimeClientMessageSchema.safeParse({
+        awareness: {
+          activeTool: 'build',
+          color: '#16a34a',
+          cursor: { x: 1, y: 0, z: 0 },
+          displayName: 'Researcher',
+          lastSeenAt: '2026-05-13T00:00:00.000Z',
+          role: 'researcher',
+          userId: '00000000-0000-4000-8000-000000000002',
+          worldPosition: { x: 1, y: 1, z: 0 },
+        },
+        type: 'awareness.update',
+      }).success
+    ).toBe(true);
+  });
+
   it('accepts web-api-applied world event broadcasts', () => {
     expect(
       hiveRealtimeClientMessageSchema.safeParse({

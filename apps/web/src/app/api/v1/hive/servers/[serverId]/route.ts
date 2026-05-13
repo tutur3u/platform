@@ -1,5 +1,11 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import {
+  deleteHiveServer,
+  getHiveSnapshot,
+  toBase64,
+  updateHiveServer,
+} from '@/lib/hive/hive-db';
+import {
   hiveServerSchema,
   mapHiveEvent,
   mapHiveNpc,
@@ -21,27 +27,8 @@ async function getSnapshot(request: NextRequest, serverId: string) {
   const result = await requireHiveAccess(request);
   if (!result.ok) return result.response;
 
-  const sbAdmin = result.access.sbAdmin;
-  const [{ data: server }, { data: state }, { data: events }, { data: npcs }] =
-    await Promise.all([
-      sbAdmin.from('hive_servers').select('*').eq('id', serverId).maybeSingle(),
-      sbAdmin
-        .from('hive_world_states')
-        .select('*')
-        .eq('server_id', serverId)
-        .maybeSingle(),
-      sbAdmin
-        .from('hive_world_events')
-        .select('*')
-        .eq('server_id', serverId)
-        .order('revision', { ascending: false })
-        .limit(100),
-      sbAdmin
-        .from('hive_npcs')
-        .select('*')
-        .eq('server_id', serverId)
-        .order('created_at', { ascending: true }),
-    ]);
+  const snapshot = await getHiveSnapshot(serverId);
+  const { server, state, events, npcs } = snapshot;
 
   if (!server || (!server.enabled && !result.access.isAdmin)) {
     return NextResponse.json(
@@ -51,9 +38,19 @@ async function getSnapshot(request: NextRequest, serverId: string) {
   }
 
   return NextResponse.json({
-    events: (events ?? []).reverse().map(mapHiveEvent),
-    npcs: (npcs ?? []).map(mapHiveNpc),
-    revision: Number(state?.revision ?? 0),
+    crdt: {
+      state: toBase64(state?.crdt_state),
+      stateVector: toBase64(state?.crdt_state_vector),
+    },
+    crops: snapshot.crops,
+    economy: {
+      totalCurrency: Number(server.total_currency ?? 0),
+      inventories: snapshot.inventories,
+      warehouses: snapshot.warehouses,
+    },
+    events: events.map(mapHiveEvent),
+    npcs: npcs.map(mapHiveNpc),
+    revision: Number(state?.revision ?? state?.op_seq ?? 0),
     server: mapHiveServer(server),
     world: state?.world_data ?? { blocks: [], objects: [] },
   });
@@ -73,45 +70,30 @@ async function updateServer(request: NextRequest, serverId: string) {
     );
   }
 
-  const { data, error } = await result.access.sbAdmin
-    .from('hive_servers')
-    .update({
-      ...(parsed.data.description !== undefined
-        ? { description: parsed.data.description }
-        : {}),
-      ...(parsed.data.enabled !== undefined
-        ? { enabled: parsed.data.enabled }
-        : {}),
-      ...(parsed.data.maxPlayers !== undefined
-        ? { max_players: parsed.data.maxPlayers }
-        : {}),
-      ...(parsed.data.name ? { name: parsed.data.name } : {}),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', serverId)
-    .select('*')
-    .single();
+  const server = await updateHiveServer(serverId, {
+    description: parsed.data.description,
+    enabled: parsed.data.enabled,
+    maxPlayers: parsed.data.maxPlayers,
+    name: parsed.data.name,
+  });
 
-  if (error || !data) {
+  if (!server) {
     return NextResponse.json(
       { error: 'Failed to update Hive server' },
       { status: 400 }
     );
   }
 
-  return NextResponse.json({ server: mapHiveServer(data) });
+  return NextResponse.json({ server: mapHiveServer(server) });
 }
 
 async function deleteServer(request: NextRequest, serverId: string) {
   const result = await requireHiveAdmin(request);
   if (!result.ok) return result.response;
 
-  const { error } = await result.access.sbAdmin
-    .from('hive_servers')
-    .delete()
-    .eq('id', serverId);
-
-  if (error) {
+  try {
+    await deleteHiveServer(serverId);
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete Hive server' },
       { status: 400 }

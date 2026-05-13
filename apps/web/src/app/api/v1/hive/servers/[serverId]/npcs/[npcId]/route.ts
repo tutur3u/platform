@@ -1,5 +1,5 @@
-import type { Json } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
+import { deleteHiveNpc, updateHiveNpc } from '@/lib/hive/npcs';
 import {
   hiveNpcSchema,
   mapHiveNpc,
@@ -34,48 +34,20 @@ async function updateNpc(
     );
   }
 
-  const { data, error } = await result.access.sbAdmin
-    .from('hive_npcs')
-    .update({
-      ...(parsed.data.backstory !== undefined
-        ? { backstory: parsed.data.backstory }
-        : {}),
-      ...(parsed.data.backstoryEnabled !== undefined
-        ? { backstory_enabled: parsed.data.backstoryEnabled }
-        : {}),
-      ...(parsed.data.customPromptEnabled !== undefined
-        ? { custom_prompt_enabled: parsed.data.customPromptEnabled }
-        : {}),
-      ...(parsed.data.memoryEnabled !== undefined
-        ? { memory_enabled: parsed.data.memoryEnabled }
-        : {}),
-      ...(parsed.data.model !== undefined ? { model: parsed.data.model } : {}),
-      ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
-      ...(parsed.data.position !== undefined
-        ? { position: parsed.data.position as Json }
-        : {}),
-      ...(parsed.data.role !== undefined ? { role: parsed.data.role } : {}),
-      ...(parsed.data.settings !== undefined
-        ? { settings: parsed.data.settings as Json }
-        : {}),
-      ...(parsed.data.systemPrompt !== undefined
-        ? { system_prompt: parsed.data.systemPrompt }
-        : {}),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', npcId)
-    .eq('server_id', serverId)
-    .select('*')
-    .single();
+  const npc = await updateHiveNpc({
+    npcId,
+    patch: parsed.data,
+    serverId,
+  });
 
-  if (error || !data) {
+  if (!npc) {
     return NextResponse.json(
       { error: 'Failed to update Hive NPC' },
       { status: 400 }
     );
   }
 
-  return NextResponse.json({ npc: mapHiveNpc(data) });
+  return NextResponse.json({ npc: mapHiveNpc(npc) });
 }
 
 async function deleteNpc(
@@ -86,13 +58,9 @@ async function deleteNpc(
   const result = await requireHiveAccess(request);
   if (!result.ok) return result.response;
 
-  const { error } = await result.access.sbAdmin
-    .from('hive_npcs')
-    .delete()
-    .eq('id', npcId)
-    .eq('server_id', serverId);
-
-  if (error) {
+  try {
+    await deleteHiveNpc({ npcId, serverId });
+  } catch {
     return NextResponse.json(
       { error: 'Failed to delete Hive NPC' },
       { status: 400 }

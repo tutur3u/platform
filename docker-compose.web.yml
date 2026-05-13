@@ -38,6 +38,8 @@ services:
       - CHOKIDAR_INTERVAL=1000
       - CHOKIDAR_USEPOLLING=1
       - HOSTNAME=0.0.0.0
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+      - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
       - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
       - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-ws://localhost:7815/realtime}
       - NEXT_TELEMETRY_DISABLED=1
@@ -95,6 +97,8 @@ services:
       - platform-web-offline-dist:/workspace/packages/offline/dist
       - platform-web-payment-node_modules:/workspace/packages/payment/node_modules
       - platform-web-payment-dist:/workspace/packages/payment/dist
+      - platform-web-realtime-node_modules:/workspace/packages/realtime/node_modules
+      - platform-web-realtime-dist:/workspace/packages/realtime/dist
       - platform-web-satellite-node_modules:/workspace/packages/satellite/node_modules
       - platform-web-satellite-dist:/workspace/packages/satellite/dist
       - platform-web-sdk-node_modules:/workspace/packages/sdk/node_modules
@@ -121,6 +125,8 @@ services:
       - platform-web-workflows-node_modules:/workspace/packages/workflows/node_modules
       - platform-web-workflows-dist:/workspace/packages/workflows/dist
     depends_on:
+      hive-postgres:
+        condition: service_healthy
       log-drain-postgres:
         condition: service_healthy
 
@@ -135,6 +141,7 @@ services:
       - path: .env.local
         required: false
     environment:
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
       - HIVE_REALTIME_TOKEN_SECRET
       - PORT=7815
     healthcheck:
@@ -146,6 +153,9 @@ services:
     init: true
     ports:
       - "7815:7815"
+    depends_on:
+      hive-postgres:
+        condition: service_healthy
     volumes:
       - .:/workspace
       - platform-hive-realtime-node_modules:/workspace/apps/hive-realtime/node_modules
@@ -163,6 +173,8 @@ services:
       - path: .env.local
         required: false
     environment:
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+      - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
       - HIVE_REALTIME_TOKEN_SECRET
       - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
       - HOSTNAME=0.0.0.0
@@ -180,6 +192,9 @@ services:
     init: true
     ports:
       - "7814:7814"
+    depends_on:
+      hive-postgres:
+        condition: service_healthy
     volumes:
       - .:/workspace
       - platform-hive-next:/workspace/apps/hive/.next
@@ -203,6 +218,32 @@ services:
     volumes:
       - platform-web-log-drain-postgres:/var/lib/postgresql/data
       - ./apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro
+
+  hive-postgres:
+    container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-hive-postgres-1
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: hive
+      POSTGRES_PASSWORD: hive
+      POSTGRES_USER: hive
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hive -d hive"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "127.0.0.1:${DOCKER_HIVE_POSTGRES_HOST_PORT:-7904}:5432"
+    volumes:
+      - platform-hive-postgres:/var/lib/postgresql/data
+      - ./apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro
+
+  hive-ollama:
+    profiles: ["hive-ollama"]
+    image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:${HIVE_OLLAMA_HOST_PORT:-11434}:11434"
+    volumes:
+      - platform-hive-ollama:/root/.ollama
 
   cloudflared:
     profiles: ["cloudflared"]
@@ -318,6 +359,8 @@ volumes:
   platform-web-icons-dist:
   platform-hive-next:
   platform-hive-node_modules:
+  platform-hive-ollama:
+  platform-hive-postgres:
   platform-hive-realtime-node_modules:
   platform-web-internal-api-node_modules:
   platform-web-internal-api-dist:
@@ -332,6 +375,8 @@ volumes:
   platform-web-offline-dist:
   platform-web-payment-node_modules:
   platform-web-payment-dist:
+  platform-web-realtime-node_modules:
+  platform-web-realtime-dist:
   platform-web-satellite-node_modules:
   platform-web-satellite-dist:
   platform-web-sdk-node_modules:

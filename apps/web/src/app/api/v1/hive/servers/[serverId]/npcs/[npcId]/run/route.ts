@@ -3,6 +3,13 @@ import { generateObject } from '@tuturuuu/ai/core';
 import type { Json } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { createHiveWorldEvent } from '@/lib/hive/hive-db';
+import {
+  appendHiveNpcMemories,
+  getHiveNpc,
+  listHiveNpcMemories,
+  persistHiveNpcRun,
+} from '@/lib/hive/npcs';
 import {
   hiveNpcRunSchema,
   mapHiveEvent,
@@ -173,55 +180,32 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }
 
       const payload = hiveNpcRunSchema.parse(await request.json());
-      const { data: npc, error: npcError } = await access.access.sbAdmin
-        .from('hive_npcs')
-        .select('*')
-        .eq('id', npcId)
-        .eq('server_id', serverId)
-        .maybeSingle();
+      const npc = await getHiveNpc({ npcId, serverId });
 
-      if (npcError || !npc) {
+      if (!npc) {
         return NextResponse.json({ error: 'NPC not found' }, { status: 404 });
       }
 
-      const { data: state } = await access.access.sbAdmin
-        .from('hive_world_states')
-        .select('revision')
-        .eq('server_id', serverId)
-        .maybeSingle();
+      let memories: Array<{ content: string; importance: number }> = [];
 
-      if (Number(state?.revision ?? 0) !== payload.expectedRevision) {
-        return NextResponse.json(
-          { error: 'Hive revision conflict' },
-          { status: 409 }
-        );
-      }
-
-      const { data: memories, error: memoriesError } =
-        await access.access.sbAdmin
-          .from('hive_npc_memories')
-          .select('content, importance')
-          .eq('npc_id', npcId)
-          .eq('enabled', true)
-          .order('importance', { ascending: false })
-          .limit(12);
-
-      if (memoriesError) {
+      try {
+        memories = await listHiveNpcMemories(npcId);
+      } catch (error) {
         serverLogger.warn('Failed to load Hive NPC memories', {
-          error: memoriesError.message,
+          error: error instanceof Error ? error.message : String(error),
           npcId,
           serverId,
         });
       }
 
       const fallbackDecision = buildResearchDecision({
-        memories: memories ?? [],
+        memories,
         npc,
         promptMode: payload.promptMode,
         world: payload.world,
       });
       const inputContext = {
-        activeMemories: memories ?? [],
+        activeMemories: memories,
         npc: {
           backstory: npc.backstory_enabled ? npc.backstory : null,
           name: npc.name,
@@ -246,54 +230,49 @@ export async function POST(request: NextRequest, context: RouteContext) {
             : null,
       });
 
-      const { data: run, error: runError } = await access.access.sbAdmin
-        .from('hive_npc_runs')
-        .insert({
-          actor_user_id: access.access.user.id,
-          input_context: inputContext,
-          npc_id: npcId,
-          output_decision: decision,
-          prompt_mode: payload.promptMode,
-          server_id: serverId,
-        })
-        .select('id, npc_id, input_context, output_decision, created_at')
-        .single();
+      const run = await persistHiveNpcRun({
+        actorUserId: access.access.user.id,
+        decision: decision as unknown as Record<string, unknown>,
+        inputContext,
+        llmCost: 0,
+        llmModel: npc.model,
+        llmProvider: process.env.GOOGLE_GENERATIVE_AI_API_KEY
+          ? 'google'
+          : 'deterministic',
+        npcId,
+        promptMode: payload.promptMode,
+        serverId,
+      });
 
-      if (runError) {
+      if (!run) {
         return NextResponse.json(
           { error: 'Failed to persist Hive NPC run' },
           { status: 500 }
         );
       }
 
-      for (const content of decision.memoryWrites) {
-        await access.access.sbAdmin.from('hive_npc_memories').insert({
-          content,
-          created_by: access.access.user.id,
-          importance: 3,
-          npc_id: npcId,
-          server_id: serverId,
-          source_run_id: run.id,
-        });
-      }
+      await appendHiveNpcMemories({
+        contents: decision.memoryWrites,
+        createdBy: access.access.user.id,
+        npcId,
+        runId: run.id,
+        serverId,
+      });
 
-      const { data: event, error: eventError } =
-        await access.access.sbAdmin.rpc('apply_hive_world_event', {
-          p_actor_user_id: access.access.user.id,
-          p_event_type: 'npc.decision',
-          p_expected_revision: payload.expectedRevision,
-          p_payload: {
-            decision,
-            npcId,
-            runId: run.id,
-          } as Json,
-          p_server_id: serverId,
-          p_world_data: payload.world as Json,
-        });
+      const eventRow = await createHiveWorldEvent({
+        actorUserId: access.access.user.id,
+        eventType: 'npc.decision',
+        payload: {
+          decision,
+          expectedRevision: payload.expectedRevision,
+          npcId,
+          runId: run.id,
+        },
+        serverId,
+        world: payload.world,
+      });
 
-      const eventRow = event?.[0];
-
-      if (eventError || !eventRow) {
+      if (!eventRow) {
         return NextResponse.json(
           { error: 'Failed to append Hive NPC event' },
           { status: 409 }

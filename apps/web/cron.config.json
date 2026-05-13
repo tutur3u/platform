@@ -55,6 +55,13 @@
       "id": "infrastructure-sample-resources",
       "path": "/api/cron/infrastructure/sample-resources",
       "schedule": "* * * * *"
+    },
+    {
+      "description": "Advance enabled Hive farming, NPC needs, ledgers, and autonomous simulation ticks.",
+      "enabled": false,
+      "id": "hive-simulate",
+      "path": "/api/cron/hive/simulate",
+      "schedule": "*/5 * * * *"
     }
   ]
 }

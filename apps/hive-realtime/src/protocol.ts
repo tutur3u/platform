@@ -1,80 +1,9 @@
-import { z } from 'zod';
-
-const vectorSchema = z.object({
-  x: z.number().finite(),
-  y: z.number().finite(),
-  z: z.number().finite(),
-});
-
-const worldSchema = z.object({
-  blocks: z.array(
-    z.object({
-      id: z.string().min(1),
-      position: vectorSchema,
-      type: z.string().min(1),
-    })
-  ),
-  objects: z.array(
-    z.object({
-      id: z.string().min(1),
-      position: vectorSchema,
-      rotation: z.number().optional(),
-      state: z.record(z.string(), z.unknown()).optional(),
-      type: z.string().min(1),
-    })
-  ),
-});
-
-const eventSchema = z.object({
-  actorUserId: z.string().uuid().nullable(),
-  createdAt: z.string(),
-  eventType: z.string().min(1),
-  id: z.string().uuid(),
-  payload: z.record(z.string(), z.unknown()).default({}),
-  revision: z.number().int().min(0),
-  serverId: z.string().uuid(),
-});
-
-export const hiveRealtimeClientMessageSchema = z.discriminatedUnion('type', [
-  z.object({
-    eventType: z
-      .enum([
-        'block.place',
-        'block.remove',
-        'object.place',
-        'object.remove',
-        'object.move',
-        'npc.move',
-        'npc.config',
-        'npc.decision',
-        'server.metadata',
-      ])
-      .or(z.string().min(1).max(80)),
-    expectedRevision: z.number().int().min(0),
-    payload: z.record(z.string(), z.unknown()).default({}),
-    type: z.literal('world.event'),
-    world: worldSchema,
-  }),
-  z.object({
-    event: eventSchema,
-    type: z.literal('world.event.applied'),
-    world: worldSchema,
-  }),
-  z.object({
-    selection: z
-      .object({
-        id: z.string(),
-        kind: z.string(),
-      })
-      .nullable(),
-    type: z.literal('selection'),
-  }),
-  z.object({
-    type: z.literal('presence.join'),
-    userId: z.string().uuid().optional(),
-  }),
-]);
-
-export type HiveRealtimeClientMessage = z.infer<
-  typeof hiveRealtimeClientMessageSchema
->;
+export {
+  base64ToBytes,
+  bytesToBase64,
+  type HiveRealtimeAwareness,
+  type HiveRealtimeClientMessage,
+  type HiveRealtimeServerMessage,
+  hiveRealtimeClientMessageSchema,
+  mergeHiveCrdtUpdate,
+} from '@tuturuuu/realtime/hive';

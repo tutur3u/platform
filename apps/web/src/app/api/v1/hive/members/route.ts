@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { listHiveMembers, upsertHiveMember } from '@/lib/hive/hive-db';
 import {
   hiveMemberSchema,
   mapHiveMember,
@@ -14,19 +15,15 @@ export async function GET(request: NextRequest) {
       return access.response;
     }
 
-    const { data, error } = await access.access.sbAdmin
-      .from('hive_members')
-      .select('id, user_id, enabled, notes, created_at')
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      const members = await listHiveMembers();
+      return NextResponse.json({ members: members.map(mapHiveMember) });
+    } catch {
       return NextResponse.json(
         { error: 'Failed to list Hive members' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ members: (data ?? []).map(mapHiveMember) });
   });
 }
 
@@ -39,27 +36,19 @@ export async function POST(request: NextRequest) {
     }
 
     const payload = hiveMemberSchema.parse(await request.json());
-    const { data, error } = await access.access.sbAdmin
-      .from('hive_members')
-      .upsert(
-        {
-          enabled: payload.enabled,
-          notes: payload.notes ?? null,
-          updated_at: new Date().toISOString(),
-          user_id: payload.userId,
-        },
-        { onConflict: 'user_id' }
-      )
-      .select('id, user_id, enabled, notes, created_at')
-      .single();
+    const member = await upsertHiveMember({
+      enabled: payload.enabled,
+      notes: payload.notes ?? null,
+      userId: payload.userId,
+    });
 
-    if (error) {
+    if (!member) {
       return NextResponse.json(
         { error: 'Failed to update Hive member' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ member: mapHiveMember(data) });
+    return NextResponse.json({ member: mapHiveMember(member) });
   });
 }

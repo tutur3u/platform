@@ -26,7 +26,13 @@ async function createToken(request: NextRequest, serverId: string) {
     token = signHiveRealtimeToken({
       exp: Math.floor(expiresAt.getTime() / 1000),
       role: result.access.isAdmin ? 'admin' : 'member',
-      scopes: ['presence', 'world:write', 'npc:write'],
+      scopes: [
+        'presence',
+        'awareness:write',
+        'world:write',
+        'crdt:write',
+        'npc:write',
+      ],
       serverId,
       userId: result.access.user.id,
     });

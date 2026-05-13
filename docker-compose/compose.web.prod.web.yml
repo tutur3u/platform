@@ -22,6 +22,8 @@ x-web-service: &web-service
     - DISCORD_APP_DEPLOYMENT_URL
     - DRIVE_AUTO_EXTRACT_PROXY_TOKEN
     - DRIVE_AUTO_EXTRACT_PROXY_URL
+    - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+    - HIVE_OLLAMA_BASE_URL=${HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434}
     - HIVE_REALTIME_TOKEN_SECRET
     - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
     - HOSTNAME=0.0.0.0
@@ -57,6 +59,8 @@ x-web-service: &web-service
     - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control
     - ../tmp/docker-web:/app/runtime/docker-web:ro
   depends_on:
+    hive-postgres:
+      condition: service_healthy
     log-drain-postgres:
       condition: service_healthy
 

@@ -431,9 +431,22 @@ function validateDockerCompose(
     '    image: cloudflare/cloudflared:latest',
     '  hive:',
     '      dockerfile: apps/hive/Dockerfile\n      target: dev',
+    '      - HIVE_DATABASE_URL=${' +
+      'HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive' +
+      '}',
+    '      - HIVE_OLLAMA_BASE_URL=${' +
+      'HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434' +
+      '}',
     '  hive-realtime:',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      - HIVE_REALTIME_TOKEN_SECRET',
+    '  hive-postgres:',
+    '      - platform-hive-postgres:/var/lib/postgresql/data',
+    '      - ./apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro',
+    '  hive-ollama:',
+    '    profiles: ["hive-ollama"]',
+    '  platform-hive-postgres:',
+    '  platform-hive-ollama:',
     'http://127.0.0.1:7815/health',
     '        "$' + '{' + 'CLOUDFLARED_TOKEN:-' + '}",',
   ];
@@ -505,6 +518,8 @@ function validateDockerProdCompose(composeContent) {
     '  hive-blue:',
     '  hive-green:',
     '  hive-realtime:',
+    '  hive-postgres:',
+    '  hive-ollama:',
     '  markitdown:',
     '  storage-unzip-proxy:',
     '  web-proxy:',
@@ -585,6 +600,12 @@ function validateDockerProdCompose(composeContent) {
     '    - DISCORD_APP_DEPLOYMENT_URL',
     '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
     '    - DRIVE_AUTO_EXTRACT_PROXY_URL',
+    '    - HIVE_DATABASE_URL=${' +
+      'HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive' +
+      '}',
+    '    - HIVE_OLLAMA_BASE_URL=${' +
+      'HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434' +
+      '}',
     '    - HIVE_REALTIME_TOKEN_SECRET',
     '    - INTERNAL_WEB_API_ORIGIN',
     '    - MARKITDOWN_ENDPOINT_SECRET',
@@ -611,6 +632,17 @@ function validateDockerProdCompose(composeContent) {
     '    - UPSTASH_REDIS_REST_URL',
     '    - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control',
     '    - ../tmp/docker-web:/app/runtime/docker-web:ro',
+    '  hive-postgres:',
+    '    container_name: ' +
+      '${' +
+      'COMPOSE_PROJECT_NAME:-tuturuuu' +
+      '}-hive-postgres-1',
+    '      POSTGRES_DB: hive',
+    '      POSTGRES_USER: hive',
+    '      - platform-hive-postgres:/var/lib/postgresql/data',
+    '      - ../apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro',
+    '  hive-ollama:',
+    '    profiles: ["hive-ollama"]',
     '  log-drain-postgres:',
     '    container_name: ' +
       '${' +
@@ -623,6 +655,8 @@ function validateDockerProdCompose(composeContent) {
     '      - ../apps/web/docker/log-drain-init.sql:/docker-entrypoint-initdb.d/001-log-drain.sql:ro',
     '  platform-buildkit-state:',
     '  platform-log-drain-postgres:',
+    '  platform-hive-postgres:',
+    '  platform-hive-ollama:',
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
     '      SRH_TOKEN: ' +
       '${' +

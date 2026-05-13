@@ -95,6 +95,7 @@
     "@tuturuuu/microsoft": "workspace:*",
     "@tuturuuu/offline": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
+    "@tuturuuu/realtime": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/transactional": "workspace:*",
     "@tuturuuu/trigger": "workspace:*",
