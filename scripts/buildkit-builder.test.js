@@ -414,16 +414,24 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.match(
     runWebDockerNextBuildScript,
-    /DEFAULT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096/
+    /NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = \[\s*16384, 12288, 8192, 6144, 4096,?\s*\]/
+  );
+  assert.match(
+    runWebDockerNextBuildScript,
+    /DEFAULT_NEXT_BUILD_ENGINE = 'webpack'/
   );
   assert.match(
     runWebDockerNextBuildScript,
     /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/
   );
+  assert.match(runWebDockerNextBuildScript, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(runWebDockerNextBuildScript, /--max-old-space-size=\$\{/);
   assert.match(runWebDockerNextBuildScript, /--experimental-require-module/);
   assert.match(runWebDockerNextBuildScript, /DOCKER_WEB_NODE_BINARY/);
-  assert.match(runWebDockerNextBuildScript, /NEXT_BIN, 'build', '--turbopack'/);
+  assert.match(
+    runWebDockerNextBuildScript,
+    /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/
+  );
   assert.deepEqual(turboConfig.tasks['build:docker'].dependsOn, ['^build']);
   assert.match(buildWebDockerScript, /build:web:docker/);
   assert.match(webNextConfig, /DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT/);

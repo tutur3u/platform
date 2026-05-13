@@ -14,15 +14,18 @@
 .opencode
 .trae
 .turbo
+**/.turbo
 .vscode
 .windsurf
 .zed
 .next
+**/.next
 .pnpm-store
 .worktrees
 node_modules
 **/node_modules
 coverage
+**/coverage
 dist
 build
 target
@@ -44,6 +47,8 @@ __pycache__
 **/.env.test.local
 **/.env.production.local
 apps/database/supabase/.temp
+apps/mobile/.dart_tool
+apps/mobile/build
 apps/web/playwright-report
 apps/web/test-results
 apps/web/.next

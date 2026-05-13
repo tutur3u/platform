@@ -3,6 +3,11 @@ x-web-service: &web-service
     context: ..
     dockerfile: apps/web/Dockerfile
     target: runner
+    args:
+      DOCKER_WEB_BUILD_MEMORY: ${DOCKER_WEB_BUILD_MEMORY:-12g}
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: ${DOCKER_WEB_DOCKER_MEMORY_LIMIT:-}
+      DOCKER_WEB_NEXT_BUILD_ENGINE: ${DOCKER_WEB_NEXT_BUILD_ENGINE:-webpack}
+      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: ${DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE:-auto}
     secrets:
       - web_env
   env_file:

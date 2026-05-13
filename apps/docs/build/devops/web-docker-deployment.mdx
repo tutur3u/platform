@@ -116,6 +116,10 @@ web runtime into containers.
 
 - Container-managed `node_modules` are isolated from the host.
 - Package-local `node_modules` and `dist` directories are also isolated so host installs do not shadow container artifacts.
+- The root Docker context excludes generated app artifacts such as `.next`,
+  `.turbo`, coverage output, and Flutter build directories. Keep these excludes
+  intact so production builds do not stream multi-gigabyte local artifacts into
+  BuildKit.
 - A host `bun install` is not required just to boot the Dockerized web stack.
 
 ## Production Mode
@@ -482,16 +486,18 @@ bun serve:web:docker:bg -- --build-memory 16g --build-cpus 4 --build-max-paralle
 
 Equivalent environment variables:
 
-- `DOCKER_WEB_BUILD_MEMORY=4g`
+- `DOCKER_WEB_BUILD_MEMORY=16g`
 - `DOCKER_WEB_BUILD_CPUS=4`
 - `DOCKER_WEB_BUILD_MAX_PARALLELISM=2`
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
+- `DOCKER_WEB_DOCKER_MEMORY_LIMIT=<bytes from docker info>`
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
 - `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=4`
 - `DOCKER_WEB_NEXT_BUILD_CPUS=4`
-- `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096`
+- `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto`
+- `DOCKER_WEB_NEXT_BUILD_ENGINE=webpack`
 
 How it works:
 
@@ -514,17 +520,25 @@ How it works:
   workflow builds each service image in its own Compose build call so image
   export and web compilation do not overlap on memory-constrained hosts.
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
-  build dependency graph, caps the Docker-only web app V8 heap at 4 GB, and
-  still uses the Turbopack production build. The Docker `builder` stage is based
-  on `node:24-bookworm-slim` and copies the Bun binary in only for workspace
-  script orchestration, so the actual `next build` process runs under real Node
-  instead of Bun's `node` shim. The `@tuturuuu/web` `build:docker` script
-  delegates to `scripts/run-web-docker-next-build.js`, which spawns
-  `DOCKER_WEB_NODE_BINARY` (pinned by the Dockerfile to `/usr/local/bin/node`)
-  for the Next CLI and honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE` when a larger
-  Docker host can safely allocate more heap. This avoids Bun runtime crashes
-  while loading native Next SWC modules and avoids host OOM kills on smaller
-  Docker Desktop allocations.
+  build dependency graph, sets `NODE_OPTIONS=--max-old-space-size` to at least
+  4 GB, and auto-scales the heap to 4 GB, 6 GB, 8 GB, 12 GB, or 16 GB based on
+  the smaller of `DOCKER_WEB_BUILD_MEMORY` and Docker's reported memory limit.
+  The helper reads Docker's `MemTotal` and forwards it as
+  `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets never use more than half of
+  that effective Docker memory budget once the machine is eligible for a larger
+  bucket. Docker production builds default to webpack to avoid Turbopack memory
+  spikes on smaller watcher hosts. The Docker `builder` stage is based on
+  `node:24-bookworm-slim` and copies the Bun binary in only for workspace script
+  orchestration, so the actual `next build` process runs under real Node instead
+  of Bun's `node` shim. The `@tuturuuu/web` `build:docker` script delegates to
+  `scripts/run-web-docker-next-build.js`, which spawns `DOCKER_WEB_NODE_BINARY`
+  (pinned by the Dockerfile to `/usr/local/bin/node`) for the Next CLI and
+  honors `DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto` by default. Set a numeric
+  heap value only when you need to override the bucket selection; values below
+  4096 MB are rejected. Set `DOCKER_WEB_NEXT_BUILD_ENGINE=turbopack` only on
+  hosts with enough memory headroom for Turbopack. This avoids Bun runtime
+  crashes while loading native Next SWC modules and avoids host OOM kills on
+  smaller Docker Desktop allocations.
 - Docker standalone Next builds default static page generation to a 180 second
   timeout, static generation concurrency capped at 4, and Next build CPU count
   capped at 4. This avoids false `Failed to build ... because it took more than 60

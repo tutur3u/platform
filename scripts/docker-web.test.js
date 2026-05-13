@@ -1353,6 +1353,7 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
     calls.map((call) => [call.command, call.args]),
     [
       ['docker', ['compose', 'version']],
+      ['docker', ['info', '--format', '{{json .MemTotal}}']],
       [
         'docker',
         [
@@ -1370,7 +1371,7 @@ test('runDockerWebWorkflow only runs docker compose for dev:web:docker', async (
   );
   assert.equal(calls[0].stdio, 'ignore');
   assert.equal(
-    calls[1].env.SUPABASE_SERVER_URL,
+    calls[2].env.SUPABASE_SERVER_URL,
     `http://${DOCKER_HOST_ALIAS}:8001/`
   );
 });
@@ -1399,15 +1400,16 @@ test('runDockerWebWorkflow omits redis env when dockerized redis is disabled', a
     calls.map((call) => [call.command, call.args]),
     [
       ['docker', ['compose', 'version']],
+      ['docker', ['info', '--format', '{{json .MemTotal}}']],
       [
         'docker',
         ['compose', '-f', COMPOSE_FILE, 'up', '--build', '--remove-orphans'],
       ],
     ]
   );
-  assert.equal(calls[1].env.UPSTASH_REDIS_REST_URL, undefined);
-  assert.equal(calls[1].env.UPSTASH_REDIS_REST_TOKEN, undefined);
-  assert.equal(calls[1].env.SRH_TOKEN, undefined);
+  assert.equal(calls[2].env.UPSTASH_REDIS_REST_URL, undefined);
+  assert.equal(calls[2].env.UPSTASH_REDIS_REST_TOKEN, undefined);
+  assert.equal(calls[2].env.SRH_TOKEN, undefined);
 });
 
 test('runDockerWebWorkflow routes builds through a capped buildx builder when requested', async () => {
@@ -1487,6 +1489,50 @@ test('runDockerWebWorkflow routes builds through a capped buildx builder when re
   assert.equal(calls.at(-1).env.BUILDX_BUILDER, DEFAULT_BUILDER_NAME);
 });
 
+test('runDockerWebWorkflow forwards Docker memory limit into build env', async () => {
+  const calls = [];
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001',
+  });
+
+  await runDockerWebWorkflow(parseArgs(['up', '--mode', 'prod']), {
+    env: { PATH: 'test-path' },
+    fsImpl: fsStub,
+    runCommand: async (command, args, options = {}) => {
+      calls.push({
+        args,
+        command,
+        env: options.env,
+        stdio: options.stdio ?? 'inherit',
+      });
+
+      if (
+        command === 'docker' &&
+        args[0] === 'info' &&
+        args.includes('{{json .MemTotal}}')
+      ) {
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: String(16 * 1024 * 1024 * 1024),
+        };
+      }
+
+      if (args.includes('ps')) {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.equal(
+    calls.at(-1).env.DOCKER_WEB_DOCKER_MEMORY_LIMIT,
+    String(16 * 1024 * 1024 * 1024)
+  );
+});
+
 test('runDockerWebWorkflow uses the production compose file for in-place deploys', async () => {
   const calls = [];
   const fsStub = createFsStub({
@@ -1549,6 +1595,7 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
 
   assert.deepEqual(calls, [
     ['docker', ['compose', 'version']],
+    ['docker', ['info', '--format', '{{json .MemTotal}}']],
     ['bun', ['sb:start']],
     ['bun', ['sb:reset']],
     [

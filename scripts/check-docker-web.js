@@ -8,6 +8,7 @@ const {
   readDockerProdComposeMergedText,
 } = require('./docker-web/prod-compose-include.js');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
+const DOCKERIGNORE_PATH = path.join(ROOT_DIR, '.dockerignore');
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -41,6 +42,13 @@ const PACKAGE_JSON_DEPENDENCY_FIELDS = [
 ];
 const DRAIN_STATUS_HEALTHCHECK_PATTERN =
   /fetch\(`http:\/\/127\.0\.0\.1:\$\{process\.env\.PORT \|\| 7803\}\/__platform\/drain-status`\)/;
+const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
+  '**/.next',
+  '**/.turbo',
+  '**/coverage',
+  'apps/mobile/.dart_tool',
+  'apps/mobile/build',
+];
 
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
   return WORKSPACE_DIRS.flatMap((workspaceDir) => {
@@ -289,9 +297,31 @@ function validateDockerfile({
       );
     }
 
-    if (!builderStage.includes('ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=4096')) {
+    if (!builderStage.includes('ARG DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=auto')) {
       errors.push(
-        'apps/web/Dockerfile builder stage must default Docker next build heap to 4096 MB.'
+        'apps/web/Dockerfile builder stage must default Docker next build heap to auto.'
+      );
+    }
+
+    if (
+      !builderStage.includes('ARG DOCKER_WEB_BUILD_MEMORY=12g') ||
+      !builderStage.includes('ARG DOCKER_WEB_DOCKER_MEMORY_LIMIT=') ||
+      !/ENV DOCKER_WEB_BUILD_MEMORY=\$\{DOCKER_WEB_BUILD_MEMORY\}/u.test(
+        builderStage
+      ) ||
+      !/ENV DOCKER_WEB_DOCKER_MEMORY_LIMIT=\$\{DOCKER_WEB_DOCKER_MEMORY_LIMIT\}/u.test(
+        builderStage
+      ) ||
+      !builderStage.includes('ARG DOCKER_WEB_NEXT_BUILD_ENGINE=webpack') ||
+      !/ENV DOCKER_WEB_NEXT_BUILD_ENGINE=\$\{DOCKER_WEB_NEXT_BUILD_ENGINE\}/u.test(
+        builderStage
+      ) ||
+      !/ENV DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE=\$\{DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE\}/u.test(
+        builderStage
+      )
+    ) {
+      errors.push(
+        'apps/web/Dockerfile builder stage must expose Docker build memory, next build engine, and heap build args.'
       );
     }
 
@@ -320,6 +350,24 @@ function validateDockerfile({
     errors.push(
       'apps/web/Dockerfile runner stage must health-check the internal /__platform/drain-status endpoint.'
     );
+  }
+
+  return errors;
+}
+
+function validateDockerignore(dockerignoreContent) {
+  const errors = [];
+  const lines = dockerignoreContent
+    .split(/\r?\n/u)
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith('#'));
+
+  for (const pattern of DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS) {
+    if (!lines.includes(pattern)) {
+      errors.push(
+        `.dockerignore must exclude ${pattern} from Docker web build contexts.`
+      );
+    }
   }
 
   return errors;
@@ -405,6 +453,23 @@ function validateDockerProdCompose(composeContent) {
     'path: docker-compose/compose.web.prod.ops.yml',
     'path: docker-compose/compose.web.prod.redis.yml',
     'x-web-service: &web-service',
+    '    args:',
+    '      DOCKER_WEB_BUILD_MEMORY: ' +
+      '${' +
+      'DOCKER_WEB_BUILD_MEMORY:-12g' +
+      '}',
+    '      DOCKER_WEB_DOCKER_MEMORY_LIMIT: ' +
+      '${' +
+      'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
+      '}',
+    '      DOCKER_WEB_NEXT_BUILD_ENGINE: ' +
+      '${' +
+      'DOCKER_WEB_NEXT_BUILD_ENGINE:-webpack' +
+      '}',
+    '      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: ' +
+      '${' +
+      'DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE:-auto' +
+      '}',
     '  web:',
     '  web-blue:',
     '  web-green:',
@@ -694,6 +759,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'web', 'docker', 'cron-runner.Dockerfile'),
     'utf8'
   ),
+  dockerignoreContent = fsImpl.readFileSync(
+    path.join(rootDir, '.dockerignore'),
+    'utf8'
+  ),
   markitdownDockerfileContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'discord', 'Dockerfile.markitdown'),
     'utf8'
@@ -709,6 +778,7 @@ function checkDockerWebSetup({
     }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
+    ...validateDockerignore(dockerignoreContent),
     ...validateWatcherDockerfile(watcherDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
     ...validateMarkitdownDockerfile(markitdownDockerfileContent),
@@ -738,6 +808,7 @@ module.exports = {
   ROOT_DIR,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
+  DOCKERIGNORE_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -750,6 +821,7 @@ module.exports = {
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
   validateDockerProdCompose,
+  validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateMarkitdownDockerfile,

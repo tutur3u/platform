@@ -127,6 +127,52 @@ async function getCurrentGitCommitMetadata({
   }
 }
 
+async function getDockerMemoryLimit({
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await run(
+    'docker',
+    ['info', '--format', '{{json .MemTotal}}'],
+    {
+      env,
+      stdio: 'pipe',
+    }
+  );
+
+  if (result.code !== 0) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(result.stdout.trim(), 10);
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null;
+  }
+
+  return String(parsed);
+}
+
+async function applyDockerMemoryLimitEnv(composeEnv, { env, runCommand: run }) {
+  if (composeEnv.DOCKER_WEB_DOCKER_MEMORY_LIMIT) {
+    return composeEnv;
+  }
+
+  const dockerMemoryLimit = await getDockerMemoryLimit({
+    env,
+    runCommand: run,
+  });
+
+  if (!dockerMemoryLimit) {
+    return composeEnv;
+  }
+
+  return {
+    ...composeEnv,
+    DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+  };
+}
+
 function parseArgs(argv) {
   const args = [...argv];
   const action = args.shift() ?? 'up';
@@ -550,6 +596,10 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     rootDir: options.rootDir,
     withCloudflared,
     withRedis,
+  });
+  composeEnv = await applyDockerMemoryLimitEnv(composeEnv, {
+    env,
+    runCommand: run,
   });
   const watchPaths = getWatchPaths(options.rootDir ?? ROOT_DIR);
   let blueGreenBuildLock = null;

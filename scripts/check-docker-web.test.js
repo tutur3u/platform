@@ -9,7 +9,15 @@ const {
 } = require('./docker-web/prod-compose-include.js');
 
 const {
+  getAutoDockerNodeMaxOldSpaceSizeMb,
+  getDockerNodeMaxOldSpaceSizeMb,
+  mergeNodeOptions,
+  parseMemoryToMb,
+} = require('./run-web-docker-next-build.js');
+
+const {
   CRON_RUNNER_DOCKERFILE_PATH,
+  DOCKERIGNORE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
@@ -23,6 +31,7 @@ const {
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
   validateDockerProdCompose,
+  validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateMarkitdownDockerfile,
@@ -78,6 +87,24 @@ test('validateDockerfile accepts the current web Dockerfile', () => {
   );
 });
 
+test('validateDockerignore accepts the current Docker context excludes', () => {
+  const dockerignoreContent = fs.readFileSync(DOCKERIGNORE_PATH, 'utf8');
+
+  assert.deepEqual(validateDockerignore(dockerignoreContent), []);
+});
+
+test('validateDockerignore reports generated app artifacts in the context', () => {
+  const dockerignoreContent = fs
+    .readFileSync(DOCKERIGNORE_PATH, 'utf8')
+    .replace('**/.next\n', '')
+    .replace('apps/mobile/build\n', '');
+
+  const errors = validateDockerignore(dockerignoreContent).join('\n');
+
+  assert.match(errors, /\.dockerignore must exclude \*\*\/\.next/);
+  assert.match(errors, /\.dockerignore must exclude apps\/mobile\/build/);
+});
+
 test('web Docker build script delegates Next to the real Node wrapper', () => {
   const packageJson = JSON.parse(
     fs.readFileSync(path.join(ROOT_DIR, 'apps', 'web', 'package.json'), 'utf8')
@@ -92,9 +119,80 @@ test('web Docker build script delegates Next to the real Node wrapper', () => {
     'bun ../../scripts/run-web-docker-next-build.js'
   );
   assert.match(wrapper, /process\.env\.DOCKER_WEB_NODE_BINARY \|\| 'node'/u);
-  assert.match(wrapper, /DEFAULT_NODE_MAX_OLD_SPACE_SIZE_MB = 4096/u);
+  assert.match(wrapper, /NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB/u);
+  assert.match(wrapper, /DEFAULT_NEXT_BUILD_ENGINE = 'webpack'/u);
   assert.match(wrapper, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/u);
-  assert.match(wrapper, /NEXT_BIN, 'build', '--turbopack'/u);
+  assert.match(wrapper, /DOCKER_WEB_NEXT_BUILD_ENGINE/u);
+  assert.match(wrapper, /NEXT_BUILD_ENGINES\.get\(nextBuildEngine\)/u);
+});
+
+test('Docker web build heap auto-scales from Docker memory buckets', () => {
+  assert.equal(parseMemoryToMb('12g'), 12 * 1024);
+  assert.equal(parseMemoryToMb('16gb'), 16 * 1024);
+  assert.equal(parseMemoryToMb('24576m'), 24 * 1024);
+  assert.equal(parseMemoryToMb('34359738368'), 32 * 1024);
+
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '8g' }),
+    4096
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '12g' }),
+    6144
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '16g' }),
+    8192
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '24g' }),
+    12288
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '32g' }),
+    16384
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '64g' }),
+    16384
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({
+      DOCKER_WEB_BUILD_MEMORY: '16g',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
+    }),
+    4096
+  );
+  assert.equal(
+    getAutoDockerNodeMaxOldSpaceSizeMb({
+      DOCKER_WEB_BUILD_MEMORY: '24g',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
+    }),
+    8192
+  );
+});
+
+test('Docker web build NODE_OPTIONS always includes at least a 4 GB heap', () => {
+  assert.equal(
+    getDockerNodeMaxOldSpaceSizeMb({
+      DOCKER_WEB_BUILD_MEMORY: '16g',
+      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: 'auto',
+    }),
+    8192
+  );
+  assert.equal(
+    mergeNodeOptions('--max-old-space-size=2048 --trace-warnings', {
+      DOCKER_WEB_BUILD_MEMORY: '12g',
+    }),
+    '--trace-warnings --max-old-space-size=6144 --experimental-require-module'
+  );
+  assert.throws(
+    () =>
+      getDockerNodeMaxOldSpaceSizeMb({
+        DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: '2048',
+      }),
+    /at least 4096/
+  );
 });
 
 test('validateDockerfile reports missing workspace manifest copies', () => {
@@ -208,6 +306,39 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR);
 
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
+});
+
+test('validateDockerProdCompose reports missing Docker web build args', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
+    [
+      '    args:',
+      '      DOCKER_WEB_BUILD_MEMORY: $' +
+        '{' +
+        'DOCKER_WEB_BUILD_MEMORY:-12g' +
+        '}',
+      '      DOCKER_WEB_DOCKER_MEMORY_LIMIT: $' +
+        '{' +
+        'DOCKER_WEB_DOCKER_MEMORY_LIMIT:-' +
+        '}',
+      '      DOCKER_WEB_NEXT_BUILD_ENGINE: $' +
+        '{' +
+        'DOCKER_WEB_NEXT_BUILD_ENGINE:-webpack' +
+        '}',
+      '      DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE: $' +
+        '{' +
+        'DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE:-auto' +
+        '}',
+      '',
+    ].join('\n'),
+    ''
+  );
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /DOCKER_WEB_BUILD_MEMORY/);
+  assert.match(errors, /DOCKER_WEB_DOCKER_MEMORY_LIMIT/);
+  assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
+  assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
 });
 
 test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
@@ -468,6 +599,7 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       path.join(tempDir, 'docker-compose.web.prod.yml'),
       'services:\n'
     );
+    fs.writeFileSync(path.join(tempDir, '.dockerignore'), '');
 
     const errors = checkDockerWebSetup({
       rootDir: tempDir,
