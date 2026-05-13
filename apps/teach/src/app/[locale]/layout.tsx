@@ -9,6 +9,7 @@ import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
+import { TeachQueryProvider } from '@/components/teach-query-provider';
 import { TeachThemeProvider } from '@/components/teach-theme-provider';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
@@ -60,7 +61,9 @@ export default async function RootLayout({ children, params }: Props) {
         )}
       >
         <TeachThemeProvider>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <TeachQueryProvider>
+            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          </TeachQueryProvider>
         </TeachThemeProvider>
         <TailwindIndicator />
         <ProductionIndicator />

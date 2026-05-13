@@ -1,0 +1,171 @@
+'use client';
+
+import { ArrowRight, BookOpen, Play, Users } from '@tuturuuu/icons';
+import { Progress } from '@tuturuuu/ui/progress';
+import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/navigation';
+import { BrutalCard, courseThemes } from './modules-shared';
+
+export interface CourseGroupItem {
+  id: string;
+  name: string | null;
+  description: string | null;
+  totalModules: number;
+  completedModules: number;
+  progress: number;
+}
+
+// ─── Stat chip ────────────────────────────────────────────────────────────────
+
+function StatChip({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof BookOpen;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-col items-center gap-0.5 border-2 border-border bg-muted/40 px-2 py-2 text-center">
+      <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+      <span className="font-bold text-sm leading-none">{value}</span>
+      <span className="text-[10px] text-muted-foreground leading-none">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+// ─── Course Group Card ────────────────────────────────────────────────────────
+
+export function CourseGroupCard({
+  course,
+  index,
+  wsId,
+}: {
+  course: CourseGroupItem;
+  index: number;
+  wsId: string;
+}) {
+  const t = useTranslations();
+  const theme = courseThemes[index % courseThemes.length] ?? courseThemes[0];
+  const Icon = theme.icon;
+
+  const boundedProgress = Math.min(100, Math.max(0, course.progress));
+  const remaining = Math.max(0, course.totalModules - course.completedModules);
+  const isComplete = boundedProgress >= 100;
+  const courseHref = `/${wsId}/modules/${course.id}`;
+
+  return (
+    <BrutalCard className="flex flex-col overflow-hidden p-0">
+      {/* Canvas-style colored header band */}
+      <div
+        className={cn(
+          'relative flex items-center gap-3 border-border border-b-2 px-5 py-4',
+          theme.surface
+        )}
+      >
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]">
+          <Icon className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <h3 className="truncate font-bold text-lg leading-tight">
+            {course.name ?? t('common.untitled')}
+          </h3>
+          <p className="text-muted-foreground text-xs">
+            {course.totalModules} {t('teachModules.modules').toLowerCase()}
+          </p>
+        </div>
+        {isComplete ? (
+          <span className="shrink-0 border-2 border-border bg-dynamic-green/15 px-2 py-0.5 font-bold text-foreground text-xs shadow-[2px_2px_0_var(--border)]">
+            {t('common.completed')}
+          </span>
+        ) : null}
+      </div>
+
+      {/* Body */}
+      <div className="flex flex-1 flex-col gap-4 p-5">
+        <p className="line-clamp-2 min-h-10 text-muted-foreground text-sm leading-relaxed">
+          {course.description ?? t('teachModules.noDescription')}
+        </p>
+
+        <div className="grid grid-cols-3 gap-2">
+          <StatChip
+            icon={BookOpen}
+            label={t('teachModules.modules')}
+            value={`${course.completedModules}/${course.totalModules}`}
+          />
+          <StatChip
+            icon={Play}
+            label={t('teachModules.progress')}
+            value={`${boundedProgress}%`}
+          />
+          <StatChip
+            icon={Users}
+            label={
+              remaining > 0
+                ? t('teachModules.remaining')
+                : t('teachModules.done')
+            }
+            value={`${remaining}`}
+          />
+        </div>
+
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-semibold text-muted-foreground">
+              {t('teachModules.courseProgress')}
+            </span>
+            <span className="font-bold">{boundedProgress}%</span>
+          </div>
+          <Progress className="h-2.5" value={boundedProgress} />
+        </div>
+
+        {/* Module checkpoint dots — Canvas style */}
+        <div className="flex flex-wrap gap-1.5">
+          {Array.from({ length: Math.min(course.totalModules, 12) }).map(
+            (_, i) => {
+              const completed = i < course.completedModules;
+              const current = i === course.completedModules;
+              return (
+                <div
+                  className={cn(
+                    'h-2.5 w-2.5 border border-border transition-all',
+                    completed && 'bg-primary',
+                    current &&
+                      'bg-dynamic-yellow ring-1 ring-dynamic-yellow/50',
+                    !completed && !current && 'bg-muted'
+                  )}
+                  key={`dot-${course.id}-${i}`}
+                />
+              );
+            }
+          )}
+          {course.totalModules > 12 ? (
+            <span className="text-muted-foreground text-xs">
+              +{course.totalModules - 12}
+            </span>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Canvas-style footer action */}
+      <div className="mt-auto border-border border-t-2 px-5 py-3">
+        <Link
+          className="group/btn flex w-full items-center gap-2 font-bold text-sm transition hover:text-primary"
+          href={courseHref}
+        >
+          <Play className="h-4 w-4" />
+          <span>
+            {isComplete
+              ? t('teachModules.reviewCourse')
+              : t('teachModules.openModules')}
+          </span>
+          <ArrowRight className="ml-auto h-4 w-4 transition group-hover/btn:translate-x-0.5" />
+        </Link>
+      </div>
+    </BrutalCard>
+  );
+}
