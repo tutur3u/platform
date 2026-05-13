@@ -7,6 +7,12 @@ Hive is the Tuturuuu research satellite app at `https://hive.tuturuuu.com`.
 It uses the centralized Tuturuuu login handoff and keeps protected product APIs
 inside `apps/web` under `/api/v1/hive/*`.
 
+Hive consumes cross-app login tokens through `/verify-token`. That verifier
+must treat the returned app token as the source of truth and create a fresh
+Hive-domain Supabase session from `/api/auth/verify-app-token`; it should not
+try to refresh an existing Hive refresh token first, because a stale local
+cookie can mask a valid central login handoff.
+
 ## Access Model
 
 - Production access requires a row in `hive_members` with `enabled = true`.

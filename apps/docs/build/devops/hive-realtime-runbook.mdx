@@ -1,7 +1,7 @@
 ---
 title: Hive Realtime Runbook
 description: Operating notes for the Hive WebSocket service and satellite app deployment.
-updatedAt: '2026-05-11'
+updatedAt: '2026-05-13'
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
@@ -29,6 +29,14 @@ comes from `.env.local` with the same `apps/web/.env.local` fallback, and the
 production Hive image receives the `web_env` BuildKit secret during `next build`
 so prerendered auth routes can resolve `NEXT_PUBLIC_SUPABASE_URL` and related
 platform Supabase variables.
+
+When Hive is exposed as `https://hive.tuturuuu.com` through a Cloudflare tunnel
+to `http://localhost:7814`, keep browser-facing realtime URLs secure. Use
+`NEXT_PUBLIC_HIVE_REALTIME_URL=wss://hive.tuturuuu.com/realtime` or leave it
+unset so the client falls back to the same-origin `/realtime` route. Keep
+Docker-internal or host-local forwarding in `HIVE_REALTIME_HTTP_URL` or
+`HIVE_REALTIME_URL`; do not expose `ws://...` as the browser URL for an HTTPS
+page.
 
 ## Local production-style servers (Turbo)
 

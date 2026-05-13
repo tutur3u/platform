@@ -130,6 +130,86 @@ describe('verifyRouteToken', () => {
     expect(router.refresh).toHaveBeenCalled();
   });
 
+  it('does not read the stale local session before verifying a fresh token', async () => {
+    const getUser = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Invalid Refresh Token: Refresh Token not found')
+      );
+    const setSession = vi.fn().mockResolvedValue({ error: null });
+    const router = createMockRouter();
+    mocks.createClient.mockReturnValue({
+      auth: {
+        getUser,
+        refreshSession: vi.fn().mockResolvedValue({}),
+        setSession,
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          session: {
+            access_token: 'access-token',
+            refresh_token: 'refresh-token',
+          },
+          userId: 'user-1',
+          valid: true,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
+      token: 'token-1',
+    });
+
+    expect(getUser).not.toHaveBeenCalled();
+    expect(setSession).toHaveBeenCalledWith({
+      access_token: 'access-token',
+      refresh_token: 'refresh-token',
+    });
+    expect(router.push).toHaveBeenCalledWith('/personal');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('does not refresh a stale local session when token verification returns no session', async () => {
+    const refreshSession = vi
+      .fn()
+      .mockRejectedValue(
+        new Error('Invalid Refresh Token: Refresh Token not found')
+      );
+    const router = createMockRouter();
+    mocks.createClient.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+        refreshSession,
+        setSession: vi.fn().mockResolvedValue({ error: null }),
+      },
+    });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          sessionCreated: false,
+          userId: 'user-1',
+          valid: true,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
+      token: 'token-1',
+    });
+
+    expect(refreshSession).not.toHaveBeenCalled();
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
   it('redirects when token verification returns no user id', async () => {
     const router = createMockRouter();
     vi.stubGlobal(

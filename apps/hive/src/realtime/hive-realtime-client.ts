@@ -38,7 +38,11 @@ export function connectHiveRealtime(args: {
   url: string;
 }): HiveRealtimeClient {
   const endpoint = new URL(args.url, window.location.origin);
-  endpoint.protocol = endpoint.protocol === 'https:' ? 'wss:' : 'ws:';
+  const shouldUseSecureSocket =
+    window.location.protocol === 'https:' ||
+    endpoint.protocol === 'https:' ||
+    endpoint.protocol === 'wss:';
+  endpoint.protocol = shouldUseSecureSocket ? 'wss:' : 'ws:';
   endpoint.searchParams.set('token', args.token);
 
   const socket = new WebSocket(endpoint);

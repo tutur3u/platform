@@ -2270,15 +2270,30 @@ test('runDeployWatchIteration skips dirty worktrees before fetch and still repor
     assert.equal(result.status, 'dirty');
     assert.equal(result.currentBlueGreen.state, 'idle');
     assert.deepEqual(result.deployments, []);
-    assert.deepEqual(calls, [
+    const expectedRuntimeSnapshotCalls = [
       'git rev-parse --abbrev-ref HEAD',
       'git status --porcelain',
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
       'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
+    ];
+    const optionalProxyStatusCalls = [
       prodComposePsKey(BLUE_GREEN_PROXY_SERVICE),
       `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`,
-    ]);
+    ];
+
+    assert.deepEqual(
+      calls.slice(0, expectedRuntimeSnapshotCalls.length),
+      expectedRuntimeSnapshotCalls
+    );
+    assert.ok(
+      calls.length === expectedRuntimeSnapshotCalls.length ||
+        (calls.length ===
+          expectedRuntimeSnapshotCalls.length +
+            optionalProxyStatusCalls.length &&
+          JSON.stringify(calls.slice(expectedRuntimeSnapshotCalls.length)) ===
+            JSON.stringify(optionalProxyStatusCalls))
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

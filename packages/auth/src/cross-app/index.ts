@@ -236,10 +236,6 @@ export const verifyRouteToken = async ({
   try {
     const supabase = createClient();
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
     if (!token) {
       const nextUrl = searchParams.get('nextUrl');
       router.push(nextUrl || '/');
@@ -249,14 +245,13 @@ export const verifyRouteToken = async ({
 
     // Always verify the token when present — it represents fresh auth from web
     // and should override any existing (potentially stale aal1) session
-    let userId = user?.id;
-
     const res = await fetch('/api/auth/verify-app-token', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ token }),
+      cache: 'no-store',
     });
 
     if (!res.ok) {
@@ -266,7 +261,7 @@ export const verifyRouteToken = async ({
     }
 
     const data = await res.json();
-    userId = data.userId;
+    const userId = data.userId;
 
     if (!userId) {
       console.error('Error verifying token: missing user id');
@@ -289,14 +284,13 @@ export const verifyRouteToken = async ({
           '[cross-app] setSession failed, trying refreshSession:',
           sessionError
         );
-        // setSession can fail if the tokens expired during transit.
-        // Fall back to refreshing whatever session the middleware may have set.
-        await supabase.auth.refreshSession();
+        redirectAfterVerificationFailure(router);
+        return;
       }
     } else {
-      // No session tokens in response — server couldn't create a session.
-      // Try to refresh whatever session the middleware established.
-      await supabase.auth.refreshSession();
+      console.error('Error verifying token: missing satellite session tokens');
+      redirectAfterVerificationFailure(router);
+      return;
     }
 
     const nextUrl = searchParams.get('nextUrl');
