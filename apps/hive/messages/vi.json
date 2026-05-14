@@ -61,6 +61,8 @@
       "blocks_count": "{count} khối",
       "close_chat": "Đóng khung chat agent",
       "collapse_npc_lab": "Thu gọn phòng NPC",
+      "mode_workflows": "Sơ đồ quy trình",
+      "mode_world": "Chế độ thế giới",
       "npcs": "NPC",
       "npcs_count": "{count} NPC",
       "objects": "vật thể",
@@ -172,6 +174,83 @@
       "select_label": "Chọn máy chủ Hive",
       "unknown": "Không rõ",
       "version": "Phiên bản Hive"
+    },
+    "workflows": {
+      "description": "Mô tả",
+      "inspector": {
+        "delete_node": "Xóa nút",
+        "empty_body": "Chọn một nút trên khung vẽ để kiểm tra cấu hình động.",
+        "empty_title": "Chưa chọn nút",
+        "node_config": "JSON cấu hình nút",
+        "node_label": "Nhãn nút",
+        "read_only": "Quy trình chỉ đọc",
+        "validation_title": "Sơ đồ cần kiểm tra"
+      },
+      "name": "Tên quy trình",
+      "new_workflow": "Quy trình mới",
+      "nodes": {
+        "condition": "Điều kiện",
+        "context": "Đọc ngữ cảnh",
+        "farming": "Thao tác nông trại",
+        "log": "Ghi nhật ký",
+        "manual_trigger": "Kích hoạt thủ công",
+        "npc_decision": "Quyết định NPC",
+        "simulation_tick": "Nhịp mô phỏng",
+        "trade": "Thao tác giao dịch",
+        "transform": "Biến đổi dữ liệu",
+        "update_npc": "Cập nhật NPC",
+        "warehouse": "Thao tác kho",
+        "world_event": "Sự kiện thế giới"
+      },
+      "palette": {
+        "eyebrow": "Trình dựng đồ thị",
+        "nodes": "Nút",
+        "search": "Tìm nút",
+        "templates": "Mẫu khởi đầu",
+        "title": "Thành phần quy trình"
+      },
+      "run": "Chạy",
+      "run_panel": {
+        "empty": "Chưa có lượt chạy",
+        "eyebrow": "Dấu vết thực thi",
+        "title": "Lượt chạy mới nhất",
+        "trace_empty": "Chạy một quy trình đã lưu để xem đầu ra từng nút."
+      },
+      "run_started": "Đã chạy xong quy trình",
+      "running": "Đang chạy",
+      "save": "Lưu",
+      "saved": "Đã lưu quy trình",
+      "select_workflow": "Chọn quy trình",
+      "templates": {
+        "farm_cycle": {
+          "description": "Trồng cây và ghi lại kết quả nông trại.",
+          "name": "Chu kỳ nông trại"
+        },
+        "market_trade": {
+          "description": "Chuẩn bị sự kiện giao dịch cho thử nghiệm chợ NPC.",
+          "name": "Giao dịch chợ"
+        },
+        "npc_daily": {
+          "description": "Chạy quyết định NPC thủ công từ ngữ cảnh thế giới hiện tại.",
+          "name": "Nếp sinh hoạt NPC"
+        },
+        "simulation_tick": {
+          "description": "Tiến một nhịp cho cây trồng, nhu cầu NPC và trạng thái mô phỏng.",
+          "name": "Nhịp mô phỏng"
+        },
+        "world_cleanup": {
+          "description": "Ghi sự kiện dọn dẹp cho các lượt bảo trì thế giới.",
+          "name": "Dọn dẹp thế giới"
+        }
+      },
+      "untitled": "Quy trình chưa đặt tên",
+      "validation": {
+        "cycle": "Sơ đồ quy trình không được chứa vòng lặp.",
+        "dangling_edge": "Cạnh quy trình phải nối các nút đang tồn tại.",
+        "edge_limit": "Mỗi quy trình Hive tối đa 120 cạnh.",
+        "missing_trigger": "Quy trình cần một nút kích hoạt thủ công.",
+        "node_limit": "Mỗi quy trình Hive tối đa 80 nút."
+      }
     }
   }
 }

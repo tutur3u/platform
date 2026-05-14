@@ -6,6 +6,7 @@ import {
   MessageSquareText,
   PanelRightClose,
   PanelRightOpen,
+  Workflow,
 } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
@@ -17,7 +18,9 @@ type HiveTopRightToolbarProps = {
   chatOpen: boolean;
   currentUser: HiveUser;
   miniMapCollapsed: boolean;
+  mode: 'workflows' | 'world';
   npcLabCollapsed: boolean;
+  onChangeMode: (mode: 'workflows' | 'world') => void;
   onToggleChat: () => void;
   onToggleInspector: () => void;
   onToggleMiniMap: () => void;
@@ -30,7 +33,9 @@ export function HiveTopRightToolbar({
   chatOpen,
   currentUser,
   miniMapCollapsed,
+  mode,
   npcLabCollapsed,
+  onChangeMode,
   onToggleChat,
   onToggleInspector,
   onToggleMiniMap,
@@ -47,34 +52,51 @@ export function HiveTopRightToolbar({
       role="toolbar"
     >
       {serverPicker}
+      <div className="my-1 h-7 w-px shrink-0 bg-border" />
+      <ToolbarButton
+        active={mode === 'world'}
+        icon={MapIcon}
+        label={chromeT('mode_world')}
+        onClick={() => onChangeMode('world')}
+      />
+      <ToolbarButton
+        active={mode === 'workflows'}
+        icon={Workflow}
+        label={chromeT('mode_workflows')}
+        onClick={() => onChangeMode('workflows')}
+      />
       <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-[max-width,opacity,transform] duration-300 ease-out group-focus-within/hive-top-toolbar:max-w-[24rem] group-focus-within/hive-top-toolbar:translate-x-0 group-focus-within/hive-top-toolbar:opacity-100 group-hover/hive-top-toolbar:max-w-[24rem] group-hover/hive-top-toolbar:translate-x-0 group-hover/hive-top-toolbar:opacity-100">
-        <div className="flex items-center gap-1">
-          <ToolbarButton
-            active={!rightCollapsed}
-            icon={rightCollapsed ? PanelRightOpen : PanelRightClose}
-            label={chromeT('toggle_inspector')}
-            onClick={onToggleInspector}
-          />
-          <ToolbarButton
-            active={!npcLabCollapsed}
-            icon={Brain}
-            label={chromeT('toggle_npc_lab')}
-            onClick={onToggleNpcLab}
-          />
-          <ToolbarButton
-            active={!miniMapCollapsed}
-            icon={MapIcon}
-            label={chromeT('toggle_minimap')}
-            onClick={onToggleMiniMap}
-          />
-          <ToolbarButton
-            active={chatOpen}
-            icon={MessageSquareText}
-            label={chatOpen ? chromeT('close_chat') : chromeT('open_chat')}
-            onClick={onToggleChat}
-          />
-        </div>
-        <div className="my-1 h-7 w-px shrink-0 bg-border" />
+        {mode === 'world' ? (
+          <>
+            <div className="flex items-center gap-1">
+              <ToolbarButton
+                active={!rightCollapsed}
+                icon={rightCollapsed ? PanelRightOpen : PanelRightClose}
+                label={chromeT('toggle_inspector')}
+                onClick={onToggleInspector}
+              />
+              <ToolbarButton
+                active={!npcLabCollapsed}
+                icon={Brain}
+                label={chromeT('toggle_npc_lab')}
+                onClick={onToggleNpcLab}
+              />
+              <ToolbarButton
+                active={!miniMapCollapsed}
+                icon={MapIcon}
+                label={chromeT('toggle_minimap')}
+                onClick={onToggleMiniMap}
+              />
+              <ToolbarButton
+                active={chatOpen}
+                icon={MessageSquareText}
+                label={chatOpen ? chromeT('close_chat') : chromeT('open_chat')}
+                onClick={onToggleChat}
+              />
+            </div>
+            <div className="my-1 h-7 w-px shrink-0 bg-border" />
+          </>
+        ) : null}
         <HiveAccountMenu user={currentUser} variant="icon" />
       </div>
     </div>

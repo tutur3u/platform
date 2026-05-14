@@ -11,7 +11,9 @@ type EditorTopChromeProps = {
   inspectorPanel: ReactNode;
   isRunningNpc: boolean;
   miniMapCollapsed: boolean;
+  mode: 'workflows' | 'world';
   npcLabCollapsed: boolean;
+  onChangeMode: (mode: 'workflows' | 'world') => void;
   npcs: HiveNpc[];
   onToggleChat: () => void;
   onToggleInspector: () => void;
@@ -36,7 +38,9 @@ export function EditorTopChrome({
   inspectorPanel,
   isRunningNpc,
   miniMapCollapsed,
+  mode,
   npcLabCollapsed,
+  onChangeMode,
   npcs,
   onToggleChat,
   onToggleInspector,
@@ -64,7 +68,9 @@ export function EditorTopChrome({
           chatOpen={chatOpen}
           currentUser={currentUser}
           miniMapCollapsed={miniMapCollapsed}
+          mode={mode}
           npcLabCollapsed={npcLabCollapsed}
+          onChangeMode={onChangeMode}
           onToggleChat={onToggleChat}
           onToggleInspector={onToggleInspector}
           onToggleMiniMap={onToggleMiniMap}

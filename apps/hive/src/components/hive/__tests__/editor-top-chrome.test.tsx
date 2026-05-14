@@ -31,8 +31,10 @@ describe('EditorTopChrome', () => {
           inspectorPanel={<div>Inspector panel</div>}
           isRunningNpc={false}
           miniMapCollapsed={false}
+          mode="world"
           npcLabCollapsed
           npcs={[{ id: 'npc-1' } as HiveNpc]}
+          onChangeMode={vi.fn()}
           onToggleChat={vi.fn()}
           onToggleInspector={vi.fn()}
           onToggleMiniMap={vi.fn()}
@@ -57,6 +59,8 @@ describe('EditorTopChrome', () => {
     expect(screen.getByLabelText('1 NPC')).toBeTruthy();
     expect(screen.getByLabelText('2 online')).toBeTruthy();
     expect(screen.getByText('Server picker')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'World view' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Workflow graph' })).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Toggle inspector' })
     ).toBeTruthy();

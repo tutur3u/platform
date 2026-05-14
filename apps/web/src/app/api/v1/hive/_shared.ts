@@ -160,6 +160,67 @@ export const hiveAccessRequestApprovalSchema = z.object({
   notes: z.string().trim().max(1000).nullable().optional(),
 });
 
+export const hiveWorkflowNodeTypeSchema = z.enum([
+  'condition',
+  'context',
+  'farming',
+  'log',
+  'manual_trigger',
+  'npc_decision',
+  'simulation_tick',
+  'trade',
+  'transform',
+  'update_npc',
+  'warehouse',
+  'world_event',
+]);
+
+export const hiveWorkflowDefinitionSchema = z.object({
+  edges: z
+    .array(
+      z.object({
+        id: z.string().trim().min(1).max(120),
+        label: z.string().trim().max(120).optional(),
+        source: z.string().trim().min(1).max(120),
+        sourceHandle: z.string().trim().max(120).nullable().optional(),
+        target: z.string().trim().min(1).max(120),
+        targetHandle: z.string().trim().max(120).nullable().optional(),
+      })
+    )
+    .max(120),
+  nodes: z
+    .array(
+      z.object({
+        data: z.object({
+          config: hiveJsonObjectSchema.optional(),
+          description: z.string().trim().max(500).optional(),
+          label: z.string().trim().min(1).max(120),
+        }),
+        id: z.string().trim().min(1).max(120),
+        position: z.object({
+          x: z.number().finite(),
+          y: z.number().finite(),
+        }),
+        type: hiveWorkflowNodeTypeSchema,
+      })
+    )
+    .max(80),
+  version: z.literal(1),
+});
+
+export const hiveWorkflowPayloadSchema = z.object({
+  definition: hiveWorkflowDefinitionSchema,
+  description: z.string().trim().max(1000).nullable().optional(),
+  enabled: z.boolean().default(true),
+  name: z.string().trim().min(1).max(120),
+});
+
+export const hiveWorkflowPatchSchema = hiveWorkflowPayloadSchema.partial();
+
+export const hiveWorkflowRunPayloadSchema = z.object({
+  input: hiveJsonObjectSchema.default({}),
+});
+
 export type HiveAccess = {
   isAdmin: boolean;
   isMember: boolean;

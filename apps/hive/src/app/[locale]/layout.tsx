@@ -15,6 +15,7 @@ import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import { HIVE_BODY_CLASS_NAME } from './layout-classes';
+import '@xyflow/react/dist/style.css';
 import '@tuturuuu/ui/globals.css';
 
 const outfit = Outfit({

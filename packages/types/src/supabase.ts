@@ -5620,6 +5620,203 @@ export type Database = {
           },
         ];
       };
+      hive_workflow_runs: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          input: Json;
+          output: Json;
+          server_id: string;
+          started_at: string;
+          status: string;
+          step_trace: Json;
+          workflow_id: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          input?: Json;
+          output?: Json;
+          server_id: string;
+          started_at?: string;
+          status?: string;
+          step_trace?: Json;
+          workflow_id: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          input?: Json;
+          output?: Json;
+          server_id?: string;
+          started_at?: string;
+          status?: string;
+          step_trace?: Json;
+          workflow_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_workflow_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_workflow_id_fkey';
+            columns: ['workflow_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_workflows';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_workflows: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          definition: Json;
+          description: string | null;
+          enabled: boolean;
+          id: string;
+          name: string;
+          server_id: string;
+          updated_at: string;
+          updated_by: string | null;
+          version: number;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          definition?: Json;
+          description?: string | null;
+          enabled?: boolean;
+          id?: string;
+          name: string;
+          server_id: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          definition?: Json;
+          description?: string | null;
+          enabled?: boolean;
+          id?: string;
+          name?: string;
+          server_id?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_workflows_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflows_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       hive_world_events: {
         Row: {
           actor_user_id: string | null;

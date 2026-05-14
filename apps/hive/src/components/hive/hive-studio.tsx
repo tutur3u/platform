@@ -20,6 +20,7 @@ import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shor
 import { isBoolean, useHivePersistedState } from './use-hive-persisted-state';
 import { useHiveStudioEngine } from './use-hive-studio-engine';
 import { HiveViewport } from './viewport/hive-viewport';
+import { HiveWorkflowStudio } from './workflows/hive-workflow-studio';
 
 type HiveStudioProps = {
   buildInfo: HiveBuildInfo;
@@ -62,6 +63,9 @@ export function HiveStudio({
     false,
     { validate: isBoolean }
   );
+  const [studioMode, setStudioMode] = useHivePersistedState<
+    'workflows' | 'world'
+  >('hive.editor.mode', 'world', { validate: isStudioMode });
   const [miniMapCollapsed, setMiniMapCollapsed] = useHivePersistedState(
     'hive.editor.miniMapCollapsed',
     false,
@@ -116,53 +120,59 @@ export function HiveStudio({
     <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
       <SatelliteWorkspaceShell
         bottom={
-          <HiveStudioToolDock
-            engine={engine}
-            onToggle={() => setBottomCollapsed(true)}
-          />
+          studioMode === 'world' ? (
+            <HiveStudioToolDock
+              engine={engine}
+              onToggle={() => setBottomCollapsed(true)}
+            />
+          ) : null
         }
-        bottomCollapsed={bottomCollapsed}
+        bottomCollapsed={bottomCollapsed || studioMode !== 'world'}
         center={
-          <>
-            <HiveViewport
-              activeBuildMode={engine.activeBuildMode}
-              activeObject={engine.activeObject}
-              activeTerrain={engine.activeTerrain}
-              cameraView={engine.cameraView}
-              gaplessMode={engine.gaplessMode}
-              npcs={engine.npcs}
-              onErase={engine.eraseSelection}
-              onMoveSelection={engine.moveSelection}
-              onPlaceNpc={engine.placeNpc}
-              onPlaceObject={engine.placeObject}
-              onPlaceTerrain={engine.placeTerrain}
-              onRealtimeCursor={engine.sendCursorPosition}
-              onSelect={selectEntity}
-              remoteAwareness={engine.remoteAwareness}
-              season={engine.season}
-              selection={engine.selection}
-              tool={engine.tool}
-              timeTheme={engine.timeTheme}
-              weather={engine.weather}
-              world={engine.world}
-            />
-            <HiveViewportOverlays
-              agentMessages={agentMessages}
-              bottomCollapsed={bottomCollapsed}
-              chatOpen={chatOpen}
-              miniMapCollapsed={miniMapCollapsed}
-              npcs={engine.npcs}
-              onSetBottomCollapsed={setBottomCollapsed}
-              onSetMiniMapCollapsed={setMiniMapCollapsed}
-              onSetTopCollapsed={setTopCollapsed}
-              onSubmitAgentPrompt={submitAgentPrompt}
-              selectedServer={engine.selectedServer}
-              selection={engine.selection}
-              syncNotice={engine.syncNotice}
-              topCollapsed={topCollapsed}
-              world={engine.world}
-            />
-          </>
+          studioMode === 'world' ? (
+            <>
+              <HiveViewport
+                activeBuildMode={engine.activeBuildMode}
+                activeObject={engine.activeObject}
+                activeTerrain={engine.activeTerrain}
+                cameraView={engine.cameraView}
+                gaplessMode={engine.gaplessMode}
+                npcs={engine.npcs}
+                onErase={engine.eraseSelection}
+                onMoveSelection={engine.moveSelection}
+                onPlaceNpc={engine.placeNpc}
+                onPlaceObject={engine.placeObject}
+                onPlaceTerrain={engine.placeTerrain}
+                onRealtimeCursor={engine.sendCursorPosition}
+                onSelect={selectEntity}
+                remoteAwareness={engine.remoteAwareness}
+                season={engine.season}
+                selection={engine.selection}
+                tool={engine.tool}
+                timeTheme={engine.timeTheme}
+                weather={engine.weather}
+                world={engine.world}
+              />
+              <HiveViewportOverlays
+                agentMessages={agentMessages}
+                bottomCollapsed={bottomCollapsed}
+                chatOpen={chatOpen}
+                miniMapCollapsed={miniMapCollapsed}
+                npcs={engine.npcs}
+                onSetBottomCollapsed={setBottomCollapsed}
+                onSetMiniMapCollapsed={setMiniMapCollapsed}
+                onSetTopCollapsed={setTopCollapsed}
+                onSubmitAgentPrompt={submitAgentPrompt}
+                selectedServer={engine.selectedServer}
+                selection={engine.selection}
+                syncNotice={engine.syncNotice}
+                topCollapsed={topCollapsed}
+                world={engine.world}
+              />
+            </>
+          ) : (
+            <HiveWorkflowStudio isAdmin={isAdmin} serverId={engine.serverId} />
+          )
         }
         rightCollapsed={rightCollapsed}
         top={
@@ -183,8 +193,10 @@ export function HiveStudio({
             }
             isRunningNpc={engine.isRunningNpc}
             miniMapCollapsed={miniMapCollapsed}
-            npcLabCollapsed={npcLabCollapsed}
+            mode={studioMode}
+            npcLabCollapsed={npcLabCollapsed || studioMode !== 'world'}
             npcs={engine.npcs}
+            onChangeMode={setStudioMode}
             onToggleChat={() => setChatOpen((value) => !value)}
             onToggleInspector={() =>
               setRightCollapsed((value) => (engine.selection ? !value : true))
@@ -196,7 +208,7 @@ export function HiveStudio({
             presenceCount={engine.presenceCount}
             realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
-            rightCollapsed={rightCollapsed}
+            rightCollapsed={rightCollapsed || studioMode !== 'world'}
             serverPicker={
               <HiveStudioServerPicker
                 buildInfo={buildInfo}
@@ -233,4 +245,8 @@ export function HiveStudio({
       />
     </div>
   );
+}
+
+function isStudioMode(value: unknown): value is 'workflows' | 'world' {
+  return value === 'workflows' || value === 'world';
 }
