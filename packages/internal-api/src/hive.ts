@@ -269,6 +269,104 @@ export type HiveTradeActionPayload =
       tradeId: string;
     };
 
+export type HiveWorkflowNodeType =
+  | 'condition'
+  | 'context'
+  | 'farming'
+  | 'log'
+  | 'manual_trigger'
+  | 'npc_decision'
+  | 'simulation_tick'
+  | 'trade'
+  | 'transform'
+  | 'update_npc'
+  | 'warehouse'
+  | 'world_event';
+
+export type HiveWorkflowNodePosition = {
+  x: number;
+  y: number;
+};
+
+export type HiveWorkflowNode = {
+  data: {
+    config?: HiveJsonObject;
+    description?: string;
+    label: string;
+  };
+  id: string;
+  position: HiveWorkflowNodePosition;
+  type: HiveWorkflowNodeType;
+};
+
+export type HiveWorkflowEdge = {
+  id: string;
+  label?: string;
+  source: string;
+  sourceHandle?: string | null;
+  target: string;
+  targetHandle?: string | null;
+};
+
+export type HiveWorkflowDefinition = {
+  edges: HiveWorkflowEdge[];
+  nodes: HiveWorkflowNode[];
+  version: 1;
+};
+
+export type HiveWorkflow = {
+  archivedAt: string | null;
+  createdAt: string;
+  createdBy: string | null;
+  definition: HiveWorkflowDefinition;
+  description: string | null;
+  enabled: boolean;
+  id: string;
+  name: string;
+  serverId: string;
+  updatedAt: string;
+  updatedBy: string | null;
+  version: number;
+};
+
+export type HiveWorkflowRunStatus = 'completed' | 'failed' | 'running';
+
+export type HiveWorkflowStepTrace = {
+  durationMs?: number;
+  error?: string | null;
+  input?: Json;
+  nodeId: string;
+  nodeType: HiveWorkflowNodeType;
+  output?: Json;
+  status: HiveWorkflowRunStatus;
+};
+
+export type HiveWorkflowRun = {
+  actorUserId: string | null;
+  createdAt: string;
+  error: string | null;
+  finishedAt: string | null;
+  id: string;
+  input: Json;
+  output: Json;
+  serverId: string;
+  startedAt: string;
+  status: HiveWorkflowRunStatus;
+  stepTrace: HiveWorkflowStepTrace[];
+  workflowId: string;
+};
+
+export type HiveWorkflowPayload = {
+  definition: HiveWorkflowDefinition;
+  description?: string | null;
+  enabled?: boolean;
+  name: string;
+};
+
+export type HiveWorkflowRunPayload = {
+  input?: HiveJsonObject;
+};
+
 export type HiveNpcPayload = {
   backstory?: string;
   backstoryEnabled?: boolean;
@@ -636,6 +734,106 @@ export async function upsertHiveMember(
       body: JSON.stringify(payload),
       cache: 'no-store',
       method: 'POST',
+    }
+  );
+}
+
+export async function listHiveWorkflows(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ workflows: HiveWorkflow[] }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createHiveWorkflow(
+  serverId: string,
+  payload: HiveWorkflowPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ workflow: HiveWorkflow }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateHiveWorkflow(
+  serverId: string,
+  workflowId: string,
+  payload: Partial<HiveWorkflowPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ workflow: HiveWorkflow }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows/${encodeURIComponent(workflowId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function archiveHiveWorkflow(
+  serverId: string,
+  workflowId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ ok: true }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows/${encodeURIComponent(workflowId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function runHiveWorkflow(
+  serverId: string,
+  workflowId: string,
+  payload: HiveWorkflowRunPayload = {},
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ run: HiveWorkflowRun }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows/${encodeURIComponent(workflowId)}/run`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function listHiveWorkflowRuns(
+  serverId: string,
+  workflowId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ runs: HiveWorkflowRun[] }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows/${encodeURIComponent(workflowId)}/runs`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getHiveWorkflowRun(
+  serverId: string,
+  workflowId: string,
+  runId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ run: HiveWorkflowRun }>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/workflows/${encodeURIComponent(workflowId)}/runs/${encodeURIComponent(runId)}`,
+    {
+      cache: 'no-store',
     }
   );
 }
