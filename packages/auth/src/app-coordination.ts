@@ -38,17 +38,36 @@ export type AppCoordinationTokenVerification =
       ok: false;
     };
 
-function getSecret(explicitSecret?: string) {
-  const secret =
-    explicitSecret ??
-    process.env.TUTURUUU_APP_COORDINATION_SECRET ??
-    process.env.APP_COORDINATION_TOKEN_SECRET;
+function getSecretCandidates(explicitSecret?: string) {
+  const candidates = explicitSecret
+    ? [explicitSecret]
+    : [
+        process.env.TUTURUUU_APP_COORDINATION_SECRET,
+        process.env.APP_COORDINATION_TOKEN_SECRET,
+        process.env.SUPABASE_SECRET_KEY,
+        process.env.SUPABASE_SERVICE_ROLE_KEY,
+        process.env.SUPABASE_SERVICE_KEY,
+      ];
 
-  if (!secret?.trim()) {
-    throw new Error('Missing TUTURUUU_APP_COORDINATION_SECRET');
+  const secrets = candidates
+    .map((value) => value?.trim())
+    .filter((value): value is string => Boolean(value));
+
+  if (secrets.length === 0) {
+    throw new Error(
+      'Missing TUTURUUU_APP_COORDINATION_SECRET or SUPABASE_SECRET_KEY'
+    );
   }
 
-  return secret;
+  return [...new Set(secrets)];
+}
+
+function getSigningSecret(explicitSecret?: string) {
+  return getSecretCandidates(explicitSecret)[0]!;
+}
+
+function getVerificationSecrets(explicitSecret?: string) {
+  return getSecretCandidates(explicitSecret);
 }
 
 function encodeBase64Url(value: string | Buffer) {
@@ -119,7 +138,7 @@ export function createAppCoordinationToken(
     secret?: string;
   } = {}
 ) {
-  const secret = getSecret(options.secret);
+  const secret = getSigningSecret(options.secret);
   const nowSeconds = Math.floor((options.now ?? new Date()).getTime() / 1000);
   const expiresInSeconds =
     payload.expiresInSeconds ?? DEFAULT_EXPIRES_IN_SECONDS;
@@ -177,14 +196,20 @@ export function verifyAppCoordinationToken(
   }
 
   const unsigned = `${encodedHeader}.${encodedPayload}`;
-  const expectedSignature = signContent(unsigned, getSecret(options.secret));
   const signatureBuffer = Buffer.from(signature);
-  const expectedSignatureBuffer = Buffer.from(expectedSignature);
+  const signatureMatches = getVerificationSecrets(options.secret).some(
+    (secret) => {
+      const expectedSignature = signContent(unsigned, secret);
+      const expectedSignatureBuffer = Buffer.from(expectedSignature);
 
-  if (
-    signatureBuffer.length !== expectedSignatureBuffer.length ||
-    !timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
-  ) {
+      return (
+        signatureBuffer.length === expectedSignatureBuffer.length &&
+        timingSafeEqual(signatureBuffer, expectedSignatureBuffer)
+      );
+    }
+  );
+
+  if (!signatureMatches) {
     return { error: 'Invalid token signature', ok: false };
   }
 

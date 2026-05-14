@@ -14,6 +14,10 @@ import {
 
 describe('app-session JWTs', () => {
   beforeEach(() => {
+    vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+    vi.stubEnv('SUPABASE_SECRET_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
   });
 
@@ -49,6 +53,42 @@ describe('app-session JWTs', () => {
     });
 
     expect(claims.scopes).toEqual(['internal-app:session', 'custom:scope']);
+  });
+
+  it('falls back to the server-side Supabase secret for deployed satellite apps', () => {
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', '');
+    vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+    vi.stubEnv('SUPABASE_SECRET_KEY', 'supabase-server-secret');
+
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+
+    const verification = verifyAppSessionToken(token, {
+      targetApp: 'learn',
+    });
+
+    expect(verification.ok).toBe(true);
+  });
+
+  it('verifies Supabase-secret signed app-session tokens when web also has an explicit coordination secret', () => {
+    const { token } = createAppSessionToken(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      { secret: 'supabase-server-secret' }
+    );
+
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'web-coordination-secret');
+    vi.stubEnv('SUPABASE_SECRET_KEY', 'supabase-server-secret');
+
+    const verification = verifyAppSessionToken(token, {
+      targetApp: 'learn',
+    });
+
+    expect(verification.ok).toBe(true);
   });
 
   it('rejects target-app mismatches', () => {

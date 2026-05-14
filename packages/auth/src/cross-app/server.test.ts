@@ -13,6 +13,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('cross-app server verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+    vi.stubEnv('SUPABASE_SECRET_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
 
     mocks.createClient.mockResolvedValue({
@@ -49,6 +53,26 @@ describe('cross-app server verification', () => {
     );
     expect(response.headers.get('set-cookie')).toContain('HttpOnly');
     expect(response.headers.get('set-cookie')).not.toContain('Domain=');
+  });
+
+  it('mints app-session cookies in satellite deployments with only the existing server-side Supabase secret', async () => {
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', '');
+    vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+    vi.stubEnv('SUPABASE_SECRET_KEY', 'supabase-server-secret');
+
+    const handler = createPOST('learn');
+
+    const response = await handler(
+      new NextRequest('https://learn.tuturuuu.com/api/auth/verify-app-token', {
+        body: JSON.stringify({ token: 'copy-token' }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('set-cookie')).toContain(
+      'tuturuuu_app_session=ttr_app_'
+    );
   });
 
   it('returns Tuturuuu-managed app-session JWTs for CLI token exchange', async () => {

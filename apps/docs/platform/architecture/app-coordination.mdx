@@ -125,6 +125,14 @@ default to an 8-hour lifetime. CLI refresh JWTs use a rolling longer-lived
 window so normal CLI usage can keep the session alive without returning to the
 browser.
 
+When registered internal apps are deployed separately, every deployment that
+mints or verifies `tuturuuu_app_session` must share the same signing material.
+Prefer setting `TUTURUUU_APP_COORDINATION_SECRET` on `apps/web` and every
+registered satellite. For compatibility with existing Vercel satellite
+deployments, the runtime also accepts the server-side Supabase secret as a
+fallback verifier so satellites without the explicit coordination secret do not
+fail immediately after cross-app token validation.
+
 When rotating an app secret, deploy the new external app environment first, then
 rotate from Infrastructure. Existing short-lived bearer tokens keep working
 until they expire, but future exchanges require the new app secret.
@@ -132,5 +140,9 @@ until they expire, but future exchanges require the new app secret.
 Cross-app login tokens are user-bound handoff tokens. The database RPC only
 mints a token for the authenticated caller's own `auth.uid()`; do not use it as a
 server-side impersonation primitive or as a replacement for app credentials.
-Registered apps should clear `tuturuuu_app_session` on local logout and may then
-continue to central `/logout` to end the platform session.
+Registered apps should clear `tuturuuu_app_session` on local logout and expire
+stale `sb-*-auth-token` cookies on the app host. Browser form logout should
+redirect back to the app's landing or login page after local cleanup instead of
+leaving the browser on `/api/auth/logout`. Apps may then offer a separate
+central `/logout` continuation when the user wants to end the platform session
+too.
