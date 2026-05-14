@@ -262,7 +262,11 @@ only when the suffix matches one of the services in the current `compose up`
 request, removes that stale temp container, and retries the same narrow up
 operation.
 
-The stable nginx proxy also raises its request-header buffer limits so larger
+The production `web-proxy` service is pinned to the official mainline Alpine
+image `nginx:1.31.0-alpine`, and `scripts/check-docker-web.js` verifies that
+pin in the merged production Compose config.
+
+The long-lived nginx proxy also raises its request-header buffer limits so larger
 session/auth cookies do not fail at the proxy layer with `400 Request Header Or
 Cookie Too Large` before the active web container sees the request. It now also
 raises its upstream response-header buffers (`proxy_buffer_size`,

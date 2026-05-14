@@ -6,7 +6,7 @@ services:
       timeout: 5s
       start_period: 10s
       retries: 3
-    image: nginx:1.27-alpine
+    image: nginx:1.31.0-alpine
     init: true
     ports:
       - "${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"

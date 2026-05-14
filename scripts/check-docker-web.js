@@ -588,7 +588,7 @@ function validateDockerProdCompose(composeContent) {
       'PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host' +
       '}' +
       '/node_modules',
-    '    image: nginx:1.27-alpine',
+    '    image: nginx:1.31.0-alpine',
     '    image: cloudflare/cloudflared:latest',
     '${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',

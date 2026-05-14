@@ -2077,7 +2077,7 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
             'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}',
             createResult(
               [
-                `proxy-123\tplatform-web-proxy-1\tnginx:1.27-alpine\tUp 4 minutes (healthy)\t4 minutes\t0.0.0.0:7803->7803/tcp\tweb-proxy\t${path.basename(tempDir)}`,
+                `proxy-123\tplatform-web-proxy-1\tnginx:1.31.0-alpine\tUp 4 minutes (healthy)\t4 minutes\t0.0.0.0:7803->7803/tcp\tweb-proxy\t${path.basename(tempDir)}`,
                 `blue-123\tplatform-web-blue-1\tplatform-web\tUp 3 minutes\t3 minutes\t\tweb-blue\t${path.basename(tempDir)}`,
                 `green-123\tplatform-web-green-1\tplatform-web\tUp 6 minutes (healthy)\t6 minutes\t\tweb-green\t${path.basename(tempDir)}`,
                 `markitdown-123\tplatform-markitdown-1\tplatform-markitdown\tUp 2 minutes (healthy)\t2 minutes\t\tmarkitdown\t${path.basename(tempDir)}`,
