@@ -51,7 +51,6 @@ export function HiveAgentComposer({
           aria-label={t('input_label')}
           className="min-w-0 flex-1 bg-transparent px-1 py-2 text-sm outline-none placeholder:text-muted-foreground"
           onChange={(event) => setInput(event.target.value)}
-          placeholder={t('placeholder')}
           value={input}
         />
         <Tooltip>

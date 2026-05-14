@@ -72,13 +72,19 @@ Shared realtime payloads and Hive CRDT helpers live in
 ## Editor Surface
 
 `apps/hive` is a hidden-locale Next.js satellite app. The editor uses a
-full-bleed React Three Fiber viewport, a left server navigator, a bottom tool
-dock, a right inspector, and an NPC Lab panel for manual research runs.
+full-bleed React Three Fiber viewport, compact top status chips, a bottom tool
+dock with the server picker and build/settings controls, a right inspector, and
+an NPC Lab panel for manual research runs.
 
 The editor is built on the shared `@tuturuuu/satellite` workspace shell. Hive
 uses that shell for collapsible left/right rails, top research overlays, and the
 bottom tool dock so satellite apps can share layout mechanics while keeping
 Hive-specific tool density and viewport behavior.
+
+Collapsed editor slots must remove hit targets as well as opacity. Hidden Hive
+toolbars use the satellite shell's collapsed `visibility` and pointer-event
+gating so invisible dock buttons cannot still receive hover, focus, or tooltip
+events.
 
 Hive keeps one editable CRDT world per server. Admins manage that world through
 server controls: creating a server creates its world, deleting a server deletes
@@ -108,6 +114,21 @@ surface responsive during reconnects and slow-client conditions.
 
 Client data access must go through `@tuturuuu/internal-api` helpers and
 TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
+
+## Testing
+
+Hive has app-local Playwright coverage in `apps/hive/e2e`. The suite assumes
+the local web app on `http://localhost:7803` and Hive app on
+`http://localhost:7814` are already running; it does not auto-start dev servers.
+Run it with:
+
+```bash
+bun --filter @tuturuuu/hive test:e2e
+```
+
+The authenticated setup uses the web app's development session endpoint for the
+seeded `local@tuturuuu.com` account before opening Hive. Override
+`WEB_BASE_URL` or `HIVE_BASE_URL` when the local services use different ports.
 
 ## Economy And Farming
 

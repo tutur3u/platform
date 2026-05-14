@@ -1,6 +1,6 @@
 # Hive Design Rules
 
-Hive is a dense research editor, not a marketing site. The first viewport is the working voxel engine: full-bleed 3D scene, compact navigator, tool dock, inspector, and NPC lab.
+Hive is a dense research editor, not a marketing site. The first viewport is the working voxel engine: full-bleed 3D scene, compact status chips, tool dock, inspector, and NPC lab.
 
 ## Visual System
 
@@ -14,11 +14,10 @@ Hive is a dense research editor, not a marketing site. The first viewport is the
 
 - Full-bleed perspective viewport is the main surface.
 - Use the shared `@tuturuuu/satellite` workspace shell for structural rails and viewport slots, then layer Hive-specific controls inside those slots.
-- Left side owns server/world navigation and admin-only server controls.
-- Bottom dock owns tools, swatches, object choices, undo, and redo.
+- Bottom dock owns server/world selection, tools, swatches, object choices, and environment settings.
 - Right side owns the selected entity inspector.
 - NPC Lab is anchored in the viewport top chrome and exposes role, backstory, prompt mode, memory toggles, model, system prompt, and manual run controls without overlapping the inspector.
-- Left/right rails, top research chrome, NPC Lab, and the bottom dock must be collapsible from compact icon controls.
+- Right rail, top research chrome, NPC Lab, and the bottom dock must be collapsible from compact icon controls. Collapsed slots must not leave invisible hover targets or tooltips behind.
 - Do not use generic three-card rows or explanatory landing sections.
 - The generated visual reference for the current landing/editor direction lives at `public/hive-landing-reference.png`; use it as a mood board, not as a literal UI screenshot to embed.
 

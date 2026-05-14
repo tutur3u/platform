@@ -1,7 +1,22 @@
 'use client';
 
-import { Grid3x3 } from '@tuturuuu/icons';
-import { timeThemeLabels, timeThemeOrder } from '@/engine/time-themes';
+import {
+  Bot,
+  Clock3,
+  CloudMoon,
+  Gauge,
+  Grid3x3,
+  Moon,
+  Play,
+  ServerCog,
+  Sun,
+  Sunrise,
+  Sunset,
+} from '@tuturuuu/icons';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
+import type { ComponentType } from 'react';
+import { timeThemeOrder } from '@/engine/time-themes';
 import type { HiveServer, HiveTimeTheme } from '@/engine/types';
 
 type ToolDockSettingsPanelProps = {
@@ -21,46 +36,41 @@ type ToolDockSettingsPanelProps = {
   timeTheme: HiveTimeTheme;
 };
 
+const timeThemeIcons = {
+  afternoon: Sun,
+  evening: Sunset,
+  midnight: Moon,
+  morning: Sunrise,
+  noon: Sun,
+} satisfies Record<HiveTimeTheme, ComponentType<{ className?: string }>>;
+
 export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
+  const t = useTranslations('studio.dock');
   const settings = props.server?.settings ?? {};
 
   return (
     <>
       <div className="my-1 w-px shrink-0 bg-border" />
       <div className="flex items-center gap-1.5">
-        <button
-          aria-pressed={props.gaplessMode}
-          className={[
-            'grid h-14 min-w-18 place-items-center rounded-lg border px-3 text-[11px] transition',
-            props.gaplessMode
-              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-          ].join(' ')}
+        <SettingsIconButton
+          active={props.gaplessMode}
+          icon={Grid3x3}
+          label={t('gapless')}
           onClick={props.onToggleGapless}
-          title="Toggle gapless blocks"
-          type="button"
-        >
-          <Grid3x3 className="h-4 w-4" />
-          <span className="mt-1 leading-none">Gapless</span>
-        </button>
-        <button
-          aria-pressed={props.autoTimeEnabled}
-          className={[
-            'h-14 min-w-20 rounded-lg border px-3 text-[11px] transition',
-            props.autoTimeEnabled
-              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-          ].join(' ')}
+        />
+        <SettingsIconButton
+          active={props.autoTimeEnabled}
+          icon={Clock3}
+          label={t('auto_time')}
           onClick={props.onToggleAutoTime}
-          title="Toggle automatic 24 hour cycle"
-          type="button"
+        />
+        <label
+          aria-label={t('speed')}
+          className="grid h-10 min-w-28 grid-cols-[auto_1fr] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground"
         >
-          <span className="block leading-none">Auto 24h</span>
-        </button>
-        <label className="grid h-14 min-w-28 rounded-lg border border-border bg-background px-3 py-2 text-[11px] text-muted-foreground">
-          <span className="leading-none">Speed</span>
+          <Gauge className="h-4 w-4" />
           <input
-            className="mt-1 h-5 accent-[var(--dynamic-green)]"
+            className="h-5 min-w-20 accent-[var(--dynamic-green)]"
             max={60}
             min={1}
             onChange={(event) =>
@@ -71,77 +81,46 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
           />
         </label>
         {timeThemeOrder.map((theme) => (
-          <button
-            aria-pressed={props.timeTheme === theme}
-            className={[
-              'h-14 min-w-20 rounded-lg border px-3 text-[11px] transition',
-              props.timeTheme === theme
-                ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-                : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-            ].join(' ')}
+          <SettingsIconButton
+            active={props.timeTheme === theme}
+            icon={timeThemeIcons[theme]}
             key={theme}
+            label={t(`time_${theme}`)}
             onClick={() => props.onSelectTimeTheme(theme)}
-            title={`${timeThemeLabels[theme]} theme`}
-            type="button"
-          >
-            <span className="block leading-none">{timeThemeLabels[theme]}</span>
-          </button>
+          />
         ))}
-        <button
-          aria-pressed={!!settings.simulationCronEnabled}
-          className={[
-            'h-14 min-w-20 rounded-lg border px-3 text-[11px] transition',
-            settings.simulationCronEnabled
-              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-          ].join(' ')}
+        <SettingsIconButton
+          active={!!settings.simulationCronEnabled}
+          icon={ServerCog}
+          label={t('cron')}
           onClick={() =>
             props.onUpdateServerSettings({
               simulationCronEnabled: !settings.simulationCronEnabled,
             })
           }
-          title="Toggle Hive simulation cron for this server"
-          type="button"
-        >
-          <span className="block leading-none">Cron</span>
-        </button>
-        <button
-          aria-pressed={!!settings.autonomousNpcEnabled}
-          className={[
-            'h-14 min-w-24 rounded-lg border px-3 text-[11px] transition',
-            settings.autonomousNpcEnabled
-              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-          ].join(' ')}
+        />
+        <SettingsIconButton
+          active={!!settings.autonomousNpcEnabled}
+          icon={Bot}
+          label={t('autonomy')}
           onClick={() =>
             props.onUpdateServerSettings({
               autonomousNpcEnabled: !settings.autonomousNpcEnabled,
             })
           }
-          title="Toggle autonomous NPC simulation"
-          type="button"
-        >
-          <span className="block leading-none">Autonomy</span>
-        </button>
-        <button
-          className="h-14 min-w-24 rounded-lg border border-border bg-background px-3 text-[11px] text-muted-foreground transition hover:border-foreground/25 hover:text-foreground disabled:cursor-wait disabled:opacity-60"
+        />
+        <SettingsIconButton
           disabled={props.isRunningSimulationTick}
+          icon={Play}
+          label={
+            props.isRunningSimulationTick ? t('running_tick') : t('run_tick')
+          }
           onClick={props.onRunSimulationTick}
-          title="Run one autonomous farming and needs simulation tick"
-          type="button"
-        >
-          <span className="block leading-none">
-            {props.isRunningSimulationTick ? 'Running' : 'Run tick'}
-          </span>
-        </button>
-        <button
-          aria-pressed={!!settings.ollamaEnabled}
-          className={[
-            'h-14 min-w-24 rounded-lg border px-3 text-[11px] transition',
-            settings.ollamaEnabled
-              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
-              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-          ].join(' ')}
+        />
+        <SettingsIconButton
+          active={!!settings.ollamaEnabled}
+          icon={CloudMoon}
+          label={t('ollama')}
           onClick={() =>
             props.onUpdateServerSettings({
               llmProvider: settings.ollamaEnabled ? 'disabled' : 'ollama',
@@ -149,12 +128,45 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
               ollamaModel: 'gemma4',
             })
           }
-          title="Toggle local Ollama gemma4 for Hive"
-          type="button"
-        >
-          <span className="block leading-none">Ollama</span>
-        </button>
+        />
       </div>
     </>
+  );
+}
+
+function SettingsIconButton({
+  active = false,
+  disabled = false,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  active?: boolean;
+  disabled?: boolean;
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          aria-label={label}
+          aria-pressed={active}
+          className={[
+            'inline-flex h-10 w-10 items-center justify-center rounded-md border transition disabled:cursor-wait disabled:opacity-60',
+            active
+              ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
+              : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
+          ].join(' ')}
+          disabled={disabled}
+          onClick={onClick}
+          type="button"
+        >
+          <Icon className="h-4 w-4" />
+        </button>
+      </TooltipTrigger>
+      <TooltipContent side="top">{label}</TooltipContent>
+    </Tooltip>
   );
 }

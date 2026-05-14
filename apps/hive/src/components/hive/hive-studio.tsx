@@ -114,11 +114,12 @@ export function HiveStudio({
               topCollapsed={topCollapsed}
             />
             <div
+              aria-hidden={bottomCollapsed}
               className={[
-                'pointer-events-none absolute right-4 bottom-28 left-4 z-20 transition duration-300 ease-out',
+                'absolute right-4 bottom-28 left-4 z-20 transition duration-300 ease-out',
                 bottomCollapsed
-                  ? 'translate-y-6 opacity-0'
-                  : 'translate-y-0 opacity-100',
+                  ? 'pointer-events-none invisible translate-y-6 opacity-0'
+                  : 'pointer-events-none visible translate-y-0 opacity-100',
               ].join(' ')}
             >
               <HiveAgentComposer
