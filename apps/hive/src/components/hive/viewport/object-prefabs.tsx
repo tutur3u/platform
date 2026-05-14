@@ -4,6 +4,7 @@ import { type ThreeEvent, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import type { Group } from 'three';
 import type { HiveObject, HiveSelection, HiveTool } from '@/engine/types';
+import { BuildingPrefab } from './building-prefabs';
 
 type PrefabProps = {
   object: HiveObject;
@@ -61,47 +62,9 @@ export function ObjectPrefab({
     rotation: [0, ((object.rotation ?? 0) * Math.PI) / 180, 0] as const,
   };
   const ringColor = selected ? '#e2c168' : '#47503a';
+  const building = BuildingPrefab({ common, object, ringColor });
 
-  if (object.type === 'house') {
-    return (
-      <group {...common}>
-        {/* Base house wall */}
-        <mesh castShadow position={[0, 0.45, 0]}>
-          <boxGeometry args={[1.4, 0.9, 1.3]} />
-          <meshStandardMaterial color="#e5ccb3" roughness={0.9} />
-        </mesh>
-        {/* Door */}
-        <mesh position={[0, 0.3, 0.66]}>
-          <boxGeometry args={[0.35, 0.6, 0.05]} />
-          <meshStandardMaterial color="#6a4b3a" roughness={0.8} />
-        </mesh>
-        {/* Window */}
-        <mesh position={[0.4, 0.45, 0.66]}>
-          <boxGeometry args={[0.3, 0.3, 0.05]} />
-          <meshStandardMaterial
-            color="#88cbd8"
-            emissive="#1a4d66"
-            roughness={0.2}
-            metalness={0.8}
-          />
-        </mesh>
-        {/* Roof */}
-        <mesh castShadow position={[0, 1.05, 0]} rotation={[0, Math.PI / 4, 0]}>
-          <cylinderGeometry args={[0, 1.3, 0.7, 4]} />
-          <meshStandardMaterial color="#c05a5a" roughness={0.8} />
-        </mesh>
-        {/* Chimney */}
-        <mesh castShadow position={[-0.4, 1.2, -0.3]}>
-          <boxGeometry args={[0.2, 0.6, 0.2]} />
-          <meshStandardMaterial color="#8e4a4a" />
-        </mesh>
-        <mesh position={[0, 0.05, 0]}>
-          <boxGeometry args={[1.6, 0.1, 1.5]} />
-          <meshStandardMaterial color={ringColor} transparent opacity={0.6} />
-        </mesh>
-      </group>
-    );
-  }
+  if (building) return building;
 
   if (object.type === 'tree') {
     return (
@@ -253,29 +216,6 @@ export function ObjectPrefab({
             </mesh>
           </>
         )}
-      </group>
-    );
-  }
-
-  if (object.type === 'greenhouse' || object.type === 'workshop') {
-    return (
-      <group {...common}>
-        <mesh castShadow position={[0, 0.34, 0]}>
-          <boxGeometry args={[1.18, 0.52, 1.02]} />
-          <meshStandardMaterial
-            color={object.type === 'greenhouse' ? '#7fb56a' : '#b76b55'}
-            roughness={0.72}
-          />
-        </mesh>
-        <mesh castShadow position={[0, 0.78, 0]}>
-          <boxGeometry args={[1.02, 0.24, 0.86]} />
-          <meshStandardMaterial
-            color={object.type === 'greenhouse' ? '#b9d8a7' : '#6d7180'}
-            roughness={0.58}
-            transparent={object.type === 'greenhouse'}
-            opacity={object.type === 'greenhouse' ? 0.78 : 1}
-          />
-        </mesh>
       </group>
     );
   }

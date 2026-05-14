@@ -17,7 +17,9 @@ Hive is a dense research editor, not a marketing site. The first viewport is the
 - Bottom dock owns server/world selection, tools, swatches, object choices, and environment settings.
 - Right side owns the selected entity inspector.
 - NPC Lab is anchored in the viewport top chrome and exposes role, backstory, prompt mode, memory toggles, model, system prompt, and manual run controls without overlapping the inspector.
-- Right rail, top research chrome, NPC Lab, and the bottom dock must be collapsible from compact icon controls. Collapsed slots must not leave invisible hover targets or tooltips behind.
+- Right rail, top research chrome, NPC Lab, chat composer, mini-map, and the bottom dock must be collapsible from compact icon controls. Collapsed slots must not leave invisible hover targets or tooltips behind.
+- Keep the active server name on one dock line with its server icon and menu affordance.
+- Render voxel terrain with a minimal tile gap by default. Gapless rendering is an optional setting, not the default visual state.
 - Do not use generic three-card rows or explanatory landing sections.
 - The generated visual reference for the current landing/editor direction lives at `public/hive-landing-reference.png`; use it as a mood board, not as a literal UI screenshot to embed.
 
@@ -26,9 +28,11 @@ Hive is a dense research editor, not a marketing site. The first viewport is the
 - Tile animation must use transform, opacity, material color, or shader-safe frame updates. Never use layout-affecting CSS animation for the editor scene.
 - Object previews should snap to the voxel grid and feel tactile.
 - Keep the editable grid unrotated. Perspective belongs to the camera/control rig so raycast placement matches the cursor.
+- Camera views should be explicit editor modes. At minimum keep isometric, wide, close, and top-down presets available from the dock.
 
 ## Content
 
 - Use direct editor labels. Do not add visible instructional prose about keyboard shortcuts, layout, or feature explanations.
 - No emojis in UI copy.
 - Research controls should make experimental variables explicit: default/enhanced/custom prompt, memory enabled, backstory enabled, editable system prompt, model settings, and run logs.
+- Environment controls use a continuous 24-hour time slider plus season and weather buttons. Do not reintroduce the five fixed visible time buttons as the main control.

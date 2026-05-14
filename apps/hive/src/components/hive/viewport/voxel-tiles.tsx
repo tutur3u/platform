@@ -32,7 +32,7 @@ export function VoxelTiles({
 
   useEffect(() => {
     if (!meshRef.current || !sideRef.current) return;
-    const tileSize = gaplessMode ? 1 : 0.9;
+    const tileSize = gaplessMode ? 1 : 0.94;
 
     blocks.forEach((block, index) => {
       const height = getTerrainHeight(block.type);

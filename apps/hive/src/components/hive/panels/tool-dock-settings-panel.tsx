@@ -2,60 +2,92 @@
 
 import {
   Bot,
+  Camera,
   Clock3,
+  Cloud,
+  CloudFog,
   CloudMoon,
+  CloudRain,
+  CloudSnow,
+  CloudSun,
   Gauge,
   Grid3x3,
-  Moon,
   Play,
   ServerCog,
+  Snowflake,
+  Sprout,
   Sun,
-  Sunrise,
-  Sunset,
+  TreeDeciduous,
+  Zap,
 } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import type { ComponentType } from 'react';
-import { timeThemeOrder } from '@/engine/time-themes';
-import type { HiveServer, HiveTimeTheme } from '@/engine/types';
+import {
+  hiveCameraViewOrder,
+  hiveSeasonOrder,
+  hiveWeatherOrder,
+} from '@/engine/environment';
+import { formatSimulatedClock } from '@/engine/time-themes';
+import type {
+  HiveCameraView,
+  HiveSeason,
+  HiveServer,
+  HiveWeather,
+} from '@/engine/types';
 
 type ToolDockSettingsPanelProps = {
   autoTimeEnabled: boolean;
   autoTimeSpeed: number;
+  cameraView: HiveCameraView;
   gaplessMode: boolean;
   isRunningSimulationTick: boolean;
-  onSelectTimeTheme: (theme: HiveTimeTheme) => void;
-  onSetAutoTimeSpeed: (speed: number) => void;
   onRunSimulationTick: () => void;
+  onSelectCameraView: (view: HiveCameraView) => void;
+  onSetAutoTimeSpeed: (speed: number) => void;
+  onSetClockMinutes: (minutes: number) => void;
+  onSetSeason: (season: HiveSeason) => void;
+  onSetWeather: (weather: HiveWeather) => void;
   onToggleAutoTime: () => void;
   onToggleGapless: () => void;
   onUpdateServerSettings: (
     settings: NonNullable<HiveServer['settings']>
   ) => void;
+  season: HiveSeason;
   server?: HiveServer | null;
-  timeTheme: HiveTimeTheme;
+  simulatedMinutes: number;
+  weather: HiveWeather;
 };
 
-const timeThemeIcons = {
-  afternoon: Sun,
-  evening: Sunset,
-  midnight: Moon,
-  morning: Sunrise,
-  noon: Sun,
-} satisfies Record<HiveTimeTheme, ComponentType<{ className?: string }>>;
+const seasonIcons = {
+  autumn: TreeDeciduous,
+  spring: Sprout,
+  summer: Sun,
+  winter: Snowflake,
+} satisfies Record<HiveSeason, ComponentType<{ className?: string }>>;
+
+const weatherIcons = {
+  clear: CloudSun,
+  cloudy: Cloud,
+  fog: CloudFog,
+  rain: CloudRain,
+  snow: CloudSnow,
+  storm: Zap,
+} satisfies Record<HiveWeather, ComponentType<{ className?: string }>>;
 
 export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
   const t = useTranslations('studio.dock');
   const settings = props.server?.settings ?? {};
+  const clock = formatSimulatedClock(props.simulatedMinutes);
 
   return (
     <>
       <div className="my-1 w-px shrink-0 bg-border" />
       <div className="flex items-center gap-1.5">
         <SettingsIconButton
-          active={props.gaplessMode}
+          active={!props.gaplessMode}
           icon={Grid3x3}
-          label={t('gapless')}
+          label={t('minimal_gaps')}
           onClick={props.onToggleGapless}
         />
         <SettingsIconButton
@@ -64,6 +96,26 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
           label={t('auto_time')}
           onClick={props.onToggleAutoTime}
         />
+        <label
+          aria-label={t('time_of_day', { time: clock })}
+          className="grid h-10 min-w-44 grid-cols-[auto_1fr_auto] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground"
+        >
+          <Clock3 className="h-4 w-4" />
+          <input
+            className="h-5 min-w-24 accent-[var(--dynamic-green)]"
+            max={1439}
+            min={0}
+            onChange={(event) =>
+              props.onSetClockMinutes(Number(event.target.value))
+            }
+            step={15}
+            type="range"
+            value={props.simulatedMinutes}
+          />
+          <span className="w-10 text-right font-medium text-foreground text-xs tabular-nums">
+            {clock}
+          </span>
+        </label>
         <label
           aria-label={t('speed')}
           className="grid h-10 min-w-28 grid-cols-[auto_1fr] items-center gap-2 rounded-md border border-border bg-background px-2 text-muted-foreground"
@@ -80,13 +132,31 @@ export function ToolDockSettingsPanel(props: ToolDockSettingsPanelProps) {
             value={props.autoTimeSpeed}
           />
         </label>
-        {timeThemeOrder.map((theme) => (
+        {hiveSeasonOrder.map((season) => (
           <SettingsIconButton
-            active={props.timeTheme === theme}
-            icon={timeThemeIcons[theme]}
-            key={theme}
-            label={t(`time_${theme}`)}
-            onClick={() => props.onSelectTimeTheme(theme)}
+            active={props.season === season}
+            icon={seasonIcons[season]}
+            key={season}
+            label={t(`season_${season}`)}
+            onClick={() => props.onSetSeason(season)}
+          />
+        ))}
+        {hiveWeatherOrder.map((weather) => (
+          <SettingsIconButton
+            active={props.weather === weather}
+            icon={weatherIcons[weather]}
+            key={weather}
+            label={t(`weather_${weather}`)}
+            onClick={() => props.onSetWeather(weather)}
+          />
+        ))}
+        {hiveCameraViewOrder.map((view) => (
+          <SettingsIconButton
+            active={props.cameraView === view}
+            icon={Camera}
+            key={view}
+            label={t(`camera_${view}`)}
+            onClick={() => props.onSelectCameraView(view)}
           />
         ))}
         <SettingsIconButton

@@ -23,9 +23,8 @@ export function useHiveTimeOfDay() {
   }, [autoTimeEnabled, autoTimeSpeed]);
 
   useEffect(() => {
-    if (!autoTimeEnabled) return;
     setTimeTheme(getTimeThemeForMinutes(simulatedMinutes));
-  }, [autoTimeEnabled, simulatedMinutes]);
+  }, [simulatedMinutes]);
 
   const selectTimeTheme = (theme: HiveTimeTheme) => {
     setAutoTimeEnabled(false);
@@ -33,11 +32,17 @@ export function useHiveTimeOfDay() {
     setTimeTheme(theme);
   };
 
+  const setClockMinutes = (minutes: number) => {
+    setAutoTimeEnabled(false);
+    setSimulatedMinutes(((Math.round(minutes) % 1440) + 1440) % 1440);
+  };
+
   return {
     autoTimeEnabled,
     autoTimeSpeed,
     setAutoTimeEnabled,
     setAutoTimeSpeed,
+    setClockMinutes,
     setTimeTheme: selectTimeTheme,
     simulatedMinutes,
     timeTheme,

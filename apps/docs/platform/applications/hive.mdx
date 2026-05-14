@@ -96,12 +96,20 @@ from the camera and controls, not from rotating the editable world group. World
 edits should commit only after click/drag threshold handling so orbit, pan,
 zoom, placement, erasing, moving, and rotating do not conflict with each other.
 The toolbar opens with build tools only; block, object, system, and agent
-catalogs appear only while the Build tool is active. Gapless tile rendering is
-enabled by default and lives with time-of-day controls in the Settings dock tab.
-Manual morning, noon, afternoon, evening, and midnight modes use authored scene
-backdrops rather than a generic sky preset. Auto 24h mode advances a fast
-simulated day, shows the in-world clock in the summary overlay, and smoothly
-lerps scene lighting, fog, background, and cloud tint between themes.
+catalogs appear only while the Build tool is active. Minimal tile gaps are the
+default terrain presentation; gapless rendering is an explicit settings toggle.
+The Settings dock tab owns the continuous 24-hour time slider, auto-time speed,
+season, weather, camera presets, and simulation/server toggles. Do not restore
+the older five fixed visible time buttons as the primary time control.
+
+The chat composer is opt-in from the editor chrome button, and the mini-map is
+a collapsible viewport overlay. If all Hive servers are deleted, the editor must
+clear local world, NPC, revision, selection, presence, and awareness state so it
+does not keep rendering the last server snapshot.
+
+Time of day still maps to authored scene backdrops and lerped lighting, fog,
+background, and cloud tint. Weather and season controls layer visual atmosphere
+over that time base without changing the durable CRDT world snapshot.
 Realtime multiplayer awareness is ephemeral. Avatar badges, terrain cursors,
 selection rings, active tool state, camera focus, and in-world user markers are
 sent as TTL-based awareness updates and must not be persisted into durable

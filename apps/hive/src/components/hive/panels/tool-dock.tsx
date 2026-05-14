@@ -15,9 +15,11 @@ import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type {
   HiveBuildMode,
+  HiveCameraView,
+  HiveSeason,
   HiveServer,
-  HiveTimeTheme,
   HiveTool,
+  HiveWeather,
 } from '@/engine/types';
 import { ToolDockCatalogPanel } from './tool-dock-catalog-panel';
 import { ToolDockSettingsPanel } from './tool-dock-settings-panel';
@@ -29,16 +31,20 @@ type ToolDockProps = {
   gaplessMode: boolean;
   autoTimeEnabled: boolean;
   autoTimeSpeed: number;
+  cameraView: HiveCameraView;
   isRunningSimulationTick: boolean;
   onSelectBuildMode: (mode: HiveBuildMode) => void;
+  onSelectCameraView: (view: HiveCameraView) => void;
   onSelectObject: (id: string) => void;
   onSelectTerrain: (id: string) => void;
   onRotateSelection: () => void;
   onRunSimulationTick: () => void;
+  onSetClockMinutes: (minutes: number) => void;
+  onSetSeason: (season: HiveSeason) => void;
+  onSetWeather: (weather: HiveWeather) => void;
   onSetTool: (tool: HiveTool) => void;
   onToggle: () => void;
   onToggleGapless: () => void;
-  onSelectTimeTheme: (theme: HiveTimeTheme) => void;
   onSetAutoTimeSpeed: (speed: number) => void;
   onToggleAutoTime: () => void;
   onUpdateServerSettings: (
@@ -46,8 +52,10 @@ type ToolDockProps = {
   ) => void;
   server?: HiveServer | null;
   serverPicker?: ReactNode;
-  timeTheme: HiveTimeTheme;
+  season: HiveSeason;
+  simulatedMinutes: number;
   tool: HiveTool;
+  weather: HiveWeather;
 };
 
 const toolItems = [
@@ -141,16 +149,22 @@ export function ToolDock(props: ToolDockProps) {
           <ToolDockSettingsPanel
             autoTimeEnabled={props.autoTimeEnabled}
             autoTimeSpeed={props.autoTimeSpeed}
+            cameraView={props.cameraView}
             gaplessMode={props.gaplessMode}
-            onSelectTimeTheme={props.onSelectTimeTheme}
+            onSelectCameraView={props.onSelectCameraView}
+            onSetClockMinutes={props.onSetClockMinutes}
             onSetAutoTimeSpeed={props.onSetAutoTimeSpeed}
+            onSetSeason={props.onSetSeason}
+            onSetWeather={props.onSetWeather}
             onToggleAutoTime={props.onToggleAutoTime}
             onToggleGapless={props.onToggleGapless}
             onRunSimulationTick={props.onRunSimulationTick}
             onUpdateServerSettings={props.onUpdateServerSettings}
             isRunningSimulationTick={props.isRunningSimulationTick}
+            season={props.season}
             server={props.server}
-            timeTheme={props.timeTheme}
+            simulatedMinutes={props.simulatedMinutes}
+            weather={props.weather}
           />
         ) : null}
         <div className="my-1 w-px shrink-0 bg-border" />

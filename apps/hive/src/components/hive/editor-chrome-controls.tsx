@@ -2,6 +2,7 @@
 
 import {
   Brain,
+  MessageSquareText,
   PanelBottomClose,
   PanelBottomOpen,
   PanelRightClose,
@@ -9,11 +10,14 @@ import {
   PanelTopClose,
   PanelTopOpen,
 } from '@tuturuuu/icons';
+import { useTranslations } from 'next-intl';
 
 type EditorChromeControlsProps = {
   bottomCollapsed: boolean;
+  chatOpen: boolean;
   npcLabCollapsed: boolean;
   onToggleBottom: () => void;
+  onToggleChat: () => void;
   onToggleNpcLab: () => void;
   onToggleRight: () => void;
   onToggleTop: () => void;
@@ -23,20 +27,23 @@ type EditorChromeControlsProps = {
 
 export function EditorChromeControls({
   bottomCollapsed,
+  chatOpen,
   npcLabCollapsed,
   onToggleBottom,
+  onToggleChat,
   onToggleNpcLab,
   onToggleRight,
   onToggleTop,
   rightCollapsed,
   topCollapsed,
 }: EditorChromeControlsProps) {
+  const t = useTranslations('studio.chrome');
   const items = [
     {
       active: !rightCollapsed,
       className: 'top-52 right-4',
       icon: rightCollapsed ? PanelRightOpen : PanelRightClose,
-      label: 'Toggle inspector',
+      label: t('toggle_inspector'),
       onClick: onToggleRight,
       visible: rightCollapsed,
     },
@@ -44,7 +51,7 @@ export function EditorChromeControls({
       active: !topCollapsed,
       className: 'top-4 left-1/2 -translate-x-1/2',
       icon: topCollapsed ? PanelTopOpen : PanelTopClose,
-      label: 'Toggle top panels',
+      label: t('toggle_top'),
       onClick: onToggleTop,
       visible: topCollapsed,
     },
@@ -52,15 +59,23 @@ export function EditorChromeControls({
       active: !npcLabCollapsed,
       className: rightCollapsed ? 'top-20 right-4' : 'top-20 right-[404px]',
       icon: Brain,
-      label: 'Toggle NPC lab',
+      label: t('toggle_npc_lab'),
       onClick: onToggleNpcLab,
       visible: npcLabCollapsed && !topCollapsed,
+    },
+    {
+      active: chatOpen,
+      className: bottomCollapsed ? 'right-4 bottom-16' : 'right-4 bottom-28',
+      icon: MessageSquareText,
+      label: chatOpen ? t('close_chat') : t('open_chat'),
+      onClick: onToggleChat,
+      visible: true,
     },
     {
       active: !bottomCollapsed,
       className: 'bottom-4 left-1/2 -translate-x-1/2',
       icon: bottomCollapsed ? PanelBottomOpen : PanelBottomClose,
-      label: 'Toggle tool dock',
+      label: t('toggle_tool_dock'),
       onClick: onToggleBottom,
       visible: bottomCollapsed,
     },

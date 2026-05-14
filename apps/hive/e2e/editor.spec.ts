@@ -33,11 +33,33 @@ test.describe('Hive editor chrome', () => {
 
     await page.getByRole('button', { name: 'Editor settings' }).click();
     await expect(
-      page.getByRole('button', { name: 'Gapless blocks' })
+      page.getByRole('button', { name: 'Minimal tile gaps' })
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: 'Automatic 24 hour cycle' })
     ).toBeVisible();
+    await expect(page.getByLabel(/Time of day/)).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Spring' })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Clear weather' })
+    ).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Isometric camera' })
+    ).toBeVisible();
+  });
+
+  test('toggles agent chat and mini-map chrome', async ({ page }) => {
+    await expect(page.getByLabel('World agent prompt')).not.toBeVisible();
+    await page.getByRole('button', { name: 'Open agent chat' }).click();
+    await expect(page.getByLabel('World agent prompt')).toBeVisible();
+    await page.getByRole('button', { name: 'Close agent chat' }).click();
+    await expect(page.getByLabel('World agent prompt')).not.toBeVisible();
+
+    await expect(page.getByLabel('Hive mini-map')).toBeVisible();
+    await page.getByRole('button', { name: 'Collapse mini-map' }).click();
+    await expect(page.getByLabel('Hive mini-map')).not.toBeVisible();
+    await page.getByRole('button', { name: 'Open mini-map' }).click();
+    await expect(page.getByLabel('Hive mini-map')).toBeVisible();
   });
 
   test('removes hidden toolbar hit targets when the dock is collapsed', async ({

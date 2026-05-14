@@ -33,6 +33,18 @@ export type HiveTimeTheme =
   | 'morning'
   | 'noon';
 
+export type HiveCameraView = 'close' | 'isometric' | 'topDown' | 'wide';
+
+export type HiveSeason = 'autumn' | 'spring' | 'summer' | 'winter';
+
+export type HiveWeather =
+  | 'clear'
+  | 'cloudy'
+  | 'fog'
+  | 'rain'
+  | 'snow'
+  | 'storm';
+
 export type HiveCatalogItem = {
   category: 'building' | 'functional' | 'terrain';
   color: string;

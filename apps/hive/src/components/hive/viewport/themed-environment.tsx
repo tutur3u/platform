@@ -11,12 +11,25 @@ import {
   Vector3,
 } from 'three';
 import { timeThemePresets } from '@/engine/time-themes';
-import type { HiveTimeTheme } from '@/engine/types';
+import type { HiveSeason, HiveTimeTheme, HiveWeather } from '@/engine/types';
 
-export function ThemedEnvironment({ timeTheme }: { timeTheme: HiveTimeTheme }) {
+type ThemedEnvironmentProps = {
+  season: HiveSeason;
+  timeTheme: HiveTimeTheme;
+  weather: HiveWeather;
+};
+
+export function ThemedEnvironment({
+  season,
+  timeTheme,
+  weather,
+}: ThemedEnvironmentProps) {
   const ambientRef = useRef<AmbientLight>(null);
   const directionalRef = useRef<DirectionalLight>(null);
-  const target = timeThemePresets[timeTheme];
+  const target = useMemo(
+    () => getEnvironmentPreset(timeTheme, season, weather),
+    [season, timeTheme, weather]
+  );
   const { scene } = useThree();
   const stateRef = useRef({
     ambient: target.ambientIntensity,
@@ -82,12 +95,12 @@ export function ThemedEnvironment({ timeTheme }: { timeTheme: HiveTimeTheme }) {
         shadow-mapSize-width={2048}
         shadow-normalBias={0.035}
       />
-      <SceneBackdrop timeTheme={timeTheme} />
+      <SceneBackdrop season={season} timeTheme={timeTheme} weather={weather} />
     </>
   );
 }
 
-function SceneBackdrop({ timeTheme }: { timeTheme: HiveTimeTheme }) {
+function SceneBackdrop({ season, timeTheme, weather }: ThemedEnvironmentProps) {
   if (timeTheme === 'midnight') {
     return (
       <>
@@ -153,6 +166,21 @@ function SceneBackdrop({ timeTheme }: { timeTheme: HiveTimeTheme }) {
     );
   }
 
+  if (season === 'winter' || weather === 'snow') {
+    return (
+      <>
+        <mesh position={[-7, 10, -24]}>
+          <sphereGeometry args={[4.8, 24, 12]} />
+          <meshBasicMaterial color="#f5fbff" transparent opacity={0.32} />
+        </mesh>
+        <mesh position={[9, 8.4, -26]}>
+          <boxGeometry args={[24, 1.2, 0.4]} />
+          <meshBasicMaterial color="#d8e8ef" transparent opacity={0.24} />
+        </mesh>
+      </>
+    );
+  }
+
   return (
     <>
       <mesh position={[-8, 11, -24]}>
@@ -165,4 +193,54 @@ function SceneBackdrop({ timeTheme }: { timeTheme: HiveTimeTheme }) {
       </mesh>
     </>
   );
+}
+
+function getEnvironmentPreset(
+  timeTheme: HiveTimeTheme,
+  season: HiveSeason,
+  weather: HiveWeather
+) {
+  const base = timeThemePresets[timeTheme];
+  const seasonTint = getSeasonTint(season);
+  const weatherFog = weather === 'fog' ? 10 : weather === 'storm' ? 7 : 0;
+  const stormDim = weather === 'storm' ? 0.62 : 1;
+  const precipitationDim =
+    weather === 'rain' || weather === 'snow' || weather === 'cloudy' ? 0.86 : 1;
+
+  return {
+    ...base,
+    ambientIntensity: base.ambientIntensity * precipitationDim,
+    background:
+      weather === 'fog'
+        ? '#dfe8e4'
+        : weather === 'storm'
+          ? '#8091a1'
+          : weather === 'snow'
+            ? '#eef6f8'
+            : blendHex(base.background, seasonTint, 0.12),
+    cloud:
+      weather === 'storm'
+        ? '#67717b'
+        : weather === 'snow'
+          ? '#ffffff'
+          : base.cloud,
+    directionalIntensity: base.directionalIntensity * stormDim,
+    fogFar: Math.max(24, base.fogFar - weatherFog),
+    fogNear: Math.max(5, base.fogNear - weatherFog),
+    shadowOpacity:
+      weather === 'cloudy' || weather === 'fog' ? 0.12 : base.shadowOpacity,
+    tint: blendHex(base.tint, seasonTint, 0.16),
+  };
+}
+
+function getSeasonTint(season: HiveSeason) {
+  if (season === 'spring') return '#d8f4c6';
+  if (season === 'summer') return '#fff2a8';
+  if (season === 'autumn') return '#e9ad72';
+  return '#d8eef7';
+}
+
+function blendHex(a: string, b: string, amount: number) {
+  const colorA = new Color(a);
+  return `#${colorA.lerp(new Color(b), amount).getHexString()}`;
 }

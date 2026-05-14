@@ -68,13 +68,15 @@ export function HiveServerPicker({
       >
         <SelectTrigger
           aria-label={t('select_label')}
-          className="h-10 w-[min(190px,36vw)] rounded-md border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
+          className="h-10 w-[min(260px,42vw)] justify-start rounded-md border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
         >
-          <span className="flex min-w-0 items-center gap-2">
+          <span className="flex min-w-0 flex-1 items-center gap-2 whitespace-nowrap">
             <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-dynamic-green text-background">
               <Server className="h-4 w-4" />
             </span>
-            <span className="truncate">{server?.name ?? t('empty')}</span>
+            <span className="min-w-0 truncate leading-none">
+              {server?.name ?? t('empty')}
+            </span>
           </span>
         </SelectTrigger>
         <SelectContent align="start" className="min-w-64">

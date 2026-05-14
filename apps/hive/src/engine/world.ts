@@ -51,6 +51,17 @@ export function createDefaultWorld(): HiveWorldData {
         type: 'house',
       },
       {
+        id: 'object:cottage:seed:a',
+        position: { x: 4, y: 1, z: -1 },
+        rotation: 90,
+        type: 'cottage',
+      },
+      {
+        id: 'object:civic-hall:seed:a',
+        position: { x: -3, y: 1, z: 3 },
+        type: 'civic-hall',
+      },
+      {
         id: 'object:tree:seed:a',
         position: { x: 3, y: 1, z: -3 },
         type: 'tree',

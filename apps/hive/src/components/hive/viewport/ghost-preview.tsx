@@ -90,19 +90,37 @@ function ObjectGhostPreview({
     <meshStandardMaterial color={color} opacity={0.48} transparent />
   );
 
-  if (activeObject === 'house') {
+  if (
+    activeObject === 'house' ||
+    activeObject === 'cottage' ||
+    activeObject === 'townhouse' ||
+    activeObject === 'civic-hall' ||
+    activeObject === 'watchtower'
+  ) {
+    const tall = activeObject === 'townhouse' || activeObject === 'watchtower';
+    const wide = activeObject === 'civic-hall';
+
     return (
-      <group name="house-preview" position={position}>
+      <group name={`${activeObject}-preview`} position={position}>
         <mesh position={[0, 0.38, 0]}>
-          <boxGeometry args={[1.4, 0.78, 1.25]} />
+          <boxGeometry
+            args={[
+              wide ? 1.62 : activeObject === 'cottage' ? 1.16 : 1.4,
+              tall ? 1.28 : 0.78,
+              wide ? 1.18 : activeObject === 'cottage' ? 1.02 : 1.25,
+            ]}
+          />
           <meshStandardMaterial color="#d8a56a" opacity={0.44} transparent />
         </mesh>
-        <mesh position={[0, 0.96, 0]} rotation={[0, Math.PI / 4, 0]}>
+        <mesh
+          position={[0, tall ? 1.36 : 0.96, 0]}
+          rotation={[0, Math.PI / 4, 0]}
+        >
           <boxGeometry args={[1.25, 0.42, 1.25]} />
           <meshStandardMaterial color="#4d8ed8" opacity={0.52} transparent />
         </mesh>
         <mesh position={[0, 0.08, 0]}>
-          <boxGeometry args={[1.58, 0.1, 1.42]} />
+          <boxGeometry args={[wide ? 1.9 : 1.58, 0.1, wide ? 1.42 : 1.42]} />
           <meshStandardMaterial color="#47503a" opacity={0.3} transparent />
         </mesh>
       </group>

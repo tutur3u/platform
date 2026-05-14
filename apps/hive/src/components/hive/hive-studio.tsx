@@ -4,14 +4,11 @@ import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
 import { useState } from 'react';
 import type { HiveSelection, HiveServer, HiveUser } from '@/engine/types';
-import { EditorChromeControls } from './editor-chrome-controls';
 import { EditorTopChrome } from './editor-top-chrome';
-import {
-  HiveAgentComposer,
-  type HiveAgentMessage,
-} from './hive-agent-composer';
+import type { HiveAgentMessage } from './hive-agent-composer';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
 import { HiveStudioToolDock } from './hive-studio-tool-dock';
+import { HiveViewportOverlays } from './hive-viewport-overlays';
 import { InspectorPanel } from './panels/inspector-panel';
 import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shortcut';
 import { useHiveStudioEngine } from './use-hive-studio-engine';
@@ -39,6 +36,8 @@ export function HiveStudio({
   const [topCollapsed, setTopCollapsed] = useState(false);
   const [bottomCollapsed, setBottomCollapsed] = useState(false);
   const [npcLabCollapsed, setNpcLabCollapsed] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [miniMapCollapsed, setMiniMapCollapsed] = useState(false);
   const [serverDialogMode, setServerDialogMode] = useState<
     'create' | 'edit' | null
   >(null);
@@ -88,6 +87,7 @@ export function HiveStudio({
               activeBuildMode={engine.activeBuildMode}
               activeObject={engine.activeObject}
               activeTerrain={engine.activeTerrain}
+              cameraView={engine.cameraView}
               gaplessMode={engine.gaplessMode}
               npcs={engine.npcs}
               onErase={engine.eraseSelection}
@@ -98,42 +98,34 @@ export function HiveStudio({
               onRealtimeCursor={engine.sendCursorPosition}
               onSelect={engine.setSelection}
               remoteAwareness={engine.remoteAwareness}
+              season={engine.season}
               selection={engine.selection}
               tool={engine.tool}
               timeTheme={engine.timeTheme}
+              weather={engine.weather}
               world={engine.world}
             />
-            <EditorChromeControls
+            <HiveViewportOverlays
+              agentMessages={agentMessages}
               bottomCollapsed={bottomCollapsed}
+              chatOpen={chatOpen}
+              miniMapCollapsed={miniMapCollapsed}
               npcLabCollapsed={npcLabCollapsed}
-              onToggleBottom={() => setBottomCollapsed((value) => !value)}
-              onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
-              onToggleRight={() => setRightCollapsed((value) => !value)}
-              onToggleTop={() => setTopCollapsed((value) => !value)}
+              npcs={engine.npcs}
+              onSetBottomCollapsed={setBottomCollapsed}
+              onSetChatOpen={setChatOpen}
+              onSetMiniMapCollapsed={setMiniMapCollapsed}
+              onSetNpcLabCollapsed={setNpcLabCollapsed}
+              onSetRightCollapsed={setRightCollapsed}
+              onSetTopCollapsed={setTopCollapsed}
+              onSubmitAgentPrompt={submitAgentPrompt}
               rightCollapsed={rightCollapsed}
+              selectedServer={engine.selectedServer}
+              selection={engine.selection}
+              syncNotice={engine.syncNotice}
               topCollapsed={topCollapsed}
+              world={engine.world}
             />
-            <div
-              aria-hidden={bottomCollapsed}
-              className={[
-                'absolute right-4 bottom-28 left-4 z-20 transition duration-300 ease-out',
-                bottomCollapsed
-                  ? 'pointer-events-none invisible translate-y-6 opacity-0'
-                  : 'pointer-events-none visible translate-y-0 opacity-100',
-              ].join(' ')}
-            >
-              <HiveAgentComposer
-                lastMessage={agentMessages.at(-1) ?? null}
-                onSubmit={submitAgentPrompt}
-              />
-            </div>
-            {engine.syncNotice ? (
-              <div className="pointer-events-none absolute right-4 bottom-48 left-4 z-20 flex justify-center">
-                <div className="rounded-lg border border-dynamic-yellow/40 bg-background/90 px-4 py-2 text-dynamic-yellow text-sm shadow-lg backdrop-blur">
-                  {engine.syncNotice}
-                </div>
-              </div>
-            ) : null}
           </>
         }
         right={

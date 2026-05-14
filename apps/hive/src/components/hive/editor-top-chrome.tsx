@@ -92,10 +92,10 @@ export function EditorTopChrome({
           <button
             className="absolute -top-2 -right-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-lg hover:text-foreground"
             onClick={onToggleNpcLab}
-            title="Collapse NPC lab"
+            title={t('collapse_npc_lab')}
             type="button"
           >
-            <span className="sr-only">Collapse NPC lab</span>
+            <span className="sr-only">{t('collapse_npc_lab')}</span>
             <X className="h-3.5 w-3.5" />
           </button>
           <NpcLabPanel

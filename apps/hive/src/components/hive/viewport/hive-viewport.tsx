@@ -8,15 +8,19 @@ import {
 import { Canvas } from '@react-three/fiber';
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { MOUSE, PCFShadowMap, TOUCH } from 'three';
+import { cameraViewPresets } from '@/engine/environment';
 import { timeThemePresets } from '@/engine/time-themes';
 import type {
   HiveBuildMode,
+  HiveCameraView,
   HiveNpc,
   HiveRealtimeAwareness,
+  HiveSeason,
   HiveSelection,
   HiveTimeTheme,
   HiveTool,
   HiveVector3,
+  HiveWeather,
   HiveWorldData,
 } from '@/engine/types';
 import { CloudLayer } from './cloud-layer';
@@ -27,11 +31,13 @@ import { PlacementPlane } from './placement-plane';
 import { RealtimePresenceMarkers } from './realtime-presence-markers';
 import { ThemedEnvironment } from './themed-environment';
 import { VoxelTiles } from './voxel-tiles';
+import { WeatherLayer } from './weather-layer';
 
 type HiveViewportProps = {
   activeBuildMode: HiveBuildMode;
   activeObject: string;
   activeTerrain: string;
+  cameraView: HiveCameraView;
   gaplessMode: boolean;
   npcs: HiveNpc[];
   onErase: (selection: NonNullable<HiveSelection>) => void;
@@ -42,9 +48,11 @@ type HiveViewportProps = {
   onRealtimeCursor: (position: HiveVector3 | null) => void;
   onSelect: (selection: HiveSelection) => void;
   remoteAwareness: HiveRealtimeAwareness[];
+  season: HiveSeason;
   selection: HiveSelection;
   timeTheme: HiveTimeTheme;
   tool: HiveTool;
+  weather: HiveWeather;
   world: HiveWorldData;
 };
 
@@ -55,6 +63,7 @@ export function HiveViewport(props: HiveViewportProps) {
     () => timeThemePresets[props.timeTheme],
     [props.timeTheme]
   );
+  const cameraPreset = cameraViewPresets[props.cameraView];
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -109,13 +118,22 @@ export function HiveViewport(props: HiveViewportProps) {
       <Canvas
         className="relative z-0"
         shadows={{ enabled: true, type: PCFShadowMap }}
-        camera={{ fov: 44, position: [8, 7.5, 8] }}
+        camera={cameraPreset}
         onPointerMissed={() => props.onSelect(null)}
       >
         <Suspense fallback={null}>
-          <PerspectiveCamera makeDefault fov={44} position={[8, 7.5, 8]} />
-          <ThemedEnvironment timeTheme={props.timeTheme} />
-          <CloudLayer timeTheme={props.timeTheme} />
+          <PerspectiveCamera
+            fov={cameraPreset.fov}
+            key={props.cameraView}
+            makeDefault
+            position={cameraPreset.position}
+          />
+          <ThemedEnvironment
+            season={props.season}
+            timeTheme={props.timeTheme}
+            weather={props.weather}
+          />
+          <CloudLayer timeTheme={props.timeTheme} weather={props.weather} />
           <group>
             <VoxelTiles
               blocks={props.world.blocks}
@@ -171,6 +189,7 @@ export function HiveViewport(props: HiveViewportProps) {
               tool={props.tool}
             />
           </group>
+          <WeatherLayer weather={props.weather} />
           <ContactShadows
             blur={2.6}
             far={12}

@@ -22,22 +22,28 @@ describe('ToolDock', () => {
         activeTerrain="grass"
         autoTimeEnabled={false}
         autoTimeSpeed={10}
+        cameraView="isometric"
         gaplessMode={true}
         isRunningSimulationTick={false}
         onRotateSelection={vi.fn()}
         onRunSimulationTick={vi.fn()}
         onSelectBuildMode={vi.fn()}
+        onSelectCameraView={vi.fn()}
         onSelectObject={vi.fn()}
         onSelectTerrain={vi.fn()}
-        onSelectTimeTheme={vi.fn()}
         onSetAutoTimeSpeed={vi.fn()}
+        onSetClockMinutes={vi.fn()}
+        onSetSeason={vi.fn()}
         onSetTool={vi.fn()}
+        onSetWeather={vi.fn()}
         onToggle={vi.fn()}
         onToggleAutoTime={vi.fn()}
         onToggleGapless={vi.fn()}
         onUpdateServerSettings={vi.fn()}
-        timeTheme="morning"
+        season="spring"
+        simulatedMinutes={480}
         tool="select"
+        weather="clear"
       />
     );
 
@@ -63,22 +69,28 @@ describe('ToolDock', () => {
         activeTerrain="grass"
         autoTimeEnabled={false}
         autoTimeSpeed={10}
+        cameraView="isometric"
         gaplessMode={true}
         isRunningSimulationTick={false}
         onRotateSelection={vi.fn()}
         onRunSimulationTick={vi.fn()}
         onSelectBuildMode={vi.fn()}
+        onSelectCameraView={vi.fn()}
         onSelectObject={vi.fn()}
         onSelectTerrain={vi.fn()}
-        onSelectTimeTheme={vi.fn()}
         onSetAutoTimeSpeed={vi.fn()}
+        onSetClockMinutes={vi.fn()}
+        onSetSeason={vi.fn()}
         onSetTool={vi.fn()}
+        onSetWeather={vi.fn()}
         onToggle={vi.fn()}
         onToggleAutoTime={vi.fn()}
         onToggleGapless={vi.fn()}
         onUpdateServerSettings={vi.fn()}
-        timeTheme="morning"
+        season="spring"
+        simulatedMinutes={480}
         tool="build"
+        weather="clear"
       />
     );
 
@@ -99,30 +111,46 @@ describe('ToolDock', () => {
         activeTerrain="grass"
         autoTimeEnabled={false}
         autoTimeSpeed={10}
+        cameraView="isometric"
         gaplessMode={true}
         isRunningSimulationTick={false}
         onRotateSelection={vi.fn()}
         onRunSimulationTick={vi.fn()}
         onSelectBuildMode={vi.fn()}
+        onSelectCameraView={vi.fn()}
         onSelectObject={vi.fn()}
         onSelectTerrain={vi.fn()}
-        onSelectTimeTheme={vi.fn()}
         onSetAutoTimeSpeed={vi.fn()}
+        onSetClockMinutes={vi.fn()}
+        onSetSeason={vi.fn()}
         onSetTool={vi.fn()}
+        onSetWeather={vi.fn()}
         onToggle={vi.fn()}
         onToggleAutoTime={vi.fn()}
         onToggleGapless={vi.fn()}
         onUpdateServerSettings={vi.fn()}
-        timeTheme="morning"
+        season="spring"
+        simulatedMinutes={480}
         tool="select"
+        weather="clear"
       />
     );
 
-    expect(screen.queryByRole('button', { name: 'Gapless blocks' })).toBeNull();
+    expect(
+      screen.queryByRole('button', { name: 'Minimal tile gaps' })
+    ).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Editor settings' }));
-    expect(screen.getByRole('button', { name: 'Gapless blocks' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Minimal tile gaps' })
+    ).toBeTruthy();
     expect(
       screen.getByRole('button', { name: 'Automatic 24 hour cycle' })
+    ).toBeTruthy();
+    expect(screen.getByLabelText('Time of day 08:00')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Spring' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Clear weather' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Isometric camera' })
     ).toBeTruthy();
   });
 });
