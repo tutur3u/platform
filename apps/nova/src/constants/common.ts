@@ -1,3 +1,4 @@
+import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
@@ -6,20 +7,36 @@ export const PROD_MODE = process.env.NODE_ENV === 'production';
 export const PORT = process.env.PORT || 7805;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
-export const BASE_URL =
-  process.env.BASE_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : `http://localhost:${PORT}`;
+const DEFAULT_NOVA_APP_URL = PROD_MODE
+  ? 'https://nova.ai.vn'
+  : `http://localhost:${PORT}`;
+const DEFAULT_WEB_APP_URL = PROD_MODE
+  ? 'https://tuturuuu.com'
+  : `http://localhost:${CENTRAL_PORT}`;
 
-export const API_URL =
-  process.env.API_URL || PROD_MODE
-    ? 'https://tuturuuu.com/api'
-    : `http://localhost:${PORT}/api`;
+export const BASE_URL = resolveInternalAppUrl({
+  appName: 'nova',
+  candidates: [
+    process.env.NOVA_APP_URL,
+    process.env.NEXT_PUBLIC_NOVA_APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.BASE_URL,
+  ],
+  fallback: DEFAULT_NOVA_APP_URL,
+});
 
-export const TTR_URL =
-  process.env.TTR_URL || PROD_MODE
-    ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
+
+export const TTR_URL = resolveInternalAppUrl({
+  appName: 'platform',
+  candidates: [
+    process.env.TTR_URL,
+    process.env.NEXT_PUBLIC_WEB_APP_URL,
+    process.env.WEB_APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
+  ],
+  fallback: DEFAULT_WEB_APP_URL,
+});
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';

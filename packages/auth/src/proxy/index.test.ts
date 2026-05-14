@@ -221,6 +221,57 @@ describe('auth proxy redirect helpers', () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it('builds registered app return URLs from forwarded public app hosts', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('http://0.0.0.0:7812/dashboard', {
+      headers: {
+        host: '0.0.0.0:7812',
+        'x-forwarded-host': 'learn.tuturuuu.com',
+        'x-forwarded-proto': 'https',
+      },
+    });
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location') ?? '';
+
+    expect(location).toContain('https://tuturuuu.com/login?returnUrl=');
+    expect(location).toContain(
+      encodeURIComponent(
+        'https://learn.tuturuuu.com/verify-token?nextUrl=%2Fdashboard'
+      )
+    );
+    expect(location).not.toContain('0.0.0.0:7812');
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('redirects registered app requests with a different target app session', async () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'teach',
+      userId: 'user-1',
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toContain(
+      'https://tuturuuu.com/login?returnUrl='
+    );
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
   it('redirects registered app requests with an expired app-session cookie', async () => {
     const { token } = createAppSessionToken(
       {

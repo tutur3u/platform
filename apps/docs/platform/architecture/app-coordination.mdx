@@ -28,6 +28,11 @@ Registered internal apps are the apps listed in
 
 1. The app redirects unauthenticated users to `apps/web` login with a
    `returnUrl` pointing back to the app's `/verify-token?nextUrl=...` route.
+   That return URL must resolve to the satellite app origin, not the central
+   web origin. Registered apps should use `resolveInternalAppUrl()` for their
+   `BASE_URL`/app URL constants so shared environment variables such as
+   `BASE_URL=https://tuturuuu.com` are rejected for satellite hosts instead of
+   minting the host-only app-session cookie on the wrong domain.
 2. `apps/web` validates the return target and mints the normal one-time
    cross-app handoff token.
 3. The app `/verify-token` client posts only that handoff token to

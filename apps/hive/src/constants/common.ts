@@ -1,4 +1,4 @@
-import { resolveAppUrl } from '@tuturuuu/utils/app-url';
+import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
 
 export {
   DEV_MODE,
@@ -21,10 +21,12 @@ const DEFAULT_WEB_APP_URL =
     ? 'https://tuturuuu.com'
     : `http://localhost:${CENTRAL_PORT}`;
 
-export const HIVE_APP_URL = resolveAppUrl({
+export const HIVE_APP_URL = resolveInternalAppUrl({
+  appName: 'hive',
   candidates: [
     process.env.HIVE_APP_URL,
     process.env.NEXT_PUBLIC_HIVE_APP_URL,
+    process.env.NEXT_PUBLIC_APP_URL,
     process.env.BASE_URL,
   ],
   fallback: DEFAULT_HIVE_APP_URL,
@@ -32,7 +34,8 @@ export const HIVE_APP_URL = resolveAppUrl({
 
 export const BASE_URL = HIVE_APP_URL;
 
-export const WEB_APP_URL = resolveAppUrl({
+export const WEB_APP_URL = resolveInternalAppUrl({
+  appName: 'platform',
   candidates: [
     process.env.NEXT_PUBLIC_WEB_APP_URL,
     process.env.WEB_APP_URL,

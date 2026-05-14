@@ -61,7 +61,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
       href: DEV_MODE
-        ? 'http://localhost:3001'
+        ? 'http://localhost:7806'
         : 'https://calendar.tuturuuu.com',
       label: t(`landing.features.apps.tuplan.title`),
       description: t(`landing.features.apps.tuplan.description`),
@@ -69,7 +69,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Calendar className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7809' : 'https://tudo.com',
+      href: DEV_MODE ? 'http://localhost:7809' : 'https://tasks.tuturuuu.com',
       label: t(`landing.features.apps.tudo.title`),
       description: t(`landing.features.apps.tudo.description`),
       badge: t('common.waitlist'),

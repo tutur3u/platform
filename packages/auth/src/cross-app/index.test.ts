@@ -50,6 +50,21 @@ describe('mapUrlToApp', () => {
     );
   });
 
+  it('maps registered app return URLs for production and local development', () => {
+    expect(
+      mapUrlToApp('https://nova.ai.vn/verify-token?nextUrl=%2Fdashboard')
+    ).toBe('nova');
+    expect(
+      mapUrlToApp('https://rewise.me/verify-token?nextUrl=%2Fpersonal')
+    ).toBe('rewise');
+    expect(
+      mapUrlToApp('http://localhost:7806/verify-token?nextUrl=%2Fcalendar')
+    ).toBe('calendar');
+    expect(
+      mapUrlToApp('http://localhost:7809/verify-token?nextUrl=%2Fpersonal')
+    ).toBe('tudo');
+  });
+
   it('rejects hostname prefix lookalikes', () => {
     expect(mapUrlToApp('https://learn.tuturuuu.com.evil.test')).toBeNull();
   });

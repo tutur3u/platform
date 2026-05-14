@@ -56,7 +56,7 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   },
   {
     name: 'calendar',
-    url: 'http://localhost:3001',
+    url: 'http://localhost:7806',
   },
   {
     name: 'platform',

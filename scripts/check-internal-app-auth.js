@@ -211,6 +211,65 @@ for (const proxyPath of registeredProxyPaths) {
   }
 }
 
+const registeredAppConstantPaths = [
+  ['apps/calendar/src/constants/common.ts', 'calendar'],
+  ['apps/cms/src/constants/common.ts', 'cms'],
+  ['apps/finance/src/constants/common.ts', 'finance'],
+  ['apps/hive/src/constants/common.ts', 'hive'],
+  ['apps/learn/src/constants/common.ts', 'learn'],
+  ['apps/nova/src/constants/common.ts', 'nova'],
+  ['apps/rewise/src/constants/common.ts', 'rewise'],
+  ['apps/tasks/src/constants/common.ts', 'tudo'],
+  ['apps/teach/src/constants/common.ts', 'teach'],
+  ['apps/track/src/constants/common.ts', 'track'],
+];
+
+for (const [constantPath, appName] of registeredAppConstantPaths) {
+  const constantsSource = fs.readFileSync(
+    path.join(ROOT, constantPath),
+    'utf8'
+  );
+
+  if (!/resolveInternalAppUrl/u.test(constantsSource)) {
+    failures.push(
+      `${constantPath}: Registered app URL constants must reject generic env URLs that point at another internal app.`
+    );
+  }
+
+  if (
+    !new RegExp(`appName:\\s*['"]${appName}['"]`, 'u').test(constantsSource)
+  ) {
+    failures.push(
+      `${constantPath}: Registered app URL constants must resolve the app host for target ${appName}.`
+    );
+  }
+
+  if (
+    /process\.env\.(?:BASE_URL|TTR_URL|API_URL)\s*\|\|\s*(?:process\.env\.NODE_ENV\s*===\s*['"]production['"]|PROD_MODE)/u.test(
+      constantsSource
+    )
+  ) {
+    failures.push(
+      `${constantPath}: Registered app URL constants must not rely on ||/?: auth-origin precedence.`
+    );
+  }
+}
+
+const internalDomainsSource = fs.readFileSync(
+  path.join(ROOT, 'packages/utils/src/internal-domains.ts'),
+  'utf8'
+);
+
+if (
+  !/name:\s*['"]calendar['"],\s*url:\s*['"]http:\/\/localhost:7806['"]/su.test(
+    internalDomainsSource
+  )
+) {
+  failures.push(
+    'packages/utils/src/internal-domains.ts: Calendar dev auth return URLs must use the app dev port 7806.'
+  );
+}
+
 if (
   !/requestHasAppSessionAuth/u.test(supabaseServerSource) ||
   !/createNoCookieAnonProxyClient/u.test(supabaseServerSource)

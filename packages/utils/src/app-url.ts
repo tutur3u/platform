@@ -1,8 +1,14 @@
+import { type AppName, getAppDomainMap } from './internal-domains';
+
 type AppUrlCandidate = string | null | undefined;
 
 interface ResolveAppUrlOptions {
   candidates: readonly AppUrlCandidate[];
   fallback: string;
+}
+
+interface ResolveInternalAppUrlOptions extends ResolveAppUrlOptions {
+  appName: AppName;
 }
 
 function trimTrailingSlashes(value: string) {
@@ -42,6 +48,40 @@ export function resolveAppUrl({ candidates, fallback }: ResolveAppUrlOptions) {
     if (resolvedUrl) {
       return resolvedUrl;
     }
+  }
+
+  return normalizeHttpUrl(fallback) ?? fallback;
+}
+
+function getRegisteredAppNameForUrl(value: string) {
+  const candidateOrigin = new URL(value).origin;
+
+  return (
+    getAppDomainMap().find(
+      (domain) => new URL(domain.url).origin === candidateOrigin
+    )?.name ?? null
+  );
+}
+
+export function resolveInternalAppUrl({
+  appName,
+  candidates,
+  fallback,
+}: ResolveInternalAppUrlOptions) {
+  for (const candidate of candidates) {
+    const resolvedUrl = normalizeHttpUrl(candidate);
+
+    if (!resolvedUrl) {
+      continue;
+    }
+
+    const registeredAppName = getRegisteredAppNameForUrl(resolvedUrl);
+
+    if (registeredAppName && registeredAppName !== appName) {
+      continue;
+    }
+
+    return resolvedUrl;
   }
 
   return normalizeHttpUrl(fallback) ?? fallback;
