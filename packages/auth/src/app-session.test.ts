@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_SESSION_COOKIE_NAME,
   clearAppSessionCookie,
+  clearSupabaseAuthCookies,
   createAppSessionToken,
   getAppSessionClaimsFromRequest,
   getAppSessionTokenFromRequest,
@@ -140,5 +141,33 @@ describe('app-session JWTs', () => {
     const clearCookie = clearResponse.headers.get('set-cookie') ?? '';
     expect(clearCookie).toContain(`${APP_SESSION_COOKIE_NAME}=`);
     expect(clearCookie).toContain('Max-Age=0');
+  });
+
+  it('clears stale Supabase auth cookies without touching app-session cookies', () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${token}`,
+          'sb-test-auth-token=stale',
+          'sb-test-auth-token.0=stale-chunk',
+          'regular_cookie=value',
+        ].join('; '),
+      },
+    });
+    const response = clearSupabaseAuthCookies(
+      request,
+      NextResponse.json({ ok: true })
+    );
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(setCookie).toContain('sb-test-auth-token=;');
+    expect(setCookie).toContain('sb-test-auth-token.0=;');
+    expect(setCookie).toContain('Max-Age=0');
+    expect(setCookie).not.toContain(`${APP_SESSION_COOKIE_NAME}=;`);
+    expect(setCookie).not.toContain('regular_cookie=;');
   });
 });

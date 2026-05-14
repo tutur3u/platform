@@ -626,11 +626,13 @@ export async function getPermissions({
   wsId: string;
   request?: Request;
 }): Promise<PermissionsResult | null> {
-  const supabase = await (request ? createClient(request) : createClient());
+  const supabase = user
+    ? null
+    : await (request ? createClient(request) : createClient());
 
   const principal = user
     ? { id: user.id, email: user.email ?? null }
-    : await resolveAuthenticatedPrincipal(supabase);
+    : await resolveAuthenticatedPrincipal(supabase as TypedSupabaseClient);
 
   if (!principal) {
     console.error('User not found');
@@ -639,13 +641,16 @@ export async function getPermissions({
 
   const userId = principal.id;
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: Boolean(user) });
   const authorizationClient = user ? sbAdmin : supabase;
 
   // Handle "personal" workspace slug by looking up the user's personal workspace
   let resolvedWorkspaceId: string;
   try {
-    resolvedWorkspaceId = await normalizeWorkspaceId(wsId, authorizationClient);
+    resolvedWorkspaceId = await normalizeWorkspaceId(
+      wsId,
+      authorizationClient as TypedSupabaseClient
+    );
   } catch {
     return null;
   }
@@ -653,7 +658,7 @@ export async function getPermissions({
   const membership = await verifyWorkspaceMembershipType({
     wsId: resolvedWorkspaceId,
     userId,
-    supabase: authorizationClient,
+    supabase: authorizationClient as TypedSupabaseClient,
   });
 
   if (!membership.ok) {

@@ -1,5 +1,8 @@
 import { match } from '@formatjs/intl-localematcher';
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  clearSupabaseAuthCookies,
+  getAppSessionClaimsFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -85,14 +88,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:teach:api',
     });
-    return guardResponse ?? NextResponse.next();
+    return clearSupabaseAuthCookies(
+      request,
+      guardResponse ?? NextResponse.next()
+    );
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
-  if (canonicalLocaleRedirect) return canonicalLocaleRedirect;
+  if (canonicalLocaleRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
 
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
-  if (canonicalPublicRedirect) return canonicalPublicRedirect;
+  if (canonicalPublicRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
@@ -111,13 +121,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       if (next) url.searchParams.set('next', next);
 
-      return NextResponse.redirect(url);
+      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
   }
 
   const response = intlMiddleware(request);
   response.cookies.set(LOCALE_COOKIE_NAME, getPreferredLocale(request));
-  return response;
+  return clearSupabaseAuthCookies(request, response);
 }
 
 export const config = {

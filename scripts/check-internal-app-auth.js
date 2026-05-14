@@ -104,6 +104,18 @@ const internalApiClientSource = fs.readFileSync(
   path.join(ROOT, 'packages/internal-api/src/client.ts'),
   'utf8'
 );
+const appSessionSource = fs.readFileSync(
+  path.join(ROOT, 'packages/auth/src/app-session.ts'),
+  'utf8'
+);
+const supabaseServerSource = fs.readFileSync(
+  path.join(ROOT, 'packages/supabase/src/next/server.ts'),
+  'utf8'
+);
+const webApiAuthSource = fs.readFileSync(
+  path.join(ROOT, 'apps/web/src/lib/api-auth.ts'),
+  'utf8'
+);
 
 if (/supabase\.auth\.setSession/u.test(verifierSource)) {
   failures.push(
@@ -165,6 +177,105 @@ if (
 ) {
   failures.push(
     'packages/internal-api/src/client.ts: Forwarded app-session internal API auth must strip Supabase auth cookies.'
+  );
+}
+
+if (
+  !/SUPABASE_AUTH_COOKIE_PATTERN/u.test(appSessionSource) ||
+  !/clearSupabaseAuthCookies/u.test(appSessionSource)
+) {
+  failures.push(
+    'packages/auth/src/app-session.ts: Registered apps must share app-session Supabase auth cookie cleanup.'
+  );
+}
+
+const registeredProxyPaths = [
+  'apps/calendar/src/proxy.ts',
+  'apps/cms/src/proxy.ts',
+  'apps/finance/src/proxy.ts',
+  'apps/hive/src/proxy.ts',
+  'apps/learn/src/proxy.ts',
+  'apps/nova/src/proxy.ts',
+  'apps/rewise/src/proxy.ts',
+  'apps/tasks/src/proxy.ts',
+  'apps/teach/src/proxy.ts',
+  'apps/track/src/proxy.ts',
+];
+
+for (const proxyPath of registeredProxyPaths) {
+  const proxySource = fs.readFileSync(path.join(ROOT, proxyPath), 'utf8');
+  if (!/clearSupabaseAuthCookies/u.test(proxySource)) {
+    failures.push(
+      `${proxyPath}: Registered app proxies must expire stale Supabase auth cookies when using app-session auth.`
+    );
+  }
+}
+
+if (
+  !/requestHasAppSessionAuth/u.test(supabaseServerSource) ||
+  !/createNoCookieAnonProxyClient/u.test(supabaseServerSource)
+) {
+  failures.push(
+    'packages/supabase/src/next/server.ts: App-session requests must not fall back to Supabase cookie-backed clients.'
+  );
+}
+
+const withSessionAuthStart = webApiAuthSource.indexOf(
+  'export function withSessionAuth'
+);
+const withSessionAuthSource =
+  withSessionAuthStart === -1
+    ? ''
+    : webApiAuthSource.slice(withSessionAuthStart);
+const appSessionAuthIndex = withSessionAuthSource.indexOf(
+  'allowAppSessionAuth'
+);
+const fallbackSupabaseIndex = withSessionAuthSource.indexOf(
+  'const supabase = (await createClient(request))'
+);
+
+if (
+  appSessionAuthIndex === -1 ||
+  fallbackSupabaseIndex === -1 ||
+  fallbackSupabaseIndex < appSessionAuthIndex
+) {
+  failures.push(
+    'apps/web/src/lib/api-auth.ts: withSessionAuth must resolve app-session JWTs before creating Supabase request clients.'
+  );
+}
+
+const appSessionAwareWebRoutes = [
+  'apps/web/src/app/api/v1/ai/chats/route.ts',
+  'apps/web/src/app/api/v1/ai/chats/[chatId]/route.ts',
+  'apps/web/src/app/api/v1/cms/workspaces/route.ts',
+  'apps/web/src/app/api/v1/nova/me/team/route.ts',
+];
+
+for (const routePath of appSessionAwareWebRoutes) {
+  const routeSource = fs.readFileSync(path.join(ROOT, routePath), 'utf8');
+  if (!/withSessionAuth/u.test(routeSource)) {
+    failures.push(
+      `${routePath}: Registered app internal API routes must use the shared session auth wrapper.`
+    );
+  }
+  if (!/allowAppSessionAuth:\s*true/u.test(routeSource)) {
+    failures.push(
+      `${routePath}: Registered app internal API routes must opt into Tuturuuu app-session auth.`
+    );
+  }
+}
+
+const rewiseNewChatRouteSource = fs.readFileSync(
+  path.join(ROOT, 'apps/rewise/src/app/api/ai/chat/google/new/route.ts'),
+  'utf8'
+);
+
+if (
+  !/resolveGatewayAuth/u.test(rewiseNewChatRouteSource) ||
+  !/targetApp:\s*['"]rewise['"]/u.test(rewiseNewChatRouteSource)
+) {
+  failures.push(
+    'apps/rewise/src/app/api/ai/chat/google/new/route.ts: Rewise chat creation must verify app-session tokens for target app rewise.'
   );
 }
 

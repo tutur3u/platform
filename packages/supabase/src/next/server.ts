@@ -11,6 +11,9 @@ import {
   wrapRequestClientForProxyOnlyTables,
 } from './protected-tables';
 
+const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const APP_SESSION_BEARER_PREFIX = 'ttr_app_';
+
 function createCookieHandler(
   cookieStore: ReadonlyRequestCookies,
   url: string
@@ -76,6 +79,60 @@ function createRequestAdminProxyClient<T = Database>(): SupabaseClient<T> {
   });
 }
 
+function createNoCookieAnonProxyClient<T = Database>(): SupabaseClient<T> {
+  const { url, key } = checkEnvVariables({ useSecretKey: false });
+
+  return createBrowserClient<T>(url, key, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${key}`,
+      },
+    },
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+function hasCookieNamed(cookieHeader: string | null, name: string) {
+  if (!cookieHeader) {
+    return false;
+  }
+
+  return cookieHeader.split(';').some((part) => {
+    const [rawName] = part.trim().split('=');
+    return rawName === name;
+  });
+}
+
+function getBearerAccessToken(request: Pick<Request, 'headers'>) {
+  const authHeader =
+    request.headers.get('authorization') ??
+    request.headers.get('Authorization');
+
+  return authHeader?.startsWith('Bearer ')
+    ? authHeader.replace('Bearer ', '').trim()
+    : undefined;
+}
+
+function requestHasAppSessionAuth(request: Pick<Request, 'headers'>) {
+  const accessToken = getBearerAccessToken(request);
+
+  return (
+    Boolean(accessToken?.startsWith(APP_SESSION_BEARER_PREFIX)) ||
+    hasCookieNamed(request.headers.get('cookie'), APP_SESSION_COOKIE_NAME)
+  );
+}
+
+function createAppSessionIsolatedRequestClient<T = Database>() {
+  return wrapRequestClientForProxyOnlyTables(
+    createNoCookieAnonProxyClient<T>(),
+    createRequestAdminProxyClient<T>()
+  );
+}
+
 export function createAdminClient<T = Database>({
   noCookie = false,
 }: {
@@ -122,14 +179,13 @@ export async function createClient<T = Database>(
 ): Promise<SupabaseClient<T>> {
   // Check for Bearer token in request headers (mobile / API callers).
   if (request) {
-    const authHeader =
-      request.headers.get('authorization') ??
-      request.headers.get('Authorization');
-    const accessToken = authHeader?.startsWith('Bearer ')
-      ? authHeader.replace('Bearer ', '').trim()
-      : undefined;
+    if (requestHasAppSessionAuth(request)) {
+      return createAppSessionIsolatedRequestClient<T>();
+    }
 
-    if (accessToken && !accessToken.startsWith('ttr_app_')) {
+    const accessToken = getBearerAccessToken(request);
+
+    if (accessToken) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
       const userClient = createBrowserClient<T>(url, key, {
         global: {
@@ -178,14 +234,13 @@ export async function createDynamicClient<T = Database>(
 ): Promise<SupabaseClient<T>> {
   // Check for Bearer token in request headers (mobile / API callers).
   if (request) {
-    const authHeader =
-      request.headers.get('authorization') ??
-      request.headers.get('Authorization');
-    const accessToken = authHeader?.startsWith('Bearer ')
-      ? authHeader.replace('Bearer ', '').trim()
-      : undefined;
+    if (requestHasAppSessionAuth(request)) {
+      return createAppSessionIsolatedRequestClient<T>();
+    }
 
-    if (accessToken && !accessToken.startsWith('ttr_app_')) {
+    const accessToken = getBearerAccessToken(request);
+
+    if (accessToken) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
       const userClient = createBrowserClient<T>(url, key, {
         global: {

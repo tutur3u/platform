@@ -1,5 +1,8 @@
 import { match } from '@formatjs/intl-localematcher';
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  clearSupabaseAuthCookies,
+  getAppSessionClaimsFromRequest,
+} from '@tuturuuu/auth/app-session';
 import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
@@ -45,10 +48,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       prefixBase: 'proxy:track:api',
     });
     if (guardResponse) {
-      return guardResponse;
+      return clearSupabaseAuthCookies(req, guardResponse);
     }
 
-    return NextResponse.next();
+    return clearSupabaseAuthCookies(req, NextResponse.next());
   }
 
   // Handle authentication and MFA with the centralized middleware

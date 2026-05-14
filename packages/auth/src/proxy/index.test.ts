@@ -171,6 +171,36 @@ describe('auth proxy redirect helpers', () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it('expires stale Supabase auth cookies on registered app responses', async () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${token}`,
+          'sb-test-auth-token=stale',
+          'sb-test-auth-token.0=stale-chunk',
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(setCookie).toContain('sb-test-auth-token=;');
+    expect(setCookie).toContain('sb-test-auth-token.0=;');
+    expect(setCookie).toContain('Max-Age=0');
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
   it('redirects registered app requests without an app-session cookie through web login', async () => {
     const authProxy = createCentralizedAuthProxy({
       appSession: { targetApp: 'learn' },

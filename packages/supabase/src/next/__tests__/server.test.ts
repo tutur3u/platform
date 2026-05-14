@@ -280,7 +280,7 @@ describe('Supabase Server Client', () => {
         }),
       };
 
-      await createClient(mockRequest);
+      const client = await createClient(mockRequest);
 
       expect(createBrowserClient).not.toHaveBeenCalledWith(
         'https://test.supabase.co',
@@ -293,11 +293,69 @@ describe('Supabase Server Client', () => {
           },
         })
       );
-      expect(createServerClient).toHaveBeenCalledWith(
+      expect(createServerClient).not.toHaveBeenCalled();
+      expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
         'test-publishable-key',
         expect.objectContaining({
-          cookies: expect.any(Object),
+          global: {
+            headers: {
+              Authorization: 'Bearer test-publishable-key',
+            },
+          },
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+      expect(client.from('workspace_boards')).toEqual({
+        client: 'user',
+        table: 'workspace_boards',
+      });
+      expect(client.from('mira_accessories')).toEqual({
+        client: 'admin',
+        table: 'mira_accessories',
+      });
+    });
+
+    it('should isolate app-session cookie requests from Supabase cookie auth', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          cookie:
+            'tuturuuu_app_session=ttr_app_header.payload.signature; sb-test-auth-token=stale',
+        }),
+      };
+
+      await createClient(mockRequest);
+
+      expect(createServerClient).not.toHaveBeenCalled();
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          global: {
+            headers: {
+              Authorization: 'Bearer test-publishable-key',
+            },
+          },
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
+        })
+      );
+      expect(createBrowserClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-secret-key',
+        expect.objectContaining({
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+            detectSessionInUrl: false,
+          },
         })
       );
     });

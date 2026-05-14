@@ -12,7 +12,10 @@ import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { verifyAppSessionRequest } from '../app-session';
+import {
+  clearSupabaseAuthCookies,
+  verifyAppSessionRequest,
+} from '../app-session';
 import {
   hashMfaMobileApprovalSecret,
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
@@ -446,10 +449,10 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
             buildCentralizedReturnUrl(req, webAppUrl)
           );
 
-          return NextResponse.redirect(loginUrl);
+          return clearSupabaseAuthCookies(req, NextResponse.redirect(loginUrl));
         }
 
-        return NextResponse.next();
+        return clearSupabaseAuthCookies(req, NextResponse.next());
       }
 
       // Make sure user session is always refreshed

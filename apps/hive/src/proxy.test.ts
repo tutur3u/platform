@@ -1,6 +1,6 @@
+import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { describe, expect, it } from 'vitest';
-import { clearSupabaseAuthCookies } from './lib/supabase-auth-cookies';
 
 describe('Hive proxy auth cookie cleanup', () => {
   it('clears stale Supabase auth cookies without touching unrelated cookies', () => {

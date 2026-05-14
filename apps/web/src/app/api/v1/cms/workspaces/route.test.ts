@@ -1,3 +1,4 @@
+import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { accessMocks, authMocks, workspaceMocks } = vi.hoisted(() => ({
@@ -34,6 +35,12 @@ vi.mock('@/lib/external-projects/access', () => ({
 
 import { GET } from './route';
 
+function createRequest() {
+  return new Request(
+    'http://localhost/api/v1/cms/workspaces'
+  ) as unknown as NextRequest;
+}
+
 function createPermissions(...permissions: string[]) {
   return {
     containsPermission(permission: string) {
@@ -59,9 +66,7 @@ describe('cms workspaces route', () => {
       },
     });
 
-    const response = await GET(
-      new Request('http://localhost/api/v1/cms/workspaces')
-    );
+    const response = await GET(createRequest());
 
     expect(response.status).toBe(401);
   });
@@ -117,9 +122,7 @@ describe('cms workspaces route', () => {
       }
     );
 
-    const response = await GET(
-      new Request('http://localhost/api/v1/cms/workspaces')
-    );
+    const response = await GET(createRequest());
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual([

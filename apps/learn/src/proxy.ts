@@ -1,4 +1,7 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  clearSupabaseAuthCookies,
+  getAppSessionClaimsFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -67,14 +70,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:learn:api',
     });
-    return guardResponse ?? NextResponse.next();
+    return clearSupabaseAuthCookies(
+      request,
+      guardResponse ?? NextResponse.next()
+    );
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
-  if (canonicalLocaleRedirect) return canonicalLocaleRedirect;
+  if (canonicalLocaleRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
 
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
-  if (canonicalPublicRedirect) return canonicalPublicRedirect;
+  if (canonicalPublicRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
@@ -93,11 +103,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       if (next) url.searchParams.set('next', next);
 
-      return NextResponse.redirect(url);
+      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
   }
 
-  return intlMiddleware(request);
+  return clearSupabaseAuthCookies(request, intlMiddleware(request));
 }
 
 export const config = {

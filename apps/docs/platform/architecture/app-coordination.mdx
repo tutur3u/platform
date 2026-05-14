@@ -51,10 +51,17 @@ Supabase as user access tokens.
 
 When a registered app forwards request cookies to `apps/web`, it must strip
 stale `sb-*-auth-token` Supabase cookies whenever `tuturuuu_app_session` is
-present. Gateway API routes for registered apps should resolve the app-session
-actor before any central-web Supabase Auth fallback, and admin-backed checks
-must use no-cookie admin clients so satellite responses do not inject Supabase
-Auth cookies back onto the app host.
+present. Registered app proxies should also call the shared
+`clearSupabaseAuthCookies()` helper on API, redirect, and normal middleware
+responses so stale Supabase session cookies are expired on the satellite host.
+
+Gateway API routes for registered apps should resolve the app-session actor
+before any central-web Supabase Auth fallback, and admin-backed checks must use
+no-cookie admin clients so satellite responses do not inject Supabase Auth
+cookies back onto the app host. Shared Supabase server-client helpers must treat
+requests carrying `tuturuuu_app_session` or `Authorization: Bearer ttr_app_...`
+as app-session requests and avoid constructing cookie-backed Supabase clients for
+those requests.
 
 ## CLI app-session flow
 

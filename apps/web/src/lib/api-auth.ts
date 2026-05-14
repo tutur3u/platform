@@ -290,9 +290,8 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
-    // 4. Authenticate — use Redis temp auth when present, otherwise resolve
-    // identity with `getClaims()` and fall back to `getUser()` when required.
-    const supabase = (await createClient(request)) as TypedSupabaseClient;
+    // 4. Authenticate — use Redis temp auth or app-session JWTs when present,
+    // otherwise resolve identity with `getClaims()` and fall back to `getUser()`.
     const tempAuth = options?.allowAiTempAuth
       ? await validateAiTempAuthRequest(request)
       : { status: 'missing' as const };
@@ -303,6 +302,7 @@ export function withSessionAuth<T = unknown>(
 
     if (tempAuth.status === 'valid') {
       const tempUser = tempAuth.context.user as SupabaseUser;
+      const tempSupabase = (await createClient(request)) as TypedSupabaseClient;
 
       try {
         const { checkUserSuspension } = await import(
@@ -324,7 +324,7 @@ export function withSessionAuth<T = unknown>(
 
       const response = await handler(
         request,
-        { user: tempUser, supabase },
+        { user: tempUser, supabase: tempSupabase },
         routeContext?.params
           ? await Promise.resolve(routeContext.params)
           : ({} as T)
@@ -409,6 +409,7 @@ export function withSessionAuth<T = unknown>(
       }
     }
 
+    const supabase = (await createClient(request)) as TypedSupabaseClient;
     const { user, authError } = await resolveAuthenticatedUser(supabase);
 
     if (isBackendRateLimitError(authError)) {

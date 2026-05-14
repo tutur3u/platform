@@ -12,14 +12,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetUser = vi.fn();
 const mockAdminClient = { from: vi.fn() };
-const mockCreateClient = vi.fn(() => ({
+const mockCreateClient = vi.fn((..._args: unknown[]) => ({
   auth: { getUser: mockGetUser },
 }));
-const mockCreateAdminClient = vi.fn(() => mockAdminClient);
+const mockCreateAdminClient = vi.fn((..._args: unknown[]) => mockAdminClient);
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: () => mockCreateAdminClient(),
-  createClient: () => mockCreateClient(),
+  createAdminClient: (...args: unknown[]) => mockCreateAdminClient(...args),
+  createClient: (...args: unknown[]) => mockCreateClient(...args),
 }));
 
 const mockExtractIP = vi.fn().mockReturnValue('192.168.1.1');
@@ -459,7 +459,8 @@ describe('withSessionAuth', () => {
 
     expect(response.status).toBe(200);
     expect(mockGetUser).not.toHaveBeenCalled();
-    expect(mockCreateAdminClient).toHaveBeenCalled();
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
     expect(handler).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({

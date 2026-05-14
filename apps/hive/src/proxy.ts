@@ -1,11 +1,13 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  clearSupabaseAuthCookies,
+  getAppSessionClaimsFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
-import { clearSupabaseAuthCookies } from './lib/supabase-auth-cookies';
 
 const intlMiddleware = createIntlMiddleware(routing);
 

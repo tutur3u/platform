@@ -1,16 +1,19 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import {
   getPermissions,
   getWorkspaces,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { withSessionAuth } from '@/lib/api-auth';
 import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+type JoinedWorkspace = NonNullable<
+  Awaited<ReturnType<typeof getWorkspaces>>
+>[number];
 
 function hasWorkspaceExternalProjectPermission(
   permissions: Awaited<ReturnType<typeof getPermissions>> | null
@@ -23,60 +26,58 @@ function hasWorkspaceExternalProjectPermission(
   );
 }
 
-export async function GET(request: Request) {
-  const supabase = (await createClient(request)) as TypedSupabaseClient;
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+export const GET = withSessionAuth(
+  async (_request, { user }) => {
+    try {
+      const actor = { email: user.email ?? null, id: user.id };
+      const [workspaces, rootPermissions] = await Promise.all([
+        getWorkspaces({ useAdmin: true, user: actor }),
+        getPermissions({ user: actor, wsId: ROOT_WORKSPACE_ID }),
+      ]);
 
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+      if (!workspaces) {
+        return NextResponse.json([]);
+      }
 
-  try {
-    const [workspaces, rootPermissions] = await Promise.all([
-      getWorkspaces({ useAdmin: true }),
-      getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
-    ]);
+      const isRootAdmin =
+        hasRootExternalProjectsAdminPermission(rootPermissions);
 
-    if (!workspaces) {
-      return NextResponse.json([]);
+      const accessibleWorkspaces = (
+        await Promise.all(
+          workspaces.map(async (workspace) => {
+            if (workspace.id === ROOT_WORKSPACE_ID) {
+              return isRootAdmin ? workspace : null;
+            }
+
+            const [binding, permissions] = await Promise.all([
+              resolveWorkspaceExternalProjectBinding(workspace.id),
+              getPermissions({ user: actor, wsId: workspace.id }),
+            ]);
+
+            if (!binding.enabled || !binding.canonical_project) {
+              return null;
+            }
+
+            if (
+              !hasWorkspaceExternalProjectPermission(permissions) &&
+              !isRootAdmin
+            ) {
+              return null;
+            }
+
+            return workspace;
+          })
+        )
+      ).filter((workspace): workspace is JoinedWorkspace => workspace !== null);
+
+      return NextResponse.json(accessibleWorkspaces);
+    } catch (error) {
+      serverLogger.error('Failed to load CMS workspaces', error);
+      return NextResponse.json(
+        { error: 'Failed to load CMS workspaces' },
+        { status: 500 }
+      );
     }
-
-    const isRootAdmin = hasRootExternalProjectsAdminPermission(rootPermissions);
-
-    const accessibleWorkspaces = (
-      await Promise.all(
-        workspaces.map(async (workspace) => {
-          if (workspace.id === ROOT_WORKSPACE_ID) {
-            return isRootAdmin ? workspace : null;
-          }
-
-          const [binding, permissions] = await Promise.all([
-            resolveWorkspaceExternalProjectBinding(workspace.id),
-            getPermissions({ wsId: workspace.id, request }),
-          ]);
-
-          if (!binding.enabled || !binding.canonical_project) {
-            return null;
-          }
-
-          if (
-            !hasWorkspaceExternalProjectPermission(permissions) &&
-            !isRootAdmin
-          ) {
-            return null;
-          }
-
-          return workspace;
-        })
-      )
-    ).filter(Boolean);
-
-    return NextResponse.json(accessibleWorkspaces);
-  } catch (error) {
-    console.error('Failed to load CMS workspaces', error);
-    return NextResponse.json(
-      { error: 'Failed to load CMS workspaces' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: true }
+);

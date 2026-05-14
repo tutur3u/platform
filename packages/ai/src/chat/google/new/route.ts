@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import {
   cascadeBackendRateLimitToProxyBan,
@@ -68,12 +69,36 @@ function getErrorMessage(error: unknown): string {
   return 'Internal server error.';
 }
 
-export function createPOST(
-  _options: {
-    /** Gateway provider prefix for bare model names. Defaults to 'google'. */
-    defaultProvider?: string;
-  } = {}
-) {
+type GatewayAuthenticatedClient = {
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type GatewayAuthResolution =
+  | {
+      auth: GatewayAuthenticatedClient;
+      ok: true;
+    }
+  | {
+      ok: false;
+      response: Response;
+    }
+  | null;
+
+type CreatePostOptions = {
+  /** Resolves gateway-level JWT auth without making @tuturuuu/ai depend on auth. */
+  resolveGatewayAuth?: (request: Request) => Promise<GatewayAuthResolution>;
+  /** Gateway provider prefix for bare model names. Defaults to 'google'. */
+  defaultProvider?: string;
+};
+
+type ChatMessageInsertMode = 'direct' | 'rpc';
+
+type AuthenticatedContext = GatewayAuthenticatedClient & {
+  messageInsertMode: ChatMessageInsertMode;
+};
+
+export function createPOST(options: CreatePostOptions = {}) {
   return async function handler(req: Request) {
     try {
       const { id, model, message, isMiraMode } = (await req.json()) as {
@@ -86,16 +111,38 @@ export function createPOST(
       if (!message)
         return NextResponse.json('No message provided', { status: 400 });
 
-      const supabase = await createClient(req);
       const tempAuth = await validateAiTempAuthRequest(req);
       if (tempAuth.status === 'revoked') {
         return NextResponse.json('Unauthorized', { status: 401 });
       }
 
-      let user: SupabaseUser | null = null;
+      let auth: AuthenticatedContext | null = null;
+
       if (tempAuth.status === 'valid') {
-        user = tempAuth.context.user as SupabaseUser;
+        const supabase = (await createClient(req)) as TypedSupabaseClient;
+        auth = {
+          messageInsertMode: 'rpc',
+          supabase,
+          user: tempAuth.context.user as SupabaseUser,
+        };
       } else {
+        const gatewayAuth = await options.resolveGatewayAuth?.(req);
+
+        if (gatewayAuth?.ok === false) {
+          return gatewayAuth.response;
+        }
+
+        if (gatewayAuth?.ok) {
+          auth = {
+            messageInsertMode: 'direct',
+            ...gatewayAuth.auth,
+          };
+        }
+      }
+
+      if (!auth) {
+        const supabase = (await createClient(req)) as TypedSupabaseClient;
+
         const { user: sessionUser, authError } =
           await resolveSupabaseSessionUser(supabase);
 
@@ -103,10 +150,18 @@ export function createPOST(
           return buildRateLimitResponse(req, { source: 'auth' });
         }
 
-        user = sessionUser;
+        if (sessionUser) {
+          auth = {
+            messageInsertMode: 'rpc',
+            supabase,
+            user: sessionUser,
+          };
+        }
       }
 
-      if (!user) return NextResponse.json('Unauthorized', { status: 401 });
+      if (!auth) return NextResponse.json('Unauthorized', { status: 401 });
+
+      const { messageInsertMode, supabase, user } = auth;
 
       if (isMiraMode) {
         const allowed = await isInternalTuturuuuAiUser({
@@ -200,11 +255,21 @@ export function createPOST(
         return NextResponse.json(getErrorMessage(chatError), { status: 500 });
       }
 
-      const { error: msgError } = await supabase.rpc('insert_ai_chat_message', {
-        message: message,
-        chat_id: chat.id,
-        source: isMiraMode ? 'Mira' : 'Rewise',
-      });
+      const source = isMiraMode ? 'Mira' : 'Rewise';
+      const { error: msgError } =
+        messageInsertMode === 'direct'
+          ? await supabase.from('ai_chat_messages').insert({
+              chat_id: chat.id,
+              content: message,
+              creator_id: user.id,
+              role: 'USER',
+              metadata: { source },
+            })
+          : await supabase.rpc('insert_ai_chat_message', {
+              message: message,
+              chat_id: chat.id,
+              source,
+            });
 
       if (msgError) {
         if (isBackendRateLimitError(msgError)) {
