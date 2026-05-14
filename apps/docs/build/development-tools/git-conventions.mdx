@@ -305,6 +305,29 @@ After verification, it checks out the branch you started from.
 `main` first; if `staging` or `production` contain commits that are not already
 in `main`, reconcile those branches manually before rerunning the command.
 
+Use `--only-branch` to update one branch while leaving the other release branch
+untouched:
+
+```bash
+bun git-sync --only-branch staging
+bun git-sync --only-branch production
+```
+
+`main` is still refreshed locally as the source commit, but only the selected
+branch is fast-forwarded and pushed. Use `--only-branch main` when you only want
+to pull and push `main`.
+
+Use `--no-push` for local-only synchronization:
+
+```bash
+bun git-sync --no-push
+bun git-sync --only-branch staging --no-push
+```
+
+With `--no-push`, the command fetches, pulls with `--ff-only`, and fast-forwards
+the selected local branches, but it never pushes to `origin`. Final verification
+checks local refs only.
+
 ### Pull Request Workflow
 
 1. Create a branch with the appropriate type based on the work

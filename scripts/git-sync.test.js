@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { runGitSync } = require('./git-sync.js');
+const { parseArgs, runGitSync } = require('./git-sync.js');
 
 const MAIN_SHA = 'a'.repeat(40);
 const STAGING_SHA = 'b'.repeat(40);
@@ -171,6 +171,44 @@ function createFakeGit({
   };
 }
 
+test('parseArgs supports branch scoping and local-only mode', () => {
+  assert.deepEqual(
+    parseArgs([
+      '--only-branch',
+      'staging',
+      '--only-branch=production',
+      '--no-push',
+    ]),
+    {
+      help: false,
+      push: false,
+      selectedBranches: ['staging', 'production'],
+    }
+  );
+});
+
+test('parseArgs accepts comma-separated branch scopes', () => {
+  assert.deepEqual(parseArgs(['--only-branch=staging,production']), {
+    help: false,
+    push: true,
+    selectedBranches: ['staging', 'production'],
+  });
+});
+
+test('parseArgs rejects unknown branch scopes', () => {
+  assert.throws(
+    () => parseArgs(['--only-branch', 'preview']),
+    /Unsupported branch "preview"/
+  );
+});
+
+test('parseArgs rejects empty branch scopes', () => {
+  assert.throws(
+    () => parseArgs(['--only-branch=,']),
+    /Missing value after --only-branch/
+  );
+});
+
 test('runGitSync fast-forwards staging and production to main and pushes all branches', () => {
   const git = createFakeGit();
 
@@ -181,6 +219,8 @@ test('runGitSync fast-forwards staging and production to main and pushes all bra
   });
 
   assert.equal(result.mainSha, MAIN_SHA);
+  assert.deepEqual(result.selectedBranches, ['main', 'staging', 'production']);
+  assert.deepEqual(result.pushedBranches, ['main', 'staging', 'production']);
   assert.equal(git.currentBranch, 'feature/work');
   assert.equal(git.refs['refs/heads/main'], MAIN_SHA);
   assert.equal(git.refs['refs/heads/staging'], MAIN_SHA);
@@ -195,6 +235,56 @@ test('runGitSync fast-forwards staging and production to main and pushes all bra
       ['push', 'origin', 'staging'],
       ['push', 'origin', 'production'],
     ]
+  );
+});
+
+test('runGitSync can sync only staging', () => {
+  const git = createFakeGit();
+
+  const result = runGitSync({
+    execFile: git.execFile,
+    selectedBranches: ['staging'],
+    stderr: sink,
+    stdout: sink,
+  });
+
+  assert.deepEqual(result.selectedBranches, ['staging']);
+  assert.deepEqual(result.pushedBranches, ['staging']);
+  assert.equal(git.refs['refs/heads/staging'], MAIN_SHA);
+  assert.equal(git.refs['refs/remotes/origin/staging'], MAIN_SHA);
+  assert.equal(git.refs['refs/heads/production'], PRODUCTION_SHA);
+  assert.equal(git.refs['refs/remotes/origin/production'], PRODUCTION_SHA);
+  assert.deepEqual(
+    git.calls.filter((args) => args[0] === 'push'),
+    [['push', 'origin', 'staging']]
+  );
+  assert.equal(
+    git.calls.some(
+      (args) => args[0] === 'checkout' && args[1] === 'production'
+    ),
+    false
+  );
+});
+
+test('runGitSync can update local branches without pushing', () => {
+  const git = createFakeGit();
+
+  const result = runGitSync({
+    execFile: git.execFile,
+    push: false,
+    stderr: sink,
+    stdout: sink,
+  });
+
+  assert.deepEqual(result.pushedBranches, []);
+  assert.equal(git.refs['refs/heads/main'], MAIN_SHA);
+  assert.equal(git.refs['refs/heads/staging'], MAIN_SHA);
+  assert.equal(git.refs['refs/heads/production'], MAIN_SHA);
+  assert.equal(git.refs['refs/remotes/origin/staging'], STAGING_SHA);
+  assert.equal(git.refs['refs/remotes/origin/production'], PRODUCTION_SHA);
+  assert.equal(
+    git.calls.some((args) => args[0] === 'push'),
+    false
   );
 });
 
