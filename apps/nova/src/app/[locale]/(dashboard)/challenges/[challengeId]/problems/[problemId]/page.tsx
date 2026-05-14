@@ -1,7 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   NovaChallenge,
   NovaChallengeCriteria,
@@ -12,6 +9,7 @@ import type {
 } from '@tuturuuu/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 import ChallengeClient from './client';
 
 type ExtendedNovaChallenge = NovaChallenge & {
@@ -96,7 +94,7 @@ async function getChallenge(
   challengeId: string,
   sessionId: string
 ): Promise<ExtendedNovaChallenge | null> {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Fetch challenge details
@@ -169,7 +167,7 @@ async function getChallenge(
 async function getFullProblem(
   problemId: string
 ): Promise<(NovaProblem & { test_cases: NovaProblemTestCase[] }) | null> {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data: problem, error: problemError } = await sbAdmin
     .from('nova_problems')
@@ -187,15 +185,10 @@ async function getFullProblem(
 }
 
 async function getSession(challengeId: string): Promise<NovaSession | null> {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await getNovaAppSessionUserFromHeaders();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     throw new Error('Unauthorized');
   }
 
@@ -224,15 +217,10 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
 async function getSubmissions(
   problemId: string
 ): Promise<NovaSubmissionWithScores[]> {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await getNovaAppSessionUserFromHeaders();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     throw new Error('Unauthorized');
   }
 

@@ -4,8 +4,9 @@ const BASE_URL = process.env.BASE_URL || 'http://localhost:7803';
 
 export default defineConfig({
   testDir: './e2e',
-  // Run tests sequentially to avoid overwhelming the Turbopack dev server
-  // with parallel compilation requests
+  globalSetup: './e2e/global-setup.ts',
+  // Keep workers single-process per shard because auth/rate-limit tests mutate
+  // the same local Supabase seed data. CI parallelism is handled with shards.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -28,13 +29,11 @@ export default defineConfig({
     // Auth setup — runs once, creates storageState for authenticated tests
     { name: 'setup', testMatch: /auth\.setup\.ts/, timeout: 120_000 },
 
-    // Unauthenticated tests (login page, redirects) — run BEFORE authenticated
-    // tests so that the login + onboarding pages are pre-compiled
+    // Unauthenticated tests (login page, redirects, bearer-token API checks).
     {
       name: 'chromium-no-auth',
       use: { ...devices['Desktop Chrome'] },
       testMatch: /.*\.noauth\.spec\.ts/,
-      dependencies: ['setup'],
     },
 
     // Authenticated tests (most tests)
@@ -44,16 +43,8 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
         storageState: 'e2e/.auth/user.json',
       },
-      dependencies: ['chromium-no-auth'],
+      dependencies: ['setup'],
       testIgnore: /.*\.noauth\.spec\.ts/,
     },
   ],
-
-  // Uncomment to auto-start dev server (agents must not run bun dev):
-  // webServer: {
-  //   command: 'bun dev',
-  //   url: BASE_URL,
-  //   reuseExistingServer: !process.env.CI,
-  //   timeout: 120_000,
-  // },
 });

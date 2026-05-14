@@ -1,8 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Suspense } from 'react';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 import type { BasicInformation } from '../components/basic-information-component';
 import type {
   LeaderboardEntry,
@@ -89,7 +87,7 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
   };
 
   const limit = 20;
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Fetch all challenges for filter options
   const { data: challenges, error: challengesError } = await sbAdmin
@@ -251,15 +249,12 @@ async function fetchLeaderboard(page: number = 1, challengeId: string = 'all') {
 
   const topThree = rankedTeams.slice(0, 3);
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getNovaAppSessionUserFromHeaders();
 
   let currentRank = 0;
 
   if (user?.id) {
-    const { data: teamMember } = await supabase
+    const { data: teamMember } = await sbAdmin
       .from('nova_team_members')
       .select('team_id')
       .eq('user_id', user.id)

@@ -7,6 +7,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./app-coordination": "./src/app-coordination.ts",
+    "./app-session": "./src/app-session.ts",
+    "./cli-session": "./src/cli-session.ts",
     "./proxy": "./src/proxy/index.ts",
     "./cross-app": "./src/cross-app/index.ts",
     "./cross-app/server": "./src/cross-app/server.ts",

@@ -5,6 +5,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const GET = withSessionAuth(
   async (_req, { supabase }) => {
@@ -13,14 +14,14 @@ export const GET = withSessionAuth(
 
       return NextResponse.json(defaultWorkspace);
     } catch (error) {
-      console.error('Error getting default workspace:', error);
+      serverLogger.error('Error getting default workspace:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
       );
     }
   },
-  { cache: { maxAge: 300, swr: 60 } }
+  { allowAppSessionAuth: true, cache: { maxAge: 300, swr: 60 } }
 );
 
 export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
@@ -62,7 +63,7 @@ export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating default workspace:', error);
+    serverLogger.error('Error updating default workspace:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

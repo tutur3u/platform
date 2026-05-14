@@ -1,3 +1,4 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
@@ -73,7 +74,9 @@ async function getDataWithApiKey(
     apiKey: string;
   }
 ) {
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
   const searchParams = req.nextUrl.searchParams;
 
   const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
@@ -110,16 +113,16 @@ async function getDataFromSession(
   req: NextRequest,
   { wsId }: { wsId: string }
 ) {
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+  const permissions = user ? await getPermissions({ user, wsId }) : null;
 
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const sbAdmin = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
   const searchParams = new URLSearchParams(req.nextUrl.search);
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
@@ -145,8 +148,14 @@ async function getDataFromSession(
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -177,7 +186,7 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = validationResult.data;
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   // Separate control flags from user payload
   // Do NOT allow archived or archived_until during creation
   const { is_guest, ...userPayload } = data ?? {};

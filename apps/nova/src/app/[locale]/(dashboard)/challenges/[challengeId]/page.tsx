@@ -1,10 +1,8 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NovaSession } from '@tuturuuu/types';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 
 interface Props {
   params: Promise<{
@@ -47,7 +45,7 @@ export default async function Page({ params }: Props) {
 }
 
 async function getChallenge(challengeId: string) {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Fetch challenge details
@@ -70,14 +68,10 @@ async function getChallenge(challengeId: string) {
 }
 
 async function getSession(challengeId: string): Promise<NovaSession | null> {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
+  const user = await getNovaAppSessionUserFromHeaders();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     throw new Error('Unauthorized');
   }
 
@@ -104,7 +98,7 @@ async function getSession(challengeId: string): Promise<NovaSession | null> {
 }
 
 async function getFirstProblemId(challengeId: string) {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     const { data: problem, error: problemError } = await sbAdmin

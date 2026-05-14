@@ -1,7 +1,10 @@
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
+import {
+  getFinanceWorkspace,
+  getFinanceWorkspacePermissions,
+} from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -13,8 +16,8 @@ interface Props {
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
   const { wsId: id } = await params;
   const [workspace, permissions] = await Promise.all([
-    getWorkspace(id),
-    getPermissions({ wsId: id }),
+    getFinanceWorkspace(id),
+    getFinanceWorkspacePermissions(id),
   ]);
   if (!workspace || !permissions) notFound();
 

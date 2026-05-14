@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   MAX_COLOR_LENGTH,
@@ -224,14 +222,21 @@ export async function calculateInvoiceValues(
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await createAdminClient({ noCookie: true });
     const { wsId: id } = await params;
+    const user = getAppSessionUserFromRequest(request, {
+      targetApp: 'finance',
+    });
+
+    if (!user) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
 
     // Resolve workspace ID
-    const wsId = await normalizeWorkspaceId(id);
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ user, wsId });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }
@@ -402,11 +407,16 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { wsId } = await params;
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   const permissions = await getPermissions({
+    user,
     wsId,
   });
   if (!permissions) {
@@ -464,15 +474,6 @@ export async function POST(req: Request, { params }: Params) {
         },
         { status: 403 }
       );
-    }
-
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user workspace ID

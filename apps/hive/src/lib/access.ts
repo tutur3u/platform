@@ -1,14 +1,13 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export async function requireHiveAccess() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'hive' }
+  );
 
   if (!user?.id) {
     redirect('/login');

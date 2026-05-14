@@ -1,4 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { HIVE_APP_URL, WEB_APP_URL } from '@/constants/common';
@@ -13,14 +14,14 @@ type Props = {
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
   const t = await getTranslations('auth');
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: await headers() },
+    { targetApp: 'hive' }
+  );
 
   const nextPath = params.next?.startsWith('/') ? params.next : '/';
 
-  if (user) {
+  if (appSession) {
     redirect(nextPath);
   }
 

@@ -1,7 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
@@ -36,11 +37,10 @@ export default async function TimeTrackerManagementPage({
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
         const searchParamsResolved = await searchParams;
-        const supabase = await createClient();
-
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const user = getAppSessionUserFromRequest(
+          { headers: await headers() },
+          { targetApp: 'track' }
+        );
         if (!user) notFound();
 
         const isRootUser = isValidTuturuuuEmail(user.email || '');

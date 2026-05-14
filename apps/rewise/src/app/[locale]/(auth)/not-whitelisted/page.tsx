@@ -1,15 +1,15 @@
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export default async function NotWhitelistedPage() {
   const t = await getTranslations();
 
-  const user = await getCurrentUser();
+  const user = await getSatelliteAppSessionUser('rewise');
   if (!user?.email) redirect('/login');
 
-  const adminSb = await createAdminClient();
+  const adminSb = await createAdminClient({ noCookie: true });
 
   const { data: whitelisted, error } = await adminSb
     .from('ai_whitelisted_emails')

@@ -502,10 +502,17 @@ The platform supports token-based authentication across different apps using `@t
 When a new satellite app participates in centralized login, wire both sides in the same patch:
 
 - Register the app URL in `packages/utils/src/internal-domains.ts` so `mapUrlToApp(...)` can recognize its `returnUrl`.
-- Add `apps/<app>/src/app/api/auth/verify-app-token/route.ts` with `createPOST('<app>')` so `/verify-token` can exchange the cross-app token for an app-local session.
+- Add `apps/<app>/src/app/api/auth/verify-app-token/route.ts` with `createPOST('<app>')` so `/verify-token` can exchange the cross-app token for a host-only `tuturuuu_app_session` cookie.
 - Keep `generate_cross_app_token(...)` bound to the authenticated caller
   (`p_user_id = auth.uid()`) so verify endpoints cannot mint sessions for
   arbitrary users.
+- Do not call `supabase.auth.setSession()` in registered internal apps. The
+  verifier route sets the HttpOnly app-session cookie, and satellite UI should
+  fetch user/profile data by forwarding that cookie to central internal APIs.
+- Registered internal app source must not call `supabase.auth.*` directly.
+  Use `@tuturuuu/auth/app-session` server helpers and `@tuturuuu/internal-api`
+  profile/default-workspace helpers instead; `bun check` runs the static guard
+  across all registered app `src` directories.
 
 If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
 

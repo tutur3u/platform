@@ -1,7 +1,5 @@
 'use client';
 
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -12,13 +10,15 @@ export function AuthButton({
   onClick,
   className,
 }: {
-  user: SupabaseUser | null;
+  user: { email?: string | null } | null;
   onClick?: () => void;
   className?: string;
 }) {
   const handleLogout = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut({ scope: 'local' });
+    await fetch('/api/auth/logout', {
+      cache: 'no-store',
+      method: 'POST',
+    }).catch(() => null);
     window.location.assign(`${TTR_URL}/logout?from=Nova`);
   };
 

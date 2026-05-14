@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_SESSION_COOKIE_NAME, createAppSessionToken } from '../app-session';
 import {
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
   MFA_MOBILE_APPROVAL_KIND,
@@ -31,6 +32,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mocks.updateSession.mockResolvedValue({
       claims: null,
       res: NextResponse.next(),
@@ -145,5 +147,78 @@ describe('auth proxy redirect helpers', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(adminClient.from).toHaveBeenCalledWith('qr_login_challenges');
+  });
+
+  it('lets registered apps through with a valid app-session cookie without refreshing Supabase auth', async () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('redirects registered app requests without an app-session cookie through web login', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'learn' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard');
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location');
+
+    expect(location).toContain('https://tuturuuu.com/login?returnUrl=');
+    expect(location).toContain(
+      encodeURIComponent(
+        'https://learn.tuturuuu.com/verify-token?nextUrl=%2Fdashboard'
+      )
+    );
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('redirects registered app requests with an expired app-session cookie', async () => {
+    const { token } = createAppSessionToken(
+      {
+        expiresInSeconds: 1,
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      { now: new Date('2026-01-01T00:00:00.000Z') }
+    );
+    const authProxy = createCentralizedAuthProxy({
+      appSession: {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+        targetApp: 'learn',
+      },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toContain(
+      'https://tuturuuu.com/login?returnUrl='
+    );
+    expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 });

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Award,
   Bolt,
@@ -17,8 +18,7 @@ import {
   Target,
   Trophy,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -44,7 +44,7 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface RecentActivity {
   id: string;
@@ -98,23 +98,15 @@ export default function UserProfileClient({
 }: {
   profile: ProfileData;
 }) {
-  const supabase = createClient();
   const router = useRouter();
 
-  const [user, setUser] = useState<SupabaseUser | null>(null);
   const [copied, setCopied] = useState(false);
+  const { data: user } = useQuery({
+    queryKey: ['current-user-profile'],
+    queryFn: () => getCurrentUserProfile(),
+  });
 
   const t = useTranslations('nova.profile-page');
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, [supabase.auth]);
 
   // Share profile functionality
   const handleShare = () => {

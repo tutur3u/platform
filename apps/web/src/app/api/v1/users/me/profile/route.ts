@@ -67,7 +67,7 @@ export const GET = withSessionAuth(
       );
     }
   },
-  { cache: { maxAge: 60, swr: 30 } }
+  { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
 );
 
 export const PATCH = withSessionAuth(async (req, { user, supabase }) => {

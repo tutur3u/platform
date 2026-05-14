@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   Award,
   ChevronRight,
@@ -10,8 +11,7 @@ import {
   Trophy,
   Users,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -27,7 +27,7 @@ import { generateFunName, getInitials } from '@tuturuuu/utils/name-helper';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { TeamActionDialog } from './dialog-content';
 
 export interface TeamData {
@@ -77,8 +77,10 @@ export default function TeamClient({
   };
 
   const [copied, setCopied] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const supabase = createClient();
+  const { data: user } = useQuery({
+    queryKey: ['current-user-profile'],
+    queryFn: () => getCurrentUserProfile(),
+  });
   const [dialogState, setDialogState] = useState<{
     isOpen: boolean;
     type: 'goals' | 'reports' | 'des';
@@ -124,15 +126,6 @@ export default function TeamClient({
     setDialogState((prev) => ({ ...prev, isOpen: false }));
   };
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUser(user);
-    };
-    fetchUser();
-  }, [supabase.auth]);
   // Share functionality
   const handleShare = () => {
     if (navigator.share) {

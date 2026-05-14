@@ -61,6 +61,11 @@ export class WorkspaceRedirectRequiredError extends Error {
   }
 }
 
+type AuthenticatedWorkspacePrincipal = {
+  email?: string | null;
+  id: string;
+};
+
 // Structured logging utility
 const logWorkspaceError = (
   context: string,
@@ -283,7 +288,10 @@ export async function getWorkspaceTier(
  */
 export async function getWorkspace(
   id: string,
-  options: { useAdmin?: boolean } = {}
+  options: {
+    useAdmin?: boolean;
+    user?: AuthenticatedWorkspacePrincipal | null;
+  } = {}
 ): Promise<
   | (Workspace & {
       joined: boolean;
@@ -295,13 +303,21 @@ export async function getWorkspace(
     return null;
   }
 
-  const supabase = await createClient();
-  const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
-  const principal = await resolveAuthenticatedPrincipal(supabase);
+  const supabase = options.user ? null : await createClient();
+  const workspaceClient =
+    options.useAdmin || options.user
+      ? await createAdminClient({ noCookie: Boolean(options.user) })
+      : (supabase as TypedSupabaseClient);
+  const principal = options.user
+    ? {
+        email: options.user.email ?? null,
+        id: options.user.id,
+      }
+    : await resolveAuthenticatedPrincipal(supabase as TypedSupabaseClient);
 
   if (!principal) return null;
 
-  const queryBuilder = sbAdmin
+  const queryBuilder = workspaceClient
     .from('workspaces')
     .select('*, workspace_members!inner(user_id)');
 
@@ -353,14 +369,27 @@ export async function getWorkspace(
   };
 }
 
-export async function getWorkspaces(options: { useAdmin?: boolean } = {}) {
-  const supabase = await createClient();
-  const sbAdmin = options.useAdmin ? await createAdminClient() : supabase;
-  const principal = await resolveAuthenticatedPrincipal(supabase);
+export async function getWorkspaces(
+  options: {
+    useAdmin?: boolean;
+    user?: AuthenticatedWorkspacePrincipal | null;
+  } = {}
+) {
+  const supabase = options.user ? null : await createClient();
+  const workspacesClient =
+    options.useAdmin || options.user
+      ? await createAdminClient({ noCookie: Boolean(options.user) })
+      : (supabase as TypedSupabaseClient);
+  const principal = options.user
+    ? {
+        email: options.user.email ?? null,
+        id: options.user.id,
+      }
+    : await resolveAuthenticatedPrincipal(supabase as TypedSupabaseClient);
 
   if (!principal) return null;
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await workspacesClient
     .from('workspaces')
     .select(
       'id, name, avatar_url, logo_url, personal, created_at, workspace_members!inner(user_id)'
@@ -589,15 +618,19 @@ export interface PermissionsResult {
 }
 
 export async function getPermissions({
+  user,
   wsId,
   request,
 }: {
+  user?: AuthenticatedWorkspacePrincipal | null;
   wsId: string;
   request?: Request;
 }): Promise<PermissionsResult | null> {
   const supabase = await (request ? createClient(request) : createClient());
 
-  const principal = await resolveAuthenticatedPrincipal(supabase);
+  const principal = user
+    ? { id: user.id, email: user.email ?? null }
+    : await resolveAuthenticatedPrincipal(supabase);
 
   if (!principal) {
     console.error('User not found');
@@ -607,11 +640,12 @@ export async function getPermissions({
   const userId = principal.id;
 
   const sbAdmin = await createAdminClient();
+  const authorizationClient = user ? sbAdmin : supabase;
 
   // Handle "personal" workspace slug by looking up the user's personal workspace
   let resolvedWorkspaceId: string;
   try {
-    resolvedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
+    resolvedWorkspaceId = await normalizeWorkspaceId(wsId, authorizationClient);
   } catch {
     return null;
   }
@@ -619,7 +653,7 @@ export async function getPermissions({
   const membership = await verifyWorkspaceMembershipType({
     wsId: resolvedWorkspaceId,
     userId,
-    supabase,
+    supabase: authorizationClient,
   });
 
   if (!membership.ok) {

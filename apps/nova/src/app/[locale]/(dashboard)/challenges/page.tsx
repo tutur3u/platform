@@ -1,46 +1,26 @@
 import { Plus } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { NovaExtendedChallenge } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { getTranslations } from 'next-intl/server';
+import {
+  requireNovaAppSessionUser,
+  requireNovaEnabledRole,
+} from '@/lib/app-session';
 import ChallengesList from './ChallengesList';
 import CreateChallengeDialog from './createChallengeDialog';
 
 export default async function Page() {
   const t = await getTranslations('nova');
 
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
+  const user = await requireNovaAppSessionUser();
+  const userRole = await requireNovaEnabledRole(user);
 
-  // Get current user
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
+  const isAdmin = Boolean(userRole.allow_challenge_management);
+  const isSuperAdmin = isAdmin && Boolean(userRole.allow_manage_all_challenges);
 
-  if (authError || !user?.id || !user?.email) {
-    throw new Error('Auth error or missing user');
-  }
-
-  const { data: userRole, error: roleError } = await sbAdmin
-    .from('platform_user_roles')
-    .select(
-      'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'
-    )
-    .eq('user_id', user?.id)
-    .maybeSingle();
-
-  if (roleError || !userRole) {
-    throw new Error(`Error fetching user role: ${roleError}`);
-  }
-
-  const isAdmin = userRole.allow_challenge_management;
-  const isSuperAdmin = isAdmin && userRole.allow_manage_all_challenges;
-
-  const challenges = await fetchChallenges();
+  const challenges = await fetchChallenges(user);
 
   return (
     <div className="container mx-auto p-6">
@@ -64,17 +44,13 @@ export default async function Page() {
   );
 }
 
-async function fetchChallenges(): Promise<NovaExtendedChallenge[]> {
+async function fetchChallenges(
+  user: Pick<SupabaseUser, 'email' | 'id'>
+): Promise<NovaExtendedChallenge[]> {
   try {
-    const sbAdmin = await createAdminClient();
-    const supabase = await createClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
-    // Get current user
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.id || !user?.email) {
+    if (!user?.id || !user?.email) {
       throw new Error('Auth error or missing user');
     }
 

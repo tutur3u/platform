@@ -1,8 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
 interface Params {
   params: Promise<{
@@ -10,21 +8,15 @@ interface Params {
   }>;
 }
 
-export async function GET(_request: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { problemId } = await params;
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     const { data: problem, error } = await sbAdmin
@@ -58,15 +50,11 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { problemId } = await params;
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -145,16 +133,12 @@ export async function PUT(request: Request, { params }: Params) {
   }
 }
 
-export async function DELETE(_request: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(request: Request, { params }: Params) {
+  const supabase = await createAdminClient({ noCookie: true });
   const { problemId } = await params;
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 

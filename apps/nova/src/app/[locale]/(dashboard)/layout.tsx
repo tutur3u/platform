@@ -9,16 +9,15 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import Structure from '@/components/layout/structure';
 import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
+import {
+  requireNovaAppSessionUser,
+  requireNovaEnabledRole,
+} from '@/lib/app-session';
 import NavbarActions from '../(marketing)/navbar-actions';
 import { UserNav } from '../(marketing)/user-nav';
 
@@ -27,23 +26,9 @@ export default async function RootLayout({
 }: {
   children: ReactNode;
 }) {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
   const t = await getTranslations('nova');
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.id) redirect('/login');
-
-  const { data: whitelisted } = await sbAdmin
-    .from('platform_user_roles')
-    .select('enabled, allow_challenge_management, allow_role_management')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (!whitelisted?.enabled) redirect('/not-whitelisted');
+  const user = await requireNovaAppSessionUser();
+  const whitelisted = await requireNovaEnabledRole(user);
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
 

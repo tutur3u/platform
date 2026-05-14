@@ -1,8 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import CalendarLabClientPage from './client';
 
@@ -20,20 +22,23 @@ interface PageProps {
 
 export default async function CalendarLabPage({ params }: PageProps) {
   const { wsId } = await params;
-  const workspace = await getWorkspace(wsId);
+  const requestHeaders = await headers();
+  const user = getAppSessionUserFromRequest(
+    { headers: requestHeaders },
+    { targetApp: 'calendar' }
+  );
+
+  if (!user?.id) redirect('/login');
+
+  const workspace = await getWorkspace(wsId, { useAdmin: true, user });
   if (!workspace) notFound();
 
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) notFound();
 
   const { withoutPermission } = permissions;
 
-  const supabase = await createClient();
-
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const supabase = await createAdminClient({ noCookie: true });
 
   // Security Check: Only Tuturuuu employees
   const isEmployee = user?.email?.endsWith('@tuturuuu.com');

@@ -1,10 +1,8 @@
 /* eslint-disable no-unused-vars */
 
 import type { UIMessage, UseChatHelpers } from '@tuturuuu/ai/types';
-import {
-  createClient,
-  createDynamicClient,
-} from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
+import { createDynamicClient } from '@tuturuuu/supabase/next/client';
 import type { RealtimePresenceState } from '@tuturuuu/supabase/next/realtime';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import {
@@ -273,11 +271,7 @@ export async function uploadFile(
   let finalPath: string | undefined;
 
   if (!chatId) {
-    const supabase = createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const user = await getCurrentUserProfile();
 
     if (!user?.id)
       return {

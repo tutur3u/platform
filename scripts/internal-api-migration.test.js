@@ -129,9 +129,27 @@ test('non-web apps fall back unmatched API routes to the central web app', () =>
   }
 });
 
-test('shared satellite logout uses the auth-only browser client', () => {
+test('shared satellite logout clears the local app-session cookie before central logout', () => {
   const source = read('packages/satellite/src/components/user-nav-client.tsx');
 
-  assert.match(source, /@tuturuuu\/supabase\/next\/auth-browser/);
+  assert.match(source, /fetch\('\/api\/auth\/logout'/);
+  assert.match(source, /window\.location\.assign\(`\$\{centralUrl\}\/logout/);
+  assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/auth-browser/);
   assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/client/);
+});
+
+test('CLI auth uses Tuturuuu-managed JWTs instead of Supabase Auth sessions', () => {
+  const verifyRoute = read('apps/web/src/app/api/cli/auth/verify/route.ts');
+  const refreshRoute = read('apps/web/src/app/api/cli/auth/refresh/route.ts');
+  const crossAppServer = read('packages/auth/src/cross-app/server.ts');
+
+  assert.match(verifyRoute, /sessionKind:\s*'cli-app-session'/);
+  assert.doesNotMatch(verifyRoute, /sessionKind:\s*'supabase'/);
+  assert.match(refreshRoute, /verifyCliRefreshToken/);
+  assert.match(refreshRoute, /createCliAppSession/);
+  assert.doesNotMatch(
+    refreshRoute,
+    /createDetachedClient|auth\.refreshSession/
+  );
+  assert.doesNotMatch(crossAppServer, /generateLink|verifyOtp/);
 });

@@ -3,9 +3,9 @@ services:
     build:
       context: ../apps/pronunciation-assessor
     env_file:
-      - path: ../apps/web/.env.local
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
-      - path: ../.env.local
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
         required: false
     environment:
       - PORT=8010

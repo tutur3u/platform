@@ -1,10 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import { defaultLocale, supportedLocales } from '@/i18n/routing';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
@@ -13,11 +13,7 @@ export default async function NavbarActions({
   hideMetadata?: boolean;
 }) {
   const t = await getTranslations();
-  const supabase = await createClient();
-
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
+  const sbUser = await getNovaAppSessionUserFromHeaders();
 
   return (
     <div className="relative">

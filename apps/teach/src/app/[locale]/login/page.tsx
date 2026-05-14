@@ -1,5 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
 
@@ -16,12 +16,12 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const nextPath = normalizeNextPath(params.next);
-  const supabase = await createClient();
-  const { user } = await resolveAuthenticatedSessionUser(supabase).catch(
-    () => ({ user: null })
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: await headers() },
+    { targetApp: 'teach' }
   );
 
-  if (user) {
+  if (appSession) {
     redirect(nextPath);
   }
 

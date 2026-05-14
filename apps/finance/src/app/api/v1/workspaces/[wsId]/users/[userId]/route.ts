@@ -1,3 +1,4 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
@@ -6,7 +7,6 @@ import {
   MAX_NAME_LENGTH,
   MAX_URL_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { getCurrentWorkspaceUser } from '@tuturuuu/utils/user-helper';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -58,9 +58,14 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -108,7 +113,7 @@ export async function PUT(req: Request, { params }: Params) {
     userPayload.archived_until = archived_until;
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Get current user to check status changes
   const { data: currentUser, error: fetchError } = await sbAdmin
@@ -143,7 +148,13 @@ export async function PUT(req: Request, { params }: Params) {
 
   // Log status changes if archived status changed
   if (typeof archived === 'boolean' && archived !== currentUser.archived) {
-    const currentWorkspaceUser = await getCurrentWorkspaceUser(wsId);
+    const { data: currentWorkspaceUser } = await sbAdmin
+      .from('workspace_user_linked_users')
+      .select('virtual_user_id')
+      .eq('platform_user_id', user.id)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
     if (currentWorkspaceUser) {
       const { error: logError } = await sbAdmin
         .from('workspace_user_status_changes')
@@ -212,9 +223,14 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_: Request, { params }: Params) {
   const { wsId, userId } = await params;
+  const user = getAppSessionUserFromRequest(_, { targetApp: 'finance' });
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -225,7 +241,7 @@ export async function DELETE(_: Request, { params }: Params) {
       { status: 403 }
     );
   }
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { error } = await sbAdmin
     .from('workspace_users')
     .delete()
@@ -252,7 +268,7 @@ async function getDataWithApiKey({
   userId: string;
   apiKey: string;
 }) {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
@@ -290,16 +306,19 @@ async function getDataFromSession({
   wsId: string;
   userId: string;
 }) {
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+  const permissions = user
+    ? await getPermissions({
+        user,
+        wsId,
+      })
+    : null;
 
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin
     .from('workspace_users')

@@ -8,6 +8,8 @@ export interface CliTokenExchangeResponse {
     access_token: string;
     expires_at?: number | null;
     expires_in?: number;
+    refresh_expires_at?: number | null;
+    refresh_expires_in?: number;
     refresh_token: string;
     token_type?: string;
   };
@@ -92,6 +94,7 @@ export async function refreshCliSession({
   return {
     accessToken: payload.session.access_token,
     expiresAt: payload.session.expires_at,
+    refreshExpiresAt: payload.session.refresh_expires_at,
     refreshToken: payload.session.refresh_token,
     tokenType: payload.session.token_type,
   };

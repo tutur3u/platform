@@ -9,8 +9,10 @@ import type {
 } from '@tuturuuu/supabase/next/user';
 import type { Database } from '@tuturuuu/types/db';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
+import type { AppName } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { verifyAppSessionRequest } from '../app-session';
 import {
   hashMfaMobileApprovalSecret,
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
@@ -376,6 +378,15 @@ interface CentralizedAuthOptions {
      */
     enforceForAll?: boolean;
   };
+
+  /**
+   * Registered satellite apps use Tuturuuu-managed app-session JWTs instead
+   * of app-local Supabase Auth sessions.
+   */
+  appSession?: {
+    now?: Date;
+    targetApp: AppName | string;
+  };
 }
 
 /**
@@ -389,6 +400,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
     isPublicPath,
     skipApiRoutes = true,
     mfa = {},
+    appSession,
   } = options;
 
   const {
@@ -416,6 +428,30 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         return NextResponse.next();
       }
 
+      const isPublic =
+        (!excludeRootPath && req.nextUrl.pathname === '/') ||
+        publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
+        isPublicPath?.(req.nextUrl.pathname);
+
+      if (appSession) {
+        const appSessionVerification = verifyAppSessionRequest(req, {
+          now: appSession.now,
+          targetApp: appSession.targetApp,
+        });
+
+        if (!appSessionVerification.ok && !isPublic) {
+          const loginUrl = new URL('/login', webAppUrl);
+          loginUrl.searchParams.set(
+            'returnUrl',
+            buildCentralizedReturnUrl(req, webAppUrl)
+          );
+
+          return NextResponse.redirect(loginUrl);
+        }
+
+        return NextResponse.next();
+      }
+
       // Make sure user session is always refreshed
       const { res, claims } = await updateSession(req);
 
@@ -427,12 +463,6 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
         // console.log('Not skipping API route:', req.nextUrl.pathname);
       }
 
-      // Determine if the current path is public
-      const isPublic =
-        (!excludeRootPath && req.nextUrl.pathname === '/') ||
-        publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
-        isPublicPath?.(req.nextUrl.pathname);
-
       // If the user is not authenticated and the path is not public, redirect to the central login page
       if (!claims && !isPublic) {
         const loginUrl = new URL('/login', webAppUrl);
@@ -441,7 +471,6 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           buildCentralizedReturnUrl(req, webAppUrl)
         );
 
-        console.log('Redirecting to:', loginUrl.toString());
         const redirectResponse = NextResponse.redirect(loginUrl);
         propagateAuthCookies(res, redirectResponse);
 

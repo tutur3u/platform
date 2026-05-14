@@ -1,15 +1,16 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 export default async function NotWhitelistedPage() {
   const t = await getTranslations('auth');
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: await headers() },
+    { targetApp: 'hive' }
+  );
 
-  if (!user) {
+  if (!appSession) {
     redirect('/login');
   }
 

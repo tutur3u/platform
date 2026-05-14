@@ -5,6 +5,7 @@ import { dirname, posix, win32 } from 'node:path';
 export interface CliSession {
   accessToken: string;
   expiresAt?: number | null;
+  refreshExpiresAt?: number | null;
   refreshToken: string;
   tokenType?: string;
 }

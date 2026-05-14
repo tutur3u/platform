@@ -4,9 +4,9 @@ services:
       context: ..
       dockerfile: apps/web/docker/blue-green-watcher.Dockerfile
     env_file:
-      - path: ../apps/web/.env.local
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
-      - path: ../.env.local
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
         required: false
     environment:
       - CLOUDFLARED_TOKEN

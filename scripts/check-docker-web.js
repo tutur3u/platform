@@ -537,8 +537,19 @@ function validateDockerProdCompose(composeContent) {
     '      - platform-buildkit-state:/var/lib/buildkit',
     '      - ../tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '    env_file:',
-    '      - path: ../apps/web/.env.local',
-    '      - path: ../.env.local',
+    '    - path: $' +
+      '{' +
+      'DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local' +
+      '}',
+    '    - path: $' + '{' + 'DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local' + '}',
+    '      - path: $' +
+      '{' +
+      'DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local' +
+      '}',
+    '      - path: $' +
+      '{' +
+      'DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local' +
+      '}',
     '      - CLOUDFLARED_TOKEN',
     '      - DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://buildkit:1234',
     '      - DOCKER_WEB_WITH_CLOUDFLARED',

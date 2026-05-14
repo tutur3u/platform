@@ -1,9 +1,9 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
 import {
@@ -26,12 +26,15 @@ interface LayoutProps {
 export default async function Layout({ children, params }: LayoutProps) {
   const { wsId: id } = await params;
 
-  const user = await getCurrentUser();
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'rewise' }
+  );
   if (!user?.id) redirect('/login');
 
   // Whitelist check — preserve AI access gating
   if (user.email) {
-    const adminSb = await createAdminClient();
+    const adminSb = await createAdminClient({ noCookie: true });
     const { data: whitelisted, error } = await adminSb
       .from('ai_whitelisted_emails')
       .select('enabled')
@@ -43,7 +46,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     }
   }
 
-  const workspace = await getWorkspace(id, { useAdmin: true });
+  const workspace = await getWorkspace(id, { useAdmin: true, user });
 
   if (!workspace) redirect('/onboarding');
   if (!workspace?.joined) redirect('/');

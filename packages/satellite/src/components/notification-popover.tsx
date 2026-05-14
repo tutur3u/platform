@@ -1,6 +1,6 @@
 import NotificationPopoverClient from '@tuturuuu/ui/custom/notification-popover-client';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { getTranslations } from 'next-intl/server';
+import { getSatelliteAppSession } from '../auth';
 
 /** The central Tuturuuu web app URL, resolved from env or defaults */
 function getTtrUrl(): string {
@@ -15,11 +15,11 @@ function getTtrUrl(): string {
 
 export default async function NotificationPopover() {
   const t = await getTranslations('notifications');
-  const user = await getCurrentSupabaseUser();
+  const appSession = await getSatelliteAppSession();
 
   return (
     <NotificationPopoverClient
-      userId={user?.id}
+      userId={appSession?.sub}
       noNotificationsText={t('no-notifications')}
       notificationsText={t('notifications')}
       viewAllText={t('view-all')}

@@ -218,6 +218,17 @@ test('parseArgs accepts manual active build cancellation override', () => {
   );
 });
 
+test('parseArgs accepts an explicit Docker web env file', () => {
+  assert.equal(
+    parseArgs(['up', '--env-file', 'tmp/e2e/web.env']).envFilePath,
+    'tmp/e2e/web.env'
+  );
+  assert.throws(
+    () => parseArgs(['up', '--env-file']),
+    /Expected an env file path/
+  );
+});
+
 test('getBlueGreenBuildTimeoutMs reads the build watchdog timeout from env', () => {
   assert.equal(
     getBlueGreenBuildTimeoutMs({}),
@@ -547,6 +558,12 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
     assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.SUPABASE_SERVER_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
     assert.equal(env.DOCKER_BUILDKIT, '1');
+    assert.equal(env.DOCKER_WEB_ENV_FILE, 'apps/web/.env.local');
+    assert.equal(env.DOCKER_WEB_COMPOSE_ENV_FILE, '../apps/web/.env.local');
+    assert.equal(
+      env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE,
+      '../apps/web/.env.local'
+    );
     assert.equal(env.MARKITDOWN_ENDPOINT_URL, undefined);
     assert.equal(env.DRIVE_AUTO_EXTRACT_PROXY_URL, undefined);
     assert.equal(env.INTERNAL_WEB_API_ORIGIN, undefined);

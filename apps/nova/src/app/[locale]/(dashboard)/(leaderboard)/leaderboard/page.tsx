@@ -1,10 +1,8 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateFunName } from '@tuturuuu/utils/name-helper';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import LeaderboardClient from './client';
 import type { BasicInformation } from './components/basic-information-component';
 import type { LeaderboardEntry } from './components/leaderboard';
@@ -93,19 +91,13 @@ async function fetchLeaderboard(
 
   const limit = 20;
 
-  const supabase = await createClient();
+  const user = await requireNovaAppSessionUser();
 
-  // Get current user
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id || !user?.email) {
+  if (!user?.id || !user?.email) {
     throw new Error('Auth error or missing user');
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Check user's role and permissions
   const { data: userRole, error: roleError } = await sbAdmin

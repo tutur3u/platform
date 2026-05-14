@@ -1,21 +1,15 @@
 'use server';
 
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import type { AdminsResponse } from './challengeForm';
 
 export async function fetchAdmins(): Promise<AdminsResponse> {
   try {
-    const supabase = await createClient();
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const user = await requireNovaAppSessionUser();
 
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-    if (authError || !user?.email) {
+    if (!user?.email) {
       throw new Error('Auth error or missing user');
     }
 

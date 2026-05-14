@@ -14,7 +14,6 @@ import {
   SquareMousePointer,
   User,
 } from '@tuturuuu/icons';
-import { createAuthClient } from '@tuturuuu/supabase/next/auth-browser';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Dialog } from '@tuturuuu/ui/dialog';
@@ -74,8 +73,10 @@ export default function UserNavClient({
       : `http://localhost:${process.env.CENTRAL_PORT || 7803}`);
 
   const handleLogout = async () => {
-    const supabase = createAuthClient();
-    await supabase.auth.signOut({ scope: 'local' });
+    await fetch('/api/auth/logout', {
+      cache: 'no-store',
+      method: 'POST',
+    }).catch(() => null);
     window.location.assign(`${centralUrl}/logout?from=${appName}`);
   };
 

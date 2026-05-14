@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   InventoryProduct,
   RawInventoryProduct,
@@ -49,26 +47,23 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient(request);
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
     const { wsId: id } = await params;
+    const user = getAppSessionUserFromRequest(request, {
+      targetApp: 'finance',
+    });
 
-    // Resolve workspace ID
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser();
-
-    if (authError || !user) {
+    if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    // Resolve workspace ID
+    const wsId = await normalizeWorkspaceId(id, sbAdmin);
 
     const membership = await verifyWorkspaceMembershipType({
       wsId,
       userId: user.id,
-      supabase,
+      supabase: sbAdmin,
       requiredType: 'MEMBER',
     });
 
@@ -84,7 +79,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     // Check permissions
-    const permissions = await getPermissions({ wsId });
+    const permissions = await getPermissions({ user, wsId });
     if (!permissions) {
       return Response.json({ error: 'Not found' }, { status: 404 });
     }

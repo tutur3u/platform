@@ -1,10 +1,7 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { calculatePercentage } from '@tuturuuu/utils/nova/scores/calculate';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import { redirect } from 'next/navigation';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import ResultClient from './client';
 
 interface Props {
@@ -14,15 +11,10 @@ interface Props {
 export default async function Page({ params }: Props) {
   const { challengeId } = await params;
 
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
-
-  const user = await getCurrentSupabaseUser();
-
-  if (!user) redirect('/dashboard');
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await requireNovaAppSessionUser();
 
   try {
-    // Get challenge - using the regular client since users can view their challenges
     const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .select('*')
@@ -34,8 +26,7 @@ export default async function Page({ params }: Props) {
       throw new Error('Challenge not found');
     }
 
-    // Get sessions using regular client (user has permissions to their own sessions)
-    const { data: sessionSummaries, error: sessionsError } = await supabase
+    const { data: sessionSummaries, error: sessionsError } = await sbAdmin
       .from('nova_sessions')
       .select('*')
       .eq('challenge_id', challengeId)
@@ -47,8 +38,7 @@ export default async function Page({ params }: Props) {
       throw new Error('Error fetching sessions');
     }
 
-    // Get challenge stats for this user through RPC (respect permissions)
-    const { data: challengeStats, error: statsError } = await supabase.rpc(
+    const { data: challengeStats, error: statsError } = await sbAdmin.rpc(
       'get_challenge_stats',
       {
         challenge_id_param: challengeId,

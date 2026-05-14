@@ -129,7 +129,7 @@ export async function createClient<T = Database>(
       ? authHeader.replace('Bearer ', '').trim()
       : undefined;
 
-    if (accessToken) {
+    if (accessToken && !accessToken.startsWith('ttr_app_')) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
       const userClient = createBrowserClient<T>(url, key, {
         global: {
@@ -185,7 +185,7 @@ export async function createDynamicClient<T = Database>(
       ? authHeader.replace('Bearer ', '').trim()
       : undefined;
 
-    if (accessToken) {
+    if (accessToken && !accessToken.startsWith('ttr_app_')) {
       const { url, key } = checkEnvVariables({ useSecretKey: false });
       const userClient = createBrowserClient<T>(url, key, {
         global: {

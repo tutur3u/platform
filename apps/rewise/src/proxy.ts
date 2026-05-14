@@ -1,12 +1,15 @@
 import { match } from '@formatjs/intl-localematcher';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
 import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  getCurrentUserDefaultWorkspace,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { getUserDefaultWorkspace } from '@tuturuuu/utils/user-helper';
 import { isPersonalWorkspace } from '@tuturuuu/utils/workspace-helper';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -28,6 +31,7 @@ const WEB_APP_URL =
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  appSession: { targetApp: 'rewise' },
   webAppUrl: WEB_APP_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
@@ -54,6 +58,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (authRes.headers.has('Location')) {
     return authRes;
   }
+
+  const appSession = getAppSessionClaimsFromRequest(req, {
+    targetApp: 'rewise',
+  });
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -112,12 +120,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   // If we found a potential workspace ID, check if it's a personal workspace
   if (potentialWorkspaceId) {
     try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
+      if (appSession) {
         const isPersonal = await isPersonalWorkspace(potentialWorkspaceId);
 
         if (isPersonal) {
@@ -162,13 +165,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     !isMultiAccountFlow
   ) {
     try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (user) {
-        const defaultWorkspace = await getUserDefaultWorkspace();
+      if (appSession) {
+        const defaultWorkspace = await getCurrentUserDefaultWorkspace(
+          withForwardedInternalApiAuth(req.headers)
+        );
 
         if (defaultWorkspace) {
           const target = defaultWorkspace.personal

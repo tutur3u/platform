@@ -1,3 +1,8 @@
+import {
+  APP_SESSION_COOKIE_NAME,
+  createAppSessionToken,
+} from '@tuturuuu/auth/app-session';
+import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,11 +11,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 const mockGetUser = vi.fn();
+const mockAdminClient = { from: vi.fn() };
 const mockCreateClient = vi.fn(() => ({
   auth: { getUser: mockGetUser },
 }));
+const mockCreateAdminClient = vi.fn(() => mockAdminClient);
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: () => mockCreateAdminClient(),
   createClient: () => mockCreateClient(),
 }));
 
@@ -41,6 +49,10 @@ const mockHasAuthenticatedApiSession = vi.fn().mockReturnValue(false);
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   hasAuthenticatedApiSession: (request: unknown) =>
     mockHasAuthenticatedApiSession(request),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  verifyWorkspaceMembershipType: vi.fn(),
 }));
 
 const mockCheckRateLimit = vi
@@ -92,6 +104,7 @@ const fakeUser = { id: 'user-123', email: 'test@test.com' };
 describe('withSessionAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mockGetUser.mockResolvedValue({ data: { user: fakeUser }, error: null });
     mockIsIPBlocked.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({ allowed: true, headers: {} });
@@ -425,6 +438,61 @@ describe('withSessionAuth', () => {
     expect(response.status).toBe(200);
     expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalled();
+  });
+
+  it('should accept app-session cookie auth without calling Supabase getUser when opted in', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'learn',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, { allowAppSessionAuth: true });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        supabase: mockAdminClient,
+        user: expect.objectContaining({
+          email: 'agent@example.com',
+          id: 'app-user-1',
+        }),
+      }),
+      {}
+    );
+  });
+
+  it('should reject CLI refresh JWTs as app-session bearer auth', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.refresh.token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, { allowAppSessionAuth: true });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('should still enforce suspension checks for valid AI temp auth', async () => {

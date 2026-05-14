@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
 import {
   getPermissions,
@@ -43,15 +41,19 @@ interface CreateSubscriptionInvoiceRequest {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { wsId } = await params;
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
   let createdInvoiceId: string | null = null;
 
   const permissions = await getPermissions({
+    user,
     wsId,
-    request: req,
   });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -167,15 +169,6 @@ export async function POST(req: Request, { params }: Params) {
       values_recalculated,
       rounding_applied,
     } = calculatedValues;
-
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
-    if (userError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
 
     // Map platform user to workspace virtual user
     let workspaceUserId: string | null = null;

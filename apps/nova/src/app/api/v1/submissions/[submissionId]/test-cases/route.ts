@@ -1,8 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
 interface Params {
   params: Promise<{
@@ -15,18 +13,13 @@ export async function GET(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createClient();
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Check if submission belongs to user
@@ -83,18 +76,13 @@ export async function GET(request: Request, { params }: Params) {
 export async function PUT(request: Request, { params }: Params) {
   const { submissionId } = await params;
 
-  const supabase = await createClient();
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     const body = await request.json();
@@ -161,14 +149,10 @@ export async function DELETE(request: Request, { params }: Params) {
   const { searchParams } = new URL(request.url);
   const testCaseId = searchParams.get('testCaseId');
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 

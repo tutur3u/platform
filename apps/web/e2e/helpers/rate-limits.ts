@@ -1,11 +1,11 @@
-const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
-const SAFE_LOCAL_SUPABASE_ORIGINS = new Set([
-  'http://127.0.0.1:8001',
-  'http://localhost:8001',
-]);
+import {
+  LOCAL_E2E_SUPABASE_SECRET_KEY,
+  LOCAL_E2E_SUPABASE_URL,
+  SAFE_LOCAL_SUPABASE_ORIGINS,
+} from './environment';
 
 export function getLocalE2ESupabaseSecretKey(): string {
-  return ['sb', 'secret', 'N7UND0UgjKTVK-Uodkm0Hg_xSvEMPvz'].join('_');
+  return LOCAL_E2E_SUPABASE_SECRET_KEY;
 }
 
 export async function resolveRateLimitResetConfig(): Promise<{

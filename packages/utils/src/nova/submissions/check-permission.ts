@@ -1,35 +1,21 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 
 export async function checkPermission({
   problemId,
   sessionId,
+  userId,
 }: {
   problemId: string;
   sessionId: string | null;
+  userId: string;
 }) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
-    return {
-      canSubmit: false,
-      remainingAttempts: 0,
-      message: 'Unauthorized',
-    };
-  }
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Check if the user is an admin
-  const { data: roleData, error: roleError } = await supabase
+  const { data: roleData, error: roleError } = await sbAdmin
     .from('platform_user_roles')
     .select('*')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('allow_challenge_management', true)
     .single();
 
@@ -57,8 +43,6 @@ export async function checkPermission({
       message: 'sessionId is required for non-admin users',
     };
   }
-
-  const sbAdmin = await createAdminClient();
 
   // Check if the session is in progress
   const { data: sessionData, error: sessionError } = await sbAdmin
@@ -92,12 +76,12 @@ export async function checkPermission({
   }
 
   // Check submission count
-  const { error: countError, count } = await supabase
+  const { error: countError, count } = await sbAdmin
     .from('nova_submissions')
     .select('*', { count: 'exact', head: true })
     .eq('problem_id', problemId)
     .eq('session_id', sessionId)
-    .eq('user_id', user.id);
+    .eq('user_id', userId);
 
   if (countError) {
     console.error('Database Error when counting submissions:', countError);

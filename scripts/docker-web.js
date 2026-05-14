@@ -223,6 +223,7 @@ function parseArgs(argv) {
   let buildMaxParallelism = null;
   let buildBuilderName = null;
   let cancelActiveBuild = false;
+  let envFilePath = null;
 
   for (let index = 0; index < args.length; index += 1) {
     const arg = args[index];
@@ -250,6 +251,18 @@ function parseArgs(argv) {
 
     if (arg === '--cancel-active-build') {
       cancelActiveBuild = true;
+      continue;
+    }
+
+    if (arg === '--env-file') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error('Expected an env file path after --env-file.');
+      }
+
+      envFilePath = value;
+      index += 1;
       continue;
     }
 
@@ -361,6 +374,7 @@ function parseArgs(argv) {
     action,
     composeArgs,
     composeGlobalArgs,
+    ...(envFilePath ? { envFilePath } : {}),
     mode,
     resetSupabase,
     strategy,
@@ -587,6 +601,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     options.startWatcherContainer ?? startBlueGreenWatcherContainer;
   const composeFile = getComposeFile(parsed.mode);
   const env = options.env ?? process.env;
+  const envFilePath = options.envFilePath ?? parsed.envFilePath;
   const processImpl = options.processImpl ?? process;
   const now = options.now ?? (() => Date.now());
   ensureCloudflaredProfileFromEnv(parsed, env);
@@ -606,7 +621,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
   if (parsed.action === 'down') {
     const composeEnv = getComposeEnvironment({
       baseEnv: env,
-      envFilePath: options.envFilePath,
+      envFilePath,
       fsImpl,
       rootDir: options.rootDir,
       withCloudflared,
@@ -639,14 +654,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     return;
   }
 
-  ensureWebEnvFile(fsImpl, options.envFilePath, options.rootDir ?? ROOT_DIR);
+  ensureWebEnvFile(fsImpl, envFilePath, options.rootDir ?? ROOT_DIR);
   ensureProductionRedisToken(parsed, env, hasComposeProfile, {
     fsImpl,
     rootDir: options.rootDir,
   });
   let composeEnv = getComposeEnvironment({
     baseEnv: env,
-    envFilePath: options.envFilePath,
+    envFilePath,
     fsImpl,
     rootDir: options.rootDir,
     withCloudflared,
@@ -772,7 +787,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         drainPollMs: options.drainPollMs,
         drainTimeoutMs: options.drainTimeoutMs,
         env: workflowEnv,
-        envFilePath: options.envFilePath,
+        envFilePath,
         fsImpl,
         proxyDrainMs: options.proxyDrainMs,
         rootDir: options.rootDir,
@@ -810,7 +825,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
                 DOCKER_WEB_WITH_CLOUDFLARED: '1',
               }
             : env,
-          envFilePath: options.envFilePath,
+          envFilePath,
           fsImpl,
           rootDir: options.rootDir,
           runCommand: run,

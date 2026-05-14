@@ -525,6 +525,7 @@ async function saveSession(config: CliConfig, token: string) {
   const session = {
     accessToken: payload.session.access_token,
     expiresAt: payload.session.expires_at,
+    refreshExpiresAt: payload.session.refresh_expires_at,
     refreshToken: payload.session.refresh_token,
     tokenType: payload.session.token_type,
   };
