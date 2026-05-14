@@ -14,9 +14,16 @@ Codex discovers repo-local plugins through
 `tuturuuu`, displays as `Tuturuuu`, and points its local plugin entry at
 `./plugins/tuturuuu`.
 
-After changing marketplace metadata or plugin files, restart Codex. Then open
-the plugin directory, choose the `Tuturuuu` marketplace, and install the
-`Tuturuuu` plugin.
+After changing marketplace metadata or plugin files, bump
+`plugins/tuturuuu/.codex-plugin/plugin.json` so Codex has a new cache target,
+then refresh the repo-local marketplace from the repo root:
+
+```bash
+codex plugin marketplace add ./
+```
+
+Restart Codex after refreshing the marketplace. Then open the plugin directory,
+choose the `Tuturuuu` marketplace, and install or update the `Tuturuuu` plugin.
 
 If Codex does not show the repo marketplace after restart, add the repo root as
 a local marketplace source from the CLI:
@@ -133,7 +140,8 @@ library.
 ## Maintenance Rules
 
 - Keep `plugins/tuturuuu/.codex-plugin/plugin.json` aligned with the plugin
-  folder name.
+  folder name, and bump its `version` whenever a skill is added, removed, or
+  materially changed.
 - Keep each skill folder name aligned with its `SKILL.md` frontmatter `name`.
 - Keep plugin and skill default prompts short, natural, and action-oriented.
   Marketplace prompt cards should read like user goals, for example "Clear the
