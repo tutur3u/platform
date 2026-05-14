@@ -179,6 +179,12 @@ package lifecycle scripts to the OIDC-enabled job. Because the `tuturuuu`
 package is public and `tutur3u/platform` is a public repository, npm also
 generates and attaches build provenance attestations automatically.
 
+The SDK imports `@tuturuuu/types` and `@tuturuuu/internal-api` through package
+exports that point at their git-ignored `dist/` directories. The release
+workflow must build those two workspace packages in the non-OIDC build and
+prepare jobs before running SDK tests or creating the `npm pack` tarball;
+otherwise a clean Actions checkout cannot resolve the SDK imports.
+
 The matching npm-side trusted publisher must stay configured at
 `https://www.npmjs.com/package/tuturuuu/access` with these exact values:
 

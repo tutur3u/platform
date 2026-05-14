@@ -58,6 +58,11 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Build SDK workspace dependencies
+        run: |
+          bun run --filter @tuturuuu/types build
+          bun run --filter @tuturuuu/internal-api build
+
       - name: Run tests
         working-directory: packages/sdk
         run: bun run test
@@ -103,6 +108,12 @@ jobs:
           else
             echo "should_publish=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Build SDK workspace dependencies
+        if: steps.version-check.outputs.should_publish == 'true'
+        run: |
+          bun run --filter @tuturuuu/types build
+          bun run --filter @tuturuuu/internal-api build
 
       - name: Pack publish artifact
         if: steps.version-check.outputs.should_publish == 'true'

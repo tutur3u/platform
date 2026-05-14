@@ -290,6 +290,7 @@ test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () =>
     path.join(repoRoot, '.github', 'workflows', 'release-sdk-package.yaml'),
     'utf8'
   );
+  const buildJob = readWorkflowJobBlock('release-sdk-package.yaml', 'build');
   const prepareJob = readWorkflowJobBlock(
     'release-sdk-package.yaml',
     'prepare-publish-npm'
@@ -306,7 +307,20 @@ test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () =>
   assert.doesNotMatch(workflow, /github\.event\.pull_request/);
   assert.doesNotMatch(workflow, /pull_request\.title/);
 
+  assert.match(buildJob, /Build SDK workspace dependencies/);
+  assert.match(buildJob, /bun run --filter @tuturuuu\/types build/);
+  assert.match(buildJob, /bun run --filter @tuturuuu\/internal-api build/);
+  assert.match(buildJob, /working-directory: packages\/sdk/);
+  assert.match(buildJob, /run: bun run test/);
+
   assert.doesNotMatch(prepareJob, /id-token:\s*write/);
+  assert.match(prepareJob, /Build SDK workspace dependencies/);
+  assert.match(
+    prepareJob,
+    /steps\.version-check\.outputs\.should_publish == 'true'/
+  );
+  assert.match(prepareJob, /bun run --filter @tuturuuu\/types build/);
+  assert.match(prepareJob, /bun run --filter @tuturuuu\/internal-api build/);
   assert.match(prepareJob, /npm pack --pack-destination/);
   assert.match(prepareJob, /actions\/upload-artifact@/);
 

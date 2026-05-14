@@ -121,6 +121,13 @@ outside the trusted-publish job. The npm-version check makes workflow changes
 and manual retries idempotent: if `tuturuuu@<version>` already exists, the
 publish job is skipped.
 
+The SDK imports local workspace packages whose package exports point at
+git-ignored `dist/` output. The release workflow therefore builds
+`@tuturuuu/types` and `@tuturuuu/internal-api` in the non-OIDC build and
+prepare jobs before running SDK tests or `npm pack`. Do not remove those
+dependency-build steps unless SDK tests and package builds stop resolving those
+workspace packages through their published-style `dist/` exports.
+
 The final publish job authenticates with npm through
 [trusted publishing](https://docs.npmjs.com/trusted-publishers): GitHub Actions
 mints a short-lived OIDC token (`id-token: write`) and the npm CLI exchanges it
