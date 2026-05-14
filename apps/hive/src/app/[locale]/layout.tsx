@@ -14,6 +14,7 @@ import { type ReactNode, Suspense } from 'react';
 import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
+import { HIVE_BODY_CLASS_NAME } from './layout-classes';
 import '@tuturuuu/ui/globals.css';
 
 const outfit = Outfit({
@@ -76,12 +77,7 @@ export default async function RootLayout({ children, params }: Props) {
 
   return (
     <html className="dark" lang={locale} suppressHydrationWarning>
-      <body
-        className={cn(
-          'min-h-dvh overflow-hidden bg-zinc-950 text-zinc-50 antialiased',
-          outfit.className
-        )}
-      >
+      <body className={cn(HIVE_BODY_CLASS_NAME, outfit.className)}>
         <SerwistProvider register={false}>
           <VercelAnalytics />
           <VercelInsights />
