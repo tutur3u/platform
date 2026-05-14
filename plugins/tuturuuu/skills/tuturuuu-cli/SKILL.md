@@ -19,6 +19,10 @@ Before changing CLI code, inspect the owning surfaces:
 - `apps/docs/reference/packages/sdk.mdx` and `packages/sdk/README.md` for durable usage documentation.
 - `plugins/tuturuuu/skills/tuturuuu-cli/references/cli-workflows.md` for detailed agent-facing examples.
 
+If the user asks for commits, combine this skill with `$tuturuuu-commit`.
+Separate CLI behavior, docs/help text, and version or release metadata only when
+they are independently revertible.
+
 ## Install Or Repair The CLI
 
 Prefer using an existing `bun` on `PATH`. If `bun` is missing and the user asks

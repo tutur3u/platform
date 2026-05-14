@@ -61,6 +61,8 @@ If the script is unavailable, use `gh api graphql` to fetch `reviewThreads`, inc
 For this repository, combine this skill with the focused Tuturuuu skills when relevant:
 
 - `$tuturuuu-platform` for repo-wide web/shared-code rules and final checks.
+- `$tuturuuu-commit` when the user explicitly asks to commit addressed review
+  feedback or split fixes by scope.
 - `$tuturuuu-database` for Supabase migrations, RLS, generated types, and workspace-scoped API writes.
 - `$tuturuuu-ci-docs` for CI, docs, and validator changes.
 - `$tuturuuu-mobile-task-board` for Flutter mobile task-board behavior.
@@ -89,11 +91,7 @@ jq -r '.counts.active_unresolved' /tmp/pr123-review-threads-postresolve.json
 
 ## Commit Workflow
 
-Only commit when explicitly asked.
-
-1. Run `git status --short` and `git diff --cached --stat` or `git diff --stat` to confirm scope.
-2. Stage intentionally. If the user says to include unrelated files, include exactly those files too.
-3. Use Conventional Commits, for example:
-   - `fix(education): address module group review feedback`
-   - `fix(codex): harden review thread fetcher`
-4. Report commit hash, resolved thread count, remaining active unresolved thread count, and validation results.
+Only commit when explicitly asked. Use `$tuturuuu-commit` for staging, scope
+splitting, Conventional Commit subjects, and final commit reporting. Include
+resolved thread count, remaining active unresolved thread count, and validation
+results in the final review-comment report.

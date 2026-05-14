@@ -1,7 +1,7 @@
 {
   "name": "tuturuuu",
   "version": "0.2.1",
-  "description": "Codex operating guidance, CLI support, validation, CI, and focused workflows for the Tuturuuu platform monorepo.",
+  "description": "Codex operating guidance, scoped commits, CLI support, validation, CI, and focused workflows for the Tuturuuu platform monorepo.",
   "author": {
     "name": "Tuturuuu",
     "email": "contact@tuturuuu.com",
@@ -15,12 +15,13 @@
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",
-    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, shared worktree coordination, native ttr CLI install and SDK-backed workflows, finance CRUD and pagination commands, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, review-comment follow-through, plugin validation, and incremental tooling improvements.",
+    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, shared worktree coordination, scoped Conventional Commit follow-through, native ttr CLI install and SDK-backed workflows, finance CRUD and pagination commands, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, review-comment follow-through, plugin validation, and incremental tooling improvements.",
     "developerName": "Tuturuuu",
     "category": "Productivity",
     "capabilities": [
       "Repository guidance",
       "Shared worktree coordination",
+      "Scoped commit workflow",
       "SDK and CLI workflows",
       "Finance CRUD commands",
       "Finance pagination guidance",
@@ -43,7 +44,7 @@
       "Fix this Flutter task-board behavior and verify it.",
       "Update the docs or CI workflow and validate the follow-through.",
       "Clear the unresolved review comments on this PR.",
-      "Improve this shared agent workflow for future agents."
+      "Improve this shared agent workflow for future agents and commit by scope."
     ],
     "brandColor": "#000000",
     "composerIcon": "./assets/light.png",

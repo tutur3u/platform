@@ -13,6 +13,10 @@ For docs changes, update the MDX page and `apps/docs/docs.json` together when ad
 
 Read `references/ci-docs-checklist.md` for the compact checklist before editing CI or docs.
 
+If the user asks to commit the finished work, route to `$tuturuuu-commit` and
+keep docs, CI, and validator changes split only when they are independently
+revertible.
+
 ## CI Patterns
 
 - Prefer narrow validation jobs that do not install the full monorepo unless the check needs dependencies.

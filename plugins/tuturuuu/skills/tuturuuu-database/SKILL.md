@@ -13,6 +13,11 @@ Keep migrations additive when possible. Prepare migrations for the user to apply
 
 Use `normalizeWorkspaceId(wsId)` in API routes that accept workspace aliases such as `personal`. Keep workspace normalization consistent across selector, preview, and final save routes in the same flow.
 
+If the user asks for commits, combine this skill with `$tuturuuu-commit`. Keep a
+schema migration and the code that consumes it together when they are one rollout
+contract; split docs-only or tooling-only follow-through only when it can be
+reverted independently.
+
 ## Access And Types
 
 - Prefer importing shared DB aliases from `@tuturuuu/types/db`.

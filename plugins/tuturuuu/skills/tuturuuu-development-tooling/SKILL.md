@@ -29,6 +29,8 @@ future work. Examples:
 - document CLI, deploy, database, mobile, or CI behavior in `apps/docs`
 - add a helper script when an install or verification flow is easy to automate
 - refine prompts, checklists, or skill descriptions so future triggering is more reliable
+- extract repeated commit behavior into `$tuturuuu-commit` instead of relying on
+  memory or final-response habits
 
 Do not expand scope into broad refactors. Keep improvements tied to evidence from
 the current task or recent local failures.
@@ -45,6 +47,10 @@ For `plugins/tuturuuu` changes:
 - put detailed operational material in `references/`
 - update `apps/docs/build/development-tools/codex-plugin.mdx`
 - run `python3 plugins/tuturuuu/scripts/validate_plugin.py`
+
+When a plugin change is committed, use `$tuturuuu-commit` so skill, manifest,
+validator, and docs updates are staged together only when they describe one
+coherent plugin behavior.
 
 When improving agent task-capture behavior, make `ttr` the default path for new
 Tuturuuu tasks. Update `AGENTS.md`, `$tuturuuu-cli`, and plugin docs together so

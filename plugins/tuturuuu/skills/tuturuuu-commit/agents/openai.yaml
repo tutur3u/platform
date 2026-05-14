@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Commit"
+  short_description: "Stage and commit Tuturuuu changes by scope"
+  default_prompt: "Commit these changes by scope and domain."

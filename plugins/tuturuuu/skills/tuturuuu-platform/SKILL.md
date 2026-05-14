@@ -43,6 +43,8 @@ Use the more focused plugin skills when they match the task:
 - `$tuturuuu-database` for Supabase schema, RLS, API write, storage, or generated type changes.
 - `$tuturuuu-ci-docs` for workflow files, validators, docs pages, and docs navigation.
 - `$tuturuuu-cli` for installing, using, debugging, or publishing the native `ttr` CLI and browser/copy-token login flows.
+- `$tuturuuu-commit` for explicit commit requests, scoped staging, atomic
+  Conventional Commits, commit-and-push follow-through, and commit reporting.
 - `$tuturuuu-development-tooling` for Codex plugin, skill, validation, docs, scripts, and durable agent workflow improvements.
 - `$tuturuuu-mobile-task-board` for Flutter task-board date, routing, assignee, detail, or version bump work.
 - `$tuturuuu-review-comments` for fetching, fixing, resolving, and reporting unresolved GitHub PR review threads.
@@ -66,6 +68,10 @@ When a session reveals durable workflow knowledge, make an incremental
 improvement to the relevant Tuturuuu tooling surface when practical: plugin
 skill text, `apps/docs`, validation scripts, focused tests, or helper scripts.
 Keep the improvement small and tied to the task.
+
+When the user asks to commit, treat the commit as part of the deliverable. Use
+`$tuturuuu-commit`, split commits by product domain or independently revertible
+scope, and stage only paths intentionally changed in this session.
 
 ## Verification
 

@@ -31,6 +31,9 @@ codex plugin marketplace add ./
   `packages/*`, `apps/database`, `apps/docs`, translations, navigation, and
   verification follow-through, including shared-worktree preflight and scoped
   staging expectations.
+- `$tuturuuu-commit`: scoped commit workflow guidance for explicit commit,
+  commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
+  path isolation, hook failure handling, and final commit reporting.
 - `$tuturuuu-cli`: native `ttr` CLI install, SDK-backed command work, browser
   login, copy-token login, workspace discovery, active-board defaults,
   open-task defaults, finance CRUD commands, finance pagination footers, compact
@@ -74,6 +77,7 @@ The CI check currently verifies:
 - plugin manifest JSON and interface metadata
 - natural default prompt examples for the invokable skills, written as short
   user requests instead of visible `$skill` commands
+- scoped commit workflow coverage for explicit commit requests
 - repo marketplace metadata at `.agents/plugins/marketplace.json`
 - skill folder and frontmatter naming parity
 - `agents/openai.yaml` defaults for every skill
@@ -113,6 +117,7 @@ For individual skills, run the Codex skill validator:
 
 ```bash
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-platform
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-commit
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-development-tooling
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-mobile-task-board

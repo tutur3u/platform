@@ -9,6 +9,11 @@ description: Tuturuuu Flutter mobile task-board workflow guidance. Use when Code
 
 Read `references/task-board-reference.md` before editing. It captures the known file map, UX semantics, and verification flow for this area.
 
+If the user asks to commit mobile work, combine this skill with
+`$tuturuuu-commit`. Keep a user-visible mobile behavior, its tests,
+localization, and required version bump together unless the user explicitly asks
+for a different split.
+
 Search these files first, then expand only as needed:
 
 - `apps/mobile/lib/features/tasks/presentation/cubit/task_board_detail_cubit.dart`

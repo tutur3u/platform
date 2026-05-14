@@ -21,6 +21,7 @@ PLUGIN_NAME = "tuturuuu"
 MAX_DEFAULT_PROMPT_LENGTH = 120
 PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-platform": re.compile(r"\bplatform\b", re.IGNORECASE),
+    "tuturuuu-commit": re.compile(r"\b(commit|scope|domain)\b", re.IGNORECASE),
     "tuturuuu-cli": re.compile(r"\b(cli|sdk|ttr)\b", re.IGNORECASE),
     "tuturuuu-development-tooling": re.compile(
         r"\b(development workflow|tooling|future agents?)\b", re.IGNORECASE
