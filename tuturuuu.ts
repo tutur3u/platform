@@ -15,6 +15,7 @@ export const ci = {
   'i18n-check.yaml': true,
   'mobile.yaml': true,
   'release-ai-package.yaml': true,
+  'release-sdk-package.yaml': true,
   'release-supabase-package.yaml': true,
   'release-types-package.yaml': true,
   'release-typescript-config-package.yaml': true,

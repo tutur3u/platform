@@ -1,9 +1,10 @@
 name: Release tuturuuu package
 
 on:
-  pull_request:
-    types: [closed]
+  push:
+    branches: [production]
     paths:
+      - ".github/workflows/release-sdk-package.yaml"
       - "packages/sdk/package.json"
   workflow_dispatch:
 
@@ -15,7 +16,7 @@ jobs:
 
   check-version-bump:
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true' && github.event.pull_request.merged == true && contains(github.event.pull_request.title, 'chore(tuturuuu)')
+    if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}

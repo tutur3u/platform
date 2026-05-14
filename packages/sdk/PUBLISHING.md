@@ -112,11 +112,14 @@ Check the package on npm:
 ### Option 1: GitHub Actions (npm Trusted Publishing)
 
 The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
-SDK automatically to npm when a merged version-bump PR updates
-`packages/sdk/package.json` and the PR title matches `chore(tuturuuu)`. The
-workflow runs the SDK test suite, checks whether the exact package version is
-already present on npm, and prepares a package tarball with `npm pack` outside
-the trusted-publish job.
+SDK automatically to npm when a push to `production` changes
+`packages/sdk/package.json` or the release workflow itself. The workflow can also
+be dispatched manually to catch up a version that already landed on
+`production`. It runs the SDK test suite, checks whether the exact package
+version is already present on npm, and prepares a package tarball with `npm pack`
+outside the trusted-publish job. The npm-version check makes workflow changes
+and manual retries idempotent: if `tuturuuu@<version>` already exists, the
+publish job is skipped.
 
 The final publish job authenticates with npm through
 [trusted publishing](https://docs.npmjs.com/trusted-publishers): GitHub Actions
@@ -133,8 +136,10 @@ npm also generates and attaches build provenance attestations automatically.
 To publish a new release:
 
 1. Bump `packages/sdk/package.json`.
-2. Merge a PR whose title includes `chore(tuturuuu)`.
-3. Make sure the npm trusted publisher entry for `tuturuuu` still points at
+2. Merge or push the version bump to `production`.
+3. If the version bump already landed without publishing, manually dispatch
+   `Release tuturuuu package` from GitHub Actions.
+4. Make sure the npm trusted publisher entry for `tuturuuu` still points at
    `tutur3u/platform` and the workflow filename
    `release-sdk-package.yaml` (no GitHub environment). Manage it from the
    package settings page on npmjs.com under **Trusted Publisher**.

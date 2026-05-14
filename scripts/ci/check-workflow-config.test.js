@@ -286,6 +286,10 @@ test('workflow_dispatch bypasses affected gating', () => {
 });
 
 test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'release-sdk-package.yaml'),
+    'utf8'
+  );
   const prepareJob = readWorkflowJobBlock(
     'release-sdk-package.yaml',
     'prepare-publish-npm'
@@ -294,6 +298,13 @@ test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () =>
     'release-sdk-package.yaml',
     'publish-npm'
   );
+
+  assert.match(workflow, /\n {2}push:\n/);
+  assert.match(workflow, /branches:\s*\[production\]/);
+  assert.match(workflow, /"packages\/sdk\/package\.json"/);
+  assert.match(workflow, /"\.github\/workflows\/release-sdk-package\.yaml"/);
+  assert.doesNotMatch(workflow, /github\.event\.pull_request/);
+  assert.doesNotMatch(workflow, /pull_request\.title/);
 
   assert.doesNotMatch(prepareJob, /id-token:\s*write/);
   assert.match(prepareJob, /npm pack --pack-destination/);

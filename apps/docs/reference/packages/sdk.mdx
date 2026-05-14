@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-10'
+updatedAt: '2026-05-14'
 ---
 
 # Tuturuuu SDK
@@ -162,11 +162,12 @@ used directly as API bearer tokens. If refresh fails because the user no longer
 exists or the refresh JWT has expired, run `ttr login` again.
 
 SDK releases are published automatically from
-`.github/workflows/release-sdk-package.yaml` after a merged version-bump PR
-updates `packages/sdk/package.json` and includes `chore(tuturuuu)` in the PR
-title. The workflow runs the SDK tests, skips publication if the exact package
-version already exists on npm, prepares a tarball with `npm pack` outside the
-trusted-publish job, and then publishes that tarball through
+`.github/workflows/release-sdk-package.yaml` when a push to `production` changes
+`packages/sdk/package.json` or the release workflow itself. The same workflow can
+also be dispatched manually to catch up a version that already landed on
+`production`. The workflow runs the SDK tests, skips publication if the exact
+package version already exists on npm, prepares a tarball with `npm pack` outside
+the trusted-publish job, and then publishes that tarball through
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers). Only the
 final `publish-npm` job requests `id-token: write`, so GitHub Actions mints the
 short-lived OIDC token after dependency installation, package builds, and version
