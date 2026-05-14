@@ -273,6 +273,35 @@ describe('Supabase Server Client', () => {
       });
     });
 
+    it('should not pass Tuturuuu app-session JWTs to Supabase as Bearer auth', async () => {
+      const mockRequest = {
+        headers: new Headers({
+          Authorization: 'Bearer ttr_app_header.payload.signature',
+        }),
+      };
+
+      await createClient(mockRequest);
+
+      expect(createBrowserClient).not.toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          global: {
+            headers: {
+              Authorization: 'Bearer ttr_app_header.payload.signature',
+            },
+          },
+        })
+      );
+      expect(createServerClient).toHaveBeenCalledWith(
+        'https://test.supabase.co',
+        'test-publishable-key',
+        expect.objectContaining({
+          cookies: expect.any(Object),
+        })
+      );
+    });
+
     it('should fall back to cookie auth when request has no Bearer token', async () => {
       const mockRequest = {
         headers: new Headers({}),

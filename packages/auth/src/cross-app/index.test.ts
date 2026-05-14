@@ -1,13 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
-  createClient: vi.fn(),
-}));
-
-vi.mock('@tuturuuu/supabase/next/client', () => ({
-  createClient: () => mocks.createClient(),
-}));
-
 let mapUrlToApp: typeof import('./index').mapUrlToApp;
 let verifyRouteToken: typeof import('./index').verifyRouteToken;
 
@@ -20,13 +12,6 @@ beforeAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.createClient.mockReturnValue({
-    auth: {
-      getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-      refreshSession: vi.fn().mockResolvedValue({}),
-      setSession: vi.fn().mockResolvedValue({ error: null }),
-    },
-  });
 });
 
 function createMockRouter() {
@@ -92,24 +77,13 @@ describe('verifyRouteToken', () => {
     expect(router.refresh).toHaveBeenCalled();
   });
 
-  it('stores the returned session before redirecting to the requested route', async () => {
-    const setSession = vi.fn().mockResolvedValue({ error: null });
+  it('trusts the HttpOnly app-session cookie set by the verifier route before redirecting', async () => {
     const router = createMockRouter();
-    mocks.createClient.mockReturnValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-        refreshSession: vi.fn().mockResolvedValue({}),
-        setSession,
-      },
-    });
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
         Response.json({
-          session: {
-            access_token: 'access-token',
-            refresh_token: 'refresh-token',
-          },
+          appSessionCreated: true,
           userId: 'user-1',
           valid: true,
         })
@@ -122,37 +96,17 @@ describe('verifyRouteToken', () => {
       token: 'token-1',
     });
 
-    expect(setSession).toHaveBeenCalledWith({
-      access_token: 'access-token',
-      refresh_token: 'refresh-token',
-    });
     expect(router.push).toHaveBeenCalledWith('/personal');
     expect(router.refresh).toHaveBeenCalled();
   });
 
-  it('does not read the stale local session before verifying a fresh token', async () => {
-    const getUser = vi
-      .fn()
-      .mockRejectedValue(
-        new Error('Invalid Refresh Token: Refresh Token not found')
-      );
-    const setSession = vi.fn().mockResolvedValue({ error: null });
+  it('does not read or mutate a stale local Supabase session when verifying a fresh token', async () => {
     const router = createMockRouter();
-    mocks.createClient.mockReturnValue({
-      auth: {
-        getUser,
-        refreshSession: vi.fn().mockResolvedValue({}),
-        setSession,
-      },
-    });
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
         Response.json({
-          session: {
-            access_token: 'access-token',
-            refresh_token: 'refresh-token',
-          },
+          appSessionCreated: true,
           userId: 'user-1',
           valid: true,
         })
@@ -165,29 +119,12 @@ describe('verifyRouteToken', () => {
       token: 'token-1',
     });
 
-    expect(getUser).not.toHaveBeenCalled();
-    expect(setSession).toHaveBeenCalledWith({
-      access_token: 'access-token',
-      refresh_token: 'refresh-token',
-    });
     expect(router.push).toHaveBeenCalledWith('/personal');
     expect(router.refresh).toHaveBeenCalled();
   });
 
-  it('does not refresh a stale local session when token verification returns no session', async () => {
-    const refreshSession = vi
-      .fn()
-      .mockRejectedValue(
-        new Error('Invalid Refresh Token: Refresh Token not found')
-      );
+  it('redirects when token verification cannot create an app-session cookie', async () => {
     const router = createMockRouter();
-    mocks.createClient.mockReturnValue({
-      auth: {
-        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
-        refreshSession,
-        setSession: vi.fn().mockResolvedValue({ error: null }),
-      },
-    });
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -205,7 +142,6 @@ describe('verifyRouteToken', () => {
       token: 'token-1',
     });
 
-    expect(refreshSession).not.toHaveBeenCalled();
     expect(router.push).toHaveBeenCalledWith('/');
     expect(router.refresh).toHaveBeenCalled();
   });

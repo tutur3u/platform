@@ -18,6 +18,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('cross-app server verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
 
     mocks.createClient.mockResolvedValue({
       rpc: vi.fn().mockResolvedValue({
@@ -61,8 +62,33 @@ describe('cross-app server verification', () => {
     });
   });
 
-  it('can create a fresh session with CLI-designating metadata', async () => {
+  it('sets an HttpOnly Tuturuuu app-session cookie without returning Supabase session tokens', async () => {
+    const handler = createPOST('learn');
+
+    const response = await handler(
+      new NextRequest('https://learn.tuturuuu.com/api/auth/verify-app-token', {
+        body: JSON.stringify({ token: 'copy-token' }),
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      appSessionCreated: true,
+      userId: 'user-1',
+      valid: true,
+    });
+    expect(response.headers.get('set-cookie')).toContain(
+      'tuturuuu_app_session=ttr_app_'
+    );
+    expect(response.headers.get('set-cookie')).toContain('HttpOnly');
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.createDetachedClient).not.toHaveBeenCalled();
+  });
+
+  it('can still create a fresh Supabase session with CLI-designating metadata', async () => {
     const handler = createPOST('platform', {
+      sessionKind: 'supabase',
       sessionMetadata: {
         auth_client: 'cli',
         origin: 'TUTURUUU_CLI',

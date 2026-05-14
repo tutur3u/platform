@@ -2,6 +2,7 @@ import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import { safeParseBody } from '@/lib/safe-parse-body';
 
@@ -15,7 +16,7 @@ export const GET = withSessionAuth<{ configId: string }>(
       .maybeSingle();
 
     if (error) {
-      console.error('Error fetching user config:', error);
+      serverLogger.error('Error fetching user config:', error);
       return NextResponse.json(
         { message: 'Error fetching user config' },
         { status: 500 }
@@ -24,7 +25,7 @@ export const GET = withSessionAuth<{ configId: string }>(
 
     return NextResponse.json({ value: data?.value ?? null });
   },
-  { cache: { maxAge: 60, swr: 30 } }
+  { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
 );
 
 export const PUT = withSessionAuth<{ configId: string }>(
@@ -68,7 +69,7 @@ export const PUT = withSessionAuth<{ configId: string }>(
         return rateLimitResponse;
       }
 
-      console.error('Error upserting user config:', error);
+      serverLogger.error('Error upserting user config:', error);
       return NextResponse.json(
         { message: 'Error upserting user config' },
         { status: 500 }
@@ -76,7 +77,8 @@ export const PUT = withSessionAuth<{ configId: string }>(
     }
 
     return NextResponse.json({ message: 'success' });
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const DELETE = withSessionAuth<{ configId: string }>(
@@ -88,7 +90,7 @@ export const DELETE = withSessionAuth<{ configId: string }>(
       .eq('id', id);
 
     if (error) {
-      console.error('Error deleting user config:', error);
+      serverLogger.error('Error deleting user config:', error);
       return NextResponse.json(
         { message: 'Error deleting user config' },
         { status: 500 }
@@ -96,5 +98,6 @@ export const DELETE = withSessionAuth<{ configId: string }>(
     }
 
     return NextResponse.json({ message: 'success' });
-  }
+  },
+  { allowAppSessionAuth: true }
 );

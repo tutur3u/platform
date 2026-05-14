@@ -1,6 +1,13 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAppSessionUser,
+  getAppSessionTokenFromRequest,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import {
   extractIPFromHeaders,
@@ -122,7 +129,17 @@ interface SessionAuthContext {
   supabase: TypedSupabaseClient;
 }
 
-const resolveAuthenticatedUser = resolveAuthenticatedSessionUser;
+async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  return {
+    authError: error,
+    user,
+  };
+}
 
 interface CacheConfig {
   /** Browser cache max-age in seconds. Only applied to 2xx GET responses. */
@@ -168,6 +185,12 @@ interface SessionAuthOptions {
    * Supabase session auth. Keep this scoped to AI routes only.
    */
   allowAiTempAuth?: boolean;
+  /**
+   * Allows registered internal apps to authenticate with a Tuturuuu-managed
+   * app-session JWT. Handlers opting into this path must keep authorization
+   * explicit because the Supabase client is admin-backed.
+   */
+  allowAppSessionAuth?: boolean;
 }
 
 /**
@@ -322,6 +345,68 @@ export function withSessionAuth<T = unknown>(
       }
 
       return response;
+    }
+
+    if (options?.allowAppSessionAuth) {
+      const appSessionToken = getAppSessionTokenFromRequest(request);
+
+      if (appSessionToken) {
+        const appSessionVerification = verifyAppSessionRequest(request);
+
+        if (!appSessionVerification.ok) {
+          return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const appSessionUser = createAppSessionUser(
+          appSessionVerification.claims
+        );
+
+        try {
+          const { checkUserSuspension } = await import(
+            '@tuturuuu/utils/abuse-protection/user-suspension'
+          );
+          const suspension = await checkUserSuspension(appSessionUser.id);
+          if (suspension.suspended) {
+            return NextResponse.json(
+              {
+                error: 'Forbidden',
+                message: suspension.reason ?? 'Account suspended',
+              },
+              { status: 403 }
+            );
+          }
+        } catch {
+          // User suspension module not yet available or failed — fail-open
+        }
+
+        const adminSupabase = (await createAdminClient({
+          noCookie: true,
+        })) as TypedSupabaseClient;
+        const params = routeContext?.params
+          ? await Promise.resolve(routeContext.params)
+          : ({} as T);
+        const response = await handler(
+          request,
+          { user: appSessionUser, supabase: adminSupabase },
+          params
+        );
+
+        if (
+          options?.cache &&
+          request.method === 'GET' &&
+          response.status >= 200 &&
+          response.status < 300
+        ) {
+          const { maxAge, swr } = options.cache;
+          const directives = [`private`, `max-age=${maxAge}`];
+          if (swr !== undefined) {
+            directives.push(`stale-while-revalidate=${swr}`);
+          }
+          response.headers.set('Cache-Control', directives.join(', '));
+        }
+
+        return response;
+      }
     }
 
     const { user, authError } = await resolveAuthenticatedUser(supabase);

@@ -1,7 +1,4 @@
-import {
-  createClient,
-  type TypedSupabaseClient,
-} from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
 import type { useRouter } from 'next/navigation';
 
@@ -234,8 +231,6 @@ export const verifyRouteToken = async ({
   router: ReturnType<typeof useRouter>;
 }) => {
   try {
-    const supabase = createClient();
-
     if (!token) {
       const nextUrl = searchParams.get('nextUrl');
       router.push(nextUrl || '/');
@@ -269,26 +264,10 @@ export const verifyRouteToken = async ({
       return;
     }
 
-    // The server creates an independent session for this satellite app via
-    // generateLink + verifyOtp. The tokens are returned in the response body
-    // (no Set-Cookie headers) so the browser client stores them in its own
-    // domain-scoped cookies, avoiding cross-app cookie collisions.
-    if (data.session?.access_token && data.session?.refresh_token) {
-      const { error: sessionError } = await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      if (sessionError) {
-        console.error(
-          '[cross-app] setSession failed, trying refreshSession:',
-          sessionError
-        );
-        redirectAfterVerificationFailure(router);
-        return;
-      }
-    } else {
-      console.error('Error verifying token: missing satellite session tokens');
+    // The verifier route sets the host-only HttpOnly app-session cookie.
+    // Client code must not receive or store Supabase session tokens here.
+    if (!data.appSessionCreated) {
+      console.error('Error verifying token: missing app-session cookie');
       redirectAfterVerificationFailure(router);
       return;
     }
