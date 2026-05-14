@@ -10,6 +10,7 @@ import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
+const LOCAL_AUTH_API_PATHS = new Set(['/api/auth/logout']);
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -47,6 +48,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
+    if (LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname)) {
+      return clearSupabaseAuthCookies(request, NextResponse.next());
+    }
+
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:hive:api',
     });

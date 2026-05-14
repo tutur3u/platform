@@ -11,6 +11,11 @@ Hive consumes cross-app login tokens through `/verify-token`. That verifier
 posts the handoff token to `/api/auth/verify-app-token`, trusts the returned
 HttpOnly `tuturuuu_app_session` cookie, and then redirects to the requested
 Hive path. It must not create or refresh a Hive-domain Supabase Auth session.
+Hive local logout is intentionally app-local: `/api/auth/logout` clears
+`tuturuuu_app_session`, expires stale Supabase Auth cookies on the Hive host, and
+redirects browser form submissions back to `/login`. Keep that route outside the
+generic API proxy guard path so logout does not wait on product API rate-limit
+checks.
 
 ## Access Model
 
