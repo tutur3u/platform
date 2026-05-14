@@ -1,28 +1,21 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 import { createChallengeSchema } from '../schemas';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const enabled = searchParams.get('enabled');
 
-  const supabase = await createClient();
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     let query = sbAdmin
@@ -65,14 +58,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 

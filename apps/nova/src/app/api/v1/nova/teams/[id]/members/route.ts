@@ -1,15 +1,14 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient({ noCookie: true });
+    const user = getNovaAppSessionUserFromRequest(request);
 
     const { id } = await params;
 
@@ -23,10 +22,6 @@ export async function GET(
     if (teamError) {
       return NextResponse.json({ error: 'Team not found' }, { status: 404 });
     }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
 
     if (!user?.email) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -43,7 +38,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin = await createAdminClient({ noCookie: true });
 
     // Get team members with user information
     const { data, error, count } = await sbAdmin
@@ -78,7 +73,12 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient({ noCookie: true });
+    const user = getNovaAppSessionUserFromRequest(request);
+
+    if (!user?.id) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     const { id } = await params;
     const { user_id } = await request.json();

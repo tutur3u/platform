@@ -1,6 +1,5 @@
 import { match } from '@formatjs/intl-localematcher';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -102,10 +101,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     unlocalizedPath.startsWith('/verify-token');
 
   if (!isPublicPath) {
-    const supabase = await createClient(request);
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const appSession = getAppSessionClaimsFromRequest(request, {
+      targetApp: 'teach',
+    });
 
-    if (!user) {
+    if (!appSession) {
       const url = new URL(getLoginPath(), request.url);
       const next = getNextValue(request);
 

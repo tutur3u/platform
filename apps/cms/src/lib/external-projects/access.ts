@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
@@ -96,12 +94,17 @@ export async function resolveWorkspaceExternalProjectBinding(
 }
 
 export async function getCmsWorkspaceAccess(rawWsId: string) {
-  const supabase = (await createClient()) as TypedSupabaseClient;
+  const user = await getSatelliteAppSessionUser('cms');
+  const supabase = (await createAdminClient({
+    noCookie: true,
+  })) as TypedSupabaseClient;
   const normalizedWorkspaceId = await normalizeWorkspaceId(rawWsId, supabase);
   const isInternalWorkspace = normalizedWorkspaceId === ROOT_WORKSPACE_ID;
   const [workspacePermissions, rootPermissions, binding] = await Promise.all([
-    getPermissions({ wsId: normalizedWorkspaceId }),
-    getPermissions({ wsId: ROOT_WORKSPACE_ID }),
+    user
+      ? getPermissions({ user, wsId: normalizedWorkspaceId })
+      : Promise.resolve(null),
+    user ? getPermissions({ user, wsId: ROOT_WORKSPACE_ID }) : null,
     isInternalWorkspace
       ? Promise.resolve({
           adapter: null,

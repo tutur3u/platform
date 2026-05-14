@@ -1,15 +1,24 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import {
+  getCurrentUserProfile,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
+import { headers } from 'next/headers';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 import Menu from './menu';
 
 export default async function ServerMenu() {
-  const supabase = await createClient();
-
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
-
-  const user = await getCurrentUser();
+  const requestHeaders = await headers();
+  const sbUser = getNovaAppSessionUserFromRequest({
+    headers: requestHeaders,
+  });
+  const user = sbUser
+    ? await getCurrentUserProfile(
+        withForwardedInternalApiAuth(requestHeaders)
+      ).catch(() => ({
+        email: sbUser.email,
+        id: sbUser.id,
+      }))
+    : null;
 
   return <Menu sbUser={sbUser} user={user} />;
 }

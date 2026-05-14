@@ -187,6 +187,12 @@ const checks = [
     parseOutput: () => 'Server logs use internal drain',
   },
   {
+    name: 'internal-app-auth',
+    command: 'node',
+    args: ['scripts/check-internal-app-auth.js'],
+    parseOutput: () => 'Registered app auth surfaces use app sessions',
+  },
+  {
     name: 'script-tests',
     command: 'bun',
     args: ['run', 'test:scripts'],

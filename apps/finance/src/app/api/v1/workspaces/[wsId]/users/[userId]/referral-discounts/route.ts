@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
@@ -14,22 +12,17 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   const { wsId, userId } = await params;
-  const supabase = await createClient(request);
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = getAppSessionUserFromRequest(request, { targetApp: 'finance' });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const membership = await verifyWorkspaceMembershipType({
     wsId,
     userId: user.id,
-    supabase,
+    supabase: sbAdmin,
     requiredType: 'MEMBER',
   });
 

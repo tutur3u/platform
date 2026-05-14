@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -14,7 +12,7 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { wsId, userId } = await params;
 
   if (!userId)
@@ -29,7 +27,7 @@ export async function GET(_: Request, { params }: Params) {
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, userId, apiKey })
-    : getDataFromSession({ wsId, userId });
+    : getDataFromSession({ request, wsId, userId });
 }
 
 async function getDataWithApiKey({
@@ -71,28 +69,25 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({
+  request,
   wsId,
   userId,
 }: {
+  request: Request;
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = getAppSessionUserFromRequest(request, { targetApp: 'finance' });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const membership = await verifyWorkspaceMembershipType({
     wsId,
     userId: user.id,
-    supabase,
+    supabase: sbAdmin,
     requiredType: 'MEMBER',
   });
 

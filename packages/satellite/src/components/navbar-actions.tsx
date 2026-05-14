@@ -1,8 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { GetStartedButton } from '@tuturuuu/ui/custom/get-started-button';
 import { LanguageWrapper } from '@tuturuuu/ui/custom/language-wrapper';
 import { ThemeToggle } from '@tuturuuu/ui/custom/theme-toggle';
 import { getTranslations } from 'next-intl/server';
+import { getSatelliteAppSession } from '../auth';
 import { LOCALE_COOKIE_NAME } from '../constants/common';
 import { defaultLocale, supportedLocales } from '../i18n/routing';
 import NotificationPopover from './notification-popover';
@@ -14,18 +14,14 @@ export default async function NavbarActions({
   hideMetadata?: boolean;
 }) {
   const t = await getTranslations();
-  const supabase = await createClient();
-
-  const {
-    data: { user: sbUser },
-  } = await supabase.auth.getUser();
+  const appSession = await getSatelliteAppSession();
 
   return (
     <div className="relative flex w-full">
       <div className="flex w-full flex-col gap-2">
         {/* Main actions row */}
         <div className="flex w-full items-center gap-1">
-          {sbUser ? (
+          {appSession ? (
             <>
               <div className="flex-1">
                 <UserNavWrapper hideMetadata={hideMetadata} />

@@ -1,5 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -12,14 +13,10 @@ export async function GET(request: Request) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 

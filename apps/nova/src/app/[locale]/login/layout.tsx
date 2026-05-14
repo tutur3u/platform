@@ -1,4 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type React from 'react';
 
@@ -7,10 +8,12 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children }: LayoutProps) {
-  const supabase = await createClient();
-  const { data: user } = await supabase.auth.getUser();
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: await headers() },
+    { targetApp: 'nova' }
+  );
 
-  if (user) redirect('/home');
+  if (appSession) redirect('/home');
 
   return (
     <div

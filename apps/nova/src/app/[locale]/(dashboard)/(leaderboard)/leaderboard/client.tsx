@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import {
   ArrowLeftToLine,
   ArrowRightToLine,
@@ -9,7 +10,7 @@ import {
   Medal,
   Sparkles,
 } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { motion } from 'framer-motion';
@@ -50,9 +51,6 @@ export default function LeaderboardClient({
 }) {
   const [filteredData, setFilteredData] = useState<LeaderboardEntry[]>(data);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>(
-    undefined
-  );
   const [page, setPage] = useState(initialPage);
   const t = useTranslations('nova.leaderboard-page');
   const router = useRouter();
@@ -61,18 +59,11 @@ export default function LeaderboardClient({
   // Get the selected challenge from URL params
   const selectedChallenge = searchParams.get('challenge') || 'all';
 
-  const supabase = createClient();
-
-  useEffect(() => {
-    const getUserId = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setCurrentUserId(user?.id);
-    };
-
-    getUserId();
-  }, [supabase]);
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user-profile'],
+    queryFn: () => getCurrentUserProfile(),
+  });
+  const currentUserId = currentUser?.id;
 
   useEffect(() => {
     let filtered = [...data];

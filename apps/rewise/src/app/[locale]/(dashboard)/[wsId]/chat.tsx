@@ -1,11 +1,10 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
 import { useChat } from '@tuturuuu/ai/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { updateAiChat } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile, updateAiChat } from '@tuturuuu/internal-api';
 import type { AIChat, AIModelUI } from '@tuturuuu/types';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
@@ -61,8 +60,12 @@ export default function Chat({
 
   const [chat, setChat] = useState<Partial<AIChat> | undefined>(defaultChat);
   const [model, setModel] = useState<AIModelUI | undefined>(inputModel);
-  const [currentUserId, setCurrentUserId] = useState<string>();
   const [input, setInput] = useState('');
+  const { data: currentUser } = useQuery({
+    queryKey: ['current-user-profile'],
+    queryFn: () => getCurrentUserProfile(),
+  });
+  const currentUserId = currentUser?.id;
 
   const {
     id: chatId,
@@ -94,18 +97,6 @@ export default function Chat({
       });
     },
   });
-
-  useEffect(() => {
-    const getCurrentUser = async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) setCurrentUserId(user.id);
-    };
-
-    getCurrentUser();
-  }, []);
 
   const [summarizing, setSummarizing] = useState(false);
   const [summary, setSummary] = useState<string | undefined>(

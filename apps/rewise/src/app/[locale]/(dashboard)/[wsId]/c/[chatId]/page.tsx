@@ -1,10 +1,9 @@
 import type { UIMessage } from '@tuturuuu/ai/types';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { AIChat } from '@tuturuuu/types';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import Chat from '../../chat';
 import { getChats } from '../../helper';
@@ -25,7 +24,10 @@ export default async function AIPage({ params, searchParams }: Props) {
   const { lang: locale } = await searchParams;
 
   // Check if user is whitelisted
-  const user = await getCurrentUser();
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'rewise' }
+  );
   if (!user?.email) redirect('/login');
 
   const adminSb = await createAdminClient();
@@ -38,9 +40,9 @@ export default async function AIPage({ params, searchParams }: Props) {
   if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
 
   // Get chat data
-  const chat = await getChat(chatId);
-  const messages = await getMessages(chatId);
-  const { data: chats, count } = await getChats();
+  const chat = await getChat(chatId, user);
+  const messages = await getMessages(chatId, user);
+  const { data: chats, count } = await getChats(user);
 
   return (
     <div className="h-full p-4 lg:p-0">
@@ -55,81 +57,49 @@ export default async function AIPage({ params, searchParams }: Props) {
   );
 }
 
-const getMessages = async (chatId: string) => {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+const getMessages = async (
+  chatId: string,
+  user: Pick<SupabaseUser, 'email' | 'id'>
+) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: chat } = await sbAdmin
+    .from('ai_chats')
+    .select('creator_id, is_public')
+    .eq('id', chatId)
+    .maybeSingle();
 
-  // First try to get messages as the current user
-  const { data: userMessages, error: userError } = await supabase
+  if (!chat) {
+    return [];
+  }
+
+  let isMember = false;
+
+  if (user.email) {
+    const { data: membership } = await sbAdmin
+      .from('ai_chat_members')
+      .select('chat_id')
+      .eq('chat_id', chatId)
+      .eq('email', user.email)
+      .maybeSingle();
+
+    isMember = Boolean(membership);
+  }
+
+  const canRead = chat.creator_id === user.id || chat.is_public || isMember;
+
+  if (!canRead) {
+    return [];
+  }
+
+  const { data: messages, error } = await sbAdmin
     .from('ai_chat_messages')
     .select('*')
     .eq('chat_id', chatId)
     .order('created_at');
 
-  // If the user owns the chat, return messages
-  const { data: chat } = await supabase
-    .from('ai_chats')
-    .select('creator_id')
-    .eq('id', chatId)
-    .single();
-
-  if (!userError && userMessages && chat?.creator_id === user?.id) {
-    return formatMessages(userMessages, await getMessageUsers(userMessages));
-  }
-
-  // Check if user's email is in ai_chat_members
-  if (user?.email) {
-    const { data: membership } = await supabase
-      .from('ai_chat_members')
-      .select('*')
-      .eq('chat_id', chatId)
-      .eq('email', user.email)
-      .single();
-
-    if (membership) {
-      // User is a member, use admin client to get messages
-      const { data: adminMessages, error: adminError } = await sbAdmin
-        .from('ai_chat_messages')
-        .select('*')
-        .eq('chat_id', chatId)
-        .order('created_at');
-
-      if (!adminError && adminMessages) {
-        return formatMessages(
-          adminMessages,
-          await getMessageUsers(adminMessages)
-        );
-      }
-    }
-  }
-
-  // If not a member, check if the chat is public
-  const { data: publicChat } = await sbAdmin
-    .from('ai_chats')
-    .select('*')
-    .eq('id', chatId)
-    .eq('is_public', true)
-    .single();
-
-  if (publicChat) {
-    // Chat is public, get messages using admin client
-    const { data: publicMessages, error: publicError } = await sbAdmin
-      .from('ai_chat_messages')
-      .select('*')
-      .eq('chat_id', chatId)
-      .order('created_at');
-
-    if (!publicError && publicMessages) {
-      return formatMessages(
-        publicMessages,
-        await getMessageUsers(publicMessages)
-      );
-    }
+  if (!error && messages) {
+    return formatMessages(messages, await getMessageUsers(messages));
   }
 
   return [];
@@ -137,7 +107,7 @@ const getMessages = async (chatId: string) => {
 
 // Helper function to get user data for messages
 const getMessageUsers = async (messages: any[]) => {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   // Get user data for all unique creator_ids
   const uniqueCreatorIds = [
@@ -177,60 +147,37 @@ const formatMessages = (messages: any[], userMap: Map<string, any>) => {
   })) as UIMessage[];
 };
 
-const getChat = async (chatId: string) => {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+const getChat = async (
+  chatId: string,
+  user: Pick<SupabaseUser, 'email' | 'id'>
+) => {
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // First try to get the chat as the current user
-  const { data: userChat, error: userError } = await supabase
+  const { data: chat, error } = await sbAdmin
     .from('ai_chats')
     .select('*')
     .eq('id', chatId)
-    .single();
+    .maybeSingle();
 
-  // If the user owns the chat, return it
-  if (!userError && userChat && userChat.creator_id === user?.id) {
-    return userChat as AIChat;
+  if (error || !chat) {
+    notFound();
   }
 
-  // Check if user's email is in ai_chat_members
-  if (user?.email) {
-    const { data: membership } = await supabase
+  if (chat.creator_id === user.id || chat.is_public) {
+    return chat as AIChat;
+  }
+
+  if (user.email) {
+    const { data: membership } = await sbAdmin
       .from('ai_chat_members')
-      .select('*')
+      .select('chat_id')
       .eq('chat_id', chatId)
       .eq('email', user.email)
-      .single();
+      .maybeSingle();
 
     if (membership) {
-      // User is a member, use admin client to get the chat
-      const { data: adminChat, error: adminError } = await sbAdmin
-        .from('ai_chats')
-        .select('*')
-        .eq('id', chatId)
-        .single();
-
-      if (!adminError && adminChat) {
-        return adminChat as AIChat;
-      }
+      return chat as AIChat;
     }
-  }
-
-  // If not a member, check if the chat is public using admin client
-  const { data: adminChat, error: adminError } = await sbAdmin
-    .from('ai_chats')
-    .select('*')
-    .eq('id', chatId)
-    .eq('is_public', true)
-    .single();
-
-  if (!adminError && adminChat) {
-    return adminChat as AIChat;
   }
 
   // If neither condition is met, the user doesn't have access

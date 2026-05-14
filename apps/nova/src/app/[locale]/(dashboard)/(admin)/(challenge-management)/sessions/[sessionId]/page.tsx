@@ -1,7 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import SessionClient from './client';
 import type { SessionData, SessionSubmission } from './types';
 
@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SessionPage({ params: futureParams }: Props) {
   const params = await futureParams;
-  const sbAdmin = await createAdminClient();
-  const user = await getCurrentSupabaseUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await requireNovaAppSessionUser();
 
   if (!user) {
     return notFound();

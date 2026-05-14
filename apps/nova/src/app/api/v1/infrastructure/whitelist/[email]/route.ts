@@ -1,10 +1,14 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
 export async function PUT(req: NextRequest) {
+  const user = getNovaAppSessionUserFromRequest(req);
+
+  if (!user?.id) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
   const { email, enabled } = (await req.json()) as {
     email: string;
     enabled: boolean;
@@ -14,7 +18,7 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const updateData = {
     email,
@@ -38,7 +42,7 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ email: string }> }
 ) {
   const { email } = await params;
@@ -47,18 +51,13 @@ export async function DELETE(
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data: roleData, error: roleError } = await sbAdmin
     .from('platform_user_roles')

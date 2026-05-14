@@ -129,9 +129,11 @@ test('non-web apps fall back unmatched API routes to the central web app', () =>
   }
 });
 
-test('shared satellite logout uses the auth-only browser client', () => {
+test('shared satellite logout clears the local app-session cookie before central logout', () => {
   const source = read('packages/satellite/src/components/user-nav-client.tsx');
 
-  assert.match(source, /@tuturuuu\/supabase\/next\/auth-browser/);
+  assert.match(source, /fetch\('\/api\/auth\/logout'/);
+  assert.match(source, /window\.location\.assign\(`\$\{centralUrl\}\/logout/);
+  assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/auth-browser/);
   assert.doesNotMatch(source, /@tuturuuu\/supabase\/next\/client/);
 });

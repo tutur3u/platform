@@ -1,9 +1,7 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
+import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 import { createProblemSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -12,18 +10,13 @@ export async function GET(request: Request) {
   const challengeId = searchParams.get('challengeId');
   const includeChallenge = searchParams.get('includeChallenge') === 'true';
 
-  const supabase = await createClient();
+  const user = getNovaAppSessionUserFromRequest(request);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Build query with proper select statement based on params
@@ -70,7 +63,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
+  const user = getNovaAppSessionUserFromRequest(request);
   let body: unknown;
 
   try {
@@ -79,12 +73,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Invalid JSON' }, { status: 400 });
   }
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 

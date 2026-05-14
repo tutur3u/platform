@@ -1,4 +1,7 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import type { AIModelUI } from '@tuturuuu/types';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import Chat from '../chat';
 import { getChats } from '../helper';
 
@@ -17,7 +20,13 @@ interface Props {
 
 export default async function AIPage({ searchParams }: Props) {
   const { lang: locale } = await searchParams;
-  const { data: chats, count } = await getChats();
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'rewise' }
+  );
+  if (!user?.email) redirect('/login');
+
+  const { data: chats, count } = await getChats(user);
 
   return (
     <Chat

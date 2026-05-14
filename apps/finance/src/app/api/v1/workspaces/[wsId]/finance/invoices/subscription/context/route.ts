@@ -1,3 +1,4 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
@@ -11,7 +12,8 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
 
-  const permissions = await getPermissions({ wsId, request: req });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
+  const permissions = user ? await getPermissions({ user, wsId }) : null;
   if (!permissions) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
@@ -39,7 +41,7 @@ export async function GET(req: Request, { params }: Params) {
   const nextMonth = new Date(startOfMonth);
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   const { data: validGroups, error: validGroupsError } = await sbAdmin
     .from('workspace_user_groups_users')
     .select('group_id')

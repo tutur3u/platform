@@ -1,8 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
-  getCurrentSupabaseUser,
-  getCurrentUser,
-} from '@tuturuuu/utils/user-helper';
+  getSatelliteAppSessionUser,
+  getSatelliteCurrentUser,
+} from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -23,8 +23,8 @@ export default async function TimeTrackerHistoryPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, workspace, isPersonal }) => {
-        const user = await getCurrentSupabaseUser();
-        const supabase = await createClient();
+        const user = await getSatelliteAppSessionUser('track');
+        const supabase = await createAdminClient({ noCookie: true });
 
         if (!user) return notFound();
 
@@ -40,8 +40,8 @@ export default async function TimeTrackerHistoryPage({
 
         if (!isPersonal) {
           const [permissions, resolvedCurrentUser] = await Promise.all([
-            getPermissions({ wsId }),
-            getCurrentUser(),
+            getPermissions({ user, wsId }),
+            getSatelliteCurrentUser('track'),
           ]);
           if (!permissions) notFound();
 

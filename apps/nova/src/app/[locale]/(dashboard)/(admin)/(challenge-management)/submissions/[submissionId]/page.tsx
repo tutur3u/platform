@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { NovaSubmissionData } from '@tuturuuu/types';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import SubmissionClient from './client';
 
 interface Props {
@@ -24,8 +24,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function Page({ params }: Props) {
   const { submissionId } = await params;
 
-  const sbAdmin = await createAdminClient();
-  const user = await getCurrentSupabaseUser();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await requireNovaAppSessionUser();
 
   if (!user) notFound();
 

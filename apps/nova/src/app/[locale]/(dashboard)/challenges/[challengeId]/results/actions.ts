@@ -1,15 +1,13 @@
 'use server';
 
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   NovaProblem,
   NovaSession,
   NovaSubmissionCriteria,
   NovaSubmissionWithScoresAndCriteria,
 } from '@tuturuuu/types';
+import { getNovaAppSessionUserFromHeaders } from '@/lib/app-session';
 
 // Helper interfaces for return types
 interface SessionDetails {
@@ -17,37 +15,26 @@ interface SessionDetails {
   problems: NovaProblem[];
 }
 
-/**
- * Fetches user-accessible data (sessions and submissions) using the regular client
- * and fetches restricted data (problems and challenge details) using the admin client
- */
 export async function fetchSessionDetails(
   sessionId: string,
   challengeId: string
 ): Promise<SessionDetails> {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    const user = await getNovaAppSessionUserFromHeaders();
 
-    if (userError) {
-      console.error('User fetch error:', userError);
+    if (!user?.id) {
       throw new Error('User not found');
     }
 
-    if (!user) {
-      throw new Error('User not found');
-    }
-
-    // Step 1: Get session data using regular client (user has permissions for their own sessions)
-    const { data: session, error: sessionError } = await supabase
+    // Step 1: Get the owned session through the app-session actor.
+    const { data: session, error: sessionError } = await sbAdmin
       .from('nova_sessions')
       .select('*')
       .eq('id', sessionId)
+      .eq('challenge_id', challengeId)
+      .eq('user_id', user.id)
       .single();
 
     if (sessionError || !session) {
@@ -193,8 +180,7 @@ export async function fetchAllProblems(
 ): Promise<{
   problems: NovaProblem[];
 }> {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Step 1: Get all problems for this challenge using admin client
@@ -208,8 +194,8 @@ export async function fetchAllProblems(
       throw new Error('Failed to fetch problems');
     }
 
-    // Step 2: Get the user's sessions for this challenge using regular client
-    const { data: sessions, error: sessionsError } = await supabase
+    // Step 2: Get the user's sessions for this challenge using the verified actor id.
+    const { data: sessions, error: sessionsError } = await sbAdmin
       .from('nova_sessions')
       .select('id')
       .eq('challenge_id', challengeId)

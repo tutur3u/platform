@@ -1,6 +1,6 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { getCurrentSupabaseUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -21,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function fetchTimerData(userId: string, wsId: string) {
-  const sbAdmin = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const [categoriesResult, runningSessionResult] = await Promise.all([
     sbAdmin.from('time_tracking_categories').select('*').eq('ws_id', wsId),
@@ -134,7 +134,7 @@ export default async function TimeTrackerPage({
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId, locale, isPersonal }) => {
-        const user = await getCurrentSupabaseUser();
+        const user = await getSatelliteAppSessionUser('track');
         if (!user) return notFound();
         if (!workspace) return notFound();
 

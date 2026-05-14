@@ -1,13 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { clearAppSessionAndReturn } from '@tuturuuu/auth/app-session';
 import { NextResponse } from 'next/server';
 
-export async function POST() {
-  const supabase = await createClient();
-
-  const { error } = await supabase.auth.signOut({
-    scope: 'local',
-  });
-
-  if (error) return NextResponse.json({ error }, { status: 500 });
-  return NextResponse.json({ success: true });
+export function GET() {
+  return clearAppSessionAndReturn(NextResponse.json({ success: true }));
 }
+
+export const POST = GET;

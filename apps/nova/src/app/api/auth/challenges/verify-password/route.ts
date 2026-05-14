@@ -1,19 +1,14 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const appSession = getAppSessionClaimsFromRequest(request, {
+    targetApp: 'nova',
+  });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!appSession) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
@@ -81,8 +76,7 @@ export async function POST(request: Request) {
     });
 
     return response;
-  } catch (error) {
-    console.error('Unexpected Error:', error);
+  } catch {
     return NextResponse.json(
       { message: 'Internal Server Error' },
       { status: 500 }

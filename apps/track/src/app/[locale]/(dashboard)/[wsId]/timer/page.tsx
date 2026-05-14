@@ -1,4 +1,4 @@
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { getSatelliteAppSessionUser } from '@tuturuuu/satellite/auth';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -23,7 +23,7 @@ export default async function TimeTrackerPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
-        const user = await getCurrentUser();
+        const user = await getSatelliteAppSessionUser('track');
         if (!user) {
           notFound();
         }

@@ -1,5 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -61,10 +60,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     unlocalizedPath.startsWith('/~recover-browser-state');
 
   if (!isPublicPath) {
-    const supabase = await createClient(request);
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const appSession = getAppSessionClaimsFromRequest(request, {
+      targetApp: 'hive',
+    });
 
-    if (!user) {
+    if (!appSession) {
       const url = new URL('/login', request.url);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);

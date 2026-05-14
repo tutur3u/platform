@@ -1,8 +1,5 @@
 import { ArrowLeft } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   NovaProblem,
   NovaProblemTestCase,
@@ -12,6 +9,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import Link from 'next/link';
+import { requireNovaAppSessionUser } from '@/lib/app-session';
 import ProblemComponent from '../../../../shared/problem-component';
 import PromptComponent from '../../../../shared/prompt-component';
 import PromptForm from '../../../../shared/prompt-form';
@@ -91,7 +89,7 @@ export default async function Page({ params }: Props) {
 async function getProblem(
   problemId: string
 ): Promise<ExtendedNovaProblem | null> {
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   try {
     // Fetch problem details
@@ -130,15 +128,10 @@ async function getProblem(
 async function getSubmissions(
   problemId: string
 ): Promise<NovaSubmissionWithScores[]> {
-  const sbAdmin = await createAdminClient();
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = await requireNovaAppSessionUser();
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user?.id) {
+  if (!user?.id) {
     throw new Error('Unauthorized');
   }
 

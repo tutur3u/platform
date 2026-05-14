@@ -1,5 +1,6 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Chat from './chat';
 import { getChats } from './helper';
@@ -12,12 +13,15 @@ interface Props {
 
 export default async function AIPage({ searchParams }: Props) {
   const { lang: locale } = await searchParams;
-  const { data: chats, count } = await getChats();
-
-  const user = await getCurrentUser();
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'rewise' }
+  );
   if (!user?.email) redirect('/login');
 
-  const adminSb = await createAdminClient();
+  const { data: chats, count } = await getChats(user);
+
+  const adminSb = await createAdminClient({ noCookie: true });
 
   const { data: whitelisted, error } = await adminSb
     .from('ai_whitelisted_emails')

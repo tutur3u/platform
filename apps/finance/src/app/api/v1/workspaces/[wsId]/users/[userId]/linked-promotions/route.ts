@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   verifyWorkspaceMembershipType,
@@ -16,24 +14,19 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
+  if (!user) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const membership = await verifyWorkspaceMembershipType({
     wsId,
     userId: user.id,
-    supabase,
+    supabase: sbAdmin,
     requiredType: 'MEMBER',
   });
 
@@ -69,9 +62,14 @@ export async function GET(_: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
 
-  const permissions = await getPermissions({ wsId });
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -128,9 +126,14 @@ export async function POST(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
 
-  const permissions = await getPermissions({ wsId });
+  if (!user) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const permissions = await getPermissions({ user, wsId });
   if (!permissions) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }

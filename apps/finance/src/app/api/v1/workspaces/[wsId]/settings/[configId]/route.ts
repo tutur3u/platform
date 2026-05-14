@@ -1,4 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   getWorkspaceConfig,
@@ -14,13 +15,14 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
+  const supabase = await createAdminClient({ noCookie: true });
   const { wsId: rawWsId, configId: id } = await params;
+  const user = getAppSessionUserFromRequest(req, { targetApp: 'finance' });
 
   // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
   const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-  const permissions = await getPermissions({ wsId, request: req });
+  const permissions = user ? await getPermissions({ user, wsId }) : null;
   if (!permissions) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }

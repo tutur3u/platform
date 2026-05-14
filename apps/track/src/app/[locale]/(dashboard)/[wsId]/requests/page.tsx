@@ -1,5 +1,8 @@
 import { AlertTriangle } from '@tuturuuu/icons';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
+import {
+  getSatelliteAppSessionUser,
+  getSatelliteCurrentUser,
+} from '@tuturuuu/satellite/auth';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
@@ -104,10 +107,10 @@ export default async function TimeTrackerRequestsPage({ params }: PageProps) {
           );
         }
 
-        const permissions = await getPermissions({ wsId });
+        const user = await getSatelliteAppSessionUser('track');
+        const currentUser = await getSatelliteCurrentUser('track');
+        const permissions = user ? await getPermissions({ user, wsId }) : null;
         if (!permissions) notFound();
-
-        const currentUser = await getCurrentUser();
 
         const canManageTimeTrackingRequests = permissions.containsPermission(
           'manage_time_tracking_requests'

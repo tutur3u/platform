@@ -2,7 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Settings, Timer, Zap } from '@tuturuuu/icons';
-import { createClient } from '@tuturuuu/supabase/next/client';
+import { getCurrentUserProfile } from '@tuturuuu/internal-api';
 import type { Workspace } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -32,11 +32,7 @@ export default function TimeTrackerWrapper({
   const { data: currentUser, isLoading: isUserLoading } = useQuery({
     queryKey: ['current-user'],
     queryFn: async () => {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      return user;
+      return getCurrentUserProfile();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

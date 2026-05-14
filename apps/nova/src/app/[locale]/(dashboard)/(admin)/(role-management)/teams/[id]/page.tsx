@@ -1,13 +1,14 @@
 import { ArrowLeft } from '@tuturuuu/icons';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import {
+  requireNovaAppSessionUser,
+  requireNovaEnabledRole,
+} from '@/lib/app-session';
 import TeamDetailsClient from './client-page';
 
 interface Props {
@@ -50,9 +51,9 @@ export default async function TeamDetailsPage({ params }: Props) {
 }
 
 async function getTeamData(id: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('nova_teams')
     .select('*')
     .eq('id', id)
@@ -69,30 +70,12 @@ async function getTeamData(id: string) {
 }
 
 async function getTeamMembersData(id: string) {
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user?.email) notFound();
-
-  const sbAdmin = await createAdminClient();
-
-  if (!sbAdmin) return [];
-
-  const { data: roleData, error: roleError } = await sbAdmin
-    .from('platform_user_roles')
-    .select('allow_role_management')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  if (roleError) {
-    console.error('Error fetching role:', roleError);
-    return [];
-  }
+  const user = await requireNovaAppSessionUser();
+  const roleData = await requireNovaEnabledRole(user);
 
   if (!roleData?.allow_role_management) notFound();
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   const { data, error } = await sbAdmin
     .from('nova_team_members')
@@ -115,9 +98,9 @@ async function getTeamMembersData(id: string) {
 }
 
 async function getTeamInvitationsData(id: string) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const { data, error } = await supabase
+  const { data, error } = await sbAdmin
     .from('nova_team_emails')
     .select('*')
     .eq('team_id', id)
