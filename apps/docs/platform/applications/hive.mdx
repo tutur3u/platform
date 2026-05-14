@@ -8,10 +8,9 @@ It uses the centralized Tuturuuu login handoff and keeps protected product APIs
 inside `apps/web` under `/api/v1/hive/*`.
 
 Hive consumes cross-app login tokens through `/verify-token`. That verifier
-must treat the returned app token as the source of truth and create a fresh
-Hive-domain Supabase session from `/api/auth/verify-app-token`; it should not
-try to refresh an existing Hive refresh token first, because a stale local
-cookie can mask a valid central login handoff.
+posts the handoff token to `/api/auth/verify-app-token`, trusts the returned
+HttpOnly `tuturuuu_app_session` cookie, and then redirects to the requested
+Hive path. It must not create or refresh a Hive-domain Supabase Auth session.
 
 ## Access Model
 
@@ -23,9 +22,10 @@ cookie can mask a valid central login handoff.
   `/{rootWorkspaceId}/platform/roles` without opening the Hive satellite app.
 - V1 server policy is intentionally broad: every enabled Hive member can join
   every enabled Hive server.
-- Supabase remains the identity, session, and platform-admin source. Hive
-  product data belongs in the dedicated Docker-managed Hive Postgres database
-  and is accessed through `HIVE_DATABASE_URL`.
+- `apps/web` remains the login authority and verifies platform roles through
+  internal APIs. Hive itself uses the app-session JWT as the local identity
+  cookie. Hive product data belongs in the dedicated Docker-managed Hive
+  Postgres database and is accessed through `HIVE_DATABASE_URL`.
 
 ## Data Model
 
@@ -62,8 +62,8 @@ available, and ledger rows.
 
 The one-shot Hive backfill path copies legacy Supabase Hive rows into Hive
 Postgres. After backfill, `/api/v1/hive/*` routes should write Hive Postgres
-only, while Supabase is used only to authenticate the caller and resolve
-platform-admin status.
+only, while `apps/web` internal APIs use the forwarded app-session cookie to
+resolve the caller and platform-admin status.
 
 Shared realtime payloads and Hive CRDT helpers live in
 `@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,

@@ -9,7 +9,7 @@ Teach lives in `apps/teach` and runs locally on port `7813`. It is a teacher-fac
 
 Teach is not a separate education admin stack. It links teachers into `apps/web` for workspace records, course data, reports, assignments, parent links, and operational settings. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard.
 
-Teach does not render its own login portal. Its `/login` route first checks for an existing Teach Supabase session. If the session is already present, it redirects inside Teach to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. After the platform login confirms the account, `apps/web` generates a cross-app token for the `teach` target app and redirects back. Teach finishes its local Supabase session through `POST /api/auth/verify-app-token`.
+Teach does not render its own login portal. Its `/login` route first checks for an existing Teach app-session JWT. If the app session is already present, it redirects inside Teach to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. After the platform login confirms the account, `apps/web` generates a cross-app token for the `teach` target app and redirects back. Teach finishes the handoff by setting the host-only `tuturuuu_app_session` cookie through `POST /api/auth/verify-app-token`; it does not create a Teach-local Supabase Auth session.
 
 Learn follows the same platform-login pattern: the learner app keeps `/verify-token` for cross-app session completion, but `/login` delegates account selection to `apps/web`.
 
