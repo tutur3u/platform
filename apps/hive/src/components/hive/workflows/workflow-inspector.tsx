@@ -1,6 +1,6 @@
 'use client';
 
-import { Trash2 } from '@tuturuuu/icons';
+import { BookOpen, Braces, Trash2 } from '@tuturuuu/icons';
 import type {
   HiveJsonObject,
   HiveWorkflowNode,
@@ -30,12 +30,21 @@ export function WorkflowInspector({
 
   if (!node) {
     return (
-      <aside className="flex h-full flex-col border-border/70 border-l bg-background/88 p-4 backdrop-blur-xl">
-        <p className="font-medium text-sm">{t('empty_title')}</p>
-        <p className="mt-1 text-muted-foreground text-xs">{t('empty_body')}</p>
-        {validationErrors.length > 0 ? (
-          <ValidationErrors errors={validationErrors} />
-        ) : null}
+      <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 backdrop-blur-xl">
+        <div className="shrink-0 border-border/70 border-b bg-dynamic-blue/5 p-4">
+          <p className="font-medium text-sm">{t('empty_title')}</p>
+          <p className="mt-1 text-muted-foreground text-xs">
+            {t('empty_body')}
+          </p>
+        </div>
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="grid gap-3 p-4">
+            {validationErrors.length > 0 ? (
+              <ValidationErrors errors={validationErrors} />
+            ) : null}
+            <InspectorGuide />
+          </div>
+        </ScrollArea>
       </aside>
     );
   }
@@ -43,8 +52,8 @@ export function WorkflowInspector({
   const configText = JSON.stringify(node.data.config ?? {}, null, 2);
 
   return (
-    <aside className="flex h-full flex-col border-border/70 border-l bg-background/90 backdrop-blur-xl">
-      <div className="border-border/70 border-b p-4">
+    <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 backdrop-blur-xl">
+      <div className="shrink-0 border-border/70 border-b bg-dynamic-blue/5 p-4">
         <p className="text-muted-foreground text-xs uppercase tracking-wide">
           {node.type}
         </p>
@@ -60,6 +69,7 @@ export function WorkflowInspector({
           {validationErrors.length > 0 ? (
             <ValidationErrors errors={validationErrors} />
           ) : null}
+          <InspectorGuide compact />
           <label className="grid gap-1.5">
             <span className="font-medium text-xs">{t('node_label')}</span>
             <Input
@@ -110,6 +120,33 @@ export function WorkflowInspector({
         </div>
       </ScrollArea>
     </aside>
+  );
+}
+
+function InspectorGuide({ compact = false }: { compact?: boolean }) {
+  const t = useTranslations('studio.workflows.inspector');
+
+  return (
+    <div className="rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 p-3">
+      <div className="flex gap-2">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-dynamic-blue/30 bg-background/70 text-dynamic-blue">
+          {compact ? (
+            <Braces className="h-4 w-4" />
+          ) : (
+            <BookOpen className="h-4 w-4" />
+          )}
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold text-sm">{t('guide_title')}</p>
+          <p className="mt-1 text-muted-foreground text-xs">
+            {compact ? t('guide_compact') : t('guide_body')}
+          </p>
+        </div>
+      </div>
+      <code className="mt-3 block rounded-md border border-border bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
+        {'{{steps.context.output.revision}}'}
+      </code>
+    </div>
   );
 }
 

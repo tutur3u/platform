@@ -116,6 +116,18 @@ export function HiveStudio({
     }
   };
 
+  const serverPicker = (
+    <HiveStudioServerPicker
+      buildInfo={buildInfo}
+      engine={engine}
+      isAdmin={isAdmin}
+      onSetDeleteServerOpen={setDeleteServerOpen}
+      onSetServerActionTarget={setServerActionTarget}
+      onSetServerDialogMode={setServerDialogMode}
+      onSetWorldAction={setWorldAction}
+    />
+  );
+
   return (
     <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
       <SatelliteWorkspaceShell
@@ -171,59 +183,56 @@ export function HiveStudio({
               />
             </>
           ) : (
-            <HiveWorkflowStudio isAdmin={isAdmin} serverId={engine.serverId} />
+            <HiveWorkflowStudio
+              isAdmin={isAdmin}
+              onExitWorkflows={() => setStudioMode('world')}
+              serverId={engine.serverId}
+              serverPicker={serverPicker}
+            />
           )
         }
         rightCollapsed={rightCollapsed}
         top={
-          <EditorTopChrome
-            chatOpen={chatOpen}
-            currentUser={currentUser}
-            inspectorPanel={
-              <InspectorPanel
-                npcs={engine.npcs}
-                onPatchBlock={engine.patchBlock}
-                onPatchNpc={engine.patchNpc}
-                onPatchObject={engine.patchObject}
-                onRequestDelete={setDeleteSelectionTarget}
-                onToggle={() => setRightCollapsed(true)}
-                selection={engine.selection}
-                world={engine.world}
-              />
-            }
-            isRunningNpc={engine.isRunningNpc}
-            miniMapCollapsed={miniMapCollapsed}
-            mode={studioMode}
-            npcLabCollapsed={npcLabCollapsed || studioMode !== 'world'}
-            npcs={engine.npcs}
-            onChangeMode={setStudioMode}
-            onToggleChat={() => setChatOpen((value) => !value)}
-            onToggleInspector={() =>
-              setRightCollapsed((value) => (engine.selection ? !value : true))
-            }
-            onToggleMiniMap={() => setMiniMapCollapsed((value) => !value)}
-            onPatchNpc={engine.patchNpc}
-            onRunNpc={engine.runNpc}
-            onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
-            presenceCount={engine.presenceCount}
-            realtimeStatus={engine.realtimeStatus}
-            revision={engine.revision}
-            rightCollapsed={rightCollapsed || studioMode !== 'world'}
-            serverPicker={
-              <HiveStudioServerPicker
-                buildInfo={buildInfo}
-                engine={engine}
-                isAdmin={isAdmin}
-                onSetDeleteServerOpen={setDeleteServerOpen}
-                onSetServerActionTarget={setServerActionTarget}
-                onSetServerDialogMode={setServerDialogMode}
-                onSetWorldAction={setWorldAction}
-              />
-            }
-            world={engine.world}
-          />
+          studioMode === 'world' ? (
+            <EditorTopChrome
+              chatOpen={chatOpen}
+              currentUser={currentUser}
+              inspectorPanel={
+                <InspectorPanel
+                  npcs={engine.npcs}
+                  onPatchBlock={engine.patchBlock}
+                  onPatchNpc={engine.patchNpc}
+                  onPatchObject={engine.patchObject}
+                  onRequestDelete={setDeleteSelectionTarget}
+                  onToggle={() => setRightCollapsed(true)}
+                  selection={engine.selection}
+                  world={engine.world}
+                />
+              }
+              isRunningNpc={engine.isRunningNpc}
+              miniMapCollapsed={miniMapCollapsed}
+              mode={studioMode}
+              npcLabCollapsed={npcLabCollapsed}
+              npcs={engine.npcs}
+              onChangeMode={setStudioMode}
+              onToggleChat={() => setChatOpen((value) => !value)}
+              onToggleInspector={() =>
+                setRightCollapsed((value) => (engine.selection ? !value : true))
+              }
+              onToggleMiniMap={() => setMiniMapCollapsed((value) => !value)}
+              onPatchNpc={engine.patchNpc}
+              onRunNpc={engine.runNpc}
+              onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
+              presenceCount={engine.presenceCount}
+              realtimeStatus={engine.realtimeStatus}
+              revision={engine.revision}
+              rightCollapsed={rightCollapsed}
+              serverPicker={serverPicker}
+              world={engine.world}
+            />
+          ) : null
         }
-        topCollapsed={topCollapsed}
+        topCollapsed={topCollapsed || studioMode !== 'world'}
       />
       <HiveStudioDialogs
         deleteServerOpen={deleteServerOpen}

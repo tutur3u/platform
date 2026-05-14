@@ -1,6 +1,6 @@
 'use client';
 
-import { Play, Save, Workflow } from '@tuturuuu/icons';
+import { Map as MapIcon, Play, Save, Workflow } from '@tuturuuu/icons';
 import type {
   HiveWorkflowDefinition,
   HiveWorkflowNode,
@@ -24,6 +24,7 @@ import {
   useReactFlow,
 } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   useHiveWorkflowMutations,
@@ -44,7 +45,9 @@ type WorkflowFlowNode = Node<HiveWorkflowNode['data'], HiveWorkflowNodeType>;
 
 type HiveWorkflowStudioProps = {
   isAdmin: boolean;
+  onExitWorkflows: () => void;
   serverId: string | null;
+  serverPicker: ReactNode;
 };
 
 const NEW_WORKFLOW_ID = '__new__';
@@ -63,7 +66,9 @@ export function HiveWorkflowStudio(props: HiveWorkflowStudioProps) {
 
 function HiveWorkflowStudioInner({
   isAdmin,
+  onExitWorkflows,
   serverId,
+  serverPicker,
 }: HiveWorkflowStudioProps) {
   const t = useTranslations('studio.workflows');
   const { screenToFlowPosition } = useReactFlow();
@@ -192,152 +197,180 @@ function HiveWorkflowStudioInner({
   };
 
   return (
-    <div className="grid h-full grid-cols-[280px_minmax(0,1fr)_360px] bg-background text-foreground">
-      <WorkflowPalette
-        isAdmin={isAdmin}
-        onAddNode={(type) => addNode(type)}
-        onUseTemplate={useTemplate}
-      />
-      <section className="flex min-w-0 flex-col">
-        <header className="flex items-center gap-3 border-border/70 border-b bg-background/92 p-3 backdrop-blur-xl">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green">
-            <Workflow className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <Input
-              aria-label={t('name')}
-              className="h-9 border-transparent bg-transparent px-0 font-semibold text-base shadow-none"
-              disabled={!isAdmin}
-              onChange={(event) => setDraftName(event.target.value)}
-              value={draftName}
-            />
-            <Input
-              aria-label={t('description')}
-              className="h-7 border-transparent bg-transparent px-0 text-muted-foreground text-xs shadow-none"
-              disabled={!isAdmin}
-              onChange={(event) => setDraftDescription(event.target.value)}
-              placeholder={t('description')}
-              value={draftDescription}
-            />
-          </div>
-          <select
-            aria-label={t('select_workflow')}
-            className="h-9 max-w-52 rounded-md border border-border bg-background px-2 text-sm"
-            onChange={(event) => setSelectedWorkflowId(event.target.value)}
-            value={selectedWorkflow?.id ?? NEW_WORKFLOW_ID}
-          >
-            <option value={NEW_WORKFLOW_ID}>{t('new_workflow')}</option>
-            {(workflowsQuery.data?.workflows ?? []).map((workflow) => (
-              <option key={workflow.id} value={workflow.id}>
-                {workflow.name}
-              </option>
-            ))}
-          </select>
-          <Button
-            disabled={!isAdmin || validationErrors.length > 0}
-            onClick={saveWorkflow}
-            type="button"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            {t('save')}
-          </Button>
-          <Button
-            disabled={!selectedWorkflow || mutations.runWorkflow.isPending}
-            onClick={runWorkflow}
-            type="button"
-            variant="secondary"
-          >
-            <Play className="mr-2 h-4 w-4" />
-            {mutations.runWorkflow.isPending ? t('running') : t('run')}
-          </Button>
-        </header>
-        <div className="min-h-0 flex-1">
-          <ReactFlow
-            colorMode="dark"
-            edges={edges}
-            fitView
-            nodeTypes={nodeTypes}
-            nodes={nodes}
-            nodesDraggable={isAdmin}
-            onConnect={(connection: Connection) => {
-              if (
-                !isAdmin ||
-                !isValidWorkflowConnection(connection, nodes, edges)
-              ) {
-                return;
-              }
-              setEdges((current) =>
-                addEdge(
-                  {
-                    ...connection,
-                    id: `${connection.source}-${connection.target}-${Date.now()}`,
-                  },
-                  current
-                )
-              );
-            }}
-            onDragOver={(event) => {
-              if (!isAdmin) return;
-              event.preventDefault();
-              event.dataTransfer.dropEffect = 'move';
-            }}
-            onDrop={(event) => {
-              if (!isAdmin) return;
-              event.preventDefault();
-              const type = event.dataTransfer.getData(
-                'application/hive-node-type'
-              ) as HiveWorkflowNodeType;
-              if (!type) return;
-              addNode(
-                type,
-                screenToFlowPosition({
-                  x: event.clientX,
-                  y: event.clientY,
-                })
-              );
-            }}
-            onEdgesChange={isAdmin ? onEdgesChange : undefined}
-            isValidConnection={(connection) =>
-              isAdmin && isValidWorkflowConnection(connection, nodes, edges)
-            }
-            onNodeClick={(_event, node) => setSelectedNodeId(node.id)}
-            onNodesChange={isAdmin ? onNodesChange : undefined}
-            snapGrid={[16, 16]}
-            snapToGrid
-          >
-            <Background gap={24} />
-            <MiniMap pannable zoomable />
-            <Controls />
-          </ReactFlow>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
+      <header className="group/hive-top-toolbar flex shrink-0 items-center gap-3 border-border/70 border-b bg-background/95 px-4 py-3 backdrop-blur-xl">
+        <Button
+          aria-label={t('chrome.back_to_world')}
+          className="h-10 w-10 shrink-0 border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/15"
+          onClick={onExitWorkflows}
+          size="icon"
+          type="button"
+          variant="outline"
+        >
+          <MapIcon className="h-4 w-4" />
+        </Button>
+        <div className="min-w-0">
+          <p className="font-medium text-dynamic-green text-xs uppercase tracking-wide">
+            {t('chrome.eyebrow')}
+          </p>
+          <h1 className="truncate font-semibold text-base">
+            {t('chrome.title')}
+          </h1>
+          <p className="truncate text-muted-foreground text-xs">
+            {t('chrome.subtitle')}
+          </p>
         </div>
-        <WorkflowRunPanel
-          latestRun={latestRun}
-          runs={runsQuery.data?.runs ?? []}
+        <div className="ml-auto flex min-w-0 items-center gap-2">
+          {serverPicker}
+        </div>
+      </header>
+      <div className="grid min-h-0 flex-1 grid-cols-[minmax(260px,320px)_minmax(0,1fr)_minmax(300px,380px)] overflow-hidden">
+        <WorkflowPalette
+          isAdmin={isAdmin}
+          onAddNode={(type) => addNode(type)}
+          onUseTemplate={useTemplate}
         />
-      </section>
-      <WorkflowInspector
-        isAdmin={isAdmin}
-        node={selectedNode ? toWorkflowNode(selectedNode) : null}
-        onChange={(nodeId, patch) => {
-          if (!isAdmin) return;
-          setNodes((current) =>
-            current.map((node) =>
-              node.id === nodeId ? { ...node, ...patch } : node
-            )
-          );
-        }}
-        onDelete={(nodeId) => {
-          if (!isAdmin) return;
-          setNodes((current) => current.filter((node) => node.id !== nodeId));
-          setEdges((current) =>
-            current.filter(
-              (edge) => edge.source !== nodeId && edge.target !== nodeId
-            )
-          );
-          setSelectedNodeId(null);
-        }}
-        validationErrors={validationErrors}
-      />
+        <section className="flex min-h-0 min-w-0 flex-col border-border/70 border-r">
+          <header className="flex shrink-0 flex-wrap items-center gap-3 border-border/70 border-b bg-background/92 p-3 backdrop-blur-xl">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green">
+              <Workflow className="h-5 w-5" />
+            </div>
+            <div className="min-w-56 flex-1">
+              <Input
+                aria-label={t('name')}
+                className="h-9 border-transparent bg-transparent px-0 font-semibold text-base shadow-none"
+                disabled={!isAdmin}
+                onChange={(event) => setDraftName(event.target.value)}
+                value={draftName}
+              />
+              <Input
+                aria-label={t('description')}
+                className="h-7 border-transparent bg-transparent px-0 text-muted-foreground text-xs shadow-none"
+                disabled={!isAdmin}
+                onChange={(event) => setDraftDescription(event.target.value)}
+                placeholder={t('description')}
+                value={draftDescription}
+              />
+            </div>
+            <select
+              aria-label={t('select_workflow')}
+              className="h-9 max-w-52 rounded-md border border-border bg-background px-2 text-sm"
+              onChange={(event) => setSelectedWorkflowId(event.target.value)}
+              value={selectedWorkflow?.id ?? NEW_WORKFLOW_ID}
+            >
+              <option value={NEW_WORKFLOW_ID}>{t('new_workflow')}</option>
+              {(workflowsQuery.data?.workflows ?? []).map((workflow) => (
+                <option key={workflow.id} value={workflow.id}>
+                  {workflow.name}
+                </option>
+              ))}
+            </select>
+            <Button
+              disabled={!isAdmin || validationErrors.length > 0}
+              onClick={saveWorkflow}
+              type="button"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              {t('save')}
+            </Button>
+            <Button
+              disabled={!selectedWorkflow || mutations.runWorkflow.isPending}
+              onClick={runWorkflow}
+              type="button"
+              variant="secondary"
+            >
+              <Play className="mr-2 h-4 w-4" />
+              {mutations.runWorkflow.isPending ? t('running') : t('run')}
+            </Button>
+          </header>
+          <div className="min-h-0 flex-1">
+            <ReactFlow
+              colorMode="dark"
+              edges={edges}
+              fitView
+              nodeTypes={nodeTypes}
+              nodes={nodes}
+              nodesDraggable={isAdmin}
+              onConnect={(connection: Connection) => {
+                if (
+                  !isAdmin ||
+                  !isValidWorkflowConnection(connection, nodes, edges)
+                ) {
+                  return;
+                }
+                setEdges((current) =>
+                  addEdge(
+                    {
+                      ...connection,
+                      id: `${connection.source}-${connection.target}-${Date.now()}`,
+                    },
+                    current
+                  )
+                );
+              }}
+              onDragOver={(event) => {
+                if (!isAdmin) return;
+                event.preventDefault();
+                event.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(event) => {
+                if (!isAdmin) return;
+                event.preventDefault();
+                const type = event.dataTransfer.getData(
+                  'application/hive-node-type'
+                ) as HiveWorkflowNodeType;
+                if (!type) return;
+                addNode(
+                  type,
+                  screenToFlowPosition({
+                    x: event.clientX,
+                    y: event.clientY,
+                  })
+                );
+              }}
+              onEdgesChange={isAdmin ? onEdgesChange : undefined}
+              isValidConnection={(connection) =>
+                isAdmin && isValidWorkflowConnection(connection, nodes, edges)
+              }
+              onNodeClick={(_event, node) => setSelectedNodeId(node.id)}
+              onNodesChange={isAdmin ? onNodesChange : undefined}
+              snapGrid={[16, 16]}
+              snapToGrid
+            >
+              <Background gap={24} />
+              <MiniMap pannable zoomable />
+              <Controls />
+            </ReactFlow>
+          </div>
+          <WorkflowRunPanel
+            latestRun={latestRun}
+            runs={runsQuery.data?.runs ?? []}
+          />
+        </section>
+        <WorkflowInspector
+          isAdmin={isAdmin}
+          node={selectedNode ? toWorkflowNode(selectedNode) : null}
+          onChange={(nodeId, patch) => {
+            if (!isAdmin) return;
+            setNodes((current) =>
+              current.map((node) =>
+                node.id === nodeId ? { ...node, ...patch } : node
+              )
+            );
+          }}
+          onDelete={(nodeId) => {
+            if (!isAdmin) return;
+            setNodes((current) => current.filter((node) => node.id !== nodeId));
+            setEdges((current) =>
+              current.filter(
+                (edge) => edge.source !== nodeId && edge.target !== nodeId
+              )
+            );
+            setSelectedNodeId(null);
+          }}
+          validationErrors={validationErrors}
+        />
+      </div>
     </div>
   );
 }

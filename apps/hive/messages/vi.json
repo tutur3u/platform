@@ -176,11 +176,20 @@
       "version": "Phiên bản Hive"
     },
     "workflows": {
+      "chrome": {
+        "back_to_world": "Quay lại thế giới",
+        "eyebrow": "Hive workflow studio",
+        "subtitle": "Chạy đồ thị thủ công cho thế giới Hive trực tiếp",
+        "title": "Sơ đồ quy trình"
+      },
       "description": "Mô tả",
       "inspector": {
         "delete_node": "Xóa nút",
         "empty_body": "Chọn một nút trên khung vẽ để kiểm tra cấu hình động.",
         "empty_title": "Chưa chọn nút",
+        "guide_body": "Dùng mẫu để phác thảo trước, rồi chọn từng nút để chỉnh JSON cấu hình.",
+        "guide_compact": "Tham chiếu được xử lý khi chạy và không thực thi JavaScript.",
+        "guide_title": "Hướng dẫn cấu hình",
         "node_config": "JSON cấu hình nút",
         "node_label": "Nhãn nút",
         "read_only": "Quy trình chỉ đọc",
@@ -242,6 +251,25 @@
           "description": "Ghi sự kiện dọn dẹp cho các lượt bảo trì thế giới.",
           "name": "Dọn dẹp thế giới"
         }
+      },
+      "tutorial": {
+        "body": "Dựng một sơ đồ nhỏ, lưu lại, rồi chạy thủ công trên máy chủ Hive đang chọn.",
+        "label": "Hướng dẫn quy trình",
+        "steps": {
+          "connect": {
+            "body": "Nối các nút từ trái sang phải; liên kết tạo vòng lặp sẽ bị chặn.",
+            "title": "Nối thao tác"
+          },
+          "run": {
+            "body": "Chạy quy trình đã lưu và xem dấu vết bên dưới khung vẽ.",
+            "title": "Chạy và kiểm tra"
+          },
+          "template": {
+            "body": "Bắt đầu từ mẫu sinh hoạt, nông trại, chợ, dọn dẹp hoặc nhịp mô phỏng.",
+            "title": "Chọn mẫu"
+          }
+        },
+        "title": "Bắt đầu nhanh"
       },
       "untitled": "Quy trình chưa đặt tên",
       "validation": {

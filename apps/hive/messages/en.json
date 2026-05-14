@@ -176,6 +176,12 @@
       "version": "Hive version"
     },
     "workflows": {
+      "chrome": {
+        "back_to_world": "Back to world view",
+        "eyebrow": "Hive workflow studio",
+        "subtitle": "Manual graph runs for live Hive worlds",
+        "title": "Workflow graph"
+      },
       "description": "Description",
       "new_workflow": "New workflow",
       "nodes": {
@@ -204,6 +210,9 @@
         "delete_node": "Delete node",
         "empty_body": "Pick a node on the canvas to inspect its dynamic configuration.",
         "empty_title": "No node selected",
+        "guide_body": "Use templates for the first draft, then select a node to adjust its JSON config.",
+        "guide_compact": "References resolve at run time and never execute JavaScript.",
+        "guide_title": "Config tutorial",
         "node_config": "Node config JSON",
         "node_label": "Node label",
         "read_only": "Read-only workflow",
@@ -242,6 +251,25 @@
           "description": "Record a cleanup event for world maintenance passes.",
           "name": "World cleanup"
         }
+      },
+      "tutorial": {
+        "body": "Build a small graph, save it, then run it manually against the selected Hive server.",
+        "label": "Workflow tutorial",
+        "steps": {
+          "connect": {
+            "body": "Wire nodes left to right; cyclic links are blocked.",
+            "title": "Connect actions"
+          },
+          "run": {
+            "body": "Run saved workflows and inspect the trace below the canvas.",
+            "title": "Run and audit"
+          },
+          "template": {
+            "body": "Start from a routine, farm, market, cleanup, or tick pattern.",
+            "title": "Pick a template"
+          }
+        },
+        "title": "Quick start"
       },
       "untitled": "Untitled workflow",
       "validation": {
