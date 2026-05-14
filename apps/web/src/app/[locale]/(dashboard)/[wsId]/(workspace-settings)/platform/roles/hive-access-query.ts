@@ -1,10 +1,17 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { type HiveMember, upsertHiveMember } from '@tuturuuu/internal-api';
+import {
+  approveHiveAccessRequest,
+  type HiveAccessRequest,
+  type HiveMember,
+  upsertHiveMember,
+} from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 
+export const HIVE_ACCESS_REQUEST_QUERY_KEY = ['hive-access-requests'];
 export const HIVE_MEMBER_QUERY_KEY = ['hive-members'];
+type HiveAccessRequestsQueryData = { requests: HiveAccessRequest[] };
 type HiveMembersQueryData = { members: HiveMember[] };
 type HiveAccessMutationContext = {
   previousData?: HiveMembersQueryData;
@@ -12,6 +19,10 @@ type HiveAccessMutationContext = {
 type HiveAccessMutationVariables = {
   enabled: boolean;
   userId: string;
+};
+type HiveAccessApprovalMutationContext = {
+  previousMembers?: HiveMembersQueryData;
+  previousRequests?: HiveAccessRequestsQueryData;
 };
 
 export function getHiveMemberMap(members: HiveMember[]) {
@@ -104,6 +115,85 @@ export function useHiveAccessMutation({
         }
       );
       toast.success(member.enabled ? enabledToast : disabledToast);
+    },
+  });
+}
+
+export function useHiveAccessApprovalMutation({
+  approveFailedToast,
+  approvedToast,
+}: {
+  approveFailedToast: string;
+  approvedToast: string;
+}) {
+  const queryClient = useQueryClient();
+
+  return useMutation<
+    { member: HiveMember; request: HiveAccessRequest },
+    Error,
+    { notes?: string | null; requestId: string },
+    HiveAccessApprovalMutationContext
+  >({
+    mutationFn: ({ notes, requestId }) =>
+      approveHiveAccessRequest(requestId, { notes }),
+    onError: (_error, _variables, context) => {
+      if (context?.previousMembers) {
+        queryClient.setQueryData(
+          HIVE_MEMBER_QUERY_KEY,
+          context.previousMembers
+        );
+      }
+      if (context?.previousRequests) {
+        queryClient.setQueryData(
+          HIVE_ACCESS_REQUEST_QUERY_KEY,
+          context.previousRequests
+        );
+      }
+      toast.error(approveFailedToast);
+    },
+    onMutate: async ({ requestId }) => {
+      await Promise.all([
+        queryClient.cancelQueries({ queryKey: HIVE_MEMBER_QUERY_KEY }),
+        queryClient.cancelQueries({ queryKey: HIVE_ACCESS_REQUEST_QUERY_KEY }),
+      ]);
+      const previousMembers = queryClient.getQueryData<HiveMembersQueryData>(
+        HIVE_MEMBER_QUERY_KEY
+      );
+      const previousRequests =
+        queryClient.getQueryData<HiveAccessRequestsQueryData>(
+          HIVE_ACCESS_REQUEST_QUERY_KEY
+        );
+
+      queryClient.setQueryData<HiveAccessRequestsQueryData>(
+        HIVE_ACCESS_REQUEST_QUERY_KEY,
+        (current) => ({
+          requests: (current?.requests ?? []).filter(
+            (request) => request.id !== requestId
+          ),
+        })
+      );
+
+      return { previousMembers, previousRequests };
+    },
+    onSuccess: ({ member }) => {
+      queryClient.setQueryData<HiveMembersQueryData>(
+        HIVE_MEMBER_QUERY_KEY,
+        (current) => {
+          const currentMembers = current?.members ?? [];
+          const exists = currentMembers.some(
+            (entry) => entry.userId === member.userId
+          );
+
+          return {
+            members: exists
+              ? currentMembers.map((entry) =>
+                  entry.userId === member.userId ? member : entry
+                )
+              : [...currentMembers, member],
+          };
+        }
+      );
+      toast.success(approvedToast);
     },
   });
 }

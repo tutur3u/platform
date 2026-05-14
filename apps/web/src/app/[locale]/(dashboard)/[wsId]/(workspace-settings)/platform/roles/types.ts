@@ -1,4 +1,4 @@
-import type { HiveMember } from '@tuturuuu/internal-api';
+import type { HiveAccessRequest, HiveMember } from '@tuturuuu/internal-api';
 import type { PlatformUser, User, UserPrivateDetails } from '@tuturuuu/types';
 
 export type SearchUserResult = {
@@ -50,4 +50,5 @@ export type PlatformRoleStats = {
 export type HiveAccessState = {
   available: boolean;
   members: HiveMember[];
+  requests: HiveAccessRequest[];
 };

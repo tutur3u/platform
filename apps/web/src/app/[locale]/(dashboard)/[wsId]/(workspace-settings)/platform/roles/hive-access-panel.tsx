@@ -2,20 +2,29 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Sprout, UserCheck } from '@tuturuuu/icons';
-import { type HiveMember, listHiveMembers } from '@tuturuuu/internal-api';
+import {
+  type HiveAccessRequest,
+  type HiveMember,
+  listHiveAccessRequests,
+  listHiveMembers,
+} from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { HiveAccessMetrics } from './hive-access-metrics';
 import {
   getHiveMemberMap,
+  HIVE_ACCESS_REQUEST_QUERY_KEY,
   HIVE_MEMBER_QUERY_KEY,
+  useHiveAccessApprovalMutation,
   useHiveAccessMutation,
 } from './hive-access-query';
+import { HiveAccessRequestsPanel } from './hive-access-requests-panel';
 import { HiveAccessRow } from './hive-access-row';
 import type { PlatformUserWithDetails } from './types';
 
 type HiveAccessPanelProps = {
   initialAvailable: boolean;
   initialMembers: HiveMember[];
+  initialRequests: HiveAccessRequest[];
   locale: string;
   totalUsers: number;
   users: PlatformUserWithDetails[];
@@ -24,6 +33,7 @@ type HiveAccessPanelProps = {
 export function HiveAccessPanel({
   initialAvailable,
   initialMembers,
+  initialRequests,
   locale,
   totalUsers,
   users,
@@ -35,7 +45,14 @@ export function HiveAccessPanel({
     queryFn: () => listHiveMembers(),
     queryKey: HIVE_MEMBER_QUERY_KEY,
   });
+  const requestsQuery = useQuery({
+    enabled: initialAvailable,
+    initialData: { requests: initialRequests },
+    queryFn: () => listHiveAccessRequests(),
+    queryKey: HIVE_ACCESS_REQUEST_QUERY_KEY,
+  });
   const members = membersQuery.data?.members ?? [];
+  const requests = requestsQuery.data?.requests ?? [];
   const memberByUserId = getHiveMemberMap(members);
   const visibleHiveEnabled = users.filter(
     (user) => memberByUserId.get(user.id)?.enabled
@@ -46,6 +63,10 @@ export function HiveAccessPanel({
     enabledToast: t('hive_access_enabled_toast'),
     members,
     updateFailedToast: t('hive_access_update_failed'),
+  });
+  const approvalMutation = useHiveAccessApprovalMutation({
+    approveFailedToast: t('hive_access_request_approve_failed'),
+    approvedToast: t('hive_access_request_approved_toast'),
   });
 
   return (
@@ -76,6 +97,33 @@ export function HiveAccessPanel({
           visibleHiveEnabled={visibleHiveEnabled}
         />
       </div>
+
+      <HiveAccessRequestsPanel
+        labels={{
+          approve: t('hive_access_request_approve'),
+          description: t('hive_access_pending_requests_description'),
+          empty: t('hive_access_no_pending_requests'),
+          requestedAt: t('hive_access_requested_at'),
+          title: t('hive_access_pending_requests'),
+        }}
+        locale={locale}
+        onApprove={(request) =>
+          approvalMutation.mutate({
+            notes:
+              request.note ||
+              `Approved Hive access request from ${
+                request.email ?? request.userId
+              }`,
+            requestId: request.id,
+          })
+        }
+        pendingRequestId={
+          approvalMutation.isPending
+            ? approvalMutation.variables?.requestId
+            : undefined
+        }
+        requests={requests}
+      />
 
       <div className="mt-4 grid gap-2 xl:grid-cols-2">
         {users.map((user) => {

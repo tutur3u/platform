@@ -105,6 +105,7 @@ export default async function PlatformRolesPage({
             <HiveAccessPanel
               initialAvailable={hiveAccess.available}
               initialMembers={hiveAccess.members}
+              initialRequests={hiveAccess.requests}
               locale={locale}
               totalUsers={userCount}
               users={userData}

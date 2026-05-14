@@ -237,6 +237,11 @@ export {
   updateWorkspaceHabitTrackerEntry,
 } from './habit-trackers';
 export type {
+  HiveAccessRequest,
+  HiveAccessRequestApprovalPayload,
+  HiveAccessRequestPayload,
+  HiveAccessRequestStatus,
+  HiveAccessRequestStatusResponse,
   HiveBlock,
   HiveCropSnapshot,
   HiveEconomySnapshot,
@@ -261,6 +266,7 @@ export type {
   HiveWorldEventPayload,
 } from './hive';
 export {
+  approveHiveAccessRequest,
   createHiveNpc,
   createHiveServer,
   createHiveWorldEvent,
@@ -270,9 +276,12 @@ export {
   getHiveEconomy,
   getHiveRealtimeToken,
   getHiveSnapshot,
+  getMyHiveAccessRequestStatus,
+  listHiveAccessRequests,
   listHiveMembers,
   listHiveServers,
   postHiveCrdtUpdate,
+  requestHiveAccess,
   runHiveFarmingAction,
   runHiveNpcDecision,
   runHiveSimulationTick,

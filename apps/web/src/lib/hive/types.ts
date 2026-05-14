@@ -70,3 +70,19 @@ export type HiveMemberRow = {
   notes: string | null;
   user_id: string;
 };
+
+export type HiveAccessRequestStatus = 'approved' | 'pending' | 'rejected';
+
+export type HiveAccessRequestRow = {
+  created_at: string;
+  email: string | null;
+  id: string;
+  note: string | null;
+  requested_at: string;
+  resolution_note: string | null;
+  resolved_at: string | null;
+  resolved_by: string | null;
+  status: HiveAccessRequestStatus;
+  updated_at: string;
+  user_id: string;
+};

@@ -12,6 +12,7 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getHiveMemberByUserId } from '@/lib/hive/hive-db';
 import type {
+  HiveAccessRequestRow,
   HiveMemberRow,
   HiveNpcRow,
   HiveServerRow,
@@ -150,6 +151,14 @@ export const hiveMemberSchema = z.object({
   userId: z.string().uuid(),
 });
 
+export const hiveAccessRequestSchema = z.object({
+  note: z.string().trim().max(1000).nullable().optional(),
+});
+
+export const hiveAccessRequestApprovalSchema = z.object({
+  notes: z.string().trim().max(1000).nullable().optional(),
+});
+
 export type HiveAccess = {
   isAdmin: boolean;
   isMember: boolean;
@@ -160,7 +169,7 @@ export type HiveAccess = {
   };
 };
 
-async function resolveHiveRequestUser(request: NextRequest) {
+export async function resolveHiveRequestUser(request: NextRequest) {
   const appSessionToken = getAppSessionTokenFromRequest(request);
 
   if (appSessionToken) {
@@ -199,6 +208,27 @@ async function resolveHiveRequestUser(request: NextRequest) {
         }
       : null,
   };
+}
+
+export async function syncSupabaseHiveMember(
+  sbAdmin: TypedSupabaseClient,
+  input: {
+    enabled: boolean;
+    notes: string | null;
+    userId: string;
+  }
+) {
+  const { error } = await sbAdmin.from('hive_members').upsert(
+    {
+      enabled: input.enabled,
+      notes: input.notes,
+      updated_at: new Date().toISOString(),
+      user_id: input.userId,
+    },
+    { onConflict: 'user_id' }
+  );
+
+  return error;
 }
 
 export function withHiveRoute(
@@ -355,6 +385,22 @@ export function mapHiveMember(row: HiveMemberRow) {
     enabled: row.enabled,
     id: row.id,
     notes: row.notes,
+    userId: row.user_id,
+  };
+}
+
+export function mapHiveAccessRequest(row: HiveAccessRequestRow) {
+  return {
+    createdAt: row.created_at,
+    email: row.email,
+    id: row.id,
+    note: row.note,
+    requestedAt: row.requested_at,
+    resolutionNote: row.resolution_note,
+    resolvedAt: row.resolved_at,
+    resolvedBy: row.resolved_by,
+    status: row.status,
+    updatedAt: row.updated_at,
     userId: row.user_id,
   };
 }

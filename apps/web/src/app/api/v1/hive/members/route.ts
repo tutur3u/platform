@@ -4,6 +4,8 @@ import {
   hiveMemberSchema,
   mapHiveMember,
   requireHiveAdmin,
+  serverLogger,
+  syncSupabaseHiveMember,
   withHiveRoute,
 } from '../_shared';
 
@@ -45,6 +47,23 @@ export async function POST(request: NextRequest) {
     if (!member) {
       return NextResponse.json(
         { error: 'Failed to update Hive member' },
+        { status: 500 }
+      );
+    }
+
+    const syncError = await syncSupabaseHiveMember(access.access.sbAdmin, {
+      enabled: payload.enabled,
+      notes: payload.notes ?? null,
+      userId: payload.userId,
+    });
+
+    if (syncError) {
+      serverLogger.error('Failed to sync Hive member with satellite gate', {
+        error: syncError.message,
+        userId: payload.userId,
+      });
+      return NextResponse.json(
+        { error: 'Failed to sync Hive satellite access' },
         { status: 500 }
       );
     }

@@ -21,10 +21,20 @@ checks.
 
 - Production access requires a row in the Hive Postgres `hive_members` table
   with `enabled = true`.
+- Researchers who authenticate successfully but are not enabled land on
+  `/not-whitelisted`, where they can create or refresh a
+  `hive_access_requests` row. That page polls
+  `/api/v1/hive/access-requests/me` every 5 seconds and opens Hive automatically
+  after the request reaches the approved/access-enabled state.
 - Platform admins are users whose `platform_user_roles.allow_role_management`
   value is `true`; they can create and manage Hive servers and Hive members.
 - Root workspace admins can enable or disable Hive access from
   `/{rootWorkspaceId}/platform/roles` without opening the Hive satellite app.
+- Pending Hive requests appear in the same platform roles panel. Approving a
+  request writes both the dedicated Hive Postgres `hive_members` row and the
+  Supabase `public.hive_members` row that the Hive satellite uses for its local
+  server gate. Do not update only one store, or users can authenticate through
+  Tuturuuu and then loop back to the restricted page.
 - V1 server policy is intentionally broad: every enabled Hive member can join
   every enabled Hive server.
 - `apps/web` remains the login authority and verifies platform roles through
@@ -52,6 +62,7 @@ Hive stores product state in the dedicated Hive Postgres database:
 - `hive_crop_instances`
 - `hive_simulation_ticks`
 - `hive_members`
+- `hive_access_requests`
 
 Shared editor state is a Yjs CRDT document per Hive server. Terrain blocks,
 objects, public NPC projections, farm tiles, and visual warehouse/crop

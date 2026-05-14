@@ -146,6 +146,41 @@ export type HiveMember = {
   userId: string;
 };
 
+export type HiveAccessRequestStatus =
+  | 'approved'
+  | 'none'
+  | 'pending'
+  | 'rejected';
+
+export type HiveAccessRequest = {
+  createdAt: string;
+  email: string | null;
+  id: string;
+  note: string | null;
+  requestedAt: string;
+  resolutionNote: string | null;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+  status: Exclude<HiveAccessRequestStatus, 'none'>;
+  updatedAt: string;
+  userId: string;
+};
+
+export type HiveAccessRequestStatusResponse = {
+  hasAccess: boolean;
+  member: HiveMember | null;
+  request: HiveAccessRequest | null;
+  status: HiveAccessRequestStatus;
+};
+
+export type HiveAccessRequestPayload = {
+  note?: string | null;
+};
+
+export type HiveAccessRequestApprovalPayload = {
+  notes?: string | null;
+};
+
 export type HiveSnapshotResponse = {
   crdt?: {
     state: string | null;
@@ -263,6 +298,56 @@ export type HiveMemberPayload = {
   notes?: string | null;
   userId: string;
 };
+
+export async function getMyHiveAccessRequestStatus(
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveAccessRequestStatusResponse>(
+    '/api/v1/hive/access-requests/me',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function requestHiveAccess(
+  payload: HiveAccessRequestPayload = {},
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveAccessRequestStatusResponse>(
+    '/api/v1/hive/access-requests/me',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function listHiveAccessRequests(
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    requests: HiveAccessRequest[];
+  }>('/api/v1/hive/access-requests', {
+    cache: 'no-store',
+  });
+}
+
+export async function approveHiveAccessRequest(
+  requestId: string,
+  payload: HiveAccessRequestApprovalPayload = {},
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    member: HiveMember;
+    request: HiveAccessRequest;
+  }>(`/api/v1/hive/access-requests/${encodeURIComponent(requestId)}/approve`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    method: 'POST',
+  });
+}
 
 export async function listHiveServers(options?: InternalApiClientOptions) {
   return getInternalApiClient(options).json<HiveServersResponse>(

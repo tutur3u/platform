@@ -2,6 +2,8 @@ import postgres, { type Sql } from 'postgres';
 import 'server-only';
 import type { Json } from '@tuturuuu/types/db';
 import type {
+  HiveAccessRequestRow,
+  HiveAccessRequestStatus,
   HiveMemberRow,
   HiveNpcRow,
   HiveServerRow,
@@ -13,6 +15,7 @@ import type {
 const DEFAULT_WORLD: HiveWorld = { blocks: [], objects: [] };
 
 let hiveSql: Sql | null = null;
+let accessRequestSchemaPromise: Promise<void> | null = null;
 type PostgresJson = Parameters<Sql['json']>[0];
 
 export function asHiveJson(value: unknown): PostgresJson {
@@ -42,6 +45,41 @@ export function toBase64(value: Buffer | Uint8Array | null | undefined) {
 
 export function fromBase64(value: string) {
   return Buffer.from(value, 'base64');
+}
+
+async function ensureHiveAccessRequestSchema() {
+  if (accessRequestSchemaPromise) return accessRequestSchemaPromise;
+
+  const sql = getHiveSql();
+  accessRequestSchemaPromise = (async () => {
+    await sql`
+      create table if not exists hive_access_requests (
+        id uuid primary key default gen_random_uuid(),
+        user_id uuid not null unique,
+        email text,
+        note text,
+        status text not null default 'pending'
+          check (status in ('pending', 'approved', 'rejected')),
+        requested_at timestamptz not null default now(),
+        resolved_at timestamptz,
+        resolved_by uuid,
+        resolution_note text,
+        created_at timestamptz not null default now(),
+        updated_at timestamptz not null default now()
+      )
+    `;
+    await sql`
+      create index if not exists hive_access_requests_status_requested_idx
+      on hive_access_requests (status, requested_at desc)
+    `;
+  })();
+
+  try {
+    await accessRequestSchemaPromise;
+  } catch (error) {
+    accessRequestSchemaPromise = null;
+    throw error;
+  }
 }
 
 export function normalizeWorld(value: Json | null | undefined): HiveWorld {
@@ -92,6 +130,137 @@ export async function upsertHiveMember(input: {
     returning id, user_id, enabled, notes, created_at
   `;
   return member ?? null;
+}
+
+export async function getHiveAccessRequestByUserId(userId: string) {
+  await ensureHiveAccessRequestSchema();
+  const sql = getHiveSql();
+  const [request] = await sql<HiveAccessRequestRow[]>`
+    select id, user_id, email, note, status, requested_at, resolved_at,
+      resolved_by, resolution_note, created_at, updated_at
+    from hive_access_requests
+    where user_id = ${userId}
+    limit 1
+  `;
+  return request ?? null;
+}
+
+export async function getHiveAccessRequestById(requestId: string) {
+  await ensureHiveAccessRequestSchema();
+  const sql = getHiveSql();
+  const [request] = await sql<HiveAccessRequestRow[]>`
+    select id, user_id, email, note, status, requested_at, resolved_at,
+      resolved_by, resolution_note, created_at, updated_at
+    from hive_access_requests
+    where id = ${requestId}
+    limit 1
+  `;
+  return request ?? null;
+}
+
+export async function listHiveAccessRequests(input?: {
+  status?: HiveAccessRequestStatus;
+}) {
+  await ensureHiveAccessRequestSchema();
+  const sql = getHiveSql();
+  const status = input?.status ?? null;
+
+  return sql<HiveAccessRequestRow[]>`
+    select id, user_id, email, note, status, requested_at, resolved_at,
+      resolved_by, resolution_note, created_at, updated_at
+    from hive_access_requests
+    where ${status}::text is null or status = ${status}
+    order by requested_at desc
+  `;
+}
+
+export async function upsertHiveAccessRequest(input: {
+  email?: string | null;
+  note?: string | null;
+  userId: string;
+}) {
+  await ensureHiveAccessRequestSchema();
+  const sql = getHiveSql();
+  const [request] = await sql<HiveAccessRequestRow[]>`
+    insert into hive_access_requests (
+      user_id, email, note, status, requested_at, updated_at
+    )
+    values (
+      ${input.userId},
+      ${input.email ?? null},
+      ${input.note ?? null},
+      'pending',
+      now(),
+      now()
+    )
+    on conflict (user_id) do update set
+      email = coalesce(excluded.email, hive_access_requests.email),
+      note = excluded.note,
+      status = 'pending',
+      requested_at = case
+        when hive_access_requests.status = 'pending'
+        then hive_access_requests.requested_at
+        else now()
+      end,
+      resolved_at = null,
+      resolved_by = null,
+      resolution_note = null,
+      updated_at = now()
+    returning id, user_id, email, note, status, requested_at, resolved_at,
+      resolved_by, resolution_note, created_at, updated_at
+  `;
+  return request ?? null;
+}
+
+export async function approveHiveAccessRequest(input: {
+  approvedBy: string;
+  notes: string | null;
+  requestId: string;
+}) {
+  await ensureHiveAccessRequestSchema();
+  const sql = getHiveSql();
+
+  return sql.begin(async (tx) => {
+    const [request] = await tx<HiveAccessRequestRow[]>`
+      select id, user_id, email, note, status, requested_at, resolved_at,
+        resolved_by, resolution_note, created_at, updated_at
+      from hive_access_requests
+      where id = ${input.requestId}
+      limit 1
+      for update
+    `;
+
+    if (!request) return null;
+
+    const notes = input.notes ?? request.note ?? 'Approved from Platform Roles';
+    const [member] = await tx<HiveMemberRow[]>`
+      insert into hive_members (user_id, enabled, notes, updated_at)
+      values (${request.user_id}, true, ${notes}, now())
+      on conflict (user_id) do update set
+        enabled = true,
+        notes = excluded.notes,
+        updated_at = now()
+      returning id, user_id, enabled, notes, created_at
+    `;
+
+    const [updatedRequest] = await tx<HiveAccessRequestRow[]>`
+      update hive_access_requests set
+        status = 'approved',
+        resolved_at = now(),
+        resolved_by = ${input.approvedBy},
+        resolution_note = ${notes},
+        updated_at = now()
+      where id = ${input.requestId}
+      returning id, user_id, email, note, status, requested_at, resolved_at,
+        resolved_by, resolution_note, created_at, updated_at
+    `;
+
+    if (!member || !updatedRequest) return null;
+    return {
+      member,
+      request: updatedRequest,
+    };
+  });
 }
 
 export async function listHiveServers(isAdmin: boolean) {

@@ -3,7 +3,7 @@ import 'server-only';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { User } from '@tuturuuu/types';
 import { notFound } from 'next/navigation';
-import { listHiveMembers } from '@/lib/hive/hive-db';
+import { listHiveAccessRequests, listHiveMembers } from '@/lib/hive/hive-db';
 import type {
   HiveAccessState,
   PlatformRoleStats,
@@ -13,7 +13,10 @@ import type {
 
 export async function getHiveAccessState(): Promise<HiveAccessState> {
   try {
-    const members = await listHiveMembers();
+    const [members, requests] = await Promise.all([
+      listHiveMembers(),
+      listHiveAccessRequests({ status: 'pending' }),
+    ]);
     return {
       available: true,
       members: members.map((member) => ({
@@ -23,11 +26,25 @@ export async function getHiveAccessState(): Promise<HiveAccessState> {
         notes: member.notes,
         userId: member.user_id,
       })),
+      requests: requests.map((request) => ({
+        createdAt: request.created_at,
+        email: request.email,
+        id: request.id,
+        note: request.note,
+        requestedAt: request.requested_at,
+        resolutionNote: request.resolution_note,
+        resolvedAt: request.resolved_at,
+        resolvedBy: request.resolved_by,
+        status: request.status,
+        updatedAt: request.updated_at,
+        userId: request.user_id,
+      })),
     };
   } catch {
     return {
       available: false,
       members: [],
+      requests: [],
     };
   }
 }
