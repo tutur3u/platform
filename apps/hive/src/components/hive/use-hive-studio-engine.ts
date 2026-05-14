@@ -10,6 +10,7 @@ import {
   type HiveRealtimeAwareness as HiveAwareness,
 } from '@tuturuuu/realtime/hive';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { applyHiveAgentInstruction } from '@/engine/agent';
 import type {
   HiveBuildMode,
   HiveNpc,
@@ -346,10 +347,44 @@ export function useHiveStudioEngine({
     );
   };
 
+  const applyAgentInstruction = (prompt: string) => {
+    if (!serverId) {
+      return {
+        actions: [],
+        changed: false,
+        summary: 'Select a Hive server before asking the agent to edit.',
+        world,
+      };
+    }
+
+    const result = applyHiveAgentInstruction(world, prompt);
+    if (!result.changed) {
+      setSyncNotice(result.summary);
+      return result;
+    }
+
+    persistWorld(
+      result.world,
+      'agent.refine',
+      {
+        actions: result.actions,
+        prompt,
+      },
+      {
+        rebase: (latestWorld) =>
+          applyHiveAgentInstruction(latestWorld, prompt).world,
+      }
+    );
+    setSelection(null);
+    setTool('select');
+    return result;
+  };
+
   return {
     activeBuildMode,
     activeObject,
     activeTerrain,
+    applyAgentInstruction,
     autoTimeEnabled: timeOfDay.autoTimeEnabled,
     autoTimeSpeed: timeOfDay.autoTimeSpeed,
     createServerWithPayload,

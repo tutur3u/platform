@@ -15,36 +15,64 @@ import type { HiveUser } from '@/engine/types';
 
 type HiveAccountMenuProps = {
   user: HiveUser;
+  variant?: 'full' | 'icon';
 };
 
-export function HiveAccountMenu({ user }: HiveAccountMenuProps) {
+export function HiveAccountMenu({
+  user,
+  variant = 'full',
+}: HiveAccountMenuProps) {
   const displayName = user.displayName || user.email || 'Hive member';
   const fallback = getInitials(displayName) || 'H';
 
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <button
-          className="flex w-full items-center gap-3 rounded-lg border border-border/20 bg-muted/10 p-3 text-left text-foreground transition hover:bg-muted/20"
-          type="button"
-        >
-          <Avatar className="h-9 w-9 border border-border/30">
-            <AvatarImage alt={displayName} src={user.avatarUrl ?? undefined} />
-            <AvatarFallback className="bg-dynamic-green/15 font-semibold text-dynamic-green text-xs">
-              {fallback}
-            </AvatarFallback>
-          </Avatar>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium text-sm">
-              {displayName}
+        {variant === 'icon' ? (
+          <button
+            aria-label="Hive account"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-foreground transition hover:bg-muted/70"
+            type="button"
+          >
+            <Avatar className="h-8 w-8 border border-border/40">
+              <AvatarImage
+                alt={displayName}
+                src={user.avatarUrl ?? undefined}
+              />
+              <AvatarFallback className="bg-dynamic-green/15 font-semibold text-dynamic-green text-xs">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+          </button>
+        ) : (
+          <button
+            className="flex w-full items-center gap-3 rounded-lg border border-border/20 bg-muted/10 p-3 text-left text-foreground transition hover:bg-muted/20"
+            type="button"
+          >
+            <Avatar className="h-9 w-9 border border-border/30">
+              <AvatarImage
+                alt={displayName}
+                src={user.avatarUrl ?? undefined}
+              />
+              <AvatarFallback className="bg-dynamic-green/15 font-semibold text-dynamic-green text-xs">
+                {fallback}
+              </AvatarFallback>
+            </Avatar>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium text-sm">
+                {displayName}
+              </span>
+              <span className="block truncate text-muted-foreground text-xs">
+                {user.handle || user.email || user.id}
+              </span>
             </span>
-            <span className="block truncate text-muted-foreground text-xs">
-              {user.handle || user.email || user.id}
-            </span>
-          </span>
-        </button>
+          </button>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-72">
+      <DropdownMenuContent
+        align={variant === 'icon' ? 'end' : 'start'}
+        className="w-72"
+      >
         <DropdownMenuLabel className="font-normal">
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">

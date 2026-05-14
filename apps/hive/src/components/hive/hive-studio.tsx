@@ -2,14 +2,18 @@
 
 import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { HiveSelection, HiveServer, HiveUser } from '@/engine/types';
 import { EditorChromeControls } from './editor-chrome-controls';
 import { EditorTopChrome } from './editor-top-chrome';
+import {
+  HiveAgentComposer,
+  type HiveAgentMessage,
+} from './hive-agent-composer';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
+import { HiveStudioToolDock } from './hive-studio-tool-dock';
 import { InspectorPanel } from './panels/inspector-panel';
-import { ServerNavigator } from './panels/server-navigator';
-import { ToolDock } from './panels/tool-dock';
+import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shortcut';
 import { useHiveStudioEngine } from './use-hive-studio-engine';
 import { HiveViewport } from './viewport/hive-viewport';
 
@@ -31,7 +35,6 @@ export function HiveStudio({
     initialServers,
     realtimeUrl,
   });
-  const [leftCollapsed, setLeftCollapsed] = useState(true);
   const [rightCollapsed, setRightCollapsed] = useState(true);
   const [topCollapsed, setTopCollapsed] = useState(false);
   const [bottomCollapsed, setBottomCollapsed] = useState(false);
@@ -47,64 +50,35 @@ export function HiveStudio({
   );
   const [deleteSelectionTarget, setDeleteSelectionTarget] =
     useState<NonNullable<HiveSelection> | null>(null);
+  const [agentMessages, setAgentMessages] = useState<HiveAgentMessage[]>([]);
 
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        target?.tagName === 'INPUT' ||
-        target?.tagName === 'TEXTAREA' ||
-        target?.isContentEditable
-      ) {
-        return;
-      }
+  const submitAgentPrompt = (prompt: string) => {
+    const result = engine.applyAgentInstruction(prompt);
+    setAgentMessages((messages) => [
+      ...messages.slice(-4),
+      { content: prompt, id: `user-${Date.now()}`, role: 'user' },
+      { content: result.summary, id: `agent-${Date.now()}`, role: 'agent' },
+    ]);
+  };
 
-      if (
-        (event.key === 'Delete' || event.key === 'Backspace') &&
-        engine.selection
-      ) {
-        event.preventDefault();
-        if (event.metaKey || event.ctrlKey) {
-          engine.eraseSelection(engine.selection);
-          return;
-        }
-        setDeleteSelectionTarget(engine.selection);
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [engine]);
+  useHiveDeleteSelectionShortcut({
+    onEraseSelection: engine.eraseSelection,
+    onRequestDelete: setDeleteSelectionTarget,
+    selection: engine.selection,
+  });
 
   return (
     <>
       <SatelliteWorkspaceShell
         bottom={
-          <ToolDock
-            activeBuildMode={engine.activeBuildMode}
-            activeObject={engine.activeObject}
-            activeTerrain={engine.activeTerrain}
-            autoTimeEnabled={engine.autoTimeEnabled}
-            autoTimeSpeed={engine.autoTimeSpeed}
-            gaplessMode={engine.gaplessMode}
-            onRotateSelection={engine.rotateSelection}
-            onSelectBuildMode={engine.setActiveBuildMode}
-            onSelectObject={engine.setActiveObject}
-            onSelectTerrain={engine.setActiveTerrain}
-            onSetTool={engine.setTool}
-            onToggle={() => setBottomCollapsed(true)}
-            onToggleGapless={() => engine.setGaplessMode((value) => !value)}
-            onSelectTimeTheme={engine.setTimeTheme}
-            onSetAutoTimeSpeed={engine.setAutoTimeSpeed}
-            onToggleAutoTime={() =>
-              engine.setAutoTimeEnabled((value) => !value)
-            }
-            onRunSimulationTick={engine.runSimulationTick}
-            onUpdateServerSettings={engine.updateServerSettings}
-            isRunningSimulationTick={engine.isRunningSimulationTick}
-            server={engine.selectedServer}
-            timeTheme={engine.timeTheme}
-            tool={engine.tool}
+          <HiveStudioToolDock
+            engine={engine}
+            isAdmin={isAdmin}
+            onSetBottomCollapsed={setBottomCollapsed}
+            onSetDeleteServerOpen={setDeleteServerOpen}
+            onSetServerActionTarget={setServerActionTarget}
+            onSetServerDialogMode={setServerDialogMode}
+            onSetWorldAction={setWorldAction}
           />
         }
         bottomCollapsed={bottomCollapsed}
@@ -131,18 +105,29 @@ export function HiveStudio({
             />
             <EditorChromeControls
               bottomCollapsed={bottomCollapsed}
-              leftCollapsed={leftCollapsed}
               npcLabCollapsed={npcLabCollapsed}
               onToggleBottom={() => setBottomCollapsed((value) => !value)}
-              onToggleLeft={() => setLeftCollapsed((value) => !value)}
               onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
               onToggleRight={() => setRightCollapsed((value) => !value)}
               onToggleTop={() => setTopCollapsed((value) => !value)}
               rightCollapsed={rightCollapsed}
               topCollapsed={topCollapsed}
             />
+            <div
+              className={[
+                'pointer-events-none absolute right-4 bottom-28 left-4 z-20 transition duration-300 ease-out',
+                bottomCollapsed
+                  ? 'translate-y-6 opacity-0'
+                  : 'translate-y-0 opacity-100',
+              ].join(' ')}
+            >
+              <HiveAgentComposer
+                lastMessage={agentMessages.at(-1) ?? null}
+                onSubmit={submitAgentPrompt}
+              />
+            </div>
             {engine.syncNotice ? (
-              <div className="pointer-events-none absolute right-4 bottom-24 left-4 z-20 flex justify-center">
+              <div className="pointer-events-none absolute right-4 bottom-48 left-4 z-20 flex justify-center">
                 <div className="rounded-lg border border-dynamic-yellow/40 bg-background/90 px-4 py-2 text-dynamic-yellow text-sm shadow-lg backdrop-blur">
                   {engine.syncNotice}
                 </div>
@@ -150,30 +135,6 @@ export function HiveStudio({
             ) : null}
           </>
         }
-        left={
-          <ServerNavigator
-            activeServerId={engine.serverId}
-            currentUser={currentUser}
-            isAdmin={isAdmin}
-            onCreateServer={() => {
-              setServerActionTarget(null);
-              setServerDialogMode('create');
-            }}
-            onDeleteServer={(server) => {
-              setServerActionTarget(server);
-              setDeleteServerOpen(true);
-            }}
-            onEditServer={(server) => {
-              setServerActionTarget(server);
-              setServerDialogMode('edit');
-            }}
-            onResetWorld={setWorldAction}
-            onSelectServer={engine.setServerId}
-            onToggle={() => setLeftCollapsed(true)}
-            servers={engine.servers}
-          />
-        }
-        leftCollapsed={leftCollapsed}
         right={
           <InspectorPanel
             eventsCount={engine.eventsCount}
@@ -192,21 +153,17 @@ export function HiveStudio({
         rightCollapsed={rightCollapsed}
         top={
           <EditorTopChrome
+            currentUser={currentUser}
             isRunningNpc={engine.isRunningNpc}
             npcLabCollapsed={npcLabCollapsed}
             npcs={engine.npcs}
             onPatchNpc={engine.patchNpc}
             onRunNpc={engine.runNpc}
-            onToggleNpcLab={() => setNpcLabCollapsed(true)}
+            onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
             presenceCount={engine.presenceCount}
-            remoteAwareness={engine.remoteAwareness}
             realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
             rightCollapsed={rightCollapsed}
-            server={engine.selectedServer}
-            simulatedMinutes={engine.simulatedMinutes}
-            autoTimeEnabled={engine.autoTimeEnabled}
-            timeTheme={engine.timeTheme}
             world={engine.world}
           />
         }

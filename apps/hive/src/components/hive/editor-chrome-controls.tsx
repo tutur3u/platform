@@ -4,8 +4,6 @@ import {
   Brain,
   PanelBottomClose,
   PanelBottomOpen,
-  PanelLeftClose,
-  PanelLeftOpen,
   PanelRightClose,
   PanelRightOpen,
   PanelTopClose,
@@ -14,10 +12,8 @@ import {
 
 type EditorChromeControlsProps = {
   bottomCollapsed: boolean;
-  leftCollapsed: boolean;
   npcLabCollapsed: boolean;
   onToggleBottom: () => void;
-  onToggleLeft: () => void;
   onToggleNpcLab: () => void;
   onToggleRight: () => void;
   onToggleTop: () => void;
@@ -27,10 +23,8 @@ type EditorChromeControlsProps = {
 
 export function EditorChromeControls({
   bottomCollapsed,
-  leftCollapsed,
   npcLabCollapsed,
   onToggleBottom,
-  onToggleLeft,
   onToggleNpcLab,
   onToggleRight,
   onToggleTop,
@@ -38,14 +32,6 @@ export function EditorChromeControls({
   topCollapsed,
 }: EditorChromeControlsProps) {
   const items = [
-    {
-      active: !leftCollapsed,
-      className: 'top-28 left-4',
-      icon: leftCollapsed ? PanelLeftOpen : PanelLeftClose,
-      label: 'Toggle server sidebar',
-      onClick: onToggleLeft,
-      visible: leftCollapsed,
-    },
     {
       active: !rightCollapsed,
       className: 'top-52 right-4',

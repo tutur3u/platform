@@ -13,10 +13,8 @@ describe('EditorChromeControls', () => {
     const { rerender } = render(
       <EditorChromeControls
         bottomCollapsed
-        leftCollapsed
         npcLabCollapsed={true}
         onToggleBottom={onToggleBottom}
-        onToggleLeft={onToggleLeft}
         onToggleNpcLab={onToggleNpcLab}
         onToggleRight={onToggleRight}
         onToggleTop={onToggleTop}
@@ -25,7 +23,6 @@ describe('EditorChromeControls', () => {
       />
     );
 
-    fireEvent.click(screen.getByTitle('Toggle server sidebar'));
     fireEvent.click(screen.getByTitle('Toggle inspector'));
     fireEvent.click(screen.getByTitle('Toggle NPC lab'));
     fireEvent.click(screen.getByTitle('Toggle tool dock'));
@@ -33,10 +30,8 @@ describe('EditorChromeControls', () => {
     rerender(
       <EditorChromeControls
         bottomCollapsed={false}
-        leftCollapsed={false}
         npcLabCollapsed={false}
         onToggleBottom={onToggleBottom}
-        onToggleLeft={onToggleLeft}
         onToggleNpcLab={onToggleNpcLab}
         onToggleRight={onToggleRight}
         onToggleTop={onToggleTop}
@@ -46,7 +41,7 @@ describe('EditorChromeControls', () => {
     );
     fireEvent.click(screen.getByTitle('Toggle top panels'));
 
-    expect(onToggleLeft).toHaveBeenCalledOnce();
+    expect(onToggleLeft).not.toHaveBeenCalled();
     expect(onToggleRight).toHaveBeenCalledOnce();
     expect(onToggleTop).toHaveBeenCalledOnce();
     expect(onToggleNpcLab).toHaveBeenCalledOnce();

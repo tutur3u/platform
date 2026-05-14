@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { ToolDock } from '../tool-dock';
 
@@ -30,9 +30,17 @@ describe('ToolDock', () => {
       />
     );
 
-    expect(screen.getByTitle('Select')).toBeTruthy();
-    expect(screen.getByTitle('Build')).toBeTruthy();
-    expect(screen.getByTitle('Erase')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Select' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Build' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Erase' })).toBeTruthy();
+    expect(
+      within(screen.getByRole('button', { name: 'Erase' })).queryByText('E')
+    ).toBeNull();
+    expect(
+      within(
+        screen.getByRole('button', { name: 'Editor settings' })
+      ).queryByText('Settings')
+    ).toBeNull();
     expect(screen.queryByText('Blocks')).toBeNull();
   });
 
@@ -100,7 +108,7 @@ describe('ToolDock', () => {
     );
 
     expect(screen.queryByTitle('Toggle gapless blocks')).toBeNull();
-    fireEvent.click(screen.getByTitle('Editor settings'));
+    fireEvent.click(screen.getByRole('button', { name: 'Editor settings' }));
     expect(screen.getByTitle('Toggle gapless blocks')).toBeTruthy();
     expect(screen.getByTitle('Toggle automatic 24 hour cycle')).toBeTruthy();
   });

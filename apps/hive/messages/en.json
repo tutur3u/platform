@@ -28,5 +28,46 @@
   "metadata": {
     "description": "Voxel-based research editor for simulated agent behavior experiments.",
     "title": "Hive"
+  },
+  "studio": {
+    "agent": {
+      "agent_name": "Hive agent",
+      "input_label": "World agent prompt",
+      "placeholder": "Ask the agent to change this world.",
+      "send": "Send world instruction",
+      "you": "You"
+    },
+    "chrome": {
+      "blocks": "blocks",
+      "hint": "Tap to place - drag to orbit - pinch or scroll to zoom",
+      "npcs": "NPCs",
+      "objects": "objects",
+      "online": "online",
+      "open_npc_lab": "Open NPC lab",
+      "realtime": "Realtime",
+      "title": "Hive World",
+      "title_accent": "Builder"
+    },
+    "server": {
+      "admin": "Platform admin controls",
+      "blocks": "Blocks",
+      "clear": "Clear",
+      "create": "Create",
+      "credits": "Credits",
+      "delete": "Delete",
+      "description_fallback": "Shared realtime world for Hive experiments.",
+      "edit": "Edit",
+      "empty": "No server selected",
+      "enabled": "enabled",
+      "info": "Server info",
+      "npcs": "NPCs",
+      "objects": "Objects",
+      "online": "Online",
+      "paused": "paused",
+      "realtime": "Realtime",
+      "reseed": "Reseed",
+      "revision": "Revision",
+      "select_label": "Select Hive server"
+    }
   }
 }

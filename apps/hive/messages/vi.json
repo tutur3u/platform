@@ -28,5 +28,46 @@
   "metadata": {
     "description": "Trình biên tập nghiên cứu dựa trên voxel cho thí nghiệm hành vi agent trong môi trường mô phỏng.",
     "title": "Hive"
+  },
+  "studio": {
+    "agent": {
+      "agent_name": "Agent Hive",
+      "input_label": "Prompt cho agent xây thế giới",
+      "placeholder": "Yêu cầu agent thay đổi thế giới này.",
+      "send": "Gửi yêu cầu chỉnh thế giới",
+      "you": "Bạn"
+    },
+    "chrome": {
+      "blocks": "khối",
+      "hint": "Chạm để đặt - kéo để xoay góc nhìn - chụm hoặc cuộn để zoom",
+      "npcs": "NPC",
+      "objects": "vật thể",
+      "online": "đang online",
+      "open_npc_lab": "Mở phòng NPC",
+      "realtime": "Thời gian thực",
+      "title": "Hive World",
+      "title_accent": "Builder"
+    },
+    "server": {
+      "admin": "Điều khiển quản trị nền tảng",
+      "blocks": "Khối",
+      "clear": "Xóa trắng",
+      "create": "Tạo",
+      "credits": "Credit",
+      "delete": "Xóa",
+      "description_fallback": "Thế giới thời gian thực dùng chung cho thí nghiệm Hive.",
+      "edit": "Sửa",
+      "empty": "Chưa chọn máy chủ",
+      "enabled": "đang bật",
+      "info": "Thông tin máy chủ",
+      "npcs": "NPC",
+      "objects": "Vật thể",
+      "online": "Online",
+      "paused": "đang tạm dừng",
+      "realtime": "Thời gian thực",
+      "reseed": "Tạo lại",
+      "revision": "Phiên bản",
+      "select_label": "Chọn máy chủ Hive"
+    }
   }
 }
