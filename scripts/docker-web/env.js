@@ -142,6 +142,52 @@ function getComposeEnvFileValue({
   return path.relative(rootDir, resolvedEnvFile) || '.env.local';
 }
 
+function getComposeFragmentEnvFileValue(envFileValue) {
+  if (!envFileValue) {
+    return undefined;
+  }
+
+  if (path.isAbsolute(envFileValue)) {
+    return envFileValue;
+  }
+
+  return `../${envFileValue}`;
+}
+
+function getComposeFragmentEnvFileValues({
+  envFilePath = WEB_ENV_FILE,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const candidates = getWebEnvFileCandidates({
+    envFilePath,
+    rootDir,
+  });
+
+  const values = candidates
+    .filter((candidatePath) => fsImpl.existsSync(candidatePath))
+    .map((candidatePath) =>
+      getComposeFragmentEnvFileValue(
+        path.relative(rootDir, candidatePath) || '.env.local'
+      )
+    );
+
+  if (values.length === 0) {
+    const fallback = getComposeFragmentEnvFileValue(
+      path.relative(rootDir, envFilePath) || '.env.local'
+    );
+    return {
+      envFile: fallback,
+      legacyEnvFile: fallback,
+    };
+  }
+
+  return {
+    envFile: values.at(-1),
+    legacyEnvFile: values[0],
+  };
+}
+
 function rewriteLocalhostUrl(rawUrl) {
   if (!rawUrl) {
     return undefined;
@@ -241,6 +287,16 @@ function getComposeEnvironment({
         rootDir,
       }),
   };
+  const composeEnvFileValues = getComposeFragmentEnvFileValues({
+    envFilePath: resolvedEnvFilePath,
+    fsImpl,
+    rootDir,
+  });
+  composeEnv.DOCKER_WEB_COMPOSE_ENV_FILE =
+    baseEnv.DOCKER_WEB_COMPOSE_ENV_FILE ?? composeEnvFileValues.envFile;
+  composeEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE =
+    baseEnv.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE ??
+    composeEnvFileValues.legacyEnvFile;
 
   if (dockerInternalSupabaseUrl) {
     composeEnv.SUPABASE_URL = dockerInternalSupabaseUrl;
@@ -617,6 +673,8 @@ module.exports = {
   generateDockerRedisToken,
   generateDockerServiceToken,
   getComposeEnvironment,
+  getComposeFragmentEnvFileValue,
+  getComposeFragmentEnvFileValues,
   getDefaultComposeProjectName,
   getDockerWebComposeProjectName,
   getDockerCloudflaredRuntime,

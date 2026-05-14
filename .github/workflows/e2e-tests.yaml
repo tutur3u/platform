@@ -10,31 +10,25 @@ jobs:
       workflow_name: e2e-tests.yaml
 
   e2e:
-    name: Playwright E2E
+    name: Playwright E2E (${{ matrix.shard }}/${{ matrix.total_shards }})
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
-    timeout-minutes: 25
+    timeout-minutes: 45
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+        total_shards: [4]
 
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
       TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-      # Local Supabase (well-known demo keys — only valid against ephemeral local instance)
-      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
-      SUPABASE_SECRET_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       BASE_URL: http://localhost:7803
-      NODE_ENV: development
-
-      # Rate limit E2E tests use the in-memory fallback (no Redis required).
-      # The withSessionAuth rate limiter falls back to a process-local Map when
-      # UPSTASH_REDIS_REST_URL is not set, which is deterministic for single-
-      # worker Playwright runs against a single `next dev` process.
-      #
-      # To test with Redis (production-like), uncomment these:
-      # UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
-      # UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: ttr-e2e-${{ github.run_id }}-${{ matrix.shard }}
+      E2E_SHARD_INDEX: ${{ matrix.shard }}
+      E2E_TOTAL_SHARDS: ${{ matrix.total_shards }}
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:8001
 
     steps:
       - name: Check out code
@@ -61,42 +55,6 @@ jobs:
         if: steps.cache-supabase.outputs.cache-hit == 'true'
         run: docker load -i /tmp/supabase-docker/images.tar || true
 
-      - name: Start local Supabase
-        id: start-supabase
-        working-directory: apps/database
-        run: |
-          if supabase start; then
-            echo "pruned=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "Retrying after Docker prune..."
-            docker system prune -af
-            supabase start
-            echo "pruned=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Delete corrupted cache
-        if: steps.start-supabase.outputs.pruned == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: gh cache delete "supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}" --repo "${{ github.repository }}" || true
-
-      - name: Save Docker images for cache
-        if: steps.cache-supabase.outputs.cache-hit != 'true' || steps.start-supabase.outputs.pruned == 'true'
-        run: |
-          mkdir -p /tmp/supabase-docker
-          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
-
-      - name: Cache Docker images
-        if: steps.cache-supabase.outputs.cache-hit != 'true' || steps.start-supabase.outputs.pruned == 'true'
-        uses: actions/cache/save@v5
-        with:
-          path: /tmp/supabase-docker
-          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
-
-      - name: Reset database (apply migrations + seed)
-        working-directory: apps/database
-        run: supabase db reset
-
       # --- Node / Bun ---
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -120,44 +78,34 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Build workspace dependencies
-        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
-
       - name: Install Playwright browsers
         working-directory: apps/web
         run: bunx playwright install chromium
 
-      # --- Start dev server ---
-      - name: Start web app
+      # --- Run E2E tests against Docker web + local Docker Supabase ---
+      - name: Run Playwright shard
         working-directory: apps/web
-        run: |
-          NODE_OPTIONS='--experimental-require-module' npx next dev -p 7803 --turbopack &
-          echo "Waiting for dev server..."
+        run: bun test:e2e -- --shard=${{ matrix.shard }}/${{ matrix.total_shards }}
 
-      - name: Wait for dev server to be ready
+      - name: Save Supabase Docker images for cache
+        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
         run: |
-          for i in $(seq 1 60); do
-            if curl -s -o /dev/null -w "%{http_code}" http://localhost:7803/login | grep -q "200\|302\|307"; then
-              echo "Dev server is ready!"
-              exit 0
-            fi
-            echo "Attempt $i/60 — waiting 5s..."
-            sleep 5
-          done
-          echo "Dev server failed to start within 5 minutes"
-          exit 1
+          mkdir -p /tmp/supabase-docker
+          docker images --format '{{.Repository}}:{{.Tag}}' | grep 'supabase/' | grep -v '<none>' | xargs -r docker save -o /tmp/supabase-docker/images.tar
 
-      # --- Run E2E tests ---
-      - name: Run Playwright tests
-        working-directory: apps/web
-        run: bunx playwright test
+      - name: Cache Supabase Docker images
+        if: ${{ always() && matrix.shard == 1 && steps.cache-supabase.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v5
+        with:
+          path: /tmp/supabase-docker
+          key: supabase-docker-${{ runner.os }}-${{ steps.supabase-version.outputs.version }}
 
       # --- Upload artifacts on failure ---
       - name: Upload Playwright report
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: playwright-report-${{ matrix.shard }}-of-${{ matrix.total_shards }}
           path: apps/web/blob-report/
           retention-days: 14
 
@@ -165,12 +113,13 @@ jobs:
         uses: actions/upload-artifact@v7
         if: ${{ !cancelled() }}
         with:
-          name: test-results
+          name: test-results-${{ matrix.shard }}-of-${{ matrix.total_shards }}
           path: apps/web/test-results/
           retention-days: 14
 
       # --- Cleanup ---
-      - name: Stop Supabase
+      - name: Stop Docker web and Supabase
         if: always()
-        working-directory: apps/database
-        run: supabase stop
+        run: |
+          node scripts/docker-web.js down --mode prod --strategy blue-green --env-file tmp/e2e/web.env || true
+          bun sb:stop || true
