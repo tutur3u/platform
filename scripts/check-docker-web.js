@@ -8,6 +8,7 @@ const {
   readDockerProdComposeMergedText,
 } = require('./docker-web/prod-compose-include.js');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
+const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const DOCKERIGNORE_PATH = path.join(ROOT_DIR, '.dockerignore');
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -802,6 +803,27 @@ function validateMarkitdownDockerfile(dockerfileContent) {
   return errors;
 }
 
+function validateHiveDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'bun install --frozen-lockfile --filter @tuturuuu/hive',
+    'bun run --filter @tuturuuu/types build',
+    'bun run --filter @tuturuuu/internal-api build',
+    'bun run --filter @tuturuuu/supabase build',
+    'bun --env-file=/tmp/web.env run --filter @tuturuuu/hive build:docker',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/hive/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -836,6 +858,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'discord', 'Dockerfile.markitdown'),
     'utf8'
   ),
+  hiveDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'hive', 'Dockerfile'),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
@@ -851,6 +877,7 @@ function checkDockerWebSetup({
     ...validateWatcherDockerfile(watcherDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
     ...validateMarkitdownDockerfile(markitdownDockerfileContent),
+    ...validateHiveDockerfile(hiveDockerfileContent),
   ];
 }
 
@@ -875,6 +902,7 @@ if (require.main === module) {
 
 module.exports = {
   ROOT_DIR,
+  HIVE_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
@@ -893,6 +921,7 @@ module.exports = {
   validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
+  validateHiveDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 };

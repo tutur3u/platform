@@ -21,6 +21,10 @@ function trimTrailingSlashes(value: string) {
   return end === value.length ? value : value.slice(0, end);
 }
 
+function isWildcardListenerHostname(hostname: string) {
+  return hostname === '0.0.0.0' || hostname === '::' || hostname === '[::]';
+}
+
 function normalizeHttpUrl(value: AppUrlCandidate) {
   const trimmed = value?.trim();
 
@@ -32,6 +36,10 @@ function normalizeHttpUrl(value: AppUrlCandidate) {
     const url = new URL(trimmed);
 
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    if (isWildcardListenerHostname(url.hostname)) {
       return null;
     }
 

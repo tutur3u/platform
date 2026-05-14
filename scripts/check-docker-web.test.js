@@ -21,6 +21,7 @@ const {
 const {
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
+  HIVE_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
@@ -37,6 +38,7 @@ const {
   validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
+  validateHiveDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
@@ -143,6 +145,12 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
     dockerfileContent,
     /bun install --frozen-lockfile --production --filter @tuturuuu\/hive-realtime --linker hoisted/u
   );
+});
+
+test('Hive Docker image builds workspace dist exports before Next build', () => {
+  const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
+
+  assert.deepEqual(validateHiveDockerfile(dockerfileContent), []);
 });
 
 test('Docker web build args default to App Router only builds', () => {
@@ -647,6 +655,16 @@ test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', (
   assert.deepEqual(validateMarkitdownDockerfile(dockerfileContent), []);
 });
 
+test('validateHiveDockerfile reports missing workspace package builds', () => {
+  const dockerfileContent = fs
+    .readFileSync(HIVE_DOCKERFILE_PATH, 'utf8')
+    .replace('  bun run --filter @tuturuuu/supabase build && \\\n', '');
+
+  const errors = validateHiveDockerfile(dockerfileContent);
+
+  assert.match(errors.join('\n'), /@tuturuuu\/supabase build/);
+});
+
 test('validateWatcherDockerfile reports missing docker cli tooling', () => {
   const dockerfileContent = fs
     .readFileSync(WATCHER_DOCKERFILE_PATH, 'utf8')
@@ -679,6 +697,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'discord'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'hive'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -699,6 +720,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'discord', 'Dockerfile.markitdown'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'hive', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

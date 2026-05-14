@@ -600,14 +600,17 @@ How it works:
   `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY`, and
   `DOCKER_WEB_NEXT_BUILD_CPUS` when a host has more or less headroom.
 - Hive Docker images use a filtered workspace install and a Next standalone
-  runner, while Hive realtime installs its filtered production workspace with
-  Bun's hoisted linker so the direct `bun apps/hive-realtime/src/index.ts`
-  runtime can resolve top-level production packages such as `postgres` and
-  `@tuturuuu/realtime`. Keep `.dockerignore` explicit about recursive generated
-  directories such as `**/.next/**`, `tmp/**`, `apps/mobile/build/**`, and
-  `apps/backend/target/**`; otherwise previous local builds can be copied into
-  the next Docker context and inflate small sidecar images by several
-  gigabytes.
+  runner. Before `apps/hive` runs `next build`, the image must build
+  `@tuturuuu/types`, `@tuturuuu/internal-api`, and `@tuturuuu/supabase` because
+  those packages expose production `dist/*` subpath exports that Turbopack
+  resolves during the standalone build. Hive realtime installs its filtered
+  production workspace with Bun's hoisted linker so the direct
+  `bun apps/hive-realtime/src/index.ts` runtime can resolve top-level production
+  packages such as `postgres` and `@tuturuuu/realtime`. Keep `.dockerignore`
+  explicit about recursive generated directories such as `**/.next/**`,
+  `tmp/**`, `apps/mobile/build/**`, and `apps/backend/target/**`; otherwise
+  previous local builds can be copied into the next Docker context and inflate
+  small sidecar images by several gigabytes.
 
 Operational notes:
 

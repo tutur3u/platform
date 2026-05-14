@@ -1,4 +1,5 @@
 import { verifyAppCoordinationToken } from '@tuturuuu/auth/app-coordination';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -47,6 +48,176 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 import { POST } from './route';
 
 const victimUserId = '11111111-1111-4111-8111-111111111111';
+const workspaceId = '22222222-2222-4222-8222-222222222222';
+
+type PermissionId =
+  | 'manage_external_projects'
+  | 'publish_external_projects'
+  | 'manage_workspace_roles';
+
+type AdminState = {
+  appAdapter?: string;
+  bindingEnabled?: boolean;
+  canonicalActive?: boolean;
+  workspaceMember?: boolean;
+  workspacePermissions?: PermissionId[];
+  rootPermissions?: PermissionId[];
+};
+
+function createQueryResult(
+  data: unknown,
+  error: { message: string } | null = null
+) {
+  return { data, error };
+}
+
+function createAdminClientMock(state: AdminState = {}) {
+  const adminState = {
+    appAdapter: 'yoola',
+    bindingEnabled: true,
+    canonicalActive: true,
+    rootPermissions: [],
+    workspaceMember: true,
+    workspacePermissions: ['manage_external_projects'],
+    ...state,
+  };
+
+  function resolveTable(table: string, filters: Record<string, unknown>) {
+    const wsId = (filters.ws_id ?? filters['workspace_roles.ws_id']) as
+      | string
+      | undefined;
+    const userId = filters.user_id as string | undefined;
+
+    if (table === 'workspace_secrets') {
+      if (!adminState.bindingEnabled) return createQueryResult([]);
+
+      return createQueryResult([
+        { name: 'EXTERNAL_PROJECT_ENABLED', value: 'true' },
+        { name: 'EXTERNAL_PROJECT_CANONICAL_ID', value: 'yoola-main' },
+      ]);
+    }
+
+    if (table === 'canonical_external_projects') {
+      if (!adminState.canonicalActive) return createQueryResult(null);
+
+      return createQueryResult({
+        adapter: adminState.appAdapter,
+        id: 'yoola-main',
+        is_active: true,
+      });
+    }
+
+    if (table === 'workspace_members') {
+      const isKnownWorkspace =
+        wsId === workspaceId || wsId === ROOT_WORKSPACE_ID;
+      const isKnownUser = userId === victimUserId;
+      const isMember = wsId === ROOT_WORKSPACE_ID || adminState.workspaceMember;
+      return createQueryResult(
+        isKnownWorkspace && isKnownUser && isMember ? { type: 'MEMBER' } : null
+      );
+    }
+
+    if (table === 'workspace_role_members') {
+      const permissions =
+        wsId === ROOT_WORKSPACE_ID
+          ? adminState.rootPermissions
+          : adminState.workspacePermissions;
+
+      return createQueryResult(
+        permissions.length > 0
+          ? [
+              {
+                workspace_roles: {
+                  workspace_role_permissions: permissions.map((permission) => ({
+                    permission,
+                  })),
+                },
+              },
+            ]
+          : []
+      );
+    }
+
+    if (table === 'workspaces') {
+      return createQueryResult({ creator_id: 'workspace-creator' });
+    }
+
+    if (table === 'workspace_default_permissions') {
+      return createQueryResult([]);
+    }
+
+    return createQueryResult(null);
+  }
+
+  function createBuilder(table: string) {
+    const filters: Record<string, unknown> = {};
+    const builder = {
+      eq: vi.fn((field: string, value: unknown) => {
+        filters[field] = value;
+        return builder;
+      }),
+      in: vi.fn(() => builder),
+      maybeSingle: vi.fn(() => Promise.resolve(resolveTable(table, filters))),
+      select: vi.fn(() => builder),
+      single: vi.fn(() => Promise.resolve(resolveTable(table, filters))),
+    };
+
+    Object.defineProperty(builder, 'then', {
+      value: (
+        onFulfilled?: (value: unknown) => unknown,
+        onRejected?: (reason: unknown) => unknown
+      ) =>
+        Promise.resolve(resolveTable(table, filters)).then(
+          onFulfilled,
+          onRejected
+        ),
+    });
+
+    return builder;
+  }
+
+  return {
+    auth: {
+      admin: {
+        getUserById: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: 'victim@example.com',
+            },
+          },
+          error: null,
+        }),
+      },
+    },
+    from: vi.fn((table: string) => createBuilder(table)),
+  };
+}
+
+function mockRegisteredApp(allowedScopes = ['external-projects:read']) {
+  mocks.verifyExternalAppSecret.mockResolvedValue({
+    app: {
+      allowedScopes,
+      createdAt: null,
+      createdBy: null,
+      displayName: 'Yoola',
+      enabled: true,
+      id: 'yoola',
+      origins: ['https://yoola.example.com'],
+      secretIssuedAt: null,
+      secretLastFour: 'test',
+      updatedAt: null,
+      updatedBy: null,
+    },
+    ok: true,
+  });
+}
+
+function createExchangeRequest(body: Record<string, unknown>) {
+  return new NextRequest('http://localhost/api/v1/auth/app-token/exchange', {
+    body: JSON.stringify(body),
+    method: 'POST',
+  });
+}
 
 describe('app token exchange route', () => {
   beforeEach(() => {
@@ -71,20 +242,7 @@ describe('app token exchange route', () => {
         error: null,
       }),
     });
-    mocks.createAdminClient.mockResolvedValue({
-      auth: {
-        admin: {
-          getUserById: vi.fn().mockResolvedValue({
-            data: {
-              user: {
-                email: 'victim@example.com',
-              },
-            },
-            error: null,
-          }),
-        },
-      },
-    });
+    mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
   });
 
   it('rejects configured target exchanges without app credentials', async () => {
@@ -107,46 +265,203 @@ describe('app token exchange route', () => {
   });
 
   it('exchanges a valid registered app credential for a scoped app token', async () => {
-    mocks.verifyExternalAppSecret.mockResolvedValue({
-      app: {
-        allowedScopes: ['external-projects:read'],
-        createdAt: null,
-        createdBy: null,
-        displayName: 'Yoola',
-        enabled: true,
-        id: 'yoola',
-        origins: ['https://yoola.example.com'],
-        secretIssuedAt: null,
-        secretLastFour: 'test',
-        updatedAt: null,
-        updatedBy: null,
-      },
-      ok: true,
-    });
+    mockRegisteredApp();
 
     const response = await POST(
-      new NextRequest('http://localhost/api/v1/auth/app-token/exchange', {
-        body: JSON.stringify({
-          appId: 'yoola',
-          appSecret: 'ttr_app_secret_test',
-          requestedScopes: ['external-projects:read'],
-          token: 'valid-cross-app-token',
-        }),
-        method: 'POST',
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:read'],
+        token: 'valid-cross-app-token',
+        workspaceId,
       })
     );
 
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { accessToken: string };
+    const body = (await response.json()) as {
+      accessToken: string;
+      workspaceId?: string;
+    };
     const verification = verifyAppCoordinationToken(body.accessToken, {
       secret: 'test-secret',
     });
 
+    expect(body.workspaceId).toBe(workspaceId);
     expect(verification.ok).toBe(true);
     if (verification.ok) {
       expect(verification.claims.sub).toBe(victimUserId);
       expect(verification.claims.target_app).toBe('yoola');
       expect(verification.claims.scopes).toEqual(['external-projects:read']);
     }
+  });
+
+  it('rejects external-project app exchanges without a linked workspace id', async () => {
+    mockRegisteredApp(['external-projects:*']);
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+      })
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Missing workspace ID for external project scopes',
+    });
+  });
+
+  it('rejects users without linked workspace EPM permission', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspacePermissions: [] })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+  });
+
+  it('rejects non-members of the linked workspace', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ workspaceMember: false })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({ error: 'Forbidden' });
+  });
+
+  it('rejects external-project app exchanges when the app does not match the workspace adapter', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ appAdapter: 'junly' })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'App is not linked to this workspace',
+    });
+  });
+
+  it('rejects external-project app exchanges for disabled or unbound workspaces', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({ bindingEnabled: false })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'External project studio unavailable for this workspace',
+    });
+  });
+
+  it.each([
+    'external-projects:read',
+    'external-projects:publish',
+  ])('allows publish-only linked workspace access for %s app scope', async (requestedScope) => {
+    mockRegisteredApp([requestedScope]);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        workspacePermissions: ['publish_external_projects'],
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: [requestedScope],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
+  });
+
+  it('rejects publish-only linked workspace access for manage app scopes', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        workspacePermissions: ['publish_external_projects'],
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it('allows root EPM admins to exchange for linked workspace app tokens', async () => {
+    mockRegisteredApp(['external-projects:*']);
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminClientMock({
+        rootPermissions: ['manage_external_projects'],
+        workspaceMember: false,
+        workspacePermissions: [],
+      })
+    );
+
+    const response = await POST(
+      createExchangeRequest({
+        appId: 'yoola',
+        appSecret: 'ttr_app_secret_test',
+        requestedScopes: ['external-projects:*'],
+        token: 'valid-cross-app-token',
+        workspaceId,
+      })
+    );
+
+    expect(response.status).toBe(200);
   });
 });

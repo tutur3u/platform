@@ -391,7 +391,19 @@ export async function requireRootExternalProjectsAdmin(request: Request) {
   };
 }
 
-type WorkspaceExternalProjectMode = 'read' | 'manage' | 'publish';
+export type WorkspaceExternalProjectMode = 'read' | 'manage' | 'publish';
+
+type ExternalProjectAppTokenExchangeAuthorization =
+  | {
+      mode: WorkspaceExternalProjectMode | null;
+      normalizedWorkspaceId: string | null;
+      ok: true;
+    }
+  | {
+      error: string;
+      ok: false;
+      status: 400 | 403 | 404;
+    };
 
 function hasWorkspaceExternalProjectPermission(
   permissions: PermissionsResult | null,
@@ -581,6 +593,131 @@ export function appTokenHasRequiredScope(
     claims.scopes.includes('external-projects:*') ||
     claims.scopes.includes(requiredScope)
   );
+}
+
+export function getExternalProjectModeForScopes(
+  scopes: string[]
+): WorkspaceExternalProjectMode | null {
+  if (!scopes.some((scope) => scope.startsWith('external-projects:'))) {
+    return null;
+  }
+
+  if (
+    scopes.includes('external-projects:*') ||
+    scopes.includes('external-projects:manage')
+  ) {
+    return 'manage';
+  }
+
+  if (scopes.includes('external-projects:publish')) {
+    return 'publish';
+  }
+
+  if (scopes.includes('external-projects:read')) {
+    return 'read';
+  }
+
+  return 'manage';
+}
+
+export async function authorizeExternalProjectAppTokenExchange({
+  admin,
+  appId,
+  scopes,
+  userId,
+  workspaceId,
+}: {
+  admin: AdminDb;
+  appId: string;
+  scopes: string[];
+  userId: string;
+  workspaceId?: string;
+}): Promise<ExternalProjectAppTokenExchangeAuthorization> {
+  const mode = getExternalProjectModeForScopes(scopes);
+
+  if (!mode) {
+    return {
+      mode: null,
+      normalizedWorkspaceId: null,
+      ok: true,
+    };
+  }
+
+  if (!workspaceId?.trim()) {
+    return {
+      error: 'Missing workspace ID for external project scopes',
+      ok: false,
+      status: 400,
+    };
+  }
+
+  let normalizedWorkspaceId: string;
+
+  try {
+    normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+      admin,
+      userId,
+      wsId: workspaceId,
+    });
+  } catch {
+    return {
+      error: 'Forbidden',
+      ok: false,
+      status: 403,
+    };
+  }
+
+  const binding = await resolveWorkspaceExternalProjectBinding(
+    normalizedWorkspaceId,
+    admin
+  );
+
+  if (!binding.enabled || !binding.canonical_project) {
+    return {
+      error: 'External project studio unavailable for this workspace',
+      ok: false,
+      status: 404,
+    };
+  }
+
+  if (binding.canonical_project.adapter !== appId) {
+    return {
+      error: 'App is not linked to this workspace',
+      ok: false,
+      status: 403,
+    };
+  }
+
+  const [workspacePermissions, rootPermissions] = await Promise.all([
+    getPermissionsForUserId({
+      admin,
+      userId,
+      wsId: normalizedWorkspaceId,
+    }),
+    getPermissionsForUserId({
+      admin,
+      userId,
+      wsId: ROOT_WORKSPACE_ID,
+    }),
+  ]);
+
+  const allowed =
+    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
+    hasRootExternalProjectsAdminPermission(rootPermissions);
+
+  if (!allowed) {
+    return {
+      error: 'Forbidden',
+      ok: false,
+      status: 403,
+    };
+  }
+
+  return {
+    mode,
+    normalizedWorkspaceId,
+    ok: true,
+  };
 }
 
 async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
