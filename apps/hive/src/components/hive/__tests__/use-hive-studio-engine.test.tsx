@@ -99,6 +99,47 @@ describe('useHiveStudioEngine', () => {
       expect(screen.getByTestId('engine-state').textContent).toBe('none:0:0:0')
     );
   });
+
+  it('updates NPC snapshot data without replaying equal-revision world snapshots', async () => {
+    const { rerender } = render(<Harness />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('engine-state').textContent).toBe(
+        `${server.id}:100:0:7`
+      )
+    );
+
+    snapshotData = {
+      ...snapshotData!,
+      npcs: [
+        {
+          backstory: '',
+          backstoryEnabled: true,
+          customPromptEnabled: false,
+          id: 'npc-1',
+          memoryEnabled: true,
+          model: 'gemini-2.5-flash-lite',
+          name: 'Researcher',
+          position: { x: 0, y: 1, z: 0 },
+          role: 'resident',
+          serverId: server.id,
+          settings: {},
+          systemPrompt: '',
+        },
+      ],
+      world: {
+        blocks: [],
+        objects: [],
+      },
+    };
+    rerender(<Harness />);
+
+    await waitFor(() =>
+      expect(screen.getByTestId('engine-state').textContent).toBe(
+        `${server.id}:100:1:7`
+      )
+    );
+  });
 });
 
 function installLocalStorageMock() {

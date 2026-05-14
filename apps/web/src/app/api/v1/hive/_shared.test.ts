@@ -5,7 +5,7 @@ import {
   signHiveRealtimeToken,
   verifyHiveRealtimeToken,
 } from './_realtime-token';
-import { requireHiveAccess } from './_shared';
+import { hiveEventSchema, requireHiveAccess } from './_shared';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
@@ -169,5 +169,31 @@ describe('Hive API request auth', () => {
     }
     expect(mocks.createClient).toHaveBeenCalledOnce();
     expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+});
+
+describe('Hive event validation', () => {
+  it('preserves block state payloads accepted by the Hive inspector', () => {
+    const result = hiveEventSchema.safeParse({
+      eventType: 'block.update',
+      expectedRevision: 7,
+      payload: { blockId: 'block:0:0:0' },
+      world: {
+        blocks: [
+          {
+            id: 'block:0:0:0',
+            position: { x: 0, y: 0, z: 0 },
+            state: { color: '#ffcc00' },
+            type: 'crop-soil',
+          },
+        ],
+        objects: [],
+      },
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.data?.world.blocks[0]?.state).toEqual({
+      color: '#ffcc00',
+    });
   });
 });

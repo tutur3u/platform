@@ -107,6 +107,16 @@ server controls: creating a server creates its world, deleting a server deletes
 the world through database cascade, and clear/reseed actions persist typed audit
 events plus CRDT updates against the current server document.
 
+Manual editor changes persist through the web gateway world-event API. That API
+stores the authoritative `world_data` and the matching CRDT state in the same
+Hive Postgres transaction, then the Hive client only broadcasts the already
+applied event through `hive-realtime`. Do not add a second client-side
+`sync.update` persistence write after the gateway event succeeds; duplicate
+writes can churn `op_seq`, slow visible save completion, and let older world
+snapshots overwrite newer local edits. Realtime and snapshot consumers must
+also ignore equal or older revisions so delayed broadcasts cannot revert an
+optimistic edit that already advanced locally.
+
 The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World
 edits should commit only after click/drag threshold handling so orbit, pan,

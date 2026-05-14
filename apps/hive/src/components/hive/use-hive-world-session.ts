@@ -11,6 +11,7 @@ import type {
 } from '@/engine/types';
 import { createDefaultWorld, createEmptyWorld } from '@/engine/world';
 import type { HiveRealtimeStatus } from '@/realtime/hive-realtime-client';
+import { shouldApplyHiveRealtimeRevision } from './hive-realtime-revision';
 
 type UseHiveWorldSessionProps = {
   serverId: string | null;
@@ -35,6 +36,7 @@ export function useHiveWorldSession({
   const [npcs, setNpcs] = useState<HiveNpc[]>([]);
   const [revision, setRevision] = useState(0);
   const revisionRef = useRef(0);
+  const loadedServerIdRef = useRef<string | null>(null);
   const [selection, setSelection] = useState<HiveSelection>(null);
 
   useEffect(() => {
@@ -43,10 +45,24 @@ export function useHiveWorldSession({
 
   useEffect(() => {
     if (!snapshot || snapshot.server.id !== serverId) return;
+    const isNewServer = loadedServerIdRef.current !== serverId;
+
+    const shouldApplyWorld =
+      isNewServer ||
+      shouldApplyHiveRealtimeRevision(snapshot.revision, revisionRef.current);
+
+    if (!shouldApplyWorld) {
+      if (snapshot.revision === revisionRef.current) {
+        setNpcs(snapshot.npcs);
+      }
+      return;
+    }
+
     setWorld(snapshot.world ?? createDefaultWorld());
     setNpcs(snapshot.npcs);
     setRevision(snapshot.revision);
     revisionRef.current = snapshot.revision;
+    loadedServerIdRef.current = serverId;
   }, [serverId, snapshot]);
 
   useEffect(() => {
@@ -56,6 +72,7 @@ export function useHiveWorldSession({
       setNpcs([]);
       setRevision(0);
       revisionRef.current = 0;
+      loadedServerIdRef.current = null;
       setSelection(null);
       setPresenceCount(0);
       setRemoteAwareness([]);

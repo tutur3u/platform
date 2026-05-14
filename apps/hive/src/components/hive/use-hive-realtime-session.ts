@@ -23,6 +23,7 @@ import {
   type HiveRealtimeClient,
   type HiveRealtimeStatus,
 } from '@/realtime/hive-realtime-client';
+import { shouldApplyHiveRealtimeRevision } from './hive-realtime-revision';
 
 type UseHiveRealtimeSessionProps = {
   currentUserId: string;
@@ -108,11 +109,21 @@ export function useHiveRealtimeSession({
     const client = connectHiveRealtime({
       onMessage: (message) => {
         if (message.type === 'sync.snapshot') {
+          if (
+            !shouldApplyHiveRealtimeRevision(message.opSeq, revisionRef.current)
+          ) {
+            return;
+          }
           setWorld(message.world);
           setRevision(message.opSeq);
           revisionRef.current = message.opSeq;
         }
         if (message.type === 'sync.update') {
+          if (
+            !shouldApplyHiveRealtimeRevision(message.opSeq, revisionRef.current)
+          ) {
+            return;
+          }
           if (message.world) setWorld(message.world);
           setRevision(message.opSeq);
           revisionRef.current = message.opSeq;
@@ -124,6 +135,14 @@ export function useHiveRealtimeSession({
           ]);
         }
         if (message.type === 'world.event') {
+          if (
+            !shouldApplyHiveRealtimeRevision(
+              message.event.revision,
+              revisionRef.current
+            )
+          ) {
+            return;
+          }
           if (message.world) setWorld(message.world);
           setRevision(message.event.revision);
           revisionRef.current = message.event.revision;

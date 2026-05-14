@@ -4,11 +4,7 @@ import type {
   HiveServerPayload,
   HiveServersResponse,
 } from '@tuturuuu/internal-api/hive';
-import {
-  bytesToBase64,
-  encodeHiveWorldUpdate,
-  type HiveRealtimeAwareness as HiveAwareness,
-} from '@tuturuuu/realtime/hive';
+import type { HiveRealtimeAwareness as HiveAwareness } from '@tuturuuu/realtime/hive';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { objectCatalog, terrainCatalog } from '@/engine/catalog';
 import type {
@@ -164,13 +160,6 @@ export function useHiveStudioEngine({
     snapshotQuery,
     tool,
     onPersisted: ({ event, world }) => {
-      const encoded = encodeHiveWorldUpdate(world);
-      realtimeClientRef.current?.send({
-        stateVector: bytesToBase64(encoded.stateVector),
-        type: 'sync.update',
-        update: bytesToBase64(encoded.update),
-        world,
-      });
       realtimeClientRef.current?.send({
         event,
         type: 'world.event.applied',

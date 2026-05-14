@@ -15,6 +15,7 @@ const baseWorld = {
     {
       id: 'soil-0-0',
       position: { x: 0, y: 0, z: 0 },
+      state: { color: '#7cba62' },
       type: 'soil',
     },
   ],
@@ -30,6 +31,7 @@ describe('@tuturuuu/realtime Hive CRDT helpers', () => {
         {
           id: 'soil-1-0',
           position: { x: 1, y: 0, z: 0 },
+          state: { accentColor: '#65a5d8' },
           type: 'soil',
         },
       ],
@@ -53,6 +55,18 @@ describe('@tuturuuu/realtime Hive CRDT helpers', () => {
       'soil-0-0',
       'soil-1-0',
     ]);
+    expect(merged.world.blocks).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'soil-0-0',
+          state: { color: '#7cba62' },
+        }),
+        expect.objectContaining({
+          id: 'soil-1-0',
+          state: { accentColor: '#65a5d8' },
+        }),
+      ])
+    );
     expect(merged.world.objects).toHaveLength(1);
     expect(merged.stateVector.byteLength).toBeGreaterThan(0);
   });

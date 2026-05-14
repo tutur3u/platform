@@ -1,4 +1,5 @@
 import {
+  encodeHiveWorldUpdate,
   type HiveRealtimeWorld,
   mergeHiveCrdtUpdate,
 } from '@tuturuuu/realtime/hive';
@@ -90,11 +91,14 @@ export async function persistHiveWorldEvent(input: {
       returning op_seq
     `;
     const nextSeq = Number(state?.op_seq ?? 0) + 1;
+    const crdt = encodeHiveWorldUpdate(input.world);
 
     await tx`
       update hive_world_states
       set op_seq = ${nextSeq},
         world_data = ${tx.json(asJson(input.world))},
+        crdt_state = ${Buffer.from(crdt.state)},
+        crdt_state_vector = ${Buffer.from(crdt.stateVector)},
         updated_by = ${input.actorUserId},
         updated_at = now()
       where server_id = ${input.serverId}

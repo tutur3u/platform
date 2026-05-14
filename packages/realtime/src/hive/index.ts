@@ -12,6 +12,7 @@ export const hiveWorldSchema = z.object({
     z.object({
       id: z.string().min(1),
       position: hiveVectorSchema,
+      state: z.record(z.string(), z.any()).optional(),
       type: z.string().min(1),
     })
   ),

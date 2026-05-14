@@ -55,6 +55,7 @@ export const hiveWorldSchema = z.object({
       z.object({
         id: z.string().trim().min(1).max(120),
         position: hiveVectorSchema,
+        state: hiveJsonObjectSchema.optional(),
         type: z.string().trim().min(1).max(80),
       })
     )
