@@ -1,10 +1,21 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
+import { NextIntlClientProvider } from 'next-intl';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import messages from '../../../../../messages/en.json';
 import { ToolDock } from '../tool-dock';
+
+function renderDock(ui: ReactNode) {
+  return render(
+    <NextIntlClientProvider locale="en" messages={messages}>
+      {ui}
+    </NextIntlClientProvider>
+  );
+}
 
 describe('ToolDock', () => {
   it('renders core voxel editor tools', () => {
-    render(
+    renderDock(
       <ToolDock
         activeBuildMode="terrain"
         activeObject="house"
@@ -45,7 +56,7 @@ describe('ToolDock', () => {
   });
 
   it('shows grouped catalogs only in build mode', () => {
-    render(
+    renderDock(
       <ToolDock
         activeBuildMode="terrain"
         activeObject="house"
@@ -71,17 +82,17 @@ describe('ToolDock', () => {
       />
     );
 
-    expect(screen.getByText('Blocks')).toBeTruthy();
-    fireEvent.click(screen.getByTitle('Objects'));
-    expect(screen.getByText('House H')).toBeTruthy();
-    fireEvent.click(screen.getByTitle('Systems'));
-    expect(screen.getByText('Bridge J')).toBeTruthy();
-    fireEvent.click(screen.getByTitle('Agents'));
-    expect(screen.getByText('NPC 1')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Blocks' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Objects' }));
+    expect(screen.getByRole('button', { name: 'House H' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Systems' }));
+    expect(screen.getByRole('button', { name: 'Bridge J' })).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'NPCs' }));
+    expect(screen.getByRole('button', { name: 'NPC 1' })).toBeTruthy();
   });
 
   it('keeps environment settings in a dedicated dock tab', () => {
-    render(
+    renderDock(
       <ToolDock
         activeBuildMode="terrain"
         activeObject="house"
@@ -107,9 +118,11 @@ describe('ToolDock', () => {
       />
     );
 
-    expect(screen.queryByTitle('Toggle gapless blocks')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Gapless blocks' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Editor settings' }));
-    expect(screen.getByTitle('Toggle gapless blocks')).toBeTruthy();
-    expect(screen.getByTitle('Toggle automatic 24 hour cycle')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Gapless blocks' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Automatic 24 hour cycle' })
+    ).toBeTruthy();
   });
 });

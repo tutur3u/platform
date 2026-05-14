@@ -31,11 +31,12 @@ export function SatelliteWorkspaceShell({
         {center}
         {top ? (
           <div
+            aria-hidden={topCollapsed}
             className={[
-              'pointer-events-none absolute top-4 right-4 left-4 z-20 transition duration-300 ease-out',
+              'absolute top-4 right-4 left-4 z-20 transition duration-300 ease-out',
               topCollapsed
-                ? '-translate-y-4 opacity-0'
-                : 'translate-y-0 opacity-100',
+                ? 'pointer-events-none invisible -translate-y-4 opacity-0'
+                : 'pointer-events-none visible translate-y-0 opacity-100',
             ].join(' ')}
           >
             {top}
@@ -43,11 +44,12 @@ export function SatelliteWorkspaceShell({
         ) : null}
         {bottom ? (
           <div
+            aria-hidden={bottomCollapsed}
             className={[
-              'pointer-events-none absolute right-4 bottom-4 left-4 z-20 transition duration-300 ease-out',
+              'absolute right-4 bottom-4 left-4 z-20 transition duration-300 ease-out',
               bottomCollapsed
-                ? 'translate-y-4 opacity-0'
-                : 'translate-y-0 opacity-100',
+                ? 'pointer-events-none invisible translate-y-4 opacity-0'
+                : 'pointer-events-none visible translate-y-0 opacity-100',
             ].join(' ')}
           >
             {bottom}

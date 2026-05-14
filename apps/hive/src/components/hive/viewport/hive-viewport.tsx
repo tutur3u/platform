@@ -200,14 +200,6 @@ export function HiveViewport(props: HiveViewportProps) {
           />
         </Suspense>
       </Canvas>
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 z-10"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 48%, transparent 0%, transparent 42%, color-mix(in oklab, var(--background) 82%, transparent) 100%)',
-        }}
-      />
     </div>
   );
 }

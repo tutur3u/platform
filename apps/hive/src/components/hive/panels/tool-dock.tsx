@@ -6,12 +6,11 @@ import {
   MousePointer2,
   Move3d,
   PanelBottomClose,
-  Redo2,
   RotateCw,
   Settings2,
-  Undo2,
 } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 import type {
@@ -52,59 +51,64 @@ type ToolDockProps = {
 };
 
 const toolItems = [
-  { icon: MousePointer2, id: 'select', label: 'Select' },
-  { icon: Box, id: 'build', label: 'Build' },
-  { icon: Eraser, id: 'erase', label: 'Erase' },
-  { icon: Move3d, id: 'move', label: 'Move' },
-  { icon: RotateCw, id: 'rotate', label: 'Rotate' },
+  { icon: MousePointer2, id: 'select', labelKey: 'select' },
+  { icon: Box, id: 'build', labelKey: 'build' },
+  { icon: Eraser, id: 'erase', labelKey: 'erase' },
+  { icon: Move3d, id: 'move', labelKey: 'move' },
+  { icon: RotateCw, id: 'rotate', labelKey: 'rotate' },
 ] as const;
 
 type DockPanel = 'build' | 'settings';
 
 export function ToolDock(props: ToolDockProps) {
+  const t = useTranslations('studio.dock');
   const [panel, setPanel] = useState<DockPanel>('build');
   const showCatalog = props.tool === 'build' && panel === 'build';
   const showSettings = panel === 'settings';
 
   return (
     <div className="pointer-events-auto flex justify-center">
-      <div className="flex max-w-[calc(100vw-2rem)] items-center gap-2 overflow-x-auto rounded-full border border-white/70 bg-background/82 p-2 text-foreground shadow-2xl shadow-foreground/15 ring-1 ring-foreground/5 backdrop-blur-xl">
+      <div className="flex max-w-[calc(100vw-2rem)] items-center gap-1.5 overflow-x-auto rounded-xl border border-white/60 bg-background/84 p-1.5 text-foreground shadow-2xl shadow-foreground/15 ring-1 ring-foreground/5 backdrop-blur-xl">
         {props.serverPicker}
         <div className="flex items-center gap-1.5">
-          {toolItems.map(({ icon: Icon, id, label }) => (
-            <Tooltip key={id}>
-              <TooltipTrigger asChild>
-                <button
-                  aria-label={label}
-                  className={[
-                    'inline-flex h-12 w-12 items-center justify-center rounded-lg border transition',
-                    props.tool === id
-                      ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner'
-                      : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
-                  ].join(' ')}
-                  onClick={() => {
-                    if (id === 'rotate') props.onRotateSelection();
-                    if (id === 'build') setPanel('build');
-                    props.onSetTool(id);
-                  }}
-                  type="button"
-                >
-                  <Icon className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="top">{label}</TooltipContent>
-            </Tooltip>
-          ))}
+          {toolItems.map(({ icon: Icon, id, labelKey }) => {
+            const label = t(labelKey);
+
+            return (
+              <Tooltip key={id}>
+                <TooltipTrigger asChild>
+                  <button
+                    aria-label={label}
+                    className={[
+                      'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
+                      props.tool === id
+                        ? 'border-dynamic-green bg-dynamic-green/10 text-dynamic-green shadow-dynamic-green/20 shadow-inner'
+                        : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
+                    ].join(' ')}
+                    onClick={() => {
+                      if (id === 'rotate') props.onRotateSelection();
+                      if (id === 'build') setPanel('build');
+                      props.onSetTool(id);
+                    }}
+                    type="button"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top">{label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
         </div>
         <div className="my-1 w-px shrink-0 bg-border" />
         <div className="flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                aria-label="Editor settings"
+                aria-label={t('editor_settings')}
                 aria-pressed={panel === 'settings'}
                 className={[
-                  'inline-flex h-12 w-12 items-center justify-center rounded-lg border transition',
+                  'inline-flex h-10 w-10 items-center justify-center rounded-md border transition',
                   panel === 'settings'
                     ? 'border-dynamic-green bg-dynamic-green/10 text-foreground'
                     : 'border-border bg-background text-muted-foreground hover:border-foreground/25 hover:text-foreground',
@@ -119,7 +123,7 @@ export function ToolDock(props: ToolDockProps) {
                 <Settings2 className="h-4 w-4" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="top">Editor settings</TooltipContent>
+            <TooltipContent side="top">{t('editor_settings')}</TooltipContent>
           </Tooltip>
         </div>
         {showCatalog ? (
@@ -150,45 +154,18 @@ export function ToolDock(props: ToolDockProps) {
           />
         ) : null}
         <div className="my-1 w-px shrink-0 bg-border" />
-        <div className="flex items-center gap-1.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                aria-label="Undo"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
-                type="button"
-              >
-                <Undo2 className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Undo</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                aria-label="Redo"
-                className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground"
-                type="button"
-              >
-                <Redo2 className="h-4 w-4" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="top">Redo</TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="my-1 w-px shrink-0 bg-border" />
         <Tooltip>
           <TooltipTrigger asChild>
             <button
-              aria-label="Collapse tool dock"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground hover:text-foreground"
+              aria-label={t('collapse')}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:text-foreground"
               onClick={props.onToggle}
               type="button"
             >
               <PanelBottomClose className="h-4 w-4" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="top">Collapse tool dock</TooltipContent>
+          <TooltipContent side="top">{t('collapse')}</TooltipContent>
         </Tooltip>
       </div>
     </div>

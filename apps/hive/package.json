@@ -13,6 +13,8 @@
     "start": "NODE_OPTIONS='--max-http-header-size=65536' next start -p 7814",
     "preview": "next build --turbopack && NODE_OPTIONS='--max-http-header-size=65536' next start -p 7814",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
     "test:watch": "vitest",
     "stop": "cd ../database && bun sb:stop",
     "sb:status": "cd ../database && bun sb:status",
@@ -52,6 +54,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query-devtools": "^5.100.10",
     "@testing-library/react": "^16.3.2",

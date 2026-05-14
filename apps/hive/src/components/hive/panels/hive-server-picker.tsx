@@ -68,10 +68,10 @@ export function HiveServerPicker({
       >
         <SelectTrigger
           aria-label={t('select_label')}
-          className="h-12 w-[min(210px,38vw)] rounded-full border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
+          className="h-10 w-[min(190px,36vw)] rounded-md border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
         >
           <span className="flex min-w-0 items-center gap-2">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-dynamic-green text-background">
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-dynamic-green text-background">
               <Server className="h-4 w-4" />
             </span>
             <span className="truncate">{server?.name ?? t('empty')}</span>
@@ -96,7 +96,7 @@ export function HiveServerPicker({
             <PopoverTrigger asChild>
               <Button
                 aria-label={t('info')}
-                className="h-10 w-10 rounded-full border-border/60 bg-background/70"
+                className="h-9 w-9 rounded-md border-border/60 bg-background/70"
                 size="icon"
                 type="button"
                 variant="outline"
