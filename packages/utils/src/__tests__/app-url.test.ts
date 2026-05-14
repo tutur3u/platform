@@ -19,6 +19,15 @@ describe('resolveAppUrl', () => {
       })
     ).toBe('http://localhost:7812');
   });
+
+  it('ignores wildcard listener URLs that are not browser destinations', () => {
+    expect(
+      resolveAppUrl({
+        candidates: ['http://0.0.0.0:7814', 'http://[::]:7814'],
+        fallback: 'https://hive.tuturuuu.com',
+      })
+    ).toBe('https://hive.tuturuuu.com');
+  });
 });
 
 describe('resolveInternalAppUrl', () => {
@@ -50,5 +59,15 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'https://cms.tuturuuu.com',
       })
     ).toBe('https://cms-preview.example.com');
+  });
+
+  it('skips wildcard listener origins before resolving an internal app URL', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'hive',
+        candidates: ['http://0.0.0.0:7814', 'https://hive.tuturuuu.com'],
+        fallback: 'http://localhost:7814',
+      })
+    ).toBe('https://hive.tuturuuu.com');
   });
 });

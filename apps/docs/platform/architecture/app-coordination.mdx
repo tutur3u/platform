@@ -145,4 +145,7 @@ stale `sb-*-auth-token` cookies on the app host. Browser form logout should
 redirect back to the app's landing or login page after local cleanup instead of
 leaving the browser on `/api/auth/logout`. Apps may then offer a separate
 central `/logout` continuation when the user wants to end the platform session
-too.
+too. Logout and browser-state recovery redirects must use the app's configured
+public URL as the fallback when the request reaches the app through a wildcard
+listener such as `0.0.0.0`, because that listener address is not a browser
+destination.

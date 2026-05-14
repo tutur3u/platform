@@ -70,6 +70,16 @@ describe('Hive proxy auth cookie cleanup', () => {
     );
   });
 
+  it('does not redirect unauthenticated users to the internal listener origin', async () => {
+    const response = await proxy(
+      new NextRequest('http://0.0.0.0:7814/dashboard')
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:7814/login?next=%2Fdashboard'
+    );
+  });
+
   it('keeps generic API guard coverage for Hive product APIs', async () => {
     vi.mocked(guardApiProxyRequest).mockResolvedValue(null);
 

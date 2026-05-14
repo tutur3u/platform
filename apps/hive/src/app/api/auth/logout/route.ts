@@ -3,6 +3,7 @@ import {
   clearSupabaseAuthCookies,
 } from '@tuturuuu/auth/app-session';
 import { type NextRequest, NextResponse } from 'next/server';
+import { createHivePublicUrl } from '@/lib/hive-public-url';
 
 function wantsJsonResponse(request: NextRequest) {
   const accept = request.headers.get('accept') ?? '';
@@ -12,7 +13,9 @@ function wantsJsonResponse(request: NextRequest) {
 function createLogoutResponse(request: NextRequest) {
   const response = wantsJsonResponse(request)
     ? NextResponse.json({ success: true })
-    : NextResponse.redirect(new URL('/login', request.url), { status: 303 });
+    : NextResponse.redirect(createHivePublicUrl('/login', request), {
+        status: 303,
+      });
 
   return clearSupabaseAuthCookies(request, clearAppSessionAndReturn(response));
 }

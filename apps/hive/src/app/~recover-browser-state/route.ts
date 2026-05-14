@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { createHivePublicUrl } from '@/lib/hive-public-url';
 
 const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?$/u;
 const CLEAR_SITE_DATA_VALUE =
@@ -18,7 +19,10 @@ function applyNoStoreHeaders(response: NextResponse) {
 }
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
-  const redirectUrl = new URL('/login?browserStateReset=1', request.nextUrl);
+  const redirectUrl = createHivePublicUrl(
+    '/login?browserStateReset=1',
+    request
+  );
   const response = NextResponse.redirect(redirectUrl);
 
   applyNoStoreHeaders(response);

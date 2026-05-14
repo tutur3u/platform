@@ -1,9 +1,13 @@
 import { APP_SESSION_COOKIE_NAME } from '@tuturuuu/auth/app-session';
 import { NextRequest } from 'next/server';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GET, POST } from './route';
 
 describe('Hive logout route', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('redirects browser form logout back to the Hive landing page', () => {
     const response = POST(
       new NextRequest('https://hive.tuturuuu.com/api/auth/logout', {
@@ -27,6 +31,28 @@ describe('Hive logout route', () => {
     expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
     expect(setCookie).toContain('sb-resolved-kingfish-21146-auth-token=;');
     expect(setCookie).toContain('Max-Age=0');
+  });
+
+  it('does not leak the internal listener origin into production logout redirects', async () => {
+    vi.resetModules();
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('HIVE_APP_URL', 'https://hive.tuturuuu.com');
+
+    const { POST: postWithProductionEnv } = await import('./route');
+    const response = postWithProductionEnv(
+      new NextRequest('http://0.0.0.0:7814/api/auth/logout', {
+        headers: {
+          accept: 'text/html',
+          cookie: `${APP_SESSION_COOKIE_NAME}=ttr_app_session`,
+        },
+        method: 'POST',
+      })
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      'https://hive.tuturuuu.com/login'
+    );
   });
 
   it('keeps JSON compatibility for programmatic logout requests', async () => {

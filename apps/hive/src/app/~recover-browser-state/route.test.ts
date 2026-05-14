@@ -31,4 +31,14 @@ describe('Hive browser state recovery route', () => {
     ).toBe('');
     expect(response.cookies.get('unrelated')).toBeUndefined();
   });
+
+  it('does not redirect browser-state recovery to the internal listener origin', async () => {
+    const response = await GET(
+      new NextRequest('http://0.0.0.0:7814/~recover-browser-state')
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:7814/login?browserStateReset=1'
+    );
+  });
 });

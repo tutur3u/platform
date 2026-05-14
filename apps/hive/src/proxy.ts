@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+import { createHivePublicUrl } from './lib/hive-public-url';
 
 const intlMiddleware = createIntlMiddleware(routing);
 const LOCAL_AUTH_API_PATHS = new Set(['/api/auth/logout']);
@@ -38,8 +39,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   const pathLocale = getPathLocale(request.nextUrl.pathname);
   if (!pathLocale) return null;
 
-  const url = new URL(request.url);
-  url.pathname = stripLocale(request.nextUrl.pathname);
+  const url = createHivePublicUrl(
+    `${stripLocale(request.nextUrl.pathname)}${request.nextUrl.search}`,
+    request
+  );
 
   const response = NextResponse.redirect(url);
   response.cookies.set(LOCALE_COOKIE_NAME, pathLocale);
@@ -78,7 +81,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     });
 
     if (!appSession) {
-      const url = new URL('/login', request.url);
+      const url = createHivePublicUrl('/login', request);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
