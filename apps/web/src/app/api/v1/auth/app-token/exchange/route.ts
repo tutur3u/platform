@@ -11,6 +11,7 @@ import {
   getAllowedAppTokenScopes,
   verifyExternalAppSecret,
 } from '@/lib/app-coordination/external-apps';
+import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import {
   serverLogger,
   withRequestLogDrain,
@@ -35,6 +36,7 @@ const exchangeSchema = z.object({
     .regex(/^[a-z0-9_-]{1,64}$/u)
     .optional(),
   token: z.string().min(1),
+  workspaceId: z.string().trim().max(128).optional(),
 });
 
 type CrossAppValidationRow = {
@@ -178,6 +180,7 @@ async function exchangeAppToken(request: NextRequest) {
     requestedScopes = [],
     targetApp,
     token,
+    workspaceId,
   } = parsed.data;
   let resolvedTarget: Awaited<ReturnType<typeof resolveExchangeTarget>>;
 
@@ -237,6 +240,21 @@ async function exchangeAppToken(request: NextRequest) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const exchangeAuthorization = await authorizeExternalProjectAppTokenExchange({
+    admin: sbAdmin,
+    appId: resolvedTarget.targetApp,
+    scopes: resolvedTarget.scopes,
+    userId,
+    workspaceId,
+  });
+
+  if (!exchangeAuthorization.ok) {
+    return NextResponse.json(
+      { error: exchangeAuthorization.error },
+      { status: exchangeAuthorization.status }
+    );
+  }
+
   const email = await getUserEmail({
     sbAdmin,
     sessionData: validationRow.session_data ?? null,
@@ -267,6 +285,7 @@ async function exchangeAppToken(request: NextRequest) {
       email,
       id: userId,
     },
+    workspaceId: exchangeAuthorization.normalizedWorkspaceId,
   });
 }
 

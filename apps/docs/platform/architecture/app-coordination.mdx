@@ -101,15 +101,24 @@ admin-backed lookup before minting new JWTs.
 4. The external app receives a short-lived cross-app `token` on its return URL.
 5. The external app server calls
    `POST /api/v1/auth/app-token/exchange` with `appId`, `appSecret`, `token`,
-   and optional `requestedScopes`.
-6. Tuturuuu validates the app secret and cross-app token, then returns a
-   short-lived bearer token for Tuturuuu APIs.
+   optional `requestedScopes`, and `workspaceId` whenever the requested or
+   issued scopes include `external-projects:*`, `external-projects:manage`,
+   `external-projects:publish`, or `external-projects:read`.
+6. For external-project scopes, Tuturuuu validates that the workspace has an
+   enabled external-project binding, that the binding's canonical adapter
+   matches the registered external app ID, and that the user has the required
+   EPM permission in that workspace. Root EPM admins remain an override.
+7. Tuturuuu validates the app secret and cross-app token, then returns a
+   short-lived bearer token for Tuturuuu APIs plus the normalized authorized
+   `workspaceId`.
 
 External apps should store only their own app secret and local session material.
 They should send Tuturuuu API calls with the returned bearer token and should
 never require production Supabase keys. Third-party or custom Supabase JWT paths
 are not used for registered internal apps; Tuturuuu JWTs stay at the gateway and
-internal API layer.
+internal API layer. External-project admin apps must store the returned
+authorized workspace ID in their encrypted local admin session and reject the
+session if it no longer matches the app's configured linked workspace.
 
 The centralized login page validates external and internal `returnUrl` targets
 before it renders the normal sign-in form or account-confirmation handoff. If the
