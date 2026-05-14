@@ -1,8 +1,41 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   signHiveRealtimeToken,
   verifyHiveRealtimeToken,
 } from './_realtime-token';
+import { requireHiveAccess } from './_shared';
+
+const mocks = vi.hoisted(() => ({
+  createAdminClient: vi.fn(),
+  createClient: vi.fn(),
+  getHiveMemberByUserId: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: (...args: unknown[]) => mocks.createAdminClient(...args),
+  createClient: (...args: unknown[]) => mocks.createClient(...args),
+}));
+
+vi.mock('@/lib/hive/hive-db', () => ({
+  getHiveMemberByUserId: (...args: unknown[]) =>
+    mocks.getHiveMemberByUserId(...args),
+}));
+
+function createRoleClient(
+  role: { allow_role_management: boolean; enabled: boolean } | null = null
+) {
+  return {
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn().mockResolvedValue({ data: role, error: null }),
+        })),
+      })),
+    })),
+  };
+}
 
 describe('Hive realtime token signing', () => {
   afterEach(() => {
@@ -25,5 +58,116 @@ describe('Hive realtime token signing', () => {
       serverId: '8f7fa5cf-8bb1-446a-9c51-f4222f452f4d',
       userId: '00000000-0000-4000-8000-000000000001',
     });
+  });
+});
+
+describe('Hive API request auth', () => {
+  beforeEach(() => {
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+    mocks.createAdminClient.mockReset();
+    mocks.createClient.mockReset();
+    mocks.getHiveMemberByUserId.mockReset();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('accepts Hive app-session cookies without reading Supabase Auth user sessions', async () => {
+    const adminClient = createRoleClient();
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'hive',
+      userId: '00000000-0000-4000-8000-000000000001',
+    });
+    mocks.createAdminClient.mockResolvedValue(adminClient);
+    mocks.getHiveMemberByUserId.mockResolvedValue({ enabled: true });
+
+    const result = await requireHiveAccess(
+      new NextRequest('https://tuturuuu.com/api/v1/hive/servers', {
+        headers: {
+          cookie: `tuturuuu_app_session=${token}`,
+        },
+      })
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.access.user).toEqual({
+        email: 'agent@example.com',
+        id: '00000000-0000-4000-8000-000000000001',
+      });
+      expect(result.access.isMember).toBe(true);
+    }
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.getHiveMemberByUserId).toHaveBeenCalledWith(
+      '00000000-0000-4000-8000-000000000001'
+    );
+  });
+
+  it('rejects non-Hive app-session cookies instead of accepting them as Hive users', async () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: '00000000-0000-4000-8000-000000000002',
+    });
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: null },
+          error: null,
+        }),
+      },
+    });
+
+    const result = await requireHiveAccess(
+      new NextRequest('https://tuturuuu.com/api/v1/hive/servers', {
+        headers: {
+          cookie: `tuturuuu_app_session=${token}`,
+        },
+      })
+    );
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(401);
+    }
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getHiveMemberByUserId).not.toHaveBeenCalled();
+  });
+
+  it('keeps central web Supabase sessions as a fallback for direct web requests', async () => {
+    const adminClient = createRoleClient({
+      allow_role_management: true,
+      enabled: true,
+    });
+    mocks.createAdminClient.mockResolvedValue(adminClient);
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              email: 'web@example.com',
+              id: '00000000-0000-4000-8000-000000000003',
+            },
+          },
+          error: null,
+        }),
+      },
+    });
+    mocks.getHiveMemberByUserId.mockResolvedValue(null);
+
+    const result = await requireHiveAccess(
+      new NextRequest('https://tuturuuu.com/api/v1/hive/servers')
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.access.isAdmin).toBe(true);
+      expect(result.access.user.email).toBe('web@example.com');
+    }
+    expect(mocks.createClient).toHaveBeenCalledOnce();
+    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 });

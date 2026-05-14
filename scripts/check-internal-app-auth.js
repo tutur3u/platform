@@ -96,6 +96,14 @@ const cliRefreshSource = fs.readFileSync(
   path.join(ROOT, 'apps/web/src/app/api/cli/auth/refresh/route.ts'),
   'utf8'
 );
+const hiveSharedSource = fs.readFileSync(
+  path.join(ROOT, 'apps/web/src/app/api/v1/hive/_shared.ts'),
+  'utf8'
+);
+const internalApiClientSource = fs.readFileSync(
+  path.join(ROOT, 'packages/internal-api/src/client.ts'),
+  'utf8'
+);
 
 if (/supabase\.auth\.setSession/u.test(verifierSource)) {
   failures.push(
@@ -118,6 +126,45 @@ if (/createDetachedClient|auth\.refreshSession/u.test(cliRefreshSource)) {
 if (/generateLink|verifyOtp|createDetachedClient/u.test(crossAppServerSource)) {
   failures.push(
     'packages/auth/src/cross-app/server.ts: Cross-app verification must not mint Supabase sessions with magic links or OTP verification.'
+  );
+}
+
+const hiveAppSessionIndex = hiveSharedSource.indexOf('verifyAppSessionToken');
+const hiveSupabaseUserIndex = hiveSharedSource.indexOf('supabase.auth.getUser');
+
+if (
+  hiveAppSessionIndex === -1 ||
+  !/targetApp:\s*['"]hive['"]/u.test(hiveSharedSource)
+) {
+  failures.push(
+    'apps/web/src/app/api/v1/hive/_shared.ts: Hive gateway APIs must resolve Tuturuuu app-session JWTs for target app hive.'
+  );
+}
+
+if (
+  hiveSupabaseUserIndex !== -1 &&
+  (hiveAppSessionIndex === -1 || hiveSupabaseUserIndex < hiveAppSessionIndex)
+) {
+  failures.push(
+    'apps/web/src/app/api/v1/hive/_shared.ts: Hive gateway APIs must check Tuturuuu app-session auth before Supabase Auth fallback.'
+  );
+}
+
+if (
+  !/createAdminClient\(\{\s*noCookie:\s*true\s*\}\)/u.test(hiveSharedSource)
+) {
+  failures.push(
+    'apps/web/src/app/api/v1/hive/_shared.ts: Hive admin checks must use noCookie admin clients for app-session requests.'
+  );
+}
+
+if (
+  !/tuturuuu_app_session/u.test(internalApiClientSource) ||
+  !/sanitizeForwardedCookieHeader/u.test(internalApiClientSource) ||
+  !/SUPABASE_AUTH_COOKIE_PATTERN/u.test(internalApiClientSource)
+) {
+  failures.push(
+    'packages/internal-api/src/client.ts: Forwarded app-session internal API auth must strip Supabase auth cookies.'
   );
 }
 

@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME } from './constants/common';
 import { type Locale, routing, supportedLocales } from './i18n/routing';
+import { clearSupabaseAuthCookies } from './lib/supabase-auth-cookies';
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -47,11 +48,16 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:hive:api',
     });
-    return guardResponse ?? NextResponse.next();
+    return clearSupabaseAuthCookies(
+      request,
+      guardResponse ?? NextResponse.next()
+    );
   }
 
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
-  if (canonicalLocaleRedirect) return canonicalLocaleRedirect;
+  if (canonicalLocaleRedirect) {
+    return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
@@ -68,11 +74,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       const url = new URL('/login', request.url);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);
-      return NextResponse.redirect(url);
+      return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
   }
 
-  return intlMiddleware(request);
+  return clearSupabaseAuthCookies(request, intlMiddleware(request));
 }
 
 export const config = {

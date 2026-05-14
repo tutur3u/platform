@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createInternalApiClient, resolveInternalApiUrl } from './client';
+import {
+  createInternalApiClient,
+  resolveInternalApiUrl,
+  withForwardedInternalApiAuth,
+} from './client';
 
 describe('resolveInternalApiUrl', () => {
   afterEach(() => {
@@ -70,5 +74,53 @@ describe('createInternalApiClient', () => {
     const [, init] = fetchMock.mock.calls[0];
     expect((init.headers as Headers).get('authorization')).toBe('Bearer token');
     expect((init.headers as Headers).get('accept')).toBe('application/json');
+  });
+});
+
+describe('withForwardedInternalApiAuth', () => {
+  it('strips Supabase auth cookies when forwarding Tuturuuu app-session auth', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie:
+        'tuturuuu_app_session=ttr_app_123; sb-resolved-kingfish-21146-auth-token=stale; sb-resolved-kingfish-21146-auth-token.0=chunk; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/hive/servers');
+
+    const [, init] = fetchMock.mock.calls[0];
+    const forwardedCookie = (init.headers as Headers).get('cookie');
+    expect(forwardedCookie).toBe(
+      'tuturuuu_app_session=ttr_app_123; theme=dark'
+    );
+  });
+
+  it('preserves Supabase auth cookies when no app-session cookie is present', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ ok: true }),
+    });
+    const headers = new Headers({
+      cookie: 'sb-resolved-kingfish-21146-auth-token=web-session; theme=dark',
+    });
+    const options = withForwardedInternalApiAuth(headers, {
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    await createInternalApiClient(options).json('/api/v1/workspaces');
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect((init.headers as Headers).get('cookie')).toBe(
+      'sb-resolved-kingfish-21146-auth-token=web-session; theme=dark'
+    );
   });
 });

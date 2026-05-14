@@ -20,6 +20,8 @@ export type InternalApiClientOptions = {
 };
 
 type HeaderAccessor = Pick<Headers, 'get'>;
+const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 
 export class InternalApiError extends Error {
   constructor(
@@ -165,6 +167,30 @@ function mergeHeaders(
   return headers;
 }
 
+function getCookieName(cookiePart: string) {
+  return cookiePart.trim().split('=')[0]?.trim() ?? '';
+}
+
+function hasAppSessionCookie(cookieHeader: string) {
+  return cookieHeader
+    .split(';')
+    .some((part) => getCookieName(part) === APP_SESSION_COOKIE_NAME);
+}
+
+function sanitizeForwardedCookieHeader(cookieHeader: string | null) {
+  if (!cookieHeader || !hasAppSessionCookie(cookieHeader)) {
+    return cookieHeader;
+  }
+
+  const cookies = cookieHeader
+    .split(';')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .filter((part) => !SUPABASE_AUTH_COOKIE_PATTERN.test(getCookieName(part)));
+
+  return cookies.length > 0 ? cookies.join('; ') : null;
+}
+
 export function createInternalApiClient(
   options: InternalApiClientOptions = {}
 ) {
@@ -221,7 +247,9 @@ export function withForwardedInternalApiAuth(
   requestHeaders: HeaderAccessor,
   options: InternalApiClientOptions = {}
 ): InternalApiClientOptions {
-  const cookieHeader = requestHeaders.get('cookie');
+  const cookieHeader = sanitizeForwardedCookieHeader(
+    requestHeaders.get('cookie')
+  );
   const authorizationHeader = requestHeaders.get('authorization');
 
   if (!cookieHeader && !authorizationHeader) {

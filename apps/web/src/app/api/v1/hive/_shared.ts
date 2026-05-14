@@ -1,4 +1,8 @@
 import {
+  getAppSessionTokenFromRequest,
+  verifyAppSessionToken,
+} from '@tuturuuu/auth/app-session';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -156,6 +160,47 @@ export type HiveAccess = {
   };
 };
 
+async function resolveHiveRequestUser(request: NextRequest) {
+  const appSessionToken = getAppSessionTokenFromRequest(request);
+
+  if (appSessionToken) {
+    const verification = verifyAppSessionToken(appSessionToken, {
+      targetApp: 'hive',
+    });
+
+    if (!verification.ok) {
+      return {
+        error: new Error(verification.error),
+        user: null,
+      };
+    }
+
+    return {
+      error: null,
+      user: {
+        email: verification.claims.email ?? null,
+        id: verification.claims.sub,
+      },
+    };
+  }
+
+  const supabase = await createClient(request);
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  return {
+    error,
+    user: user?.id
+      ? {
+          email: user.email ?? null,
+          id: user.id,
+        }
+      : null,
+  };
+}
+
 export function withHiveRoute(
   request: NextRequest,
   route: string,
@@ -165,11 +210,7 @@ export function withHiveRoute(
 }
 
 export async function requireHiveAccess(request: NextRequest) {
-  const supabase = await createClient(request);
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  const { error, user } = await resolveHiveRequestUser(request);
 
   if (error || !user?.id) {
     return {
@@ -178,7 +219,7 @@ export async function requireHiveAccess(request: NextRequest) {
     };
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin = await createAdminClient({ noCookie: true });
   let member: Awaited<ReturnType<typeof getHiveMemberByUserId>> | null = null;
   let memberError: Error | null = null;
   const { data: role, error: roleError } = await sbAdmin
