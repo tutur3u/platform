@@ -4,6 +4,10 @@ import { Map as MapIcon, Minimize2, ScanSearch } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { getTerrainColor } from '@/engine/catalog';
+import {
+  getObjectFootprint,
+  getObjectFootprintCenter,
+} from '@/engine/footprint';
 import type {
   HiveNpc,
   HiveSelection,
@@ -93,25 +97,35 @@ export function HiveMiniMap({
         {world.blocks.map((block) => (
           <rect
             fill={getTerrainColor(block.type)}
-            height={0.86}
+            height={0.96}
             key={block.id}
             opacity={selection?.id === block.id ? 1 : 0.86}
             stroke={selection?.id === block.id ? '#22c55e' : 'transparent'}
-            strokeWidth={0.08}
-            width={0.86}
-            x={block.position.x - 0.43}
-            y={block.position.z - 0.43}
+            strokeWidth={0.04}
+            width={0.96}
+            x={block.position.x - 0.48}
+            y={block.position.z - 0.48}
           />
         ))}
-        {world.objects.map((object) => (
-          <circle
-            cx={object.position.x}
-            cy={object.position.z}
-            fill={selection?.id === object.id ? '#22c55e' : '#1f2937'}
-            key={object.id}
-            r={selection?.id === object.id ? 0.24 : 0.18}
-          />
-        ))}
+        {world.objects.map((object) => {
+          const footprint = getObjectFootprint(object.type, object.state);
+          const center = getObjectFootprintCenter(object);
+
+          return (
+            <rect
+              fill={selection?.id === object.id ? '#22c55e' : '#1f2937'}
+              height={Math.max(0.28, footprint.depth * 0.42)}
+              key={object.id}
+              opacity={0.92}
+              rx={0.05}
+              stroke={selection?.id === object.id ? '#fef3c7' : 'transparent'}
+              strokeWidth={0.04}
+              width={Math.max(0.28, footprint.width * 0.42)}
+              x={center.x - Math.max(0.28, footprint.width * 0.42) / 2}
+              y={center.z - Math.max(0.28, footprint.depth * 0.42) / 2}
+            />
+          );
+        })}
         {npcs.map((npc) => (
           <rect
             fill={selection?.id === npc.id ? '#22c55e' : '#f59e0b'}

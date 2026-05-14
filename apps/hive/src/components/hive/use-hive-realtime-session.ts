@@ -91,9 +91,20 @@ export function useHiveRealtimeSession({
   tokenUrl,
 }: UseHiveRealtimeSessionProps) {
   const realtimeClientRef = useRef<HiveRealtimeClient | null>(null);
+  const getOwnAwarenessRef = useRef(getOwnAwareness);
 
   useEffect(() => {
-    if (!token || !serverId) return;
+    getOwnAwarenessRef.current = getOwnAwareness;
+  }, [getOwnAwareness]);
+
+  useEffect(() => {
+    if (!token || !serverId) {
+      realtimeClientRef.current = null;
+      setRealtimeStatus('disconnected');
+      setPresenceCount(0);
+      return;
+    }
+
     const client = connectHiveRealtime({
       onMessage: (message) => {
         if (message.type === 'sync.snapshot') {
@@ -136,17 +147,15 @@ export function useHiveRealtimeSession({
       type: 'presence.join',
       userId: currentUserId,
     });
-    client.sendAwareness(getOwnAwareness(null));
+    client.sendAwareness(getOwnAwarenessRef.current(null));
 
     return () => {
       realtimeClientRef.current = null;
-      setRealtimeStatus('disconnected');
       setPresenceCount(0);
       client.close();
     };
   }, [
     currentUserId,
-    getOwnAwareness,
     realtimeUrl,
     revisionRef,
     serverId,
@@ -160,15 +169,15 @@ export function useHiveRealtimeSession({
   ]);
 
   useEffect(() => {
+    getOwnAwarenessRef.current = getOwnAwareness;
     realtimeClientRef.current?.sendAwareness(getOwnAwareness(null));
   }, [getOwnAwareness]);
 
-  const sendCursorPosition = useCallback(
-    (position: HiveVector3 | null) => {
-      realtimeClientRef.current?.sendAwareness(getOwnAwareness(position));
-    },
-    [getOwnAwareness]
-  );
+  const sendCursorPosition = useCallback((position: HiveVector3 | null) => {
+    realtimeClientRef.current?.sendAwareness(
+      getOwnAwarenessRef.current(position)
+    );
+  }, []);
 
   return { realtimeClientRef, sendCursorPosition };
 }

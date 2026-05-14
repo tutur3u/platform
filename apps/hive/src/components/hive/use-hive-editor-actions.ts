@@ -17,6 +17,8 @@ import {
   moveObject,
   removeSelection,
   rotateObject,
+  updateBlock,
+  updateObject,
   upsertBlock,
 } from '@/engine/world';
 import type { useHiveMutations } from '@/hooks/use-hive-data';
@@ -190,6 +192,63 @@ export function useHiveEditorActions({
     mutations.updateNpc.mutate({ npcId: id, payload: patch });
   };
 
+  const patchBlock = (id: string, patch: Parameters<typeof updateBlock>[2]) => {
+    const nextWorld = updateBlock(world, id, patch);
+    if (nextWorld === world) {
+      setSyncNotice('That block transform is blocked by another tile.');
+      return;
+    }
+
+    const nextBlock =
+      nextWorld.blocks.find((block) => block.id === id) ??
+      nextWorld.blocks.find(
+        (block) =>
+          patch.position &&
+          block.position.x === Math.round(patch.position.x) &&
+          block.position.y === Math.max(0, Math.round(patch.position.y)) &&
+          block.position.z === Math.round(patch.position.z)
+      );
+
+    if (nextBlock) {
+      setSelection({ id: nextBlock.id, kind: 'block' });
+    }
+
+    persistWorld(
+      nextWorld,
+      'block.update',
+      {
+        blockId: id,
+        patch,
+      },
+      {
+        rebase: (latestWorld) => updateBlock(latestWorld, id, patch),
+      }
+    );
+  };
+
+  const patchObject = (
+    id: string,
+    patch: Parameters<typeof updateObject>[2]
+  ) => {
+    const nextWorld = updateObject(world, id, patch);
+    if (nextWorld === world) {
+      setSyncNotice('That object transform overlaps another footprint.');
+      return;
+    }
+
+    persistWorld(
+      nextWorld,
+      'object.update',
+      {
+        objectId: id,
+        patch,
+      },
+      {
+        rebase: (latestWorld) => updateObject(latestWorld, id, patch),
+      }
+    );
+  };
+
   const runNpc = (
     npcId: string,
     promptMode: 'custom' | 'default' | 'enhanced'
@@ -249,7 +308,9 @@ export function useHiveEditorActions({
     applyAgentInstruction,
     eraseSelection,
     moveSelection,
+    patchBlock,
     patchNpc,
+    patchObject,
     placeNpc,
     placeObject,
     placeTerrain,

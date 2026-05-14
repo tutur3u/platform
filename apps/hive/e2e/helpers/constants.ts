@@ -1,4 +1,6 @@
 export const DEFAULT_LOCALE = 'en';
+export const HIVE_BASE_URL =
+  process.env.HIVE_BASE_URL || 'http://localhost:7814';
 
 export const TEST_USER = {
   email: 'local@tuturuuu.com',

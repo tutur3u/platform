@@ -5,7 +5,12 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { npcCatalog, objectCatalog, terrainCatalog } from '@/engine/catalog';
+import { getObjectFootprintLabel } from '@/engine/footprint';
 import type { HiveBuildMode } from '@/engine/types';
+import {
+  CatalogPreviewSwatch,
+  getAssetPreviewStyle,
+} from './tool-dock-catalog-preview';
 
 type CatalogFolder = 'agents' | 'blocks' | 'objects' | 'systems';
 
@@ -18,40 +23,6 @@ type ToolDockCatalogPanelProps = {
   onSelectTerrain: (id: string) => void;
   onUseBuildTool: () => void;
 };
-
-const ASSET_SHEET = '/assets/hive/hive-voxel-asset-sheet.png';
-const assetIndexById: Record<string, number> = {
-  bridge: 13,
-  'crop-soil': 2,
-  crop: 16,
-  fence: 12,
-  garden: 3,
-  grass: 0,
-  greenhouse: 7,
-  house: 6,
-  lamp: 11,
-  path: 1,
-  resident: 21,
-  sensor: 23,
-  stone: 5,
-  warehouse: 9,
-  water: 4,
-  well: 10,
-  workshop: 8,
-};
-
-function getAssetPreviewStyle(id: string) {
-  const index = assetIndexById[id];
-  if (index === undefined) return null;
-  const column = index % 6;
-  const row = Math.floor(index / 6);
-
-  return {
-    backgroundImage: `url(${ASSET_SHEET})`,
-    backgroundPosition: `${(column / 5) * 100}% ${(row / 4) * 100}%`,
-    backgroundSize: '600% 500%',
-  };
-}
 
 export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
   const t = useTranslations('studio.dock');
@@ -112,6 +83,10 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
       <div className="flex max-w-[42vw] items-center gap-1.5 overflow-x-auto">
         {activeItems.map((item, index) => {
           const previewStyle = getAssetPreviewStyle(item.id);
+          const footprintLabel =
+            folder === 'objects' || folder === 'systems'
+              ? getObjectFootprintLabel(item.id)
+              : null;
           const selected =
             folder === 'blocks'
               ? props.activeTerrain === item.id
@@ -145,16 +120,27 @@ export function ToolDockCatalogPanel(props: ToolDockCatalogPanelProps) {
                   }}
                   type="button"
                 >
-                  <span
-                    className="h-7 w-8 rounded border border-black/10 bg-center bg-cover shadow-sm"
-                    style={previewStyle ?? { backgroundColor: item.color }}
+                  <CatalogPreviewSwatch
+                    color={item.color}
+                    id={item.id}
+                    mode={folder === 'blocks' ? 'terrain' : 'asset'}
+                    previewStyle={previewStyle}
                   />
+                  {footprintLabel && footprintLabel !== '1x1' ? (
+                    <span className="absolute top-0.5 left-0.5 rounded bg-background/95 px-1 text-[9px] text-dynamic-green leading-4 ring-1 ring-dynamic-green/30">
+                      {footprintLabel}
+                    </span>
+                  ) : null}
                   <span className="absolute -right-1 -bottom-1 rounded bg-background px-1 text-[9px] text-muted-foreground leading-4 ring-1 ring-border">
                     {item.shortcut ?? index + 1}
                   </span>
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="top">{item.label}</TooltipContent>
+              <TooltipContent side="top">
+                {footprintLabel
+                  ? `${item.label} / ${footprintLabel}`
+                  : item.label}
+              </TooltipContent>
             </Tooltip>
           );
         })}

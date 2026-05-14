@@ -58,11 +58,12 @@ export function SatelliteWorkspaceShell({
       </section>
       {left ? (
         <div
+          aria-hidden={leftCollapsed}
           className={[
             'absolute top-4 bottom-4 left-4 z-30 w-[min(300px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 shadow-2xl shadow-foreground/15 transition duration-300 ease-out',
             leftCollapsed
-              ? 'pointer-events-none -translate-x-[calc(100%+2rem)] opacity-0'
-              : 'translate-x-0 opacity-100',
+              ? 'pointer-events-none invisible -translate-x-[calc(100%+2rem)] opacity-0'
+              : 'visible translate-x-0 opacity-100',
           ].join(' ')}
         >
           {left}
@@ -70,11 +71,12 @@ export function SatelliteWorkspaceShell({
       ) : null}
       {right ? (
         <div
+          aria-hidden={rightCollapsed}
           className={[
             'absolute top-4 right-4 bottom-4 z-30 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-xl border border-border/70 shadow-2xl shadow-foreground/15 transition duration-300 ease-out',
             rightCollapsed
-              ? 'pointer-events-none translate-x-[calc(100%+2rem)] opacity-0'
-              : 'translate-x-0 opacity-100',
+              ? 'pointer-events-none invisible translate-x-[calc(100%+2rem)] opacity-0'
+              : 'visible translate-x-0 opacity-100',
           ].join(' ')}
         >
           {right}

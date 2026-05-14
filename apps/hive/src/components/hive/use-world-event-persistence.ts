@@ -12,6 +12,12 @@ type PersistWorldOptions = {
   rebase?: (latestWorld: HiveWorldData) => HiveWorldData;
 };
 
+export type QueuedWorldEvent = {
+  eventType: string;
+  nextWorld: HiveWorldData;
+  payload: Record<string, unknown>;
+};
+
 type WorldEventMutation = {
   isPending: boolean;
   mutate: (
@@ -38,6 +44,7 @@ type CreateWorldEventPersistenceOptions = {
   createWorldEvent: WorldEventMutation;
   conflictCooldownRef: MutableRefObject<number>;
   inFlightRef: MutableRefObject<boolean>;
+  queuedEventRef: MutableRefObject<QueuedWorldEvent | null>;
   revisionRef: MutableRefObject<number>;
   serverId: string | null;
   setNpcs: Dispatch<SetStateAction<HiveNpc[]>>;
@@ -59,6 +66,7 @@ export function createWorldEventPersistence({
   conflictCooldownRef,
   revisionRef,
   inFlightRef,
+  queuedEventRef,
   serverId,
   setNpcs,
   setRevision,
@@ -79,8 +87,9 @@ export function createWorldEventPersistence({
     const now = Date.now();
 
     if (createWorldEvent.isPending || inFlightRef.current) {
+      queuedEventRef.current = { eventType, nextWorld, payload };
       setWorld(nextWorld);
-      setSyncNotice('Saving the previous world edit before sending another.');
+      setSyncNotice('Saving latest world edit after current save.');
       return;
     }
 
@@ -90,15 +99,21 @@ export function createWorldEventPersistence({
       return;
     }
 
-    const actorPayload = { actor: currentUserId, tool, ...payload };
     const commitWorldEvent = (
       worldToPersist: HiveWorldData,
+      worldEventType: string,
+      worldEventPayload: Record<string, unknown>,
       expectedRevision: number
     ) => {
+      const actorPayload = {
+        actor: currentUserId,
+        tool,
+        ...worldEventPayload,
+      };
       inFlightRef.current = true;
       createWorldEvent.mutate(
         {
-          eventType,
+          eventType: worldEventType,
           expectedRevision,
           payload: actorPayload,
           world: worldToPersist,
@@ -106,6 +121,7 @@ export function createWorldEventPersistence({
         {
           onError: async () => {
             inFlightRef.current = false;
+            queuedEventRef.current = null;
             conflictCooldownRef.current = Date.now() + 1500;
             const result = await snapshotQuery.refetch();
             const latestWorld = result.data?.world ?? createDefaultWorld();
@@ -124,14 +140,28 @@ export function createWorldEventPersistence({
             conflictCooldownRef.current = 0;
             setRevision(data.revision);
             revisionRef.current = data.revision;
-            setSyncNotice(null);
             onPersisted?.({ ...data, world: worldToPersist });
+
+            const queued = queuedEventRef.current;
+            if (queued) {
+              queuedEventRef.current = null;
+              setSyncNotice('Saving latest world edit.');
+              commitWorldEvent(
+                queued.nextWorld,
+                queued.eventType,
+                queued.payload,
+                data.revision
+              );
+              return;
+            }
+
+            setSyncNotice(null);
           },
         }
       );
     };
 
     setWorld(nextWorld);
-    commitWorldEvent(nextWorld, revisionRef.current);
+    commitWorldEvent(nextWorld, eventType, payload, revisionRef.current);
   };
 }

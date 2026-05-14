@@ -52,10 +52,49 @@ describe('Hive world helpers', () => {
     });
     expect(addObject(world, { x: 0, y: 1, z: 0 }, 'bridge')).toBe(world);
 
-    const waterWorld = upsertBlock(world, { x: 1, y: 0, z: 1 }, 'water');
+    const waterWorld = upsertBlock(
+      upsertBlock(world, { x: 1, y: 0, z: 1 }, 'water'),
+      { x: 2, y: 0, z: 1 },
+      'water'
+    );
     expect(
       canPlaceObject(waterWorld, { x: 1, y: 1, z: 1 }, 'bridge').allowed
     ).toBe(true);
+  });
+
+  it('uses catalog footprints for multi-tile placement and replacement', () => {
+    const world = addObject(createDefaultWorld(), { x: 1, y: 1, z: 1 }, 'tree');
+    const tree = world.objects.at(-1);
+    const updated = addObject(world, { x: 1, y: 1, z: 1 }, 'house');
+    const house = updated.objects.at(-1);
+
+    expect(house).toMatchObject({
+      position: { x: 1, y: 1, z: 1 },
+      type: 'house',
+    });
+    expect(updated.objects.some((object) => object.id === tree?.id)).toBe(
+      false
+    );
+  });
+
+  it('auto-expands terrain for footprint-aware buildings', () => {
+    const world = {
+      blocks: [
+        { id: 'grass-0-0', position: { x: 0, y: 0, z: 0 }, type: 'grass' },
+      ],
+      objects: [],
+    };
+
+    const updated = addObject(world, { x: 0, y: 1, z: 0 }, 'house');
+
+    expect(updated.blocks).toHaveLength(4);
+    expect(updated.blocks.map((block) => block.id).sort()).toEqual([
+      'block:0:0:1',
+      'block:1:0:0',
+      'block:1:0:1',
+      'grass-0-0',
+    ]);
+    expect(updated.objects).toHaveLength(1);
   });
 
   it('moves and rotates objects through world events', () => {
@@ -117,5 +156,24 @@ describe('Hive world helpers', () => {
       'grass-1-0',
     ]);
     expect(removed.world.objects).toEqual([]);
+  });
+
+  it('removes multi-tile objects when any occupied block is deleted', () => {
+    const world = addObject(
+      createDefaultWorld(),
+      { x: 1, y: 1, z: 1 },
+      'house'
+    );
+    const house = world.objects.at(-1);
+    expect(house?.type).toBe('house');
+
+    const removed = removeSelection(world, [], {
+      id: 'block:2:0:2',
+      kind: 'block',
+    });
+
+    expect(
+      removed.world.objects.some((object) => object.id === house?.id)
+    ).toBe(false);
   });
 });

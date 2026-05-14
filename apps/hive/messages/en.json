@@ -52,6 +52,7 @@
       "realtime": "Realtime",
       "realtime_status": "{status} connection",
       "toggle_inspector": "Toggle inspector",
+      "toggle_minimap": "Toggle mini-map",
       "toggle_npc_lab": "Toggle NPC lab",
       "toggle_tool_dock": "Toggle tool dock",
       "toggle_top": "Toggle top panels"
@@ -92,6 +93,35 @@
       "weather_snow": "Snow weather",
       "weather_storm": "Storm weather"
     },
+    "inspector": {
+      "accent_color": "Accent color",
+      "backstory": "Back story",
+      "block": "Block",
+      "category": "Category",
+      "delete_selected": "Delete selected",
+      "empty": "Select a block, object, or NPC to inspect and edit it.",
+      "empty_tile": "empty",
+      "footprint": "Footprint",
+      "grid_locked": "grid locked",
+      "id": "ID",
+      "model": "Model",
+      "name": "Name",
+      "npc": "NPC",
+      "npc_prompt": "NPC prompt",
+      "object": "Object",
+      "persisted": "persisted",
+      "placement_rule": "Placement rule",
+      "position": "Position",
+      "primary_color": "Primary color",
+      "role": "Role",
+      "rotation": "Rotation",
+      "single_object_tile": "Single object tile",
+      "style": "Style",
+      "surface_height": "Surface height",
+      "tile_objects": "Tile objects",
+      "transform": "Transform",
+      "type": "Type"
+    },
     "minimap": {
       "collapse": "Collapse mini-map",
       "empty": "No server",
@@ -102,6 +132,8 @@
       "admin": "Platform admin controls",
       "blocks": "Blocks",
       "clear": "Clear",
+      "commit": "Commit hash",
+      "commit_message": "Full commit message",
       "create": "Create",
       "credits": "Credits",
       "delete": "Delete",
@@ -117,7 +149,9 @@
       "realtime": "Realtime",
       "reseed": "Reseed",
       "revision": "Revision",
-      "select_label": "Select Hive server"
+      "select_label": "Select Hive server",
+      "unknown": "Unknown",
+      "version": "Hive version"
     }
   }
 }

@@ -33,11 +33,10 @@ export function NpcLabPanel({
   world,
 }: NpcLabPanelProps) {
   const npc = npcs[0] ?? null;
+  const settings = npc?.settings ?? {};
   const agentMode =
-    npc && typeof npc.settings.agentMode === 'string'
-      ? npc.settings.agentMode
-      : 'llm';
-  const autonomous = Boolean(npc?.settings.autonomous);
+    typeof settings.agentMode === 'string' ? settings.agentMode : 'llm';
+  const autonomous = Boolean(settings.autonomous);
 
   return (
     <section className="pointer-events-auto w-[min(420px,38vw)] overflow-hidden rounded-lg border border-border/70 bg-background/90 text-foreground shadow-foreground/12 shadow-xl backdrop-blur-md">
@@ -91,7 +90,7 @@ export function NpcLabPanel({
                   onChange={(event) =>
                     onPatchNpc(npc.id, {
                       settings: {
-                        ...npc.settings,
+                        ...settings,
                         autonomous: event.target.checked,
                       },
                     })
@@ -113,7 +112,7 @@ export function NpcLabPanel({
                   key={mode.id}
                   onClick={() =>
                     onPatchNpc(npc.id, {
-                      settings: { ...npc.settings, agentMode: mode.id },
+                      settings: { ...settings, agentMode: mode.id },
                     })
                   }
                   type="button"

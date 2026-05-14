@@ -7,6 +7,7 @@ import {
   getTerrainHeight,
   getTerrainSideColor,
 } from '@/engine/catalog';
+import { getStyleColor } from '@/engine/style';
 import type { HiveBlock, HiveSelection, HiveTool } from '@/engine/types';
 
 type VoxelTilesProps = {
@@ -14,7 +15,6 @@ type VoxelTilesProps = {
   gaplessMode: boolean;
   onErase: (selection: NonNullable<HiveSelection>) => void;
   onSelect: (id: string) => void;
-  selectedId?: string | null;
   tool: HiveTool;
 };
 
@@ -23,7 +23,6 @@ export function VoxelTiles({
   gaplessMode,
   onErase,
   onSelect,
-  selectedId,
   tool,
 }: VoxelTilesProps) {
   const meshRef = useRef<InstancedMesh>(null);
@@ -32,7 +31,7 @@ export function VoxelTiles({
 
   useEffect(() => {
     if (!meshRef.current || !sideRef.current) return;
-    const tileSize = gaplessMode ? 1 : 0.94;
+    const tileSize = gaplessMode ? 1 : 0.985;
 
     blocks.forEach((block, index) => {
       const height = getTerrainHeight(block.type);
@@ -41,16 +40,14 @@ export function VoxelTiles({
         block.position.y + height / 2,
         block.position.z
       );
-      dummy.scale.set(
-        tileSize,
-        selectedId === block.id ? height + 0.06 : height,
-        tileSize
-      );
+      dummy.scale.set(tileSize, height, tileSize);
       dummy.updateMatrix();
       meshRef.current?.setMatrixAt(index, dummy.matrix);
       meshRef.current?.setColorAt(
         index,
-        new Color(getTerrainColor(block.type))
+        new Color(
+          getStyleColor(block.state, 'color', getTerrainColor(block.type))
+        )
       );
 
       dummy.position.set(
@@ -73,7 +70,7 @@ export function VoxelTiles({
       meshRef.current.instanceColor.needsUpdate = true;
     if (sideRef.current.instanceColor)
       sideRef.current.instanceColor.needsUpdate = true;
-  }, [blocks, dummy, gaplessMode, selectedId]);
+  }, [blocks, dummy, gaplessMode]);
 
   return (
     <>

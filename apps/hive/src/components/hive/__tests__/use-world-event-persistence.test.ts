@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createDefaultWorld } from '@/engine/world';
-import { createWorldEventPersistence } from '../use-world-event-persistence';
+import {
+  createWorldEventPersistence,
+  type QueuedWorldEvent,
+} from '../use-world-event-persistence';
 
 const userId = '00000000-0000-4000-8000-000000000001';
 const serverId = '8f7fa5cf-8bb1-446a-9c51-f4222f452f4d';
@@ -14,6 +17,7 @@ function createHarness() {
   const refs = {
     conflictCooldownRef: { current: 0 },
     inFlightRef: { current: false },
+    queuedEventRef: { current: null as QueuedWorldEvent | null },
     revisionRef: { current: 7 },
   };
   const state = {
@@ -45,15 +49,54 @@ function createHarness() {
 }
 
 describe('createWorldEventPersistence', () => {
-  it('does not submit another world event while a save is pending', () => {
-    const { createWorldEvent, persistWorld, state, world } = createHarness();
+  it('queues the latest world event while a save is pending', () => {
+    const { createWorldEvent, persistWorld, refs, state, world } =
+      createHarness();
+    const queuedWorld = { ...world, blocks: world.blocks.slice(0, 1) };
     createWorldEvent.isPending = true;
 
-    persistWorld(world, 'block.place');
+    persistWorld(queuedWorld, 'block.place', { blockId: 'block-1' });
 
     expect(createWorldEvent.mutate).not.toHaveBeenCalled();
+    expect(refs.queuedEventRef.current).toEqual({
+      eventType: 'block.place',
+      nextWorld: queuedWorld,
+      payload: { blockId: 'block-1' },
+    });
     expect(state.setSyncNotice).toHaveBeenCalledWith(
-      'Saving the previous world edit before sending another.'
+      'Saving latest world edit after current save.'
+    );
+  });
+
+  it('flushes a queued world event after the active save succeeds', () => {
+    const { createWorldEvent, persistWorld, refs, state, world } =
+      createHarness();
+    const queuedWorld = { ...world, blocks: world.blocks.slice(0, 1) };
+
+    persistWorld(world, 'block.place', { blockId: 'block-1' });
+    refs.queuedEventRef.current = {
+      eventType: 'object.place',
+      nextWorld: queuedWorld,
+      payload: { objectId: 'object-1' },
+    };
+
+    const mutateOptions = createWorldEvent.mutate.mock.calls[0]?.[1];
+    mutateOptions.onSuccess({ event: { id: 'event-1' } as never, revision: 8 });
+
+    expect(createWorldEvent.mutate).toHaveBeenCalledTimes(2);
+    expect(createWorldEvent.mutate.mock.calls[1]?.[0]).toMatchObject({
+      eventType: 'object.place',
+      expectedRevision: 8,
+      payload: {
+        actor: userId,
+        objectId: 'object-1',
+        tool: 'build',
+      },
+      world: queuedWorld,
+    });
+    expect(refs.queuedEventRef.current).toBeNull();
+    expect(state.setSyncNotice).toHaveBeenCalledWith(
+      'Saving latest world edit.'
     );
   });
 

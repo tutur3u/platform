@@ -1,5 +1,10 @@
 import type { Json } from '@tuturuuu/types/db';
 import { getObjectCatalogItem } from './catalog';
+import {
+  getObjectFootprint,
+  getObjectFootprintCells,
+  objectFootprintsIntersect,
+} from './footprint';
 import type {
   HiveBlock,
   HiveNpc,
@@ -107,19 +112,51 @@ export function upsertBlock(
   };
 }
 
+export function updateBlock(
+  world: HiveWorldData,
+  blockId: string,
+  patch: Partial<Pick<HiveBlock, 'position' | 'state' | 'type'>>
+) {
+  const target = world.blocks.find((block) => block.id === blockId);
+  if (!target) return world;
+
+  const position = patch.position
+    ? snapVector(patch.position)
+    : target.position;
+  const id = makeBlockId(position);
+
+  if (id !== blockId && world.blocks.some((block) => block.id === id)) {
+    return world;
+  }
+
+  return {
+    ...world,
+    blocks: world.blocks.map((block) =>
+      block.id === blockId
+        ? {
+            ...block,
+            id,
+            position,
+            ...(patch.state ? { state: patch.state } : {}),
+            type: patch.type ?? block.type,
+          }
+        : block
+    ),
+  };
+}
+
 export function addObject(
   world: HiveWorldData,
   position: HiveVector3,
   type: string
 ): HiveWorldData {
   const snapped = { ...snapVector(position), y: 1 };
-  const targetBlock = world.blocks.find(
-    (block) =>
-      block.position.x === snapped.x &&
-      block.position.z === snapped.z &&
-      block.position.y === 0
+  const worldWithFootprintTerrain = ensureObjectFootprintTerrain(
+    world,
+    snapped,
+    type
   );
-  const canPlace = canPlaceObject(world, snapped, type);
+  const canPlace = canPlaceObject(worldWithFootprintTerrain, snapped, type);
 
   if (!canPlace.allowed) {
     return world;
@@ -128,21 +165,27 @@ export function addObject(
   const catalogItem = getObjectCatalogItem(type);
   const stackable = catalogItem?.stackable ?? false;
   const state = createObjectState(type);
+  const placementCells = getObjectFootprintCells({
+    position: snapped,
+    state,
+    type,
+  });
 
   return {
-    ...world,
+    ...worldWithFootprintTerrain,
     objects: [
-      ...world.objects.filter((object) => {
+      ...worldWithFootprintTerrain.objects.filter((object) => {
         if (stackable) return true;
-        return (
-          object.position.x !== snapped.x || object.position.z !== snapped.z
+        return !objectFootprintsIntersect(
+          getObjectFootprintCells(object),
+          placementCells
         );
       }),
       {
         id: makeObjectId(type, snapped),
         position: {
           ...snapped,
-          y: targetBlock?.type === 'raised-grass' ? 1.16 : 1,
+          y: getObjectPlacementY(worldWithFootprintTerrain, snapped, type),
         },
         ...(state ? { state } : {}),
         type,
@@ -235,8 +278,10 @@ export function removeBlock(world: HiveWorldData, blockId: string) {
     objects: block
       ? world.objects.filter(
           (object) =>
-            object.position.x !== block.position.x ||
-            object.position.z !== block.position.z
+            !getObjectFootprintCells(object).some(
+              (cell) =>
+                cell.x === block.position.x && cell.z === block.position.z
+            )
         )
       : world.objects,
   };
@@ -268,18 +313,78 @@ export function moveObject(
     ...nextWorld,
     objects: nextWorld.objects.map((item) =>
       item.id === movedObject.id
-        ? { ...item, id: object.id, rotation: object.rotation }
+        ? {
+            ...item,
+            id: object.id,
+            rotation: object.rotation,
+            state: object.state,
+          }
         : item
     ),
   };
 }
 
 export function rotateObject(world: HiveWorldData, objectId: string) {
+  const target = world.objects.find((object) => object.id === objectId);
+  if (!target) return world;
+
+  const nextRotation = ((target.rotation ?? 0) + 90) % 360;
+  const canRotate = canPlaceObject(world, target.position, target.type, {
+    allowReplacement: false,
+    ignoreObjectId: target.id,
+    rotation: nextRotation,
+  });
+
+  if (!canRotate.allowed) {
+    return world;
+  }
+
+  return {
+    ...world,
+    objects: world.objects.map((object) =>
+      object.id === objectId ? { ...object, rotation: nextRotation } : object
+    ),
+  };
+}
+
+export function updateObject(
+  world: HiveWorldData,
+  objectId: string,
+  patch: Partial<Pick<HiveObject, 'position' | 'rotation' | 'state'>>
+) {
+  const target = world.objects.find((object) => object.id === objectId);
+  if (!target) return world;
+
+  const snapped = patch.position
+    ? { ...snapVector(patch.position), y: 1 }
+    : target.position;
+  const rotation =
+    typeof patch.rotation === 'number'
+      ? normalizeRotation(patch.rotation)
+      : target.rotation;
+  const canUpdate = canPlaceObject(world, snapped, target.type, {
+    allowReplacement: false,
+    ignoreObjectId: target.id,
+    rotation,
+  });
+
+  if (!canUpdate.allowed) {
+    return world;
+  }
+
   return {
     ...world,
     objects: world.objects.map((object) =>
       object.id === objectId
-        ? { ...object, rotation: ((object.rotation ?? 0) + 90) % 360 }
+        ? {
+            ...object,
+            position: {
+              ...snapped,
+              y: getObjectPlacementY(world, snapped, object.type),
+            },
+            rotation,
+            ...(patch.state ? { state: patch.state } : {}),
+          }
         : object
     ),
   };
@@ -288,21 +393,34 @@ export function rotateObject(world: HiveWorldData, objectId: string) {
 export function canPlaceObject(
   world: HiveWorldData,
   position: HiveVector3,
-  type: string
+  type: string,
+  options: {
+    allowReplacement?: boolean;
+    ignoreObjectId?: string;
+    rotation?: number;
+  } = {}
 ): { allowed: boolean; reason?: string } {
   const snapped = snapVector(position);
-  const block = world.blocks.find(
-    (item) =>
-      item.position.x === snapped.x &&
-      item.position.z === snapped.z &&
-      item.position.y === 0
+  const cells = getObjectFootprintCells({
+    position: snapped,
+    rotation: options.rotation,
+    type,
+  });
+  const blocksByCell = new Map(
+    world.blocks.map((block) => [
+      `${block.position.x}:${block.position.z}`,
+      block,
+    ])
   );
+  const blocks = cells
+    .map((cell) => blocksByCell.get(`${cell.x}:${cell.z}`) ?? null)
+    .filter((block) => block !== null);
 
-  if (!block) {
+  if (blocks.length !== cells.length) {
     return { allowed: false, reason: 'Place a terrain tile first.' };
   }
 
-  if (type === 'bridge' && block.type !== 'water') {
+  if (type === 'bridge' && blocks.some((block) => block.type !== 'water')) {
     return {
       allowed: false,
       reason: 'Bridge objects must be placed on water.',
@@ -311,8 +429,9 @@ export function canPlaceObject(
 
   if (
     (type === 'crop' || type === 'flower-crop') &&
-    block.type !== 'crop-soil' &&
-    block.type !== 'garden'
+    blocks.some(
+      (block) => block.type !== 'crop-soil' && block.type !== 'garden'
+    )
   ) {
     return {
       allowed: false,
@@ -321,14 +440,23 @@ export function canPlaceObject(
   }
 
   const catalogItem = getObjectCatalogItem(type);
-  const occupied = world.objects.some(
-    (object) =>
-      object.position.x === snapped.x &&
-      object.position.z === snapped.z &&
-      !(catalogItem?.stackable ?? false)
-  );
+  const stackable = catalogItem?.stackable ?? false;
+  const occupied =
+    !stackable &&
+    world.objects.some(
+      (object) =>
+        object.id !== options.ignoreObjectId &&
+        objectFootprintsIntersect(getObjectFootprintCells(object), cells)
+    );
 
   if (occupied) {
+    if (options.allowReplacement === false) {
+      return {
+        allowed: false,
+        reason: 'This footprint overlaps another object.',
+      };
+    }
+
     return {
       allowed: true,
       reason: 'This placement replaces the existing object.',
@@ -336,6 +464,71 @@ export function canPlaceObject(
   }
 
   return { allowed: true };
+}
+
+function ensureObjectFootprintTerrain(
+  world: HiveWorldData,
+  position: HiveVector3,
+  type: string
+) {
+  const footprint = getObjectFootprint(type);
+
+  if (!footprint.autoExpandTerrain) {
+    return world;
+  }
+
+  const anchorBlock = world.blocks.find(
+    (block) =>
+      block.position.x === position.x &&
+      block.position.z === position.z &&
+      block.position.y === 0
+  );
+
+  if (!anchorBlock) {
+    return world;
+  }
+
+  const existing = new Set(
+    world.blocks.map((block) => `${block.position.x}:${block.position.z}`)
+  );
+  const missingBlocks = getObjectFootprintCells({ position, type })
+    .filter((cell) => !existing.has(`${cell.x}:${cell.z}`))
+    .map((cell) => ({
+      id: makeBlockId(cell),
+      position: cell,
+      type: anchorBlock.type,
+    }));
+
+  if (missingBlocks.length === 0) {
+    return world;
+  }
+
+  return {
+    ...world,
+    blocks: [...world.blocks, ...missingBlocks],
+  };
+}
+
+function getObjectPlacementY(
+  world: HiveWorldData,
+  position: HiveVector3,
+  type: string
+) {
+  const cells = getObjectFootprintCells({ position, type });
+  const raised = cells.some((cell) =>
+    world.blocks.some(
+      (block) =>
+        block.position.x === cell.x &&
+        block.position.z === cell.z &&
+        block.type === 'raised-grass'
+    )
+  );
+
+  return raised ? 1.16 : 1;
+}
+
+function normalizeRotation(rotation: number) {
+  return ((Math.round(rotation) % 360) + 360) % 360;
 }
 
 export function removeSelection(

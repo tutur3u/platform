@@ -2,19 +2,27 @@
 
 import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
-import { useState } from 'react';
-import type { HiveSelection, HiveServer, HiveUser } from '@/engine/types';
+import { useEffect, useState } from 'react';
+import type {
+  HiveBuildInfo,
+  HiveSelection,
+  HiveServer,
+  HiveUser,
+} from '@/engine/types';
 import { EditorTopChrome } from './editor-top-chrome';
 import type { HiveAgentMessage } from './hive-agent-composer';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
+import { HiveStudioServerPicker } from './hive-studio-server-picker';
 import { HiveStudioToolDock } from './hive-studio-tool-dock';
 import { HiveViewportOverlays } from './hive-viewport-overlays';
 import { InspectorPanel } from './panels/inspector-panel';
 import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shortcut';
+import { isBoolean, useHivePersistedState } from './use-hive-persisted-state';
 import { useHiveStudioEngine } from './use-hive-studio-engine';
 import { HiveViewport } from './viewport/hive-viewport';
 
 type HiveStudioProps = {
+  buildInfo: HiveBuildInfo;
   currentUser: HiveUser;
   initialServers: HiveServersResponse;
   isAdmin: boolean;
@@ -22,6 +30,7 @@ type HiveStudioProps = {
 };
 
 export function HiveStudio({
+  buildInfo,
   currentUser,
   initialServers,
   isAdmin,
@@ -33,11 +42,31 @@ export function HiveStudio({
     realtimeUrl,
   });
   const [rightCollapsed, setRightCollapsed] = useState(true);
-  const [topCollapsed, setTopCollapsed] = useState(false);
-  const [bottomCollapsed, setBottomCollapsed] = useState(false);
-  const [npcLabCollapsed, setNpcLabCollapsed] = useState(true);
-  const [chatOpen, setChatOpen] = useState(false);
-  const [miniMapCollapsed, setMiniMapCollapsed] = useState(false);
+  const [topCollapsed, setTopCollapsed] = useHivePersistedState(
+    'hive.editor.topCollapsed',
+    false,
+    { validate: isBoolean }
+  );
+  const [bottomCollapsed, setBottomCollapsed] = useHivePersistedState(
+    'hive.editor.bottomCollapsed',
+    false,
+    { validate: isBoolean }
+  );
+  const [npcLabCollapsed, setNpcLabCollapsed] = useHivePersistedState(
+    'hive.editor.npcLabCollapsed',
+    true,
+    { validate: isBoolean }
+  );
+  const [chatOpen, setChatOpen] = useHivePersistedState(
+    'hive.editor.chatOpen',
+    false,
+    { validate: isBoolean }
+  );
+  const [miniMapCollapsed, setMiniMapCollapsed] = useHivePersistedState(
+    'hive.editor.miniMapCollapsed',
+    false,
+    { validate: isBoolean }
+  );
   const [serverDialogMode, setServerDialogMode] = useState<
     'create' | 'edit' | null
   >(null);
@@ -50,6 +79,14 @@ export function HiveStudio({
   const [deleteSelectionTarget, setDeleteSelectionTarget] =
     useState<NonNullable<HiveSelection> | null>(null);
   const [agentMessages, setAgentMessages] = useState<HiveAgentMessage[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    if (!engine.selection) {
+      setRightCollapsed(true);
+    }
+  }, [engine.selection]);
 
   const submitAgentPrompt = (prompt: string) => {
     const result = engine.applyAgentInstruction(prompt);
@@ -66,18 +103,22 @@ export function HiveStudio({
     selection: engine.selection,
   });
 
+  const selectEntity = (selection: HiveSelection) => {
+    engine.setSelection(selection);
+    if (selection) {
+      setRightCollapsed(false);
+    } else {
+      setRightCollapsed(true);
+    }
+  };
+
   return (
-    <>
+    <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
       <SatelliteWorkspaceShell
         bottom={
           <HiveStudioToolDock
             engine={engine}
-            isAdmin={isAdmin}
-            onSetBottomCollapsed={setBottomCollapsed}
-            onSetDeleteServerOpen={setDeleteServerOpen}
-            onSetServerActionTarget={setServerActionTarget}
-            onSetServerDialogMode={setServerDialogMode}
-            onSetWorldAction={setWorldAction}
+            onToggle={() => setBottomCollapsed(true)}
           />
         }
         bottomCollapsed={bottomCollapsed}
@@ -96,7 +137,7 @@ export function HiveStudio({
               onPlaceObject={engine.placeObject}
               onPlaceTerrain={engine.placeTerrain}
               onRealtimeCursor={engine.sendCursorPosition}
-              onSelect={engine.setSelection}
+              onSelect={selectEntity}
               remoteAwareness={engine.remoteAwareness}
               season={engine.season}
               selection={engine.selection}
@@ -110,16 +151,11 @@ export function HiveStudio({
               bottomCollapsed={bottomCollapsed}
               chatOpen={chatOpen}
               miniMapCollapsed={miniMapCollapsed}
-              npcLabCollapsed={npcLabCollapsed}
               npcs={engine.npcs}
               onSetBottomCollapsed={setBottomCollapsed}
-              onSetChatOpen={setChatOpen}
               onSetMiniMapCollapsed={setMiniMapCollapsed}
-              onSetNpcLabCollapsed={setNpcLabCollapsed}
-              onSetRightCollapsed={setRightCollapsed}
               onSetTopCollapsed={setTopCollapsed}
               onSubmitAgentPrompt={submitAgentPrompt}
-              rightCollapsed={rightCollapsed}
               selectedServer={engine.selectedServer}
               selection={engine.selection}
               syncNotice={engine.syncNotice}
@@ -128,28 +164,32 @@ export function HiveStudio({
             />
           </>
         }
-        right={
-          <InspectorPanel
-            eventsCount={engine.eventsCount}
-            npcs={engine.npcs}
-            onPatchNpc={engine.patchNpc}
-            onRequestDelete={setDeleteSelectionTarget}
-            onToggle={() => setRightCollapsed(true)}
-            presenceCount={engine.presenceCount}
-            remoteAwareness={engine.remoteAwareness}
-            realtimeStatus={engine.realtimeStatus}
-            revision={engine.revision}
-            selection={engine.selection}
-            world={engine.world}
-          />
-        }
         rightCollapsed={rightCollapsed}
         top={
           <EditorTopChrome
+            chatOpen={chatOpen}
             currentUser={currentUser}
+            inspectorPanel={
+              <InspectorPanel
+                npcs={engine.npcs}
+                onPatchBlock={engine.patchBlock}
+                onPatchNpc={engine.patchNpc}
+                onPatchObject={engine.patchObject}
+                onRequestDelete={setDeleteSelectionTarget}
+                onToggle={() => setRightCollapsed(true)}
+                selection={engine.selection}
+                world={engine.world}
+              />
+            }
             isRunningNpc={engine.isRunningNpc}
+            miniMapCollapsed={miniMapCollapsed}
             npcLabCollapsed={npcLabCollapsed}
             npcs={engine.npcs}
+            onToggleChat={() => setChatOpen((value) => !value)}
+            onToggleInspector={() =>
+              setRightCollapsed((value) => (engine.selection ? !value : true))
+            }
+            onToggleMiniMap={() => setMiniMapCollapsed((value) => !value)}
             onPatchNpc={engine.patchNpc}
             onRunNpc={engine.runNpc}
             onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
@@ -157,6 +197,17 @@ export function HiveStudio({
             realtimeStatus={engine.realtimeStatus}
             revision={engine.revision}
             rightCollapsed={rightCollapsed}
+            serverPicker={
+              <HiveStudioServerPicker
+                buildInfo={buildInfo}
+                engine={engine}
+                isAdmin={isAdmin}
+                onSetDeleteServerOpen={setDeleteServerOpen}
+                onSetServerActionTarget={setServerActionTarget}
+                onSetServerDialogMode={setServerDialogMode}
+                onSetWorldAction={setWorldAction}
+              />
+            }
             world={engine.world}
           />
         }
@@ -180,6 +231,6 @@ export function HiveStudio({
         serverDialogMode={serverDialogMode}
         worldAction={worldAction}
       />
-    </>
+    </div>
   );
 }

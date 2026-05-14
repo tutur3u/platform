@@ -66,8 +66,8 @@ export function connectHiveRealtime(args: {
     });
 
     socket.addEventListener('close', () => {
-      args.onStatus?.('disconnected');
       if (closed) return;
+      args.onStatus?.('disconnected');
       reconnectAttempts += 1;
       const delay = Math.min(20_000, 500 * 2 ** reconnectAttempts);
       retryTimer = setTimeout(open, delay);

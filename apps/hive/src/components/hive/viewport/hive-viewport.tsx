@@ -29,6 +29,7 @@ import { NpcPrefab } from './npc-prefab';
 import { ObjectPrefab } from './object-prefabs';
 import { PlacementPlane } from './placement-plane';
 import { RealtimePresenceMarkers } from './realtime-presence-markers';
+import { SelectionOutline } from './selection-outline';
 import { ThemedEnvironment } from './themed-environment';
 import { VoxelTiles } from './voxel-tiles';
 import { WeatherLayer } from './weather-layer';
@@ -140,9 +141,6 @@ export function HiveViewport(props: HiveViewportProps) {
               gaplessMode={props.gaplessMode}
               onErase={props.onErase}
               onSelect={(id) => props.onSelect({ id, kind: 'block' })}
-              selectedId={
-                props.selection?.kind === 'block' ? props.selection.id : null
-              }
               tool={props.tool}
             />
             {props.world.objects.map((object) => (
@@ -180,6 +178,12 @@ export function HiveViewport(props: HiveViewportProps) {
               tool={props.tool}
             />
             <RealtimePresenceMarkers awareness={props.remoteAwareness} />
+            <SelectionOutline
+              gaplessMode={props.gaplessMode}
+              npcs={props.npcs}
+              selection={props.selection}
+              world={props.world}
+            />
             <GhostPreview
               activeBuildMode={props.activeBuildMode}
               activeObject={props.activeObject}

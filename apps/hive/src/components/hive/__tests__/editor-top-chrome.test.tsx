@@ -22,14 +22,20 @@ describe('EditorTopChrome', () => {
     render(
       <NextIntlClientProvider locale="en" messages={messages}>
         <EditorTopChrome
+          chatOpen={false}
           currentUser={{
             displayName: 'Local Researcher',
             email: 'local@tuturuuu.com',
             id: 'user-1',
           }}
+          inspectorPanel={<div>Inspector panel</div>}
           isRunningNpc={false}
+          miniMapCollapsed={false}
           npcLabCollapsed
           npcs={[{ id: 'npc-1' } as HiveNpc]}
+          onToggleChat={vi.fn()}
+          onToggleInspector={vi.fn()}
+          onToggleMiniMap={vi.fn()}
           onPatchNpc={vi.fn()}
           onRunNpc={vi.fn()}
           onToggleNpcLab={vi.fn()}
@@ -37,6 +43,7 @@ describe('EditorTopChrome', () => {
           realtimeStatus="connected"
           revision={4}
           rightCollapsed
+          serverPicker={<div>Server picker</div>}
           world={world}
         />
       </NextIntlClientProvider>
@@ -49,5 +56,16 @@ describe('EditorTopChrome', () => {
     expect(screen.getByLabelText('2 objects')).toBeTruthy();
     expect(screen.getByLabelText('1 NPC')).toBeTruthy();
     expect(screen.getByLabelText('2 online')).toBeTruthy();
+    expect(screen.getByText('Server picker')).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Toggle inspector' })
+    ).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Toggle NPC lab' })).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Toggle mini-map' })
+    ).toBeTruthy();
+    expect(
+      screen.getByRole('button', { name: 'Open agent chat' })
+    ).toBeTruthy();
   });
 });

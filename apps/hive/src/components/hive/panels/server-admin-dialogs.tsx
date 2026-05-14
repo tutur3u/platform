@@ -66,7 +66,7 @@ export function ServerEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="z-[80] sm:max-w-lg">
+      <DialogContent className="data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 z-[80] duration-300 sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>
             {mode === 'create' ? 'Create Hive server' : 'Edit Hive server'}
@@ -176,7 +176,7 @@ export function ConfirmActionDialog({
 }: ConfirmActionDialogProps) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="z-[80]">
+      <AlertDialogContent className="data-[state=closed]:slide-out-to-top-2 data-[state=open]:slide-in-from-top-2 z-[80] duration-300">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>

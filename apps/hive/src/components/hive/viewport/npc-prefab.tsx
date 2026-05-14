@@ -3,6 +3,7 @@
 import { type ThreeEvent, useFrame } from '@react-three/fiber';
 import { useRef } from 'react';
 import type { Group } from 'three';
+import { getStyleColor } from '@/engine/style';
 import type { HiveNpc, HiveSelection, HiveTool } from '@/engine/types';
 
 type NpcPrefabProps = {
@@ -20,8 +21,13 @@ export function NpcPrefab({
   selected,
   tool,
 }: NpcPrefabProps) {
-  const color = selected ? '#e2c168' : '#c89b45';
+  const color = selected
+    ? '#e2c168'
+    : getStyleColor(npc.settings, 'color', '#c89b45');
+  const headColor = getStyleColor(npc.settings, 'accentColor', '#ebcdab');
   const groupRef = useRef<Group>(null);
+  const rotation =
+    typeof npc.settings.rotation === 'number' ? npc.settings.rotation : 0;
 
   useFrame(() => {
     if (!groupRef.current) return;
@@ -29,6 +35,7 @@ export function NpcPrefab({
     const bob = Math.sin(elapsed * 2.6 + npc.position.x) * 0.035;
     groupRef.current.position.y = npc.position.y - 1 + bob;
     groupRef.current.rotation.y =
+      (rotation * Math.PI) / 180 +
       Math.sin(elapsed * 1.4 + npc.position.z) * 0.08;
   });
 
@@ -51,7 +58,7 @@ export function NpcPrefab({
       </mesh>
       <mesh castShadow position={[0, 0.85, 0]}>
         <sphereGeometry args={[0.22, 16, 16]} />
-        <meshStandardMaterial color="#ebcdab" roughness={0.6} />
+        <meshStandardMaterial color={headColor} roughness={0.6} />
       </mesh>
       {selected && (
         <mesh position={[0, 0.05, 0]} rotation={[-Math.PI / 2, 0, 0]}>

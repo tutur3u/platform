@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { HiveStudio } from '@/components/hive/hive-studio';
 import { HIVE_REALTIME_URL } from '@/constants/common';
 import { requireHiveAccess } from '@/lib/access';
+import { getHiveBuildInfo } from '@/lib/build-info';
 
 export default async function HivePage() {
   const [{ isAdmin, user }, requestHeaders] = await Promise.all([
@@ -35,6 +36,7 @@ export default async function HivePage() {
 
   return (
     <HiveStudio
+      buildInfo={getHiveBuildInfo()}
       currentUser={{
         avatarUrl,
         displayName,

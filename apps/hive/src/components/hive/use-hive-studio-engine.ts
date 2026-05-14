@@ -9,7 +9,8 @@ import {
   encodeHiveWorldUpdate,
   type HiveRealtimeAwareness as HiveAwareness,
 } from '@tuturuuu/realtime/hive';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { objectCatalog, terrainCatalog } from '@/engine/catalog';
 import type {
   HiveBuildMode,
   HiveServer,
@@ -27,10 +28,15 @@ import type { HiveRealtimeStatus } from '@/realtime/hive-realtime-client';
 import { useHiveEditorActions } from './use-hive-editor-actions';
 import { useHiveEnvironmentControls } from './use-hive-environment-controls';
 import {
+  isNullableString,
+  useHivePersistedState,
+} from './use-hive-persisted-state';
+import {
   createHiveAwareness,
   useHiveRealtimeSession,
 } from './use-hive-realtime-session';
 import { useHiveWorldSession } from './use-hive-world-session';
+import type { QueuedWorldEvent } from './use-world-event-persistence';
 import { createWorldEventPersistence } from './use-world-event-persistence';
 
 type UseHiveStudioEngineProps = {
@@ -44,18 +50,36 @@ export function useHiveStudioEngine({
   initialServers,
   realtimeUrl,
 }: UseHiveStudioEngineProps) {
-  const [serverId, setServerId] = useState(
-    initialServers.servers[0]?.id ?? null
+  const [serverId, setServerId] = useHivePersistedState<string | null>(
+    'hive.editor.serverId',
+    initialServers.servers[0]?.id ?? null,
+    { validate: isNullableString }
   );
   const serversQuery = useHiveServers(initialServers);
   const snapshotQuery = useHiveSnapshot(serverId, null);
   const mutations = useHiveMutations(serverId);
   const tokenQuery = useHiveRealtimeToken(serverId);
-  const [tool, setTool] = useState<HiveTool>('select');
+  const [tool, setTool] = useHivePersistedState<HiveTool>(
+    'hive.editor.tool',
+    'select',
+    { validate: isHiveTool }
+  );
   const [activeBuildMode, setActiveBuildMode] =
-    useState<HiveBuildMode>('terrain');
-  const [activeTerrain, setActiveTerrain] = useState('grass');
-  const [activeObject, setActiveObject] = useState('house');
+    useHivePersistedState<HiveBuildMode>(
+      'hive.editor.activeBuildMode',
+      'terrain',
+      { validate: isHiveBuildMode }
+    );
+  const [activeTerrain, setActiveTerrain] = useHivePersistedState(
+    'hive.editor.activeTerrain',
+    'grass',
+    { validate: isTerrainId }
+  );
+  const [activeObject, setActiveObject] = useHivePersistedState(
+    'hive.editor.activeObject',
+    'house',
+    { validate: isObjectId }
+  );
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [realtimeStatus, setRealtimeStatus] =
     useState<HiveRealtimeStatus>('disconnected');
@@ -63,6 +87,7 @@ export function useHiveStudioEngine({
   const [remoteAwareness, setRemoteAwareness] = useState<HiveAwareness[]>([]);
   const worldEventConflictCooldownRef = useRef(0);
   const worldEventInFlightRef = useRef(false);
+  const worldEventQueuedRef = useRef<QueuedWorldEvent | null>(null);
   const environment = useHiveEnvironmentControls();
   const {
     npcs,
@@ -84,6 +109,17 @@ export function useHiveStudioEngine({
     setServerId,
     snapshot: snapshotQuery.data,
   });
+
+  useEffect(() => {
+    const nextServer =
+      serversQuery.data.servers.find((server) => server.id === serverId) ??
+      serversQuery.data.servers[0] ??
+      null;
+
+    if ((nextServer?.id ?? null) !== serverId) {
+      setServerId(nextServer?.id ?? null);
+    }
+  }, [serverId, serversQuery.data.servers, setServerId]);
 
   const getOwnAwareness = useCallback(
     (cursor?: HiveVector3 | null): HiveAwareness =>
@@ -118,6 +154,7 @@ export function useHiveStudioEngine({
     createWorldEvent: mutations.createWorldEvent,
     currentUserId: currentUser.id,
     inFlightRef: worldEventInFlightRef,
+    queuedEventRef: worldEventQueuedRef,
     revisionRef,
     serverId,
     setNpcs,
@@ -214,7 +251,9 @@ export function useHiveStudioEngine({
     isRunningSimulationTick: mutations.runSimulationTick.isPending,
     moveSelection: editorActions.moveSelection,
     npcs,
+    patchBlock: editorActions.patchBlock,
     patchNpc: editorActions.patchNpc,
+    patchObject: editorActions.patchObject,
     placeNpc: editorActions.placeNpc,
     placeObject: editorActions.placeObject,
     placeTerrain: editorActions.placeTerrain,
@@ -254,4 +293,31 @@ export function useHiveStudioEngine({
     weather: environment.weather,
     world,
   };
+}
+
+function isHiveTool(value: unknown): value is HiveTool {
+  return (
+    value === 'select' ||
+    value === 'build' ||
+    value === 'erase' ||
+    value === 'move' ||
+    value === 'rotate'
+  );
+}
+
+function isHiveBuildMode(value: unknown): value is HiveBuildMode {
+  return value === 'terrain' || value === 'object' || value === 'npc';
+}
+
+function isTerrainId(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    terrainCatalog.some((item) => item.id === value)
+  );
+}
+
+function isObjectId(value: unknown): value is string {
+  return (
+    typeof value === 'string' && objectCatalog.some((item) => item.id === value)
+  );
 }

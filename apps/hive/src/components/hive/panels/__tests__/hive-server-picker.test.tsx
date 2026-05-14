@@ -22,6 +22,11 @@ function renderPicker(
 ) {
   const props = {
     activeServerId: server.id,
+    buildInfo: {
+      commitHash: '1234567890abcdef',
+      commitMessage: 'fix: stabilize hive editor',
+      version: '0.1.0',
+    },
     isAdmin: true,
     npcs: [],
     onCreateServer: vi.fn(),
@@ -55,11 +60,15 @@ describe('HiveServerPicker', () => {
       screen.getByRole('combobox', { name: 'Select Hive server' })
     ).toBeTruthy();
     expect(screen.getByText('Research Garden')).toBeTruthy();
+    expect(screen.queryByText(/rev 7/i)).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Server info' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reseed' }));
 
     expect(props.onResetWorld).toHaveBeenCalledWith('reseed');
     expect(screen.getByText('Revision')).toBeTruthy();
+    expect(screen.getByText('v0.1.0')).toBeTruthy();
+    expect(screen.getByText('1234567890abcdef')).toBeTruthy();
+    expect(screen.getByText('fix: stabilize hive editor')).toBeTruthy();
   });
 });

@@ -1,5 +1,6 @@
 import type {
   HiveBlock,
+  HiveJsonObject,
   HiveNpc,
   HiveObject,
   HiveRealtimeAwareness,
@@ -12,6 +13,7 @@ import type {
 
 export type {
   HiveBlock,
+  HiveJsonObject,
   HiveNpc,
   HiveObject,
   HiveRealtimeAwareness,
@@ -25,6 +27,12 @@ export type {
 export type HiveTool = 'select' | 'build' | 'erase' | 'move' | 'rotate';
 
 export type HiveBuildMode = 'npc' | 'object' | 'terrain';
+
+export type HiveBuildInfo = {
+  commitHash: string | null;
+  commitMessage: string | null;
+  version: string;
+};
 
 export type HiveTimeTheme =
   | 'afternoon'
@@ -49,6 +57,11 @@ export type HiveCatalogItem = {
   category: 'building' | 'functional' | 'terrain';
   color: string;
   description?: string;
+  footprint?: {
+    autoExpandTerrain?: boolean;
+    depth: number;
+    width: number;
+  };
   id: string;
   label: string;
   shortcut?: string;

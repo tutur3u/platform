@@ -13,6 +13,7 @@ export type HiveBlock = {
   id: string;
   type: string;
   position: HiveVector3;
+  state?: HiveJsonObject;
 };
 
 export type HiveObject = {

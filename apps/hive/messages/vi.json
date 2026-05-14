@@ -52,6 +52,7 @@
       "realtime": "Thời gian thực",
       "realtime_status": "Kết nối {status}",
       "toggle_inspector": "Bật/tắt bảng kiểm tra",
+      "toggle_minimap": "Bật/tắt bản đồ nhỏ",
       "toggle_npc_lab": "Bật/tắt phòng NPC",
       "toggle_tool_dock": "Bật/tắt thanh công cụ",
       "toggle_top": "Bật/tắt bảng trên"
@@ -92,6 +93,35 @@
       "weather_snow": "Thời tiết tuyết",
       "weather_storm": "Thời tiết bão"
     },
+    "inspector": {
+      "accent_color": "Màu nhấn",
+      "backstory": "Câu chuyện nền",
+      "block": "Khối",
+      "category": "Danh mục",
+      "delete_selected": "Xóa mục đã chọn",
+      "empty": "Chọn một khối, vật thể hoặc NPC để kiểm tra và chỉnh sửa.",
+      "empty_tile": "trống",
+      "footprint": "Kích thước ô",
+      "grid_locked": "khóa theo lưới",
+      "id": "ID",
+      "model": "Mô hình",
+      "name": "Tên",
+      "npc": "NPC",
+      "npc_prompt": "Prompt NPC",
+      "object": "Vật thể",
+      "persisted": "đã lưu",
+      "placement_rule": "Quy tắc đặt",
+      "position": "Vị trí",
+      "primary_color": "Màu chính",
+      "role": "Vai trò",
+      "rotation": "Xoay",
+      "single_object_tile": "Một ô vật thể",
+      "style": "Kiểu hiển thị",
+      "surface_height": "Chiều cao bề mặt",
+      "tile_objects": "Vật thể trên ô",
+      "transform": "Biến đổi",
+      "type": "Loại"
+    },
     "minimap": {
       "collapse": "Thu gọn bản đồ nhỏ",
       "empty": "Không có máy chủ",
@@ -102,6 +132,8 @@
       "admin": "Điều khiển quản trị nền tảng",
       "blocks": "Khối",
       "clear": "Xóa trắng",
+      "commit": "Mã commit",
+      "commit_message": "Thông điệp commit đầy đủ",
       "create": "Tạo",
       "credits": "Credit",
       "delete": "Xóa",
@@ -117,7 +149,9 @@
       "realtime": "Thời gian thực",
       "reseed": "Tạo lại",
       "revision": "Phiên bản",
-      "select_label": "Chọn máy chủ Hive"
+      "select_label": "Chọn máy chủ Hive",
+      "unknown": "Không rõ",
+      "version": "Phiên bản Hive"
     }
   }
 }

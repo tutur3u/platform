@@ -19,16 +19,11 @@ type HiveViewportOverlaysProps = {
   bottomCollapsed: boolean;
   chatOpen: boolean;
   miniMapCollapsed: boolean;
-  npcLabCollapsed: boolean;
   npcs: HiveNpc[];
-  onSetChatOpen: Dispatch<SetStateAction<boolean>>;
   onSetMiniMapCollapsed: Dispatch<SetStateAction<boolean>>;
-  onSetNpcLabCollapsed: Dispatch<SetStateAction<boolean>>;
-  onSetRightCollapsed: Dispatch<SetStateAction<boolean>>;
   onSetTopCollapsed: Dispatch<SetStateAction<boolean>>;
   onSetBottomCollapsed: Dispatch<SetStateAction<boolean>>;
   onSubmitAgentPrompt: (prompt: string) => void;
-  rightCollapsed: boolean;
   selectedServer?: HiveServer | null;
   selection: HiveSelection;
   syncNotice?: string | null;
@@ -41,16 +36,11 @@ export function HiveViewportOverlays({
   bottomCollapsed,
   chatOpen,
   miniMapCollapsed,
-  npcLabCollapsed,
   npcs,
   onSetBottomCollapsed,
-  onSetChatOpen,
   onSetMiniMapCollapsed,
-  onSetNpcLabCollapsed,
-  onSetRightCollapsed,
   onSetTopCollapsed,
   onSubmitAgentPrompt,
-  rightCollapsed,
   selectedServer,
   selection,
   syncNotice,
@@ -61,24 +51,21 @@ export function HiveViewportOverlays({
     <>
       <EditorChromeControls
         bottomCollapsed={bottomCollapsed}
-        chatOpen={chatOpen}
-        npcLabCollapsed={npcLabCollapsed}
         onToggleBottom={() => onSetBottomCollapsed((value) => !value)}
-        onToggleChat={() => onSetChatOpen((value) => !value)}
-        onToggleNpcLab={() => onSetNpcLabCollapsed((value) => !value)}
-        onToggleRight={() => onSetRightCollapsed((value) => !value)}
         onToggleTop={() => onSetTopCollapsed((value) => !value)}
-        rightCollapsed={rightCollapsed}
         topCollapsed={topCollapsed}
       />
       <div
+        aria-hidden={miniMapCollapsed}
         className={[
-          'absolute top-24 z-20 transition-all duration-300 ease-out',
-          rightCollapsed ? 'right-4' : 'right-[404px]',
+          'absolute top-24 right-4 z-20 origin-top-right transition-[opacity,transform,visibility] duration-300 ease-out',
+          miniMapCollapsed
+            ? 'pointer-events-none invisible translate-x-4 scale-95 opacity-0'
+            : 'pointer-events-auto visible translate-x-0 scale-100 opacity-100',
         ].join(' ')}
       >
         <HiveMiniMap
-          collapsed={miniMapCollapsed}
+          collapsed={false}
           npcs={npcs}
           onToggle={() => onSetMiniMapCollapsed((value) => !value)}
           selection={selection}
@@ -89,11 +76,11 @@ export function HiveViewportOverlays({
       <div
         aria-hidden={!chatOpen}
         className={[
-          'absolute right-4 left-4 z-20 transition duration-300 ease-out',
+          'absolute right-4 left-4 z-20 origin-bottom transition-[opacity,transform,visibility] duration-300 ease-out',
           bottomCollapsed ? 'bottom-16' : 'bottom-28',
           chatOpen
-            ? 'pointer-events-none visible translate-y-0 opacity-100'
-            : 'pointer-events-none invisible translate-y-6 opacity-0',
+            ? 'pointer-events-auto visible translate-y-0 scale-100 opacity-100'
+            : 'pointer-events-none invisible translate-y-6 scale-95 opacity-0',
         ].join(' ')}
       >
         <HiveAgentComposer
