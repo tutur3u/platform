@@ -2,6 +2,7 @@ import {
   APP_SESSION_COOKIE_NAME,
   createAppSessionToken,
 } from '@tuturuuu/auth/app-session';
+import { createCliAppSession } from '@tuturuuu/auth/cli-session';
 import { type NextRequest, NextResponse } from 'next/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -470,6 +471,28 @@ describe('withSessionAuth', () => {
       }),
       {}
     );
+  });
+
+  it('should reject CLI refresh JWTs as app-session bearer auth', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.refresh.token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, { allowAppSessionAuth: true });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
   });
 
   it('should still enforce suspension checks for valid AI temp auth', async () => {

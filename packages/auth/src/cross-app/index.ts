@@ -76,7 +76,6 @@ export async function validateCrossAppTokenWithSession(
   targetApp: string
 ): Promise<{
   userId: string;
-  sessionData?: { access_token: string; refresh_token: string };
 } | null> {
   const result = await validateCrossAppToken(supabase, token, targetApp);
   if (!result) return null;

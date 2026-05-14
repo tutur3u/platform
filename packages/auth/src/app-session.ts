@@ -36,6 +36,7 @@ export type AppSessionVerification =
 
 type AppSessionOptions = {
   now?: Date;
+  requiredScope?: string | false;
   secret?: string;
   targetApp?: AppSessionTargetApp;
 };
@@ -58,7 +59,7 @@ export function createAppSessionToken(
       email: payload.email ?? null,
       expiresInSeconds: payload.expiresInSeconds,
       originApp: payload.originApp ?? 'web',
-      scopes: payload.scopes ?? [APP_SESSION_SCOPE],
+      scopes: normalizeAppSessionScopes(payload.scopes),
       targetApp: payload.targetApp,
       userId: payload.userId,
     },
@@ -86,7 +87,23 @@ export function verifyAppSessionToken(
     };
   }
 
+  const requiredScope = options.requiredScope ?? APP_SESSION_SCOPE;
+
+  if (requiredScope && !verification.claims.scopes.includes(requiredScope)) {
+    return {
+      error: 'App session missing required scope',
+      ok: false,
+    };
+  }
+
   return verification;
+}
+
+function normalizeAppSessionScopes(scopes: string[] = []) {
+  return [
+    APP_SESSION_SCOPE,
+    ...scopes.filter((scope) => scope !== APP_SESSION_SCOPE),
+  ];
 }
 
 function getCookieValue(request: RequestLike, name: string) {

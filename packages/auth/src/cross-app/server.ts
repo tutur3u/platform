@@ -1,11 +1,12 @@
-import {
-  createAdminClient,
-  createClient,
-  createDetachedClient,
-} from '@tuturuuu/supabase/next/server';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { createAppSessionToken, setAppSessionCookie } from '../app-session';
+import {
+  CLI_APP_TARGET_APP,
+  createCliAppSession,
+  createCliSessionResponseBody,
+} from '../cli-session';
 
 type CrossAppTokenRow = {
   session_data?: {
@@ -14,12 +15,11 @@ type CrossAppTokenRow = {
   user_id?: string | null;
 };
 
-type CrossAppSessionKind = 'app-session' | 'supabase';
+type CrossAppSessionKind = 'app-session' | 'cli-app-session';
 
 type CreatePostOptions = {
   appSessionScopes?: string[];
   sessionKind?: CrossAppSessionKind;
-  sessionMetadata?: Record<string, string>;
 };
 
 function getFirstRow(data: unknown): CrossAppTokenRow | null {
@@ -30,89 +30,6 @@ function getFirstRow(data: unknown): CrossAppTokenRow | null {
   }
 
   return firstRow as CrossAppTokenRow;
-}
-
-function jsonValidWithoutSession(userId: string) {
-  return NextResponse.json({
-    sessionCreated: false,
-    userId,
-    valid: true,
-  });
-}
-
-async function createSupabaseSessionResponse(
-  userId: string,
-  firstRow: CrossAppTokenRow,
-  options: CreatePostOptions
-) {
-  try {
-    const sbAdmin = await createAdminClient();
-    const sessionData = firstRow.session_data ?? null;
-    let userEmail = sessionData?.email;
-
-    if (!userEmail) {
-      const { data: userData, error: userError } =
-        await sbAdmin.auth.admin.getUserById(userId);
-
-      if (userError || !userData?.user?.email) {
-        return jsonValidWithoutSession(userId);
-      }
-
-      userEmail = userData.user.email;
-    }
-
-    if (!userEmail) {
-      return jsonValidWithoutSession(userId);
-    }
-
-    const { data: linkData, error: linkError } =
-      await sbAdmin.auth.admin.generateLink({
-        type: 'magiclink',
-        email: userEmail,
-        ...(options.sessionMetadata
-          ? {
-              options: {
-                data: options.sessionMetadata,
-              },
-            }
-          : {}),
-      });
-
-    if (linkError || !linkData) {
-      return jsonValidWithoutSession(userId);
-    }
-
-    const magicLinkUrl = new URL(linkData.properties.action_link);
-    const tokenHash = magicLinkUrl.searchParams.get('token');
-
-    if (!tokenHash) {
-      return jsonValidWithoutSession(userId);
-    }
-
-    const detached = createDetachedClient();
-    const { data: otpData, error: verifyError } = await detached.auth.verifyOtp(
-      {
-        token_hash: tokenHash,
-        type: 'magiclink',
-      }
-    );
-
-    if (verifyError || !otpData.session) {
-      return jsonValidWithoutSession(userId);
-    }
-
-    return NextResponse.json({
-      userId,
-      valid: true,
-      sessionCreated: true,
-      session: {
-        access_token: otpData.session.access_token,
-        refresh_token: otpData.session.refresh_token,
-      },
-    });
-  } catch {
-    return jsonValidWithoutSession(userId);
-  }
 }
 
 function createAppSessionResponse(
@@ -140,12 +57,28 @@ function createAppSessionResponse(
   return response;
 }
 
+function createCliAppSessionResponse(
+  userId: string,
+  firstRow: CrossAppTokenRow
+) {
+  const cliSession = createCliAppSession({
+    email: firstRow.session_data?.email ?? null,
+    userId,
+  });
+
+  return NextResponse.json({
+    ...createCliSessionResponseBody(cliSession),
+    email: firstRow.session_data?.email ?? null,
+    userId,
+  });
+}
+
 /**
  * Creates a POST handler for cross-app token verification.
  *
  * Registered internal apps receive a Tuturuuu-managed app-session JWT cookie.
- * The CLI keeps its explicit Supabase session exchange by opting into
- * `sessionKind: 'supabase'`.
+ * The CLI receives explicit Tuturuuu-managed access and refresh JWTs by opting
+ * into `sessionKind: 'cli-app-session'`.
  *
  * @param appName The name of the target app (e.g., 'nova', 'rewise', 'platform')
  */
@@ -188,8 +121,15 @@ export function createPOST(appName: AppName, options: CreatePostOptions = {}) {
         );
       }
 
-      if (options.sessionKind === 'supabase') {
-        return createSupabaseSessionResponse(userId, firstRow, options);
+      if (options.sessionKind === 'cli-app-session') {
+        if (appName !== CLI_APP_TARGET_APP) {
+          return NextResponse.json(
+            { error: 'Invalid CLI token target app' },
+            { status: 500 }
+          );
+        }
+
+        return createCliAppSessionResponse(userId, firstRow);
       }
 
       return createAppSessionResponse(userId, appName, firstRow, options);

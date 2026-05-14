@@ -12,10 +12,11 @@ describe('TuturuuuUserClient', () => {
       .mockResolvedValueOnce(
         Response.json({
           session: {
-            access_token: 'fresh-access-token',
+            access_token: 'ttr_app_fresh-access-token',
             expires_at: Math.floor(Date.now() / 1000) + 3600,
             expires_in: 3600,
-            refresh_token: 'fresh-refresh-token',
+            refresh_expires_at: Math.floor(Date.now() / 1000) + 7_776_000,
+            refresh_token: 'ttr_app_fresh-refresh-token',
             token_type: 'bearer',
           },
           sessionCreated: true,
@@ -25,14 +26,14 @@ describe('TuturuuuUserClient', () => {
       .mockResolvedValueOnce(Response.json({ ok: true }));
 
     const client = new TuturuuuUserClient({
-      accessToken: 'old-access-token',
+      accessToken: 'ttr_app_old-access-token',
       baseUrl: 'https://tuturuuu.com',
       expiresAt: Math.floor(Date.now() / 1000) + 30,
       fetch: fetchMock,
       onSessionRefresh: (session) => {
         refreshedSessions.push(session);
       },
-      refreshToken: 'old-refresh-token',
+      refreshToken: 'ttr_app_old-refresh-token',
     });
 
     const response = await client
@@ -45,14 +46,14 @@ describe('TuturuuuUserClient', () => {
       1,
       'https://tuturuuu.com/api/cli/auth/refresh',
       expect.objectContaining({
-        body: JSON.stringify({ refreshToken: 'old-refresh-token' }),
+        body: JSON.stringify({ refreshToken: 'ttr_app_old-refresh-token' }),
         method: 'POST',
       })
     );
 
     const secondCallInit = fetchMock.mock.calls[1]?.[1];
     expect(new Headers(secondCallInit?.headers).get('authorization')).toBe(
-      'Bearer fresh-access-token'
+      'Bearer ttr_app_fresh-access-token'
     );
     expect(refreshedSessions).toHaveLength(1);
 
@@ -75,11 +76,11 @@ describe('TuturuuuUserClient', () => {
       .mockResolvedValue(Response.json({ ok: true }));
 
     const client = new TuturuuuUserClient({
-      accessToken: 'old-access-token',
+      accessToken: 'ttr_app_old-access-token',
       baseUrl: 'https://tuturuuu.com',
       expiresAt: Math.floor(Date.now() / 1000) + 30,
       fetch: fetchMock,
-      refreshToken: 'old-refresh-token',
+      refreshToken: 'ttr_app_old-refresh-token',
     });
 
     const options = client.getClientOptions();
@@ -92,10 +93,11 @@ describe('TuturuuuUserClient', () => {
     resolveRefresh?.(
       Response.json({
         session: {
-          access_token: 'fresh-access-token',
+          access_token: 'ttr_app_fresh-access-token',
           expires_at: Math.floor(Date.now() / 1000) + 3600,
           expires_in: 3600,
-          refresh_token: 'fresh-refresh-token',
+          refresh_expires_at: Math.floor(Date.now() / 1000) + 7_776_000,
+          refresh_token: 'ttr_app_fresh-refresh-token',
           token_type: 'bearer',
         },
         sessionCreated: true,
@@ -110,8 +112,8 @@ describe('TuturuuuUserClient', () => {
       .slice(1)
       .map(([, init]) => new Headers(init?.headers).get('authorization'));
     expect(requestAuthHeaders).toEqual([
-      'Bearer fresh-access-token',
-      'Bearer fresh-access-token',
+      'Bearer ttr_app_fresh-access-token',
+      'Bearer ttr_app_fresh-access-token',
     ]);
 
     vi.useRealTimers();

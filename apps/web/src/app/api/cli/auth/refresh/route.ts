@@ -1,4 +1,9 @@
-import { createDetachedClient } from '@tuturuuu/supabase/next/server';
+import {
+  createCliAppSession,
+  createCliSessionResponseBody,
+  verifyCliRefreshToken,
+} from '@tuturuuu/auth/cli-session';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -17,27 +22,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const detached = createDetachedClient();
-  const { data, error } = await detached.auth.refreshSession({
-    refresh_token: parsed.data.refreshToken,
-  });
+  const verification = verifyCliRefreshToken(parsed.data.refreshToken);
 
-  if (error || !data.session) {
+  if (!verification.ok) {
     return NextResponse.json(
       { error: 'Invalid or expired refresh token' },
       { status: 401 }
     );
   }
 
-  return NextResponse.json({
-    session: {
-      access_token: data.session.access_token,
-      expires_at: data.session.expires_at,
-      expires_in: data.session.expires_in,
-      refresh_token: data.session.refresh_token,
-      token_type: data.session.token_type,
-    },
-    sessionCreated: true,
-    valid: true,
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = await sbAdmin.auth.admin.getUserById(
+    verification.claims.sub
+  );
+
+  if (error || !data.user) {
+    return NextResponse.json(
+      { error: 'Invalid or expired refresh token' },
+      { status: 401 }
+    );
+  }
+
+  const session = createCliAppSession({
+    email: data.user.email ?? verification.claims.email,
+    userId: verification.claims.sub,
   });
+
+  return NextResponse.json(createCliSessionResponseBody(session));
 }

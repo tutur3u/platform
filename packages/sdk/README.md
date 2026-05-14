@@ -84,10 +84,10 @@ ttr finance transactions create --amount 150000 --wallet <wallet-id> --taken-at 
 ttr finance budgets status
 ```
 
-Login opens the browser and creates a fresh session specifically labeled for
-the Tuturuuu CLI. The terminal and browser confirmation page show the signed-in
-account email when the web session exposes it. For headless environments, use
-copy-token mode:
+Login opens the browser and creates a Tuturuuu-managed CLI app-session JWT pair
+through `apps/web`. The terminal and browser confirmation page show the
+signed-in account email when the web session exposes it. For headless
+environments, use copy-token mode:
 
 ```bash
 ttr login --copy
@@ -104,11 +104,13 @@ upgrade` to run `bun i -g tuturuuu`. Use
 `--no-update-check` for a single command or set `TUTURUUU_DISABLE_UPDATE_CHECK=1`
 to disable this notification.
 
-CLI sessions are dedicated Supabase sessions labeled `Tuturuuu CLI`, separate
-from normal browser sessions. The CLI stores both the access token and refresh
-token, refreshes shortly before token expiry, updates the saved config with the
-rotated refresh token, and retries once after a `401` response. If refresh fails,
-run `ttr login` again to create a fresh dedicated CLI session.
+CLI sessions are dedicated Tuturuuu gateway JWTs, separate from normal browser
+and Supabase Auth sessions. The CLI stores a short-lived app-session access JWT
+plus a longer-lived refresh JWT, refreshes shortly before access-token expiry,
+updates the saved config with the rotated refresh token, and retries once after a
+`401` response. Refresh JWTs only carry the CLI refresh scope, so they cannot be
+used directly as API bearer tokens. If refresh fails because the user no longer
+exists or the refresh JWT has expired, run `ttr login` again.
 
 Scoped help is available without login, saved config reads, or update checks:
 

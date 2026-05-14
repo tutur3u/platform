@@ -84,10 +84,40 @@ const verifierSource = fs.readFileSync(
   path.join(ROOT, 'packages/auth/src/cross-app/index.ts'),
   'utf8'
 );
+const crossAppServerSource = fs.readFileSync(
+  path.join(ROOT, 'packages/auth/src/cross-app/server.ts'),
+  'utf8'
+);
+const cliVerifySource = fs.readFileSync(
+  path.join(ROOT, 'apps/web/src/app/api/cli/auth/verify/route.ts'),
+  'utf8'
+);
+const cliRefreshSource = fs.readFileSync(
+  path.join(ROOT, 'apps/web/src/app/api/cli/auth/refresh/route.ts'),
+  'utf8'
+);
 
 if (/supabase\.auth\.setSession/u.test(verifierSource)) {
   failures.push(
     'packages/auth/src/cross-app/index.ts: Shared verifier must trust the HttpOnly app-session cookie instead of setting Supabase sessions.'
+  );
+}
+
+if (/sessionKind:\s*['"]supabase['"]/u.test(cliVerifySource)) {
+  failures.push(
+    'apps/web/src/app/api/cli/auth/verify/route.ts: CLI login must return Tuturuuu-managed app-session JWTs, not Supabase Auth sessions.'
+  );
+}
+
+if (/createDetachedClient|auth\.refreshSession/u.test(cliRefreshSource)) {
+  failures.push(
+    'apps/web/src/app/api/cli/auth/refresh/route.ts: CLI refresh must rotate Tuturuuu-managed JWTs instead of calling Supabase Auth refresh.'
+  );
+}
+
+if (/generateLink|verifyOtp|createDetachedClient/u.test(crossAppServerSource)) {
+  failures.push(
+    'packages/auth/src/cross-app/server.ts: Cross-app verification must not mint Supabase sessions with magic links or OTP verification.'
   );
 }
 

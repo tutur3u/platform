@@ -40,6 +40,16 @@ describe('app-session JWTs', () => {
     }
   });
 
+  it('always includes the app-session scope when custom scopes are added', () => {
+    const { claims } = createAppSessionToken({
+      scopes: ['custom:scope'],
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+
+    expect(claims.scopes).toEqual(['internal-app:session', 'custom:scope']);
+  });
+
   it('rejects target-app mismatches', () => {
     const { token } = createAppSessionToken({
       targetApp: 'learn',
