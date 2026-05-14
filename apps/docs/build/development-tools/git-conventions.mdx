@@ -285,6 +285,26 @@ Closes #123
 3. Regularly rebase long-lived branches on `main` to avoid merge conflicts
 4. Delete branches after they've been merged
 
+### Synchronizing Release Branches
+
+Use the root command below when `staging` and `production` should point at the
+same commit as `main`:
+
+```bash
+bun git-sync
+```
+
+The command refuses to run unless the worktree is clean, then fetches `origin`,
+pulls `main`, `staging`, and `production` with `--ff-only`, pushes `main`, and
+fast-forwards `staging` and `production` to the current `main` commit before
+pushing those branches. It finishes by fetching again and verifying that local
+and remote `main`, `staging`, and `production` all resolve to the same commit.
+After verification, it checks out the branch you started from.
+
+`bun git-sync` does not create commits for you. Commit all intended changes on
+`main` first; if `staging` or `production` contain commits that are not already
+in `main`, reconcile those branches manually before rerunning the command.
+
 ### Pull Request Workflow
 
 1. Create a branch with the appropriate type based on the work
