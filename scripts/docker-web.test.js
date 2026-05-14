@@ -46,6 +46,7 @@ const {
 const {
   buildBlueGreenServices,
   getBlueGreenComposeMigration,
+  hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
@@ -2287,6 +2288,32 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
       };
     }
 
+    if (args.includes('config') && args.includes('--format')) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        }),
+      };
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'nginx:1.31.0-alpine\n',
+      };
+    }
+
     if (args[0] === 'inspect' && args.at(-1) === 'blue-123') {
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
     }
@@ -2450,6 +2477,65 @@ test('hasBlueGreenProxyHostPortBindings requires the Hive host port on web-proxy
   );
 });
 
+test('hasComposeServiceExpectedImage detects stale compose service images', async () => {
+  let runningImage = 'nginx:1.27-alpine';
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+
+    if (key === `docker compose -f ${PROD_COMPOSE_FILE} config --format json`) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        }),
+      };
+    }
+
+    if (
+      key ===
+      `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${BLUE_GREEN_PROXY_SERVICE}`
+    ) {
+      return { code: 0, signal: null, stderr: '', stdout: 'proxy-123\n' };
+    }
+
+    if (key === 'docker inspect -f {{.Config.Image}} proxy-123') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: `${runningImage}\n`,
+      };
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  assert.equal(
+    await hasComposeServiceExpectedImage(BLUE_GREEN_PROXY_SERVICE, {
+      composeFile: PROD_COMPOSE_FILE,
+      env: { PATH: 'test-path' },
+      runCommand,
+    }),
+    false
+  );
+
+  runningImage = 'nginx:1.31.0-alpine';
+
+  assert.equal(
+    await hasComposeServiceExpectedImage(BLUE_GREEN_PROXY_SERVICE, {
+      composeFile: PROD_COMPOSE_FILE,
+      env: { PATH: 'test-path' },
+      runCommand,
+    }),
+    true
+  );
+});
+
 test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is missing', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'docker-web-hive-port-refresh-')
@@ -2492,6 +2578,9 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       if (serviceName === 'web') return resultFor('');
       if (serviceName === 'web-green') {
         return resultFor(targetStarted ? 'green-123\n' : '');
+      }
+      if (serviceName === 'buildkit') {
+        return resultFor('buildkit-123\n');
       }
       if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
         return resultFor(targetStarted ? `${serviceName}-123\n` : '');
@@ -2610,6 +2699,174 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
               call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
         )
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow recreates web-proxy when its image is stale', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-proxy-image-refresh-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let targetStarted = false;
+  let forcedProxyRefresh = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor('proxy-123\n');
+      }
+      if (serviceName === 'web') return resultFor('');
+      if (serviceName === 'web-green') {
+        return resultFor(targetStarted ? 'green-123\n' : '');
+      }
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor(targetStarted ? `${serviceName}-123\n` : '');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(`${BLUE_GREEN_PROXY_PORTS_JSON}\n`);
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return resultFor(
+        JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        })
+      );
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor('nginx:1.27-alpine\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args[0] === 'buildx' && args[1] === 'prune') {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      targetStarted = true;
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('hive-green')) {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      forcedProxyRefresh =
+        forcedProxyRefresh || args.includes('--force-recreate');
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      (args.includes('wget') || args.includes('nginx'))
+    ) {
+      return resultFor('');
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    await runBlueGreenProdWorkflow(
+      {
+        action: 'up',
+        composeArgs: [],
+        composeGlobalArgs: [],
+        mode: 'prod',
+        strategy: 'blue-green',
+      },
+      {
+        drainPollMs: 0,
+        drainTimeoutMs: 5_000,
+        env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+        envFilePath,
+        proxyDrainMs: 0,
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.equal(forcedProxyRefresh, true);
+    const targetHealthyIndex = calls.findIndex(
+      (call) =>
+        call.includes('inspect') &&
+        (call.includes('green-123') || call.includes('hive-green-123'))
+    );
+    const proxyRefreshIndex = calls.findIndex(
+      (call) =>
+        call.includes(' up --detach --no-build --force-recreate') &&
+        (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+          call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+    );
+
+    assert.notEqual(targetHealthyIndex, -1);
+    assert.notEqual(proxyRefreshIndex, -1);
+    assert.ok(targetHealthyIndex < proxyRefreshIndex);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2893,6 +3150,32 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
         signal: null,
         stderr: '',
         stdout: `${BLUE_GREEN_PROXY_PORTS_JSON}\n`,
+      };
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        }),
+      };
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'nginx:1.31.0-alpine\n',
       };
     }
 

@@ -181,9 +181,12 @@ Blue/green deploy does this:
 6. Waits for the new web container and helper container healthchecks to pass.
 7. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
-   listener.
+   listener. If the running proxy is missing required host ports or its
+   container image no longer matches the resolved Compose image, the deploy
+   defers the forced proxy recreate until after the replacement lane is healthy.
 8. Validates the generated nginx config with `nginx -t`, then reloads nginx
-   inside that existing proxy only after the new color is healthy.
+   inside the existing or freshly recreated proxy only after the new color is
+   healthy.
 9. Immediately verifies the proxy can serve the internal
    `/__platform/drain-status` endpoint through the newly promoted color before
    marking the new color active. This avoids false deployment failures from
@@ -550,9 +553,13 @@ How it works:
   Compose-owned builder so the `platform-buildkit-state` volume does not keep
   multi-gigabyte build cache indefinitely. The CLI runs this cleanup again
   after starting the watcher container, so watcher-image build cache is also
-  removed before the command exits. Set
+  removed before the command exits. The cleanup then stops the Compose-owned
+  `buildkit` service by default so it does not keep CPU or memory reserved
+  while no deployment is building. Set
   `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` only when you are intentionally
-  preserving BuildKit cache for repeated local diagnostics.
+  preserving BuildKit cache for repeated local diagnostics, and set
+  `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when you intentionally want to
+  keep the builder warm between back-to-back deploys.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
   workflow builds each service image in its own Compose build call so image
@@ -929,9 +936,11 @@ Dashboard details:
   direct Hive container, so Cloudflare tunnel traffic to `localhost:7814` always
   reaches the currently promoted Hive color.
   Deploys verify that the running `web-proxy` container has both host bindings
-  (`7803` and `7814`) before reusing it; if an older proxy was created before
-  Hive moved behind blue/green, the next deploy force-recreates the proxy so the
-  host-level Cloudflare Tunnel route can reach Hive.
+  (`7803` and `7814`) and that its running image matches the resolved Compose
+  image before reusing it; if an older proxy was created before Hive moved
+  behind blue/green or before the nginx image pin changed, the next deploy
+  force-recreates the proxy so the host-level Cloudflare Tunnel route can reach
+  Hive on the expected proxy runtime.
   The Hive color services use the same Supabase env source as `apps/web`:
   runtime env files are shared, and production image builds mount the `web_env`
   BuildKit secret so hidden-locale auth pages can prerender with the platform
@@ -979,7 +988,9 @@ Dashboard details:
   every poll.
 - Normal promotions keep the long-lived `web-proxy` container and bound port
   stable, which avoids transient listener drops for upstreams such as
-  Cloudflare Tunnel that are connected to `:7803`.
+  Cloudflare Tunnel that are connected to `:7803`. Proxy container recreates are
+  reserved for required host-port or image drift and happen only after the
+  replacement web/Hive lane is healthy.
 - Persists recent deployment history, including manual
   `bun serve:web:docker:bg` runs, and renders the top 3 most operationally
   relevant entries as stacked terminal cards that favor vertical scanability

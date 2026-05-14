@@ -73,8 +73,8 @@ const {
 const {
   DEFAULT_BUILDER_NAME,
   BUILDKIT_SERVICE_NAME,
+  cleanupBuildkitAfterBuild,
   ensureBuildkitBuilder,
-  pruneBuildkitCacheAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
 const {
   SKIP_WATCH_HISTORY_ENV,
@@ -397,6 +397,8 @@ function isTruthyEnv(value) {
 }
 
 async function pruneDockerWebBuildkitCacheAfterWorkflow({
+  composeFile,
+  composeGlobalArgs = [],
   env,
   fsImpl = fs,
   runCommand: run = runCommand,
@@ -406,7 +408,9 @@ async function pruneDockerWebBuildkitCacheAfterWorkflow({
   }
 
   try {
-    await pruneBuildkitCacheAfterBuild({
+    await cleanupBuildkitAfterBuild({
+      composeFile,
+      composeGlobalArgs,
       env,
       fsImpl,
       runCommand: run,
@@ -417,7 +421,7 @@ async function pruneDockerWebBuildkitCacheAfterWorkflow({
         ? cleanupError.message
         : String(cleanupError);
     process.stderr.write(
-      `[docker-web] Warning: failed to prune BuildKit cache after workflow: ${message}\n`
+      `[docker-web] Warning: failed to clean up BuildKit after workflow: ${message}\n`
     );
   }
 }
@@ -855,6 +859,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       throw error;
     } finally {
       await pruneDockerWebBuildkitCacheAfterWorkflow({
+        composeFile,
+        composeGlobalArgs: parsed.composeGlobalArgs,
         env: workflowEnv,
         fsImpl,
         runCommand: run,

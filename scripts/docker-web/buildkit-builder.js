@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const {
   getComposeCommandArgs,
+  hasComposeServiceContainer,
   runChecked,
   runCommand,
   waitForComposeServiceHealthy,
@@ -518,6 +519,16 @@ function shouldPruneBuildkitAfterBuild(env = process.env) {
   return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
 }
 
+function shouldStopBuildkitAfterBuild(env = process.env) {
+  const rawValue = env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD;
+
+  if (rawValue == null || String(rawValue).trim() === '') {
+    return true;
+  }
+
+  return !DISABLED_ENV_VALUES.has(String(rawValue).trim().toLowerCase());
+}
+
 async function pruneBuildkitCacheAfterBuild({
   env = process.env,
   fsImpl = fs,
@@ -553,6 +564,137 @@ async function pruneBuildkitCacheAfterBuild({
   };
 }
 
+async function stopBuildkitComposeServiceAfterBuild({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!composeFile || !shouldStopBuildkitAfterBuild(env)) {
+    return {
+      skipped: true,
+      stopped: false,
+    };
+  }
+
+  const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
+  if (!hasContainer) {
+    return {
+      skipped: false,
+      stopped: false,
+    };
+  }
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'stop',
+      '--timeout',
+      '1',
+      BUILDKIT_SERVICE_NAME
+    ),
+    {
+      env,
+      fsImpl,
+      runCommand: run,
+    }
+  );
+
+  return {
+    skipped: false,
+    stopped: true,
+  };
+}
+
+async function cleanupBuildkitAfterBuild({
+  composeFile,
+  composeGlobalArgs = [],
+  env = process.env,
+  fsImpl = fs,
+  runCommand: run = runCommand,
+} = {}) {
+  if (!env?.BUILDX_BUILDER && !env?.DOCKER_WEB_BUILD_BUILDER_NAME) {
+    return {
+      prune: {
+        builderName: null,
+        pruned: false,
+        skipped: true,
+      },
+      skipped: true,
+      stop: {
+        skipped: true,
+        stopped: false,
+      },
+    };
+  }
+
+  let serviceRunning = true;
+
+  if (composeFile) {
+    serviceRunning = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+  }
+
+  const errors = [];
+  let pruneResult = {
+    builderName: null,
+    pruned: false,
+    skipped: true,
+  };
+
+  if (serviceRunning) {
+    try {
+      pruneResult = await pruneBuildkitCacheAfterBuild({
+        env,
+        fsImpl,
+        runCommand: run,
+      });
+    } catch (error) {
+      errors.push(error);
+    }
+  }
+
+  let stopResult = {
+    skipped: true,
+    stopped: false,
+  };
+
+  try {
+    stopResult = await stopBuildkitComposeServiceAfterBuild({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      fsImpl,
+      runCommand: run,
+    });
+  } catch (error) {
+    errors.push(error);
+  }
+
+  if (errors.length > 0) {
+    throw errors[0];
+  }
+
+  return {
+    prune: pruneResult,
+    skipped: false,
+    stop: stopResult,
+  };
+}
+
 module.exports = {
   BUILDKIT_CONFIG_FILE,
   BUILDKIT_RUNTIME_DIR,
@@ -562,6 +704,7 @@ module.exports = {
   DEFAULT_BUILDKIT_HOST_PORT,
   DEFAULT_BUILDER_NAME,
   LEGACY_BUILDER_NAMES,
+  cleanupBuildkitAfterBuild,
   ensureBuildkitComposeService,
   ensureBuildkitBuilder,
   getBuildkitPaths,
@@ -578,5 +721,7 @@ module.exports = {
   renderBuildkitConfig,
   readBuilderState,
   shouldPruneBuildkitAfterBuild,
+  shouldStopBuildkitAfterBuild,
+  stopBuildkitComposeServiceAfterBuild,
   writeBuilderState,
 };

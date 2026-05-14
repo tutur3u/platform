@@ -5,6 +5,8 @@ const os = require('node:os');
 const path = require('node:path');
 
 const {
+  BUILDKIT_SERVICE_NAME,
+  cleanupBuildkitAfterBuild,
   DEFAULT_BUILDER_NAME,
   DEFAULT_BUILDKIT_HOST_PORT,
   ensureBuildkitBuilder,
@@ -18,7 +20,10 @@ const {
   readBuilderState,
   renderBuildkitConfig,
   shouldPruneBuildkitAfterBuild,
+  shouldStopBuildkitAfterBuild,
+  stopBuildkitComposeServiceAfterBuild,
 } = require('./docker-web/buildkit-builder.js');
+const { PROD_COMPOSE_FILE } = require('./docker-web/compose.js');
 
 test('parsePositiveNumber accepts positive numeric values and rejects invalid ones', () => {
   assert.equal(parsePositiveNumber('8'), 8);
@@ -100,6 +105,28 @@ test('shouldPruneBuildkitAfterBuild defaults on and accepts explicit opt-out', (
   );
 });
 
+test('shouldStopBuildkitAfterBuild defaults on and accepts explicit opt-out', () => {
+  assert.equal(shouldStopBuildkitAfterBuild({}), true);
+  assert.equal(
+    shouldStopBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD: '1',
+    }),
+    true
+  );
+  assert.equal(
+    shouldStopBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD: 'false',
+    }),
+    false
+  );
+  assert.equal(
+    shouldStopBuildkitAfterBuild({
+      DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD: ' off ',
+    }),
+    false
+  );
+});
+
 test('pruneBuildkitCacheAfterBuild prunes all cache for the active builder', async () => {
   const calls = [];
 
@@ -154,6 +181,107 @@ test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
     skipped: true,
   });
   assert.deepEqual(calls, []);
+});
+
+test('stopBuildkitComposeServiceAfterBuild stops the running compose service', async () => {
+  const calls = [];
+
+  const result = await stopBuildkitComposeServiceAfterBuild({
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['--profile', 'redis'],
+    env: { PATH: 'test-path' },
+    runCommand: async (command, args, options = {}) => {
+      calls.push({
+        args,
+        command,
+        env: options.env,
+      });
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.deepEqual(result, {
+    skipped: false,
+    stopped: true,
+  });
+  assert.deepEqual(
+    calls.map(({ command, args }) => [command, args]),
+    [
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          '--profile',
+          'redis',
+          'ps',
+          '-q',
+          BUILDKIT_SERVICE_NAME,
+        ],
+      ],
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          '--profile',
+          'redis',
+          'stop',
+          '--timeout',
+          '1',
+          BUILDKIT_SERVICE_NAME,
+        ],
+      ],
+    ]
+  );
+});
+
+test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', async () => {
+  const calls = [];
+
+  const result = await cleanupBuildkitAfterBuild({
+    composeFile: PROD_COMPOSE_FILE,
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      throw new Error(`Unexpected command: ${command} ${args.join(' ')}`);
+    },
+  });
+
+  assert.deepEqual(result, {
+    prune: {
+      builderName: null,
+      pruned: false,
+      skipped: true,
+    },
+    skipped: false,
+    stop: {
+      skipped: false,
+      stopped: false,
+    },
+  });
+  assert.deepEqual(calls, [
+    [
+      'docker',
+      ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', BUILDKIT_SERVICE_NAME],
+    ],
+    [
+      'docker',
+      ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', BUILDKIT_SERVICE_NAME],
+    ],
+  ]);
 });
 
 test('getBuilderConfigFingerprint is stable for the same config', () => {

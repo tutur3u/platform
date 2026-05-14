@@ -30,7 +30,7 @@ const {
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
-  pruneBuildkitCacheAfterBuild,
+  cleanupBuildkitAfterBuild,
   recoverBuildkitBunInstallCache,
 } = require('./buildkit-builder.js');
 
@@ -731,6 +731,95 @@ async function hasBlueGreenProxyHostPortBindings({
   }
 }
 
+function normalizeDockerImageReference(image) {
+  return typeof image === 'string' ? image.trim() : '';
+}
+
+async function getComposeServiceExpectedImage(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  const result = await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'config',
+      '--format',
+      'json'
+    ),
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+  const config = JSON.parse(result.stdout.trim() || '{}');
+  const image = config?.services?.[serviceName]?.image;
+
+  return normalizeDockerImageReference(image) || null;
+}
+
+async function getComposeServiceRunningImage(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  const containerId = await getComposeServiceContainerId(serviceName, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
+  if (!containerId) {
+    return null;
+  }
+
+  const result = await runChecked(
+    'docker',
+    ['inspect', '-f', '{{.Config.Image}}', containerId],
+    {
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return normalizeDockerImageReference(result.stdout) || null;
+}
+
+async function hasComposeServiceExpectedImage(
+  serviceName,
+  { composeFile, composeGlobalArgs = [], env, runCommand: run }
+) {
+  const expectedImage = await getComposeServiceExpectedImage(serviceName, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
+  if (!expectedImage) {
+    return true;
+  }
+
+  const runningImage = await getComposeServiceRunningImage(serviceName, {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+
+  if (!runningImage) {
+    return false;
+  }
+
+  return (
+    normalizeDockerImageReference(runningImage) ===
+    normalizeDockerImageReference(expectedImage)
+  );
+}
+
 async function validateBlueGreenProxyConfig({
   composeFile,
   composeGlobalArgs = [],
@@ -878,6 +967,8 @@ async function buildBlueGreenServices({
 }
 
 async function pruneBlueGreenBuildkitCacheAfterWorkflow({
+  composeFile,
+  composeGlobalArgs = [],
   env,
   fsImpl = fs,
   runCommand: run,
@@ -887,7 +978,9 @@ async function pruneBlueGreenBuildkitCacheAfterWorkflow({
   }
 
   try {
-    await pruneBuildkitCacheAfterBuild({
+    await cleanupBuildkitAfterBuild({
+      composeFile,
+      composeGlobalArgs,
       env,
       fsImpl,
       runCommand: run,
@@ -898,7 +991,7 @@ async function pruneBlueGreenBuildkitCacheAfterWorkflow({
         ? cleanupError.message
         : String(cleanupError);
     process.stderr.write(
-      `[docker-web] Warning: failed to prune BuildKit cache after deployment: ${message}\n`
+      `[docker-web] Warning: failed to clean up BuildKit after deployment: ${message}\n`
     );
   }
 }
@@ -1420,6 +1513,18 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       runCommand: run,
     }));
   const needsProxyHostPortRefresh = proxyRunning && !proxyHasRequiredHostPorts;
+  const proxyHasExpectedImage =
+    proxyRunning &&
+    proxyHasRequiredHostPorts &&
+    (await hasComposeServiceExpectedImage(BLUE_GREEN_PROXY_SERVICE, {
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env,
+      runCommand: run,
+    }));
+  const needsProxyImageRefresh =
+    proxyRunning && proxyHasRequiredHostPorts && !proxyHasExpectedImage;
+  const needsProxyRefresh = needsProxyHostPortRefresh || needsProxyImageRefresh;
   const targetColor = getNextBlueGreenColor(activeColor);
   const initialProxyColor = activeColor ?? targetColor;
   const standbyColor = activeColor;
@@ -1428,8 +1533,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     PLATFORM_BLUE_GREEN_COLOR: targetColor,
     PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
   };
-  const needsProxyBootstrap =
-    !!migration || !proxyRunning || needsProxyHostPortRefresh;
+  const needsProxyBootstrap = !!migration || !proxyRunning || needsProxyRefresh;
 
   try {
     if (needsProxyBootstrap) {
@@ -1572,7 +1676,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
           parsed,
           proxyBootstrapServices,
           {
-            forceRecreate: needsProxyHostPortRefresh,
+            forceRecreate: needsProxyRefresh,
           }
         ),
       });
@@ -1660,6 +1764,8 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     };
   } finally {
     await pruneBlueGreenBuildkitCacheAfterWorkflow({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
       env: targetEnv,
       fsImpl,
       runCommand: run,
@@ -1827,6 +1933,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     };
   } finally {
     await pruneBlueGreenBuildkitCacheAfterWorkflow({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       fsImpl,
       runCommand: run,
@@ -2066,6 +2174,9 @@ module.exports = {
   getBlueGreenHiveServiceName,
   getBlueGreenProdServices,
   getBlueGreenProdServicesWithProxyOption,
+  getComposeServiceExpectedImage,
+  getComposeServiceRunningImage,
+  hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   readBlueGreenDeploymentStamp,
   getBlueGreenServiceName,
