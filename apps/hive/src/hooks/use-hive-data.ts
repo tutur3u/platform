@@ -2,8 +2,10 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  archiveHiveWorkflow,
   createHiveNpc,
   createHiveServer,
+  createHiveWorkflow,
   createHiveWorldEvent,
   deleteHiveNpc,
   deleteHiveServer,
@@ -15,19 +17,32 @@ import {
   type HiveServerSettings,
   type HiveServersResponse,
   type HiveSnapshotResponse,
+  type HiveWorkflowPayload,
+  type HiveWorkflowRunPayload,
   type HiveWorldEventPayload,
   listHiveServers,
+  listHiveWorkflowRuns,
+  listHiveWorkflows,
   runHiveNpcDecision,
   runHiveSimulationTick,
+  runHiveWorkflow,
   updateHiveNpc,
   updateHiveServer,
   updateHiveServerSettings,
+  updateHiveWorkflow,
 } from '@tuturuuu/internal-api/hive';
 
 export const hiveQueryKeys = {
   realtimeToken: (serverId: string) => ['hive', 'realtime-token', serverId],
   servers: ['hive', 'servers'],
   snapshot: (serverId: string) => ['hive', 'snapshot', serverId],
+  workflowRuns: (serverId: string, workflowId: string) => [
+    'hive',
+    'workflow-runs',
+    serverId,
+    workflowId,
+  ],
+  workflows: (serverId: string) => ['hive', 'workflows', serverId],
 };
 
 export function useHiveServers(initialData: HiveServersResponse) {
@@ -165,4 +180,81 @@ export function useHiveRealtimeToken(serverId: string | null) {
       : ['hive', 'realtime-token'],
     staleTime: 9 * 60 * 1000,
   });
+}
+
+export function useHiveWorkflows(serverId: string | null, enabled: boolean) {
+  return useQuery({
+    enabled: !!serverId && enabled,
+    queryFn: () => listHiveWorkflows(serverId!),
+    queryKey: serverId
+      ? hiveQueryKeys.workflows(serverId)
+      : ['hive', 'workflows'],
+  });
+}
+
+export function useHiveWorkflowRuns(
+  serverId: string | null,
+  workflowId: string | null,
+  enabled: boolean
+) {
+  return useQuery({
+    enabled: !!serverId && !!workflowId && enabled,
+    queryFn: () => listHiveWorkflowRuns(serverId!, workflowId!),
+    queryKey:
+      serverId && workflowId
+        ? hiveQueryKeys.workflowRuns(serverId, workflowId)
+        : ['hive', 'workflow-runs'],
+  });
+}
+
+export function useHiveWorkflowMutations(
+  serverId: string | null,
+  workflowId: string | null
+) {
+  const queryClient = useQueryClient();
+  const invalidateWorkflows = async () => {
+    if (!serverId) return;
+    await queryClient.invalidateQueries({
+      queryKey: hiveQueryKeys.workflows(serverId),
+    });
+  };
+  const invalidateRuns = async () => {
+    if (!serverId || !workflowId) return;
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: hiveQueryKeys.workflowRuns(serverId, workflowId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: hiveQueryKeys.snapshot(serverId),
+      }),
+    ]);
+  };
+
+  return {
+    archiveWorkflow: useMutation({
+      mutationFn: (targetWorkflowId: string) =>
+        archiveHiveWorkflow(serverId!, targetWorkflowId),
+      onSuccess: invalidateWorkflows,
+    }),
+    createWorkflow: useMutation({
+      mutationFn: (payload: HiveWorkflowPayload) =>
+        createHiveWorkflow(serverId!, payload),
+      onSuccess: invalidateWorkflows,
+    }),
+    runWorkflow: useMutation({
+      mutationFn: (payload: HiveWorkflowRunPayload) =>
+        runHiveWorkflow(serverId!, workflowId!, payload),
+      onSuccess: invalidateRuns,
+    }),
+    updateWorkflow: useMutation({
+      mutationFn: ({
+        payload,
+        targetWorkflowId,
+      }: {
+        payload: Partial<HiveWorkflowPayload>;
+        targetWorkflowId: string;
+      }) => updateHiveWorkflow(serverId!, targetWorkflowId, payload),
+      onSuccess: invalidateWorkflows,
+    }),
+  };
 }

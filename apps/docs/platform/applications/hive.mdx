@@ -61,6 +61,8 @@ Hive stores product state in the dedicated Hive Postgres database:
 - `hive_trade_offers`
 - `hive_crop_instances`
 - `hive_simulation_ticks`
+- `hive_workflows`
+- `hive_workflow_runs`
 - `hive_members`
 - `hive_access_requests`
 
@@ -80,6 +82,15 @@ The one-shot Hive backfill path copies legacy Supabase Hive rows into Hive
 Postgres. After backfill, `/api/v1/hive/*` routes should write Hive Postgres
 only, while `apps/web` internal APIs use the forwarded app-session cookie to
 resolve the caller and platform-admin status.
+
+Hive graph workflows are server-scoped product data. Platform admins author
+shared workflow definitions in `hive_workflows`; enabled Hive members can run
+enabled, unarchived workflows manually, and every run writes a row in
+`hive_workflow_runs` with the input, output, step trace, status, and error
+message. Workflow definitions are JSON graphs with typed nodes and edges. V1
+manual execution disallows cycles, caps graphs at 80 nodes / 120 edges, and
+uses restricted `{{steps.nodeId.output.path}}` or `{{input.path}}` references
+only. Do not add arbitrary JavaScript evaluation to workflow config.
 
 Shared realtime payloads and Hive CRDT helpers live in
 `@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,
@@ -127,6 +138,17 @@ default terrain presentation; gapless rendering is an explicit settings toggle.
 The Settings dock tab owns the continuous 24-hour time slider, auto-time speed,
 season, weather, camera presets, and simulation/server toggles. Do not restore
 the older five fixed visible time buttons as the primary time control.
+
+The editor also has a `World / Workflows` mode switch. Workflow mode is a 2D
+React Flow graph builder for manual Hive automations. Admins can drag nodes
+from the palette, use starter templates, edit JSON config in the inspector,
+save shared workflows, and run them against the selected server. Members see
+the same graph read-only and can manually run saved workflows. Workflow runs
+apply live effects through the same gateway-backed Hive actions used elsewhere:
+world events, simulation ticks, NPC decision records, farming, warehouses, and
+trades. Effects are audited through the workflow run trace plus the existing
+Hive event/economy tables; v1 has no schedule, webhook trigger, retry queue,
+credential vault, or rollback approval layer.
 
 The chat composer is opt-in from the editor chrome button, and the mini-map is
 a collapsible viewport overlay. If all Hive servers are deleted, the editor must

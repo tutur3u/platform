@@ -116,6 +116,24 @@ test.describe('Hive editor chrome', () => {
       page.getByRole('button', { exact: true, name: 'Select' })
     ).toBeVisible();
   });
+
+  test('creates and manually runs a graph workflow', async ({ page }) => {
+    await page.getByRole('toolbar', { name: 'Hive top toolbar' }).hover();
+    await page.getByRole('button', { name: 'Workflow graph' }).click();
+
+    await expect(page.getByText('Workflow parts')).toBeVisible();
+    await page.getByRole('button', { name: 'Simulation tick' }).click();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Workflow saved')).toBeVisible({
+      timeout: 15_000,
+    });
+
+    await page.getByRole('button', { name: 'Run' }).click();
+    await expect(page.getByText('Latest run')).toBeVisible();
+    await expect(page.getByText(/completed|failed/)).toBeVisible({
+      timeout: 20_000,
+    });
+  });
 });
 
 async function selectVisibleWorldItem(page: Page) {

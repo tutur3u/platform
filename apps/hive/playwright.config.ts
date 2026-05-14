@@ -1,6 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import {
+  assertLocalHiveE2EEnvironment,
+  HIVE_BASE_URL,
+} from './e2e/helpers/constants';
 
-const BASE_URL = process.env.HIVE_BASE_URL || 'http://localhost:7814';
+assertLocalHiveE2EEnvironment();
 
 export default defineConfig({
   testDir: './e2e',
@@ -11,7 +15,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   timeout: 60_000,
   use: {
-    baseURL: BASE_URL,
+    baseURL: HIVE_BASE_URL,
     navigationTimeout: 60_000,
     screenshot: 'only-on-failure',
     trace: 'on-first-retry',
