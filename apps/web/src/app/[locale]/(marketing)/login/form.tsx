@@ -239,6 +239,8 @@ export default function LoginForm() {
 
   const defaultEmail = DEV_MODE ? 'local@tuturuuu.com' : '';
   const defaultPassword = DEV_MODE ? 'password123' : '';
+  const localE2EAuthBypass =
+    process.env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS === 'true';
 
   const emailForm = useForm({
     mode: 'onChange',
@@ -309,7 +311,7 @@ export default function LoginForm() {
   });
 
   const turnstileClientState = resolveTurnstileClientState({
-    devMode: DEV_MODE,
+    devMode: DEV_MODE || localE2EAuthBypass,
     siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   });
   const turnstileSiteKey = turnstileClientState.siteKey;
@@ -1924,21 +1926,29 @@ export default function LoginForm() {
                       onSubmit={passwordForm.handleSubmit(loginWithPassword)}
                       className="space-y-5"
                     >
-                      <FormItem>
-                        <FormLabel className="font-medium text-sm">
-                          {t('login.email')}
-                        </FormLabel>
-                        <FormControl>
-                          <div className="group relative">
-                            <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                              className="h-12 rounded-2xl border-border/60 bg-muted/30 pl-10 font-medium text-foreground shadow-none"
-                              value={passwordForm.getValues('email')}
-                              disabled
-                            />
-                          </div>
-                        </FormControl>
-                      </FormItem>
+                      <FormField
+                        control={passwordForm.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="font-medium text-sm">
+                              {t('login.email')}
+                            </FormLabel>
+                            <FormControl>
+                              <div className="group relative">
+                                <Mail className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                  className="h-12 rounded-2xl border-border/60 bg-muted/30 pl-10 font-medium text-foreground shadow-none"
+                                  {...field}
+                                  aria-readonly="true"
+                                  readOnly
+                                  tabIndex={-1}
+                                />
+                              </div>
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
 
                       <FormField
                         control={passwordForm.control}

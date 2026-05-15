@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const {
   LOCAL_E2E_APP_COORDINATION_SECRET,
+  LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
@@ -65,6 +66,16 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     new RegExp(`SUPABASE_SERVER_URL=${LOCAL_E2E_DOCKER_SUPABASE_URL}`)
   );
   assert.match(content, new RegExp(LOCAL_E2E_APP_COORDINATION_SECRET));
+  assert.match(
+    content,
+    new RegExp(`TUTURUUU_LOCAL_E2E_AUTH_BYPASS=${LOCAL_E2E_AUTH_BYPASS}`)
+  );
+  assert.match(
+    content,
+    new RegExp(
+      `NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS=${LOCAL_E2E_AUTH_BYPASS}`
+    )
+  );
   assert.match(content, new RegExp(LOCAL_E2E_SUPABASE_SECRET_KEY));
   assert.doesNotMatch(content, /supabase\.(co|in)/iu);
 });
@@ -83,7 +94,12 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
 
   assert.equal(env.BASE_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
+  assert.equal(
+    env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS,
+    LOCAL_E2E_AUTH_BYPASS
+  );
   assert.equal(env.SUPABASE_SERVER_URL, LOCAL_E2E_DOCKER_SUPABASE_URL);
+  assert.equal(env.TUTURUUU_LOCAL_E2E_AUTH_BYPASS, LOCAL_E2E_AUTH_BYPASS);
   assert.equal(env.DATABASE_URL, '');
   assert.equal(env.DIRECT_URL, '');
   assert.equal(env.POSTGRES_URL, '');

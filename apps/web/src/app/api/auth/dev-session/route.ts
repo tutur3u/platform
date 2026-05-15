@@ -5,9 +5,10 @@ import {
 import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
+import { isLocalE2EAuthBypassEnabled } from '@/lib/auth/local-e2e';
 
 export async function POST(request: NextRequest) {
-  if (!DEV_MODE) {
+  if (!DEV_MODE && !isLocalE2EAuthBypassEnabled()) {
     return NextResponse.json(
       { error: 'This endpoint is only available in development mode' },
       { status: 403 }
