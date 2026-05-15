@@ -11,6 +11,8 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - When overlap is likely, create a coordination note under
   `tmp/agent-coordination/` with intent, owned paths, observed dirty paths,
   status, and needs.
+- Use `$tuturuuu-agent-coordination` for dirty worktrees, active overlap,
+  handoff, or path-scoped staging decisions.
 - Read the task-local code and docs before proposing abstractions.
 - Check for existing helpers in `packages/internal-api`, `packages/types`, `packages/ui`, and app-local utilities.
 - Identify whether the change affects user-facing copy, route navigation, database schema, generated types, docs, or mobile localization.

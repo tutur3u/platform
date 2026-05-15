@@ -29,6 +29,8 @@ future work. Examples:
 - document CLI, deploy, database, mobile, or CI behavior in `apps/docs`
 - add a helper script when an install or verification flow is easy to automate
 - refine prompts, checklists, or skill descriptions so future triggering is more reliable
+- route shared-worktree ownership and handoff behavior through
+  `$tuturuuu-agent-coordination`
 - extract repeated commit behavior into `$tuturuuu-commit` instead of relying on
   memory or final-response habits
 
@@ -57,20 +59,13 @@ Tuturuuu tasks. Update `AGENTS.md`, `$tuturuuu-cli`, and plugin docs together so
 future assistants create, label, split, and verify tasks through the CLI instead
 of drifting into local notes or issue trackers.
 
-## Shared Worktree Coordination
+## Coordination Changes
 
-Read `references/agent-coordination.md` when a session may overlap with human or
-agent work in the same checkout. Keep `AGENTS.md`,
-`apps/docs/overview/agent-operating-manual.mdx`, and plugin docs aligned when
-changing the coordination protocol.
-
-Default posture:
-
-- run `git status --short` before editing
-- treat unknown dirty or untracked files as user-owned or other-agent-owned
-- use ignored `tmp/agent-coordination/` notes for live ownership and handoff
-- stage only paths intentionally changed
-- do not fix unrelated files just because a repo-wide check reports them
+Use `$tuturuuu-agent-coordination` when the task is about shared worktree
+ownership, dirty-path handling, active coordination notes, overlap resolution,
+handoff behavior, or staged-path safety. When changing that protocol, keep
+`AGENTS.md`, `apps/docs/overview/agent-operating-manual.mdx`, the Codex plugin
+docs, and the dedicated coordination skill aligned.
 
 ## Documentation Follow-Through
 

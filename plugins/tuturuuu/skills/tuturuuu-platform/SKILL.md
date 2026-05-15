@@ -12,7 +12,8 @@ Start by reading the nearest `AGENTS.md` instructions and any task-local docs be
 Run `git status --short` before edits. If dirty or untracked files already
 exist, assume they belong to the user or another agent unless local evidence says
 otherwise. For overlapping or long-running work, use
-`tmp/agent-coordination/` notes before touching shared files.
+`$tuturuuu-agent-coordination` and `tmp/agent-coordination/` notes before
+touching shared files.
 
 Map the request to the smallest owning surface:
 
@@ -45,13 +46,16 @@ Use the more focused plugin skills when they match the task:
 - `$tuturuuu-cli` for installing, using, debugging, or publishing the native `ttr` CLI and browser/copy-token login flows.
 - `$tuturuuu-commit` for explicit commit requests, scoped staging, atomic
   Conventional Commits, commit-and-push follow-through, and commit reporting.
+- `$tuturuuu-agent-coordination` for dirty/shared worktrees, active ownership
+  notes, overlapping edits, handoffs, and path-scoped staging safety.
 - `$tuturuuu-development-tooling` for Codex plugin, skill, validation, docs, scripts, and durable agent workflow improvements.
 - `$tuturuuu-mobile-task-board` for Flutter task-board date, routing, assignee, detail, or version bump work.
 - `$tuturuuu-review-comments` for fetching, fixing, resolving, and reporting unresolved GitHub PR review threads.
 
-Use `$tuturuuu-development-tooling` when the durable change is about agent
-coordination, plugin behavior, skill text, validation scripts, docs runbooks, or
-repo automation.
+Use `$tuturuuu-agent-coordination` when the immediate work depends on shared
+worktree ownership or overlap handling. Use `$tuturuuu-development-tooling` when
+the durable change is about plugin behavior, skill text, validation scripts,
+docs runbooks, or repo automation.
 
 If the user asks to add, create, track, or split a Tuturuuu task while working in
 this repo, route to `$tuturuuu-cli` and use `ttr` as the source of truth instead

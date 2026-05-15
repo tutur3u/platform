@@ -105,20 +105,23 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 
 ### 4.7 Multi-Agent Worktree Coordination
 
-Assume another agent may be working in the same checkout. Coordination is advisory, but it is mandatory whenever work overlaps, long-running edits touch broad areas, or existing dirty files are present.
+Assume another agent may be working in the same checkout. Coordination is advisory, but it is mandatory whenever work overlaps, long-running edits touch broad areas, existing dirty files are present, or the task changes agent workflow rules.
 
 1. **Inspect first**: Run `git status --short` before edits. Do not infer ownership from file names alone.
-2. **Read active notes**: If `tmp/agent-coordination/` exists, read the latest notes before choosing files. This directory is ignored by git and is the shared scratchpad for agent-to-agent coordination.
-3. **Declare ownership when useful**: For overlapping or long-running work, create `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` with:
+2. **Read active notes**: If `tmp/agent-coordination/` exists, inspect notes marked `working`, `blocked`, or `handoff` before choosing files. Notes marked `done` are historical context. Stale active notes are still ownership signals; age alone is not permission to overwrite.
+3. **Choose a narrow write set**: Prefer files and focused directories over broad app or repo claims. Record unrelated dirty or untracked paths and leave them alone.
+4. **Declare ownership when useful**: For dirty worktrees, overlapping areas, long-running edits, broad surfaces, or coordination-rule/plugin/tooling changes, create `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` with:
    - `Agent`: stable name or session id if available.
    - `Intent`: one-line task summary.
    - `Owned paths`: files or directories you expect to edit.
    - `Observed dirty paths`: relevant pre-existing files you will not touch.
    - `Status`: `working`, `blocked`, `handoff`, or `done`.
    - `Needs`: specific question or response requested from other agents.
-4. **Resolve overlaps explicitly**: If another note claims the same files, do not race or overwrite. Leave a response note in `tmp/agent-coordination/`, choose a disjoint slice, or ask the user to arbitrate.
-5. **Stage by path**: When committing, stage only paths you intentionally changed. If verification or hooks fail on unrelated dirty files, do not format or fix those files; report the blocker and keep your staged diff scoped.
-6. **Close the loop**: Before final response or handoff, update your coordination note to `done` or `handoff` with remaining risks and commands already run.
+   - `Verification`: commands already run, when available.
+   - `Risks`: remaining overlap or validation risk, when relevant.
+5. **Resolve overlaps explicitly**: If another active note claims the same files, do not race or overwrite. Leave a response note in `tmp/agent-coordination/`, choose a disjoint slice, or ask the user to arbitrate. Do not edit another agent's note unless the user explicitly asks.
+6. **Stage by path**: When committing, stage only paths you intentionally changed. Never stage `tmp/agent-coordination/`. If verification or hooks fail on unrelated dirty files, do not format or fix those files; report the blocker and keep your staged diff scoped.
+7. **Close the loop**: Before final response or handoff, update your own coordination note to `done`, `handoff`, or `blocked` with remaining risks and commands already run.
 
 ## 5. Engineering Standards
 
