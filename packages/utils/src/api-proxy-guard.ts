@@ -383,7 +383,11 @@ function hasAuthenticatedBearerToken(headers: Headers): boolean {
   return looksLikeSupabaseJwt(token) || looksLikeWorkspaceApiKey(token);
 }
 
-function getSupabaseAuthStorageKey(url: string): string | null {
+function getSupabaseAuthStorageKey(url: string | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
   try {
     return `sb-${new URL(url).hostname.split('.')[0]}-auth-token`;
   } catch {
@@ -393,28 +397,39 @@ function getSupabaseAuthStorageKey(url: string): string | null {
 
 function isSupabaseAuthCookieName(
   cookieName: string,
-  storageKey: string | null
+  storageKeys: string[]
 ): boolean {
-  if (storageKey) {
-    return (
+  for (const storageKey of storageKeys) {
+    if (
       cookieName === storageKey ||
       (/^\d+$/.test(cookieName.slice(storageKey.length + 1)) &&
         cookieName.startsWith(`${storageKey}.`))
-    );
+    ) {
+      return true;
+    }
   }
 
-  return GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookieName);
+  return (
+    storageKeys.length === 0 &&
+    GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN.test(cookieName)
+  );
+}
+
+function getSupabaseAuthStorageKeys(): string[] {
+  const storageKeys = [
+    getSupabaseAuthStorageKey(process.env.NEXT_PUBLIC_SUPABASE_URL),
+    getSupabaseAuthStorageKey(process.env.SUPABASE_SERVER_URL),
+  ].filter((value): value is string => Boolean(value));
+
+  return [...new Set(storageKeys)];
 }
 
 export function hasSupabaseSessionCookie(req: NextRequest): boolean {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const storageKey = supabaseUrl
-    ? getSupabaseAuthStorageKey(supabaseUrl)
-    : null;
+  const storageKeys = getSupabaseAuthStorageKeys();
 
   return req.cookies
     .getAll()
-    .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKey));
+    .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKeys));
 }
 
 export function hasAuthenticatedApiSession(req: NextRequest): boolean {
