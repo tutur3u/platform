@@ -1,11 +1,11 @@
-import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
-import { toast } from '@tuturuuu/ui/sonner';
 import {
   type EditorState,
   NodeSelection,
   Plugin,
   PluginKey,
-} from 'prosemirror-state';
+} from '@tiptap/pm/state';
+import { Decoration, DecorationSet, type EditorView } from '@tiptap/pm/view';
+import { toast } from '@tuturuuu/ui/sonner';
 import ImageResize from 'tiptap-extension-resize-image';
 import {
   formatBytes,

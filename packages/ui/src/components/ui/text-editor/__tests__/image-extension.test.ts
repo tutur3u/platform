@@ -1,8 +1,4 @@
-import {
-  type EditorState,
-  NodeSelection,
-  type Plugin,
-} from 'prosemirror-state';
+import { type EditorState, NodeSelection, type Plugin } from '@tiptap/pm/state';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { __imageExtensionPrivate, CustomImage } from '../image-extension';
 import { MAX_IMAGE_SIZE, MAX_VIDEO_SIZE } from '../media-utils';

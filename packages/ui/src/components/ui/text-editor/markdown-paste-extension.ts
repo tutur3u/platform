@@ -1,6 +1,6 @@
 import { DOMParser as ProseMirrorDOMParser } from '@tiptap/pm/model';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Extension } from '@tiptap/react';
-import { Plugin, PluginKey } from 'prosemirror-state';
 
 // ---------------------------------------------------------------------------
 // Markdown -> HTML converter (toolbar-supported features only)

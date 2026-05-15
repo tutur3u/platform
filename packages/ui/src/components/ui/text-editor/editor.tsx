@@ -1,6 +1,7 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
+import { TextSelection } from '@tiptap/pm/state';
 import {
   type Editor,
   EditorContent,
@@ -10,7 +11,6 @@ import {
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
 import { debounce } from 'lodash';
-import { TextSelection } from 'prosemirror-state';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';

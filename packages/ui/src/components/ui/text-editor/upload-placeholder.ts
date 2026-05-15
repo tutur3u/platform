@@ -1,6 +1,6 @@
+import type { EditorState } from '@tiptap/pm/state';
+import { PluginKey } from '@tiptap/pm/state';
 import type { Decoration } from '@tiptap/pm/view';
-import type { EditorState } from 'prosemirror-state';
-import { PluginKey } from 'prosemirror-state';
 
 // Plugin keys for upload placeholder decorations (separate keys to avoid conflicts)
 export const imageUploadPlaceholderPluginKey = new PluginKey(
