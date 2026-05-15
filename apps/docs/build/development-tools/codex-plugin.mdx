@@ -42,8 +42,8 @@ codex plugin marketplace add ./
   commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
   path isolation, hook failure handling, and final commit reporting.
 - `$tuturuuu-agent-coordination`: shared-worktree coordination guidance for
-  dirty checkouts, active ownership notes, overlapping edits, stale handoffs,
-  explicit write sets, and path-scoped staging safety.
+  dirty checkouts, active ownership notes, archived context, overlapping edits,
+  stale handoffs, explicit write sets, and path-scoped staging safety.
 - `$tuturuuu-cli`: native `ttr` CLI install, SDK-backed command work, browser
   login, copy-token login, workspace discovery, active-board defaults,
   open-task defaults, finance CRUD commands, finance pagination footers, compact
@@ -112,11 +112,18 @@ polluting commits.
 
 Active notes are notes marked `working`, `blocked`, or `handoff`. Treat stale
 active notes as ownership signals until you have read them and checked the
-current worktree. Notes marked `done` are historical context. If another active
-note claims the same file set, agents should choose non-overlapping slices, write
-a response note, or ask the human partner to arbitrate. They should never format,
-stage, or fix unrelated dirty files simply because a repo-wide check or commit
-hook reports them.
+current worktree. Keep active notes as direct files under
+`tmp/agent-coordination/`; archive completed notes under
+`tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` after they are
+marked `done` and no longer need top-level visibility.
+
+Archived notes are historical context for targeted lookup, not locks. Agents
+should search them by path, feature, or workflow only when previous decisions or
+verification matter to the current task. If another active note claims the same
+file set, agents should choose non-overlapping slices, write a response note, or
+ask the human partner to arbitrate. They should never format, stage, or fix
+unrelated dirty files simply because a repo-wide check or commit hook reports
+them.
 
 ## Validate The Plugin
 

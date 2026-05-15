@@ -108,7 +108,7 @@ Foundational mandates here take absolute precedence. **NEVER** invent ad-hoc beh
 Assume another agent may be working in the same checkout. Coordination is advisory, but it is mandatory whenever work overlaps, long-running edits touch broad areas, existing dirty files are present, or the task changes agent workflow rules.
 
 1. **Inspect first**: Run `git status --short` before edits. Do not infer ownership from file names alone.
-2. **Read active notes**: If `tmp/agent-coordination/` exists, inspect notes marked `working`, `blocked`, or `handoff` before choosing files. Notes marked `done` are historical context. Stale active notes are still ownership signals; age alone is not permission to overwrite.
+2. **Read active notes**: If `tmp/agent-coordination/` exists, inspect top-level notes marked `working`, `blocked`, or `handoff` before choosing files. Treat `tmp/agent-coordination/archive/` as historical context for targeted lookup, not active ownership. Stale active notes are still ownership signals; age alone is not permission to overwrite.
 3. **Choose a narrow write set**: Prefer files and focused directories over broad app or repo claims. Record unrelated dirty or untracked paths and leave them alone.
 4. **Declare ownership when useful**: For dirty worktrees, overlapping areas, long-running edits, broad surfaces, or coordination-rule/plugin/tooling changes, create `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` with:
    - `Agent`: stable name or session id if available.
@@ -121,7 +121,8 @@ Assume another agent may be working in the same checkout. Coordination is adviso
    - `Risks`: remaining overlap or validation risk, when relevant.
 5. **Resolve overlaps explicitly**: If another active note claims the same files, do not race or overwrite. Leave a response note in `tmp/agent-coordination/`, choose a disjoint slice, or ask the user to arbitrate. Do not edit another agent's note unless the user explicitly asks.
 6. **Stage by path**: When committing, stage only paths you intentionally changed. Never stage `tmp/agent-coordination/`. If verification or hooks fail on unrelated dirty files, do not format or fix those files; report the blocker and keep your staged diff scoped.
-7. **Close the loop**: Before final response or handoff, update your own coordination note to `done`, `handoff`, or `blocked` with remaining risks and commands already run.
+7. **Archive completed context**: Keep actionable notes in the top-level directory. Move only your own completed `done` notes to `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` when no active handoff needs top-level visibility. Never archive `working`, `blocked`, or `handoff` notes unless the user explicitly asks for coordination cleanup and the ownership state is clear.
+8. **Close the loop**: Before final response or handoff, update your own coordination note to `done`, `handoff`, or `blocked` with remaining risks and commands already run. If the note is `done` and archived, preserve verification and risk details in the archived file.
 
 ## 5. Engineering Standards
 

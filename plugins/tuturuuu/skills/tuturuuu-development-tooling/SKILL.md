@@ -62,10 +62,11 @@ of drifting into local notes or issue trackers.
 ## Coordination Changes
 
 Use `$tuturuuu-agent-coordination` when the task is about shared worktree
-ownership, dirty-path handling, active coordination notes, overlap resolution,
-handoff behavior, or staged-path safety. When changing that protocol, keep
-`AGENTS.md`, `apps/docs/overview/agent-operating-manual.mdx`, the Codex plugin
-docs, and the dedicated coordination skill aligned.
+ownership, dirty-path handling, active coordination notes, archived context,
+overlap resolution, handoff behavior, or staged-path safety. When changing that
+protocol, keep `AGENTS.md`, `apps/docs/overview/agent-operating-manual.mdx`, the
+Codex plugin docs, the platform checklist, and the dedicated coordination skill
+aligned.
 
 ## Documentation Follow-Through
 

@@ -62,7 +62,9 @@ See AGENTS.md §4 for full step-by-step instructions across all workflows.
 
 Use `tmp/agent-coordination/` as the ignored, in-worktree conversation space for agent-to-agent coordination. This is not source-controlled and should not be committed.
 
-Before editing, run `git status --short`. If dirty or untracked files already exist, record which ones are unrelated and leave them alone. If `tmp/agent-coordination/` exists, inspect notes marked `working`, `blocked`, or `handoff` before choosing files. Notes marked `done` are historical context; stale active notes still count as ownership signals until checked against the current worktree.
+Before editing, run `git status --short`. If dirty or untracked files already exist, record which ones are unrelated and leave them alone. If `tmp/agent-coordination/` exists, inspect top-level notes marked `working`, `blocked`, or `handoff` before choosing files. Stale active notes still count as ownership signals until checked against the current worktree.
+
+Completed context should move out of the active scan path. Use `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` for notes that are already marked `done` and no longer need top-level visibility. Search the archive with targeted keywords when a task mentions prior work or a workflow decision needs history; archived notes explain context, verification, and residual risks, but they are not active ownership claims.
 
 Create a note named `tmp/agent-coordination/<YYYYMMDD-HHMMSS>-<agent-or-task>.md` when the worktree is dirty, active notes touch a nearby area, the task is long-running, or the task changes coordination, commit, validation, CI, deployment, plugin, or skill behavior.
 
@@ -77,7 +79,7 @@ Each note should include:
 - `Verification`: commands already run, when available.
 - `Risks`: remaining overlap or validation risk, when relevant.
 
-If two agents need the same file set, do not race. Reply in `tmp/agent-coordination/`, choose a disjoint slice, or ask the human partner to arbitrate. Do not edit another agent's note unless explicitly asked. Before the final response or handoff, update your own note to `done`, `handoff`, or `blocked` with verification and residual risks. When committing, stage explicit paths only and never stage coordination notes. If a repo-wide check or commit hook fails because of another agent's files, do not fix those files just to satisfy the hook; report the blocker and keep your own diff scoped.
+If two agents need the same file set, do not race. Reply in `tmp/agent-coordination/`, choose a disjoint slice, or ask the human partner to arbitrate. Do not edit another agent's note unless explicitly asked. Before the final response or handoff, update your own note to `done`, `handoff`, or `blocked` with verification and residual risks. Archive only your own completed `done` note unless the human partner explicitly requests broader cleanup. When committing, stage explicit paths only and never stage coordination notes or archived coordination notes. If a repo-wide check or commit hook fails because of another agent's files, do not fix those files just to satisfy the hook; report the blocker and keep your own diff scoped.
 
 ## Tooling & Environment Rules
 

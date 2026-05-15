@@ -47,7 +47,8 @@ Use the more focused plugin skills when they match the task:
 - `$tuturuuu-commit` for explicit commit requests, scoped staging, atomic
   Conventional Commits, commit-and-push follow-through, and commit reporting.
 - `$tuturuuu-agent-coordination` for dirty/shared worktrees, active ownership
-  notes, overlapping edits, handoffs, and path-scoped staging safety.
+  notes, archived context, overlapping edits, handoffs, and path-scoped staging
+  safety.
 - `$tuturuuu-development-tooling` for Codex plugin, skill, validation, docs, scripts, and durable agent workflow improvements.
 - `$tuturuuu-mobile-task-board` for Flutter task-board date, routing, assignee, detail, or version bump work.
 - `$tuturuuu-review-comments` for fetching, fixing, resolving, and reporting unresolved GitHub PR review threads.
