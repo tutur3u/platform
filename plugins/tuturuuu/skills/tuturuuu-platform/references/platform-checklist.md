@@ -51,6 +51,9 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - Run `bun check` for TypeScript, JavaScript, root script, or repo config changes.
 - Update `apps/docs` for durable workflow, deployment, architecture, debugging, or operations knowledge.
 - Update the Tuturuuu plugin when agent-facing CLI, validation, setup, or workflow knowledge changes.
+- If you created a coordination note, update it with final status, verification,
+  and risks. Archive it before the final response when the status is `done` and
+  no active handoff needs it in the top-level directory.
 - Stage only paths you intentionally changed. Do not fix, format, or stage
   unrelated dirty files owned by a human or another agent.
 - Use Conventional Commit style if asked to commit.

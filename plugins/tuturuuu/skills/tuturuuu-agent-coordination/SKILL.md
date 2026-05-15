@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-agent-coordination
-description: Use when Codex or another assistant works in a dirty or shared Tuturuuu checkout, encounters active or archived coordination notes, needs ownership context, has overlapping paths, is handing off work, or must keep commits scoped to intentionally touched files.
+description: Use when Codex or another assistant works in a dirty or shared Tuturuuu checkout, encounters active or archived coordination notes, needs ownership context, has overlapping paths, is handing off work, must archive completed coordination notes, or must keep commits scoped to intentionally touched files.
 ---
 
 # Tuturuuu Agent Coordination
@@ -48,6 +48,8 @@ For non-trivial overlap, handoff, archived-context, or stale-note cases, read
 
 ## Archiving
 
+- Treat archiving your own completed current-session note as part of finishing,
+  not optional cleanup.
 - Keep active coordination notes as direct files under `tmp/agent-coordination/`.
 - Archive completed notes under
   `tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md` after the note
@@ -61,7 +63,7 @@ For non-trivial overlap, handoff, archived-context, or stale-note cases, read
 
 - Update your note to `done`, `handoff`, or `blocked` before the final response.
 - Include verification already run and any remaining risks in the note.
+- If your note is `done` and no active handoff needs top-level visibility,
+  archive it before the final response.
 - Stage explicit paths only when committing. Never stage `tmp/agent-coordination/`
   notes.
-- If your final note is `done` and no one needs it as an active handoff, move it
-  into the archive subtree so future active scans stay small.

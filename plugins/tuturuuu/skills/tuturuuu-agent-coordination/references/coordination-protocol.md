@@ -72,7 +72,9 @@ owned path set so other agents can proceed around you.
 ## Archived Coordination Notes
 
 Keep the top-level `tmp/agent-coordination/` directory small enough for fast
-active scans. Move completed notes that no longer need to be prominent into:
+active scans. Archiving your own completed current-session note is part of
+finishing the task, not optional cleanup. Move completed notes that no longer
+need to be prominent into:
 
 ```text
 tmp/agent-coordination/archive/<YYYY>/<original-note-name>.md
@@ -115,8 +117,10 @@ takes over or a human asks for cleanup.
 - `done`: your scoped work is complete; include verification and residual risks,
   then archive the note if no active handoff needs top-level visibility.
 
-Before the final response, update your own note to `done` or `handoff`. Do not
-commit coordination notes or archived coordination notes.
+Before the final response, update your own note to `done` or `handoff`. If it is
+`done`, move it into the archive subtree before replying unless it must remain
+visible as an active handoff. Do not commit coordination notes or archived
+coordination notes.
 
 ## Commit And Verification Hygiene
 

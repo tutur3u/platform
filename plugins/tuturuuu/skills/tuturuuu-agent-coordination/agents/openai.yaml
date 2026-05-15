@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu Agent Coordination"
   short_description: "Coordinate shared Tuturuuu worktrees"
-  default_prompt: "Coordinate this shared worktree task with archived context."
+  default_prompt: "Coordinate this shared worktree task and archive its completed note."
