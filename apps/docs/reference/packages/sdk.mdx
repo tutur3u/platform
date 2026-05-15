@@ -173,8 +173,9 @@ final `publish-npm` job requests `id-token: write`, so GitHub Actions mints the
 short-lived OIDC token after dependency installation, package builds, and version
 checks have already finished. That job downloads the prepared artifact, verifies
 its package `name` and `version`, confirms the bundled `npm` CLI supports trusted
-publishing, and runs `npm publish <tarball> --ignore-scripts` without an
-`NPM_TOKEN`. Do not add `bun install`, `npm install -g`, package builds, or
+  publishing, and runs `npm publish ./<tarball> --ignore-scripts` without an
+  `NPM_TOKEN` so npm treats the downloaded artifact as a local file path. Do not
+  add `bun install`, `npm install -g`, package builds, or
 package lifecycle scripts to the OIDC-enabled job. Because the `tuturuuu`
 package is public and `tutur3u/platform` is a public repository, npm also
 generates and attaches build provenance attestations automatically.

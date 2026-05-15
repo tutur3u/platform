@@ -329,6 +329,10 @@ test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () =>
   assert.match(publishJob, /Verify package artifact/);
   assert.match(
     publishJob,
+    /echo "path=\.\/\$\{PACKAGE_TARBALL\}" >> "\$GITHUB_OUTPUT"/
+  );
+  assert.match(
+    publishJob,
     /npm publish "\$\{\{ steps\.artifact\.outputs\.path \}\}" --ignore-scripts/
   );
   assert.doesNotMatch(publishJob, /actions\/checkout@/);

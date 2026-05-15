@@ -133,8 +133,9 @@ The final publish job authenticates with npm through
 mints a short-lived OIDC token (`id-token: write`) and the npm CLI exchanges it
 for a one-shot publish credential. Keep that job limited to downloading the
 prepared tarball, verifying its `name` and `version`, checking that the bundled
-npm CLI supports trusted publishing, and running
-`npm publish <tarball> --ignore-scripts`. Do not add dependency installation,
+  npm CLI supports trusted publishing, and running
+  `npm publish ./<tarball> --ignore-scripts` so npm treats the artifact as a
+  local file path. Do not add dependency installation,
 `npm install -g`, `bun install`, package builds, or package lifecycle scripts to
 the OIDC-enabled job. The job does **not** read an `NPM_TOKEN` secret. Because
 `tuturuuu` is a public package and `tutur3u/platform` is a public repository,
