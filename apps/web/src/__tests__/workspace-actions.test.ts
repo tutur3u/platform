@@ -182,4 +182,27 @@ describe('fetchWorkspaceSummaries', () => {
 
     expect(createClient).toHaveBeenCalledWith(request);
   });
+
+  it('uses a provided authenticated user without resolving Supabase auth again', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+
+    await fetchWorkspaceSummaries({
+      supabase: mocks.sessionSupabase as never,
+      userId: 'app-session-user',
+    });
+
+    expect(createClient).not.toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
+    expect(mocks.workspacesEq).toHaveBeenCalledWith(
+      'workspace_members.user_id',
+      'app-session-user'
+    );
+  });
 });

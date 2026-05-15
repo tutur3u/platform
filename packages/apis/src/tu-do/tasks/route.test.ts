@@ -215,11 +215,14 @@ describe('workspace task route personal external loading', () => {
     mocks.adminClient.from.mockClear();
     mocks.memberClient.from.mockClear();
     mocks.memberClient.rpc.mockClear();
+    mocks.normalizeWorkspaceId.mockClear();
     mocks.normalizeWorkspaceId.mockResolvedValue(PERSONAL_WS_ID);
+    mocks.resolveAuthenticatedSessionUser.mockClear();
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
       user: { id: USER_ID },
       authError: null,
     });
+    mocks.verifyWorkspaceMembershipType.mockClear();
     mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: true });
   });
 
@@ -283,6 +286,47 @@ describe('workspace task route personal external loading', () => {
       'is',
       ['task_lists.workspace_boards.archived_at', null],
     ]);
+  });
+
+  it('accepts a pre-authenticated app-session actor for personal workspace task reads', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { id: PERSONAL_WS_ID },
+      error: null,
+    });
+    queuePersonalWorkspace();
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { handleTaskRouteGET } = await import('./route.js');
+    const response = await handleTaskRouteGET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/tasks?includeRelationshipSummary=false&includeCount=true'
+      ),
+      { params: Promise.resolve({ wsId: 'personal' }) },
+      {
+        appSession: true,
+        supabase: mocks.adminClient as never,
+        user: { id: USER_ID } as never,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      count: 0,
+      tasks: [],
+    });
+    expect(mocks.resolveAuthenticatedSessionUser).not.toHaveBeenCalled();
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith(
+      expect.objectContaining({
+        supabase: mocks.adminClient,
+        userId: USER_ID,
+        wsId: PERSONAL_WS_ID,
+      })
+    );
   });
 
   it('loads placed external tasks for a real personal list when boardId is present', async () => {

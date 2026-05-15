@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, TaskActorRpcArgs } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -10,6 +11,9 @@ import {
   MAX_COLOR_LENGTH,
   MAX_TASK_DESCRIPTION_LENGTH,
   MAX_TASK_NAME_LENGTH,
+  PERSONAL_WORKSPACE_SLUG,
+  ROOT_WORKSPACE_ID,
+  resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import {
   calculateTopSortKey,
@@ -402,19 +406,85 @@ function applyPersonalPlacement(
   );
 }
 
-export async function GET(
+export type TaskRouteAuthContext = {
+  appSession?: boolean;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type LegacyTaskRouteAuth =
+  | { auth: TaskRouteAuthContext; response?: never }
+  | { auth?: never; response: NextResponse };
+
+async function resolveSupabaseTaskRouteAuth(
+  request: NextRequest
+): Promise<LegacyTaskRouteAuth> {
+  const supabase = (await createClient(request)) as TypedSupabaseClient;
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (authError || !user) {
+    return {
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return { auth: { appSession: false, supabase, user } };
+}
+
+async function normalizeRouteWorkspaceId({
+  appSession,
+  supabase,
+  userId,
+  wsId,
+}: {
+  appSession: boolean;
+  supabase: TypedSupabaseClient;
+  userId: string;
+  wsId: string;
+}) {
+  if (!appSession) {
+    return normalizeWorkspaceId(wsId, supabase);
+  }
+
+  const resolvedWorkspaceId = resolveWorkspaceId(wsId);
+
+  if (resolvedWorkspaceId === ROOT_WORKSPACE_ID) {
+    return ROOT_WORKSPACE_ID;
+  }
+
+  if (wsId.trim().toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
+    const { data: workspace, error } = await supabase
+      .from('workspaces')
+      .select('id, workspace_members!inner(user_id, type)')
+      .eq('personal', true)
+      .eq('workspace_members.user_id', userId)
+      .eq('workspace_members.type', 'MEMBER')
+      .maybeSingle();
+
+    if (error || !workspace?.id) {
+      throw new Error('Personal workspace not found');
+    }
+
+    return workspace.id;
+  }
+
+  return normalizeWorkspaceId(wsId, supabase);
+}
+
+export async function handleTaskRouteGET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
+  { params }: { params: Promise<{ wsId: string }> },
+  auth: TaskRouteAuthContext
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-    const normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { supabase, user } = auth;
+    const normalizedWorkspaceId = await normalizeRouteWorkspaceId({
+      appSession: auth.appSession === true,
+      supabase,
+      userId: user.id,
+      wsId,
+    });
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWorkspaceId,
@@ -1243,19 +1313,33 @@ export async function GET(
   }
 }
 
-export async function POST(
+export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string }> }
+  context: { params: Promise<{ wsId: string }> }
+) {
+  const legacyAuth = await resolveSupabaseTaskRouteAuth(request);
+
+  if (legacyAuth.response) {
+    return legacyAuth.response;
+  }
+
+  return handleTaskRouteGET(request, context, legacyAuth.auth);
+}
+
+export async function handleTaskRoutePOST(
+  request: NextRequest,
+  { params }: { params: Promise<{ wsId: string }> },
+  auth: TaskRouteAuthContext
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-    const normalizedWorkspaceId = await normalizeWorkspaceId(wsId, supabase);
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { supabase, user } = auth;
+    const normalizedWorkspaceId = await normalizeRouteWorkspaceId({
+      appSession: auth.appSession === true,
+      supabase,
+      userId: user.id,
+      wsId,
+    });
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWorkspaceId,
@@ -1634,4 +1718,17 @@ export async function POST(
       { status: 500 }
     );
   }
+}
+
+export async function POST(
+  request: NextRequest,
+  context: { params: Promise<{ wsId: string }> }
+) {
+  const legacyAuth = await resolveSupabaseTaskRouteAuth(request);
+
+  if (legacyAuth.response) {
+    return legacyAuth.response;
+  }
+
+  return handleTaskRoutePOST(request, context, legacyAuth.auth);
 }

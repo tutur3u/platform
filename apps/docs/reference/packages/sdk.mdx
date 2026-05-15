@@ -161,6 +161,12 @@ updates the saved config with the rotated refresh token, and retries once after 
 used directly as API bearer tokens. If refresh fails because the user no longer
 exists or the refresh JWT has expired, run `ttr login` again.
 
+API routes used by `ttr` must accept the CLI app-session access JWT from the
+`Authorization: Bearer ...` header. For `apps/web` routes, prefer
+`withSessionAuth(..., { allowAppSessionAuth: true })`; shared API routes should
+verify the app-session token before falling back to Supabase session auth and
+then keep workspace membership checks explicit.
+
 SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` when a push to `production` changes
 `packages/sdk/package.json` or the release workflow itself. The same workflow can

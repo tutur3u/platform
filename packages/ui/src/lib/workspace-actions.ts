@@ -4,6 +4,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 
 const WORKSPACE_SUMMARY_UNAUTHORIZED = 'WORKSPACE_SUMMARY_UNAUTHORIZED';
@@ -62,18 +63,24 @@ function resolveWorkspaceTier(workspace: {
 export async function fetchWorkspaceSummaries({
   requireAuth = false,
   request,
+  supabase: providedSupabase,
+  userId: providedUserId,
 }: {
   requireAuth?: boolean;
   request?: Pick<Request, 'headers'>;
+  supabase?: TypedSupabaseClient;
+  userId?: string;
 } = {}): Promise<InternalApiWorkspaceSummary[]> {
-  const supabase = await (request ? createClient(request) : createClient());
+  const supabase =
+    providedSupabase ??
+    ((await (request
+      ? createClient(request)
+      : createClient())) as TypedSupabaseClient);
   const sbAdmin = await createAdminClient();
+  const userId =
+    providedUserId ?? (await supabase.auth.getUser()).data.user?.id ?? null;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
+  if (!userId) {
     if (requireAuth) {
       throw new Error(WORKSPACE_SUMMARY_UNAUTHORIZED);
     }
@@ -85,7 +92,7 @@ export async function fetchWorkspaceSummaries({
     .select(
       'id, name, personal, avatar_url, logo_url, created_at, creator_id, workspace_members!inner(user_id), workspace_subscriptions!left(created_at, status, workspace_subscription_products(tier))'
     )
-    .eq('workspace_members.user_id', user.id);
+    .eq('workspace_members.user_id', userId);
 
   if (error) return [];
 
@@ -94,12 +101,12 @@ export async function fetchWorkspaceSummaries({
     supabase
       .from('users')
       .select('display_name, handle, avatar_url')
-      .eq('id', user.id)
+      .eq('id', userId)
       .maybeSingle(),
     supabase
       .from('user_private_details')
       .select('email')
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .maybeSingle(),
   ]);
 
@@ -132,7 +139,7 @@ export async function fetchWorkspaceSummaries({
       personal: ws.personal,
       avatar_url: ws.personal ? userAvatarUrl || ws.avatar_url : ws.avatar_url,
       logo_url: ws.logo_url,
-      created_by_me: ws.creator_id === user.id,
+      created_by_me: ws.creator_id === userId,
       tier: resolveWorkspaceTier(ws),
     };
   });
