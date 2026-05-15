@@ -183,7 +183,7 @@ test('pruneBuildkitCacheAfterBuild skips when disabled', async () => {
   assert.deepEqual(calls, []);
 });
 
-test('stopBuildkitComposeServiceAfterBuild stops the running compose service', async () => {
+test('stopBuildkitComposeServiceAfterBuild removes the running compose service', async () => {
   const calls = [];
 
   const result = await stopBuildkitComposeServiceAfterBuild({
@@ -206,6 +206,7 @@ test('stopBuildkitComposeServiceAfterBuild stops the running compose service', a
   });
 
   assert.deepEqual(result, {
+    removed: true,
     skipped: false,
     stopped: true,
   });
@@ -233,9 +234,36 @@ test('stopBuildkitComposeServiceAfterBuild stops the running compose service', a
           PROD_COMPOSE_FILE,
           '--profile',
           'redis',
+          'ps',
+          '-a',
+          '-q',
+          BUILDKIT_SERVICE_NAME,
+        ],
+      ],
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          '--profile',
+          'redis',
           'stop',
           '--timeout',
           '1',
+          BUILDKIT_SERVICE_NAME,
+        ],
+      ],
+      [
+        'docker',
+        [
+          'compose',
+          '-f',
+          PROD_COMPOSE_FILE,
+          '--profile',
+          'redis',
+          'rm',
+          '-f',
           BUILDKIT_SERVICE_NAME,
         ],
       ],
@@ -252,7 +280,19 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
     runCommand: async (command, args) => {
       calls.push([command, args]);
 
+      if (
+        args.includes('ps') &&
+        args.includes('-a') &&
+        args.at(-1) === BUILDKIT_SERVICE_NAME
+      ) {
+        return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
+      }
+
       if (args.includes('ps') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
+        return { code: 0, signal: null, stderr: '', stdout: '' };
+      }
+
+      if (args.includes('rm') && args.at(-1) === BUILDKIT_SERVICE_NAME) {
         return { code: 0, signal: null, stderr: '', stdout: '' };
       }
 
@@ -268,6 +308,7 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
     },
     skipped: false,
     stop: {
+      removed: true,
       skipped: false,
       stopped: false,
     },
@@ -280,6 +321,22 @@ test('cleanupBuildkitAfterBuild skips prune when BuildKit is already stopped', a
     [
       'docker',
       ['compose', '-f', PROD_COMPOSE_FILE, 'ps', '-q', BUILDKIT_SERVICE_NAME],
+    ],
+    [
+      'docker',
+      [
+        'compose',
+        '-f',
+        PROD_COMPOSE_FILE,
+        'ps',
+        '-a',
+        '-q',
+        BUILDKIT_SERVICE_NAME,
+      ],
+    ],
+    [
+      'docker',
+      ['compose', '-f', PROD_COMPOSE_FILE, 'rm', '-f', BUILDKIT_SERVICE_NAME],
     ],
   ]);
 });

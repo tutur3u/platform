@@ -553,9 +553,10 @@ How it works:
   Compose-owned builder so the `platform-buildkit-state` volume does not keep
   multi-gigabyte build cache indefinitely. The CLI runs this cleanup again
   after starting the watcher container, so watcher-image build cache is also
-  removed before the command exits. The cleanup then stops the Compose-owned
-  `buildkit` service by default so it does not keep CPU or memory reserved
-  while no deployment is building. Set
+  removed before the command exits. The cleanup then stops and removes the
+  Compose-owned `buildkit` service by default so it does not keep CPU or memory
+  reserved or appear as a stopped container in the `tuturuuu` Docker Desktop
+  stack while no deployment is building. Set
   `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` only when you are intentionally
   preserving BuildKit cache for repeated local diagnostics, and set
   `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when you intentionally want to

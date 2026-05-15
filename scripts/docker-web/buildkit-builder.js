@@ -573,23 +573,54 @@ async function stopBuildkitComposeServiceAfterBuild({
 } = {}) {
   if (!composeFile || !shouldStopBuildkitAfterBuild(env)) {
     return {
+      removed: false,
       skipped: true,
       stopped: false,
     };
   }
 
+  const hasRunningContainer = await hasComposeServiceContainer(
+    BUILDKIT_SERVICE_NAME,
+    {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    }
+  );
   const hasContainer = await hasComposeServiceContainer(BUILDKIT_SERVICE_NAME, {
     composeFile,
     composeGlobalArgs,
     env,
+    includeStopped: true,
     runCommand: run,
   });
 
   if (!hasContainer) {
     return {
+      removed: false,
       skipped: false,
       stopped: false,
     };
+  }
+
+  if (hasRunningContainer) {
+    await runChecked(
+      'docker',
+      getComposeCommandArgs(
+        composeFile,
+        composeGlobalArgs,
+        'stop',
+        '--timeout',
+        '1',
+        BUILDKIT_SERVICE_NAME
+      ),
+      {
+        env,
+        fsImpl,
+        runCommand: run,
+      }
+    );
   }
 
   await runChecked(
@@ -597,9 +628,8 @@ async function stopBuildkitComposeServiceAfterBuild({
     getComposeCommandArgs(
       composeFile,
       composeGlobalArgs,
-      'stop',
-      '--timeout',
-      '1',
+      'rm',
+      '-f',
       BUILDKIT_SERVICE_NAME
     ),
     {
@@ -610,8 +640,9 @@ async function stopBuildkitComposeServiceAfterBuild({
   );
 
   return {
+    removed: true,
     skipped: false,
-    stopped: true,
+    stopped: hasRunningContainer,
   };
 }
 
@@ -631,6 +662,7 @@ async function cleanupBuildkitAfterBuild({
       },
       skipped: true,
       stop: {
+        removed: false,
         skipped: true,
         stopped: false,
       },
@@ -668,6 +700,7 @@ async function cleanupBuildkitAfterBuild({
   }
 
   let stopResult = {
+    removed: false,
     skipped: true,
     stopped: false,
   };
