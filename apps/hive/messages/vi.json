@@ -252,6 +252,9 @@
           "name": "Dọn dẹp thế giới"
         }
       },
+      "toggle_inspector": "Bật/tắt bảng kiểm tra nút",
+      "toggle_palette": "Bật/tắt phần quy trình",
+      "toggle_trace": "Bật/tắt dấu vết chạy",
       "tutorial": {
         "body": "Dựng một sơ đồ nhỏ, lưu lại, rồi chạy thủ công trên máy chủ Hive đang chọn.",
         "label": "Hướng dẫn quy trình",

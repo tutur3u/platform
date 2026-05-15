@@ -56,7 +56,7 @@ export function HiveServerPicker({
   const connected = realtimeStatus === 'connected';
 
   return (
-    <div className="flex min-w-0 items-center gap-1 border-transparent border-r pr-0 transition-[border-color,padding] duration-300 ease-out group-focus-within/hive-top-toolbar:border-border/60 group-focus-within/hive-top-toolbar:pr-1.5 group-hover/hive-top-toolbar:border-border/60 group-hover/hive-top-toolbar:pr-1.5">
+    <div className="flex min-w-0 items-center gap-1">
       <HiveServerSelect
         activeServerId={activeServerId}
         labels={{
@@ -69,100 +69,98 @@ export function HiveServerPicker({
         server={server}
         servers={servers}
       />
-      <div className="invisible max-w-0 overflow-hidden opacity-0 transition-[max-width,opacity,visibility] duration-300 ease-out group-focus-within/hive-top-toolbar:visible group-focus-within/hive-top-toolbar:max-w-9 group-focus-within/hive-top-toolbar:opacity-100 group-hover/hive-top-toolbar:visible group-hover/hive-top-toolbar:max-w-9 group-hover/hive-top-toolbar:opacity-100">
-        <Popover>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <PopoverTrigger asChild>
-                <Button
-                  aria-label={t('info')}
-                  className="h-9 w-9 rounded-md border-border/60 bg-background/70 transition-transform duration-200 ease-out hover:-translate-y-0.5"
-                  size="icon"
-                  type="button"
-                  variant="outline"
+      <Popover>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <PopoverTrigger asChild>
+              <Button
+                aria-label={t('info')}
+                className="h-9 w-9 rounded-md border-border/60 bg-background/70 transition-transform duration-200 ease-out hover:-translate-y-0.5"
+                size="icon"
+                type="button"
+                variant="outline"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+            </PopoverTrigger>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{t('info')}</TooltipContent>
+        </Tooltip>
+        <PopoverContent
+          align="end"
+          className="data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 w-80 rounded-2xl p-4"
+        >
+          <div className="space-y-4">
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <p className="font-semibold text-sm">
+                  {server?.name ?? t('empty')}
+                </p>
+                <span
+                  className={[
+                    'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium text-[11px]',
+                    connected
+                      ? 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green'
+                      : 'border-dynamic-yellow/40 bg-dynamic-yellow/10 text-dynamic-yellow',
+                  ].join(' ')}
                 >
-                  <Info className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">{t('info')}</TooltipContent>
-          </Tooltip>
-          <PopoverContent
-            align="end"
-            className="data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 w-80 rounded-2xl p-4"
-          >
-            <div className="space-y-4">
-              <div>
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-sm">
-                    {server?.name ?? t('empty')}
-                  </p>
                   <span
                     className={[
-                      'inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 font-medium text-[11px]',
-                      connected
-                        ? 'border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green'
-                        : 'border-dynamic-yellow/40 bg-dynamic-yellow/10 text-dynamic-yellow',
+                      'h-1.5 w-1.5 rounded-full',
+                      connected ? 'bg-dynamic-green' : 'bg-dynamic-yellow',
                     ].join(' ')}
-                  >
-                    <span
-                      className={[
-                        'h-1.5 w-1.5 rounded-full',
-                        connected ? 'bg-dynamic-green' : 'bg-dynamic-yellow',
-                      ].join(' ')}
-                    />
-                    {connected ? t('realtime') : realtimeStatus}
-                  </span>
-                </div>
-                <p className="mt-1 text-muted-foreground text-xs">
-                  {server?.description || t('description_fallback')}
-                </p>
+                  />
+                  {connected ? t('realtime') : realtimeStatus}
+                </span>
               </div>
-              <HiveServerStats
-                labels={{
-                  blocks: t('blocks'),
-                  credits: t('credits'),
-                  npcs: t('npcs'),
-                  objects: t('objects'),
-                  online: t('online'),
-                  revision: t('revision'),
-                }}
-                npcs={npcs}
-                presenceCount={presenceCount}
-                revision={revision}
-                server={server}
-                world={world}
-              />
-              {isAdmin ? (
-                <HiveServerAdminControls
-                  labels={{
-                    admin: t('admin'),
-                    clear: t('clear'),
-                    create: t('create'),
-                    delete: t('delete'),
-                    edit: t('edit'),
-                    reseed: t('reseed'),
-                  }}
-                  onCreateServer={onCreateServer}
-                  onDeleteServer={onDeleteServer}
-                  onEditServer={onEditServer}
-                  onResetWorld={onResetWorld}
-                  server={server}
-                />
-              ) : null}
-              <HiveServerBuildInfo
-                buildInfo={buildInfo}
-                labels={{
-                  commit: t('commit'),
-                  commitMessage: t('commit_message'),
-                  unknown: t('unknown'),
-                  version: t('version'),
-                }}
-              />
+              <p className="mt-1 text-muted-foreground text-xs">
+                {server?.description || t('description_fallback')}
+              </p>
             </div>
-          </PopoverContent>
-        </Popover>
-      </div>
+            <HiveServerStats
+              labels={{
+                blocks: t('blocks'),
+                credits: t('credits'),
+                npcs: t('npcs'),
+                objects: t('objects'),
+                online: t('online'),
+                revision: t('revision'),
+              }}
+              npcs={npcs}
+              presenceCount={presenceCount}
+              revision={revision}
+              server={server}
+              world={world}
+            />
+            {isAdmin ? (
+              <HiveServerAdminControls
+                labels={{
+                  admin: t('admin'),
+                  clear: t('clear'),
+                  create: t('create'),
+                  delete: t('delete'),
+                  edit: t('edit'),
+                  reseed: t('reseed'),
+                }}
+                onCreateServer={onCreateServer}
+                onDeleteServer={onDeleteServer}
+                onEditServer={onEditServer}
+                onResetWorld={onResetWorld}
+                server={server}
+              />
+            ) : null}
+            <HiveServerBuildInfo
+              buildInfo={buildInfo}
+              labels={{
+                commit: t('commit'),
+                commitMessage: t('commit_message'),
+                unknown: t('unknown'),
+                version: t('version'),
+              }}
+            />
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

@@ -252,6 +252,9 @@
           "name": "World cleanup"
         }
       },
+      "toggle_inspector": "Toggle node inspector",
+      "toggle_palette": "Toggle workflow parts",
+      "toggle_trace": "Toggle run trace",
       "tutorial": {
         "body": "Build a small graph, save it, then run it manually against the selected Hive server.",
         "label": "Workflow tutorial",

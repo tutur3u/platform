@@ -31,14 +31,14 @@ export function WorkflowInspector({
   if (!node) {
     return (
       <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 backdrop-blur-xl">
-        <div className="shrink-0 border-border/70 border-b bg-dynamic-blue/5 p-4">
+        <div className="shrink-0 border-border/70 border-b bg-background/80 p-3">
           <p className="font-medium text-sm">{t('empty_title')}</p>
           <p className="mt-1 text-muted-foreground text-xs">
             {t('empty_body')}
           </p>
         </div>
         <ScrollArea className="min-h-0 flex-1">
-          <div className="grid gap-3 p-4">
+          <div className="grid gap-3 p-3">
             {validationErrors.length > 0 ? (
               <ValidationErrors errors={validationErrors} />
             ) : null}
@@ -53,7 +53,7 @@ export function WorkflowInspector({
 
   return (
     <aside className="flex h-full min-h-0 flex-col overflow-hidden bg-background/95 backdrop-blur-xl">
-      <div className="shrink-0 border-border/70 border-b bg-dynamic-blue/5 p-4">
+      <div className="shrink-0 border-border/70 border-b bg-background/80 p-3">
         <p className="text-muted-foreground text-xs uppercase tracking-wide">
           {node.type}
         </p>
@@ -65,7 +65,7 @@ export function WorkflowInspector({
         ) : null}
       </div>
       <ScrollArea className="min-h-0 flex-1">
-        <div className="grid gap-4 p-4">
+        <div className="grid gap-3 p-3">
           {validationErrors.length > 0 ? (
             <ValidationErrors errors={validationErrors} />
           ) : null}
@@ -108,7 +108,7 @@ export function WorkflowInspector({
           </label>
           {isAdmin ? (
             <Button
-              className="justify-start"
+              className="h-9 justify-start"
               onClick={() => onDelete(node.id)}
               type="button"
               variant="destructive"
@@ -127,7 +127,7 @@ function InspectorGuide({ compact = false }: { compact?: boolean }) {
   const t = useTranslations('studio.workflows.inspector');
 
   return (
-    <div className="rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 p-3">
+    <div className="rounded-md border border-dynamic-blue/30 bg-dynamic-blue/10 p-2.5">
       <div className="flex gap-2">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-dynamic-blue/30 bg-background/70 text-dynamic-blue">
           {compact ? (
@@ -143,7 +143,7 @@ function InspectorGuide({ compact = false }: { compact?: boolean }) {
           </p>
         </div>
       </div>
-      <code className="mt-3 block rounded-md border border-border bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
+      <code className="mt-2 block rounded-md border border-border bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
         {'{{steps.context.output.revision}}'}
       </code>
     </div>

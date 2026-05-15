@@ -1,13 +1,6 @@
 'use client';
 
-import { Map as MapIcon, Play, Save, Workflow } from '@tuturuuu/icons';
-import type {
-  HiveWorkflowDefinition,
-  HiveWorkflowNode,
-  HiveWorkflowNodeType,
-} from '@tuturuuu/internal-api/hive';
-import { Button } from '@tuturuuu/ui/button';
-import { Input } from '@tuturuuu/ui/input';
+import type { HiveWorkflowNodeType } from '@tuturuuu/internal-api/hive';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
   addEdge,
@@ -16,7 +9,6 @@ import {
   Controls,
   type Edge,
   MiniMap,
-  type Node,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
@@ -31,17 +23,26 @@ import {
   useHiveWorkflowRuns,
   useHiveWorkflows,
 } from '@/hooks/use-hive-data';
+import { isBoolean, useHivePersistedState } from '../use-hive-persisted-state';
 import {
   createWorkflowTemplate,
   type WorkflowTemplateKey,
   workflowCatalog,
 } from './workflow-catalog';
+import {
+  fromDefinitionEdges,
+  fromDefinitionNodes,
+  isValidWorkflowConnection,
+  toDefinition,
+  toWorkflowNode,
+  validateDraftDefinition,
+  type WorkflowFlowNode,
+} from './workflow-graph-utils';
 import { WorkflowInspector } from './workflow-inspector';
 import { WorkflowNodeCard } from './workflow-node-card';
 import { WorkflowPalette } from './workflow-palette';
 import { WorkflowRunPanel } from './workflow-run-panel';
-
-type WorkflowFlowNode = Node<HiveWorkflowNode['data'], HiveWorkflowNodeType>;
+import { NEW_WORKFLOW_ID, WorkflowTopBar } from './workflow-top-bar';
 
 type HiveWorkflowStudioProps = {
   isAdmin: boolean;
@@ -49,8 +50,6 @@ type HiveWorkflowStudioProps = {
   serverId: string | null;
   serverPicker: ReactNode;
 };
-
-const NEW_WORKFLOW_ID = '__new__';
 
 const nodeTypes = Object.fromEntries(
   workflowCatalog.map((item) => [item.type, WorkflowNodeCard])
@@ -90,6 +89,21 @@ function HiveWorkflowStudioInner({
     t('templates.simulation_tick.name')
   );
   const [draftDescription, setDraftDescription] = useState('');
+  const [leftCollapsed, setLeftCollapsed] = useHivePersistedState(
+    'hive.workflow.leftCollapsed',
+    false,
+    { validate: isBoolean }
+  );
+  const [rightCollapsed, setRightCollapsed] = useHivePersistedState(
+    'hive.workflow.rightCollapsed',
+    false,
+    { validate: isBoolean }
+  );
+  const [traceCollapsed, setTraceCollapsed] = useHivePersistedState(
+    'hive.workflow.traceCollapsed',
+    false,
+    { validate: isBoolean }
+  );
   const selectedNode = nodes.find((node) => node.id === selectedNodeId) ?? null;
   const mutations = useHiveWorkflowMutations(
     serverId,
@@ -101,6 +115,7 @@ function HiveWorkflowStudioInner({
     !!selectedWorkflow
   );
   const latestRun = mutations.runWorkflow.data?.run ?? null;
+  const activeRun = latestRun ?? runsQuery.data?.runs[0] ?? null;
   const validationErrors = useMemo(
     () =>
       validateDraftDefinition(toDefinition(nodes, edges), {
@@ -198,91 +213,53 @@ function HiveWorkflowStudioInner({
 
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden bg-background text-foreground">
-      <header className="group/hive-top-toolbar flex shrink-0 items-center gap-3 border-border/70 border-b bg-background/95 px-4 py-3 backdrop-blur-xl">
-        <Button
-          aria-label={t('chrome.back_to_world')}
-          className="h-10 w-10 shrink-0 border-dynamic-green/40 bg-dynamic-green/10 text-dynamic-green hover:bg-dynamic-green/15"
-          onClick={onExitWorkflows}
-          size="icon"
-          type="button"
-          variant="outline"
+      <WorkflowTopBar
+        activeRun={activeRun}
+        draftDescription={draftDescription}
+        draftName={draftName}
+        isAdmin={isAdmin}
+        leftCollapsed={leftCollapsed}
+        onChangeDescription={setDraftDescription}
+        onChangeName={setDraftName}
+        onExitWorkflows={onExitWorkflows}
+        onRunWorkflow={runWorkflow}
+        onSaveWorkflow={saveWorkflow}
+        onSelectWorkflow={setSelectedWorkflowId}
+        onToggleInspector={() => setRightCollapsed((value) => !value)}
+        onTogglePalette={() => setLeftCollapsed((value) => !value)}
+        onToggleTrace={() => setTraceCollapsed((value) => !value)}
+        rightCollapsed={rightCollapsed}
+        runPending={mutations.runWorkflow.isPending}
+        selectedWorkflow={selectedWorkflow}
+        serverPicker={serverPicker}
+        traceCollapsed={traceCollapsed}
+        validationErrors={validationErrors}
+        workflows={workflowsQuery.data?.workflows ?? []}
+      />
+      <div
+        className="grid min-h-0 flex-1 overflow-hidden transition-[grid-template-columns] duration-300 ease-out"
+        style={{
+          gridTemplateColumns: `${
+            leftCollapsed ? '0px' : 'minmax(248px, 300px)'
+          } minmax(0, 1fr) ${rightCollapsed ? '0px' : 'minmax(280px, 340px)'}`,
+        }}
+      >
+        <div
+          aria-hidden={leftCollapsed}
+          className={[
+            'min-h-0 min-w-0 overflow-hidden border-border/70 transition-[opacity,transform] duration-300 ease-out',
+            leftCollapsed
+              ? 'pointer-events-none -translate-x-2 border-r-0 opacity-0'
+              : 'translate-x-0 border-r opacity-100',
+          ].join(' ')}
         >
-          <MapIcon className="h-4 w-4" />
-        </Button>
-        <div className="min-w-0">
-          <p className="font-medium text-dynamic-green text-xs uppercase tracking-wide">
-            {t('chrome.eyebrow')}
-          </p>
-          <h1 className="truncate font-semibold text-base">
-            {t('chrome.title')}
-          </h1>
-          <p className="truncate text-muted-foreground text-xs">
-            {t('chrome.subtitle')}
-          </p>
+          <WorkflowPalette
+            isAdmin={isAdmin}
+            onAddNode={(type) => addNode(type)}
+            onUseTemplate={useTemplate}
+          />
         </div>
-        <div className="ml-auto flex min-w-0 items-center gap-2">
-          {serverPicker}
-        </div>
-      </header>
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(260px,320px)_minmax(0,1fr)_minmax(300px,380px)] overflow-hidden">
-        <WorkflowPalette
-          isAdmin={isAdmin}
-          onAddNode={(type) => addNode(type)}
-          onUseTemplate={useTemplate}
-        />
-        <section className="flex min-h-0 min-w-0 flex-col border-border/70 border-r">
-          <header className="flex shrink-0 flex-wrap items-center gap-3 border-border/70 border-b bg-background/92 p-3 backdrop-blur-xl">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green">
-              <Workflow className="h-5 w-5" />
-            </div>
-            <div className="min-w-56 flex-1">
-              <Input
-                aria-label={t('name')}
-                className="h-9 border-transparent bg-transparent px-0 font-semibold text-base shadow-none"
-                disabled={!isAdmin}
-                onChange={(event) => setDraftName(event.target.value)}
-                value={draftName}
-              />
-              <Input
-                aria-label={t('description')}
-                className="h-7 border-transparent bg-transparent px-0 text-muted-foreground text-xs shadow-none"
-                disabled={!isAdmin}
-                onChange={(event) => setDraftDescription(event.target.value)}
-                placeholder={t('description')}
-                value={draftDescription}
-              />
-            </div>
-            <select
-              aria-label={t('select_workflow')}
-              className="h-9 max-w-52 rounded-md border border-border bg-background px-2 text-sm"
-              onChange={(event) => setSelectedWorkflowId(event.target.value)}
-              value={selectedWorkflow?.id ?? NEW_WORKFLOW_ID}
-            >
-              <option value={NEW_WORKFLOW_ID}>{t('new_workflow')}</option>
-              {(workflowsQuery.data?.workflows ?? []).map((workflow) => (
-                <option key={workflow.id} value={workflow.id}>
-                  {workflow.name}
-                </option>
-              ))}
-            </select>
-            <Button
-              disabled={!isAdmin || validationErrors.length > 0}
-              onClick={saveWorkflow}
-              type="button"
-            >
-              <Save className="mr-2 h-4 w-4" />
-              {t('save')}
-            </Button>
-            <Button
-              disabled={!selectedWorkflow || mutations.runWorkflow.isPending}
-              onClick={runWorkflow}
-              type="button"
-              variant="secondary"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              {mutations.runWorkflow.isPending ? t('running') : t('run')}
-            </Button>
-          </header>
+        <section className="flex min-h-0 min-w-0 flex-col">
           <div className="min-h-0 flex-1">
             <ReactFlow
               colorMode="dark"
@@ -342,170 +319,57 @@ function HiveWorkflowStudioInner({
               <Controls />
             </ReactFlow>
           </div>
-          <WorkflowRunPanel
-            latestRun={latestRun}
-            runs={runsQuery.data?.runs ?? []}
-          />
+          <div
+            aria-hidden={traceCollapsed}
+            className={[
+              'overflow-hidden transition-[height,opacity,transform] duration-300 ease-out',
+              traceCollapsed
+                ? 'h-0 translate-y-2 opacity-0'
+                : 'h-44 translate-y-0 opacity-100',
+            ].join(' ')}
+          >
+            <WorkflowRunPanel
+              latestRun={latestRun}
+              runs={runsQuery.data?.runs ?? []}
+            />
+          </div>
         </section>
-        <WorkflowInspector
-          isAdmin={isAdmin}
-          node={selectedNode ? toWorkflowNode(selectedNode) : null}
-          onChange={(nodeId, patch) => {
-            if (!isAdmin) return;
-            setNodes((current) =>
-              current.map((node) =>
-                node.id === nodeId ? { ...node, ...patch } : node
-              )
-            );
-          }}
-          onDelete={(nodeId) => {
-            if (!isAdmin) return;
-            setNodes((current) => current.filter((node) => node.id !== nodeId));
-            setEdges((current) =>
-              current.filter(
-                (edge) => edge.source !== nodeId && edge.target !== nodeId
-              )
-            );
-            setSelectedNodeId(null);
-          }}
-          validationErrors={validationErrors}
-        />
+        <div
+          aria-hidden={rightCollapsed}
+          className={[
+            'min-h-0 min-w-0 overflow-hidden border-border/70 transition-[opacity,transform] duration-300 ease-out',
+            rightCollapsed
+              ? 'pointer-events-none translate-x-2 border-l-0 opacity-0'
+              : 'translate-x-0 border-l opacity-100',
+          ].join(' ')}
+        >
+          <WorkflowInspector
+            isAdmin={isAdmin}
+            node={selectedNode ? toWorkflowNode(selectedNode) : null}
+            onChange={(nodeId, patch) => {
+              if (!isAdmin) return;
+              setNodes((current) =>
+                current.map((node) =>
+                  node.id === nodeId ? { ...node, ...patch } : node
+                )
+              );
+            }}
+            onDelete={(nodeId) => {
+              if (!isAdmin) return;
+              setNodes((current) =>
+                current.filter((node) => node.id !== nodeId)
+              );
+              setEdges((current) =>
+                current.filter(
+                  (edge) => edge.source !== nodeId && edge.target !== nodeId
+                )
+              );
+              setSelectedNodeId(null);
+            }}
+            validationErrors={validationErrors}
+          />
+        </div>
       </div>
     </div>
   );
-}
-
-function fromDefinitionNodes(
-  definition: HiveWorkflowDefinition
-): WorkflowFlowNode[] {
-  return definition.nodes.map((node) => ({
-    ...node,
-    type: node.type,
-  }));
-}
-
-function fromDefinitionEdges(definition: HiveWorkflowDefinition): Edge[] {
-  return definition.edges.map((edge) => ({ ...edge }));
-}
-
-function toWorkflowNode(node: WorkflowFlowNode): HiveWorkflowNode {
-  return {
-    data: node.data,
-    id: node.id,
-    position: node.position,
-    type: node.type as HiveWorkflowNodeType,
-  };
-}
-
-function toDefinition(
-  nodes: WorkflowFlowNode[],
-  edges: Edge[]
-): HiveWorkflowDefinition {
-  return {
-    edges: edges.map((edge) => ({
-      id: edge.id,
-      label: typeof edge.label === 'string' ? edge.label : undefined,
-      source: edge.source,
-      sourceHandle: edge.sourceHandle,
-      target: edge.target,
-      targetHandle: edge.targetHandle,
-    })),
-    nodes: nodes.map(toWorkflowNode),
-    version: 1,
-  };
-}
-
-function validateDraftDefinition(
-  definition: HiveWorkflowDefinition,
-  messages: {
-    cycle: string;
-    danglingEdge: string;
-    edgeLimit: string;
-    missingTrigger: string;
-    nodeLimit: string;
-  }
-) {
-  const errors: string[] = [];
-  const nodeIds = new Set(definition.nodes.map((node) => node.id));
-
-  if (!definition.nodes.some((node) => node.type === 'manual_trigger')) {
-    errors.push(messages.missingTrigger);
-  }
-  if (definition.nodes.length > 80) {
-    errors.push(messages.nodeLimit);
-  }
-  if (definition.edges.length > 120) {
-    errors.push(messages.edgeLimit);
-  }
-  if (
-    definition.edges.some(
-      (edge) => !nodeIds.has(edge.source) || !nodeIds.has(edge.target)
-    )
-  ) {
-    errors.push(messages.danglingEdge);
-  }
-  if (hasDraftCycle(definition)) {
-    errors.push(messages.cycle);
-  }
-  return errors;
-}
-
-function isValidWorkflowConnection(
-  connection: Connection | Edge,
-  nodes: WorkflowFlowNode[],
-  edges: Edge[]
-) {
-  if (!connection.source || !connection.target) return false;
-  if (connection.source === connection.target) return false;
-  const sourceHandle = connection.sourceHandle ?? null;
-  const targetHandle = connection.targetHandle ?? null;
-
-  if (
-    edges.some(
-      (edge) =>
-        edge.source === connection.source &&
-        edge.target === connection.target &&
-        (edge.sourceHandle ?? null) === sourceHandle
-    )
-  ) {
-    return false;
-  }
-
-  return !hasDraftCycle(
-    toDefinition(nodes, [
-      ...edges,
-      {
-        id: '__candidate__',
-        source: connection.source,
-        sourceHandle,
-        target: connection.target,
-        targetHandle,
-      },
-    ])
-  );
-}
-
-function hasDraftCycle(definition: HiveWorkflowDefinition) {
-  const outgoing = new Map<string, string[]>();
-  for (const edge of definition.edges) {
-    const current = outgoing.get(edge.source) ?? [];
-    current.push(edge.target);
-    outgoing.set(edge.source, current);
-  }
-
-  const state = new Map<string, 'done' | 'visiting'>();
-  const visit = (nodeId: string): boolean => {
-    const current = state.get(nodeId);
-    if (current === 'visiting') return true;
-    if (current === 'done') return false;
-
-    state.set(nodeId, 'visiting');
-    for (const target of outgoing.get(nodeId) ?? []) {
-      if (visit(target)) return true;
-    }
-    state.set(nodeId, 'done');
-    return false;
-  };
-
-  return definition.nodes.some((node) => visit(node.id));
 }

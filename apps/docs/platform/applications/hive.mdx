@@ -140,15 +140,20 @@ season, weather, camera presets, and simulation/server toggles. Do not restore
 the older five fixed visible time buttons as the primary time control.
 
 The editor also has a `World / Workflows` mode switch. Workflow mode is a 2D
-React Flow graph builder for manual Hive automations. Admins can drag nodes
-from the palette, use starter templates, edit JSON config in the inspector,
-save shared workflows, and run them against the selected server. Members see
-the same graph read-only and can manually run saved workflows. Workflow runs
-apply live effects through the same gateway-backed Hive actions used elsewhere:
-world events, simulation ticks, NPC decision records, farming, warehouses, and
-trades. Effects are audited through the workflow run trace plus the existing
-Hive event/economy tables; v1 has no schedule, webhook trigger, retry queue,
-credential vault, or rollback approval layer.
+React Flow graph builder for manual Hive automations. The workflow command bar
+owns server selection, always-visible server info, workflow selection, editable
+workflow title/description, latest run status, Save/Run actions, and collapse
+toggles for the palette, node inspector, and run trace. Keep those controls in
+the top bar instead of restoring separate title blocks, hover-only server info,
+or large tutorial chrome inside workflow mode. Admins can drag nodes from the
+palette, use starter templates, edit JSON config in the inspector, save shared
+workflows, and run them against the selected server. Members see the same graph
+read-only and can manually run saved workflows. Workflow runs apply live effects
+through the same gateway-backed Hive actions used elsewhere: world events,
+simulation ticks, NPC decision records, farming, warehouses, and trades. Effects
+are audited through the workflow run trace plus the existing Hive event/economy
+tables; v1 has no schedule, webhook trigger, retry queue, credential vault, or
+rollback approval layer.
 
 The chat composer is opt-in from the editor chrome button, and the mini-map is
 a collapsible viewport overlay. If all Hive servers are deleted, the editor must

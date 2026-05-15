@@ -36,9 +36,8 @@ describe('WorkflowRunPanel', () => {
       </NextIntlClientProvider>
     );
 
-    expect(screen.getByText('Latest run')).toBeTruthy();
-    expect(screen.getByText('run-1')).toBeTruthy();
     expect(screen.getByText('trigger')).toBeTruthy();
+    expect(screen.getByText('completed')).toBeTruthy();
     expect(screen.getByText('manual_trigger')).toBeTruthy();
     expect(screen.getByText('{"mode":"manual"}')).toBeTruthy();
   });
