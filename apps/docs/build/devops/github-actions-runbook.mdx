@@ -1,7 +1,7 @@
 ---
 title: 'GitHub Actions Runbook'
 description: 'How the repository’s automation is organized, gated, and operated.'
-updatedAt: '2026-05-04'
+updatedAt: '2026-05-16'
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -125,6 +125,12 @@ Use `workflow_dispatch` when:
 
 Manual dispatch bypasses affected-app gating when the workflow is enabled in
 `tuturuuu.ts`. Disabled `ci` entries still skip, even for manual dispatch.
+
+Package release workflows that expose production secrets or trusted publishing
+authority must add their own ref guard before dependency installation or publish
+jobs. For the SDK release workflow, manual dispatch is only valid with the
+branch selector set to `production`; non-production refs are rejected before the
+package or publish jobs can start.
 
 ### Newer-commit guards
 

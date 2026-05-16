@@ -115,11 +115,13 @@ The repository uses `.github/workflows/release-sdk-package.yaml` to publish the
 SDK automatically to npm when a push to `production` changes
 `packages/sdk/package.json` or the release workflow itself. The workflow can also
 be dispatched manually to catch up a version that already landed on
-`production`. It runs the SDK test suite, checks whether the exact package
-version is already present on npm, and prepares a package tarball with `npm pack`
-outside the trusted-publish job. The npm-version check makes workflow changes
-and manual retries idempotent: if `tuturuuu@<version>` already exists, the
-publish job is skipped.
+`production`. Manual dispatches from any other ref are rejected before
+dependency installation, packaging, or npm trusted publishing can run. It runs
+the SDK test suite, checks whether the exact package version is already present
+on npm, and prepares a package tarball with `npm pack` outside the
+trusted-publish job. The npm-version check makes workflow changes and manual
+retries idempotent: if `tuturuuu@<version>` already exists, the publish job is
+skipped.
 
 The SDK imports local workspace packages whose package exports point at
 git-ignored `dist/` output. The release workflow therefore builds
@@ -133,11 +135,16 @@ The final publish job authenticates with npm through
 mints a short-lived OIDC token (`id-token: write`) and the npm CLI exchanges it
 for a one-shot publish credential. Keep that job limited to downloading the
 prepared tarball, verifying its `name` and `version`, checking that the bundled
-  npm CLI supports trusted publishing, and running
-  `npm publish ./<tarball> --ignore-scripts` so npm treats the artifact as a
-  local file path. Do not add dependency installation,
-`npm install -g`, `bun install`, package builds, or package lifecycle scripts to
-the OIDC-enabled job. The job does **not** read an `NPM_TOKEN` secret. Because
+npm CLI supports trusted publishing, and running
+`npm publish ./<tarball> --ignore-scripts` so npm treats the artifact as a
+local file path. Do not add dependency installation,
+`npm install -g`, `bun install`, package builds, package lifecycle scripts, or
+repository secrets to the SDK release workflow. The publish job targets the
+GitHub environment
+`sdk-release-production`; keep that environment restricted to the `production`
+branch in repository settings, and keep the npm trusted publisher bound to the
+same environment name so a branch-selected workflow cannot mint a matching npm
+publish identity. The job does **not** read an `NPM_TOKEN` secret. Because
 `tuturuuu` is a public package and `tutur3u/platform` is a public repository,
 npm also generates and attaches build provenance attestations automatically.
 
@@ -146,11 +153,13 @@ To publish a new release:
 1. Bump `packages/sdk/package.json`.
 2. Merge or push the version bump to `production`.
 3. If the version bump already landed without publishing, manually dispatch
-   `Release tuturuuu package` from GitHub Actions.
+   `Release tuturuuu package` from GitHub Actions with the branch selector set
+   to `production`.
 4. Make sure the npm trusted publisher entry for `tuturuuu` still points at
    `tutur3u/platform` and the workflow filename
-   `release-sdk-package.yaml` (no GitHub environment). Manage it from the
-   package settings page on npmjs.com under **Trusted Publisher**.
+   `release-sdk-package.yaml` with GitHub environment
+   `sdk-release-production`. Manage it from the package settings page on
+   npmjs.com under **Trusted Publisher**.
 
 The npm package settings should keep
 **Require two-factor authentication and disallow tokens** enabled so the

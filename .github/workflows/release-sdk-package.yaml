@@ -9,14 +9,25 @@ on:
   workflow_dispatch:
 
 jobs:
+  reject-non-production-ref:
+    if: github.ref != 'refs/heads/production'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Reject non-production release ref
+        run: |
+          echo "::error::SDK releases can only run from refs/heads/production. Current ref: ${GITHUB_REF}."
+          exit 1
+
   check-ci:
+    if: github.ref == 'refs/heads/production'
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: release-sdk-package.yaml
 
   check-version-bump:
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
     outputs:
       should_release: ${{ steps.check.outputs.should_release }}
@@ -26,22 +37,8 @@ jobs:
 
   build:
     needs: check-version-bump
-    if: needs.check-version-bump.outputs.should_release == 'true'
+    if: github.ref == 'refs/heads/production' && needs.check-version-bump.outputs.should_release == 'true'
     runs-on: ubuntu-latest
-
-    env:
-      # Use Vercel Remote Caching
-      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-
-      # Configure production Supabase client
-      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-      SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
-
-      # Configure infrastructure
-      PROXY_API_KEY: ${{ secrets.PROXY_API_KEY }}
-      NEXT_PUBLIC_PROXY_API_KEY: ${{ secrets.NEXT_PUBLIC_PROXY_API_KEY }}
 
     steps:
       - uses: actions/checkout@v6
@@ -69,6 +66,7 @@ jobs:
 
   prepare-publish-npm:
     needs: [build]
+    if: github.ref == 'refs/heads/production'
     runs-on: ubuntu-latest
     outputs:
       package_name: ${{ steps.version-check.outputs.package_name }}
@@ -133,15 +131,17 @@ jobs:
 
   publish-npm:
     needs: [prepare-publish-npm]
-    if: needs.prepare-publish-npm.outputs.should_publish == 'true'
+    if: github.ref == 'refs/heads/production' && needs.prepare-publish-npm.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
+    environment: sdk-release-production
 
     # Trusted publishing requires the workflow to be able to mint an OIDC
     # token. Keep dependency installation, tool upgrades, package builds, and
     # lifecycle scripts out of this job so only the final artifact publish runs
     # with npm publish authority. See https://docs.npmjs.com/trusted-publishers
     # for the npm-side configuration (provider: GitHub Actions, repository:
-    # tutur3u/platform, workflow filename: release-sdk-package.yaml).
+    # tutur3u/platform, workflow filename: release-sdk-package.yaml,
+    # environment: sdk-release-production).
     permissions:
       contents: read
       id-token: write
