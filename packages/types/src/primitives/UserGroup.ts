@@ -5,6 +5,7 @@ export interface UserGroup extends Entity {
   ws_id?: string;
   name: string;
   archived?: boolean;
+  is_course_published?: boolean;
   is_guest: boolean;
   amount?: number;
   attendance_amount?: number;

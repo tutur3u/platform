@@ -9,7 +9,7 @@ import {
 } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
-import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
+import { LEARN_APP_URL } from '@/constants/common';
 
 export async function TeachDashboardFeatureGrid({
   attendanceChecks,
@@ -27,35 +27,35 @@ export async function TeachDashboardFeatureGrid({
   const t = await getTranslations('teachDashboard');
   const featureCards = [
     {
-      href: `${WEB_APP_URL}/${wsId}/users/groups`,
+      href: `/${wsId}/courses`,
       icon: UsersRound,
       key: 'groups',
       surface: 'bg-dynamic-yellow/15',
       value: totalGroups,
     },
     {
-      href: `${WEB_APP_URL}/${wsId}/users/groups`,
+      href: `/${wsId}/courses`,
       icon: BookOpenCheck,
       key: 'modules',
       surface: 'bg-dynamic-cyan/15',
       value: totalModules,
     },
     {
-      href: `${WEB_APP_URL}/${wsId}/users/attendance`,
+      href: `/${wsId}/attendance`,
       icon: CalendarCheck,
       key: 'attendance',
       surface: 'bg-dynamic-green/15',
       value: attendanceChecks,
     },
     {
-      href: `${WEB_APP_URL}/${wsId}/users/reports`,
+      href: `/${wsId}/reports`,
       icon: FileText,
       key: 'reports',
       surface: 'bg-dynamic-pink/15',
       value: totalGroups,
     },
     {
-      href: `${WEB_APP_URL}/${wsId}/users/groups/indicators`,
+      href: `/${wsId}/metrics`,
       icon: BarChart3,
       key: 'metrics',
       surface: 'bg-dynamic-orange/15',
@@ -86,7 +86,7 @@ export async function TeachDashboardFeatureGrid({
         </div>
         <a
           className="inline-flex h-10 w-fit shrink-0 items-center gap-2 border-2 border-border bg-primary px-3 font-black text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)]"
-          href={`${WEB_APP_URL}/${wsId}/users/groups`}
+          href={`/${wsId}/courses`}
         >
           {t('featureGrid.primaryAction')}
           <ArrowRight className="h-3.5 w-3.5" />

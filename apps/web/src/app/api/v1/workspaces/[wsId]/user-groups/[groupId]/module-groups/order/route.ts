@@ -56,7 +56,7 @@ export const PATCH = withSessionAuth(
     }
 
     const permissions = await getPermissions({
-      request,
+      user: context.user,
       wsId: normalizedWsId,
     });
     if (!permissions?.containsPermission('manage_users')) {

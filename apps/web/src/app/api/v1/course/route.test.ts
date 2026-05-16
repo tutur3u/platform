@@ -167,5 +167,48 @@ describe('course API app-session access', () => {
     expect(mocks.resolveSessionAuthContext).toHaveBeenCalledWith(request, {
       allowAppSessionAuth: true,
     });
+    const groupsQuery = admin.from.mock.results[0]?.value;
+    expect(groupsQuery.eq).toHaveBeenCalledWith('is_course_published', true);
+  });
+
+  it('keeps published courses visible even when they have no published modules yet', async () => {
+    const admin = createSupabaseMock({
+      workspace_course_modules: [
+        {
+          data: [],
+          error: null,
+        },
+      ],
+      workspace_user_groups: [
+        {
+          data: [
+            {
+              description: 'Draft module path',
+              id: 'course-2',
+              name: 'Chemistry',
+            },
+          ],
+          error: null,
+        },
+      ],
+    });
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const request = new Request('http://localhost/api/v1/course?wsId=ws-1');
+    const response = await GET(request);
+
+    await expect(response.json()).resolves.toEqual({
+      courses: [
+        {
+          completedModules: 0,
+          description: 'Draft module path',
+          id: 'course-2',
+          name: 'Chemistry',
+          progress: 0,
+          totalModules: 0,
+        },
+      ],
+    });
+    expect(response.status).toBe(200);
   });
 });

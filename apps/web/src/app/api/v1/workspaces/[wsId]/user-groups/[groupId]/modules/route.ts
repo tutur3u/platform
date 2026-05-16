@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json, TablesInsert } from '@tuturuuu/types';
 import {
@@ -39,8 +40,8 @@ async function validateWorkspaceGroupAccess(
   wsId: string,
   groupId: string,
   userId: string,
-  sessionSupabase: TypedSupabaseClient,
-  request: Request
+  user: SupabaseUser,
+  sessionSupabase: TypedSupabaseClient
 ) {
   const parsedParams = RouteParamsSchema.safeParse({ groupId, wsId });
   if (!parsedParams.success) {
@@ -74,7 +75,7 @@ async function validateWorkspaceGroupAccess(
   }
 
   const permissions = await getPermissions({
-    request,
+    user,
     wsId: normalizedWsId,
   });
   if (!permissions?.containsPermission('manage_users')) {
@@ -107,15 +108,15 @@ async function validateWorkspaceGroupAccess(
 }
 
 export const GET = withSessionAuth(
-  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const { wsId, groupId } = await params;
 
     const access = await validateWorkspaceGroupAccess(
       wsId,
       groupId,
       context.user.id,
-      context.supabase,
-      request
+      context.user,
+      context.supabase
     );
     if (access instanceof NextResponse) return access;
 
@@ -165,8 +166,8 @@ export const POST = withSessionAuth(
       wsId,
       groupId,
       context.user.id,
-      context.supabase,
-      request
+      context.user,
+      context.supabase
     );
     if (access instanceof NextResponse) return access;
 

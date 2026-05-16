@@ -81,6 +81,8 @@ export {
 } from './client';
 export type {
   CreateWorkspaceQuizPayload,
+  ListWorkspaceCoursesParams,
+  ListWorkspaceCoursesResponse,
   UpsertWorkspaceCourseModuleGroupPayload,
   UpsertWorkspaceCourseModulePayload,
   UpsertWorkspaceCoursePayload,
@@ -109,9 +111,11 @@ export type {
   ValseaVoiceGradeResult,
   ValseaVoiceGradeStatus,
   ValseaVoiceGradeWord,
+  WorkspaceCourseListItem,
   WorkspaceEducationAttemptListQuery,
 } from './education';
 export {
+  archiveWorkspaceCourse,
   createWorkspaceCourse,
   createWorkspaceCourseModule,
   createWorkspaceCourseModuleGroup,
@@ -132,7 +136,9 @@ export {
   listWorkspaceCourseModuleGroupModules,
   listWorkspaceCourseModuleGroups,
   listWorkspaceCourseModules,
+  listWorkspaceCourses,
   listWorkspaceEducationAttempts,
+  publishWorkspaceCourse,
   reorderWorkspaceCourseModuleGroups,
   reorderWorkspaceCourseModules,
   reorderWorkspaceCourseModulesInModuleGroup,
@@ -431,6 +437,31 @@ export {
   type TaskSchedulingUpdatePayload,
   updateTaskSchedulingSettings,
 } from './tasks-scheduling';
+export {
+  addWorkspaceCourseMembers,
+  createWorkspaceCourseIndicator,
+  createWorkspaceCoursePost,
+  createWorkspaceCourseReport,
+  getTeachBootstrap,
+  listWorkspaceCourseAttendance,
+  listWorkspaceCourseIndicators,
+  listWorkspaceCourseMembers,
+  listWorkspaceCoursePosts,
+  listWorkspaceCourseReports,
+  listWorkspaceUsers,
+  removeWorkspaceCourseMember,
+  type TeachAttendanceEntry,
+  type TeachAttendanceStatus,
+  type TeachBootstrapResponse,
+  type TeachCourseMember,
+  type TeachIndicator,
+  type TeachIndicatorValue,
+  type TeachPost,
+  type TeachReport,
+  type TeachWorkspaceUser,
+  updateWorkspaceCourseAttendance,
+  updateWorkspaceCourseIndicators,
+} from './teach';
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,

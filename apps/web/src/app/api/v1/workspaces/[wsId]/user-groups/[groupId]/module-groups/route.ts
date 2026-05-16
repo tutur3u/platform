@@ -35,7 +35,7 @@ const CreateModuleGroupSchema = z
   .strict();
 
 export const GET = withSessionAuth(
-  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
       return NextResponse.json(
@@ -68,7 +68,7 @@ export const GET = withSessionAuth(
     }
 
     const permissions = await getPermissions({
-      request,
+      user: context.user,
       wsId: normalizedWsId,
     });
     if (!permissions?.containsPermission('manage_users')) {
@@ -150,7 +150,7 @@ export const POST = withSessionAuth(
     }
 
     const permissions = await getPermissions({
-      request,
+      user: context.user,
       wsId: normalizedWsId,
     });
     if (!permissions?.containsPermission('manage_users')) {

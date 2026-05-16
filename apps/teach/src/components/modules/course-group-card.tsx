@@ -1,6 +1,14 @@
 'use client';
 
-import { ArrowRight, BookOpen, Play, Users } from '@tuturuuu/icons';
+import {
+  Archive,
+  ArrowRight,
+  BookOpen,
+  Eye,
+  EyeOff,
+  Play,
+  Users,
+} from '@tuturuuu/icons';
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -8,7 +16,10 @@ import { Link } from '@/i18n/navigation';
 import { BrutalCard, courseThemes } from './modules-shared';
 
 export interface CourseGroupItem {
+  archived?: boolean;
   id: string;
+  is_course_published?: boolean;
+  members_count?: number;
   name: string | null;
   description: string | null;
   totalModules: number;
@@ -43,10 +54,14 @@ function StatChip({
 export function CourseGroupCard({
   course,
   index,
+  onArchive,
+  onPublish,
   wsId,
 }: {
   course: CourseGroupItem;
   index: number;
+  onArchive?: () => void;
+  onPublish?: (isPublished: boolean) => void;
   wsId: string;
 }) {
   const t = useTranslations();
@@ -54,9 +69,9 @@ export function CourseGroupCard({
   const Icon = theme.icon;
 
   const boundedProgress = Math.min(100, Math.max(0, course.progress));
-  const remaining = Math.max(0, course.totalModules - course.completedModules);
   const isComplete = boundedProgress >= 100;
-  const courseHref = `/${wsId}/modules/${course.id}`;
+  const courseHref = `/${wsId}/courses/${course.id}`;
+  const isPublished = Boolean(course.is_course_published);
 
   return (
     <BrutalCard className="flex flex-col overflow-hidden p-0">
@@ -78,9 +93,9 @@ export function CourseGroupCard({
             {course.totalModules} {t('teachModules.modules').toLowerCase()}
           </p>
         </div>
-        {isComplete ? (
+        {isPublished ? (
           <span className="shrink-0 border-2 border-border bg-dynamic-green/15 px-2 py-0.5 font-bold text-foreground text-xs shadow-[2px_2px_0_var(--border)]">
-            {t('common.completed')}
+            {t('teachModules.published')}
           </span>
         ) : null}
       </div>
@@ -104,12 +119,8 @@ export function CourseGroupCard({
           />
           <StatChip
             icon={Users}
-            label={
-              remaining > 0
-                ? t('teachModules.remaining')
-                : t('teachModules.done')
-            }
-            value={`${remaining}`}
+            label={t('teachModules.learners')}
+            value={`${course.members_count ?? 0}`}
           />
         </div>
 
@@ -152,7 +163,34 @@ export function CourseGroupCard({
       </div>
 
       {/* Canvas-style footer action */}
-      <div className="mt-auto border-border border-t-2 px-5 py-3">
+      <div className="mt-auto space-y-3 border-border border-t-2 px-5 py-3">
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            className={cn(
+              'inline-flex min-h-9 items-center justify-center gap-2 border-2 border-border px-2 font-black text-xs shadow-[2px_2px_0_var(--border)]',
+              isPublished ? 'bg-dynamic-green/15' : 'bg-dynamic-yellow/15'
+            )}
+            onClick={() => onPublish?.(!isPublished)}
+            type="button"
+          >
+            {isPublished ? (
+              <EyeOff className="h-3.5 w-3.5" />
+            ) : (
+              <Eye className="h-3.5 w-3.5" />
+            )}
+            {isPublished
+              ? t('teachModules.unpublish')
+              : t('teachModules.publish')}
+          </button>
+          <button
+            className="inline-flex min-h-9 items-center justify-center gap-2 border-2 border-border bg-muted px-2 font-black text-xs shadow-[2px_2px_0_var(--border)]"
+            onClick={onArchive}
+            type="button"
+          >
+            <Archive className="h-3.5 w-3.5" />
+            {t('teachModules.archive')}
+          </button>
+        </div>
         <Link
           className="group/btn flex w-full items-center gap-2 font-bold text-sm transition hover:text-primary"
           href={courseHref}

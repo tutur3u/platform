@@ -12,8 +12,36 @@ import {
 export interface UpsertWorkspaceCoursePayload {
   id?: string;
   name: string;
+  archived?: boolean;
   description?: string;
   cert_template?: string;
+  is_course_published?: boolean;
+}
+
+export interface WorkspaceCourseListItem {
+  archived: boolean;
+  cert_template: string | null;
+  created_at: string | null;
+  description: string | null;
+  id: string;
+  is_course_published: boolean;
+  members_count: number;
+  modules_count: number;
+  name: string;
+}
+
+export interface ListWorkspaceCoursesParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  status?: 'active' | 'all' | 'archived';
+}
+
+export interface ListWorkspaceCoursesResponse {
+  count: number;
+  data: WorkspaceCourseListItem[];
+  page: number;
+  pageSize: number;
 }
 
 export interface UpsertWorkspaceCourseModulePayload {
@@ -364,13 +392,33 @@ export async function createWorkspaceCourse(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ message: string }>(
+  return client.json<{ id: string; message: string }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
       cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceCourses(
+  workspaceId: string,
+  params: ListWorkspaceCoursesParams = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ListWorkspaceCoursesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/courses`,
+    {
+      cache: 'no-store',
+      query: {
+        page: params.page,
+        pageSize: params.pageSize,
+        q: params.q,
+        status: params.status,
+      },
     }
   );
 }
@@ -586,6 +634,33 @@ export async function updateWorkspaceCourse(
       body: JSON.stringify(payload),
       cache: 'no-store',
     }
+  );
+}
+
+export function archiveWorkspaceCourse(
+  workspaceId: string,
+  courseId: string,
+  options?: InternalApiClientOptions
+) {
+  return updateWorkspaceCourse(
+    workspaceId,
+    courseId,
+    { archived: true, is_course_published: false },
+    options
+  );
+}
+
+export function publishWorkspaceCourse(
+  workspaceId: string,
+  courseId: string,
+  isPublished: boolean,
+  options?: InternalApiClientOptions
+) {
+  return updateWorkspaceCourse(
+    workspaceId,
+    courseId,
+    { is_course_published: isPublished },
+    options
   );
 }
 

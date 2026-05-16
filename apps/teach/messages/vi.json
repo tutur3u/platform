@@ -88,7 +88,7 @@
     "groupsTitle": "Nhóm học theo khóa",
     "lead": "Quản lý vòng dạy học mà không biến Teach thành một bản sao quản trị nền tảng. Dashboard tập trung vào nhóm, module, điểm danh tập trung, báo cáo và score metrics.",
     "manager": "Quản lý: {name}",
-    "manageInPlatform": "Quản lý hồ sơ trên nền tảng",
+    "manageInPlatform": "Quản lý khóa học",
     "metrics": "Metrics",
     "modules": "Module",
     "openLearn": "Mở Learn",
@@ -170,12 +170,18 @@
       "title": "Tạo module bằng AI"
     },
     "allCourses": "Tất cả khóa học",
-    "allCoursesDescription": "Mỗi nhóm khóa học bên dưới là một workspace user group có module đã xuất bản.",
+    "allCoursesDescription": "Mỗi khóa học bên dưới là một workspace user group do Teach quản lý. Khóa học nháp vẫn ẩn khỏi Learn cho đến khi được xuất bản.",
+    "archive": "Lưu trữ",
     "backToDashboard": "Quay lại dashboard",
     "courseProgress": "Tiến độ khóa học",
+    "createCourse": "Tạo khóa học",
+    "createDescriptionPlaceholder": "Mô tả ngắn cho khóa học",
+    "createNamePlaceholder": "Tên khóa học",
+    "creating": "Đang tạo...",
     "courses": "khóa học",
-    "description": "Xem tất cả nhóm khóa học trong workspace này. Mỗi thẻ là một user group có module học tập đã xuất bản.",
+    "description": "Tạo và quản lý nhóm khóa học trong Teach. Xuất bản khóa học khi học viên cần thấy các module đã xuất bản trong Learn.",
     "done": "Xong",
+    "learners": "Học viên",
     "lessonEditor": {
       "removeYoutubeLink": "Gỡ liên kết YouTube",
       "saved": "Đã lưu",
@@ -183,14 +189,89 @@
     },
     "loadError": "Không tải được khóa học. Vui lòng thử lại.",
     "modules": "Module",
-    "noCourses": "Không tìm thấy khóa học. Hãy tạo workspace user groups có module đã xuất bản trên nền tảng trước.",
+    "noCourses": "Chưa có khóa học. Hãy tạo khóa học nháp đầu tiên ngay trong Teach.",
     "noDescription": "Chưa có mô tả.",
     "openModules": "Mở module",
     "progress": "Tiến độ",
+    "publish": "Xuất bản",
+    "published": "Đã xuất bản",
     "remaining": "Còn lại",
     "reviewCourse": "Xem lại khóa học",
     "title": "Module khóa học",
     "totalModules": "tổng module",
+    "unpublish": "Hủy xuất bản",
     "workspace": "Workspace"
+  },
+  "teachMembers": {
+    "remove": "Gỡ học viên",
+    "searchPlaceholder": "Tìm người dùng hiện có trong workspace",
+    "title": "Học viên"
+  },
+  "teachOperations": {
+    "assignments": {
+      "lead": "Tạo bài đăng khóa học và ghi chú bài tập mà không rời Teach.",
+      "title": "Bài tập và bài đăng"
+    },
+    "attendance": {
+      "lead": "Lưu điểm danh hằng ngày cho học viên đã ghi danh trong khóa học đã chọn.",
+      "title": "Điểm danh"
+    },
+    "attendanceStatus": {
+      "ABSENT": "Vắng",
+      "LATE": "Muộn",
+      "NONE": "Chưa đặt",
+      "PRESENT": "Có mặt"
+    },
+    "backToDashboard": "Quay lại dashboard",
+    "course": "Khóa học",
+    "createCourse": "Tạo khóa học",
+    "createMetric": "Tạo metric",
+    "createPost": "Tạo bài đăng",
+    "createReport": "Tạo báo cáo",
+    "emptyCoursesBody": "Hãy tạo một khóa học nháp trước, rồi quay lại đây để quản lý vận hành lớp học.",
+    "emptyCoursesTitle": "Chưa có khóa học",
+    "emptyPost": "Chưa có nội dung.",
+    "learner": "Học viên",
+    "loading": "Đang tải khóa học...",
+    "metricName": "Tên metric",
+    "metricUnit": "Đơn vị",
+    "metrics": {
+      "lead": "Tạo chỉ số và lưu giá trị metric của học viên cho khóa học đã chọn.",
+      "title": "Metrics"
+    },
+    "postContent": "Nội dung bài đăng hoặc bài tập",
+    "postTitle": "Tiêu đề bài đăng",
+    "reportContent": "Nội dung báo cáo",
+    "reportFeedback": "Nhận xét",
+    "reportTitle": "Tiêu đề báo cáo",
+    "reports": {
+      "lead": "Viết báo cáo khóa học cho học viên đã ghi danh ngay trong Teach.",
+      "title": "Báo cáo"
+    },
+    "saveAttendance": "Lưu điểm danh",
+    "saveMetrics": "Lưu metrics",
+    "saving": "Đang lưu...",
+    "untitledPost": "Bài đăng chưa đặt tên"
+  },
+  "teachSettings": {
+    "backToDashboard": "Quay lại dashboard",
+    "language": "Ngôn ngữ",
+    "logout": "Đăng xuất",
+    "theme": "Giao diện",
+    "title": "Cài đặt Teach",
+    "workspaceFallback": "Workspace giáo dục"
+  },
+  "teachShell": {
+    "logout": "Đăng xuất",
+    "nav": {
+      "assignments": "Bài tập",
+      "attendance": "Điểm danh",
+      "courses": "Khóa học",
+      "dashboard": "Dashboard",
+      "metrics": "Metrics",
+      "reports": "Báo cáo",
+      "settings": "Cài đặt"
+    },
+    "workspaceFallback": "Workspace giáo dục"
   }
 }
