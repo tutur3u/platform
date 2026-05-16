@@ -27,8 +27,22 @@ const CourseUpdateSchema = z
       .optional(),
     archived: z.boolean().optional(),
     description: z.string().max(2000).optional(),
+    ending_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
     is_course_published: z.boolean().optional(),
     name: z.string().trim().min(1).max(255).optional(),
+    sessions: z
+      .array(z.string().regex(/^\d{4}-\d{2}-\d{2}/))
+      .max(750)
+      .optional(),
+    starting_date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .nullable()
+      .optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
     message: 'At least one field is required',
@@ -126,6 +140,9 @@ export const PUT = withSessionAuth(
     if (parsedBody.data.description !== undefined) {
       updatePayload.description = parsedBody.data.description;
     }
+    if (parsedBody.data.ending_date !== undefined) {
+      updatePayload.ending_date = parsedBody.data.ending_date;
+    }
     if (parsedBody.data.cert_template !== undefined) {
       updatePayload.cert_template = parsedBody.data.cert_template;
     }
@@ -134,6 +151,12 @@ export const PUT = withSessionAuth(
     }
     if (parsedBody.data.is_course_published !== undefined) {
       updatePayload.is_course_published = parsedBody.data.is_course_published;
+    }
+    if (parsedBody.data.sessions !== undefined) {
+      updatePayload.sessions = parsedBody.data.sessions;
+    }
+    if (parsedBody.data.starting_date !== undefined) {
+      updatePayload.starting_date = parsedBody.data.starting_date;
     }
 
     const { data: updated, error } = await context.supabase

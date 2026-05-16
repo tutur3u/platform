@@ -29,6 +29,15 @@ export interface TeachAttendanceEntry {
   user_id: string;
 }
 
+export interface TeachAttendanceDaySummary {
+  absent: number;
+  date: string;
+  late: number;
+  notes: number;
+  present: number;
+  totalMarked: number;
+}
+
 export interface TeachPost {
   content: string | null;
   created_at: string;
@@ -43,10 +52,12 @@ export interface TeachReport {
   created_at: string;
   feedback: string;
   id: string;
+  report_approval_status?: string | null;
   score: number | null;
   scores: number[] | null;
   title: string;
   updated_at: string;
+  user?: TeachWorkspaceUser | null;
   user_id: string;
 }
 
@@ -140,6 +151,19 @@ export function listWorkspaceCourseAttendance(
   );
 }
 
+export function listWorkspaceCourseAttendanceMonth(
+  workspaceId: string,
+  courseId: string,
+  month: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ days: TeachAttendanceDaySummary[] }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/teach/courses/${encodePathSegment(courseId)}/attendance`,
+    { cache: 'no-store', query: { month } }
+  );
+}
+
 export function updateWorkspaceCourseAttendance(
   workspaceId: string,
   courseId: string,
@@ -211,6 +235,7 @@ export function createWorkspaceCourseReport(
     content: string;
     feedback: string;
     score?: number | null;
+    scores?: number[] | null;
     title: string;
     user_id: string;
   },

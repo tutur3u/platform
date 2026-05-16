@@ -75,7 +75,7 @@ export const GET = withSessionAuth(
     const { data, error } = await access.sbAdmin
       .from('external_user_monthly_reports')
       .select(
-        'id, title, content, feedback, score, scores, created_at, updated_at, user_id'
+        'id, title, content, feedback, score, scores, created_at, updated_at, user_id, report_approval_status, user:workspace_users!user_id(id, full_name, display_name, email, avatar_url)'
       )
       .eq('group_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false })
@@ -89,7 +89,16 @@ export const GET = withSessionAuth(
       );
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    return NextResponse.json({
+      data: (data ?? []).map((report) => {
+        const user = Array.isArray(report.user) ? report.user[0] : report.user;
+
+        return {
+          ...report,
+          user,
+        };
+      }),
+    });
   },
   {
     allowAppSessionAuth: { targetApp: 'teach' },

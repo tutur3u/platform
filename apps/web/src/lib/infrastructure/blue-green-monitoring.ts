@@ -1043,15 +1043,47 @@ function normalizeInstantRolloutRequest(
 }
 
 function normalizeDockerHealth(
-  value: unknown
+  value: unknown,
+  status?: unknown
 ): BlueGreenMonitoringDockerHealth {
-  return value === 'healthy' ||
+  const explicitHealth =
+    value === 'healthy' ||
     value === 'none' ||
     value === 'starting' ||
     value === 'unknown' ||
     value === 'unhealthy'
-    ? value
-    : 'unknown';
+      ? value
+      : 'unknown';
+
+  if (explicitHealth === 'none' || explicitHealth === 'unknown') {
+    return inferDockerHealthFromStatus(status) ?? explicitHealth;
+  }
+
+  return explicitHealth;
+}
+
+function inferDockerHealthFromStatus(
+  status: unknown
+): BlueGreenMonitoringDockerHealth | null {
+  if (typeof status !== 'string' || status.trim().length === 0) {
+    return null;
+  }
+
+  const normalized = status.toLowerCase();
+
+  if (normalized.includes('(unhealthy)')) {
+    return 'unhealthy';
+  }
+
+  if (normalized.includes('(healthy)')) {
+    return 'healthy';
+  }
+
+  if (normalized.includes('(health: starting)')) {
+    return 'starting';
+  }
+
+  return normalized.startsWith('up') ? 'healthy' : null;
 }
 
 function normalizeDockerContainers(
@@ -1075,7 +1107,7 @@ function normalizeDockerContainers(
       {
         containerId,
         cpuPercent: toFiniteNumber(record?.cpuPercent),
-        health: normalizeDockerHealth(record?.health),
+        health: normalizeDockerHealth(record?.health, record?.status),
         image: typeof record?.image === 'string' ? record.image : null,
         isMonitored: record?.isMonitored === true,
         memoryBytes: toFiniteNumber(record?.memoryBytes),
@@ -1117,7 +1149,7 @@ function normalizeServiceHealth(
     return [
       {
         containerId,
-        health: normalizeDockerHealth(record?.health),
+        health: normalizeDockerHealth(record?.health, record?.status),
         name,
         projectName:
           typeof record?.projectName === 'string' ? record.projectName : null,

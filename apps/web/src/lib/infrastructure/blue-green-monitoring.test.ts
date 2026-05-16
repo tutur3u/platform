@@ -77,6 +77,58 @@ describe('readBlueGreenMonitoringSnapshot', () => {
     }
   });
 
+  it('treats running containers without Docker healthchecks as healthy', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-runtime-health-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.status.json'),
+        JSON.stringify({
+          dockerResources: {
+            allContainers: [
+              {
+                containerId: 'legacy-php',
+                health: 'none',
+                name: 'pktm-legacy-php',
+                status: 'Up 4 minutes',
+              },
+              {
+                containerId: 'legacy-db',
+                health: 'healthy',
+                name: 'pktm-legacy-db',
+                status: 'Up 5 minutes (healthy)',
+              },
+            ],
+            serviceHealth: [],
+          },
+          intervalMs: 1000,
+          updatedAt: 1000,
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 2000 });
+
+      expect(snapshot.dockerResources.allContainers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            containerId: 'legacy-php',
+            health: 'healthy',
+          }),
+          expect.objectContaining({
+            containerId: 'legacy-db',
+            health: 'healthy',
+          }),
+        ])
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('reads the active deployment pin from the watcher control directory', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'blue-green-monitoring-pin-')

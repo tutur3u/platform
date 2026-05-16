@@ -357,7 +357,8 @@ describe('task edit dialog utils', () => {
     ).not.toHaveBeenCalled();
   });
 
-  it('fails verification when description matches but yjs state differs', async () => {
+  it('allows close persistence when description matches but yjs state differs', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({
       description: JSON.stringify(content),
       description_yjs_state: [3, 2, 1],
@@ -371,7 +372,16 @@ describe('task edit dialog utils', () => {
       context: 'test-yjs-mismatch',
     });
 
-    expect(result).toBe(false);
+    expect(result).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(
+      'Task description Yjs state differed (test-yjs-mismatch)',
+      expect.objectContaining({
+        persistedYjsStateLength: 3,
+        taskId: 'task-1',
+        wsId: 'ws-1',
+      })
+    );
+    warnSpy.mockRestore();
   });
 
   it('broadcasts task upsert payload for description cache updates', () => {

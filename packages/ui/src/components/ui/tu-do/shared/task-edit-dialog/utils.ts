@@ -287,6 +287,8 @@ export async function saveYjsDescriptionToDatabase({
 /**
  * Persists the latest editor state and verifies that the read-back task
  * description matches the state the user had before closing the dialog.
+ * Yjs byte-array confirmation is best-effort because the canonical
+ * description is enough to heal Yjs state on the next editor initialization.
  */
 export async function saveAndVerifyYjsDescriptionToDatabase({
   wsId,
@@ -361,7 +363,7 @@ export async function saveAndVerifyYjsDescriptionToDatabase({
         )
       : true;
 
-    if (!descriptionMatches || !yjsMatches) {
+    if (!descriptionMatches) {
       console.error(`Task description verification failed (${context})`, {
         descriptionMatches,
         expectedDescription: payload.description,
@@ -374,6 +376,16 @@ export async function saveAndVerifyYjsDescriptionToDatabase({
         wsId,
       });
       return false;
+    }
+
+    if (!yjsMatches && process.env.NODE_ENV !== 'production') {
+      console.warn(`Task description Yjs state differed (${context})`, {
+        expectedYjsStateLength: payload.description_yjs_state?.length ?? null,
+        persistedYjsStateLength:
+          persistedDescription.description_yjs_state?.length ?? null,
+        taskId,
+        wsId,
+      });
     }
 
     return true;

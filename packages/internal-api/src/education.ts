@@ -15,7 +15,10 @@ export interface UpsertWorkspaceCoursePayload {
   archived?: boolean;
   description?: string;
   cert_template?: string;
+  ending_date?: string | null;
   is_course_published?: boolean;
+  sessions?: string[] | null;
+  starting_date?: string | null;
 }
 
 export interface WorkspaceCourseListItem {
@@ -23,11 +26,14 @@ export interface WorkspaceCourseListItem {
   cert_template: string | null;
   created_at: string | null;
   description: string | null;
+  ending_date: string | null;
   id: string;
   is_course_published: boolean;
   members_count: number;
   modules_count: number;
   name: string;
+  sessions: string[];
+  starting_date: string | null;
 }
 
 export interface ListWorkspaceCoursesParams {

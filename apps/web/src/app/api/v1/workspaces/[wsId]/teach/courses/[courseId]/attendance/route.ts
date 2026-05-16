@@ -20,6 +20,20 @@ const AttendanceSchema = z.object({
 });
 
 const BatchAttendanceSchema = z.array(AttendanceSchema).max(300);
+const MonthSchema = z.string().regex(/^\d{4}-\d{2}$/);
+
+function getMonthBounds(month: string) {
+  const [yearValue, monthValue] = month.split('-');
+  const year = Number(yearValue);
+  const monthIndex = Number(monthValue) - 1;
+  const start = new Date(Date.UTC(year, monthIndex, 1));
+  const end = new Date(Date.UTC(year, monthIndex + 1, 1));
+
+  return {
+    endDate: end.toISOString().slice(0, 10),
+    startDate: start.toISOString().slice(0, 10),
+  };
+}
 
 export const GET = withSessionAuth(
   async (
@@ -38,9 +52,13 @@ export const GET = withSessionAuth(
     }
 
     const date = request.nextUrl.searchParams.get('date');
-    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const month = request.nextUrl.searchParams.get('month');
+    if (
+      (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) &&
+      (!month || !MonthSchema.safeParse(month).success)
+    ) {
       return NextResponse.json(
-        { message: 'Date is required' },
+        { message: 'Date or month is required' },
         { status: 400 }
       );
     }
@@ -64,11 +82,66 @@ export const GET = withSessionAuth(
       );
     }
 
+    if (month) {
+      const { endDate, startDate } = getMonthBounds(month);
+      const { data, error } = await access.sbAdmin
+        .from('user_group_attendance')
+        .select('date, notes, status, user_id')
+        .eq('group_id', parsedParams.data.courseId)
+        .gte('date', startDate)
+        .lt('date', endDate);
+
+      if (error) {
+        serverLogger.error('Failed to fetch Teach attendance month', {
+          error,
+        });
+        return NextResponse.json(
+          { message: 'Error fetching attendance' },
+          { status: 500 }
+        );
+      }
+
+      const days = new Map<
+        string,
+        {
+          absent: number;
+          date: string;
+          late: number;
+          notes: number;
+          present: number;
+          totalMarked: number;
+        }
+      >();
+
+      for (const entry of data ?? []) {
+        const current = days.get(entry.date) ?? {
+          absent: 0,
+          date: entry.date,
+          late: 0,
+          notes: 0,
+          present: 0,
+          totalMarked: 0,
+        };
+        if (entry.status === 'PRESENT') current.present += 1;
+        if (entry.status === 'ABSENT') current.absent += 1;
+        if (entry.status === 'LATE') current.late += 1;
+        if (entry.notes?.trim()) current.notes += 1;
+        current.totalMarked += 1;
+        days.set(entry.date, current);
+      }
+
+      return NextResponse.json({
+        days: Array.from(days.values()).sort((a, b) =>
+          a.date.localeCompare(b.date)
+        ),
+      });
+    }
+
     const { data, error } = await access.sbAdmin
       .from('user_group_attendance')
       .select('date, notes, status, user_id')
       .eq('group_id', parsedParams.data.courseId)
-      .eq('date', date);
+      .eq('date', date ?? '');
 
     if (error) {
       serverLogger.error('Failed to fetch Teach attendance', { error });

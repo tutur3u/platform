@@ -963,9 +963,10 @@ Dashboard details:
   color, Hive realtime, and the first-phase support services before switching
   nginx.
 - Every service owned by `docker-compose.web.prod.yml` should declare a
-  healthcheck, either directly in compose or in the image. The monitoring page
-  treats containers without Docker health metadata as external or incomplete
-  runtime entries, so add a probe when adding new prod services or sidecars.
+  healthcheck, either directly in compose or in the image. The resources
+  inventory treats an `Up` container without Docker health metadata as healthy
+  for cross-project runtime visibility, but first-party prod services and
+  sidecars still need explicit probes so deploy gates can fail before promotion.
 - The MarkItDown sidecar needs `SUPABASE_URL` set to the same Docker-internal
   Supabase URL used by the web container. The service validates signed Storage
   URLs before downloading attachments, and local Docker runs may use

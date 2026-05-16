@@ -1,12 +1,15 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExternalLink } from '@tuturuuu/icons';
 import {
   createWorkspaceCoursePost,
   listWorkspaceCoursePosts,
 } from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LEARN_APP_URL } from '@/constants/common';
 
 export function PostsPanel({
   courseId,
@@ -38,10 +41,25 @@ export function PostsPanel({
       });
     },
   });
+  const learnAssignmentsUrl = `${LEARN_APP_URL}/${wsId}/assignments`;
 
   return (
     <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem]">
       <div className="space-y-3">
+        <div className="flex flex-col gap-2 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)] sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-black">{t('learnerAssignmentPreview')}</p>
+            <p className="text-muted-foreground text-sm">
+              {t('learnerAssignmentPreviewLead')}
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <a href={learnAssignmentsUrl} rel="noreferrer" target="_blank">
+              <ExternalLink className="h-4 w-4" />
+              {t('openLearnAssignments')}
+            </a>
+          </Button>
+        </div>
         {(postsQuery.data?.data ?? []).map((post) => (
           <article
             className="border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)]"

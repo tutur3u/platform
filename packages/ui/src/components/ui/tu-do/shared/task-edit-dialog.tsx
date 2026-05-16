@@ -741,6 +741,7 @@ export function TaskEditDialog({
     creatingProject,
   } = useTaskRelationships({
     wsId: effectiveTaskWsId,
+    labelCacheWorkspaceId: boardConfig?.ws_id || effectiveTaskWsId,
     taskId: task?.id,
     isCreateMode,
     boardId,

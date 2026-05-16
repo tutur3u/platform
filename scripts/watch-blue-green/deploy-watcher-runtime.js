@@ -321,30 +321,19 @@ function parseDockerHealthFromStatus(status) {
 
   const normalized = status.toLowerCase();
 
-  if (normalized.includes('(healthy)')) {
-    return 'healthy';
-  }
-
   if (normalized.includes('(unhealthy)')) {
     return 'unhealthy';
+  }
+
+  if (normalized.includes('(healthy)')) {
+    return 'healthy';
   }
 
   if (normalized.includes('(health: starting)')) {
     return 'starting';
   }
 
-  return normalized.startsWith('up') ? 'none' : 'unknown';
-}
-
-function isBuildkitContainer({ image, name }) {
-  const normalizedImage = String(image || '').toLowerCase();
-  const normalizedName = String(name || '').toLowerCase();
-
-  return (
-    normalizedImage.startsWith('moby/buildkit') ||
-    normalizedName.startsWith('buildx_buildkit_') ||
-    normalizedName.includes('-buildkit-')
-  );
+  return normalized.startsWith('up') ? 'healthy' : 'unknown';
 }
 
 function parseDockerPsLine(line) {
@@ -361,16 +350,10 @@ function parseDockerPsLine(line) {
   const health = parseDockerHealthFromStatus(status);
   const trimmedImage = image.trim() || null;
   const trimmedName = name.trim();
-  const normalizedStatus = status.toLowerCase();
 
   return {
     containerId: containerId.trim(),
-    health:
-      health === 'none' &&
-      normalizedStatus.startsWith('up') &&
-      isBuildkitContainer({ image: trimmedImage, name: trimmedName })
-        ? 'healthy'
-        : health,
+    health,
     image: trimmedImage,
     name: trimmedName,
     ports: ports.trim() || null,
