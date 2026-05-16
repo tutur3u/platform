@@ -103,6 +103,28 @@ describe('app-session JWTs', () => {
     });
   });
 
+  it('accepts target-app allow lists and rejects tokens outside the list', () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'calendar',
+      userId: 'user-1',
+    });
+
+    expect(
+      verifyAppSessionToken(token, {
+        targetApp: ['calendar', 'track'],
+      }).ok
+    ).toBe(true);
+
+    expect(
+      verifyAppSessionToken(token, {
+        targetApp: ['learn', 'teach'],
+      })
+    ).toEqual({
+      error: 'App session target mismatch',
+      ok: false,
+    });
+  });
+
   it('rejects expired and tampered app-session tokens', () => {
     const { token } = createAppSessionToken(
       {

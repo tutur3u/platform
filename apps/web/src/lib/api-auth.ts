@@ -1,4 +1,5 @@
 import {
+  type AppSessionTargetApp,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
@@ -133,13 +134,90 @@ type AppSessionAuthOptions =
   | boolean
   | {
       requiredScope?: string | false;
-      targetApp?: string;
+      targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
     };
 
+type StrictAppSessionAuthOptions = Exclude<AppSessionAuthOptions, boolean>;
+
+const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
+const ALL_SATELLITE_APP_SESSION_TARGETS = [
+  'calendar',
+  'cms',
+  'finance',
+  'hive',
+  'learn',
+  'mira',
+  'nova',
+  'rewise',
+  'teach',
+  'track',
+  'tudo',
+] as const;
+
+const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
+  pattern: RegExp;
+  targetApp: AppSessionTargetApp | readonly AppSessionTargetApp[];
+}[] = [
+  { pattern: /^\/api\/v1\/ai\/chats(?:\/|$)/u, targetApp: 'rewise' },
+  { pattern: /^\/api\/v1\/cms(?:\/|$)/u, targetApp: 'cms' },
+  { pattern: /^\/api\/v1\/nova(?:\/|$)/u, targetApp: 'nova' },
+  {
+    pattern: /^\/api\/v1\/(?:course|tulearn)(?:\/|$)/u,
+    targetApp: LEARN_TEACH_APP_SESSION_TARGETS,
+  },
+  {
+    pattern:
+      /^\/api\/v1\/users\/me\/(?:avatar|configs|default-workspace|email|profile)(?:\/|$)/u,
+    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
+  },
+  {
+    pattern:
+      /^\/api\/v1\/workspaces\/[^/]+\/(?:calendar|calendar-hours|calendar-settings|encryption)(?:\/|$)/u,
+    targetApp: 'calendar',
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/time-tracking(?:\/|$)/u,
+    targetApp: ['calendar', 'track'],
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/tulearn(?:\/|$)/u,
+    targetApp: LEARN_TEACH_APP_SESSION_TARGETS,
+  },
+  {
+    pattern:
+      /^\/api\/v1\/workspaces\/[^/]+\/user-groups\/[^/]+\/(?:module-groups|module-order|modules)(?:\/|$)/u,
+    targetApp: 'teach',
+  },
+];
+
+function getPathnameFromRequestUrl(url: string) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return url.split('?')[0] || '/';
+  }
+}
+
+export function getDefaultAppSessionVerificationOptions(
+  requestUrl: string
+): StrictAppSessionAuthOptions {
+  const pathname = getPathnameFromRequestUrl(requestUrl);
+  const audienceRule = APP_SESSION_ROUTE_AUDIENCE_RULES.find((rule) =>
+    rule.pattern.test(pathname)
+  );
+
+  return {
+    targetApp: audienceRule?.targetApp ?? 'platform',
+  };
+}
+
 function getAppSessionVerificationOptions(
-  allowAppSessionAuth: true | Exclude<AppSessionAuthOptions, boolean>
+  request: Pick<NextRequest, 'url'>,
+  allowAppSessionAuth: true | StrictAppSessionAuthOptions
 ) {
-  return allowAppSessionAuth === true ? {} : allowAppSessionAuth;
+  return allowAppSessionAuth === true
+    ? getDefaultAppSessionVerificationOptions(request.url)
+    : allowAppSessionAuth;
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
@@ -173,7 +251,7 @@ export async function resolveSessionAuthContext(
     if (appSessionToken) {
       const appSessionVerification = verifyAppSessionRequest(
         request,
-        getAppSessionVerificationOptions(options.allowAppSessionAuth)
+        getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
       );
 
       if (!appSessionVerification.ok) {
@@ -425,7 +503,7 @@ export function withSessionAuth<T = unknown>(
       if (appSessionToken) {
         const appSessionVerification = verifyAppSessionRequest(
           request,
-          getAppSessionVerificationOptions(options.allowAppSessionAuth)
+          getAppSessionVerificationOptions(request, options.allowAppSessionAuth)
         );
 
         if (!appSessionVerification.ok) {

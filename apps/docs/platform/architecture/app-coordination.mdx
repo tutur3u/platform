@@ -64,10 +64,15 @@ local satellite apps do not loop between `/login` and product pages or
 accumulate `api_auth_failed` IP blocks.
 
 Use route-specific app-session constraints instead of accepting any registered
-internal app token. For example, CLI-only platform APIs should configure
-`withSessionAuth` with `targetApp: 'platform'` and
+internal app token. The legacy `allowAppSessionAuth: true` shorthand is
+audience-bound in `apps/web/src/lib/api-auth.ts`: it maps known internal API
+path prefixes to their expected satellite app audience and falls back to the
+`platform` audience for unmapped routes. For example, CLI-only platform APIs
+should configure `withSessionAuth` with `targetApp: 'platform'` and
 `requiredScope: 'cli:access'`; satellite APIs should use that satellite's
-target app and only the scopes intended for that route.
+target app and only the scopes intended for that route. When adding a new
+boolean app-session route for a satellite API, update the shared audience map or
+use an explicit `{ targetApp, requiredScope }` object in the route.
 
 When a registered app forwards request cookies to `apps/web`, it must strip
 stale `sb-*-auth-token` Supabase cookies whenever `tuturuuu_app_session` is

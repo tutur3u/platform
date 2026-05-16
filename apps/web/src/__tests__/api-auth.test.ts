@@ -82,7 +82,11 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------
-import { resolveSessionAuthContext, withSessionAuth } from '../lib/api-auth';
+import {
+  getDefaultAppSessionVerificationOptions,
+  resolveSessionAuthContext,
+  withSessionAuth,
+} from '../lib/api-auth';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -440,10 +444,10 @@ describe('withSessionAuth', () => {
     expect(handler).toHaveBeenCalled();
   });
 
-  it('should accept app-session cookie auth without calling Supabase getUser when opted in', async () => {
+  it('should accept platform app-session cookie auth without calling Supabase getUser when opted in', async () => {
     const { token } = createAppSessionToken({
       email: 'agent@example.com',
-      targetApp: 'learn',
+      targetApp: 'platform',
       userId: 'app-user-1',
     });
     const request = new Request('http://localhost:3000/api/test', {
@@ -472,6 +476,123 @@ describe('withSessionAuth', () => {
       }),
       {}
     );
+  });
+
+  it('should reject unrelated app-session audiences when using the boolean app-session opt-in', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'learn',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, { allowAppSessionAuth: true });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('should bind sensitive calendar encryption APIs to the calendar app-session audience', async () => {
+    const { token: unrelatedToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'learn',
+      userId: 'app-user-1',
+    });
+    const unrelatedRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/encryption',
+      {
+        headers: {
+          authorization: `Bearer ${unrelatedToken}`,
+        },
+        method: 'POST',
+      }
+    ) as unknown as NextRequest;
+
+    const unrelatedResult = await resolveSessionAuthContext(unrelatedRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(unrelatedResult.ok).toBe(false);
+    if (!unrelatedResult.ok) {
+      expect(unrelatedResult.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+
+    vi.clearAllMocks();
+    mockIsIPBlocked.mockResolvedValue(null);
+    mockCheckRateLimit.mockResolvedValue({ allowed: true, headers: {} });
+    mockCheckSuspension.mockResolvedValue({ suspended: false });
+    mockHasAuthenticatedApiSession.mockReturnValue(false);
+    mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+
+    const { token: calendarToken } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'calendar',
+      userId: 'app-user-1',
+    });
+    const calendarRequest = new Request(
+      'http://localhost:3000/api/v1/workspaces/ws-1/encryption',
+      {
+        headers: {
+          authorization: `Bearer ${calendarToken}`,
+        },
+        method: 'POST',
+      }
+    ) as unknown as NextRequest;
+
+    const calendarResult = await resolveSessionAuthContext(calendarRequest, {
+      allowAppSessionAuth: true,
+    });
+
+    expect(calendarResult.ok).toBe(true);
+    if (calendarResult.ok) {
+      expect(calendarResult.user.id).toBe('app-user-1');
+      expect(calendarResult.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+  });
+
+  it('should keep shared satellite API audiences path-bound', () => {
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/time-tracking/sessions'
+      )
+    ).toEqual({ targetApp: ['calendar', 'track'] });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/tulearn/home'
+      )
+    ).toEqual({ targetApp: ['learn', 'teach'] });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/users/me/profile'
+      )
+    ).toEqual({
+      targetApp: [
+        'calendar',
+        'cms',
+        'finance',
+        'hive',
+        'learn',
+        'mira',
+        'nova',
+        'rewise',
+        'teach',
+        'track',
+        'tudo',
+      ],
+    });
   });
 
   it('should reject app-session auth that misses configured target and scope', async () => {

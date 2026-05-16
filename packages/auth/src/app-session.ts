@@ -40,7 +40,7 @@ type AppSessionOptions = {
   now?: Date;
   requiredScope?: string | false;
   secret?: string;
-  targetApp?: AppSessionTargetApp;
+  targetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[];
 };
 
 type RequestLike = Pick<Request, 'headers'> & {
@@ -81,8 +81,7 @@ export function verifyAppSessionToken(
   }
 
   if (
-    options.targetApp &&
-    verification.claims.target_app !== options.targetApp
+    !matchesAppSessionTarget(verification.claims.target_app, options.targetApp)
   ) {
     return {
       error: 'App session target mismatch',
@@ -100,6 +99,19 @@ export function verifyAppSessionToken(
   }
 
   return verification;
+}
+
+function matchesAppSessionTarget(
+  actualTargetApp: string,
+  expectedTargetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[]
+) {
+  if (!expectedTargetApp) return true;
+
+  const expectedTargetApps = Array.isArray(expectedTargetApp)
+    ? expectedTargetApp
+    : [expectedTargetApp];
+
+  return expectedTargetApps.includes(actualTargetApp);
 }
 
 function normalizeAppSessionScopes(scopes: string[] = []) {
