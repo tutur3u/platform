@@ -189,7 +189,7 @@ export const PUT = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  { allowAppSessionAuth: true, rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );
 
 export const DELETE = withSessionAuth(
@@ -257,5 +257,5 @@ export const DELETE = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  { allowAppSessionAuth: true, rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

@@ -232,7 +232,7 @@
       "select_workflow": "Chọn quy trình",
       "templates": {
         "farm_cycle": {
-          "description": "Trồng cây và ghi lại kết quả nông trại.",
+          "description": "Trồng cây, lưu cây trồng và đặt một ô vườn hiển thị vào thế giới.",
           "name": "Chu kỳ nông trại"
         },
         "market_trade": {
@@ -248,7 +248,7 @@
           "name": "Nhịp mô phỏng"
         },
         "world_cleanup": {
-          "description": "Ghi sự kiện dọn dẹp cho các lượt bảo trì thế giới.",
+          "description": "Dọn ô nông trại mẫu khỏi thế giới và ghi sự kiện dọn dẹp.",
           "name": "Dọn dẹp thế giới"
         }
       },

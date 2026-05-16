@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +10,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const createCommentSchema = z.object({
   content: z
@@ -35,15 +35,16 @@ export async function POST(
 
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({
@@ -137,15 +138,16 @@ export async function GET(
   try {
     const { wsId, id: requestId } = await params;
     const resolvedWorkspaceId = resolveWorkspaceId(wsId);
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     // Verify user has access to workspace
     const membership = await verifyWorkspaceMembershipType({

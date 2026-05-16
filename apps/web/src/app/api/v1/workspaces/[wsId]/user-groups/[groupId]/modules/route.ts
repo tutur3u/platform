@@ -136,7 +136,7 @@ export const GET = withSessionAuth(
 
     return NextResponse.json(data);
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  { allowAppSessionAuth: true, rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );
 
 export const POST = withSessionAuth(
@@ -248,5 +248,5 @@ export const POST = withSessionAuth(
       { status: 409 }
     );
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  { allowAppSessionAuth: true, rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

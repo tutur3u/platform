@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +10,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const updateRequestSchema = z.discriminatedUnion('action', [
@@ -128,14 +128,15 @@ export async function PATCH(
       );
     }
 
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     // Verify workspace access and admin permissions
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -232,17 +233,18 @@ export async function PUT(
 ) {
   try {
     const { wsId, id } = await context.params;
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
     // Use createDynamicClient with request to support Bearer token auth for mobile apps
     const storageClient = await createDynamicClient(request);
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const normalizedWsId = await normalizeWorkspaceId(wsId);
 

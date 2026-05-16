@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -7,6 +6,7 @@ import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),
@@ -31,14 +31,15 @@ export async function GET(
 ) {
   const { wsId, id: requestId } = await params;
 
-  const supabase = await createClient(req);
+  let supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await resolveSessionAuthContext(req, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) return auth.response;
+  const { user } = auth;
+  supabase = auth.supabase;
 
   // Verify user has access to this workspace
   const member = await verifyWorkspaceMembershipType({

@@ -153,5 +153,5 @@ export const GET = withSessionAuth(
 
     return NextResponse.json(data);
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  { allowAppSessionAuth: true, rateLimit: { maxRequests: 60, windowMs: 60000 } }
 );

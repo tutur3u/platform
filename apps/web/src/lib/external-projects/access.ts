@@ -4,6 +4,10 @@ import {
   verifyAppCoordinationToken,
 } from '@tuturuuu/auth/app-coordination';
 import {
+  getAppSessionTokenFromRequest,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -799,6 +803,78 @@ async function requireWorkspaceExternalProjectSetupAccessWithAppToken({
   };
 }
 
+async function requireWorkspaceExternalProjectSetupAccessWithAppSession({
+  request,
+  wsId,
+}: {
+  request: Request;
+  wsId: string;
+}) {
+  let verification: ReturnType<typeof verifyAppSessionRequest>;
+
+  try {
+    verification = verifyAppSessionRequest(request, { targetApp: 'cms' });
+  } catch {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'App coordination is not configured' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!verification.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const admin = (await createAdminClient()) as TypedSupabaseClient;
+  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+    admin,
+    userId: verification.claims.sub,
+    wsId,
+  });
+  const [workspacePermissions, rootPermissions] = await Promise.all([
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: normalizedWorkspaceId,
+    }),
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: ROOT_WORKSPACE_ID,
+    }),
+  ]);
+
+  const allowed =
+    hasWorkspaceExternalProjectPermission(workspacePermissions, 'manage') ||
+    hasRootExternalProjectsAdminPermission(rootPermissions);
+
+  if (!allowed) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    admin,
+    normalizedWorkspaceId,
+    rootPermissions,
+    user: {
+      app: verification.claims.target_app,
+      email: verification.claims.email,
+      id: verification.claims.sub,
+    },
+    workspacePermissions,
+  };
+}
+
 async function requireWorkspaceExternalProjectAccessWithAppToken({
   mode,
   token,
@@ -895,6 +971,95 @@ async function requireWorkspaceExternalProjectAccessWithAppToken({
   };
 }
 
+async function requireWorkspaceExternalProjectAccessWithAppSession({
+  mode,
+  request,
+  wsId,
+}: {
+  mode: WorkspaceExternalProjectMode;
+  request: Request;
+  wsId: string;
+}) {
+  let verification: ReturnType<typeof verifyAppSessionRequest>;
+
+  try {
+    verification = verifyAppSessionRequest(request, { targetApp: 'cms' });
+  } catch {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'App coordination is not configured' },
+        { status: 500 }
+      ),
+    };
+  }
+
+  if (!verification.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const admin = (await createAdminClient()) as TypedSupabaseClient;
+  const normalizedWorkspaceId = await normalizeWorkspaceIdForUser({
+    admin,
+    userId: verification.claims.sub,
+    wsId,
+  });
+  const [workspacePermissions, rootPermissions] = await Promise.all([
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: normalizedWorkspaceId,
+    }),
+    getPermissionsForUserId({
+      admin,
+      userId: verification.claims.sub,
+      wsId: ROOT_WORKSPACE_ID,
+    }),
+  ]);
+  const binding = await resolveWorkspaceExternalProjectBinding(
+    normalizedWorkspaceId,
+    admin
+  );
+
+  if (!binding.enabled || !binding.canonical_project) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: 'External project studio unavailable for this workspace' },
+        { status: 404 }
+      ),
+    };
+  }
+
+  const allowed =
+    hasWorkspaceExternalProjectPermission(workspacePermissions, mode) ||
+    hasRootExternalProjectsAdminPermission(rootPermissions);
+
+  if (!allowed) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true as const,
+    admin,
+    binding,
+    normalizedWorkspaceId,
+    rootPermissions,
+    user: {
+      app: verification.claims.target_app,
+      email: verification.claims.email,
+      id: verification.claims.sub,
+    },
+    workspacePermissions,
+  };
+}
+
 export async function requireWorkspaceExternalProjectSetupAccess({
   request,
   wsId,
@@ -907,6 +1072,13 @@ export async function requireWorkspaceExternalProjectSetupAccess({
   if (appCoordinationToken) {
     return requireWorkspaceExternalProjectSetupAccessWithAppToken({
       token: appCoordinationToken,
+      wsId,
+    });
+  }
+
+  if (getAppSessionTokenFromRequest(request)) {
+    return requireWorkspaceExternalProjectSetupAccessWithAppSession({
+      request,
       wsId,
     });
   }
@@ -968,6 +1140,14 @@ export async function requireWorkspaceExternalProjectAccess({
     return requireWorkspaceExternalProjectAccessWithAppToken({
       mode,
       token: appCoordinationToken,
+      wsId,
+    });
+  }
+
+  if (getAppSessionTokenFromRequest(request)) {
+    return requireWorkspaceExternalProjectAccessWithAppSession({
+      mode,
+      request,
       wsId,
     });
   }

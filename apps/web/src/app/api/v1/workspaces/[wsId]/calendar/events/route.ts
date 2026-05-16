@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_CALENDAR_EVENT_DESCRIPTION_LENGTH,
   MAX_CALENDAR_EVENT_TITLE_LENGTH,
@@ -15,6 +11,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   decryptEventsFromStorage,
   encryptEventForStorage,
@@ -46,16 +43,14 @@ async function authorizeWorkspaceCalendarAccess(
   request: Request,
   rawWsId: string
 ) {
-  const supabase = await createClient(request);
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) {
+    return { error: auth.response };
   }
+  const { user, supabase } = auth;
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const membership = await verifyWorkspaceMembershipType({
     wsId: wsId,

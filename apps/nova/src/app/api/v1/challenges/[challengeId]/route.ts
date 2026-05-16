@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 
 interface Params {
   params: Promise<{
@@ -18,6 +19,10 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
 
   try {
     const { data: challenge, error } = await sbAdmin
@@ -53,12 +58,17 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { challengeId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   let body: {
@@ -122,7 +132,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.openAt !== undefined) updateData.open_at = body.openAt;
     if (body.closeAt !== undefined) updateData.close_at = body.closeAt;
 
-    const { data: updatedChallenge, error: updateError } = await supabase
+    const { data: updatedChallenge, error: updateError } = await sbAdmin
       .from('nova_challenges')
       .update(updateData)
       .eq('id', challengeId)
@@ -154,7 +164,6 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { challengeId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
@@ -162,8 +171,14 @@ export async function DELETE(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    const { error: deleteError } = await supabase
+    const { error: deleteError } = await sbAdmin
       .from('nova_challenges')
       .delete()
       .eq('id', challengeId);

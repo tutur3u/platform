@@ -1,5 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -7,6 +5,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import * as z from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 interface Params {
   params: Promise<{
@@ -34,7 +33,12 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(req);
+    const auth = await resolveSessionAuthContext(req, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
+
     let normalizedWsId: string;
     try {
       normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
@@ -43,12 +47,6 @@ export async function PUT(
         { error: 'Workspace not found' },
         { status: 404 }
       );
-    }
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Verify workspace access and permissions

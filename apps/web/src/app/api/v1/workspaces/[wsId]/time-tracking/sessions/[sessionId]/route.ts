@@ -1,5 +1,4 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +10,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   handleEditAction,
   handlePauseAction,
@@ -306,13 +306,15 @@ async function authenticateAndResolveWorkspace(
     }
   | { error: NextResponse }
 > {
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
-    };
+  let supabase = await createClient(request);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) {
+    return { error: auth.response };
   }
+  const { user } = auth;
+  supabase = auth.supabase;
 
   let normalizedWsId: string;
   try {

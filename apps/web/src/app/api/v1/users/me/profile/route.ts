@@ -70,48 +70,51 @@ export const GET = withSessionAuth(
   { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
 );
 
-export const PATCH = withSessionAuth(async (req, { user, supabase }) => {
-  try {
-    const body = await req.json();
-    const validatedData = PatchProfileSchema.parse(body);
+export const PATCH = withSessionAuth(
+  async (req, { user, supabase }) => {
+    try {
+      const body = await req.json();
+      const validatedData = PatchProfileSchema.parse(body);
 
-    const updates: z.infer<typeof PatchProfileSchema> = {
-      ...validatedData,
-    };
+      const updates: z.infer<typeof PatchProfileSchema> = {
+        ...validatedData,
+      };
 
-    if (Object.keys(updates).length === 0) {
-      return NextResponse.json(
-        { message: 'No valid fields to update' },
-        { status: 400 }
-      );
-    }
+      if (Object.keys(updates).length === 0) {
+        return NextResponse.json(
+          { message: 'No valid fields to update' },
+          { status: 400 }
+        );
+      }
 
-    const { error } = await supabase
-      .from('users')
-      .update(updates)
-      .eq('id', user.id);
+      const { error } = await supabase
+        .from('users')
+        .update(updates)
+        .eq('id', user.id);
 
-    if (error) {
-      serverLogger.error('Error updating user profile:', error);
+      if (error) {
+        serverLogger.error('Error updating user profile:', error);
+        return NextResponse.json(
+          { message: 'Internal server error' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ message: 'Profile updated successfully' });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { message: 'Invalid request data', errors: error.issues },
+          { status: 400 }
+        );
+      }
+
+      serverLogger.error('Request error while updating user profile:', error);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ message: 'Profile updated successfully' });
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { message: 'Invalid request data', errors: error.issues },
-        { status: 400 }
-      );
-    }
-
-    serverLogger.error('Request error while updating user profile:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-});
+  },
+  { allowAppSessionAuth: true }
+);

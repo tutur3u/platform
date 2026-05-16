@@ -3,7 +3,12 @@ import type { Json } from '@tuturuuu/types/db';
 export type HiveVector = { x: number; y: number; z: number };
 
 export type HiveWorld = {
-  blocks: Array<{ id: string; position: HiveVector; type: string }>;
+  blocks: Array<{
+    id: string;
+    position: HiveVector;
+    state?: Record<string, Json | undefined>;
+    type: string;
+  }>;
   objects: Array<{
     id: string;
     position: HiveVector;

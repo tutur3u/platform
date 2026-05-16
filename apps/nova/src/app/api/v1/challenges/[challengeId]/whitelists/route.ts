@@ -1,6 +1,7 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 
 interface Params {
   params: Promise<{
@@ -9,8 +10,6 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
-
   const { challengeId } = await params;
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email');
@@ -20,8 +19,14 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+  }
+
   try {
-    let query = supabase
+    let query = sbAdmin
       .from('nova_challenge_whitelisted_emails')
       .select('*')
       .eq('challenge_id', challengeId);
@@ -51,12 +56,17 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { challengeId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -70,7 +80,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await sbAdmin
       .from('nova_challenge_whitelisted_emails')
       .upsert({
         challenge_id: challengeId,
@@ -98,7 +108,6 @@ export async function POST(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { searchParams } = new URL(request.url);
   const email = searchParams.get('email');
   const { challengeId } = await params;
@@ -106,6 +115,12 @@ export async function DELETE(request: Request, { params }: Params) {
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   try {
@@ -116,7 +131,7 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-    const { error } = await supabase
+    const { error } = await sbAdmin
       .from('nova_challenge_whitelisted_emails')
       .delete()
       .eq('challenge_id', challengeId)

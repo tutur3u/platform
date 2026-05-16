@@ -717,7 +717,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const POST = withSessionAuth<{ wsId: string }>(
@@ -825,5 +826,6 @@ export const POST = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );

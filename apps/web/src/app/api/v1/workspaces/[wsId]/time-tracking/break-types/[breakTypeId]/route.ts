@@ -1,14 +1,11 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 // PATCH /api/v1/workspaces/[wsId]/time-tracking/break-types/[breakTypeId]
 // Update a custom break type (workspace admins only)
@@ -18,14 +15,12 @@ export async function PATCH(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
@@ -226,14 +221,12 @@ export async function DELETE(
 ) {
   try {
     const { wsId, breakTypeId } = await params;
-    const supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,

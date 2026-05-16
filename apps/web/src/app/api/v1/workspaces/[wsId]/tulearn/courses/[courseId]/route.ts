@@ -49,5 +49,6 @@ export const GET = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );

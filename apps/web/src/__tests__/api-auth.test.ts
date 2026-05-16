@@ -82,7 +82,7 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------
-import { withSessionAuth } from '../lib/api-auth';
+import { resolveSessionAuthContext, withSessionAuth } from '../lib/api-auth';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -472,6 +472,99 @@ describe('withSessionAuth', () => {
       }),
       {}
     );
+  });
+
+  it('should reject app-session auth that misses configured target and scope', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'learn',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn();
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: {
+        requiredScope: 'cli:access',
+        targetApp: 'platform',
+      },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(401);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('should accept app-session auth that matches configured target and scope', async () => {
+    const session = createCliAppSession({
+      email: 'agent@example.com',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${session.access.token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler, {
+      allowAppSessionAuth: {
+        requiredScope: 'cli:access',
+        targetApp: 'platform',
+      },
+    });
+    const response = await wrapped(request);
+
+    expect(response.status).toBe(200);
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(handler).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        supabase: mockAdminClient,
+        user: expect.objectContaining({
+          email: 'agent@example.com',
+          id: 'app-user-1',
+        }),
+      }),
+      {}
+    );
+  });
+
+  it('should apply configured app-session target and scope to shared auth resolution', async () => {
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'learn',
+      userId: 'app-user-1',
+    });
+    const request = new Request('http://localhost:3000/api/test', {
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+      method: 'GET',
+    }) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: {
+        requiredScope: 'cli:access',
+        targetApp: 'platform',
+      },
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.response.status).toBe(401);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).not.toHaveBeenCalled();
   });
 
   it('should reject CLI refresh JWTs as app-session bearer auth', async () => {

@@ -162,5 +162,5 @@ export const PATCH = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  { allowAppSessionAuth: true, rateLimit: { windowMs: 60000, maxRequests: 60 } }
 );

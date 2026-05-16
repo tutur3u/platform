@@ -1,7 +1,16 @@
+import {
+  CLI_APP_ACCESS_SCOPE,
+  CLI_APP_TARGET_APP,
+} from '@tuturuuu/auth/cli-session';
 import { fetchWorkspaceSummaries } from '@tuturuuu/ui/lib/workspace-actions';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+const CLI_APP_SESSION_AUTH = {
+  requiredScope: CLI_APP_ACCESS_SCOPE,
+  targetApp: CLI_APP_TARGET_APP,
+} as const;
 
 export const GET = withSessionAuth(
   async (request, { supabase, user }) => {
@@ -28,5 +37,8 @@ export const GET = withSessionAuth(
       );
     }
   },
-  { allowAppSessionAuth: true, cache: { maxAge: 60, swr: 30 } }
+  {
+    allowAppSessionAuth: CLI_APP_SESSION_AUTH,
+    cache: { maxAge: 60, swr: 30 },
+  }
 );

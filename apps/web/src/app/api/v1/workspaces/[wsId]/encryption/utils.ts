@@ -35,31 +35,33 @@ export type CheckE2EEResult =
  */
 export async function checkE2EEPermission(
   supabase: TypedSupabaseClient,
-  wsId: string
+  wsId: string,
+  user?: AuthUser
 ): Promise<CheckE2EEResult> {
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  const resolvedUser =
+    user ?? (await resolveAuthenticatedSessionUser(supabase)).user;
 
-  if (!user) {
+  if (!resolvedUser) {
     return { authorized: false, user: null };
   }
 
   // Check if user is a member of this workspace
   const member = await verifyWorkspaceMembershipType({
     wsId: wsId,
-    userId: user.id,
+    userId: resolvedUser.id,
     supabase: supabase,
   });
 
   if (member.error === 'membership_lookup_failed') {
     return {
       authorized: false,
-      user,
+      user: resolvedUser,
       reason: 'membership_lookup_failed',
     };
   }
 
   if (!member.ok) {
-    return { authorized: false, user, reason: 'not_a_member' };
+    return { authorized: false, user: resolvedUser, reason: 'not_a_member' };
   }
 
   // Check if user is the creator of the workspace (has all permissions)
@@ -69,8 +71,8 @@ export async function checkE2EEPermission(
     .eq('id', wsId)
     .single();
 
-  if (workspaceData?.creator_id === user.id) {
-    return { authorized: true, user };
+  if (workspaceData?.creator_id === resolvedUser.id) {
+    return { authorized: true, user: resolvedUser };
   }
 
   // Check if user has manage_e2ee permission via roles
@@ -81,7 +83,7 @@ export async function checkE2EEPermission(
     .select(
       'workspace_roles!inner(workspace_role_permissions!inner(permission))'
     )
-    .eq('user_id', user.id)
+    .eq('user_id', resolvedUser.id)
     .eq('workspace_roles.ws_id', wsId)
     .eq('workspace_roles.workspace_role_permissions.permission', 'manage_e2ee')
     .eq('workspace_roles.workspace_role_permissions.enabled', true)
@@ -89,7 +91,7 @@ export async function checkE2EEPermission(
     .maybeSingle();
 
   if (rolePermission) {
-    return { authorized: true, user };
+    return { authorized: true, user: resolvedUser };
   }
 
   // Check if user has manage_e2ee via default permissions
@@ -102,10 +104,10 @@ export async function checkE2EEPermission(
     .maybeSingle();
 
   if (defaultPermission) {
-    return { authorized: true, user };
+    return { authorized: true, user: resolvedUser };
   }
 
-  return { authorized: false, user, reason: 'no_permission' };
+  return { authorized: false, user: resolvedUser, reason: 'no_permission' };
 }
 
 /**

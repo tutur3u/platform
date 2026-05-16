@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +10,7 @@ import {
 } from '@tuturuuu/utils/encryption';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { checkE2EEPermission, looksLikeEncryptedData } from '../utils';
 
 interface Params {
@@ -24,7 +24,7 @@ interface Params {
  * Returns detailed info about encrypted vs unencrypted events
  * Any workspace member can check encryption status
  */
-export async function GET(_: Request, { params }: Params) {
+export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   if (!isEncryptionEnabled()) {
@@ -34,14 +34,15 @@ export async function GET(_: Request, { params }: Params) {
     });
   }
 
-  const supabase = await createClient();
+  let supabase = await createClient();
 
   // Get current user
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) return auth.response;
+  const { user } = auth;
+  supabase = auth.supabase;
 
   // Check if user has access to this workspace (any member can view status)
   const member = await verifyWorkspaceMembershipType({
@@ -149,7 +150,7 @@ export async function GET(_: Request, { params }: Params) {
  * POST - Encrypt all unencrypted calendar events in the workspace
  * Requires manage_e2ee permission
  */
-export async function POST(_: Request, { params }: Params) {
+export async function POST(request: Request, { params }: Params) {
   const { wsId } = await params;
 
   if (!isEncryptionEnabled()) {
@@ -159,12 +160,16 @@ export async function POST(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) return auth.response;
 
   // Check if user has manage_e2ee permission
   const { authorized, user, reason } = await checkE2EEPermission(
-    supabase,
-    wsId
+    auth.supabase,
+    wsId,
+    auth.user
   );
 
   if (!user) {

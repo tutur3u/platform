@@ -697,7 +697,10 @@ bun dev:web:docker -- --without-redis
 
 That opt-out disables both the bundled Redis companion services and the
 Docker-injected `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`
-variables, so `apps/web` falls back to its non-Redis behavior cleanly.
+variables. Redis-optional features such as rate limiting fall back to their
+non-Redis behavior, but security-sensitive one-time state such as CLI
+refresh-token replay protection fails closed until Redis is restored or the CLI
+user signs in again.
 
 Vercel-hosted satellite apps such as CMS, Calendar, Finance, Learn, Teach, and
 Tasks cannot reach Docker-private Redis hosts such as `serverless-redis-http`.

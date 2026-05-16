@@ -95,7 +95,11 @@ enabled, unarchived workflows manually, and every run writes a row in
 message. Workflow definitions are JSON graphs with typed nodes and edges. V1
 manual execution disallows cycles, caps graphs at 80 nodes / 120 edges, and
 uses restricted `{{steps.nodeId.output.path}}` or `{{input.path}}` references
-only. Do not add arbitrary JavaScript evaluation to workflow config.
+only. Do not add arbitrary JavaScript evaluation to workflow config. Workflow
+`world_event` nodes can also include a `worldPatch` object with `blocks`,
+`objects`, `removeBlockIds`, `removeObjectIds`, or `clear: true`; the engine
+applies that patch to the latest server snapshot and persists the result through
+the same audited world-event path as manual editor saves.
 
 Shared realtime payloads and Hive CRDT helpers live in
 `@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,
@@ -164,6 +168,12 @@ simulation ticks, NPC decision records, farming, warehouses, and trades. Effects
 are audited through the workflow run trace plus the existing Hive event/economy
 tables; v1 has no schedule, webhook trigger, retry queue, credential vault, or
 rollback approval layer.
+
+Starter workflow templates should demonstrate a real server-side use case, not
+just create trace rows. The farm cycle template plants a relational crop, then
+uses a `world_event.worldPatch` step to stamp a visible crop plot into the Hive
+world. The cleanup template removes that starter plot by id and records the
+maintenance event.
 
 The chat composer is opt-in from the editor chrome button, and the mini-map is
 a collapsible viewport overlay. If all Hive servers are deleted, the editor must

@@ -1,7 +1,7 @@
 ---
 title: 'tuturuuu'
 description: 'Official TypeScript/JavaScript SDK for the Tuturuuu platform'
-updatedAt: '2026-05-14'
+updatedAt: '2026-05-16'
 ---
 
 # Tuturuuu SDK
@@ -171,20 +171,26 @@ SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` when a push to `production` changes
 `packages/sdk/package.json` or the release workflow itself. The same workflow can
 also be dispatched manually to catch up a version that already landed on
-`production`. The workflow runs the SDK tests, skips publication if the exact
-package version already exists on npm, prepares a tarball with `npm pack` outside
-the trusted-publish job, and then publishes that tarball through
+`production`. Manual dispatches from any other ref are rejected before
+dependency installation, packaging, or npm trusted publishing can run. The
+workflow runs the SDK tests, skips publication if the exact package version
+already exists on npm, prepares a tarball with `npm pack` outside the
+trusted-publish job, and then publishes that tarball through
 [npm trusted publishing](https://docs.npmjs.com/trusted-publishers). Only the
 final `publish-npm` job requests `id-token: write`, so GitHub Actions mints the
 short-lived OIDC token after dependency installation, package builds, and version
 checks have already finished. That job downloads the prepared artifact, verifies
 its package `name` and `version`, confirms the bundled `npm` CLI supports trusted
-  publishing, and runs `npm publish ./<tarball> --ignore-scripts` without an
-  `NPM_TOKEN` so npm treats the downloaded artifact as a local file path. Do not
-  add `bun install`, `npm install -g`, package builds, or
-package lifecycle scripts to the OIDC-enabled job. Because the `tuturuuu`
-package is public and `tutur3u/platform` is a public repository, npm also
-generates and attaches build provenance attestations automatically.
+publishing, and runs `npm publish ./<tarball> --ignore-scripts` without an
+`NPM_TOKEN` so npm treats the downloaded artifact as a local file path. The job
+targets the GitHub environment `sdk-release-production`; keep that environment
+restricted to the `production` branch in repository settings, and keep the npm
+trusted publisher bound to the same environment name so a branch-selected
+workflow cannot mint a matching npm publish identity. Do not add `bun install`,
+`npm install -g`, package builds, package lifecycle scripts, or repository
+secrets to the SDK release workflow. Because the `tuturuuu` package is public
+and `tutur3u/platform` is a public repository, npm also generates and attaches
+build provenance attestations automatically.
 
 The SDK imports `@tuturuuu/types` and `@tuturuuu/internal-api` through package
 exports that point at their git-ignored `dist/` directories. The release
@@ -199,8 +205,7 @@ The matching npm-side trusted publisher must stay configured at
 - **Organization or user**: `tutur3u`
 - **Repository**: `platform`
 - **Workflow filename**: `release-sdk-package.yaml`
-- **Environment name**: leave empty (the publish job does not target a GitHub
-  environment)
+- **Environment name**: `sdk-release-production`
 
 If the npm-side configuration drifts (for example after a repo rename or after
 moving the publish step into another workflow file), `npm publish` will fail

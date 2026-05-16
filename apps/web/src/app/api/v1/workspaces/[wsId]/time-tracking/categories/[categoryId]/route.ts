@@ -1,13 +1,10 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function PATCH(
   request: NextRequest,
@@ -15,15 +12,12 @@ export async function PATCH(
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
@@ -118,15 +112,12 @@ export async function DELETE(
 ) {
   try {
     const { wsId, categoryId } = await params;
-    const supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     // Verify workspace access
     const memberCheck = await verifyWorkspaceMembershipType({
