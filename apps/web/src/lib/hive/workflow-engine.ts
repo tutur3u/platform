@@ -6,9 +6,12 @@ import type {
   HiveWorkflowNodeType,
   HiveWorkflowStepTrace,
 } from './workflow-types';
+import {
+  groupHiveWorkflowEdgesBySource,
+  validateHiveWorkflowDefinition,
+} from './workflow-validation';
+import { getHiveWorkflowWorldEventConfig } from './workflow-world-patch';
 
-const MAX_WORKFLOW_NODES = 80;
-const MAX_WORKFLOW_EDGES = 120;
 const MAX_WORKFLOW_STEPS = 120;
 const REFERENCE_PATTERN = /\{\{\s*([^{}]+?)\s*\}\}/gu;
 const FULL_REFERENCE_PATTERN = /^\{\{\s*([^{}]+?)\s*\}\}$/u;
@@ -54,85 +57,7 @@ export type HiveWorkflowExecutionResult = {
   trace: HiveWorkflowStepTrace[];
 };
 
-export function validateHiveWorkflowDefinition(
-  definition: HiveWorkflowDefinition
-) {
-  const errors: string[] = [];
-  const nodes = Array.isArray(definition.nodes) ? definition.nodes : [];
-  const edges = Array.isArray(definition.edges) ? definition.edges : [];
-
-  if (definition.version !== 1) {
-    errors.push('Hive workflow definitions must use version 1.');
-  }
-
-  if (nodes.length > MAX_WORKFLOW_NODES) {
-    errors.push(`Hive workflows are limited to ${MAX_WORKFLOW_NODES} nodes.`);
-  }
-
-  if (edges.length > MAX_WORKFLOW_EDGES) {
-    errors.push(`Hive workflows are limited to ${MAX_WORKFLOW_EDGES} edges.`);
-  }
-
-  const nodeIds = new Set<string>();
-
-  for (const node of nodes) {
-    if (!node.id || nodeIds.has(node.id)) {
-      errors.push('Workflow node ids must be unique.');
-      break;
-    }
-    nodeIds.add(node.id);
-  }
-
-  if (!nodes.some((node) => node.type === 'manual_trigger')) {
-    errors.push('Workflow needs a manual trigger node.');
-  }
-
-  for (const edge of edges) {
-    if (!nodeIds.has(edge.source) || !nodeIds.has(edge.target)) {
-      errors.push('Workflow edges must connect existing nodes.');
-      break;
-    }
-  }
-
-  if (hasCycle(nodes, edges)) {
-    errors.push('Workflow graphs cannot contain cycles.');
-  }
-
-  return {
-    errors,
-    ok: errors.length === 0,
-  };
-}
-
-function hasCycle(nodes: HiveWorkflowNode[], edges: HiveWorkflowEdge[]) {
-  const outgoing = groupEdgesBySource(edges);
-  const state = new Map<string, 'done' | 'visiting'>();
-
-  const visit = (nodeId: string): boolean => {
-    const current = state.get(nodeId);
-    if (current === 'visiting') return true;
-    if (current === 'done') return false;
-
-    state.set(nodeId, 'visiting');
-    for (const edge of outgoing.get(nodeId) ?? []) {
-      if (visit(edge.target)) return true;
-    }
-    state.set(nodeId, 'done');
-    return false;
-  };
-
-  return nodes.some((node) => visit(node.id));
-}
-
-function groupEdgesBySource(edges: HiveWorkflowEdge[]) {
-  const outgoing = new Map<string, HiveWorkflowEdge[]>();
-  for (const edge of edges) {
-    const current = outgoing.get(edge.source) ?? [];
-    current.push(edge);
-    outgoing.set(edge.source, current);
-  }
-  return outgoing;
-}
+export { validateHiveWorkflowDefinition } from './workflow-validation';
 
 function getPathValue(source: unknown, path: string[]) {
   let value = source;
@@ -290,7 +215,13 @@ async function executeNode(input: {
         ? capabilities.transferInventory(config)
         : capabilities.createWarehouse(config);
     case 'world_event':
-      return capabilities.createHiveWorldEvent(config);
+      return capabilities.createHiveWorldEvent(
+        await getHiveWorkflowWorldEventConfig({
+          capabilities,
+          config,
+          serverId,
+        })
+      );
     default:
       return assertNever(node.type);
   }
@@ -340,7 +271,7 @@ export async function executeHiveWorkflowDefinition({
   }
 
   const nodeById = new Map(definition.nodes.map((node) => [node.id, node]));
-  const outgoing = groupEdgesBySource(definition.edges);
+  const outgoing = groupHiveWorkflowEdgesBySource(definition.edges);
   const trigger = definition.nodes.find(
     (node) => node.type === 'manual_trigger'
   );

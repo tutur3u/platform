@@ -76,6 +76,16 @@ export const workflowCatalog: WorkflowCatalogItem[] = [
     defaultConfig: {
       eventType: 'workflow.event',
       payload: { source: 'workflow' },
+      worldPatch: {
+        objects: [
+          {
+            id: 'workflow:event-marker:0:1:0',
+            position: { x: 0, y: 1, z: 0 },
+            state: { label: 'Workflow event' },
+            type: 'marker',
+          },
+        ],
+      },
     },
     icon: Workflow,
     labelKey: 'world_event',
@@ -164,7 +174,8 @@ export function createWorkflowTemplate(
       edges: [
         { id: 'trigger-context', source: 'trigger', target: 'context' },
         { id: 'context-farm', source: 'context', target: 'farm' },
-        { id: 'farm-log', source: 'farm', target: 'log' },
+        { id: 'farm-plot', source: 'farm', target: 'plot' },
+        { id: 'plot-log', source: 'plot', target: 'log' },
       ],
       nodes: [
         manual,
@@ -184,12 +195,90 @@ export function createWorkflowTemplate(
         },
         {
           data: {
-            config: { message: 'Farm cycle completed.' },
+            config: {
+              eventType: 'workflow.farm_plot',
+              payload: {
+                cropId: '{{steps.farm.output.crop.id}}',
+                cropType: '{{steps.farm.output.crop.crop_type}}',
+                template: 'farm_cycle',
+              },
+              worldPatch: {
+                blocks: [
+                  {
+                    position: { x: 1, y: 0, z: 1 },
+                    type: 'garden',
+                  },
+                  {
+                    position: { x: 2, y: 0, z: 1 },
+                    type: 'garden',
+                  },
+                  {
+                    position: { x: 3, y: 0, z: 1 },
+                    type: 'garden',
+                  },
+                ],
+                objects: [
+                  {
+                    id: 'workflow:farm-cycle:crop:2:1:1',
+                    position: { x: 2, y: 1, z: 1 },
+                    state: {
+                      cropId: '{{steps.farm.output.crop.id}}',
+                      cropType: '{{steps.farm.output.crop.crop_type}}',
+                      growthStage: 0.35,
+                      needsWater: true,
+                    },
+                    type: 'crop',
+                  },
+                ],
+              },
+            },
+            label: label('nodes.world_event'),
+          },
+          id: 'plot',
+          position: { x: 790, y: 40 },
+          type: 'world_event',
+        },
+        {
+          data: {
+            config: {
+              message:
+                'Farm cycle planted {{steps.farm.output.crop.crop_type}} and updated the world.',
+            },
             label: label('nodes.log'),
           },
           id: 'log',
-          position: { x: 790, y: 40 },
+          position: { x: 1060, y: 40 },
           type: 'log',
+        },
+      ],
+      version: 1,
+    };
+  }
+
+  if (key === 'world_cleanup') {
+    return {
+      edges: [
+        { id: 'trigger-context', source: 'trigger', target: 'context' },
+        { id: 'context-cleanup', source: 'context', target: 'cleanup' },
+      ],
+      nodes: [
+        manual,
+        context,
+        {
+          data: {
+            config: {
+              eventType: 'workflow.cleanup',
+              payload: { template: key },
+              worldPatch: {
+                removeBlockIds: ['block:1:0:1', 'block:2:0:1', 'block:3:0:1'],
+                removeObjectIds: ['workflow:farm-cycle:crop:2:1:1'],
+              },
+            },
+            label: label('nodes.world_event'),
+          },
+          id: 'cleanup',
+          position: { x: 520, y: 80 },
+          type: 'world_event',
         },
       ],
       version: 1,
@@ -211,10 +300,7 @@ export function createWorkflowTemplate(
             actionType === 'npc_decision'
               ? { npcId: '', spokenText: 'Starting daily routine.' }
               : {
-                  eventType:
-                    key === 'world_cleanup'
-                      ? 'workflow.cleanup'
-                      : 'workflow.trade',
+                  eventType: 'workflow.trade',
                   payload: { template: key },
                 },
           label: label(`nodes.${actionType}`),

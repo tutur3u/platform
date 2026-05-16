@@ -232,7 +232,7 @@
       "select_workflow": "Select workflow",
       "templates": {
         "farm_cycle": {
-          "description": "Plant a crop and record the farming result.",
+          "description": "Plant a crop, persist it, and stamp a visible garden plot into the world.",
           "name": "Farm cycle"
         },
         "market_trade": {
@@ -248,7 +248,7 @@
           "name": "Simulation tick"
         },
         "world_cleanup": {
-          "description": "Record a cleanup event for world maintenance passes.",
+          "description": "Remove the starter farm plot from the world and record a cleanup event.",
           "name": "World cleanup"
         }
       },
