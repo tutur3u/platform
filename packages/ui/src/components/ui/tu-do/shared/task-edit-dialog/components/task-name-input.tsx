@@ -34,6 +34,18 @@ export function TaskNameInput({
 }: TaskNameInputProps) {
   const t = useTranslations('ws-task-boards.dialog');
 
+  const focusDescriptionEditor = () => {
+    targetEditorCursorRef.current = null;
+
+    setTimeout(() => {
+      const editorElement = editorRef.current?.querySelector(
+        '.ProseMirror'
+      ) as HTMLElement | null;
+
+      editorElement?.focus();
+    }, 0);
+  };
+
   return (
     <div className="group">
       <Input
@@ -87,19 +99,17 @@ export function TaskNameInput({
         onKeyDown={(e) => {
           // Enter key moves to description
           if (e.key === 'Enter') {
+            if (e.nativeEvent.isComposing || e.keyCode === 229) {
+              return;
+            }
+
             e.preventDefault();
+            e.stopPropagation();
             // Flush pending save immediately when pressing Enter (in edit mode)
             if (!isCreateMode && e.currentTarget.value.trim()) {
               flushNameUpdate();
             }
-            const editorElement = editorRef.current?.querySelector(
-              '.ProseMirror'
-            ) as HTMLElement;
-            if (editorElement) {
-              editorElement.focus();
-              // Clear the target cursor so it goes to the start
-              targetEditorCursorRef.current = null;
-            }
+            focusDescriptionEditor();
           }
 
           if (e.key === 'ArrowDown') {
