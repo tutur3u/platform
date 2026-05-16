@@ -12,6 +12,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/tulearn',
   'apps/web/src/app/api/v1/course',
   'apps/web/src/app/api/v1/workspaces/[wsId]/tulearn',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/users/groups',
   'apps/web/src/app/api/v1/workspaces/[wsId]/time-tracking',
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar',
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings',
@@ -24,6 +25,18 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/users/me/avatar',
   'apps/web/src/app/api/v1/users/me/email',
 ];
+
+const satelliteAppApiRoots = [
+  'apps/learn/src/app/api',
+  'apps/teach/src/app/api',
+];
+
+const allowedSatelliteLocalApiRoutes = new Set([
+  'apps/learn/src/app/api/auth/logout/route.ts',
+  'apps/learn/src/app/api/auth/verify-app-token/route.ts',
+  'apps/teach/src/app/api/auth/logout/route.ts',
+  'apps/teach/src/app/api/auth/verify-app-token/route.ts',
+]);
 
 function walkRouteFiles(relativePath: string): string[] {
   const absolutePath = resolve(repoRoot, relativePath);
@@ -96,5 +109,72 @@ describe('satellite app-session route inventory', () => {
 
     expect(source).toContain('getAppSessionTokenFromRequest');
     expect(source).toContain('verifyAppSessionRequest');
+  });
+
+  it('keeps Learn and Teach local APIs limited to auth cookie handoff routes', () => {
+    const unexpectedRoutes = satelliteAppApiRoots
+      .flatMap(walkRouteFiles)
+      .map(relative)
+      .filter((file) => !allowedSatelliteLocalApiRoutes.has(file));
+
+    expect(unexpectedRoutes).toEqual([]);
+  });
+
+  it('keeps Learn and Teach browser logout routes redirecting after local cleanup', () => {
+    for (const file of [
+      'apps/learn/src/app/api/auth/logout/route.ts',
+      'apps/teach/src/app/api/auth/logout/route.ts',
+    ]) {
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+
+      expect(source, file).toContain('createAppSessionLogoutResponse');
+      expect(source, file).toContain("new URL('/logout'");
+    }
+  });
+
+  it('keeps Learn and Teach local auth routes out of the generic API proxy guard', () => {
+    for (const file of ['apps/learn/src/proxy.ts', 'apps/teach/src/proxy.ts']) {
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+
+      expect(source, file).toContain('LOCAL_AUTH_API_PATHS');
+      expect(source, file).toContain("'/api/auth/logout'");
+      expect(source, file).toContain("'/api/auth/verify-app-token'");
+    }
+  });
+
+  it('keeps education dashboard entry pages from redirect-looping authenticated users', () => {
+    for (const file of [
+      'apps/learn/src/app/[locale]/dashboard/page.tsx',
+      'apps/teach/src/app/[locale]/dashboard/page.tsx',
+    ]) {
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+      const loginRedirectIndex = source.indexOf(
+        "redirect({ href: '/login?next=/dashboard'"
+      );
+      const bootstrapIndex = source.indexOf('getTulearnBootstrap(');
+
+      expect(source, file).toContain('getAppSessionClaimsFromRequest');
+      expect(source, file).toContain('hasWebAppSessionTokenFromRequest');
+      expect(loginRedirectIndex, file).toBeGreaterThanOrEqual(0);
+      expect(bootstrapIndex, file).toBeGreaterThan(loginRedirectIndex);
+      expect(source, file).toMatch(
+        /return <No(?:Workspace|TeachWorkspace)State/u
+      );
+    }
+  });
+
+  it('keeps Learn and Teach stale local app-session cookies on the platform-login recovery path', () => {
+    for (const file of [
+      'apps/learn/src/proxy.ts',
+      'apps/teach/src/proxy.ts',
+      'apps/learn/src/app/[locale]/(auth)/login/page.tsx',
+      'apps/teach/src/app/[locale]/login/page.tsx',
+      'apps/learn/src/app/[locale]/page.tsx',
+      'apps/teach/src/app/[locale]/page.tsx',
+    ]) {
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+
+      expect(source, file).toContain('hasWebAppSessionTokenFromRequest');
+    }
   });
 });

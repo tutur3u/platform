@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  resolveStudentForPlatformUser,
   resolveTulearnSubject,
   tulearnAccessErrorResponse,
 } from '@/lib/tulearn/service';
@@ -146,6 +147,7 @@ async function handleCourseList({
     parsed.data.wsId,
     sessionSupabase
   );
+  const sbAdmin = await createAdminClient();
   let progressUserId = user.id;
   let hasAccess = false;
 
@@ -158,6 +160,15 @@ async function handleCourseList({
     });
     progressUserId = subject.studentPlatformUserId;
     hasAccess = true;
+  }
+
+  if (!hasAccess) {
+    const selfStudent = await resolveStudentForPlatformUser({
+      db: sbAdmin,
+      platformUserId: user.id,
+      wsId: normalizedWsId,
+    });
+    hasAccess = Boolean(selfStudent);
   }
 
   // Verify workspace membership
@@ -212,8 +223,6 @@ async function handleCourseList({
   if (!hasAccess) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
   }
-
-  const sbAdmin = await createAdminClient();
 
   // Fetch workspace groups first, then scope module lookup to those groups.
   const { data: groups, error: groupsError } = await sbAdmin

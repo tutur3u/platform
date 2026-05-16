@@ -76,6 +76,7 @@
     "dev:track": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/track -F @tuturuuu/web",
     "dev:learn": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/learn -F @tuturuuu/web",
     "dev:teach": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/teach -F @tuturuuu/web",
+    "dev:edu": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/learn -F @tuturuuu/teach -F @tuturuuu/web",
     "dev:hive": "turbo run dev -F @tuturuuu/types -F @tuturuuu/supabase -F @tuturuuu/hive-realtime -F @tuturuuu/hive -F @tuturuuu/web",
     "dev:mail": "turbo run dev -F @tuturuuu/transactional",
     "devx": "bun sb:stop && bun sb:start && bun dev",

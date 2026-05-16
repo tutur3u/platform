@@ -7,9 +7,13 @@ Teach lives in `apps/teach` and runs locally on port `7813`. It is a teacher-fac
 
 ## Ownership model
 
-Teach is not a separate education admin stack. It links teachers into `apps/web` for workspace records, course data, reports, assignments, parent links, and operational settings. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard.
+Teach is not a separate education admin stack. It links teachers into `apps/web` for workspace records, course data, reports, assignments, parent links, and operational settings. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard; Teach-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Teach host.
 
-Teach does not render its own login portal. Its `/login` route first checks for an existing Teach app-session JWT. If the app session is already present, it redirects inside Teach to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. After the platform login confirms the account, `apps/web` generates a cross-app token for the `teach` target app and redirects back. Teach finishes the handoff by setting the host-only `tuturuuu_app_session` cookie through `POST /api/auth/verify-app-token`; it does not create a Teach-local Supabase Auth session.
+Teach-local logout clears the host-only app-session cookies and stale Supabase Auth cookies on `teach.tuturuuu.*`, then redirects browser form submissions to the central `apps/web` `/logout?from=Teach` continuation. JSON callers can still POST `/api/auth/logout` and receive `{ success: true }`.
+
+Teach does not render its own login portal. Its `/login` route first checks for an existing Teach app-session JWT. If the app session is already present, it redirects inside Teach to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. After the platform login confirms the account, `apps/web` generates a cross-app token for the `teach` target app and redirects back. Teach's local `POST /api/auth/verify-app-token` route only completes the host-only cookie handoff; token validation is delegated back to the central web app, and Teach does not create a Teach-local Supabase Auth session. The handoff stores both a Teach-local app-session cookie for satellite route guards and a Web-issued app-session cookie for rewritten Web API requests. Protected Teach routes require both cookies; if an older local-only cookie is present, Teach sends the user back through the platform handoff so the coordinated cookie pair is refreshed without manual cookie deletion.
+
+The `/dashboard` entry route must only send users to `/login` when the Teach app-session is missing. If the app-session exists but the central bootstrap API returns no eligible education workspace, render an empty teacher state instead of redirecting back to login.
 
 Learn follows the same platform-login pattern: the learner app keeps `/verify-token` for cross-app session completion, but `/login` delegates account selection to `apps/web`.
 
@@ -22,6 +26,8 @@ Teach metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. P
 All non-`apps/web` education apps use the shared Neobrutalist design language from `apps/learn/DESIGN.md`: heavy foreground borders, offset shadows, paper-like surfaces, compact responsive grids, and theme-adaptive dynamic accents. Teach uses this language for public teacher orientation surfaces and protected dashboards.
 
 Teach should read as a teacher operations dashboard, not a landing page. The protected surface should keep course user groups, modules, centralized attendance, reports, score metrics, and learner-preview handoffs visible as first-class cards. Use multiple dynamic accent roles across these work loops and keep rails readable in light, dark, and system themes.
+
+Teach reads course groups and module data through central `apps/web` APIs. Web API routes that serve Teach must opt in to app-session auth for the `teach` audience and resolve permissions from the forwarded app-session user before falling back to workspace group membership filters.
 
 ## Verification
 

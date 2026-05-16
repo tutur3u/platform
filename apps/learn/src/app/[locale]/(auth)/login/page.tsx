@@ -1,4 +1,7 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
@@ -16,12 +19,17 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const nextPath = normalizeNextPath(params.next);
+  const shouldRefreshCrossAppSession = params.refresh === '1';
+  const requestHeaders = await headers();
   const appSession = getAppSessionClaimsFromRequest(
-    { headers: await headers() },
+    { headers: requestHeaders },
     { targetApp: 'learn' }
   );
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
+    headers: requestHeaders,
+  });
 
-  if (appSession) {
+  if (appSession && hasWebAppSession && !shouldRefreshCrossAppSession) {
     redirect(nextPath);
   }
 

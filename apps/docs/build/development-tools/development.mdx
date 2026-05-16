@@ -137,6 +137,10 @@ through `dev:app` for direct port-based debugging.
 When debugging without Portless, run an app's `dev:app` script directly and use
 the legacy fallback port from that package script.
 
+Use `bun dev:edu` when working on the education apps together. It starts Learn,
+Teach, their shared packages, and the central web app so cross-app login can
+complete locally.
+
 Next.js still prints the internal listener port, for example
 `http://localhost:4803`, because Portless assigns a free backend port to the app
 process. App `dev:app` scripts also print a `Portless URL:` line from the

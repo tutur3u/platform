@@ -176,10 +176,14 @@ mints a token for the authenticated caller's own `auth.uid()`; do not use it as 
 server-side impersonation primitive or as a replacement for app credentials.
 Registered apps should clear `tuturuuu_app_session` on local logout and expire
 stale `sb-*-auth-token` cookies on the app host. Browser form logout should
-redirect back to the app's landing or login page after local cleanup instead of
-leaving the browser on `/api/auth/logout`. Apps may then offer a separate
-central `/logout` continuation when the user wants to end the platform session
-too. Logout and browser-state recovery redirects must use the app's configured
-public URL as the fallback when the request reaches the app through a wildcard
-listener such as `0.0.0.0`, because that listener address is not a browser
-destination.
+redirect back to the app's landing/login page or to the central `/logout`
+continuation after local cleanup instead of leaving the browser on
+`/api/auth/logout`. Logout and browser-state recovery redirects must use the
+app's configured public URL as the fallback when the request reaches the app
+through a wildcard listener such as `0.0.0.0`, because that listener address is
+not a browser destination.
+
+Shared satellite UI must not assume every app publishes the full `apps/web`
+`public/media` tree. Shared brand images such as `TuturuuLogo` should use the
+canonical hosted Tuturuuu asset URL so apps without local `/media/logos/*`
+files do not produce repeated 404s.

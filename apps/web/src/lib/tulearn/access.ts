@@ -164,6 +164,7 @@ export async function getTulearnBootstrap({
   const sbAdmin = await getAdmin();
   const [
     membershipWorkspacesResult,
+    linkedUsersResult,
     parentLinksResult,
     profileResult,
     privateDetailsResult,
@@ -176,6 +177,10 @@ export async function getTulearnBootstrap({
       .eq('workspace_members.user_id', user.id)
       .eq('workspace_secrets.name', ENABLE_EDUCATION_SECRET)
       .eq('workspace_secrets.value', 'true'),
+    sbAdmin
+      .from('workspace_user_linked_users')
+      .select('ws_id, virtual_user_id')
+      .eq('platform_user_id', user.id),
     sbAdmin
       .from('tulearn_parent_student_links')
       .select('ws_id, student_platform_user_id, student_workspace_user_id')
@@ -194,12 +199,45 @@ export async function getTulearnBootstrap({
   ]);
 
   if (membershipWorkspacesResult.error) throw membershipWorkspacesResult.error;
+  if (linkedUsersResult.error) throw linkedUsersResult.error;
   if (parentLinksResult.error) throw parentLinksResult.error;
   if (profileResult.error) throw profileResult.error;
   if (privateDetailsResult.error) throw privateDetailsResult.error;
 
   const workspaceMap = new Map<string, TulearnWorkspaceSummary>();
   for (const workspace of membershipWorkspacesResult.data ?? []) {
+    workspaceMap.set(workspace.id, {
+      id: workspace.id,
+      name: workspace.name ?? null,
+      avatar_url: workspace.avatar_url ?? null,
+      logo_url: workspace.logo_url ?? null,
+      roles: ['student'],
+    });
+  }
+
+  const linkedWorkspaceIds = [
+    ...new Set((linkedUsersResult.data ?? []).map((link) => link.ws_id)),
+  ];
+  const linkedWorkspacesResult = linkedWorkspaceIds.length
+    ? await sbAdmin
+        .from('workspaces')
+        .select(
+          'id, name, avatar_url, logo_url, workspace_secrets!inner(name, value)'
+        )
+        .in('id', linkedWorkspaceIds)
+        .eq('workspace_secrets.name', ENABLE_EDUCATION_SECRET)
+        .eq('workspace_secrets.value', 'true')
+    : { data: [], error: null };
+
+  if (linkedWorkspacesResult.error) throw linkedWorkspacesResult.error;
+
+  for (const workspace of linkedWorkspacesResult.data ?? []) {
+    const existing = workspaceMap.get(workspace.id);
+    if (existing) {
+      if (!existing.roles.includes('student')) existing.roles.push('student');
+      continue;
+    }
+
     workspaceMap.set(workspace.id, {
       id: workspace.id,
       name: workspace.name ?? null,

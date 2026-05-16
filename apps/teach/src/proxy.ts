@@ -2,6 +2,7 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
@@ -17,6 +18,10 @@ import {
 } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
+const LOCAL_AUTH_API_PATHS = new Set([
+  '/api/auth/logout',
+  '/api/auth/verify-app-token',
+]);
 
 function getPreferredLocale(request: NextRequest): Locale {
   const cookieLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value;
@@ -85,6 +90,10 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
+    if (LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname)) {
+      return clearSupabaseAuthCookies(request, NextResponse.next());
+    }
+
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:teach:api',
     });
@@ -114,8 +123,9 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     const appSession = getAppSessionClaimsFromRequest(request, {
       targetApp: 'teach',
     });
+    const hasWebAppSession = hasWebAppSessionTokenFromRequest(request);
 
-    if (!appSession) {
+    if (!appSession || !hasWebAppSession) {
       const url = new URL(getLoginPath(), request.url);
       const next = getNextValue(request);
 

@@ -1,7 +1,7 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
-import type { NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import {
   type AppCoordinationTokenClaims,
   createAppCoordinationToken,
@@ -11,6 +11,7 @@ import {
 } from './app-coordination';
 
 export const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
+export const WEB_APP_SESSION_COOKIE_NAME = 'tuturuuu_web_app_session';
 export const APP_SESSION_SCOPE = 'internal-app:session';
 export const SUPABASE_AUTH_COOKIE_PATTERN =
   /^sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?$/u;
@@ -150,31 +151,74 @@ function getCookieValue(request: RequestLike, name: string) {
 }
 
 export function getAppSessionTokenFromRequest(request: RequestLike) {
+  return getAppSessionTokenCandidatesFromRequest(request)[0] ?? null;
+}
+
+export function getWebAppSessionTokenFromRequest(request: RequestLike) {
+  const webCookieToken = getCookieValue(request, WEB_APP_SESSION_COOKIE_NAME);
+
+  return webCookieToken && isAppCoordinationToken(webCookieToken)
+    ? webCookieToken
+    : null;
+}
+
+export function hasWebAppSessionTokenFromRequest(request: RequestLike) {
+  return Boolean(getWebAppSessionTokenFromRequest(request));
+}
+
+function getAppSessionTokenCandidatesFromRequest(request: RequestLike) {
+  const tokens = new Set<string>();
   const bearerToken = getBearerAppCoordinationToken(request);
 
   if (bearerToken) {
-    return bearerToken;
+    tokens.add(bearerToken);
   }
 
   const cookieToken = getCookieValue(request, APP_SESSION_COOKIE_NAME);
+  const webCookieToken = getCookieValue(request, WEB_APP_SESSION_COOKIE_NAME);
 
-  return isAppCoordinationToken(cookieToken) ? cookieToken : null;
+  if (cookieToken && isAppCoordinationToken(cookieToken)) {
+    tokens.add(cookieToken);
+  }
+
+  if (webCookieToken && isAppCoordinationToken(webCookieToken)) {
+    tokens.add(webCookieToken);
+  }
+
+  return [...tokens];
 }
 
 export function verifyAppSessionRequest(
   request: RequestLike,
   options: AppSessionOptions = {}
 ): AppSessionVerification {
-  const token = getAppSessionTokenFromRequest(request);
+  const tokens = getAppSessionTokenCandidatesFromRequest(request);
 
-  if (!token) {
+  if (tokens.length === 0) {
     return {
       error: 'Missing app session',
       ok: false,
     };
   }
 
-  return verifyAppSessionToken(token, options);
+  let lastVerification: AppSessionVerification | null = null;
+
+  for (const token of tokens) {
+    const verification = verifyAppSessionToken(token, options);
+
+    if (verification.ok) {
+      return verification;
+    }
+
+    lastVerification = verification;
+  }
+
+  return (
+    lastVerification ?? {
+      error: 'Missing app session',
+      ok: false,
+    }
+  );
 }
 
 export function getAppSessionClaimsFromRequest(
@@ -221,8 +265,26 @@ export function setAppSessionCookie(
   );
 }
 
+export function setWebAppSessionCookie(
+  response: NextResponse,
+  token: string,
+  options: {
+    expires?: Date;
+  } = {}
+) {
+  response.cookies.set(
+    WEB_APP_SESSION_COOKIE_NAME,
+    token,
+    getAppSessionCookieOptions(options)
+  );
+}
+
 export function clearAppSessionCookie(response: NextResponse) {
   response.cookies.set(APP_SESSION_COOKIE_NAME, '', {
+    ...getAppSessionCookieOptions({ expires: new Date(0) }),
+    maxAge: 0,
+  });
+  response.cookies.set(WEB_APP_SESSION_COOKIE_NAME, '', {
     ...getAppSessionCookieOptions({ expires: new Date(0) }),
     maxAge: 0,
   });
@@ -231,6 +293,24 @@ export function clearAppSessionCookie(response: NextResponse) {
 export function clearAppSessionAndReturn(response: NextResponse) {
   clearAppSessionCookie(response);
   return response;
+}
+
+function wantsJsonLogoutResponse(request: RequestLike) {
+  const accept = request.headers.get('accept') ?? '';
+  return accept.includes('application/json') && !accept.includes('text/html');
+}
+
+export function createAppSessionLogoutResponse(
+  request: RequestLike,
+  options: {
+    redirectUrl: string | URL;
+  }
+) {
+  const response = wantsJsonLogoutResponse(request)
+    ? NextResponse.json({ success: true })
+    : NextResponse.redirect(options.redirectUrl, { status: 303 });
+
+  return clearSupabaseAuthCookies(request, clearAppSessionAndReturn(response));
 }
 
 export function isSupabaseAuthCookieName(name: string) {

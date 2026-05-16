@@ -13,6 +13,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('cross-app server verification', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
     vi.stubEnv('SUPABASE_SECRET_KEY', '');
     vi.stubEnv('SUPABASE_SERVICE_KEY', '');
@@ -43,6 +44,7 @@ describe('cross-app server verification', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
     await expect(response.json()).resolves.toEqual({
       appSessionCreated: true,
       userId: 'user-1',
@@ -53,6 +55,60 @@ describe('cross-app server verification', () => {
     );
     expect(response.headers.get('set-cookie')).toContain('HttpOnly');
     expect(response.headers.get('set-cookie')).not.toContain('Domain=');
+  });
+
+  it('uses central Web verification for satellite app-session cookies', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        appSessionExpiresAt: '2026-01-01T00:00:00.000Z',
+        appSessionToken: 'ttr_app_central-session',
+        sessionData: { email: 'learn@example.com' },
+        userId: 'user-2',
+        valid: true,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const handler = createPOST('learn', {
+      verificationBaseUrl: 'https://tuturuuu.localhost',
+    });
+
+    const response = await handler(
+      new NextRequest(
+        'https://learn.tuturuuu.localhost/api/auth/verify-app-token',
+        {
+          body: JSON.stringify({ token: 'learn-token' }),
+          method: 'POST',
+        }
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    await expect(response.json()).resolves.toMatchObject({
+      appSessionCreated: true,
+      userId: 'user-2',
+      valid: true,
+    });
+
+    const fetchCall = fetchMock.mock.calls[0];
+
+    expect(fetchCall).toBeDefined();
+
+    const [url, init] = fetchCall!;
+    expect(String(url)).toBe(
+      'https://tuturuuu.localhost/api/v1/auth/cross-app-token/verify'
+    );
+    expect(JSON.parse(init.body as string)).toEqual({
+      targetApp: 'learn',
+      token: 'learn-token',
+    });
+    expect(mocks.createClient).not.toHaveBeenCalled();
+    const setCookie = response.headers.get('set-cookie') ?? '';
+    expect(setCookie).toContain('tuturuuu_app_session=ttr_app_');
+    expect(setCookie).toContain(
+      'tuturuuu_web_app_session=ttr_app_central-session'
+    );
   });
 
   it('mints app-session cookies in satellite deployments with only the existing server-side Supabase secret', async () => {

@@ -184,6 +184,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
     targetApp: LEARN_TEACH_APP_SESSION_TARGETS,
   },
   {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/users\/groups(?:\/|$)/u,
+    targetApp: 'teach',
+  },
+  {
     pattern:
       /^\/api\/v1\/workspaces\/[^/]+\/user-groups\/[^/]+\/(?:module-groups|module-order|modules)(?:\/|$)/u,
     targetApp: 'teach',

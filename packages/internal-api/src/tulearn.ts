@@ -324,11 +324,11 @@ export async function updateTulearnProfile(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ success: boolean }>('/api/settings/profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+  return client.json<{ message: string }>('/api/v1/users/me/profile', {
+    body: JSON.stringify({ display_name: payload.displayName }),
     cache: 'no-store',
+    headers: { 'Content-Type': 'application/json' },
+    method: 'PATCH',
   });
 }
 

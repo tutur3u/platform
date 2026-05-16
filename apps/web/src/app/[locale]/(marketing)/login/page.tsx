@@ -82,9 +82,7 @@ export default function Login({ searchParams }: LoginProps) {
       />
     </Link>
   );
-  const usesTuturuuuLogo =
-    currentDomain?.logo === DOMAINS.TUTURUUU.logo ||
-    currentDomain === DOMAINS.TUTURUUU;
+  const usesTuturuuuLogo = currentDomain?.logo === DOMAINS.TUTURUUU.logo;
 
   return (
     <div className="min-h-screen">

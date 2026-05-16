@@ -4,12 +4,18 @@ import {
   APP_SESSION_COOKIE_NAME,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
+  createAppSessionLogoutResponse,
   createAppSessionToken,
   getAppSessionClaimsFromRequest,
   getAppSessionTokenFromRequest,
   getAppSessionUserFromRequest,
+  getWebAppSessionTokenFromRequest,
+  hasWebAppSessionTokenFromRequest,
   setAppSessionCookie,
+  setWebAppSessionCookie,
+  verifyAppSessionRequest,
   verifyAppSessionToken,
+  WEB_APP_SESSION_COOKIE_NAME,
 } from './app-session';
 
 describe('app-session JWTs', () => {
@@ -180,6 +186,73 @@ describe('app-session JWTs', () => {
     ).toBe('user-1');
   });
 
+  it('detects the Web-issued app-session cookie separately from the local app-session cookie', () => {
+    const { token: localToken } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'local-user',
+    });
+    const { token: webToken } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'web-user',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.localhost/', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${localToken}`,
+          `${WEB_APP_SESSION_COOKIE_NAME}=${webToken}`,
+        ].join('; '),
+      },
+    });
+
+    expect(getAppSessionTokenFromRequest(request)).toBe(localToken);
+    expect(getWebAppSessionTokenFromRequest(request)).toBe(webToken);
+    expect(hasWebAppSessionTokenFromRequest(request)).toBe(true);
+  });
+
+  it('tries the local app cookie before falling back to the Web-issued app cookie', () => {
+    const { token: localToken } = createAppSessionToken(
+      {
+        targetApp: 'learn',
+        userId: 'local-user',
+      },
+      { secret: 'learn-local-secret' }
+    );
+    const { token: webToken } = createAppSessionToken(
+      {
+        targetApp: 'learn',
+        userId: 'web-user',
+      },
+      { secret: 'web-central-secret' }
+    );
+    const request = new NextRequest('https://learn.tuturuuu.localhost/api', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${localToken}`,
+          `${WEB_APP_SESSION_COOKIE_NAME}=${webToken}`,
+        ].join('; '),
+      },
+    });
+
+    const localVerification = verifyAppSessionRequest(request, {
+      secret: 'learn-local-secret',
+      targetApp: 'learn',
+    });
+    const webVerification = verifyAppSessionRequest(request, {
+      secret: 'web-central-secret',
+      targetApp: 'learn',
+    });
+
+    expect(localVerification.ok).toBe(true);
+    if (localVerification.ok) {
+      expect(localVerification.claims.sub).toBe('local-user');
+    }
+
+    expect(webVerification.ok).toBe(true);
+    if (webVerification.ok) {
+      expect(webVerification.claims.sub).toBe('web-user');
+    }
+  });
+
   it('sets and clears the host-only app-session cookie', () => {
     const { token } = createAppSessionToken({
       targetApp: 'learn',
@@ -190,9 +263,13 @@ describe('app-session JWTs', () => {
     setAppSessionCookie(response, token, {
       expires: new Date('2026-01-01T08:00:00.000Z'),
     });
+    setWebAppSessionCookie(response, token, {
+      expires: new Date('2026-01-01T08:00:00.000Z'),
+    });
 
     const setCookie = response.headers.get('set-cookie') ?? '';
     expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=ttr_app_`);
+    expect(setCookie).toContain(`${WEB_APP_SESSION_COOKIE_NAME}=ttr_app_`);
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('Path=/');
     expect(setCookie).not.toContain('Domain=');
@@ -202,6 +279,7 @@ describe('app-session JWTs', () => {
 
     const clearCookie = clearResponse.headers.get('set-cookie') ?? '';
     expect(clearCookie).toContain(`${APP_SESSION_COOKIE_NAME}=`);
+    expect(clearCookie).toContain(`${WEB_APP_SESSION_COOKIE_NAME}=`);
     expect(clearCookie).toContain('Max-Age=0');
   });
 
@@ -231,5 +309,62 @@ describe('app-session JWTs', () => {
     expect(setCookie).toContain('Max-Age=0');
     expect(setCookie).not.toContain(`${APP_SESSION_COOKIE_NAME}=;`);
     expect(setCookie).not.toContain('regular_cookie=;');
+  });
+
+  it('redirects browser logout requests after clearing local app cookies', () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const request = new NextRequest(
+      'https://learn.tuturuuu.com/api/auth/logout',
+      {
+        headers: {
+          accept: 'text/html',
+          cookie: [
+            `${APP_SESSION_COOKIE_NAME}=${token}`,
+            `${WEB_APP_SESSION_COOKIE_NAME}=${token}`,
+            'sb-test-auth-token=stale',
+          ].join('; '),
+        },
+        method: 'POST',
+      }
+    );
+    const response = createAppSessionLogoutResponse(request, {
+      redirectUrl: 'https://tuturuuu.com/logout?from=Learn',
+    });
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/logout?from=Learn'
+    );
+    expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=;`);
+    expect(setCookie).toContain(`${WEB_APP_SESSION_COOKIE_NAME}=;`);
+    expect(setCookie).toContain('sb-test-auth-token=;');
+    expect(setCookie).toContain('Max-Age=0');
+  });
+
+  it('keeps JSON compatibility for programmatic logout requests', async () => {
+    const { token } = createAppSessionToken({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const request = new NextRequest(
+      'https://learn.tuturuuu.com/api/auth/logout',
+      {
+        headers: {
+          accept: 'application/json',
+          cookie: `${APP_SESSION_COOKIE_NAME}=${token}`,
+        },
+      }
+    );
+    const response = createAppSessionLogoutResponse(request, {
+      redirectUrl: 'https://tuturuuu.com/logout?from=Learn',
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    await expect(response.json()).resolves.toEqual({ success: true });
   });
 });

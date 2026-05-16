@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { MAX_SEARCH_LENGTH } from '@tuturuuu/utils/constants';
 import {
@@ -11,9 +12,10 @@ import {
   applyAttendanceMemberCounts,
   fetchManagersForGroups,
   getShouldCountManagersInAttendance,
-  getUserGroupMemberships,
   matchesUserGroupSearch,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 
 function normalizeListParam(value: string | undefined) {
@@ -44,15 +46,56 @@ interface Params {
   }>;
 }
 
+async function getUserGroupMembershipsForUser({
+  platformUserId,
+  sbAdmin,
+  wsId,
+}: {
+  platformUserId: string;
+  sbAdmin: TypedSupabaseClient;
+  wsId: string;
+}) {
+  const { data: linkedUser, error: linkedUserError } = await sbAdmin
+    .from('workspace_user_linked_users')
+    .select('virtual_user_id')
+    .eq('ws_id', wsId)
+    .eq('platform_user_id', platformUserId)
+    .maybeSingle();
+
+  if (linkedUserError) throw linkedUserError;
+
+  const candidateUserIds = [linkedUser?.virtual_user_id, platformUserId].filter(
+    (userId): userId is string => Boolean(userId)
+  );
+
+  const { data: memberships, error } = await sbAdmin
+    .from('workspace_user_groups_users')
+    .select('group_id')
+    .in('user_id', candidateUserIds);
+
+  if (error) throw error;
+
+  return Array.from(
+    new Set((memberships ?? []).map((membership) => membership.group_id))
+  ).filter((groupId): groupId is string => Boolean(groupId));
+}
+
 export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-    const sbAdmin = await createAdminClient();
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
 
-    const wsId = await normalizeWorkspaceId(id);
+    if (!auth.ok) return auth.response;
+
+    const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+
+    const wsId = await normalizeWorkspaceId(id, auth.supabase);
 
     // Check permissions
     const permissions = await getPermissions({
+      user: auth.user,
       wsId,
       request,
     });
@@ -122,7 +165,11 @@ export async function GET(request: Request, { params }: Params) {
       }
       queryBuilder.in('id', groupIds);
     } else if (!hasManageUsers) {
-      const groupIds = await getUserGroupMemberships(wsId);
+      const groupIds = await getUserGroupMembershipsForUser({
+        platformUserId: auth.user.id,
+        sbAdmin,
+        wsId,
+      });
       if (groupIds.length === 0) {
         return NextResponse.json({ data: [], count: 0 });
       }
@@ -186,7 +233,7 @@ export async function GET(request: Request, { params }: Params) {
       count,
     });
   } catch (error) {
-    console.error('Error in workspace user groups API:', error);
+    serverLogger.error('Error in workspace user groups API', { error });
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

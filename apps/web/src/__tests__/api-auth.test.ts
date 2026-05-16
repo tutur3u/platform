@@ -576,6 +576,11 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: ['learn', 'teach'] });
     expect(
       getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/users/groups'
+      )
+    ).toEqual({ targetApp: 'teach' });
+    expect(
+      getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/users/me/profile'
       )
     ).toEqual({

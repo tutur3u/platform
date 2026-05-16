@@ -9,9 +9,13 @@ Learn lives in `apps/learn` and runs locally on port `7812`. It is the learner-f
 
 Learn does not render its own login portal. Its `/login` route first checks for an existing Learn app-session JWT. If the app session is already present, it redirects inside Learn to the requested `next` path, usually `/dashboard`. Otherwise it redirects to the platform login at `apps/web` with a `returnUrl` pointing back to `/verify-token`. Learn stores a host-only `tuturuuu_app_session` cookie after token verification, not a Learn-local Supabase Auth session.
 
-Social auth providers still run on `apps/web` because OAuth provider callbacks are registered for `tuturuuu.com`. After the platform login confirms the current account, `apps/web` generates a cross-app token for the `learn` target app, redirects back to `/verify-token`, and Learn mints the app-session cookie through `POST /api/auth/verify-app-token`.
+The `/dashboard` entry route must only send users to `/login` when the Learn app-session is missing. If the app-session exists but the central bootstrap API returns no eligible education workspace, render the empty workspace state instead of redirecting back to login.
 
-Protected product data still belongs to the central platform. Learn calls `apps/web` APIs through `@tuturuuu/internal-api`, and the satellite app rewrites `/api/v1/*` to the central web app when no local Learn route exists.
+Social auth providers still run on `apps/web` because OAuth provider callbacks are registered for `tuturuuu.com`. After the platform login confirms the current account, `apps/web` generates a cross-app token for the `learn` target app and redirects back to `/verify-token`. Learn's local `POST /api/auth/verify-app-token` route only completes the host-only cookie handoff; token validation is delegated back to the central web app so Learn does not depend on a Learn-local Supabase Auth project. The handoff stores both a Learn-local app-session cookie for satellite route guards and a Web-issued app-session cookie for rewritten Web API requests. Protected Learn routes require both cookies; if an older local-only cookie is present, Learn sends the user back through the platform handoff so the coordinated cookie pair is refreshed without manual cookie deletion.
+
+Protected product data still belongs to the central platform. Learn calls `apps/web` APIs through `@tuturuuu/internal-api`, and the satellite app rewrites `/api/v1/*` to the central web app. Learn-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Learn host.
+
+Learn-local logout clears the host-only app-session cookies and stale Supabase Auth cookies on `learn.tuturuuu.*`, then redirects browser form submissions to the central `apps/web` `/logout?from=Learn` continuation. JSON callers can still POST `/api/auth/logout` and receive `{ success: true }`.
 
 Learn also exposes a learner-focused AI Chat surface at `/[wsId]/ai-chat`. The UI stays inside `apps/learn`, while the chat stream uses the central `apps/web` `/api/ai/*` routes through the satellite rewrite so model routing, credits, logging, and chat persistence remain centralized.
 
@@ -28,7 +32,7 @@ The bootstrap route only returns eligible education workspaces and linked studen
 GET /api/v1/tulearn/bootstrap
 ```
 
-Workspace-scoped learner routes use the normalized workspace id so aliases like `personal` do not diverge between selection and final reads.
+Workspace-scoped learner routes use the normalized workspace id so aliases like `personal` do not diverge between selection and final reads. Linked learners in `workspace_user_linked_users` count as eligible student access even when the platform user is not a direct workspace member, so course lists and learner dashboard bootstrap must agree on the same workspace set.
 
 ## Parent links
 

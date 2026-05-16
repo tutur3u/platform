@@ -25,6 +25,18 @@ function createMockRouter() {
   };
 }
 
+function createDeferredResponse() {
+  let resolveResponse: (response: Response) => void;
+  const promise = new Promise<Response>((resolve) => {
+    resolveResponse = resolve;
+  });
+
+  return {
+    promise,
+    resolve: resolveResponse!,
+  };
+}
+
 describe('mapUrlToApp', () => {
   it('maps the CMS production URL to the cms app', () => {
     expect(
@@ -143,7 +155,7 @@ describe('verifyRouteToken', () => {
     await verifyRouteToken({
       router,
       searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
-      token: 'token-1',
+      token: 'token-success',
     });
 
     expect(router.push).toHaveBeenCalledWith('/personal');
@@ -166,7 +178,7 @@ describe('verifyRouteToken', () => {
     await verifyRouteToken({
       router,
       searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
-      token: 'token-1',
+      token: 'token-fresh-session',
     });
 
     expect(router.push).toHaveBeenCalledWith('/personal');
@@ -189,7 +201,7 @@ describe('verifyRouteToken', () => {
     await verifyRouteToken({
       router,
       searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
-      token: 'token-1',
+      token: 'token-missing-app-session',
     });
 
     expect(router.push).toHaveBeenCalledWith('/');
@@ -210,10 +222,115 @@ describe('verifyRouteToken', () => {
     await verifyRouteToken({
       router,
       searchParams: new URLSearchParams('nextUrl=%2Fpersonal'),
-      token: 'token-1',
+      token: 'token-missing-user-id',
     });
 
     expect(router.push).toHaveBeenCalledWith('/');
     expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('deduplicates concurrent verification for the same one-time token', async () => {
+    const router = createMockRouter();
+    const response = createDeferredResponse();
+    const fetchMock = vi.fn().mockReturnValue(response.promise);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const searchParams = new URLSearchParams('nextUrl=%2Fdashboard');
+    const firstVerification = verifyRouteToken({
+      router,
+      searchParams,
+      token: 'token-concurrent-dedupe',
+    });
+    const secondVerification = verifyRouteToken({
+      router,
+      searchParams,
+      token: 'token-concurrent-dedupe',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+
+    response.resolve(
+      Response.json({
+        appSessionCreated: true,
+        userId: 'user-1',
+        valid: true,
+      })
+    );
+
+    await Promise.all([firstVerification, secondVerification]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/dashboard');
+    expect(router.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not repost a successfully consumed one-time token', async () => {
+    const router = createMockRouter();
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        appSessionCreated: true,
+        userId: 'user-1',
+        valid: true,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const searchParams = new URLSearchParams('nextUrl=%2Fdashboard');
+
+    await verifyRouteToken({
+      router,
+      searchParams,
+      token: 'token-consumed-dedupe',
+    });
+    await verifyRouteToken({
+      router,
+      searchParams,
+      token: 'token-consumed-dedupe',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledTimes(2);
+    expect(router.push).toHaveBeenNthCalledWith(1, '/dashboard');
+    expect(router.push).toHaveBeenNthCalledWith(2, '/dashboard');
+    expect(router.refresh).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not permanently cache completed token verification decisions', async () => {
+    let now = 0;
+    const nowSpy = vi.spyOn(Date, 'now').mockImplementation(() => now);
+    const router = createMockRouter();
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        appSessionCreated: true,
+        userId: 'user-1',
+        valid: true,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const searchParams = new URLSearchParams('nextUrl=%2Fdashboard');
+
+    try {
+      await verifyRouteToken({
+        router,
+        searchParams,
+        token: 'token-completed-short-window',
+      });
+
+      now = 6000;
+
+      await verifyRouteToken({
+        router,
+        searchParams,
+        token: 'token-completed-short-window',
+      });
+    } finally {
+      nowSpy.mockRestore();
+    }
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(router.push).toHaveBeenCalledTimes(2);
+    expect(router.refresh).toHaveBeenCalledTimes(2);
   });
 });

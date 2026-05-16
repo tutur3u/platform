@@ -1,9 +1,36 @@
 import {
+  getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
+import { GraduationCap } from '@tuturuuu/icons';
+import {
   getTulearnBootstrap,
+  InternalApiError,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from '@/i18n/navigation';
+
+async function NoTeachWorkspaceState() {
+  const t = await getTranslations('teachDashboard');
+
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-root-background p-6">
+      <div className="max-w-lg border-2 border-border bg-background p-8 text-center shadow-[9px_9px_0_var(--border)]">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center border-2 border-border bg-dynamic-yellow/15 shadow-[4px_4px_0_var(--border)]">
+          <GraduationCap className="h-8 w-8" />
+        </div>
+        <h1 className="font-black text-3xl tracking-normal">
+          {t('emptyGroupsTitle')}
+        </h1>
+        <p className="mt-3 text-muted-foreground leading-7">
+          {t('emptyGroupsBody')}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export default async function DashboardEntryPage({
   params,
@@ -12,13 +39,37 @@ export default async function DashboardEntryPage({
 }) {
   const { locale } = await params;
   const requestHeaders = await headers();
-  const bootstrap = await getTulearnBootstrap(
-    withForwardedInternalApiAuth(requestHeaders)
-  ).catch(() => null);
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: requestHeaders },
+    { targetApp: 'teach' }
+  );
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
+    headers: requestHeaders,
+  });
+
+  if (!appSession || !hasWebAppSession) {
+    redirect({ href: '/login?next=/dashboard', locale });
+  }
+
+  let bootstrap: Awaited<ReturnType<typeof getTulearnBootstrap>>;
+  try {
+    bootstrap = await getTulearnBootstrap(
+      withForwardedInternalApiAuth(requestHeaders)
+    );
+  } catch (error) {
+    if (
+      error instanceof InternalApiError &&
+      (error.status === 401 || error.status === 403)
+    ) {
+      redirect({ href: '/login?next=/dashboard&refresh=1', locale });
+    }
+
+    throw error;
+  }
 
   const workspaceId = bootstrap?.workspaces[0]?.id;
   if (!workspaceId) {
-    redirect({ href: '/login?next=/dashboard', locale });
+    return <NoTeachWorkspaceState />;
   }
 
   redirect({ href: `/${workspaceId}`, locale });

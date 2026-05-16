@@ -220,6 +220,42 @@ function redirectAfterVerificationFailure(
   router.refresh();
 }
 
+const activeRouteTokenVerifications = new Map<string, Promise<void>>();
+const completedRouteTokenVerifications = new Map<string, number>();
+const MAX_COMPLETED_ROUTE_TOKEN_VERIFICATIONS = 100;
+const COMPLETED_ROUTE_TOKEN_VERIFICATION_TTL_MS = 5000;
+
+function rememberCompletedRouteTokenVerification(token: string) {
+  completedRouteTokenVerifications.set(
+    token,
+    Date.now() + COMPLETED_ROUTE_TOKEN_VERIFICATION_TTL_MS
+  );
+
+  if (
+    completedRouteTokenVerifications.size >
+    MAX_COMPLETED_ROUTE_TOKEN_VERIFICATIONS
+  ) {
+    const oldestToken = completedRouteTokenVerifications.keys().next().value;
+
+    if (oldestToken) {
+      completedRouteTokenVerifications.delete(oldestToken);
+    }
+  }
+}
+
+function hasRecentCompletedRouteTokenVerification(token: string) {
+  const expiresAt = completedRouteTokenVerifications.get(token);
+
+  if (!expiresAt) return false;
+
+  if (expiresAt <= Date.now()) {
+    completedRouteTokenVerifications.delete(token);
+    return false;
+  }
+
+  return true;
+}
+
 export const verifyRouteToken = async ({
   searchParams,
   token,
@@ -237,6 +273,43 @@ export const verifyRouteToken = async ({
       return;
     }
 
+    const completedVerification =
+      hasRecentCompletedRouteTokenVerification(token);
+
+    if (completedVerification) {
+      const nextUrl = searchParams.get('nextUrl');
+      router.push(nextUrl || '/');
+      router.refresh();
+      return;
+    }
+
+    const activeVerification = activeRouteTokenVerifications.get(token);
+
+    if (activeVerification) {
+      await activeVerification;
+      return;
+    }
+
+    const verification = verifyRouteTokenOnce({ router, searchParams, token });
+    activeRouteTokenVerifications.set(token, verification);
+
+    await verification;
+  } catch (error) {
+    console.error('[cross-app] Unexpected token verification error:', error);
+    redirectAfterVerificationFailure(router);
+  }
+};
+
+async function verifyRouteTokenOnce({
+  searchParams,
+  token,
+  router,
+}: {
+  searchParams: URLSearchParams;
+  token: string;
+  router: ReturnType<typeof useRouter>;
+}) {
+  try {
     // Always verify the token when present — it represents fresh auth from web
     // and should override any existing (potentially stale aal1) session
     const res = await fetch('/api/auth/verify-app-token', {
@@ -271,11 +344,12 @@ export const verifyRouteToken = async ({
       return;
     }
 
+    rememberCompletedRouteTokenVerification(token);
+
     const nextUrl = searchParams.get('nextUrl');
     router.push(nextUrl || '/');
     router.refresh();
-  } catch (error) {
-    console.error('[cross-app] Unexpected token verification error:', error);
-    redirectAfterVerificationFailure(router);
+  } finally {
+    activeRouteTokenVerifications.delete(token);
   }
-};
+}
