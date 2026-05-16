@@ -2,33 +2,40 @@
 
 import { XIcon } from '@tuturuuu/icons';
 import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { Suspense, use } from 'react';
-import { DEV_MODE, PORT } from '@/constants/common';
+import { BASE_URL, DEV_MODE } from '@/constants/common';
 import LoginForm from './form';
 
 const DOMAINS = {
   TUTURUUU: {
     name: 'Tuturuuu',
-    href: DEV_MODE ? `http://localhost:${PORT}` : 'https://tuturuuu.com',
+    href: BASE_URL,
     logo: TUTURUUU_LOGO_URL,
   },
   NOVA: {
     name: 'Nova',
-    href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('nova')
+      : 'https://nova.ai.vn',
     logo: '/media/logos/nova/nova-transparent.png',
   },
   LEARN: {
     name: 'Learn',
-    href: DEV_MODE ? 'http://localhost:7812' : 'https://learn.tuturuuu.com',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('learn')
+      : 'https://learn.tuturuuu.com',
     logo: TUTURUUU_LOGO_URL,
   },
   TEACH: {
     name: 'Teach',
-    href: DEV_MODE ? 'http://localhost:7813' : 'https://teach.tuturuuu.com',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('teach')
+      : 'https://teach.tuturuuu.com',
     logo: TUTURUUU_LOGO_URL,
   },
 } as const;

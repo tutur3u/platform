@@ -15,7 +15,7 @@ describe('isLocalE2EAuthBypassEnabled', () => {
   it('allows the bypass for the local Docker web and Supabase origins', () => {
     expect(
       isLocalE2EAuthBypassEnabled({
-        BASE_URL: 'http://localhost:7803',
+        BASE_URL: 'https://tuturuuu.localhost',
         NODE_ENV: 'test',
         NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:8001',
         TUTURUUU_LOCAL_E2E_AUTH_BYPASS: 'true',

@@ -17,6 +17,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -52,7 +53,7 @@ export function InlineLinkShortenerForm({ wsId }: { wsId: string }) {
 
   const getShortUrl = (slug: string) => {
     if (process.env.NODE_ENV === 'development') {
-      return `http://localhost:3002/${slug}`;
+      return `${getTuturuuuPortlessAppOrigin('shortener')}/${slug}`;
     }
     return `${process.env.NEXT_PUBLIC_SHORTENER_URL || ''}/${slug}`;
   };

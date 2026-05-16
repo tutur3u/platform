@@ -1,3 +1,5 @@
+import { getTuturuuuPortlessAppOrigin } from './portless';
+
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   {
     name: 'platform',
@@ -49,7 +51,54 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   },
 ] as const;
 
-export const DEV_INTERNAL_APP_DOMAINS = [
+export const PORTLESS_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'platform',
+    url: getTuturuuuPortlessAppOrigin('platform'),
+  },
+  {
+    name: 'cms',
+    url: getTuturuuuPortlessAppOrigin('cms'),
+  },
+  {
+    name: 'calendar',
+    url: getTuturuuuPortlessAppOrigin('calendar'),
+  },
+  {
+    name: 'nova',
+    url: getTuturuuuPortlessAppOrigin('nova'),
+  },
+  {
+    name: 'rewise',
+    url: getTuturuuuPortlessAppOrigin('rewise'),
+  },
+  {
+    name: 'tudo',
+    url: getTuturuuuPortlessAppOrigin('tasks'),
+  },
+  {
+    name: 'finance',
+    url: getTuturuuuPortlessAppOrigin('finance'),
+  },
+  {
+    name: 'track',
+    url: getTuturuuuPortlessAppOrigin('track'),
+  },
+  {
+    name: 'learn',
+    url: getTuturuuuPortlessAppOrigin('learn'),
+  },
+  {
+    name: 'teach',
+    url: getTuturuuuPortlessAppOrigin('teach'),
+  },
+  {
+    name: 'hive',
+    url: getTuturuuuPortlessAppOrigin('hive'),
+  },
+] as const;
+
+export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'cms',
     url: 'http://localhost:7811',
@@ -96,6 +145,11 @@ export const DEV_INTERNAL_APP_DOMAINS = [
   },
 ] as const;
 
+export const DEV_INTERNAL_APP_DOMAINS = [
+  ...PORTLESS_INTERNAL_APP_DOMAINS,
+  ...LOCALHOST_INTERNAL_APP_DOMAINS,
+] as const;
+
 export const APP_DOMAIN_MAP = [
   ...PRODUCTION_INTERNAL_APP_DOMAINS,
   ...DEV_INTERNAL_APP_DOMAINS,
@@ -108,6 +162,17 @@ export type AppDomain = {
   name: string;
   url: string;
 };
+
+export function getPortlessInternalAppUrl(appName: AppName) {
+  return (
+    PORTLESS_INTERNAL_APP_DOMAINS.find((domain) => domain.name === appName)
+      ?.url ?? null
+  );
+}
+
+export function getLocalInternalAppUrl(appName: AppName, legacyUrl: string) {
+  return getPortlessInternalAppUrl(appName) ?? legacyUrl;
+}
 
 function parseExternalAppDomainEntry(entry: string): AppDomain | null {
   const trimmed = entry.trim();

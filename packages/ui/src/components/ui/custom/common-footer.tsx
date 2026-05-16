@@ -1,10 +1,11 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import Link from 'next/link';
 import { Separator } from '../separator';
 import { TuturuuLogo } from './tuturuuu-logo';
 
 export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
   const TUTURUUU_URL = devMode
-    ? 'http://localhost:7803'
+    ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
     : 'https://tuturuuu.com';
 
   return (

@@ -1,11 +1,11 @@
-import { DEV_MODE } from './common';
+import { BASE_URL, DEV_MODE } from './common';
+
+const APP_URL = DEV_MODE ? BASE_URL : 'https://nova.ai.vn';
 
 export const siteConfig = {
   name: 'Tuturuuu Nova',
-  url: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
-  ogImage: DEV_MODE
-    ? 'http://localhost:7805/api/og'
-    : 'https://nova.ai.vn/api/og',
+  url: APP_URL,
+  ogImage: DEV_MODE ? `${APP_URL}/api/og` : 'https://nova.ai.vn/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',

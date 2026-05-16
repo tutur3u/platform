@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsgo-build.js --build",
-    "dev": "next dev -p 3000 --turbopack",
+    "dev": "portless",
+    "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-3000} --turbopack",
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "next build --turbopack",
@@ -47,5 +48,9 @@
     "postcss": "^8.5.14",
     "typescript": "^6.0.3"
   },
-  "packageManager": "bun@1.3.14"
+  "packageManager": "bun@1.3.14",
+  "portless": {
+    "name": "external.tuturuuu",
+    "script": "dev:app"
+  }
 }

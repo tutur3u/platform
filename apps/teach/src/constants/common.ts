@@ -1,4 +1,5 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 
@@ -9,17 +10,17 @@ export const LEARN_PORT = process.env.LEARN_PORT || 7812;
 const DEFAULT_TEACH_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://teach.tuturuuu.com'
-    : `http://localhost:${PORT}`;
+    : getLocalInternalAppUrl('teach', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+    : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
 const DEFAULT_LEARN_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://learn.tuturuuu.com'
-    : `http://localhost:${LEARN_PORT}`;
+    : getLocalInternalAppUrl('learn', `http://localhost:${LEARN_PORT}`);
 
 export const BASE_URL = resolveInternalAppUrl({
   appName: 'teach',

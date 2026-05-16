@@ -1,11 +1,12 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
 
 const PORT = process.env.PORT || 7814;
 const DEFAULT_HIVE_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://hive.tuturuuu.com'
-    : `http://localhost:${PORT}`;
+    : getLocalInternalAppUrl('hive', `http://localhost:${PORT}`);
 
 const HIVE_PUBLIC_APP_URL = resolveInternalAppUrl({
   appName: 'hive',

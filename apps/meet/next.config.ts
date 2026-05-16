@@ -1,3 +1,5 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -26,10 +28,11 @@ const WEB_APP_URL = trimTrailingSlashes(
     process.env.NEXT_PUBLIC_APP_URL ||
     (IS_DEPLOYED_ENVIRONMENT
       ? 'https://tuturuuu.com'
-      : `http://localhost:${CENTRAL_PORT}`)
+      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`))
 );
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   reactCompiler: true,
   typescript: {
     ignoreBuildErrors: true,

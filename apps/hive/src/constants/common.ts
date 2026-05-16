@@ -1,4 +1,6 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 
 export {
   DEV_MODE,
@@ -14,12 +16,12 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const DEFAULT_HIVE_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://hive.tuturuuu.com'
-    : `http://localhost:${PORT}`;
+    : getLocalInternalAppUrl('hive', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+    : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
 export const HIVE_APP_URL = resolveInternalAppUrl({
   appName: 'hive',
@@ -49,4 +51,7 @@ export const HIVE_REALTIME_URL =
   process.env.HIVE_REALTIME_URL ||
   (process.env.NODE_ENV === 'production'
     ? 'wss://hive.tuturuuu.com/realtime'
-    : 'ws://localhost:7815/realtime');
+    : `${getTuturuuuPortlessAppOrigin('hive-realtime').replace(
+        'https:',
+        'wss:'
+      )}/realtime`);

@@ -1,4 +1,5 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
@@ -9,10 +10,10 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 const DEFAULT_NOVA_APP_URL = PROD_MODE
   ? 'https://nova.ai.vn'
-  : `http://localhost:${PORT}`;
+  : getLocalInternalAppUrl('nova', `http://localhost:${PORT}`);
 const DEFAULT_WEB_APP_URL = PROD_MODE
   ? 'https://tuturuuu.com'
-  : `http://localhost:${CENTRAL_PORT}`;
+  : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
 export const BASE_URL = resolveInternalAppUrl({
   appName: 'nova',

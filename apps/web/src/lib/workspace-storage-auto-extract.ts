@@ -2,6 +2,7 @@ import 'server-only';
 
 import { posix } from 'node:path';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { getSecrets } from '@tuturuuu/utils/workspace-helper';
 import { EXTERNAL_PROJECT_ENABLED_SECRET } from './external-projects/constants';
 import {
@@ -68,7 +69,9 @@ function resolveAutoExtractCallbackOrigin(requestOrigin: string) {
     resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
     resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
     requestOrigin ||
-    (DEV_MODE ? 'http://localhost:7803' : 'https://tuturuuu.com')
+    (DEV_MODE
+      ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
+      : 'https://tuturuuu.com')
   );
 }
 

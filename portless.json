@@ -1,0 +1,68 @@
+{
+  "apps": {
+    "apps/calendar": {
+      "name": "calendar.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/cms": {
+      "name": "cms.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/external": {
+      "name": "external.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/finance": {
+      "name": "finance.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/hive": {
+      "name": "hive.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/hive-realtime": {
+      "name": "realtime.hive.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/learn": {
+      "name": "learn.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/meet": {
+      "name": "meet.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/nova": {
+      "name": "nova.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/playground": {
+      "name": "playground.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/rewise": {
+      "name": "rewise.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/shortener": {
+      "name": "shortener.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/tasks": {
+      "name": "tasks.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/teach": {
+      "name": "teach.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/track": {
+      "name": "track.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/web": {
+      "name": "tuturuuu",
+      "script": "dev:app"
+    }
+  }
+}

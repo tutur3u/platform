@@ -22,6 +22,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@tuturuuu/ui/tooltip';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import { formatDistanceToNow } from 'date-fns';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -59,7 +60,7 @@ function ShortUrlDisplay({ slug, t }: { slug: string; t: any }) {
   useEffect(() => {
     const url =
       process.env.NODE_ENV === 'development'
-        ? `http://localhost:3002/${slug}`
+        ? `${getTuturuuuPortlessAppOrigin('shortener')}/${slug}`
         : `${process.env.NEXT_PUBLIC_SHORTENER_URL || ''}/${slug}`;
     setShortUrl(url);
   }, [slug]);

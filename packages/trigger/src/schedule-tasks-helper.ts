@@ -1,3 +1,5 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+
 type Params = {
   success: boolean;
   data?: any;
@@ -12,7 +14,7 @@ const schedulableTasksHelper = async (ws_id: string): Promise<Params> => {
     const baseUrl =
       process.env.NODE_ENV === 'production'
         ? 'https://tuturuuu.com'
-        : 'http://localhost:7803';
+        : getLocalInternalAppUrl('platform', 'http://localhost:7803');
 
     const fullUrl = `${baseUrl}/api/${ws_id}/calendar/auto-schedule?stream=false`;
 

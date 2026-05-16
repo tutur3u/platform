@@ -1,11 +1,11 @@
-const DEV_MODE = process.env.NODE_ENV === 'development';
+import { BASE_URL, DEV_MODE } from '@/constants/common';
+
+const APP_URL = DEV_MODE ? BASE_URL : 'https://tasks.tuturuuu.com';
 
 export const siteConfig = {
-  name: 'Tuturuuu Meet',
-  url: DEV_MODE ? 'http://localhost:7807' : 'https://tumeet.me',
-  ogImage: DEV_MODE
-    ? 'http://localhost:7803/api/og'
-    : 'https://tumeet.me/api/og',
+  name: 'Tuturuuu Tasks',
+  url: APP_URL,
+  ogImage: DEV_MODE ? `${APP_URL}/api/og` : 'https://tasks.tuturuuu.com/api/og',
   links: {
     twitter: 'https://twitter.com/tutur3u',
     github: 'https://github.com/tutur3u/platform',

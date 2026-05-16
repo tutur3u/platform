@@ -1,5 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { NextResponse } from 'next/server';
 
 export async function GET(req: Request) {
@@ -78,7 +79,9 @@ export async function GET(req: Request) {
 }
 
 async function triggerInitialFetch() {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:7803';
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL ||
+    getLocalInternalAppUrl('platform', 'http://localhost:7803');
   const serviceKey = process.env.SUPABASE_SECRET_KEY;
 
   if (!serviceKey) return;

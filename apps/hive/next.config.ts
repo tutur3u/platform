@@ -1,3 +1,8 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import {
+  getTuturuuuPortlessAppOrigin,
+  TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
+} from '@tuturuuu/utils/portless';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -27,12 +32,16 @@ const WEB_APP_URL = trimTrailingSlashes(
     process.env.NEXT_PUBLIC_APP_URL ||
     (IS_DEPLOYED_ENVIRONMENT
       ? 'https://tuturuuu.com'
-      : `http://localhost:${CENTRAL_PORT}`)
+      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`))
 );
 
 const hiveDockerBuild = process.env.HIVE_DOCKER_BUILD === '1';
+const HIVE_REALTIME_HTTP_URL =
+  process.env.HIVE_REALTIME_HTTP_URL ||
+  getTuturuuuPortlessAppOrigin('hive-realtime');
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   reactCompiler: true,
   ...(hiveDockerBuild ? { output: 'standalone' } : {}),
   ...(hiveDockerBuild
@@ -53,9 +62,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: '/realtime/:path*',
-          destination:
-            process.env.HIVE_REALTIME_HTTP_URL ||
-            'http://localhost:7815/realtime/:path*',
+          destination: `${HIVE_REALTIME_HTTP_URL}/realtime/:path*`,
         },
       ],
       afterFiles: [],

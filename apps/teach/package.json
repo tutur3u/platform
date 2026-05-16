@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "type-check": "node ../../scripts/run-tsgo-build.js --build",
-    "dev": "next dev -p 7813 --turbopack",
+    "dev": "portless",
+    "dev:app": "node ../../scripts/portless-dev-banner.js -- next dev -p ${PORT:-7813} --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
     "preview": "next build --turbopack && next start -p 7813 --turbopack"
@@ -41,5 +42,9 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "typescript": "^6.0.3"
+  },
+  "portless": {
+    "name": "teach.tuturuuu",
+    "script": "dev:app"
   }
 }

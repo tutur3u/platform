@@ -31,14 +31,14 @@ describe('resolveCmsWebAppUrl', () => {
     ).toBe('https://tuturuuu.com');
   });
 
-  it('uses the central local port when the local app URL points at CMS', () => {
+  it('uses the central Portless URL when the local app URL points at CMS', () => {
     expect(
       resolveCmsWebAppUrl({
         CENTRAL_PORT: '7803',
-        NEXT_PUBLIC_APP_URL: 'http://localhost:7811',
+        NEXT_PUBLIC_APP_URL: 'https://cms.tuturuuu.localhost',
         NODE_ENV: 'development',
         PORT: '7811',
       })
-    ).toBe('http://localhost:7803');
+    ).toBe('https://tuturuuu.localhost');
   });
 });

@@ -1,10 +1,12 @@
-import { DEV_MODE } from './common';
+import { BASE_URL, DEV_MODE } from './common';
+
+const APP_URL = DEV_MODE ? BASE_URL : 'https://rewise.me';
 
 export const siteConfig = {
   name: 'Rewise',
-  url: DEV_MODE ? 'http://localhost:7804' : 'https://rewise.me',
+  url: APP_URL,
   ogImage: DEV_MODE
-    ? 'http://localhost:7804/media/logos/og-image.png'
+    ? `${APP_URL}/media/logos/og-image.png`
     : 'https://rewise.me/media/logos/og-image.png',
   links: {
     twitter: 'https://twitter.com/tutur3u',

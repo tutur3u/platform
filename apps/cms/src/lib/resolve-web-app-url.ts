@@ -1,3 +1,6 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+
 type Environment = Record<string, string | undefined>;
 
 function isDeployedEnvironment(env: Environment) {
@@ -49,9 +52,10 @@ export function resolveCmsWebAppUrl(env: Environment = process.env) {
   const deployed = isDeployedEnvironment(env);
   const fallbackWebUrl = deployed
     ? 'https://tuturuuu.com'
-    : `http://localhost:${centralPort}`;
+    : getLocalInternalAppUrl('platform', `http://localhost:${centralPort}`);
   const currentAppOrigins = [
-    deployed ? 'https://cms.tuturuuu.com' : `http://localhost:${cmsPort}`,
+    deployed ? 'https://cms.tuturuuu.com' : getTuturuuuPortlessAppOrigin('cms'),
+    `http://localhost:${cmsPort}`,
     env.CMS_APP_URL,
     env.NEXT_PUBLIC_CMS_APP_URL,
     env.BASE_URL,

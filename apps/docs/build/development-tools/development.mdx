@@ -106,8 +106,63 @@ bun dev
 
 <Info>
   This command will start all Next.js apps in development mode. You can access
-  the apps by visiting the following URL: http://localhost:7803
+  the platform app by visiting the following URL:
+  https://tuturuuu.localhost
 </Info>
+
+Local app development uses Portless, so each app gets a stable Tuturuuu
+subdomain instead of relying on its fallback port. The app package `dev`
+scripts run `portless`, and the underlying framework command remains available
+through `dev:app` for direct port-based debugging.
+
+| App | Local URL |
+| --- | --- |
+| Platform | `https://tuturuuu.localhost` |
+| Calendar | `https://calendar.tuturuuu.localhost` |
+| CMS | `https://cms.tuturuuu.localhost` |
+| External | `https://external.tuturuuu.localhost` |
+| Finance | `https://finance.tuturuuu.localhost` |
+| Hive | `https://hive.tuturuuu.localhost` |
+| Hive Realtime | `https://realtime.hive.tuturuuu.localhost` |
+| Learn | `https://learn.tuturuuu.localhost` |
+| Meet | `https://meet.tuturuuu.localhost` |
+| Nova | `https://nova.tuturuuu.localhost` |
+| Playground | `https://playground.tuturuuu.localhost` |
+| Rewise | `https://rewise.tuturuuu.localhost` |
+| Shortener | `https://shortener.tuturuuu.localhost` |
+| Tasks | `https://tasks.tuturuuu.localhost` |
+| Teach | `https://teach.tuturuuu.localhost` |
+| Track | `https://track.tuturuuu.localhost` |
+
+When debugging without Portless, run an app's `dev:app` script directly and use
+the legacy fallback port from that package script.
+
+Next.js still prints the internal listener port, for example
+`http://localhost:4803`, because Portless assigns a free backend port to the app
+process. App `dev:app` scripts also print a `Portless URL:` line from the
+`PORTLESS_URL` environment variable; use that URL in the browser:
+
+```text
+Portless URL: https://tuturuuu.localhost
+```
+
+If Turbo cannot prompt for the Portless sudo password while starting app dev
+scripts, run the Portless setup helper first:
+
+```bash
+bun portless:setup
+```
+
+The helper starts the Portless HTTPS proxy on port `443` before Turbo launches
+package `dev` scripts. It no-ops when the proxy is already responding and skips
+in non-interactive shells or CI. `bun setup` runs this helper after dependency
+installation so fresh local checkouts are ready before the build step. To
+install Portless as an OS startup service instead of only starting the current
+proxy daemon, run:
+
+```bash
+bun portless:setup -- --service
+```
 
 ### Start Local Supabase Instance
 

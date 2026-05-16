@@ -123,7 +123,7 @@ export function getConfiguredInternalApiBaseUrl() {
       resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
       (isProductionDeployment()
         ? 'https://tuturuuu.com'
-        : 'http://localhost:7803')
+        : 'https://tuturuuu.localhost')
   );
 }
 

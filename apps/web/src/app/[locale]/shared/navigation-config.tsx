@@ -21,6 +21,7 @@ import {
   Utensils,
   Wallet,
 } from '@tuturuuu/icons';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
 import type { ReactNode } from 'react';
 import { DEV_MODE } from '@/constants/common';
 
@@ -61,7 +62,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const products: NavItem[] = [
     {
       href: DEV_MODE
-        ? 'http://localhost:7806'
+        ? getTuturuuuPortlessAppOrigin('calendar')
         : 'https://calendar.tuturuuu.com',
       label: t(`landing.features.apps.tuplan.title`),
       description: t(`landing.features.apps.tuplan.description`),
@@ -69,7 +70,9 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <Calendar className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7809' : 'https://tasks.tuturuuu.com',
+      href: DEV_MODE
+        ? getTuturuuuPortlessAppOrigin('tasks')
+        : 'https://tasks.tuturuuu.com',
       label: t(`landing.features.apps.tudo.title`),
       description: t(`landing.features.apps.tudo.description`),
       badge: t('common.waitlist'),
@@ -77,27 +80,35 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
     },
     {
       // href: '/meet-together',
-      href: DEV_MODE ? 'http://localhost:7807' : 'https://tumeet.me',
+      href: DEV_MODE
+        ? getTuturuuuPortlessAppOrigin('meet')
+        : 'https://tumeet.me',
       label: t(`landing.features.apps.tumeet.title`),
       description: t(`landing.features.apps.tumeet.description`),
       icon: <Users className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7810' : 'https://tuchat.com',
+      href: DEV_MODE
+        ? getTuturuuuPortlessAppOrigin('track')
+        : 'https://tuchat.com',
       label: t(`landing.features.apps.tuchat.title`),
       description: t(`landing.features.apps.tuchat.description`),
       badge: t('common.coming_soon'),
       icon: <MessageSquare className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7808' : 'https://tufinance.com',
+      href: DEV_MODE
+        ? getTuturuuuPortlessAppOrigin('finance')
+        : 'https://tufinance.com',
       label: t(`landing.features.apps.tufinance.title`),
       description: t(`landing.features.apps.tufinance.description`),
       badge: t('common.coming_soon'),
       icon: <Wallet className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE ? 'http://localhost:7805' : 'https://nova.ai.vn',
+      href: DEV_MODE
+        ? getTuturuuuPortlessAppOrigin('nova')
+        : 'https://nova.ai.vn',
       label: t(`landing.features.apps.nova.title`),
       description: t(`landing.features.apps.nova.description`),
       icon: <GraduationCap className="h-4 w-4" />,

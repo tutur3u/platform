@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:7803';
+const BASE_URL = process.env.BASE_URL || 'https://tuturuuu.localhost';
 
 // Test user: local@tuturuuu.com (ID: 00000000-0000-0000-0000-000000000001)
 // Auth state loaded from storageState

@@ -1,3 +1,4 @@
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { APP_PUBLIC_PATHS } from './public_paths';
 
 export const GITHUB_OWNER = 'tutur3u';
@@ -12,11 +13,13 @@ export const PUBLIC_PATHS = APP_PUBLIC_PATHS;
 
 export const BASE_URL =
   process.env.BASE_URL ||
-  (PROD_MODE ? 'https://tuturuuu.com' : `http://localhost:${PORT}`);
+  (PROD_MODE
+    ? 'https://tuturuuu.com'
+    : getLocalInternalAppUrl('platform', `http://localhost:${PORT}`));
 
 export const API_URL =
   process.env.API_URL ||
-  (PROD_MODE ? 'https://tuturuuu.com/api' : `http://localhost:${PORT}/api`);
+  (PROD_MODE ? 'https://tuturuuu.com/api' : `${BASE_URL}/api`);
 
 export const PROD_API_URL = 'https://tuturuuu.com/api';
 
@@ -24,7 +27,9 @@ export const PROD_BASE_URL = 'https://tuturuuu.com';
 export const CMS_APP_URL =
   process.env.CMS_APP_URL ||
   process.env.NEXT_PUBLIC_CMS_APP_URL ||
-  (PROD_MODE ? 'https://cms.tuturuuu.com' : 'http://localhost:7811');
+  (PROD_MODE
+    ? 'https://cms.tuturuuu.com'
+    : getLocalInternalAppUrl('cms', 'http://localhost:7811'));
 
 export const LOCALE_COOKIE_NAME = 'NEXT_LOCALE';
 export const THEME_COOKIE_NAME = 'NEXT_THEME';

@@ -3,6 +3,7 @@ const LOCAL_E2E_AUTH_BYPASS_ENV = 'TUTURUUU_LOCAL_E2E_AUTH_BYPASS';
 const LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
   'http://localhost:7803',
+  'https://tuturuuu.localhost',
 ]);
 
 const LOCAL_SUPABASE_ORIGINS = new Set([

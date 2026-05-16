@@ -1,4 +1,5 @@
 import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 
 export {
   DEV_MODE,
@@ -14,12 +15,12 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const DEFAULT_LEARN_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://learn.tuturuuu.com'
-    : `http://localhost:${PORT}`;
+    : getLocalInternalAppUrl('learn', `http://localhost:${PORT}`);
 
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+    : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
 export const LEARN_APP_URL = resolveInternalAppUrl({
   appName: 'learn',

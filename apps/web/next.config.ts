@@ -1,4 +1,5 @@
 import { getTurbopackConfig } from '@tuturuuu/offline/config';
+import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -39,6 +40,7 @@ const dockerNextBuildCpus = parsePositiveIntegerEnv(
 
 const nextConfig: NextConfig = {
   ...serwistConfig,
+  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   ...(isDockerStandaloneBuild ? { output: 'standalone' } : {}),
   ...(staticPageGenerationTimeout ? { staticPageGenerationTimeout } : {}),
   reactCompiler: reactCompilerEnabled,

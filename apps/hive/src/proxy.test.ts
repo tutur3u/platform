@@ -76,7 +76,7 @@ describe('Hive proxy auth cookie cleanup', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'http://localhost:7814/login?next=%2Fdashboard'
+      'https://hive.tuturuuu.localhost/login?next=%2Fdashboard'
     );
   });
 

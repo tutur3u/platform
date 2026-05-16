@@ -199,9 +199,9 @@ TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
 ## Testing
 
 Hive has app-local Playwright coverage in `apps/hive/e2e`. The suite assumes
-the local web app on `http://localhost:7803` and Hive app on
-`http://localhost:7814` are already running; it does not auto-start dev servers.
-Run it with:
+the local web app on `https://tuturuuu.localhost` and Hive app on
+`https://hive.tuturuuu.localhost` are already running through Portless; it does
+not auto-start dev servers. Run it with:
 
 ```bash
 bun --filter @tuturuuu/hive test:e2e
@@ -209,7 +209,8 @@ bun --filter @tuturuuu/hive test:e2e
 
 The authenticated setup uses the web app's development session endpoint for the
 seeded `local@tuturuuu.com` account before opening Hive. Override
-`WEB_BASE_URL` or `HIVE_BASE_URL` when the local services use different ports.
+`WEB_BASE_URL` or `HIVE_BASE_URL` when bypassing Portless or using direct
+fallback ports.
 
 ## Economy And Farming
 

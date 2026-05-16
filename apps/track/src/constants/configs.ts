@@ -1,10 +1,12 @@
-import { DEV_MODE } from './common';
+import { BASE_URL, DEV_MODE } from './common';
+
+const APP_URL = DEV_MODE ? BASE_URL : 'https://track.tuturuuu.com';
 
 export const siteConfig = {
   name: 'Tuturuuu Track',
-  url: DEV_MODE ? 'http://localhost:7810' : 'https://track.tuturuuu.com',
+  url: APP_URL,
   ogImage: DEV_MODE
-    ? 'http://localhost:7810/media/logos/og-image.png'
+    ? `${APP_URL}/media/logos/og-image.png`
     : 'https://track.tuturuuu.com/media/logos/og-image.png',
   links: {
     twitter: 'https://twitter.com/tutur3u',

@@ -38,7 +38,7 @@ describe('Hive browser state recovery route', () => {
     );
 
     expect(response.headers.get('location')).toBe(
-      'http://localhost:7814/login?browserStateReset=1'
+      'https://hive.tuturuuu.localhost/login?browserStateReset=1'
     );
   });
 });

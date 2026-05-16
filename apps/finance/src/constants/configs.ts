@@ -1,10 +1,12 @@
-import { DEV_MODE } from './common';
+import { BASE_URL, DEV_MODE } from './common';
+
+const APP_URL = DEV_MODE ? BASE_URL : 'https://finance.tuturuuu.com';
 
 export const siteConfig = {
   name: 'Tuturuuu Finance',
-  url: DEV_MODE ? 'http://localhost:7808' : 'https://finance.tuturuuu.com',
+  url: APP_URL,
   ogImage: DEV_MODE
-    ? 'http://localhost:7808/media/logos/og-image.png'
+    ? `${APP_URL}/media/logos/og-image.png`
     : 'https://finance.tuturuuu.com/media/logos/og-image.png',
   links: {
     twitter: 'https://twitter.com/tutur3u',

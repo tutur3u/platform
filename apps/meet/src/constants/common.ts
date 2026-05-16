@@ -1,12 +1,13 @@
-// Re-export shared constants from satellite package
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+import { getTuturuuuPortlessAppOrigin } from '@tuturuuu/utils/portless';
+import { supportedLocales } from '@/i18n/routing';
+
 // Re-export shared constants from satellite package
 export {
   LOCALE_COOKIE_NAME,
   SHOW_TAILWIND_INDICATOR,
   THEME_COOKIE_NAME,
 } from '@tuturuuu/satellite/constants';
-
-import { supportedLocales } from '@/i18n/routing';
 
 export const DEV_MODE = process.env.NODE_ENV === 'development';
 export const PROD_MODE = process.env.NODE_ENV === 'production';
@@ -16,19 +17,16 @@ export const PORT = process.env.PORT || 7807;
 export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 
 export const BASE_URL =
-  process.env.BASE_URL || PROD_MODE
-    ? 'https://tumeet.me'
-    : `http://localhost:${PORT}`;
+  process.env.BASE_URL ||
+  (PROD_MODE ? 'https://tumeet.me' : getTuturuuuPortlessAppOrigin('meet'));
 
-export const API_URL =
-  process.env.API_URL || PROD_MODE
-    ? 'https://tumeet.me/api'
-    : `http://localhost:${PORT}/api`;
+export const API_URL = process.env.API_URL || `${BASE_URL}/api`;
 
 export const TTR_URL =
-  process.env.TTR_URL || PROD_MODE
+  process.env.TTR_URL ||
+  (PROD_MODE
     ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
+    : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`));
 
 export const PUBLIC_PATHS = ['/verify-token'].reduce((acc: string[], path) => {
   // Add the original path

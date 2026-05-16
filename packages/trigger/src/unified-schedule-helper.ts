@@ -5,6 +5,8 @@
  * This helper is used by the background scheduling job.
  */
 
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
+
 type UnifiedScheduleResult = {
   success: boolean;
   data?: {
@@ -35,7 +37,7 @@ export const unifiedScheduleHelper = async (
     const baseUrl =
       process.env.NODE_ENV === 'production'
         ? 'https://tuturuuu.com'
-        : 'http://localhost:7803';
+        : getLocalInternalAppUrl('platform', 'http://localhost:7803');
 
     const fullUrl = `${baseUrl}/api/v1/workspaces/${ws_id}/calendar/schedule`;
 

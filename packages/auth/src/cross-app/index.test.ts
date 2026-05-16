@@ -50,7 +50,7 @@ describe('mapUrlToApp', () => {
     );
   });
 
-  it('maps registered app return URLs for production and local development', () => {
+  it('maps registered app return URLs for production and localhost development', () => {
     expect(
       mapUrlToApp('https://nova.ai.vn/verify-token?nextUrl=%2Fdashboard')
     ).toBe('nova');
@@ -63,6 +63,41 @@ describe('mapUrlToApp', () => {
     expect(
       mapUrlToApp('http://localhost:7809/verify-token?nextUrl=%2Fpersonal')
     ).toBe('tudo');
+  });
+
+  it.each([
+    ['platform', 'https://tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['cms', 'https://cms.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    [
+      'calendar',
+      'https://calendar.tuturuuu.localhost/verify-token?nextUrl=%2Fcalendar',
+    ],
+    ['nova', 'https://nova.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['rewise', 'https://rewise.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    [
+      'tudo',
+      'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
+    ],
+    ['finance', 'https://finance.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['track', 'https://track.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['learn', 'https://learn.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['teach', 'https://teach.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['hive', 'https://hive.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+  ])('maps %s Portless return URLs', (expectedApp, returnUrl) => {
+    expect(mapUrlToApp(returnUrl)).toBe(expectedApp);
+  });
+
+  it('continues to map representative Portless aliases for task and calendar apps', () => {
+    expect(
+      mapUrlToApp(
+        'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal'
+      )
+    ).toBe('tudo');
+    expect(
+      mapUrlToApp(
+        'https://calendar.tuturuuu.localhost/verify-token?nextUrl=%2Fcalendar'
+      )
+    ).toBe('calendar');
   });
 
   it('rejects hostname prefix lookalikes', () => {

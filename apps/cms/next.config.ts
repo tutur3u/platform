@@ -1,3 +1,4 @@
+import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import { resolveCmsWebAppUrl } from './src/lib/resolve-web-app-url';
@@ -7,6 +8,7 @@ const withNextIntl = createNextIntlPlugin();
 const WEB_APP_URL = resolveCmsWebAppUrl();
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   reactCompiler: true,
   typescript: {
     ignoreBuildErrors: true,

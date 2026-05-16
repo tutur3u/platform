@@ -1,10 +1,12 @@
-import { DEV_MODE, PORT } from './common';
+import { BASE_URL, DEV_MODE, PROD_BASE_URL } from './common';
+
+const APP_URL = DEV_MODE ? BASE_URL : PROD_BASE_URL;
 
 export const siteConfig = {
   name: 'Tuturuuu',
-  url: DEV_MODE ? `http://localhost:${PORT}` : 'https://tuturuuu.com',
+  url: APP_URL,
   ogImage: DEV_MODE
-    ? `http://localhost:${PORT}/media/logos/og-image.png`
+    ? `${APP_URL}/media/logos/og-image.png`
     : 'https://tuturuuu.com/media/logos/og-image.png',
   links: {
     twitter: 'https://twitter.com/tutur3u',

@@ -1,5 +1,6 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { getSepayWebhookAuthSecret } from '@/lib/sepay';
 import {
   createSepayWebhook,
@@ -53,7 +54,9 @@ export function resolveSepayAppOrigin() {
     resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
-    (DEV_MODE ? 'http://localhost:7803' : null);
+    (DEV_MODE
+      ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
+      : null);
 
   if (!origin) {
     throw new Error(

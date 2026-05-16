@@ -3,6 +3,7 @@ import 'server-only';
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import { posix } from 'node:path';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import type { WorkspaceStorageProvider } from './workspace-storage-config';
 import { WorkspaceStorageError } from './workspace-storage-provider';
@@ -82,7 +83,9 @@ export function resolveWorkspaceStorageExportOrigin() {
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||
     resolveConfiguredOrigin(process.env.COOLIFY_URL) ||
     resolveConfiguredOrigin(process.env.COOLIFY_FQDN) ||
-    (DEV_MODE ? 'http://localhost:7803' : null);
+    (DEV_MODE
+      ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
+      : null);
 
   if (!origin) {
     throw new WorkspaceStorageError(

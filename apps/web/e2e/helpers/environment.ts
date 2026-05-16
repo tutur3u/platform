@@ -1,4 +1,4 @@
-export const LOCAL_E2E_BASE_URL = 'http://localhost:7803';
+export const LOCAL_E2E_BASE_URL = 'https://tuturuuu.localhost';
 export const LOCAL_E2E_SUPABASE_URL = 'http://127.0.0.1:8001';
 export const LOCAL_E2E_DOCKER_SUPABASE_URL = 'http://host.docker.internal:8001';
 export const LOCAL_E2E_SUPABASE_SECRET_KEY =
@@ -9,6 +9,7 @@ export const LOCAL_E2E_APP_COORDINATION_SECRET =
 export const SAFE_LOCAL_WEB_ORIGINS = new Set([
   'http://127.0.0.1:7803',
   'http://localhost:7803',
+  'https://tuturuuu.localhost',
 ]);
 export const SAFE_LOCAL_SUPABASE_ORIGINS = new Set([
   'http://127.0.0.1:8001',

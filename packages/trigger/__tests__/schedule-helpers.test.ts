@@ -47,7 +47,7 @@ describe('Schedule Helpers', () => {
       expect(result.error).toBeUndefined();
     });
 
-    it('calls correct localhost URL in development', async () => {
+    it('calls correct Portless URL in development', async () => {
       process.env.INTERNAL_TRIGGER_SECRET_KEY = 'test-secret-key';
       process.env.NODE_ENV = 'development';
 
@@ -59,7 +59,7 @@ describe('Schedule Helpers', () => {
       await schedulableTasksHelper(wsId);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        `http://localhost:7803/api/${wsId}/calendar/auto-schedule?stream=false`,
+        `https://tuturuuu.localhost/api/${wsId}/calendar/auto-schedule?stream=false`,
         expect.objectContaining({
           method: 'POST',
           headers: {
@@ -185,7 +185,7 @@ describe('Schedule Helpers', () => {
       expect(result.data?.warnings).toEqual(['Some warning']);
     });
 
-    it('calls correct localhost URL in development', async () => {
+    it('calls correct Portless URL in development', async () => {
       process.env.INTERNAL_TRIGGER_SECRET_KEY = 'test-secret-key';
       process.env.NODE_ENV = 'development';
 
@@ -197,7 +197,7 @@ describe('Schedule Helpers', () => {
       await unifiedScheduleHelper(wsId);
 
       expect(mockFetch).toHaveBeenCalledWith(
-        `http://localhost:7803/api/v1/workspaces/${wsId}/calendar/schedule`,
+        `https://tuturuuu.localhost/api/v1/workspaces/${wsId}/calendar/schedule`,
         expect.any(Object)
       );
     });

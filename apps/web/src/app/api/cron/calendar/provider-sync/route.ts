@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -11,7 +12,10 @@ function resolveCalendarSyncOrigin() {
     return `https://${process.env.VERCEL_URL}`;
   }
 
-  return process.env.NEXT_PUBLIC_URL || 'http://localhost:7803';
+  return (
+    process.env.NEXT_PUBLIC_URL ||
+    getLocalInternalAppUrl('platform', 'http://localhost:7803')
+  );
 }
 
 export async function GET(request: NextRequest) {

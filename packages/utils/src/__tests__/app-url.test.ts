@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { resolveAppUrl, resolveInternalAppUrl } from '../app-url';
+import {
+  getLocalInternalAppUrl,
+  getPortlessInternalAppUrl,
+} from '../internal-domains';
+import {
+  TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS,
+  TUTURUUU_PORTLESS_APP_ORIGINS,
+} from '../portless';
 
 describe('resolveAppUrl', () => {
   it('uses the first valid configured URL', () => {
@@ -41,6 +49,19 @@ describe('resolveInternalAppUrl', () => {
     ).toBe('https://learn.tuturuuu.com');
   });
 
+  it('recognizes Portless local origins as registered internal app URLs', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'learn',
+        candidates: [
+          'https://tuturuuu.localhost',
+          'https://learn.tuturuuu.localhost',
+        ],
+        fallback: 'http://localhost:7812',
+      })
+    ).toBe('https://learn.tuturuuu.localhost');
+  });
+
   it('falls back when every configured URL points at another internal app', () => {
     expect(
       resolveInternalAppUrl({
@@ -69,5 +90,68 @@ describe('resolveInternalAppUrl', () => {
         fallback: 'http://localhost:7814',
       })
     ).toBe('https://hive.tuturuuu.com');
+  });
+});
+
+describe('getLocalInternalAppUrl', () => {
+  it('prefers the Portless Tuturuuu domain for local internal app defaults', () => {
+    expect(getLocalInternalAppUrl('platform', 'http://localhost:7803')).toBe(
+      'https://tuturuuu.localhost'
+    );
+    expect(getLocalInternalAppUrl('tudo', 'http://localhost:7809')).toBe(
+      'https://tasks.tuturuuu.localhost'
+    );
+  });
+
+  it.each([
+    ['platform', 'https://tuturuuu.localhost'],
+    ['cms', 'https://cms.tuturuuu.localhost'],
+    ['calendar', 'https://calendar.tuturuuu.localhost'],
+    ['nova', 'https://nova.tuturuuu.localhost'],
+    ['rewise', 'https://rewise.tuturuuu.localhost'],
+    ['tudo', 'https://tasks.tuturuuu.localhost'],
+    ['finance', 'https://finance.tuturuuu.localhost'],
+    ['track', 'https://track.tuturuuu.localhost'],
+    ['learn', 'https://learn.tuturuuu.localhost'],
+    ['teach', 'https://teach.tuturuuu.localhost'],
+    ['hive', 'https://hive.tuturuuu.localhost'],
+  ] as const)('returns the %s Portless URL', (appName, expectedUrl) => {
+    expect(getPortlessInternalAppUrl(appName)).toBe(expectedUrl);
+    expect(getLocalInternalAppUrl(appName, 'http://localhost:9999')).toBe(
+      expectedUrl
+    );
+  });
+});
+
+describe('Portless app origin registry', () => {
+  it('keeps all app origins under the Tuturuuu localhost namespace', () => {
+    expect(TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS).toEqual([
+      'tuturuuu.localhost',
+      '*.tuturuuu.localhost',
+    ]);
+    expect(Object.values(TUTURUUU_PORTLESS_APP_ORIGINS)).toEqual([
+      'https://calendar.tuturuuu.localhost',
+      'https://cms.tuturuuu.localhost',
+      'https://external.tuturuuu.localhost',
+      'https://finance.tuturuuu.localhost',
+      'https://hive.tuturuuu.localhost',
+      'https://realtime.hive.tuturuuu.localhost',
+      'https://learn.tuturuuu.localhost',
+      'https://meet.tuturuuu.localhost',
+      'https://nova.tuturuuu.localhost',
+      'https://tuturuuu.localhost',
+      'https://playground.tuturuuu.localhost',
+      'https://rewise.tuturuuu.localhost',
+      'https://shortener.tuturuuu.localhost',
+      'https://tasks.tuturuuu.localhost',
+      'https://teach.tuturuuu.localhost',
+      'https://track.tuturuuu.localhost',
+    ]);
+  });
+
+  it('does not reuse the same Portless origin for multiple apps', () => {
+    const origins = Object.values(TUTURUUU_PORTLESS_APP_ORIGINS);
+
+    expect(new Set(origins).size).toBe(origins.length);
   });
 });
