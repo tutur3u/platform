@@ -1,12 +1,14 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { Constants } from '@tuturuuu/types';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -25,6 +27,7 @@ const CourseCreateSchema = z.object({
       ...(typeof certificateTemplateOptions)[number][],
     ])
     .optional(),
+  is_course_published: z.boolean().optional(),
 });
 
 async function validateWorkspaceAccess(
@@ -78,7 +81,22 @@ export const GET = withSessionAuth(
     );
     if (access instanceof NextResponse) return access;
 
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: access.normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (permissions.withoutPermission('view_user_groups')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to view courses' },
+        { status: 403 }
+      );
+    }
+
     const q = request.nextUrl.searchParams.get('q')?.trim();
+    const status = request.nextUrl.searchParams.get('status') ?? 'active';
     const page = Math.max(
       Number.parseInt(request.nextUrl.searchParams.get('page') ?? '1', 10) || 1,
       1
@@ -98,12 +116,16 @@ export const GET = withSessionAuth(
     const queryBuilder = context.supabase
       .from('workspace_user_groups')
       .select(
-        'id, name, description, cert_template, created_at, workspace_course_modules(id)',
+        'id, name, description, cert_template, created_at, archived, is_course_published, workspace_course_modules(id), workspace_user_groups_users(user_id)',
         { count: 'exact' }
       )
       .eq('ws_id', access.normalizedWsId)
       .eq('is_guest', false)
       .order('created_at', { ascending: false });
+
+    if (status !== 'all') {
+      queryBuilder.eq('archived', status === 'archived');
+    }
 
     if ((q?.length ?? 0) > 0) {
       queryBuilder.ilike('name', `%${q}%`);
@@ -114,7 +136,7 @@ export const GET = withSessionAuth(
 
     const { data, error, count } = await queryBuilder;
     if (error) {
-      console.error('Failed to fetch workspace courses', error);
+      serverLogger.error('Failed to fetch workspace courses', { error });
       return NextResponse.json(
         { message: 'Error fetching workspace courses' },
         { status: 500 }
@@ -128,6 +150,9 @@ export const GET = withSessionAuth(
         description: course.description,
         cert_template: course.cert_template,
         created_at: course.created_at,
+        archived: course.archived,
+        is_course_published: course.is_course_published,
+        members_count: course.workspace_user_groups_users?.length ?? 0,
         modules_count: course.workspace_course_modules?.length ?? 0,
       })),
       count: count ?? 0,
@@ -135,7 +160,10 @@ export const GET = withSessionAuth(
       pageSize,
     });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 120 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { windowMs: 60000, maxRequests: 120 },
+  }
 );
 
 export const POST = withSessionAuth(
@@ -158,6 +186,20 @@ export const POST = withSessionAuth(
       context.supabase
     );
     if (access instanceof NextResponse) return access;
+
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: access.normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (permissions.withoutPermission('create_user_groups')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to create courses' },
+        { status: 403 }
+      );
+    }
 
     let body: unknown;
     try {
@@ -182,13 +224,15 @@ export const POST = withSessionAuth(
       .insert({
         ...parsedBody.data,
         ws_id: access.normalizedWsId,
+        archived: false,
         is_guest: false,
+        is_course_published: parsedBody.data.is_course_published ?? false,
       })
       .select('id')
       .single();
 
     if (error) {
-      console.error('Failed to create workspace course', error);
+      serverLogger.error('Failed to create workspace course', { error });
       return NextResponse.json(
         { message: 'Error creating workspace course' },
         { status: 500 }
@@ -197,5 +241,8 @@ export const POST = withSessionAuth(
 
     return NextResponse.json({ message: 'success', id: data.id });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+  }
 );

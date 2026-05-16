@@ -229,6 +229,7 @@ async function handleCourseList({
     .from('workspace_user_groups')
     .select('id, name, description')
     .eq('ws_id', normalizedWsId)
+    .eq('is_course_published', true)
     .order('name', { ascending: true });
 
   if (groupsError)
@@ -249,9 +250,6 @@ async function handleCourseList({
   if (modulesError) {
     throw courseRouteError('course_modules_lookup_failed', modulesError);
   }
-
-  const courseGroupIds = [...new Set((modules ?? []).map((m) => m.group_id))];
-  const courseGroupIdSet = new Set(courseGroupIds);
 
   // Count modules per course
   const moduleCountByCourse = new Map<string, number>();
@@ -302,24 +300,22 @@ async function handleCourseList({
     }
   }
 
-  const courses = (groups ?? [])
-    .filter((group) => courseGroupIdSet.has(group.id))
-    .map((group) => {
-      const totalModules = moduleCountByCourse.get(group.id) ?? 0;
-      const completedModules = completedByCourse.get(group.id) ?? 0;
-      const progress = totalModules
-        ? Math.round((completedModules / totalModules) * 100)
-        : 0;
+  const courses = (groups ?? []).map((group) => {
+    const totalModules = moduleCountByCourse.get(group.id) ?? 0;
+    const completedModules = completedByCourse.get(group.id) ?? 0;
+    const progress = totalModules
+      ? Math.round((completedModules / totalModules) * 100)
+      : 0;
 
-      return {
-        id: group.id,
-        name: group.name,
-        description: group.description,
-        totalModules,
-        completedModules,
-        progress,
-      };
-    });
+    return {
+      id: group.id,
+      name: group.name,
+      description: group.description,
+      totalModules,
+      completedModules,
+      progress,
+    };
+  });
 
   return NextResponse.json({ courses });
 }
@@ -347,6 +343,7 @@ async function handleCourseDetail(
     .from('workspace_user_groups')
     .select('id, ws_id, name, description')
     .eq('id', groupId)
+    .eq('is_course_published', true)
     .maybeSingle();
 
   if (groupError)

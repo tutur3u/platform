@@ -24080,6 +24080,7 @@ export type Database = {
           description: string | null;
           ending_date: string | null;
           id: string;
+          is_course_published: boolean;
           is_guest: boolean | null;
           name: string;
           notes: string | null;
@@ -24095,6 +24096,7 @@ export type Database = {
           description?: string | null;
           ending_date?: string | null;
           id?: string;
+          is_course_published?: boolean;
           is_guest?: boolean | null;
           name: string;
           notes?: string | null;
@@ -24110,6 +24112,7 @@ export type Database = {
           description?: string | null;
           ending_date?: string | null;
           id?: string;
+          is_course_published?: boolean;
           is_guest?: boolean | null;
           name?: string;
           notes?: string | null;

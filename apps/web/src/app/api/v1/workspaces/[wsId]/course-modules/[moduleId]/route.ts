@@ -2,12 +2,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database, Json } from '@tuturuuu/types';
 import {
+  getPermissions,
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface RouteParams {
   moduleId: string;
@@ -76,6 +78,17 @@ async function validateWorkspaceModuleAccess(
   if (!membership.ok) {
     return NextResponse.json(
       { message: "You don't have access to this workspace" },
+      { status: 403 }
+    );
+  }
+
+  const permissions = await getPermissions({
+    user: { id: userId },
+    wsId: normalizedWsId,
+  });
+  if (!permissions?.containsPermission('manage_users')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
       { status: 403 }
     );
   }
@@ -246,7 +259,7 @@ export const PUT = withSessionAuth(
 
       if (!shouldReallocateSortKey || error.code !== '23505') {
         const scrubbedPayload = summarizeUpdatePayload(updatePayload);
-        console.error('Failed to update workspace course module', {
+        serverLogger.error('Failed to update workspace course module', {
           error,
           moduleId,
           updatePayload: scrubbedPayload,
@@ -263,7 +276,10 @@ export const PUT = withSessionAuth(
       { status: 409 }
     );
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 60, windowMs: 60000 },
+  }
 );
 
 export const DELETE = withSessionAuth(
@@ -302,5 +318,8 @@ export const DELETE = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 60, windowMs: 60000 },
+  }
 );

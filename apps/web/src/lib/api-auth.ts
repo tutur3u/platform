@@ -184,7 +184,20 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
     targetApp: LEARN_TEACH_APP_SESSION_TARGETS,
   },
   {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/teach(?:\/|$)/u,
+    targetApp: 'teach',
+  },
+  {
+    pattern:
+      /^\/api\/v1\/workspaces\/[^/]+\/(?:courses|course-modules)(?:\/|$)/u,
+    targetApp: 'teach',
+  },
+  {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/users\/groups(?:\/|$)/u,
+    targetApp: 'teach',
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/users(?:\/|$)/u,
     targetApp: 'teach',
   },
   {

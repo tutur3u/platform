@@ -3,11 +3,15 @@ title: Teach teacher companion app
 description: Teacher-facing education companion app for Tuturuuu workspaces.
 ---
 
-Teach lives in `apps/teach` and runs locally on port `7813`. It is a teacher-facing companion to `apps/web` and `apps/learn`: teachers can orient around lesson loops, classroom signals, and learner handoffs, but protected education data and administrative mutations remain centralized in `apps/web`.
+Teach lives in `apps/teach` and runs locally on port `7813`. It is the teacher-facing operations app for Tuturuuu education workspaces. Teachers create and publish courses, enroll existing workspace users, author modules, save attendance, write posts and reports, and enter metrics inside Teach. Protected data and mutations still run through centralized `apps/web` API routes.
 
 ## Ownership model
 
-Teach is not a separate education admin stack. It links teachers into `apps/web` for workspace records, course data, reports, assignments, parent links, and operational settings. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard; Teach-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Teach host.
+Teach is a standalone teacher UI, but not a separate backend. Core teacher actions must stay inside `apps/teach`; avoid protected dashboard and course actions that jump teachers back to `apps/web`. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard; Teach-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Teach host.
+
+`apps/web` remains the protected API owner. Teach-callable routes must opt in to app-session auth for the `teach` audience, resolve permissions from the forwarded app-session user, and then perform admin-backed reads/writes only after workspace membership is verified. New Teach-owned flows should add typed helpers in `@tuturuuu/internal-api` and consume those helpers from Teach client components with TanStack Query.
+
+Courses are stored as `workspace_user_groups`. The course-level Learn visibility switch is `workspace_user_groups.is_course_published`; module visibility remains `workspace_course_modules.is_published`. New courses default to unpublished drafts, non-guest, active, and empty. Teach can enroll existing workspace users into a course, but this self-serve pass does not create or invite new users.
 
 Teach-local logout clears the host-only app-session cookies and stale Supabase Auth cookies on `teach.tuturuuu.*`, then redirects browser form submissions to the central `apps/web` `/logout?from=Teach` continuation. JSON callers can still POST `/api/auth/logout` and receive `{ success: true }`.
 
@@ -25,9 +29,9 @@ Teach metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. P
 
 All non-`apps/web` education apps use the shared Neobrutalist design language from `apps/learn/DESIGN.md`: heavy foreground borders, offset shadows, paper-like surfaces, compact responsive grids, and theme-adaptive dynamic accents. Teach uses this language for public teacher orientation surfaces and protected dashboards.
 
-Teach should read as a teacher operations dashboard, not a landing page. The protected surface should keep course user groups, modules, centralized attendance, reports, score metrics, and learner-preview handoffs visible as first-class cards. Use multiple dynamic accent roles across these work loops and keep rails readable in light, dark, and system themes.
+Teach should read as a teacher operations dashboard, not a landing page. The protected surface should keep courses, module authoring, learner enrollment, attendance, posts, reports, score metrics, settings, and learner-preview handoffs visible as first-class paths. Use multiple dynamic accent roles across these work loops and keep rails readable in light, dark, and system themes.
 
-Teach reads course groups and module data through central `apps/web` APIs. Web API routes that serve Teach must opt in to app-session auth for the `teach` audience and resolve permissions from the forwarded app-session user before falling back to workspace group membership filters.
+Teach reads and mutates course groups and module data through central `apps/web` APIs. Web API routes that serve Teach must opt in to app-session auth for the `teach` audience and resolve permissions from the forwarded app-session user before falling back to workspace group membership filters.
 
 ## Verification
 

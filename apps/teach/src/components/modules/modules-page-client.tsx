@@ -1,10 +1,17 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BookOpenCheck, GraduationCap } from '@tuturuuu/icons';
-import { listSharedCourses } from '@tuturuuu/internal-api';
+import {
+  archiveWorkspaceCourse,
+  createWorkspaceCourse,
+  listWorkspaceCourses,
+  publishWorkspaceCourse,
+  type WorkspaceCourseListItem,
+} from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
+import { CourseCreatePanel } from './course-create-panel';
 import { CourseGroupCard } from './course-group-card';
 import { ModulesEmptyState, ModulesLoadingState } from './modules-shared';
 
@@ -54,16 +61,23 @@ function ModulesPageHeader({
 
 function CourseGrid({
   courses,
+  onArchive,
+  onPublish,
   wsId,
 }: {
   courses: Array<{
+    archived?: boolean;
     id: string;
+    is_course_published?: boolean;
+    members_count?: number;
     name: string | null;
     description: string | null;
     totalModules: number;
     completedModules: number;
     progress: number;
   }>;
+  onArchive: (courseId: string) => void;
+  onPublish: (courseId: string, isPublished: boolean) => void;
   wsId: string;
 }) {
   const t = useTranslations();
@@ -79,6 +93,8 @@ function CourseGrid({
           course={course}
           index={index}
           key={course.id}
+          onArchive={() => onArchive(course.id)}
+          onPublish={(isPublished) => onPublish(course.id, isPublished)}
           wsId={wsId}
         />
       ))}
@@ -125,14 +141,41 @@ export function ModulesPageClient({
   workspaceName: string | null;
 }) {
   const t = useTranslations();
+  const queryClient = useQueryClient();
+  const queryKey = ['teach-courses', wsId] as const;
 
   const coursesQuery = useQuery({
     enabled: Boolean(wsId),
-    queryFn: () => listSharedCourses(wsId),
-    queryKey: ['teach-courses', wsId],
+    queryFn: () =>
+      listWorkspaceCourses(wsId, { pageSize: 100, status: 'active' }),
+    queryKey,
   });
 
-  const courses = coursesQuery.data?.courses ?? [];
+  const invalidateCourses = () => queryClient.invalidateQueries({ queryKey });
+
+  const createCourse = useMutation({
+    mutationFn: (payload: { description?: string; name: string }) =>
+      createWorkspaceCourse(wsId, payload),
+    onSuccess: invalidateCourses,
+  });
+
+  const publishCourse = useMutation({
+    mutationFn: ({
+      courseId,
+      isPublished,
+    }: {
+      courseId: string;
+      isPublished: boolean;
+    }) => publishWorkspaceCourse(wsId, courseId, isPublished),
+    onSuccess: invalidateCourses,
+  });
+
+  const archiveCourse = useMutation({
+    mutationFn: (courseId: string) => archiveWorkspaceCourse(wsId, courseId),
+    onSuccess: invalidateCourses,
+  });
+
+  const courses = (coursesQuery.data?.data ?? []).map(toCourseCardItem);
   const totalModules = courses.reduce(
     (sum: number, c) => sum + c.totalModules,
     0
@@ -143,6 +186,11 @@ export function ModulesPageClient({
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header */}
         <ModulesPageHeader wsId={wsId} workspaceName={workspaceName} />
+
+        <CourseCreatePanel
+          isPending={createCourse.isPending}
+          onCreate={(payload) => createCourse.mutate(payload)}
+        />
 
         {/* Summary bar */}
         {!coursesQuery.isLoading && courses.length > 0 ? (
@@ -181,9 +229,31 @@ export function ModulesPageClient({
             }
           />
         ) : (
-          <CourseGrid courses={courses} wsId={wsId} />
+          <CourseGrid
+            courses={courses}
+            onArchive={(courseId) => archiveCourse.mutate(courseId)}
+            onPublish={(courseId, isPublished) =>
+              publishCourse.mutate({ courseId, isPublished })
+            }
+            wsId={wsId}
+          />
         )}
       </div>
     </main>
   );
+}
+
+function toCourseCardItem(course: WorkspaceCourseListItem) {
+  const totalModules = course.modules_count ?? 0;
+  return {
+    archived: course.archived,
+    completedModules: 0,
+    description: course.description,
+    id: course.id,
+    is_course_published: course.is_course_published,
+    members_count: course.members_count,
+    name: course.name,
+    progress: course.is_course_published ? 100 : 0,
+    totalModules,
+  };
 }

@@ -88,7 +88,7 @@
     "groupsTitle": "Course user groups",
     "lead": "Manage the teaching loop without turning Teach into a second platform admin. The dashboard focuses on groups, modules, centralized attendance, reports, and score metrics.",
     "manager": "Manager: {name}",
-    "manageInPlatform": "Manage records in platform",
+    "manageInPlatform": "Manage courses",
     "metrics": "Metrics",
     "modules": "Modules",
     "openLearn": "Open Learn",
@@ -170,12 +170,18 @@
       "title": "Generate modules with AI"
     },
     "allCourses": "All Courses",
-    "allCoursesDescription": "Each course group below represents a workspace user group with published modules.",
+    "allCoursesDescription": "Each course below is a Teach-owned workspace user group. Draft courses stay hidden from Learn until published.",
+    "archive": "Archive",
     "backToDashboard": "Back to dashboard",
     "courseProgress": "Course progress",
+    "createCourse": "Create course",
+    "createDescriptionPlaceholder": "Short course description",
+    "createNamePlaceholder": "Course name",
+    "creating": "Creating...",
     "courses": "courses",
-    "description": "Browse all course groups in this workspace. Each card represents a user group with published learning modules.",
+    "description": "Create and manage course groups in Teach. Publish a course when learners should see its published modules in Learn.",
     "done": "Done",
+    "learners": "Learners",
     "lessonEditor": {
       "removeYoutubeLink": "Remove YouTube link",
       "saved": "Saved",
@@ -183,14 +189,89 @@
     },
     "loadError": "Failed to load courses. Please try again.",
     "modules": "Modules",
-    "noCourses": "No courses found. Create workspace user groups with published modules in the platform first.",
+    "noCourses": "No courses found. Create the first draft course here in Teach.",
     "noDescription": "No description provided.",
     "openModules": "Open modules",
     "progress": "Progress",
+    "publish": "Publish",
+    "published": "Published",
     "remaining": "Remaining",
     "reviewCourse": "Review course",
     "title": "Course Modules",
     "totalModules": "total modules",
+    "unpublish": "Unpublish",
     "workspace": "Workspace"
+  },
+  "teachMembers": {
+    "remove": "Remove learner",
+    "searchPlaceholder": "Search existing workspace users",
+    "title": "Learners"
+  },
+  "teachOperations": {
+    "assignments": {
+      "lead": "Create course posts and assignment notes without leaving Teach.",
+      "title": "Assignments and posts"
+    },
+    "attendance": {
+      "lead": "Save daily attendance for enrolled learners in the selected course.",
+      "title": "Attendance"
+    },
+    "attendanceStatus": {
+      "ABSENT": "Absent",
+      "LATE": "Late",
+      "NONE": "Unset",
+      "PRESENT": "Present"
+    },
+    "backToDashboard": "Back to dashboard",
+    "course": "Course",
+    "createCourse": "Create course",
+    "createMetric": "Create metric",
+    "createPost": "Create post",
+    "createReport": "Create report",
+    "emptyCoursesBody": "Create a draft course first, then return here to manage classroom operations.",
+    "emptyCoursesTitle": "No courses yet",
+    "emptyPost": "No content yet.",
+    "learner": "Learner",
+    "loading": "Loading courses...",
+    "metricName": "Metric name",
+    "metricUnit": "Unit",
+    "metrics": {
+      "lead": "Create indicators and save learner metric values for the selected course.",
+      "title": "Metrics"
+    },
+    "postContent": "Post or assignment content",
+    "postTitle": "Post title",
+    "reportContent": "Report content",
+    "reportFeedback": "Feedback",
+    "reportTitle": "Report title",
+    "reports": {
+      "lead": "Write course reports for enrolled learners from inside Teach.",
+      "title": "Reports"
+    },
+    "saveAttendance": "Save attendance",
+    "saveMetrics": "Save metrics",
+    "saving": "Saving...",
+    "untitledPost": "Untitled post"
+  },
+  "teachSettings": {
+    "backToDashboard": "Back to dashboard",
+    "language": "Language",
+    "logout": "Log out",
+    "theme": "Theme",
+    "title": "Teach settings",
+    "workspaceFallback": "Education workspace"
+  },
+  "teachShell": {
+    "logout": "Log out",
+    "nav": {
+      "assignments": "Assignments",
+      "attendance": "Attendance",
+      "courses": "Courses",
+      "dashboard": "Dashboard",
+      "metrics": "Metrics",
+      "reports": "Reports",
+      "settings": "Settings"
+    },
+    "workspaceFallback": "Education workspace"
   }
 }

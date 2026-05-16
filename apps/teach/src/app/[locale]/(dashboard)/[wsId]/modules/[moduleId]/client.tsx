@@ -24,6 +24,7 @@ import {
 } from '@tuturuuu/icons';
 import Link from 'next/link';
 import { useCallback, useState } from 'react';
+import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
@@ -178,7 +179,7 @@ export function ModuleDetailClient({
           {/* Page header */}
           <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
             <Link
-              href={`/${wsId}/modules`}
+              href={`/${wsId}/courses`}
               className="mb-5 inline-flex items-center gap-2 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -204,6 +205,8 @@ export function ModuleDetailClient({
               </div>
             </div>
           </div>
+
+          <CourseMembersPanel courseId={courseId} wsId={wsId} />
 
           {/* Toolbar */}
           <div className="flex items-center justify-between gap-4">

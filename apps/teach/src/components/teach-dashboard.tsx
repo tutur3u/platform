@@ -7,7 +7,6 @@ import {
   ClipboardList,
   FileText,
   Gauge,
-  GraduationCap,
   Layers3,
   LineChart,
   UsersRound,
@@ -18,12 +17,9 @@ import type {
 } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { getTranslations } from 'next-intl/server';
-import { LEARN_APP_URL, WEB_APP_URL } from '@/constants/common';
-import { Link } from '@/i18n/navigation';
 import { TeachDashboardFeatureGrid } from './teach-dashboard-feature-grid';
 import { TeachMetricTile } from './teach-metric-tile';
 import { TeachOperationCard } from './teach-operation-card';
-import { TeachThemeControl } from './teach-theme-control';
 
 type TeachGroup = {
   attendance_amount?: number;
@@ -80,48 +76,12 @@ export async function TeachDashboard({
     0
   );
   const profileName = bootstrap.profile.display_name ?? t('teacher');
-  const platformGroupsUrl = `${WEB_APP_URL}/${wsId}/users/groups`;
+  const workspaceName = workspace.name ?? t('workspaceFallback');
+  const coursesUrl = `/${wsId}/courses`;
 
   return (
     <main className="min-h-screen bg-root-background px-5 py-5 text-foreground md:px-8">
-      <nav className="mx-auto flex max-w-7xl flex-nowrap items-center gap-3 border-2 border-border bg-background p-2 shadow-[5px_5px_0_var(--border)]">
-        <Link className="flex min-w-0 items-center gap-2" href="/dashboard">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-yellow/15">
-            <GraduationCap className="h-5 w-5" />
-          </span>
-          <span className="min-w-0 leading-tight">
-            <span className="block font-black text-lg">Teach</span>
-            <span className="block truncate text-muted-foreground text-xs">
-              {workspace.name ?? t('workspaceFallback')}
-            </span>
-          </span>
-        </Link>
-        <div className="ml-auto flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {bootstrap.workspaces.slice(0, 4).map((candidate) => (
-            <Link
-              className={`h-10 shrink-0 border-2 border-border px-3 py-2 font-black text-xs shadow-[2px_2px_0_var(--border)] ${
-                candidate.id === wsId
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-background'
-              }`}
-              href={`/${candidate.id}`}
-              key={candidate.id}
-            >
-              {candidate.name ?? t('workspaceFallback')}
-            </Link>
-          ))}
-          <TeachThemeControl compact />
-          <a
-            className="inline-flex h-10 shrink-0 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)]"
-            href={LEARN_APP_URL}
-          >
-            {t('openLearn')}
-            <ArrowRight className="h-3.5 w-3.5" />
-          </a>
-        </div>
-      </nav>
-
-      <section className="mx-auto mt-8 grid max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
+      <section className="mx-auto grid max-w-7xl gap-5 lg:grid-cols-[minmax(0,1fr)_24rem]">
         <div className="border-2 border-border bg-background p-6 shadow-[8px_8px_0_var(--border)] md:p-8">
           <p className="mb-4 inline-flex border-2 border-border bg-dynamic-yellow/15 px-3 py-1 font-black text-xs shadow-[3px_3px_0_var(--border)]">
             {t('eyebrow', { name: profileName })}
@@ -132,17 +92,20 @@ export async function TeachDashboard({
           <p className="mt-5 max-w-2xl text-muted-foreground leading-7">
             {t('lead')}
           </p>
+          <p className="mt-2 font-bold text-muted-foreground text-sm">
+            {workspaceName}
+          </p>
           <div className="mt-7 flex flex-wrap gap-3">
             <a
               className="inline-flex h-11 items-center gap-2 border-2 border-border bg-primary px-4 font-black text-primary-foreground shadow-[4px_4px_0_var(--border)]"
-              href={platformGroupsUrl}
+              href={coursesUrl}
             >
               {t('manageInPlatform')}
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
               className="inline-flex h-11 items-center gap-2 border-2 border-border bg-background px-4 font-black shadow-[4px_4px_0_var(--border)]"
-              href={`${WEB_APP_URL}/${wsId}/users/attendance`}
+              href={`/${wsId}/attendance`}
             >
               {t('checkAttendance')}
             </a>
@@ -194,7 +157,7 @@ export async function TeachDashboard({
             </div>
             <a
               className="hidden h-10 items-center gap-2 border-2 border-border bg-background px-3 font-black text-xs shadow-[2px_2px_0_var(--border)] md:inline-flex"
-              href={platformGroupsUrl}
+              href={coursesUrl}
             >
               {t('allGroups')}
               <ArrowRight className="h-3.5 w-3.5" />
@@ -268,7 +231,7 @@ export async function TeachDashboard({
           </div>
           <a
             className="inline-flex h-10 shrink-0 items-center justify-center gap-2 border-2 border-border bg-primary px-3 font-black text-primary-foreground text-xs shadow-[2px_2px_0_var(--border)]"
-            href={`${WEB_APP_URL}/${wsId}/users/reports`}
+            href={`/${wsId}/reports`}
           >
             {t('openReports')}
             <ArrowRight className="h-3.5 w-3.5" />
@@ -289,12 +252,12 @@ export async function TeachDashboard({
               }
               href={
                 key === 'plan'
-                  ? `${WEB_APP_URL}/${wsId}/users/groups`
+                  ? `/${wsId}/courses`
                   : key === 'attendance'
-                    ? `${WEB_APP_URL}/${wsId}/users/attendance`
+                    ? `/${wsId}/attendance`
                     : key === 'reports'
-                      ? `${WEB_APP_URL}/${wsId}/users/reports`
-                      : `${WEB_APP_URL}/${wsId}/users/groups/indicators`
+                      ? `/${wsId}/reports`
+                      : `/${wsId}/metrics`
               }
               icon={Icon}
               key={key}
@@ -319,7 +282,7 @@ function CourseUserGroupCard({
   t: Awaited<ReturnType<typeof getTranslations>>;
   wsId: string;
 }) {
-  const baseUrl = `${WEB_APP_URL}/${wsId}/users/groups/${group.id}`;
+  const baseUrl = `/${wsId}/courses/${group.id}`;
   const manager =
     group.managers?.[0]?.display_name ||
     group.managers?.[0]?.full_name ||
@@ -343,10 +306,19 @@ function CourseUserGroupCard({
         </div>
       </div>
       <div className="grid grid-cols-2 gap-2">
-        <DashboardLink href={`${baseUrl}/content`} label={t('courseModules')} />
-        <DashboardLink href={`${baseUrl}/attendance`} label={t('attendance')} />
-        <DashboardLink href={`${baseUrl}/reports`} label={t('reports')} />
-        <DashboardLink href={`${baseUrl}/indicators`} label={t('metrics')} />
+        <DashboardLink href={baseUrl} label={t('courseModules')} />
+        <DashboardLink
+          href={`/${wsId}/attendance?course=${group.id}`}
+          label={t('attendance')}
+        />
+        <DashboardLink
+          href={`/${wsId}/reports?course=${group.id}`}
+          label={t('reports')}
+        />
+        <DashboardLink
+          href={`/${wsId}/metrics?course=${group.id}`}
+          label={t('metrics')}
+        />
       </div>
     </article>
   );

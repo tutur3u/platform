@@ -23,7 +23,12 @@ Teach follows the shared Tuturuuu Education Satellites design language defined i
 
 ## Relationship To Apps
 
-- `apps/web` owns platform login, protected APIs, workspace controls, and
-  teacher/admin operations.
-- `apps/teach` presents the education command surface for teachers.
+- `apps/web` owns platform login, protected APIs, app-session verification,
+  workspace permissions, and the central data model.
+- `apps/teach` owns the teacher UI for core education operations: course
+  creation, course publishing, existing-user enrollment, module authoring,
+  attendance, posts, reports, and metrics.
 - `apps/learn` presents the learner/parent-facing companion surface.
+- Teach should not link core teacher actions back to `apps/web`. Keep external
+  handoffs intentional, such as learner preview into `apps/learn` and
+  centralized auth/logout.

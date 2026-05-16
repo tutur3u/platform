@@ -1,9 +1,13 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { Constants, type TablesUpdate } from '@tuturuuu/types';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const certificateTemplateOptions = Constants.public.Enums.certificate_templates;
 type CertificateTemplate = (typeof certificateTemplateOptions)[number];
@@ -21,7 +25,9 @@ const CourseUpdateSchema = z
         ...CertificateTemplate[],
       ])
       .optional(),
+    archived: z.boolean().optional(),
     description: z.string().max(2000).optional(),
+    is_course_published: z.boolean().optional(),
     name: z.string().trim().min(1).max(255).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, {
@@ -81,6 +87,20 @@ export const PUT = withSessionAuth(
     );
     if (access instanceof NextResponse) return access;
 
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: access.normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (permissions.withoutPermission('update_user_groups')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to update courses' },
+        { status: 403 }
+      );
+    }
+
     let body: unknown;
     try {
       body = await request.json();
@@ -109,6 +129,12 @@ export const PUT = withSessionAuth(
     if (parsedBody.data.cert_template !== undefined) {
       updatePayload.cert_template = parsedBody.data.cert_template;
     }
+    if (parsedBody.data.archived !== undefined) {
+      updatePayload.archived = parsedBody.data.archived;
+    }
+    if (parsedBody.data.is_course_published !== undefined) {
+      updatePayload.is_course_published = parsedBody.data.is_course_published;
+    }
 
     const { data: updated, error } = await context.supabase
       .from('workspace_user_groups')
@@ -120,7 +146,7 @@ export const PUT = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to update workspace course', error);
+      serverLogger.error('Failed to update workspace course', { error });
       return NextResponse.json(
         { message: 'Error updating workspace course' },
         { status: 500 }
@@ -136,7 +162,10 @@ export const PUT = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 60, windowMs: 60000 },
+  }
 );
 
 export const DELETE = withSessionAuth(
@@ -156,6 +185,20 @@ export const DELETE = withSessionAuth(
     );
     if (access instanceof NextResponse) return access;
 
+    const permissions = await getPermissions({
+      user: context.user,
+      wsId: access.normalizedWsId,
+    });
+    if (!permissions) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+    if (permissions.withoutPermission('update_user_groups')) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions to delete courses' },
+        { status: 403 }
+      );
+    }
+
     const { data: deleted, error } = await context.supabase
       .from('workspace_user_groups')
       .delete()
@@ -166,7 +209,7 @@ export const DELETE = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to delete workspace course', error);
+      serverLogger.error('Failed to delete workspace course', { error });
       return NextResponse.json(
         { message: 'Error deleting workspace course' },
         { status: 500 }
@@ -182,5 +225,8 @@ export const DELETE = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { maxRequests: 60, windowMs: 60000 } }
+  {
+    allowAppSessionAuth: { targetApp: 'teach' },
+    rateLimit: { maxRequests: 60, windowMs: 60000 },
+  }
 );

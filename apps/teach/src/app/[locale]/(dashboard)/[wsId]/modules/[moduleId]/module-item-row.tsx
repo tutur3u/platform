@@ -105,7 +105,7 @@ export function ModuleItemRow({
       ) : (
         <Link
           className="min-w-0 flex-1 truncate text-sm hover:text-primary hover:underline"
-          href={`/${wsId}/modules/${courseId}/${module.id}`}
+          href={`/${wsId}/courses/${courseId}/${module.id}`}
         >
           {module.name ?? 'Untitled'}
         </Link>

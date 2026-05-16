@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   getPermissions,
@@ -28,7 +29,7 @@ async function validateWorkspaceGroupAccess(
   groupId: string,
   userId: string,
   sessionSupabase: TypedSupabaseClient,
-  request: Request
+  user: SupabaseUser
 ) {
   const parsedParams = WorkspaceGroupParamsSchema.safeParse({ groupId, wsId });
   if (!parsedParams.success) {
@@ -62,7 +63,7 @@ async function validateWorkspaceGroupAccess(
   }
 
   const permissions = await getPermissions({
-    request,
+    user,
     wsId: normalizedWsId,
   });
   if (!permissions?.containsPermission('manage_users')) {
@@ -95,7 +96,7 @@ async function validateWorkspaceGroupAccess(
 }
 
 export const GET = withSessionAuth(
-  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
       return NextResponse.json(
@@ -111,7 +112,7 @@ export const GET = withSessionAuth(
       groupId,
       context.user.id,
       context.supabase,
-      request
+      context.user
     );
     if (access instanceof NextResponse) return access;
 

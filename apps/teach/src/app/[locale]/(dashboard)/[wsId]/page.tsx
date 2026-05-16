@@ -1,7 +1,6 @@
 import {
-  getTulearnBootstrap,
-  listWorkspaceCourseModules,
-  listWorkspaceUserGroups,
+  getTeachBootstrap,
+  listWorkspaceCourses,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import { headers } from 'next/headers';
@@ -16,7 +15,7 @@ export default async function WorkspaceTeachDashboardPage({
   const { locale, wsId } = await params;
   const requestHeaders = await headers();
   const authOptions = withForwardedInternalApiAuth(requestHeaders);
-  const bootstrap = await getTulearnBootstrap(authOptions).catch(() => null);
+  const bootstrap = await getTeachBootstrap(authOptions).catch(() => null);
 
   if (!bootstrap) {
     redirect({ href: `/login?next=/${wsId}`, locale });
@@ -36,29 +35,28 @@ export default async function WorkspaceTeachDashboardPage({
     throw new Error('Redirecting to an available Teach workspace');
   }
 
-  const groupsPayload = await listWorkspaceUserGroups(
+  const coursesPayload = await listWorkspaceCourses(
     wsId,
     { page: 1, pageSize: 8, status: 'active' },
     authOptions
   ).catch(() => ({ count: 0, data: [], page: 1, pageSize: 8 }));
 
-  const moduleCounts = await Promise.all(
-    groupsPayload.data.slice(0, 6).map(async (group) => {
-      const modules = await listWorkspaceCourseModules(
-        wsId,
-        group.id,
-        authOptions
-      ).catch(() => []);
-      return [group.id, modules.length] as const;
-    })
+  const groups = coursesPayload.data.map((course) => ({
+    attendance_amount: 0,
+    id: course.id,
+    name: course.name,
+    sessions: [],
+  }));
+  const moduleCounts = coursesPayload.data.map(
+    (course) => [course.id, course.modules_count] as const
   );
 
   return (
     <TeachDashboard
       bootstrap={bootstrap}
-      groups={groupsPayload.data}
+      groups={groups}
       moduleCounts={Object.fromEntries(moduleCounts)}
-      totalGroups={groupsPayload.count}
+      totalGroups={coursesPayload.count}
       workspace={requestedWorkspace}
       wsId={wsId}
     />

@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   getPermissions,
@@ -22,10 +23,10 @@ const RouteParamsSchema = z.object({
 });
 
 async function validateModuleGroupRouteAccess(
-  request: Request,
   wsId: string,
   groupId: string,
   userId: string,
+  user: SupabaseUser,
   sessionSupabase: Parameters<
     typeof verifyWorkspaceMembershipType
   >[0]['supabase']
@@ -53,7 +54,7 @@ async function validateModuleGroupRouteAccess(
   }
 
   const permissions = await getPermissions({
-    request,
+    user,
     wsId: normalizedWsId,
   });
   if (!permissions?.containsPermission('manage_users')) {
@@ -113,10 +114,10 @@ export const PUT = withSessionAuth(
 
     const { wsId, groupId, moduleGroupId } = parsedParams.data;
     const access = await validateModuleGroupRouteAccess(
-      request,
       wsId,
       groupId,
       context.user.id,
+      context.user,
       context.supabase
     );
     if (access instanceof NextResponse) return access;
@@ -193,7 +194,7 @@ export const PUT = withSessionAuth(
 );
 
 export const DELETE = withSessionAuth(
-  async (request, context, params: RouteParams | Promise<RouteParams>) => {
+  async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const parsedParams = RouteParamsSchema.safeParse(await params);
     if (!parsedParams.success) {
       return NextResponse.json(
@@ -204,10 +205,10 @@ export const DELETE = withSessionAuth(
 
     const { wsId, groupId, moduleGroupId } = parsedParams.data;
     const access = await validateModuleGroupRouteAccess(
-      request,
       wsId,
       groupId,
       context.user.id,
+      context.user,
       context.supabase
     );
     if (access instanceof NextResponse) return access;
