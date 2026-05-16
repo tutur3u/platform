@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useQueryClient } from '@tanstack/react-query';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import { toast } from '@tuturuuu/ui/sonner';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
@@ -18,6 +18,7 @@ import {
 
 export interface UseTaskRelationshipsProps {
   wsId: string;
+  labelCacheWorkspaceId?: string;
   taskId?: string;
   isCreateMode: boolean;
   boardId: string;
@@ -69,8 +70,58 @@ function getErrorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
 }
 
+function compareLabelsByName(
+  a: WorkspaceTaskLabel,
+  b: WorkspaceTaskLabel
+): number {
+  return (a?.name || '')
+    .toLowerCase()
+    .localeCompare((b?.name || '').toLowerCase());
+}
+
+function upsertLabelSortedByName(
+  labels: WorkspaceTaskLabel[] | undefined,
+  label: WorkspaceTaskLabel
+) {
+  const existingLabels = labels ?? [];
+  return [
+    label,
+    ...existingLabels.filter((entry) => entry.id !== label.id),
+  ].sort(compareLabelsByName);
+}
+
+function upsertWorkspaceLabelCaches({
+  queryClient,
+  workspaceIds,
+  label,
+}: {
+  queryClient: QueryClient;
+  workspaceIds: Array<string | undefined>;
+  label: WorkspaceTaskLabel;
+}) {
+  const uniqueWorkspaceIds = Array.from(
+    new Set(workspaceIds.filter((id): id is string => Boolean(id)))
+  );
+
+  for (const workspaceId of uniqueWorkspaceIds) {
+    queryClient.setQueryData(
+      ['workspace-labels', workspaceId],
+      (old: WorkspaceTaskLabel[] | undefined) =>
+        upsertLabelSortedByName(old, label)
+    );
+    queryClient.setQueryData(
+      ['workspace_task_labels', workspaceId],
+      (old: WorkspaceTaskLabel[] | undefined) => [
+        label,
+        ...(old ?? []).filter((entry) => entry.id !== label.id),
+      ]
+    );
+  }
+}
+
 export function useTaskRelationships({
   wsId,
+  labelCacheWorkspaceId,
   taskId,
   isCreateMode,
   boardId,
@@ -298,6 +349,11 @@ export function useTaskRelationships({
         name: newLabelName.trim(),
         color: newLabelColor,
       });
+      upsertWorkspaceLabelCaches({
+        queryClient,
+        workspaceIds: [wsId, labelCacheWorkspaceId],
+        label: newLabel,
+      });
     } catch (error: unknown) {
       toast.error('Label creation failed', {
         description: getErrorMessage(error, 'Unable to create label.'),
@@ -307,13 +363,7 @@ export function useTaskRelationships({
     }
 
     try {
-      setAvailableLabels((prev) =>
-        [newLabel, ...prev].sort((a, b) =>
-          (a?.name || '')
-            .toLowerCase()
-            .localeCompare((b?.name || '').toLowerCase())
-        )
-      );
+      setAvailableLabels((prev) => upsertLabelSortedByName(prev, newLabel));
 
       if (isCreateMode) {
         setSelectedLabels((prev) => [...prev, newLabel]);
@@ -322,9 +372,7 @@ export function useTaskRelationships({
         });
       } else if (taskId) {
         const nextSelectedLabels = [...selectedLabels, newLabel].sort((a, b) =>
-          (a?.name || '')
-            .toLowerCase()
-            .localeCompare((b?.name || '').toLowerCase())
+          compareLabelsByName(a, b)
         );
 
         await updateWorkspaceTask(wsId, taskId, {
@@ -342,9 +390,7 @@ export function useTaskRelationships({
               return {
                 ...task,
                 labels: [...currentLabels, newLabel].sort((a, b) =>
-                  (a?.name || '')
-                    .toLowerCase()
-                    .localeCompare((b?.name || '').toLowerCase())
+                  compareLabelsByName(a, b)
                 ),
               };
             });
@@ -390,6 +436,7 @@ export function useTaskRelationships({
     setNewLabelColor,
     setShowNewLabelDialog,
     broadcast,
+    labelCacheWorkspaceId,
   ]);
 
   const handleCreateProject = useCallback(async () => {
