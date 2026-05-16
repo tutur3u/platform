@@ -1,14 +1,11 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const querySchema = z.object({
   start_at: z.string().datetime(),
@@ -25,14 +22,12 @@ export async function GET(
 ) {
   try {
     const { wsId: rawWsId } = await params;
-    const supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user, supabase } = auth;
     const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const membership = await verifyWorkspaceMembershipType({
       wsId: wsId,

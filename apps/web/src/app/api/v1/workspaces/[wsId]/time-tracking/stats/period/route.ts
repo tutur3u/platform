@@ -279,5 +279,5 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
     }
   },
-  { cache: { maxAge: 30, swr: 30 } }
+  { allowAppSessionAuth: true, cache: { maxAge: 30, swr: 30 } }
 );

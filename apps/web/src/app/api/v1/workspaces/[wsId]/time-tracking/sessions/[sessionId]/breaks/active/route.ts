@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -6,6 +5,7 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 export async function GET(
@@ -22,15 +22,15 @@ export async function GET(
   }
 
   const normalizedWsId = await normalizeWorkspaceId(wsId);
-  const supabase = await createClient(req);
+  let supabase = await createClient(req);
 
   // Get current user
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
+  const auth = await resolveSessionAuthContext(req, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) return auth.response;
+  const { user } = auth;
+  supabase = auth.supabase;
 
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: normalizedWsId,

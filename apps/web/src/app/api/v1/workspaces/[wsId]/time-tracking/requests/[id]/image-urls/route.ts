@@ -143,5 +143,5 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimitKind: 'read' }
+  { allowAppSessionAuth: true, rateLimitKind: 'read' }
 );

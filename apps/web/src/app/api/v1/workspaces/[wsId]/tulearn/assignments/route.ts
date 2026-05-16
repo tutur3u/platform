@@ -46,7 +46,8 @@ export const GET = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const PATCH = withSessionAuth<Params>(
@@ -143,5 +144,6 @@ export const PATCH = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );

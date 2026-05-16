@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -9,6 +8,7 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveTulearnSubject,
@@ -65,16 +65,13 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
 
     // Authenticate caller
-    const sessionSupabase = await createClient(request);
-    const { user, authError } =
-      await resolveAuthenticatedSessionUser(sessionSupabase);
-
-    if (authError) {
-      return NextResponse.json(
-        { error: 'Authentication error' },
-        { status: 401 }
-      );
-    }
+    let sessionSupabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    sessionSupabase = auth.supabase;
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }

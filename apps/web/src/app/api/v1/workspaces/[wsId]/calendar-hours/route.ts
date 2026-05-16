@@ -142,7 +142,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
     }
   },
-  { cache: { maxAge: 30, swr: 30 } }
+  { allowAppSessionAuth: true, cache: { maxAge: 30, swr: 30 } }
 );
 
 export const PATCH = withSessionAuth<{ wsId: string }>(
@@ -197,5 +197,6 @@ export const PATCH = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );

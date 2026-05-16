@@ -39,5 +39,8 @@ export const PATCH = withSessionAuth(
     }
   },
   // Email changes trigger verification flows — strict limit to prevent abuse
-  { rateLimit: { windowMs: 60000, maxRequests: 5 } }
+  {
+    allowAppSessionAuth: true,
+    rateLimit: { windowMs: 60000, maxRequests: 5 },
+  }
 );

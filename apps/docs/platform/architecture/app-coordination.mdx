@@ -46,13 +46,28 @@ Registered internal apps are the apps listed in
 
 The app-session JWT reuses the app-coordination claim shape: `sub`, `email`,
 `origin_app`, `target_app`, `scopes`, `iat`, `exp`, and `jti`. Verification
-rejects expired tokens and target-app mismatches. The default lifetime remains
-8 hours through the existing app-coordination token behavior.
+rejects expired tokens. Target app and scope checks are enforced by the caller,
+so every API route that opts into app-session auth must bind the token to the
+audience and scope it expects. The default lifetime remains 8 hours through the
+existing app-coordination token behavior.
 
 For internal API calls, apps forward the app-session cookie to `apps/web`.
 Routes that opt into app-session auth use the verified claims as the actor and
 must keep authorization explicit. Do not pass `ttr_app_...` HS256 JWTs to
 Supabase as user access tokens.
+
+Every central `apps/web` API consumed by a registered internal app must accept
+`tuturuuu_app_session` before falling back to Supabase Auth. Routes using
+`withSessionAuth` should opt into app-session auth; legacy route handlers should
+use `resolveSessionAuthContext(request, { allowAppSessionAuth: true })` so
+local satellite apps do not loop between `/login` and product pages or
+accumulate `api_auth_failed` IP blocks.
+
+Use route-specific app-session constraints instead of accepting any registered
+internal app token. For example, CLI-only platform APIs should configure
+`withSessionAuth` with `targetApp: 'platform'` and
+`requiredScope: 'cli:access'`; satellite APIs should use that satellite's
+target app and only the scopes intended for that route.
 
 When a registered app forwards request cookies to `apps/web`, it must strip
 stale `sb-*-auth-token` Supabase cookies whenever `tuturuuu_app_session` is
@@ -90,6 +105,11 @@ CLI access JWTs include the app-session scope and can authenticate gateway API
 requests. CLI refresh JWTs include only the CLI refresh scope, so they cannot be
 used directly as API bearer tokens. Refresh also resolves the user through an
 admin-backed lookup before minting new JWTs.
+
+Routes used by the native CLI must require both the `platform` target app and
+the `cli:access` scope before passing the request to admin-backed workspace or
+task handlers. Do not rely on the generic `internal-app:session` scope for
+CLI-only APIs.
 
 ## External app flow
 

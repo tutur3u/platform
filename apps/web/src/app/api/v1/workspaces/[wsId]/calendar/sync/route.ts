@@ -3,7 +3,6 @@ import {
   convertMicrosoftEventToWorkspaceFormat,
   fetchMicrosoftEvents,
 } from '@tuturuuu/microsoft/calendar';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -11,6 +10,7 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { performIncrementalActiveSync } from '@/lib/calendar/incremental-active-sync';
 import { sanitizeWorkspaceCalendarEventFields } from '@/lib/calendar/sync-field-limits';
 
@@ -61,12 +61,13 @@ async function verifyWorkspaceAccess(
     return { userId: null, isCronAuth: true };
   }
 
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return jsonError('Please sign in to sync calendars', 401);
-  }
+  let supabase = await createClient(request);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: true,
+  });
+  if (!auth.ok) return auth.response;
+  const { user } = auth;
+  supabase = auth.supabase;
 
   const membership = await verifyWorkspaceMembershipType({
     wsId: wsId,

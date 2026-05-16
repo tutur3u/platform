@@ -153,5 +153,5 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 30 } }
+  { allowAppSessionAuth: true, rateLimit: { windowMs: 60000, maxRequests: 30 } }
 );

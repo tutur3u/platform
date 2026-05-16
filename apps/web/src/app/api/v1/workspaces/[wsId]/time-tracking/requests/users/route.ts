@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -9,6 +8,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function GET(
   request: NextRequest,
@@ -16,14 +16,16 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 

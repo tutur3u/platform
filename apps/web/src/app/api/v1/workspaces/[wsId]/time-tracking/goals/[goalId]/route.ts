@@ -1,4 +1,3 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -10,6 +9,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().min(1),
@@ -46,15 +46,16 @@ export async function PATCH(
     }
 
     const { wsId, goalId } = parsedParams.data;
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
@@ -209,15 +210,16 @@ export async function DELETE(
     }
 
     const { wsId, goalId } = parsedParams.data;
-    const supabase = await createClient(request);
+    let supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 

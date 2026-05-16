@@ -1,8 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { classifyCalendarSyncHealth } from '@/lib/calendar/sync-health';
 
 interface RouteParams {
@@ -23,15 +23,13 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to view sync status' },
-        { status: 401 }
-      );
-    }
+    let supabase = await createClient(request);
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const membership = await verifyWorkspaceMembershipType({
       wsId: wsId,

@@ -69,5 +69,8 @@ export const POST = withSessionAuth(
     }
   },
   // Upload URL generation — moderate limit to prevent storage abuse
-  { rateLimit: { windowMs: 60000, maxRequests: 10 } }
+  {
+    allowAppSessionAuth: true,
+    rateLimit: { windowMs: 60000, maxRequests: 10 },
+  }
 );

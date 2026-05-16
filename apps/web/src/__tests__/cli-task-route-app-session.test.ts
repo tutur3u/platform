@@ -7,6 +7,29 @@ const mocks = vi.hoisted(() => ({
   handleTaskRoutePOST: vi.fn(),
   supabase: { from: vi.fn() },
   user: { id: 'user-1' },
+  withSessionAuth: vi.fn(
+    (
+      handler: (
+        request: NextRequest,
+        context: {
+          supabase: { from: ReturnType<typeof vi.fn> };
+          user: { id: string };
+        },
+        params: { wsId: string }
+      ) => unknown
+    ) =>
+      async (
+        request: NextRequest,
+        routeContext?: { params?: Promise<{ wsId: string }> }
+      ) =>
+        handler(
+          request,
+          { supabase: { from: vi.fn() }, user: { id: 'user-1' } },
+          routeContext?.params
+            ? await routeContext.params
+            : { wsId: 'personal' }
+        )
+  ),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -19,23 +42,7 @@ vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
 }));
 
 vi.mock('@/lib/api-auth', () => ({
-  withSessionAuth:
-    (
-      handler: (
-        request: NextRequest,
-        context: { supabase: typeof mocks.supabase; user: typeof mocks.user },
-        params: { wsId: string }
-      ) => unknown
-    ) =>
-    async (
-      request: NextRequest,
-      routeContext?: { params?: Promise<{ wsId: string }> }
-    ) =>
-      handler(
-        request,
-        { supabase: mocks.supabase, user: mocks.user },
-        routeContext?.params ? await routeContext.params : { wsId: 'personal' }
-      ),
+  withSessionAuth: mocks.withSessionAuth,
 }));
 
 describe('workspace task API route app-session bridge', () => {
@@ -44,6 +51,51 @@ describe('workspace task API route app-session bridge', () => {
     vi.clearAllMocks();
     mocks.handleTaskRouteGET.mockResolvedValue(Response.json({ ok: true }));
     mocks.handleTaskRoutePOST.mockResolvedValue(Response.json({ ok: true }));
+    mocks.withSessionAuth.mockImplementation(
+      (
+        handler: (
+          request: NextRequest,
+          context: { supabase: typeof mocks.supabase; user: typeof mocks.user },
+          params: { wsId: string }
+        ) => unknown
+      ) =>
+        async (
+          request: NextRequest,
+          routeContext?: { params?: Promise<{ wsId: string }> }
+        ) =>
+          handler(
+            request,
+            { supabase: mocks.supabase, user: mocks.user },
+            routeContext?.params
+              ? await routeContext.params
+              : { wsId: 'personal' }
+          )
+    );
+  });
+
+  it('requires platform CLI app-session auth on task routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/tasks/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          requiredScope: 'cli:access',
+          targetApp: 'platform',
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          requiredScope: 'cli:access',
+          targetApp: 'platform',
+        },
+      }
+    );
   });
 
   it('passes app-session auth context into the shared task GET handler', async () => {

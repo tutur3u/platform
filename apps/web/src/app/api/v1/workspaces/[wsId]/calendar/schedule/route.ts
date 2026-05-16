@@ -12,7 +12,6 @@
  * All scheduling uses the same algorithm as the preview panel.
  */
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
@@ -22,6 +21,7 @@ import type { Habit } from '@tuturuuu/types/primitives/Habit';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   listActiveHabitSkipDates,
   revokeHabitSkip,
@@ -58,7 +58,7 @@ export async function POST(
       );
     }
 
-    const supabase = await createClient();
+    let supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Check for cron secret authorization (for background jobs)
@@ -68,7 +68,7 @@ export async function POST(
     const isCronAuth = cronSecret && authHeader === `Bearer ${cronSecret}`;
 
     // Workspace mode detection (personal vs workspace)
-    const { data: workspaceInfo } = await supabase
+    const { data: workspaceInfo } = await sbAdmin
       .from('workspaces')
       .select('personal')
       .eq('id', wsId)
@@ -79,15 +79,12 @@ export async function POST(
     let currentUserId: string | null = null;
     if (!isCronAuth) {
       // Get authenticated user
-      const { user, authError } =
-        await resolveAuthenticatedSessionUser(supabase);
-
-      if (authError || !user) {
-        return NextResponse.json(
-          { error: 'Please sign in to schedule' },
-          { status: 401 }
-        );
-      }
+      const auth = await resolveSessionAuthContext(request, {
+        allowAppSessionAuth: true,
+      });
+      if (!auth.ok) return auth.response;
+      const { user } = auth;
+      supabase = auth.supabase;
       currentUserId = user.id;
 
       // Verify workspace access
@@ -416,7 +413,7 @@ export async function POST(
 }
 
 export async function GET(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<RouteParams> }
 ) {
   try {
@@ -429,18 +426,16 @@ export async function GET(
       );
     }
 
-    const supabase = await createClient();
+    let supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
     // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to view schedule status' },
-        { status: 401 }
-      );
-    }
+    const auth = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: true,
+    });
+    if (!auth.ok) return auth.response;
+    const { user } = auth;
+    supabase = auth.supabase;
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,

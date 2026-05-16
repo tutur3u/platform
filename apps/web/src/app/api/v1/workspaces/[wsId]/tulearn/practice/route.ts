@@ -59,7 +59,8 @@ export const GET = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 export const POST = withSessionAuth<Params>(
@@ -164,7 +165,8 @@ export const POST = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );
 
 async function validateModulePractice(

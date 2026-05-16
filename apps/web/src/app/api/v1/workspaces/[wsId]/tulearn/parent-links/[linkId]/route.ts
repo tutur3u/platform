@@ -67,5 +67,6 @@ export const PATCH = withSessionAuth<Params>(
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: true }
 );

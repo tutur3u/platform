@@ -124,9 +124,22 @@ export async function authorize(
 // withSessionAuth — rate-limited session-auth wrapper
 // ---------------------------------------------------------------------------
 
-interface SessionAuthContext {
+export interface SessionAuthContext {
   user: SupabaseUser;
   supabase: TypedSupabaseClient;
+}
+
+type AppSessionAuthOptions =
+  | boolean
+  | {
+      requiredScope?: string | false;
+      targetApp?: string;
+    };
+
+function getAppSessionVerificationOptions(
+  allowAppSessionAuth: true | Exclude<AppSessionAuthOptions, boolean>
+) {
+  return allowAppSessionAuth === true ? {} : allowAppSessionAuth;
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
@@ -137,6 +150,65 @@ async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
 
   return {
     authError: error,
+    user,
+  };
+}
+
+export type SessionAuthResolution =
+  | (SessionAuthContext & {
+      ok: true;
+    })
+  | {
+      ok: false;
+      response: NextResponse;
+    };
+
+export async function resolveSessionAuthContext(
+  request: Pick<NextRequest, 'headers' | 'url'>,
+  options?: Pick<SessionAuthOptions, 'allowAppSessionAuth'>
+): Promise<SessionAuthResolution> {
+  if (options?.allowAppSessionAuth) {
+    const appSessionToken = getAppSessionTokenFromRequest(request);
+
+    if (appSessionToken) {
+      const appSessionVerification = verifyAppSessionRequest(
+        request,
+        getAppSessionVerificationOptions(options.allowAppSessionAuth)
+      );
+
+      if (!appSessionVerification.ok) {
+        return {
+          ok: false,
+          response: NextResponse.json(
+            { error: 'Unauthorized' },
+            { status: 401 }
+          ),
+        };
+      }
+
+      return {
+        ok: true,
+        supabase: (await createAdminClient({
+          noCookie: true,
+        })) as TypedSupabaseClient,
+        user: createAppSessionUser(appSessionVerification.claims),
+      };
+    }
+  }
+
+  const supabase = (await createClient(request)) as TypedSupabaseClient;
+  const { user, authError } = await resolveAuthenticatedUser(supabase);
+
+  if (authError || !user) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return {
+    ok: true,
+    supabase,
     user,
   };
 }
@@ -190,7 +262,7 @@ interface SessionAuthOptions {
    * app-session JWT. Handlers opting into this path must keep authorization
    * explicit because the Supabase client is admin-backed.
    */
-  allowAppSessionAuth?: boolean;
+  allowAppSessionAuth?: AppSessionAuthOptions;
 }
 
 /**
@@ -351,7 +423,10 @@ export function withSessionAuth<T = unknown>(
       const appSessionToken = getAppSessionTokenFromRequest(request);
 
       if (appSessionToken) {
-        const appSessionVerification = verifyAppSessionRequest(request);
+        const appSessionVerification = verifyAppSessionRequest(
+          request,
+          getAppSessionVerificationOptions(options.allowAppSessionAuth)
+        );
 
         if (!appSessionVerification.ok) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
