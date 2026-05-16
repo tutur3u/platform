@@ -1,4 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
+import { getHiveServer } from '@/lib/hive/hive-db';
 import {
   requireHiveAccess,
   serverLogger,
@@ -18,6 +19,14 @@ type Params = {
 async function createToken(request: NextRequest, serverId: string) {
   const result = await requireHiveAccess(request);
   if (!result.ok) return result.response;
+
+  const server = await getHiveServer(serverId);
+  if (!server || (!server.enabled && !result.access.isAdmin)) {
+    return NextResponse.json(
+      { error: 'Hive server not found' },
+      { status: 404 }
+    );
+  }
 
   const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
   let token: string;
