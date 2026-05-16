@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
   normalizeWorkspaceId,
@@ -12,6 +13,23 @@ import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-descript
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { paramsSchema, updateTaskDescriptionSchema } from './schema';
+
+type PersistedTaskDescription = {
+  description: string | null;
+  description_yjs_state: number[] | null;
+  id: string;
+};
+
+async function fetchPersistedTaskDescription(
+  sbAdmin: TypedSupabaseClient,
+  taskId: string
+) {
+  return sbAdmin
+    .from('tasks')
+    .select('id, description, description_yjs_state')
+    .eq('id', taskId)
+    .maybeSingle();
+}
 
 async function requireWorkspaceTaskAccess(
   request: NextRequest,
@@ -101,11 +119,10 @@ export async function GET(
     if ('error' in access) return access.error;
 
     const { sbAdmin, taskId } = access;
-    const { data, error } = await sbAdmin
-      .from('tasks')
-      .select('description, description_yjs_state')
-      .eq('id', taskId)
-      .maybeSingle();
+    const { data, error } = await fetchPersistedTaskDescription(
+      sbAdmin,
+      taskId
+    );
 
     if (error) {
       console.error('Error fetching task description:', error);
@@ -187,13 +204,39 @@ export async function PATCH(
       );
     }
 
-    if (!data || data.id !== taskId) {
-      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    let persistedTaskDescription: PersistedTaskDescription | null =
+      data && data.id === taskId
+        ? {
+            description: data.description,
+            description_yjs_state: data.description_yjs_state,
+            id: data.id,
+          }
+        : null;
+
+    if (!persistedTaskDescription) {
+      // The RPC can be idempotent when description_yjs_state is already
+      // current. Read the row back so close-time saves are confirmed by the
+      // persisted task description instead of failing as "not found".
+      const { data: confirmedTask, error: confirmError } =
+        await fetchPersistedTaskDescription(sbAdmin, taskId);
+
+      if (confirmError) {
+        return NextResponse.json(
+          { error: 'Failed to confirm task description update' },
+          { status: 500 }
+        );
+      }
+
+      if (!confirmedTask) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+
+      persistedTaskDescription = confirmedTask;
     }
 
     return NextResponse.json({
-      description: data.description,
-      description_yjs_state: data.description_yjs_state,
+      description: persistedTaskDescription.description,
+      description_yjs_state: persistedTaskDescription.description_yjs_state,
     });
   } catch (error) {
     if (error instanceof ZodError) {
