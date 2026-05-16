@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import { createCriterionSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -42,7 +43,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
@@ -60,6 +60,13 @@ export async function POST(request: Request) {
   try {
     // Validate request body with Zod
     const validatedData = createCriterionSchema.parse(body);
+    const sbAdmin = await createAdminClient({ noCookie: true });
+
+    if (
+      !(await canManageNovaChallenge(user, validatedData.challengeId, sbAdmin))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     const criterionData = {
       challenge_id: validatedData.challengeId,
@@ -67,7 +74,7 @@ export async function POST(request: Request) {
       description: validatedData.description,
     };
 
-    const { data: criterion, error: criterionError } = await supabase
+    const { data: criterion, error: criterionError } = await sbAdmin
       .from('nova_challenge_criteria')
       .insert(criterionData)
       .select()

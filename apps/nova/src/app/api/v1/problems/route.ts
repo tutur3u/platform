@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallenge } from '@/lib/challenge-management-auth';
 import { createProblemSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -63,7 +64,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
   let body: unknown;
 
@@ -80,6 +80,13 @@ export async function POST(request: Request) {
   try {
     // Validate request body with Zod
     const validatedData = createProblemSchema.parse(body);
+    const sbAdmin = await createAdminClient({ noCookie: true });
+
+    if (
+      !(await canManageNovaChallenge(user, validatedData.challengeId, sbAdmin))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     const problemData = {
       title: validatedData.title,
@@ -90,7 +97,7 @@ export async function POST(request: Request) {
       challenge_id: validatedData.challengeId,
     };
 
-    const { data: problem, error: problemError } = await supabase
+    const { data: problem, error: problemError } = await sbAdmin
       .from('nova_problems')
       .insert(problemData)
       .select()

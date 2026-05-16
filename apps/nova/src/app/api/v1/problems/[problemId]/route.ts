@@ -1,6 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import {
+  canManageNovaChallenge,
+  getNovaProblemChallengeId,
+} from '@/lib/challenge-management-auth';
 
 interface Params {
   params: Promise<{
@@ -50,13 +54,14 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { problemId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   let body: {
     title?: string;
@@ -82,6 +87,38 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
+    const { challengeId, error: lookupError } = await getNovaProblemChallengeId(
+      problemId,
+      sbAdmin
+    );
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching problem' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Problem not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (
+      body.challengeId &&
+      body.challengeId !== challengeId &&
+      !(await canManageNovaChallenge(user, body.challengeId, sbAdmin))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const updateData: any = {};
     if (body.title !== undefined) updateData.title = body.title;
     if (body.description !== undefined)
@@ -102,7 +139,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.challengeId !== undefined)
       updateData.challenge_id = body.challengeId;
 
-    const { data: updatedProblem, error: updateError } = await supabase
+    const { data: updatedProblem, error: updateError } = await sbAdmin
       .from('nova_problems')
       .update(updateData)
       .eq('id', problemId)
@@ -134,7 +171,6 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { problemId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
@@ -142,8 +178,34 @@ export async function DELETE(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    const { error: deleteError } = await supabase
+    const { challengeId, error: lookupError } = await getNovaProblemChallengeId(
+      problemId,
+      sbAdmin
+    );
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching problem' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Problem not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const { error: deleteError } = await sbAdmin
       .from('nova_problems')
       .delete()
       .eq('id', problemId);

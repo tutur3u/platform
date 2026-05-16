@@ -3,6 +3,7 @@ import { generateSalt, hashPassword } from '@tuturuuu/utils/crypto';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaChallengesGlobally } from '@/lib/challenge-management-auth';
 import { createChallengeSchema } from '../schemas';
 
 export async function GET(request: Request) {
@@ -58,11 +59,16 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaChallengesGlobally(user, sbAdmin))) {
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   let body: unknown;
@@ -100,7 +106,7 @@ export async function POST(request: Request) {
       close_at: validatedData.closeAt,
     };
 
-    const { data: challenge, error: challengeError } = await supabase
+    const { data: challenge, error: challengeError } = await sbAdmin
       .from('nova_challenges')
       .insert(challengeData)
       .select()

@@ -1,6 +1,7 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -34,9 +35,12 @@ export async function requireNovaAppSessionUser(): Promise<SupabaseUser> {
   return user;
 }
 
-export async function getNovaPlatformRole(userId: string) {
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data } = await sbAdmin
+export async function getNovaPlatformRole(
+  userId: string,
+  sbAdmin?: TypedSupabaseClient
+) {
+  const client = sbAdmin ?? (await createAdminClient({ noCookie: true }));
+  const { data } = await client
     .from('platform_user_roles')
     .select(
       'enabled, allow_challenge_management, allow_manage_all_challenges, allow_role_management'

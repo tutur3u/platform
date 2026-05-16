@@ -2,10 +2,14 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import {
+  canManageNovaChallenge,
+  canManageNovaChallengesGlobally,
+  getNovaProblemChallengeId,
+} from '@/lib/challenge-management-auth';
 import { createTestcaseSchema } from '../schemas';
 
 export async function GET(request: Request) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { searchParams } = new URL(request.url);
   const problemId = searchParams.get('problemId');
   const user = getNovaAppSessionUserFromRequest(request);
@@ -14,8 +18,36 @@ export async function GET(request: Request) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    let query = supabase.from('nova_problem_test_cases').select('*');
+    if (problemId) {
+      const { challengeId, error: lookupError } =
+        await getNovaProblemChallengeId(problemId, sbAdmin);
+
+      if (lookupError) {
+        console.error('Database Error: ', lookupError);
+        return NextResponse.json(
+          { message: 'Error fetching problem' },
+          { status: 500 }
+        );
+      }
+
+      if (!challengeId) {
+        return NextResponse.json(
+          { message: 'Problem not found' },
+          { status: 404 }
+        );
+      }
+
+      if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+        return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+      }
+    } else if (!(await canManageNovaChallengesGlobally(user, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    let query = sbAdmin.from('nova_problem_test_cases').select('*');
     if (problemId) {
       query = query.eq('problem_id', problemId);
     }
@@ -41,7 +73,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createAdminClient({ noCookie: true });
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
@@ -59,6 +90,30 @@ export async function POST(request: Request) {
   try {
     // Validate request body with Zod
     const validatedData = createTestcaseSchema.parse(body);
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { challengeId, error: lookupError } = await getNovaProblemChallengeId(
+      validatedData.problemId,
+      sbAdmin
+    );
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching problem' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Problem not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
 
     const testcaseData = {
       problem_id: validatedData.problemId,
@@ -67,7 +122,7 @@ export async function POST(request: Request) {
       hidden: validatedData.hidden,
     };
 
-    const { data: testcase, error: testcaseError } = await supabase
+    const { data: testcase, error: testcaseError } = await sbAdmin
       .from('nova_problem_test_cases')
       .insert(testcaseData)
       .select()

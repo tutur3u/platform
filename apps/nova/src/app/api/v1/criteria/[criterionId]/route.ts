@@ -1,6 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import {
+  canManageNovaChallenge,
+  getNovaCriterionChallengeId,
+} from '@/lib/challenge-management-auth';
 
 interface Params {
   params: Promise<{
@@ -9,7 +13,6 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { criterionId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
@@ -17,8 +20,10 @@ export async function GET(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    const { data: criterion, error } = await supabase
+    const { data: criterion, error } = await sbAdmin
       .from('nova_challenge_criteria')
       .select('*')
       .eq('id', criterionId)
@@ -49,13 +54,14 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function PUT(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { criterionId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
   let body: {
     name?: string;
@@ -78,6 +84,36 @@ export async function PUT(request: Request, { params }: Params) {
   }
 
   try {
+    const { challengeId, error: lookupError } =
+      await getNovaCriterionChallengeId(criterionId, sbAdmin);
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching criterion' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Criterion not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    if (
+      body.challengeId &&
+      body.challengeId !== challengeId &&
+      !(await canManageNovaChallenge(user, body.challengeId, sbAdmin))
+    ) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
     const updateData: any = {};
     if (body.name !== undefined) updateData.name = body.name;
     if (body.description !== undefined)
@@ -85,7 +121,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (body.challengeId !== undefined)
       updateData.challenge_id = body.challengeId;
 
-    const { data: updatedCriterion, error: updateError } = await supabase
+    const { data: updatedCriterion, error: updateError } = await sbAdmin
       .from('nova_challenge_criteria')
       .update(updateData)
       .eq('id', criterionId)
@@ -117,7 +153,6 @@ export async function PUT(request: Request, { params }: Params) {
 }
 
 export async function DELETE(request: Request, { params }: Params) {
-  const supabase = await createAdminClient({ noCookie: true });
   const { criterionId } = await params;
   const user = getNovaAppSessionUserFromRequest(request);
 
@@ -125,8 +160,32 @@ export async function DELETE(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   try {
-    const { error: deleteError } = await supabase
+    const { challengeId, error: lookupError } =
+      await getNovaCriterionChallengeId(criterionId, sbAdmin);
+
+    if (lookupError) {
+      console.error('Database Error: ', lookupError);
+      return NextResponse.json(
+        { message: 'Error fetching criterion' },
+        { status: 500 }
+      );
+    }
+
+    if (!challengeId) {
+      return NextResponse.json(
+        { message: 'Criterion not found' },
+        { status: 404 }
+      );
+    }
+
+    if (!(await canManageNovaChallenge(user, challengeId, sbAdmin))) {
+      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    }
+
+    const { error: deleteError } = await sbAdmin
       .from('nova_challenge_criteria')
       .delete()
       .eq('id', criterionId);
