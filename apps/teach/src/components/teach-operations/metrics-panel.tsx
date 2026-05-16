@@ -1,14 +1,17 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { ExternalLink } from '@tuturuuu/icons';
 import {
   createWorkspaceCourseIndicator,
   listWorkspaceCourseIndicators,
   listWorkspaceCourseMembers,
   updateWorkspaceCourseIndicators,
 } from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { LEARN_APP_URL } from '@/constants/common';
 
 export function MetricsPanel({
   courseId,
@@ -74,9 +77,34 @@ export function MetricsPanel({
       value.value,
     ])
   );
+  const savedValues = (indicatorsQuery.data?.values ?? []).filter(
+    (value) => typeof value.value === 'number'
+  );
+  const averageScore = savedValues.length
+    ? Math.round(
+        savedValues.reduce((sum, value) => sum + (value.value ?? 0), 0) /
+          savedValues.length
+      )
+    : null;
+  const learnMarksUrl = `${LEARN_APP_URL}/${wsId}/marks`;
 
   return (
     <section className="space-y-4">
+      <div className="grid gap-3 md:grid-cols-[repeat(3,minmax(0,1fr))_auto]">
+        <MetricSummary
+          label={t('metricsCount')}
+          value={indicatorsQuery.data?.indicators.length ?? 0}
+        />
+        <MetricSummary label={t('savedValues')} value={savedValues.length} />
+        <MetricSummary label={t('averageScore')} value={averageScore ?? '-'} />
+        <Button asChild className="h-full min-h-14" variant="outline">
+          <a href={learnMarksUrl} rel="noreferrer" target="_blank">
+            <ExternalLink className="h-4 w-4" />
+            {t('openLearnMarks')}
+          </a>
+        </Button>
+      </div>
+
       <div className="grid gap-3 border-2 border-border bg-card p-4 shadow-[3px_3px_0_var(--border)] md:grid-cols-[minmax(0,1fr)_12rem_auto]">
         <input
           className="h-11 border-2 border-border bg-background px-3 font-bold outline-none focus:border-primary"
@@ -152,5 +180,20 @@ export function MetricsPanel({
         {saveValues.isPending ? t('saving') : t('saveMetrics')}
       </button>
     </section>
+  );
+}
+
+function MetricSummary({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | string;
+}) {
+  return (
+    <div className="border-2 border-border bg-card p-3 shadow-[2px_2px_0_var(--border)]">
+      <p className="text-muted-foreground text-xs">{label}</p>
+      <p className="font-black text-2xl">{value}</p>
+    </div>
   );
 }

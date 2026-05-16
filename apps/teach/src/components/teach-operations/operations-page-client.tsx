@@ -48,6 +48,8 @@ export function OperationsPageClient({
     selectedCourseId && courses.some((course) => course.id === selectedCourseId)
       ? selectedCourseId
       : (courses[0]?.id ?? '');
+  const activeCourse =
+    courses.find((course) => course.id === activeCourseId) ?? courses[0];
   const Icon = modeIcons[mode];
 
   return (
@@ -86,12 +88,21 @@ export function OperationsPageClient({
               courses={courses}
               onChange={setSelectedCourseId}
             />
-            {mode === 'attendance' ? (
-              <AttendancePanel courseId={activeCourseId} wsId={wsId} />
+            {mode === 'attendance' && activeCourse ? (
+              <AttendancePanel
+                course={activeCourse}
+                key={activeCourse.id}
+                wsId={wsId}
+              />
             ) : mode === 'assignments' ? (
               <PostsPanel courseId={activeCourseId} wsId={wsId} />
             ) : mode === 'reports' ? (
-              <ReportsPanel courseId={activeCourseId} wsId={wsId} />
+              <ReportsPanel
+                courseId={activeCourseId}
+                courseName={activeCourse?.name ?? t('course')}
+                key={activeCourseId}
+                wsId={wsId}
+              />
             ) : (
               <MetricsPanel courseId={activeCourseId} wsId={wsId} />
             )}
