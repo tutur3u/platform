@@ -2124,6 +2124,12 @@ test('loadRuntimeSnapshot keeps both live colors marked active in deployment car
       )?.health,
       'healthy'
     );
+    assert.equal(
+      snapshot.dockerResources.serviceHealth.find(
+        (service) => service.serviceName === 'web-blue'
+      )?.health,
+      'healthy'
+    );
     assert.equal(snapshot.dockerResources.totalCpuPercent, 4.7);
     assert.match(
       stripAnsi(
