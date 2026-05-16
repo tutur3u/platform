@@ -619,7 +619,9 @@ function validateDockerProdCompose(composeContent) {
       'HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434' +
       '}',
     '    - HIVE_REALTIME_TOKEN_SECRET',
-    '    - INTERNAL_WEB_API_ORIGIN',
+    '    - INTERNAL_WEB_API_ORIGIN=${' +
+      'INTERNAL_WEB_API_ORIGIN:-http://web-proxy:7803' +
+      '}',
     '    - MARKITDOWN_ENDPOINT_SECRET',
     '    - MARKITDOWN_ENDPOINT_URL',
     '    - PLATFORM_BLUE_GREEN_COLOR',

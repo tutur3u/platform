@@ -83,6 +83,11 @@ Postgres. After backfill, `/api/v1/hive/*` routes should write Hive Postgres
 only, while `apps/web` internal APIs use the forwarded app-session cookie to
 resolve the caller and platform-admin status.
 
+In Docker production, Hive satellite API rewrites must target the web service
+through `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`. If that value is empty,
+the Hive Next.js rewrite can fall back to the public web origin and turn every
+editor save into a browser-to-Hive-to-public-Web round trip.
+
 Hive graph workflows are server-scoped product data. Platform admins author
 shared workflow definitions in `hive_workflows`; enabled Hive members can run
 enabled, unarchived workflows manually, and every run writes a row in
@@ -127,6 +132,11 @@ writes can churn `op_seq`, slow visible save completion, and let older world
 snapshots overwrite newer local edits. Realtime and snapshot consumers must
 also ignore equal or older revisions so delayed broadcasts cannot revert an
 optimistic edit that already advanced locally.
+
+Keep full-world snapshots in `hive_world_states` only. `hive_world_events`
+should store event metadata and the compact event payload, not another copy of
+`world_data`, because normal editor saves can otherwise rewrite and insert the
+entire voxel world twice on every operation.
 
 The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World

@@ -7,6 +7,10 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const MIGRATIONS_DIR = path.join(ROOT_DIR, 'apps/database/supabase/migrations');
 const RPC_SIGNATURE =
   'public.apply_hive_world_event(uuid, uuid, bigint, text, jsonb, jsonb)';
+const HIVE_EVENT_PERSISTENCE_FILES = [
+  'apps/web/src/lib/hive/hive-db.ts',
+  'apps/hive-realtime/src/hive-db.ts',
+];
 
 function readMigration(filename) {
   return fs.readFileSync(path.join(MIGRATIONS_DIR, filename), 'utf8');
@@ -45,6 +49,19 @@ function latestHiveRpcDefinition() {
   assert.ok(definitions.length > 0, 'expected Hive world event RPC migrations');
 
   return definitions.at(-1);
+}
+
+function listHiveWorldEventInsertColumns(source) {
+  return Array.from(
+    source.matchAll(
+      /insert\s+into\s+hive_world_events\s*\(([\s\S]*?)\)\s*values/giu
+    )
+  ).map((match) =>
+    match[1]
+      .split(',')
+      .map((column) => column.trim().replace(/\s+/gu, ' '))
+      .filter(Boolean)
+  );
 }
 
 test('Hive world event RPC final definition binds writes to a verified actor', () => {
@@ -134,4 +151,20 @@ test('Hive world event RPC final migration revokes browser execution', () => {
       'iu'
     )
   );
+});
+
+test('Hive event persistence does not duplicate full world snapshots into audit rows', () => {
+  for (const relativePath of HIVE_EVENT_PERSISTENCE_FILES) {
+    const source = fs.readFileSync(path.join(ROOT_DIR, relativePath), 'utf8');
+    const inserts = listHiveWorldEventInsertColumns(source);
+
+    assert.ok(inserts.length > 0, `${relativePath} should append Hive events`);
+
+    for (const columns of inserts) {
+      assert.ok(
+        !columns.includes('world_data'),
+        `${relativePath} must keep full worlds in hive_world_states only`
+      );
+    }
+  }
 });

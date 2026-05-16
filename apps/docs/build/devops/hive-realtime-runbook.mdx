@@ -1,7 +1,7 @@
 ---
 title: Hive Realtime Runbook
 description: Operating notes for the Hive WebSocket service and satellite app deployment.
-updatedAt: '2026-05-13'
+updatedAt: '2026-05-16'
 ---
 
 Hive realtime lives in `apps/hive-realtime`. It is a Bun WebSocket service used
@@ -25,6 +25,10 @@ Yjs helpers live in `@tuturuuu/realtime/hive` so `apps/hive`,
   Realtime uses this database to load compacted CRDT snapshots, append Yjs
   update bytes, and persist audit events. Supabase is not the Hive product store
   after backfill.
+- `INTERNAL_WEB_API_ORIGIN`: Docker-internal web gateway origin used by
+  `apps/hive` API rewrites. In production Compose this should resolve to
+  `http://web-proxy:7803` so editor saves do not leave the Docker network and
+  re-enter through the public web origin.
 - Supabase credentials already used by `apps/web`, especially
   `NEXT_PUBLIC_SUPABASE_URL` with `SUPABASE_SECRET_KEY`. `SUPABASE_SERVER_URL`
   may still override the server-side URL when the deployment needs a
@@ -112,6 +116,11 @@ visual projections for those authoritative writes.
 `world.event` and `world.event.applied` remain as temporary compatibility
 wrappers for older full-world edit flows. The service converts accepted payloads
 into CRDT updates before broadcasting them to the room.
+
+Do not store full `world_data` snapshots in `hive_world_events` for compatibility
+events. The current world snapshot belongs in `hive_world_states`; event rows
+should keep compact metadata and payloads so high-frequency editor saves do not
+double the amount of JSON written per operation.
 
 Awareness is ephemeral and TTL-based. It includes user ID, display name, avatar
 URL, role, color, active tool, selected entity, terrain cursor, camera position,

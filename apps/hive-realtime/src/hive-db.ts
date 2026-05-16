@@ -106,15 +106,14 @@ export async function persistHiveWorldEvent(input: {
 
     const [event] = await tx<HiveWorldEventRow[]>`
       insert into hive_world_events (
-        server_id, actor_user_id, op_seq, event_type, payload, world_data
+        server_id, actor_user_id, op_seq, event_type, payload
       )
       values (
         ${input.serverId},
         ${input.actorUserId},
         ${nextSeq},
         ${input.eventType},
-        ${tx.json(asJson(input.payload))},
-        ${tx.json(asJson(input.world))}
+        ${tx.json(asJson(input.payload))}
       )
       returning id, server_id, actor_user_id, revision, event_type, payload, created_at
     `;

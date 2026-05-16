@@ -16,6 +16,7 @@ x-hive-service: &hive-service
     - HIVE_REALTIME_TOKEN_SECRET
     - HIVE_REALTIME_URL=${HIVE_REALTIME_URL:-http://hive-realtime:7815/realtime}
     - HOSTNAME=0.0.0.0
+    - INTERNAL_WEB_API_ORIGIN=${INTERNAL_WEB_API_ORIGIN:-http://web-proxy:7803}
     - NEXT_PUBLIC_HIVE_REALTIME_URL=${NEXT_PUBLIC_HIVE_REALTIME_URL:-wss://hive.tuturuuu.com/realtime}
     - NEXT_TELEMETRY_DISABLED=1
     - NODE_ENV=production
