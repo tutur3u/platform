@@ -8,7 +8,7 @@
     "@vitest/coverage-v8": "^4.1.6",
     "lucide-static": "^1.16.0",
     "portless": "^0.13.0",
-    "turbo": "^2.9.12",
+    "turbo": "^2.9.14",
     "typescript": "^6.0.3",
     "vite": "^8.0.13",
     "vitest": "^4.1.6"
