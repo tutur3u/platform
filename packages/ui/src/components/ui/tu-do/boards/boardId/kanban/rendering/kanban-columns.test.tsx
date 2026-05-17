@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
@@ -24,7 +24,7 @@ vi.mock('../../task-list-form', () => ({
 }));
 
 vi.mock('../../../../shared/cursor-overlay-multi-wrapper', () => ({
-  default: () => null,
+  default: () => <div data-testid="cursor-overlay" />,
 }));
 
 const lists: TaskList[] = [
@@ -115,5 +115,65 @@ describe('KanbanColumns', () => {
 
     expect(container.firstElementChild).toHaveClass('snap-mandatory');
     expect(container.firstElementChild).not.toHaveClass('snap-proximity');
+  });
+
+  it('keeps rendering board columns when cursor overlays are gated off', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        cursorsEnabled={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        dragPreviewPosition={null}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+      />
+    );
+
+    expect(screen.getByTestId('column-list-1')).toBeInTheDocument();
+    expect(screen.getByTestId('column-list-2')).toBeInTheDocument();
+    expect(screen.queryByTestId('cursor-overlay')).not.toBeInTheDocument();
+  });
+
+  it('renders cursor overlays when cursor gating allows them', () => {
+    render(
+      <KanbanColumns
+        columns={lists}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        cursorsEnabled
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        dragPreviewPosition={null}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={lists.map((list) => list.id)}
+      />
+    );
+
+    expect(screen.getByTestId('cursor-overlay')).toBeInTheDocument();
   });
 });

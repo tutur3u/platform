@@ -19,12 +19,11 @@ import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useCalendarPreferences } from '@tuturuuu/ui/hooks/use-calendar-preferences';
-import { toast } from '@tuturuuu/ui/sonner';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { coordinateGetter } from '@tuturuuu/utils/keyboard-preset';
 import { useBoardConfig, useReorderTask } from '@tuturuuu/utils/task-helper';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useOptionalWorkspacePresenceContext } from '../../providers/workspace-presence-provider';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
@@ -74,7 +73,6 @@ interface Props {
 
 export function KanbanBoard({
   workspace,
-  workspaceTier,
   workspaceId,
   boardId,
   tasks,
@@ -109,6 +107,12 @@ export function KanbanBoard({
   const boardRef = useRef<HTMLDivElement>(null);
 
   const queryClient = useQueryClient();
+  const wsPresence = useOptionalWorkspacePresenceContext();
+  const cursorsEnabled =
+    !workspace.personal &&
+    !!boardId &&
+    !!wsPresence?.cursorsEnabled &&
+    !wsPresence.isBoardOverLimit(boardId);
 
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
   const { createTask } = useTaskDialog();
@@ -378,7 +382,7 @@ export function KanbanBoard({
             boardId={boardId ?? ''}
             workspaceId={workspaceId}
             isPersonalWorkspace={workspace.personal}
-            cursorsEnabled={!!workspaceTier && workspaceTier !== 'FREE'}
+            cursorsEnabled={cursorsEnabled}
             disableSort={disableSort}
             selectedTasks={selectedTasks}
             isMultiSelectMode={isMultiSelectMode}
@@ -416,7 +420,6 @@ export function KanbanBoard({
           </DragOverlay>
         </DndContext>
       </div>
-      <BoardOverLimitToast boardId={boardId ?? ''} />
 
       <BoardSelector
         open={boardSelectorOpen}
@@ -451,26 +454,4 @@ export function KanbanBoard({
       />
     </div>
   );
-}
-
-/**
- * Shows a one-time toast when the board exceeds the concurrent user limit.
- * Must be rendered inside WorkspacePresenceProvider.
- */
-function BoardOverLimitToast({ boardId }: { boardId: string }) {
-  const wsPresence = useOptionalWorkspacePresenceContext();
-  const toastShownRef = useRef(false);
-
-  const overLimit = wsPresence?.isBoardOverLimit(boardId) ?? false;
-
-  useEffect(() => {
-    if (overLimit && !toastShownRef.current) {
-      toastShownRef.current = true;
-      toast.info(
-        'Board at capacity. Realtime features paused for this session.'
-      );
-    }
-  }, [overLimit]);
-
-  return null;
 }
