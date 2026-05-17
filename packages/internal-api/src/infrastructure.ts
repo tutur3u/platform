@@ -996,7 +996,18 @@ export interface ObservabilityResourceBucket {
   txBytes: number | null;
 }
 
+export interface ObservabilityBuildResources {
+  containers: BlueGreenMonitoringDockerContainer[];
+  state: string;
+  totalCpuPercent: number;
+  totalMemoryBytes: number;
+  totalRxBytes: number;
+  totalTxBytes: number;
+}
+
 export interface ObservabilityResources {
+  buildBuckets: ObservabilityResourceBucket[];
+  buildResources: ObservabilityBuildResources;
   buckets: ObservabilityResourceBucket[];
   dockerResources: BlueGreenMonitoringSnapshot['dockerResources'];
 }

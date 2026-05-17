@@ -3,6 +3,7 @@ import type {
   BlueGreenMonitoringRequestLog,
   BlueGreenMonitoringWatcherLog,
   ObservabilityAnalytics,
+  ObservabilityBuildResources,
   ObservabilityCronRun,
   ObservabilityDeployment,
   ObservabilityLogEvent,
@@ -49,6 +50,13 @@ const RESOURCE_METRICS = {
   rx: 'docker.rx_bytes',
   tx: 'docker.tx_bytes',
 } as const;
+const BUILD_RESOURCE_METRICS = {
+  cpu: 'docker.build.cpu_percent',
+  memory: 'docker.build.memory_bytes',
+  rx: 'docker.build.rx_bytes',
+  tx: 'docker.build.tx_bytes',
+} as const;
+type ResourceMetricNames = Record<keyof typeof RESOURCE_METRICS, string>;
 
 function clampPage(value: unknown) {
   const parsed = Number.parseInt(String(value ?? ''), 10);
@@ -1002,6 +1010,43 @@ function sumResourceMetric(
   }, 0);
 }
 
+function isDockerBuildResourceContainer(
+  container: ObservabilityResources['dockerResources']['allContainers'][number]
+) {
+  return [
+    container.image,
+    container.name,
+    container.projectName,
+    container.serviceName,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => value.toLowerCase())
+    .some(
+      (value) =>
+        value === 'buildkit' ||
+        value.includes('buildkit') ||
+        value.includes('buildx_buildkit') ||
+        value.includes('moby/buildkit')
+    );
+}
+
+export function getBuildResources(
+  dockerResources: ObservabilityResources['dockerResources']
+): ObservabilityBuildResources {
+  const containers = dockerResources.allContainers.filter(
+    isDockerBuildResourceContainer
+  );
+
+  return {
+    containers,
+    state: containers.length > 0 ? dockerResources.state : 'idle',
+    totalCpuPercent: sumResourceMetric(containers, 'cpuPercent'),
+    totalMemoryBytes: sumResourceMetric(containers, 'memoryBytes'),
+    totalRxBytes: sumResourceMetric(containers, 'rxBytes'),
+    totalTxBytes: sumResourceMetric(containers, 'txBytes'),
+  };
+}
+
 function scopeDockerResources(
   dockerResources: ObservabilityResources['dockerResources'],
   projectId: string
@@ -1067,8 +1112,12 @@ export async function sampleObservabilityResources() {
     watcherLogLimit: 0,
   });
   await persistResourceSample(snapshot.dockerResources);
+  const buildResources = getBuildResources(snapshot.dockerResources);
 
   return {
+    buildContainers: buildResources.containers.length,
+    buildCpuPercent: buildResources.totalCpuPercent,
+    buildMemoryBytes: buildResources.totalMemoryBytes,
     containers: snapshot.dockerResources.allContainers.length,
     cpuPercent: snapshot.dockerResources.totalCpuPercent,
     memoryBytes: snapshot.dockerResources.totalMemoryBytes,
@@ -1103,7 +1152,9 @@ async function persistResourceSample(
     return;
   }
 
+  const buildResources = getBuildResources(dockerResources);
   const metadata = JSON.stringify({
+    buildContainers: buildResources.containers.length,
     containers: dockerResources.allContainers.length,
     services: dockerResources.serviceHealth.length,
     state: dockerResources.state,
@@ -1115,7 +1166,11 @@ async function persistResourceSample(
       (${DEFAULT_PROJECT_ID}, 'server', ${RESOURCE_METRICS.cpu}, ${dockerResources.totalCpuPercent}, 'percent', ${metadata}::jsonb),
       (${DEFAULT_PROJECT_ID}, 'server', ${RESOURCE_METRICS.memory}, ${dockerResources.totalMemoryBytes}, 'bytes', ${metadata}::jsonb),
       (${DEFAULT_PROJECT_ID}, 'server', ${RESOURCE_METRICS.rx}, ${dockerResources.totalRxBytes}, 'bytes', ${metadata}::jsonb),
-      (${DEFAULT_PROJECT_ID}, 'server', ${RESOURCE_METRICS.tx}, ${dockerResources.totalTxBytes}, 'bytes', ${metadata}::jsonb)
+      (${DEFAULT_PROJECT_ID}, 'server', ${RESOURCE_METRICS.tx}, ${dockerResources.totalTxBytes}, 'bytes', ${metadata}::jsonb),
+      (${DEFAULT_PROJECT_ID}, 'server', ${BUILD_RESOURCE_METRICS.cpu}, ${buildResources.totalCpuPercent}, 'percent', ${metadata}::jsonb),
+      (${DEFAULT_PROJECT_ID}, 'server', ${BUILD_RESOURCE_METRICS.memory}, ${buildResources.totalMemoryBytes}, 'bytes', ${metadata}::jsonb),
+      (${DEFAULT_PROJECT_ID}, 'server', ${BUILD_RESOURCE_METRICS.rx}, ${buildResources.totalRxBytes}, 'bytes', ${metadata}::jsonb),
+      (${DEFAULT_PROJECT_ID}, 'server', ${BUILD_RESOURCE_METRICS.tx}, ${buildResources.totalTxBytes}, 'bytes', ${metadata}::jsonb)
   `;
   await pruneOldLogDrainRecords();
 }
@@ -1129,26 +1184,25 @@ function getResourceBucketCount(timeframeHours: number) {
   return 84;
 }
 
-function getCurrentResourceBucket(
-  dockerResources: ObservabilityResources['dockerResources']
-): ObservabilityResourceBucket {
+function getCurrentResourceBucket(metrics: ResourceMetricItem) {
   return {
     bucketStart: Date.now(),
-    cpuPercent: dockerResources.totalCpuPercent,
-    memoryBytes: dockerResources.totalMemoryBytes,
-    rxBytes: dockerResources.totalRxBytes,
-    txBytes: dockerResources.totalTxBytes,
+    cpuPercent: metrics.cpuPercent ?? null,
+    memoryBytes: metrics.memoryBytes ?? null,
+    rxBytes: metrics.rxBytes ?? null,
+    txBytes: metrics.txBytes ?? null,
   };
 }
 
 async function readResourceBuckets(
   projectId: string,
   timeframeHours: number,
-  dockerResources: ObservabilityResources['dockerResources']
+  currentMetrics: ResourceMetricItem,
+  metricNames: ResourceMetricNames = RESOURCE_METRICS
 ): Promise<ObservabilityResourceBucket[]> {
   const sql = await getSql();
   if (!sql) {
-    return [getCurrentResourceBucket(dockerResources)];
+    return [getCurrentResourceBucket(currentMetrics)];
   }
 
   const rows = await sql<
@@ -1157,14 +1211,14 @@ async function readResourceBuckets(
     SELECT metric, value, created_at
     FROM usage_events
     WHERE project_id = ${projectId}
-      AND metric IN ${sql(Object.values(RESOURCE_METRICS))}
+      AND metric IN ${sql(Object.values(metricNames))}
       AND created_at >= now() - make_interval(hours => ${timeframeHours})
     ORDER BY created_at ASC
     LIMIT ${MAX_AGGREGATE_ROWS}
   `;
 
   if (rows.length === 0) {
-    return [getCurrentResourceBucket(dockerResources)];
+    return [getCurrentResourceBucket(currentMetrics)];
   }
 
   const bucketCount = getResourceBucketCount(timeframeHours);
@@ -1188,19 +1242,19 @@ async function readResourceBuckets(
     const bucket = buckets[bucketIndex];
     if (!bucket) continue;
 
-    if (row.metric === RESOURCE_METRICS.cpu) bucket.cpu.push(row.value);
-    else if (row.metric === RESOURCE_METRICS.memory) {
+    if (row.metric === metricNames.cpu) bucket.cpu.push(row.value);
+    else if (row.metric === metricNames.memory) {
       bucket.memory.push(row.value);
-    } else if (row.metric === RESOURCE_METRICS.rx) bucket.rx.push(row.value);
-    else if (row.metric === RESOURCE_METRICS.tx) bucket.tx.push(row.value);
+    } else if (row.metric === metricNames.rx) bucket.rx.push(row.value);
+    else if (row.metric === metricNames.tx) bucket.tx.push(row.value);
   }
 
   const currentBucket = buckets.at(-1);
   if (currentBucket) {
-    currentBucket.cpu.push(dockerResources.totalCpuPercent);
-    currentBucket.memory.push(dockerResources.totalMemoryBytes);
-    currentBucket.rx.push(dockerResources.totalRxBytes);
-    currentBucket.tx.push(dockerResources.totalTxBytes);
+    currentBucket.cpu.push(currentMetrics.cpuPercent ?? 0);
+    currentBucket.memory.push(currentMetrics.memoryBytes ?? 0);
+    currentBucket.rx.push(currentMetrics.rxBytes ?? 0);
+    currentBucket.tx.push(currentMetrics.txBytes ?? 0);
   }
 
   const average = (values: number[]) =>
@@ -1229,13 +1283,36 @@ export async function readObservabilityResources(
     snapshot.dockerResources,
     normalized.projectId
   );
-
-  return {
-    buckets: await readResourceBuckets(
+  const buildResources = getBuildResources(snapshot.dockerResources);
+  const [buckets, buildBuckets] = await Promise.all([
+    readResourceBuckets(
       normalized.projectId,
       normalized.timeframeHours,
-      scopedDockerResources
+      {
+        cpuPercent: scopedDockerResources.totalCpuPercent,
+        memoryBytes: scopedDockerResources.totalMemoryBytes,
+        rxBytes: scopedDockerResources.totalRxBytes,
+        txBytes: scopedDockerResources.totalTxBytes,
+      },
+      RESOURCE_METRICS
     ),
+    readResourceBuckets(
+      DEFAULT_PROJECT_ID,
+      normalized.timeframeHours,
+      {
+        cpuPercent: buildResources.totalCpuPercent,
+        memoryBytes: buildResources.totalMemoryBytes,
+        rxBytes: buildResources.totalRxBytes,
+        txBytes: buildResources.totalTxBytes,
+      },
+      BUILD_RESOURCE_METRICS
+    ),
+  ]);
+
+  return {
+    buildBuckets,
+    buildResources,
+    buckets,
     dockerResources: scopedDockerResources,
   };
 }

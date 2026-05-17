@@ -89,6 +89,7 @@ import {
   formatDateTime,
   formatLatencyMs,
 } from './formatters';
+import { ObservabilityBuildResources } from './observability-build-resources';
 import { ObservabilityResourceClusters } from './observability-resource-clusters';
 
 export type ObservabilityDashboardMode =
@@ -1559,6 +1560,8 @@ export function ObservabilityDashboardClient({
   const deploymentsTotal = deploymentsQuery.data?.pages[0]?.total ?? 0;
   const cronExecutionsTotal = cronExecutionsQuery.data?.pages[0]?.total ?? 0;
   const newRequestCount = newRequestsQuery.data?.total ?? 0;
+  const buildResourceBuckets = resourcesQuery.data?.buildBuckets ?? [];
+  const buildResources = resourcesQuery.data?.buildResources;
   const resourceBuckets = resourcesQuery.data?.buckets ?? [];
   const scopedContainers = useMemo(() => {
     const containers = resources?.allContainers ?? [];
@@ -2997,6 +3000,72 @@ export function ObservabilityDashboardClient({
                   },
                 ]}
                 title={t('resources.network_trend')}
+              />
+            </div>
+          )}
+
+          <ObservabilityBuildResources
+            buildResources={buildResources}
+            isLoading={resourcesQuery.isLoading}
+          />
+
+          {resourcesQuery.isLoading ? (
+            <div className="grid gap-4 xl:grid-cols-3">
+              <section className="rounded-lg border border-border bg-background">
+                <ChartSkeleton />
+              </section>
+              <section className="rounded-lg border border-border bg-background">
+                <ChartSkeleton />
+              </section>
+              <section className="rounded-lg border border-border bg-background">
+                <ChartSkeleton />
+              </section>
+            </div>
+          ) : (
+            <div className="grid gap-4 xl:grid-cols-3">
+              <ResourceTrendChart
+                buckets={buildResourceBuckets}
+                emptyLabel={t('charts.no_data')}
+                formatter={(value) => `${formatNumber(value)}%`}
+                series={[
+                  {
+                    getValue: (bucket) => bucket.cpuPercent,
+                    label: t('resources.cpu'),
+                    tone: getCpuTone(buildResources?.totalCpuPercent),
+                  },
+                ]}
+                title={t('resources.build_cpu_trend')}
+              />
+              <ResourceTrendChart
+                buckets={buildResourceBuckets}
+                emptyLabel={t('charts.no_data')}
+                formatter={formatBytes}
+                series={[
+                  {
+                    getValue: (bucket) => bucket.memoryBytes,
+                    label: t('resources.memory'),
+                    tone: getMemoryTone(buildResources?.totalMemoryBytes),
+                  },
+                ]}
+                title={t('resources.build_memory_trend')}
+              />
+              <ResourceTrendChart
+                buckets={buildResourceBuckets}
+                emptyLabel={t('charts.no_data')}
+                formatter={formatBytes}
+                series={[
+                  {
+                    getValue: (bucket) => bucket.rxBytes,
+                    label: t('resources.rx'),
+                    tone: 'blue',
+                  },
+                  {
+                    getValue: (bucket) => bucket.txBytes,
+                    label: t('resources.tx'),
+                    tone: 'amber',
+                  },
+                ]}
+                title={t('resources.build_network_trend')}
               />
             </div>
           )}

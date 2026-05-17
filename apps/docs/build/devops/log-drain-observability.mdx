@@ -100,6 +100,12 @@ The `infrastructure-sample-resources` job runs every minute through `/api/cron/i
 
 Infrastructure → Monitoring → Resources reads the Docker runtime snapshot and displays container health, image/service identity, uptime, CPU, memory, compact network ingress/egress, and aggregate service counts. This is the operator view for Docker Desktop resource pressure without opening Docker Desktop directly.
 
+The same tab also separates Docker build consumption from the generic container
+inventory. Build resources are derived from BuildKit and builder containers
+captured by `docker stats`, then charted as `docker.build.*` usage events so
+operators can distinguish build pressure from runtime web, proxy, Redis, and
+sidecar pressure.
+
 The internal resource sampler writes the current Docker snapshot into the log drain `usage_events` table at most once per minute. The UI charts that history across the supported resource windows: 1 hour, 6 hours, 12 hours, 24 hours, 3 days, and 7 days. If the log drain is disabled or unavailable, the tab still shows the live Docker snapshot and falls back to a single current sample.
 
 Resource pressure uses the same thresholds as the dashboard: memory under 200 MB is green, 200-500 MB is amber, 500-1024 MB is orange, and anything above 1024 MB is red. CPU under 5% is green, 5-20% is amber, 20-40% is orange, and anything above 40% is red.

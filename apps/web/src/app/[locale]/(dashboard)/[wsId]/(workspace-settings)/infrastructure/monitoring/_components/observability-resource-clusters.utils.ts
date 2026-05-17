@@ -158,8 +158,9 @@ export function getMemoryTone(value: number | null | undefined): ResourceTone {
   if (value == null || !Number.isFinite(value)) return 'muted';
 
   const mb = value / 1024 / 1024;
-  if (mb < 1024) return 'green';
-  if (mb < 2048) return 'orange';
+  if (mb < 200) return 'green';
+  if (mb <= 500) return 'amber';
+  if (mb <= 1024) return 'orange';
   return 'red';
 }
 
