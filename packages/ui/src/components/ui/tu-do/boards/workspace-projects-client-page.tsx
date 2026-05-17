@@ -9,7 +9,6 @@ import {
 } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { useWorkspaceUser } from '@tuturuuu/ui/hooks/use-workspace-user';
 import { Separator } from '@tuturuuu/ui/separator';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
@@ -73,8 +72,6 @@ export default function WorkspaceProjectsClientPage({
   const isPermissionLoading = permissionQuery.isLoading;
 
   const resolvedWsId = workspace?.id;
-  const { value: openDefaultBoard, isLoading: isOpenDefaultBoardLoading } =
-    useUserBooleanConfig('TASKS_OPEN_DEFAULT_BOARD', true);
 
   const {
     data: boardsPayload,
@@ -108,44 +105,11 @@ export default function WorkspaceProjectsClientPage({
     router,
   ]);
 
-  useEffect(() => {
-    if (
-      !workspace?.personal ||
-      !resolvedWsId ||
-      isOpenDefaultBoardLoading ||
-      !openDefaultBoard ||
-      q.trim() !== '' ||
-      boardsPayload == null
-    ) {
-      return;
-    }
-
-    const defaultBoard = boardsPayload.data.find(
-      (board) =>
-        board.name?.trim().toLowerCase() === 'tasks' &&
-        !board.archived_at &&
-        !board.deleted_at
-    );
-
-    if (defaultBoard) {
-      router.replace(`/${resolvedWsId}/tasks/boards/${defaultBoard.id}`);
-    }
-  }, [
-    boardsPayload,
-    isOpenDefaultBoardLoading,
-    openDefaultBoard,
-    q,
-    resolvedWsId,
-    router,
-    workspace?.personal,
-  ]);
-
   if (
     isWorkspacePending ||
     isWorkspaceUserLoading ||
     isPermissionLoading ||
-    isBoardsPending ||
-    isOpenDefaultBoardLoading
+    isBoardsPending
   ) {
     return <BoardsListSkeleton />;
   }

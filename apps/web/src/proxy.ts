@@ -121,6 +121,7 @@ const SUSPICIOUS_QUERY_PARAMS_MAX = parsePositiveIntEnv(
 const SCANNER_PATH_PATTERN =
   /(wp-admin|wp-login\.php|xmlrpc\.php|phpmyadmin|adminer|\.env|\.git|boaform|server-status|cgi-bin|vendor\/phpunit|actuator|jenkins|hudson|\/shell|\/debug)/i;
 const ROOT_DEFAULT_NAVIGATION_CONFIG_ID = 'ROOT_DEFAULT_NAVIGATION';
+const TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID = 'TASKS_OPEN_DEFAULT_BOARD';
 
 type RootNavigationTarget = 'workspace_home' | 'tasks' | 'calendar' | 'finance';
 
@@ -189,7 +190,7 @@ function isWorkspaceHomeRedirectCandidate(
 
 async function resolveRootRedirectPath(
   userId: string,
-  workspace: { id: string }
+  workspace: { id: string; personal?: boolean }
 ): Promise<{ path: string; staleConfigValue: string | null }> {
   const sbAdmin = await createAdminClient();
   const { data: configRow } = await sbAdmin
@@ -267,6 +268,37 @@ async function resolveRootRedirectPath(
             submodule: 'boards',
           }),
         };
+      }
+
+      if (workspace.personal) {
+        const { data: openDefaultBoardConfig } = await sbAdmin
+          .from('user_configs')
+          .select('value')
+          .eq('user_id', userId)
+          .eq('id', TASKS_OPEN_DEFAULT_BOARD_CONFIG_ID)
+          .maybeSingle();
+        const shouldOpenDefaultBoard =
+          openDefaultBoardConfig?.value == null ||
+          openDefaultBoardConfig.value === 'true';
+
+        if (shouldOpenDefaultBoard) {
+          const { data: defaultBoard } = await sbAdmin
+            .from('workspace_boards')
+            .select('id')
+            .eq('ws_id', workspace.id)
+            .ilike('name', 'tasks')
+            .is('deleted_at', null)
+            .is('archived_at', null)
+            .limit(1)
+            .maybeSingle();
+
+          if (defaultBoard?.id) {
+            return {
+              path: `/${workspace.id}/tasks/boards/${defaultBoard.id}`,
+              staleConfigValue: null,
+            };
+          }
+        }
       }
 
       return { path: `/${workspace.id}/tasks/boards`, staleConfigValue: null };
@@ -1187,6 +1219,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
             user.id,
             {
               id: defaultWorkspace.id,
+              personal: defaultWorkspace.personal,
             }
           );
 

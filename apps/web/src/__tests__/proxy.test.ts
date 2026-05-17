@@ -685,6 +685,63 @@ describe('web proxy api handling', () => {
     );
   });
 
+  it('applies the personal default board preference only from the root redirect', async () => {
+    const workspaceConfigBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          value: JSON.stringify({
+            target: 'tasks',
+            submodule: 'boards',
+          }),
+        },
+      }),
+    };
+    const userConfigBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { value: 'true' },
+      }),
+    };
+    const defaultBoardBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      ilike: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: { id: 'board-1' },
+        error: null,
+      }),
+    };
+    const adminFrom = vi.fn((table: string) => {
+      if (table === 'user_workspace_configs') return workspaceConfigBuilder;
+      if (table === 'user_configs') return userConfigBuilder;
+      return defaultBoardBuilder;
+    });
+
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+    mocks.getUserDefaultWorkspace.mockResolvedValue({
+      id: 'ws-personal',
+      personal: true,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(new NextRequest('http://localhost/'));
+
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost/personal/tasks/boards/board-1'
+    );
+    expect(adminFrom).toHaveBeenCalledWith('user_configs');
+    expect(adminFrom).toHaveBeenCalledWith('workspace_boards');
+  });
+
   it('preserves locale when redirecting root to a configured workspace board', async () => {
     const adminQueryBuilder = {
       select: vi.fn().mockReturnThis(),
