@@ -1,3 +1,4 @@
+import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import { WORKSPACE_STORAGE_SECRET_DEFINITIONS } from '@/lib/workspace-storage-config';
 
 export interface SecretDefinition {
@@ -176,6 +177,12 @@ export const KNOWN_SECRETS: SecretDefinition[] = [
   {
     name: 'ENABLE_USERS',
     description: 'Enables user management features.',
+    type: 'boolean',
+    defaultValue: 'false',
+  },
+  {
+    name: TOPIC_ANNOUNCEMENTS_SECRET,
+    description: 'Enables reusable topic announcements for user groups.',
     type: 'boolean',
     defaultValue: 'false',
   },

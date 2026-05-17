@@ -24,6 +24,10 @@ import {
   NON_RATE_LIMIT_SECRETS,
   RATE_LIMIT_SECRETS,
 } from './constants';
+import {
+  getSecretNameOptions,
+  normalizeCustomSecretName,
+} from './secret-name-options';
 
 interface Props {
   wsId: string;
@@ -107,6 +111,12 @@ export default function SecretForm({
   const selectedSecret = availableSecrets.find(
     (secret) => secret.name === watchedName
   );
+  const secretNameOptions = getSecretNameOptions({
+    availableSecrets,
+    currentName: data?.name,
+    existingSecrets,
+    selectedName: watchedName,
+  });
   const valueOptions =
     selectedSecret?.options ??
     (selectedSecret?.type === 'boolean' ? ['true', 'false'] : undefined);
@@ -191,16 +201,7 @@ export default function SecretForm({
                       mode="single"
                       className="w-full"
                       placeholder={t('ws-secrets.name')}
-                      options={availableSecrets
-                        .filter(
-                          (secret) =>
-                            !existingSecrets.includes(secret.name) ||
-                            data?.name === secret.name
-                        )
-                        .map((secret) => ({
-                          value: secret.name,
-                          label: secret.name,
-                        }))}
+                      options={secretNameOptions}
                       selected={field.value}
                       onChange={(val) => {
                         const value = Array.isArray(val) ? val[0] : val;
@@ -234,12 +235,14 @@ export default function SecretForm({
                         }
                       }}
                       onCreate={(val) => {
-                        field.onChange(
-                          val
-                            .replace(/-/g, '_')
-                            .replace(/\s/g, '_')
-                            .toUpperCase()
-                        );
+                        const value = normalizeCustomSecretName(val);
+                        if (!value) return;
+
+                        form.setValue('name', value, {
+                          shouldDirty: true,
+                          shouldTouch: true,
+                          shouldValidate: true,
+                        });
                       }}
                     />
                   )}
