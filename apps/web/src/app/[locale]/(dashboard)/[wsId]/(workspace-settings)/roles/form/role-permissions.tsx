@@ -21,10 +21,12 @@ export default function RoleFormPermissionsSection({
   wsId,
   user,
   form,
+  permissionCatalog,
   enabledPermissionsCount,
 }: SectionProps) {
   const t = useTranslations();
   const groups = permissionGroups({
+    catalog: permissionCatalog,
     t: t as (key: string) => string,
     wsId,
     user,

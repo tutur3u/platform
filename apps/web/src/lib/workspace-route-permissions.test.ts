@@ -18,6 +18,27 @@ describe('workspace route permission mapping', () => {
     ]);
   });
 
+  it('maps dashboard routes to the same feature permissions exposed in navigation', () => {
+    expect(getWorkspaceRoutePermissionRequirements(['education'])).toEqual([
+      'ai_lab',
+    ]);
+    expect(getWorkspaceRoutePermissionRequirements(['cron'])).toEqual([
+      'ai_lab',
+    ]);
+    expect(getWorkspaceRoutePermissionRequirements(['ai', 'spark'])).toEqual([
+      'manage_projects',
+    ]);
+    expect(getWorkspaceRoutePermissionRequirements(['posts'])).toContain(
+      'approve_posts'
+    );
+    expect(
+      getWorkspaceRoutePermissionRequirements(['users', 'groups', 'indicators'])
+    ).toContain('view_user_groups_scores');
+    expect(
+      getWorkspaceRoutePermissionRequirements(['users', 'guest-leads'])
+    ).toEqual(['create_lead_generations']);
+  });
+
   it('allows guest admin to satisfy mapped route permissions only', () => {
     expect(
       hasRequiredWorkspaceRoutePermission({

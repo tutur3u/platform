@@ -3,7 +3,7 @@ import type { PermissionId } from '@tuturuuu/types';
 export function getWorkspaceRoutePermissionRequirements(
   routeSegments: string[]
 ): PermissionId[] | null {
-  const [section, subSection] = routeSegments;
+  const [section, subSection, nestedSection] = routeSegments;
 
   if (!section) {
     return null;
@@ -11,9 +11,16 @@ export function getWorkspaceRoutePermissionRequirements(
 
   switch (section) {
     case 'ai':
+      if (subSection === 'spark') {
+        return ['manage_projects'];
+      }
+      return ['ai_lab'];
+    case 'crawlers':
+    case 'cron':
     case 'datasets':
     case 'models':
     case 'pipelines':
+    case 'queues':
       return ['ai_lab'];
     case 'ai-chat':
     case 'chat':
@@ -28,13 +35,9 @@ export function getWorkspaceRoutePermissionRequirements(
     case 'documents':
       return ['manage_documents'];
     case 'drive':
-      return ['view_drive', 'manage_drive'];
+      return ['manage_drive'];
     case 'education':
-      return [
-        'view_user_groups',
-        'view_user_groups_posts',
-        'view_user_groups_reports',
-      ];
+      return ['ai_lab'];
     case 'epm':
     case 'external-projects':
       return ['manage_external_projects', 'publish_external_projects'];
@@ -50,7 +53,15 @@ export function getWorkspaceRoutePermissionRequirements(
         return ['view_transactions'];
       }
       if (subSection === 'wallets') {
-        return ['manage_finance', 'change_finance_wallets'];
+        return ['view_transactions', 'change_finance_wallets'];
+      }
+      if (
+        subSection === 'analytics' ||
+        subSection === 'budgets' ||
+        subSection === 'debts' ||
+        subSection === 'tags'
+      ) {
+        return ['manage_finance', 'view_finance_stats'];
       }
       return ['manage_finance', 'view_finance_stats'];
     case 'infrastructure':
@@ -79,6 +90,7 @@ export function getWorkspaceRoutePermissionRequirements(
         'view_user_groups_posts',
         'create_user_groups_posts',
         'update_user_groups_posts',
+        'approve_posts',
       ];
     case 'roles':
       return ['manage_workspace_roles'];
@@ -100,7 +112,17 @@ export function getWorkspaceRoutePermissionRequirements(
       return ['manage_workspace_members'];
     case 'users':
       if (subSection === 'groups') {
+        if (nestedSection === 'indicators') {
+          return [
+            'view_user_groups_scores',
+            'create_user_groups_scores',
+            'update_user_groups_scores',
+            'delete_user_groups_scores',
+          ];
+        }
+
         return [
+          'manage_users',
           'view_user_groups',
           'create_user_groups',
           'update_user_groups',
@@ -114,7 +136,24 @@ export function getWorkspaceRoutePermissionRequirements(
         return ['approve_reports', 'approve_posts'];
       }
       if (subSection === 'attendance') {
-        return ['check_user_attendance', 'update_user_attendance'];
+        return [
+          'manage_users',
+          'check_user_attendance',
+          'update_user_attendance',
+        ];
+      }
+      if (
+        subSection === 'feedbacks' ||
+        subSection === 'group-tags' ||
+        subSection === 'tutoring'
+      ) {
+        return ['manage_users', 'view_user_groups'];
+      }
+      if (subSection === 'guest-leads') {
+        return ['create_lead_generations'];
+      }
+      if (subSection === 'structure') {
+        return ['manage_users'];
       }
       return [
         'manage_users',

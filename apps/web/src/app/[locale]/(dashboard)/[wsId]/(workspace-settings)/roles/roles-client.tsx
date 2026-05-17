@@ -45,10 +45,10 @@ function getEnabledPermissionCount({
   );
 
   if (enabled.has('admin' as PermissionId)) {
-    return totalPermissions({ wsId, user });
+    return totalPermissions({ catalog: 'full', wsId, user });
   }
 
-  return permissions({ wsId, user }).filter((permission) =>
+  return permissions({ catalog: 'full', wsId, user }).filter((permission) =>
     enabled.has(permission.id)
   ).length;
 }
@@ -68,7 +68,7 @@ function DefaultPermissionsPanel({
 }) {
   const t = useTranslations();
   const enabledCount = getEnabledPermissionCount({ defaultData, user, wsId });
-  const totalCount = totalPermissions({ wsId, user });
+  const totalCount = totalPermissions({ catalog: 'full', wsId, user });
   const isGuest = memberType === 'GUEST';
   const roleData = defaultData
     ? {

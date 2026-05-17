@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  type PermissionCatalog,
   permissionGroups,
   totalPermissions,
 } from '@tuturuuu/utils/permissions';
@@ -71,6 +72,7 @@ interface Props {
   defaultMemberType?: WorkspaceDefaultPermissionMemberType;
   defaultName?: string;
   forceDefault?: boolean;
+  permissionCatalog?: PermissionCatalog;
 
   onFinish?: (data: FormType) => void;
 }
@@ -81,6 +83,7 @@ export interface SectionProps {
   roleId?: string;
   initialMembers?: WorkspaceUser[];
   initialMembersCount?: number;
+  permissionCatalog: PermissionCatalog;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
@@ -92,6 +95,7 @@ export function RoleForm({
   defaultMemberType = 'MEMBER',
   defaultName,
   forceDefault,
+  permissionCatalog = forceDefault ? 'full' : 'workspace',
   onFinish,
 }: Props) {
   const t = useTranslations();
@@ -100,12 +104,14 @@ export function RoleForm({
   const roleId = data?.id;
 
   const rootGroups = permissionGroups({
+    catalog: 'full',
     t: t as (key: string) => string,
-    wsId: ROOT_WORKSPACE_ID,
+    wsId,
     user,
   });
 
   const groups = permissionGroups({
+    catalog: permissionCatalog,
     t: t as (key: string) => string,
     wsId,
     user,
@@ -211,7 +217,11 @@ export function RoleForm({
   }));
 
   const adminEnabled = form.watch('permissions.admin');
-  const totalCount = totalPermissions({ wsId, user });
+  const totalCount = totalPermissions({
+    catalog: permissionCatalog,
+    wsId,
+    user,
+  });
 
   const currentCount = adminEnabled
     ? totalCount
@@ -223,6 +233,7 @@ export function RoleForm({
     roleId,
     initialMembers: data?.members as WorkspaceUser[] | undefined,
     initialMembersCount: data?.user_count,
+    permissionCatalog,
     form,
     enabledPermissionsCount,
   };
@@ -250,8 +261,7 @@ export function RoleForm({
             </TabsTrigger>
             <TabsTrigger value="permissions">
               <PencilRuler className="mr-1 h-5 w-5" />
-              {t('ws-roles.permissions')} ({currentCount}/
-              {totalPermissions({ wsId, user })})
+              {t('ws-roles.permissions')} ({currentCount}/{totalCount})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />
