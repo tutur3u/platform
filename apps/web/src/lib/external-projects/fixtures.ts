@@ -929,6 +929,154 @@ export const externalProjectAdapterFixtures: Record<
       },
     ],
   },
+  shiraoki: {
+    adapter: 'shiraoki',
+    sourceReference: '../shiraoki/lib/cms.ts',
+    profileData: {
+      brand: 'Shiraoki',
+      brandName: 'Shiraoki',
+      deliveryPreset: 'shopify-storefront',
+    },
+    collections: [
+      {
+        collectionType: 'site-config',
+        slug: 'site-config',
+        sourceId: 'shiraoki:collection:site-config',
+        title: 'Site Config',
+        entries: [
+          {
+            sourceId: 'shiraoki:site-config:main',
+            slug: 'main',
+            title: 'Main',
+            summary: 'Primary storefront identity and portability settings.',
+            status: 'published',
+            profileData: {
+              brandName: 'Shiraoki',
+            },
+            blocks: [
+              {
+                sourceId: 'shiraoki:site-config:main:body',
+                blockType: 'markdown',
+                content: {
+                  markdown:
+                    'A minimal Shopify storefront coordinated through Tuturuuu CMS and Auth.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'launch-gate',
+        slug: 'launch-gate',
+        sourceId: 'shiraoki:collection:launch-gate',
+        title: 'Launch Gate',
+        entries: [
+          {
+            sourceId: 'shiraoki:launch-gate:main',
+            slug: 'main',
+            title: 'Launch Gate',
+            summary: 'Enter password for early access.',
+            status: 'published',
+            profileData: {
+              enabled: false,
+              message: 'Enter password for early access.',
+            },
+            blocks: [],
+          },
+        ],
+      },
+      {
+        collectionType: 'navigation',
+        slug: 'navigation',
+        sourceId: 'shiraoki:collection:navigation',
+        title: 'Navigation',
+        entries: [
+          {
+            sourceId: 'shiraoki:navigation:shop',
+            slug: 'shop',
+            title: 'Shop',
+            status: 'published',
+            profileData: {
+              href: '/',
+            },
+            blocks: [],
+          },
+          {
+            sourceId: 'shiraoki:navigation:catalog',
+            slug: 'catalog',
+            title: 'Catalog',
+            status: 'published',
+            profileData: {
+              href: '/collections/all',
+            },
+            blocks: [],
+          },
+          {
+            sourceId: 'shiraoki:navigation:account',
+            slug: 'account',
+            title: 'Account',
+            status: 'published',
+            profileData: {
+              href: '/account',
+            },
+            blocks: [],
+          },
+        ],
+      },
+      {
+        collectionType: 'editorial-sections',
+        slug: 'editorial-sections',
+        sourceId: 'shiraoki:collection:editorial-sections',
+        title: 'Editorial Sections',
+        entries: [
+          {
+            sourceId: 'shiraoki:editorial:minimal-commerce',
+            slug: 'minimal-commerce',
+            title: 'Frictionless by subtraction',
+            summary:
+              'A single-domain shop surface: catalog, account, admin, and cart stay close together until Shopify checkout takes payment.',
+            status: 'published',
+            profileData: {
+              eyebrow: 'System',
+            },
+            blocks: [],
+          },
+          {
+            sourceId: 'shiraoki:editorial:barebones-complete',
+            slug: 'barebones-complete',
+            title: 'Barebones without feeling unfinished',
+            summary:
+              'Compact text, clear actions, real product media, and no decorative filler.',
+            status: 'published',
+            profileData: {
+              eyebrow: 'Direction',
+            },
+            blocks: [],
+          },
+        ],
+      },
+      {
+        collectionType: 'shopify-settings',
+        slug: 'shopify-settings',
+        sourceId: 'shiraoki:collection:shopify-settings',
+        title: 'Shopify Settings',
+        entries: [
+          {
+            sourceId: 'shiraoki:shopify-settings:main',
+            slug: 'main',
+            title: 'Shopify Settings',
+            summary: 'Storefront integration settings for the active shop.',
+            status: 'published',
+            profileData: {
+              featuredCollectionHandle: 'all',
+            },
+            blocks: [],
+          },
+        ],
+      },
+    ],
+  },
   shu: {
     adapter: 'shu',
     sourceReference: '../shu/lib/shu-external-project-manifest.ts',

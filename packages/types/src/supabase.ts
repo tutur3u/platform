@@ -31755,7 +31755,8 @@ export type Database = {
         | 'theguyser'
         | 'exocorpse'
         | 'shu'
-        | 'yashie';
+        | 'yashie'
+        | 'shiraoki';
       external_project_entry_status:
         | 'draft'
         | 'scheduled'
@@ -33914,6 +33915,7 @@ export const Constants = {
         'exocorpse',
         'shu',
         'yashie',
+        'shiraoki',
       ],
       external_project_entry_status: [
         'draft',

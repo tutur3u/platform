@@ -1,0 +1,162 @@
+---
+title: 'Shiraoki'
+description: 'How Shiraoki is wired as a Shopify-backed external storefront through Tuturuuu CMS and app coordination.'
+updatedAt: '2026-05-17'
+---
+
+Shiraoki is a standalone headless Shopify storefront in the sibling
+`../shiraoki` repository. Tuturuuu does not own Shiraoki commerce records.
+Tuturuuu owns the external-project binding, CMS configuration, launch gate,
+central login handoff, and app-token access used by Shiraoki admin/account
+surfaces.
+
+## Ownership Boundary
+
+Keep the data split explicit:
+
+- Shopify owns products, variants, inventory availability, cart checkout URLs,
+  payment completion, customer addresses, and order history.
+- Shiraoki owns the storefront runtime, local server helpers, route transitions,
+  cart UI, product gallery, account center, and owner admin workflow.
+- Tuturuuu owns CMS configuration, workspace binding, external app
+  registration, app-token exchange, launch-gate content, navigation, editorial
+  sections, and shopper-only data that is not naturally Shopify-owned.
+
+Do not duplicate Shopify products into Tuturuuu CMS records for normal catalog
+operation. CMS records should only hold presentation/configuration metadata.
+
+## Platform Adapter
+
+The platform adapter ID is `shiraoki`.
+
+The adapter is registered in:
+
+- `apps/web/src/lib/external-projects/constants.ts`
+- `apps/web/src/lib/external-projects/fixtures.ts`
+- `apps/cms/src/features/cms-studio/constants.ts`
+- `packages/types/src/supabase.ts`
+- `apps/database/supabase/migrations/20260517141000_add_shiraoki_external_project_adapter.sql`
+
+The canonical project created by setup routes should be `shiraoki-main`.
+Workspace bindings must point at a canonical project whose adapter is
+`shiraoki`, or app-token exchanges for Shiraoki external-project scopes will
+be rejected.
+
+## CMS Collections
+
+Shiraoki's default CMS collection slugs are:
+
+- `site-config`: brand name and portable storefront identity
+- `launch-gate`: password screen state, copy, and early-access passphrase
+- `navigation`: storefront nav labels and hrefs
+- `editorial-sections`: minimal home-page supporting sections
+- `shopify-settings`: active Shopify presentation settings, such as featured
+  collection handle
+
+These collection slugs are defined in both `apps/web` and `apps/cms` so the
+root platform console and standalone CMS app agree on adapter defaults.
+
+## External App Registration
+
+Register Shiraoki from the Infrastructure external-app registry before using
+live auth:
+
+1. Create external app ID `shiraoki`.
+2. Add every allowed Shiraoki origin, for example
+   `http://localhost:3000`, staging origins, and the production storefront
+   domain.
+3. Allow only the scopes Shiraoki needs. For admin/CMS setup use
+   `external-projects:*`; for preview or read-only storefront access prefer
+   `external-projects:read`.
+4. Issue an app secret and store it in Shiraoki as `TUTURUUU_APP_SECRET`.
+
+The secret is shown once. Tuturuuu stores only the hash in root workspace
+secrets.
+
+## Auth Flow
+
+Shiraoki sends users to `apps/web` login with a return URL pointing back to
+`/verify-token?nextUrl=...` on the Shiraoki origin.
+
+After login, `apps/web` validates that the return origin belongs to the
+registered Shiraoki external app and adds a short-lived cross-app token to the
+return URL. Shiraoki then calls:
+
+```http
+POST /api/v1/auth/app-token/exchange
+```
+
+with `appId: "shiraoki"`, the app secret, the handoff token, requested scopes,
+and the bound workspace ID when external-project scopes are requested.
+
+The exchange succeeds only when:
+
+- the Shiraoki app secret is valid
+- the cross-app token targets `shiraoki`
+- the workspace has external projects enabled
+- the workspace binding's canonical adapter is `shiraoki`
+- the user has the permission required by the requested external-project scope
+
+Shiraoki should store the returned bearer token in its own HttpOnly session
+cookie and call Tuturuuu APIs with that token. Do not give Shiraoki production
+Supabase service-role credentials.
+
+## Environment
+
+Shiraoki expects these runtime variables:
+
+```bash
+SHOPIFY_STORE_DOMAIN=your-shop.myshopify.com
+SHOPIFY_STOREFRONT_ACCESS_TOKEN=...
+SHOPIFY_ADMIN_ACCESS_TOKEN=...
+SHOPIFY_API_VERSION=2026-01
+TUTURUUU_WEB_APP_URL=https://tuturuuu.com
+TUTURUUU_APP_ID=shiraoki
+TUTURUUU_APP_SECRET=...
+TUTURUUU_CMS_WORKSPACE_ID=...
+NEXT_PUBLIC_SHIRAOKI_SITE_URL=https://shiraoki.example
+SHIRAOKI_STOREFRONT_PASSWORD=...
+```
+
+Store Shopify Admin API credentials only on trusted server runtimes or platform
+workspace secrets. Never expose Admin API tokens to client code.
+
+## Local Development
+
+From the Shiraoki repo:
+
+```bash
+bun run lint
+bun run build
+bun run dev -- -p 3000
+```
+
+When Shopify credentials are absent, Shiraoki falls back to demo products and a
+demo cart so product pages, dark mode, responsive catalog layout, and cart UI
+remain testable.
+
+For local Tuturuuu auth, run the central platform app and register the local
+Shiraoki origin as an external app:
+
+```bash
+TUTURUUU_WEB_APP_URL=http://localhost:7803
+NEXT_PUBLIC_SHIRAOKI_SITE_URL=http://localhost:3000
+TUTURUUU_APP_ID=shiraoki
+```
+
+## Operational Checks
+
+After platform adapter changes, run focused checks first:
+
+```bash
+cd apps/web
+bun run test src/lib/external-projects/fixtures.test.ts src/lib/external-projects/access.test.ts
+bun run test src/app/api/v1/auth/app-token/exchange/route.test.ts
+bun run type-check
+
+cd ../cms
+bun run type-check
+```
+
+Run `bun check` from the platform root before landing the change when the
+worktree is not blocked by unrelated dirty files.

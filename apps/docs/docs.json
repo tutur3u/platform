@@ -103,6 +103,7 @@
                 "pages": [
                   "platform/applications/cms",
                   "platform/applications/inventory",
+                  "platform/applications/shiraoki",
                   "platform/applications/nova",
                   "platform/applications/tasks",
                   "platform/applications/learn",

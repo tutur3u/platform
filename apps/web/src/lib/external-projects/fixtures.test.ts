@@ -6,6 +6,7 @@ describe('external project adapter fixtures', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
       'exocorpse',
       'junly',
+      'shiraoki',
       'shu',
       'theguyser',
       'yashie',
@@ -14,7 +15,7 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(junly|yoola|theguyser|exocorpse|shu|yashie)/
+        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -57,6 +58,18 @@ describe('external project adapter fixtures', () => {
         (collection) => collection.slug
       )
     ).toEqual(['portfolio-art', 'writing', 'games']);
+
+    expect(
+      externalProjectAdapterFixtures.shiraoki.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual([
+      'site-config',
+      'launch-gate',
+      'navigation',
+      'editorial-sections',
+      'shopify-settings',
+    ]);
 
     expect(
       externalProjectAdapterFixtures.shu.collections.map(

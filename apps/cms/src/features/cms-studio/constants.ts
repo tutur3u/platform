@@ -13,6 +13,7 @@ export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
   'exocorpse',
   'shu',
   'yashie',
+  'shiraoki',
 ];
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
@@ -47,6 +48,13 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'blog-posts',
     'shop-products',
     'social-links',
+  ],
+  shiraoki: [
+    'site-config',
+    'launch-gate',
+    'navigation',
+    'editorial-sections',
+    'shopify-settings',
   ],
   yoola: ['artworks', 'lore-capsules', 'singleton-sections'],
 } satisfies Record<ExternalProjectAdapterKind, string[]>;
