@@ -27,8 +27,6 @@ export const LEARN_APP_URL = resolveInternalAppUrl({
   candidates: [
     process.env.LEARN_APP_URL,
     process.env.NEXT_PUBLIC_LEARN_APP_URL,
-    process.env.TULEARN_APP_URL,
-    process.env.NEXT_PUBLIC_TULEARN_APP_URL,
     process.env.NEXT_PUBLIC_APP_URL,
     process.env.BASE_URL,
   ],

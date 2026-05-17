@@ -379,6 +379,38 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('auth');
   });
 
+  it('uses a classroom-friendly bucket for cross-app return handoffs', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+    mocks.limit.mockResolvedValueOnce({
+      success: false,
+      limit: 180,
+      remaining: 0,
+      reset: Date.now() + 15_000,
+    });
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/auth/cross-app-return', 'POST'),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response?.status).toBe(429);
+    expect(response?.headers.get('X-RateLimit-Limit')).toBe('180');
+    expect(response?.headers.get('X-RateLimit-Policy')).toBe(
+      'cross-app-return'
+    );
+  });
+
   it('keeps verify-otp on the strict auth bucket', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
