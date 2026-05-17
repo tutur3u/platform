@@ -87,6 +87,13 @@ export type WorkspaceTutoringSession = Tables<'workspace_tutoring_sessions'> & {
   attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
   reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
 };
+export type TopicAnnouncement = Tables<'topic_announcements'>;
+export type TopicAnnouncementBatch = Tables<'topic_announcement_batches'>;
+export type TopicAnnouncementContact = Tables<'topic_announcement_contacts'>;
+export type TopicAnnouncementContactVerification =
+  Tables<'topic_announcement_contact_verifications'>;
+export type TopicAnnouncementRecipient =
+  Tables<'topic_announcement_recipients'>;
 export interface WorkspaceStorageFileMetadata {
   size?: number;
   mimetype?: string;

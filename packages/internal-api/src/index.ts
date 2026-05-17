@@ -504,6 +504,26 @@ export {
   updateWorkspaceBreakType,
 } from './time-tracking';
 export {
+  createTopicAnnouncement,
+  createTopicAnnouncementContact,
+  importTopicAnnouncements,
+  listTopicAnnouncementContacts,
+  listTopicAnnouncements,
+  requestTopicAnnouncementContactVerification,
+  sendTopicAnnouncement,
+  sendTopicAnnouncementsBulk,
+  type TopicAnnouncementContact,
+  type TopicAnnouncementContactPayload,
+  type TopicAnnouncementImportPayload,
+  type TopicAnnouncementImportRow,
+  type TopicAnnouncementPayload,
+  type TopicAnnouncementRecord,
+  type TopicAnnouncementStatus,
+  type TopicAnnouncementVerificationStatus,
+  updateTopicAnnouncement,
+  updateTopicAnnouncementContact,
+} from './topic-announcements';
+export {
   type CompleteTulearnAssignmentPayload,
   type CourseListItem,
   type CourseListResponse,

@@ -145,9 +145,12 @@ export function getWorkspaceRoutePermissionRequirements(
       if (
         subSection === 'feedbacks' ||
         subSection === 'group-tags' ||
+        subSection === 'topic-announcements' ||
         subSection === 'tutoring'
       ) {
-        return ['manage_users', 'view_user_groups'];
+        return subSection === 'topic-announcements'
+          ? ['manage_users', 'send_user_group_post_emails']
+          : ['manage_users', 'view_user_groups'];
       }
       if (subSection === 'guest-leads') {
         return ['create_lead_generations'];
