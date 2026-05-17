@@ -190,6 +190,7 @@ export async function validateApiKey(
           .from('workspace_default_permissions')
           .select('permission')
           .eq('ws_id', keyRecord.ws_id)
+          .eq('member_type', 'MEMBER')
           .eq('enabled', true);
 
         if (defaultPermissions) {

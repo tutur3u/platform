@@ -33,6 +33,10 @@ import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
+import {
+  getWorkspaceRoutePermissionRequirements,
+  hasRequiredWorkspaceRoutePermission,
+} from './lib/workspace-route-permissions';
 
 // Paths that should bypass onboarding check (public/marketing pages + auth flows)
 const ONBOARDING_BYPASS_PATHS = [
@@ -712,6 +716,106 @@ function getRootDynamicSegment(pathname: string): string | null {
   return segments[0] ?? null;
 }
 
+function buildGuestRouteDeniedResponse(
+  req: NextRequest,
+  authRes: NextResponse
+) {
+  const deniedResponse = NextResponse.rewrite(
+    new URL(RESERVED_ROOT_NOT_FOUND_PATH, req.nextUrl)
+  );
+  propagateAuthCookies(authRes, deniedResponse);
+  return deniedResponse;
+}
+
+async function guardGuestWorkspaceRoute({
+  authRes,
+  hasLocaleInPath,
+  pathSegments,
+  req,
+}: {
+  authRes: NextResponse;
+  hasLocaleInPath: boolean;
+  pathSegments: string[];
+  req: NextRequest;
+}): Promise<NextResponse | null> {
+  const workspaceIndex = hasLocaleInPath ? 1 : 0;
+  const workspaceSlug = pathSegments[workspaceIndex];
+
+  if (
+    !workspaceSlug ||
+    pathSegments.length <= workspaceIndex + 1 ||
+    workspaceSlug.startsWith(RESERVED_ROOT_SEGMENT_PREFIX) ||
+    workspaceSlug.startsWith(BLOCKED_ROOT_SEGMENT_PREFIX) ||
+    !isWorkspaceHomeRedirectCandidate(workspaceSlug)
+  ) {
+    return null;
+  }
+
+  try {
+    const supabase = await createClient();
+    const { user } = await resolveAuthenticatedSessionUser(supabase);
+
+    if (!user) {
+      return null;
+    }
+
+    const resolvedWorkspaceId = await normalizeWorkspaceId(
+      workspaceSlug,
+      supabase
+    );
+
+    if (await isPersonalWorkspace(resolvedWorkspaceId)) {
+      return null;
+    }
+
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: resolvedWorkspaceId,
+      userId: user.id,
+      supabase,
+      requiredType: 'ANY',
+    });
+
+    if (!membership.ok || membership.membershipType !== 'GUEST') {
+      return null;
+    }
+
+    const requiredPermissions = getWorkspaceRoutePermissionRequirements(
+      pathSegments.slice(workspaceIndex + 1)
+    );
+
+    if (!requiredPermissions) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const { data, error } = await sbAdmin
+      .from('workspace_default_permissions')
+      .select('permission')
+      .eq('ws_id', resolvedWorkspaceId)
+      .eq('member_type', 'GUEST')
+      .eq('enabled', true);
+
+    if (error) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+
+    const grantedPermissions = (data ?? []).map((row) => row.permission);
+
+    if (
+      !hasRequiredWorkspaceRoutePermission({
+        grantedPermissions,
+        requiredPermissions,
+      })
+    ) {
+      return buildGuestRouteDeniedResponse(req, authRes);
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
     if (isStorageUnzipCallbackRequest(req)) {
@@ -993,6 +1097,16 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     }
   }
 
+  const guestRouteGuardResponse = await guardGuestWorkspaceRoute({
+    authRes,
+    hasLocaleInPath,
+    pathSegments,
+    req,
+  });
+  if (guestRouteGuardResponse) {
+    return guestRouteGuardResponse;
+  }
+
   // Handle direct workspace home routes (/{wsId} or /{locale}/{wsId})
   // and apply workspace-specific default navigation if configured.
   const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
@@ -1029,6 +1143,10 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
           if (!memberCheck.ok) {
             return handleLocaleWithAuthCookies(req, authRes);
+          }
+
+          if (memberCheck.membershipType === 'GUEST') {
+            return buildGuestRouteDeniedResponse(req, authRes);
           }
 
           const { path, staleConfigValue } = await resolveRootRedirectPath(

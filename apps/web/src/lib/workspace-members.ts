@@ -154,6 +154,7 @@ export async function getWorkspaceMembers({
       .from('workspace_default_permissions')
       .select('permission, enabled')
       .eq('ws_id', wsId)
+      .eq('member_type', 'MEMBER')
       .eq('enabled', true);
 
   if (defaultPermissionsError) throw defaultPermissionsError;

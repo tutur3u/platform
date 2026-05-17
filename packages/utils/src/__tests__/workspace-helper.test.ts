@@ -308,7 +308,7 @@ describe('getPermissions membership type gate', () => {
     vi.clearAllMocks();
   });
 
-  it('returns null when caller membership is GUEST', async () => {
+  it('returns null when caller membership is GUEST without enabled guest defaults', async () => {
     const membershipQuery = {
       select: vi.fn(),
       eq: vi.fn(),
@@ -348,9 +348,37 @@ describe('getPermissions membership type gate', () => {
       }),
     });
 
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'owner-1' },
+      error: null,
+    });
+
+    const defaultPermissionsQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+    };
+    defaultPermissionsQuery.select.mockReturnValue(defaultPermissionsQuery);
+    defaultPermissionsQuery.eq.mockImplementation((field) => {
+      if (field === 'enabled') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return defaultPermissionsQuery;
+    });
+
     mockCreateAdminClient.mockResolvedValue({
-      from: vi.fn(() => {
-        throw new Error('Admin client should not be called for GUEST caller');
+      from: vi.fn((table: string) => {
+        if (table === 'workspaces') return workspaceQuery;
+        if (table === 'workspace_default_permissions') {
+          return defaultPermissionsQuery;
+        }
+        throw new Error(`Unexpected admin table lookup: ${table}`);
       }),
     });
 
@@ -359,6 +387,91 @@ describe('getPermissions membership type gate', () => {
     });
 
     expect(permissions).toBeNull();
+    expect(defaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'member_type',
+      'GUEST'
+    );
+  });
+
+  it('uses guest default permissions for GUEST callers', async () => {
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: { type: 'GUEST' },
+      error: null,
+    });
+
+    mockCreateClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'user-1', email: 'user@example.com' } },
+        }),
+      },
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_members') return membershipQuery;
+        throw new Error(`Unexpected table lookup: ${table}`);
+      }),
+    });
+
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'owner-1' },
+      error: null,
+    });
+
+    const defaultPermissionsQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+    };
+    defaultPermissionsQuery.select.mockReturnValue(defaultPermissionsQuery);
+    defaultPermissionsQuery.eq.mockImplementation((field) => {
+      if (field === 'enabled') {
+        return Promise.resolve({
+          data: [{ permission: 'manage_workspace_roles' }],
+          error: null,
+        });
+      }
+      return defaultPermissionsQuery;
+    });
+
+    mockCreateAdminClient.mockResolvedValue({
+      from: vi.fn((table: string) => {
+        if (table === 'workspaces') return workspaceQuery;
+        if (table === 'workspace_default_permissions') {
+          return defaultPermissionsQuery;
+        }
+        throw new Error(`Unexpected admin table lookup: ${table}`);
+      }),
+    });
+
+    const permissions = await getPermissions({
+      wsId: '11111111-1111-4111-8111-111111111111',
+    });
+
+    expect(permissions?.membershipType).toBe('GUEST');
+    expect(permissions?.permissions).toEqual(['manage_workspace_roles']);
+    expect(permissions?.containsPermission('manage_workspace_roles')).toBe(
+      true
+    );
+    expect(permissions?.containsPermission('manage_workspace_members')).toBe(
+      false
+    );
+    expect(defaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'member_type',
+      'GUEST'
+    );
   });
 });
 

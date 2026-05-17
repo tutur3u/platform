@@ -1,7 +1,7 @@
 ---
 title: "Workspaces & Permissions"
 description: "Complete reference for workspace identity, membership, routing, and effective permissions in apps/web"
-updatedAt: "2026-04-19"
+updatedAt: "2026-05-16"
 ---
 
 This page documents the actual workspace and permission model used by `apps/web` today.
@@ -47,10 +47,11 @@ flowchart LR
 | Workspace | `workspaces` | A top-level collaboration boundary and the scope for most product data. |
 | Personal workspace | `workspaces.personal = true` | A one-user workspace that is canonicalized to the `personal` URL slug. |
 | Root workspace | `ROOT_WORKSPACE_ID` | The internal/system workspace, canonicalized to the `internal` URL slug. |
-| Membership | `workspace_members` | Grants baseline access to a workspace. |
+| Membership | `workspace_members` | Grants baseline access to a workspace as either `MEMBER` or `GUEST`. |
 | Workspace role | `workspace_roles` | A named collection of enabled permission bits for one workspace. |
 | Role assignment | `workspace_role_members` | Links a user to one or more workspace roles. |
-| Default permissions | `workspace_default_permissions` | Workspace-wide permissions every member receives. |
+| Default permissions | `workspace_default_permissions` | Workspace-wide defaults scoped by `member_type`. `MEMBER` rows apply to members and API keys; `GUEST` rows apply to guests. |
+| Guest resource permissions | `workspace_guest_permissions` | Per-guest or resource-scoped guest grants such as course access. |
 | API key | `workspace_api_keys` | Workspace-bound SDK credential that reuses the same permission IDs. |
 
 ## Membership Is Not The Same Thing As A Workspace User Record
@@ -127,10 +128,12 @@ If that lookup fails, the wrapper calls `notFound()`.
 Page components that use `WorkspaceWrapper` already know:
 
 - the user is authenticated
-- the user is a member of the workspace
+- the user has a `workspace_members` row for the workspace
 - the child callback receives the canonical UUID as `wsId`
 
 That does **not** mean the user has feature-level permissions. Fine-grained authorization still needs `getPermissions()`.
+
+It also does not mean the user is a full member. Guests can have `workspace_members.type = 'GUEST'`, so non-guest-capable pages and APIs must explicitly require `MEMBER`.
 
 ## Route-Handler Workspace Resolution
 
@@ -162,19 +165,24 @@ Its behavior is the key thing to understand.
 - `workspace_role_members`
 - `workspace_roles`
 - `workspace_role_permissions`
-- `workspace_default_permissions`
+- `workspace_default_permissions.member_type`
 - `workspaces.creator_id`
 
 ### Evaluation algorithm
 
 1. Authenticate the current user.
 2. Normalize the workspace ID.
-3. Load role-derived permissions for the current user in that workspace.
-4. Load workspace-wide default permissions.
-5. Load the workspace creator ID.
-6. If the user is the creator, return the full permission catalog from `packages/utils/src/permissions.tsx`.
-7. Otherwise return the deduplicated union of role-derived and default permissions.
-8. If the user is not the creator and the union is empty, return `null`.
+3. Verify whether the caller is a `MEMBER` or `GUEST`.
+4. For `MEMBER`, load role-derived permissions for the current user in that workspace.
+5. Load workspace-wide default permissions where `member_type` matches the caller.
+6. Load the workspace creator ID.
+7. If the user is the creator and a `MEMBER`, return the full permission catalog from `packages/utils/src/permissions.tsx`.
+8. Otherwise return the deduplicated union of role-derived and default permissions.
+9. If the user is not the creator and the union is empty, return `null`.
+
+`MEMBER` defaults are the backward-compatible default. Existing rows became `member_type = 'MEMBER'`, and `/api/v1/workspaces/[wsId]/roles/default` still defaults to `memberType=MEMBER` when the query parameter is omitted.
+
+`GUEST` defaults use the same full permission catalog as members, but the default is deny: a missing guest row means no permission. The dashboard proxy applies this as a route guard for guests: members keep existing behavior, while guests may open only routes that map to an enabled guest default permission. Routes without a permission mapping are denied for guests even when the guest has `admin`.
 
 ### Why creator fallback matters
 
@@ -188,11 +196,13 @@ This is the most important corrective note for anyone reading older docs or lega
 
 `apps/web` permission checks do **not** currently derive access from `workspace_members.role`.
 
-Modern permission evaluation reads:
+Modern member permission evaluation reads:
 
 - role memberships from `workspace_role_members`
 - permission definitions from `workspace_role_permissions`
-- workspace-wide defaults from `workspace_default_permissions`
+- workspace-wide defaults from `workspace_default_permissions.member_type = 'MEMBER'`
+
+Guest permission evaluation reads `workspace_default_permissions.member_type = 'GUEST'` for dashboard route defaults and keeps `workspace_guest_permissions` for resource-specific grants such as `course:view`.
 
 If you document or implement new authorization behavior against `workspace_members.role`, you will diverge from the real app behavior.
 

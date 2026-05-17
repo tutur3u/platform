@@ -1,7 +1,9 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Pencil } from '@tuturuuu/icons';
+import { deleteWorkspaceRole } from '@tuturuuu/internal-api/settings';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { WorkspaceRole } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -13,7 +15,6 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { RoleForm } from './form';
@@ -23,29 +24,26 @@ interface RoleRowActionsProps {
 }
 
 export function RoleRowActions({ row }: RoleRowActionsProps) {
-  const router = useRouter();
+  const queryClient = useQueryClient();
   const t = useTranslations();
 
   const data = row.original;
 
-  const deleteRole = async () => {
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/roles/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      router.refresh();
-    } else {
-      const data = await res.json();
-      toast({
-        title: 'Failed to delete workspace role',
-        description: data.message,
+  const deleteRoleMutation = useMutation({
+    mutationFn: () => deleteWorkspaceRole(data.ws_id ?? '', data.id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['workspace-roles', data.ws_id],
       });
-    }
-  };
+    },
+    onError: (error) => {
+      toast({
+        title: t('ws-roles.delete_failed'),
+        description:
+          error instanceof Error ? error.message : t('common.500-msg'),
+      });
+    },
+  });
 
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -69,7 +67,7 @@ export function RoleRowActions({ row }: RoleRowActionsProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-[160px]">
-          <DropdownMenuItem onClick={deleteRole}>
+          <DropdownMenuItem onClick={() => deleteRoleMutation.mutate()}>
             {t('common.delete')}
           </DropdownMenuItem>
         </DropdownMenuContent>

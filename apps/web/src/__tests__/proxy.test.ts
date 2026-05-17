@@ -817,6 +817,91 @@ describe('web proxy api handling', () => {
     expect(adminFrom).not.toHaveBeenCalled();
   });
 
+  it('denies guest workspace home routes before default navigation admin reads', async () => {
+    const adminFrom = vi.fn();
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/11111111-1111-4111-8111-111111111111')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('denies guest dashboard routes without mapped permissions', async () => {
+    const adminFrom = vi.fn();
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/11111111-1111-4111-8111-111111111111/unknown'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('allows guest dashboard routes when the mapped guest default is enabled', async () => {
+    const defaultPermissionsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn(),
+    };
+    defaultPermissionsBuilder.eq
+      .mockReturnValueOnce(defaultPermissionsBuilder)
+      .mockReturnValueOnce(defaultPermissionsBuilder)
+      .mockResolvedValueOnce({
+        data: [{ permission: 'manage_projects' }],
+        error: null,
+      });
+    const adminFrom = vi.fn().mockReturnValue(defaultPermissionsBuilder);
+
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/11111111-1111-4111-8111-111111111111/tasks'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/en/11111111-1111-4111-8111-111111111111/tasks'
+    );
+    expect(adminFrom).toHaveBeenCalledWith('workspace_default_permissions');
+  });
+
   it('falls back to tasks boards and self-heals when configured board no longer exists', async () => {
     const supabaseClient = createAuthenticatedSupabaseClient();
 

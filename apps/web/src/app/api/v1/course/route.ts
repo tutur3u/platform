@@ -178,6 +178,7 @@ async function handleCourseList({
       .select('user_id')
       .eq('ws_id', normalizedWsId)
       .eq('user_id', user.id)
+      .eq('type', 'MEMBER')
       .maybeSingle();
 
     if (membershipError) {
@@ -358,6 +359,7 @@ async function handleCourseDetail(
     .select('user_id')
     .eq('ws_id', group.ws_id)
     .eq('user_id', userId)
+    .eq('type', 'MEMBER')
     .maybeSingle();
 
   if (membershipError) {
