@@ -41,6 +41,12 @@ type UseHiveStudioEngineProps = {
   realtimeUrl: string;
 };
 
+type HiveNpcRunState = {
+  npcId: string;
+  promptMode: 'custom' | 'default' | 'enhanced';
+  status: 'completed' | 'failed' | 'running';
+};
+
 export function useHiveStudioEngine({
   currentUser,
   initialServers,
@@ -81,6 +87,7 @@ export function useHiveStudioEngine({
     useState<HiveRealtimeStatus>('disconnected');
   const [presenceCount, setPresenceCount] = useState(0);
   const [remoteAwareness, setRemoteAwareness] = useState<HiveAwareness[]>([]);
+  const [lastNpcRun, setLastNpcRun] = useState<HiveNpcRunState | null>(null);
   const worldEventConflictCooldownRef = useRef(0);
   const worldEventInFlightRef = useRef(false);
   const worldEventQueuedRef = useRef<QueuedWorldEvent | null>(null);
@@ -105,6 +112,25 @@ export function useHiveStudioEngine({
     setServerId,
     snapshot: snapshotQuery.data,
   });
+  const selectedNpc =
+    selection?.kind === 'npc'
+      ? (npcs.find((npc) => npc.id === selection.id) ?? null)
+      : null;
+  const visibleLastNpcRunStatus =
+    selectedNpc && lastNpcRun?.npcId === selectedNpc.id
+      ? lastNpcRun.status
+      : null;
+  const cropsCount = snapshotQuery.data?.crops?.length ?? 0;
+  const warehousesCount = snapshotQuery.data?.economy?.warehouses?.length ?? 0;
+  const currency =
+    snapshotQuery.data?.economy?.totalCurrency ??
+    selectedServer?.totalCurrency ??
+    0;
+  const worldCounts = {
+    blocks: world.blocks.length,
+    npcs: npcs.length,
+    objects: world.objects.length,
+  };
 
   useEffect(() => {
     const nextServer =
@@ -173,6 +199,12 @@ export function useHiveStudioEngine({
     activeTerrain,
     mutations,
     npcs,
+    onNpcRunError: (npcId, promptMode) =>
+      setLastNpcRun({ npcId, promptMode, status: 'failed' }),
+    onNpcRunStart: (npcId, promptMode) =>
+      setLastNpcRun({ npcId, promptMode, status: 'running' }),
+    onNpcRunSuccess: (npcId, promptMode) =>
+      setLastNpcRun({ npcId, promptMode, status: 'completed' }),
     persistWorld,
     revision,
     selection,
@@ -232,12 +264,15 @@ export function useHiveStudioEngine({
     autoTimeSpeed: environment.autoTimeSpeed,
     cameraView: environment.cameraView,
     createServerWithPayload,
+    cropsCount,
+    currency,
     deleteServer,
     eraseSelection: editorActions.eraseSelection,
     eventsCount: snapshotQuery.data?.events.length ?? 0,
     gaplessMode: environment.gaplessMode,
     isRunningNpc: mutations.runNpc.isPending,
     isRunningSimulationTick: mutations.runSimulationTick.isPending,
+    lastNpcRunStatus: visibleLastNpcRunStatus,
     moveSelection: editorActions.moveSelection,
     npcs,
     patchBlock: editorActions.patchBlock,
@@ -255,6 +290,7 @@ export function useHiveStudioEngine({
     runNpc: editorActions.runNpc,
     runSimulationTick,
     selectedServer,
+    selectedNpc,
     selection,
     serverId,
     servers: serversQuery.data.servers,
@@ -280,7 +316,9 @@ export function useHiveStudioEngine({
     updateServer,
     updateServerSettings,
     weather: environment.weather,
+    warehousesCount,
     world,
+    worldCounts,
   };
 }
 

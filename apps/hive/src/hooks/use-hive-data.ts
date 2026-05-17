@@ -221,6 +221,7 @@ export function useHiveWorkflowMutations(
   const invalidateRuns = async () => {
     if (!serverId || !workflowId) return;
     await Promise.all([
+      queryClient.invalidateQueries({ queryKey: hiveQueryKeys.servers }),
       queryClient.invalidateQueries({
         queryKey: hiveQueryKeys.workflowRuns(serverId, workflowId),
       }),

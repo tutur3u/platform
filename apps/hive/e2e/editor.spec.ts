@@ -31,8 +31,7 @@ test.describe('Hive editor chrome', () => {
   test('toggles dock catalog and settings panels without duplicated labels', async ({
     page,
   }) => {
-    await page.getByRole('toolbar', { name: 'Hive tool dock' }).hover();
-    await page.getByRole('button', { name: 'Build' }).click();
+    await page.getByRole('button', { exact: true, name: 'Build' }).click();
     await expect(page.getByRole('button', { name: 'Blocks' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Objects' }).click();
@@ -53,6 +52,10 @@ test.describe('Hive editor chrome', () => {
     await expect(
       page.getByRole('button', { name: 'Isometric camera' })
     ).toBeVisible();
+
+    await page.getByRole('button', { name: 'Live operations' }).click();
+    await expect(page.getByText('Live operations')).toBeVisible();
+    await expect(page.getByText('Revision')).toBeVisible();
   });
 
   test('toggles agent chat and mini-map chrome', async ({ page }) => {

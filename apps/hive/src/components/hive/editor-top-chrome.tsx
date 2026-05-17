@@ -10,6 +10,7 @@ type EditorTopChromeProps = {
   currentUser: HiveUser;
   inspectorPanel: ReactNode;
   isRunningNpc: boolean;
+  lastNpcRunStatus?: 'completed' | 'failed' | 'running' | null;
   miniMapCollapsed: boolean;
   mode: 'workflows' | 'world';
   npcLabCollapsed: boolean;
@@ -28,6 +29,7 @@ type EditorTopChromeProps = {
   realtimeStatus: HiveRealtimeStatus;
   revision: number;
   rightCollapsed: boolean;
+  selectedNpc: HiveNpc | null;
   serverPicker: ReactNode;
   world: HiveWorldData;
 };
@@ -37,6 +39,7 @@ export function EditorTopChrome({
   currentUser,
   inspectorPanel,
   isRunningNpc,
+  lastNpcRunStatus,
   miniMapCollapsed,
   mode,
   npcLabCollapsed,
@@ -52,6 +55,7 @@ export function EditorTopChrome({
   realtimeStatus,
   revision,
   rightCollapsed,
+  selectedNpc,
   serverPicker,
   world,
 }: EditorTopChromeProps) {
@@ -100,10 +104,12 @@ export function EditorTopChrome({
         >
           <NpcLabPanel
             isRunning={isRunningNpc}
+            lastRunStatus={lastNpcRunStatus}
             npcs={npcs}
             onPatchNpc={onPatchNpc}
             onRun={onRunNpc}
             revision={revision}
+            selectedNpc={selectedNpc}
             world={world}
           />
         </div>

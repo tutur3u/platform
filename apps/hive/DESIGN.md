@@ -19,6 +19,14 @@ Hive is a dense research editor, not a marketing site. The first viewport is the
 - NPC Lab is anchored in the viewport top chrome and exposes role, backstory, prompt mode, memory toggles, model, system prompt, and manual run controls without overlapping the inspector.
 - Right rail, top research chrome, NPC Lab, chat composer, mini-map, and the bottom dock must be collapsible from compact icon controls. Collapsed slots must not leave invisible hover targets or tooltips behind.
 - Keep the active server name on one dock line with its server icon and menu affordance.
+- Bottom dock secondary surfaces are explicit panel toggles, not hover-only
+  expansion. Build catalog, editor settings, and live operations each have a
+  visible icon button and persist until the operator chooses another panel.
+- Live operations in the dock should summarize existing snapshot data only:
+  world counts, crops, warehouses, currency, events, online users, realtime
+  status, revision, and the last sync notice.
+- NPC Lab edits the selected NPC. If no NPC is selected, it should ask for an
+  NPC selection instead of silently editing the first NPC.
 - Render voxel terrain with a minimal tile gap by default. Gapless rendering is an optional setting, not the default visual state.
 - Do not use generic three-card rows or explanatory landing sections.
 - The generated visual reference for the current landing/editor direction lives at `public/hive-landing-reference.png`; use it as a mood board, not as a literal UI screenshot to embed.
