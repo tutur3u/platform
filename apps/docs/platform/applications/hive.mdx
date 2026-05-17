@@ -208,7 +208,9 @@ TanStack Query. Do not add raw client `fetch()` calls in the satellite app.
 Hive has app-local Playwright coverage in `apps/hive/e2e`. The suite assumes
 the local web app on `https://tuturuuu.localhost` and Hive app on
 `https://hive.tuturuuu.localhost` are already running through Portless; it does
-not auto-start dev servers. Run it with:
+not auto-start dev servers. Root `bun test:e2e` intentionally runs the
+self-contained Dockerized web E2E suite instead; after starting the Portless
+services for Hive, run Hive coverage with:
 
 ```bash
 bun --filter @tuturuuu/hive test:e2e

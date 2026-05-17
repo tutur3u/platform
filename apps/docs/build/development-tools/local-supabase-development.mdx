@@ -264,10 +264,11 @@ These accounts are already set up with the necessary data, allowing you to quick
 
 ### Playwright E2E Safety
 
-Web E2E runs must use the local Dockerized Supabase stack. `apps/web` routes
-`bun test:e2e` through `scripts/run-web-e2e-docker.js`, which writes a temporary
-`tmp/e2e/web.env`, starts and resets local Supabase, runs the production-style
-Docker web stack, and then runs Playwright.
+Web E2E runs must use the local Dockerized Supabase stack. The repo root and
+`apps/web` both route `bun test:e2e` through
+`scripts/run-web-e2e-docker.js`, which writes a temporary `tmp/e2e/web.env`,
+starts and resets local Supabase, runs the production-style Docker web stack,
+and then runs Playwright.
 
 Do not point E2E at a cloud Supabase project. The Playwright global setup fails
 fast if `BASE_URL` is not local or if `NEXT_PUBLIC_SUPABASE_URL`,

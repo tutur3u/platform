@@ -32,7 +32,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 | `bun serve:web:docker:bg:watch` | Recreate the watcher container, then tail its live logs while it polls the tracked branch and auto-runs blue/green after a successful fast-forward pull |
 | `bun serve:web:docker:down` | Stop the production Docker stack |
 | `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
-| `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright |
+| `bun test:e2e` / `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright |
 | `bun check:docker` | Validate Dockerfile and compose parity rules |
 
 ## Flags And Implicit Mappings
@@ -88,7 +88,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 
 ## Dockerized E2E
 
-`bun test:e2e` in `apps/web` now runs through
+`bun test:e2e` from the repo root and `bun test:e2e` in `apps/web` run through
 `scripts/run-web-e2e-docker.js` instead of starting `next dev`. The runner:
 
 1. writes `tmp/e2e/web.env` with local-only Supabase, app-session JWT values,
