@@ -1107,8 +1107,8 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return guestRouteGuardResponse;
   }
 
-  // Handle direct workspace home routes (/{wsId} or /{locale}/{wsId})
-  // and apply workspace-specific default navigation if configured.
+  // Handle direct workspace home routes (/{wsId} or /{locale}/{wsId}).
+  // User-configured default navigation is only applied from the app root below.
   const skipWorkspaceRedirect = req.nextUrl.searchParams.has('no-redirect');
   const isHashNavigation = req.nextUrl.searchParams.has('hash-nav');
   const isMultiAccountFlow = req.nextUrl.searchParams.has('multiAccount');
@@ -1148,54 +1148,9 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
           if (memberCheck.membershipType === 'GUEST') {
             return buildGuestRouteDeniedResponse(req, authRes);
           }
-
-          const { path, staleConfigValue } = await resolveRootRedirectPath(
-            user.id,
-            {
-              id: resolvedWorkspaceId,
-            }
-          );
-
-          const canonicalPath =
-            workspaceSlug === resolvedWorkspaceId
-              ? path
-              : path.replace(`/${resolvedWorkspaceId}`, `/${workspaceSlug}`);
-          const localizedCanonicalPath = prependLocalePrefix(
-            canonicalPath,
-            activeLocalePrefix
-          );
-
-          if (localizedCanonicalPath !== req.nextUrl.pathname) {
-            if (staleConfigValue !== null) {
-              try {
-                const sbAdmin = await createAdminClient();
-                await sbAdmin.from('user_workspace_configs').upsert(
-                  {
-                    id: ROOT_DEFAULT_NAVIGATION_CONFIG_ID,
-                    user_id: user.id,
-                    ws_id: resolvedWorkspaceId,
-                    value: staleConfigValue,
-                    updated_at: new Date().toISOString(),
-                  },
-                  { onConflict: 'user_id,ws_id,id' }
-                );
-              } catch (error) {
-                console.error(
-                  'Failed to self-heal stale workspace navigation config in proxy:',
-                  error
-                );
-              }
-            }
-
-            const redirectUrl = new URL(localizedCanonicalPath, req.nextUrl);
-            redirectUrl.search = req.nextUrl.search;
-            const workspaceRootRedirect = NextResponse.redirect(redirectUrl);
-            propagateAuthCookies(authRes, workspaceRootRedirect);
-            return workspaceRootRedirect;
-          }
         }
       } catch (error) {
-        console.error('Error handling workspace home redirect:', error);
+        console.error('Error handling workspace home route:', error);
       }
     }
   }
