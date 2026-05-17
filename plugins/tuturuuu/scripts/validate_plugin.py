@@ -23,6 +23,12 @@ PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-platform": re.compile(r"\bplatform\b", re.IGNORECASE),
     "tuturuuu-commit": re.compile(r"\b(commit|scope|domain)\b", re.IGNORECASE),
     "tuturuuu-cli": re.compile(r"\b(cli|sdk|ttr)\b", re.IGNORECASE),
+    "tuturuuu-cli-tasks": re.compile(
+        r"\b(ttr task|ttr tasks|tasks?)\b", re.IGNORECASE
+    ),
+    "tuturuuu-cli-finance": re.compile(
+        r"\b(finance|wallets?|transactions?|budgets?)\b", re.IGNORECASE
+    ),
     "tuturuuu-agent-coordination": re.compile(
         r"\b(coordinate|coordination|shared worktree|handoff|overlap)\b",
         re.IGNORECASE,

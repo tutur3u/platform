@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu CLI Finance"
+  short_description: "Use ttr finance for finance CRUD, reads, and diagnostics"
+  default_prompt: "Check whether finance reads work with the ttr CLI."

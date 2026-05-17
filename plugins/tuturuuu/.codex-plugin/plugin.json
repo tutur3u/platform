@@ -1,6 +1,6 @@
 {
   "name": "tuturuuu",
-  "version": "0.2.4",
+  "version": "0.2.6",
   "description": "Codex operating guidance, scoped commits, CLI support, validation, CI, and focused workflows for the Tuturuuu platform monorepo.",
   "author": {
     "name": "Tuturuuu",
@@ -15,7 +15,7 @@
   "interface": {
     "displayName": "Tuturuuu",
     "shortDescription": "Keep Tuturuuu platform work aligned with repo conventions.",
-    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, dedicated shared-worktree agent coordination with archived context support and completed-note archiving, scoped Conventional Commit follow-through, native ttr CLI install and SDK-backed workflows, finance CRUD and pagination commands, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, review-comment follow-through, plugin validation, and incremental tooling improvements.",
+    "longDescription": "Provides Codex skills for safe Tuturuuu platform development, including repo-wide workflow rules, dedicated shared-worktree agent coordination with archived context support and completed-note archiving, scoped Conventional Commit follow-through, native ttr CLI install and SDK-backed workflows, focused ttr task workflows, finance CRUD, finance read diagnostics, pagination commands, wrapped finance response normalization, ttr-first task capture, Flutter mobile task-board guidance, Supabase database patterns, CI/docs maintenance, review-comment follow-through, plugin validation, and incremental tooling improvements.",
     "developerName": "Tuturuuu",
     "category": "Productivity",
     "capabilities": [
@@ -26,8 +26,11 @@
       "Agent handoff protocol",
       "Scoped commit workflow",
       "SDK and CLI workflows",
+      "TTR task workflows",
       "Finance CRUD commands",
+      "Finance read diagnostics",
       "Finance pagination guidance",
+      "Wrapped finance response normalization",
       "TTR-first task capture",
       "Workflow checklists",
       "Mobile task-board support",
@@ -41,7 +44,7 @@
     "termsOfServiceURL": "https://tuturuuu.com/terms",
     "defaultPrompt": [
       "Make this platform change in the shared worktree and run the checks it needs.",
-      "Add an SDK-backed ttr command and verify its scoped help.",
+      "Check finance reads with the ttr CLI and fix the SDK helper if needed.",
       "Add this as a Tuturuuu task with the ttr CLI.",
       "Update the Supabase schema or API write path safely.",
       "Fix this Flutter task-board behavior and verify it.",

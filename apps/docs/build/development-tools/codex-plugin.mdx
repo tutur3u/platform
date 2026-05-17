@@ -44,19 +44,22 @@ codex plugin marketplace add ./
 - `$tuturuuu-agent-coordination`: shared-worktree coordination guidance for
   dirty checkouts, active ownership notes, archived context, overlapping edits,
   stale handoffs, explicit write sets, and path-scoped staging safety.
-- `$tuturuuu-cli`: native `ttr` CLI install, SDK-backed command work, browser
-  login, copy-token login, workspace discovery, active-board defaults,
-  open-task defaults, finance CRUD commands, finance pagination footers, compact
-  task tables, and release verification guidance. It also covers scoped help
-  such as `ttr finance --help`, `ttr finance transactions --help`, `ttr tasks
-  --help`, `ttr tasks create --help`, quick status shortcuts such as `ttr tasks
-  done` and `ttr tasks close`, `ttr upgrade`, and `ttr help tasks create`. It
+- `$tuturuuu-cli`: core native `ttr` CLI install, browser login, copy-token
+  login, workspace discovery, scoped help, SDK-backed command surfaces, version
+  checks, and release verification guidance. It documents autonomous Bun and CLI
+  installation with `curl -fsSL https://bun.sh/install | bash` on macOS/Linux,
+  `powershell -c "irm bun.sh/install.ps1 | iex"` on Windows, then
+  `bun i -g tuturuuu`.
+- `$tuturuuu-cli-tasks`: focused `ttr tasks` guidance for task capture, task
+  board/list/label discovery, open-task defaults, compact task tables, task
+  creation, splitting, movement, completion, closure, and task verification. It
   documents ttr-first task capture for requests to add, create, track, or split
   Tuturuuu tasks, including label discovery and closing superseded combined
-  tasks after replacements are created. It documents autonomous Bun and CLI
-  installation with `curl -fsSL
-  https://bun.sh/install | bash` on macOS/Linux, `powershell -c "irm
-  bun.sh/install.ps1 | iex"` on Windows, then `bun i -g tuturuuu`.
+  tasks after replacements are created.
+- `$tuturuuu-cli-finance`: focused `ttr finance` guidance for wallet,
+  transaction, category, budget, and recurring CRUD; analytics reads; finance
+  pagination footers; explicit-workspace finance read diagnostics; and wrapped
+  finance response normalization in the SDK client.
 - `$tuturuuu-development-tooling`: shared guidance for improving Codex skills,
   plugin behavior, validation scripts, docs runbooks, helper scripts, and
   durable workflow learnings that should benefit future Tuturuuu contributors
@@ -140,6 +143,8 @@ python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-commit
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-agent-coordination
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-tasks
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-finance
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-development-tooling
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-mobile-task-board
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-database

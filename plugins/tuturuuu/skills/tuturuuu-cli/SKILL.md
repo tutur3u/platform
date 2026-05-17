@@ -1,6 +1,6 @@
 ---
 name: tuturuuu-cli
-description: Tuturuuu SDK and CLI workflow guidance. Use when installing, verifying, publishing, debugging, or using the `ttr` or `tuturuuu` CLI, SDK clients, browser login, copy-token login, workspace discovery, task listing, finance CRUD, task mutation, compact output, or autonomous agent workflows.
+description: Core Tuturuuu SDK and CLI workflow guidance. Use when installing, verifying, publishing, debugging, or using the `ttr` or `tuturuuu` CLI, SDK user clients, browser login, copy-token login, workspace discovery, scoped help, version checks, or autonomous agent workflows. Use the focused task and finance CLI skills for task or finance commands.
 ---
 
 # Tuturuuu CLI
@@ -17,11 +17,19 @@ Before changing CLI code, inspect the owning surfaces:
 - `packages/internal-api/src/*` for shared route helpers used by the CLI.
 - `apps/web/src/app/api/cli/auth/*` for browser login and token exchange.
 - `apps/docs/reference/packages/sdk.mdx` and `packages/sdk/README.md` for durable usage documentation.
-- `plugins/tuturuuu/skills/tuturuuu-cli/references/cli-workflows.md` for detailed agent-facing examples.
+- `plugins/tuturuuu/skills/tuturuuu-cli/references/cli-workflows.md` for install, auth, and SDK client examples.
 
 If the user asks for commits, combine this skill with `$tuturuuu-commit`.
 Separate CLI behavior, docs/help text, and version or release metadata only when
 they are independently revertible.
+
+Use the focused companion skills when the task is specific:
+
+- `$tuturuuu-cli-tasks` for task listing, task capture, task mutation, compact
+  task output, task board/list/label discovery, and `ttr tasks` verification.
+- `$tuturuuu-cli-finance` for finance CRUD, analytics reads, finance pagination,
+  explicit-workspace finance diagnostics, and wrapped finance response
+  normalization.
 
 ## Install Or Repair The CLI
 
@@ -106,119 +114,17 @@ clear error instead of mixed prompt output.
 Persist selected workspace, board, list, task, label, and project IDs in the CLI
 config so repeated commands can use the current context.
 
-## Task Capture Requests
+## SDK Client Surfaces
 
-When a user asks to add, create, track, or split a Tuturuuu task, prioritize the
-`ttr` CLI immediately. Do not substitute markdown TODOs, local notes, or GitHub
-issues unless the user explicitly asks for those artifacts.
+The CLI should call SDK user-client surfaces in `packages/sdk/src/platform.ts`
+and adjacent `platform-*.ts` modules. Keep command handlers focused on parsing,
+payload construction, rendering, and config/session concerns. Put authenticated
+API details in SDK client helpers or `packages/internal-api/src/*` helpers.
 
-Discover current destinations before creating tasks:
-
-```bash
-ttr whoami --no-update-check
-ttr boards --no-update-check
-ttr lists --no-update-check
-ttr labels --no-update-check
-```
-
-Inside the Tuturuuu monorepo, use the local script form:
-
-```bash
-bun ttr tasks create "Fix calendar sync cron job" --board <board-id> --list <list-id> --labels <label-id>,<label-id> --no-update-check
-```
-
-For a combined task that should be split, create each replacement task with
-relevant labels first, verify the new task keys, then close or otherwise mark
-the original task as superseded:
-
-```bash
-ttr tasks create "Integrate Valsea demo into Tuturuuu web app" --board <board-id> --list <list-id> --labels <label-ids>
-ttr tasks create "Integrate Valsea demo into Tuturuuu mobile app" --board <board-id> --list <list-id> --labels <label-ids>
-ttr tasks close <combined-task-key>
-```
-
-## Task Defaults
-
-Read-oriented groups list by default:
-
-- `ttr workspaces`
-- `ttr boards`
-- `ttr labels`
-- `ttr projects`
-- `ttr tasks`
-
-`ttr tasks` should show open tasks by default by excluding rows with
-`completed_at` or `closed_at`. Keep these filters available:
-
-- `--all`
-- `--done`
-- `--closed`
-- `--include-done`
-- `--include-closed`
-- `--compact`
-
-Compact task output is for agent workflows and should display only task title,
-task list name, and workspace name unless the user asks for JSON.
-
-Task list output should be ordered by priority first, then due date. Human table
-output should format due dates into short readable labels such as `Today`,
-`Tomorrow`, or `May 10`.
-
-Create commands should support a quoted positional name as a shorthand for
-`--name`, especially `ttr tasks create "Add Tuturuuu CLI"`.
-
-When marking a task completed from the CLI, include a `completed_at` timestamp.
-That lets Tuturuuu move the task to the first `done` list by default. Preserve
-an explicit done destination when the user provides `--list <id>` or `list_id`
-inside `--json-payload`.
-
-Prefer quick shortcuts for common status changes:
-
-```bash
-ttr tasks done <task-id>
-ttr tasks done <task-id> --list <done-list-id>
-ttr tasks close <task-id>
-ttr tasks close <task-id> --list <closed-list-id>
-```
-
-`ttr tasks done` should set `completed: true`, stamp `completed_at`, and use the
-first `done` list on the task board unless an explicit destination is provided.
-`ttr tasks close` should stamp `closed_at`, clear completion, and use the first
-`closed` list on the task board when available.
-
-Use `ttr tasks --json --no-update-check` for agent-readable task discovery. It
-keeps stdout parseable and avoids update-check chatter while the agent decides
-which tasks to read or mutate.
-
-## Finance CRUD
-
-Finance commands belong under `ttr finance` and should use the SDK user client
-surface instead of duplicating route logic in command handlers. Keep CLI parsing,
-payload construction, rendering, and authenticated request helpers separated
-when the command group grows.
-
-Support full CRUD for finance resources:
-
-- `ttr finance wallets list|get|create|update|delete`
-- `ttr finance transactions list|get|create|update|delete`
-- `ttr finance categories list|get|create|update|delete`
-- `ttr finance budgets list|status|create|update|delete`
-- `ttr finance recurring list|upcoming|create|update|delete`
-
-Keep analytics/read helpers alongside transactions when backed by finance APIs:
-
-- `ttr finance transactions export`
-- `ttr finance transactions stats`
-- `ttr finance transactions category-breakdown`
-- `ttr finance transactions spending-trends`
-
-For multi-value finance query params, prefer explicit repeated query params over
-comma-joined values when the backing route expects arrays.
-
-Finance list output should be paginated consistently. Prefer `--page` and
-`--page-size` for humans, keep `--limit` and `--offset` aliases for scripts, and
-render the same `Page X/Y | N total` footer used by task lists whenever the
-response includes a count.
+When a new command group becomes substantial, split focused modules under
+`packages/sdk/src/cli/` before the command file grows too large. Keep public
+exports in `packages/sdk/src/index.ts` aligned with new SDK clients and payload
+types.
 
 ## Verification
 
