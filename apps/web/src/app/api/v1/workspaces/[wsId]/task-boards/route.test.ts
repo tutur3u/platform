@@ -17,9 +17,26 @@ const tasksSelectMock = vi.fn();
 const fromMock = vi.fn();
 const createClientMock = vi.fn();
 const createAdminClientMock = vi.fn();
+const getAppSessionTokenFromRequestMock = vi.fn();
+const verifyCliAccessTokenMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const ensureDefaultPersonalTaskBoardMock = vi.fn();
+const workspacesMaybeSingleMock = vi.fn();
+const workspacesEqMock = vi.fn();
+const workspacesSelectMock = vi.fn();
+
+vi.mock('@tuturuuu/auth/app-session', () => ({
+  getAppSessionTokenFromRequest: (
+    ...args: Parameters<typeof getAppSessionTokenFromRequestMock>
+  ) => getAppSessionTokenFromRequestMock(...args),
+}));
+
+vi.mock('@tuturuuu/auth/cli-session', () => ({
+  verifyCliAccessToken: (
+    ...args: Parameters<typeof verifyCliAccessTokenMock>
+  ) => verifyCliAccessTokenMock(...args),
+}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createClient: (...args: Parameters<typeof createClientMock>) =>
@@ -60,6 +77,8 @@ describe('task boards route GET', () => {
       containsPermission: vi.fn().mockReturnValue(false),
     });
     ensureDefaultPersonalTaskBoardMock.mockResolvedValue(null);
+    getAppSessionTokenFromRequestMock.mockReturnValue(null);
+    verifyCliAccessTokenMock.mockReturnValue({ ok: false });
 
     authGetUserMock.mockResolvedValue({
       data: {
@@ -77,6 +96,16 @@ describe('task boards route GET', () => {
       data: { type: 'MEMBER' as const },
       error: null,
     });
+    const workspacesQuery = {
+      eq: workspacesEqMock,
+      maybeSingle: workspacesMaybeSingleMock,
+    };
+    workspacesEqMock.mockReturnValue(workspacesQuery);
+    workspacesMaybeSingleMock.mockResolvedValue({
+      data: { id: '00000000-0000-4000-8000-000000000123' },
+      error: null,
+    });
+    workspacesSelectMock.mockReturnValue(workspacesQuery);
 
     boardsOrderCreatedAtMock.mockResolvedValue({
       data: [],
@@ -131,6 +160,12 @@ describe('task boards route GET', () => {
         };
       }
 
+      if (table === 'workspaces') {
+        return {
+          select: workspacesSelectMock,
+        };
+      }
+
       if (table === 'task_lists') {
         return {
           select: taskListsSelectMock,
@@ -170,8 +205,50 @@ describe('task boards route GET', () => {
       }
     );
 
+    if (!response) {
+      throw new Error('Expected GET to return a response');
+    }
+
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
     expect(getPermissionsMock).not.toHaveBeenCalled();
+  });
+
+  it('allows CLI app-session tokens to list personal workspace boards', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
+    verifyCliAccessTokenMock.mockReturnValue({
+      claims: {
+        email: 'agent@example.com',
+        sub: '00000000-0000-4000-8000-000000000999',
+      },
+      ok: true,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards?status=all',
+        {
+          headers: {
+            Authorization: 'Bearer ttr_app_access',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    if (!response) {
+      throw new Error('Expected GET to return a response');
+    }
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(workspacesSelectMock).toHaveBeenCalledWith(
+      'id, workspace_members!inner(user_id, type)'
+    );
   });
 });

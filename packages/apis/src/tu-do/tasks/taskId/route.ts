@@ -1,8 +1,11 @@
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TaskActorRpcArgs } from '@tuturuuu/types/db';
 import {
@@ -31,14 +34,64 @@ import {
 } from './schema';
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
+const PERSONAL_WORKSPACE_ALIAS = 'personal';
 
-async function requireWorkspaceAccess(
-  request: NextRequest,
-  rawParams: unknown
-) {
-  const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
-  const supabase = await createClient(request);
+type TaskRequestAuth =
+  | {
+      appSession: false;
+      supabase: TypedSupabaseClient;
+      user: SupabaseUser;
+    }
+  | {
+      appSession: true;
+      sbAdmin: TypedSupabaseClient;
+      supabase: TypedSupabaseClient;
+      user: SupabaseUser;
+    }
+  | {
+      error: NextResponse;
+    };
 
+type TaskWorkspaceAccess =
+  | {
+      supabase: TypedSupabaseClient;
+      taskId: string;
+      user: SupabaseUser;
+      wsId: string;
+    }
+  | {
+      error: NextResponse;
+    };
+
+function createCliSessionUser(claims: { email: string | null; sub: string }) {
+  return {
+    aud: 'authenticated',
+    email: claims.email ?? undefined,
+    id: claims.sub,
+  } as SupabaseUser;
+}
+
+async function resolveTaskRequestAuth(
+  request: NextRequest
+): Promise<TaskRequestAuth> {
+  const appSessionToken = getAppSessionTokenFromRequest(request);
+
+  if (appSessionToken) {
+    const verification = verifyCliAccessToken(appSessionToken);
+
+    if (verification.ok) {
+      const sbAdmin = await createAdminClient({ noCookie: true });
+
+      return {
+        appSession: true,
+        sbAdmin,
+        supabase: sbAdmin as TypedSupabaseClient,
+        user: createCliSessionUser(verification.claims),
+      };
+    }
+  }
+
+  const supabase = (await createClient(request)) as TypedSupabaseClient;
   const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
   if (authError || !user) {
@@ -47,7 +100,54 @@ async function requireWorkspaceAccess(
     };
   }
 
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+  return { appSession: false, supabase, user };
+}
+
+async function normalizeWorkspaceIdForCliSession({
+  rawWsId,
+  sbAdmin,
+  userId,
+}: {
+  rawWsId: string;
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+}) {
+  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
+    return normalizeWorkspaceId(rawWsId, sbAdmin);
+  }
+
+  const { data: workspace, error } = await sbAdmin
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id, type)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', userId)
+    .eq('workspace_members.type', 'MEMBER')
+    .maybeSingle();
+
+  if (error || !workspace?.id) {
+    throw new Error('Personal workspace not found');
+  }
+
+  return workspace.id;
+}
+
+async function requireWorkspaceAccess(
+  request: NextRequest,
+  rawParams: unknown
+): Promise<TaskWorkspaceAccess> {
+  const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
+  const auth = await resolveTaskRequestAuth(request);
+  if ('error' in auth) return auth;
+
+  const { supabase, user } = auth;
+  const sbAdmin = 'sbAdmin' in auth ? auth.sbAdmin : await createAdminClient();
+  const wsId = auth.appSession
+    ? await normalizeWorkspaceIdForCliSession({
+        rawWsId,
+        sbAdmin,
+        userId: user.id,
+      })
+    : await normalizeWorkspaceId(rawWsId, supabase);
 
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: wsId,

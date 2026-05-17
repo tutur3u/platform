@@ -69,8 +69,9 @@ describe('satellite app-session route inventory', () => {
 
         if (wrapperCount === 0) return [];
 
-        const optInCount = (source.match(/allowAppSessionAuth:\s*true/g) ?? [])
-          .length;
+        const optInCount = (
+          source.match(/allowAppSessionAuth:\s*(?:true|[A-Z][A-Z0-9_]*)/g) ?? []
+        ).length;
 
         return optInCount >= wrapperCount
           ? []
