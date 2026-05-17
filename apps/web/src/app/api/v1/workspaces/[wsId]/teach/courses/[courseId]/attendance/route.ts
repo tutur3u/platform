@@ -13,14 +13,15 @@ const RouteParamsSchema = z.object({
 });
 
 const AttendanceSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().date(),
   notes: z.string().optional(),
   status: z.enum(['PRESENT', 'ABSENT', 'LATE', 'NONE']),
   user_id: z.guid(),
 });
 
 const BatchAttendanceSchema = z.array(AttendanceSchema).max(300);
-const MonthSchema = z.string().regex(/^\d{4}-\d{2}$/);
+const DateSchema = z.string().date();
+const MonthSchema = z.string().regex(/^\d{4}-(?:0[1-9]|1[0-2])$/);
 
 function getMonthBounds(month: string) {
   const [yearValue, monthValue] = month.split('-');
@@ -53,10 +54,26 @@ export const GET = withSessionAuth(
 
     const date = request.nextUrl.searchParams.get('date');
     const month = request.nextUrl.searchParams.get('month');
-    if (
-      (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) &&
-      (!month || !MonthSchema.safeParse(month).success)
-    ) {
+
+    let parsedDate: string | null = null;
+    if (date) {
+      const result = DateSchema.safeParse(date);
+      if (!result.success) {
+        return NextResponse.json({ message: 'Invalid date' }, { status: 400 });
+      }
+      parsedDate = result.data;
+    }
+
+    let parsedMonth: string | null = null;
+    if (month) {
+      const result = MonthSchema.safeParse(month);
+      if (!result.success) {
+        return NextResponse.json({ message: 'Invalid month' }, { status: 400 });
+      }
+      parsedMonth = result.data;
+    }
+
+    if (!parsedDate && !parsedMonth) {
       return NextResponse.json(
         { message: 'Date or month is required' },
         { status: 400 }
@@ -82,8 +99,8 @@ export const GET = withSessionAuth(
       );
     }
 
-    if (month) {
-      const { endDate, startDate } = getMonthBounds(month);
+    if (parsedMonth) {
+      const { endDate, startDate } = getMonthBounds(parsedMonth);
       const { data, error } = await access.sbAdmin
         .from('user_group_attendance')
         .select('date, notes, status, user_id')
@@ -141,7 +158,7 @@ export const GET = withSessionAuth(
       .from('user_group_attendance')
       .select('date, notes, status, user_id')
       .eq('group_id', parsedParams.data.courseId)
-      .eq('date', date ?? '');
+      .eq('date', parsedDate ?? '');
 
     if (error) {
       serverLogger.error('Failed to fetch Teach attendance', { error });
