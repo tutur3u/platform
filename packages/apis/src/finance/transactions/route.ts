@@ -1,17 +1,12 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
-import {
-  getPermissions,
-  getWorkspaceConfig,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import {
+  getFinanceRouteContext,
+  hasAnyFinancePermission,
+} from '../request-access';
 import { enrichTransactionsWithTags } from './tag-enrichment';
 
 interface Params {
@@ -40,23 +35,21 @@ function normalizeTransactionDate(value: string | Date) {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const sbAdmin = await createAdminClient();
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const { withoutPermission } = permissions;
+  const { normalizedWsId, permissions, sbAdmin, supabase, user } =
+    access.context;
 
   if (
-    withoutPermission('view_transactions') &&
-    withoutPermission('view_expenses') &&
-    withoutPermission('view_incomes')
+    !hasAnyFinancePermission(permissions, [
+      'view_transactions',
+      'view_expenses',
+      'view_incomes',
+    ])
   ) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
@@ -76,28 +69,11 @@ export async function GET(req: Request, { params }: Params) {
   const itemsPerPage = Math.max(1, parseInt(itemsPerPageParam || '25', 10));
   const offset = (page - 1) * itemsPerPage;
 
-  const supabase = await createClient(req);
-
-  // Get authenticated user for permission checks
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  let resolvedWsId: string;
-
-  try {
-    resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   // Use the RPC function with pagination parameters to fetch transactions
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
     {
-      p_ws_id: resolvedWsId,
+      p_ws_id: normalizedWsId,
       p_user_id: user.id,
       p_transaction_ids: undefined,
       p_limit: itemsPerPage,
@@ -161,16 +137,14 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin, supabase, user } =
+    access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('create_transactions')) {
@@ -178,24 +152,6 @@ export async function POST(req: Request, { params }: Params) {
       { message: 'Insufficient permissions' },
       { status: 403 }
     );
-  }
-
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-
-  // Get authenticated user
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  let resolvedWsId: string;
-
-  try {
-    resolvedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const parsed = TransactionSchema.safeParse(await req.json());
@@ -242,7 +198,7 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_wallets')
     .select('id')
     .eq('id', data.origin_wallet_id)
-    .eq('ws_id', resolvedWsId)
+    .eq('ws_id', normalizedWsId)
     .maybeSingle();
 
   if (walletErr || !walletCheck) {
@@ -250,7 +206,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const defaultWalletId = await getWorkspaceConfig(
-    resolvedWsId,
+    normalizedWsId,
     'default_wallet_id'
   );
 
@@ -274,7 +230,7 @@ export async function POST(req: Request, { params }: Params) {
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
-    .eq('ws_id', resolvedWsId)
+    .eq('ws_id', normalizedWsId)
     .maybeSingle();
 
   if (!wsUser?.virtual_user_id) {
@@ -282,7 +238,7 @@ export async function POST(req: Request, { params }: Params) {
       const { data: repairedVirtualUserId, error: repairError } =
         await sbAdmin.rpc('ensure_workspace_user_link', {
           target_user_id: user.id,
-          target_ws_id: resolvedWsId,
+          target_ws_id: normalizedWsId,
         });
 
       if (!repairError) {
@@ -290,7 +246,7 @@ export async function POST(req: Request, { params }: Params) {
           .from('workspace_user_linked_users')
           .select('virtual_user_id')
           .eq('platform_user_id', user.id)
-          .eq('ws_id', resolvedWsId)
+          .eq('ws_id', normalizedWsId)
           .maybeSingle();
 
         wsUser =

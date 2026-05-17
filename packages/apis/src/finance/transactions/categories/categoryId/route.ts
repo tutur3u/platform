@@ -1,7 +1,6 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getFinanceRouteContext } from '../../../request-access';
 
 interface Params {
   params: Promise<{
@@ -19,16 +18,13 @@ const TransactionCategoryUpdateSchema = z.object({
 
 export async function GET(req: Request, { params }: Params) {
   const { categoryId, wsId } = await params;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
@@ -38,13 +34,11 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
-
   const { data, error } = await sbAdmin
     .from('transaction_categories')
     .select('*')
     .eq('id', categoryId)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {
@@ -60,6 +54,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const { categoryId, wsId } = await params;
+  const access = await getFinanceRouteContext(req, wsId);
 
   const parsed = TransactionCategoryUpdateSchema.safeParse(await req.json());
 
@@ -72,15 +67,11 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('update_transactions')) {
@@ -90,13 +81,11 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
-
   const { error } = await sbAdmin
     .from('transaction_categories')
     .update(data)
     .eq('id', categoryId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
     console.log(error);
@@ -110,18 +99,14 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const sbAdmin = await createAdminClient();
   const { categoryId, wsId } = await params;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('delete_transactions')) {
@@ -135,7 +120,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .from('transaction_categories')
     .delete()
     .eq('id', categoryId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
     console.log(error);

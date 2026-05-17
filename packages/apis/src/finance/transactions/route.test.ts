@@ -124,19 +124,47 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('transactions route', () => {
-  const withPermissions = (granted: string[]) => ({
-    withoutPermission: vi.fn(
-      (permission: string) => !granted.includes(permission)
-    ),
-  });
+  const normalizedPersonalWsId = '00000000-0000-0000-0000-000000000000';
+  const normalizeTestWsId = (wsId: string) =>
+    wsId === 'personal' ? normalizedPersonalWsId : wsId;
+  const withPermissions = (
+    granted: string[],
+    wsId = normalizedPersonalWsId
+  ) => {
+    const containsPermission = vi.fn((permission: string) =>
+      granted.includes(permission)
+    );
+
+    return {
+      containsPermission,
+      withoutPermission: vi.fn(
+        (permission: string) => !granted.includes(permission)
+      ),
+      wsId: normalizeTestWsId(wsId),
+    };
+  };
 
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => false),
-    });
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(
+        withPermissions(
+          [
+            'create_transactions',
+            'delete_transactions',
+            'export_finance_data',
+            'manage_finance',
+            'update_transactions',
+            'view_expenses',
+            'view_incomes',
+            'view_transactions',
+          ],
+          wsId
+        )
+      )
+    );
     mocks.getWorkspaceConfig.mockResolvedValue(null);
     mocks.sessionSupabase.auth.getUser.mockResolvedValue({
       data: {

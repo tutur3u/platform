@@ -1,5 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -19,10 +18,14 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
   const { wsId } = await params;
+  const access = await getFinanceRouteContext(request, wsId);
 
-  const permissions = await getPermissions({ wsId, request });
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, supabase } = access.context;
   if (!permissions || permissions.withoutPermission('view_transactions')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -30,7 +33,7 @@ export async function GET(request: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('recurring_transactions')
     .select('*')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .order('next_occurrence', { ascending: true });
 
   if (error) {
@@ -45,10 +48,14 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
   const { wsId } = await params;
+  const access = await getFinanceRouteContext(request, wsId);
 
-  const permissions = await getPermissions({ wsId, request });
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, supabase } = access.context;
   if (!permissions || permissions.withoutPermission('manage_finance')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -65,7 +72,7 @@ export async function POST(request: Request, { params }: Params) {
     .from('recurring_transactions')
     .insert({
       ...parsed.data,
-      ws_id: wsId,
+      ws_id: normalizedWsId,
       next_occurrence: parsed.data.start_date,
     })
     .select('*')

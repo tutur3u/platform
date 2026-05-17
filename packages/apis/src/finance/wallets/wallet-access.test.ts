@@ -72,6 +72,16 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('wallet access helper', () => {
+  const withPermissions = (isManager: boolean, wsId = 'normalized-ws') => ({
+    containsPermission: vi.fn(
+      (permission: string) => isManager || permission !== 'manage_finance'
+    ),
+    withoutPermission: vi.fn(
+      (permission: string) => !isManager && permission === 'manage_finance'
+    ),
+    wsId,
+  });
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -90,11 +100,7 @@ describe('wallet access helper', () => {
   });
 
   it('returns wallet data for a whitelisted non-manager', async () => {
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(
-        (permission: string) => permission === 'manage_finance'
-      ),
-    });
+    mocks.getPermissions.mockResolvedValue(withPermissions(false));
     mocks.whitelistIn.mockResolvedValue({
       data: [{ wallet_id: 'wallet-1' }],
       error: null,
@@ -116,11 +122,7 @@ describe('wallet access helper', () => {
   });
 
   it('returns 404 when a non-manager is not whitelisted for the wallet', async () => {
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(
-        (permission: string) => permission === 'manage_finance'
-      ),
-    });
+    mocks.getPermissions.mockResolvedValue(withPermissions(false));
     mocks.whitelistIn.mockResolvedValue({
       data: [],
       error: null,
@@ -144,9 +146,7 @@ describe('wallet access helper', () => {
   });
 
   it('allows managers to fetch wallet details without a whitelist lookup', async () => {
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => false),
-    });
+    mocks.getPermissions.mockResolvedValue(withPermissions(true));
 
     const { getAccessibleWallet } = await import('./wallet-access.js');
     const result = await getAccessibleWallet({

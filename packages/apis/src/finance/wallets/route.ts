@@ -1,14 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { getFinanceRouteContext } from '../request-access';
 import { flattenWalletCreditList } from './wallet-access';
 
 interface Params {
@@ -18,34 +10,15 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
   const { wsId } = await params;
-  let normalizedWsId: string;
+  const access = await getFinanceRouteContext(request, wsId);
 
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const permissions = await getPermissions({
-    wsId,
-    request,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
-  const sbAdmin = await createAdminClient();
 
   // Check if user has manage_finance permission
   const hasManageFinance = !withoutPermission('manage_finance');
@@ -199,27 +172,15 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const { wsId } = await params;
   const data: Wallet = await req.json();
-  let normalizedWsId: string;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('create_wallets')) {

@@ -168,6 +168,10 @@ API routes used by `ttr` must accept the CLI app-session access JWT from the
 routes can include the platform target alongside satellite app targets. Shared
 API routes should verify the CLI app-session token before falling back to
 Supabase session auth and then keep workspace membership checks explicit.
+When a handler lives in `packages/apis` and is reused by multiple apps, keep
+`@tuturuuu/auth` imports in the app-owned route wrapper and pass a
+pre-authenticated context into the shared handler so package builds do not form
+an auth/UI/API cycle.
 
 SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` when a push to `production` changes
@@ -312,6 +316,11 @@ workspace, and use `--json-payload` when a script needs to send fields that do
 not have dedicated flags yet. Finance list output is paginated by default; use
 `--page`/`--page-size` or `--limit`/`--offset` to move through larger result
 sets.
+
+Finance API routes that back `ttr finance` should resolve access through
+`getFinanceRouteContext` from `@tuturuuu/apis/finance/request-access`. That
+keeps CLI app-session bearer tokens, browser Supabase sessions, `personal`
+workspace resolution, and finance permission checks on the same path.
 
 ```bash
 # Wallet CRUD.

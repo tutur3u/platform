@@ -1,11 +1,4 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -24,27 +17,15 @@ export const budgetPayloadSchema = z.object({
 export type BudgetPayload = z.infer<typeof budgetPayloadSchema>;
 
 export async function requireBudgetAccess(request: Request, rawWsId: string) {
-  const supabase = await createClient(request);
-  let wsId: string;
+  const access = await getFinanceRouteContext(request, rawWsId);
 
-  try {
-    wsId = await normalizeWorkspaceId(rawWsId, supabase);
-  } catch {
+  if (access.response) {
     return {
-      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+      error: access.response,
     };
   }
 
-  const permissions = await getPermissions({
-    wsId,
-    request,
-  });
-
-  if (!permissions) {
-    return {
-      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('manage_finance')) {
     return {
@@ -56,8 +37,8 @@ export async function requireBudgetAccess(request: Request, rawWsId: string) {
   }
 
   return {
-    wsId,
-    sbAdmin: await createAdminClient(),
+    wsId: normalizedWsId,
+    sbAdmin,
   };
 }
 

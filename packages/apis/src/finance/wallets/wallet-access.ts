@@ -1,13 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  type FinanceRouteContext,
+  getFinanceRouteContext,
+} from '../request-access';
 
 type WalletPermission =
   | 'view_transactions'
@@ -25,6 +20,7 @@ type WalletSupabaseClient = any;
 
 type WalletRouteContext = {
   normalizedWsId: string;
+  permissions: FinanceRouteContext['permissions'];
   requiredPermission: WalletPermission;
   sbAdmin: WalletSupabaseClient;
   supabase: WalletSupabaseClient;
@@ -77,27 +73,15 @@ export async function getWalletRouteContext(
   wsId: string,
   requiredPermission: WalletPermission
 ): Promise<WalletContextResult> {
-  const supabase = await createClient(req);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const financeContext = await getFinanceRouteContext(req, wsId);
 
-  if (authError || !user) {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
+  if (financeContext.response) {
+    return financeContext;
   }
 
-  let normalizedWsId: string;
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+  const { context } = financeContext;
 
-  const permissions = await getPermissions({ wsId, request: req });
-
-  if (!permissions || permissions.withoutPermission(requiredPermission)) {
+  if (context.permissions.withoutPermission(requiredPermission)) {
     return {
       response: NextResponse.json(
         { message: 'Insufficient permissions' },
@@ -108,11 +92,12 @@ export async function getWalletRouteContext(
 
   return {
     context: {
-      normalizedWsId,
+      normalizedWsId: context.normalizedWsId,
+      permissions: context.permissions,
       requiredPermission,
-      sbAdmin: (await createAdminClient()) as WalletSupabaseClient,
-      supabase: supabase as WalletSupabaseClient,
-      userId: user.id,
+      sbAdmin: context.sbAdmin as WalletSupabaseClient,
+      supabase: context.supabase as WalletSupabaseClient,
+      userId: context.user.id,
     },
   };
 }
@@ -142,9 +127,8 @@ export async function getAccessibleWallet({
 
   const { context } = contextResult;
 
-  const permissions = await getPermissions({ wsId, request: req });
   const hasManageFinance =
-    !!permissions && !permissions.withoutPermission('manage_finance');
+    !context.permissions.withoutPermission('manage_finance');
 
   if (!hasManageFinance) {
     const { data: memberships, error: membershipsError } = await context.sbAdmin
@@ -272,9 +256,8 @@ export async function getAccessibleWallets({
     };
   }
 
-  const permissions = await getPermissions({ wsId, request: req });
   const hasManageFinance =
-    !!permissions && !permissions.withoutPermission('manage_finance');
+    !contextResult.context.permissions.withoutPermission('manage_finance');
 
   let allowedWalletIds = uniqueWalletIds;
 

@@ -1,14 +1,10 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
+import { getFinanceRouteContext } from '../../request-access';
 import { enrichTransactionsWithTags } from '../tag-enrichment';
 
 // Helper function to verify transaction belongs to workspace
@@ -72,7 +68,7 @@ const TransactionUpdateSchema = z.object({
 
 const TransactionRouteParamsSchema = z.object({
   transactionId: z.guid(),
-  wsId: z.guid(),
+  wsId: z.string().trim().min(1),
 });
 
 export async function GET(req: Request, { params }: Params) {
@@ -85,19 +81,14 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin, supabase, user } =
+    access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
@@ -110,7 +101,7 @@ export async function GET(req: Request, { params }: Params) {
   // Verify transaction belongs to workspace and fetch full data
   const transaction = await verifyTransactionWorkspace(
     transactionId,
-    wsId,
+    normalizedWsId,
     sbAdmin
   );
 
@@ -121,18 +112,11 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  // Get authenticated user for permission checks
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   // Use redaction function to get transaction with permission-based field redaction
   const { data, error } = await supabase.rpc(
     'get_wallet_transactions_with_permissions',
     {
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
       p_user_id: user.id,
       p_transaction_ids: [transactionId],
     }
@@ -184,6 +168,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
+  const access = await getFinanceRouteContext(req, wsId);
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
 
@@ -196,15 +181,11 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('update_transactions')) {
@@ -214,12 +195,10 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
-
   // Verify transaction belongs to workspace
   const transaction = await verifyTransactionWorkspace(
     transactionId,
-    wsId,
+    normalizedWsId,
     sbAdmin
   );
 
@@ -312,7 +291,7 @@ export async function PUT(req: Request, { params }: Params) {
       .from('workspace_wallets')
       .select('id')
       .eq('id', newData.wallet_id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
     if (!walletCheck) {
@@ -433,19 +412,13 @@ export async function deleteTransaction(
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('delete_transactions')) {
@@ -458,7 +431,7 @@ export async function deleteTransaction(
   // Verify transaction belongs to workspace
   const transaction = await verifyTransactionWorkspace(
     transactionId,
-    wsId,
+    normalizedWsId,
     sbAdmin
   );
 
@@ -507,7 +480,7 @@ export async function deleteTransaction(
   } | null = null;
 
   if (linkedTransaction?.invoice_id) {
-    const [{ count: inventoryLineCount }, { data: invoice }, authResult] =
+    const [{ count: inventoryLineCount }, { data: invoice }] =
       await Promise.all([
         sbAdmin
           .from('finance_invoice_products')
@@ -518,11 +491,10 @@ export async function deleteTransaction(
           .select('id, notice')
           .eq('id', linkedTransaction.invoice_id)
           .maybeSingle(),
-        resolveAuthenticatedSessionUser(supabase),
       ]);
 
     if ((inventoryLineCount ?? 0) > 0 && invoice) {
-      const authUserId = authResult.user?.id ?? null;
+      const authUserId = user.id;
       let workspaceUserId: string | null = null;
 
       if (authUserId) {
@@ -530,7 +502,7 @@ export async function deleteTransaction(
           .from('workspace_user_linked_users')
           .select('virtual_user_id')
           .eq('platform_user_id', authUserId)
-          .eq('ws_id', wsId)
+          .eq('ws_id', normalizedWsId)
           .maybeSingle();
         workspaceUserId = linkedUser?.virtual_user_id ?? null;
       }
@@ -549,7 +521,11 @@ export async function deleteTransaction(
 
   if (options.onBeforeDeleteFiles) {
     try {
-      await options.onBeforeDeleteFiles({ request: req, transactionId, wsId });
+      await options.onBeforeDeleteFiles({
+        request: req,
+        transactionId,
+        wsId: normalizedWsId,
+      });
     } catch {
       return NextResponse.json(
         { message: 'Failed to delete transaction files' },
@@ -577,7 +553,7 @@ export async function deleteTransaction(
   if (inventorySaleAuditPayload) {
     await sbAdmin.from('inventory_audit_logs').insert([
       {
-        ws_id: wsId,
+        ws_id: normalizedWsId,
         event_kind: 'updated',
         entity_kind: 'sale',
         entity_id: inventorySaleAuditPayload.invoiceId,

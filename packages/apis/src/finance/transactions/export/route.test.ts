@@ -60,18 +60,28 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 describe('transaction export route', () => {
-  const withPermissions = (granted: string[]) => ({
-    withoutPermission: vi.fn(
-      (permission: string) => !granted.includes(permission)
-    ),
-  });
+  const withPermissions = (granted: string[], wsId = 'workspace-1') => {
+    const containsPermission = vi.fn((permission: string) =>
+      granted.includes(permission)
+    );
+
+    return {
+      containsPermission,
+      withoutPermission: vi.fn(
+        (permission: string) => !granted.includes(permission)
+      ),
+      wsId,
+    };
+  };
 
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    mocks.getPermissions.mockResolvedValue(
-      withPermissions(['view_transactions', 'export_finance_data'])
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(
+        withPermissions(['view_transactions', 'export_finance_data'], wsId)
+      )
     );
     mocks.normalizeWorkspaceId.mockResolvedValue('workspace-1');
     mocks.resolveAuthenticatedSessionUser.mockResolvedValue({

@@ -1,5 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { format } from 'date-fns';
 import { NextResponse } from 'next/server';
 
@@ -8,12 +7,17 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
   const { wsId } = await params;
+  const access = await getFinanceRouteContext(request, wsId);
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, supabase } = access.context;
   const url = new URL(request.url);
   const days = Number.parseInt(url.searchParams.get('days') ?? '30', 10);
 
-  const permissions = await getPermissions({ wsId, request });
   if (!permissions || permissions.withoutPermission('view_transactions')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
@@ -30,7 +34,7 @@ export async function GET(request: Request, { params }: Params) {
         workspace_wallets!inner(ws_id)
       `
     )
-    .eq('workspace_wallets.ws_id', wsId)
+    .eq('workspace_wallets.ws_id', normalizedWsId)
     .lt('amount', 0)
     .gte('taken_at', startDate.toISOString())
     .order('taken_at', { ascending: true });

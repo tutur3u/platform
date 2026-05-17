@@ -6,8 +6,12 @@ const mocks = vi.hoisted(() => {
   const budgetInsertSingle = vi.fn();
   const budgetDeleteMaybeSingle = vi.fn();
   const budgetStatusRpc = vi.fn();
+  const getUser = vi.fn();
 
   const sessionSupabase = {
+    auth: {
+      getUser,
+    },
     from: vi.fn((table: string) => {
       if (table === 'finance_budgets') {
         throw new Error(
@@ -54,7 +58,11 @@ const mocks = vi.hoisted(() => {
   };
 
   const permissions = {
+    containsPermission: vi.fn(() => true),
+    membershipType: 'MEMBER',
+    permissions: ['manage_finance'],
     withoutPermission: vi.fn(() => false),
+    wsId: 'normalized-ws',
   };
 
   return {
@@ -63,6 +71,7 @@ const mocks = vi.hoisted(() => {
     budgetInsertSingle,
     budgetList,
     budgetStatusRpc,
+    getUser,
     permissions,
     sessionSupabase,
   };
@@ -82,6 +91,15 @@ describe('budget routes', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.getUser.mockResolvedValue({
+      data: {
+        user: {
+          email: 'finance@example.com',
+          id: 'user-1',
+        },
+      },
+      error: null,
+    });
   });
 
   it('lists budgets through the admin client', async () => {

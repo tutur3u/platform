@@ -1,14 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -36,7 +31,13 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(req);
+    const access = await getFinanceRouteContext(req, wsId);
+
+    if (access.response) {
+      return access.response;
+    }
+
+    const { normalizedWsId, permissions, supabase, user } = access.context;
     const { searchParams } = new URL(req.url);
 
     // Validate query parameters
@@ -75,22 +76,6 @@ export async function GET(
     const finalWalletIds =
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
-    // Get current user to pass to RPC
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-    // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-
-    const permissions = await getPermissions({
-      wsId: normalizedWsId,
-      request: req,
-    });
-    if (!permissions) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
     const { withoutPermission } = permissions;
     if (withoutPermission('view_transactions')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

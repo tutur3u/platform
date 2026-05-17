@@ -117,19 +117,39 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 describe('transaction detail route', () => {
   const firstTagId = '11111111-1111-4111-8111-111111111111';
   const secondTagId = '22222222-2222-4222-8222-222222222222';
-  const withPermissions = (granted: string[]) => ({
-    withoutPermission: vi.fn(
-      (permission: string) => !granted.includes(permission)
-    ),
-  });
+  const normalizedWsId = '00000000-0000-0000-0000-000000000000';
+  const withPermissions = (granted: string[], wsId = normalizedWsId) => {
+    const containsPermission = vi.fn((permission: string) =>
+      granted.includes(permission)
+    );
+
+    return {
+      containsPermission,
+      withoutPermission: vi.fn(
+        (permission: string) => !granted.includes(permission)
+      ),
+      wsId,
+    };
+  };
 
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
 
-    mocks.getPermissions.mockResolvedValue({
-      withoutPermission: vi.fn(() => false),
-    });
+    mocks.getPermissions.mockImplementation(({ wsId }: { wsId: string }) =>
+      Promise.resolve(
+        withPermissions(
+          [
+            'delete_confidential_transactions',
+            'delete_transactions',
+            'update_confidential_transactions',
+            'update_transactions',
+            'view_transactions',
+          ],
+          wsId
+        )
+      )
+    );
     mocks.getUser.mockResolvedValue({
       data: {
         user: {

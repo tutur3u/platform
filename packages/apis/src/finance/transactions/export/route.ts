@@ -1,13 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getFinanceRouteContext } from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -146,18 +139,13 @@ async function getInvoiceCustomers({
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const supabase = await createClient(req);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (
@@ -168,12 +156,6 @@ export async function GET(req: Request, { params }: Params) {
       { message: 'Insufficient permissions' },
       { status: 403 }
     );
-  }
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
   const { searchParams } = new URL(req.url);

@@ -1,13 +1,6 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getFinanceRouteContext } from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -23,19 +16,14 @@ const TransactionCategoryCreateSchema = z.object({
 });
 
 export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+  const access = await getFinanceRouteContext(req, wsId);
 
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
@@ -44,8 +32,6 @@ export async function GET(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .rpc('get_transaction_categories_with_amount_by_workspace', {
@@ -65,9 +51,14 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
   const { wsId } = await params;
-  const normalizedwsId = await normalizeWorkspaceId(wsId, supabase);
+  const access = await getFinanceRouteContext(req, wsId);
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const parsed = TransactionCategoryCreateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -79,15 +70,6 @@ export async function POST(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const permissions = await getPermissions({
-    wsId: normalizedwsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   const { withoutPermission } = permissions;
 
   if (withoutPermission('create_transactions')) {
@@ -97,12 +79,10 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
-
   const { data: res, error } = await sbAdmin
     .from('transaction_categories')
     .insert({
-      ws_id: normalizedwsId,
+      ws_id: normalizedWsId,
       name: data.name,
       is_expense: data.is_expense,
       icon: data.icon ?? null,
