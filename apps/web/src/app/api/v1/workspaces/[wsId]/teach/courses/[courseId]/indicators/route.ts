@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -29,6 +30,61 @@ const UpdateIndicatorValuesSchema = z
     })
   )
   .max(500);
+
+type UpdateIndicatorValue = z.infer<typeof UpdateIndicatorValuesSchema>[number];
+type IndicatorValueTargetValidationIssue = 'invalid-indicator' | 'invalid-user';
+
+async function validateIndicatorValueTargets({
+  courseId,
+  db,
+  values,
+  wsId,
+}: {
+  courseId: string;
+  db: TypedSupabaseClient;
+  values: UpdateIndicatorValue[];
+  wsId: string;
+}): Promise<IndicatorValueTargetValidationIssue | null> {
+  if (!values.length) return null;
+
+  const indicatorIds = [...new Set(values.map((value) => value.indicator_id))];
+  const userIds = [...new Set(values.map((value) => value.user_id))];
+
+  const [indicatorsResult, membersResult] = await Promise.all([
+    db
+      .from('user_group_metrics')
+      .select('id')
+      .eq('ws_id', wsId)
+      .eq('group_id', courseId)
+      .in('id', indicatorIds),
+    db
+      .from('workspace_user_groups_users')
+      .select('user_id, workspace_users!inner(id)')
+      .eq('group_id', courseId)
+      .in('user_id', userIds)
+      .eq('workspace_users.ws_id', wsId)
+      .eq('workspace_users.archived', false),
+  ]);
+
+  if (indicatorsResult.error) throw indicatorsResult.error;
+  if (membersResult.error) throw membersResult.error;
+
+  const validIndicatorIds = new Set(
+    (indicatorsResult.data ?? []).map((indicator) => indicator.id)
+  );
+  if (indicatorIds.some((indicatorId) => !validIndicatorIds.has(indicatorId))) {
+    return 'invalid-indicator';
+  }
+
+  const validUserIds = new Set(
+    (membersResult.data ?? []).map((member) => member.user_id)
+  );
+  if (userIds.some((userId) => !validUserIds.has(userId))) {
+    return 'invalid-user';
+  }
+
+  return null;
+}
 
 export const GET = withSessionAuth(
   async (
@@ -247,6 +303,42 @@ export const PATCH = withSessionAuth(
         { message: 'Course not found' },
         { status: 404 }
       );
+    }
+
+    let targetValidationIssue: IndicatorValueTargetValidationIssue | null;
+    try {
+      targetValidationIssue = await validateIndicatorValueTargets({
+        courseId: parsedParams.data.courseId,
+        db: access.sbAdmin,
+        values: parsedBody.data,
+        wsId: access.normalizedWsId,
+      });
+    } catch (error) {
+      serverLogger.error('Failed to validate Teach indicator value targets', {
+        error,
+      });
+      return NextResponse.json(
+        { message: 'Error validating indicator values' },
+        { status: 500 }
+      );
+    }
+
+    if (targetValidationIssue === 'invalid-indicator') {
+      return NextResponse.json(
+        { message: 'Indicator values must belong to this course' },
+        { status: 400 }
+      );
+    }
+
+    if (targetValidationIssue === 'invalid-user') {
+      return NextResponse.json(
+        { message: 'Indicator users must be enrolled in this course' },
+        { status: 400 }
+      );
+    }
+
+    if (parsedBody.data.length === 0) {
+      return NextResponse.json({ message: 'success' });
     }
 
     const actorId = await getTeachActorWorkspaceUserId({

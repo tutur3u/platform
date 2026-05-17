@@ -11,6 +11,8 @@ Teach is a standalone teacher UI, but not a separate backend. Core teacher actio
 
 `apps/web` remains the protected API owner. Teach-callable routes must opt in to app-session auth for the `teach` audience, resolve permissions from the forwarded app-session user, and then perform admin-backed reads/writes only after workspace membership is verified. New Teach-owned flows should add typed helpers in `@tuturuuu/internal-api` and consume those helpers from Teach client components with TanStack Query.
 
+When a Teach route uses an admin client to write rows keyed by request-body IDs, the route must validate those body IDs against the URL workspace and course before writing. Workspace permission plus course existence is not enough, because the admin client bypasses RLS; score writes such as `indicator_id` and `user_id` must prove that the indicator belongs to the URL course/workspace and the user is an active course member in the same workspace.
+
 Courses are stored as `workspace_user_groups`. The course-level Learn visibility switch is `workspace_user_groups.is_course_published`; module visibility remains `workspace_course_modules.is_published`. New courses default to unpublished drafts, non-guest, active, and empty. Teach can enroll existing workspace users into a course, but this self-serve pass does not create or invite new users.
 
 Teach-owned attendance uses the course schedule fields on `workspace_user_groups`: `sessions`, `starting_date`, and `ending_date`. Teachers can generate recurring class sessions inside Teach, and the attendance calendar should mark unscheduled days, scheduled unchecked days, partial days, complete days, late days, and absent days without linking back to the web user-group schedule page.
