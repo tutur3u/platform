@@ -45,6 +45,7 @@ describe('EditorTopChrome', () => {
           realtimeStatus="connected"
           revision={4}
           rightCollapsed
+          selectedNpc={null}
           serverPicker={<div>Server picker</div>}
           world={world}
         />

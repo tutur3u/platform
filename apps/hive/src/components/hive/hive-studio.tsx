@@ -210,6 +210,7 @@ export function HiveStudio({
                 />
               }
               isRunningNpc={engine.isRunningNpc}
+              lastNpcRunStatus={engine.lastNpcRunStatus}
               miniMapCollapsed={miniMapCollapsed}
               mode={studioMode}
               npcLabCollapsed={npcLabCollapsed}
@@ -227,6 +228,7 @@ export function HiveStudio({
               realtimeStatus={engine.realtimeStatus}
               revision={engine.revision}
               rightCollapsed={rightCollapsed}
+              selectedNpc={engine.selectedNpc}
               serverPicker={serverPicker}
               world={engine.world}
             />

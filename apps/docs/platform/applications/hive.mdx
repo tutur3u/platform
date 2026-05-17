@@ -146,12 +146,19 @@ The 3D editor treats the voxel grid as the source of truth. Perspective comes
 from the camera and controls, not from rotating the editable world group. World
 edits should commit only after click/drag threshold handling so orbit, pan,
 zoom, placement, erasing, moving, and rotating do not conflict with each other.
-The toolbar opens with build tools only; block, object, system, and agent
-catalogs appear only while the Build tool is active. Minimal tile gaps are the
-default terrain presentation; gapless rendering is an explicit settings toggle.
-The Settings dock tab owns the continuous 24-hour time slider, auto-time speed,
-season, weather, camera presets, and simulation/server toggles. Do not restore
-the older five fixed visible time buttons as the primary time control.
+The bottom dock uses explicit persistent panel toggles instead of hover-only
+expansion. Build catalog, editor settings, and live operations each have a
+visible icon control. Minimal tile gaps are the default terrain presentation;
+gapless rendering is an explicit settings toggle. The Settings dock tab owns the
+continuous 24-hour time slider, auto-time speed, season, weather, camera
+presets, and simulation/server toggles. Do not restore the older five fixed
+visible time buttons as the primary time control.
+
+Live operations in the dock must use existing Hive snapshot state rather than a
+new route: world counts, crops, warehouses, server currency, events, online
+users, realtime status, revision, and the last sync notice. The NPC Lab edits
+only the selected NPC. When no NPC is selected, it should show a selection
+prompt instead of silently mutating the first NPC in the server.
 
 The editor also has a `World / Workflows` mode switch. Workflow mode is a 2D
 React Flow graph builder for manual Hive automations. The workflow command bar

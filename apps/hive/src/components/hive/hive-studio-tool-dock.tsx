@@ -22,6 +22,9 @@ export function HiveStudioToolDock({
       autoTimeEnabled={engine.autoTimeEnabled}
       autoTimeSpeed={engine.autoTimeSpeed}
       cameraView={engine.cameraView}
+      cropsCount={engine.cropsCount}
+      currency={engine.currency}
+      eventsCount={engine.eventsCount}
       gaplessMode={engine.gaplessMode}
       isRunningSimulationTick={engine.isRunningSimulationTick}
       onRotateSelection={engine.rotateSelection}
@@ -39,11 +42,18 @@ export function HiveStudioToolDock({
       onToggleAutoTime={() => engine.setAutoTimeEnabled((value) => !value)}
       onToggleGapless={() => engine.setGaplessMode((value) => !value)}
       onUpdateServerSettings={engine.updateServerSettings}
+      presenceCount={engine.presenceCount}
+      realtimeStatus={engine.realtimeStatus}
+      revision={engine.revision}
       season={engine.season}
       server={engine.selectedServer}
+      serverName={engine.selectedServer?.name}
       simulatedMinutes={engine.simulatedMinutes}
+      syncNotice={engine.syncNotice}
       tool={engine.tool}
+      warehousesCount={engine.warehousesCount}
       weather={engine.weather}
+      worldCounts={engine.worldCounts}
     />
   );
 }

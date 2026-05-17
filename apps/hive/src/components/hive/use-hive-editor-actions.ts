@@ -31,6 +31,18 @@ type UseHiveEditorActionsProps = {
   activeTerrain: string;
   mutations: ReturnType<typeof useHiveMutations>;
   npcs: HiveNpc[];
+  onNpcRunError?: (
+    npcId: string,
+    promptMode: 'custom' | 'default' | 'enhanced'
+  ) => void;
+  onNpcRunStart?: (
+    npcId: string,
+    promptMode: 'custom' | 'default' | 'enhanced'
+  ) => void;
+  onNpcRunSuccess?: (
+    npcId: string,
+    promptMode: 'custom' | 'default' | 'enhanced'
+  ) => void;
   persistWorld: ReturnType<typeof createWorldEventPersistence>;
   revision: number;
   selection: HiveSelection;
@@ -50,6 +62,9 @@ export function useHiveEditorActions({
   activeTerrain,
   mutations,
   npcs,
+  onNpcRunError,
+  onNpcRunStart,
+  onNpcRunSuccess,
   persistWorld,
   revision,
   selection,
@@ -253,10 +268,17 @@ export function useHiveEditorActions({
     npcId: string,
     promptMode: 'custom' | 'default' | 'enhanced'
   ) => {
-    mutations.runNpc.mutate({
-      npcId,
-      payload: { expectedRevision: revision, promptMode, world },
-    });
+    onNpcRunStart?.(npcId, promptMode);
+    mutations.runNpc.mutate(
+      {
+        npcId,
+        payload: { expectedRevision: revision, promptMode, world },
+      },
+      {
+        onError: () => onNpcRunError?.(npcId, promptMode),
+        onSuccess: () => onNpcRunSuccess?.(npcId, promptMode),
+      }
+    );
   };
 
   const resetWorld = (mode: 'clear' | 'reseed') => {
