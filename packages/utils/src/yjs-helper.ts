@@ -173,7 +173,7 @@ function jsonFromYElement(element: Y.XmlElement): JSONContent {
 
 export function convertJsonContentToYjsState(
   jsonContent: JSONContent,
-  _schema: Schema
+  _schema?: Schema
 ): Uint8Array {
   const ydoc = new Y.Doc();
   const fragment = ydoc.getXmlFragment(PROSEMIRROR_FRAGMENT_NAME);
@@ -186,7 +186,7 @@ export function convertJsonContentToYjsState(
 
 export function convertYjsStateToJsonContent(
   yjsState: Uint8Array,
-  _schema: Schema
+  _schema?: Schema
 ): JSONContent {
   const ydoc = new Y.Doc();
   Y.applyUpdate(ydoc, yjsState);

@@ -57,7 +57,7 @@ describe('useTaskYjsSync', () => {
   });
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
   });
 
   it('initializes missing yjs state from canonical description', async () => {
@@ -82,8 +82,7 @@ describe('useTaskYjsSync', () => {
     });
   });
 
-  it('auto-heals mismatched persisted yjs state from description', async () => {
-    const healedState = createValidYjsState();
+  it('does not rewrite persisted yjs state when description data is stale', async () => {
     yjsHelperMocks.mockConvertYjsStateToJsonContent.mockReturnValueOnce({
       type: 'doc',
       content: [
@@ -93,6 +92,35 @@ describe('useTaskYjsSync', () => {
         },
       ],
     });
+    taskApiMocks.mockFetchWorkspaceTaskDescription.mockResolvedValueOnce({
+      description: JSON.stringify(description),
+      description_yjs_state: [7, 7, 7],
+    });
+    taskApiMocks.mockUpdateWorkspaceTaskDescription.mockResolvedValueOnce({});
+
+    renderHook(() => useTaskYjsSync(makeProps()));
+
+    await waitFor(() => {
+      expect(
+        taskApiMocks.mockFetchWorkspaceTaskDescription
+      ).toHaveBeenCalledWith('ws-1', 'task-1');
+    });
+
+    expect(
+      taskApiMocks.mockUpdateWorkspaceTaskDescription
+    ).not.toHaveBeenCalled();
+    expect(
+      yjsHelperMocks.mockConvertJsonContentToYjsState
+    ).not.toHaveBeenCalled();
+  });
+
+  it('heals unreadable persisted yjs state from the persisted description', async () => {
+    const healedState = createValidYjsState();
+    yjsHelperMocks.mockConvertYjsStateToJsonContent.mockImplementationOnce(
+      () => {
+        throw new Error('Corrupt Yjs state');
+      }
+    );
     yjsHelperMocks.mockConvertJsonContentToYjsState.mockReturnValueOnce(
       healedState
     );
@@ -144,12 +172,7 @@ describe('useTaskYjsSync', () => {
       description_yjs_state: Array.from(yjsState),
     });
 
-    renderHook(() =>
-      useTaskYjsSync({
-        ...props,
-        description: null,
-      })
-    );
+    renderHook(() => useTaskYjsSync(props));
 
     await waitFor(() => {
       expect(

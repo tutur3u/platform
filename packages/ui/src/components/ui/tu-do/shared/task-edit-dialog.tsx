@@ -20,7 +20,10 @@ import {
   getTicketIdentifier,
   invalidateTaskCaches,
 } from '@tuturuuu/utils/task-helper';
-import { convertJsonContentToYjsState } from '@tuturuuu/utils/yjs-helper';
+import {
+  convertJsonContentToYjsState,
+  convertYjsStateToJsonContent,
+} from '@tuturuuu/utils/yjs-helper';
 import dayjs from 'dayjs';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -322,8 +325,19 @@ export function TaskEditDialog({
     async (yjsState: number[]) => {
       if (!task?.id) return false;
 
-      const content =
-        flushEditorPendingRef.current?.() ?? descriptionRef.current;
+      let content: JSONContent | null;
+      try {
+        content = convertYjsStateToJsonContent(Uint8Array.from(yjsState));
+      } catch (error) {
+        console.error('Failed to decode task description Yjs state:', {
+          taskId: task.id,
+          ...(error instanceof Error
+            ? { message: error.message, name: error.name }
+            : { error }),
+        });
+        return false;
+      }
+
       const serializedDescription = serializeTaskDescriptionContent(content);
 
       if (
@@ -861,9 +875,9 @@ export function TaskEditDialog({
     isOpen,
     isCreateMode,
     realtimeEnabled,
-    description: formState.description,
     editorInstance,
     doc,
+    yjsProvider: provider,
     queryClient,
     flushEditorPendingRef,
   });

@@ -1,7 +1,9 @@
 import { waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import SupabaseProvider from '../supabase-provider';
+import SupabaseProvider, {
+  SUPABASE_PROVIDER_SYNC_ORIGIN,
+} from '../supabase-provider';
 
 function createRealtimeChannel() {
   let subscribeHandler:
@@ -168,6 +170,49 @@ describe('SupabaseProvider', () => {
         status: 'SAVE_FAILED',
       })
     );
+
+    provider.destroy();
+  });
+
+  it('does not broadcast or persist hydration-origin document updates', async () => {
+    const doc = new Y.Doc();
+    const channel = createRealtimeChannel();
+    const saveState = vi.fn().mockResolvedValue(undefined);
+    const loadState = vi.fn().mockResolvedValue(null);
+    const supabase = {
+      channel: vi.fn(() => channel),
+      removeChannel: vi.fn(),
+    } as any;
+
+    const provider = new SupabaseProvider(doc, supabase, {
+      channel: 'task-editor-hydration',
+      tableName: 'tasks',
+      columnName: 'description_yjs_state',
+      id: 'task-hydration',
+      loadState,
+      saveState,
+      saveDebounceMs: 1000,
+      resyncInterval: false,
+    });
+
+    channel.trigger('SUBSCRIBED');
+
+    await waitFor(() => {
+      expect(provider.connected).toBe(true);
+      expect(provider.synced).toBe(true);
+    });
+
+    const sendsBefore = channel.send.mock.calls.length;
+    doc.transact(() => {
+      doc.getMap('prosemirror').set('text', 'hydrated');
+    }, SUPABASE_PROVIDER_SYNC_ORIGIN);
+
+    expect(provider.synced).toBe(true);
+    expect(channel.send.mock.calls).toHaveLength(sendsBefore);
+
+    await provider.flushSave();
+
+    expect(saveState).not.toHaveBeenCalled();
 
     provider.destroy();
   });

@@ -6,6 +6,10 @@ import * as awarenessProtocol from 'y-protocols/awareness';
 import * as Y from 'yjs';
 import { isPageVisible } from './use-page-visibility';
 
+export const SUPABASE_PROVIDER_SYNC_ORIGIN = Symbol.for(
+  'tuturuuu.supabase-provider.sync-origin'
+);
+
 export interface SupabaseProviderConfig {
   channel: string;
   tableName: string;
@@ -62,41 +66,43 @@ export default class SupabaseProvider extends EventEmitter {
   }
 
   onDocumentUpdate(update: Uint8Array, origin: unknown) {
-    if (origin !== this) {
-      // Only broadcast and save if connected and not destroyed
-      if (!this.connected || this.destroyed) {
-        this.logger('skipping broadcast - not connected or destroyed');
-        return;
-      }
-
-      // Validate update size (avoid broadcasting empty or corrupted updates)
-      if (!update || update.length === 0) {
-        this.logger('skipping broadcast - empty update');
-        return;
-      }
-
-      this._dirty = true;
-      this.synced = false;
-
-      this.logger(
-        `document updated locally (${update.length} bytes), broadcasting update to peers`
-      );
-
-      if (this.broadcastDebounceMs > 0) {
-        // Debounced broadcast for free tier — coalesce rapid edits
-        if (this.broadcastDebounceTimeout) {
-          clearTimeout(this.broadcastDebounceTimeout);
-        }
-        this.broadcastDebounceTimeout = setTimeout(() => {
-          this.emit('message', update);
-        }, this.broadcastDebounceMs);
-      } else {
-        // Immediate broadcast for paid tier
-        this.emit('message', update);
-      }
-
-      this.debouncedSave(); // Use debounced save instead of immediate
+    if (origin === this || origin === SUPABASE_PROVIDER_SYNC_ORIGIN) {
+      return;
     }
+
+    // Only broadcast and save if connected and not destroyed
+    if (!this.connected || this.destroyed) {
+      this.logger('skipping broadcast - not connected or destroyed');
+      return;
+    }
+
+    // Validate update size (avoid broadcasting empty or corrupted updates)
+    if (!update || update.length === 0) {
+      this.logger('skipping broadcast - empty update');
+      return;
+    }
+
+    this._dirty = true;
+    this.synced = false;
+
+    this.logger(
+      `document updated locally (${update.length} bytes), broadcasting update to peers`
+    );
+
+    if (this.broadcastDebounceMs > 0) {
+      // Debounced broadcast for free tier — coalesce rapid edits
+      if (this.broadcastDebounceTimeout) {
+        clearTimeout(this.broadcastDebounceTimeout);
+      }
+      this.broadcastDebounceTimeout = setTimeout(() => {
+        this.emit('message', update);
+      }, this.broadcastDebounceMs);
+    } else {
+      // Immediate broadcast for paid tier
+      this.emit('message', update);
+    }
+
+    this.debouncedSave(); // Use debounced save instead of immediate
   }
 
   debouncedSave() {
@@ -284,7 +290,7 @@ export default class SupabaseProvider extends EventEmitter {
     if (persistedState && persistedState.length > 0) {
       this.logger('applying update to yjs');
       try {
-        this.applyUpdate(Uint8Array.from(persistedState));
+        this.applyUpdate(Uint8Array.from(persistedState), this);
       } catch (error) {
         this.logger(error);
       }

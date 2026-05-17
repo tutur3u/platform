@@ -234,6 +234,21 @@ those tasks are already resolved for deadline purposes. Mobile list mode still
 shows `review` lists by default; only `documents`, `done`, and `closed` are
 hidden when no explicit list or status filter is selected.
 
+#### Task description realtime
+
+Task descriptions use a Yjs CRDT document stored in
+`tasks.description_yjs_state`. Once that state exists, treat it as the
+authoritative collaborative source. The JSON `tasks.description` field is the
+read/search/cache projection and must not overwrite a valid Yjs state just
+because it differs; board caches and recently opened dialogs can hold stale
+description JSON while another collaborator has newer Yjs edits.
+
+Initialization or repair writes that seed the local Yjs document from persisted
+state must use the provider sync origin so those changes are not broadcast as
+fresh user edits. Persistence should serialize the description projection from
+the Yjs update being saved, keeping `description` and `description_yjs_state`
+from diverging under multi-user edit churn.
+
 #### Mobile board caching
 
 The mobile task-board flow restores workspace boards, board metadata, and per-list

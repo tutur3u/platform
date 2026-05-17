@@ -2,6 +2,8 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { Editor, JSONContent } from '@tiptap/react';
+import type SupabaseProvider from '@tuturuuu/ui/hooks/supabase-provider';
+import { SUPABASE_PROVIDER_SYNC_ORIGIN } from '@tuturuuu/ui/hooks/supabase-provider';
 import {
   convertJsonContentToYjsState,
   convertYjsStateToJsonContent,
@@ -34,9 +36,9 @@ export interface UseTaskYjsSyncProps {
   isCreateMode: boolean;
   /** Whether realtime features (Yjs sync) are enabled - true for all tiers */
   realtimeEnabled: boolean;
-  description: JSONContent | null;
   editorInstance: Editor | null;
   doc: Y.Doc | null;
+  yjsProvider?: SupabaseProvider | null;
   queryClient: QueryClient;
   flushEditorPendingRef: React.MutableRefObject<
     (() => JSONContent | null) | undefined
@@ -54,9 +56,9 @@ export function useTaskYjsSync({
   isOpen,
   isCreateMode,
   realtimeEnabled,
-  description,
   editorInstance,
   doc,
+  yjsProvider,
   queryClient,
   flushEditorPendingRef,
 }: UseTaskYjsSyncProps): void {
@@ -82,23 +84,20 @@ export function useTaskYjsSync({
           taskDescription.description
         );
         const canonicalDescription =
-          serverDescriptionContent || description || EMPTY_DOC_CONTENT;
-        const hasCanonicalDescriptionSource = Boolean(
-          serverDescriptionContent || description
-        );
-        const canonicalDescriptionString =
-          serializeTaskDescriptionContent(canonicalDescription);
+          serverDescriptionContent ?? EMPTY_DOC_CONTENT;
+        const hasCanonicalDescriptionSource = serverDescriptionContent !== null;
 
         const applyYjsStateToDoc = (yjsState: Uint8Array) => {
+          const syncOrigin = yjsProvider ?? SUPABASE_PROVIDER_SYNC_ORIGIN;
           doc.transact(() => {
             const fragment = doc.getXmlFragment('prosemirror');
             if (fragment.length > 0) {
               fragment.delete(0, fragment.length);
             }
-          });
+          }, syncOrigin);
 
           if (yjsState.length > 0) {
-            Y.applyUpdate(doc, yjsState);
+            Y.applyUpdate(doc, yjsState, syncOrigin);
           }
         };
 
@@ -118,38 +117,27 @@ export function useTaskYjsSync({
           return;
         }
 
-        if (!hasCanonicalDescriptionSource) {
-          applyYjsStateToDoc(Uint8Array.from(currentYjsState));
-          initializedTaskIdRef.current = taskId;
-          return;
-        }
-
-        let shouldHealYjsState = false;
         try {
-          const restoredFromYjs = convertYjsStateToJsonContent(
+          convertYjsStateToJsonContent(
             Uint8Array.from(currentYjsState),
             editorInstance.schema
           );
-          const restoredDescriptionString =
-            serializeTaskDescriptionContent(restoredFromYjs);
-
-          shouldHealYjsState =
-            restoredDescriptionString !== canonicalDescriptionString;
+          initializedTaskIdRef.current = taskId;
+          return;
         } catch {
-          shouldHealYjsState = true;
-        }
+          if (!hasCanonicalDescriptionSource) {
+            initializedTaskIdRef.current = taskId;
+            return;
+          }
 
-        if (shouldHealYjsState) {
           const healedYjsState = convertJsonContentToYjsState(
             canonicalDescription,
             editorInstance.schema
           );
-          const nextYjsState = Array.from(healedYjsState);
 
           await updateWorkspaceTaskDescription(wsId, taskId, {
-            description_yjs_state: nextYjsState,
+            description_yjs_state: Array.from(healedYjsState),
           });
-
           applyYjsStateToDoc(healedYjsState);
         }
 
@@ -166,7 +154,7 @@ export function useTaskYjsSync({
     };
 
     initializeYjsState();
-  }, [doc, description, editorInstance, taskId, wsId]);
+  }, [doc, editorInstance, taskId, wsId, yjsProvider]);
 
   useEffect(() => {
     if (
