@@ -7,16 +7,15 @@ import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef } from 'react';
 import type { BoardBroadcastFn } from '../components/ui/tu-do/shared/board-broadcast-context';
 import { toast } from './use-toast';
-
-type TaskRelationRow = {
-  id: string;
-  assignees?: Array<{ user: NonNullable<Task['assignees']>[number] | null }>;
-  labels?: Array<{ label: NonNullable<Task['labels']>[number] | null }>;
-  projects?: Array<{ project: NonNullable<Task['projects']>[number] | null }>;
-};
-
-const isDefined = <T>(value: T | null | undefined): value is T =>
-  value !== null && value !== undefined;
+import {
+  type BoardRealtimePayload,
+  createRealtimeClientId,
+  isBoardRealtimeEnvelope,
+  LOCAL_BROADCAST_CHANNEL_PREFIX,
+  type RealtimeChannel,
+  SEEN_REALTIME_EVENT_LIMIT,
+} from './useBoardRealtime.types';
+import { useBoardRealtimeEventHandler } from './useBoardRealtimeEventHandler';
 
 export function useBoardRealtime(
   boardId: string,
@@ -37,9 +36,11 @@ export function useBoardRealtime(
   const t = useTranslations('common');
 
   // Hold channel ref so the returned broadcast fn always targets the current channel
-  const channelRef = useRef<ReturnType<
-    ReturnType<typeof createClient>['channel']
-  > | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const localChannelRef = useRef<BroadcastChannel | null>(null);
+  const localClientIdRef = useRef<string>(createRealtimeClientId());
+  const localEventCounterRef = useRef(0);
+  const seenEventIdsRef = useRef<Set<string>>(new Set());
   const hasShownConnectionToastRef = useRef(false);
 
   // Deferred cleanup timer — prevents StrictMode "leave then immediate rejoin"
@@ -61,13 +62,98 @@ export function useBoardRealtime(
   );
   const batchFlushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ── Receiver-side relations batching ────────────────────────────
-  // Collects task IDs from task:relations-changed events over 150ms
-  // and batch-fetches all relations in one query.
-  const pendingRelationIdsRef = useRef<Set<string>>(new Set());
-  const relationFetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+  const rememberEventId = useCallback((payload: BoardRealtimePayload) => {
+    const eventId = payload.__tuturuuuBoardRealtimeEventId;
+    if (typeof eventId !== 'string' || eventId.length === 0) return false;
+
+    const seen = seenEventIdsRef.current;
+    if (seen.has(eventId)) return true;
+
+    seen.add(eventId);
+    while (seen.size > SEEN_REALTIME_EVENT_LIMIT) {
+      const first = seen.values().next().value;
+      if (!first) break;
+      seen.delete(first);
+    }
+
+    return false;
+  }, []);
+
+  const withEventMetadata = useCallback(
+    (payload: Record<string, unknown>): BoardRealtimePayload => {
+      localEventCounterRef.current += 1;
+      return {
+        ...payload,
+        __tuturuuuBoardRealtimeEventId: `${localClientIdRef.current}:${Date.now()}:${localEventCounterRef.current}`,
+        __tuturuuuBoardRealtimeOrigin: localClientIdRef.current,
+      };
+    },
+    []
   );
+
+  const postLocalBroadcast = useCallback(
+    (event: string, payload: BoardRealtimePayload) => {
+      const localChannel = localChannelRef.current;
+      if (!localChannel) return;
+
+      try {
+        localChannel.postMessage({ event, payload });
+      } catch (error) {
+        if (DEV_MODE) {
+          console.error(
+            '[useBoardRealtime] Failed local tab broadcast:',
+            error
+          );
+        }
+      }
+    },
+    []
+  );
+
+  const sendBoardRealtimeEvent = useCallback(
+    (
+      channel: RealtimeChannel | null,
+      event: string,
+      payload: Record<string, unknown>
+    ) => {
+      const payloadWithMetadata = withEventMetadata(payload);
+      postLocalBroadcast(event, payloadWithMetadata);
+      channel?.send({
+        type: 'broadcast',
+        event,
+        payload: payloadWithMetadata,
+      });
+    },
+    [postLocalBroadcast, withEventMetadata]
+  );
+
+  const handleBoardRealtimeEvent = useBoardRealtimeEventHandler({
+    boardId,
+    onListChangeRef,
+    onTaskChangeRef,
+    queryClient,
+    rememberEventId,
+  });
+
+  useEffect(() => {
+    if (!boardId || typeof BroadcastChannel === 'undefined') return;
+
+    const localChannel = new BroadcastChannel(
+      `${LOCAL_BROADCAST_CHANNEL_PREFIX}:${boardId}`
+    );
+    localChannelRef.current = localChannel;
+    localChannel.onmessage = (message) => {
+      if (!isBoardRealtimeEnvelope(message.data)) return;
+      handleBoardRealtimeEvent(message.data.event, message.data.payload);
+    };
+
+    return () => {
+      if (localChannelRef.current === localChannel) {
+        localChannelRef.current = null;
+      }
+      localChannel.close();
+    };
+  }, [boardId, handleBoardRealtimeEvent]);
 
   useEffect(() => {
     if (!boardId || !enabled) return;
@@ -114,251 +200,43 @@ export function useBoardRealtime(
     });
     channelRef.current = channel;
 
-    // --- task:upsert ---
-    channel.on('broadcast', { event: 'task:upsert' }, ({ payload }) => {
-      const taskData = payload.task as Partial<Task> & { id: string };
-      if (DEV_MODE) {
-        console.log('[useBoardRealtime] task:upsert received', taskData.id);
-      }
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) {
-            return [
-              {
-                ...taskData,
-                assignees: taskData.assignees ?? [],
-                labels: taskData.labels ?? [],
-                projects: taskData.projects ?? [],
-              } as Task,
-            ];
-          }
-          const exists = old.some((t) => t.id === taskData.id);
-          if (exists) {
-            onTaskChangeRef.current?.(taskData as Task, 'UPDATE');
-            return old.map((t) =>
-              t.id === taskData.id ? { ...t, ...taskData } : t
-            );
-          }
-          onTaskChangeRef.current?.(taskData as Task, 'INSERT');
-          return [
-            ...old,
-            {
-              ...taskData,
-              assignees: taskData.assignees ?? [],
-              labels: taskData.labels ?? [],
-              projects: taskData.projects ?? [],
-            } as Task,
-          ];
-        }
-      );
-    });
-
-    // --- task:delete ---
-    channel.on('broadcast', { event: 'task:delete' }, ({ payload }) => {
-      const { taskId } = payload as { taskId: string };
-      if (DEV_MODE) {
-        console.log('[useBoardRealtime] task:delete received', taskId);
-      }
-
-      // Grab the task before removal so we can fire the callback
-      const current = queryClient.getQueryData<Task[]>(['tasks', boardId]);
-      const deleted = current?.find((t) => t.id === taskId);
-
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.filter((t) => t.id !== taskId);
-        }
-      );
-
-      if (deleted) {
-        onTaskChangeRef.current?.(deleted, 'DELETE');
-      }
-    });
-
-    // --- list:upsert ---
-    channel.on('broadcast', { event: 'list:upsert' }, ({ payload }) => {
-      const listData = payload.list as Partial<TaskList> & { id: string };
-      if (DEV_MODE) {
-        console.log('[useBoardRealtime] list:upsert received', listData.id);
-      }
-
-      queryClient.setQueryData(
-        ['task_lists', boardId],
-        (old: TaskList[] | undefined) => {
-          if (!old) return [listData as TaskList];
-          const exists = old.some((l) => l.id === listData.id);
-          if (exists) {
-            onListChangeRef.current?.(listData as TaskList, 'UPDATE');
-            return old.map((l) =>
-              l.id === listData.id ? { ...l, ...listData } : l
-            );
-          }
-          onListChangeRef.current?.(listData as TaskList, 'INSERT');
-          return [...old, listData as TaskList];
-        }
-      );
-    });
-
-    // --- list:delete ---
-    channel.on('broadcast', { event: 'list:delete' }, ({ payload }) => {
-      const { listId } = payload as { listId: string };
-      if (DEV_MODE) {
-        console.log('[useBoardRealtime] list:delete received', listId);
-      }
-
-      const current = queryClient.getQueryData<TaskList[]>([
-        'task_lists',
-        boardId,
-      ]);
-      const deleted = current?.find((l) => l.id === listId);
-
-      queryClient.setQueryData(
-        ['task_lists', boardId],
-        (old: TaskList[] | undefined) => {
-          if (!old) return old;
-          return old.filter((l) => l.id !== listId);
-        }
-      );
-
-      // Also remove tasks belonging to the deleted list
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.filter((t) => t.list_id !== listId);
-        }
-      );
-
-      if (deleted) {
-        onListChangeRef.current?.(deleted, 'DELETE');
-      }
-    });
-
-    // --- task:relations-changed ---
-    // Receiver-side batching: collect taskIds over a 150ms window, then
-    // batch-fetch all relations in a single query.
-    const fetchBatchedRelations = async () => {
-      relationFetchTimerRef.current = null;
-      const taskIds = [...pendingRelationIdsRef.current];
-      pendingRelationIdsRef.current.clear();
-      if (taskIds.length === 0) return;
-
-      if (DEV_MODE) {
-        console.log(
-          `[useBoardRealtime] Batch-fetching relations for ${taskIds.length} task(s):`,
-          taskIds
+    channel
+      .on('broadcast', { event: 'task:upsert' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:upsert',
+          payload as BoardRealtimePayload
         );
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('tasks')
-          .select(
-            `
-            id,
-            assignees:task_assignees(
-              user:users(id, display_name, avatar_url)
-            ),
-            labels:task_labels(
-              label:workspace_task_labels(id, name, color, created_at)
-            ),
-            projects:task_project_tasks(
-              project:task_projects(id, name, status)
-            )
-          `
-          )
-          .in('id', taskIds);
-
-        if (error || !data) {
-          if (DEV_MODE) {
-            console.error(
-              '[useBoardRealtime] Failed to batch-fetch relations:',
-              error
-            );
-          }
-          return;
-        }
-
-        const relationsMap = new Map<
-          string,
-          {
-            assignees: NonNullable<Task['assignees']>;
-            labels: NonNullable<Task['labels']>;
-            projects: NonNullable<Task['projects']>;
-          }
-        >();
-        for (const d of data as TaskRelationRow[]) {
-          relationsMap.set(d.id, {
-            assignees: d.assignees?.map((a) => a.user).filter(isDefined) || [],
-            labels: d.labels?.map((l) => l.label).filter(isDefined) || [],
-            projects: d.projects?.map((p) => p.project).filter(isDefined) || [],
-          });
-        }
-
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.map((task) => {
-              const relations = relationsMap.get(task.id);
-              return relations ? { ...task, ...relations } : task;
-            });
-          }
+      })
+      .on('broadcast', { event: 'task:delete' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:delete',
+          payload as BoardRealtimePayload
         );
-      } catch (err) {
-        if (DEV_MODE) {
-          console.error(
-            '[useBoardRealtime] Error batch-fetching relations:',
-            err
-          );
-        }
-      }
-    };
-
-    channel.on(
-      'broadcast',
-      { event: 'task:relations-changed' },
-      ({ payload }) => {
-        // Handle both single { taskId } and batched { taskIds } payloads
-        const p = payload as { taskId?: string; taskIds?: string[] };
-        const ids = p.taskIds ?? (p.taskId ? [p.taskId] : []);
-
-        if (DEV_MODE) {
-          console.log(
-            '[useBoardRealtime] task:relations-changed received',
-            ids
-          );
-        }
-
-        for (const id of ids) {
-          pendingRelationIdsRef.current.add(id);
-        }
-
-        // Debounce: wait 150ms for more events before fetching
-        if (relationFetchTimerRef.current) {
-          clearTimeout(relationFetchTimerRef.current);
-        }
-        relationFetchTimerRef.current = setTimeout(fetchBatchedRelations, 150);
-      }
-    );
-
-    // --- task:deps-changed ---
-    // Invalidate task-relationships caches so dependent components refetch.
-    channel.on('broadcast', { event: 'task:deps-changed' }, ({ payload }) => {
-      const { taskIds } = payload as { taskIds: string[] };
-      if (DEV_MODE) {
-        console.log('[useBoardRealtime] task:deps-changed received', taskIds);
-      }
-      for (const id of taskIds) {
-        queryClient.invalidateQueries({
-          queryKey: ['task-relationships', id],
-        });
-      }
-    });
+      })
+      .on('broadcast', { event: 'list:upsert' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'list:upsert',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on('broadcast', { event: 'list:delete' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'list:delete',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on('broadcast', { event: 'task:relations-changed' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:relations-changed',
+          payload as BoardRealtimePayload
+        );
+      })
+      .on('broadcast', { event: 'task:deps-changed' }, ({ payload }) => {
+        handleBoardRealtimeEvent(
+          'task:deps-changed',
+          payload as BoardRealtimePayload
+        );
+      });
 
     channel.subscribe((status, err) => {
       if (status === 'SUBSCRIBED') {
@@ -395,15 +273,7 @@ export function useBoardRealtime(
       }
     });
 
-    // Deferred cleanup — gives StrictMode a chance to cancel and reuse
     return () => {
-      // Clear receiver-side relation batch timer
-      if (relationFetchTimerRef.current) {
-        clearTimeout(relationFetchTimerRef.current);
-        relationFetchTimerRef.current = null;
-      }
-      pendingRelationIdsRef.current.clear();
-
       const ch = channelRef.current;
       destroyTimerRef.current = setTimeout(() => {
         destroyTimerRef.current = null;
@@ -413,14 +283,15 @@ export function useBoardRealtime(
         }
       }, 100);
     };
-  }, [boardId, enabled, queryClient, t]);
+  }, [boardId, enabled, handleBoardRealtimeEvent, t]);
 
   // ── Sender-side batched broadcast ───────────────────────────────
   const flushBroadcastBatch = useCallback(() => {
     batchFlushTimerRef.current = null;
     const buffer = batchBufferRef.current;
     const channel = channelRef.current;
-    if (buffer.size === 0 || !channel) {
+    const localChannel = localChannelRef.current;
+    if (buffer.size === 0 || (!channel && !localChannel)) {
       buffer.clear();
       return;
     }
@@ -438,11 +309,7 @@ export function useBoardRealtime(
           ),
         ];
         if (taskIds.length > 0) {
-          channel.send({
-            type: 'broadcast',
-            event,
-            payload: { taskIds },
-          });
+          sendBoardRealtimeEvent(channel, event, { taskIds });
         }
       } else if (event === 'task:upsert') {
         // Merge updates for the same task ID (last-write-wins per field)
@@ -453,22 +320,18 @@ export function useBoardRealtime(
           merged.set(task.id, existing ? { ...existing, ...task } : task);
         }
         for (const task of merged.values()) {
-          channel.send({
-            type: 'broadcast',
-            event,
-            payload: { task },
-          });
+          sendBoardRealtimeEvent(channel, event, { task });
         }
       } else {
         // Other events (task:delete, list:upsert, list:delete) — send each
         for (const p of payloads) {
-          channel.send({ type: 'broadcast', event, payload: p });
+          sendBoardRealtimeEvent(channel, event, p);
         }
       }
     }
 
     buffer.clear();
-  }, []);
+  }, [sendBoardRealtimeEvent]);
 
   const broadcast: BoardBroadcastFn = useCallback(
     (event: string, payload: Record<string, unknown>) => {

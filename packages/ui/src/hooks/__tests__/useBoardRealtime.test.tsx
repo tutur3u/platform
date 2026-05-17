@@ -25,6 +25,30 @@ type MockCreateClientFn = {
   mockReturnValue: (value: MockSupabaseClient) => void;
 };
 
+class MockBroadcastChannel {
+  static instances: MockBroadcastChannel[] = [];
+
+  close = vi.fn();
+  name: string;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  postMessage = vi.fn((data: unknown) => {
+    for (const instance of MockBroadcastChannel.instances) {
+      if (instance !== this && instance.name === this.name) {
+        instance.dispatch(data);
+      }
+    }
+  });
+
+  constructor(name: string) {
+    this.name = name;
+    MockBroadcastChannel.instances.push(this);
+  }
+
+  dispatch(data: unknown) {
+    this.onmessage?.({ data } as MessageEvent);
+  }
+}
+
 const { toastMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
 }));
@@ -85,6 +109,8 @@ describe('useBoardRealtime', () => {
 
   beforeEach(async () => {
     vi.useFakeTimers();
+    MockBroadcastChannel.instances = [];
+    vi.stubGlobal('BroadcastChannel', MockBroadcastChannel);
 
     queryClient = new QueryClient({
       defaultOptions: {
@@ -210,6 +236,7 @@ describe('useBoardRealtime', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   describe('initialization and cleanup', () => {
@@ -311,7 +338,7 @@ describe('useBoardRealtime', () => {
   });
 
   describe('broadcast listener registration', () => {
-    it('should register listeners for all 5 broadcast event types', () => {
+    it('should register listeners for all 6 broadcast event types', () => {
       renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
         wrapper,
       });
@@ -322,6 +349,7 @@ describe('useBoardRealtime', () => {
         'list:upsert',
         'list:delete',
         'task:relations-changed',
+        'task:deps-changed',
       ];
       for (const event of events) {
         expect(mockChannel.on).toHaveBeenCalledWith(
@@ -829,7 +857,21 @@ describe('useBoardRealtime', () => {
       expect(mockChannel.send).toHaveBeenCalledWith({
         type: 'broadcast',
         event: 'task:upsert',
-        payload: { task: { id: 'task-1', name: 'Updated' } },
+        payload: expect.objectContaining({
+          __tuturuuuBoardRealtimeEventId: expect.any(String),
+          __tuturuuuBoardRealtimeOrigin: expect.any(String),
+          task: { id: 'task-1', name: 'Updated' },
+        }),
+      });
+      expect(
+        MockBroadcastChannel.instances[0]?.postMessage
+      ).toHaveBeenCalledWith({
+        event: 'task:upsert',
+        payload: expect.objectContaining({
+          __tuturuuuBoardRealtimeEventId: expect.any(String),
+          __tuturuuuBoardRealtimeOrigin: expect.any(String),
+          task: { id: 'task-1', name: 'Updated' },
+        }),
       });
     });
 
@@ -843,6 +885,95 @@ describe('useBoardRealtime', () => {
       expect(() => {
         result.current.broadcast('task:upsert', { task: { id: 'task-1' } });
       }).not.toThrow();
+    });
+
+    it('applies local tab broadcasts even when Supabase realtime is disabled', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: false }), {
+        wrapper,
+      });
+
+      await act(async () => {
+        MockBroadcastChannel.instances[0]?.dispatch({
+          event: 'task:upsert',
+          payload: {
+            __tuturuuuBoardRealtimeEventId: 'local-event-1',
+            task: mockTask,
+          },
+        });
+      });
+
+      expect(mockChannel.subscribe).not.toHaveBeenCalled();
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+        expect.objectContaining({ id: 'task-1' }),
+      ]);
+    });
+
+    it('delivers outgoing broadcasts to another local tab when Supabase realtime is disabled', () => {
+      const receiverQueryClient = new QueryClient({
+        defaultOptions: {
+          queries: { retry: false },
+          mutations: { retry: false },
+        },
+      });
+      receiverQueryClient.setQueryData(['tasks', 'board-1'], []);
+
+      const receiverWrapper = ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={receiverQueryClient}>
+          {children}
+        </QueryClientProvider>
+      );
+
+      const { result } = renderHook(
+        () => useBoardRealtime('board-1', { enabled: false }),
+        { wrapper }
+      );
+      renderHook(() => useBoardRealtime('board-1', { enabled: false }), {
+        wrapper: receiverWrapper,
+      });
+
+      act(() => {
+        result.current.broadcast('task:upsert', { task: mockTask });
+        vi.advanceTimersByTime(50);
+      });
+
+      expect(mockChannel.subscribe).not.toHaveBeenCalled();
+      expect(
+        receiverQueryClient.getQueryData<Task[]>(['tasks', 'board-1'])
+      ).toEqual([expect.objectContaining({ id: 'task-1' })]);
+    });
+
+    it('deduplicates the same event received locally and through Supabase', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      await act(async () => {
+        MockBroadcastChannel.instances[0]?.dispatch({
+          event: 'task:upsert',
+          payload: {
+            __tuturuuuBoardRealtimeEventId: 'shared-event-1',
+            task: { ...mockTask, name: 'Local update' },
+          },
+        });
+      });
+
+      const listener = broadcastListeners.get('task:upsert')!;
+      await act(async () => {
+        listener({
+          payload: {
+            __tuturuuuBoardRealtimeEventId: 'shared-event-1',
+            task: { id: 'task-1', name: 'Duplicate network update' },
+          },
+        });
+      });
+
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.name
+      ).toBe('Local update');
     });
   });
 });
