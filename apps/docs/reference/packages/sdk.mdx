@@ -163,9 +163,11 @@ exists or the refresh JWT has expired, run `ttr login` again.
 
 API routes used by `ttr` must accept the CLI app-session access JWT from the
 `Authorization: Bearer ...` header. For `apps/web` routes, prefer
-`withSessionAuth(..., { allowAppSessionAuth: true })`; shared API routes should
-verify the app-session token before falling back to Supabase session auth and
-then keep workspace membership checks explicit.
+`withSessionAuth` with `targetApp: 'platform'` and
+`requiredScope: 'cli:access'` when the route is CLI-only; shared user profile
+routes can include the platform target alongside satellite app targets. Shared
+API routes should verify the CLI app-session token before falling back to
+Supabase session auth and then keep workspace membership checks explicit.
 
 SDK releases are published automatically from
 `.github/workflows/release-sdk-package.yaml` when a push to `production` changes
@@ -191,6 +193,17 @@ workflow cannot mint a matching npm publish identity. Do not add `bun install`,
 secrets to the SDK release workflow. Because the `tuturuuu` package is public
 and `tutur3u/platform` is a public repository, npm also generates and attaches
 build provenance attestations automatically.
+
+`.github/workflows/sdk-version-bump.yaml` guards that release trigger. Pull
+requests fail when release-impacting SDK files under `packages/sdk/src`,
+`packages/sdk/package.json`, `packages/sdk/README.md`, `packages/sdk/LICENSE`,
+or SDK TypeScript configs change without a `packages/sdk/package.json` version
+bump. Pushes to `production` run the same detector in auto-bump mode: if a
+release-impacting SDK change lands without a new version, the workflow opens a
+patch-version pull request back to `production`. Run the detector locally with
+`node scripts/ci/check-sdk-version-bump.mjs --changed-files
+packages/sdk/src/index.ts --mode check` when testing the guard without creating
+commits.
 
 The SDK imports `@tuturuuu/types` and `@tuturuuu/internal-api` through package
 exports that point at their git-ignored `dist/` directories. The release

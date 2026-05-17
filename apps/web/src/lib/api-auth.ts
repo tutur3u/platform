@@ -25,6 +25,12 @@ import { hasAuthenticatedApiSession } from '@tuturuuu/utils/api-proxy-guard';
 import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  enforceAdaptiveStepUpChallenge,
+  getAdaptiveRateLimitConfig,
+  recordResponseAbuseSignal,
+  resolveWebAbuseDecision,
+} from './abuse-risk';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
 export type AuthorizedRequest = {
@@ -353,6 +359,100 @@ interface SessionAuthOptions {
   allowAppSessionAuth?: AppSessionAuthOptions;
 }
 
+type SessionAdaptiveAuthKind = 'app-session' | 'session' | 'temp';
+
+function getUserCreatedAt(user: SupabaseUser) {
+  return (user as SupabaseUser & { created_at?: string | null }).created_at;
+}
+
+async function applyAdaptiveSessionControls({
+  authKind,
+  endpoint,
+  ipAddress,
+  isRead,
+  rateLimit,
+  request,
+  user,
+}: {
+  authKind: SessionAdaptiveAuthKind;
+  endpoint: string;
+  ipAddress: string;
+  isRead: boolean;
+  rateLimit: RateLimitConfig | false | undefined;
+  request: NextRequest;
+  user: SupabaseUser;
+}): Promise<{
+  decision: Awaited<ReturnType<typeof resolveWebAbuseDecision>>;
+  headers: Record<string, string>;
+  response: NextResponse | null;
+}> {
+  const decision = await resolveWebAbuseDecision({
+    authKind,
+    ipAddress,
+    isRead,
+    method: request.method,
+    request,
+    route: endpoint,
+    userCreatedAt: getUserCreatedAt(user),
+    userId: user.id,
+  });
+
+  const challengeResponse = await enforceAdaptiveStepUpChallenge({
+    decision,
+    ipAddress,
+    isRead,
+    method: request.method,
+    request,
+    route: endpoint,
+    userId: user.id,
+  });
+
+  if (challengeResponse) {
+    return { decision, headers: {}, response: challengeResponse };
+  }
+
+  const config = rateLimit ?? (isRead ? false : DEFAULT_MUTATE_RATE_LIMIT);
+  if (rateLimit === false || config === false) {
+    return { decision, headers: {}, response: null };
+  }
+
+  const { config: adaptiveConfig } = getAdaptiveRateLimitConfig(
+    config,
+    decision
+  );
+  const rateLimitResult = await checkRateLimit(
+    `session:user:${isRead ? 'read' : 'mutate'}:${user.id}`,
+    adaptiveConfig
+  );
+
+  if (!('allowed' in rateLimitResult)) {
+    recordResponseAbuseSignal({
+      decision,
+      ipAddress,
+      method: request.method,
+      response: rateLimitResult,
+      route: endpoint,
+      userId: user.id,
+    });
+    return { decision, headers: {}, response: rateLimitResult };
+  }
+
+  return {
+    decision,
+    headers: rateLimitResult.headers,
+    response: null,
+  };
+}
+
+function applyAdaptiveRateLimitHeaders(
+  response: NextResponse,
+  headers: Record<string, string>
+) {
+  for (const [key, value] of Object.entries(headers)) {
+    response.headers.set(key, value);
+  }
+}
+
 /**
  * Wraps a session-auth route handler with:
  * 1. IP block check (cheap Redis lookup)
@@ -482,6 +582,19 @@ export function withSessionAuth<T = unknown>(
         // User suspension module not yet available or failed — fail-open
       }
 
+      const adaptiveControls = await applyAdaptiveSessionControls({
+        authKind: 'temp',
+        endpoint,
+        ipAddress,
+        isRead,
+        rateLimit: options?.rateLimit,
+        request,
+        user: tempUser,
+      });
+      if (adaptiveControls.response) {
+        return adaptiveControls.response;
+      }
+
       const response = await handler(
         request,
         { user: tempUser, supabase: tempSupabase },
@@ -503,6 +616,16 @@ export function withSessionAuth<T = unknown>(
         }
         response.headers.set('Cache-Control', directives.join(', '));
       }
+
+      applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
+      recordResponseAbuseSignal({
+        decision: adaptiveControls.decision,
+        ipAddress,
+        method: request.method,
+        response,
+        route: endpoint,
+        userId: tempUser.id,
+      });
 
       return response;
     }
@@ -548,6 +671,19 @@ export function withSessionAuth<T = unknown>(
         const params = routeContext?.params
           ? await Promise.resolve(routeContext.params)
           : ({} as T);
+        const adaptiveControls = await applyAdaptiveSessionControls({
+          authKind: 'app-session',
+          endpoint,
+          ipAddress,
+          isRead,
+          rateLimit: options?.rateLimit,
+          request,
+          user: appSessionUser,
+        });
+        if (adaptiveControls.response) {
+          return adaptiveControls.response;
+        }
+
         const response = await handler(
           request,
           { user: appSessionUser, supabase: adminSupabase },
@@ -567,6 +703,16 @@ export function withSessionAuth<T = unknown>(
           }
           response.headers.set('Cache-Control', directives.join(', '));
         }
+
+        applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
+        recordResponseAbuseSignal({
+          decision: adaptiveControls.decision,
+          ipAddress,
+          method: request.method,
+          response,
+          route: endpoint,
+          userId: appSessionUser.id,
+        });
 
         return response;
       }
@@ -629,6 +775,19 @@ export function withSessionAuth<T = unknown>(
       ? await Promise.resolve(routeContext.params)
       : ({} as T);
 
+    const adaptiveControls = await applyAdaptiveSessionControls({
+      authKind: 'session',
+      endpoint,
+      ipAddress,
+      isRead,
+      rateLimit: options?.rateLimit,
+      request,
+      user,
+    });
+    if (adaptiveControls.response) {
+      return adaptiveControls.response;
+    }
+
     const response = await handler(request, { user, supabase }, params);
 
     // 7. Apply Cache-Control for successful GET responses
@@ -645,6 +804,16 @@ export function withSessionAuth<T = unknown>(
       }
       response.headers.set('Cache-Control', directives.join(', '));
     }
+
+    applyAdaptiveRateLimitHeaders(response, adaptiveControls.headers);
+    recordResponseAbuseSignal({
+      decision: adaptiveControls.decision,
+      ipAddress,
+      method: request.method,
+      response,
+      route: endpoint,
+      userId: user.id,
+    });
 
     return response;
   };

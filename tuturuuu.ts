@@ -21,6 +21,7 @@ export const ci = {
   'release-typescript-config-package.yaml': true,
   'release-ui-package.yaml': true,
   'rust-backend.yml': true,
+  'sdk-version-bump.yaml': true,
   'supabase-production.yaml': true,
   'supabase-staging.yaml': true,
   'supabase-types.yaml': true,

@@ -41,6 +41,7 @@ function createRateLimitErrorResponse(
 export interface RateLimitConfig {
   windowMs: number; // Time window in milliseconds
   maxRequests: number; // Maximum requests per window
+  maxRequestsMultiplier?: number; // Optional server-side trust/risk multiplier
 }
 
 /**
@@ -274,12 +275,34 @@ async function getEffectiveRateLimitConfig(
   const workspaceConfig = await getWorkspaceRateLimitConfig(wsId);
 
   if (!workspaceConfig) {
-    return defaultConfig;
+    return applyRateLimitConfigMultiplier(defaultConfig);
   }
 
   return {
     windowMs: workspaceConfig.windowMs ?? defaultConfig.windowMs,
-    maxRequests: workspaceConfig.maxRequests ?? defaultConfig.maxRequests,
+    maxRequests: Math.max(
+      1,
+      Math.floor(
+        (workspaceConfig.maxRequests ?? defaultConfig.maxRequests) *
+          (defaultConfig.maxRequestsMultiplier ?? 1)
+      )
+    ),
+  };
+}
+
+function applyRateLimitConfigMultiplier(
+  config: RateLimitConfig
+): RateLimitConfig {
+  if (!config.maxRequestsMultiplier) {
+    return config;
+  }
+
+  return {
+    windowMs: config.windowMs,
+    maxRequests: Math.max(
+      1,
+      Math.floor(config.maxRequests * config.maxRequestsMultiplier)
+    ),
   };
 }
 
@@ -299,7 +322,7 @@ export async function checkRateLimit(
 > {
   const effectiveConfig = wsId
     ? await getEffectiveRateLimitConfig(wsId, config)
-    : config;
+    : applyRateLimitConfigMultiplier(config);
 
   const result = await checkRateLimitRedis(keyId, effectiveConfig);
 

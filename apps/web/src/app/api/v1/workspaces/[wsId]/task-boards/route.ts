@@ -1,8 +1,12 @@
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import {
   getPermissions,
@@ -30,6 +34,23 @@ const listBoardsSearchSchema = z.object({
 });
 
 const BOARD_IDS_BATCH_SIZE = 500;
+const PERSONAL_WORKSPACE_ALIAS = 'personal';
+
+type TaskBoardRequestAuth =
+  | {
+      appSession: false;
+      supabase: TypedSupabaseClient;
+      user: SupabaseUser;
+    }
+  | {
+      appSession: true;
+      sbAdmin: TypedSupabaseClient;
+      supabase: TypedSupabaseClient;
+      user: SupabaseUser;
+    }
+  | {
+      error: NextResponse;
+    };
 
 interface Params {
   params: Promise<{
@@ -37,26 +58,100 @@ interface Params {
   }>;
 }
 
+function createCliSessionUser(claims: { email: string | null; sub: string }) {
+  return {
+    aud: 'authenticated',
+    email: claims.email ?? undefined,
+    id: claims.sub,
+  } as SupabaseUser;
+}
+
+async function resolveTaskBoardRequestAuth(
+  req: Request
+): Promise<TaskBoardRequestAuth> {
+  const appSessionToken = getAppSessionTokenFromRequest(req);
+
+  if (appSessionToken) {
+    const verification = verifyCliAccessToken(appSessionToken);
+
+    if (verification.ok) {
+      const sbAdmin = (await createAdminClient({
+        noCookie: true,
+      })) as TypedSupabaseClient;
+
+      return {
+        appSession: true,
+        sbAdmin,
+        supabase: sbAdmin as TypedSupabaseClient,
+        user: createCliSessionUser(verification.claims),
+      };
+    }
+  }
+
+  const supabase = (await createClient(req)) as TypedSupabaseClient;
+  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+
+  if (authError || !user) {
+    return {
+      error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return { appSession: false, supabase, user };
+}
+
+async function normalizeWorkspaceIdForCliSession({
+  rawWsId,
+  sbAdmin,
+  userId,
+}: {
+  rawWsId: string;
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+}) {
+  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
+    return normalizeWorkspaceId(rawWsId, sbAdmin);
+  }
+
+  const { data: workspace, error } = await sbAdmin
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id, type)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', userId)
+    .eq('workspace_members.type', 'MEMBER')
+    .maybeSingle();
+
+  if (error || !workspace?.id) {
+    throw new Error('Personal workspace not found');
+  }
+
+  return workspace.id;
+}
+
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-    const supabase = await createClient(req);
+    const auth = await resolveTaskBoardRequestAuth(req);
+    if ('error' in auth) return auth.error;
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const wsId = await normalizeWorkspaceId(id, supabase);
+    const sbAdmin: TypedSupabaseClient =
+      'sbAdmin' in auth
+        ? auth.sbAdmin
+        : ((await createAdminClient()) as TypedSupabaseClient);
+    const wsId = auth.appSession
+      ? await normalizeWorkspaceIdForCliSession({
+          rawWsId: id,
+          sbAdmin,
+          userId: auth.user.id,
+        })
+      : await normalizeWorkspaceId(id, auth.supabase);
 
     // Read access is membership-gated so board viewers can still enumerate
     // boards for navigation and selection even without manage_projects.
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
+      userId: auth.user.id,
+      supabase: auth.supabase,
     });
 
     if (memberCheck.error === 'membership_lookup_failed') {
@@ -73,8 +168,6 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    const sbAdmin = await createAdminClient();
-
     const searchParams = listBoardsSearchSchema.parse(
       Object.fromEntries(new URL(req.url).searchParams)
     );
@@ -84,7 +177,11 @@ export async function GET(req: Request, { params }: Params) {
     const status = searchParams.status;
 
     try {
-      await ensureDefaultPersonalTaskBoard({ sbAdmin, userId: user.id, wsId });
+      await ensureDefaultPersonalTaskBoard({
+        sbAdmin,
+        userId: auth.user.id,
+        wsId,
+      });
     } catch (error) {
       console.error('Failed to ensure default personal task board:', error);
     }

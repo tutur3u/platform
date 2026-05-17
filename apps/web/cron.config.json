@@ -57,6 +57,13 @@
       "schedule": "* * * * *"
     },
     {
+      "description": "Email operators when Docker daemon crash recovery events are recorded.",
+      "enabled": true,
+      "id": "infrastructure-docker-recovery-alerts",
+      "path": "/api/cron/infrastructure/docker-recovery-alerts",
+      "schedule": "* * * * *"
+    },
+    {
       "description": "Advance enabled Hive farming, NPC needs, ledgers, and autonomous simulation ticks.",
       "enabled": false,
       "id": "hive-simulate",

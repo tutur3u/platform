@@ -159,6 +159,33 @@ describe('guardApiProxyRequest', () => {
     expect(response?.headers.get('X-RateLimit-Policy')).toBe('default');
   });
 
+  it('does not grant elevated proxy budgets from authenticated-looking headers alone', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.validateEmoji.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/test', 'POST', {
+        authorization: 'Bearer header.payload.signature',
+      }),
+      {
+        prefixBase: 'proxy:test:api',
+      }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.isBlocked).not.toHaveBeenCalled();
+    expect(mocks.limit).not.toHaveBeenCalled();
+    expect(mocks.validateEmoji).toHaveBeenCalledTimes(1);
+  });
+
   it('fails open when the configured Redis rate limiter is unreachable', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv(

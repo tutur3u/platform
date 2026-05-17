@@ -16,6 +16,7 @@ import {
   TrafficPeriodsPanel,
 } from './blue-green-monitoring-panels';
 import { useBlueGreenMonitoringSnapshot } from './blue-green-monitoring-query-hooks';
+import { BlueGreenMonitoringRecoverySettings } from './blue-green-monitoring-recovery-settings';
 import { BlueGreenMonitoringRolloutControls } from './blue-green-monitoring-rollout-controls';
 import {
   BlueGreenMonitoringAlerts,
@@ -104,6 +105,8 @@ export function BlueGreenMonitoringRolloutsClient() {
       <RolloutStagePanel deployments={deployments} watcher={snapshot.watcher} />
 
       <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
+
+      <BlueGreenMonitoringRecoverySettings snapshot={snapshot} />
 
       <div className="grid gap-6 2xl:grid-cols-[1.05fr_0.95fr]">
         <TrafficPeriodsPanel analytics={snapshot.analytics} />

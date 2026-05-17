@@ -9,6 +9,127 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      abuse_activity_signals: {
+        Row: {
+          api_key_id: string | null;
+          confidence_delta: number;
+          created_at: string;
+          id: string;
+          ip_address: string | null;
+          metadata: Json;
+          method: string | null;
+          reason_code: string | null;
+          risk_tier: Database['public']['Enums']['abuse_risk_tier'];
+          route: string | null;
+          score_delta: number;
+          signal_type: Database['public']['Enums']['abuse_signal_type'];
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          user_id: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          api_key_id?: string | null;
+          confidence_delta?: number;
+          created_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          metadata?: Json;
+          method?: string | null;
+          reason_code?: string | null;
+          risk_tier?: Database['public']['Enums']['abuse_risk_tier'];
+          route?: string | null;
+          score_delta?: number;
+          signal_type: Database['public']['Enums']['abuse_signal_type'];
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          user_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          api_key_id?: string | null;
+          confidence_delta?: number;
+          created_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          metadata?: Json;
+          method?: string | null;
+          reason_code?: string | null;
+          risk_tier?: Database['public']['Enums']['abuse_risk_tier'];
+          route?: string | null;
+          score_delta?: number;
+          signal_type?: Database['public']['Enums']['abuse_signal_type'];
+          subject_key?: string;
+          subject_type?: Database['public']['Enums']['abuse_reputation_subject_type'];
+          user_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'abuse_activity_signals_api_key_id_fkey';
+            columns: ['api_key_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_api_keys';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_activity_signals_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       abuse_events: {
         Row: {
           created_at: string;
@@ -47,6 +168,324 @@ export type Database = {
           user_agent?: string | null;
         };
         Relationships: [];
+      };
+      abuse_reputation_subjects: {
+        Row: {
+          api_key_id: string | null;
+          cidr: string | null;
+          confidence_score: number;
+          created_at: string;
+          id: string;
+          ip_address: string | null;
+          last_negative_signal_at: string | null;
+          last_positive_signal_at: string | null;
+          last_seen_at: string;
+          metadata: Json;
+          negative_signal_count: number;
+          positive_signal_count: number;
+          reputation_score: number;
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier: number;
+          updated_at: string;
+          user_id: string | null;
+          workspace_id: string | null;
+        };
+        Insert: {
+          api_key_id?: string | null;
+          cidr?: string | null;
+          confidence_score?: number;
+          created_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          last_negative_signal_at?: string | null;
+          last_positive_signal_at?: string | null;
+          last_seen_at?: string;
+          metadata?: Json;
+          negative_signal_count?: number;
+          positive_signal_count?: number;
+          reputation_score?: number;
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier?: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier?: number;
+          updated_at?: string;
+          user_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Update: {
+          api_key_id?: string | null;
+          cidr?: string | null;
+          confidence_score?: number;
+          created_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          last_negative_signal_at?: string | null;
+          last_positive_signal_at?: string | null;
+          last_seen_at?: string;
+          metadata?: Json;
+          negative_signal_count?: number;
+          positive_signal_count?: number;
+          reputation_score?: number;
+          subject_key?: string;
+          subject_type?: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier?: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier?: number;
+          updated_at?: string;
+          user_id?: string | null;
+          workspace_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'abuse_reputation_subjects_api_key_id_fkey';
+            columns: ['api_key_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_api_keys';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_reputation_subjects_workspace_id_fkey';
+            columns: ['workspace_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      abuse_step_up_challenges: {
+        Row: {
+          challenge_type: string;
+          completed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          ip_address: string | null;
+          metadata: Json;
+          risk_tier: Database['public']['Enums']['abuse_risk_tier'];
+          route: string | null;
+          status: Database['public']['Enums']['abuse_challenge_status'];
+          subject_key: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          challenge_type?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          metadata?: Json;
+          risk_tier?: Database['public']['Enums']['abuse_risk_tier'];
+          route?: string | null;
+          status?: Database['public']['Enums']['abuse_challenge_status'];
+          subject_key: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          challenge_type?: string;
+          completed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          ip_address?: string | null;
+          metadata?: Json;
+          risk_tier?: Database['public']['Enums']['abuse_risk_tier'];
+          route?: string | null;
+          status?: Database['public']['Enums']['abuse_challenge_status'];
+          subject_key?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'abuse_step_up_challenges_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_step_up_challenges_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_step_up_challenges_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_step_up_challenges_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      abuse_trust_overrides: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          expires_at: string | null;
+          id: string;
+          metadata: Json;
+          reason: string;
+          revoke_reason: string | null;
+          revoked_at: string | null;
+          revoked_by: string | null;
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          reason: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          subject_key: string;
+          subject_type: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier?: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          expires_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          reason?: string;
+          revoke_reason?: string | null;
+          revoked_at?: string | null;
+          revoked_by?: string | null;
+          subject_key?: string;
+          subject_type?: Database['public']['Enums']['abuse_reputation_subject_type'];
+          tier?: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'abuse_trust_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'abuse_trust_overrides_revoked_by_fkey';
+            columns: ['revoked_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       ai_chat_members: {
         Row: {
@@ -28721,6 +29160,19 @@ export type Database = {
           username: string;
         }[];
       };
+      get_rate_limit_trust_decision: {
+        Args: {
+          p_api_key_id?: string;
+          p_ip_address?: string;
+          p_user_id?: string;
+        };
+        Returns: {
+          decision_source: string;
+          subject_key: string;
+          tier: Database['public']['Enums']['abuse_risk_tier'];
+          trust_multiplier: number;
+        }[];
+      };
       get_recent_actions_summary: {
         Args: { limit_count?: number };
         Returns: {
@@ -30451,6 +30903,24 @@ export type Database = {
           upserted: number;
         }[];
       };
+      record_abuse_activity_signal: {
+        Args: {
+          p_api_key_id?: string;
+          p_confidence_delta?: number;
+          p_ip_address?: string;
+          p_metadata?: Json;
+          p_method?: string;
+          p_reason_code?: string;
+          p_risk_tier?: Database['public']['Enums']['abuse_risk_tier'];
+          p_route?: string;
+          p_score_delta?: number;
+          p_signal_type: Database['public']['Enums']['abuse_signal_type'];
+          p_subjects: Json;
+          p_user_id?: string;
+          p_workspace_id?: string;
+        };
+        Returns: undefined;
+      };
       record_email_bounce: {
         Args: {
           p_bounce_subtype?: string;
@@ -31213,6 +31683,7 @@ export type Database = {
       };
     };
     Enums: {
+      abuse_challenge_status: 'issued' | 'passed' | 'failed' | 'expired';
       abuse_event_type:
         | 'otp_send'
         | 'otp_verify_failed'
@@ -31226,6 +31697,32 @@ export type Database = {
         | 'api_rate_limited'
         | 'api_abuse'
         | 'otp_limit_reset';
+      abuse_reputation_subject_type:
+        | 'user'
+        | 'session'
+        | 'api_key'
+        | 'ip'
+        | 'cidr'
+        | 'user_location';
+      abuse_risk_tier:
+        | 'trusted'
+        | 'standard'
+        | 'watch'
+        | 'challenge_required'
+        | 'restricted';
+      abuse_signal_type:
+        | 'organic_activity'
+        | 'automation_client'
+        | 'scripted_client'
+        | 'missing_user_agent'
+        | 'auth_failure'
+        | 'rate_limit_hit'
+        | 'client_error'
+        | 'payload_abuse'
+        | 'challenge_issued'
+        | 'challenge_passed'
+        | 'challenge_failed'
+        | 'manual_override';
       ai_message_type:
         | 'message'
         | 'file'
@@ -33338,6 +33835,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      abuse_challenge_status: ['issued', 'passed', 'failed', 'expired'],
       abuse_event_type: [
         'otp_send',
         'otp_verify_failed',
@@ -33351,6 +33849,35 @@ export const Constants = {
         'api_rate_limited',
         'api_abuse',
         'otp_limit_reset',
+      ],
+      abuse_reputation_subject_type: [
+        'user',
+        'session',
+        'api_key',
+        'ip',
+        'cidr',
+        'user_location',
+      ],
+      abuse_risk_tier: [
+        'trusted',
+        'standard',
+        'watch',
+        'challenge_required',
+        'restricted',
+      ],
+      abuse_signal_type: [
+        'organic_activity',
+        'automation_client',
+        'scripted_client',
+        'missing_user_agent',
+        'auth_failure',
+        'rate_limit_hit',
+        'client_error',
+        'payload_abuse',
+        'challenge_issued',
+        'challenge_passed',
+        'challenge_failed',
+        'manual_override',
       ],
       ai_message_type: [
         'message',

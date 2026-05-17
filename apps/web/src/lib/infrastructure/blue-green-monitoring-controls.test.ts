@@ -5,7 +5,11 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   clearBlueGreenDeploymentPin,
   readBlueGreenDeploymentPin,
+  readBlueGreenDockerRecoveryAlertState,
+  readBlueGreenDockerRecoverySettings,
   writeBlueGreenDeploymentPin,
+  writeBlueGreenDockerRecoveryAlertState,
+  writeBlueGreenDockerRecoverySettings,
 } from './blue-green-monitoring-controls';
 
 const ORIGINAL_CONTROL_DIR = process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR;
@@ -50,6 +54,88 @@ describe('blue-green monitoring controls', () => {
       clearBlueGreenDeploymentPin();
 
       expect(readBlueGreenDeploymentPin()).toBeNull();
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('persists Docker recovery settings for the host watcher', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-recovery-settings-')
+    );
+
+    try {
+      process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR = tempDir;
+
+      const settings = writeBlueGreenDockerRecoverySettings({
+        dockerRecoveryPollMs: 1000,
+        dockerRecoveryTimeoutMs: null,
+        dockerRestartAfterMs: 5000,
+        dockerRestartCommand: ['service', 'docker', 'restart'],
+        dockerRestartCooldownMs: 60_000,
+        dockerRestartDisabled: false,
+        emailAlertCooldownMs: 900_000,
+        emailAlertRecipients: ['Ops@Platform.Test', 'bad-email'],
+        emailAlertsEnabled: true,
+        postRestartCommandTimeoutMs: 120_000,
+        postRestartCommands: [
+          {
+            args: ['compose', 'up', '-d'],
+            command: 'docker',
+            cwd: '/srv/zeus',
+          },
+        ],
+        updatedAt: '2026-05-17T09:30:00.000Z',
+        updatedBy: 'user-1',
+        updatedByEmail: 'ops@platform.test',
+      });
+
+      expect(settings).toMatchObject({
+        dockerRestartCommand: ['service', 'docker', 'restart'],
+        emailAlertRecipients: ['ops@platform.test'],
+        emailAlertsEnabled: true,
+        kind: 'docker-recovery-settings',
+        postRestartCommands: [
+          {
+            command: 'docker',
+            cwd: '/srv/zeus',
+          },
+        ],
+      });
+      expect(readBlueGreenDockerRecoverySettings()).toMatchObject({
+        dockerRestartAfterMs: 5000,
+        emailAlertCooldownMs: 900_000,
+        postRestartCommandTimeoutMs: 120_000,
+        updatedBy: 'user-1',
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('persists Docker recovery email alert state for incident dedupe', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-recovery-alert-state-')
+    );
+
+    try {
+      process.env.PLATFORM_BLUE_GREEN_CONTROL_DIR = tempDir;
+
+      const state = writeBlueGreenDockerRecoveryAlertState({
+        lastCheckedAt: '2026-05-17T10:00:00.000Z',
+        lastSentAt: '2026-05-17T10:00:00.000Z',
+        notifiedIncidentIds: ['incident-1', 'incident-1', 'incident-2'],
+        updatedAt: '2026-05-17T10:00:01.000Z',
+      });
+
+      expect(state).toMatchObject({
+        kind: 'docker-recovery-alert-state',
+        notifiedIncidentIds: ['incident-1', 'incident-2'],
+      });
+      expect(readBlueGreenDockerRecoveryAlertState()).toMatchObject({
+        lastSentAt: '2026-05-17T10:00:00.000Z',
+        notifiedIncidentIds: ['incident-1', 'incident-2'],
+      });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }

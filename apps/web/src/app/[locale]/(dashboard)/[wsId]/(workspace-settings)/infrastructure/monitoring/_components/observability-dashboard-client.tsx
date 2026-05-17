@@ -82,6 +82,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { BlueGreenMonitoringRecoverySettings } from './blue-green-monitoring-recovery-settings';
 import {
   formatBytes,
   formatCompactNumber,
@@ -1888,6 +1889,10 @@ export function ObservabilityDashboardClient({
             </div>
           ) : null}
         </section>
+      ) : null}
+
+      {selectedProject?.id === 'platform' && watcherQuery.data ? (
+        <BlueGreenMonitoringRecoverySettings snapshot={watcherQuery.data} />
       ) : null}
 
       {mode === 'projects' && (

@@ -162,8 +162,25 @@ const DOCKER_DAEMON_RECOVERY_POLL_MS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_POLL_MS';
 const DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV =
   'DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS';
+const DOCKER_DAEMON_RESTART_AFTER_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RESTART_AFTER_MS';
+const DOCKER_DAEMON_RESTART_COMMAND_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RESTART_COMMAND';
+const DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RESTART_COOLDOWN_MS';
+const DOCKER_DAEMON_RESTART_DISABLED_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_RESTART_DISABLED';
+const DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMANDS';
+const DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV =
+  'DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS';
+const DOCKER_DAEMON_RECOVERY_SETTINGS_FILE =
+  'blue-green-docker-recovery-settings.json';
 const DEFAULT_DOCKER_DAEMON_RECOVERY_POLL_MS = 5_000;
 const DEFAULT_DOCKER_DAEMON_RECOVERY_TIMEOUT_MS = 0;
+const DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS = 30_000;
+const DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS = 5 * 60_000;
+const DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS = 10 * 60_000;
 const BLUE_GREEN_WATCHER_SERVICE = 'web-blue-green-watcher';
 const HOST_WORKSPACE_DIR_ENV = 'PLATFORM_HOST_WORKSPACE_DIR';
 const WATCH_PENDING_DEPLOY_ENV = 'WATCHER_PENDING_BLUE_GREEN_DEPLOY';
@@ -545,7 +562,9 @@ async function startBlueGreenWatcherContainerWithRecovery(argv, options = {}) {
 
       const recovered = await waitForDockerDaemonRecovery({
         env: options.env ?? process.env,
+        fsImpl: options.fsImpl ?? fs,
         log,
+        paths: getWatchPaths(options.rootDir ?? ROOT_DIR, options.env),
         runCommand: options.runCommand ?? runCommand,
         sleepImpl,
       });
@@ -837,6 +856,47 @@ function getErrorMessage(error) {
   return error instanceof Error ? error.message : String(error);
 }
 
+function createDockerRecoveryIncidentId(startedAt) {
+  return `docker-daemon-${new Date(startedAt).toISOString()}`;
+}
+
+function appendDockerRecoveryLogEntry({
+  eventType,
+  fsImpl = fs,
+  incidentId,
+  level = 'warn',
+  message,
+  metadata = {},
+  now = Date.now,
+  paths = getWatchPaths(),
+} = {}) {
+  const time = now();
+
+  try {
+    return appendWatcherLogEntry(
+      {
+        activeColor: null,
+        commitHash: null,
+        commitShortHash: null,
+        deploymentKey: null,
+        deploymentKind: 'docker-daemon-recovery',
+        deploymentStamp: null,
+        deploymentStatus: null,
+        eventId: `${incidentId}:${eventType}:${time}`,
+        eventType,
+        incidentId,
+        level,
+        message,
+        metadata,
+        time,
+      },
+      { fsImpl, paths }
+    );
+  } catch {
+    return [];
+  }
+}
+
 function getPositiveIntegerEnv(env, name, fallback) {
   const raw = env?.[name];
 
@@ -847,6 +907,10 @@ function getPositiveIntegerEnv(env, name, fallback) {
   const parsed = Number.parseInt(String(raw).trim(), 10);
 
   return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
+function isTruthyEnv(value) {
+  return /^(1|true|yes)$/iu.test(String(value ?? '').trim());
 }
 
 function getDockerDaemonRecoveryPollMs(env = process.env) {
@@ -869,6 +933,293 @@ function getDockerDaemonRecoveryTimeoutMs(env = process.env) {
   return timeoutMs && timeoutMs > 0 ? timeoutMs : null;
 }
 
+function getDockerDaemonRestartAfterMs(env = process.env) {
+  if (isTruthyEnv(env?.[DOCKER_DAEMON_RESTART_DISABLED_ENV])) {
+    return null;
+  }
+
+  const restartAfterMs = getPositiveIntegerEnv(
+    env,
+    DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
+    DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS
+  );
+
+  return restartAfterMs && restartAfterMs > 0 ? restartAfterMs : null;
+}
+
+function getDockerDaemonRestartCooldownMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
+      DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS
+    ) ?? DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS
+  );
+}
+
+function getDockerDaemonPostRestartCommandTimeoutMs(env = process.env) {
+  return (
+    getPositiveIntegerEnv(
+      env,
+      DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
+      DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
+    ) ?? DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
+  );
+}
+
+function splitDockerDaemonRestartCommand(rawCommand) {
+  const trimmed = String(rawCommand ?? '').trim();
+
+  if (!trimmed) {
+    return null;
+  }
+
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+
+      return Array.isArray(parsed) &&
+        parsed.every(
+          (value) => typeof value === 'string' && value.trim().length > 0
+        )
+        ? parsed
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
+  return trimmed.split(/\s+/u).filter(Boolean);
+}
+
+function getDefaultDockerDaemonRestartCommand(platform = process.platform) {
+  if (platform === 'linux') {
+    return ['systemctl', 'restart', 'docker'];
+  }
+
+  if (platform === 'darwin') {
+    return ['open', '-ga', 'Docker'];
+  }
+
+  if (platform === 'win32') {
+    return [
+      'powershell.exe',
+      '-NoProfile',
+      '-Command',
+      'Start-Process',
+      'Docker Desktop',
+    ];
+  }
+
+  return null;
+}
+
+function getDockerDaemonRestartCommand({
+  env = process.env,
+  platform = process.platform,
+} = {}) {
+  const rawCommand = env?.[DOCKER_DAEMON_RESTART_COMMAND_ENV];
+
+  if (rawCommand != null && String(rawCommand).trim().length > 0) {
+    return splitDockerDaemonRestartCommand(rawCommand);
+  }
+
+  return getDefaultDockerDaemonRestartCommand(platform);
+}
+
+function describeDockerDaemonRestartCommand(command) {
+  return command ? command.join(' ') : 'none configured';
+}
+
+function normalizeDockerDaemonPostRestartCommandSpec(spec, index) {
+  if (Array.isArray(spec)) {
+    if (
+      spec.length === 0 ||
+      !spec.every(
+        (value) => typeof value === 'string' && value.trim().length > 0
+      )
+    ) {
+      throw new Error(
+        `Docker post-restart command ${index + 1} must be a non-empty argv array of strings.`
+      );
+    }
+
+    return {
+      args: spec.slice(1),
+      command: spec[0],
+      cwd: null,
+    };
+  }
+
+  if (spec && typeof spec === 'object' && !Array.isArray(spec)) {
+    const command = spec.command;
+    const args = spec.args ?? [];
+    const cwd = spec.cwd ?? null;
+
+    if (typeof command !== 'string' || command.trim().length === 0) {
+      throw new Error(
+        `Docker post-restart command ${index + 1} must include a command string.`
+      );
+    }
+
+    if (
+      !Array.isArray(args) ||
+      !args.every(
+        (value) => typeof value === 'string' && value.trim().length > 0
+      )
+    ) {
+      throw new Error(
+        `Docker post-restart command ${index + 1} args must be an array of strings.`
+      );
+    }
+
+    if (cwd != null && (typeof cwd !== 'string' || cwd.trim().length === 0)) {
+      throw new Error(
+        `Docker post-restart command ${index + 1} cwd must be a non-empty string when provided.`
+      );
+    }
+
+    return {
+      args,
+      command: command.trim(),
+      cwd: cwd?.trim() ?? null,
+    };
+  }
+
+  throw new Error(
+    `Docker post-restart command ${index + 1} must be an argv array or object.`
+  );
+}
+
+function getDockerDaemonPostRestartCommands(env = process.env) {
+  const raw = env?.[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV];
+
+  if (raw == null || String(raw).trim().length === 0) {
+    return [];
+  }
+
+  let parsed;
+  try {
+    parsed = JSON.parse(String(raw));
+  } catch (error) {
+    throw new Error(
+      `${DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV} must be valid JSON: ${getErrorMessage(error)}`
+    );
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(
+      `${DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV} must be a JSON array.`
+    );
+  }
+
+  return parsed.map(normalizeDockerDaemonPostRestartCommandSpec);
+}
+
+function readDockerDaemonRecoverySettings({
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  const filePath = path.join(
+    paths.controlDir,
+    DOCKER_DAEMON_RECOVERY_SETTINGS_FILE
+  );
+
+  if (!fsImpl.existsSync(filePath)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(fsImpl.readFileSync(filePath, 'utf8'));
+
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? parsed
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeSettingEnvValue(env, key, value) {
+  if (value === undefined) {
+    return;
+  }
+
+  if (value == null) {
+    env[key] = '0';
+    return;
+  }
+
+  env[key] = String(value);
+}
+
+function getDockerDaemonRecoverySettingsEnv({
+  env = process.env,
+  fsImpl = fs,
+  paths = getWatchPaths(),
+} = {}) {
+  const settings = readDockerDaemonRecoverySettings({ fsImpl, paths });
+
+  if (!settings) {
+    return env;
+  }
+
+  const nextEnv = { ...env };
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_RECOVERY_POLL_MS_ENV,
+    settings.dockerRecoveryPollMs
+  );
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_RECOVERY_TIMEOUT_MS_ENV,
+    settings.dockerRecoveryTimeoutMs
+  );
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
+    settings.dockerRestartAfterMs
+  );
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
+    settings.dockerRestartCooldownMs
+  );
+  writeSettingEnvValue(
+    nextEnv,
+    DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
+    settings.postRestartCommandTimeoutMs
+  );
+
+  if (settings.dockerRestartDisabled === true) {
+    nextEnv[DOCKER_DAEMON_RESTART_DISABLED_ENV] = '1';
+  } else {
+    delete nextEnv[DOCKER_DAEMON_RESTART_DISABLED_ENV];
+  }
+
+  if (Array.isArray(settings.dockerRestartCommand)) {
+    nextEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV] = JSON.stringify(
+      settings.dockerRestartCommand
+    );
+  } else {
+    delete nextEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV];
+  }
+
+  if (Array.isArray(settings.postRestartCommands)) {
+    nextEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV] = JSON.stringify(
+      settings.postRestartCommands
+    );
+  }
+
+  return nextEnv;
+}
+
+function describeDockerDaemonPostRestartCommand(commandSpec) {
+  const label = [commandSpec.command, ...commandSpec.args].join(' ');
+
+  return commandSpec.cwd ? `${label} (cwd: ${commandSpec.cwd})` : label;
+}
+
 function isDockerDaemonUnavailableError(error) {
   const message = stripAnsi(getErrorMessage(error)).toLowerCase();
 
@@ -877,31 +1228,217 @@ function isDockerDaemonUnavailableError(error) {
   );
 }
 
-async function waitForDockerDaemonRecovery({
+async function restartDockerDaemon({
   env = process.env,
   log = console,
+  platform = process.platform,
+  runCommand: run = runCommand,
+} = {}) {
+  const command = getDockerDaemonRestartCommand({ env, platform });
+
+  if (!command || command.length === 0) {
+    log.warn?.(
+      `Docker daemon restart skipped because no restart command is configured for ${platform}.`
+    );
+    return false;
+  }
+
+  const [executable, ...args] = command;
+  log.warn?.(
+    `Docker daemon is still unavailable; attempting restart with: ${describeDockerDaemonRestartCommand(command)}`
+  );
+
+  try {
+    const result = await run(executable, args, {
+      env,
+      stdio: 'pipe',
+    });
+
+    if (result.code === 0) {
+      log.warn?.('Docker daemon restart command completed.');
+      return true;
+    }
+
+    const detail = result.stderr?.trim() || result.stdout?.trim();
+    log.warn?.(
+      `Docker daemon restart command exited with code ${result.code}${
+        detail ? `: ${detail}` : ''
+      }`
+    );
+  } catch (error) {
+    log.warn?.(
+      `Docker daemon restart command failed: ${getErrorMessage(error)}`
+    );
+  }
+
+  return false;
+}
+
+async function runDockerDaemonPostRestartCommands({
+  env = process.env,
+  log = console,
+  runCommand: run = runCommand,
+} = {}) {
+  let commands;
+  try {
+    commands = getDockerDaemonPostRestartCommands(env);
+  } catch (error) {
+    log.warn?.(
+      `Docker post-restart commands are misconfigured: ${getErrorMessage(error)}`
+    );
+    return {
+      failed: 0,
+      ran: 0,
+      status: 'misconfigured',
+    };
+  }
+
+  if (commands.length === 0) {
+    return {
+      failed: 0,
+      ran: 0,
+      status: 'skipped',
+    };
+  }
+
+  const timeoutMs = getDockerDaemonPostRestartCommandTimeoutMs(env);
+  let failed = 0;
+
+  for (const commandSpec of commands) {
+    log.warn?.(
+      `Running Docker post-restart recovery command: ${describeDockerDaemonPostRestartCommand(commandSpec)}`
+    );
+
+    try {
+      const result = await run(commandSpec.command, commandSpec.args, {
+        cwd: commandSpec.cwd ?? undefined,
+        env,
+        stdio: 'pipe',
+        timeoutMs,
+      });
+
+      if (result.code === 0) {
+        continue;
+      }
+
+      failed += 1;
+      const detail = result.stderr?.trim() || result.stdout?.trim();
+      log.warn?.(
+        `Docker post-restart recovery command exited with code ${result.code}: ${describeDockerDaemonPostRestartCommand(commandSpec)}${
+          detail ? `\n${detail}` : ''
+        }`
+      );
+    } catch (error) {
+      failed += 1;
+      log.warn?.(
+        `Docker post-restart recovery command failed: ${describeDockerDaemonPostRestartCommand(commandSpec)}\n${getErrorMessage(error)}`
+      );
+    }
+  }
+
+  return {
+    failed,
+    ran: commands.length,
+    status: failed > 0 ? 'completed-with-failures' : 'completed',
+  };
+}
+
+async function waitForDockerDaemonRecovery({
+  env = process.env,
+  fsImpl = fs,
+  log = console,
   now = () => Date.now(),
+  paths = getWatchPaths(),
+  platform = process.platform,
   runCommand: run = runCommand,
   sleepImpl = sleep,
 } = {}) {
-  const timeoutMs = getDockerDaemonRecoveryTimeoutMs(env);
-  const pollMs = getDockerDaemonRecoveryPollMs(env);
+  let effectiveEnv = getDockerDaemonRecoverySettingsEnv({
+    env,
+    fsImpl,
+    paths,
+  });
+  const timeoutMs = getDockerDaemonRecoveryTimeoutMs(effectiveEnv);
   const startedAt = now();
+  const incidentId = createDockerRecoveryIncidentId(startedAt);
   const deadline = timeoutMs == null ? null : startedAt + timeoutMs;
   let attempts = 0;
   let lastError = null;
+  let lastRestartAttemptAt = null;
+  let daemonRestarted = false;
+  let unavailableLogged = false;
+  let postRestartCommandsRan = false;
 
   while (deadline == null || now() <= deadline) {
+    effectiveEnv = getDockerDaemonRecoverySettingsEnv({
+      env,
+      fsImpl,
+      paths,
+    });
+
     try {
       await runChecked('docker', ['info'], {
-        env,
+        env: effectiveEnv,
         runCommand: run,
         stdio: 'ignore',
       });
+      if (unavailableLogged) {
+        appendDockerRecoveryLogEntry({
+          eventType: 'docker-daemon-recovered',
+          fsImpl,
+          incidentId,
+          level: 'info',
+          message: `Docker daemon recovered after ${formatDuration(now() - startedAt)}.`,
+          metadata: {
+            attempts,
+            daemonRestarted,
+            durationMs: now() - startedAt,
+          },
+          now,
+          paths,
+        });
+      }
+      if (daemonRestarted && !postRestartCommandsRan) {
+        postRestartCommandsRan = true;
+        const postRestartResult = await runDockerDaemonPostRestartCommands({
+          env: effectiveEnv,
+          log,
+          runCommand: run,
+        });
+        appendDockerRecoveryLogEntry({
+          eventType: 'docker-post-restart-commands-completed',
+          fsImpl,
+          incidentId,
+          level:
+            postRestartResult.status === 'completed-with-failures'
+              ? 'warn'
+              : 'info',
+          message: `Docker post-restart recovery commands ${postRestartResult.status}. Ran ${postRestartResult.ran}, failed ${postRestartResult.failed}.`,
+          metadata: postRestartResult,
+          now,
+          paths,
+        });
+      }
       return true;
     } catch (error) {
       lastError = error;
       attempts += 1;
+      if (!unavailableLogged) {
+        unavailableLogged = true;
+        appendDockerRecoveryLogEntry({
+          eventType: 'docker-daemon-unavailable',
+          fsImpl,
+          incidentId,
+          level: 'error',
+          message: `Docker daemon became unavailable: ${getErrorMessage(error)}`,
+          metadata: {
+            attempt: attempts,
+            timeoutMs,
+          },
+          now,
+          paths,
+        });
+      }
 
       if (attempts === 1 || attempts % 12 === 0) {
         const windowLabel =
@@ -913,6 +1450,56 @@ async function waitForDockerDaemonRecovery({
         );
       }
 
+      const currentTime = now();
+      const restartAfterMs = getDockerDaemonRestartAfterMs(effectiveEnv);
+      const restartCooldownMs = getDockerDaemonRestartCooldownMs(effectiveEnv);
+      const shouldRestartDaemon =
+        restartAfterMs != null &&
+        currentTime - startedAt >= restartAfterMs &&
+        (lastRestartAttemptAt == null ||
+          currentTime - lastRestartAttemptAt >= restartCooldownMs);
+
+      if (shouldRestartDaemon) {
+        lastRestartAttemptAt = currentTime;
+        appendDockerRecoveryLogEntry({
+          eventType: 'docker-daemon-restart-attempt',
+          fsImpl,
+          incidentId,
+          level: 'warn',
+          message: `Attempting Docker daemon restart with: ${describeDockerDaemonRestartCommand(
+            getDockerDaemonRestartCommand({ env: effectiveEnv, platform })
+          )}`,
+          metadata: {
+            attempt: attempts,
+            restartAfterMs,
+          },
+          now,
+          paths,
+        });
+        const restartSucceeded = await restartDockerDaemon({
+          env: effectiveEnv,
+          log,
+          platform,
+          runCommand: run,
+        });
+        daemonRestarted = restartSucceeded || daemonRestarted;
+        appendDockerRecoveryLogEntry({
+          eventType: 'docker-daemon-restart-result',
+          fsImpl,
+          incidentId,
+          level: restartSucceeded ? 'info' : 'warn',
+          message: restartSucceeded
+            ? 'Docker daemon restart command completed.'
+            : 'Docker daemon restart command did not complete successfully.',
+          metadata: {
+            restartSucceeded,
+          },
+          now,
+          paths,
+        });
+      }
+
+      const pollMs = getDockerDaemonRecoveryPollMs(effectiveEnv);
       const remainingMs = deadline == null ? pollMs : deadline - now();
 
       if (remainingMs <= 0) {
@@ -926,6 +1513,20 @@ async function waitForDockerDaemonRecovery({
   log.warn?.(
     `Docker daemon did not recover: ${lastError ? getErrorMessage(lastError) : 'unknown error'}`
   );
+  appendDockerRecoveryLogEntry({
+    eventType: 'docker-daemon-recovery-timeout',
+    fsImpl,
+    incidentId,
+    level: 'error',
+    message: `Docker daemon did not recover: ${lastError ? getErrorMessage(lastError) : 'unknown error'}`,
+    metadata: {
+      attempts,
+      daemonRestarted,
+      timeoutMs,
+    },
+    now,
+    paths,
+  });
 
   return false;
 }
@@ -5401,6 +6002,9 @@ module.exports = {
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
+  DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS,
+  DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS,
+  DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS,
   DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
@@ -5421,6 +6025,13 @@ module.exports = {
   WATCH_RUNTIME_DIR,
   WATCH_STATUS_FILE,
   WATCHER_CONTAINER_ENV,
+  DOCKER_DAEMON_RESTART_AFTER_MS_ENV,
+  DOCKER_DAEMON_RESTART_COMMAND_ENV,
+  DOCKER_DAEMON_RESTART_COOLDOWN_MS_ENV,
+  DOCKER_DAEMON_RESTART_DISABLED_ENV,
+  DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV,
+  DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS_ENV,
+  DOCKER_DAEMON_RECOVERY_SETTINGS_FILE,
   acquireWatchLock,
   appendDeploymentHistory,
   buildDashboardView,
@@ -5445,6 +6056,12 @@ module.exports = {
   getCurrentBranch,
   getMigrationRequest,
   getMigrationTargetWatcherEnv,
+  getDockerDaemonRestartAfterMs,
+  getDockerDaemonRestartCommand,
+  getDockerDaemonRestartCooldownMs,
+  getDockerDaemonPostRestartCommands,
+  getDockerDaemonPostRestartCommandTimeoutMs,
+  getDockerDaemonRecoverySettingsEnv,
   getRevision,
   getTrackedUpstream,
   getWatcherContainerState,
@@ -5468,6 +6085,7 @@ module.exports = {
   prependPendingDeployment,
   pullTrackedBranch,
   readDeploymentHistory,
+  readDockerDaemonRecoverySettings,
   readInstantRolloutRequest,
   readPendingDeployRequest,
   readWatchArgsFile,
@@ -5490,6 +6108,7 @@ module.exports = {
   summarizeRequestRate,
   streamBlueGreenWatcherLogs,
   terminateExistingWatcher,
+  waitForDockerDaemonRecovery,
   createPendingDeploymentEntry,
   createQuietRunCommand,
   hasPersistedPendingDeployRequest,

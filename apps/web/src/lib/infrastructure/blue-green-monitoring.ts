@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type {
   BlueGreenDeploymentPin,
+  BlueGreenDockerRecoverySettings,
   BlueGreenInstantRolloutRequest,
   BlueGreenMonitoringDockerContainer,
   BlueGreenMonitoringDockerHealth,
@@ -17,6 +18,7 @@ import type {
   BlueGreenMonitoringWatcherHealth,
   BlueGreenMonitoringWatcherLog,
 } from '@tuturuuu/internal-api/infrastructure';
+import { normalizeBlueGreenDockerRecoverySettings } from './blue-green-monitoring-controls';
 
 type FsLike = Pick<typeof fs, 'existsSync' | 'readFileSync'> &
   Partial<Pick<typeof fs, 'statSync'>>;
@@ -916,7 +918,18 @@ function normalizeWatcherLogs(
           typeof record?.deploymentStatus === 'string'
             ? record.deploymentStatus
             : null,
+        eventId: typeof record?.eventId === 'string' ? record.eventId : null,
+        eventType:
+          typeof record?.eventType === 'string' ? record.eventType : null,
+        incidentId:
+          typeof record?.incidentId === 'string' ? record.incidentId : null,
         level,
+        metadata:
+          record?.metadata &&
+          typeof record.metadata === 'object' &&
+          !Array.isArray(record.metadata)
+            ? (record.metadata as Record<string, unknown>)
+            : undefined,
         message,
         time,
       },
@@ -1379,6 +1392,16 @@ export function readBlueGreenMonitoringSnapshot({
       fsImpl
     )
   );
+  const dockerRecoverySettings = normalizeBlueGreenDockerRecoverySettings(
+    readJsonFile<BlueGreenDockerRecoverySettings>(
+      path.join(
+        watchDir,
+        'control',
+        'blue-green-docker-recovery-settings.json'
+      ),
+      fsImpl
+    )
+  );
 
   const activeColor = readTextFile(path.join(prodDir, 'active-color'), fsImpl);
   const deploymentStamp = readTextFile(
@@ -1487,6 +1510,7 @@ export function readBlueGreenMonitoringSnapshot({
     },
     control: {
       deploymentPin,
+      dockerRecoverySettings,
       instantRolloutRequest,
     },
     dockerResources: {

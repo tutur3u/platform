@@ -81,13 +81,61 @@ vi.mock('next-intl', () => ({
   },
 }));
 
-function createSnapshot(
-  overrides: Partial<BlueGreenMonitoringSnapshot> = {}
-): BlueGreenMonitoringSnapshot {
-  return {
+type SnapshotOverrides = Partial<
+  Omit<BlueGreenMonitoringSnapshot, 'control'>
+> & {
+  control?: Partial<BlueGreenMonitoringSnapshot['control']>;
+};
+
+function createSnapshot(overrides: SnapshotOverrides = {}) {
+  const snapshot: BlueGreenMonitoringSnapshot = {
+    analytics: {
+      current: {
+        daily: null,
+        monthly: null,
+        weekly: null,
+        yearly: null,
+      },
+      recentRequests: [],
+      totalPersistedLogs: 0,
+      trends: {
+        daily: [],
+        monthly: [],
+        weekly: [],
+        yearly: [],
+      },
+    },
     control: {
       deploymentPin: null,
+      dockerRecoverySettings: {
+        dockerRecoveryPollMs: 5000,
+        dockerRecoveryTimeoutMs: null,
+        dockerRestartAfterMs: 30_000,
+        dockerRestartCommand: null,
+        dockerRestartCooldownMs: 300_000,
+        dockerRestartDisabled: false,
+        emailAlertCooldownMs: 1_800_000,
+        emailAlertRecipients: [],
+        emailAlertsEnabled: false,
+        kind: 'docker-recovery-settings',
+        postRestartCommandTimeoutMs: 600_000,
+        postRestartCommands: [],
+        updatedAt: null,
+        updatedBy: null,
+        updatedByEmail: null,
+      },
       instantRolloutRequest: null,
+    },
+    dockerResources: {
+      allContainers: [],
+      containers: [],
+      message: null,
+      serviceHealth: [],
+      state: 'healthy',
+      totalCpuPercent: 0,
+      totalMemoryBytes: 0,
+      totalRxBytes: 0,
+      totalTxBytes: 0,
     },
     deployments: [
       {
@@ -108,38 +156,69 @@ function createSnapshot(
       },
     ],
     runtime: {
+      activatedAt: null,
       activeColor: 'blue',
-      activeState: 'serving',
-      message: null,
-      proxyTarget: 'web-blue',
-      runtimeUpdatedAt: null,
+      averageRequestsPerMinute: null,
+      dailyAverageRequests: null,
+      dailyPeakRequests: null,
+      dailyRequestCount: null,
+      deploymentStamp: null,
+      lifetimeMs: null,
+      liveColors: ['blue', 'green'],
+      peakRequestsPerMinute: null,
+      requestCount: null,
+      serviceContainers: {},
       standbyColor: 'green',
-      standbyState: 'idle',
       state: 'serving',
+    },
+    overview: {
+      averageBuildDurationMs: null,
+      currentAverageRequestsPerMinute: null,
+      currentPeakRequestsPerMinute: null,
+      currentRequestCount: null,
+      failedDeployments: 0,
+      successfulDeployments: 0,
+      totalDeployments: 0,
+      totalPersistedLogs: 0,
+      totalRequestsServed: 0,
     },
     recoveryCache: {
       deployments: [],
       limit: 3,
       total: 0,
     },
+    source: {
+      historyAvailable: true,
+      monitoringDirAvailable: true,
+      statusAvailable: true,
+    },
     watcher: {
       args: [],
-      branch: 'main',
-      commit: null,
       events: [],
       health: 'live',
       intervalMs: 60_000,
+      lastCheckAt: null,
+      lastDeployAt: null,
+      lastDeployStatus: null,
+      lastResult: null,
       latestCommit: null,
-      message: null,
-      pollCount: 1,
-      projectName: null,
-      retryState: null,
-      state: 'live',
+      lock: null,
+      logs: [],
+      nextCheckAt: null,
+      status: 'healthy',
       target: null,
       updatedAt: 2000,
     },
+  };
+
+  return {
+    ...snapshot,
     ...overrides,
-  } as BlueGreenMonitoringSnapshot;
+    control: {
+      ...snapshot.control,
+      ...overrides.control,
+    },
+  };
 }
 
 function renderControls(snapshot: BlueGreenMonitoringSnapshot) {

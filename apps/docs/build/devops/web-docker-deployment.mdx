@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-13'
+updatedAt: '2026-05-17'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -372,6 +372,93 @@ reimplement provider-specific calendar fetching inside the cron wrapper.
 `bun serve:web:docker:bg:watch` locks the current branch/upstream at startup,
 polls every second, fast-forwards when GitHub has a newer commit, and runs the
 blue/green deploy flow automatically.
+
+Run this command from a host-level process manager, not only from inside Docker.
+The command starts and tails the `web-blue-green-watcher` container, but the
+host process is the part that can recover after the Docker engine itself dies.
+When Docker is unavailable, the host supervisor polls `docker info`; after
+`DOCKER_WEB_WATCHER_DOCKER_RESTART_AFTER_MS` milliseconds of continuous failure
+(default 30000), it attempts to restart Docker, waits for `docker info` to pass,
+runs any configured host-level post-restart commands, then recreates the watcher
+container. The recreated watcher reuses the existing cached blue/green recovery
+path to bring `web-proxy` and the active/standby web lanes back to health.
+
+Docker restart command defaults:
+
+- Linux: `systemctl restart docker`
+- macOS: `open -ga Docker`
+- Windows: `powershell.exe -NoProfile -Command Start-Process "Docker Desktop"`
+
+Override the command with a JSON array when the host needs a different service
+manager or a narrow sudo rule:
+
+```bash
+DOCKER_WEB_WATCHER_DOCKER_RESTART_COMMAND='["sudo","systemctl","restart","docker"]' \
+  bun serve:web:docker:bg:watch -- --if-locked replace
+```
+
+Useful host-supervisor knobs:
+
+- `DOCKER_WEB_WATCHER_DOCKER_RESTART_AFTER_MS`: delay before the first Docker
+  restart attempt while `docker info` is failing; set `0` to disable attempts.
+- `DOCKER_WEB_WATCHER_DOCKER_RESTART_COOLDOWN_MS`: minimum time between restart
+  attempts; default 300000.
+- `DOCKER_WEB_WATCHER_DOCKER_RESTART_COMMAND`: command used to restart or open
+  Docker. Prefer JSON array syntax for commands with quoted arguments.
+- `DOCKER_WEB_WATCHER_DOCKER_RESTART_DISABLED=1`: hard-disable daemon restart
+  attempts while still waiting for Docker to recover externally.
+- `DOCKER_WEB_WATCHER_DOCKER_RECOVERY_TIMEOUT_MS`: optional maximum wait time
+  for Docker recovery; unset or `0` means wait indefinitely.
+- `DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS`: timeout for each
+  additional host-level recovery command; default 600000.
+- `DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMANDS`: JSON array of host-level
+  commands to run after Docker is reachable again and before Tuturuuu recreates
+  its watcher container. Each entry is an object with `command`, `args`, and an
+  optional `cwd`.
+
+The same values can be updated from Infrastructure Monitoring in the web
+dashboard. The dashboard writes
+`tmp/docker-web/watch/control/blue-green-docker-recovery-settings.json`, and
+the host supervisor reads that file before each Docker recovery wait. Dashboard
+settings override the environment defaults without restarting the supervisor.
+That settings file also owns Docker crash email alerts:
+
+- `emailAlertsEnabled`: enables SES-backed Docker recovery alert emails from the
+  web cron worker.
+- `emailAlertRecipients`: explicit recipient list. If this is empty, the cron
+  falls back to `PLATFORM_DOCKER_RECOVERY_ALERT_EMAILS`, then the last operator
+  email that saved the settings.
+- `emailAlertCooldownMs`: minimum time between alert emails; default 1800000.
+
+The host supervisor persists Docker crash/recovery events to the watcher log
+archive as soon as it detects `docker info` failures. Because the web app itself
+usually runs inside Docker, SES email delivery happens after Docker is reachable
+again and the web cron job `/api/cron/infrastructure/docker-recovery-alerts`
+can run. The cron deduplicates by Docker recovery incident id using
+`tmp/docker-web/watch/control/blue-green-docker-recovery-alert-state.json`.
+
+Example post-restart commands for colocated projects:
+
+```json
+[
+  {
+    "command": "docker",
+    "args": ["compose", "-f", "/srv/zeus/docker-compose.yml", "up", "-d"],
+    "cwd": "/srv/zeus"
+  },
+  {
+    "command": "docker",
+    "args": ["compose", "-f", "/srv/upskii/docker-compose.yml", "up", "-d"],
+    "cwd": "/srv/upskii"
+  }
+]
+```
+
+For Linux production hosts, install the command as a root-owned `systemd`
+service or run it as an operator account with permission to execute only the
+configured Docker restart command and the explicit post-restart commands needed
+by colocated projects. Use `Restart=always` so the host supervisor itself comes
+back after reboots or process crashes.
 
 Additional behavior:
 

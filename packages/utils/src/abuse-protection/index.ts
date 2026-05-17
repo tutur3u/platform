@@ -26,6 +26,7 @@ import type {
 
 // Re-export types and constants
 export * from './constants';
+export * from './reputation';
 export * from './types';
 export * from './user-agent';
 

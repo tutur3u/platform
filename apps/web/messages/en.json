@@ -376,6 +376,95 @@
     "success": "Result",
     "user_agent": "User Agent"
   },
+  "abuse-intelligence": {
+    "actions": {
+      "retry": "Retry"
+    },
+    "confidence": "Confidence {value}",
+    "description": "Review adaptive reputation signals, trust tiers, challenge outcomes, and manual controls for authenticated rate limits.",
+    "empty": {
+      "overrides": "No active manual overrides.",
+      "signals": "No recent abuse intelligence signals.",
+      "subjects": "No reputation subjects have been observed yet."
+    },
+    "error": {
+      "description": "The abuse intelligence snapshot could not be loaded. Retry after checking the observability logs.",
+      "title": "Unable to load abuse intelligence"
+    },
+    "metrics": {
+      "challenge_pass_rate": "Challenge Pass Rate",
+      "restricted": "Restricted Subjects",
+      "trusted": "Trusted Subjects",
+      "watched": "Watched Subjects"
+    },
+    "multiplier": "{value}x limit multiplier",
+    "overrides": {
+      "active": "Active overrides",
+      "create": "Create override",
+      "expires": "Expires {value}",
+      "reason": "Reason",
+      "revoke": "Revoke",
+      "revoke_reason": "Manual override revoked from abuse intelligence dashboard",
+      "subject_key": "Subject key",
+      "subject_type": "Subject type",
+      "tier": "Tier",
+      "title": "Manual trust controls"
+    },
+    "positive_negative": "{positive} positive / {negative} negative",
+    "sections": {
+      "signals": "Recent signals",
+      "signals_description": "Auditable events that adjusted a subject's reputation score.",
+      "subjects": "Reputation subjects",
+      "subjects_description": "Rolling trust state for users, sessions, API keys, IPs, CIDRs, and user-location pairs."
+    },
+    "signals": {
+      "auth_failure": "Auth failure",
+      "automation_client": "Automation client",
+      "challenge_failed": "Challenge failed",
+      "challenge_issued": "Challenge issued",
+      "challenge_passed": "Challenge passed",
+      "client_error": "Client error",
+      "manual_override": "Manual override",
+      "missing_user_agent": "Missing user agent",
+      "organic_activity": "Organic activity",
+      "payload_abuse": "Payload abuse",
+      "rate_limit_hit": "Rate-limit hit",
+      "scripted_client": "Scripted client"
+    },
+    "subject_types": {
+      "api_key": "API key",
+      "cidr": "CIDR",
+      "ip": "IP address",
+      "session": "Session",
+      "user": "User",
+      "user_location": "User + location"
+    },
+    "tables": {
+      "created": "Created",
+      "delta": "Delta",
+      "last_seen": "Last seen",
+      "route": "Route",
+      "score": "Score",
+      "signal": "Signal",
+      "signals": "Signals",
+      "subject": "Subject",
+      "tier": "Tier"
+    },
+    "tiers": {
+      "challenge_required": "Challenge required",
+      "restricted": "Restricted",
+      "standard": "Standard",
+      "trusted": "Trusted",
+      "watch": "Watch"
+    },
+    "title": "Abuse Intelligence",
+    "toasts": {
+      "override_create_failed": "Failed to create override",
+      "override_created": "Override created",
+      "override_revoke_failed": "Failed to revoke override",
+      "override_revoked": "Override revoked"
+    }
+  },
   "account_switcher": {
     "account_added_error": "Failed to add account",
     "account_added_success": "Account added successfully!",
@@ -2047,6 +2136,29 @@
       "monthly": "Monthly",
       "weekly": "Weekly",
       "yearly": "Yearly"
+    },
+    "recovery_settings": {
+      "badge": "Docker Recovery",
+      "command_timeout": "Command timeout (ms)",
+      "description": "Tune the host supervisor that restarts Docker and runs colocated service recovery commands after the daemon comes back.",
+      "email_alerts_enabled": "Email Docker crash alerts",
+      "email_cooldown": "Email alert cooldown (ms)",
+      "email_recipients": "Alert recipients",
+      "email_recipients_placeholder": "ops@example.com, founder@example.com",
+      "no_timeout": "No timeout",
+      "poll": "Docker poll interval (ms)",
+      "post_restart_commands": "Post-restart commands JSON",
+      "restart_after": "Restart after unavailable (ms)",
+      "restart_command": "Docker restart command JSON",
+      "restart_cooldown": "Restart cooldown (ms)",
+      "restart_disabled": "Disable Docker restart attempts",
+      "save": "Save Recovery Settings",
+      "save_error": "Could not save Docker recovery settings.",
+      "save_success": "Saved Docker recovery settings.",
+      "saving": "Saving Settings",
+      "timeout": "Docker recovery timeout (ms)",
+      "title": "Host-level recovery settings",
+      "updated": "{count} post-restart commands · Last updated {time}"
     },
     "requests": {
       "internal": "Internal Probe"
@@ -6246,6 +6358,7 @@
   },
   "infrastructure-tabs": {
     "abuse_events": "Abuse Events",
+    "abuse_intelligence": "Abuse Intelligence",
     "ai_credits": "AI Credits",
     "ai_credits_allocations": "Credit Allocations",
     "ai_credits_balances": "Credit Balances",

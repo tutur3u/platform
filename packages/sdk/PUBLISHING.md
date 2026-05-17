@@ -123,6 +123,15 @@ trusted-publish job. The npm-version check makes workflow changes and manual
 retries idempotent: if `tuturuuu@<version>` already exists, the publish job is
 skipped.
 
+`.github/workflows/sdk-version-bump.yaml` protects that release trigger. Pull
+requests that change release-impacting SDK files without changing
+`packages/sdk/package.json` fail fast, and pushes to `production` open an
+automatic patch-version pull request when a release-impacting SDK change lands
+without a version bump. The detector is
+`scripts/ci/check-sdk-version-bump.mjs`; run it locally with
+`node scripts/ci/check-sdk-version-bump.mjs --changed-files packages/sdk/src/index.ts --mode check`
+to verify the missing-bump failure path.
+
 The SDK imports local workspace packages whose package exports point at
 git-ignored `dist/` output. The release workflow therefore builds
 `@tuturuuu/types` and `@tuturuuu/internal-api` in the non-OIDC build and
