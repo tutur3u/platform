@@ -222,6 +222,24 @@ export type UpdateWorkspaceTaskBoardPayload = Pick<
   group_ids?: string[];
 };
 
+export interface UpdateWorkspaceTaskBoardEstimationPayload {
+  estimation_type: WorkspaceTaskBoardRow['estimation_type'] | null;
+  extended_estimation?: boolean;
+  allow_zero_estimates?: boolean;
+  count_unestimated_issues?: boolean;
+}
+
+export type WorkspaceTaskBoardEstimationConfig = Pick<
+  WorkspaceTaskBoardRow,
+  | 'id'
+  | 'name'
+  | 'estimation_type'
+  | 'extended_estimation'
+  | 'allow_zero_estimates'
+  | 'count_unestimated_issues'
+  | 'created_at'
+>;
+
 export interface CreateWorkspaceTaskPayload {
   name: string;
   listId: string;
@@ -545,6 +563,26 @@ export async function updateWorkspaceTaskBoard(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
       method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskBoardEstimation(
+  workspaceId: string,
+  boardId: string,
+  payload: UpdateWorkspaceTaskBoardEstimationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardEstimationConfig>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/boards/${encodePathSegment(boardId)}/estimation`,
+    {
+      method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
       },

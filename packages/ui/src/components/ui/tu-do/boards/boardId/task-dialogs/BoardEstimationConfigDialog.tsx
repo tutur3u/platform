@@ -1,5 +1,6 @@
 'use client';
 
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   BarChart3,
   Calculator,
@@ -7,6 +8,7 @@ import {
   Loader2,
   Target,
 } from '@tuturuuu/icons';
+import { updateWorkspaceTaskBoardEstimation } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
@@ -25,6 +27,7 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import React from 'react';
+import { syncBoardEstimationCaches } from '../../../shared/board-query-cache';
 
 interface BoardEstimationConfigDialogProps {
   open: boolean;
@@ -89,6 +92,7 @@ export function BoardEstimationConfigDialog({
   onOpenChange,
   onSuccess,
 }: BoardEstimationConfigDialogProps) {
+  const queryClient = useQueryClient();
   const [selectedEstimationType, setSelectedEstimationType] =
     React.useState<string>('none');
   const [extendedEstimation, setExtendedEstimation] =
@@ -97,7 +101,20 @@ export function BoardEstimationConfigDialog({
     React.useState<boolean>(true);
   const [countUnestimatedIssues, setCountUnestimatedIssues] =
     React.useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = React.useState<boolean>(false);
+
+  const updateEstimationMutation = useMutation({
+    mutationFn: ({
+      workspaceId,
+      targetBoardId,
+      payload,
+    }: {
+      workspaceId: string;
+      targetBoardId: string;
+      payload: Parameters<typeof updateWorkspaceTaskBoardEstimation>[2];
+    }) =>
+      updateWorkspaceTaskBoardEstimation(workspaceId, targetBoardId, payload),
+  });
+  const isSubmitting = updateEstimationMutation.isPending;
 
   // Initialize state when dialog opens
   React.useEffect(() => {
@@ -197,41 +214,59 @@ export function BoardEstimationConfigDialog({
 
   const handleConfirm = async () => {
     const actualEstimationType =
-      selectedEstimationType === 'none' ? null : selectedEstimationType;
+      selectedEstimationType === 'none'
+        ? null
+        : (selectedEstimationType as
+            | 'exponential'
+            | 'fibonacci'
+            | 'linear'
+            | 't-shirt');
 
-    setIsSubmitting(true);
     try {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/boards/${boardId}/estimation`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            estimation_type: actualEstimationType,
-            extended_estimation: extendedEstimation,
-            allow_zero_estimates: allowZeroEstimates,
-            count_unestimated_issues: countUnestimatedIssues,
-          }),
-        }
-      );
+      const updatedBoard = await updateEstimationMutation.mutateAsync({
+        workspaceId: wsId,
+        targetBoardId: boardId,
+        payload: {
+          estimation_type: actualEstimationType,
+          extended_estimation: extendedEstimation,
+          allow_zero_estimates: allowZeroEstimates,
+          count_unestimated_issues: countUnestimatedIssues,
+        },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || 'Failed to update estimation type'
-        );
-      }
+      syncBoardEstimationCaches({
+        queryClient,
+        workspaceId: wsId,
+        boardId,
+        boardName,
+        board: updatedBoard,
+      });
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['board-config', wsId, boardId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['board-estimation-config', wsId, boardId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-board', wsId, boardId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['task-estimate-boards', wsId],
+        }),
+      ]);
 
       toast.success('Estimation configured successfully');
       onOpenChange(false);
       onSuccess();
-    } catch (e: any) {
-      console.error('Error updating estimation:', e);
-      toast.error(e.message || 'Failed to update estimation settings');
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      console.error('Error updating estimation:', error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : 'Failed to update estimation settings'
+      );
     }
   };
 

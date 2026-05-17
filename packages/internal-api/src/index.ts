@@ -428,10 +428,13 @@ export {
   removeCurrentUserTaskPersonalPlacement,
   removeWorkspaceTaskLabel,
   resolveTaskProjectWorkspaceId,
+  type UpdateWorkspaceTaskBoardEstimationPayload,
   updateWorkspaceTask,
   updateWorkspaceTaskBoard,
+  updateWorkspaceTaskBoardEstimation,
   updateWorkspaceTaskList,
   upsertCurrentUserTaskPersonalPlacement,
+  type WorkspaceTaskBoardEstimationConfig,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
