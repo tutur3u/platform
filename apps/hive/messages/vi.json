@@ -58,13 +58,16 @@
     },
     "ai": {
       "autonomy": "Tương tác LLM tự chủ",
+      "context": "Ngữ cảnh AI",
       "cooldown_seconds": "Thời gian nghỉ",
       "credit_personal": "Cá nhân",
+      "credit_source": "Nguồn credit",
       "credit_workspace": "Workspace",
       "max_interactions": "Tối đa mỗi nhịp",
       "max_turns": "Lượt thoại",
       "model": "Mô hình AI",
       "remaining": "Còn credit gói {tier}",
+      "toggle_context": "Ngữ cảnh AI",
       "use_for_autonomy": "Dùng ngữ cảnh AI hiện tại",
       "workspace": "Workspace AI"
     },

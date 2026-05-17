@@ -16,6 +16,7 @@ import type { HiveUser } from '@/engine/types';
 import { HiveAccountMenu } from './panels/hive-account-menu';
 
 type HiveTopRightToolbarProps = {
+  aiContextPanel: ReactNode;
   chatOpen: boolean;
   currentUser: HiveUser;
   miniMapCollapsed: boolean;
@@ -31,6 +32,7 @@ type HiveTopRightToolbarProps = {
 };
 
 export function HiveTopRightToolbar({
+  aiContextPanel,
   chatOpen,
   currentUser,
   miniMapCollapsed,
@@ -49,10 +51,12 @@ export function HiveTopRightToolbar({
   return (
     <div
       aria-label="Hive top toolbar"
-      className="group/hive-top-toolbar pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-hidden rounded-xl border border-white/60 bg-background/84 p-1 text-foreground shadow-2xl shadow-foreground/15 ring-1 ring-foreground/5 backdrop-blur-xl transition-[box-shadow,opacity,transform,width] duration-300 ease-out hover:shadow-foreground/20"
+      className="group/hive-top-toolbar pointer-events-auto flex max-w-[calc(100vw-2rem)] items-center gap-1 overflow-visible rounded-xl border border-border/70 bg-background/88 p-1 text-foreground shadow-2xl shadow-foreground/15 ring-1 ring-foreground/5 backdrop-blur-xl transition-[box-shadow,opacity,transform,width] duration-300 ease-out hover:shadow-foreground/20"
       role="toolbar"
     >
       {serverPicker}
+      <div className="my-1 h-7 w-px shrink-0 bg-border" />
+      {aiContextPanel}
       <div className="my-1 h-7 w-px shrink-0 bg-border" />
       <ToolbarButton
         active={mode === 'world'}

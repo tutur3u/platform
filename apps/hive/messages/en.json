@@ -58,13 +58,16 @@
     },
     "ai": {
       "autonomy": "Autonomous LLM interactions",
+      "context": "AI context",
       "cooldown_seconds": "Cooldown",
       "credit_personal": "Personal",
+      "credit_source": "Credit source",
       "credit_workspace": "Workspace",
       "max_interactions": "Max per tick",
       "max_turns": "Turns",
       "model": "AI model",
       "remaining": "{tier} credits left",
+      "toggle_context": "AI context",
       "use_for_autonomy": "Use current AI context",
       "workspace": "AI workspace"
     },

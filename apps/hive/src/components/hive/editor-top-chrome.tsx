@@ -94,13 +94,15 @@ export function EditorTopChrome({
         world={world}
       />
       <div className="flex min-w-0 flex-col items-end gap-2">
-        <HiveAiContextPanel
-          aiContext={aiContext}
-          isAdmin={isAdmin}
-          onUpdateServerSettings={onUpdateServerSettings}
-          selectedServer={selectedServer}
-        />
         <HiveTopRightToolbar
+          aiContextPanel={
+            <HiveAiContextPanel
+              aiContext={aiContext}
+              isAdmin={isAdmin}
+              onUpdateServerSettings={onUpdateServerSettings}
+              selectedServer={selectedServer}
+            />
+          }
           chatOpen={chatOpen}
           currentUser={currentUser}
           miniMapCollapsed={miniMapCollapsed}
