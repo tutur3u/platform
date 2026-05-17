@@ -1232,6 +1232,11 @@ Dashboard details:
   target-only lock instead of trying to poll detached `HEAD`. If an older child
   already removed the lock, a clean detached startup falls back to the selected
   platform branch (`production` by default) before locking and polling.
+- When the watcher receives a shutdown signal while it is temporarily detached,
+  it attempts to check out the locked branch again before exiting, as long as
+  the worktree is clean except for generated `bun.lock` changes. This keeps
+  manual operator commands such as `git pull && bun serve:web:docker:bg` from
+  inheriting a detached checkout after a stopped watcher.
 - The watcher image must also include both the Docker Compose and Buildx CLI
   plugins (`docker-cli-compose` and `docker-cli-buildx` on Alpine) because the
   rollout handoff shells into `docker compose ...`, and capped production
@@ -1270,8 +1275,10 @@ Dashboard details:
   for the current Compose project, then retries `docker compose up`. This handles
   stale names left by interrupted rollouts without pruning unrelated containers.
 - Starting `bun serve:web:docker:bg:watch` now clears the persisted watcher
-  lock/status snapshot before the watcher service is force-recreated, so a
-  stale lock from the previous container cannot block the replacement watcher.
+  status snapshot and active PID before the watcher service is force-recreated,
+  but preserves any complete branch/upstream target metadata. A stale lock from
+  the previous container cannot block the replacement watcher, and a detached
+  checkout still has enough metadata to reattach to `production`.
 - If the watcher pulls a revision that changes its own Dockerfile or baked
   entrypoint, it now rebuilds and recreates the `web-blue-green-watcher`
   service automatically before handing off to the next deployment cycle.

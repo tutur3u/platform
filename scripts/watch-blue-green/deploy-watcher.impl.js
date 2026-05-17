@@ -466,11 +466,46 @@ function readWatchArgsFile({ fsImpl = fs, paths = getWatchPaths() } = {}) {
   }
 }
 
+function getTargetOnlyWatchLockPayload(lock, now = Date.now) {
+  if (
+    !lock ||
+    typeof lock.branch !== 'string' ||
+    typeof lock.remote !== 'string' ||
+    typeof lock.upstreamBranch !== 'string' ||
+    typeof lock.upstreamRef !== 'string'
+  ) {
+    return null;
+  }
+
+  const { pid: _pid, ...targetLock } = lock;
+
+  return {
+    ...targetLock,
+    releasedAt: typeof now === 'function' ? now() : now,
+  };
+}
+
 function clearContainerManagedWatcherState({
   fsImpl = fs,
+  now = Date.now,
   paths = getWatchPaths(),
 } = {}) {
-  fsImpl.rmSync(paths.lockFile, { force: true });
+  const targetLock = getTargetOnlyWatchLockPayload(
+    readWatchLock(paths, fsImpl),
+    now
+  );
+
+  if (targetLock) {
+    fsImpl.mkdirSync(paths.runtimeDir, { recursive: true });
+    fsImpl.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(targetLock, null, 2),
+      'utf8'
+    );
+  } else {
+    fsImpl.rmSync(paths.lockFile, { force: true });
+  }
+
   fsImpl.rmSync(paths.statusFile, { force: true });
 }
 
@@ -5347,6 +5382,72 @@ async function resolveInitialWatcherTarget({
   }
 }
 
+async function restoreTargetBranchIfDetached(
+  target,
+  { env, log, rootDir = ROOT_DIR, runCommand: run = runCommand } = {}
+) {
+  if (!target?.branch) {
+    return false;
+  }
+
+  let currentBranch;
+  try {
+    currentBranch = await getCurrentBranchName({
+      cwd: rootDir,
+      env,
+      runCommand: run,
+    });
+  } catch (error) {
+    log?.warn?.(
+      `Unable to inspect watcher checkout before shutdown: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+
+  if (currentBranch !== 'HEAD') {
+    return false;
+  }
+
+  let hasBlockingDirtyWorktree = true;
+  try {
+    hasBlockingDirtyWorktree = await hasDirtyWorktree({
+      cwd: rootDir,
+      env,
+      ignoredPaths: ['bun.lock'],
+      runCommand: run,
+    });
+  } catch (error) {
+    log?.warn?.(
+      `Unable to inspect detached watcher worktree before returning to ${target.branch}: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+
+  if (hasBlockingDirtyWorktree) {
+    log?.warn?.(
+      `Watcher is shutting down from detached HEAD but the worktree has uncommitted changes; leaving checkout detached instead of forcing ${target.branch}.`
+    );
+    return false;
+  }
+
+  try {
+    log?.info?.(
+      `Watcher is shutting down from detached HEAD; checking out ${target.branch}.`
+    );
+    await checkoutBranch(target.branch, {
+      cwd: rootDir,
+      env,
+      runCommand: run,
+    });
+    return true;
+  } catch (error) {
+    log?.warn?.(
+      `Unable to check out ${target.branch} before watcher shutdown: ${error instanceof Error ? error.message : String(error)}`
+    );
+    return false;
+  }
+}
+
 async function main(argv = process.argv.slice(2), options = {}) {
   const parsed = parseArgs(argv);
   const env = options.env ?? process.env;
@@ -5405,6 +5506,8 @@ async function main(argv = process.argv.slice(2), options = {}) {
       }
     );
   let released = false;
+  let target = null;
+  let terminating = false;
 
   const cleanup = () => {
     if (released) {
@@ -5426,11 +5529,32 @@ async function main(argv = process.argv.slice(2), options = {}) {
     });
   };
 
+  const restoreDetachedCheckout = () =>
+    restoreTargetBranchIfDetached(target, {
+      env,
+      log: ui,
+      rootDir,
+      runCommand: run,
+    });
+
   const handleTermination = (signal) => {
+    if (terminating) {
+      return;
+    }
+
+    terminating = true;
     ui.warn(`Received ${signal}. Shutting down watcher.`);
-    cleanup();
-    ui.close();
-    processImpl.exit(0);
+    void restoreDetachedCheckout()
+      .catch((error) => {
+        ui.warn(
+          `Unable to restore watcher branch during shutdown: ${error instanceof Error ? error.message : String(error)}`
+        );
+      })
+      .finally(() => {
+        cleanup();
+        ui.close();
+        processImpl.exit(0);
+      });
   };
 
   try {
@@ -5469,7 +5593,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
       log: ui,
       runCommand: run,
     });
-    const target = projectTarget.target;
+    target = projectTarget.target;
 
     if (projectTarget.blocked) {
       ui.warn(projectTarget.message ?? 'Project deployment is blocked.');
@@ -6005,6 +6129,7 @@ async function main(argv = process.argv.slice(2), options = {}) {
         ? error.exitCode
         : 1;
   } finally {
+    await restoreDetachedCheckout();
     cleanup();
     ui.close();
   }
@@ -6108,6 +6233,7 @@ module.exports = {
   readWatchLock,
   readWatchStatus,
   releaseWatchLock,
+  restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,
   resolvePlatformProjectTarget,
   runBunUpgradeAndInstall,

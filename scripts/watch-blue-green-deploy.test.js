@@ -79,6 +79,7 @@ const {
   readWatchLock,
   readPendingDeployRequest,
   releaseWatchLock,
+  restoreTargetBranchIfDetached,
   resolveCurrentBlueGreenStatus,
   runBunUpgradeAndInstall,
   runPendingDeployAfterRestart,
@@ -5387,6 +5388,131 @@ test('clearContainerManagedWatcherState removes persisted lock and status files'
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('clearContainerManagedWatcherState preserves branch target metadata', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-state-target-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      paths.lockFile,
+      JSON.stringify(
+        {
+          branch: 'production',
+          createdAt: 1000,
+          pid: 123,
+          remote: 'origin',
+          upstreamBranch: 'production',
+          upstreamRef: 'origin/production',
+        },
+        null,
+        2
+      ),
+      'utf8'
+    );
+    fs.writeFileSync(paths.statusFile, '{}', 'utf8');
+
+    clearContainerManagedWatcherState({
+      fsImpl: fs,
+      now: () => 2000,
+      paths,
+    });
+
+    assert.deepEqual(readWatchLock(paths, fs), {
+      branch: 'production',
+      createdAt: 1000,
+      releasedAt: 2000,
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    });
+    assert.equal(fs.existsSync(paths.statusFile), false);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('restoreTargetBranchIfDetached checks out the locked branch on a clean detached worktree', async () => {
+  const calls = [];
+  let checkedOutBranch = false;
+
+  const restored = await restoreTargetBranchIfDetached(
+    {
+      branch: 'production',
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    },
+    {
+      log: { info() {}, warn() {} },
+      rootDir: '/workspace/platform',
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult(checkedOutBranch ? 'production\n' : 'HEAD\n');
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult('');
+        }
+
+        if (key === 'git checkout production') {
+          checkedOutBranch = true;
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    }
+  );
+
+  assert.equal(restored, true);
+  assert.deepEqual(calls, [
+    'git rev-parse --abbrev-ref HEAD',
+    'git status --porcelain',
+    'git checkout production',
+  ]);
+});
+
+test('restoreTargetBranchIfDetached leaves dirty detached worktrees untouched', async () => {
+  const calls = [];
+
+  const restored = await restoreTargetBranchIfDetached(
+    {
+      branch: 'production',
+      remote: 'origin',
+      upstreamBranch: 'production',
+      upstreamRef: 'origin/production',
+    },
+    {
+      log: { info() {}, warn() {} },
+      rootDir: '/workspace/platform',
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'git rev-parse --abbrev-ref HEAD') {
+          return createResult('HEAD\n');
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult(' M scripts/watch-blue-green-deploy.js\n');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    }
+  );
+
+  assert.equal(restored, false);
+  assert.deepEqual(calls, [
+    'git rev-parse --abbrev-ref HEAD',
+    'git status --porcelain',
+  ]);
 });
 
 test('pending deploy requests persist across restarts and can be cleared explicitly', () => {
