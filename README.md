@@ -4,98 +4,94 @@
 [![CodeQL](https://github.com/tutur3u/platform/actions/workflows/codeql.yml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/codeql.yml)
 [![Test](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml/badge.svg)](https://github.com/tutur3u/platform/actions/workflows/turbo-unit-tests.yaml)
 
-![Tuturuuu Cover](/public/cover.png)
+![Tuturuuu unified workspace marketing hero](/public/tuturuuu-marketing-hero.png)
 
-Tuturuuu is an open-source workspace platform for modern work and life. This
-repository contains the product apps, mobile app, infrastructure helpers,
-shared packages, SDK, documentation, and local development tooling that power
-the Tuturuuu ecosystem.
+Tuturuuu is an open-source intelligent workspace platform for modern work and
+life. It brings tasks, calendars, meetings, documents, storage, finance,
+inventory, learning, automation, and AI-assisted workflows into one connected
+operating layer.
 
-The north star is simple: reduce digital friction so people can spend more
-time on meaningful work. The implementation is a Turborepo monorepo centered on
-Next.js, Supabase, Bun, Flutter, and a growing set of AI-powered product
-surfaces.
+The goal is to reduce digital friction: capture what matters, clarify the next
+action, keep teams in sync, and let software handle more of the coordination
+load. This monorepo contains the apps, shared packages, mobile client, SDK,
+CLI, documentation, local services, and deployment tooling behind that system.
+
+## What Tuturuuu Builds
+
+| Product layer | What it does | Where to start |
+| --- | --- | --- |
+| Command Center | Daily workspace view for tasks, appointments, reminders, quick capture, and GTD-style triage | [Command Center docs](https://docs.tuturuuu.com/platform/features/command-center-dashboard) |
+| Workspace apps | Tasks, Calendar, Meet, Finance, Inventory, CMS, Track, Shortener, Learn, Teach, Rewise, Nova, Hive, and more | [Platform overview](https://docs.tuturuuu.com/platform/overview) |
+| AI and automation | Mira, Nova, Rewise, model routing, structured data, workflow automation, and research surfaces like Hive | [AI docs](https://docs.tuturuuu.com/platform/ai/structured-data) |
+| Mobile | Flutter workspace tools for Drive, CRM, Education, QR login approval, MFA approval, and mobile-first modules | [Mobile workspace tools](https://docs.tuturuuu.com/platform/features/mobile-workspace-tools) |
+| SDK and CLI | TypeScript SDK plus the native `ttr` CLI for workspace, task, finance, storage, and automation workflows | [SDK reference](https://docs.tuturuuu.com/reference/packages/sdk) |
+| Docs and operations | Product docs, architecture notes, local development, Docker, CI, deployment, and runbooks | [Build docs](https://docs.tuturuuu.com/build/overview) |
 
 ## Start Here
 
 | Need | Go to |
 | --- | --- |
-| Product and architecture docs | [docs.tuturuuu.com](https://docs.tuturuuu.com) |
-| Development workflow | [Development Guide](https://docs.tuturuuu.com/build/development-tools/development) |
-| Web Docker operations | [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment) |
-| Agent instructions | [AGENTS.md](./AGENTS.md) |
-| Contribution rules | [CONTRIBUTING.md](./CONTRIBUTING.md) |
+| Product vision and platform architecture | [docs.tuturuuu.com](https://docs.tuturuuu.com) |
+| Local development setup | [Development Guide](https://docs.tuturuuu.com/build/development-tools/development) |
+| Monorepo architecture | [Monorepo Architecture](https://docs.tuturuuu.com/build/development-tools/monorepo-architecture) |
+| Docker and blue/green deployment | [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment) |
+| Autonomous agent guardrails | [AGENTS.md](./AGENTS.md) |
+| Contributor rules | [CONTRIBUTING.md](./CONTRIBUTING.md) |
 | Security policy | [SECURITY.md](./SECURITY.md) |
 
 ## Repository Map
 
-### Applications
+```txt
+apps/
+  web/                  Main platform app, dashboard, and centralized APIs
+  mobile/               Flutter app for iOS and Android
+  docs/                 Mintlify documentation site
+  database/             Supabase migrations, seeds, tests, and typegen
+  calendar|cms|finance|inventory|meet|tasks|track|...  Satellite apps
+  hive|hive-realtime    Research world editor and realtime service
+  redis|discord|backend|storage-unzip-proxy|...         Supporting services
+packages/
+  ui|icons|hooks|utils|types|supabase|auth|internal-api  Shared product foundation
+  ai|trigger|workflows|sdk|payment|apis|...              AI, automation, SDK, and integrations
+scripts/
+  check, Docker, CI, local environment, release, and developer tooling
+```
 
-| Path | Runtime | Purpose | Local entry |
-| --- | --- | --- | --- |
-| `apps/web` | Next.js, port 7803 | Main platform, dashboard, APIs, workspace modules | `bun dev:web` |
-| `apps/calendar` | Next.js, port 7806 | Calendar satellite app | `bun dev:calendar` |
-| `apps/cms` | Next.js, port 7811 | Content management satellite app | `bun dev:cms` |
-| `apps/finance` | Next.js, port 7808 | Finance satellite app | `bun dev:finance` |
-| `apps/meet` | Next.js, port 7807 | Meeting satellite app | `bun dev:meet` |
-| `apps/nova` | Next.js, port 7805 | Prompt engineering and AI challenge app | `bun dev:nova` |
-| `apps/rewise` | Next.js, port 7804 | Multi-model AI chat app | `bun dev:rewise` |
-| `apps/shortener` | Next.js, port 3002 | URL shortener | `bun dev:shortener` |
-| `apps/tasks` | Next.js, port 7809 | Task management satellite app | `bun dev:tasks` |
-| `apps/track` | Next.js, port 7810 | Time tracking satellite app | `bun dev:track` |
-| `apps/learn` | Next.js, port 7812 | Learning experience app | `bun dev:learn` |
-| `apps/teach` | Next.js, port 7813 | Teacher companion app | `bun dev:teach` |
-| `apps/external` | Next.js, port 3000 | SDK and integration demo app | `bun dev:external` |
-| `apps/playground` | Next.js, port 3003 | Experimentation sandbox | package-local `bun dev` |
-| `apps/mobile` | Flutter | Mobile workspace tools | `bun dev:mobile` |
-| `apps/docs` | Mintlify | Public documentation site | `bun dev:docs` |
-| `apps/database` | Supabase | Local schema, migrations, seeds, typegen | `bun sb:start` |
-| `apps/redis` | Docker | Local Redis and Serverless Redis HTTP proxy | `bun redis:start` |
-| `apps/discord` | Python, Modal | Discord bot and MarkItDown service | see `apps/discord/README.md` |
-| `apps/backend` | Rust, Axum | Rust backend learning project | see `apps/backend/README.md` |
-| `apps/storage-unzip-proxy` | Bun | Storage ZIP extraction helper | package-local `bun start` |
-| `apps/pronunciation-assessor` | Python | Pronunciation assessment helper service | Docker workflow |
+Tuturuuu uses a Turborepo monorepo so product changes can move atomically across
+apps, database schema, generated types, shared packages, tests, and docs.
+Internal packages use `workspace:*`; prefer shared packages before introducing
+app-local duplicates.
 
-### Shared Packages
-
-| Area | Packages |
-| --- | --- |
-| UI and product primitives | `@tuturuuu/ui`, `@tuturuuu/icons`, `@tuturuuu/hooks`, `@tuturuuu/utils`, `@tuturuuu/masonry`, `@tuturuuu/games`, `@tuturuuu/offline` |
-| Data, auth, and app boundaries | `@tuturuuu/types`, `@tuturuuu/supabase`, `@tuturuuu/auth`, `@tuturuuu/internal-api`, `@tuturuuu/satellite` |
-| AI and automation | `@tuturuuu/ai`, `@tuturuuu/trigger`, `@tuturuuu/workflows`, `tuturuuu` |
-| Integrations | `@tuturuuu/apis`, `@tuturuuu/google`, `@tuturuuu/microsoft`, `@tuturuuu/vercel`, `@tuturuuu/turnstile` |
-| Business systems | `@tuturuuu/payment`, `@tuturuuu/transactional`, `@tuturuuu/email-service` |
-| Tooling | `@tuturuuu/typescript-config` |
-
-## Tech Stack
+## Technology Foundation
 
 | Layer | Choices |
 | --- | --- |
 | Runtime and package manager | Bun 1.3.x, Node.js 22+ |
 | Monorepo orchestration | Turborepo |
 | Web apps | Next.js 16 App Router, React 19, TypeScript |
-| UI | Tailwind CSS 4, Radix/Shadcn patterns, Tuturuuu UI package |
-| Data | Supabase PostgreSQL with RLS, generated database types |
+| Local app routing | Portless, stable `https://*.tuturuuu.localhost` origins |
+| UI | Tailwind CSS 4, Radix/Shadcn patterns, `@tuturuuu/ui`, `@tuturuuu/icons` |
+| Data | Supabase PostgreSQL with RLS and generated database types |
 | Client state | TanStack Query, Jotai, nuqs |
-| APIs | Next.js Route Handlers, tRPC, internal API package |
+| APIs | Next.js Route Handlers, tRPC, `@tuturuuu/internal-api` |
 | AI | Vercel AI SDK and provider-specific packages |
 | Mobile | Flutter, Dart, BLoC/Cubit |
 | Tests and checks | Vitest, Playwright, Biome, tsgo, Flutter checks |
 | Deployment | Vercel, GitHub Actions, Docker blue/green workflow |
 
-## Prerequisites
+## Quick Start
+
+Install the required tools:
 
 - [Bun](https://bun.sh/) 1.3.x
 - [Node.js](https://nodejs.org/) 22 or newer
-- [Docker](https://www.docker.com/) for local Supabase, Redis, and Dockerized
-  web workflows
+- [Docker](https://www.docker.com/) for Supabase, Redis, and Dockerized web
+  workflows
 - Flutter SDK for `apps/mobile`
 - Rust toolchain for `apps/backend`
 - Python and `uv` for `apps/discord`
 
-## Local Setup
-
-Clone the repository and install dependencies:
+Clone and install:
 
 ```bash
 git clone https://github.com/tutur3u/platform.git
@@ -103,8 +99,8 @@ cd platform
 bun i
 ```
 
-Create environment files from the app-level examples you need. Most web work
-starts with:
+Create only the environment files needed for the apps you plan to run. Most web
+work starts with:
 
 ```bash
 cp apps/web/.env.example apps/web/.env.local
@@ -114,11 +110,30 @@ Then fill in Supabase, auth, AI, email, storage, and integration variables as
 needed. Keep secrets in local env files or deployment secret stores, never in
 git.
 
-## Development Workflows
+## Local Development
 
-### Main Web App
+The default local experience uses Portless, so apps get stable HTTPS subdomains
+instead of relying on fallback ports:
 
-Run the main platform plus the packages it depends on:
+| App | Local URL |
+| --- | --- |
+| Platform | `https://tuturuuu.localhost` |
+| Calendar | `https://calendar.tuturuuu.localhost` |
+| CMS | `https://cms.tuturuuu.localhost` |
+| External | `https://external.tuturuuu.localhost` |
+| Finance | `https://finance.tuturuuu.localhost` |
+| Hive | `https://hive.tuturuuu.localhost` |
+| Inventory | `https://inventory.tuturuuu.localhost` |
+| Learn | `https://learn.tuturuuu.localhost` |
+| Meet | `https://meet.tuturuuu.localhost` |
+| Nova | `https://nova.tuturuuu.localhost` |
+| Rewise | `https://rewise.tuturuuu.localhost` |
+| Shortener | `https://shortener.tuturuuu.localhost` |
+| Tasks | `https://tasks.tuturuuu.localhost` |
+| Teach | `https://teach.tuturuuu.localhost` |
+| Track | `https://track.tuturuuu.localhost` |
+
+Run the main platform:
 
 ```bash
 bun dev:web
@@ -131,27 +146,20 @@ bun sb:start
 bun dev:web
 ```
 
-Use the shortcut when you want the script to start Supabase for you:
+Use convenience scripts when you want the workflow to manage Supabase:
 
 ```bash
-bun devx:web
+bun devx:web     # start Supabase, then run web
+bun devrs:web    # reset and seed Supabase, then run web
 ```
 
-Use a clean, seeded database when debugging flows that depend on seed data:
-
-```bash
-bun devrs:web
-```
-
-### Satellite Apps
-
-Satellite apps run through filtered Turborepo scripts and usually depend on
-`apps/web` for protected product APIs.
+Run a focused app from the root when a matching script exists:
 
 ```bash
 bun dev:calendar
 bun dev:cms
 bun dev:finance
+bun dev:inventory
 bun dev:meet
 bun dev:nova
 bun dev:rewise
@@ -159,32 +167,25 @@ bun dev:shortener
 bun dev:tasks
 bun dev:track
 bun dev:learn
+bun dev:teach
+bun dev:hive
+bun dev:external
 ```
 
-### Mobile
+Use `bun dev:edu` when working on Learn and Teach together with the central web
+app for cross-app login. Run mobile and docs separately:
 
 ```bash
 bun dev:mobile
-```
-
-For verification, prefer the mobile checker:
-
-```bash
-bun check:mobile
-```
-
-### Documentation
-
-```bash
 bun dev:docs
 ```
 
-Documentation source lives in `apps/docs`. New docs pages must be registered in
-`apps/docs/docs.json`.
+Do not run long-lived development servers or build commands in automation unless
+the task explicitly calls for them.
 
-## Database Workflow
+## Data And Local Services
 
-Local Supabase is owned by `apps/database` and exposed through root scripts.
+Supabase lives in `apps/database` and is exposed through root scripts:
 
 | Command | Purpose |
 | --- | --- |
@@ -194,22 +195,24 @@ Local Supabase is owned by `apps/database` and exposed through root scripts.
 | `bun sb:new` | Create a migration |
 | `bun sb:up` | Apply local migrations and regenerate types |
 | `bun sb:typegen` | Regenerate database types |
+| `bun redis:start` | Start local Redis and the Serverless Redis HTTP proxy |
+| `bun redis:stop` | Stop local Redis services |
 
-Production Supabase pushes are intentionally not part of the normal contributor
-flow. Prepare migrations in the repo and let the release operator apply them.
+Production Supabase pushes are not part of the normal contributor flow. Prepare
+migrations in the repo and let the release operator apply them.
 
-## Docker Web Workflow
+## Docker And Deployment
 
-The web app has a Docker workflow for development, production-like local runs,
-and self-hosted blue/green deployments.
+The web app has Docker workflows for development, production-like local runs,
+and self-hosted blue/green deployment.
 
 | Command | Purpose |
 | --- | --- |
-| `bun dev:web:docker` | Run the web dev workflow inside Docker |
-| `bun devx:web:docker` | Start local Supabase, then run Docker web dev |
-| `bun devrs:web:docker` | Start and reset local Supabase, then run Docker web dev |
-| `bun dev:web:docker:down` | Stop the Docker dev stack |
-| `bun serve:web:docker` | Run production web image in place |
+| `bun dev:web:docker` | Run the web development workflow inside Docker |
+| `bun devx:web:docker` | Start local Supabase, then run Docker web development |
+| `bun devrs:web:docker` | Reset local Supabase, then run Docker web development |
+| `bun dev:web:docker:down` | Stop the Docker development stack |
+| `bun serve:web:docker` | Run the production web image in place |
 | `bun serve:web:docker:bg` | Run blue/green production deployment |
 | `bun serve:web:docker:bg:watch` | Poll the tracked branch and deploy new fast-forwards |
 | `bun serve:web:docker:down` | Stop the production Docker stack |
@@ -222,6 +225,32 @@ testing the memory-only fallback path.
 See the [Web Docker Deployment](https://docs.tuturuuu.com/build/devops/web-docker-deployment)
 runbook for flags, lock recovery, BuildKit throttling, blue/green cutover, and
 runtime file details.
+
+## SDK And CLI
+
+The `tuturuuu` package in `packages/sdk` ships the public TypeScript SDK and the
+native Bun-powered `ttr` CLI.
+
+Use the repo-local CLI during development:
+
+```bash
+bun ttr --help
+bun ttr whoami --no-update-check
+bun ttr tasks --json --no-update-check
+```
+
+Use the globally installed `ttr` for normal user workflows, login, and upgrade
+management:
+
+```bash
+ttr login
+ttr workspaces
+ttr tasks --compact
+ttr finance wallets
+```
+
+The SDK covers workspace storage, files, documents, EPM delivery and management,
+task workflows, finance workflows, and agent-friendly JSON output.
 
 ## Quality Gates
 
@@ -240,51 +269,31 @@ change touches TypeScript, JavaScript, root scripts, or shared config.
 | `bun check:mobile` | Run Flutter mobile validation |
 | `git diff --check` | Catch whitespace issues before commit |
 
-Do not use `bun build`, `bun run build`, or long-running dev servers in
-automation unless the task explicitly calls for them.
+For Markdown-only changes, keep the file manually formatted and run
+`git diff --check`. For product, API, schema, or shared package changes, follow
+the focused verification for that surface and the guardrails in `AGENTS.md`.
 
-## Engineering Standards
+## Contributor Expectations
 
-These are the rules most often needed while navigating the repo:
+Before making broad or automated changes, read [AGENTS.md](./AGENTS.md). It is
+the operating manual for this checkout and includes the full guardrail set.
 
-- Default to Server Components in Next.js. Add client components only for state,
-  browser APIs, or interaction.
-- Use TanStack Query for client-side data fetching and mutations. Do not fetch
-  app data from `useEffect`.
-- Put authenticated app API access behind `packages/internal-api/src/*` instead
-  of scattering raw `fetch('/api/...')` calls.
+The short version:
+
+- Check `git status --short` before editing and avoid unrelated dirty files.
+- Use Conventional Commit style for authored commits.
+- Default to Server Components in Next.js; use client components only for
+  browser state, browser APIs, or interaction.
+- Use TanStack Query for client-side data fetching and mutations.
+- Put authenticated app API access behind `packages/internal-api/src/*`.
 - Import shared database row shapes from `@tuturuuu/types/db` where possible.
 - Update both English and Vietnamese message bundles for user-facing strings.
-- Run `bun i18n:sort` after editing message JSON.
 - Add dashboard routes to the relevant `navigation.tsx` aliases, children,
   icons, and permissions.
-- Use `@tuturuuu/icons` instead of emoji or ad-hoc icon code in UI.
-- Use `@tuturuuu/ui/dialog` instead of native browser dialogs.
-- Use `serverLogger.*` in `apps/web` server runtime code instead of raw
-  server-side `console.*`.
-- Keep durable workflow, deployment, architecture, and debugging knowledge in
-  `apps/docs`.
+- Keep durable workflow, deployment, architecture, debugging, and operations
+  knowledge in `apps/docs`.
 
-Read [AGENTS.md](./AGENTS.md) before making broad or automated changes. It is
-the operational manual for this checkout and includes the full guardrail set.
-
-## Tuturuuu CLI
-
-The `tuturuuu` package in `packages/sdk` ships the public TypeScript SDK and the
-native `ttr` CLI.
-
-Run the repo-local CLI during development:
-
-```bash
-bun ttr --help
-bun ttr whoami --no-update-check
-bun ttr tasks --json --no-update-check
-```
-
-Use the globally installed `ttr` for normal user workflows, login, and upgrade
-management.
-
-## CI And Deployment
+## CI, Security, And License
 
 GitHub Actions cover branch naming, Biome, type checks, tests, CodeQL, mobile
 builds, Supabase checks, Vercel preview and production deployments, package
@@ -293,19 +302,7 @@ releases, Docker setup checks, and Discord Modal deployment.
 Production web deployments primarily target Vercel. The Docker workflow exists
 for local production simulation and self-hosted blue/green operation.
 
-## Contributing
-
-1. Read [CONTRIBUTING.md](./CONTRIBUTING.md) and [AGENTS.md](./AGENTS.md).
-2. Check `git status --short` before editing.
-3. Keep your write set scoped and avoid touching unrelated dirty files.
-4. Add or update tests and docs in the same change when behavior or workflow
-   changes.
-5. Run the focused verification for your area, then `bun check` when required.
-6. Use Conventional Commit style for commits.
-
 Security issues should be reported through [SECURITY.md](./SECURITY.md).
-
-## License
 
 This project is licensed under the Apache License, Version 2.0. See
 [LICENSE](./LICENSE) for details.
