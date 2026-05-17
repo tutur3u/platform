@@ -535,11 +535,14 @@ deployment kind, and a re-entrant token for nested helper calls).
   refreshes, platform promotions, and imported Infrastructure project builds all
   defer behind the same lock so only one deployment build runs across the stack.
 - The watcher also treats a build lock older than 30 minutes as a timed-out
-  build. It sends `SIGTERM` to the recorded deployment PID, clears the lock,
-  records a failed deployment history row with the timeout reason, and waits
-  until the next polling cycle before retrying. Override the window with
-  `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS`; set it to `0` only when an operator
-  explicitly wants to disable watcher-side build termination.
+  build. For another live deployment PID, it sends `SIGTERM` to the recorded
+  owner. If the lock is owned by the watcher process itself and the watcher has
+  already returned to the polling loop, the lock is treated as leaked
+  `cached-recovery` state and cleared without signaling the watcher. In both
+  cases, the watcher records a failed deployment history row with the timeout
+  reason and waits until the next polling cycle before retrying. Override the
+  window with `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS`; set it to `0` only when an
+  operator explicitly wants to disable watcher-side build termination.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
   --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
   If the build still exits with `bun install --frozen-lockfile` **exit code 1**
@@ -1071,10 +1074,12 @@ Dashboard details:
 - Recoverable Git poll failures stay visible in the dashboard as a retrying
   watcher state instead of terminating the process, and the next-check timer
   reflects the active backoff delay.
-- If `git pull --ff-only` fails only because `.git/index.lock` already exists,
-  the watcher now inspects the lock age and removes it automatically only when
-  it is stale (older than 2 minutes). Fresh lock files are left in place so
-  active Git operations are not interrupted.
+- If `git fetch` or `git pull --ff-only` fails only because a Git lock already
+  exists, the watcher inspects the lock age and removes it automatically only
+  when it is stale (older than 2 minutes). This covers `.git/index.lock`,
+  `.git/packed-refs.lock`, and remote-ref locks such as
+  `.git/refs/remotes/origin/staging.lock`. Fresh lock files are left in place
+  so active Git operations are not interrupted.
 - Build/deploy failures also stay inside the watcher loop. The watcher records
   failed attempts in deployment history, clears stale pending handoff files
   after recovery failures, and stops retrying the same commit after the third

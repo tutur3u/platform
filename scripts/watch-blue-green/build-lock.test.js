@@ -227,6 +227,54 @@ describe('tryTerminateTimedOutDeploymentBuildLock', () => {
     }
   });
 
+  it('clears a timed-out lock owned by the current watcher process', () => {
+    const runtimeDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'build-lock-timeout-self-')
+    );
+    const deploymentBuildLockFile = path.join(
+      runtimeDir,
+      'blue-green-deployment-build.lock'
+    );
+    const paths = { deploymentBuildLockFile, runtimeDir };
+    const startedAt = 1_700_000_000_000;
+    const signals = [];
+    const processImpl = {
+      kill(pid, signal) {
+        signals.push({ pid, signal });
+      },
+      pid: 4321,
+    };
+    const lock = {
+      command: 'cached-recovery',
+      deploymentKind: 'cached-recovery',
+      lockToken: 'self-timeout-token',
+      ownerPid: 4321,
+      startedAt,
+    };
+
+    fs.mkdirSync(runtimeDir, { recursive: true });
+    fs.writeFileSync(
+      deploymentBuildLockFile,
+      JSON.stringify(lock, null, 2),
+      'utf8'
+    );
+
+    try {
+      const result = tryTerminateTimedOutDeploymentBuildLock(lock, {
+        fsImpl: fs,
+        now: () => startedAt + DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS + 1,
+        paths,
+        processImpl,
+      });
+
+      assert.equal(result.action, 'self-cleared');
+      assert.deepEqual(signals, []);
+      assert.equal(fs.existsSync(deploymentBuildLockFile), false);
+    } finally {
+      fs.rmSync(runtimeDir, { force: true, recursive: true });
+    }
+  });
+
   it('leaves a young live lock untouched', () => {
     const runtimeDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'build-lock-timeout-young-')

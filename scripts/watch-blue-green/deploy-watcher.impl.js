@@ -129,11 +129,13 @@ const {
   hasWatchedScriptChanges,
   isAncestor,
   isGitIndexLockError,
+  isGitLockError,
   isRecoverableGitCommandError,
   listChangedFilesBetweenRevisions,
   listDirtyWorktreePaths,
   parseUpstreamRef,
   pullTrackedBranch,
+  removeStaleGitLock,
   removeStaleGitIndexLock,
   resolveLockedBranchTarget,
 } = require('./deploy-watcher-git.js');
@@ -1576,8 +1578,11 @@ function describeTimedOutDeploymentBuild(result) {
   const lock = result?.lock ?? {};
   const timeoutMs = result?.timeoutMs ?? DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS;
   const elapsedMs = result?.elapsedMs ?? 0;
-  const signal = result?.signal ?? 'SIGTERM';
+  if (result?.action === 'self-cleared') {
+    return `Deployment build exceeded ${formatDuration(timeoutMs)} while still building; cleared self-owned lock for PID ${lock.ownerPid ?? lock.pid ?? 'unknown'} after ${formatDuration(elapsedMs)} because the watcher had returned to the poll loop.`;
+  }
 
+  const signal = result?.signal ?? 'SIGTERM';
   return `Deployment build exceeded ${formatDuration(timeoutMs)} while still building; sent ${signal} to PID ${lock.ownerPid ?? lock.pid ?? 'unknown'} after ${formatDuration(elapsedMs)}.`;
 }
 
@@ -1605,7 +1610,7 @@ function stopTimedOutDeploymentBuildIfNeeded({
     return result;
   }
 
-  if (result.action !== 'terminated') {
+  if (result.action !== 'terminated' && result.action !== 'self-cleared') {
     return result;
   }
 
@@ -3298,7 +3303,10 @@ async function runDeployWatchIteration(
     processImpl,
   });
 
-  if (timedOutBuild.action === 'terminated') {
+  if (
+    timedOutBuild.action === 'terminated' ||
+    timedOutBuild.action === 'self-cleared'
+  ) {
     return attachRuntime({
       checkedAt,
       error: new Error(timedOutBuild.reason),
@@ -3398,7 +3406,14 @@ async function runDeployWatchIteration(
   }
 
   try {
-    await fetchTrackedBranch(target, { env, runCommand: run });
+    await fetchTrackedBranch(target, {
+      cwd: rootDir,
+      env,
+      fsImpl,
+      log,
+      now,
+      runCommand: run,
+    });
 
     const localHead = await getRevision('HEAD', { env, runCommand: run });
     const upstreamHead = await getRevision(target.upstreamRef, {
@@ -6073,6 +6088,7 @@ module.exports = {
   hasWatchedScriptChanges,
   isRecoverableGitCommandError,
   isGitIndexLockError,
+  isGitLockError,
   isAncestor,
   isProcessAlive,
   listChangedFilesBetweenRevisions,
@@ -6100,6 +6116,7 @@ module.exports = {
   runDeployWatchIteration,
   runDeployWatchLoop,
   runWatcherCommand,
+  removeStaleGitLock,
   removeStaleGitIndexLock,
   sleep,
   spawnReplacementWatcher,

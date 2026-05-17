@@ -364,7 +364,9 @@ function isDeploymentBuildLockLive(lock, processImpl = process) {
  * Terminates a live deployment build owner after the watcher timeout elapses.
  * This is deliberately separate from stale-lock invalidation: stale cleanup is
  * conservative and lock-only, while timeout handling actively stops a build
- * that is still recorded as in progress.
+ * that is still recorded as in progress. If the lock points at the current
+ * watcher process, the watcher has already returned to the poll loop, so the
+ * lock leaked from an earlier attempt and is cleared instead of self-killing.
  */
 function tryTerminateTimedOutDeploymentBuildLock(
   lock,
@@ -398,7 +400,8 @@ function tryTerminateTimedOutDeploymentBuildLock(
   }
 
   if (pid === processImpl.pid) {
-    return { action: 'self', elapsedMs, lock, timeoutMs };
+    clearDeploymentBuildLock({ fsImpl, paths });
+    return { action: 'self-cleared', elapsedMs, lock, timeoutMs };
   }
 
   const aliveState = signalPidZero(pid, processImpl);

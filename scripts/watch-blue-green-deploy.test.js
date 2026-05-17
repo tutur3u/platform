@@ -49,6 +49,7 @@ const {
   collectDeploymentTraffic,
   createQuietRunCommand,
   createWatchUi,
+  fetchTrackedBranch,
   finalizeComposeProjectMigrationIfRequested,
   formatCountdown,
   formatRelativeTime,
@@ -64,6 +65,7 @@ const {
   getWatcherComposeEnv,
   getWatchPaths,
   isGitIndexLockError,
+  isGitLockError,
   isRecoverableGitCommandError,
   isProcessAlive,
   listDirtyWorktreePaths,
@@ -82,6 +84,7 @@ const {
   runDeployWatchIteration,
   runDeployWatchLoop,
   runWatcherCommand,
+  removeStaleGitLock,
   removeStaleGitIndexLock,
   startBlueGreenWatcherContainer,
   streamBlueGreenWatcherLogs,
@@ -541,6 +544,21 @@ test('isGitIndexLockError detects git index.lock failures', () => {
   );
 });
 
+test('isGitLockError detects git ref lock failures', () => {
+  assert.equal(
+    isGitLockError(
+      new Error(
+        "Command failed (1): git pull\nerror: cannot lock ref 'refs/remotes/origin/staging': Unable to create '/workspace/.git/refs/remotes/origin/staging.lock': File exists."
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isGitLockError(new Error('Command failed (1): git fetch origin main')),
+    false
+  );
+});
+
 test('removeStaleGitIndexLock removes only stale lock files', () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-index-lock-'));
   const gitDir = path.join(tempDir, '.git');
@@ -599,6 +617,126 @@ test('removeStaleGitIndexLock removes only stale lock files', () => {
     );
     assert.equal(fs.existsSync(lockPath), true);
     assert.match(logs.at(-1), /Leaving it in place/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('removeStaleGitLock removes only stale remote ref lock files', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-ref-lock-'));
+  const refDir = path.join(tempDir, '.git', 'refs', 'remotes', 'origin');
+  const lockPath = path.join(refDir, 'staging.lock');
+  const logs = [];
+
+  try {
+    fs.mkdirSync(refDir, { recursive: true });
+    const lockError = new Error(
+      `Command failed (1): git pull\nerror: cannot lock ref 'refs/remotes/origin/staging': Unable to create '${lockPath}': File exists.`
+    );
+    const staleNow = Date.now();
+    const staleMtime = new Date(
+      staleNow - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000
+    );
+
+    fs.writeFileSync(lockPath, '', 'utf8');
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    assert.equal(
+      removeStaleGitLock({
+        error: lockError,
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => staleNow,
+        rootDir: tempDir,
+      }),
+      true
+    );
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.match(logs.at(-1), /Removed stale git ref lock/);
+
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const freshNow = Date.now();
+    const freshMtime = new Date(freshNow - 15_000);
+    fs.utimesSync(lockPath, freshMtime, freshMtime);
+
+    assert.equal(
+      removeStaleGitLock({
+        error: lockError,
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => freshNow,
+        rootDir: tempDir,
+      }),
+      false
+    );
+    assert.equal(fs.existsSync(lockPath), true);
+    assert.match(logs.at(-1), /Leaving it in place/);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('fetchTrackedBranch retries once after removing a stale remote ref lock', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-fetch-lock-'));
+  const refDir = path.join(tempDir, '.git', 'refs', 'remotes', 'origin');
+  const lockPath = path.join(refDir, 'staging.lock');
+  const calls = [];
+  const logs = [];
+  const staleNow = Date.now();
+
+  try {
+    fs.mkdirSync(refDir, { recursive: true });
+    fs.writeFileSync(lockPath, '', 'utf8');
+    const staleMtime = new Date(
+      staleNow - DEFAULT_STALE_GIT_INDEX_LOCK_MS - 1_000
+    );
+    fs.utimesSync(lockPath, staleMtime, staleMtime);
+
+    await fetchTrackedBranch(
+      {
+        branch: 'production',
+        remote: 'origin',
+        upstreamBranch: 'production',
+        upstreamRef: 'origin/production',
+      },
+      {
+        cwd: tempDir,
+        fsImpl: fs,
+        log: {
+          warn(message) {
+            logs.push(message);
+          },
+        },
+        now: () => staleNow,
+        runCommand: async (command, args) => {
+          calls.push(`${command} ${args.join(' ')}`);
+
+          if (calls.length === 1) {
+            return createResult('', {
+              code: 1,
+              stderr: `error: cannot lock ref 'refs/remotes/origin/staging': Unable to create '${lockPath}': File exists.`,
+            });
+          }
+
+          return createResult('');
+        },
+      }
+    );
+
+    assert.deepEqual(calls, [
+      'git fetch origin production',
+      'git fetch origin production',
+    ]);
+    assert.equal(fs.existsSync(lockPath), false);
+    assert.match(logs.at(-1), /Removed stale git ref lock/);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -2871,6 +3009,9 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
 });
 
 test('runDeployWatchIteration emits a pending deployment before deploy completion', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-pending-ui-'));
+  const paths = getWatchPaths(tempDir);
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const pendingStates = [];
   const projectStatusUpdates = [];
   let pullCompleted = false;
@@ -2948,47 +3089,62 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
     throw new Error(`Unexpected command: ${key}`);
   };
 
-  const result = await runDeployWatchIteration(
-    {
-      branch: 'main',
-      remote: 'origin',
-      upstreamBranch: 'main',
-      upstreamRef: 'origin/main',
-    },
-    {
-      log: { error() {}, info() {}, warn() {} },
-      now: (() => {
-        const values = [1000, 2000, 3000, 4000];
-        return () => values.shift() ?? 4000;
-      })(),
-      onDeploymentStart: (state) => {
-        pendingStates.push(state);
-      },
-      platformProjectDeploymentStatusUpdater: async (update) => {
-        projectStatusUpdates.push(update);
-      },
-      platformProjectReader: async () => ({
-        deploymentStatus: 'queued',
-        selectedBranch: 'main',
-        source: 'database',
-      }),
-      runCommand,
-    }
-  );
+  try {
+    fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+    fs.writeFileSync(
+      envFilePath,
+      'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n',
+      'utf8'
+    );
 
-  assert.equal(pendingStates.length, 1);
-  assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
-  assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
-  assert.deepEqual(
-    projectStatusUpdates.map((update) => update.status),
-    ['building', 'deploying', 'ready']
-  );
-  assert.equal(projectStatusUpdates.at(-1).latestCommit.shortHash, 'bbb222');
-  assert.equal(
-    projectStatusUpdates.at(-1).metadata.deployedCommitHash,
-    'bbb222222222222222222'
-  );
-  assert.equal(result.status, 'deployed');
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        envFilePath,
+        fsImpl: fs,
+        log: { error() {}, info() {}, warn() {} },
+        now: (() => {
+          const values = [1000, 2000, 3000, 4000];
+          return () => values.shift() ?? 4000;
+        })(),
+        onDeploymentStart: (state) => {
+          pendingStates.push(state);
+        },
+        paths,
+        platformProjectDeploymentStatusUpdater: async (update) => {
+          projectStatusUpdates.push(update);
+        },
+        platformProjectReader: async () => ({
+          deploymentStatus: 'queued',
+          selectedBranch: 'main',
+          source: 'database',
+        }),
+        rootDir: tempDir,
+        runCommand,
+      }
+    );
+
+    assert.equal(pendingStates.length, 1);
+    assert.equal(pendingStates[0].pendingDeployment.status, 'deploying');
+    assert.equal(pendingStates[0].pendingDeployment.commitShortHash, 'bbb222');
+    assert.deepEqual(
+      projectStatusUpdates.map((update) => update.status),
+      ['building', 'deploying', 'ready']
+    );
+    assert.equal(projectStatusUpdates.at(-1).latestCommit.shortHash, 'bbb222');
+    assert.equal(
+      projectStatusUpdates.at(-1).metadata.deployedCommitHash,
+      'bbb222222222222222222'
+    );
+    assert.equal(result.status, 'deployed');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchIteration waits instead of retrying while a deployment build is active', async () => {
@@ -3209,6 +3365,92 @@ test('runDeployWatchIteration terminates a timed-out deployment build lock', asy
           `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
       )
     );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runDeployWatchIteration clears a timed-out self-owned deployment build lock', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-timeout-self-lock-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  const signals = [];
+  const startedAt = 1000;
+
+  try {
+    writeDeploymentBuildLock(
+      {
+        command: 'cached-recovery',
+        commitHash: 'bbb222222222222222222',
+        commitShortHash: 'bbb222',
+        commitSubject: 'Current cached recovery',
+        deploymentKind: 'cached-recovery',
+        lockToken: 'self-timeout-token',
+        ownerPid: 4321,
+        startedAt,
+      },
+      { fsImpl: fs, paths }
+    );
+
+    const result = await runDeployWatchIteration(
+      {
+        branch: 'main',
+        remote: 'origin',
+        upstreamBranch: 'main',
+        upstreamRef: 'origin/main',
+      },
+      {
+        env: { PATH: process.env.PATH },
+        fsImpl: fs,
+        log: {
+          info() {},
+          warn() {},
+        },
+        now: () => startedAt + DEFAULT_DEPLOYMENT_BUILD_TIMEOUT_MS + 1,
+        paths,
+        processImpl: {
+          kill(pid, signal) {
+            signals.push({ pid, signal });
+          },
+          pid: 4321,
+        },
+        rootDir: tempDir,
+        runCommand: async (command, args) => {
+          const key = `${command} ${args.join(' ')}`;
+          calls.push(key);
+
+          if (key === prodComposePsKey(BLUE_GREEN_PROXY_SERVICE)) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            `docker ps --filter label=com.docker.compose.project=${path.basename(tempDir)} --filter label=com.docker.compose.service=${BLUE_GREEN_PROXY_SERVICE} --format {{.ID}}`
+          ) {
+            return createResult('');
+          }
+
+          if (
+            key ===
+            'docker ps --format {{.ID}}\t{{.Names}}\t{{.Image}}\t{{.Status}}\t{{.RunningFor}}\t{{.Ports}}\t{{.Label "com.docker.compose.service"}}\t{{.Label "com.docker.compose.project"}}'
+          ) {
+            return createResult('');
+          }
+
+          throw new Error(`Unexpected command: ${key}`);
+        },
+      }
+    );
+
+    const history = readDeploymentHistory(paths, fs);
+    assert.equal(result.status, 'deploy-failed');
+    assert.deepEqual(signals, []);
+    assert.equal(readDeploymentBuildLock(paths, fs), null);
+    assert.equal(history[0].status, 'failed');
+    assert.equal(history[0].deploymentKind, 'cached-recovery');
+    assert.match(history[0].failureReason, /cleared self-owned lock/iu);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

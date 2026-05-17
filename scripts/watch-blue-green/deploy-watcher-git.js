@@ -128,39 +128,74 @@ async function checkoutBranch(
   });
 }
 
-async function fetchTrackedBranch(
-  target,
-  { cwd = ROOT_DIR, env, runCommand: run = runCommand } = {}
-) {
-  await runChecked('git', ['fetch', target.remote, target.upstreamBranch], {
-    cwd,
-    env,
-    runCommand: run,
-    stdio: 'pipe',
-  });
+function getGitLockPathFromError(error) {
+  const message = error instanceof Error ? error.message : String(error);
+  const match = message.match(/Unable to create '([^']+\.lock)'/u);
+
+  return match?.[1] ?? null;
 }
 
-function removeStaleGitIndexLock({
+function getRecoverableGitLockKind(resolvedLockPath, rootDir = ROOT_DIR) {
+  const gitDir = path.normalize(path.join(rootDir, '.git'));
+  const relative = path.relative(gitDir, resolvedLockPath);
+
+  if (
+    !relative ||
+    relative.startsWith('..') ||
+    path.isAbsolute(relative) ||
+    !relative.endsWith('.lock')
+  ) {
+    return null;
+  }
+
+  const normalized = path.normalize(relative);
+
+  if (normalized === 'index.lock') {
+    return 'index';
+  }
+
+  if (normalized === 'packed-refs.lock') {
+    return 'packed-refs';
+  }
+
+  if (normalized.startsWith(`${path.normalize('refs')}${path.sep}`)) {
+    return 'ref';
+  }
+
+  return null;
+}
+
+function formatGitLockKind(kind) {
+  if (kind === 'index') {
+    return 'git index lock';
+  }
+
+  if (kind === 'packed-refs') {
+    return 'git packed-refs lock';
+  }
+
+  return 'git ref lock';
+}
+
+function removeStaleGitLock({
   error,
   fsImpl = require('node:fs'),
   log,
   now = () => Date.now(),
   rootDir = ROOT_DIR,
 } = {}) {
-  const message = error instanceof Error ? error.message : String(error);
-  const match = message.match(/Unable to create '([^']+index\.lock)'/u);
+  const lockPath = getGitLockPathFromError(error);
 
-  if (!match) {
+  if (!lockPath) {
     return false;
   }
 
-  const lockPath = match[1];
   const resolved = path.normalize(
     path.isAbsolute(lockPath) ? lockPath : path.join(rootDir, lockPath)
   );
-  const expectedSuffix = path.normalize(path.join('.git', 'index.lock'));
+  const lockKind = getRecoverableGitLockKind(resolved, rootDir);
 
-  if (!resolved.endsWith(expectedSuffix)) {
+  if (!lockKind) {
     return false;
   }
 
@@ -172,10 +207,11 @@ function removeStaleGitIndexLock({
   }
 
   const ageMs = now() - stats.mtimeMs;
+  const lockLabel = formatGitLockKind(lockKind);
 
   if (ageMs < DEFAULT_STALE_GIT_INDEX_LOCK_MS) {
     log?.warn?.(
-      `Git index lock at ${resolved} is only ${Math.round(ageMs / 1000)}s old; Leaving it in place.`
+      `${lockLabel} at ${resolved} is only ${Math.round(ageMs / 1000)}s old; Leaving it in place.`
     );
     return false;
   }
@@ -187,9 +223,78 @@ function removeStaleGitIndexLock({
   }
 
   log?.warn?.(
-    `Removed stale git index lock at ${resolved} (${Math.round(ageMs / 1000)}s old).`
+    `Removed stale ${lockLabel} at ${resolved} (${Math.round(ageMs / 1000)}s old).`
   );
   return true;
+}
+
+const removeStaleGitIndexLock = removeStaleGitLock;
+
+async function runGitWithStaleLockRetry(
+  args,
+  {
+    cwd = ROOT_DIR,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    rootDir = cwd,
+    runCommand: run = runCommand,
+  } = {}
+) {
+  try {
+    await runChecked('git', args, {
+      cwd,
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    });
+  } catch (error) {
+    if (
+      removeStaleGitLock({
+        error,
+        fsImpl,
+        log,
+        now,
+        rootDir,
+      })
+    ) {
+      await runChecked('git', args, {
+        cwd,
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      });
+      return;
+    }
+
+    throw error;
+  }
+}
+
+async function fetchTrackedBranch(
+  target,
+  {
+    cwd = ROOT_DIR,
+    env,
+    fsImpl = require('node:fs'),
+    log,
+    now = () => Date.now(),
+    runCommand: run = runCommand,
+  } = {}
+) {
+  await runGitWithStaleLockRetry(
+    ['fetch', target.remote, target.upstreamBranch],
+    {
+      cwd,
+      env,
+      fsImpl,
+      log,
+      now,
+      rootDir: cwd,
+      runCommand: run,
+    }
+  );
 }
 
 async function pullTrackedBranch(
@@ -207,34 +312,15 @@ async function pullTrackedBranch(
   const workDir = cwd ?? rootDir;
   const args = ['pull', '--ff-only', target.remote, target.upstreamBranch];
 
-  try {
-    await runChecked('git', args, {
-      cwd: workDir,
-      env,
-      runCommand: run,
-      stdio: 'pipe',
-    });
-  } catch (error) {
-    if (
-      removeStaleGitIndexLock({
-        error,
-        fsImpl,
-        log,
-        now,
-        rootDir: workDir,
-      })
-    ) {
-      await runChecked('git', args, {
-        cwd: workDir,
-        env,
-        runCommand: run,
-        stdio: 'pipe',
-      });
-      return;
-    }
-
-    throw error;
-  }
+  await runGitWithStaleLockRetry(args, {
+    cwd: workDir,
+    env,
+    fsImpl,
+    log,
+    now,
+    rootDir: workDir,
+    runCommand: run,
+  });
 }
 
 async function listDirtyWorktreePaths({
@@ -362,6 +448,10 @@ function isGitIndexLockError(error) {
   );
 }
 
+function isGitLockError(error) {
+  return getGitLockPathFromError(error) != null;
+}
+
 function getGitFailureBackoffMs(attempt) {
   const n = Math.max(1, Number(attempt) || 1);
   const scaled = DEFAULT_GIT_FAILURE_BACKOFF_MS * 2 ** (n - 1);
@@ -426,11 +516,13 @@ module.exports = {
   hasWatchedScriptChanges,
   isAncestor,
   isGitIndexLockError,
+  isGitLockError,
   isRecoverableGitCommandError,
   listChangedFilesBetweenRevisions,
   listDirtyWorktreePaths,
   parseUpstreamRef,
   pullTrackedBranch,
+  removeStaleGitLock,
   removeStaleGitIndexLock,
   resolveLockedBranchTarget,
 };
