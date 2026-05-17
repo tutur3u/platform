@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createWorkspaceTaskBoard,
+  createWorkspaceTaskJournal,
   deleteWorkspaceTaskBoard,
   getWorkspaceBoardsData,
   getWorkspaceTaskBoard,
@@ -67,6 +68,47 @@ describe('workspace board internal-api helpers', () => {
       expect.objectContaining({
         method: 'POST',
         body: JSON.stringify({ name: 'Board 1', template_id: 'template-1' }),
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('creates workspace tasks from the journal route', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        tasks: [{ id: 'task-1', name: 'Follow up' }],
+        metadata: { generatedWithAI: true, totalTasks: 1 },
+      })
+    );
+
+    await createWorkspaceTaskJournal(
+      'ws-1',
+      {
+        entry: 'Follow up with finance tomorrow',
+        listId: 'list-1',
+        assigneeIds: ['user-1'],
+        generateDescriptions: true,
+        generateLabels: true,
+        generatePriority: true,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks/journal',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({
+          entry: 'Follow up with finance tomorrow',
+          listId: 'list-1',
+          assigneeIds: ['user-1'],
+          generateDescriptions: true,
+          generateLabels: true,
+          generatePriority: true,
+        }),
         cache: 'no-store',
       })
     );

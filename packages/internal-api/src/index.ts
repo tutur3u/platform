@@ -424,10 +424,12 @@ export {
 } from './storage';
 export {
   addWorkspaceTaskLabel,
+  type CreateWorkspaceTaskJournalPayload,
   cleanupWorkspaceTaskMentions,
   createWorkspaceLabel,
   createWorkspaceTask,
   createWorkspaceTaskBoard,
+  createWorkspaceTaskJournal,
   createWorkspaceTaskList,
   createWorkspaceTaskProject,
   createWorkspaceTaskRelationship,
@@ -461,6 +463,7 @@ export {
   updateWorkspaceTaskList,
   upsertCurrentUserTaskPersonalPlacement,
   type WorkspaceTaskBoardEstimationConfig,
+  type WorkspaceTaskJournalResponse,
 } from './tasks';
 export {
   type TaskSchedulingUpdatePayload,

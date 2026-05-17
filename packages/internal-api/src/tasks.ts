@@ -260,6 +260,39 @@ export interface CreateWorkspaceTaskPayload {
   auto_schedule?: boolean | null;
 }
 
+export interface WorkspaceTaskJournalTaskInput {
+  title: string;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  dueDate?: string | null;
+  estimationPoints?: number | null;
+  projectIds?: string[];
+  labels?: Array<{ id?: string; name: string }>;
+}
+
+export interface CreateWorkspaceTaskJournalPayload {
+  entry: string;
+  listId?: string;
+  previewOnly?: boolean;
+  tasks?: WorkspaceTaskJournalTaskInput[];
+  generatedWithAI?: boolean;
+  labelIds?: string[];
+  assigneeIds?: string[];
+  generateDescriptions?: boolean;
+  generatePriority?: boolean;
+  generateLabels?: boolean;
+  clientTimezone?: string;
+  clientTimestamp?: string;
+}
+
+export interface WorkspaceTaskJournalResponse {
+  tasks: WorkspaceTaskApiTask[];
+  metadata?: {
+    generatedWithAI?: boolean;
+    totalTasks?: number;
+  };
+}
+
 export interface WorkspaceTaskBoardResponse {
   board: Pick<
     WorkspaceTaskBoardRow,
@@ -833,6 +866,25 @@ export async function createWorkspaceTask(
   const client = getInternalApiClient(options);
   return client.json<WorkspaceTaskResponse>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskJournal(
+  workspaceId: string,
+  payload: CreateWorkspaceTaskJournalPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskJournalResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/tasks/journal`,
     {
       method: 'POST',
       headers: {
