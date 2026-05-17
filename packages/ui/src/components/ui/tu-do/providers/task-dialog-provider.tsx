@@ -143,7 +143,7 @@ interface TaskDialogContextValue {
 
   // Register the active dialog close handler so queued opens can close safely first
   registerCloseRequestHandler: (
-    handler: (() => void | Promise<void>) | null
+    handler: (() => boolean | undefined | Promise<boolean | undefined>) | null
   ) => void;
 }
 
@@ -176,9 +176,9 @@ export function TaskDialogProvider({
   const isDialogOpenRef = useRef(state.isOpen);
   const queuedDialogStatesRef = useRef<TaskDialogState[]>([]);
   const queuedOpenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const closeRequestHandlerRef = useRef<(() => void | Promise<void>) | null>(
-    null
-  );
+  const closeRequestHandlerRef = useRef<
+    (() => boolean | undefined | Promise<boolean | undefined>) | null
+  >(null);
   const closeRequestInFlightRef = useRef(false);
 
   // Read cursorsEnabled from workspace presence context (true in DEV_MODE or PRO+ tiers)
@@ -205,7 +205,9 @@ export function TaskDialogProvider({
   const closeCallbackRef = useRef<(() => void) | null>(null);
 
   const registerCloseRequestHandler = useCallback(
-    (handler: (() => void | Promise<void>) | null) => {
+    (
+      handler: (() => boolean | undefined | Promise<boolean | undefined>) | null
+    ) => {
       closeRequestHandlerRef.current = handler;
     },
     []
@@ -258,9 +260,16 @@ export function TaskDialogProvider({
       const requestClose = closeRequestHandlerRef.current;
 
       if (requestClose) {
-        void Promise.resolve(requestClose()).catch((error) => {
-          console.error('Failed to request task dialog close:', error);
-        });
+        void Promise.resolve(requestClose())
+          .then((closeAccepted) => {
+            if (closeAccepted === false) {
+              closeRequestInFlightRef.current = false;
+            }
+          })
+          .catch((error) => {
+            closeRequestInFlightRef.current = false;
+            console.error('Failed to request task dialog close:', error);
+          });
         return;
       }
 

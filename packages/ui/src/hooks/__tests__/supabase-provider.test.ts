@@ -125,4 +125,50 @@ describe('SupabaseProvider', () => {
 
     provider.destroy();
   });
+
+  it('keeps the document unsynced when a custom save callback reports failure', async () => {
+    const doc = new Y.Doc();
+    const channel = createRealtimeChannel();
+    const saveState = vi.fn().mockResolvedValue(false);
+    const loadState = vi.fn().mockResolvedValue(null);
+    const errorListener = vi.fn();
+    const supabase = {
+      channel: vi.fn(() => channel),
+      removeChannel: vi.fn(),
+    } as any;
+
+    const provider = new SupabaseProvider(doc, supabase, {
+      channel: 'task-editor-failed-save',
+      tableName: 'tasks',
+      columnName: 'description_yjs_state',
+      id: 'task-failed-save',
+      loadState,
+      saveState,
+      saveDebounceMs: 1000,
+      resyncInterval: false,
+    });
+    provider.on('error', errorListener);
+
+    channel.trigger('SUBSCRIBED');
+
+    await waitFor(() => {
+      expect(provider.connected).toBe(true);
+      expect(provider.synced).toBe(true);
+    });
+
+    doc.getMap('prosemirror').set('text', 'unsaved');
+    expect(provider.synced).toBe(false);
+
+    await provider.flushSave();
+
+    expect(saveState).toHaveBeenCalledTimes(1);
+    expect(provider.synced).toBe(false);
+    expect(errorListener).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'SAVE_FAILED',
+      })
+    );
+
+    provider.destroy();
+  });
 });

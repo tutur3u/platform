@@ -258,6 +258,36 @@ describe('TaskDialogProvider', () => {
     expect(result.current.state.isOpen).toBe(true);
   });
 
+  it('allows queued task opens to retry after the active dialog blocks close', async () => {
+    const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
+
+    const task1 = { ...mockTask, id: 'task-1', name: 'Task 1' };
+    const task2 = { ...mockTask, id: 'task-2', name: 'Task 2' };
+    const task3 = { ...mockTask, id: 'task-3', name: 'Task 3' };
+    const requestClose = vi.fn().mockResolvedValue(false);
+
+    act(() => {
+      result.current.openTask(task1, 'board-1', [mockList]);
+      result.current.registerCloseRequestHandler(requestClose);
+    });
+
+    await act(async () => {
+      result.current.openTask(task2, 'board-1', [mockList]);
+      await Promise.resolve();
+    });
+
+    expect(requestClose).toHaveBeenCalledTimes(1);
+    expect(result.current.state.task?.name).toBe('Task 1');
+
+    await act(async () => {
+      result.current.openTask(task3, 'board-1', [mockList]);
+      await Promise.resolve();
+    });
+
+    expect(requestClose).toHaveBeenCalledTimes(2);
+    expect(result.current.state.task?.name).toBe('Task 1');
+  });
+
   it('should handle empty availableLists', () => {
     const { result } = renderHook(() => useTaskDialogContext(), { wrapper });
 

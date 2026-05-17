@@ -27,7 +27,7 @@ export interface UseTaskDialogCloseProps {
 }
 
 export interface UseTaskDialogCloseReturn {
-  handleClose: () => Promise<void>;
+  handleClose: () => Promise<boolean>;
   handleForceClose: () => Promise<void>;
   handleNavigateBack: () => Promise<void>;
   handleDialogOpenChange: (open: boolean) => void;
@@ -62,8 +62,8 @@ export function useTaskDialogClose({
   const isClosingRef = useRef(false);
 
   // Main close handler
-  const handleClose = useCallback(async () => {
-    if (isClosingRef.current) return;
+  const handleClose = useCallback(async (): Promise<boolean> => {
+    if (isClosingRef.current) return false;
 
     // Show warning if not synced in collaboration mode
     if (
@@ -73,7 +73,7 @@ export function useTaskDialogClose({
       (hasPendingRealtimeDescriptionChanges?.() ?? false)
     ) {
       setShowSyncWarning(true);
-      return;
+      return false;
     }
 
     isClosingRef.current = true;
@@ -86,7 +86,7 @@ export function useTaskDialogClose({
 
         if (!descriptionPersisted) {
           onCloseBlocked?.();
-          return;
+          return false;
         }
       }
 
@@ -95,9 +95,11 @@ export function useTaskDialogClose({
       }
 
       onClose();
+      return true;
     } catch (error) {
       console.error('Error during close save:', error);
       onCloseBlocked?.();
+      return false;
     } finally {
       isClosingRef.current = false;
     }
@@ -177,7 +179,9 @@ export function useTaskDialogClose({
   );
 
   // Keep ref updated
-  handleCloseRef.current = handleClose;
+  handleCloseRef.current = () => {
+    void handleClose();
+  };
 
   return {
     handleClose,
