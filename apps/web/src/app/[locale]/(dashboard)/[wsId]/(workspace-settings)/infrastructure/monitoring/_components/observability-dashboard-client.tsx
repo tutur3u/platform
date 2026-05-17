@@ -945,11 +945,20 @@ function RequestRow({ request }: { request: ObservabilityRequest }) {
 }
 
 function DeploymentRow({
+  cacheLabels,
   deployment,
   failureCauseLabel,
   now,
   stateLabels,
 }: {
+  cacheLabels: {
+    active: string;
+    cachedImage: string;
+    kind: string;
+    standby: string;
+    supportCache: (hits: number, total: number) => string;
+    supportRebuilt: (services: string) => string;
+  };
   deployment: ObservabilityDeployment;
   failureCauseLabel: string;
   now: number;
@@ -967,10 +976,17 @@ function DeploymentRow({
     state.tone === 'red' && deployment.failureReason
       ? deployment.failureReason
       : null;
+  const supportBuiltServices = deployment.supportBuildServices.filter(
+    (service) => !service.startsWith('web-')
+  );
+  const supportCacheTone =
+    deployment.supportBuildServiceCount > 0 && supportBuiltServices.length === 0
+      ? 'green'
+      : 'amber';
 
   return (
     <div className="h-full border-border/50 border-b px-4 py-3 text-sm">
-      <div className="grid grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] items-center gap-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] lg:items-center">
         <div className="min-w-0">
           <div className="flex min-w-0 items-center gap-2">
             <span className="shrink-0 rounded border border-border/70 bg-muted/30 px-1.5 py-0.5 font-mono text-muted-foreground text-xs">
@@ -986,6 +1002,38 @@ function DeploymentRow({
               deployment.commitHash ??
               'unknown'}
           </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {deployment.runtimeState ? (
+              <ToneBadge
+                tone={deployment.runtimeState === 'active' ? 'green' : 'blue'}
+              >
+                {deployment.runtimeState === 'active'
+                  ? cacheLabels.active
+                  : cacheLabels.standby}
+              </ToneBadge>
+            ) : null}
+            {deployment.deploymentKind ? (
+              <ToneBadge tone="muted">
+                {cacheLabels.kind}: {deployment.deploymentKind}
+              </ToneBadge>
+            ) : null}
+            {deployment.imageTag ? (
+              <ToneBadge tone="green">{cacheLabels.cachedImage}</ToneBadge>
+            ) : null}
+            {deployment.supportBuildServiceCount > 0 ? (
+              <ToneBadge tone={supportCacheTone}>
+                {cacheLabels.supportCache(
+                  deployment.supportBuildCacheHits,
+                  deployment.supportBuildServiceCount
+                )}
+              </ToneBadge>
+            ) : null}
+            {supportBuiltServices.length > 0 ? (
+              <ToneBadge tone="orange">
+                {cacheLabels.supportRebuilt(supportBuiltServices.join(', '))}
+              </ToneBadge>
+            ) : null}
+          </div>
         </div>
         <div className="min-w-0">
           <span
@@ -1558,6 +1606,21 @@ export function ObservabilityDashboardClient({
   const logsTotal = logsQuery.data?.pages[0]?.total ?? 0;
   const requestsTotal = requestsQuery.data?.pages[0]?.total ?? 0;
   const deploymentsTotal = deploymentsQuery.data?.pages[0]?.total ?? 0;
+  const cachedDeploymentCount = deployments.filter(
+    (deployment) => deployment.imageTag
+  ).length;
+  const supportBuildServiceCount = deployments.reduce(
+    (sum, deployment) => sum + deployment.supportBuildServiceCount,
+    0
+  );
+  const supportBuildCacheHitCount = deployments.reduce(
+    (sum, deployment) => sum + deployment.supportBuildCacheHits,
+    0
+  );
+  const supportBuildRebuildCount = deployments.reduce(
+    (sum, deployment) => sum + deployment.supportBuildServices.length,
+    0
+  );
   const cronExecutionsTotal = cronExecutionsQuery.data?.pages[0]?.total ?? 0;
   const newRequestCount = newRequestsQuery.data?.total ?? 0;
   const buildResourceBuckets = resourcesQuery.data?.buildBuckets ?? [];
@@ -1603,6 +1666,16 @@ export function ObservabilityDashboardClient({
     error: t('deployment_states.error'),
     queued: t('deployment_states.queued'),
     ready: t('deployment_states.ready'),
+  };
+  const deploymentCacheLabels = {
+    active: t('deployments.badges.active'),
+    cachedImage: t('deployments.badges.cached_image'),
+    kind: t('deployments.badges.kind'),
+    standby: t('deployments.badges.standby'),
+    supportCache: (hits: number, total: number) =>
+      t('deployments.badges.support_cache', { hits, total }),
+    supportRebuilt: (services: string) =>
+      t('deployments.badges.support_rebuilt', { services }),
   };
   const cronScheduleLabels = {
     dailyAt: (time: string) => cronT('schedule.daily_at', { time }),
@@ -2465,51 +2538,83 @@ export function ObservabilityDashboardClient({
       )}
 
       {mode === 'deployments' && (
-        <section className="rounded-lg border border-border bg-background">
-          <div className="grid grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs">
-            <span>{t('columns.deployment')}</span>
-            <span>{t('columns.state')}</span>
-            <span>{t('columns.build_time')}</span>
-            <span>{t('columns.requests')}</span>
-            <span>{t('columns.errors')}</span>
-            <span>{t('columns.last_request')}</span>
-          </div>
-          {deploymentsQuery.isLoading ? (
-            <LoadingSkeleton rows={8} />
-          ) : (
-            <VirtualizedList
-              empty={t('empty.deployments')}
-              estimateRowHeight={132}
+        <div className="space-y-4">
+          <section className="grid overflow-hidden rounded-lg border border-border md:grid-cols-4">
+            <MetricCard
+              label={t('deployments.summary.history')}
+              meta={t('deployments.summary.history_meta')}
+              value={`${formatNumber(deployments.length)} / ${formatNumber(
+                deploymentsTotal
+              )}`}
+            />
+            <MetricCard
+              label={t('deployments.summary.recovery_cache')}
+              meta={t('deployments.summary.recovery_cache_meta')}
+              value={formatNumber(cachedDeploymentCount)}
+            />
+            <MetricCard
+              label={t('deployments.summary.support_cache')}
+              meta={t('deployments.summary.support_cache_meta', {
+                total: supportBuildServiceCount,
+              })}
+              value={`${formatNumber(supportBuildCacheHitCount)} / ${formatNumber(
+                supportBuildServiceCount
+              )}`}
+            />
+            <MetricCard
+              label={t('deployments.summary.support_rebuilds')}
+              meta={t('deployments.summary.support_rebuilds_meta')}
+              value={formatNumber(supportBuildRebuildCount)}
+            />
+          </section>
+
+          <section className="rounded-lg border border-border bg-background">
+            <div className="grid gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs lg:grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px]">
+              <span>{t('columns.deployment')}</span>
+              <span>{t('columns.state')}</span>
+              <span>{t('columns.build_time')}</span>
+              <span>{t('columns.requests')}</span>
+              <span>{t('columns.errors')}</span>
+              <span>{t('columns.last_request')}</span>
+            </div>
+            {deploymentsQuery.isLoading ? (
+              <LoadingSkeleton rows={8} />
+            ) : (
+              <VirtualizedList
+                empty={t('empty.deployments')}
+                estimateRowHeight={168}
+                hasMore={deploymentsQuery.hasNextPage}
+                isFetchingMore={deploymentsQuery.isFetchingNextPage}
+                items={deployments}
+                onEndReached={() => void deploymentsQuery.fetchNextPage()}
+                renderRow={(deployment) => (
+                  <DeploymentRow
+                    cacheLabels={deploymentCacheLabels}
+                    deployment={deployment}
+                    failureCauseLabel={t('deployments.failure_cause')}
+                    key={
+                      deployment.commitHash ??
+                      deployment.deploymentStamp ??
+                      deployment.color ??
+                      'unknown'
+                    }
+                    now={now}
+                    stateLabels={deploymentStateLabels}
+                  />
+                )}
+              />
+            )}
+            <InfiniteFooter
+              endLabel={infiniteLabels.end}
               hasMore={deploymentsQuery.hasNextPage}
               isFetchingMore={deploymentsQuery.isFetchingNextPage}
-              items={deployments}
-              onEndReached={() => void deploymentsQuery.fetchNextPage()}
-              renderRow={(deployment) => (
-                <DeploymentRow
-                  deployment={deployment}
-                  failureCauseLabel={t('deployments.failure_cause')}
-                  key={
-                    deployment.commitHash ??
-                    deployment.deploymentStamp ??
-                    deployment.color ??
-                    'unknown'
-                  }
-                  now={now}
-                  stateLabels={deploymentStateLabels}
-                />
-              )}
+              loaded={deployments.length}
+              loadingLabel={infiniteLabels.loading}
+              moreLabel={infiniteLabels.more}
+              total={deploymentsTotal}
             />
-          )}
-          <InfiniteFooter
-            endLabel={infiniteLabels.end}
-            hasMore={deploymentsQuery.hasNextPage}
-            isFetchingMore={deploymentsQuery.isFetchingNextPage}
-            loaded={deployments.length}
-            loadingLabel={infiniteLabels.loading}
-            moreLabel={infiniteLabels.more}
-            total={deploymentsTotal}
-          />
-        </section>
+          </section>
+        </div>
       )}
 
       {mode === 'cron' && (

@@ -1,4 +1,5 @@
 import type {
+  BlueGreenMonitoringDeployment,
   BlueGreenMonitoringRequestConsoleLog,
   BlueGreenMonitoringRequestLog,
   BlueGreenMonitoringWatcherLog,
@@ -56,6 +57,7 @@ const BUILD_RESOURCE_METRICS = {
   rx: 'docker.build.rx_bytes',
   tx: 'docker.build.tx_bytes',
 } as const;
+const ACTIVE_BUILD_DEPLOYMENT_STATUSES = new Set(['building', 'deploying']);
 type ResourceMetricNames = Record<keyof typeof RESOURCE_METRICS, string>;
 
 function clampPage(value: unknown) {
@@ -791,6 +793,45 @@ export async function readObservabilityDeployments(
     requestPreviewLimit: 0,
     watcherLogLimit: 0,
   });
+  const supportBuildCacheEntries = snapshot.buildCache.history ?? [];
+  const supportBuildCacheByCommit = new Map(
+    supportBuildCacheEntries
+      .filter((entry) => entry.commitHash)
+      .map((entry) => [entry.commitHash, entry])
+  );
+  const supportBuildCacheByStamp = new Map(
+    supportBuildCacheEntries
+      .filter((entry) => entry.deploymentStamp)
+      .map((entry) => [entry.deploymentStamp, entry])
+  );
+  const getSupportBuildCacheEntry = (deployment: {
+    commitHash?: string | null;
+    deploymentStamp?: string | null;
+  }) =>
+    (deployment.deploymentStamp &&
+      supportBuildCacheByStamp.get(deployment.deploymentStamp)) ||
+    (deployment.commitHash &&
+      supportBuildCacheByCommit.get(deployment.commitHash)) ||
+    null;
+  const getSupportBuildCacheStats = (
+    entry: (typeof supportBuildCacheEntries)[number] | null
+  ) => {
+    const supportBuildServices =
+      entry?.buildServices.filter((service) => !service.startsWith('web-')) ??
+      [];
+    const supportBuildServiceCount = Object.keys(
+      entry?.serviceHashes ?? {}
+    ).length;
+
+    return {
+      supportBuildCacheHits: Math.max(
+        0,
+        supportBuildServiceCount - supportBuildServices.length
+      ),
+      supportBuildServiceCount,
+      supportBuildServices,
+    };
+  };
   const resolveDeploymentKey = (deployment: {
     activeColor?: string | null;
     commitHash?: string | null;
@@ -843,10 +884,12 @@ export async function readObservabilityDeployments(
       commitHash: left.commitHash ?? right.commitHash,
       commitShortHash: left.commitShortHash ?? right.commitShortHash,
       commitSubject: left.commitSubject ?? right.commitSubject,
+      deploymentKind: mergeText(left.deploymentKind, right.deploymentKind),
       deploymentStamp: mergeText(left.deploymentStamp, right.deploymentStamp),
       durationMs: Math.max(left.durationMs ?? 0, right.durationMs ?? 0) || null,
       errorCount: left.errorCount + right.errorCount,
       failureReason: mergeText(left.failureReason, right.failureReason, '\n'),
+      imageTag: left.imageTag ?? right.imageTag,
       lastRequestAt:
         Math.max(left.lastRequestAt ?? 0, right.lastRequestAt ?? 0) || null,
       requestCount: left.requestCount + right.requestCount,
@@ -862,6 +905,20 @@ export async function readObservabilityDeployments(
         (left.status === 'failed' || right.status === 'failed'
           ? 'failed'
           : left.status || right.status),
+      supportBuildCacheHits: Math.max(
+        left.supportBuildCacheHits,
+        right.supportBuildCacheHits
+      ),
+      supportBuildServiceCount: Math.max(
+        left.supportBuildServiceCount,
+        right.supportBuildServiceCount
+      ),
+      supportBuildServices: [
+        ...new Set([
+          ...left.supportBuildServices,
+          ...right.supportBuildServices,
+        ]),
+      ],
     };
   };
   const upsertDeployment = (deployment: ObservabilityDeployment) => {
@@ -881,20 +938,27 @@ export async function readObservabilityDeployments(
   };
 
   for (const deployment of snapshot.deployments) {
+    const supportBuildCacheStats = getSupportBuildCacheStats(
+      getSupportBuildCacheEntry(deployment)
+    );
+
     upsertDeployment({
       color: deployment.activeColor ?? null,
       commitHash: deployment.commitHash ?? null,
       commitShortHash: deployment.commitShortHash ?? null,
       commitSubject: deployment.commitSubject ?? null,
+      deploymentKind: deployment.deploymentKind ?? null,
       deploymentStamp: deployment.deploymentStamp ?? null,
       durationMs: deployment.buildDurationMs ?? deployment.lifetimeMs ?? null,
       errorCount: deployment.errorCount ?? 0,
       failureReason: deployment.failureReason ?? null,
+      imageTag: deployment.imageTag ?? null,
       lastRequestAt: deployment.lastRequestAt ?? null,
       requestCount: deployment.requestCount ?? 0,
       runtimeState: deployment.runtimeState ?? null,
       startedAt: deployment.startedAt ?? deployment.activatedAt ?? null,
       status: deployment.status ?? 'unknown',
+      ...supportBuildCacheStats,
     });
   }
 
@@ -914,15 +978,20 @@ export async function readObservabilityDeployments(
       commitHash: null,
       commitShortHash: null,
       commitSubject: null,
+      deploymentKind: null,
       deploymentStamp: request.deploymentStamp,
       durationMs: null,
       errorCount: 0,
       failureReason: null,
+      imageTag: null,
       lastRequestAt: null,
       runtimeState: null,
       requestCount: 0,
       startedAt: null,
       status: 'ready',
+      supportBuildCacheHits: 0,
+      supportBuildServiceCount: 0,
+      supportBuildServices: [],
     };
 
     current.requestCount += 1;
@@ -1030,16 +1099,75 @@ function isDockerBuildResourceContainer(
     );
 }
 
+function getActiveBuildProcesses(
+  deployments: BlueGreenMonitoringDeployment[] = []
+): ObservabilityBuildResources['activeBuilds'] {
+  return deployments.flatMap((deployment, index) => {
+    const status =
+      typeof deployment.status === 'string' ? deployment.status : null;
+
+    if (!status || !ACTIVE_BUILD_DEPLOYMENT_STATUSES.has(status)) {
+      return [];
+    }
+
+    const startedAt =
+      typeof deployment.startedAt === 'number' &&
+      Number.isFinite(deployment.startedAt)
+        ? deployment.startedAt
+        : null;
+    const commitShortHash =
+      typeof deployment.commitShortHash === 'string'
+        ? deployment.commitShortHash
+        : null;
+    const deploymentKind =
+      typeof deployment.deploymentKind === 'string'
+        ? deployment.deploymentKind
+        : null;
+    const name =
+      typeof deployment.commitSubject === 'string' &&
+      deployment.commitSubject.trim().length > 0
+        ? deployment.commitSubject.trim()
+        : (deploymentKind ?? commitShortHash ?? status);
+    const idParts = [
+      'watcher',
+      deploymentKind,
+      commitShortHash ?? deployment.commitHash,
+      startedAt,
+      index,
+    ].filter((value) => value != null && String(value).trim().length > 0);
+
+    return [
+      {
+        commitShortHash,
+        deploymentKind,
+        id: idParts.join('-'),
+        name,
+        source: 'watcher' as const,
+        startedAt,
+        status,
+      },
+    ];
+  });
+}
+
 export function getBuildResources(
-  dockerResources: ObservabilityResources['dockerResources']
+  dockerResources: ObservabilityResources['dockerResources'],
+  deployments: BlueGreenMonitoringDeployment[] = []
 ): ObservabilityBuildResources {
   const containers = dockerResources.allContainers.filter(
     isDockerBuildResourceContainer
   );
+  const activeBuilds = getActiveBuildProcesses(deployments);
 
   return {
+    activeBuilds,
     containers,
-    state: containers.length > 0 ? dockerResources.state : 'idle',
+    state:
+      activeBuilds.length > 0
+        ? 'building'
+        : containers.length > 0
+          ? dockerResources.state
+          : 'idle',
     totalCpuPercent: sumResourceMetric(containers, 'cpuPercent'),
     totalMemoryBytes: sumResourceMetric(containers, 'memoryBytes'),
     totalRxBytes: sumResourceMetric(containers, 'rxBytes'),
@@ -1111,13 +1239,22 @@ export async function sampleObservabilityResources() {
     requestPreviewLimit: 0,
     watcherLogLimit: 0,
   });
-  await persistResourceSample(snapshot.dockerResources);
-  const buildResources = getBuildResources(snapshot.dockerResources);
+  await persistResourceSample(snapshot.dockerResources, snapshot.deployments);
+  const buildResources = getBuildResources(
+    snapshot.dockerResources,
+    snapshot.deployments
+  );
 
   return {
+    activeBuilds: buildResources.activeBuilds.length,
     buildContainers: buildResources.containers.length,
     buildCpuPercent: buildResources.totalCpuPercent,
     buildMemoryBytes: buildResources.totalMemoryBytes,
+    buildProcesses: Math.max(
+      buildResources.activeBuilds.length,
+      buildResources.containers.length
+    ),
+    buildState: buildResources.state,
     containers: snapshot.dockerResources.allContainers.length,
     cpuPercent: snapshot.dockerResources.totalCpuPercent,
     memoryBytes: snapshot.dockerResources.totalMemoryBytes,
@@ -1129,7 +1266,8 @@ export async function sampleObservabilityResources() {
 }
 
 async function persistResourceSample(
-  dockerResources: ObservabilityResources['dockerResources']
+  dockerResources: ObservabilityResources['dockerResources'],
+  deployments: BlueGreenMonitoringDeployment[] = []
 ) {
   const sql = await getSql();
   if (!sql) {
@@ -1152,12 +1290,14 @@ async function persistResourceSample(
     return;
   }
 
-  const buildResources = getBuildResources(dockerResources);
+  const buildResources = getBuildResources(dockerResources, deployments);
   const metadata = JSON.stringify({
+    activeBuilds: buildResources.activeBuilds.length,
     buildContainers: buildResources.containers.length,
     containers: dockerResources.allContainers.length,
     services: dockerResources.serviceHealth.length,
     state: dockerResources.state,
+    buildState: buildResources.state,
   });
 
   await sql`
@@ -1283,7 +1423,10 @@ export async function readObservabilityResources(
     snapshot.dockerResources,
     normalized.projectId
   );
-  const buildResources = getBuildResources(snapshot.dockerResources);
+  const buildResources = getBuildResources(
+    snapshot.dockerResources,
+    snapshot.deployments
+  );
   const [buckets, buildBuckets] = await Promise.all([
     readResourceBuckets(
       normalized.projectId,

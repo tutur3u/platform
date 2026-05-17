@@ -1945,8 +1945,26 @@
         "ready": "Sẵn sàng"
       },
       "deployments": {
+        "badges": {
+          "active": "Đang chạy",
+          "cached_image": "Cache khôi phục",
+          "kind": "Loại",
+          "standby": "Dự phòng",
+          "support_cache": "{hits}/{total} image hỗ trợ dùng cache",
+          "support_rebuilt": "Đã build lại {services}"
+        },
         "description": "Dấu triển khai được nhóm theo lưu lượng request và lỗi server.",
         "failure_cause": "Nguyên nhân lỗi",
+        "summary": {
+          "history": "Lịch sử",
+          "history_meta": "Các dòng triển khai đã tải",
+          "recovery_cache": "Image khôi phục",
+          "recovery_cache_meta": "Image web đã cache để khôi phục",
+          "support_cache": "Cache hỗ trợ",
+          "support_cache_meta": "{total} input image hỗ trợ đang được theo dõi",
+          "support_rebuilds": "Build lại support",
+          "support_rebuilds_meta": "Image support đã build lại trong các dòng đã tải"
+        },
         "title": "Deployments"
       },
       "empty": {
@@ -2048,7 +2066,7 @@
         "description": "Sức khỏe container Docker, mức dùng tài nguyên, lưu lượng mạng và trạng thái dịch vụ compose.",
         "detected_prefix": "Tiền tố phát hiện",
         "docker_build_consumption": "Mức dùng tài nguyên Docker build",
-        "docker_build_consumption_meta": "Mức dùng tài nguyên của BuildKit và các tiến trình builder được ghi nhận từ Docker stats.",
+        "docker_build_consumption_meta": "Mức dùng BuildKit, tiến trình builder và build đang chạy của watcher được ghi nhận từ Docker stats và trạng thái triển khai.",
         "health": "Sức khỏe",
         "live_inventory": "Danh sách container trực tiếp",
         "live_inventory_meta": "Tách theo Docker Compose project cha khi có dữ liệu, dùng prefix phát hiện làm phương án dự phòng.",

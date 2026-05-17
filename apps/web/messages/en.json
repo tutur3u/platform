@@ -1945,8 +1945,26 @@
         "ready": "Ready"
       },
       "deployments": {
+        "badges": {
+          "active": "Active",
+          "cached_image": "Recovery cache",
+          "kind": "Kind",
+          "standby": "Standby",
+          "support_cache": "{hits}/{total} support cached",
+          "support_rebuilt": "Rebuilt {services}"
+        },
         "description": "Deployment stamps grouped by request traffic and server errors.",
         "failure_cause": "Failure cause",
+        "summary": {
+          "history": "History",
+          "history_meta": "Loaded deployment rows",
+          "recovery_cache": "Recovery Images",
+          "recovery_cache_meta": "Cached web images available for fallback",
+          "support_cache": "Support Cache",
+          "support_cache_meta": "{total} support image inputs tracked",
+          "support_rebuilds": "Support Rebuilds",
+          "support_rebuilds_meta": "Support images rebuilt in loaded rows"
+        },
         "title": "Deployments"
       },
       "empty": {
@@ -2048,7 +2066,7 @@
         "description": "Docker container health, resource usage, network flow, and compose service state.",
         "detected_prefix": "Detected prefix",
         "docker_build_consumption": "Docker Build Consumption",
-        "docker_build_consumption_meta": "BuildKit and builder process resource usage captured from Docker stats.",
+        "docker_build_consumption_meta": "BuildKit, builder process, and active watcher build usage captured from Docker stats and deployment state.",
         "health": "Health",
         "live_inventory": "Live Container Inventory",
         "live_inventory_meta": "Split by Docker Compose parent project when available, with prefix detection as a fallback.",

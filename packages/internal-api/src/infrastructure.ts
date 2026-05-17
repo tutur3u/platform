@@ -291,6 +291,24 @@ export interface BlueGreenMonitoringDeployment {
   status?: string | null;
 }
 
+export interface BlueGreenBuildCacheHistoryEntry {
+  buildServices: string[];
+  commitHash: string | null;
+  commitShortHash: string | null;
+  commitSubject: string | null;
+  deploymentKind: string | null;
+  deploymentStamp: string | null;
+  serviceHashes: Record<string, string>;
+  targetColor: string | null;
+  updatedAt: string | null;
+}
+
+export interface BlueGreenBuildCache {
+  current: Record<string, string>;
+  history: BlueGreenBuildCacheHistoryEntry[];
+  total: number;
+}
+
 export interface BlueGreenDeploymentPin {
   activeColor: string | null;
   commitHash: string;
@@ -610,6 +628,7 @@ export interface BlueGreenMonitoringSnapshot {
     instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
+  buildCache: BlueGreenBuildCache;
   recoveryCache: {
     deployments: BlueGreenMonitoringDeployment[];
     limit: number;
@@ -883,15 +902,20 @@ export interface ObservabilityDeployment {
   commitHash: string | null;
   commitShortHash: string | null;
   commitSubject: string | null;
+  deploymentKind: string | null;
   deploymentStamp: string | null;
   durationMs: number | null;
   errorCount: number;
   failureReason: string | null;
+  imageTag: string | null;
   lastRequestAt: number | null;
   runtimeState: 'active' | 'standby' | null;
   requestCount: number;
   startedAt: number | null;
   status: string;
+  supportBuildCacheHits: number;
+  supportBuildServiceCount: number;
+  supportBuildServices: string[];
 }
 
 export interface ObservabilityLogEvent {
@@ -996,7 +1020,18 @@ export interface ObservabilityResourceBucket {
   txBytes: number | null;
 }
 
+export interface ObservabilityBuildProcess {
+  commitShortHash: string | null;
+  deploymentKind: string | null;
+  id: string;
+  name: string;
+  source: 'watcher';
+  startedAt: number | null;
+  status: string | null;
+}
+
 export interface ObservabilityBuildResources {
+  activeBuilds: ObservabilityBuildProcess[];
   containers: BlueGreenMonitoringDockerContainer[];
   state: string;
   totalCpuPercent: number;

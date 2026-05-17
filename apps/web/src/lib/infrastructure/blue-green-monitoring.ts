@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type {
+  BlueGreenBuildCache,
+  BlueGreenBuildCacheHistoryEntry,
   BlueGreenDeploymentPin,
   BlueGreenDockerRecoverySettings,
   BlueGreenInstantRolloutRequest,
@@ -979,6 +981,86 @@ function getRecoverableCachedDeployments(
   };
 }
 
+function normalizeStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
+function normalizeServiceHashes(value: unknown): Record<string, string> {
+  const record = toRecord(value);
+
+  if (!record) {
+    return {};
+  }
+
+  return Object.entries(record).reduce<Record<string, string>>(
+    (hashes, [key, hash]) => {
+      if (typeof key === 'string' && typeof hash === 'string' && hash.length) {
+        hashes[key] = hash;
+      }
+
+      return hashes;
+    },
+    {}
+  );
+}
+
+function normalizeBlueGreenBuildCacheHistoryEntry(
+  value: unknown
+): BlueGreenBuildCacheHistoryEntry | null {
+  const record = toRecord(value);
+
+  if (!record) {
+    return null;
+  }
+
+  return {
+    buildServices: normalizeStringArray(record.buildServices),
+    commitHash:
+      typeof record.commitHash === 'string' ? record.commitHash : null,
+    commitShortHash:
+      typeof record.commitShortHash === 'string'
+        ? record.commitShortHash
+        : null,
+    commitSubject:
+      typeof record.commitSubject === 'string' ? record.commitSubject : null,
+    deploymentKind:
+      typeof record.deploymentKind === 'string' ? record.deploymentKind : null,
+    deploymentStamp:
+      typeof record.deploymentStamp === 'string'
+        ? record.deploymentStamp
+        : null,
+    serviceHashes: normalizeServiceHashes(record.serviceHashes),
+    targetColor:
+      typeof record.targetColor === 'string' ? record.targetColor : null,
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
+  };
+}
+
+function normalizeBlueGreenBuildCache(
+  currentValue: unknown,
+  historyValue: unknown
+): BlueGreenBuildCache {
+  const currentRecord = toRecord(currentValue);
+  const current = normalizeServiceHashes(
+    currentRecord?.services ?? currentValue
+  );
+  const history = Array.isArray(historyValue)
+    ? historyValue
+        .map(normalizeBlueGreenBuildCacheHistoryEntry)
+        .filter((entry): entry is BlueGreenBuildCacheHistoryEntry =>
+          Boolean(entry)
+        )
+    : [];
+
+  return {
+    current,
+    history,
+    total: history.length,
+  };
+}
+
 function normalizeDeploymentPin(value: unknown): BlueGreenDeploymentPin | null {
   const record = toRecord(value);
   const commitHash =
@@ -1408,6 +1490,16 @@ export function readBlueGreenMonitoringSnapshot({
     path.join(prodDir, 'deployment-stamp'),
     fsImpl
   );
+  const buildCache = normalizeBlueGreenBuildCache(
+    readJsonFile<Record<string, unknown>>(
+      path.join(prodDir, 'build-input-hashes.json'),
+      fsImpl
+    ),
+    readJsonFile<Array<Record<string, unknown>>>(
+      path.join(prodDir, 'build-input-hashes.history.json'),
+      fsImpl
+    )
+  );
   const runtime =
     (status?.currentBlueGreen as Record<string, unknown> | null) ?? null;
   const dockerResources =
@@ -1513,6 +1605,7 @@ export function readBlueGreenMonitoringSnapshot({
       dockerRecoverySettings,
       instantRolloutRequest,
     },
+    buildCache,
     dockerResources: {
       allContainers,
       containers: resourceContainers,

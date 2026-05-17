@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const crypto = require('node:crypto');
 const path = require('node:path');
 
 const {
@@ -66,6 +67,51 @@ const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
 const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
   ...BLUE_GREEN_DEFERRED_SUPPORT_SERVICES,
   ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+]);
+const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
+  'hive',
+  'hive-realtime',
+  'markitdown',
+  'storage-unzip-proxy',
+  'web-cron-runner',
+]);
+const BLUE_GREEN_BUILD_HASH_VERSION = 1;
+const BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS = Object.freeze([
+  '.dockerignore',
+  'bun.lock',
+  'docker-compose.web.prod.yml',
+  'docker-compose/compose.web.prod.sidecars.yml',
+  'package.json',
+  'turbo.json',
+]);
+const BLUE_GREEN_HIVE_BUILD_PATHS = Object.freeze([
+  'apps/hive/',
+  'packages/ai/',
+  'packages/auth/',
+  'packages/icons/',
+  'packages/internal-api/',
+  'packages/offline/',
+  'packages/realtime/',
+  'packages/satellite/',
+  'packages/supabase/',
+  'packages/types/',
+  'packages/ui/',
+  'packages/utils/',
+  'packages/vercel/',
+]);
+const BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS = Object.freeze([
+  'apps/hive-realtime/',
+  'packages/realtime/',
+  'packages/types/',
+]);
+const BLUE_GREEN_MARKITDOWN_BUILD_PATHS = Object.freeze(['apps/discord/']);
+const BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS = Object.freeze([
+  'apps/storage-unzip-proxy/',
+]);
+const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
+  'apps/web/docker/cron-runner-entrypoint.js',
+  'apps/web/docker/cron-runner.Dockerfile',
+  'docker-compose/compose.web.prod.ops.yml',
 ]);
 const BLUE_GREEN_PROXY_BOOTSTRAP_SERVICES = Object.freeze([
   BLUE_GREEN_PROXY_SERVICE,
@@ -258,6 +304,11 @@ function getBlueGreenPaths(rootDir = ROOT_DIR) {
   const runtimeDir = path.join(rootDir, 'tmp', 'docker-web', 'prod');
 
   return {
+    buildHashesFile: path.join(runtimeDir, 'build-input-hashes.json'),
+    buildHashHistoryFile: path.join(
+      runtimeDir,
+      'build-input-hashes.history.json'
+    ),
     deploymentStampFile: path.join(runtimeDir, 'deployment-stamp'),
     proxyConfigFile: path.join(runtimeDir, 'nginx.conf'),
     runtimeDir,
@@ -343,6 +394,156 @@ function writeBlueGreenDeploymentStamp(
 
   ensureBlueGreenRuntime(paths, fsImpl);
   fsImpl.writeFileSync(paths.deploymentStampFile, `${stamp.trim()}\n`, 'utf8');
+}
+
+function readBlueGreenSupportBuildHashes(
+  paths = getBlueGreenPaths(),
+  fsImpl = fs
+) {
+  if (!fsImpl.existsSync(paths.buildHashesFile)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fsImpl.readFileSync(paths.buildHashesFile, 'utf8')
+    );
+    const services =
+      parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? parsed.services && typeof parsed.services === 'object'
+          ? parsed.services
+          : parsed
+        : null;
+
+    if (!services || Array.isArray(services)) {
+      return null;
+    }
+
+    return Object.fromEntries(
+      Object.entries(services).filter(
+        ([serviceName, hash]) =>
+          typeof serviceName === 'string' &&
+          typeof hash === 'string' &&
+          hash.length > 0
+      )
+    );
+  } catch {
+    return null;
+  }
+}
+
+function writeBlueGreenSupportBuildHashes(
+  hashes,
+  paths = getBlueGreenPaths(),
+  fsImpl = fs
+) {
+  if (!hashes || typeof hashes !== 'object' || Array.isArray(hashes)) {
+    return;
+  }
+
+  ensureBlueGreenRuntime(paths, fsImpl);
+  fsImpl.writeFileSync(
+    paths.buildHashesFile,
+    JSON.stringify(
+      {
+        services: hashes,
+        updatedAt: new Date().toISOString(),
+        version: BLUE_GREEN_BUILD_HASH_VERSION,
+      },
+      null,
+      2
+    ),
+    'utf8'
+  );
+}
+
+function readBlueGreenSupportBuildHashHistory(
+  paths = getBlueGreenPaths(),
+  fsImpl = fs
+) {
+  if (!fsImpl.existsSync(paths.buildHashHistoryFile)) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fsImpl.readFileSync(paths.buildHashHistoryFile, 'utf8')
+    );
+
+    return Array.isArray(parsed)
+      ? parsed.filter(
+          (entry) => entry && typeof entry === 'object' && !Array.isArray(entry)
+        )
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function appendBlueGreenSupportBuildHashHistoryEntry(
+  entry,
+  { fsImpl = fs, limit = 200, paths = getBlueGreenPaths() } = {}
+) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
+    return [];
+  }
+
+  const history = readBlueGreenSupportBuildHashHistory(paths, fsImpl);
+  const nextHistory = [entry, ...history].slice(0, limit);
+  ensureBlueGreenRuntime(paths, fsImpl);
+  fsImpl.writeFileSync(
+    paths.buildHashHistoryFile,
+    JSON.stringify(nextHistory, null, 2),
+    'utf8'
+  );
+
+  return nextHistory;
+}
+
+function writeBlueGreenSupportBuildCacheSnapshot({
+  buildServices,
+  commit = null,
+  deploymentKind = 'promotion',
+  deploymentStamp = null,
+  hashes,
+  paths = getBlueGreenPaths(),
+  fsImpl = fs,
+  targetColor,
+}) {
+  if (!hashes) {
+    return;
+  }
+
+  const previousHashes = readBlueGreenSupportBuildHashes(paths, fsImpl) ?? {};
+  const mergedHashes = {
+    ...previousHashes,
+    ...hashes,
+  };
+
+  writeBlueGreenSupportBuildHashes(mergedHashes, paths, fsImpl);
+  appendBlueGreenSupportBuildHashHistoryEntry(
+    {
+      buildServices: Array.isArray(buildServices) ? buildServices : [],
+      commitHash:
+        typeof commit?.hash === 'string' && commit.hash.length > 0
+          ? commit.hash
+          : null,
+      commitShortHash:
+        typeof commit?.shortHash === 'string' && commit.shortHash.length > 0
+          ? commit.shortHash
+          : null,
+      commitSubject:
+        typeof commit?.subject === 'string' && commit.subject.length > 0
+          ? commit.subject
+          : null,
+      deploymentKind,
+      deploymentStamp,
+      serviceHashes: mergedHashes,
+      targetColor,
+      updatedAt: new Date().toISOString(),
+    },
+    { fsImpl, paths }
+  );
 }
 
 function generateBlueGreenDeploymentStamp(date = new Date()) {
@@ -664,6 +865,284 @@ function getBlueGreenProdServicesWithProxyOption(
 
   if (hasComposeProfile(parsed.composeGlobalArgs, 'cloudflared')) {
     services.push(CLOUDFLARED_SERVICE);
+  }
+
+  return services;
+}
+
+function normalizeChangedFilePath(filePath) {
+  return String(filePath ?? '')
+    .trim()
+    .replaceAll('\\', '/')
+    .replace(/^\.\//u, '');
+}
+
+function changedFilesIncludePath(changedFiles, watchedPath) {
+  const normalizedWatchedPath = normalizeChangedFilePath(watchedPath);
+
+  return changedFiles.some((filePath) => {
+    const normalizedFilePath = normalizeChangedFilePath(filePath);
+
+    if (normalizedWatchedPath.endsWith('/')) {
+      return normalizedFilePath.startsWith(normalizedWatchedPath);
+    }
+
+    return normalizedFilePath === normalizedWatchedPath;
+  });
+}
+
+function getBlueGreenSupportBuildServiceName(serviceName, targetColor) {
+  return serviceName === 'hive'
+    ? getBlueGreenHiveServiceName(targetColor)
+    : serviceName;
+}
+
+function getBlueGreenAllSupportBuildServices(targetColor) {
+  return BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.map((serviceName) =>
+    getBlueGreenSupportBuildServiceName(serviceName, targetColor)
+  );
+}
+
+function getBlueGreenSupportBuildInputSpecs(targetColor) {
+  return [
+    {
+      paths: [
+        '.dockerignore',
+        'bun.lock',
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        'package.json',
+        'turbo.json',
+        ...BLUE_GREEN_HIVE_BUILD_PATHS,
+      ],
+      serviceName: getBlueGreenHiveServiceName(targetColor),
+    },
+    {
+      paths: [
+        '.dockerignore',
+        'bun.lock',
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        'package.json',
+        'turbo.json',
+        ...BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS,
+      ],
+      serviceName: 'hive-realtime',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        ...BLUE_GREEN_MARKITDOWN_BUILD_PATHS,
+      ],
+      serviceName: 'markitdown',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        ...BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS,
+      ],
+      serviceName: 'storage-unzip-proxy',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
+        ...BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS,
+      ],
+      serviceName: 'web-cron-runner',
+    },
+  ];
+}
+
+async function listBlueGreenBuildInputFiles({
+  env,
+  paths,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const result = await runChecked(
+    'git',
+    [
+      'ls-files',
+      '-z',
+      '--cached',
+      '--others',
+      '--exclude-standard',
+      '--',
+      ...paths,
+    ],
+    {
+      cwd: rootDir,
+      env,
+      runCommand: run,
+      stdio: 'pipe',
+    }
+  );
+
+  return result.stdout
+    .split('\0')
+    .map((filePath) => normalizeChangedFilePath(filePath))
+    .filter(Boolean)
+    .sort();
+}
+
+function hashBlueGreenBuildInputFiles(
+  files,
+  { fsImpl = fs, rootDir = ROOT_DIR }
+) {
+  const hash = crypto.createHash('sha256');
+
+  for (const filePath of files) {
+    const resolvedPath = path.join(rootDir, filePath);
+
+    try {
+      const stats = fsImpl.statSync(resolvedPath);
+
+      if (!stats.isFile()) {
+        continue;
+      }
+
+      hash.update(filePath);
+      hash.update('\0');
+      hash.update(String(stats.size));
+      hash.update('\0');
+      hash.update(fsImpl.readFileSync(resolvedPath));
+      hash.update('\0');
+    } catch {
+      hash.update(filePath);
+      hash.update('\0missing\0');
+    }
+  }
+
+  return hash.digest('hex');
+}
+
+async function getBlueGreenSupportBuildInputHashes({
+  env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  targetColor,
+} = {}) {
+  try {
+    const hashes = {};
+
+    for (const spec of getBlueGreenSupportBuildInputSpecs(targetColor)) {
+      const inputFiles = await listBlueGreenBuildInputFiles({
+        env,
+        paths: spec.paths,
+        rootDir,
+        runCommand: run,
+      });
+
+      hashes[spec.serviceName] = hashBlueGreenBuildInputFiles(inputFiles, {
+        fsImpl,
+        rootDir,
+      });
+    }
+
+    return hashes;
+  } catch {
+    return null;
+  }
+}
+
+function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
+  if (
+    BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    return getBlueGreenAllSupportBuildServices(targetColor);
+  }
+
+  const services = [];
+  const addService = (serviceName) => {
+    if (!services.includes(serviceName)) {
+      services.push(serviceName);
+    }
+  };
+
+  if (
+    BLUE_GREEN_HIVE_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService(getBlueGreenHiveServiceName(targetColor));
+  }
+
+  if (
+    BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('hive-realtime');
+  }
+
+  if (
+    BLUE_GREEN_MARKITDOWN_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('markitdown');
+  }
+
+  if (
+    BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('storage-unzip-proxy');
+  }
+
+  if (
+    BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('web-cron-runner');
+  }
+
+  return services;
+}
+
+function getBlueGreenDeploymentBuildServices({
+  changedFiles = null,
+  forceBuildSupportServices = false,
+  previousSupportBuildHashes = null,
+  supportBuildHashes = null,
+  targetColor,
+} = {}) {
+  const services = [getBlueGreenServiceName(targetColor)];
+  const hasPreviousSupportBuildHashes =
+    previousSupportBuildHashes &&
+    typeof previousSupportBuildHashes === 'object' &&
+    Object.keys(previousSupportBuildHashes).length > 0;
+  let supportServices;
+
+  if (forceBuildSupportServices) {
+    supportServices = getBlueGreenAllSupportBuildServices(targetColor);
+  } else if (
+    hasPreviousSupportBuildHashes &&
+    supportBuildHashes &&
+    typeof supportBuildHashes === 'object'
+  ) {
+    supportServices = getBlueGreenAllSupportBuildServices(targetColor).filter(
+      (serviceName) =>
+        previousSupportBuildHashes?.[serviceName] !==
+        supportBuildHashes[serviceName]
+    );
+  } else {
+    supportServices = Array.isArray(changedFiles)
+      ? getBlueGreenChangedSupportBuildServices(targetColor, changedFiles)
+      : getBlueGreenAllSupportBuildServices(targetColor);
+  }
+
+  for (const serviceName of supportServices) {
+    if (!services.includes(serviceName)) {
+      services.push(serviceName);
+    }
   }
 
   return services;
@@ -1558,6 +2037,24 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       targetColor,
       needsProxyBootstrap
     );
+    const previousSupportBuildHashes = readBlueGreenSupportBuildHashes(
+      paths,
+      fsImpl
+    );
+    const supportBuildHashes = await getBlueGreenSupportBuildInputHashes({
+      env: targetEnv,
+      fsImpl,
+      rootDir: options.rootDir ?? ROOT_DIR,
+      runCommand: run,
+      targetColor,
+    });
+    const buildServices = getBlueGreenDeploymentBuildServices({
+      changedFiles: options.changedFiles,
+      forceBuildSupportServices: !activeColor || !!migration,
+      previousSupportBuildHashes,
+      supportBuildHashes,
+      targetColor,
+    });
     const { proxyBootstrapServices, runtimeServices } =
       splitBlueGreenProxyBootstrapServices(targetServices, needsProxyBootstrap);
     const { phase1Services, phase2Services } =
@@ -1568,7 +2065,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: targetEnv,
       runCommand: run,
-      services: targetServices,
+      services: buildServices,
     });
 
     await removeLegacyHiveContainerIfPresent({
@@ -1740,6 +2237,16 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
 
     writeBlueGreenActiveColor(targetColor, paths, fsImpl);
+    writeBlueGreenSupportBuildCacheSnapshot({
+      buildServices,
+      commit: options.latestCommit,
+      deploymentKind: options.deploymentKind ?? 'promotion',
+      deploymentStamp,
+      fsImpl,
+      hashes: supportBuildHashes,
+      paths,
+      targetColor,
+    });
 
     if (activeColor && activeColor !== targetColor) {
       await waitForBlueGreenServiceDrain(getBlueGreenServiceName(activeColor), {
@@ -1822,6 +2329,24 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     standbyColor,
     false
   );
+  const previousSupportBuildHashes = readBlueGreenSupportBuildHashes(
+    paths,
+    fsImpl
+  );
+  const supportBuildHashes = await getBlueGreenSupportBuildInputHashes({
+    env: standbyEnv,
+    fsImpl,
+    rootDir: options.rootDir ?? ROOT_DIR,
+    runCommand: run,
+    targetColor: standbyColor,
+  });
+  const standbyBuildServices = getBlueGreenDeploymentBuildServices({
+    changedFiles: options.changedFiles,
+    forceBuildSupportServices: options.forceBuildSupportServices === true,
+    previousSupportBuildHashes,
+    supportBuildHashes,
+    targetColor: standbyColor,
+  });
 
   try {
     await buildBlueGreenServices({
@@ -1829,7 +2354,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
       runCommand: run,
-      services: standbyServices,
+      services: standbyBuildServices,
     });
 
     await stopComposeServicesIfPresent(
@@ -1915,6 +2440,16 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     }
 
     writeBlueGreenDeploymentStamp(deploymentStamp, paths, fsImpl);
+    writeBlueGreenSupportBuildCacheSnapshot({
+      buildServices: standbyBuildServices,
+      commit: options.latestCommit,
+      deploymentKind: options.deploymentKind ?? 'standby-refresh',
+      deploymentStamp,
+      fsImpl,
+      hashes: supportBuildHashes,
+      paths,
+      targetColor: standbyColor,
+    });
 
     await refreshBlueGreenProxyIfRunning({
       env: standbyEnv,
@@ -2168,7 +2703,9 @@ module.exports = {
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,
   getBlueGreenCacheImageTag,
+  getBlueGreenDeploymentBuildServices,
   getBlueGreenPaths,
+  getBlueGreenSupportBuildInputHashes,
   getBlueGreenBuildTimeoutMs,
   getBlueGreenComposeMigration,
   getBlueGreenHiveServiceName,
@@ -2179,6 +2716,8 @@ module.exports = {
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   readBlueGreenDeploymentStamp,
+  readBlueGreenSupportBuildHashHistory,
+  readBlueGreenSupportBuildHashes,
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
   getNextBlueGreenColor,

@@ -79,6 +79,7 @@ const {
 const {
   SKIP_WATCH_HISTORY_ENV,
   appendDeploymentHistory,
+  readDeploymentHistory,
 } = require('./watch-blue-green/history.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
@@ -128,6 +129,73 @@ async function getCurrentGitCommitMetadata({
       subject: null,
     };
   }
+}
+
+function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
+  const deployment = deployments.find(
+    (entry) =>
+      entry?.status === 'successful' &&
+      typeof entry.commitHash === 'string' &&
+      entry.commitHash.length > 0
+  );
+
+  return deployment?.commitHash ?? null;
+}
+
+async function getChangedFilesBetweenCommits({
+  env,
+  fromCommitHash,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  toCommitHash,
+} = {}) {
+  if (!fromCommitHash || !toCommitHash) {
+    return null;
+  }
+
+  if (fromCommitHash === toCommitHash) {
+    return [];
+  }
+
+  try {
+    const result = await runChecked(
+      'git',
+      ['diff', '--name-only', fromCommitHash, toCommitHash],
+      {
+        cwd: rootDir,
+        env,
+        runCommand: run,
+        stdio: 'pipe',
+      }
+    );
+
+    return result.stdout
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
+async function getBlueGreenDeploymentChangedFiles({
+  env,
+  fsImpl = fs,
+  latestCommit,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+} = {}) {
+  const history = readDeploymentHistory(getWatchPaths(rootDir), fsImpl);
+  const latestSuccessfulCommitHash =
+    getLatestSuccessfulDeploymentCommitHash(history);
+
+  return getChangedFilesBetweenCommits({
+    env,
+    fromCommitHash: latestSuccessfulCommitHash,
+    rootDir,
+    runCommand: run,
+    toCommitHash: latestCommit?.hash,
+  });
 }
 
 async function getDockerMemoryLimit({
@@ -785,14 +853,23 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
         }
       : composeEnv;
+    const changedFiles = await getBlueGreenDeploymentChangedFiles({
+      env,
+      fsImpl,
+      latestCommit,
+      rootDir: options.rootDir ?? ROOT_DIR,
+      runCommand: run,
+    });
 
     try {
       await runBlueGreenProdWorkflow(parsed, {
+        changedFiles,
         drainPollMs: options.drainPollMs,
         drainTimeoutMs: options.drainTimeoutMs,
         env: workflowEnv,
         envFilePath,
         fsImpl,
+        latestCommit,
         proxyDrainMs: options.proxyDrainMs,
         rootDir: options.rootDir,
         runCommand: run,
@@ -958,6 +1035,7 @@ module.exports = {
   ensureRequiredComposeEnvironment,
   ensureWebEnvFile,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenDeploymentChangedFiles,
   getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getBlueGreenProdServices,
@@ -969,7 +1047,9 @@ module.exports = {
   getComposeServiceContainerId,
   getComposeServiceContainerName,
   getContainerHealthStatus,
+  getChangedFilesBetweenCommits,
   getInPlaceProdServices,
+  getLatestSuccessfulDeploymentCommitHash,
   getNextBlueGreenColor,
   hasComposeProfile,
   hasComposeServiceContainer,

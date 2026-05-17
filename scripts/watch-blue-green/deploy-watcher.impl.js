@@ -824,6 +824,36 @@ function getLatestSuccessfulDeploymentCommitHash(deployments = []) {
   return latestSuccessfulDeployment?.commitHash ?? null;
 }
 
+async function getChangedFilesForBuildScope({
+  env,
+  fromCommitHash,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  toCommitHash,
+} = {}) {
+  if (!fromCommitHash || !toCommitHash) {
+    return null;
+  }
+
+  if (fromCommitHash === toCommitHash) {
+    return [];
+  }
+
+  try {
+    return await listChangedFilesBetweenRevisions(
+      fromCommitHash,
+      toCommitHash,
+      {
+        cwd: rootDir,
+        env,
+        runCommand: run,
+      }
+    );
+  } catch {
+    return null;
+  }
+}
+
 function getLatestCachedSuccessfulDeployment(deployments = [], commitHash) {
   return deployments.find(
     (entry) =>
@@ -2007,7 +2037,15 @@ async function runDetachedParentFallbackStandbyRefresh({
     });
 
     try {
+      const changedFiles = await getChangedFilesForBuildScope({
+        env,
+        fromCommitHash: standbyRefreshCandidate.standbyDeployment?.commitHash,
+        rootDir,
+        runCommand: run,
+        toCommitHash: deployCommit.hash,
+      });
       const standbyResult = await runBlueGreenStandbyRefresh({
+        changedFiles,
         env,
         envFilePath,
         fsImpl,
@@ -2667,6 +2705,7 @@ async function cacheBlueGreenDeploymentImage({
 }
 
 async function runBlueGreenStandbyRefresh({
+  changedFiles = null,
   env,
   envFilePath = WEB_ENV_FILE,
   fsImpl = fs,
@@ -2698,12 +2737,15 @@ async function runBlueGreenStandbyRefresh({
         strategy: 'blue-green',
       },
       {
+        changedFiles,
+        deploymentKind: 'standby-refresh',
         env: {
           ...(env ?? process.env),
           [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
         },
         envFilePath,
         fsImpl,
+        latestCommit,
         rootDir,
         runCommand: run,
       }
@@ -4407,7 +4449,16 @@ async function runDeployWatchIteration(
       });
 
       try {
+        const changedFiles = await getChangedFilesForBuildScope({
+          env,
+          fromCommitHash: standbyRefreshCandidate.standbyDeployment?.commitHash,
+          rootDir,
+          runCommand: run,
+          toCommitHash: latestCommit.hash,
+        });
+
         await runBlueGreenStandbyRefresh({
+          changedFiles,
           env,
           envFilePath,
           fsImpl,
@@ -6191,6 +6242,7 @@ module.exports = {
   getLatestCachedSuccessfulDeployment,
   getLatestDeploymentSummary,
   getFailedDeploymentCountForCommit,
+  getChangedFilesForBuildScope,
   getLatestSuccessfulDeploymentCommitHash,
   getCommitMetadata,
   getCurrentBranch,

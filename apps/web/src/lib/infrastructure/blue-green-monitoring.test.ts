@@ -352,6 +352,63 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
+
+  it('exposes support build input hash cache history', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-build-cache-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'prod'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'build-input-hashes.json'),
+        JSON.stringify({
+          services: {
+            'hive-blue': 'hash-hive',
+            'hive-realtime': 'hash-realtime',
+          },
+          updatedAt: '2026-05-17T10:00:00.000Z',
+          version: 1,
+        })
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'build-input-hashes.history.json'),
+        JSON.stringify([
+          {
+            buildServices: ['web-blue', 'hive-blue'],
+            commitHash: 'bbb222',
+            commitShortHash: 'bbb222',
+            commitSubject: 'Build web and Hive',
+            deploymentKind: 'standby-refresh',
+            deploymentStamp: 'deploy-bbb222',
+            serviceHashes: {
+              'hive-blue': 'hash-hive',
+              'hive-realtime': 'hash-realtime',
+            },
+            targetColor: 'blue',
+            updatedAt: '2026-05-17T10:00:00.000Z',
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 5000 });
+
+      expect(snapshot.buildCache.current).toEqual({
+        'hive-blue': 'hash-hive',
+        'hive-realtime': 'hash-realtime',
+      });
+      expect(snapshot.buildCache.history[0]).toMatchObject({
+        buildServices: ['web-blue', 'hive-blue'],
+        commitShortHash: 'bbb222',
+        deploymentKind: 'standby-refresh',
+        deploymentStamp: 'deploy-bbb222',
+      });
+      expect(snapshot.buildCache.total).toBe(1);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
 });
 
 describe('readBlueGreenMonitoringRequestArchive', () => {

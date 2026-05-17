@@ -102,9 +102,13 @@ Infrastructure → Monitoring → Resources reads the Docker runtime snapshot an
 
 The same tab also separates Docker build consumption from the generic container
 inventory. Build resources are derived from BuildKit and builder containers
-captured by `docker stats`, then charted as `docker.build.*` usage events so
-operators can distinguish build pressure from runtime web, proxy, Redis, and
-sidecar pressure.
+captured by `docker stats`, plus watcher deployment entries that are still
+`building` or `deploying`. This matters because Docker Desktop can show an
+active Buildx record before the watcher captures a fresh stats sample, and the
+Resources tab should still show that a build process is active instead of
+claiming the build lane is idle. The sampled resource metrics are charted as
+`docker.build.*` usage events so operators can distinguish build pressure from
+runtime web, proxy, Redis, and sidecar pressure.
 
 The internal resource sampler writes the current Docker snapshot into the log drain `usage_events` table at most once per minute. The UI charts that history across the supported resource windows: 1 hour, 6 hours, 12 hours, 24 hours, 3 days, and 7 days. If the log drain is disabled or unavailable, the tab still shows the live Docker snapshot and falls back to a single current sample.
 

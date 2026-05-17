@@ -25,6 +25,7 @@ const {
   ensureRequiredComposeEnvironment,
   getActiveDeploymentConflict,
   getBlueGreenBuildTimeoutMs,
+  getBlueGreenDeploymentChangedFiles,
   getBlueGreenHiveServiceName,
   getBlueGreenPaths,
   getComposeEnvironment,
@@ -46,12 +47,14 @@ const {
 const {
   buildBlueGreenServices,
   getBlueGreenComposeMigration,
+  getBlueGreenDeploymentBuildServices,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
+const { writeDeploymentHistory } = require('./watch-blue-green/history.js');
 const {
   writeDeploymentBuildLock,
 } = require('./watch-blue-green/build-lock.js');
@@ -65,6 +68,87 @@ const { WATCHER_CONTAINER_ENV } = require('./watch-blue-green-deploy.js');
 const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
   '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
   '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+});
+
+test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only changes', () => {
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/web/src/app/page.tsx'],
+      targetColor: 'green',
+    }),
+    ['web-green']
+  );
+});
+
+test('getBlueGreenDeploymentBuildServices scopes support image builds to changed sources', () => {
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: [
+        'apps/hive/src/app/page.tsx',
+        'apps/storage-unzip-proxy/src/server.js',
+      ],
+      targetColor: 'blue',
+    }),
+    ['web-blue', 'hive-blue', 'storage-unzip-proxy']
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['bun.lock'],
+      targetColor: 'green',
+    }),
+    [
+      'web-green',
+      'hive-green',
+      'hive-realtime',
+      'markitdown',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ]
+  );
+});
+
+test('getBlueGreenDeploymentChangedFiles diffs from the latest successful deploy', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-changed-files-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+
+  try {
+    writeDeploymentHistory(
+      [
+        {
+          commitHash: 'aaa111',
+          status: 'successful',
+        },
+      ],
+      paths,
+      fs
+    );
+
+    const changedFiles = await getBlueGreenDeploymentChangedFiles({
+      env: { PATH: 'test-path' },
+      fsImpl: fs,
+      latestCommit: { hash: 'bbb222' },
+      rootDir: tempDir,
+      runCommand: async (command, args, options = {}) => {
+        calls.push([command, args, options.cwd]);
+        return {
+          code: 0,
+          signal: null,
+          stderr: '',
+          stdout: 'apps/web/src/app/page.tsx\n',
+        };
+      },
+    });
+
+    assert.deepEqual(changedFiles, ['apps/web/src/app/page.tsx']);
+    assert.deepEqual(calls, [
+      ['git', ['diff', '--name-only', 'aaa111', 'bbb222'], tempDir],
+    ]);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 function createFsStub({ envFileContent = '', hasEnvFile = true } = {}) {

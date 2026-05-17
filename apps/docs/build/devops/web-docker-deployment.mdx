@@ -178,9 +178,13 @@ Blue/green deploy does this:
 2. Ignores that state if the corresponding container no longer exists.
 3. Stops and removes the old inactive-color container, then builds and starts
    its fresh replacement.
-4. Builds and starts the shared `markitdown`, `pronunciation-assessor`,
-   `storage-unzip-proxy`, and `web-cron-runner` helper containers alongside the
-   target color.
+4. Starts the shared `markitdown`, `storage-unzip-proxy`, and
+   `web-cron-runner` helper containers alongside the target color. The build
+   step is scoped separately: ordinary web commits build only `web-blue` or
+   `web-green`, while Hive and helper images are rebuilt only when their source,
+   Dockerfile, compose wiring, or shared dependency inputs changed. Image-only
+   services such as `redis`, `serverless-redis-http`, `web-proxy`, and
+   `cloudflared` are never passed to `docker compose build`.
 5. Injects Docker-internal helper URLs into `apps/web`:
    `MARKITDOWN_ENDPOINT_URL=http://markitdown:8000/markitdown`,
    `DISCORD_APP_DEPLOYMENT_URL=http://markitdown:8000`,
@@ -213,6 +217,12 @@ Blue/green deploy does this:
     minutes, the watcher automatically rebuilds that stale standby in place so
     both colors converge on the latest checked-out code without flipping the
     active port or promoting traffic again.
+
+The helper writes support-image input hashes to
+`tmp/docker-web/prod/build-input-hashes.json` and keeps recent decisions in
+`tmp/docker-web/prod/build-input-hashes.history.json`. Infrastructure
+monitoring reads that history so deployment rows can show which helper images
+were rebuilt and which ones were served from the cached build inputs.
 
 `scripts/docker-web/env.js` persists generated helper tokens under
 `tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.
@@ -914,13 +924,12 @@ Behavior:
    routing through `/__platform/drain-status`, and only then starts the new
    blue/green build/promotion.
 14. If compose or helper-image wiring changed, including
-    `docker-compose.web.prod.yml`, MarkItDown service files,
-    `apps/pronunciation-assessor` source files, or `apps/storage-unzip-proxy`
-    package/source files, the containerized watcher recreates its own compose
-    service before the pending deploy handoff. That lets a running watcher pull
-    this update and then refresh `markitdown`, `pronunciation-assessor`, and
-    `storage-unzip-proxy` through the blue/green workflow instead of only
-    replacing the web color.
+    `docker-compose.web.prod.yml`, Hive service files, MarkItDown service files,
+    `apps/storage-unzip-proxy` package/source files, or
+    `apps/web/docker/cron-runner*`, the containerized watcher recreates its own
+    compose service before the pending deploy handoff. The deploy then includes
+    only the affected buildable helper images in the blue/green build command
+    instead of rebuilding every service on every commit.
 15. Retries recoverable Git command failures instead of exiting. The first retry
     waits 1 minute, then the watcher backs off exponentially on consecutive Git
     failures up to a 15 minute ceiling.

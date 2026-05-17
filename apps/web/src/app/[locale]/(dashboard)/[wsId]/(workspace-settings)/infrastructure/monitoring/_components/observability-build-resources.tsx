@@ -4,7 +4,11 @@ import { Gauge, Terminal } from '@tuturuuu/icons';
 import type { ObservabilityBuildResources as ObservabilityBuildResourcesPayload } from '@tuturuuu/internal-api/infrastructure';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { formatBytes } from './formatters';
+import {
+  formatBytes,
+  formatDuration,
+  getDeploymentStatusTranslationKey,
+} from './formatters';
 import {
   formatResourceNumber,
   getContainerDisplayName,
@@ -23,7 +27,13 @@ export function ObservabilityBuildResources({
   isLoading: boolean;
 }) {
   const t = useTranslations('blue-green-monitoring.observability');
+  const rootT = useTranslations('blue-green-monitoring');
+  const activeBuilds = buildResources?.activeBuilds ?? [];
   const containers = buildResources?.containers ?? [];
+  const activeBuildRows = containers.length > 0 ? [] : activeBuilds;
+  const processCount =
+    containers.length > 0 ? containers.length : activeBuilds.length;
+  const hasBuildActivity = activeBuildRows.length > 0 || containers.length > 0;
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-background">
@@ -73,14 +83,14 @@ export function ObservabilityBuildResources({
             />
             <BuildSummaryMetric
               label={t('resources.build_processes')}
-              tone={containers.length > 0 ? 'green' : 'muted'}
-              value={formatResourceNumber(containers.length)}
+              tone={processCount > 0 ? 'green' : 'muted'}
+              value={formatResourceNumber(processCount)}
             />
           </>
         )}
       </div>
 
-      {isLoading ? null : containers.length > 0 ? (
+      {isLoading ? null : hasBuildActivity ? (
         <>
           <div className="hidden grid-cols-[minmax(0,1fr)_98px_120px_128px_132px] gap-4 border-border border-y px-4 py-3 text-muted-foreground text-xs xl:grid">
             <span>{t('resources.builder')}</span>
@@ -90,6 +100,15 @@ export function ObservabilityBuildResources({
             <span>{t('resources.network')}</span>
           </div>
           <div className="divide-y divide-border/60">
+            {activeBuildRows.map((build) => (
+              <ActiveBuildRow
+                build={build}
+                key={build.id}
+                statusLabel={rootT(
+                  getDeploymentStatusTranslationKey(build.status)
+                )}
+              />
+            ))}
             {containers.map((container) => (
               <BuildContainerRow
                 container={container}
@@ -104,6 +123,39 @@ export function ObservabilityBuildResources({
         </div>
       )}
     </section>
+  );
+}
+
+function ActiveBuildRow({
+  build,
+  statusLabel,
+}: {
+  build: ObservabilityBuildResourcesPayload['activeBuilds'][number];
+  statusLabel: string;
+}) {
+  const elapsedMs =
+    build.startedAt == null ? null : Math.max(0, Date.now() - build.startedAt);
+  const details = [
+    build.deploymentKind,
+    build.commitShortHash,
+    statusLabel,
+  ].filter(Boolean);
+
+  return (
+    <div className="grid gap-3 px-4 py-3 text-sm xl:grid-cols-[minmax(0,1fr)_98px_120px_128px_132px] xl:items-center xl:gap-4">
+      <div className="min-w-0">
+        <p className="truncate font-medium">{build.name}</p>
+        <p className="truncate font-mono text-muted-foreground text-xs">
+          {details.join(' / ')}
+        </p>
+      </div>
+      <span className="font-mono text-muted-foreground text-xs">
+        {elapsedMs == null ? '-' : formatDuration(elapsedMs)}
+      </span>
+      <span className="font-mono text-muted-foreground text-xs">-</span>
+      <span className="font-mono text-muted-foreground text-xs">-</span>
+      <span className="font-mono text-muted-foreground text-xs">-</span>
+    </div>
   );
 }
 

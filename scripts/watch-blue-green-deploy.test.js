@@ -165,6 +165,10 @@ function createRunCommandMock(responses) {
   return async (command, args) => {
     const key = `${command} ${args.join(' ')}`;
 
+    if (command === 'git' && args[0] === 'diff' && args[1] === '--name-only') {
+      return createResult('apps/web/src/app/page.tsx\n');
+    }
+
     if (!responses.has(key)) {
       throw new Error(`Unexpected command: ${key}`);
     }
@@ -3744,7 +3748,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         createResult(''),
       ],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
         createResult(''),
       ],
       [
@@ -3820,6 +3824,14 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       const key = `${command} ${args.join(' ')}`;
       calls.push(key);
 
+      if (
+        command === 'git' &&
+        args[0] === 'diff' &&
+        args[1] === '--name-only'
+      ) {
+        return createResult('apps/web/src/app/page.tsx\n');
+      }
+
       if (!responses.has(key)) {
         throw new Error(`Unexpected command: ${key}`);
       }
@@ -3855,7 +3867,11 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       'standby-refresh'
     );
     assert.equal(pendingStates[0].pendingDeployment.activeColor, 'blue');
-    assert.equal(result.status, 'standby-refreshed');
+    assert.equal(
+      result.status,
+      'standby-refreshed',
+      result.error instanceof Error ? result.error.message : undefined
+    );
     assert.equal(result.currentBlueGreen.activeColor, 'green');
     assert.equal(result.currentBlueGreen.standbyColor, 'blue');
     assert.equal(result.deployments[0].runtimeState, 'standby');
@@ -4298,7 +4314,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           createResult(''),
         ],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue hive-blue hive-realtime markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
           createResult(''),
         ],
         [
@@ -4393,7 +4409,11 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
       }
     );
 
-    assert.equal(result.status, 'standby-refreshed');
+    assert.equal(
+      result.status,
+      'standby-refreshed',
+      result.error instanceof Error ? result.error.message : undefined
+    );
     assert.equal(pendingStates.length, 1);
     assert.equal(
       pendingStates[0].pendingDeployment.deploymentKind,

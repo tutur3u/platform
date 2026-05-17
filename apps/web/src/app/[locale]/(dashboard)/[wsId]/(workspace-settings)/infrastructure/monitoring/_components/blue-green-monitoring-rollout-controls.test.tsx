@@ -105,6 +105,11 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
         yearly: [],
       },
     },
+    buildCache: {
+      current: {},
+      history: [],
+      total: 0,
+    },
     control: {
       deploymentPin: null,
       dockerRecoverySettings: {
