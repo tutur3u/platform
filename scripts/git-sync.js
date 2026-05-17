@@ -1,6 +1,13 @@
 #!/usr/bin/env node
 
 const { execFileSync } = require('node:child_process');
+const {
+  createGit,
+  createTemporaryWorktree,
+  getDefaultTempRoot,
+  makeTempDir: defaultMakeTempDir,
+  removeDir: defaultRemoveDir,
+} = require('./git-sync-worktree.js');
 
 const DEFAULT_REMOTE = 'origin';
 const MAIN_BRANCH = 'main';
@@ -9,7 +16,7 @@ const SYNC_BRANCHES = [MAIN_BRANCH, ...TARGET_BRANCHES];
 const SYNC_BRANCH_SET = new Set(SYNC_BRANCHES);
 const USAGE = `Usage: bun git-sync [options]
 
-Fast-forward release branches to the current main commit.
+Fast-forward release branches to the current main commit through a temporary worktree.
 
 Options:
   --only-branch <branch>  Sync only main, staging, or production. Can be repeated or comma-separated.
@@ -98,31 +105,6 @@ function parseArgs(argv = process.argv.slice(2)) {
   };
 }
 
-function createGit(execFile, cwd) {
-  function run(args, options = {}) {
-    return execFile('git', args, {
-      cwd,
-      encoding: options.encoding,
-      stdio: options.stdio ?? 'inherit',
-    });
-  }
-
-  return {
-    read(args) {
-      return String(run(args, { encoding: 'utf8', stdio: 'pipe' })).trim();
-    },
-    run,
-    test(args) {
-      try {
-        run(args, { stdio: 'ignore' });
-        return true;
-      } catch {
-        return false;
-      }
-    },
-  };
-}
-
 function writeLine(stdout, message = '') {
   stdout.write(`${message}\n`);
 }
@@ -131,6 +113,7 @@ function writePlan(stdout, { push, remote, selectedBranches }) {
   writeLine(stdout, 'Git sync');
   writeLine(stdout, `  Remote: ${remote}`);
   writeLine(stdout, `  Branches: ${selectedBranches.join(', ')}`);
+  writeLine(stdout, '  Worktree: temporary detached worktree');
   writeLine(stdout, `  Push: ${push ? 'enabled' : 'disabled (--no-push)'}`);
   writeLine(stdout);
 }
@@ -152,21 +135,7 @@ function writeSuccess(stdout, result) {
         : 'none'
     }`
   );
-  writeLine(stdout, `  Restored branch: ${result.originalBranch}`);
-}
-
-function assertCleanWorktree(status) {
-  if (!status) {
-    return;
-  }
-
-  throw new Error(
-    [
-      'git-sync requires a clean worktree before switching release branches.',
-      'Commit, stash, or remove these changes first:',
-      status,
-    ].join('\n')
-  );
+  writeLine(stdout, `  Current checkout: ${result.originalBranch} (untouched)`);
 }
 
 function ensureLocalBranch(git, remote, branch) {
@@ -184,13 +153,12 @@ function ensureLocalBranch(git, remote, branch) {
   git.run(['branch', '--track', branch, `${remote}/${branch}`]);
 }
 
-function checkoutAndPull(git, remote, branch) {
-  git.run(['checkout', branch]);
-  git.run(['pull', '--ff-only', remote, branch]);
+function isAncestor(git, baseRef, tipRef) {
+  return git.test(['merge-base', '--is-ancestor', baseRef, tipRef]);
 }
 
-function assertCanFastForwardToMain(git, branch, mainSha) {
-  if (git.test(['merge-base', '--is-ancestor', 'HEAD', mainSha])) {
+function assertCanFastForwardToMain(git, branch, branchSha, mainSha) {
+  if (isAncestor(git, branchSha, mainSha)) {
     return;
   }
 
@@ -210,71 +178,98 @@ function assertBranchAtSha(git, ref, expectedSha) {
   }
 }
 
-function restoreOriginalBranch(git, originalBranch, stderr) {
-  let currentBranch = '';
-  try {
-    currentBranch = git.read(['branch', '--show-current']);
-  } catch {
-    return false;
-  }
-
-  if (!currentBranch || currentBranch === originalBranch) {
-    return true;
+function updateLocalBranch(git, branch, targetSha) {
+  const currentSha = git.read(['rev-parse', branch]);
+  if (currentSha === targetSha) {
+    return;
   }
 
   try {
-    git.run(['checkout', originalBranch]);
-    return true;
+    git.run(['branch', '--force', branch, targetSha]);
   } catch (error) {
-    stderr.write(
-      `git-sync warning: synced branches, but could not restore ${originalBranch}: ${error.message}\n`
+    throw new Error(
+      [
+        `Cannot update ${branch} to ${shortSha(targetSha)} from the git-sync worktree.`,
+        'Git reports that the branch is checked out or locked by another worktree.',
+        `Switch that worktree away from ${branch} or update it manually, then rerun bun git-sync.`,
+        `Original error: ${error.message}`,
+      ].join(' ')
     );
-    return false;
   }
+
+  assertBranchAtSha(git, branch, targetSha);
+}
+
+function refreshLocalBranchFromRemote(git, remote, branch) {
+  ensureLocalBranch(git, remote, branch);
+
+  const remoteBranch = `${remote}/${branch}`;
+  const localSha = git.read(['rev-parse', branch]);
+  const remoteSha = git.read(['rev-parse', remoteBranch]);
+
+  if (localSha === remoteSha) {
+    return localSha;
+  }
+
+  if (isAncestor(git, localSha, remoteSha)) {
+    updateLocalBranch(git, branch, remoteSha);
+    return remoteSha;
+  }
+
+  if (isAncestor(git, remoteSha, localSha)) {
+    return localSha;
+  }
+
+  throw new Error(
+    `${branch} and ${remoteBranch} have diverged. Reconcile them manually, then rerun bun git-sync.`
+  );
 }
 
 function runGitSync({
   cwd = process.cwd(),
   execFile = execFileSync,
+  makeTempDir = defaultMakeTempDir,
+  removeDir = defaultRemoveDir,
   push = true,
   remote = DEFAULT_REMOTE,
   selectedBranches = SYNC_BRANCHES,
   stdout = process.stdout,
   stderr = process.stderr,
+  tempRoot = getDefaultTempRoot(),
 } = {}) {
   const git = createGit(execFile, cwd);
   const branches = normalizeBranchSelection(selectedBranches);
   const targetBranches = branches.filter((branch) => branch !== MAIN_BRANCH);
-  const branchesToPrepare = normalizeBranchSelection([
-    MAIN_BRANCH,
-    ...targetBranches,
-  ]);
-  const originalBranch = git.read(['branch', '--show-current']);
+  const originalBranch =
+    git.read(['branch', '--show-current']) || 'detached HEAD';
 
-  if (!originalBranch) {
-    throw new Error('git-sync cannot run from a detached HEAD checkout.');
-  }
-
-  assertCleanWorktree(git.read(['status', '--porcelain=v1']));
   writePlan(stdout, { push, remote, selectedBranches: branches });
 
   let result;
+  let worktree;
   try {
     writeStep(stdout, `Fetch ${remote}`);
     git.run(['fetch', '--prune', remote]);
 
-    for (const branch of branchesToPrepare) {
-      ensureLocalBranch(git, remote, branch);
-    }
+    worktree = createTemporaryWorktree({
+      baseRef: `${remote}/${MAIN_BRANCH}`,
+      git,
+      makeTempDir,
+      removeDir,
+      tempRoot,
+    });
+    const worktreeGit = createGit(execFile, worktree.path);
 
     writeStep(stdout, `Refresh ${MAIN_BRANCH}`);
-    checkoutAndPull(git, remote, MAIN_BRANCH);
-    const mainSha = git.read(['rev-parse', MAIN_BRANCH]);
+    const mainSha = refreshLocalBranchFromRemote(
+      worktreeGit,
+      remote,
+      MAIN_BRANCH
+    );
 
     if (branches.includes(MAIN_BRANCH) && push) {
       writeStep(stdout, `Push ${MAIN_BRANCH}`);
-      git.run(['push', remote, MAIN_BRANCH]);
-      git.run(['pull', '--ff-only', remote, MAIN_BRANCH]);
+      worktreeGit.run(['push', remote, MAIN_BRANCH]);
     }
 
     for (const branch of TARGET_BRANCHES) {
@@ -283,29 +278,31 @@ function runGitSync({
       }
 
       writeStep(stdout, `Fast-forward ${branch} to ${shortSha(mainSha)}`);
-      checkoutAndPull(git, remote, branch);
-      assertCanFastForwardToMain(git, branch, mainSha);
-      git.run(['merge', '--ff-only', mainSha]);
-      assertBranchAtSha(git, 'HEAD', mainSha);
+      const branchSha = refreshLocalBranchFromRemote(
+        worktreeGit,
+        remote,
+        branch
+      );
+      assertCanFastForwardToMain(worktreeGit, branch, branchSha, mainSha);
+      updateLocalBranch(worktreeGit, branch, mainSha);
 
       if (push) {
         writeStep(stdout, `Push ${branch}`);
-        git.run(['push', remote, branch]);
-        git.run(['pull', '--ff-only', remote, branch]);
+        worktreeGit.run(['push', remote, branch]);
       }
     }
 
     if (push) {
       writeStep(stdout, 'Verify local and remote refs');
-      git.run(['fetch', '--prune', remote]);
+      worktreeGit.run(['fetch', '--prune', remote]);
     } else {
       writeStep(stdout, 'Verify local refs');
     }
 
     for (const branch of branches) {
-      assertBranchAtSha(git, branch, mainSha);
+      assertBranchAtSha(worktreeGit, branch, mainSha);
       if (push) {
-        assertBranchAtSha(git, `${remote}/${branch}`, mainSha);
+        assertBranchAtSha(worktreeGit, `${remote}/${branch}`, mainSha);
       }
     }
 
@@ -317,8 +314,14 @@ function runGitSync({
       selectedBranches: branches,
     };
   } finally {
-    if (originalBranch) {
-      restoreOriginalBranch(git, originalBranch, stderr);
+    if (worktree) {
+      try {
+        worktree.remove();
+      } catch (error) {
+        stderr.write(
+          `git-sync warning: could not remove temporary worktree ${worktree.path}: ${error.message}\n`
+        );
+      }
     }
   }
 
@@ -344,11 +347,12 @@ function main() {
 }
 
 module.exports = {
-  assertCleanWorktree,
   createGit,
+  createTemporaryWorktree,
   ensureLocalBranch,
   normalizeBranchSelection,
   parseArgs,
+  refreshLocalBranchFromRemote,
   runGitSync,
   shortSha,
   USAGE,
