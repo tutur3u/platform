@@ -16,6 +16,7 @@ COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
+COPY apps/inventory/package.json ./apps/inventory/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json

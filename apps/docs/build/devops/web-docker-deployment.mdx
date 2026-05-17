@@ -81,6 +81,12 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   `COMPOSE_DOCKER_CLI_BUILD=1`, `DOCKER_BUILDKIT=1`, and
   `BUILDX_NO_DEFAULT_ATTESTATIONS=1` so local blue/green image exports do not
   stall while resolving default provenance metadata.
+- The dependency stages in `apps/web/Dockerfile`, `apps/hive/Dockerfile`, and
+  `apps/hive-realtime/Dockerfile` must copy every `apps/*/package.json` and
+  `packages/*/package.json` manifest before running any frozen Bun install.
+  Adding a new workspace app or package without updating all three lists makes
+  Docker-only installs try to rewrite `bun.lock`. `bun check:docker` validates
+  this manifest parity.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - By default the Docker container uses the Supabase URL already configured in `.env.local`, falling back to `apps/web/.env.local`. It should stay pointed at the cloud project for normal Tuturuuu work.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.

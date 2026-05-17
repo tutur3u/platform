@@ -22,6 +22,7 @@ const {
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
   HIVE_DOCKERFILE_PATH,
+  HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
@@ -39,6 +40,7 @@ const {
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateHiveDockerfile,
+  validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
@@ -137,7 +139,7 @@ test('web Docker build script delegates Next to the real Node wrapper', () => {
 
 test('Hive realtime Docker image hoists production dependencies for Bun runtime resolution', () => {
   const dockerfileContent = fs.readFileSync(
-    path.join(ROOT_DIR, 'apps', 'hive-realtime', 'Dockerfile'),
+    HIVE_REALTIME_DOCKERFILE_PATH,
     'utf8'
   );
 
@@ -151,6 +153,36 @@ test('Hive Docker image builds workspace dist exports before Next build', () => 
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
 
   assert.deepEqual(validateHiveDockerfile(dockerfileContent), []);
+});
+
+test('Hive Docker image copies every workspace manifest before frozen install', () => {
+  const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
+  const driftedDockerfileContent = dockerfileContent.replace(
+    'COPY apps/inventory/package.json ./apps/inventory/package.json\n',
+    ''
+  );
+
+  assert.match(
+    validateHiveDockerfile(driftedDockerfileContent).join('\n'),
+    /apps\/hive\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
+  );
+});
+
+test('Hive realtime Docker image copies every workspace manifest before frozen install', () => {
+  const dockerfileContent = fs.readFileSync(
+    HIVE_REALTIME_DOCKERFILE_PATH,
+    'utf8'
+  );
+  const driftedDockerfileContent = dockerfileContent.replace(
+    'COPY apps/inventory/package.json ./apps/inventory/package.json\n',
+    ''
+  );
+
+  assert.deepEqual(validateHiveRealtimeDockerfile(dockerfileContent), []);
+  assert.match(
+    validateHiveRealtimeDockerfile(driftedDockerfileContent).join('\n'),
+    /apps\/hive-realtime\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
+  );
 });
 
 test('Docker web build args default to App Router only builds', () => {
@@ -700,6 +732,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'hive'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'hive-realtime'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -724,6 +759,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'hive', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'hive-realtime', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

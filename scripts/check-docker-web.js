@@ -9,6 +9,12 @@ const {
 } = require('./docker-web/prod-compose-include.js');
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
+const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'hive-realtime',
+  'Dockerfile'
+);
 const DOCKERIGNORE_PATH = path.join(ROOT_DIR, '.dockerignore');
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -366,6 +372,62 @@ function validateDockerfile({
   if (!DRAIN_STATUS_HEALTHCHECK_PATTERN.test(runnerStage ?? '')) {
     errors.push(
       'apps/web/Dockerfile runner stage must health-check the internal /__platform/drain-status endpoint.'
+    );
+  }
+
+  return errors;
+}
+
+function validateDepsStageManifestCopies({
+  dockerfileContent,
+  dockerfileLabel,
+  workspacePackageJsonPaths,
+  fileDependencyPaths,
+}) {
+  const errors = [];
+  const depsStage = getStageContent(dockerfileContent, 'deps');
+
+  if (!depsStage) {
+    errors.push(`${dockerfileLabel} is missing the deps stage.`);
+    return errors;
+  }
+
+  const copiedRelativePaths = getCopiedRelativePaths(depsStage);
+  const copiedWorkspacePackageJsonPaths =
+    getCopiedWorkspaceManifestPaths(depsStage);
+  const missingWorkspacePackageJsonPaths = workspacePackageJsonPaths.filter(
+    (relativePath) => !copiedWorkspacePackageJsonPaths.includes(relativePath)
+  );
+  const unexpectedWorkspacePackageJsonPaths =
+    copiedWorkspacePackageJsonPaths.filter(
+      (relativePath) => !workspacePackageJsonPaths.includes(relativePath)
+    );
+
+  if (missingWorkspacePackageJsonPaths.length > 0) {
+    errors.push(
+      `${dockerfileLabel} deps stage is missing workspace package manifests: ${missingWorkspacePackageJsonPaths.join(
+        ', '
+      )}`
+    );
+  }
+
+  if (unexpectedWorkspacePackageJsonPaths.length > 0) {
+    errors.push(
+      `${dockerfileLabel} deps stage copies non-existent workspace manifests: ${unexpectedWorkspacePackageJsonPaths.join(
+        ', '
+      )}`
+    );
+  }
+
+  const missingFileDependencyPaths = fileDependencyPaths.filter(
+    (relativePath) => !copiedRelativePaths.includes(relativePath)
+  );
+
+  if (missingFileDependencyPaths.length > 0) {
+    errors.push(
+      `${dockerfileLabel} deps stage is missing file-backed dependencies required by package manifests: ${missingFileDependencyPaths.join(
+        ', '
+      )}`
     );
   }
 
@@ -805,8 +867,21 @@ function validateMarkitdownDockerfile(dockerfileContent) {
   return errors;
 }
 
-function validateHiveDockerfile(dockerfileContent) {
-  const errors = [];
+function validateHiveDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/hive/Dockerfile',
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+  ];
   const requiredSnippets = [
     'bun install --frozen-lockfile --filter @tuturuuu/hive',
     'bun run --filter @tuturuuu/types build',
@@ -819,6 +894,39 @@ function validateHiveDockerfile(dockerfileContent) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/hive/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateHiveRealtimeDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/hive-realtime/Dockerfile',
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+  ];
+  const requiredSnippets = [
+    'bun install --frozen-lockfile --production --filter @tuturuuu/hive-realtime --linker hoisted',
+    'COPY --from=deps /workspace/node_modules ./node_modules',
+    'COPY --from=deps /workspace/apps/hive-realtime/package.json ./apps/hive-realtime/package.json',
+    'CMD ["bun", "apps/hive-realtime/src/index.ts"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/hive-realtime/Dockerfile is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -864,6 +972,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'hive', 'Dockerfile'),
     'utf8'
   ),
+  hiveRealtimeDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'hive-realtime', 'Dockerfile'),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
@@ -879,7 +991,14 @@ function checkDockerWebSetup({
     ...validateWatcherDockerfile(watcherDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
     ...validateMarkitdownDockerfile(markitdownDockerfileContent),
-    ...validateHiveDockerfile(hiveDockerfileContent),
+    ...validateHiveDockerfile(hiveDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+    ...validateHiveRealtimeDockerfile(hiveRealtimeDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
   ];
 }
 
@@ -905,6 +1024,7 @@ if (require.main === module) {
 module.exports = {
   ROOT_DIR,
   HIVE_DOCKERFILE_PATH,
+  HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
@@ -923,7 +1043,9 @@ module.exports = {
   validateDockerignore,
   validateDockerfile,
   validateCronRunnerDockerfile,
+  validateDepsStageManifestCopies,
   validateHiveDockerfile,
+  validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,
 };
