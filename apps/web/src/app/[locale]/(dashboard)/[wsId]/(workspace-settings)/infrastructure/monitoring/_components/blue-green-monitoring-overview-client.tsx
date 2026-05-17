@@ -24,6 +24,7 @@ import {
   useBlueGreenMonitoringSnapshot,
   useCronMonitoringSnapshot,
 } from './blue-green-monitoring-query-hooks';
+import { BlueGreenMonitoringRecoverySettings } from './blue-green-monitoring-recovery-settings';
 import { BlueGreenMonitoringRolloutControls } from './blue-green-monitoring-rollout-controls';
 import {
   BlueGreenMonitoringAlerts,
@@ -189,7 +190,10 @@ export function BlueGreenMonitoringOverviewClient({
       <BlueGreenMonitoringAlerts snapshot={snapshot} t={t} />
 
       {showRollbackControls ? (
-        <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
+        <>
+          <BlueGreenMonitoringRolloutControls snapshot={snapshot} />
+          <BlueGreenMonitoringRecoverySettings snapshot={snapshot} />
+        </>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">

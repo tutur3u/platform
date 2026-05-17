@@ -11,6 +11,16 @@ const INSTANT_ROLLOUT_REQUEST_FILE = 'blue-green-instant-rollout.request.json';
 const DEPLOYMENT_PIN_FILE = 'blue-green-deployment-pin.json';
 const WATCHER_RECOVERY_REQUEST_FILE =
   'blue-green-watcher-recovery.request.json';
+const DOCKER_RECOVERY_SETTINGS_FILE =
+  'blue-green-docker-recovery-settings.json';
+const DOCKER_RECOVERY_ALERT_STATE_FILE =
+  'blue-green-docker-recovery-alert-state.json';
+const DEFAULT_DOCKER_RECOVERY_POLL_MS = 5_000;
+const DEFAULT_DOCKER_RECOVERY_TIMEOUT_MS: number | null = null;
+const DEFAULT_DOCKER_RESTART_AFTER_MS: number | null = 30_000;
+const DEFAULT_DOCKER_RESTART_COOLDOWN_MS = 5 * 60_000;
+const DEFAULT_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS = 10 * 60_000;
+const DEFAULT_DOCKER_EMAIL_ALERT_COOLDOWN_MS = 30 * 60_000;
 
 export interface BlueGreenInstantRolloutRequest {
   kind: 'sync-standby';
@@ -29,6 +39,38 @@ export interface BlueGreenWatcherRecoveryRequest {
   requestedByEmail: string | null;
   watcherBranch: string | null;
   watcherHealth: string | null;
+}
+
+export interface BlueGreenDockerRecoveryCommand {
+  args: string[];
+  command: string;
+  cwd: string | null;
+}
+
+export interface BlueGreenDockerRecoverySettings {
+  dockerRecoveryPollMs: number;
+  dockerRecoveryTimeoutMs: number | null;
+  dockerRestartAfterMs: number | null;
+  dockerRestartCommand: string[] | null;
+  dockerRestartCooldownMs: number;
+  dockerRestartDisabled: boolean;
+  emailAlertCooldownMs: number;
+  emailAlertRecipients: string[];
+  emailAlertsEnabled: boolean;
+  kind: 'docker-recovery-settings';
+  postRestartCommandTimeoutMs: number;
+  postRestartCommands: BlueGreenDockerRecoveryCommand[];
+  updatedAt: string | null;
+  updatedBy: string | null;
+  updatedByEmail: string | null;
+}
+
+export interface BlueGreenDockerRecoveryAlertState {
+  kind: 'docker-recovery-alert-state';
+  lastCheckedAt: string | null;
+  lastSentAt: string | null;
+  notifiedIncidentIds: string[];
+  updatedAt: string | null;
 }
 
 export interface BlueGreenDeploymentPin {
@@ -68,6 +110,175 @@ function resolveMonitoringControlDir(fsImpl: FsLike = fs) {
       existing ??
       candidates[0] ??
       path.resolve('tmp', 'docker-web', 'watch', 'control'),
+  };
+}
+
+function toPositiveInteger(value: unknown, fallback: number) {
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  return fallback;
+}
+
+function toNullablePositiveInteger(value: unknown, fallback: number | null) {
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === 'number' && Number.isInteger(value) && value > 0) {
+    return value;
+  }
+
+  return fallback;
+}
+
+function normalizeEmailList(value: unknown) {
+  const entries = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.split(',')
+      : [];
+  const seen = new Set<string>();
+  const emails: string[] = [];
+
+  for (const entry of entries) {
+    if (typeof entry !== 'string') {
+      continue;
+    }
+
+    const email = entry.trim().toLowerCase();
+    if (
+      !email ||
+      seen.has(email) ||
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/u.test(email)
+    ) {
+      continue;
+    }
+
+    seen.add(email);
+    emails.push(email);
+  }
+
+  return emails;
+}
+
+function normalizeStringArray(value: unknown) {
+  return Array.isArray(value) &&
+    value.every((entry) => typeof entry === 'string' && entry.trim().length > 0)
+    ? value.map((entry) => entry.trim())
+    : null;
+}
+
+function normalizeRecoveryCommand(
+  value: unknown
+): BlueGreenDockerRecoveryCommand | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const command =
+    typeof record.command === 'string' && record.command.trim().length > 0
+      ? record.command.trim()
+      : null;
+  const args = normalizeStringArray(record.args);
+  const cwd =
+    typeof record.cwd === 'string' && record.cwd.trim().length > 0
+      ? record.cwd.trim()
+      : null;
+
+  if (!command || !args) {
+    return null;
+  }
+
+  return {
+    args,
+    command,
+    cwd,
+  };
+}
+
+function getDefaultDockerRecoverySettings(): BlueGreenDockerRecoverySettings {
+  return {
+    dockerRecoveryPollMs: DEFAULT_DOCKER_RECOVERY_POLL_MS,
+    dockerRecoveryTimeoutMs: DEFAULT_DOCKER_RECOVERY_TIMEOUT_MS,
+    dockerRestartAfterMs: DEFAULT_DOCKER_RESTART_AFTER_MS,
+    dockerRestartCommand: null,
+    dockerRestartCooldownMs: DEFAULT_DOCKER_RESTART_COOLDOWN_MS,
+    dockerRestartDisabled: false,
+    emailAlertCooldownMs: DEFAULT_DOCKER_EMAIL_ALERT_COOLDOWN_MS,
+    emailAlertRecipients: [],
+    emailAlertsEnabled: false,
+    kind: 'docker-recovery-settings',
+    postRestartCommandTimeoutMs: DEFAULT_DOCKER_POST_RESTART_COMMAND_TIMEOUT_MS,
+    postRestartCommands: [],
+    updatedAt: null,
+    updatedBy: null,
+    updatedByEmail: null,
+  };
+}
+
+export function normalizeBlueGreenDockerRecoverySettings(
+  value: unknown
+): BlueGreenDockerRecoverySettings {
+  const defaults = getDefaultDockerRecoverySettings();
+
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return defaults;
+  }
+
+  const record = value as Record<string, unknown>;
+  const postRestartCommands = Array.isArray(record.postRestartCommands)
+    ? record.postRestartCommands.flatMap((command) => {
+        const normalized = normalizeRecoveryCommand(command);
+        return normalized ? [normalized] : [];
+      })
+    : defaults.postRestartCommands;
+
+  return {
+    dockerRecoveryPollMs: toPositiveInteger(
+      record.dockerRecoveryPollMs,
+      defaults.dockerRecoveryPollMs
+    ),
+    dockerRecoveryTimeoutMs: toNullablePositiveInteger(
+      record.dockerRecoveryTimeoutMs,
+      defaults.dockerRecoveryTimeoutMs
+    ),
+    dockerRestartAfterMs: toNullablePositiveInteger(
+      record.dockerRestartAfterMs,
+      defaults.dockerRestartAfterMs
+    ),
+    dockerRestartCommand:
+      normalizeStringArray(record.dockerRestartCommand) ??
+      defaults.dockerRestartCommand,
+    dockerRestartCooldownMs: toPositiveInteger(
+      record.dockerRestartCooldownMs,
+      defaults.dockerRestartCooldownMs
+    ),
+    dockerRestartDisabled:
+      typeof record.dockerRestartDisabled === 'boolean'
+        ? record.dockerRestartDisabled
+        : defaults.dockerRestartDisabled,
+    emailAlertCooldownMs: toPositiveInteger(
+      record.emailAlertCooldownMs,
+      defaults.emailAlertCooldownMs
+    ),
+    emailAlertRecipients: normalizeEmailList(record.emailAlertRecipients),
+    emailAlertsEnabled:
+      typeof record.emailAlertsEnabled === 'boolean'
+        ? record.emailAlertsEnabled
+        : defaults.emailAlertsEnabled,
+    kind: 'docker-recovery-settings',
+    postRestartCommandTimeoutMs: toPositiveInteger(
+      record.postRestartCommandTimeoutMs,
+      defaults.postRestartCommandTimeoutMs
+    ),
+    postRestartCommands,
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
+    updatedBy: typeof record.updatedBy === 'string' ? record.updatedBy : null,
+    updatedByEmail:
+      typeof record.updatedByEmail === 'string' ? record.updatedByEmail : null,
   };
 }
 
@@ -285,4 +496,131 @@ export function readBlueGreenWatcherRecoveryRequest({
   }
 
   return null;
+}
+
+export function readBlueGreenDockerRecoverySettings({
+  fsImpl = fs,
+}: {
+  fsImpl?: FsLike;
+} = {}) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const filePath = path.join(controlDir.path, DOCKER_RECOVERY_SETTINGS_FILE);
+
+  if (!fsImpl.existsSync(filePath)) {
+    return getDefaultDockerRecoverySettings();
+  }
+
+  try {
+    return normalizeBlueGreenDockerRecoverySettings(
+      JSON.parse(fsImpl.readFileSync(filePath, 'utf8'))
+    );
+  } catch {
+    return getDefaultDockerRecoverySettings();
+  }
+}
+
+export function writeBlueGreenDockerRecoverySettings(
+  settings: Omit<
+    BlueGreenDockerRecoverySettings,
+    'kind' | 'updatedAt' | 'updatedBy' | 'updatedByEmail'
+  > & {
+    updatedAt?: string | null;
+    updatedBy: string;
+    updatedByEmail: string | null;
+  },
+  { fsImpl = fs }: { fsImpl?: FsLike } = {}
+) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const nextSettings = normalizeBlueGreenDockerRecoverySettings({
+    ...settings,
+    kind: 'docker-recovery-settings',
+    updatedAt: settings.updatedAt ?? new Date().toISOString(),
+    updatedBy: settings.updatedBy,
+    updatedByEmail: settings.updatedByEmail,
+  });
+
+  fsImpl.mkdirSync(controlDir.path, { recursive: true });
+  fsImpl.writeFileSync(
+    path.join(controlDir.path, DOCKER_RECOVERY_SETTINGS_FILE),
+    JSON.stringify(nextSettings, null, 2),
+    'utf8'
+  );
+
+  return nextSettings;
+}
+
+function normalizeBlueGreenDockerRecoveryAlertState(
+  value: unknown
+): BlueGreenDockerRecoveryAlertState {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {
+      kind: 'docker-recovery-alert-state',
+      lastCheckedAt: null,
+      lastSentAt: null,
+      notifiedIncidentIds: [],
+      updatedAt: null,
+    };
+  }
+
+  const record = value as Record<string, unknown>;
+  const notifiedIncidentIds = Array.isArray(record.notifiedIncidentIds)
+    ? record.notifiedIncidentIds.filter(
+        (entry): entry is string =>
+          typeof entry === 'string' && entry.trim().length > 0
+      )
+    : [];
+
+  return {
+    kind: 'docker-recovery-alert-state',
+    lastCheckedAt:
+      typeof record.lastCheckedAt === 'string' ? record.lastCheckedAt : null,
+    lastSentAt:
+      typeof record.lastSentAt === 'string' ? record.lastSentAt : null,
+    notifiedIncidentIds: [...new Set(notifiedIncidentIds)].slice(0, 500),
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
+  };
+}
+
+export function readBlueGreenDockerRecoveryAlertState({
+  fsImpl = fs,
+}: {
+  fsImpl?: FsLike;
+} = {}) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const filePath = path.join(controlDir.path, DOCKER_RECOVERY_ALERT_STATE_FILE);
+
+  if (!fsImpl.existsSync(filePath)) {
+    return normalizeBlueGreenDockerRecoveryAlertState(null);
+  }
+
+  try {
+    return normalizeBlueGreenDockerRecoveryAlertState(
+      JSON.parse(fsImpl.readFileSync(filePath, 'utf8'))
+    );
+  } catch {
+    return normalizeBlueGreenDockerRecoveryAlertState(null);
+  }
+}
+
+export function writeBlueGreenDockerRecoveryAlertState(
+  state: Omit<BlueGreenDockerRecoveryAlertState, 'kind' | 'updatedAt'> & {
+    updatedAt?: string | null;
+  },
+  { fsImpl = fs }: { fsImpl?: FsLike } = {}
+) {
+  const controlDir = resolveMonitoringControlDir(fsImpl);
+  const nextState = normalizeBlueGreenDockerRecoveryAlertState({
+    ...state,
+    kind: 'docker-recovery-alert-state',
+    updatedAt: state.updatedAt ?? new Date().toISOString(),
+  });
+
+  fsImpl.mkdirSync(controlDir.path, { recursive: true });
+  fsImpl.writeFileSync(
+    path.join(controlDir.path, DOCKER_RECOVERY_ALERT_STATE_FILE),
+    JSON.stringify(nextState, null, 2),
+    'utf8'
+  );
+
+  return nextState;
 }

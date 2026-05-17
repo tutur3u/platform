@@ -299,6 +299,8 @@ export {
   upsertHiveMember,
 } from './hive';
 export {
+  type BlueGreenDockerRecoveryCommand,
+  type BlueGreenDockerRecoverySettings,
   type BlueGreenMonitoringContainerResource,
   type BlueGreenMonitoringDeployment,
   type BlueGreenMonitoringEvent,
@@ -316,6 +318,9 @@ export {
   type SendInfrastructurePushTestPayload,
   type SendInfrastructurePushTestResponse,
   sendInfrastructurePushTest,
+  type UpdateBlueGreenDockerRecoverySettingsPayload,
+  type UpdateBlueGreenDockerRecoverySettingsResponse,
+  updateBlueGreenDockerRecoverySettings,
   updateMobileVersionPolicies,
 } from './infrastructure';
 export {

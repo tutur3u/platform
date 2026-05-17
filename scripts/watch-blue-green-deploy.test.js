@@ -13,6 +13,7 @@ const {
   readDeploymentBuildLock,
   writeDeploymentBuildLock,
 } = require('./watch-blue-green/build-lock.js');
+const { readWatcherLogEntries } = require('./watch-blue-green/logs.js');
 
 const {
   BLUE_GREEN_PROXY_SERVICE,
@@ -21,10 +22,17 @@ const {
   CONTAINER_REFRESH_EXIT_CODE,
   CONTAINER_SELF_RESTART_EXIT_CODE,
   DEFAULT_DEPLOY_COMMAND,
+  DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS,
+  DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS,
+  DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS,
   DEFAULT_GIT_FAILURE_BACKOFF_MS,
   DEFAULT_STALE_GIT_INDEX_LOCK_MS,
   DEFAULT_INTERVAL_MS,
   DISPLAY_DEPLOYMENTS,
+  DOCKER_DAEMON_RESTART_COMMAND_ENV,
+  DOCKER_DAEMON_RESTART_DISABLED_ENV,
+  DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV,
+  DOCKER_DAEMON_RECOVERY_SETTINGS_FILE,
   HOST_WORKSPACE_DIR_ENV,
   MIGRATION_PROXY_HANDOFF_TIMEOUT_MS,
   MIGRATION_STAGING_PORT_ENV,
@@ -47,6 +55,12 @@ const {
   formatRequestsPerMinute,
   getGitFailureBackoffMs,
   getFailedDeploymentCountForCommit,
+  getDockerDaemonRestartAfterMs,
+  getDockerDaemonRestartCommand,
+  getDockerDaemonRestartCooldownMs,
+  getDockerDaemonPostRestartCommands,
+  getDockerDaemonPostRestartCommandTimeoutMs,
+  getDockerDaemonRecoverySettingsEnv,
   getWatcherComposeEnv,
   getWatchPaths,
   isGitIndexLockError,
@@ -71,6 +85,7 @@ const {
   removeStaleGitIndexLock,
   startBlueGreenWatcherContainer,
   streamBlueGreenWatcherLogs,
+  waitForDockerDaemonRecovery,
   main,
   spawnReplacementWatcher,
   stripAnsi,
@@ -153,6 +168,193 @@ function createRunCommandMock(responses) {
     return typeof response === 'function' ? response() : response;
   };
 }
+
+test('docker daemon restart configuration defaults to host service commands', () => {
+  assert.equal(
+    getDockerDaemonRestartAfterMs({}),
+    DEFAULT_DOCKER_DAEMON_RESTART_AFTER_MS
+  );
+  assert.equal(
+    getDockerDaemonRestartCooldownMs({}),
+    DEFAULT_DOCKER_DAEMON_RESTART_COOLDOWN_MS
+  );
+  assert.equal(
+    getDockerDaemonPostRestartCommandTimeoutMs({}),
+    DEFAULT_DOCKER_DAEMON_POST_RESTART_COMMAND_TIMEOUT_MS
+  );
+  assert.deepEqual(
+    getDockerDaemonRestartCommand({ env: {}, platform: 'linux' }),
+    ['systemctl', 'restart', 'docker']
+  );
+  assert.deepEqual(
+    getDockerDaemonRestartCommand({ env: {}, platform: 'darwin' }),
+    ['open', '-ga', 'Docker']
+  );
+  assert.deepEqual(
+    getDockerDaemonRestartCommand({
+      env: {
+        [DOCKER_DAEMON_RESTART_COMMAND_ENV]:
+          '["sudo","systemctl","restart","docker"]',
+      },
+      platform: 'linux',
+    }),
+    ['sudo', 'systemctl', 'restart', 'docker']
+  );
+  assert.equal(
+    getDockerDaemonRestartAfterMs({
+      [DOCKER_DAEMON_RESTART_DISABLED_ENV]: '1',
+    }),
+    null
+  );
+  assert.deepEqual(
+    getDockerDaemonPostRestartCommands({
+      [DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV]:
+        '[{"command":"docker","args":["compose","up","-d"],"cwd":"/srv/zeus"}]',
+    }),
+    [
+      {
+        args: ['compose', 'up', '-d'],
+        command: 'docker',
+        cwd: '/srv/zeus',
+      },
+    ]
+  );
+});
+
+test('dashboard Docker recovery settings override static restart command env', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-docker-recovery-settings-')
+  );
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(paths.controlDir, DOCKER_DAEMON_RECOVERY_SETTINGS_FILE),
+      JSON.stringify({
+        dockerRestartCommand: null,
+        postRestartCommands: [],
+      }),
+      'utf8'
+    );
+
+    const effectiveEnv = getDockerDaemonRecoverySettingsEnv({
+      env: {
+        [DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV]:
+          '[["docker","compose","up","-d"]]',
+        [DOCKER_DAEMON_RESTART_COMMAND_ENV]: '["custom","docker","restart"]',
+      },
+      fsImpl: fs,
+      paths,
+    });
+
+    assert.equal(effectiveEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV], undefined);
+    assert.equal(effectiveEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV], '[]');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('waitForDockerDaemonRecovery runs dashboard-configured hooks after Docker recovers', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-command-docker-recovery-settings-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const calls = [];
+  let now = 0;
+  let restarted = false;
+
+  try {
+    fs.mkdirSync(paths.controlDir, { recursive: true });
+    fs.writeFileSync(
+      path.join(paths.controlDir, DOCKER_DAEMON_RECOVERY_SETTINGS_FILE),
+      JSON.stringify({
+        dockerRecoveryPollMs: 10,
+        dockerRecoveryTimeoutMs: null,
+        dockerRestartAfterMs: 1,
+        dockerRestartCommand: ['service', 'docker', 'restart'],
+        dockerRestartCooldownMs: 1,
+        dockerRestartDisabled: false,
+        kind: 'docker-recovery-settings',
+        postRestartCommandTimeoutMs: 1234,
+        postRestartCommands: [
+          {
+            args: ['compose', 'up', '-d'],
+            command: 'docker',
+            cwd: '/srv/zeus',
+          },
+        ],
+      }),
+      'utf8'
+    );
+
+    const recovered = await waitForDockerDaemonRecovery({
+      env: { PATH: process.env.PATH },
+      fsImpl: fs,
+      log: { warn() {} },
+      now: () => now,
+      paths,
+      runCommand: async (command, args, options = {}) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(options.cwd ? `${key} cwd=${options.cwd}` : `${key}`);
+
+        if (key === 'docker info') {
+          return restarted
+            ? createResult('')
+            : createResult('', {
+                code: 1,
+                stderr: 'Cannot connect to the Docker daemon',
+              });
+        }
+
+        if (key === 'service docker restart') {
+          restarted = true;
+          return createResult('');
+        }
+
+        if (key === 'docker compose up -d') {
+          assert.equal(options.cwd, '/srv/zeus');
+          assert.equal(options.timeoutMs, 1234);
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+      sleepImpl: async (ms) => {
+        now += ms;
+      },
+    });
+
+    assert.equal(recovered, true);
+    assert.deepEqual(calls, [
+      'docker info',
+      'docker info',
+      'service docker restart',
+      'docker info',
+      'docker compose up -d cwd=/srv/zeus',
+    ]);
+    const recoveryLogs = readWatcherLogEntries(paths, fs).filter((entry) =>
+      String(entry.eventType ?? '').startsWith('docker-')
+    );
+    assert.deepEqual(
+      recoveryLogs.map((entry) => entry.eventType),
+      [
+        'docker-post-restart-commands-completed',
+        'docker-daemon-recovered',
+        'docker-daemon-restart-result',
+        'docker-daemon-restart-attempt',
+        'docker-daemon-unavailable',
+      ]
+    );
+    assert.equal(
+      new Set(recoveryLogs.map((entry) => entry.incidentId)).size,
+      1
+    );
+    assert.equal(recoveryLogs[0].metadata.ran, 1);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
 
 function prodComposePsKey(serviceName) {
   return `docker compose -f ${PROD_COMPOSE_FILE} ps -q ${serviceName}`;

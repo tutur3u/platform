@@ -207,6 +207,65 @@ describe('readBlueGreenMonitoringSnapshot', () => {
     }
   });
 
+  it('reads Docker recovery settings from the watcher control directory', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-recovery-settings-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch', 'control'), {
+        recursive: true,
+      });
+      fs.writeFileSync(
+        path.join(
+          tempDir,
+          'watch',
+          'control',
+          'blue-green-docker-recovery-settings.json'
+        ),
+        JSON.stringify({
+          dockerRecoveryPollMs: 1000,
+          dockerRecoveryTimeoutMs: null,
+          dockerRestartAfterMs: 5000,
+          dockerRestartCommand: ['service', 'docker', 'restart'],
+          dockerRestartCooldownMs: 60_000,
+          dockerRestartDisabled: false,
+          emailAlertCooldownMs: 900_000,
+          emailAlertRecipients: ['ops@platform.test'],
+          emailAlertsEnabled: true,
+          kind: 'docker-recovery-settings',
+          postRestartCommandTimeoutMs: 120_000,
+          postRestartCommands: [
+            {
+              args: ['compose', 'up', '-d'],
+              command: 'docker',
+              cwd: '/srv/zeus',
+            },
+          ],
+          updatedAt: '2026-05-17T09:30:00.000Z',
+          updatedBy: 'user-1',
+          updatedByEmail: 'ops@platform.test',
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 2000 });
+
+      expect(snapshot.control.dockerRecoverySettings).toMatchObject({
+        dockerRestartAfterMs: 5000,
+        dockerRestartCommand: ['service', 'docker', 'restart'],
+        postRestartCommands: [
+          {
+            command: 'docker',
+            cwd: '/srv/zeus',
+          },
+        ],
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('exposes the latest cached recoverable deployments from history', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'blue-green-monitoring-cache-')

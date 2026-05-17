@@ -2048,6 +2048,29 @@
       "weekly": "Weekly",
       "yearly": "Yearly"
     },
+    "recovery_settings": {
+      "badge": "Docker Recovery",
+      "command_timeout": "Command timeout (ms)",
+      "description": "Tune the host supervisor that restarts Docker and runs colocated service recovery commands after the daemon comes back.",
+      "email_alerts_enabled": "Email Docker crash alerts",
+      "email_cooldown": "Email alert cooldown (ms)",
+      "email_recipients": "Alert recipients",
+      "email_recipients_placeholder": "ops@example.com, founder@example.com",
+      "no_timeout": "No timeout",
+      "poll": "Docker poll interval (ms)",
+      "post_restart_commands": "Post-restart commands JSON",
+      "restart_after": "Restart after unavailable (ms)",
+      "restart_command": "Docker restart command JSON",
+      "restart_cooldown": "Restart cooldown (ms)",
+      "restart_disabled": "Disable Docker restart attempts",
+      "save": "Save Recovery Settings",
+      "save_error": "Could not save Docker recovery settings.",
+      "save_success": "Saved Docker recovery settings.",
+      "saving": "Saving Settings",
+      "timeout": "Docker recovery timeout (ms)",
+      "title": "Host-level recovery settings",
+      "updated": "{count} post-restart commands · Last updated {time}"
+    },
     "requests": {
       "internal": "Internal Probe"
     },

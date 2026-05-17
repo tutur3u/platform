@@ -173,6 +173,30 @@ export interface BlueGreenWatcherRecoveryRequest {
   watcherHealth: string | null;
 }
 
+export interface BlueGreenDockerRecoveryCommand {
+  args: string[];
+  command: string;
+  cwd: string | null;
+}
+
+export interface BlueGreenDockerRecoverySettings {
+  dockerRecoveryPollMs: number;
+  dockerRecoveryTimeoutMs: number | null;
+  dockerRestartAfterMs: number | null;
+  dockerRestartCommand: string[] | null;
+  dockerRestartCooldownMs: number;
+  dockerRestartDisabled: boolean;
+  emailAlertCooldownMs: number;
+  emailAlertRecipients: string[];
+  emailAlertsEnabled: boolean;
+  kind: 'docker-recovery-settings';
+  postRestartCommandTimeoutMs: number;
+  postRestartCommands: BlueGreenDockerRecoveryCommand[];
+  updatedAt: string | null;
+  updatedBy: string | null;
+  updatedByEmail: string | null;
+}
+
 export interface BlueGreenMonitoringPeriodMetric {
   averageLatencyMs: number | null;
   bucketLabel: string;
@@ -246,6 +270,10 @@ export interface BlueGreenMonitoringWatcherLog {
   deploymentKind: string | null;
   deploymentStamp: string | null;
   deploymentStatus: string | null;
+  eventId?: string | null;
+  eventType?: string | null;
+  incidentId?: string | null;
+  metadata?: Record<string, unknown>;
   level: string;
   message: string;
   time: number;
@@ -429,6 +457,7 @@ export interface BlueGreenMonitoringSnapshot {
   };
   control: {
     deploymentPin: BlueGreenDeploymentPin | null;
+    dockerRecoverySettings: BlueGreenDockerRecoverySettings;
     instantRolloutRequest: BlueGreenInstantRolloutRequest | null;
   };
   deployments: BlueGreenMonitoringDeployment[];
@@ -527,6 +556,16 @@ export interface RequestBlueGreenWatcherRecoveryPayload {
 export interface RequestBlueGreenWatcherRecoveryResponse {
   message: string;
   request: BlueGreenWatcherRecoveryRequest;
+}
+
+export type UpdateBlueGreenDockerRecoverySettingsPayload = Omit<
+  BlueGreenDockerRecoverySettings,
+  'kind' | 'updatedAt' | 'updatedBy' | 'updatedByEmail'
+>;
+
+export interface UpdateBlueGreenDockerRecoverySettingsResponse {
+  message: string;
+  settings: BlueGreenDockerRecoverySettings;
 }
 
 export interface PinBlueGreenDeploymentPayload {
@@ -1345,6 +1384,24 @@ export async function requestBlueGreenWatcherRecovery(
         'Content-Type': 'application/json',
       },
       method: 'POST',
+    }
+  );
+}
+
+export async function updateBlueGreenDockerRecoverySettings(
+  payload: UpdateBlueGreenDockerRecoverySettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<UpdateBlueGreenDockerRecoverySettingsResponse>(
+    '/api/v1/infrastructure/monitoring/blue-green/recovery-settings',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
     }
   );
 }
