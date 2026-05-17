@@ -73,6 +73,7 @@ const {
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,
   parseUpstreamRef,
+  pullTrackedBranch,
   readDeploymentHistory,
   readWatchArgsFile,
   readWatchLock,
@@ -3527,6 +3528,104 @@ test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('pullTrackedBranch restores bun.lock and retries when it blocks fast-forward', async () => {
+  const calls = [];
+  const warnings = [];
+  let pullAttempts = 0;
+
+  await pullTrackedBranch(
+    {
+      remote: 'origin',
+      upstreamBranch: 'production',
+    },
+    {
+      log: {
+        warn(message) {
+          warnings.push(message);
+        },
+      },
+      rootDir: '/tmp/platform',
+      runCommand: async (command, args) => {
+        const key = `${command} ${args.join(' ')}`;
+        calls.push(key);
+
+        if (key === 'git pull --ff-only origin production') {
+          pullAttempts += 1;
+
+          return pullAttempts === 1
+            ? createResult('', {
+                code: 1,
+                stderr:
+                  'error: Your local changes to the following files would be overwritten by merge:\n\tbun.lock\nPlease commit your changes or stash them before you merge.\nAborting',
+              })
+            : createResult('Updating aaa111..bbb222\n');
+        }
+
+        if (key === 'git status --porcelain') {
+          return createResult(' M bun.lock\n');
+        }
+
+        if (key === 'git checkout HEAD -- bun.lock') {
+          return createResult('');
+        }
+
+        throw new Error(`Unexpected command: ${key}`);
+      },
+    }
+  );
+
+  assert.equal(pullAttempts, 2);
+  assert.deepEqual(calls, [
+    'git pull --ff-only origin production',
+    'git status --porcelain',
+    'git checkout HEAD -- bun.lock',
+    'git pull --ff-only origin production',
+  ]);
+  assert.match(warnings.join('\n'), /Discarding generated bun\.lock changes/);
+});
+
+test('pullTrackedBranch keeps non-lockfile dirty paths protected', async () => {
+  const calls = [];
+
+  await assert.rejects(
+    () =>
+      pullTrackedBranch(
+        {
+          remote: 'origin',
+          upstreamBranch: 'production',
+        },
+        {
+          log: { warn() {} },
+          rootDir: '/tmp/platform',
+          runCommand: async (command, args) => {
+            const key = `${command} ${args.join(' ')}`;
+            calls.push(key);
+
+            if (key === 'git pull --ff-only origin production') {
+              return createResult('', {
+                code: 1,
+                stderr:
+                  'error: Your local changes to the following files would be overwritten by merge:\n\tbun.lock\nPlease commit your changes or stash them before you merge.\nAborting',
+              });
+            }
+
+            if (key === 'git status --porcelain') {
+              return createResult(' M bun.lock\n M apps/web/page.tsx\n');
+            }
+
+            throw new Error(`Unexpected command: ${key}`);
+          },
+        }
+      ),
+    /git pull --ff-only origin production/
+  );
+
+  assert.deepEqual(calls, [
+    'git pull --ff-only origin production',
+    'git status --porcelain',
+  ]);
 });
 
 test('runDeployWatchIteration refreshes a stale standby deployment after 15 minutes', async () => {

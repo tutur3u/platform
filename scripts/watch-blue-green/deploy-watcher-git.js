@@ -10,6 +10,8 @@ const {
   MAX_GIT_FAILURE_BACKOFF_MS,
 } = require('./watcher-constants.js');
 
+const AUTO_RESTORABLE_LOCKFILE_PATHS = new Set(['bun.lock']);
+
 async function gitStdout(
   args,
   { cwd = ROOT_DIR, env, runCommand: run = runCommand } = {}
@@ -272,6 +274,74 @@ async function runGitWithStaleLockRetry(
   }
 }
 
+function getErrorMessage(error) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+function normalizeDirtyPath(dirtyPath) {
+  return String(dirtyPath ?? '').replace(/\\/gu, '/');
+}
+
+function hasOnlyAutoRestorableLockfiles(dirtyPaths) {
+  return (
+    dirtyPaths.length > 0 &&
+    dirtyPaths.every((dirtyPath) =>
+      AUTO_RESTORABLE_LOCKFILE_PATHS.has(normalizeDirtyPath(dirtyPath))
+    )
+  );
+}
+
+function isAutoRestorableLockfilePullError(error) {
+  const message = getErrorMessage(error);
+
+  return (
+    /would be overwritten by merge/iu.test(message) &&
+    /\bbun\.lock\b/iu.test(message)
+  );
+}
+
+async function restoreAutoRestorableLockfiles({
+  cwd,
+  env,
+  runCommand: run = runCommand,
+} = {}) {
+  await runChecked('git', ['checkout', 'HEAD', '--', 'bun.lock'], {
+    cwd,
+    env,
+    runCommand: run,
+    stdio: 'pipe',
+  });
+}
+
+async function recoverAutoRestorableLockfilePullError(
+  error,
+  { cwd, env, log, runCommand: run = runCommand } = {}
+) {
+  if (!isAutoRestorableLockfilePullError(error)) {
+    return false;
+  }
+
+  const dirtyPaths = await listDirtyWorktreePaths({
+    cwd,
+    env,
+    runCommand: run,
+  });
+
+  if (!hasOnlyAutoRestorableLockfiles(dirtyPaths)) {
+    return false;
+  }
+
+  log?.warn?.(
+    'Discarding generated bun.lock changes so git pull can fast-forward to the tracked lockfile.'
+  );
+  await restoreAutoRestorableLockfiles({
+    cwd,
+    env,
+    runCommand: run,
+  });
+  return true;
+}
+
 async function fetchTrackedBranch(
   target,
   {
@@ -312,15 +382,39 @@ async function pullTrackedBranch(
   const workDir = cwd ?? rootDir;
   const args = ['pull', '--ff-only', target.remote, target.upstreamBranch];
 
-  await runGitWithStaleLockRetry(args, {
-    cwd: workDir,
-    env,
-    fsImpl,
-    log,
-    now,
-    rootDir: workDir,
-    runCommand: run,
-  });
+  try {
+    await runGitWithStaleLockRetry(args, {
+      cwd: workDir,
+      env,
+      fsImpl,
+      log,
+      now,
+      rootDir: workDir,
+      runCommand: run,
+    });
+  } catch (error) {
+    if (
+      await recoverAutoRestorableLockfilePullError(error, {
+        cwd: workDir,
+        env,
+        log,
+        runCommand: run,
+      })
+    ) {
+      await runGitWithStaleLockRetry(args, {
+        cwd: workDir,
+        env,
+        fsImpl,
+        log,
+        now,
+        rootDir: workDir,
+        runCommand: run,
+      });
+      return;
+    }
+
+    throw error;
+  }
 }
 
 async function listDirtyWorktreePaths({

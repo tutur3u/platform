@@ -879,8 +879,10 @@ Behavior:
    endpoint returns `HTTPForbidden`, the watcher logs a warning and continues
    with `bun i`; dependency sync is required, but a blocked self-upgrade should
    not trap the watcher in a restart loop.
-12. Treats a worktree that is dirty only because of `bun.lock` as watchable, so
-    host-side install churn does not stop subsequent polling cycles.
+12. Treats a worktree that is dirty only because of `bun.lock` as watchable, and
+    if a fast-forward pull says that only this generated lockfile would be
+    overwritten, restores `bun.lock` from `HEAD` and retries the pull. This keeps
+    host-side install churn from blocking subsequent polling cycles.
 13. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
    pull.
 14. Polls imported Infrastructure projects from log-drain Postgres, synchronizes enabled public GitHub projects into `tmp/docker-web/projects/<projectId>/repo`, deploys them through generated Next.js compose files under the shared `tuturuuu` Compose project, and merges hostname routes into the central nginx proxy.
@@ -1065,9 +1067,11 @@ Dashboard details:
   part of the watcher refresh globs. Keep those globs in sync with any future
   sidecar entrypoints so a running watcher refreshes helper containers during
   the next deploy handoff, not just the web app container.
-- Host dependency refreshes can rewrite `bun.lock`; the watcher now ignores
-  that file as a sole dirty-worktree signal so polling continues after the
-  automatic `bun upgrade` / `bun i` step.
+- Host dependency refreshes can rewrite `bun.lock`; the watcher ignores that
+  file as a sole dirty-worktree signal and auto-restores it before retrying a
+  fast-forward pull when Git reports that only `bun.lock` would be overwritten.
+  This keeps polling alive after the automatic `bun upgrade` / `bun i` step
+  without discarding unrelated local edits.
 - A recoverable `bun upgrade` failure such as `HTTPForbidden` does not abort the
   deployment watcher. The watcher continues with `bun i` because the
   containerized watcher already pins its Bun runtime in the Dockerfile.
@@ -1379,6 +1383,12 @@ Operational notes:
 - `docker build --target runner --secret id=web_env,src=.env.local -f apps/web/Dockerfile .`
 
 That means Docker CI now covers both the dev image and the real production path.
+
+For focused watcher-script checks, run the root Node test file directly, for
+example `node --test --test-name-pattern "pullTrackedBranch"
+scripts/watch-blue-green-deploy.test.js`. Running `bun test scripts/...` from
+the repo root invokes the package test script and can expand into the full Turbo
+test suite.
 
 When `scripts/check-docker-web.js` or similar root validators need to assert a
 literal Dockerfile template placeholder like `${process.env.PORT || 7803}`,
