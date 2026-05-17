@@ -345,7 +345,7 @@ export const Mention = Node.create({
   },
 
   addNodeView() {
-    return ({ node, editor }) => {
+    return ({ node, editor, getPos }) => {
       let currentDisplayName =
         (node.attrs.displayName as string | null)?.trim() || 'Member';
       let currentAvatarUrl = node.attrs.avatarUrl as string | null;
@@ -378,6 +378,28 @@ export const Mention = Node.create({
                 subtitle={currentSubtitle}
                 translations={this.options.translations}
                 editor={editor}
+                onResolvedTaskMention={(attrs) => {
+                  if (typeof getPos !== 'function') return;
+
+                  const position = getPos();
+                  if (typeof position !== 'number') return;
+
+                  const currentNode = editor.state.doc.nodeAt(position);
+                  if (!currentNode || currentNode.type.name !== 'mention') {
+                    return;
+                  }
+
+                  editor.view.dispatch(
+                    editor.state.tr.setNodeMarkup(position, undefined, {
+                      ...currentNode.attrs,
+                      avatarUrl: attrs.avatarUrl ?? null,
+                      displayName: attrs.displayName,
+                      entityId: attrs.entityId,
+                      priority: attrs.priority ?? null,
+                      subtitle: attrs.subtitle ?? null,
+                    })
+                  );
+                }}
               />
             </QueryClientProvider>
           );

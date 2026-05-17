@@ -13,7 +13,6 @@ import {
 } from '@tuturuuu/icons';
 import {
   cleanupWorkspaceTaskMentions,
-  getCurrentUserTask,
   listWorkspaceTaskLists,
   listWorkspaceTaskProjects,
 } from '@tuturuuu/internal-api';
@@ -25,7 +24,7 @@ import {
   useBoardConfig,
   useWorkspaceLabels,
 } from '@tuturuuu/utils/task-helper';
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDomResolvedTheme } from '../../../hooks/use-dom-resolved-theme';
 import { useTaskActions } from '../../../hooks/use-task-actions';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
@@ -65,6 +64,11 @@ import {
   getTicketBadgeColorClasses,
 } from '../tu-do/utils/taskColorUtils';
 import { getPriorityIcon } from '../tu-do/utils/taskPriorityUtils';
+import {
+  getRouteTaskBoardIdFromPathname,
+  getRouteWorkspaceIdFromPathname,
+  resolveTaskMentionPayload,
+} from './task-mention-resolution';
 import { TaskSummaryPopover } from './task-summary-popover';
 
 /**
@@ -139,6 +143,13 @@ interface TaskMentionChipProps {
   subtitle?: string | null;
   className?: string;
   editor?: Editor | null;
+  onResolvedTaskMention?: (attrs: {
+    avatarUrl?: string | null;
+    displayName: string;
+    entityId: string;
+    priority?: string | null;
+    subtitle?: string | null;
+  }) => void;
   /** Optional translations for dialogs (for use in isolated React roots) */
   translations?: {
     // TaskDeleteDialog
@@ -168,18 +179,6 @@ interface TaskMentionChipProps {
   };
 }
 
-const LOCALE_SEGMENTS = new Set(['en', 'vi']);
-
-function getRouteWorkspaceIdFromPathname(pathname: string): string | undefined {
-  const segments = pathname.split('/').filter(Boolean);
-
-  if (segments.length === 0) {
-    return undefined;
-  }
-
-  return LOCALE_SEGMENTS.has(segments[0] ?? '') ? segments[1] : segments[0];
-}
-
 export function TaskMentionChip({
   entityId,
   displayNumber,
@@ -187,12 +186,14 @@ export function TaskMentionChip({
   subtitle,
   className,
   editor: editorProp,
+  onResolvedTaskMention,
   translations,
 }: TaskMentionChipProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [menuGuardUntil, setMenuGuardUntil] = useState(0);
+  const resolvedMentionRef = useRef<string | null>(null);
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   const queryClient = useQueryClient();
   const routeWsId = useMemo(() => {
@@ -201,6 +202,13 @@ export function TaskMentionChip({
     }
 
     return getRouteWorkspaceIdFromPathname(window.location.pathname);
+  }, []);
+  const routeBoardId = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+
+    return getRouteTaskBoardIdFromPathname(window.location.pathname);
   }, []);
   const isDark = useDomResolvedTheme() === 'dark';
 
@@ -219,8 +227,13 @@ export function TaskMentionChip({
   } = useQuery({
     queryKey: ['task', entityId],
     queryFn: async () => {
-      const response = await getCurrentUserTask(entityId);
-      return response;
+      return resolveTaskMentionPayload({
+        displayNumber,
+        entityId,
+        routeBoardId,
+        routeWorkspaceId: routeWsId,
+        subtitle,
+      });
     },
     enabled: true, // Always load to show inline metadata
     staleTime: 30000,
@@ -228,6 +241,7 @@ export function TaskMentionChip({
   });
 
   const task = taskPayload?.task as TaskWithBoardId | undefined;
+  const resolvedTaskId = task?.id ?? entityId;
   const taskWorkspaceId = taskPayload?.taskWsId;
   const taskWorkspacePersonal = taskPayload?.taskWorkspacePersonal;
   const boardWorkspaceId = routeWsId ?? taskWorkspaceId;
@@ -315,7 +329,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
-    taskId: entityId, // Pass entityId to sync individual task cache
+    taskId: resolvedTaskId, // Pass resolved task ID to sync individual task cache
   });
 
   // Use project management hook - only when we have task
@@ -333,7 +347,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
-    taskId: entityId, // Pass entityId to sync individual task cache
+    taskId: resolvedTaskId, // Pass resolved task ID to sync individual task cache
   });
 
   // Use task relationships hook - only when we have task
@@ -373,10 +387,13 @@ export function TaskMentionChip({
 
   const handleUpdate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['task', entityId] });
+    if (resolvedTaskId !== entityId) {
+      queryClient.invalidateQueries({ queryKey: ['task', resolvedTaskId] });
+    }
     if (task?.board_id) {
       queryClient.invalidateQueries({ queryKey: ['tasks', task.board_id] });
     }
-  }, [queryClient, entityId, task?.board_id]);
+  }, [queryClient, entityId, resolvedTaskId, task?.board_id]);
 
   // Helper to sync individual task cache with updates
   // Supports both direct updates and functional updates for operations that depend on current state
@@ -386,17 +403,23 @@ export function TaskMentionChip({
         | Partial<TaskWithBoardId>
         | ((current: TaskWithBoardId) => Partial<TaskWithBoardId>)
     ) => {
-      queryClient.setQueryData(
-        ['task', entityId],
-        (old: TaskWithBoardId | undefined) => {
-          if (!old) return old;
-          const updates =
-            typeof updatesOrFn === 'function' ? updatesOrFn(old) : updatesOrFn;
-          return { ...old, ...updates };
-        }
-      );
+      const cacheTaskIds = Array.from(new Set([entityId, resolvedTaskId]));
+
+      for (const cacheTaskId of cacheTaskIds) {
+        queryClient.setQueryData(
+          ['task', cacheTaskId],
+          (old: TaskWithBoardId | undefined) => {
+            if (!old) return old;
+            const updates =
+              typeof updatesOrFn === 'function'
+                ? updatesOrFn(old)
+                : updatesOrFn;
+            return { ...old, ...updates };
+          }
+        );
+      }
     },
-    [queryClient, entityId]
+    [queryClient, entityId, resolvedTaskId]
   );
 
   // Use task actions hook - only when we have task
@@ -426,7 +449,7 @@ export function TaskMentionChip({
     selectedTasks: undefined,
     isMultiSelectMode: false,
     onClearSelection: undefined,
-    taskId: entityId, // Pass entityId to sync individual task cache
+    taskId: resolvedTaskId, // Pass resolved task ID to sync individual task cache
   });
 
   // Wrap handlers to also sync individual task cache
@@ -636,6 +659,39 @@ export function TaskMentionChip({
     return subtitle || null;
   }, [task?.name, subtitle]);
 
+  useEffect(() => {
+    if (!task || task.id === entityId) {
+      return;
+    }
+
+    queryClient.setQueryData(['task', task.id], taskPayload);
+
+    if (resolvedMentionRef.current === task.id) {
+      return;
+    }
+
+    resolvedMentionRef.current = task.id;
+    onResolvedTaskMention?.({
+      avatarUrl,
+      displayName:
+        typeof task.display_number === 'number'
+          ? String(task.display_number)
+          : actualDisplayNumber,
+      entityId: task.id,
+      priority: task.priority ?? null,
+      subtitle: task.name ?? subtitle ?? null,
+    });
+  }, [
+    actualDisplayNumber,
+    avatarUrl,
+    entityId,
+    onResolvedTaskMention,
+    queryClient,
+    subtitle,
+    task,
+    taskPayload,
+  ]);
+
   const showTaskResolutionError = useCallback(
     (fallbackDescription?: string) => {
       const description =
@@ -645,10 +701,10 @@ export function TaskMentionChip({
             'The linked task could not be resolved from the current mention.');
 
       toast.error(`Failed to resolve linked task #${actualDisplayNumber}`, {
-        description: `${description} (task id: ${entityId})`,
+        description: `${description} (task id: ${resolvedTaskId})`,
       });
     },
-    [actualDisplayNumber, entityId, taskError]
+    [actualDisplayNumber, resolvedTaskId, taskError]
   );
 
   const getTaskUrl = () => {
@@ -659,7 +715,7 @@ export function TaskMentionChip({
       boardId,
       currentPathname: window.location.pathname,
       origin: window.location.origin,
-      taskId: entityId,
+      taskId: resolvedTaskId,
       workspaceId: wsId,
       isPersonalWorkspace: taskWorkspacePersonal,
     });
@@ -703,6 +759,7 @@ export function TaskMentionChip({
   const title = actualTaskName
     ? `#${actualDisplayNumber} • ${actualTaskName}`
     : `#${actualDisplayNumber}`;
+  const canOpenTaskMention = !!task && !taskLoading && !taskError;
 
   // Get styling based on task list color or priority
   const chipColorClasses = useMemo(() => {
@@ -715,7 +772,7 @@ export function TaskMentionChip({
   const chipContent = (
     <span
       data-mention="true"
-      data-entity-id={entityId}
+      data-entity-id={resolvedTaskId}
       data-entity-type="task"
       data-display-number={displayNumber}
       data-avatar-url={avatarUrl ?? ''}
@@ -723,34 +780,24 @@ export function TaskMentionChip({
       data-priority={task?.priority ?? ''}
       data-list-color={currentTaskList?.color ?? ''}
       title={title}
+      aria-disabled={!canOpenTaskMention}
       contentEditable={false}
       onClick={(e) => {
+        if (!canOpenTaskMention) {
+          return;
+        }
+
         e.stopPropagation();
         (e as any).stopImmediatePropagation?.();
         e.preventDefault();
 
-        if (taskLoading) {
-          toast.info(`Loading linked task #${actualDisplayNumber}...`, {
-            description: `Task id: ${entityId}`,
-          });
-          return;
-        }
-
-        if (taskError) {
-          showTaskResolutionError();
-          return;
-        }
-
-        if (!task) {
-          showTaskResolutionError(
-            'The inline mention still exists, but no live task payload was returned.'
-          );
-          return;
-        }
-
         setPopoverOpen((prev) => !prev);
       }}
       onContextMenu={(e) => {
+        if (!canOpenTaskMention) {
+          return;
+        }
+
         e.stopPropagation();
         (e as any).stopImmediatePropagation?.();
         e.preventDefault();
@@ -763,9 +810,13 @@ export function TaskMentionChip({
         }, 50);
       }}
       className={cn(
-        'inline-flex cursor-pointer items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 font-medium text-[12px] leading-normal transition-colors',
+        'inline-flex items-center gap-1 rounded-full border py-0.5 pr-1 pl-2 font-medium text-[12px] leading-normal transition-colors',
         chipColorClasses,
-        'hover:opacity-80',
+        canOpenTaskMention
+          ? 'cursor-pointer hover:opacity-80'
+          : taskLoading
+            ? 'cursor-progress opacity-90'
+            : 'cursor-default opacity-70',
         className
       )}
     >
