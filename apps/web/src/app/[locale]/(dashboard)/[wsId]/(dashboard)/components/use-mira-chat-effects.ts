@@ -12,6 +12,40 @@ import {
 } from './mira-chat-constants';
 import { getMiraToolCallId, getMiraToolName } from './mira-tool-part-utils';
 
+const TASK_MUTATION_TOOL_NAMES = new Set([
+  'create_task',
+  'complete_task',
+  'update_task',
+  'delete_task',
+  'add_task_labels',
+  'remove_task_labels',
+  'add_task_to_project',
+  'remove_task_from_project',
+  'add_task_assignee',
+  'remove_task_assignee',
+]);
+
+const TASK_LIST_MUTATION_TOOL_NAMES = new Set([
+  'create_board',
+  'update_board',
+  'delete_board',
+  'create_task_list',
+  'update_task_list',
+  'delete_task_list',
+]);
+
+const TASK_LABEL_MUTATION_TOOL_NAMES = new Set([
+  'create_task_label',
+  'update_task_label',
+  'delete_task_label',
+]);
+
+const TASK_PROJECT_MUTATION_TOOL_NAMES = new Set([
+  'create_project',
+  'update_project',
+  'delete_project',
+]);
+
 interface UseMiraChatEffectsParams {
   isFullscreen?: boolean;
   messageAttachmentsRef: MutableRefObject<Map<string, MessageFileAttachment[]>>;
@@ -24,7 +58,84 @@ interface UseMiraChatEffectsParams {
   >;
   setWorkspaceContextId: (value: string) => void;
   status: string;
+  taskBoardId?: string;
   wsId: string;
+}
+
+function isErroredToolOutput(part: unknown): boolean {
+  const output = (part as { output?: unknown })?.output;
+  if (!output || typeof output !== 'object') return false;
+
+  const error = (output as { error?: unknown }).error;
+  return typeof error === 'string' && error.trim().length > 0;
+}
+
+function invalidateMiraTaskCaches({
+  includeLists,
+  includeLabels,
+  includeProjects,
+  queryClient,
+  taskBoardId,
+  wsId,
+}: {
+  includeLists?: boolean;
+  includeLabels?: boolean;
+  includeProjects?: boolean;
+  queryClient: QueryClient;
+  taskBoardId?: string;
+  wsId: string;
+}) {
+  const boardId = taskBoardId?.trim();
+
+  void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  void queryClient.invalidateQueries({ queryKey: ['task'] });
+  void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
+  void queryClient.invalidateQueries({ queryKey: ['task-board', wsId] });
+  void queryClient.invalidateQueries({ queryKey: ['task-boards', wsId] });
+
+  if (boardId) {
+    void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+    void queryClient.invalidateQueries({
+      queryKey: ['task-board', wsId, boardId],
+    });
+    void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+  }
+
+  if (includeLists) {
+    void queryClient.invalidateQueries({ queryKey: ['task_lists'] });
+  }
+
+  if (includeLabels) {
+    void queryClient.invalidateQueries({
+      queryKey: ['workspace-labels', wsId],
+    });
+  }
+
+  if (includeProjects) {
+    void queryClient.invalidateQueries({
+      queryKey: ['workspace-task-projects', wsId],
+    });
+  }
+}
+
+function getTaskRefreshScope(toolName: string) {
+  if (TASK_LIST_MUTATION_TOOL_NAMES.has(toolName)) {
+    return { includeLists: true };
+  }
+
+  if (TASK_LABEL_MUTATION_TOOL_NAMES.has(toolName)) {
+    return { includeLabels: true };
+  }
+
+  if (TASK_PROJECT_MUTATION_TOOL_NAMES.has(toolName)) {
+    return { includeProjects: true };
+  }
+
+  if (TASK_MUTATION_TOOL_NAMES.has(toolName)) {
+    return {};
+  }
+
+  return null;
 }
 
 export function useMiraChatEffects({
@@ -37,6 +148,7 @@ export function useMiraChatEffects({
   setMessageAttachments,
   setWorkspaceContextId,
   status,
+  taskBoardId,
   wsId,
 }: UseMiraChatEffectsParams) {
   const prevStatusRef = useRef(status);
@@ -69,7 +181,18 @@ export function useMiraChatEffects({
         if (state !== 'output-available') continue;
         if (handledToolOutputs.current.has(key)) continue;
 
-        if (toolName === 'update_my_settings') {
+        const taskRefreshScope = getTaskRefreshScope(toolName);
+        if (taskRefreshScope) {
+          handledToolOutputs.current.add(key);
+          if (!isErroredToolOutput(part)) {
+            invalidateMiraTaskCaches({
+              queryClient,
+              taskBoardId,
+              wsId,
+              ...taskRefreshScope,
+            });
+          }
+        } else if (toolName === 'update_my_settings') {
           handledToolOutputs.current.add(key);
           queryClient.invalidateQueries({
             queryKey: ['mira-soul', 'detail'],
@@ -116,6 +239,7 @@ export function useMiraChatEffects({
     onToggleFullscreen,
     queryClient,
     setWorkspaceContextId,
+    taskBoardId,
     wsId,
   ]);
 

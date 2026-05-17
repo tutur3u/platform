@@ -23,6 +23,8 @@ import type {
 } from './task-board-ai-chat-bar-types';
 import { useTaskBoardAiChatBarTaskFlow } from './use-task-board-ai-chat-bar-task-flow';
 
+const CHAT_POPUP_EXIT_MS = 220;
+
 interface TaskBoardAiChatBarProps {
   assistantName: string;
   boardId: string;
@@ -43,6 +45,8 @@ export function TaskBoardAiChatBar({
   const [expanded, setExpanded] = useState(false);
   const [mode, setMode] = useState<TaskBoardAiChatBarMode>('task');
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
+  const [renderChatPopup, setRenderChatPopup] = useState(false);
+  const [chatPopupExiting, setChatPopupExiting] = useState(false);
 
   const taskFlow = useTaskBoardAiChatBarTaskFlow({
     boardId,
@@ -75,6 +79,33 @@ export function TaskBoardAiChatBar({
 
   const userName =
     currentUser.display_name || currentUser.full_name || currentUser.email;
+  const chatPopupOpen = expanded && mode === 'chat';
+
+  useEffect(() => {
+    if (chatPopupOpen) {
+      setRenderChatPopup(true);
+      setChatPopupExiting(false);
+      return;
+    }
+
+    if (!renderChatPopup) return;
+
+    setChatPopupExiting(true);
+    const timer = window.setTimeout(() => {
+      setRenderChatPopup(false);
+      setChatPopupExiting(false);
+    }, CHAT_POPUP_EXIT_MS);
+
+    return () => window.clearTimeout(timer);
+  }, [chatPopupOpen, renderChatPopup]);
+
+  const summaryText = expanded
+    ? mode === 'task'
+      ? tCommon('add_task')
+      : tCommon('ai-assistant')
+    : mode === 'task'
+      ? tTasks('cmd_ai_placeholder')
+      : tMira('placeholder', { name: assistantName });
 
   return (
     <TooltipProvider>
@@ -82,16 +113,18 @@ export function TaskBoardAiChatBar({
         <div
           ref={islandRef}
           className={cn(
-            'pointer-events-auto flex w-full max-w-2xl flex-col items-stretch transition-[max-width] duration-300',
-            expanded && mode === 'chat' && 'max-w-4xl'
+            'pointer-events-auto flex w-full max-w-xl flex-col items-stretch transition-[max-width,transform] duration-300',
+            expanded && mode === 'task' && 'max-w-2xl',
+            renderChatPopup && 'max-w-3xl'
           )}
         >
-          {expanded && mode === 'chat' && (
+          {renderChatPopup && (
             <TaskBoardMiraChatPopup
               assistantName={assistantName}
               boardId={boardId}
               chatPanelResetKey={chatPanelResetKey}
               currentUser={currentUser}
+              open={chatPopupOpen && !chatPopupExiting}
               onResetPanelState={() =>
                 setChatPanelResetKey((current) => current + 1)
               }
@@ -102,26 +135,25 @@ export function TaskBoardAiChatBar({
 
           <div
             className={cn(
-              'overflow-hidden rounded-3xl border border-border/70 bg-background/90 shadow-xl backdrop-blur-xl',
+              'overflow-hidden rounded-2xl border border-border/70 bg-background/90 shadow-lg backdrop-blur-xl',
               'transition-[width,opacity,transform] duration-300',
               expanded ? 'w-full' : 'mx-auto w-full max-w-xl'
             )}
           >
-            <div className="flex items-center gap-1.5 px-2 py-1.5 sm:px-2.5">
+            <div className="flex items-center gap-1.5 px-2 py-1.5">
               <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-full px-2 py-1 text-left transition hover:bg-muted/70"
+                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1 text-left transition hover:bg-muted/70"
                 onClick={() => setExpanded(true)}
+                aria-expanded={expanded}
               >
                 <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple">
                   <Sparkles className="h-3.5 w-3.5" />
                 </span>
                 <span className="min-w-0 flex-1 truncate text-muted-foreground text-xs sm:text-sm">
-                  {mode === 'task'
-                    ? tTasks('cmd_ai_placeholder')
-                    : tMira('placeholder', { name: assistantName })}
+                  {summaryText}
                 </span>
-                {taskFlow.selectedList && mode === 'task' && (
+                {taskFlow.selectedList && mode === 'task' && !expanded && (
                   <span className="hidden max-w-36 truncate rounded-full border border-border/70 px-2 py-0.5 text-muted-foreground text-xs sm:inline">
                     {taskFlow.selectedList.name || tCommon('list')}
                   </span>
@@ -185,7 +217,6 @@ export function TaskBoardAiChatBar({
                 onListChange={taskFlow.setSelectedListId}
                 onSubmit={taskFlow.handleTaskSubmit}
                 onSubmitShortcut={taskFlow.submitTaskInput}
-                selectedList={taskFlow.selectedList}
                 selectedListId={taskFlow.selectedListId}
                 taskInput={taskFlow.taskInput}
               />

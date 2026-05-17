@@ -29,6 +29,9 @@ import type {
 } from './task-board-ai-chat-bar-types';
 import { mergeCreatedTasks } from './task-board-ai-chat-bar-utils';
 
+const LAST_SELECTED_LIST_STORAGE_KEY_PREFIX =
+  'tuturuuu:task-board-ai-chat-bar:last-selected-list';
+
 interface UseTaskBoardAiChatBarTaskFlowParams {
   boardId: string;
   currentUser: TaskBoardAiChatBarUser;
@@ -52,7 +55,7 @@ export function useTaskBoardAiChatBarTaskFlow({
   const tTasks = useTranslations('ws-tasks');
   const queryClient = useQueryClient();
   const [taskInput, setTaskInput] = useState('');
-  const [selectedListId, setSelectedListId] = useState('');
+  const [selectedListId, setSelectedListIdState] = useState('');
   const [aiTaskMode, setAiTaskMode] = useState(true);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewEntry, setPreviewEntry] = useState<string | null>(null);
@@ -61,6 +64,32 @@ export function useTaskBoardAiChatBarTaskFlow({
   );
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const selectedListStorageKey = useMemo(
+    () => `${LAST_SELECTED_LIST_STORAGE_KEY_PREFIX}:${wsId}:${boardId}`,
+    [boardId, wsId]
+  );
+
+  const setSelectedListId = useCallback(
+    (nextListId: string) => {
+      setSelectedListIdState(nextListId);
+
+      if (typeof window === 'undefined') return;
+      if (nextListId) {
+        window.localStorage.setItem(selectedListStorageKey, nextListId);
+      } else {
+        window.localStorage.removeItem(selectedListStorageKey);
+      }
+    },
+    [selectedListStorageKey]
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    setSelectedListIdState(
+      window.localStorage.getItem(selectedListStorageKey) ?? ''
+    );
+  }, [selectedListStorageKey]);
 
   const { data: lists = [], isLoading: listsLoading } = useQuery({
     queryKey: ['task_lists', boardId],
@@ -119,7 +148,7 @@ export function useTaskBoardAiChatBarTaskFlow({
     if (!selectedStillExists) {
       setSelectedListId(defaultList.id);
     }
-  }, [activeLists, defaultList, selectedListId]);
+  }, [activeLists, defaultList, selectedListId, setSelectedListId]);
 
   const selectedList = activeLists.find((list) => list.id === selectedListId);
   const canCreateTask = taskInput.trim().length > 0 && Boolean(selectedListId);

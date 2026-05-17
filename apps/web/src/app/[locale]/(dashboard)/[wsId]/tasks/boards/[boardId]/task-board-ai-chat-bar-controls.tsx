@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, Check, Loader2, Send, WandSparkles } from '@tuturuuu/icons';
+import { Bot, Loader2, Send, WandSparkles } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Select,
@@ -37,7 +37,7 @@ export function ModeButton({
       size="sm"
       variant={active ? 'secondary' : 'ghost'}
       className={cn(
-        'h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs',
+        'h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs transition-colors',
         active && 'bg-dynamic-purple/10 text-dynamic-purple'
       )}
       aria-pressed={active}
@@ -54,6 +54,7 @@ export function TaskBoardMiraChatPopup({
   boardId,
   chatPanelResetKey,
   currentUser,
+  open,
   onResetPanelState,
   userName,
   wsId,
@@ -62,15 +63,25 @@ export function TaskBoardMiraChatPopup({
   boardId: string;
   chatPanelResetKey: number;
   currentUser: TaskBoardAiChatBarUser;
+  open: boolean;
   onResetPanelState: () => void;
   userName?: string;
   wsId: string;
 }) {
   return (
-    <div className="mb-2 flex h-[min(68vh,38rem)] min-h-80 flex-col overflow-hidden rounded-3xl border border-border/70 bg-background/95 p-1.5 shadow-xl backdrop-blur-xl">
+    <div
+      className={cn(
+        'mb-2 flex h-[min(62vh,34rem)] min-h-72 origin-bottom flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl backdrop-blur-xl',
+        'transition-[opacity,transform] duration-200 ease-out',
+        open
+          ? 'translate-y-0 scale-100 opacity-100'
+          : 'pointer-events-none translate-y-3 scale-[0.98] opacity-0'
+      )}
+    >
       <MiraChatPanel
         key={`${wsId}-${boardId}-${chatPanelResetKey}`}
         wsId={wsId}
+        taskBoardId={boardId}
         assistantName={assistantName}
         userName={userName}
         userAvatarUrl={currentUser.avatar_url}
@@ -91,7 +102,6 @@ export function TaskBoardTaskComposer({
   onListChange,
   onSubmit,
   onSubmitShortcut,
-  selectedList,
   selectedListId,
   taskInput,
 }: {
@@ -105,7 +115,6 @@ export function TaskBoardTaskComposer({
   onListChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onSubmitShortcut: () => void;
-  selectedList?: TaskBoardAiChatBarList;
   selectedListId: string;
   taskInput: string;
 }) {
@@ -114,10 +123,10 @@ export function TaskBoardTaskComposer({
 
   return (
     <form
-      className="border-border/70 border-t px-2.5 pt-2 pb-2.5 sm:px-3"
+      className="border-border/70 border-t px-2 pt-2 pb-2"
       onSubmit={onSubmit}
     >
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <Textarea
             value={taskInput}
@@ -134,7 +143,7 @@ export function TaskBoardTaskComposer({
                 ? tTasks('cmd_ai_placeholder')
                 : tTasks('cmd_task_placeholder')
             }
-            className="min-h-12 resize-none rounded-2xl border-border/70 bg-background/70 text-sm"
+            className="min-h-10 resize-none rounded-xl border-border/70 bg-background/70 px-3 py-2 text-sm"
             disabled={isCreating}
           />
         </div>
@@ -145,7 +154,7 @@ export function TaskBoardTaskComposer({
             onValueChange={onListChange}
             disabled={listsLoading || isCreating}
           >
-            <SelectTrigger className="h-9 w-36 rounded-2xl">
+            <SelectTrigger className="h-9 w-32 rounded-xl sm:w-36">
               <SelectValue
                 placeholder={
                   listsLoading
@@ -163,7 +172,7 @@ export function TaskBoardTaskComposer({
             </SelectContent>
           </Select>
 
-          <div className="flex h-9 items-center gap-1.5 rounded-2xl border border-border/70 px-2">
+          <div className="flex h-9 items-center gap-1.5 rounded-xl border border-border/70 px-2">
             <Bot
               className={cn(
                 'h-4 w-4',
@@ -180,7 +189,8 @@ export function TaskBoardTaskComposer({
 
           <Button
             type="submit"
-            className="h-9 rounded-2xl px-3"
+            size="icon"
+            className="h-9 w-9 rounded-xl"
             disabled={!canCreateTask || isCreating}
           >
             {isCreating ? (
@@ -196,16 +206,6 @@ export function TaskBoardTaskComposer({
           </Button>
         </div>
       </div>
-
-      {selectedList && (
-        <div className="mt-1.5 flex items-center gap-1 text-muted-foreground text-xs">
-          <Check className="h-3 w-3 text-dynamic-green" />
-          <span className="truncate">
-            {tCommon('destination_list')}:{' '}
-            {selectedList.name || tCommon('list')}
-          </span>
-        </div>
-      )}
     </form>
   );
 }

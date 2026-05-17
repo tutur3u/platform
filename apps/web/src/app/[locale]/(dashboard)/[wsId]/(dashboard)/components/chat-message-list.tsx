@@ -235,7 +235,7 @@ export default function ChatMessageList({
       ref={setScrollContainerRef}
       className={cn(
         'scrollbar-none flex min-w-0 flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-1 py-3',
-        scrollContainerRef && 'pb-[60vh]'
+        scrollContainerRef && 'pb-28 sm:pb-32'
       )}
     >
       {messages.map((message, index) => {

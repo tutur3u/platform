@@ -19,6 +19,7 @@ function TestHarness(props: {
     SetStateAction<Map<string, MessageFileAttachment[]>>
   >;
   setWorkspaceContextId: (value: string) => void;
+  taskBoardId?: string;
   wsId: string;
 }) {
   useMiraChatEffects({
@@ -176,5 +177,63 @@ describe('useMiraChatEffects', () => {
       WORKSPACE_CONTEXT_EVENT,
       handleWorkspaceContextEvent
     );
+  });
+
+  it('invalidates task-board caches when Mira task tools finish', async () => {
+    const wsId = 'dashboard-ws';
+    const boardId = 'board-123';
+    const queryClient = new QueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const setWorkspaceContextId = vi.fn();
+    const setMessageAttachments = vi.fn();
+    const routerRefresh = vi.fn();
+
+    render(
+      <TestHarness
+        wsId={wsId}
+        taskBoardId={boardId}
+        queryClient={queryClient}
+        routerRefresh={routerRefresh}
+        setMessageAttachments={setMessageAttachments}
+        setWorkspaceContextId={setWorkspaceContextId}
+        messages={[
+          {
+            id: 'assistant-task-tool',
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool-create_task',
+                toolCallId: 'tool-call-task',
+                state: 'output-available',
+                input: {
+                  name: 'Follow up',
+                  boardId,
+                },
+                output: {
+                  success: true,
+                  task: { id: 'task-1', name: 'Follow up' },
+                },
+              },
+            ],
+          },
+        ]}
+      />
+    );
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['tasks', boardId],
+      });
+    });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['task'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['my-tasks'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['task-board', wsId, boardId],
+    });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['task_lists', boardId],
+    });
   });
 });

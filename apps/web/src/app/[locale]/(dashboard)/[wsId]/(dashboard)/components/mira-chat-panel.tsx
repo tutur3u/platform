@@ -33,6 +33,7 @@ import { useMiraMessageQueue } from './use-mira-message-queue';
 
 interface MiraChatPanelProps {
   wsId: string;
+  taskBoardId?: string;
   assistantName: string;
   userName?: string;
   userAvatarUrl?: string | null;
@@ -46,6 +47,7 @@ interface MiraChatPanelProps {
 
 export default function MiraChatPanel({
   wsId,
+  taskBoardId,
   assistantName,
   userName,
   userAvatarUrl,
@@ -291,6 +293,7 @@ export default function MiraChatPanel({
     setMessageAttachments,
     setWorkspaceContextId,
     status,
+    taskBoardId,
     wsId,
   });
 
