@@ -37,6 +37,8 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
 }));
 
 describe('external project field definition item route', () => {
+  const fieldDefinitionId = '00000000-0000-4000-8000-000000000010';
+
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
@@ -60,7 +62,7 @@ describe('external project field definition item route', () => {
 
     const response = await PATCH(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions/field-1',
+        `http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions/${fieldDefinitionId}`,
         {
           body: JSON.stringify({
             label: 'Medium',
@@ -70,7 +72,7 @@ describe('external project field definition item route', () => {
       ),
       {
         params: Promise.resolve({
-          fieldDefinitionId: 'field-1',
+          fieldDefinitionId,
           wsId: 'ws-1',
         }),
       }
@@ -80,7 +82,7 @@ describe('external project field definition item route', () => {
     expect(
       mocks.updateWorkspaceExternalProjectFieldDefinition
     ).toHaveBeenCalledWith(
-      'field-1',
+      fieldDefinitionId,
       expect.objectContaining({
         actorId: 'user-1',
         label: 'Medium',
@@ -100,14 +102,14 @@ describe('external project field definition item route', () => {
 
     const response = await DELETE(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions/field-1',
+        `http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions/${fieldDefinitionId}`,
         {
           method: 'DELETE',
         }
       ),
       {
         params: Promise.resolve({
-          fieldDefinitionId: 'field-1',
+          fieldDefinitionId,
           wsId: 'ws-1',
         }),
       }
@@ -117,11 +119,40 @@ describe('external project field definition item route', () => {
     expect(
       mocks.deleteWorkspaceExternalProjectFieldDefinition
     ).toHaveBeenCalledWith(
-      'field-1',
+      fieldDefinitionId,
       {
         workspaceId: 'ws-1',
       },
       {}
     );
+  });
+
+  it('rejects invalid field definition ids before updating', async () => {
+    const { PATCH } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/field-definitions/[fieldDefinitionId]/route'
+    );
+
+    const response = await PATCH(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions/not-a-uuid',
+        {
+          body: JSON.stringify({
+            label: 'Medium',
+          }),
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          fieldDefinitionId: 'not-a-uuid',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(
+      mocks.updateWorkspaceExternalProjectFieldDefinition
+    ).not.toHaveBeenCalled();
   });
 });

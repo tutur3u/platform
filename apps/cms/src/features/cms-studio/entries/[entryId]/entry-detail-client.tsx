@@ -34,7 +34,9 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  type CmsSupportedEntryAssetType,
   getCollectionFieldDefinitions,
+  getSupportedAssetTypesFromSchema,
   supportsMarkdownBodyFromSchema,
 } from '../../cms-content-model';
 import { isGameLikeCollection } from '../../cms-games-shared';
@@ -62,6 +64,7 @@ import {
   getMarkdownBlockContent,
   parseEntryDescriptionContent,
   serializeEntryDescriptionContent,
+  sortEntryAssetsByType,
   sortImageAssets,
   toStudioAsset,
 } from './entry-detail-shared';
@@ -78,6 +81,85 @@ function getUploadProgressId(
 
 function clampUploadPercent(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)));
+}
+
+const AUDIO_UPLOAD_MIME_TYPES = [
+  'audio/aac',
+  'audio/flac',
+  'audio/m4a',
+  'audio/mp4',
+  'audio/mpeg',
+  'audio/ogg',
+  'audio/wav',
+  'audio/webm',
+  'audio/x-m4a',
+  'audio/x-wav',
+];
+
+const AUDIO_UPLOAD_EXTENSIONS = [
+  '.aac',
+  '.flac',
+  '.m4a',
+  '.mp3',
+  '.mp4',
+  '.oga',
+  '.ogg',
+  '.wav',
+  '.webm',
+];
+
+function getFilenameExtension(filename: string) {
+  const normalized = filename.toLowerCase();
+  const index = normalized.lastIndexOf('.');
+  return index === -1 ? '' : normalized.slice(index);
+}
+
+function getMediaInputAccept(assetTypes: CmsSupportedEntryAssetType[]) {
+  const accept = new Set<string>();
+
+  if (assetTypes.includes('image')) {
+    accept.add('image/*');
+  }
+
+  if (assetTypes.includes('audio')) {
+    AUDIO_UPLOAD_MIME_TYPES.forEach((type) => {
+      accept.add(type);
+    });
+    AUDIO_UPLOAD_EXTENSIONS.forEach((extension) => {
+      accept.add(extension);
+    });
+  }
+
+  return [...accept].join(',');
+}
+
+function resolveUploadAssetType(
+  file: File,
+  supportedAssetTypes: CmsSupportedEntryAssetType[]
+): CmsSupportedEntryAssetType | null {
+  const extension = getFilenameExtension(file.name);
+
+  if (
+    supportedAssetTypes.includes('image') &&
+    (file.type.startsWith('image/') ||
+      ['.avif', '.gif', '.jpeg', '.jpg', '.png', '.svg', '.webp'].includes(
+        extension
+      ))
+  ) {
+    return 'image';
+  }
+
+  if (
+    supportedAssetTypes.includes('audio') &&
+    (file.type.startsWith('audio/') ||
+      AUDIO_UPLOAD_EXTENSIONS.includes(extension))
+  ) {
+    return 'audio';
+  }
+
+  return supportedAssetTypes.length === 1
+    ? (supportedAssetTypes[0] ?? null)
+    : null;
 }
 
 function getCmsPublicWebglPlayerPath(
@@ -309,9 +391,25 @@ export function EntryDetailClient({
       }),
     [activeCollection, fieldDefinitions]
   );
+  const supportedAssetTypes = useMemo(
+    () => getSupportedAssetTypesFromSchema(activeCollection),
+    [activeCollection]
+  );
+  const mediaInputAccept = useMemo(
+    () => getMediaInputAccept(supportedAssetTypes),
+    [supportedAssetTypes]
+  );
   const imageAssets = useMemo(
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
+  );
+  const audioAssets = useMemo(
+    () => sortEntryAssetsByType(assets, entryId, 'audio'),
+    [assets, entryId]
+  );
+  const mediaAssets = useMemo(
+    () => [...imageAssets, ...audioAssets],
+    [audioAssets, imageAssets]
   );
   const webglPackageAsset = useMemo(
     () =>
@@ -873,16 +971,16 @@ export function EntryDetailClient({
   useEffect(() => {
     setSelectedAssetIds((current) =>
       current.filter((assetId) =>
-        imageAssets.some((asset) => asset.id === assetId)
+        mediaAssets.some((asset) => asset.id === assetId)
       )
     );
-  }, [imageAssets]);
+  }, [mediaAssets]);
 
   useEffect(() => {
     setAssetCaptions((current) => {
       const next = Object.fromEntries(
         Object.entries(current).filter(([assetId]) =>
-          imageAssets.some((asset) => asset.id === assetId)
+          mediaAssets.some((asset) => asset.id === assetId)
         )
       );
       const currentKeys = Object.keys(current);
@@ -896,7 +994,7 @@ export function EntryDetailClient({
 
       return next;
     });
-  }, [imageAssets]);
+  }, [mediaAssets]);
 
   const mergeEntry = (nextEntry: ExternalProjectEntry) => {
     updateStudioCache((current) => ({
@@ -929,7 +1027,9 @@ export function EntryDetailClient({
         assets: nextAssets,
       };
     });
-    setCoverAltText(nextAsset.alt_text ?? activeEntryTitle);
+    if (nextAsset.asset_type === 'image') {
+      setCoverAltText(nextAsset.alt_text ?? activeEntryTitle);
+    }
   };
 
   const mergeBlock = (nextBlock: (typeof blocks)[number]) => {
@@ -1359,6 +1459,11 @@ export function EntryDetailClient({
 
       return Promise.all(
         files.map(async (file, index) => {
+          const assetType = resolveUploadAssetType(file, supportedAssetTypes);
+          if (!assetType) {
+            throw new Error(strings.unsupportedMediaTypeToast);
+          }
+
           const progressId = getUploadProgressId('media', file, index);
           setUploadProgressItem(progressId, {
             loaded: 0,
@@ -1367,7 +1472,8 @@ export function EntryDetailClient({
             scope: 'media',
             total: file.size,
           });
-          const optimizedFile = await optimizeCmsMediaUpload(file);
+          const optimizedFile =
+            assetType === 'image' ? await optimizeCmsMediaUpload(file) : file;
           const upload = await uploadWorkspaceExternalProjectAssetFile(
             workspaceId,
             optimizedFile,
@@ -1396,14 +1502,20 @@ export function EntryDetailClient({
             total: optimizedFile.size,
           });
 
+          const siblingAssets = mediaAssets.filter(
+            (asset) => asset.asset_type === assetType
+          );
           const nextSortOrder =
-            Math.max(-1, ...imageAssets.map((asset) => asset.sort_order ?? 0)) +
+            Math.max(
+              -1,
+              ...siblingAssets.map((asset) => asset.sort_order ?? 0)
+            ) +
             index +
             1;
 
           return createWorkspaceExternalProjectAsset(workspaceId, {
             alt_text: file.name,
-            asset_type: 'image',
+            asset_type: assetType,
             entry_id: activeEntry?.id ?? entryId,
             metadata: {},
             sort_order: nextSortOrder,
@@ -1423,6 +1535,13 @@ export function EntryDetailClient({
       }));
       await refreshStudioFromBackend();
       toast.success(strings.coverUploadSuccessToast);
+    },
+    onError: (error) => {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : strings.unsupportedMediaTypeToast
+      );
     },
     onSettled: (_data, _error, files) => {
       removeUploadProgressItems(
@@ -1508,7 +1627,7 @@ export function EntryDetailClient({
 
   const saveAssetCaptionMutation = useMutation({
     mutationFn: async (assetId: string) => {
-      const asset = imageAssets.find((item) => item.id === assetId);
+      const asset = mediaAssets.find((item) => item.id === assetId);
       if (!asset) {
         throw new Error(strings.emptyEntries);
       }
@@ -1524,7 +1643,7 @@ export function EntryDetailClient({
       mergeAsset(
         toStudioAsset(
           asset,
-          imageAssets.find((item) => item.id === asset.id) ?? null
+          mediaAssets.find((item) => item.id === asset.id) ?? null
         )
       );
       setAssetCaptions((current) => {
@@ -1569,6 +1688,69 @@ export function EntryDetailClient({
       setCoverAltText(updatedAssets[0]?.alt_text ?? activeEntryTitle);
       await refreshStudioFromBackend();
       toast.success(strings.coverSaveSuccessToast);
+    },
+  });
+
+  const moveMediaAssetMutation = useMutation({
+    mutationFn: async ({
+      assetId,
+      direction,
+    }: {
+      assetId: string;
+      direction: -1 | 1;
+    }) => {
+      const target = mediaAssets.find((asset) => asset.id === assetId);
+      if (!target) {
+        throw new Error(strings.emptyEntries);
+      }
+
+      const siblingAssets = mediaAssets.filter(
+        (asset) => asset.asset_type === target.asset_type
+      );
+      const currentIndex = siblingAssets.findIndex(
+        (asset) => asset.id === assetId
+      );
+      const nextIndex = currentIndex + direction;
+
+      if (
+        currentIndex === -1 ||
+        nextIndex < 0 ||
+        nextIndex >= siblingAssets.length
+      ) {
+        return [];
+      }
+
+      const nextOrder = [...siblingAssets];
+      [nextOrder[currentIndex], nextOrder[nextIndex]] = [
+        nextOrder[nextIndex]!,
+        nextOrder[currentIndex]!,
+      ];
+
+      return Promise.all(
+        nextOrder.map((asset, index) =>
+          updateWorkspaceExternalProjectAsset(workspaceId, asset.id, {
+            sort_order: index,
+          })
+        )
+      );
+    },
+    onSuccess: async (updatedAssets) => {
+      updateStudioCache((current) => ({
+        ...current,
+        assets: current.assets.map((asset) =>
+          toStudioAsset(
+            updatedAssets.find((updated) => updated.id === asset.id) ?? asset,
+            asset
+          )
+        ),
+      }));
+      setCoverAltText(
+        updatedAssets.find((asset) => asset.asset_type === 'image')?.alt_text ??
+          imageAssets[0]?.alt_text ??
+          activeEntryTitle
+      );
+      await refreshStudioFromBackend();
+      toast.success(strings.saveMediaDetailsAction);
     },
   });
 
@@ -1825,7 +2007,8 @@ export function EntryDetailClient({
     saveCoverMutation.isPending ||
     saveAssetCaptionMutation.isPending ||
     deleteAssetsMutation.isPending ||
-    setAsCoverMutation.isPending;
+    setAsCoverMutation.isPending ||
+    moveMediaAssetMutation.isPending;
   const saveProcessing =
     saveEntryMutation.isPending ||
     saveMarkdownMutation.isPending ||
@@ -1873,7 +2056,7 @@ export function EntryDetailClient({
       <input
         ref={mediaInputRef}
         multiple
-        accept="image/*"
+        accept={mediaInputAccept}
         className="hidden"
         type="file"
         onChange={handleMediaInputChange}
@@ -1931,7 +2114,8 @@ export function EntryDetailClient({
             coverDirty={coverDirty}
             deleteAssetsPending={deleteAssetsMutation.isPending}
             descriptionContent={descriptionContent}
-            imageAssets={imageAssets}
+            mediaAssetTypes={supportedAssetTypes}
+            mediaAssets={mediaAssets}
             mediaProcessing={mediaProcessing}
             onBodyMarkdownChange={setBodyMarkdown}
             onCaptionChange={(assetId, value) =>
@@ -1945,6 +2129,9 @@ export function EntryDetailClient({
             onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
             onDeleteSingleAsset={deleteSingleAsset}
             onDescriptionChange={setDescriptionContent}
+            onMoveMediaAsset={(assetId, direction) =>
+              moveMediaAssetMutation.mutate({ assetId, direction })
+            }
             onOpenPreview={() => setPreviewOpen(true)}
             onSaveAssetCaption={(assetId) =>
               saveAssetCaptionMutation.mutate(assetId)
@@ -1952,9 +2139,9 @@ export function EntryDetailClient({
             onSaveCover={() => saveCoverMutation.mutate()}
             onSelectAllMedia={() =>
               setSelectedAssetIds((current) =>
-                current.length === imageAssets.length
+                current.length === mediaAssets.length
                   ? []
-                  : imageAssets.map((asset) => asset.id)
+                  : mediaAssets.map((asset) => asset.id)
               )
             }
             onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
@@ -1971,6 +2158,7 @@ export function EntryDetailClient({
             selectedAssetCount={selectedAssetCount}
             selectedAssetIds={selectedAssetIds}
             setAsCoverPending={setAsCoverMutation.isPending}
+            moveMediaPending={moveMediaAssetMutation.isPending}
             strings={strings}
             subtitle={entryForm.subtitle}
             supportsMarkdownBody={supportsMarkdownBody}

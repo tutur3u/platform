@@ -10,6 +10,9 @@ import {
   buildDefaultFieldValues,
   getCollectionFieldDefinitions,
   getContentModelTemplateStatus,
+  getSupportedAssetTypesFromSchema,
+  supportsAudioAssetsFromSchema,
+  supportsImageAssetsFromSchema,
 } from './cms-content-model';
 import type { CmsStrings } from './cms-strings';
 
@@ -144,6 +147,43 @@ describe('CMS content model templates', () => {
       status: 'draft',
       tags: ['tag-a'],
     });
+  });
+
+  it('resolves schema-driven asset support while preserving legacy image defaults', () => {
+    const legacyCollection = {
+      config: {},
+      id: 'legacy-collection',
+    } as ExternalProjectCollection;
+    const audioCollection = {
+      config: {
+        schema: {
+          assetTypes: ['audio'],
+          collection_type: 'voice-reels',
+          slug: 'voice-reels',
+          title: 'Voice Reels',
+        },
+      },
+      id: 'audio-collection',
+    } as unknown as ExternalProjectCollection;
+    const noMediaCollection = {
+      config: {
+        schema: {
+          assetTypes: [],
+          collection_type: 'contact',
+          slug: 'contact',
+          title: 'Contact',
+        },
+      },
+      id: 'no-media-collection',
+    } as unknown as ExternalProjectCollection;
+
+    expect(getSupportedAssetTypesFromSchema(legacyCollection)).toEqual([
+      'image',
+    ]);
+    expect(supportsImageAssetsFromSchema(legacyCollection)).toBe(true);
+    expect(supportsAudioAssetsFromSchema(audioCollection)).toBe(true);
+    expect(supportsImageAssetsFromSchema(audioCollection)).toBe(false);
+    expect(getSupportedAssetTypesFromSchema(noMediaCollection)).toEqual([]);
   });
 });
 

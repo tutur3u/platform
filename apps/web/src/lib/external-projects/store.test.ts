@@ -20,6 +20,16 @@ function createEqChain<T>(result: T) {
   };
 }
 
+function createMaybeSingleEqChain<T>(result: T) {
+  return {
+    eq: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        maybeSingle: vi.fn(() => Promise.resolve(result)),
+      })),
+    })),
+  };
+}
+
 describe('external project store cleanup', () => {
   beforeEach(() => {
     mocks.deleteWorkspaceStorageObjectByPath.mockReset();
@@ -35,6 +45,7 @@ describe('external project store cleanup', () => {
       ],
       error: null,
     };
+    const blocksSelectResult = { data: [], error: null };
     const deleteResult = { error: null };
 
     const db = {
@@ -51,6 +62,7 @@ describe('external project store cleanup', () => {
           table === 'workspace_external_project_entries'
         ) {
           return {
+            select: vi.fn(() => createEqChain(blocksSelectResult)),
             delete: vi.fn(() => createEqChain(deleteResult)),
           };
         }
@@ -98,6 +110,7 @@ describe('external project store cleanup', () => {
       ],
       error: null,
     };
+    const blocksSelectResult = { data: [], error: null };
     const deleteResult = { error: null };
 
     const db = {
@@ -121,6 +134,7 @@ describe('external project store cleanup', () => {
           table === 'workspace_external_project_collections'
         ) {
           return {
+            select: vi.fn(() => createEqChain(blocksSelectResult)),
             delete: vi.fn(() => createEqChain(deleteResult)),
           };
         }
@@ -155,6 +169,47 @@ describe('external project store cleanup', () => {
       2,
       'ws-1',
       'external-projects/yoola/artworks/cover-2.webp'
+    );
+  });
+
+  it('deletes referenced storage files when removing a single asset', async () => {
+    const assetSelectResult = {
+      data: {
+        storage_path: 'external-projects/yoola/artworks/audio.wav',
+      },
+      error: null,
+    };
+    const deleteResult = { error: null };
+    const db = {
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_external_project_assets') {
+          return {
+            select: vi.fn(() => createMaybeSingleEqChain(assetSelectResult)),
+            delete: vi.fn(() => createEqChain(deleteResult)),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const { deleteWorkspaceExternalProjectAsset } = await import('./store');
+
+    await expect(
+      deleteWorkspaceExternalProjectAsset(
+        'asset-1',
+        {
+          workspaceId: 'ws-1',
+        },
+        db as never
+      )
+    ).resolves.toEqual({
+      id: 'asset-1',
+    });
+
+    expect(mocks.deleteWorkspaceStorageObjectByPath).toHaveBeenCalledWith(
+      'ws-1',
+      'external-projects/yoola/artworks/audio.wav'
     );
   });
 });

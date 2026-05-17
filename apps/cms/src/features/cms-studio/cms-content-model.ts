@@ -30,6 +30,15 @@ export type CmsContentModelTemplate = {
   title: string;
 };
 
+export const CMS_SUPPORTED_ENTRY_ASSET_TYPES = ['image', 'audio'] as const;
+
+export type CmsSupportedEntryAssetType =
+  (typeof CMS_SUPPORTED_ENTRY_ASSET_TYPES)[number];
+
+const CMS_SUPPORTED_ENTRY_ASSET_TYPE_SET = new Set<string>(
+  CMS_SUPPORTED_ENTRY_ASSET_TYPES
+);
+
 export function buildCmsContentModelTemplates(
   strings: CmsStrings
 ): CmsContentModelTemplate[] {
@@ -374,13 +383,37 @@ export function supportsMarkdownBodyFromSchema(
   );
 }
 
+export function getSupportedAssetTypesFromSchema(
+  collection: ExternalProjectCollection | null | undefined
+) {
+  const schema = getCollectionSchema(collection);
+  if (!schema || !('assetTypes' in schema)) {
+    return ['image'] satisfies CmsSupportedEntryAssetType[];
+  }
+
+  return (schema.assetTypes ?? []).filter(
+    (assetType): assetType is CmsSupportedEntryAssetType =>
+      CMS_SUPPORTED_ENTRY_ASSET_TYPE_SET.has(assetType)
+  );
+}
+
+export function supportsAssetTypeFromSchema(
+  collection: ExternalProjectCollection | null | undefined,
+  assetType: CmsSupportedEntryAssetType
+) {
+  return getSupportedAssetTypesFromSchema(collection).includes(assetType);
+}
+
 export function supportsImageAssetsFromSchema(
   collection: ExternalProjectCollection | null | undefined
 ) {
-  const assetTypes = getCollectionSchema(collection)?.assetTypes;
-  return !assetTypes || assetTypes.length === 0
-    ? false
-    : assetTypes.includes('image');
+  return supportsAssetTypeFromSchema(collection, 'image');
+}
+
+export function supportsAudioAssetsFromSchema(
+  collection: ExternalProjectCollection | null | undefined
+) {
+  return supportsAssetTypeFromSchema(collection, 'audio');
 }
 
 export function buildDefaultFieldValues(

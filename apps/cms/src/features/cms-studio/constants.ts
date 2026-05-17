@@ -14,10 +14,12 @@ export const EXTERNAL_PROJECT_ADAPTER_OPTIONS: ExternalProjectAdapterKind[] = [
   'shu',
   'yashie',
   'shiraoki',
+  'kendra',
 ];
 
 export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
   exocorpse: ['portfolio-art', 'writing', 'games'],
+  kendra: ['profile', 'voice-reels', 'credits', 'studio', 'contact'],
   junly: [
     'research-projects',
     'game-projects',
@@ -58,3 +60,14 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
   ],
   yoola: ['artworks', 'lore-capsules', 'singleton-sections'],
 } satisfies Record<ExternalProjectAdapterKind, string[]>;
+
+export const EXTERNAL_PROJECT_DISPLAY_NAMES = {
+  exocorpse: 'Exocorpse',
+  junly: 'Junly',
+  kendra: 'Kendra',
+  shu: 'Shu',
+  theguyser: 'TheGuyser',
+  yashie: 'Yashie',
+  shiraoki: 'Shiraoki',
+  yoola: 'Yoola',
+} satisfies Record<ExternalProjectAdapterKind, string>;

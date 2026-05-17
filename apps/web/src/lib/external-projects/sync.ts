@@ -21,6 +21,7 @@ import type {
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
 
 type AdminDb = TypedSupabaseClient;
 
@@ -239,6 +240,45 @@ function comparableEntry(entry: ExternalProjectSyncEntry) {
   };
 }
 
+function stableChildSortKey(
+  child:
+    | Pick<ExternalProjectSyncAsset, 'sortOrder' | 'stableSourceId'>
+    | Pick<ExternalProjectSyncBlock, 'sortOrder' | 'stableSourceId'>,
+  fallbackPrefix: string
+) {
+  return (
+    child.stableSourceId?.trim() || `${fallbackPrefix}:${child.sortOrder ?? 0}`
+  );
+}
+
+function getRemovedEntryChildTypes(
+  current: ExternalProjectSyncEntry,
+  next: ExternalProjectSyncEntry
+) {
+  const removedTypes: string[] = [];
+  const nextBlockKeys = new Set(
+    (next.blocks ?? []).map((block) => stableChildSortKey(block, 'block'))
+  );
+  const nextAssetKeys = new Set(
+    (next.assets ?? []).map((asset) => stableChildSortKey(asset, 'asset'))
+  );
+  const removesBlocks = (current.blocks ?? []).some(
+    (block) => !nextBlockKeys.has(stableChildSortKey(block, 'block'))
+  );
+  const removesAssets = (current.assets ?? []).some(
+    (asset) => !nextAssetKeys.has(stableChildSortKey(asset, 'asset'))
+  );
+
+  if (removesBlocks) {
+    removedTypes.push('blocks');
+  }
+  if (removesAssets) {
+    removedTypes.push('assets');
+  }
+
+  return removedTypes;
+}
+
 function summarizeOperations(operations: ExternalProjectSyncOperation[]) {
   const summary = {
     archive: 0,
@@ -372,18 +412,22 @@ export function buildExternalProjectSyncDiff(
       continue;
     }
 
+    const removedChildTypes = getRemovedEntryChildTypes(current, entry);
+
     operations.push({
       action,
       after: comparableEntry(entry),
       before: comparableEntry(current),
-      destructive: false,
+      destructive: removedChildTypes.length > 0,
       entity: 'entry',
       manifestKey: entryKey,
       platformId: current.id ?? null,
       reason:
-        action === 'update'
-          ? 'Manifest entry differs from platform entry'
-          : 'Manifest entry matches platform entry',
+        removedChildTypes.length > 0
+          ? `Manifest removes entry ${removedChildTypes.join(' and ')}`
+          : action === 'update'
+            ? 'Manifest entry differs from platform entry'
+            : 'Manifest entry matches platform entry',
     });
   }
 
@@ -923,12 +967,14 @@ async function upsertBlocks({
     ])
   );
   const blockIdByStableSourceId = new Map<string, string>();
+  const appliedBlockKeys = new Set<string>();
 
   for (const [index, block] of blocks.entries()) {
     const key = stableBlockKey(entryId, {
       ...block,
       sortOrder: block.sortOrder ?? index,
     });
+    appliedBlockKeys.add(key);
     const current = byKey.get(key);
     const values = {
       block_type: block.blockType,
@@ -968,7 +1014,10 @@ async function upsertBlocks({
     }
   }
 
-  return blockIdByStableSourceId;
+  return {
+    appliedBlockKeys,
+    blockIdByStableSourceId,
+  };
 }
 
 async function upsertAssets({
@@ -994,13 +1043,23 @@ async function upsertAssets({
       asset,
     ])
   );
+  const appliedAssetKeys = new Set<string>();
 
   for (const [index, asset] of assets.entries()) {
     const key = stableAssetKey(entryId, {
       ...asset,
       sortOrder: asset.sortOrder ?? index,
     });
+    appliedAssetKeys.add(key);
     const current = byKey.get(key);
+    if (
+      asset.blockStableSourceId &&
+      !blockIdByStableSourceId.has(asset.blockStableSourceId)
+    ) {
+      throw new Error(
+        `Missing synced block for asset ${asset.stableSourceId ?? key}`
+      );
+    }
     const blockId = asset.blockStableSourceId
       ? (blockIdByStableSourceId.get(asset.blockStableSourceId) ?? null)
       : null;
@@ -1039,6 +1098,97 @@ async function upsertAssets({
     if (error) {
       throw new Error(error.message);
     }
+  }
+
+  const removedAssets = existingAssets.filter(
+    (asset) =>
+      !appliedAssetKeys.has(
+        asset.stable_source_id ?? `${entryId}/assets/${asset.sort_order}`
+      )
+  );
+
+  if (removedAssets.length > 0) {
+    await deleteSyncedAssets({
+      assets: removedAssets,
+      db,
+      workspaceId,
+    });
+  }
+}
+
+async function deleteSyncedAssets({
+  assets,
+  db,
+  workspaceId,
+}: {
+  assets: RawExternalProjectAsset[];
+  db: AdminDb;
+  workspaceId: string;
+}) {
+  const assetIds = assets.map((asset) => asset.id);
+  if (assetIds.length === 0) {
+    return;
+  }
+
+  const storagePaths = Array.from(
+    new Set(
+      assets
+        .map((asset) => asset.storage_path)
+        .filter((value): value is string => typeof value === 'string')
+    )
+  );
+
+  await Promise.all(
+    storagePaths.map((storagePath) =>
+      deleteWorkspaceStorageObjectByPath(workspaceId, storagePath)
+    )
+  );
+
+  const { error } = await db
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .in('id', assetIds);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
+async function deleteMissingBlocks({
+  appliedBlockKeys,
+  db,
+  entryId,
+  existingBlocks,
+  workspaceId,
+}: {
+  appliedBlockKeys: Set<string>;
+  db: AdminDb;
+  entryId: string;
+  existingBlocks: RawExternalProjectBlock[];
+  workspaceId: string;
+}) {
+  const removedBlockIds = existingBlocks
+    .filter(
+      (block) =>
+        !appliedBlockKeys.has(
+          block.stable_source_id ?? `${entryId}/blocks/${block.sort_order}`
+        )
+    )
+    .map((block) => block.id);
+
+  if (removedBlockIds.length === 0) {
+    return;
+  }
+
+  const { error } = await db
+    .from('workspace_external_project_blocks')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .in('id', removedBlockIds);
+
+  if (error) {
+    throw new Error(error.message);
   }
 }
 
@@ -1162,12 +1312,16 @@ export async function applyWorkspaceExternalProjectSyncManifest(
       existing,
       workspaceId,
     });
-    const blockIdByStableSourceId = await upsertBlocks({
+    const existingBlocksForEntry =
+      existingBlocksByEntryId.get(syncedEntry.id) ?? [];
+    const existingAssetsForEntry =
+      existingAssetsByEntryId.get(syncedEntry.id) ?? [];
+    const { appliedBlockKeys, blockIdByStableSourceId } = await upsertBlocks({
       actorId,
       blocks: entry.blocks ?? [],
       db: admin,
       entryId: syncedEntry.id,
-      existingBlocks: existingBlocksByEntryId.get(syncedEntry.id) ?? [],
+      existingBlocks: existingBlocksForEntry,
       workspaceId,
     });
 
@@ -1177,7 +1331,14 @@ export async function applyWorkspaceExternalProjectSyncManifest(
       blockIdByStableSourceId,
       db: admin,
       entryId: syncedEntry.id,
-      existingAssets: existingAssetsByEntryId.get(syncedEntry.id) ?? [],
+      existingAssets: existingAssetsForEntry,
+      workspaceId,
+    });
+    await deleteMissingBlocks({
+      appliedBlockKeys,
+      db: admin,
+      entryId: syncedEntry.id,
+      existingBlocks: existingBlocksForEntry,
       workspaceId,
     });
     appliedEntryKeys.add(entryKey);

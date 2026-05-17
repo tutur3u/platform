@@ -278,6 +278,164 @@ const yashieSchema = {
   ],
 } satisfies ExternalProjectSyncSchema;
 
+const kendraSchema = {
+  collections: [
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'profile',
+      description: 'Voice actor profile, bio, brand copy, and hero imagery.',
+      profileFields: [
+        {
+          key: 'email',
+          label: 'Email',
+          required: true,
+          type: 'string',
+        },
+        {
+          key: 'location',
+          label: 'Location',
+          type: 'string',
+        },
+        {
+          key: 'tagline',
+          label: 'Tagline',
+          type: 'string',
+        },
+        {
+          key: 'gvaaUrl',
+          label: 'GVAA rate guide URL',
+          type: 'string',
+        },
+        {
+          key: 'resumeUrl',
+          label: 'Resume URL',
+          type: 'string',
+        },
+      ],
+      slug: 'profile',
+      title: 'Profile',
+    },
+    {
+      assetTypes: ['audio'],
+      blockTypes: ['markdown'],
+      collection_type: 'voice-reels',
+      description:
+        'Voice-over demo reels optimized for public listening and casting review.',
+      profileFields: [
+        {
+          key: 'category',
+          label: 'Category',
+          type: 'string',
+        },
+        {
+          key: 'duration',
+          label: 'Duration',
+          type: 'string',
+        },
+        {
+          key: 'style',
+          label: 'Voice style',
+          type: 'string',
+        },
+        {
+          key: 'featured',
+          label: 'Featured reel',
+          type: 'boolean',
+        },
+        {
+          key: 'downloadLabel',
+          label: 'Download label',
+          type: 'string',
+        },
+      ],
+      slug: 'voice-reels',
+      title: 'Voice Reels',
+    },
+    {
+      assetTypes: [],
+      collection_type: 'credits',
+      description: 'Commercial, character, and training credits.',
+      profileFields: [
+        {
+          key: 'group',
+          label: 'Credit group',
+          type: 'string',
+        },
+        {
+          key: 'role',
+          label: 'Role',
+          type: 'string',
+        },
+        {
+          key: 'visual',
+          label: 'Visual metadata',
+          type: 'json',
+        },
+      ],
+      slug: 'credits',
+      title: 'Credits',
+    },
+    {
+      assetTypes: [],
+      collection_type: 'studio',
+      description: 'Home studio specs and live-direction availability.',
+      profileFields: [
+        {
+          key: 'kind',
+          label: 'Studio item kind',
+          options: ['spec', 'availability'],
+          type: 'string',
+        },
+        {
+          key: 'label',
+          label: 'Label',
+          type: 'string',
+        },
+        {
+          key: 'value',
+          label: 'Value',
+          type: 'string',
+        },
+      ],
+      slug: 'studio',
+      title: 'Studio',
+    },
+    {
+      assetTypes: [],
+      blockTypes: ['markdown'],
+      collection_type: 'contact',
+      description: 'Booking copy, email, and rate guide links.',
+      profileFields: [
+        {
+          key: 'email',
+          label: 'Email',
+          type: 'string',
+        },
+        {
+          key: 'gvaaUrl',
+          label: 'GVAA URL',
+          type: 'string',
+        },
+      ],
+      slug: 'contact',
+      title: 'Contact',
+    },
+  ],
+  profileFields: [
+    {
+      key: 'brand',
+      label: 'Brand',
+      type: 'string',
+    },
+    {
+      key: 'deliveryPreset',
+      label: 'Delivery preset',
+      type: 'string',
+    },
+  ],
+} satisfies ExternalProjectSyncSchema;
+
 export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
   ExternalProjectAdapterFixture
@@ -1155,6 +1313,183 @@ export const externalProjectAdapterFixtures: Record<
                 content: {
                   markdown:
                     'Game entry synchronized from the EXOCORPSE desktop-style experience.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  kendra: {
+    adapter: 'kendra',
+    sourceReference: '../kendra/lib/kendra-external-project-manifest.ts',
+    profileData: {
+      brand: 'Kendra Braun',
+      deliveryPreset: 'voice-over',
+    },
+    schema: kendraSchema,
+    collections: [
+      {
+        collectionType: 'profile',
+        description: 'Voice actor profile, bio, brand copy, and hero imagery.',
+        slug: 'profile',
+        sourceId: 'kendra:collection:profile',
+        title: 'Profile',
+        entries: [
+          {
+            sourceId: 'kendra:profile:profile',
+            slug: 'profile',
+            title: 'Kendra Braun',
+            subtitle: 'Remote & International Voice Actor',
+            summary: 'Primary Kendra Braun voice actor profile.',
+            status: 'published',
+            profileData: {
+              email: 'kendrabraun0@gmail.com',
+              location: 'Alberta, Canada',
+              tagline: 'Remote & International Voice Actor',
+            },
+            blocks: [
+              {
+                sourceId: 'kendra:profile:profile:bio',
+                blockType: 'markdown',
+                title: 'Bio',
+                content: {
+                  markdown:
+                    'Voice actor profile and biography synchronized from the Kendra static site.',
+                },
+              },
+            ],
+            assets: [
+              {
+                sourceId: 'kendra:profile:profile:hero',
+                assetType: 'image',
+                storagePath: 'external-projects/kendra/profile/hero.png',
+                altText:
+                  'Illustrated portrait of Kendra Braun holding a microphone',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'voice-reels',
+        description:
+          'Voice-over demo reels optimized for public listening and casting review.',
+        slug: 'voice-reels',
+        sourceId: 'kendra:collection:voice-reels',
+        title: 'Voice Reels',
+        entries: [
+          {
+            sourceId: 'kendra:voice-reel:interactive',
+            slug: 'interactive',
+            title: 'Kendra Braun - Interactive',
+            subtitle: 'Audio reel',
+            summary:
+              'A character-forward sample reel for interactive and narrative voice work.',
+            status: 'published',
+            profileData: {
+              category: 'Interactive',
+              downloadLabel: 'Download MP3',
+              duration: '1:20',
+              featured: true,
+              style: 'Character / Game',
+            },
+            blocks: [
+              {
+                sourceId: 'kendra:voice-reel:interactive:notes',
+                blockType: 'markdown',
+                title: 'Script notes',
+                content: {
+                  markdown:
+                    'Character-forward read with conversational narration and game dialogue.',
+                },
+              },
+            ],
+            assets: [
+              {
+                sourceId: 'kendra:voice-reel:interactive:audio',
+                assetType: 'audio',
+                storagePath:
+                  'external-projects/kendra/voice-reels/interactive/kendra-braun-interactive.mp3',
+                altText: 'Kendra Braun interactive audio reel',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'credits',
+        description: 'Commercial, character, and training credits.',
+        slug: 'credits',
+        sourceId: 'kendra:collection:credits',
+        title: 'Credits',
+        entries: [
+          {
+            sourceId: 'kendra:credit:nippon-tv',
+            slug: 'nippon-tv',
+            title: 'Nippon TV',
+            subtitle: 'Canadian K',
+            summary: 'Nippon TV - Canadian K',
+            status: 'published',
+            profileData: {
+              group: 'Commercial & Corporate Experience',
+              role: 'Canadian K',
+              visual: {
+                tone: 'broadcast',
+              },
+            },
+            blocks: [],
+          },
+        ],
+      },
+      {
+        collectionType: 'studio',
+        description: 'Home studio specs and live-direction availability.',
+        slug: 'studio',
+        sourceId: 'kendra:collection:studio',
+        title: 'Studio',
+        entries: [
+          {
+            sourceId: 'kendra:studio:source-connect',
+            slug: 'source-connect',
+            title: 'Source-Connect',
+            summary: 'Source-Connect Standard equipped home studio.',
+            status: 'published',
+            profileData: {
+              kind: 'spec',
+              label: 'Source-Connect',
+              value: 'Source-Connect Standard',
+            },
+            blocks: [],
+          },
+        ],
+      },
+      {
+        collectionType: 'contact',
+        description: 'Booking copy, email, and rate guide links.',
+        slug: 'contact',
+        sourceId: 'kendra:collection:contact',
+        title: 'Contact',
+        entries: [
+          {
+            sourceId: 'kendra:contact:booking',
+            slug: 'booking',
+            title: 'Booking',
+            summary:
+              'For booking, availability, and rates, contact Kendra directly.',
+            status: 'published',
+            profileData: {
+              email: 'kendrabraun0@gmail.com',
+            },
+            blocks: [
+              {
+                sourceId: 'kendra:contact:booking:intro',
+                blockType: 'markdown',
+                title: 'Booking intro',
+                content: {
+                  markdown:
+                    'For booking, availability, and rates, contact Kendra directly.',
                 },
               },
             ],

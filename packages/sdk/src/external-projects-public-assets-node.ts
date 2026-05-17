@@ -32,13 +32,20 @@ export type ExternalProjectPublicAssetSyncOptions = {
 };
 
 const CONTENT_TYPES: Record<string, string> = {
+  '.aac': 'audio/aac',
+  '.flac': 'audio/flac',
   '.gif': 'image/gif',
   '.jpg': 'image/jpeg',
   '.jpeg': 'image/jpeg',
+  '.m4a': 'audio/mp4',
   '.mp3': 'audio/mpeg',
   '.mp4': 'video/mp4',
+  '.oga': 'audio/ogg',
+  '.ogg': 'audio/ogg',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
+  '.wav': 'audio/wav',
+  '.webm': 'audio/webm',
   '.webp': 'image/webp',
 };
 

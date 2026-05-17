@@ -36,6 +36,10 @@ const fieldDefinitionSchema = z.object({
   options: z.array(z.string().max(160)).optional(),
   sort_order: z.number().int().min(0).optional(),
 });
+const collectionIdQuerySchema = z.union([
+  z.literal('global'),
+  z.string().uuid(),
+]);
 
 interface Params {
   params: Promise<{
@@ -55,12 +59,26 @@ async function listFieldDefinitions(request: NextRequest, { params }: Params) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const collectionId = searchParams.get('collectionId');
+    const parsedCollectionId = collectionId
+      ? collectionIdQuerySchema.safeParse(collectionId)
+      : null;
+    if (parsedCollectionId && !parsedCollectionId.success) {
+      return NextResponse.json(
+        { error: 'Invalid collectionId query parameter' },
+        { status: 400 }
+      );
+    }
     const includeDisabled = searchParams.get('includeDisabled') === 'true';
     const fieldDefinitions = await listWorkspaceExternalProjectFieldDefinitions(
       access.normalizedWorkspaceId,
       {
         ...(collectionId
-          ? { collectionId: collectionId === 'global' ? null : collectionId }
+          ? {
+              collectionId:
+                parsedCollectionId?.data === 'global'
+                  ? null
+                  : parsedCollectionId?.data,
+            }
           : {}),
         includeDisabled,
       },

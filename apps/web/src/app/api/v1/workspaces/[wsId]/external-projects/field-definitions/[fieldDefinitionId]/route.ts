@@ -36,6 +36,7 @@ const updateFieldDefinitionSchema = z.object({
   options: z.array(z.string().max(160)).optional(),
   sort_order: z.number().int().min(0).optional(),
 });
+const fieldDefinitionIdSchema = z.string().uuid();
 
 interface Params {
   params: Promise<{
@@ -54,9 +55,18 @@ async function updateFieldDefinition(request: NextRequest, { params }: Params) {
   if (!access.ok) return access.response;
 
   try {
+    const parsedFieldDefinitionId =
+      fieldDefinitionIdSchema.safeParse(fieldDefinitionId);
+    if (!parsedFieldDefinitionId.success) {
+      return NextResponse.json(
+        { error: 'Invalid field definition id' },
+        { status: 400 }
+      );
+    }
+
     const payload = updateFieldDefinitionSchema.parse(await request.json());
     const fieldDefinition = await updateWorkspaceExternalProjectFieldDefinition(
-      fieldDefinitionId,
+      parsedFieldDefinitionId.data,
       {
         actorId: access.user.id,
         collection_id: payload.collection_id,
@@ -106,8 +116,17 @@ async function deleteFieldDefinition(request: NextRequest, { params }: Params) {
   if (!access.ok) return access.response;
 
   try {
+    const parsedFieldDefinitionId =
+      fieldDefinitionIdSchema.safeParse(fieldDefinitionId);
+    if (!parsedFieldDefinitionId.success) {
+      return NextResponse.json(
+        { error: 'Invalid field definition id' },
+        { status: 400 }
+      );
+    }
+
     const result = await deleteWorkspaceExternalProjectFieldDefinition(
-      fieldDefinitionId,
+      parsedFieldDefinitionId.data,
       {
         workspaceId: access.normalizedWorkspaceId,
       },

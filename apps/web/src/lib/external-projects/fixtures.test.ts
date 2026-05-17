@@ -6,6 +6,7 @@ describe('external project adapter fixtures', () => {
     expect(Object.keys(externalProjectAdapterFixtures).sort()).toEqual([
       'exocorpse',
       'junly',
+      'kendra',
       'shiraoki',
       'shu',
       'theguyser',
@@ -15,7 +16,7 @@ describe('external project adapter fixtures', () => {
 
     for (const fixture of Object.values(externalProjectAdapterFixtures)) {
       expect(fixture.sourceReference).toMatch(
-        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki)/
+        /(junly|yoola|theguyser|exocorpse|shu|yashie|shiraoki|kendra)/
       );
       expect(fixture.collections.length).toBeGreaterThan(0);
     }
@@ -72,6 +73,12 @@ describe('external project adapter fixtures', () => {
     ]);
 
     expect(
+      externalProjectAdapterFixtures.kendra.collections.map(
+        (collection) => collection.slug
+      )
+    ).toEqual(['profile', 'voice-reels', 'credits', 'studio', 'contact']);
+
+    expect(
       externalProjectAdapterFixtures.shu.collections.map(
         (collection) => collection.slug
       )
@@ -125,6 +132,32 @@ describe('external project adapter fixtures', () => {
       ],
       ['writing-worlds', ['genre', 'status', 'contentWarnings'], []],
       ['social-links', ['url', 'platform', 'isPrimary'], ['rel']],
+    ]);
+  });
+
+  it('ships Kendra audio-first schema for voice-over reels', () => {
+    expect(
+      externalProjectAdapterFixtures.kendra.schema?.collections.map(
+        (collection) => [
+          collection.slug,
+          collection.assetTypes ?? null,
+          collection.profileFields?.map((field) => field.key) ?? [],
+        ]
+      )
+    ).toEqual([
+      [
+        'profile',
+        ['image'],
+        ['email', 'location', 'tagline', 'gvaaUrl', 'resumeUrl'],
+      ],
+      [
+        'voice-reels',
+        ['audio'],
+        ['category', 'duration', 'style', 'featured', 'downloadLabel'],
+      ],
+      ['credits', [], ['group', 'role', 'visual']],
+      ['studio', [], ['kind', 'label', 'value']],
+      ['contact', [], ['email', 'gvaaUrl']],
     ]);
   });
 });

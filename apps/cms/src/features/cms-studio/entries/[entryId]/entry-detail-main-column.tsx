@@ -1,7 +1,16 @@
 'use client';
 
 import type { JSONContent } from '@tiptap/react';
-import { Eye, ImagePlus, Loader2, Pencil, Trash2 } from '@tuturuuu/icons';
+import {
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  ImagePlus,
+  Loader2,
+  Music,
+  Pencil,
+  Trash2,
+} from '@tuturuuu/icons';
 import type {
   ExternalProjectEntry,
   ExternalProjectStudioAsset,
@@ -19,6 +28,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
+import type { CmsSupportedEntryAssetType } from '../../cms-content-model';
 import type { CmsStrings } from '../../cms-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
 import { EntryDetailMarkdownEditor } from './entry-detail-markdown-editor';
@@ -51,7 +61,8 @@ type EntryDetailMainColumnProps = {
   coverDirty: boolean;
   deleteAssetsPending: boolean;
   descriptionContent: JSONContent | null;
-  imageAssets: ExternalProjectStudioAsset[];
+  mediaAssets: ExternalProjectStudioAsset[];
+  mediaAssetTypes: CmsSupportedEntryAssetType[];
   mediaProcessing: boolean;
   onBodyMarkdownChange: (value: string) => void;
   onCaptionChange: (assetId: string, value: string) => void;
@@ -60,6 +71,7 @@ type EntryDetailMainColumnProps = {
   onDeleteSelectedMedia: () => void;
   onDeleteSingleAsset: (assetId: string) => void;
   onDescriptionChange: (content: JSONContent | null) => void;
+  onMoveMediaAsset: (assetId: string, direction: -1 | 1) => void;
   onOpenPreview: () => void;
   onSaveAssetCaption: (assetId: string) => void;
   onSaveCover: () => void;
@@ -74,6 +86,7 @@ type EntryDetailMainColumnProps = {
   selectedAssetCount: number;
   selectedAssetIds: string[];
   setAsCoverPending: boolean;
+  moveMediaPending: boolean;
   strings: CmsStrings;
   subtitle: string;
   supportsMarkdownBody: boolean;
@@ -99,7 +112,8 @@ export function EntryDetailMainColumn({
   coverDirty,
   deleteAssetsPending,
   descriptionContent,
-  imageAssets,
+  mediaAssets,
+  mediaAssetTypes,
   mediaProcessing,
   onBodyMarkdownChange,
   onCaptionChange,
@@ -108,6 +122,7 @@ export function EntryDetailMainColumn({
   onDeleteSelectedMedia,
   onDeleteSingleAsset,
   onDescriptionChange,
+  onMoveMediaAsset,
   onOpenPreview,
   onSaveAssetCaption,
   onSaveCover,
@@ -122,6 +137,7 @@ export function EntryDetailMainColumn({
   selectedAssetCount,
   selectedAssetIds,
   setAsCoverPending,
+  moveMediaPending,
   strings,
   subtitle,
   supportsMarkdownBody,
@@ -143,6 +159,23 @@ export function EntryDetailMainColumn({
   const webglUploadProgressItems = uploadProgressItems.filter(
     (item) => item.scope === 'webgl'
   );
+  const supportsImageAssets =
+    mediaAssetTypes.includes('image') || Boolean(coverAsset);
+  const supportsMediaUploads = mediaAssetTypes.length > 0;
+  const supportsOnlyAudio =
+    mediaAssetTypes.length === 1 && mediaAssetTypes[0] === 'audio';
+  const supportsMixedMedia = mediaAssetTypes.length > 1;
+  const mediaGalleryTitle = supportsOnlyAudio
+    ? strings.audioAssetGalleryTitle
+    : strings.assetGalleryTitle;
+  const mediaGalleryDescription = supportsOnlyAudio
+    ? strings.audioAssetGalleryDescription
+    : supportsMixedMedia
+      ? strings.mediaAssetGalleryDescription
+      : strings.coverImageDescription;
+  const uploadMediaLabel = supportsOnlyAudio
+    ? strings.uploadAudioAction
+    : strings.bulkUploadMediaAction;
 
   return (
     <div className="space-y-6">
@@ -158,48 +191,86 @@ export function EntryDetailMainColumn({
         />
       ) : null}
 
-      <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
-        <CardContent className="space-y-6 p-6">
-          <div className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80">
-            {coverAsset ? (
-              <div className="relative aspect-[16/9] overflow-hidden bg-background">
-                <ResilientMediaImage
-                  alt={coverAsset.alt_text ?? activeEntry.title}
-                  assetUrl={coverAsset.asset_url}
-                  className="object-cover"
-                  fill
-                  previewUrl={coverAsset.preview_url}
-                  sizes="(max-width: 1280px) 100vw, 70vw"
-                />
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-6 text-white">
-                  <div className="text-[11px] text-white/70 uppercase tracking-[0.3em]">
-                    {strings.coverImageTitle}
+      {supportsImageAssets ? (
+        <Card className="overflow-hidden border-border/70 bg-card/95 shadow-none">
+          <CardContent className="space-y-6 p-6">
+            <div className="overflow-hidden rounded-[1.5rem] border border-border/70 bg-background/80">
+              {coverAsset ? (
+                <div className="relative aspect-[16/9] overflow-hidden bg-background">
+                  <ResilientMediaImage
+                    alt={coverAsset.alt_text ?? activeEntry.title}
+                    assetUrl={coverAsset.asset_url}
+                    className="object-cover"
+                    fill
+                    previewUrl={coverAsset.preview_url}
+                    sizes="(max-width: 1280px) 100vw, 70vw"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-6 text-white">
+                    <div className="text-[11px] text-white/70 uppercase tracking-[0.3em]">
+                      {strings.coverImageTitle}
+                    </div>
+                    <h2 className="mt-3 font-semibold text-4xl tracking-tight">
+                      {activeEntry.title}
+                    </h2>
+                    <p className="mt-3 max-w-2xl text-sm text-white/80 leading-6">
+                      {strings.coverImageDescription}
+                    </p>
                   </div>
-                  <h2 className="mt-3 font-semibold text-4xl tracking-tight">
-                    {activeEntry.title}
-                  </h2>
-                  <p className="mt-3 max-w-2xl text-sm text-white/80 leading-6">
-                    {strings.coverImageDescription}
-                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-5 p-6">
-                <div className="space-y-2">
-                  <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
-                    {strings.coverImageTitle}
-                  </p>
-                  <h2 className="font-semibold text-2xl tracking-tight">
-                    {strings.noCoverTitle}
-                  </h2>
-                  <p className="max-w-md text-muted-foreground text-sm leading-6">
-                    {strings.noCoverDescription}
-                  </p>
+              ) : (
+                <div className="space-y-5 p-6">
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-[0.3em]">
+                      {strings.coverImageTitle}
+                    </p>
+                    <h2 className="font-semibold text-2xl tracking-tight">
+                      {strings.noCoverTitle}
+                    </h2>
+                    <p className="max-w-md text-muted-foreground text-sm leading-6">
+                      {strings.noCoverDescription}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      disabled={mediaProcessing}
+                      onClick={onCoverInputClick}
+                    >
+                      {uploadCoverPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImagePlus className="mr-2 h-4 w-4" />
+                      )}
+                      {uploadCoverPending
+                        ? strings.mediaProcessingLabel
+                        : strings.uploadCoverAction}
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={onOpenPreview}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      {strings.openPreviewAction}
+                    </Button>
+                  </div>
+                  <EntryDetailUploadProgressList
+                    items={coverUploadProgressItems}
+                  />
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
+              )}
+            </div>
+            {coverAsset ? (
+              <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
+                      {strings.coverImageTitle}
+                    </div>
+                    <div className="mt-1 text-muted-foreground text-sm">
+                      {strings.coverImageDescription}
+                    </div>
+                  </div>
+                  <ActionButton
                     size="sm"
+                    tooltip={strings.coverImageDescription}
                     disabled={mediaProcessing}
                     onClick={onCoverInputClick}
                   >
@@ -210,82 +281,50 @@ export function EntryDetailMainColumn({
                     )}
                     {uploadCoverPending
                       ? strings.mediaProcessingLabel
-                      : strings.uploadCoverAction}
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={onOpenPreview}>
-                    <Eye className="mr-2 h-4 w-4" />
-                    {strings.openPreviewAction}
-                  </Button>
+                      : strings.replaceCoverAction}
+                  </ActionButton>
+                </div>
+                <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
+                  <div className="flex-1 space-y-2">
+                    <Label htmlFor="entry-cover-alt">
+                      {strings.titleLabel}
+                    </Label>
+                    <Input
+                      id="entry-cover-alt"
+                      value={coverAltText}
+                      onChange={(event) =>
+                        onCoverAltTextChange(event.target.value)
+                      }
+                    />
+                  </div>
+                  <ActionButton
+                    size="sm"
+                    tooltip={strings.saveCoverAction}
+                    variant="outline"
+                    disabled={
+                      !coverDirty || saveCoverPending || mediaProcessing
+                    }
+                    onClick={onSaveCover}
+                  >
+                    {saveCoverPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Pencil className="mr-2 h-4 w-4" />
+                    )}
+                    {saveCoverPending
+                      ? strings.mediaProcessingLabel
+                      : strings.saveCoverAction}
+                  </ActionButton>
                 </div>
                 <EntryDetailUploadProgressList
+                  className="mt-4"
                   items={coverUploadProgressItems}
                 />
               </div>
-            )}
-          </div>
-          {coverAsset ? (
-            <div className="rounded-[1.35rem] border border-border/70 bg-background/80 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="text-[11px] text-muted-foreground uppercase tracking-[0.28em]">
-                    {strings.coverImageTitle}
-                  </div>
-                  <div className="mt-1 text-muted-foreground text-sm">
-                    {strings.coverImageDescription}
-                  </div>
-                </div>
-                <ActionButton
-                  size="sm"
-                  tooltip={strings.coverImageDescription}
-                  disabled={mediaProcessing}
-                  onClick={onCoverInputClick}
-                >
-                  {uploadCoverPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <ImagePlus className="mr-2 h-4 w-4" />
-                  )}
-                  {uploadCoverPending
-                    ? strings.mediaProcessingLabel
-                    : strings.replaceCoverAction}
-                </ActionButton>
-              </div>
-              <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-end">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="entry-cover-alt">{strings.titleLabel}</Label>
-                  <Input
-                    id="entry-cover-alt"
-                    value={coverAltText}
-                    onChange={(event) =>
-                      onCoverAltTextChange(event.target.value)
-                    }
-                  />
-                </div>
-                <ActionButton
-                  size="sm"
-                  tooltip={strings.saveCoverAction}
-                  variant="outline"
-                  disabled={!coverDirty || saveCoverPending || mediaProcessing}
-                  onClick={onSaveCover}
-                >
-                  {saveCoverPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Pencil className="mr-2 h-4 w-4" />
-                  )}
-                  {saveCoverPending
-                    ? strings.mediaProcessingLabel
-                    : strings.saveCoverAction}
-                </ActionButton>
-              </div>
-              <EntryDetailUploadProgressList
-                className="mt-4"
-                items={coverUploadProgressItems}
-              />
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
 
       <Card className="border-border/70 bg-card/95 shadow-none">
         <CardHeader>
@@ -337,196 +376,293 @@ export function EntryDetailMainColumn({
         </Card>
       ) : null}
 
-      <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader className="gap-4">
-          <div>
-            <CardTitle>{strings.assetGalleryTitle}</CardTitle>
-            <CardDescription>{strings.coverImageDescription}</CardDescription>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={mediaProcessing}
-              onClick={onUploadMediaClick}
-            >
-              {uploadMediaPending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <ImagePlus className="mr-2 h-4 w-4" />
-              )}
-              {uploadMediaPending
-                ? strings.mediaProcessingLabel
-                : strings.bulkUploadMediaAction}
-            </Button>
-            {imageAssets.length > 0 ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={mediaProcessing}
-                onClick={onSelectAllMedia}
-              >
-                {selectedAssetCount === imageAssets.length
-                  ? strings.cancelAction
-                  : strings.selectAllMediaAction}
-              </Button>
-            ) : null}
-            {selectedAssetCount > 0 ? (
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={mediaProcessing}
-                onClick={onDeleteSelectedMedia}
-              >
-                {deleteAssetsPending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Trash2 className="mr-2 h-4 w-4" />
-                )}
-                {deleteAssetsPending
-                  ? strings.mediaProcessingLabel
-                  : strings.bulkRemoveMediaAction}
-              </Button>
-            ) : null}
-          </div>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-3">
-          {mediaProcessing ? (
-            <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{strings.mediaProcessingLabel}</span>
+      {supportsMediaUploads || mediaAssets.length > 0 ? (
+        <Card className="border-border/70 bg-card/95 shadow-none">
+          <CardHeader className="gap-4">
+            <div>
+              <CardTitle>{mediaGalleryTitle}</CardTitle>
+              <CardDescription>{mediaGalleryDescription}</CardDescription>
             </div>
-          ) : null}
-          <EntryDetailUploadProgressList
-            className="md:col-span-3"
-            items={mediaUploadProgressItems}
-          />
-          {imageAssets.length === 0 ? (
-            <button
-              type="button"
-              className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
-              disabled={mediaProcessing}
-              onClick={onUploadMediaClick}
-            >
-              <div className="font-medium">{strings.bulkUploadMediaAction}</div>
-              <div className="mt-2 text-muted-foreground text-sm">
-                {strings.coverImageDescription}
-              </div>
-            </button>
-          ) : (
-            imageAssets.map((asset, index) => {
-              const isSelected = selectedAssetIds.includes(asset.id);
-              const caption = assetCaptions[asset.id] ?? getAssetCaption(asset);
-              const captionDirty = caption !== getAssetCaption(asset);
-
-              return (
-                <div
-                  key={asset.id}
-                  className={cn(
-                    'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
-                    isSelected
-                      ? 'border-primary ring-2 ring-primary/30'
-                      : 'border-border/70 hover:border-border'
-                  )}
+            <div className="flex flex-wrap items-center gap-2">
+              {supportsMediaUploads ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={mediaProcessing}
+                  onClick={onUploadMediaClick}
                 >
-                  <button
-                    type="button"
-                    className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
-                    onClick={() => onToggleAssetSelection(asset.id)}
+                  {uploadMediaPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                  )}
+                  {uploadMediaPending
+                    ? strings.mediaProcessingLabel
+                    : uploadMediaLabel}
+                </Button>
+              ) : null}
+              {mediaAssets.length > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={mediaProcessing}
+                  onClick={onSelectAllMedia}
+                >
+                  {selectedAssetCount === mediaAssets.length
+                    ? strings.cancelAction
+                    : strings.selectAllMediaAction}
+                </Button>
+              ) : null}
+              {selectedAssetCount > 0 ? (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={mediaProcessing}
+                  onClick={onDeleteSelectedMedia}
+                >
+                  {deleteAssetsPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="mr-2 h-4 w-4" />
+                  )}
+                  {deleteAssetsPending
+                    ? strings.mediaProcessingLabel
+                    : strings.bulkRemoveMediaAction}
+                </Button>
+              ) : null}
+            </div>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-3">
+            {mediaProcessing ? (
+              <div className="flex items-center gap-3 rounded-[1.1rem] border border-dynamic-blue/20 bg-dynamic-blue/5 px-4 py-3 text-dynamic-blue text-sm md:col-span-3">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{strings.mediaProcessingLabel}</span>
+              </div>
+            ) : null}
+            <EntryDetailUploadProgressList
+              className="md:col-span-3"
+              items={mediaUploadProgressItems}
+            />
+            {mediaAssets.length === 0 ? (
+              <button
+                type="button"
+                className="rounded-[1.2rem] border border-border/70 border-dashed bg-background/50 p-6 text-left transition hover:border-border hover:bg-background/70 md:col-span-3"
+                disabled={mediaProcessing || !supportsMediaUploads}
+                onClick={onUploadMediaClick}
+              >
+                <div className="font-medium">
+                  {supportsMediaUploads
+                    ? uploadMediaLabel
+                    : strings.noMediaAssetsTitle}
+                </div>
+                <div className="mt-2 text-muted-foreground text-sm">
+                  {mediaGalleryDescription}
+                </div>
+              </button>
+            ) : (
+              mediaAssets.map((asset) => {
+                const isSelected = selectedAssetIds.includes(asset.id);
+                const caption =
+                  assetCaptions[asset.id] ?? getAssetCaption(asset);
+                const captionDirty = caption !== getAssetCaption(asset);
+                const isCoverAsset = coverAsset?.id === asset.id;
+                const isFirstOfType =
+                  mediaAssets.find(
+                    (item) => item.asset_type === asset.asset_type
+                  )?.id === asset.id;
+                const isLastOfType =
+                  [...mediaAssets]
+                    .reverse()
+                    .find((item) => item.asset_type === asset.asset_type)
+                    ?.id === asset.id;
+                const mediaUrl = asset.asset_url ?? asset.source_url ?? null;
+
+                return (
+                  <div
+                    key={asset.id}
+                    className={cn(
+                      'overflow-hidden rounded-[1.2rem] border bg-background/75 text-left transition',
+                      isSelected
+                        ? 'border-primary ring-2 ring-primary/30'
+                        : 'border-border/70 hover:border-border'
+                    )}
                   >
-                    <ResilientMediaImage
-                      alt={asset.alt_text ?? activeEntry.title}
-                      assetUrl={asset.asset_url}
-                      className="object-cover"
-                      fill
-                      previewUrl={asset.preview_url}
-                      sizes="(max-width: 1024px) 100vw, 18vw"
-                    />
-                  </button>
-                  <div className="space-y-3 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <Badge variant="outline">
-                        {index === 0 ? strings.coverBadge : strings.assetsLabel}
-                      </Badge>
-                      <div className="flex items-center gap-2">
-                        {index !== 0 ? (
+                    {asset.asset_type === 'audio' ? (
+                      <div className="flex h-36 flex-col justify-between border-border/70 border-b bg-background/80 p-4">
+                        <button
+                          type="button"
+                          className="flex items-center gap-3 text-left"
+                          onClick={() => onToggleAssetSelection(asset.id)}
+                        >
+                          <span className="flex size-10 items-center justify-center rounded-full border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue">
+                            <Music className="h-5 w-5" />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium text-sm">
+                              {asset.alt_text ?? activeEntry.title}
+                            </span>
+                            <span className="block text-muted-foreground text-xs">
+                              {strings.audioAssetLabel}
+                            </span>
+                          </span>
+                        </button>
+                        {mediaUrl ? (
+                          <audio
+                            aria-label={asset.alt_text ?? activeEntry.title}
+                            className="w-full"
+                            controls
+                            preload="metadata"
+                            src={mediaUrl}
+                          >
+                            <track kind="captions" />
+                          </audio>
+                        ) : null}
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="relative block h-36 w-full overflow-hidden border-border/70 border-b bg-background/80"
+                        onClick={() => onToggleAssetSelection(asset.id)}
+                      >
+                        <ResilientMediaImage
+                          alt={asset.alt_text ?? activeEntry.title}
+                          assetUrl={asset.asset_url}
+                          className="object-cover"
+                          fill
+                          previewUrl={asset.preview_url}
+                          sizes="(max-width: 1024px) 100vw, 18vw"
+                        />
+                      </button>
+                    )}
+                    <div className="space-y-3 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <Badge variant="outline">
+                          {isCoverAsset
+                            ? strings.coverBadge
+                            : asset.asset_type === 'audio'
+                              ? strings.audioAssetLabel
+                              : strings.assetsLabel}
+                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8"
+                            disabled={
+                              isFirstOfType ||
+                              moveMediaPending ||
+                              mediaProcessing
+                            }
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onMoveMediaAsset(asset.id, -1);
+                            }}
+                          >
+                            <ChevronUp className="h-4 w-4" />
+                            <span className="sr-only">
+                              {strings.moveMediaUpAction}
+                            </span>
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8"
+                            disabled={
+                              isLastOfType ||
+                              moveMediaPending ||
+                              mediaProcessing
+                            }
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onMoveMediaAsset(asset.id, 1);
+                            }}
+                          >
+                            <ChevronDown className="h-4 w-4" />
+                            <span className="sr-only">
+                              {strings.moveMediaDownAction}
+                            </span>
+                          </Button>
+                          {asset.asset_type === 'image' && !isCoverAsset ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={setAsCoverPending || mediaProcessing}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                onSetAsCover(asset.id);
+                              }}
+                            >
+                              {setAsCoverPending ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : null}
+                              {setAsCoverPending
+                                ? strings.mediaProcessingLabel
+                                : strings.setAsCoverAction}
+                            </Button>
+                          ) : null}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="size-8"
+                            disabled={mediaProcessing}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onDeleteSingleAsset(asset.id);
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">
+                              {strings.removeMediaAction}
+                            </span>
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="truncate text-sm">
+                        {asset.alt_text ?? activeEntry.title}
+                      </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor={`entry-asset-caption-${asset.id}`}
+                          className="text-xs"
+                        >
+                          {strings.captionLabel}
+                        </Label>
+                        <Input
+                          id={`entry-asset-caption-${asset.id}`}
+                          value={caption}
+                          placeholder={strings.captionPlaceholder}
+                          onChange={(event) =>
+                            onCaptionChange(asset.id, event.target.value)
+                          }
+                        />
+                        {captionDirty ? (
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={setAsCoverPending || mediaProcessing}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onSetAsCover(asset.id);
-                            }}
+                            disabled={
+                              saveAssetCaptionPending || mediaProcessing
+                            }
+                            onClick={() => onSaveAssetCaption(asset.id)}
                           >
-                            {setAsCoverPending ? (
+                            {saveAssetCaptionPending ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : null}
-                            {setAsCoverPending
+                            ) : (
+                              <Pencil className="mr-2 h-4 w-4" />
+                            )}
+                            {saveAssetCaptionPending
                               ? strings.mediaProcessingLabel
-                              : strings.setAsCoverAction}
+                              : strings.saveMediaDetailsAction}
                           </Button>
                         ) : null}
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="size-8"
-                          disabled={mediaProcessing}
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onDeleteSingleAsset(asset.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">
-                            {strings.removeMediaAction}
-                          </span>
-                        </Button>
                       </div>
                     </div>
-                    <div className="truncate text-sm">
-                      {asset.alt_text ?? activeEntry.title}
-                    </div>
-                    <div className="space-y-2">
-                      <Label
-                        htmlFor={`entry-asset-caption-${asset.id}`}
-                        className="text-xs"
-                      >
-                        {strings.captionLabel}
-                      </Label>
-                      <Input
-                        id={`entry-asset-caption-${asset.id}`}
-                        value={caption}
-                        placeholder={strings.captionPlaceholder}
-                        onChange={(event) =>
-                          onCaptionChange(asset.id, event.target.value)
-                        }
-                      />
-                      {captionDirty ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={saveAssetCaptionPending || mediaProcessing}
-                          onClick={() => onSaveAssetCaption(asset.id)}
-                        >
-                          {saveAssetCaptionPending ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <Pencil className="mr-2 h-4 w-4" />
-                          )}
-                          {saveAssetCaptionPending
-                            ? strings.mediaProcessingLabel
-                            : strings.saveMediaDetailsAction}
-                        </Button>
-                      ) : null}
-                    </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </CardContent>
-      </Card>
+                );
+              })
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

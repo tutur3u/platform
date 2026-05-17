@@ -1,5 +1,10 @@
 import type { ExternalProjectSyncSnapshot } from '@tuturuuu/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('../workspace-storage-provider', () => ({
+  deleteWorkspaceStorageObjectByPath: vi.fn(),
+}));
+
 import {
   buildExternalProjectSyncDiff,
   buildExternalProjectSyncSnapshot,
@@ -168,6 +173,78 @@ describe('external project sync diff', () => {
         destructive: true,
         entity: 'entry',
         manifestKey: 'yoola:art:delete-me',
+      }),
+    ]);
+  });
+
+  it('marks manifest asset removals as destructive entry updates', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'yoola',
+      canonicalProjectId: 'yoola-main',
+      content: {
+        entries: [
+          {
+            assets: [
+              {
+                assetType: 'audio',
+                sortOrder: 0,
+                stableSourceId: 'kendra:voice:demo:audio',
+                storagePath: 'external-projects/kendra/voice-reels/demo.mp3',
+              },
+            ],
+            blocks: [],
+            collectionSlug: 'voice-reels',
+            id: 'entry-voice',
+            metadata: {},
+            profileData: {},
+            slug: 'demo',
+            stableSourceId: 'kendra:voice:demo',
+            status: 'published',
+            title: 'Demo',
+          },
+        ],
+      },
+      generatedAt: '2026-05-09T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            assetTypes: ['audio'],
+            collection_type: 'voice-reels',
+            slug: 'voice-reels',
+            title: 'Voice Reels',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'yoola',
+      content: {
+        entries: [
+          {
+            assets: [],
+            collectionSlug: 'voice-reels',
+            slug: 'demo',
+            stableSourceId: 'kendra:voice:demo',
+            status: 'published',
+            title: 'Demo',
+          },
+        ],
+      },
+      schema: snapshot.schema,
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.hasDestructiveOperations).toBe(true);
+    expect(diff.operations).toEqual([
+      expect.objectContaining({
+        action: 'update',
+        destructive: true,
+        entity: 'entry',
+        reason: 'Manifest removes entry assets',
       }),
     ]);
   });

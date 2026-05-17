@@ -84,6 +84,28 @@ describe('external project field definition route', () => {
     );
   });
 
+  it('rejects invalid collection filters before listing field definitions', async () => {
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/field-definitions/route'
+    );
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/field-definitions?collectionId=not-a-uuid'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(
+      mocks.listWorkspaceExternalProjectFieldDefinitions
+    ).not.toHaveBeenCalled();
+  });
+
   it('requires manage access before creating field definitions', async () => {
     mocks.createWorkspaceExternalProjectFieldDefinition.mockResolvedValue({
       id: 'field-1',

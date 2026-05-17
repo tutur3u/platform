@@ -141,4 +141,69 @@ describe('external project public folder assets', () => {
       await rm(publicDir, { force: true, recursive: true });
     }
   });
+
+  it('uploads common audio assets with audio content types', async () => {
+    const publicDir = await mkdtemp(join(tmpdir(), 'ttr-public-audio-'));
+    await mkdir(join(publicDir, 'audio'));
+    await writeFile(join(publicDir, 'audio', 'voice-reel.wav'), 'wav bytes');
+
+    mockFetch
+      .mockResolvedValueOnce(
+        createMockResponse({
+          fullPath:
+            'ws_123/external-projects/kendra/voice-reels/demo/voice-reel.wav',
+          path: 'external-projects/kendra/voice-reels/demo/voice-reel.wav',
+          signedUrl: 'https://upload.example.com/audio',
+          token: 'upload_token',
+        })
+      )
+      .mockResolvedValueOnce(createMockResponse('', 200));
+
+    const client = new EpmClient({
+      apiKey: 'ttr_test_key',
+      baseUrl: 'https://example.com/api/v1',
+      fetch: mockFetch,
+    });
+    const manifest: ExternalProjectSyncManifest = {
+      adapter: 'kendra' as never,
+      content: {
+        entries: [
+          {
+            assets: [
+              {
+                assetType: 'audio',
+                sourceUrl: '/audio/voice-reel.wav',
+                stableSourceId: 'kendra:voice-reel:demo:audio',
+              },
+            ],
+            collectionSlug: 'voice-reels',
+            slug: 'demo',
+            stableSourceId: 'kendra:voice-reel:demo',
+            title: 'Demo Reel',
+          },
+        ],
+      },
+      schema: {
+        collections: [],
+      },
+      version: 1,
+    };
+
+    try {
+      await uploadExternalProjectPublicFolderAssets(
+        client,
+        'ws_123',
+        manifest,
+        {
+          fetch: mockFetch,
+          publicDir,
+        }
+      );
+
+      const uploadHeaders = new Headers(mockFetch.mock.calls[1]?.[1]?.headers);
+      expect(uploadHeaders.get('Content-Type')).toBe('audio/wav');
+    } finally {
+      await rm(publicDir, { force: true, recursive: true });
+    }
+  });
 });

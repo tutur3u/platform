@@ -5,6 +5,9 @@ export type CmsStrings = {
   archiveAction: string;
   archiveBacklogHint: string;
   assetGalleryTitle: string;
+  audioAssetGalleryDescription: string;
+  audioAssetGalleryTitle: string;
+  audioAssetLabel: string;
   assetsLabel: string;
   attentionTitle: string;
   backToEpmAction: string;
@@ -156,11 +159,15 @@ export type CmsStrings = {
   libraryPageDescription: string;
   loadingPreviewLabel: string;
   metadataLabel: string;
+  mediaAssetGalleryDescription: string;
   missingLeadImageLabel: string;
+  moveMediaDownAction: string;
+  moveMediaUpAction: string;
   noAdapterLabel: string;
   noCanonicalIdLabel: string;
   noCoverDescription: string;
   noCoverTitle: string;
+  noMediaAssetsTitle: string;
   noFieldDefinitions: string;
   nextAction: string;
   noneLabel: string;
@@ -266,6 +273,8 @@ export type CmsStrings = {
   unboundLabel: string;
   unknownCollectionLabel: string;
   unpublishAction: string;
+  unsupportedMediaTypeToast: string;
+  uploadAudioAction: string;
   uploadCoverAction: string;
   visualBoardTitle: string;
   webglAssetCountLabel: string;
@@ -302,6 +311,9 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     archiveAction: t('epm.archive_action'),
     archiveBacklogHint: t('epm.archive_backlog_hint'),
     assetGalleryTitle: t('epm.asset_gallery_title'),
+    audioAssetGalleryDescription: t('epm.audio_asset_gallery_description'),
+    audioAssetGalleryTitle: t('epm.audio_asset_gallery_title'),
+    audioAssetLabel: t('epm.audio_asset_label'),
     assetsLabel: t('epm.assets_label'),
     attentionTitle: t('epm.attention_title'),
     backToEpmAction: t('epm.back_to_epm_action'),
@@ -475,12 +487,16 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     mediaProcessingLabel: t('epm.media_processing_label'),
     navigationTitleDescription: t('epm.navigation_title_description'),
     navigationTitleLabel: t('epm.navigation_title_label'),
+    mediaAssetGalleryDescription: t('epm.media_asset_gallery_description'),
     missingLeadImageLabel: t('epm.missing_lead_image_label'),
+    moveMediaDownAction: t('epm.move_media_down_action'),
+    moveMediaUpAction: t('epm.move_media_up_action'),
     noAdapterLabel: t('epm.no_adapter_label'),
     noCanonicalIdLabel: t('epm.no_canonical_id_label'),
     noCoverDescription: t('epm.no_cover_description'),
     noCoverTitle: t('epm.no_cover_title'),
     noFieldDefinitions: t('epm.no_field_definitions'),
+    noMediaAssetsTitle: t('epm.no_media_assets_title'),
     nextAction: t('epm.next_action'),
     noneLabel: t('epm.none_label'),
     notScheduledLabel: t('epm.not_scheduled_label'),
@@ -581,6 +597,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     unboundLabel: t('epm.unbound_label'),
     unknownCollectionLabel: t('epm.unknown_collection_label'),
     unpublishAction: t('epm.unpublish_action'),
+    unsupportedMediaTypeToast: t('epm.unsupported_media_type_toast'),
+    uploadAudioAction: t('epm.upload_audio_action'),
     uploadCoverAction: t('epm.upload_cover_action'),
     visualBoardTitle: t('epm.visual_board_title'),
     webglAssetCountLabel: t('epm.webgl_asset_count_label'),

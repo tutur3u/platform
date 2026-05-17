@@ -11,6 +11,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { getDescriptionText } from '@tuturuuu/utils/text-helper';
 import type { ComponentProps } from 'react';
+import type { CmsSupportedEntryAssetType } from '../../cms-content-model';
 import type { CmsStrings } from '../../cms-strings';
 
 export type EntryFormState = {
@@ -175,9 +176,17 @@ export function sortImageAssets(
   assets: ExternalProjectStudioAsset[],
   entryId: string
 ) {
+  return sortEntryAssetsByType(assets, entryId, 'image');
+}
+
+export function sortEntryAssetsByType(
+  assets: ExternalProjectStudioAsset[],
+  entryId: string,
+  assetType: CmsSupportedEntryAssetType
+) {
   return assets
     .filter(
-      (asset) => asset.entry_id === entryId && asset.asset_type === 'image'
+      (asset) => asset.entry_id === entryId && asset.asset_type === assetType
     )
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
 }

@@ -85,6 +85,11 @@ async function listExternalProjectWorkspaceSecrets(
   return rows;
 }
 type JsonObject = { [key: string]: Json | undefined };
+const SUPPORTED_ENTRY_ASSET_TYPES = ['image', 'audio'] as const;
+type SupportedEntryAssetType = (typeof SUPPORTED_ENTRY_ASSET_TYPES)[number];
+const SUPPORTED_ENTRY_ASSET_TYPE_SET = new Set<string>(
+  SUPPORTED_ENTRY_ASSET_TYPES
+);
 
 function asJsonObject(
   value: Json | Record<string, unknown> | null | undefined
@@ -94,6 +99,47 @@ function asJsonObject(
   }
 
   return {};
+}
+
+function getCollectionSchemaRecord(
+  collection: ExternalProjectCollection | null | undefined
+) {
+  const config = asJsonObject(collection?.config);
+  const schema = config.schema;
+
+  return schema && typeof schema === 'object' && !Array.isArray(schema)
+    ? (schema as Record<string, unknown>)
+    : null;
+}
+
+function getRequiredCollectionAssetTypes(
+  collection: ExternalProjectCollection | null | undefined
+): SupportedEntryAssetType[] {
+  const schema = getCollectionSchemaRecord(collection);
+
+  if (!schema || !('assetTypes' in schema)) {
+    return ['image'];
+  }
+
+  return Array.isArray(schema.assetTypes)
+    ? schema.assetTypes.filter(
+        (assetType): assetType is SupportedEntryAssetType =>
+          typeof assetType === 'string' &&
+          SUPPORTED_ENTRY_ASSET_TYPE_SET.has(assetType)
+      )
+    : [];
+}
+
+function formatMissingMediaReason(assetTypes: SupportedEntryAssetType[]) {
+  if (assetTypes.length === 1 && assetTypes[0] === 'audio') {
+    return 'Missing an audio asset';
+  }
+
+  if (assetTypes.length === 1 && assetTypes[0] === 'image') {
+    return 'Missing a primary image asset';
+  }
+
+  return `Missing required ${assetTypes.join(' and ')} assets`;
 }
 
 function asString(value: unknown): string | null {
@@ -820,18 +866,30 @@ function buildExternalProjectSummary({
 
   const draftsMissingMedia = studio.entries
     .filter((entry) => entry.status !== 'archived')
-    .filter(
-      (entry) =>
-        !studio.assets.some(
-          (asset) => asset.entry_id === entry.id && asset.asset_type === 'image'
-        )
-    )
+    .map((entry) => {
+      const collection = collectionById.get(entry.collection_id) ?? null;
+      const requiredAssetTypes = getRequiredCollectionAssetTypes(collection);
+      const missingAssetTypes = requiredAssetTypes.filter(
+        (assetType) =>
+          !studio.assets.some(
+            (asset) =>
+              asset.entry_id === entry.id && asset.asset_type === assetType
+          )
+      );
+
+      return {
+        collection,
+        entry,
+        missingAssetTypes,
+      };
+    })
+    .filter((item) => item.missingAssetTypes.length > 0)
     .slice(0, 6)
-    .map((entry) =>
+    .map(({ collection, entry, missingAssetTypes }) =>
       buildExternalProjectAttentionItem(
         entry,
-        collectionById.get(entry.collection_id) ?? null,
-        'Missing a primary image asset',
+        collection,
+        formatMissingMediaReason(missingAssetTypes),
         'missing_media'
       )
     );
@@ -1051,19 +1109,43 @@ async function deleteWorkspaceExternalProjectAssetStoragePaths(
     return;
   }
 
-  const { data: relatedAssets, error: relatedAssetsError } = await admin
+  const { data: relatedBlocks, error: relatedBlocksError } = await admin
+    .from('workspace_external_project_blocks')
+    .select('id')
+    .eq('ws_id', workspaceId)
+    .in('entry_id', entryIds);
+
+  if (relatedBlocksError) {
+    throw new Error(relatedBlocksError.message);
+  }
+
+  const blockIds = (relatedBlocks ?? []).map((block) => block.id);
+  const { data: entryAssets, error: entryAssetsError } = await admin
     .from('workspace_external_project_assets')
     .select('storage_path')
     .eq('ws_id', workspaceId)
     .in('entry_id', entryIds);
 
-  if (relatedAssetsError) {
-    throw new Error(relatedAssetsError.message);
+  if (entryAssetsError) {
+    throw new Error(entryAssetsError.message);
+  }
+
+  const { data: blockAssets, error: blockAssetsError } =
+    blockIds.length > 0
+      ? await admin
+          .from('workspace_external_project_assets')
+          .select('storage_path')
+          .eq('ws_id', workspaceId)
+          .in('block_id', blockIds)
+      : { data: [], error: null };
+
+  if (blockAssetsError) {
+    throw new Error(blockAssetsError.message);
   }
 
   const storagePaths = Array.from(
     new Set(
-      (relatedAssets ?? [])
+      [...(entryAssets ?? []), ...(blockAssets ?? [])]
         .map((asset) => asset.storage_path)
         .filter((value): value is string => typeof value === 'string')
     )
@@ -1998,6 +2080,16 @@ export async function deleteWorkspaceExternalProjectAsset(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { workspaceId } = payload;
+  const { data: asset, error: assetError } = await admin
+    .from('workspace_external_project_assets')
+    .select('storage_path')
+    .eq('ws_id', workspaceId)
+    .eq('id', assetId)
+    .maybeSingle();
+
+  if (assetError) {
+    throw new Error(assetError.message);
+  }
 
   const { error } = await admin
     .from('workspace_external_project_assets')
@@ -2007,6 +2099,10 @@ export async function deleteWorkspaceExternalProjectAsset(
 
   if (error) {
     throw new Error(error.message);
+  }
+
+  if (asset?.storage_path) {
+    await deleteWorkspaceStorageObjectByPath(workspaceId, asset.storage_path);
   }
 
   return { id: assetId };
