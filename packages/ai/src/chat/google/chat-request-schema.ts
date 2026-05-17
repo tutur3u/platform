@@ -1,3 +1,4 @@
+import { MAX_ID_LENGTH } from '@tuturuuu/utils/constants';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import type { UIMessage } from 'ai';
 import { z } from 'zod';
@@ -35,7 +36,7 @@ export const ChatRequestBodySchema = z.object({
   timezone: z.string().optional(),
   thinkingMode: z.enum(['thinking', 'fast']).optional(),
   creditSource: z.enum(['personal', 'workspace']).optional(),
-  creditWsId: z.guid().optional(),
+  creditWsId: z.string().trim().min(1).max(MAX_ID_LENGTH).optional(),
 });
 
 export type ChatRequestBody = z.infer<typeof ChatRequestBodySchema>;

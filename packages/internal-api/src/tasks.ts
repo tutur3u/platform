@@ -270,6 +270,19 @@ export interface WorkspaceTaskJournalTaskInput {
   labels?: Array<{ id?: string; name: string }>;
 }
 
+export interface WorkspaceTaskJournalResultTask {
+  id: string;
+  name: string;
+  description?: string | null;
+  priority?: TaskPriority | null;
+  labelSuggestions?: string[];
+  dueDate?: string | null;
+  labels?: Array<{ id?: string; name: string }>;
+  estimationPoints?: number | null;
+  projectIds?: string[];
+  [key: string]: unknown;
+}
+
 export interface CreateWorkspaceTaskJournalPayload {
   entry: string;
   listId?: string;
@@ -286,7 +299,7 @@ export interface CreateWorkspaceTaskJournalPayload {
 }
 
 export interface WorkspaceTaskJournalResponse {
-  tasks: WorkspaceTaskApiTask[];
+  tasks: WorkspaceTaskJournalResultTask[];
   metadata?: {
     generatedWithAI?: boolean;
     totalTasks?: number;

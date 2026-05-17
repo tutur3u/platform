@@ -37,7 +37,7 @@ export function ModeButton({
       size="sm"
       variant={active ? 'secondary' : 'ghost'}
       className={cn(
-        'h-8 shrink-0 gap-1.5 rounded-full px-3 text-xs',
+        'h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs',
         active && 'bg-dynamic-purple/10 text-dynamic-purple'
       )}
       aria-pressed={active}
@@ -67,7 +67,7 @@ export function TaskBoardMiraChatPopup({
   wsId: string;
 }) {
   return (
-    <div className="mb-2 flex h-[min(72vh,44rem)] min-h-100 flex-col overflow-hidden rounded-[1.75rem] border border-border/70 bg-background/95 p-2 shadow-2xl backdrop-blur-xl">
+    <div className="mb-2 flex h-[min(68vh,38rem)] min-h-80 flex-col overflow-hidden rounded-3xl border border-border/70 bg-background/95 p-1.5 shadow-xl backdrop-blur-xl">
       <MiraChatPanel
         key={`${wsId}-${boardId}-${chatPanelResetKey}`}
         wsId={wsId}
@@ -114,7 +114,7 @@ export function TaskBoardTaskComposer({
 
   return (
     <form
-      className="border-border/70 border-t px-3 pt-2 pb-3 sm:px-4"
+      className="border-border/70 border-t px-2.5 pt-2 pb-2.5 sm:px-3"
       onSubmit={onSubmit}
     >
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -134,18 +134,18 @@ export function TaskBoardTaskComposer({
                 ? tTasks('cmd_ai_placeholder')
                 : tTasks('cmd_task_placeholder')
             }
-            className="min-h-16 resize-none rounded-xl border-border/70 bg-background/70 text-sm"
+            className="min-h-12 resize-none rounded-2xl border-border/70 bg-background/70 text-sm"
             disabled={isCreating}
           />
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5">
           <Select
             value={selectedListId}
             onValueChange={onListChange}
             disabled={listsLoading || isCreating}
           >
-            <SelectTrigger className="h-10 w-40 rounded-xl">
+            <SelectTrigger className="h-9 w-36 rounded-2xl">
               <SelectValue
                 placeholder={
                   listsLoading
@@ -154,7 +154,7 @@ export function TaskBoardTaskComposer({
                 }
               />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent data-task-board-ai-island-portal>
               {activeLists.map((list) => (
                 <SelectItem key={list.id} value={list.id}>
                   {list.name || tCommon('list')}
@@ -163,7 +163,7 @@ export function TaskBoardTaskComposer({
             </SelectContent>
           </Select>
 
-          <div className="flex h-10 items-center gap-2 rounded-xl border border-border/70 px-2">
+          <div className="flex h-9 items-center gap-1.5 rounded-2xl border border-border/70 px-2">
             <Bot
               className={cn(
                 'h-4 w-4',
@@ -180,7 +180,7 @@ export function TaskBoardTaskComposer({
 
           <Button
             type="submit"
-            className="h-10 rounded-xl"
+            className="h-9 rounded-2xl px-3"
             disabled={!canCreateTask || isCreating}
           >
             {isCreating ? (
@@ -198,7 +198,7 @@ export function TaskBoardTaskComposer({
       </div>
 
       {selectedList && (
-        <div className="mt-2 flex items-center gap-1 text-muted-foreground text-xs">
+        <div className="mt-1.5 flex items-center gap-1 text-muted-foreground text-xs">
           <Check className="h-3 w-3 text-dynamic-green" />
           <span className="truncate">
             {tCommon('destination_list')}:{' '}
