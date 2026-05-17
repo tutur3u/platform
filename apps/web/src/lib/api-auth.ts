@@ -4,6 +4,7 @@ import {
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '@tuturuuu/auth/app-session';
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
@@ -238,15 +239,7 @@ function getAppSessionVerificationOptions(
 }
 
 async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
-
-  return {
-    authError: error,
-    user,
-  };
+  return resolveAuthenticatedSessionUser(supabase);
 }
 
 export type SessionAuthResolution =

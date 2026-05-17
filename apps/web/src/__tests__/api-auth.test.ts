@@ -11,9 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 const mockGetUser = vi.fn();
+const mockGetClaims = vi.fn();
 const mockAdminClient = { from: vi.fn() };
 const mockCreateClient = vi.fn((..._args: unknown[]) => ({
-  auth: { getUser: mockGetUser },
+  auth: { getClaims: mockGetClaims, getUser: mockGetUser },
 }));
 const mockCreateAdminClient = vi.fn((..._args: unknown[]) => mockAdminClient);
 
@@ -100,6 +101,15 @@ function makeRequest(
 }
 
 const fakeUser = { id: 'user-123', email: 'test@test.com' };
+const fakeClaims = {
+  app_metadata: {},
+  aud: 'authenticated',
+  email: fakeUser.email,
+  iat: 1_700_000_000,
+  role: 'authenticated',
+  sub: fakeUser.id,
+  user_metadata: {},
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -109,6 +119,10 @@ describe('withSessionAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
+    mockGetClaims.mockResolvedValue({
+      data: { claims: fakeClaims },
+      error: null,
+    });
     mockGetUser.mockResolvedValue({ data: { user: fakeUser }, error: null });
     mockIsIPBlocked.mockResolvedValue(null);
     mockCheckRateLimit.mockResolvedValue({ allowed: true, headers: {} });
@@ -134,10 +148,32 @@ describe('withSessionAuth', () => {
     expect(handler).toHaveBeenCalledTimes(1);
     expect(handler.mock.calls[0]?.[1]).toEqual(
       expect.objectContaining({
-        user: fakeUser,
+        user: expect.objectContaining({ id: fakeUser.id }),
       })
     );
+    expect(mockGetClaims).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
+  });
+
+  it('should fall back to getUser when session claims are unavailable', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
+    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('GET'));
+
+    expect(response.status).toBe(200);
+    expect(mockGetClaims).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(handler).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ user: fakeUser }),
+      {}
+    );
   });
 
   // ---- IP block ----
@@ -212,6 +248,10 @@ describe('withSessionAuth', () => {
   });
 
   it('should escalate backend auth 429 responses into a proxy-visible IP block', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
     mockGetUser.mockResolvedValue({
       data: { user: null },
       error: { status: 429, code: 'over_request_rate_limit' },
@@ -345,6 +385,10 @@ describe('withSessionAuth', () => {
   // ---- Authentication ----
 
   it('should return 401 when auth fails', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
     mockGetUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Invalid token'),
@@ -359,6 +403,10 @@ describe('withSessionAuth', () => {
   });
 
   it('should record auth failure on 401', async () => {
+    mockGetClaims.mockResolvedValue({
+      data: { claims: null },
+      error: new Error('claims unavailable'),
+    });
     mockGetUser.mockResolvedValue({
       data: { user: null },
       error: new Error('Invalid'),
@@ -388,10 +436,13 @@ describe('withSessionAuth', () => {
 
     expect(response.status).toBe(200);
     expect(mockValidateAiTempAuthRequest).not.toHaveBeenCalled();
-    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(mockGetClaims).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).not.toHaveBeenCalled();
     expect(handler).toHaveBeenCalledWith(
       expect.anything(),
-      expect.objectContaining({ user: fakeUser }),
+      expect.objectContaining({
+        user: expect.objectContaining({ id: fakeUser.id }),
+      }),
       {}
     );
   });
@@ -432,7 +483,7 @@ describe('withSessionAuth', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('should fall back to Supabase auth when AI temp auth is unavailable', async () => {
+  it('should fall back to Supabase auth claims when AI temp auth is unavailable', async () => {
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'unavailable' });
     const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
 
@@ -440,7 +491,8 @@ describe('withSessionAuth', () => {
     const response = await wrapped(makeRequest('POST'));
 
     expect(response.status).toBe(200);
-    expect(mockGetUser).toHaveBeenCalledTimes(1);
+    expect(mockGetClaims).toHaveBeenCalledTimes(1);
+    expect(mockGetUser).not.toHaveBeenCalled();
     expect(handler).toHaveBeenCalled();
   });
 

@@ -53,6 +53,7 @@ type Limiters = {
 };
 
 const limiterCache = new Map<string, Limiters>();
+const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 const GENERIC_SUPABASE_AUTH_COOKIE_NAME_PATTERN =
   /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 const DISABLED_LIMITERS: Limiters = { get: [], mutate: [] };
@@ -452,9 +453,14 @@ export function hasSupabaseSessionCookie(req: NextRequest): boolean {
     .some((cookie) => isSupabaseAuthCookieName(cookie.name, storageKeys));
 }
 
+function hasAppSessionCookie(req: NextRequest): boolean {
+  return req.cookies.has(APP_SESSION_COOKIE_NAME);
+}
+
 export function hasAuthenticatedApiSession(req: NextRequest): boolean {
   if (
     hasAuthenticatedBearerToken(req.headers) ||
+    hasAppSessionCookie(req) ||
     hasSupabaseSessionCookie(req)
   ) {
     return true;

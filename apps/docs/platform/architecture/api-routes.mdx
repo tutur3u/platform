@@ -618,6 +618,14 @@ export async function OPTIONS(request: NextRequest) {
 
 ## Rate Limiting
 
+For signed-in product APIs, prefer `withSessionAuth(...)` over manual
+`supabase.auth.getUser()` calls. The wrapper resolves the session through local
+JWT claims first and only falls back to `getUser()` when claims are unavailable,
+which avoids exhausting Supabase Auth limits on request-heavy dashboard surfaces
+such as task boards. Default GET/HEAD requests are not rate-limited by the
+session wrapper; default mutations use the shared mutation budget unless the
+route provides an explicit `rateLimit` option.
+
 ```typescript
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';

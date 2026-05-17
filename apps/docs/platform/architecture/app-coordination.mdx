@@ -55,6 +55,10 @@ For internal API calls, apps forward the app-session cookie to `apps/web`.
 Routes that opt into app-session auth use the verified claims as the actor and
 must keep authorization explicit. Do not pass `ttr_app_...` HS256 JWTs to
 Supabase as user access tokens.
+Satellite API proxies should treat the host-only `tuturuuu_app_session` cookie
+as an authenticated API signal before applying anonymous proxy rate limits; a
+signed-in app user doing normal dashboard work must not share anonymous
+read/mutation buckets with public traffic.
 
 Every central `apps/web` API consumed by a registered internal app must accept
 `tuturuuu_app_session` before falling back to Supabase Auth. Routes using

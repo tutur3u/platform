@@ -292,6 +292,29 @@ describe('guardApiProxyRequest', () => {
     expect(mocks.limit).not.toHaveBeenCalled();
   });
 
+  it('treats app-session cookies as authenticated for satellite API traffic', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'token');
+    mocks.redis.mockReturnValue({});
+    mocks.extractIp.mockReturnValue('1.2.3.4');
+    mocks.isBlocked.mockResolvedValue(null);
+
+    const { guardApiProxyRequest, clearApiProxyGuardLimiterCache } =
+      await import('../api-proxy-guard.js');
+    clearApiProxyGuardLimiterCache();
+
+    const response = await guardApiProxyRequest(
+      makeRequest('/api/v1/workspaces/ws-1/tasks?boardId=board-1', 'GET', {
+        cookie: 'tuturuuu_app_session=app-session-token; theme=dark',
+      }),
+      { prefixBase: 'proxy:tasks:api' }
+    );
+
+    expect(response).toBeNull();
+    expect(mocks.limit).not.toHaveBeenCalled();
+  });
+
   it('does not enforce anonymous IP blocks for authenticated browser sessions', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.test');
