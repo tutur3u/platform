@@ -40,7 +40,7 @@
     "ui:diff": "bunx shadcn-ui@latest diff"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.72",
+    "@ai-sdk/google": "^3.0.75",
     "@aws-sdk/client-s3": "^3.1048.0",
     "@aws-sdk/s3-request-presigner": "^3.1048.0",
     "@deepgram/sdk": "^5.1.0",
@@ -108,7 +108,7 @@
     "@upstash/qstash": "^2.10.1",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.0",
-    "ai": "^6.0.182",
+    "ai": "^6.0.184",
     "bcrypt": "^6.0.0",
     "browser-image-compression": "^2.0.2",
     "canvas-confetti": "^1.9.4",
@@ -128,7 +128,7 @@
     "jotai": "^2.20.0",
     "jspdf": "^4.2.1",
     "juice": "^11.1.1",
-    "katex": "^0.16.46",
+    "katex": "^0.16.47",
     "lodash": "^4.18.1",
     "mermaid": "^11.15.0",
     "mic": "^2.1.2",
