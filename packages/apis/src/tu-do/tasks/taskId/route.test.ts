@@ -1,24 +1,12 @@
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
-const getAppSessionTokenFromRequestMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
-const verifyCliAccessTokenMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
-
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  getAppSessionTokenFromRequest: (
-    ...args: Parameters<typeof getAppSessionTokenFromRequestMock>
-  ) => getAppSessionTokenFromRequestMock(...args),
-}));
-
-vi.mock('@tuturuuu/auth/cli-session', () => ({
-  verifyCliAccessToken: (
-    ...args: Parameters<typeof verifyCliAccessTokenMock>
-  ) => verifyCliAccessTokenMock(...args),
-}));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof createAdminClientMock>) =>
@@ -41,23 +29,16 @@ vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
   };
 });
 
-import { GET } from './route';
+import { handleTaskDetailRouteGET } from './route';
 
 describe('task detail route CLI app-session auth', () => {
   const taskId = '00000000-0000-4000-8000-000000000777';
   const workspaceId = '00000000-0000-4000-8000-000000000123';
+  let adminSupabase: TypedSupabaseClient;
 
   beforeEach(() => {
     vi.clearAllMocks();
 
-    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
-    verifyCliAccessTokenMock.mockReturnValue({
-      claims: {
-        email: 'agent@example.com',
-        sub: '00000000-0000-4000-8000-000000000999',
-      },
-      ok: true,
-    });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
 
     const personalWorkspaceQuery = {
@@ -124,11 +105,12 @@ describe('task detail route CLI app-session auth', () => {
       throw new Error(`Unexpected table: ${table}`);
     });
 
-    createAdminClientMock.mockResolvedValue({ from: fromMock });
+    adminSupabase = { from: fromMock } as unknown as TypedSupabaseClient;
+    createAdminClientMock.mockResolvedValue(adminSupabase);
   });
 
-  it('loads personal tasks through a valid CLI app-session token', async () => {
-    const response = await GET(
+  it('loads personal tasks through a pre-authenticated CLI app-session context', async () => {
+    const response = await handleTaskDetailRouteGET(
       new NextRequest(
         `http://localhost/api/v1/workspaces/personal/tasks/${taskId}`,
         {
@@ -142,6 +124,15 @@ describe('task detail route CLI app-session auth', () => {
           taskId,
           wsId: 'personal',
         }),
+      },
+      {
+        appSession: true,
+        supabase: adminSupabase,
+        user: {
+          aud: 'authenticated',
+          email: 'agent@example.com',
+          id: '00000000-0000-4000-8000-000000000999',
+        } as SupabaseUser,
       }
     );
 

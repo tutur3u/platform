@@ -1,5 +1,3 @@
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -36,17 +34,15 @@ import {
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
 const PERSONAL_WORKSPACE_ALIAS = 'personal';
 
+export type TaskDetailRouteAuthContext = {
+  appSession?: boolean;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
 type TaskRequestAuth =
   | {
-      appSession: false;
-      supabase: TypedSupabaseClient;
-      user: SupabaseUser;
-    }
-  | {
-      appSession: true;
-      sbAdmin: TypedSupabaseClient;
-      supabase: TypedSupabaseClient;
-      user: SupabaseUser;
+      auth: TaskDetailRouteAuthContext;
     }
   | {
       error: NextResponse;
@@ -63,32 +59,21 @@ type TaskWorkspaceAccess =
       error: NextResponse;
     };
 
-function createCliSessionUser(claims: { email: string | null; sub: string }) {
-  return {
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  } as SupabaseUser;
-}
+type TaskDetailRouteContext = {
+  params: Promise<{ wsId: string; taskId: string }>;
+};
 
 async function resolveTaskRequestAuth(
-  request: NextRequest
+  request: NextRequest,
+  auth?: TaskDetailRouteAuthContext
 ): Promise<TaskRequestAuth> {
-  const appSessionToken = getAppSessionTokenFromRequest(request);
-
-  if (appSessionToken) {
-    const verification = verifyCliAccessToken(appSessionToken);
-
-    if (verification.ok) {
-      const sbAdmin = await createAdminClient({ noCookie: true });
-
-      return {
-        appSession: true,
-        sbAdmin,
-        supabase: sbAdmin as TypedSupabaseClient,
-        user: createCliSessionUser(verification.claims),
-      };
-    }
+  if (auth) {
+    return {
+      auth: {
+        ...auth,
+        appSession: auth.appSession === true,
+      },
+    };
   }
 
   const supabase = (await createClient(request)) as TypedSupabaseClient;
@@ -100,23 +85,23 @@ async function resolveTaskRequestAuth(
     };
   }
 
-  return { appSession: false, supabase, user };
+  return { auth: { appSession: false, supabase, user } };
 }
 
 async function normalizeWorkspaceIdForCliSession({
   rawWsId,
-  sbAdmin,
+  supabase,
   userId,
 }: {
   rawWsId: string;
-  sbAdmin: TypedSupabaseClient;
+  supabase: TypedSupabaseClient;
   userId: string;
 }) {
   if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
-    return normalizeWorkspaceId(rawWsId, sbAdmin);
+    return normalizeWorkspaceId(rawWsId, supabase);
   }
 
-  const { data: workspace, error } = await sbAdmin
+  const { data: workspace, error } = await supabase
     .from('workspaces')
     .select('id, workspace_members!inner(user_id, type)')
     .eq('personal', true)
@@ -133,18 +118,19 @@ async function normalizeWorkspaceIdForCliSession({
 
 async function requireWorkspaceAccess(
   request: NextRequest,
-  rawParams: unknown
+  rawParams: unknown,
+  authContext?: TaskDetailRouteAuthContext
 ): Promise<TaskWorkspaceAccess> {
   const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
-  const auth = await resolveTaskRequestAuth(request);
-  if ('error' in auth) return auth;
+  const resolvedAuth = await resolveTaskRequestAuth(request, authContext);
+  if ('error' in resolvedAuth) return resolvedAuth;
 
+  const auth = resolvedAuth.auth;
   const { supabase, user } = auth;
-  const sbAdmin = 'sbAdmin' in auth ? auth.sbAdmin : await createAdminClient();
   const wsId = auth.appSession
     ? await normalizeWorkspaceIdForCliSession({
         rawWsId,
-        sbAdmin,
+        supabase,
         userId: user.id,
       })
     : await normalizeWorkspaceId(rawWsId, supabase);
@@ -596,12 +582,13 @@ async function clampTaskScheduleToCompletedWork(sbAdmin: any, taskId: string) {
     .eq('task_id', taskId);
 }
 
-export async function GET(
+export async function handleTaskDetailRouteGET(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskDetailRouteContext,
+  auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params);
+    const access = await requireWorkspaceAccess(request, await params, auth);
     if ('error' in access) return access.error;
 
     const { wsId, taskId } = access;
@@ -637,12 +624,17 @@ export async function GET(
   }
 }
 
-export async function PUT(
+export function GET(request: NextRequest, context: TaskDetailRouteContext) {
+  return handleTaskDetailRouteGET(request, context);
+}
+
+export async function handleTaskDetailRoutePUT(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskDetailRouteContext,
+  auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params);
+    const access = await requireWorkspaceAccess(request, await params, auth);
     if ('error' in access) return access.error;
 
     const { user, wsId, taskId } = access;
@@ -1048,12 +1040,17 @@ export async function PUT(
   }
 }
 
-export async function DELETE(
+export function PUT(request: NextRequest, context: TaskDetailRouteContext) {
+  return handleTaskDetailRoutePUT(request, context);
+}
+
+export async function handleTaskDetailRouteDELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskDetailRouteContext,
+  auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params);
+    const access = await requireWorkspaceAccess(request, await params, auth);
     if ('error' in access) return access.error;
 
     const { wsId, taskId } = access;
@@ -1128,12 +1125,17 @@ export async function DELETE(
   }
 }
 
-export async function PATCH(
+export function DELETE(request: NextRequest, context: TaskDetailRouteContext) {
+  return handleTaskDetailRouteDELETE(request, context);
+}
+
+export async function handleTaskDetailRoutePATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ wsId: string; taskId: string }> }
+  { params }: TaskDetailRouteContext,
+  auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params);
+    const access = await requireWorkspaceAccess(request, await params, auth);
     if ('error' in access) return access.error;
 
     const { user, wsId, taskId } = access;
@@ -1205,4 +1207,8 @@ export async function PATCH(
       { status: 500 }
     );
   }
+}
+
+export function PATCH(request: NextRequest, context: TaskDetailRouteContext) {
+  return handleTaskDetailRoutePATCH(request, context);
 }
