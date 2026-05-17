@@ -152,6 +152,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'cms',
   'finance',
   'hive',
+  'inventory',
   'learn',
   'mira',
   'nova',

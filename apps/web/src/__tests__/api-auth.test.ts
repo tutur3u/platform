@@ -96,6 +96,7 @@ vi.mock('@tuturuuu/utils/ai-temp-auth', () => ({
     mockValidateAiTempAuthRequest(request),
 }));
 
+import { CURRENT_USER_APP_SESSION_AUTH } from '../app/api/v1/users/me/session-auth';
 // ---------------------------------------------------------------------------
 // Import after mocks are set up
 // ---------------------------------------------------------------------------
@@ -703,6 +704,7 @@ describe('withSessionAuth', () => {
         'cms',
         'finance',
         'hive',
+        'inventory',
         'learn',
         'mira',
         'nova',
@@ -712,6 +714,37 @@ describe('withSessionAuth', () => {
         'tudo',
       ],
     });
+  });
+
+  it('should accept Inventory app-session auth for current-user bootstrap APIs', async () => {
+    const { token } = createAppSessionToken({
+      email: 'inventory@example.com',
+      targetApp: 'inventory',
+      userId: 'inventory-user-1',
+    });
+    const request = new Request(
+      'http://localhost:3000/api/v1/users/me/default-workspace',
+      {
+        headers: {
+          authorization: `Bearer ${token}`,
+        },
+        method: 'GET',
+      }
+    ) as unknown as NextRequest;
+
+    const result = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.user.id).toBe('inventory-user-1');
+      expect(result.user.email).toBe('inventory@example.com');
+      expect(result.supabase).toBe(mockAdminClient);
+    }
+    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockCreateClient).not.toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
   });
 
   it('should reject app-session auth that misses configured target and scope', async () => {
