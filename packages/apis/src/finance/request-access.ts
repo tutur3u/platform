@@ -1,5 +1,3 @@
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -22,6 +20,12 @@ export type FinanceRouteContext = {
   user: SupabaseUser;
 };
 
+export type FinanceRouteAuthContext = {
+  sbAdmin: TypedSupabaseClient;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
 export type FinanceRouteContextResult =
   | {
       context: FinanceRouteContext;
@@ -31,14 +35,6 @@ export type FinanceRouteContextResult =
       context?: never;
       response: NextResponse;
     };
-
-function createCliSessionUser(claims: { email: string | null; sub: string }) {
-  return {
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  } as SupabaseUser;
-}
 
 async function createContextForUser({
   rawWsId,
@@ -78,25 +74,16 @@ async function createContextForUser({
 
 export async function getFinanceRouteContext(
   request: Request,
-  rawWsId: string
+  rawWsId: string,
+  authContext?: FinanceRouteAuthContext
 ): Promise<FinanceRouteContextResult> {
-  const appSessionToken = getAppSessionTokenFromRequest(request);
-
-  if (appSessionToken) {
-    const verification = verifyCliAccessToken(appSessionToken);
-
-    if (verification.ok) {
-      const sbAdmin = (await createAdminClient({
-        noCookie: true,
-      })) as TypedSupabaseClient;
-
-      return createContextForUser({
-        rawWsId,
-        sbAdmin,
-        supabase: sbAdmin,
-        user: createCliSessionUser(verification.claims),
-      });
-    }
+  if (authContext) {
+    return createContextForUser({
+      rawWsId,
+      sbAdmin: authContext.sbAdmin,
+      supabase: authContext.supabase,
+      user: authContext.user,
+    });
   }
 
   const supabase = (await createClient(request)) as TypedSupabaseClient;

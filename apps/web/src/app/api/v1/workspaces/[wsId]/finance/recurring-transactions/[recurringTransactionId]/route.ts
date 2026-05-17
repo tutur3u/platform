@@ -1,6 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const recurringTransactionSchema = z.object({
   name: z.string().min(1),
@@ -19,7 +20,11 @@ interface Params {
 
 export async function PUT(request: Request, { params }: Params) {
   const { wsId, recurringTransactionId } = await params;
-  const access = await getFinanceRouteContext(request, wsId);
+  const access = await getFinanceRouteContext(
+    request,
+    wsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
 
   if (access.response) {
     return access.response;
@@ -66,7 +71,11 @@ export async function PUT(request: Request, { params }: Params) {
 
 export async function DELETE(request: Request, { params }: Params) {
   const { wsId, recurringTransactionId } = await params;
-  const access = await getFinanceRouteContext(request, wsId);
+  const access = await getFinanceRouteContext(
+    request,
+    wsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
 
   if (access.response) {
     return access.response;

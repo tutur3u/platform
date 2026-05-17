@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getFinanceRouteContext } from '../../request-access';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -15,9 +18,13 @@ const TransactionCategoryCreateSchema = z.object({
   color: z.string().nullable().optional(),
 });
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;
@@ -50,9 +57,13 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;

@@ -6,6 +6,7 @@ import {
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 const querySchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).optional().nullable(),
@@ -31,7 +32,11 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const access = await getFinanceRouteContext(req, wsId);
+    const access = await getFinanceRouteContext(
+      req,
+      wsId,
+      await resolveFinanceRouteAuthContext(req)
+    );
 
     if (access.response) {
       return access.response;

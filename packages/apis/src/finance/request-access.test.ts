@@ -4,23 +4,9 @@ const mocks = vi.hoisted(() => ({
   adminSupabase: { from: vi.fn() },
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
-  getAppSessionTokenFromRequest: vi.fn(),
   getPermissions: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
   sessionSupabase: { from: vi.fn() },
-  verifyCliAccessToken: vi.fn(),
-}));
-
-vi.mock('@tuturuuu/auth/app-session', () => ({
-  getAppSessionTokenFromRequest: (
-    ...args: Parameters<typeof mocks.getAppSessionTokenFromRequest>
-  ) => mocks.getAppSessionTokenFromRequest(...args),
-}));
-
-vi.mock('@tuturuuu/auth/cli-session', () => ({
-  verifyCliAccessToken: (
-    ...args: Parameters<typeof mocks.verifyCliAccessToken>
-  ) => mocks.verifyCliAccessToken(...args),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -66,16 +52,7 @@ describe('finance request access', () => {
     });
   });
 
-  it('resolves CLI app-session tokens with an admin client and explicit permissions', async () => {
-    mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
-    mocks.verifyCliAccessToken.mockReturnValue({
-      claims: {
-        email: 'cli@tuturuuu.com',
-        sub: 'cli-user-1',
-      },
-      ok: true,
-    });
-
+  it('uses pre-authenticated finance route context with explicit permissions', async () => {
     const { getFinanceRouteContext } = await import('./request-access.js');
     const result = await getFinanceRouteContext(
       new Request('http://localhost/api/workspaces/personal/wallets', {
@@ -83,11 +60,19 @@ describe('finance request access', () => {
           Authorization: 'Bearer ttr_app_access',
         },
       }),
-      'personal'
+      'personal',
+      {
+        sbAdmin: mocks.adminSupabase as never,
+        supabase: mocks.adminSupabase as never,
+        user: {
+          email: 'cli@tuturuuu.com',
+          id: 'cli-user-1',
+        } as never,
+      }
     );
 
     expect(result.response).toBeUndefined();
-    expect(mocks.createAdminClient).toHaveBeenCalledWith({ noCookie: true });
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
     expect(mocks.createClient).not.toHaveBeenCalled();
     expect(mocks.getPermissions).toHaveBeenCalledWith({
       wsId: 'personal',
@@ -106,8 +91,6 @@ describe('finance request access', () => {
   });
 
   it('falls back to the request Supabase session when no CLI token is present', async () => {
-    mocks.getAppSessionTokenFromRequest.mockReturnValue(null);
-
     const { getFinanceRouteContext } = await import('./request-access.js');
     const result = await getFinanceRouteContext(
       new Request('http://localhost/api/workspaces/workspace-1/wallets'),

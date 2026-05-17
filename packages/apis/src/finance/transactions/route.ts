@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import {
+  type FinanceRouteAuthContext,
   getFinanceRouteContext,
   hasAnyFinancePermission,
 } from '../request-access';
@@ -33,9 +34,13 @@ function normalizeTransactionDate(value: string | Date) {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;
@@ -135,9 +140,13 @@ export async function GET(req: Request, { params }: Params) {
   });
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;

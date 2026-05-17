@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getFinanceRouteContext } from '../../../request-access';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../../request-access';
 
 interface Params {
   params: Promise<{
@@ -16,9 +19,13 @@ const TransactionCategoryUpdateSchema = z.object({
   color: z.string().nullable().optional(),
 });
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { categoryId, wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;
@@ -52,9 +59,13 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { categoryId, wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   const parsed = TransactionCategoryUpdateSchema.safeParse(await req.json());
 
@@ -98,9 +109,13 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { categoryId, wsId } = await params;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;

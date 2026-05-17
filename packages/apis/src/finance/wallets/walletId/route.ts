@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import type { FinanceRouteAuthContext } from '../../request-access';
 import { flattenWalletCreditData, getAccessibleWallet } from '../wallet-access';
 
 interface Params {
@@ -8,7 +9,11 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId: id, wsId } = await params;
   const result = await getAccessibleWallet({
     req,
@@ -16,6 +21,7 @@ export async function GET(req: Request, { params }: Params) {
     walletId: id,
     requiredPermission: 'view_transactions',
     select: '*, credit_wallets(limit, statement_date, payment_date)',
+    authContext,
   });
 
   if (result.response) {
@@ -25,7 +31,11 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(flattenWalletCreditData(result.wallet));
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const data = await req.json();
   const { walletId: id, wsId } = await params;
   const access = await getAccessibleWallet({
@@ -34,6 +44,7 @@ export async function PUT(req: Request, { params }: Params) {
     walletId: id,
     requiredPermission: 'update_wallets',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {
@@ -104,7 +115,11 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { walletId: id, wsId } = await params;
   const access = await getAccessibleWallet({
     req,
@@ -112,6 +127,7 @@ export async function DELETE(req: Request, { params }: Params) {
     walletId: id,
     requiredPermission: 'delete_wallets',
     select: 'id',
+    authContext,
   });
 
   if (access.response) {

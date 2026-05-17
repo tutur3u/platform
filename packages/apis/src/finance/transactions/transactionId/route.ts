@@ -4,7 +4,10 @@ import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
-import { getFinanceRouteContext } from '../../request-access';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../request-access';
 import { enrichTransactionsWithTags } from '../tag-enrichment';
 
 // Helper function to verify transaction belongs to workspace
@@ -46,6 +49,7 @@ interface Params {
 }
 
 interface DeleteTransactionOptions {
+  authContext?: FinanceRouteAuthContext;
   onBeforeDeleteFiles?: (input: {
     request: Request;
     transactionId: string;
@@ -71,7 +75,11 @@ const TransactionRouteParamsSchema = z.object({
   wsId: z.string().trim().min(1),
 });
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
 
   if (!paramsValidation.success) {
@@ -81,7 +89,7 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;
@@ -158,7 +166,11 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(enrichedTransactions?.[0] ?? transactionRow);
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const paramsValidation = TransactionRouteParamsSchema.safeParse(await params);
 
   if (!paramsValidation.success) {
@@ -168,7 +180,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   const parsed = TransactionUpdateSchema.safeParse(await req.json());
 
@@ -412,7 +424,7 @@ export async function deleteTransaction(
     );
   }
   const { transactionId, wsId } = paramsValidation.data;
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, options.authContext);
 
   if (access.response) {
     return access.response;
@@ -578,6 +590,10 @@ export async function deleteTransaction(
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request, params: Params) {
-  return deleteTransaction(req, params);
+export async function DELETE(
+  req: Request,
+  params: Params,
+  authContext?: FinanceRouteAuthContext
+) {
+  return deleteTransaction(req, params, { authContext });
 }

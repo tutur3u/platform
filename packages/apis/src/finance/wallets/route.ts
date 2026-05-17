@@ -1,6 +1,9 @@
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { NextResponse } from 'next/server';
-import { getFinanceRouteContext } from '../request-access';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../request-access';
 import { flattenWalletCreditList } from './wallet-access';
 
 interface Params {
@@ -9,9 +12,13 @@ interface Params {
   }>;
 }
 
-export async function GET(request: Request, { params }: Params) {
+export async function GET(
+  request: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(request, wsId);
+  const access = await getFinanceRouteContext(request, wsId, authContext);
 
   if (access.response) {
     return access.response;
@@ -171,10 +178,14 @@ export async function GET(request: Request, { params }: Params) {
   return NextResponse.json(walletsWithWindow);
 }
 
-export async function POST(req: Request, { params }: Params) {
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
   const data: Wallet = await req.json();
-  const access = await getFinanceRouteContext(req, wsId);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
   if (access.response) {
     return access.response;

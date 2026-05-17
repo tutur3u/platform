@@ -318,9 +318,13 @@ not have dedicated flags yet. Finance list output is paginated by default; use
 sets.
 
 Finance API routes that back `ttr finance` should resolve access through
-`getFinanceRouteContext` from `@tuturuuu/apis/finance/request-access`. That
-keeps CLI app-session bearer tokens, browser Supabase sessions, `personal`
-workspace resolution, and finance permission checks on the same path.
+`getFinanceRouteContext` from `@tuturuuu/apis/finance/request-access`, with
+app-owned routes passing `resolveFinanceRouteAuthContext(request)` from
+`apps/web/src/lib/finance-route-auth.ts` when they need CLI app-session bearer
+token support. Keep CLI token verification in the app layer so `@tuturuuu/apis`
+does not depend on `@tuturuuu/auth`; `getFinanceRouteContext` still keeps the
+pre-authenticated actor, browser Supabase sessions, `personal` workspace
+resolution, and finance permission checks on the same path.
 
 ```bash
 # Wallet CRUD.

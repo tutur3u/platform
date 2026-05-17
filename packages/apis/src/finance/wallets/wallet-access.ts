@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  type FinanceRouteAuthContext,
   type FinanceRouteContext,
   getFinanceRouteContext,
 } from '../request-access';
@@ -71,9 +72,10 @@ export function flattenWalletCreditList<T extends Record<string, unknown>>(
 export async function getWalletRouteContext(
   req: Request,
   wsId: string,
-  requiredPermission: WalletPermission
+  requiredPermission: WalletPermission,
+  authContext?: FinanceRouteAuthContext
 ): Promise<WalletContextResult> {
-  const financeContext = await getFinanceRouteContext(req, wsId);
+  const financeContext = await getFinanceRouteContext(req, wsId, authContext);
 
   if (financeContext.response) {
     return financeContext;
@@ -108,17 +110,20 @@ export async function getAccessibleWallet({
   walletId,
   requiredPermission,
   select,
+  authContext,
 }: {
   req: Request;
   wsId: string;
   walletId: string;
   requiredPermission: WalletPermission;
   select: string;
+  authContext?: FinanceRouteAuthContext;
 }): Promise<AccessibleWalletResult> {
   const contextResult = await getWalletRouteContext(
     req,
     wsId,
-    requiredPermission
+    requiredPermission,
+    authContext
   );
 
   if (contextResult.response) {

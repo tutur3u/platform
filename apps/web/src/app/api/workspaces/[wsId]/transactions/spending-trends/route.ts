@@ -1,6 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { format } from 'date-fns';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -8,7 +9,11 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   const { wsId } = await params;
-  const access = await getFinanceRouteContext(request, wsId);
+  const access = await getFinanceRouteContext(
+    request,
+    wsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
 
   if (access.response) {
     return access.response;
