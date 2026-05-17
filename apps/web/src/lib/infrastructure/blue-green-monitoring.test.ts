@@ -253,13 +253,8 @@ describe('readBlueGreenMonitoringSnapshot', () => {
 
       expect(snapshot.control.dockerRecoverySettings).toMatchObject({
         dockerRestartAfterMs: 5000,
-        dockerRestartCommand: ['service', 'docker', 'restart'],
-        postRestartCommands: [
-          {
-            command: 'docker',
-            cwd: '/srv/zeus',
-          },
-        ],
+        dockerRestartCommand: null,
+        postRestartCommands: [],
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

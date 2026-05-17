@@ -59,7 +59,7 @@ describe('blue-green monitoring controls', () => {
     }
   });
 
-  it('persists Docker recovery settings for the host watcher', () => {
+  it('persists Docker recovery settings without web-controlled command hooks', () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'blue-green-recovery-settings-')
     );
@@ -91,20 +91,17 @@ describe('blue-green monitoring controls', () => {
       });
 
       expect(settings).toMatchObject({
-        dockerRestartCommand: ['service', 'docker', 'restart'],
+        dockerRestartCommand: null,
         emailAlertRecipients: ['ops@platform.test'],
         emailAlertsEnabled: true,
         kind: 'docker-recovery-settings',
-        postRestartCommands: [
-          {
-            command: 'docker',
-            cwd: '/srv/zeus',
-          },
-        ],
+        postRestartCommands: [],
       });
       expect(readBlueGreenDockerRecoverySettings()).toMatchObject({
         dockerRestartAfterMs: 5000,
+        dockerRestartCommand: null,
         emailAlertCooldownMs: 900_000,
+        postRestartCommands: [],
         postRestartCommandTimeoutMs: 120_000,
         updatedBy: 'user-1',
       });

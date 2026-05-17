@@ -3,7 +3,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Save, ServerCog } from '@tuturuuu/icons';
 import {
-  type BlueGreenDockerRecoveryCommand,
   type BlueGreenMonitoringSnapshot,
   updateBlueGreenDockerRecoverySettings,
 } from '@tuturuuu/internal-api/infrastructure';
@@ -12,9 +11,8 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function numberInput(value: number | null) {
   return value == null ? '' : String(value);
@@ -33,21 +31,6 @@ function parseOptionalPositiveInteger(value: string) {
 
 function parseRequiredPositiveInteger(value: string, fallback: number) {
   return parseOptionalPositiveInteger(value) ?? fallback;
-}
-
-function parseJsonArray<T>(value: string, fallback: T[]) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return fallback;
-  }
-
-  const parsed = JSON.parse(trimmed);
-  if (!Array.isArray(parsed)) {
-    throw new Error('Expected a JSON array.');
-  }
-
-  return parsed as T[];
 }
 
 function parseEmailList(value: string) {
@@ -95,16 +78,6 @@ export function BlueGreenMonitoringRecoverySettings({
   const [emailAlertCooldownMs, setEmailAlertCooldownMs] = useState(
     numberInput(settings.emailAlertCooldownMs)
   );
-  const [dockerRestartCommand, setDockerRestartCommand] = useState(
-    JSON.stringify(settings.dockerRestartCommand ?? [], null, 2)
-  );
-  const [postRestartCommands, setPostRestartCommands] = useState(
-    JSON.stringify(settings.postRestartCommands, null, 2)
-  );
-  const commandCount = useMemo(
-    () => settings.postRestartCommands.length,
-    [settings.postRestartCommands.length]
-  );
 
   useEffect(() => {
     setDockerRestartDisabled(settings.dockerRestartDisabled);
@@ -118,23 +91,10 @@ export function BlueGreenMonitoringRecoverySettings({
     setEmailAlertsEnabled(settings.emailAlertsEnabled);
     setEmailAlertRecipients(settings.emailAlertRecipients.join(', '));
     setEmailAlertCooldownMs(numberInput(settings.emailAlertCooldownMs));
-    setDockerRestartCommand(
-      JSON.stringify(settings.dockerRestartCommand ?? [], null, 2)
-    );
-    setPostRestartCommands(
-      JSON.stringify(settings.postRestartCommands, null, 2)
-    );
   }, [settings]);
 
   const mutation = useMutation({
     mutationFn: () => {
-      const parsedRestartCommand = parseJsonArray<string>(
-        dockerRestartCommand,
-        []
-      );
-      const parsedPostRestartCommands =
-        parseJsonArray<BlueGreenDockerRecoveryCommand>(postRestartCommands, []);
-
       return updateBlueGreenDockerRecoverySettings({
         dockerRecoveryPollMs: parseRequiredPositiveInteger(
           dockerRecoveryPollMs,
@@ -145,8 +105,6 @@ export function BlueGreenMonitoringRecoverySettings({
         ),
         dockerRestartAfterMs:
           parseOptionalPositiveInteger(dockerRestartAfterMs),
-        dockerRestartCommand:
-          parsedRestartCommand.length > 0 ? parsedRestartCommand : null,
         dockerRestartCooldownMs: parseRequiredPositiveInteger(
           dockerRestartCooldownMs,
           settings.dockerRestartCooldownMs
@@ -162,7 +120,6 @@ export function BlueGreenMonitoringRecoverySettings({
           postRestartCommandTimeoutMs,
           settings.postRestartCommandTimeoutMs
         ),
-        postRestartCommands: parsedPostRestartCommands,
       });
     },
     onSuccess: async () => {
@@ -196,7 +153,6 @@ export function BlueGreenMonitoringRecoverySettings({
           </p>
           <p className="mt-2 text-muted-foreground text-xs">
             {t('recovery_settings.updated', {
-              count: String(commandCount),
               time: settings.updatedAt ?? t('states.none'),
             })}
           </p>
@@ -292,21 +248,6 @@ export function BlueGreenMonitoringRecoverySettings({
             value={emailAlertCooldownMs}
           />
         </div>
-
-        <div className="space-y-4 rounded-lg border border-border/60 bg-muted/20 p-4 lg:col-span-3">
-          <SettingTextarea
-            id="docker-restart-command"
-            label={t('recovery_settings.restart_command')}
-            onChange={setDockerRestartCommand}
-            value={dockerRestartCommand}
-          />
-          <SettingTextarea
-            id="docker-post-restart-commands"
-            label={t('recovery_settings.post_restart_commands')}
-            onChange={setPostRestartCommands}
-            value={postRestartCommands}
-          />
-        </div>
       </div>
     </section>
   );
@@ -335,30 +276,6 @@ function SettingInput({
         inputMode={inputMode}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
-        value={value}
-      />
-    </div>
-  );
-}
-
-function SettingTextarea({
-  id,
-  label,
-  onChange,
-  value,
-}: {
-  id: string;
-  label: string;
-  onChange: (value: string) => void;
-  value: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Textarea
-        className="min-h-28 font-mono text-xs"
-        id={id}
-        onChange={(event) => onChange(event.target.value)}
         value={value}
       />
     </div>

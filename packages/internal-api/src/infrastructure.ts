@@ -728,7 +728,12 @@ export interface RequestBlueGreenWatcherRecoveryResponse {
 
 export type UpdateBlueGreenDockerRecoverySettingsPayload = Omit<
   BlueGreenDockerRecoverySettings,
-  'kind' | 'updatedAt' | 'updatedBy' | 'updatedByEmail'
+  | 'dockerRestartCommand'
+  | 'kind'
+  | 'postRestartCommands'
+  | 'updatedAt'
+  | 'updatedBy'
+  | 'updatedByEmail'
 >;
 
 export interface UpdateBlueGreenDockerRecoverySettingsResponse {

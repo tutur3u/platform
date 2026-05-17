@@ -432,11 +432,18 @@ Useful host-supervisor knobs:
   its watcher container. Each entry is an object with `command`, `args`, and an
   optional `cwd`.
 
-The same values can be updated from Infrastructure Monitoring in the web
-dashboard. The dashboard writes
+Timing, disable, and email alert values can be updated from Infrastructure
+Monitoring in the web dashboard. The dashboard writes
 `tmp/docker-web/watch/control/blue-green-docker-recovery-settings.json`, and
 the host supervisor reads that file before each Docker recovery wait. Dashboard
 settings override the environment defaults without restarting the supervisor.
+Host-level executable commands are different: configure
+`DOCKER_WEB_WATCHER_DOCKER_RESTART_COMMAND` and
+`DOCKER_WEB_WATCHER_DOCKER_POST_RESTART_COMMANDS` only in the host supervisor
+environment. The supervisor intentionally ignores command fields from
+`blue-green-docker-recovery-settings.json` so dashboard viewers cannot persist
+host commands for a later recovery event.
+
 That settings file also owns Docker crash email alerts:
 
 - `emailAlertsEnabled`: enables SES-backed Docker recovery alert emails from the

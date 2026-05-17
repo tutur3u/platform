@@ -1264,20 +1264,6 @@ function getDockerDaemonRecoverySettingsEnv({
     delete nextEnv[DOCKER_DAEMON_RESTART_DISABLED_ENV];
   }
 
-  if (Array.isArray(settings.dockerRestartCommand)) {
-    nextEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV] = JSON.stringify(
-      settings.dockerRestartCommand
-    );
-  } else {
-    delete nextEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV];
-  }
-
-  if (Array.isArray(settings.postRestartCommands)) {
-    nextEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV] = JSON.stringify(
-      settings.postRestartCommands
-    );
-  }
-
   return nextEnv;
 }
 

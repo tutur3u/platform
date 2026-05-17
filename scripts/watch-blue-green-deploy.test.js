@@ -230,7 +230,7 @@ test('docker daemon restart configuration defaults to host service commands', ()
   );
 });
 
-test('dashboard Docker recovery settings override static restart command env', () => {
+test('dashboard Docker recovery settings preserve host-configured command env', () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-command-docker-recovery-settings-')
   );
@@ -241,8 +241,14 @@ test('dashboard Docker recovery settings override static restart command env', (
     fs.writeFileSync(
       path.join(paths.controlDir, DOCKER_DAEMON_RECOVERY_SETTINGS_FILE),
       JSON.stringify({
-        dockerRestartCommand: null,
-        postRestartCommands: [],
+        dockerRestartCommand: ['dashboard', 'docker', 'restart'],
+        postRestartCommands: [
+          {
+            args: ['compose', 'up', '-d'],
+            command: 'dashboard',
+            cwd: '/tmp',
+          },
+        ],
       }),
       'utf8'
     );
@@ -257,14 +263,20 @@ test('dashboard Docker recovery settings override static restart command env', (
       paths,
     });
 
-    assert.equal(effectiveEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV], undefined);
-    assert.equal(effectiveEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV], '[]');
+    assert.equal(
+      effectiveEnv[DOCKER_DAEMON_RESTART_COMMAND_ENV],
+      '["custom","docker","restart"]'
+    );
+    assert.equal(
+      effectiveEnv[DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV],
+      '[["docker","compose","up","-d"]]'
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
 });
 
-test('waitForDockerDaemonRecovery runs dashboard-configured hooks after Docker recovers', async () => {
+test('waitForDockerDaemonRecovery ignores dashboard command fields and runs host-configured hooks', async () => {
   const tempDir = fs.mkdtempSync(
     path.join(os.tmpdir(), 'watch-command-docker-recovery-settings-')
   );
@@ -281,16 +293,16 @@ test('waitForDockerDaemonRecovery runs dashboard-configured hooks after Docker r
         dockerRecoveryPollMs: 10,
         dockerRecoveryTimeoutMs: null,
         dockerRestartAfterMs: 1,
-        dockerRestartCommand: ['service', 'docker', 'restart'],
+        dockerRestartCommand: ['malicious', 'docker', 'restart'],
         dockerRestartCooldownMs: 1,
         dockerRestartDisabled: false,
         kind: 'docker-recovery-settings',
         postRestartCommandTimeoutMs: 1234,
         postRestartCommands: [
           {
-            args: ['compose', 'up', '-d'],
-            command: 'docker',
-            cwd: '/srv/zeus',
+            args: ['after-restart'],
+            command: 'malicious',
+            cwd: '/tmp',
           },
         ],
       }),
@@ -298,7 +310,12 @@ test('waitForDockerDaemonRecovery runs dashboard-configured hooks after Docker r
     );
 
     const recovered = await waitForDockerDaemonRecovery({
-      env: { PATH: process.env.PATH },
+      env: {
+        PATH: process.env.PATH,
+        [DOCKER_DAEMON_POST_RESTART_COMMANDS_ENV]:
+          '[{"command":"docker","args":["compose","up","-d"],"cwd":"/srv/zeus"}]',
+        [DOCKER_DAEMON_RESTART_COMMAND_ENV]: '["service","docker","restart"]',
+      },
       fsImpl: fs,
       log: { warn() {} },
       now: () => now,

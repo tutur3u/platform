@@ -4,7 +4,16 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
-export async function authorizeInfrastructureViewer(request: Request) {
+type InfrastructureMonitoringPermission =
+  | 'manage_workspace_roles'
+  | 'view_infrastructure';
+
+const INFRASTRUCTURE_OPERATOR_PERMISSION = 'manage_workspace_roles';
+
+export async function authorizeInfrastructureViewer(
+  request: Request,
+  requiredPermission: InfrastructureMonitoringPermission = 'view_infrastructure'
+) {
   const supabase = await createClient(request);
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
@@ -20,7 +29,7 @@ export async function authorizeInfrastructureViewer(request: Request) {
     request,
   });
 
-  if (!permissions || permissions.withoutPermission('view_infrastructure')) {
+  if (!permissions || permissions.withoutPermission(requiredPermission)) {
     return {
       ok: false as const,
       response: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
@@ -31,4 +40,11 @@ export async function authorizeInfrastructureViewer(request: Request) {
     ok: true as const,
     user,
   };
+}
+
+export function authorizeInfrastructureOperator(request: Request) {
+  return authorizeInfrastructureViewer(
+    request,
+    INFRASTRUCTURE_OPERATOR_PERMISSION
+  );
 }

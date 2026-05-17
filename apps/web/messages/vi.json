@@ -2167,16 +2167,14 @@
     "recovery_settings": {
       "badge": "Phục hồi Docker",
       "command_timeout": "Timeout lệnh (ms)",
-      "description": "Tinh chỉnh supervisor trên host để restart Docker và chạy các lệnh phục hồi dịch vụ đặt cùng máy sau khi daemon hoạt động lại.",
+      "description": "Tinh chỉnh thời điểm restart của supervisor trên host và hành vi cảnh báo khi Docker crash.",
       "email_alerts_enabled": "Gửi email khi Docker crash",
       "email_cooldown": "Thời gian chờ giữa email cảnh báo (ms)",
       "email_recipients": "Người nhận cảnh báo",
       "email_recipients_placeholder": "ops@example.com, founder@example.com",
       "no_timeout": "Không giới hạn thời gian",
       "poll": "Chu kỳ kiểm tra Docker (ms)",
-      "post_restart_commands": "JSON lệnh sau restart",
       "restart_after": "Restart sau khi mất Docker (ms)",
-      "restart_command": "JSON lệnh restart Docker",
       "restart_cooldown": "Thời gian chờ giữa các lần restart (ms)",
       "restart_disabled": "Tắt tự động restart Docker",
       "save": "Lưu Cấu Hình Phục Hồi",
@@ -2185,7 +2183,7 @@
       "saving": "Đang Lưu",
       "timeout": "Timeout chờ Docker phục hồi (ms)",
       "title": "Cấu hình phục hồi trên host",
-      "updated": "{count} lệnh sau restart · Cập nhật lần cuối {time}"
+      "updated": "Cập nhật lần cuối {time}"
     },
     "requests": {
       "internal": "Probe Nội Bộ"

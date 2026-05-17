@@ -163,42 +163,6 @@ function normalizeEmailList(value: unknown) {
   return emails;
 }
 
-function normalizeStringArray(value: unknown) {
-  return Array.isArray(value) &&
-    value.every((entry) => typeof entry === 'string' && entry.trim().length > 0)
-    ? value.map((entry) => entry.trim())
-    : null;
-}
-
-function normalizeRecoveryCommand(
-  value: unknown
-): BlueGreenDockerRecoveryCommand | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    return null;
-  }
-
-  const record = value as Record<string, unknown>;
-  const command =
-    typeof record.command === 'string' && record.command.trim().length > 0
-      ? record.command.trim()
-      : null;
-  const args = normalizeStringArray(record.args);
-  const cwd =
-    typeof record.cwd === 'string' && record.cwd.trim().length > 0
-      ? record.cwd.trim()
-      : null;
-
-  if (!command || !args) {
-    return null;
-  }
-
-  return {
-    args,
-    command,
-    cwd,
-  };
-}
-
 function getDefaultDockerRecoverySettings(): BlueGreenDockerRecoverySettings {
   return {
     dockerRecoveryPollMs: DEFAULT_DOCKER_RECOVERY_POLL_MS,
@@ -229,12 +193,6 @@ export function normalizeBlueGreenDockerRecoverySettings(
   }
 
   const record = value as Record<string, unknown>;
-  const postRestartCommands = Array.isArray(record.postRestartCommands)
-    ? record.postRestartCommands.flatMap((command) => {
-        const normalized = normalizeRecoveryCommand(command);
-        return normalized ? [normalized] : [];
-      })
-    : defaults.postRestartCommands;
 
   return {
     dockerRecoveryPollMs: toPositiveInteger(
@@ -249,9 +207,7 @@ export function normalizeBlueGreenDockerRecoverySettings(
       record.dockerRestartAfterMs,
       defaults.dockerRestartAfterMs
     ),
-    dockerRestartCommand:
-      normalizeStringArray(record.dockerRestartCommand) ??
-      defaults.dockerRestartCommand,
+    dockerRestartCommand: null,
     dockerRestartCooldownMs: toPositiveInteger(
       record.dockerRestartCooldownMs,
       defaults.dockerRestartCooldownMs
@@ -274,7 +230,7 @@ export function normalizeBlueGreenDockerRecoverySettings(
       record.postRestartCommandTimeoutMs,
       defaults.postRestartCommandTimeoutMs
     ),
-    postRestartCommands,
+    postRestartCommands: [],
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : null,
     updatedBy: typeof record.updatedBy === 'string' ? record.updatedBy : null,
     updatedByEmail:

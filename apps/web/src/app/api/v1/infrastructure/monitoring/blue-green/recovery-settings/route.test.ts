@@ -2,17 +2,17 @@ import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
-  authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperatorMock,
   normalizeBlueGreenDockerRecoverySettingsMock,
   writeBlueGreenDockerRecoverySettingsMock,
 } = vi.hoisted(() => ({
-  authorizeInfrastructureViewerMock: vi.fn(),
+  authorizeInfrastructureOperatorMock: vi.fn(),
   normalizeBlueGreenDockerRecoverySettingsMock: vi.fn(),
   writeBlueGreenDockerRecoverySettingsMock: vi.fn(),
 }));
 
 vi.mock('../authorization', () => ({
-  authorizeInfrastructureViewer: authorizeInfrastructureViewerMock,
+  authorizeInfrastructureOperator: authorizeInfrastructureOperatorMock,
 }));
 
 vi.mock('@/lib/infrastructure/blue-green-monitoring-controls', () => ({
@@ -43,7 +43,7 @@ describe('blue-green recovery-settings route', () => {
   });
 
   it('returns the authorization response when access is denied', async () => {
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: false,
       response: new Response(JSON.stringify({ message: 'Forbidden' }), {
         status: 403,
@@ -56,12 +56,12 @@ describe('blue-green recovery-settings route', () => {
     await expect(response.json()).resolves.toEqual({ message: 'Forbidden' });
   });
 
-  it('persists Docker recovery settings for authorized viewers', async () => {
+  it('persists Docker recovery settings for authorized operators', async () => {
     const normalizedSettings = {
       dockerRecoveryPollMs: 1000,
       dockerRecoveryTimeoutMs: null,
       dockerRestartAfterMs: 5000,
-      dockerRestartCommand: ['service', 'docker', 'restart'],
+      dockerRestartCommand: null,
       dockerRestartCooldownMs: 60_000,
       dockerRestartDisabled: false,
       emailAlertCooldownMs: 900_000,
@@ -80,7 +80,7 @@ describe('blue-green recovery-settings route', () => {
       updatedBy: 'user-1',
       updatedByEmail: 'ops@platform.test',
     };
-    authorizeInfrastructureViewerMock.mockResolvedValue({
+    authorizeInfrastructureOperatorMock.mockResolvedValue({
       ok: true,
       user: {
         email: 'ops@platform.test',
@@ -99,6 +99,9 @@ describe('blue-green recovery-settings route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(authorizeInfrastructureOperatorMock).toHaveBeenCalledWith(
+      expect.any(Request)
+    );
     expect(writeBlueGreenDockerRecoverySettingsMock).toHaveBeenCalledWith({
       ...normalizedSettings,
       updatedBy: 'user-1',
