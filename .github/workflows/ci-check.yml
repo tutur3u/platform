@@ -12,6 +12,10 @@ on:
         description: "Whether the workflow should run"
         value: ${{ jobs.check.outputs.should_run }}
 
+permissions:
+  contents: read
+  deployments: read
+
 jobs:
   check:
     name: Check CI Config
@@ -30,6 +34,9 @@ jobs:
             package.json
             packages/*/package.json
             scripts/ci/check-workflow-config.ts
+            scripts/ci/github-deployment-markers.ts
+            scripts/ci/resolve-changed-files-core.ts
+            scripts/ci/resolve-changed-files.ts
             turbo.json
             tuturuuu.ts
           sparse-checkout-cone-mode: false
@@ -43,25 +50,10 @@ jobs:
         id: changed_files
         shell: bash
         env:
-          BEFORE_SHA: ${{ github.event.before || '' }}
+          GITHUB_TOKEN: ${{ github.token }}
+          WORKFLOW_NAME: ${{ inputs.workflow_name }}
         run: |
-          CHANGED_FILES_PATH="${RUNNER_TEMP}/changed-files.txt"
-
-          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
-            : > "$CHANGED_FILES_PATH"
-          elif [ -n "$BEFORE_SHA" ] && [[ ! "$BEFORE_SHA" =~ ^0+$ ]]; then
-            git diff --name-only "$BEFORE_SHA" "$GITHUB_SHA" > "$CHANGED_FILES_PATH" || rm -f "$CHANGED_FILES_PATH"
-          else
-            git diff-tree --no-commit-id --name-only -r "$GITHUB_SHA" > "$CHANGED_FILES_PATH" || rm -f "$CHANGED_FILES_PATH"
-          fi
-
-          if [ -f "$CHANGED_FILES_PATH" ]; then
-            echo "changed_files_path=$CHANGED_FILES_PATH" >> "$GITHUB_OUTPUT"
-            echo "Changed files:"
-            sed 's/^/- /' "$CHANGED_FILES_PATH"
-          else
-            echo "::warning::Unable to compute changed files. Affected Vercel gating will default open."
-          fi
+          bun run --silent scripts/ci/resolve-changed-files.ts
 
       - name: Check Configuration
         id: check_config

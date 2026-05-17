@@ -15,11 +15,17 @@ jobs:
     uses: ./.github/workflows/ci-check.yml
     with:
       workflow_name: vercel-preview-track.yaml
+    permissions:
+      contents: read
+      deployments: read
 
   Deploy-Preview:
     needs: [check-ci]
     if: needs.check-ci.outputs.should_run == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - name: Check out code
         uses: actions/checkout@v6
@@ -72,3 +78,11 @@ jobs:
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Record successful Vercel deployment marker
+        if: steps.check_commits.outputs.skip_build != 'true'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          VERCEL_WORKFLOW_NAME: vercel-preview-track.yaml
+        run: bun run --silent scripts/ci/record-vercel-deployment.ts

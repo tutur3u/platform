@@ -1,7 +1,7 @@
 ---
 title: 'GitHub Actions Runbook'
 description: 'How the repository’s automation is organized, gated, and operated.'
-updatedAt: '2026-05-16'
+updatedAt: '2026-05-17'
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -20,6 +20,19 @@ For Vercel deployments, `ci-check.yml` also performs affected-app gating before
 any install, build, or deploy step starts. It checks the current GitHub event's
 changed files against Vercel app metadata and workspace dependency closures from
 `tuturuuu.ts`.
+
+The changed-file resolver must evaluate the full effective change range:
+
+- Manual `workflow_dispatch` runs bypass affected-app gating when the workflow is
+  enabled.
+- Vercel push workflows first look for the latest successful GitHub Deployment
+  marker for the same Vercel workflow and branch, then diff that marker SHA to
+  the current `GITHUB_SHA`.
+- If no marker is available, push events use the GitHub event payload's complete
+  commit file list instead of falling back to only the latest commit.
+- Pull request events diff the PR base SHA to the PR head SHA.
+- If the resolver cannot prove the full range, it leaves changed-file state
+  unavailable so Vercel gating defaults open.
 
 Affected Vercel rules:
 
@@ -72,6 +85,9 @@ These workflows:
 - run `vercel build`
 - deploy prebuilt artifacts
 - skip work when a newer commit already exists on the target branch
+- record a non-blocking GitHub Deployment marker after a successful Vercel
+  build/deploy so the next push can evaluate every change since the last
+  successful run
 
 ### Database automation
 
@@ -138,6 +154,11 @@ package or publish jobs can start.
 Vercel workflows intentionally skip if the branch already has a newer commit than the
 current run. A skipped deployment may be correct rather than broken.
 
+The deployment marker closes the gap created by these stale-run skips. When a
+later push reaches the latest commit, affected-app gating compares against the
+last successful marker rather than only the newest push payload, so app changes
+from skipped intermediate runs still queue the correct Vercel workflow.
+
 ### Prerequisite guards
 
 - `supabase-staging.yaml` requires a successful staging preview trigger unless manually dispatched.
@@ -156,10 +177,14 @@ framework, which fails the simulator build during Xcode's embed phase.
 
 1. Check whether `ci-check.yml` disabled the workflow through `tuturuuu.ts`.
 2. For Vercel workflows, inspect the `ci-check.yml` decision reason and matched paths.
-3. Check whether the workflow was skipped because a newer commit exists.
-4. Check path filters to confirm GitHub should have started the lightweight workflow.
-5. For database workflows, inspect the prerequisite evaluation job before the deploy job.
-6. For Docker changes, verify `docker-setup-check.yaml` specifically.
+3. Inspect the changed-file source, base SHA, head SHA, and path count emitted by
+   `resolve-changed-files.ts`.
+4. Check whether the workflow was skipped because a newer commit exists.
+5. Check whether the prior successful GitHub Deployment marker exists for that
+   Vercel workflow and branch.
+6. Check path filters to confirm GitHub should have started the lightweight workflow.
+7. For database workflows, inspect the prerequisite evaluation job before the deploy job.
+8. For Docker changes, verify `docker-setup-check.yaml` specifically.
 
 ## When You Add New Automation
 
