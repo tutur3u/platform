@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
   addWorkspaceTaskLabel,
+  createWorkspaceLabel,
   removeWorkspaceTaskLabel,
   updateWorkspaceTask,
 } from '@tuturuuu/internal-api/tasks';
@@ -25,6 +26,7 @@ interface UseTaskLabelManagementProps {
   isMultiSelectMode?: boolean;
   onClearSelection?: () => void;
   taskId?: string; // Optional task ID for syncing individual task cache
+  labelCacheWorkspaceIds?: Array<string | undefined>;
 }
 
 export function useTaskLabelManagement({
@@ -35,12 +37,22 @@ export function useTaskLabelManagement({
   selectedTasks,
   isMultiSelectMode,
   taskId,
+  labelCacheWorkspaceIds,
 }: UseTaskLabelManagementProps) {
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
   const [newLabelName, setNewLabelName] = useState('');
   const [newLabelColor, setNewLabelColor] = useState(NEW_LABEL_COLOR);
   const [creatingLabel, setCreatingLabel] = useState(false);
+
+  const getLabelCacheWorkspaceIds = () =>
+    Array.from(
+      new Set(
+        [workspaceId, ...(labelCacheWorkspaceIds ?? [])].filter(
+          (id): id is string => Boolean(id)
+        )
+      )
+    );
 
   // Toggle a label for the task (quick labels submenu)
   async function toggleTaskLabel(labelId: string) {
@@ -255,46 +267,40 @@ export function useTaskLabelManagement({
 
     setCreatingLabel(true);
     try {
-      const response = await fetch(`/api/v1/workspaces/${workspaceId}/labels`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const newLabel = await createWorkspaceLabel(
+        workspaceId,
+        {
           name: newLabelName.trim(),
           color: newLabelColor,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create label');
-      }
-
-      const newLabel = await response.json();
+        },
+        typeof window !== 'undefined'
+          ? { baseUrl: window.location.origin }
+          : undefined
+      );
 
       // Optimistically add the new label to ALL workspace labels caches
       // Note: Two different query keys are used across the codebase
-      queryClient.setQueryData(
-        ['workspace-labels', workspaceId],
-        (old: WorkspaceTaskLabel[] | undefined) => {
-          if (!old) return [newLabel];
-          // Check if label already exists (shouldn't happen, but defensive)
-          if (old.some((l) => l.id === newLabel.id)) return old;
-          // Sort alphabetically like useWorkspaceLabels does
-          const updated = [newLabel, ...old];
-          return updated.sort((a, b) =>
-            a.name.toLowerCase().localeCompare(b.name.toLowerCase())
-          );
-        }
-      );
-      queryClient.setQueryData(
-        ['workspace_task_labels', workspaceId],
-        (old: WorkspaceTaskLabel[] | undefined) => {
-          if (!old) return [newLabel];
-          if (old.some((l) => l.id === newLabel.id)) return old;
-          return [newLabel, ...old]; // Most recent first (created_at desc)
-        }
-      );
+      for (const cacheWorkspaceId of getLabelCacheWorkspaceIds()) {
+        queryClient.setQueryData(
+          ['workspace-labels', cacheWorkspaceId],
+          (old: WorkspaceTaskLabel[] | undefined) => {
+            if (!old) return [newLabel];
+            if (old.some((l) => l.id === newLabel.id)) return old;
+            const updated = [newLabel, ...old];
+            return updated.sort((a, b) =>
+              a.name.toLowerCase().localeCompare(b.name.toLowerCase())
+            );
+          }
+        );
+        queryClient.setQueryData(
+          ['workspace_task_labels', cacheWorkspaceId],
+          (old: WorkspaceTaskLabel[] | undefined) => {
+            if (!old) return [newLabel];
+            if (old.some((l) => l.id === newLabel.id)) return old;
+            return [newLabel, ...old];
+          }
+        );
+      }
 
       // Auto-apply the newly created label to this task
       let linkSucceeded = false;
