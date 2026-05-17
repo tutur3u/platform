@@ -98,7 +98,13 @@ export function TaskNameInput({
         }}
         onKeyDown={(e) => {
           // Enter key moves to description
-          if (e.key === 'Enter') {
+          if (
+            e.key === 'Enter' &&
+            !e.altKey &&
+            !e.ctrlKey &&
+            !e.metaKey &&
+            !e.shiftKey
+          ) {
             if (e.nativeEvent.isComposing || e.keyCode === 229) {
               return;
             }

@@ -104,4 +104,37 @@ describe('TaskNameInput', () => {
 
     expect(focusEditor).toHaveBeenCalledTimes(1);
   });
+
+  it.each([
+    ['Ctrl+Enter', { ctrlKey: true }],
+    ['Cmd+Enter', { metaKey: true }],
+  ])('lets %s bubble to the dialog shortcut handler', (_, modifier) => {
+    const { flushNameUpdate, focusEditor, targetEditorCursorRef, input } =
+      renderTaskNameInput({
+        isCreateMode: false,
+      });
+    const windowKeyDown = vi.fn((event: KeyboardEvent) => {
+      event.preventDefault();
+    });
+
+    window.addEventListener('keydown', windowKeyDown);
+
+    try {
+      const eventAllowed = fireEvent.keyDown(input, {
+        key: 'Enter',
+        ...modifier,
+      });
+
+      expect(eventAllowed).toBe(false);
+      expect(windowKeyDown).toHaveBeenCalledTimes(1);
+      expect(flushNameUpdate).not.toHaveBeenCalled();
+      expect(targetEditorCursorRef.current).toBe(12);
+
+      vi.runOnlyPendingTimers();
+
+      expect(focusEditor).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener('keydown', windowKeyDown);
+    }
+  });
 });
