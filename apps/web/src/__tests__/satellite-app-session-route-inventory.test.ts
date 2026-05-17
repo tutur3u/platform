@@ -29,6 +29,7 @@ const satelliteRouteRoots = [
 const satelliteAppApiRoots = [
   'apps/learn/src/app/api',
   'apps/teach/src/app/api',
+  'apps/inventory/src/app/api',
 ];
 
 const allowedSatelliteLocalApiRoutes = new Set([
@@ -36,6 +37,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/learn/src/app/api/auth/verify-app-token/route.ts',
   'apps/teach/src/app/api/auth/logout/route.ts',
   'apps/teach/src/app/api/auth/verify-app-token/route.ts',
+  'apps/inventory/src/app/api/auth/logout/route.ts',
+  'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
 ]);
 
 function walkRouteFiles(relativePath: string): string[] {
@@ -112,7 +115,7 @@ describe('satellite app-session route inventory', () => {
     expect(source).toContain('verifyAppSessionRequest');
   });
 
-  it('keeps Learn and Teach local APIs limited to auth cookie handoff routes', () => {
+  it('keeps satellite local APIs limited to auth cookie handoff routes', () => {
     const unexpectedRoutes = satelliteAppApiRoots
       .flatMap(walkRouteFiles)
       .map(relative)
@@ -121,15 +124,29 @@ describe('satellite app-session route inventory', () => {
     expect(unexpectedRoutes).toEqual([]);
   });
 
-  it('keeps Learn and Teach browser logout routes redirecting after local cleanup', () => {
+  it('keeps satellite browser logout routes redirecting after local cleanup', () => {
     for (const file of [
       'apps/learn/src/app/api/auth/logout/route.ts',
       'apps/teach/src/app/api/auth/logout/route.ts',
+      'apps/inventory/src/app/api/auth/logout/route.ts',
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 
       expect(source, file).toContain('createAppSessionLogoutResponse');
       expect(source, file).toContain("new URL('/logout'");
+    }
+  });
+
+  it('keeps satellite token verifiers on the central Web verifier path', () => {
+    for (const file of [
+      'apps/learn/src/app/api/auth/verify-app-token/route.ts',
+      'apps/teach/src/app/api/auth/verify-app-token/route.ts',
+      'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
+    ]) {
+      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+
+      expect(source, file).toContain('import { WEB_APP_URL }');
+      expect(source, file).toContain('verificationBaseUrl: WEB_APP_URL');
     }
   });
 

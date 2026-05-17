@@ -502,7 +502,11 @@ The platform supports token-based authentication across different apps using `@t
 When a new satellite app participates in centralized login, wire both sides in the same patch:
 
 - Register the app URL in `packages/utils/src/internal-domains.ts` so `mapUrlToApp(...)` can recognize its `returnUrl`.
-- Add `apps/<app>/src/app/api/auth/verify-app-token/route.ts` with `createPOST('<app>')` so `/verify-token` can exchange the cross-app token for a host-only `tuturuuu_app_session` cookie.
+- Add `apps/<app>/src/app/api/auth/verify-app-token/route.ts` so
+  `/verify-token` can exchange the cross-app token for a host-only
+  `tuturuuu_app_session` cookie. When the satellite requires rewritten
+  `apps/web` API access, use `createPOST('<app>', { verificationBaseUrl:
+  WEB_APP_URL })` so the handoff also stores the Web-issued app-session cookie.
 - Keep `generate_cross_app_token(...)` bound to the authenticated caller
   (`p_user_id = auth.uid()`) so verify endpoints cannot mint sessions for
   arbitrary users.

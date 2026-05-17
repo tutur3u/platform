@@ -24,7 +24,8 @@ sessions. Apps coordinate through web-owned auth routes:
 
 Registered internal apps are the apps listed in
 `packages/utils/src/internal-domains.ts`, such as `cms`, `calendar`, `nova`,
-`rewise`, `tudo`, `finance`, `track`, `learn`, `teach`, and `hive`.
+`rewise`, `tudo`, `finance`, `inventory`, `track`, `learn`, `teach`, and
+`hive`.
 
 1. The app redirects unauthenticated users to `apps/web` login with a
    `returnUrl` pointing back to the app's `/verify-token?nextUrl=...` route.
@@ -37,9 +38,12 @@ Registered internal apps are the apps listed in
    cross-app handoff token.
 3. The app `/verify-token` client posts only that handoff token to
    `/api/auth/verify-app-token`.
-4. `createPOST('<app>')` validates the handoff token and sets a host-only
-   `tuturuuu_app_session` cookie. The cookie is `HttpOnly`, `SameSite=Lax`,
-   `Path=/`, and `Secure` in production.
+4. The app-local verifier validates the handoff token and sets a host-only
+   `tuturuuu_app_session` cookie. Satellites that require rewritten `apps/web`
+   API access must call `createPOST('<app>', { verificationBaseUrl:
+   WEB_APP_URL })` so the central verifier also returns the Web-issued
+   app-session cookie. The cookies are `HttpOnly`, `SameSite=Lax`, `Path=/`,
+   and `Secure` in production.
 5. The verifier trusts the `Set-Cookie` response and redirects to `nextUrl`.
    It must not call `supabase.auth.setSession()` and must not receive Supabase
    access or refresh tokens.

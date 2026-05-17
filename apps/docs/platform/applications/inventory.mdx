@@ -14,6 +14,11 @@ auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
 traffic to centralized `apps/web` APIs. Keep protected inventory, payment,
 Stripe Connect, checkout, and audit mutations behind `apps/web` so provider
 secrets, bot protection, request logging, and Observability stay centralized.
+The local token verifier must call the central Web verifier with
+`verificationBaseUrl: WEB_APP_URL`; Inventory protected routes require both the
+host-only Inventory app-session cookie and the Web-issued app-session cookie
+used by rewritten `apps/web` API requests. Local-only token validation will
+create a redirect loop back to platform login.
 
 ## Local Development
 
