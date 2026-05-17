@@ -218,4 +218,49 @@ describe('TuturuuuUserClient', () => {
       total: 12,
     });
   });
+
+  it('normalizes wrapped finance recurring transaction reads', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        Response.json({
+          recurringTransactions: [{ id: 'recurring-1', name: 'Rent' }],
+        })
+      )
+      .mockResolvedValueOnce(
+        Response.json({
+          upcomingTransactions: [{ id: 'upcoming-1', name: 'Rent' }],
+        })
+      );
+
+    const client = new TuturuuuUserClient({
+      accessToken: 'access-token',
+      baseUrl: 'https://tuturuuu.com',
+      fetch: fetchMock,
+    });
+
+    await expect(
+      client.finance.listRecurringTransactions('ws-1')
+    ).resolves.toEqual([{ id: 'recurring-1', name: 'Rent' }]);
+    await expect(
+      client.finance.listUpcomingRecurringTransactions('ws-1', {
+        daysAhead: 30,
+      })
+    ).resolves.toEqual([{ id: 'upcoming-1', name: 'Rent' }]);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://tuturuuu.com/api/v1/workspaces/ws-1/finance/recurring-transactions/upcoming?daysAhead=30',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
 });

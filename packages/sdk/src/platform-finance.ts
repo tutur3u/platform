@@ -293,9 +293,9 @@ export class FinanceClient {
   }
 
   listRecurringTransactions(workspaceId: string) {
-    return this.api<unknown[]>(
+    return this.api<{ recurringTransactions?: unknown[] }>(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions`
-    );
+    ).then((payload) => payload.recurringTransactions ?? []);
   }
 
   listTransactionCategories(workspaceId: string) {
@@ -329,10 +329,10 @@ export class FinanceClient {
     workspaceId: string,
     query?: { daysAhead?: number }
   ) {
-    return this.api<unknown[]>(
+    return this.api<{ upcomingTransactions?: unknown[] }>(
       `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions/upcoming`,
       { query }
-    );
+    ).then((payload) => payload.upcomingTransactions ?? []);
   }
 
   listWallets(workspaceId: string) {
