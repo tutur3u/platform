@@ -41,6 +41,7 @@ describe('external project store cleanup', () => {
       data: [
         { storage_path: 'external-projects/yoola/about/hero.webp' },
         { storage_path: 'external-projects/yoola/about/hero.webp' },
+        { storage_path: 'finance/private-payroll.csv' },
         { storage_path: 'external-projects/yoola/about/detail.webp' },
       ],
       error: null,
@@ -211,5 +212,43 @@ describe('external project store cleanup', () => {
       'ws-1',
       'external-projects/yoola/artworks/audio.wav'
     );
+  });
+
+  it('does not delete non-external-project storage when removing a single asset', async () => {
+    const assetSelectResult = {
+      data: {
+        storage_path: 'finance/private-payroll.csv',
+      },
+      error: null,
+    };
+    const deleteResult = { error: null };
+    const db = {
+      from: vi.fn((table: string) => {
+        if (table === 'workspace_external_project_assets') {
+          return {
+            select: vi.fn(() => createMaybeSingleEqChain(assetSelectResult)),
+            delete: vi.fn(() => createEqChain(deleteResult)),
+          };
+        }
+
+        throw new Error(`Unexpected table ${table}`);
+      }),
+    };
+
+    const { deleteWorkspaceExternalProjectAsset } = await import('./store');
+
+    await expect(
+      deleteWorkspaceExternalProjectAsset(
+        'asset-1',
+        {
+          workspaceId: 'ws-1',
+        },
+        db as never
+      )
+    ).resolves.toEqual({
+      id: 'asset-1',
+    });
+
+    expect(mocks.deleteWorkspaceStorageObjectByPath).not.toHaveBeenCalled();
   });
 });

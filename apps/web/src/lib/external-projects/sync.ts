@@ -22,6 +22,10 @@ import type {
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import { deleteWorkspaceStorageObjectByPath } from '../workspace-storage-provider';
+import {
+  assertExternalProjectStoragePath,
+  isExternalProjectStoragePath,
+} from './storage-path';
 
 type AdminDb = TypedSupabaseClient;
 
@@ -1072,7 +1076,10 @@ async function upsertAssets({
       sort_order: asset.sortOrder ?? index,
       source_url: asset.sourceUrl ?? null,
       stable_source_id: asset.stableSourceId ?? null,
-      storage_path: asset.storagePath ?? null,
+      storage_path: assertExternalProjectStoragePath(
+        asset.storagePath ?? null,
+        'storagePath'
+      ),
       updated_by: actorId,
       ws_id: workspaceId,
     };
@@ -1135,6 +1142,7 @@ async function deleteSyncedAssets({
       assets
         .map((asset) => asset.storage_path)
         .filter((value): value is string => typeof value === 'string')
+        .filter(isExternalProjectStoragePath)
     )
   );
 

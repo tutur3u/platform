@@ -9,6 +9,10 @@ import {
   resolveWorkspaceExternalProjectBinding,
 } from '@/lib/external-projects/access';
 import {
+  EXTERNAL_PROJECTS_STORAGE_PREFIX,
+  isExternalProjectStoragePath,
+} from '@/lib/external-projects/storage-path';
+import {
   deleteWorkspaceExternalProjectAsset as deleteWorkspaceExternalProjectAssetInStore,
   updateWorkspaceExternalProjectAsset,
 } from '@/lib/external-projects/store';
@@ -59,6 +63,13 @@ function getProviderCandidates(input: {
   return [primaryProvider, fallbackProvider] as const;
 }
 
+const assetStoragePathSchema = z
+  .string()
+  .max(1024)
+  .refine((path) => isExternalProjectStoragePath(path), {
+    message: `storage_path must be under ${EXTERNAL_PROJECTS_STORAGE_PREFIX}`,
+  });
+
 const updateAssetSchema = z.object({
   alt_text: z.string().max(500).nullable().optional(),
   asset_type: z.string().min(1).max(120).optional(),
@@ -67,7 +78,7 @@ const updateAssetSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).optional(),
   sort_order: z.number().int().min(0).optional(),
   source_url: z.string().url().nullable().optional(),
-  storage_path: z.string().max(1024).nullable().optional(),
+  storage_path: assetStoragePathSchema.nullable().optional(),
 });
 
 const assetTransformQuerySchema = z
@@ -156,6 +167,13 @@ export async function GET(
     }
 
     if (!asset.storage_path) {
+      return NextResponse.json(
+        { error: 'Asset not available' },
+        { status: 404 }
+      );
+    }
+
+    if (!isExternalProjectStoragePath(asset.storage_path)) {
       return NextResponse.json(
         { error: 'Asset not available' },
         { status: 404 }

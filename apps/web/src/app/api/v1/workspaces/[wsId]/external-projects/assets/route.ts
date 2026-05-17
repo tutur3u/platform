@@ -2,7 +2,18 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import {
+  EXTERNAL_PROJECTS_STORAGE_PREFIX,
+  isExternalProjectStoragePath,
+} from '@/lib/external-projects/storage-path';
 import { createWorkspaceExternalProjectAsset } from '@/lib/external-projects/store';
+
+const assetStoragePathSchema = z
+  .string()
+  .max(1024)
+  .refine((path) => isExternalProjectStoragePath(path), {
+    message: `storage_path must be under ${EXTERNAL_PROJECTS_STORAGE_PREFIX}`,
+  });
 
 const assetSchema = z
   .object({
@@ -13,7 +24,7 @@ const assetSchema = z
     metadata: z.record(z.string(), z.unknown()).default({}),
     sort_order: z.number().int().min(0).optional(),
     source_url: z.string().url().nullable().optional(),
-    storage_path: z.string().max(1024).nullable().optional(),
+    storage_path: assetStoragePathSchema.nullable().optional(),
   })
   .refine((value) => Boolean(value.entry_id || value.block_id), {
     message: 'entry_id or block_id is required',

@@ -33,6 +33,10 @@ import {
   EXTERNAL_PROJECT_ENABLED_SECRET,
 } from './constants';
 import { externalProjectAdapterFixtures } from './fixtures';
+import {
+  assertExternalProjectStoragePath,
+  isExternalProjectStoragePath,
+} from './storage-path';
 
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
@@ -1148,6 +1152,7 @@ async function deleteWorkspaceExternalProjectAssetStoragePaths(
       [...(entryAssets ?? []), ...(blockAssets ?? [])]
         .map((asset) => asset.storage_path)
         .filter((value): value is string => typeof value === 'string')
+        .filter(isExternalProjectStoragePath)
     )
   );
 
@@ -2018,6 +2023,7 @@ export async function createWorkspaceExternalProjectAsset(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { actorId, workspaceId, ...values } = payload;
+  assertExternalProjectStoragePath(values.storage_path);
   const { data, error } = await admin
     .from('workspace_external_project_assets')
     .insert({
@@ -2054,6 +2060,7 @@ export async function updateWorkspaceExternalProjectAsset(
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
   const { actorId, ...values } = payload;
+  assertExternalProjectStoragePath(values.storage_path);
   const { data, error } = await admin
     .from('workspace_external_project_assets')
     .update({
@@ -2101,7 +2108,7 @@ export async function deleteWorkspaceExternalProjectAsset(
     throw new Error(error.message);
   }
 
-  if (asset?.storage_path) {
+  if (isExternalProjectStoragePath(asset?.storage_path)) {
     await deleteWorkspaceStorageObjectByPath(workspaceId, asset.storage_path);
   }
 
@@ -2452,6 +2459,10 @@ export async function runWorkspaceExternalProjectImport(
         }
 
         for (const [index, asset] of (entry.assets ?? []).entries()) {
+          const storagePath = assertExternalProjectStoragePath(
+            asset.storagePath ?? null,
+            'storagePath'
+          );
           const { data: existingAsset } = await admin
             .from('workspace_external_project_assets')
             .select('id')
@@ -2468,7 +2479,7 @@ export async function runWorkspaceExternalProjectImport(
                 entry_id: entryResult.entry.id,
                 sort_order: index,
                 source_url: asset.sourceUrl ?? null,
-                storage_path: asset.storagePath ?? null,
+                storage_path: storagePath,
                 updated_by: actorId,
               })
               .eq('id', existingAsset.id);
@@ -2486,7 +2497,7 @@ export async function runWorkspaceExternalProjectImport(
                 sort_order: index,
                 source_url: asset.sourceUrl ?? null,
                 stable_source_id: asset.sourceId,
-                storage_path: asset.storagePath ?? null,
+                storage_path: storagePath,
                 updated_by: actorId,
                 ws_id: workspaceId,
               });

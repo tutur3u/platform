@@ -164,4 +164,52 @@ describe('external project sync apply route', () => {
         'External project sync contains destructive operations. Re-run with force to apply.',
     });
   });
+
+  it('rejects manifests with non-external-project storage paths', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/sync/apply/route'
+    );
+
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/sync/apply',
+        {
+          body: JSON.stringify({
+            manifest: {
+              ...manifest,
+              content: {
+                entries: [
+                  {
+                    assets: [
+                      {
+                        assetType: 'image',
+                        storagePath: 'finance/private-payroll.csv',
+                      },
+                    ],
+                    collectionSlug: 'artworks',
+                    slug: 'cover',
+                    title: 'Cover',
+                  },
+                ],
+              },
+            },
+          }),
+          method: 'POST',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(
+      mocks.applyWorkspaceExternalProjectSyncManifest
+    ).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Invalid external project sync manifest',
+    });
+  });
 });

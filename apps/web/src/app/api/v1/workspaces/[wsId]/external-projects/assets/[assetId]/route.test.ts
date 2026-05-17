@@ -238,4 +238,94 @@ describe('external project asset route', () => {
       error: 'Invalid transform query',
     });
   });
+
+  it('does not resolve stored assets outside external project storage', async () => {
+    const createSignedUrlMock = vi.fn();
+    const singleMock = vi.fn().mockResolvedValue({
+      data: {
+        id: 'asset-1',
+        metadata: {},
+        source_url: null,
+        storage_path: 'finance/private-payroll.csv',
+        workspace_external_project_entries: {
+          status: 'published',
+        },
+        ws_id: 'ws-1',
+      },
+      error: null,
+    });
+    const eqWorkspaceIdMock = vi.fn(() => ({ single: singleMock }));
+    const eqAssetIdMock = vi.fn(() => ({ eq: eqWorkspaceIdMock }));
+    const selectMock = vi.fn(() => ({ eq: eqAssetIdMock }));
+
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: selectMock,
+      })),
+      storage: {
+        from: vi.fn(() => ({
+          createSignedUrl: createSignedUrlMock,
+        })),
+      },
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1'
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    expect(createSignedUrlMock).not.toHaveBeenCalled();
+    expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
+  });
+
+  it('rejects asset updates that point outside external project storage', async () => {
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      admin: {},
+      normalizedWorkspaceId: 'ws-1',
+      ok: true,
+      user: {
+        id: 'user-1',
+      },
+    });
+
+    const { PATCH } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await PATCH(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1',
+        {
+          body: JSON.stringify({
+            storage_path: 'finance/private-payroll.csv',
+          }),
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(400);
+    expect(mocks.updateWorkspaceExternalProjectAsset).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Invalid payload',
+    });
+  });
 });

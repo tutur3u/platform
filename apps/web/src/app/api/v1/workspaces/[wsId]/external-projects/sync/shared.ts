@@ -1,6 +1,17 @@
 import type { ExternalProjectSyncManifest } from '@tuturuuu/types';
 import { z } from 'zod';
 import { EXTERNAL_PROJECT_ADAPTER_OPTIONS } from '@/lib/external-projects/constants';
+import {
+  EXTERNAL_PROJECTS_STORAGE_PREFIX,
+  isExternalProjectStoragePath,
+} from '@/lib/external-projects/storage-path';
+
+const externalProjectStoragePathSchema = z
+  .string()
+  .max(1024)
+  .refine((path) => isExternalProjectStoragePath(path), {
+    message: `storagePath must be under ${EXTERNAL_PROJECTS_STORAGE_PREFIX}`,
+  });
 
 const syncFieldSchema = z
   .object({
@@ -56,7 +67,7 @@ const assetSchema = z
     sortOrder: z.number().int().min(0).optional(),
     sourceUrl: z.string().url().nullable().optional(),
     stableSourceId: z.string().max(300).nullable().optional(),
-    storagePath: z.string().max(1024).nullable().optional(),
+    storagePath: externalProjectStoragePathSchema.nullable().optional(),
   })
   .passthrough();
 

@@ -67,6 +67,7 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 - External apps can mark manifest assets with `metadata.publicPath`, `metadata.localAssetPath`, or a relative `sourceUrl` such as `/media/hero.png`.
 - Before diff/apply, run the public-folder linker so the manifest stores deterministic Drive paths under `external-projects/{adapter}/{collectionSlug}/{entrySlug}/{filename}`.
 - Before apply, upload those files through the existing external-project asset signed upload URL route. Abort the apply if a local public asset is missing so CMS never receives storage paths for objects that were not uploaded.
+- Asset `storagePath`/`storage_path` values must stay under `external-projects/`. Do not point CMS assets at Drive, finance, or other workspace storage namespaces; delivery and admin cleanup only operate on assets that satisfy the CMS namespace invariant.
 
 ## Team Guidance
 
