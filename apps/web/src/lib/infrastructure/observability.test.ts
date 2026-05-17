@@ -170,6 +170,73 @@ describe('getBuildResources', () => {
     expect(buildResources.totalCpuPercent).toBe(0);
     expect(buildResources.totalMemoryBytes).toBe(0);
   });
+
+  it('counts the watcher builder process while a deployment is building', () => {
+    const buildResources = getBuildResources(
+      {
+        allContainers: [
+          {
+            containerId: 'watcher-1',
+            cpuPercent: 9.1,
+            health: 'healthy',
+            image: 'tuturuuu-web-blue-green-watcher',
+            isMonitored: false,
+            memoryBytes: 350 * 1024 * 1024,
+            name: 'tuturuuu-web-blue-green-watcher-1',
+            ports: null,
+            projectName: 'tuturuuu',
+            runningFor: '42 minutes',
+            rxBytes: 840 * 1024 * 1024,
+            serviceName: 'web-blue-green-watcher',
+            status: 'Up 42 minutes (healthy)',
+            txBytes: 626 * 1024 * 1024,
+          },
+          {
+            containerId: 'web-1',
+            cpuPercent: 1.5,
+            health: 'healthy',
+            image: 'tuturuuu-web',
+            isMonitored: true,
+            memoryBytes: 128 * 1024 * 1024,
+            name: 'tuturuuu-web-1',
+            ports: null,
+            projectName: 'tuturuuu',
+            runningFor: '10 minutes',
+            rxBytes: 1024,
+            serviceName: 'web',
+            status: 'Up 10 minutes',
+            txBytes: 1024,
+          },
+        ],
+        containers: [],
+        message: null,
+        serviceHealth: [],
+        state: 'live',
+        totalCpuPercent: 10.6,
+        totalMemoryBytes: 478 * 1024 * 1024,
+        totalRxBytes: 840 * 1024 * 1024 + 1024,
+        totalTxBytes: 626 * 1024 * 1024 + 1024,
+      },
+      [
+        {
+          commitShortHash: 'abc123',
+          commitSubject: 'Refresh production image',
+          deploymentKind: 'recovery-bootstrap',
+          startedAt: Date.parse('2026-05-17T02:00:00.000Z'),
+          status: 'building',
+        },
+      ]
+    );
+
+    expect(buildResources.state).toBe('building');
+    expect(buildResources.activeBuilds).toHaveLength(1);
+    expect(buildResources.containers).toHaveLength(1);
+    expect(buildResources.containers[0]?.containerId).toBe('watcher-1');
+    expect(buildResources.totalCpuPercent).toBe(9.1);
+    expect(buildResources.totalMemoryBytes).toBe(350 * 1024 * 1024);
+    expect(buildResources.totalRxBytes).toBe(840 * 1024 * 1024);
+    expect(buildResources.totalTxBytes).toBe(626 * 1024 * 1024);
+  });
 });
 
 describe('readObservabilityDeployments', () => {

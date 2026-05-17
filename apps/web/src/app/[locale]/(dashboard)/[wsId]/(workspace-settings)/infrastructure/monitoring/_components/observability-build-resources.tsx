@@ -30,10 +30,8 @@ export function ObservabilityBuildResources({
   const rootT = useTranslations('blue-green-monitoring');
   const activeBuilds = buildResources?.activeBuilds ?? [];
   const containers = buildResources?.containers ?? [];
-  const activeBuildRows = containers.length > 0 ? [] : activeBuilds;
-  const processCount =
-    containers.length > 0 ? containers.length : activeBuilds.length;
-  const hasBuildActivity = activeBuildRows.length > 0 || containers.length > 0;
+  const processCount = Math.max(containers.length, activeBuilds.length);
+  const hasBuildActivity = activeBuilds.length > 0 || containers.length > 0;
 
   return (
     <section className="overflow-hidden rounded-lg border border-border bg-background">
@@ -100,7 +98,7 @@ export function ObservabilityBuildResources({
             <span>{t('resources.network')}</span>
           </div>
           <div className="divide-y divide-border/60">
-            {activeBuildRows.map((build) => (
+            {activeBuilds.map((build) => (
               <ActiveBuildRow
                 build={build}
                 key={build.id}

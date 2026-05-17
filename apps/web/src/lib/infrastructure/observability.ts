@@ -1099,6 +1099,43 @@ function isDockerBuildResourceContainer(
     );
 }
 
+function isDockerBuilderProcessContainer(
+  container: ObservabilityResources['dockerResources']['allContainers'][number]
+) {
+  return [
+    container.image,
+    container.name,
+    container.projectName,
+    container.serviceName,
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .map((value) => value.toLowerCase())
+    .some(
+      (value) =>
+        value === 'web-blue-green-watcher' ||
+        value.includes('web-blue-green-watcher') ||
+        value.includes('blue-green-watcher') ||
+        value.includes('watch-blue-green-deploy')
+    );
+}
+
+function dedupeDockerContainers(
+  containers: ObservabilityResources['dockerResources']['allContainers']
+) {
+  const seen = new Set<string>();
+
+  return containers.filter((container) => {
+    const key = container.containerId || container.name;
+
+    if (!key || seen.has(key)) {
+      return false;
+    }
+
+    seen.add(key);
+    return true;
+  });
+}
+
 function getActiveBuildProcesses(
   deployments: BlueGreenMonitoringDeployment[] = []
 ): ObservabilityBuildResources['activeBuilds'] {
@@ -1154,10 +1191,18 @@ export function getBuildResources(
   dockerResources: ObservabilityResources['dockerResources'],
   deployments: BlueGreenMonitoringDeployment[] = []
 ): ObservabilityBuildResources {
-  const containers = dockerResources.allContainers.filter(
+  const activeBuilds = getActiveBuildProcesses(deployments);
+  const buildkitContainers = dockerResources.allContainers.filter(
     isDockerBuildResourceContainer
   );
-  const activeBuilds = getActiveBuildProcesses(deployments);
+  const builderProcessContainers =
+    activeBuilds.length > 0
+      ? dockerResources.allContainers.filter(isDockerBuilderProcessContainer)
+      : [];
+  const containers = dedupeDockerContainers([
+    ...buildkitContainers,
+    ...builderProcessContainers,
+  ]);
 
   return {
     activeBuilds,
