@@ -376,6 +376,95 @@
     "success": "Kết quả",
     "user_agent": "User Agent"
   },
+  "abuse-intelligence": {
+    "actions": {
+      "retry": "Thử lại"
+    },
+    "confidence": "Độ tin cậy {value}",
+    "description": "Xem tín hiệu uy tín thích ứng, tầng tin cậy, kết quả thử thách và điều khiển thủ công cho giới hạn tốc độ đã xác thực.",
+    "empty": {
+      "overrides": "Không có ghi đè thủ công đang hoạt động.",
+      "signals": "Chưa có tín hiệu tình báo lạm dụng gần đây.",
+      "subjects": "Chưa quan sát thấy chủ thể uy tín nào."
+    },
+    "error": {
+      "description": "Không thể tải ảnh chụp tình báo lạm dụng. Hãy thử lại sau khi kiểm tra log quan sát.",
+      "title": "Không thể tải tình báo lạm dụng"
+    },
+    "metrics": {
+      "challenge_pass_rate": "Tỷ lệ vượt thử thách",
+      "restricted": "Chủ thể bị hạn chế",
+      "trusted": "Chủ thể tin cậy",
+      "watched": "Chủ thể theo dõi"
+    },
+    "multiplier": "Hệ số giới hạn {value}x",
+    "overrides": {
+      "active": "Ghi đè đang hoạt động",
+      "create": "Tạo ghi đè",
+      "expires": "Hết hạn {value}",
+      "reason": "Lý do",
+      "revoke": "Thu hồi",
+      "revoke_reason": "Ghi đè thủ công được thu hồi từ bảng điều khiển tình báo lạm dụng",
+      "subject_key": "Khóa chủ thể",
+      "subject_type": "Loại chủ thể",
+      "tier": "Tầng",
+      "title": "Điều khiển tin cậy thủ công"
+    },
+    "positive_negative": "{positive} tích cực / {negative} tiêu cực",
+    "sections": {
+      "signals": "Tín hiệu gần đây",
+      "signals_description": "Các sự kiện có thể kiểm toán đã điều chỉnh điểm uy tín của chủ thể.",
+      "subjects": "Chủ thể uy tín",
+      "subjects_description": "Trạng thái tin cậy cuốn chiếu cho người dùng, phiên, khóa API, IP, CIDR và cặp người dùng-vị trí."
+    },
+    "signals": {
+      "auth_failure": "Lỗi xác thực",
+      "automation_client": "Máy khách tự động",
+      "challenge_failed": "Thử thách thất bại",
+      "challenge_issued": "Đã phát thử thách",
+      "challenge_passed": "Đã vượt thử thách",
+      "client_error": "Lỗi máy khách",
+      "manual_override": "Ghi đè thủ công",
+      "missing_user_agent": "Thiếu user agent",
+      "organic_activity": "Hoạt động tự nhiên",
+      "payload_abuse": "Lạm dụng payload",
+      "rate_limit_hit": "Chạm giới hạn tốc độ",
+      "scripted_client": "Máy khách chạy script"
+    },
+    "subject_types": {
+      "api_key": "Khóa API",
+      "cidr": "CIDR",
+      "ip": "Địa chỉ IP",
+      "session": "Phiên",
+      "user": "Người dùng",
+      "user_location": "Người dùng + vị trí"
+    },
+    "tables": {
+      "created": "Đã tạo",
+      "delta": "Thay đổi",
+      "last_seen": "Lần cuối thấy",
+      "route": "Tuyến",
+      "score": "Điểm",
+      "signal": "Tín hiệu",
+      "signals": "Tín hiệu",
+      "subject": "Chủ thể",
+      "tier": "Tầng"
+    },
+    "tiers": {
+      "challenge_required": "Cần thử thách",
+      "restricted": "Bị hạn chế",
+      "standard": "Tiêu chuẩn",
+      "trusted": "Tin cậy",
+      "watch": "Theo dõi"
+    },
+    "title": "Tình Báo Lạm Dụng",
+    "toasts": {
+      "override_create_failed": "Không thể tạo ghi đè",
+      "override_created": "Đã tạo ghi đè",
+      "override_revoke_failed": "Không thể thu hồi ghi đè",
+      "override_revoked": "Đã thu hồi ghi đè"
+    }
+  },
   "account_switcher": {
     "account_added_error": "Không thể thêm tài khoản",
     "account_added_success": "Đã thêm tài khoản thành công!",
@@ -6269,6 +6358,7 @@
   },
   "infrastructure-tabs": {
     "abuse_events": "Sự kiện lạm dụng",
+    "abuse_intelligence": "Tình báo lạm dụng",
     "ai_credits": "Tín dụng AI",
     "ai_credits_allocations": "Phân bổ tín dụng",
     "ai_credits_balances": "Số dư tín dụng",

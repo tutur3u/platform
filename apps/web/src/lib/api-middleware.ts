@@ -23,6 +23,11 @@ import {
   MAX_REQUEST_BODY_BYTES,
 } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  getAdaptiveRateLimitConfig,
+  recordResponseAbuseSignal,
+  resolveWebAbuseDecision,
+} from './abuse-risk';
 import { checkRateLimit, type RateLimitConfig } from './rate-limit';
 
 /**
@@ -254,6 +259,16 @@ export function withApiAuth<T = unknown>(
 
     if ('context' in authResult) {
       const { context } = authResult;
+      const abuseDecision = await resolveWebAbuseDecision({
+        apiKeyId: context.keyId,
+        authKind: 'api-key',
+        ipAddress,
+        isRead,
+        method,
+        request,
+        route: endpoint,
+        workspaceId: context.wsId,
+      });
 
       // Check rate limit if enabled (default: GET/HEAD open, mutations limited)
       // Workspace-specific limits from workspace_secrets will override defaults
@@ -269,9 +284,11 @@ export function withApiAuth<T = unknown>(
               });
 
         if (rateLimitConfig !== false) {
+          const { config: adaptiveRateLimitConfig } =
+            getAdaptiveRateLimitConfig(rateLimitConfig, abuseDecision);
           const rateLimitResult = await checkRateLimit(
             `${context.keyId}:${isRead ? 'read' : 'mutate'}`,
-            rateLimitConfig,
+            adaptiveRateLimitConfig,
             context.wsId // Pass wsId to check for workspace-specific config
           );
 
@@ -292,6 +309,15 @@ export function withApiAuth<T = unknown>(
               responseTimeMs,
               requestParams: Object.fromEntries(url.searchParams),
               errorMessage: 'Rate limit exceeded',
+            });
+            recordResponseAbuseSignal({
+              apiKeyId: context.keyId,
+              decision: abuseDecision,
+              ipAddress,
+              method,
+              response: rateLimitResult,
+              route: endpoint,
+              workspaceId: context.wsId,
             });
             return rateLimitResult;
           }
@@ -337,6 +363,15 @@ export function withApiAuth<T = unknown>(
               responseTimeMs,
               requestParams: Object.fromEntries(url.searchParams),
             });
+            recordResponseAbuseSignal({
+              apiKeyId: context.keyId,
+              decision: abuseDecision,
+              ipAddress,
+              method,
+              response,
+              route: endpoint,
+              workspaceId: context.wsId,
+            });
 
             return response;
           } catch (error) {
@@ -376,6 +411,15 @@ export function withApiAuth<T = unknown>(
           requestParams: Object.fromEntries(url.searchParams),
           errorMessage: 'Insufficient permissions',
         });
+        recordResponseAbuseSignal({
+          apiKeyId: context.keyId,
+          decision: abuseDecision,
+          ipAddress,
+          method,
+          response: permissionCheck,
+          route: endpoint,
+          workspaceId: context.wsId,
+        });
 
         // Return permission error
         return permissionCheck;
@@ -405,6 +449,15 @@ export function withApiAuth<T = unknown>(
           userAgent,
           responseTimeMs,
           requestParams: Object.fromEntries(url.searchParams),
+        });
+        recordResponseAbuseSignal({
+          apiKeyId: context.keyId,
+          decision: abuseDecision,
+          ipAddress,
+          method,
+          response,
+          route: endpoint,
+          workspaceId: context.wsId,
         });
 
         return response;

@@ -65,6 +65,22 @@ vi.mock('../lib/rate-limit', () => ({
     mockCheckRateLimit(key, config),
 }));
 
+const mockResolveWebAbuseDecision = vi.fn();
+const mockEnforceAdaptiveStepUpChallenge = vi.fn();
+const mockGetAdaptiveRateLimitConfig = vi.fn();
+const mockRecordResponseAbuseSignal = vi.fn();
+
+vi.mock('../lib/abuse-risk', () => ({
+  enforceAdaptiveStepUpChallenge: (input: unknown) =>
+    mockEnforceAdaptiveStepUpChallenge(input),
+  getAdaptiveRateLimitConfig: (config: unknown, decision: unknown) =>
+    mockGetAdaptiveRateLimitConfig(config, decision),
+  recordResponseAbuseSignal: (input: unknown) =>
+    mockRecordResponseAbuseSignal(input),
+  resolveWebAbuseDecision: (input: unknown) =>
+    mockResolveWebAbuseDecision(input),
+}));
+
 const mockCheckSuspension = vi.fn().mockResolvedValue({ suspended: false });
 
 vi.mock('@tuturuuu/utils/abuse-protection/user-suspension', () => ({
@@ -131,6 +147,30 @@ describe('withSessionAuth', () => {
     mockCascadeBackendRateLimit.mockResolvedValue(null);
     mockIsBackendRateLimitError.mockReturnValue(false);
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'missing' });
+    mockResolveWebAbuseDecision.mockResolvedValue({
+      confidenceScore: 10,
+      decisionSource: 'default',
+      reasons: [],
+      riskScore: 50,
+      subjectKey: 'user:user-123',
+      subjects: [{ subject_key: 'user:user-123', subject_type: 'user' }],
+      tier: 'standard',
+      trustMultiplier: 1,
+    });
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(null);
+    mockGetAdaptiveRateLimitConfig.mockImplementation((config, decision) => ({
+      config,
+      decision: {
+        ...(typeof decision === 'object' && decision ? decision : {}),
+        adjustedMaxRequests:
+          typeof config === 'object' &&
+          config !== null &&
+          'maxRequests' in config
+            ? Number(config.maxRequests)
+            : 0,
+      },
+    }));
+    mockRecordResponseAbuseSignal.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -324,6 +364,28 @@ describe('withSessionAuth', () => {
     expect(mockCheckRateLimit).toHaveBeenCalledWith(
       expect.stringContaining('mutate'),
       expect.objectContaining({ maxRequests: 60 })
+    );
+  });
+
+  it('should enforce adaptive step-up before calling the handler', async () => {
+    mockEnforceAdaptiveStepUpChallenge.mockResolvedValue(
+      NextResponse.json(
+        { code: 'ABUSE_CHALLENGE_REQUIRED', error: 'Forbidden' },
+        { status: 403 }
+      )
+    );
+    const handler = vi.fn();
+    const wrapped = withSessionAuth(handler);
+    const response = await wrapped(makeRequest('POST'));
+
+    expect(response.status).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
+    expect(mockResolveWebAbuseDecision).toHaveBeenCalledWith(
+      expect.objectContaining({
+        authKind: 'session',
+        isRead: false,
+        userId: fakeUser.id,
+      })
     );
   });
 

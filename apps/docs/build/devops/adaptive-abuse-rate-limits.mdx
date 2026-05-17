@@ -1,0 +1,78 @@
+---
+title: Adaptive Abuse Rate Limits
+description: Operate the reputation layer that distinguishes trusted organic users from risky automation without exposing static scoring rules.
+---
+
+## Overview
+
+Authenticated rate limits now use a server-side reputation layer. The layer
+scores users, sessions, API keys, IPs, CIDRs, and user-location pairs from
+auditable signals, then returns a coarse risk tier and rate-limit multiplier to
+the API and PostgREST guards.
+
+The policy is intentionally server-only. The repository is open source, so do not
+move scoring thresholds, bypass rules, or detailed reason codes into client code,
+response headers, or public docs. User-agent, missing-header, and request-shape
+checks are weak signals; they can raise caution but cannot earn trust by
+themselves.
+
+## Trust Tiers
+
+| Tier | Operator meaning | Rate-limit behavior |
+| --- | --- | --- |
+| `trusted` | Sustained low-risk, organic usage with no recent abuse | Higher authenticated budgets |
+| `standard` | Normal authenticated activity or fail-safe default | Current authenticated budgets |
+| `watch` | Suspicious but not high-confidence abuse | Standard or slightly lower budgets |
+| `challenge_required` | Medium-risk browser mutation activity | Browser mutation routes require Turnstile step-up |
+| `restricted` | High-risk activity or manual restriction | Stricter budgets and normal abuse blocks still apply |
+
+Trust never bypasses active user suspension, active IP blocks, sensitive auth
+route protections, workspace-secret hard overrides, or severe backend abuse
+cascades.
+
+## Signals
+
+The layer records rolling signals for:
+
+- rate-limit hits, failed auth, repeated `4xx`, `401`, `403`, and `429`
+- payload abuse and automation-like clients
+- missing or scripted browser headers as weak negative signals
+- older accounts, stable sessions, successful organic usage, and passed
+  challenges as positive signals
+- admin overrides and override revocations
+
+If reputation lookup, challenge verification, or signal recording fails, request
+handling must fall back to standard limits. Failures must never grant elevated
+limits.
+
+## Step-Up Challenges
+
+Browser mutations with medium risk should require Turnstile through the existing
+server verification path. The API returns a generic challenge-required response
+without exposing the exact scoring rules. API keys, CLI calls, cron jobs,
+webhooks, and native clients do not receive browser challenges; they rely on
+token, workspace, and API-key reputation instead.
+
+## Admin Investigation
+
+Use Infrastructure -> Abuse Intelligence to inspect:
+
+- trusted, watched, and restricted subject counts
+- recent signals and coarse reason codes
+- challenge pass/fail trends
+- risky users, sessions, API keys, IPs, and CIDRs
+- active manual overrides
+
+When investigating a false positive:
+
+1. Check whether the subject has recent rate-limit, auth-failure, or payload
+   abuse signals.
+2. Compare the subject with related location and user-location entries.
+3. Review challenge outcomes and recent route diversity before granting trust.
+4. Add a time-bound override only when the activity is clearly organic.
+5. Revoke trust immediately if the subject later shows scripted behavior,
+   account takeover indicators, or noisy API-key traffic.
+
+Manual overrides require a reason and are written to the audit signal stream.
+Prefer expiry-bound overrides for trust and watch decisions so stale operational
+judgment does not become permanent policy.

@@ -1253,6 +1253,11 @@ export async function WorkspaceNavigationLinks({
               icon: <ShieldAlert className="h-5 w-5" />,
             },
             {
+              title: t('infrastructure-tabs.abuse_intelligence'),
+              href: `/${personalOrWsId}/infrastructure/abuse-intelligence`,
+              icon: <ShieldUser className="h-5 w-5" />,
+            },
+            {
               title: t('infrastructure-tabs.otp_limits'),
               href: `/${personalOrWsId}/infrastructure/otp-limits`,
               icon: <KeyRound className="h-5 w-5" />,

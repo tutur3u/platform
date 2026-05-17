@@ -5,7 +5,11 @@ vi.mock('@upstash/redis', () => ({
   Redis: { fromEnv: vi.fn(() => null) },
 }));
 
-import { checkRateLimitMemory, type RateLimitConfig } from '../lib/rate-limit';
+import {
+  checkRateLimit,
+  checkRateLimitMemory,
+  type RateLimitConfig,
+} from '../lib/rate-limit';
 
 describe('checkRateLimitMemory', () => {
   const config: RateLimitConfig = {
@@ -144,5 +148,47 @@ describe('rate-limit key separation for method-aware limiting', () => {
     }
     // 21st mutation should be denied
     expect(checkRateLimitMemory(mutateKey, mutateConfig).allowed).toBe(false);
+  });
+});
+
+describe('checkRateLimit adaptive multipliers', () => {
+  it('applies trust multiplier before checking the budget', async () => {
+    const key = 'test:adaptive-multiplier';
+    const config: RateLimitConfig = {
+      maxRequests: 2,
+      maxRequestsMultiplier: 3,
+      windowMs: 60000,
+    };
+
+    for (let i = 0; i < 6; i++) {
+      await expect(checkRateLimit(key, config)).resolves.toMatchObject({
+        allowed: true,
+      });
+    }
+
+    const denied = await checkRateLimit(key, config);
+    const deniedResponse = denied as Response;
+
+    expect(deniedResponse.status).toBe(429);
+    expect(deniedResponse.headers.get('X-RateLimit-Limit')).toBe('6');
+  });
+
+  it('falls back to at least one request for restrictive multipliers', async () => {
+    const key = 'test:restrictive-multiplier';
+    const config: RateLimitConfig = {
+      maxRequests: 2,
+      maxRequestsMultiplier: 0.1,
+      windowMs: 60000,
+    };
+
+    await expect(checkRateLimit(key, config)).resolves.toMatchObject({
+      allowed: true,
+    });
+
+    const denied = await checkRateLimit(key, config);
+    const deniedResponse = denied as Response;
+
+    expect(deniedResponse.status).toBe(429);
+    expect(deniedResponse.headers.get('X-RateLimit-Limit')).toBe('1');
   });
 });

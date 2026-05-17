@@ -124,6 +124,7 @@
                   "build/devops/web-docker-deployment",
                   "build/devops/hive-realtime-runbook",
                   "build/devops/log-drain-observability",
+                  "build/devops/adaptive-abuse-rate-limits",
                   "build/devops/github-actions-runbook",
                   "build/devops/secrets-and-configuration",
                   "build/devops/sepay-testing-guide"

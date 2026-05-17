@@ -45,6 +45,155 @@ export interface SaveExternalAppResponse {
   secret: string | null;
 }
 
+export type AbuseRiskTier =
+  | 'challenge_required'
+  | 'restricted'
+  | 'standard'
+  | 'trusted'
+  | 'watch';
+
+export type AbuseReputationSubjectType =
+  | 'api_key'
+  | 'cidr'
+  | 'ip'
+  | 'session'
+  | 'user'
+  | 'user_location';
+
+export type AbuseSignalType =
+  | 'auth_failure'
+  | 'automation_client'
+  | 'challenge_failed'
+  | 'challenge_issued'
+  | 'challenge_passed'
+  | 'client_error'
+  | 'manual_override'
+  | 'missing_user_agent'
+  | 'organic_activity'
+  | 'payload_abuse'
+  | 'rate_limit_hit'
+  | 'scripted_client';
+
+export type AbuseChallengeStatus = 'expired' | 'failed' | 'issued' | 'passed';
+
+export interface AbuseReputationSubject {
+  api_key_id: string | null;
+  cidr: string | null;
+  confidence_score: number;
+  created_at: string;
+  id: string;
+  ip_address: string | null;
+  last_negative_signal_at: string | null;
+  last_positive_signal_at: string | null;
+  last_seen_at: string;
+  metadata: Record<string, unknown>;
+  negative_signal_count: number;
+  positive_signal_count: number;
+  reputation_score: number;
+  subject_key: string;
+  subject_type: AbuseReputationSubjectType;
+  tier: AbuseRiskTier;
+  trust_multiplier: number;
+  updated_at: string;
+  user_id: string | null;
+  workspace_id: string | null;
+}
+
+export interface AbuseActivitySignal {
+  api_key_id: string | null;
+  confidence_delta: number;
+  created_at: string;
+  id: string;
+  ip_address: string | null;
+  metadata: Record<string, unknown>;
+  method: string | null;
+  reason_code: string | null;
+  risk_tier: AbuseRiskTier;
+  route: string | null;
+  score_delta: number;
+  signal_type: AbuseSignalType;
+  subject_key: string;
+  subject_type: AbuseReputationSubjectType;
+  user_id: string | null;
+  workspace_id: string | null;
+}
+
+export interface AbuseStepUpChallenge {
+  challenge_type: string;
+  completed_at: string | null;
+  created_at: string;
+  expires_at: string;
+  id: string;
+  ip_address: string | null;
+  metadata: Record<string, unknown>;
+  risk_tier: AbuseRiskTier;
+  route: string | null;
+  status: AbuseChallengeStatus;
+  subject_key: string;
+  updated_at: string;
+  user_id: string | null;
+}
+
+export interface AbuseTrustOverride {
+  created_at: string;
+  created_by: string | null;
+  expires_at: string | null;
+  id: string;
+  metadata: Record<string, unknown>;
+  reason: string;
+  revoke_reason: string | null;
+  revoked_at: string | null;
+  revoked_by: string | null;
+  subject_key: string;
+  subject_type: AbuseReputationSubjectType;
+  tier: AbuseRiskTier;
+  trust_multiplier: number;
+  updated_at: string;
+}
+
+export interface AbuseIntelligenceSummary {
+  activeOverrideCount: number;
+  challengePassRate: number | null;
+  recentSignalCount: number;
+  restrictedSubjectCount: number;
+  tierCounts: Record<string, number>;
+  totalSubjectCount: number;
+  trustedSubjectCount: number;
+  watchedSubjectCount: number;
+}
+
+export interface AbuseIntelligenceSnapshot {
+  challenges: AbuseStepUpChallenge[];
+  overrides: AbuseTrustOverride[];
+  signals: AbuseActivitySignal[];
+  subjects: AbuseReputationSubject[];
+  summary: AbuseIntelligenceSummary;
+  topRiskySubjects: AbuseReputationSubject[];
+}
+
+export interface GetAbuseIntelligenceSnapshotParams {
+  limit?: number;
+  signalLimit?: number;
+}
+
+export interface CreateAbuseTrustOverridePayload {
+  expiresAt?: string | null;
+  metadata?: Record<string, unknown>;
+  reason: string;
+  subjectKey: string;
+  subjectType: AbuseReputationSubjectType;
+  tier: AbuseRiskTier;
+  trustMultiplier?: number;
+}
+
+export interface AbuseTrustOverrideResponse {
+  override: AbuseTrustOverride;
+}
+
+export interface RevokeAbuseTrustOverridePayload {
+  reason: string;
+}
+
 export type InfrastructurePushAppFlavor =
   | 'development'
   | 'production'
@@ -956,6 +1105,68 @@ export async function rotateExternalAppSecret(
     {
       cache: 'no-store',
       method: 'POST',
+    }
+  );
+}
+
+export async function getAbuseIntelligenceSnapshot(
+  params?: GetAbuseIntelligenceSnapshotParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (params?.limit != null) {
+    searchParams.set('limit', String(params.limit));
+  }
+
+  if (params?.signalLimit != null) {
+    searchParams.set('signalLimit', String(params.signalLimit));
+  }
+
+  return client.json<AbuseIntelligenceSnapshot>(
+    `/api/v1/infrastructure/abuse-intelligence${
+      searchParams.size > 0 ? `?${searchParams.toString()}` : ''
+    }`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function createAbuseTrustOverride(
+  payload: CreateAbuseTrustOverridePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AbuseTrustOverrideResponse>(
+    '/api/v1/infrastructure/abuse-intelligence',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function revokeAbuseTrustOverride(
+  overrideId: string,
+  payload: RevokeAbuseTrustOverridePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AbuseTrustOverrideResponse>(
+    `/api/v1/infrastructure/abuse-intelligence/overrides/${encodeURIComponent(
+      overrideId
+    )}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
     }
   );
 }
