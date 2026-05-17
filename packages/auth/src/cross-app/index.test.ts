@@ -91,6 +91,10 @@ describe('mapUrlToApp', () => {
       'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
     ],
     ['finance', 'https://finance.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    [
+      'inventory',
+      'https://inventory.tuturuuu.localhost/verify-token?nextUrl=%2F',
+    ],
     ['track', 'https://track.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['learn', 'https://learn.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['teach', 'https://teach.tuturuuu.localhost/verify-token?nextUrl=%2F'],

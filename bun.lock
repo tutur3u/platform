@@ -272,6 +272,37 @@
         "vitest": "^4.1.6",
       },
     },
+    "apps/inventory": {
+      "name": "@tuturuuu/inventory",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/auth": "workspace:*",
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/internal-api": "workspace:*",
+        "@tuturuuu/offline": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
+        "@tuturuuu/supabase": "workspace:*",
+        "@tuturuuu/types": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.2.6",
+        "next-intl": "^4.11.2",
+        "next-themes": "^0.4.6",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.0",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.8.0",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.14",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/learn": {
       "name": "@tuturuuu/learn",
       "version": "0.1.0",
@@ -1205,7 +1236,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.4.3",
+      "version": "0.4.4",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",
@@ -2894,6 +2925,8 @@
     "@tuturuuu/icons": ["@tuturuuu/icons@workspace:packages/icons"],
 
     "@tuturuuu/internal-api": ["@tuturuuu/internal-api@workspace:packages/internal-api"],
+
+    "@tuturuuu/inventory": ["@tuturuuu/inventory@workspace:apps/inventory"],
 
     "@tuturuuu/learn": ["@tuturuuu/learn@workspace:apps/learn"],
 

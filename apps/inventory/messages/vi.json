@@ -1,0 +1,393 @@
+{
+  "inventory": {
+    "checkout": {
+      "calculator": {
+        "auditNote": "Chỉ dùng bộ ước tính này để báo giá. Sổ cái production cần lưu phí giao dịch số dư Stripe, phí nền tảng Tuturuuu, phí chuyển đổi, hoàn tiền và các dòng đối soát payout sau khi quyết toán.",
+        "conversionFee": "Phí chuyển đổi",
+        "conversionPercent": "% chuyển đổi",
+        "customerPays": "Khách thanh toán",
+        "description": "Mô phỏng kinh tế checkout minh bạch trước khi đưa người bán B2B2C qua bước onboarding Stripe Connect.",
+        "feeBreakdown": "Chi tiết phí",
+        "feesHeld": "Phí giữ lại",
+        "merchantReceives": "Người bán nhận",
+        "netPayout": "Payout ròng",
+        "platformFee": "Phí nền tảng Tuturuuu",
+        "platformPercent": "% nền tảng",
+        "processingFee": "Phí xử lý Stripe",
+        "processingFixed": "Phí cố định",
+        "processingPercent": "% xử lý",
+        "settlementTitle": "Xem trước quyết toán",
+        "subtotal": "Tạm tính",
+        "title": "Bộ ước tính phí checkout",
+        "totalFees": "Tổng phí"
+      }
+    },
+    "nav": {
+      "audits": {
+        "description": "Truy vết sự kiện thanh toán, tồn kho và payout.",
+        "title": "Kiểm toán"
+      },
+      "bundles": {
+        "description": "Tạo combo, khuyến mãi và gói chiến dịch.",
+        "title": "Combo"
+      },
+      "checkout": {
+        "description": "Xem trước các dòng phí rõ ràng trước checkout.",
+        "title": "Checkout"
+      },
+      "controls": {
+        "description": "Rà soát độ phủ quan sát và kiểm soát.",
+        "title": "Kiểm soát"
+      },
+      "items": {
+        "description": "Phân loại sản phẩm theo loại, chủ sở hữu và talent.",
+        "title": "Mặt hàng"
+      },
+      "overview": {
+        "description": "Tồn kho, thanh toán và sức khỏe vận hành.",
+        "title": "Tổng quan"
+      },
+      "stock": {
+        "description": "Theo dõi nhập kho, giữ hàng và giải phóng hàng.",
+        "title": "Tồn kho"
+      },
+      "stripe": {
+        "description": "Chuẩn bị onboarding Stripe Connect và sổ cái phí.",
+        "title": "Stripe"
+      }
+    },
+    "shell": {
+      "navigationLabel": "Điều hướng kho hàng",
+      "product": "Tuturuuu Inventory",
+      "signOut": "Đăng xuất",
+      "switchWorkspace": "Đổi workspace",
+      "workspace": "Workspace {workspace}"
+    },
+    "views": {
+      "audits": {
+        "cards": {
+          "0": {
+            "detail": "Giữ hàng, phiên checkout, khoản charge Stripe, phân bổ phí và payout dùng chung một correlation id.",
+            "meta": "Liên sổ cái",
+            "title": "Chuỗi sự kiện thống nhất"
+          },
+          "1": {
+            "detail": "Hoàn tiền giá trị cao và chỉnh tồn kho thủ công cần được duyệt trước khi vào báo cáo người bán.",
+            "meta": "Cần duyệt",
+            "title": "Luồng ngoại lệ"
+          },
+          "2": {
+            "detail": "Dashboard vận hành theo dõi độ trễ webhook, thiếu giao dịch số dư, rủi ro bán quá tồn và combo tồn kho cũ.",
+            "meta": "Quan sát",
+            "title": "Độ phủ kiểm soát"
+          }
+        },
+        "description": "Kiểm toán tồn kho và thanh toán cùng nhau để hỗ trợ, tài chính và vận hành giải thích được mọi biến động hàng và tiền.",
+        "eyebrow": "Kiểm toán nâng cao",
+        "insights": {
+          "0": "Mỗi dòng thanh toán nên tham chiếu phiếu giữ hàng đã tạo ra nó.",
+          "1": "Mỗi dòng phí nên ghi nguồn, tiền tệ, phần trăm, số cố định và trạng thái quyết toán.",
+          "2": "Mỗi chỉnh sửa tồn kho nên có người thực hiện, lý do và số lượng trước/sau."
+        },
+        "insightTitle": "Kiểm soát kiểm toán",
+        "metrics": {
+          "0": {
+            "detail": "Chuỗi sự kiện có tham chiếu tồn kho, checkout, phí và payout.",
+            "label": "Độ phủ truy vết",
+            "value": "99,4%"
+          },
+          "1": {
+            "detail": "Thời gian từ webhook Stripe đến xác nhận sổ cái tồn kho.",
+            "label": "Độ trễ trung vị",
+            "value": "41 giây"
+          },
+          "2": {
+            "detail": "Ngoại lệ đang mở từ hoàn tiền, chỉnh tồn kho và lệch quyết toán.",
+            "label": "Ngoại lệ",
+            "value": "7"
+          }
+        },
+        "title": "Quan sát thanh toán và tồn kho",
+        "workTitle": "Luồng kiểm toán"
+      },
+      "bundles": {
+        "cards": {
+          "0": {
+            "detail": "Bộ ra mắt creator kết hợp áo, quyền truy cập số và sản phẩm ký tặng giới hạn trong một cam kết checkout.",
+            "meta": "Chiến dịch",
+            "title": "Bộ ra mắt creator"
+          },
+          "1": {
+            "detail": "Khả dụng của combo theo thành phần khan hiếm nhất để tránh bán khuyến mãi không thể hoàn tất.",
+            "meta": "Có chặn",
+            "title": "Chặn theo tồn thành phần"
+          },
+          "2": {
+            "detail": "Khuyến mãi luôn hiển thị biên lợi nhuận, phí nền tảng và giả định phí Stripe trước khi xuất bản.",
+            "meta": "Biên lợi nhuận",
+            "title": "Kinh tế khuyến mãi"
+          }
+        },
+        "description": "Tạo combo sản phẩm và khuyến mãi có tôn trọng ràng buộc tồn kho, phân chia sở hữu và kinh tế checkout.",
+        "eyebrow": "Quản lý combo",
+        "insights": {
+          "0": "Giữ tồn kho thành phần theo cách nguyên tử khi checkout combo bắt đầu.",
+          "1": "Hiển thị biên lợi nhuận sau giảm giá, phí Stripe, phí nền tảng và phí chuyển đổi.",
+          "2": "Tách tồn kho chiến dịch khỏi tồn kho catalog luôn bán."
+        },
+        "insightTitle": "Quy tắc khuyến mãi",
+        "metrics": {
+          "0": {
+            "detail": "Khuyến mãi có kiểm tra tồn kho thành phần.",
+            "label": "Combo đang chạy",
+            "value": "18"
+          },
+          "1": {
+            "detail": "Mức tăng doanh thu từ phiên checkout combo.",
+            "label": "Tăng trưởng combo",
+            "value": "+22%"
+          },
+          "2": {
+            "detail": "Combo được tạm dừng do thiếu thành phần trước khi bán quá tồn.",
+            "label": "Tạm dừng",
+            "value": "3"
+          }
+        },
+        "title": "Vận hành combo và khuyến mãi",
+        "workTitle": "Bảng khuyến mãi"
+      },
+      "checkout": {
+        "cards": {
+          "0": {
+            "detail": "Mỗi checkout hiển thị tạm tính, giảm giá, vận chuyển, phí xử lý Stripe, phí nền tảng Tuturuuu, phí chuyển đổi và payout người bán.",
+            "meta": "Minh bạch",
+            "title": "Hiển thị rõ phí cho khách và người bán"
+          },
+          "1": {
+            "detail": "Phiếu giữ hàng được tạo trước checkout và tự giải phóng khi phiên hết hạn hoặc thanh toán thất bại.",
+            "meta": "Đã giữ",
+            "title": "Checkout an toàn cho tồn kho"
+          },
+          "2": {
+            "detail": "Giao dịch số dư Stripe nên được đối soát với ước tính phí để khách hàng hiểu mọi chênh lệch quyết toán.",
+            "meta": "Đối soát",
+            "title": "Đối soát phí"
+          }
+        },
+        "description": "Thiết kế checkout xoay quanh dòng phí rõ ràng, giữ hàng tồn kho và đối soát quyết toán cho bán hàng kiểu marketplace B2B2C.",
+        "eyebrow": "Checkout thanh toán",
+        "insights": {
+          "0": "Không ẩn phí nền tảng trong giá sản phẩm khi người bán cần báo cáo payout.",
+          "1": "Lưu ước tính đã hiển thị ở checkout và phí Stripe thực tế nhận sau quyết toán.",
+          "2": "Giải phóng tồn kho khi checkout hết hạn, thanh toán thất bại hoặc kiểm tra gian lận chặn capture."
+        },
+        "insightTitle": "Yêu cầu checkout",
+        "metrics": {
+          "0": {
+            "detail": "Phiên checkout có chi tiết phí hiển thị.",
+            "label": "Độ rõ phí",
+            "value": "100%"
+          },
+          "1": {
+            "detail": "Đơn vị đang giữ chờ xác nhận thanh toán.",
+            "label": "Tồn đang giữ",
+            "value": "342"
+          },
+          "2": {
+            "detail": "Dòng phí ước tính đã khớp với dòng sổ cái Stripe thực tế.",
+            "label": "Phí đã khớp",
+            "value": "96,8%"
+          }
+        },
+        "title": "Checkout và quyết toán minh bạch",
+        "workTitle": "Luồng checkout"
+      },
+      "items": {
+        "cards": {
+          "0": {
+            "detail": "Sản phẩm vật lý, dịch vụ, trải nghiệm, hàng số và merchandise thuộc talent có thể cùng nằm trong một catalog với thuộc tính theo loại.",
+            "meta": "Có loại",
+            "title": "Phân loại loại sản phẩm"
+          },
+          "1": {
+            "detail": "Mặt hàng có trường chủ sở hữu, talent, nhà cung cấp, kênh và workspace để payout và quyền vận hành rõ ràng.",
+            "meta": "Theo chủ sở hữu",
+            "title": "Ánh xạ chủ sở hữu và talent"
+          },
+          "2": {
+            "detail": "Biến thể theo dõi SKU, mã vạch, chính sách fulfilment, nhóm thuế và chính sách tồn kho mà không tách khỏi ngữ cảnh kinh doanh.",
+            "meta": "Sẵn sàng biến thể",
+            "title": "Lớp SKU và biến thể"
+          }
+        },
+        "description": "Quản lý mọi sản phẩm trong một catalog trong khi vẫn thấy rõ loại, chủ sở hữu, talent, nhà cung cấp và dữ liệu fulfilment.",
+        "eyebrow": "Quản lý catalog",
+        "insights": {
+          "0": "Dùng thẻ category, owner và talent độc lập để một mặt hàng phục vụ nhiều ngữ cảnh storefront.",
+          "1": "Đặt chính sách tồn kho ở biến thể, không chỉ ở sản phẩm cha.",
+          "2": "Xem quyền truy cập số và hàng vật lý là các chính sách fulfilment khác nhau trong cùng hợp đồng inventory."
+        },
+        "insightTitle": "Mô hình catalog",
+        "metrics": {
+          "0": {
+            "detail": "Sản phẩm sẵn sàng cho checkout, combo hoặc giữ hàng.",
+            "label": "Mặt hàng hoạt động",
+            "value": "1.284"
+          },
+          "1": {
+            "detail": "Mặt hàng được nhóm theo loại, chủ sở hữu, talent, nhà cung cấp và kênh.",
+            "label": "Đã phân loại",
+            "value": "92%"
+          },
+          "2": {
+            "detail": "Biến thể có đủ dữ liệu SKU và chính sách tồn kho.",
+            "label": "Sức khỏe biến thể",
+            "value": "87%"
+          }
+        },
+        "title": "Catalog sản phẩm và sở hữu",
+        "workTitle": "Luồng catalog"
+      },
+      "overview": {
+        "cards": {
+          "0": {
+            "detail": "Người vận hành thấy sức khỏe tồn kho, giữ hàng checkout, onboarding Stripe và đối soát phí trong cùng workspace.",
+            "meta": "Điều phối",
+            "title": "Một bề mặt vận hành"
+          },
+          "1": {
+            "detail": "Mặt hàng có thể được phân loại theo loại sản phẩm, chủ sở hữu, talent, nhà cung cấp, chính sách fulfilment và kênh bán.",
+            "meta": "Catalog",
+            "title": "Phân loại linh hoạt"
+          },
+          "2": {
+            "detail": "Sự kiện thanh toán, phí, hoàn tiền, tồn kho và payout được thiết kế để kiểm toán cùng nhau thay vì ghép thủ công về sau.",
+            "meta": "Kiểm toán",
+            "title": "Quan sát theo sổ cái"
+          }
+        },
+        "description": "Workspace để quản lý sản phẩm, tồn kho, combo, kinh tế checkout, trạng thái Stripe Connect và kiểm soát vận hành.",
+        "eyebrow": "Trung tâm điều phối kho hàng",
+        "insights": {
+          "0": "Phiếu giữ hàng nên liên kết với phiên checkout trước khi capture thanh toán.",
+          "1": "Minh bạch phí cần xuất hiện trong checkout, báo cáo người bán và đối soát tài chính.",
+          "2": "Onboarding Stripe Connect nên được xem là cổng sẵn sàng kinh doanh."
+        },
+        "insightTitle": "Nguyên tắc vận hành",
+        "metrics": {
+          "0": {
+            "detail": "Đơn vị có thể bán trên sản phẩm, biến thể và combo.",
+            "label": "Tồn có thể bán",
+            "value": "42.180"
+          },
+          "1": {
+            "detail": "Đơn hàng được bảo vệ bằng giữ hàng trực tiếp trước xác nhận thanh toán.",
+            "label": "Đơn đang giữ",
+            "value": "126"
+          },
+          "2": {
+            "detail": "Người bán đã kết nối và sẵn sàng nhận payout Stripe.",
+            "label": "Người bán sẵn sàng Stripe",
+            "value": "38"
+          }
+        },
+        "title": "Vận hành tồn kho, checkout và phí",
+        "workTitle": "Luồng workspace"
+      },
+      "stock": {
+        "cards": {
+          "0": {
+            "detail": "Nhập hàng, chuyển kho, giữ hàng, giải phóng, điều chỉnh, trả hàng và hư hỏng cùng ghi vào timeline biến động tồn kho.",
+            "meta": "Sổ cái",
+            "title": "Sổ cái biến động"
+          },
+          "1": {
+            "detail": "Ngưỡng sắp hết hàng có thể khác nhau theo chủ sở hữu, kho, kênh, chiến dịch talent và cam kết combo.",
+            "meta": "Ngưỡng",
+            "title": "Tín hiệu đặt lại"
+          },
+          "2": {
+            "detail": "Phiếu giữ hàng khóa số lượng có thể bán trong lúc Stripe checkout đang chờ và giải phóng sạch khi phiên hết hạn.",
+            "meta": "An toàn checkout",
+            "title": "Kiểm soát giữ hàng"
+          }
+        },
+        "description": "Theo dõi số lượng tồn kho như một sổ cái biến động thay vì một con số có thể sửa trực tiếp.",
+        "eyebrow": "Quản lý tồn kho",
+        "insights": {
+          "0": "Tách số lượng có thể bán, đang giữ, hư hỏng, trả lại và đã cam kết.",
+          "1": "Dùng lý do biến động thay vì âm thầm sửa số lượng.",
+          "2": "Phơi bày rủi ro bán quá tồn trước khi chiến dịch và khuyến mãi chạy."
+        },
+        "insightTitle": "Bảo vệ tồn kho",
+        "metrics": {
+          "0": {
+            "detail": "Kho, pop-up và pool chiến dịch talent.",
+            "label": "Vị trí tồn kho",
+            "value": "16"
+          },
+          "1": {
+            "detail": "Mặt hàng dưới ngưỡng đặt lại hoặc đã cam kết cho combo đang chờ.",
+            "label": "Rủi ro",
+            "value": "24"
+          },
+          "2": {
+            "detail": "Dòng biến động đã đối soát với giữ hàng checkout.",
+            "label": "Sức khỏe sổ cái",
+            "value": "98,1%"
+          }
+        },
+        "title": "Sổ cái tồn kho và kiểm soát giữ hàng",
+        "workTitle": "Biến động tồn kho"
+      },
+      "stripe": {
+        "cards": {
+          "0": {
+            "detail": "Khách hàng có thể kết nối tài khoản Stripe của họ để Tuturuuu điều phối checkout storefront trong khi người bán nhận payout qua tài khoản của họ.",
+            "meta": "Connect",
+            "title": "Tài khoản Stripe thuộc người bán"
+          },
+          "1": {
+            "detail": "Trạng thái capability, hoàn tất onboarding, sẵn sàng payout và thiếu hồ sơ kinh doanh nên chặn các luồng checkout rủi ro.",
+            "meta": "Sẵn sàng",
+            "title": "Cổng sẵn sàng kinh doanh"
+          },
+          "2": {
+            "detail": "Phí ứng dụng, phí xử lý, phí chuyển đổi, hoàn tiền, tranh chấp và payout cần các dòng sổ cái riêng cho báo cáo người bán.",
+            "meta": "Phí",
+            "title": "Sổ cái phí"
+          }
+        },
+        "connectDescription": "Ứng dụng đã được đăng ký cho inventory.tuturuuu.com và sẵn sàng nhận route Stripe Connect tập trung từ apps/web. API thanh toán được bảo vệ nên nằm sau apps/web để chống bot, ghi audit và giữ bí mật provider tập trung.",
+        "connectTitle": "Ranh giới Stripe Connect",
+        "description": "Chuẩn bị onboarding B2B2C nơi khách hàng liên kết tài khoản Stripe và bán qua Tuturuuu với phí rõ ràng cùng khả năng quan sát payout.",
+        "eyebrow": "Stripe Connect",
+        "insights": {
+          "0": "Lưu id tài khoản Stripe và trạng thái capability tập trung; không bao giờ lộ provider secret cho satellite app.",
+          "1": "Dùng account onboarding link và account update link từ ranh giới API web được bảo vệ.",
+          "2": "Xem giao dịch số dư Stripe là nguồn sự thật cho phí thực tế sau quyết toán."
+        },
+        "insightTitle": "Mô hình Connect",
+        "metrics": {
+          "0": {
+            "detail": "Workspace người bán có id tài khoản đã kết nối.",
+            "label": "Người bán đã kết nối",
+            "value": "38"
+          },
+          "1": {
+            "detail": "Tài khoản đã sẵn sàng charges, transfers và payouts.",
+            "label": "Sẵn sàng payout",
+            "value": "31"
+          },
+          "2": {
+            "detail": "Thanh toán còn thiếu đối soát phí Stripe cuối cùng.",
+            "label": "Lệch phí",
+            "value": "12"
+          }
+        },
+        "title": "Sẵn sàng Stripe Connect",
+        "workTitle": "Vận hành Connect"
+      }
+    }
+  }
+}

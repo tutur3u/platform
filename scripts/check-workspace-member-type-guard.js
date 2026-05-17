@@ -7,6 +7,7 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const API_DIR_RELATIVE_PATHS = [
   'apps/web/src/app/api',
   'apps/finance/src/app/api',
+  'apps/inventory/src/app/api',
   'packages/apis/src',
 ];
 

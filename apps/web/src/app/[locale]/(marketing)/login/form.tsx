@@ -117,6 +117,7 @@ function getReturnAppName(returnApp: string | null) {
   if (returnApp === 'teach') return 'Teach';
   if (returnApp === 'nova') return 'Nova';
   if (returnApp === 'cms') return 'CMS';
+  if (returnApp === 'inventory') return 'Inventory';
   return returnApp ?? 'the app';
 }
 

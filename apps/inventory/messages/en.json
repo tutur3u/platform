@@ -1,0 +1,393 @@
+{
+  "inventory": {
+    "checkout": {
+      "calculator": {
+        "auditNote": "Use this estimator for quoting only. The production ledger should store Stripe balance transaction fees, Tuturuuu platform fees, conversion fees, refunds, and payout reconciliation lines after settlement.",
+        "conversionFee": "Conversion fee",
+        "conversionPercent": "Conversion %",
+        "customerPays": "Customer pays",
+        "description": "Model transparent checkout economics before sending a B2B2C seller through Stripe Connect onboarding.",
+        "feeBreakdown": "Fee breakdown",
+        "feesHeld": "Fees held",
+        "merchantReceives": "Merchant receives",
+        "netPayout": "Net payout",
+        "platformFee": "Tuturuuu platform fee",
+        "platformPercent": "Platform %",
+        "processingFee": "Stripe processing fee",
+        "processingFixed": "Fixed fee",
+        "processingPercent": "Processing %",
+        "settlementTitle": "Settlement preview",
+        "subtotal": "Subtotal",
+        "title": "Checkout fee estimator",
+        "totalFees": "Total fees"
+      }
+    },
+    "nav": {
+      "audits": {
+        "description": "Trace payment, stock, and payout events.",
+        "title": "Audits"
+      },
+      "bundles": {
+        "description": "Build bundles, promotions, and campaign packs.",
+        "title": "Bundles"
+      },
+      "checkout": {
+        "description": "Preview clear fee lines before checkout.",
+        "title": "Checkout"
+      },
+      "controls": {
+        "description": "Review observability and control coverage.",
+        "title": "Controls"
+      },
+      "items": {
+        "description": "Categorize products by type, owner, and talent.",
+        "title": "Items"
+      },
+      "overview": {
+        "description": "Inventory, payments, and operating health.",
+        "title": "Overview"
+      },
+      "stock": {
+        "description": "Track stock intake, reservations, and releases.",
+        "title": "Stock"
+      },
+      "stripe": {
+        "description": "Prepare Stripe Connect onboarding and fee ledgers.",
+        "title": "Stripe"
+      }
+    },
+    "shell": {
+      "navigationLabel": "Inventory navigation",
+      "product": "Tuturuuu Inventory",
+      "signOut": "Sign out",
+      "switchWorkspace": "Switch workspace",
+      "workspace": "{workspace} workspace"
+    },
+    "views": {
+      "audits": {
+        "cards": {
+          "0": {
+            "detail": "Stock reservation, checkout session, Stripe charge, fee allocation, and payout events share one correlation id.",
+            "meta": "Cross-ledger",
+            "title": "Unified event chain"
+          },
+          "1": {
+            "detail": "High-value refunds and manual stock corrections require review before they settle into the merchant statement.",
+            "meta": "Review",
+            "title": "Exception workflow"
+          },
+          "2": {
+            "detail": "Operational dashboards track webhook lag, missing balance transactions, oversell risk, and stale bundle inventory.",
+            "meta": "Observability",
+            "title": "Control coverage"
+          }
+        },
+        "description": "Audit inventory and payment operations together so support, finance, and operators can explain every stock and money movement.",
+        "eyebrow": "Advanced auditing",
+        "insights": {
+          "0": "Every payment row should reference the inventory reservation that created it.",
+          "1": "Every fee row should record source, currency, percentage, fixed amount, and settlement status.",
+          "2": "Every stock correction should include actor, reason, and before/after quantity."
+        },
+        "insightTitle": "Audit controls",
+        "metrics": {
+          "0": {
+            "detail": "Event chains with inventory, checkout, fee, and payout references.",
+            "label": "Trace coverage",
+            "value": "99.4%"
+          },
+          "1": {
+            "detail": "Stripe webhook to inventory ledger confirmation window.",
+            "label": "Median lag",
+            "value": "41s"
+          },
+          "2": {
+            "detail": "Open exceptions across refunds, stock changes, and settlement drift.",
+            "label": "Exceptions",
+            "value": "7"
+          }
+        },
+        "title": "Payment and inventory observability",
+        "workTitle": "Audit streams"
+      },
+      "bundles": {
+        "cards": {
+          "0": {
+            "detail": "A creator launch kit combines apparel, digital access, and a limited signed item while sharing one checkout promise.",
+            "meta": "Campaign",
+            "title": "Creator launch kit"
+          },
+          "1": {
+            "detail": "Bundle availability follows the scarcest component and prevents selling a promotion that cannot be fulfilled.",
+            "meta": "Guarded",
+            "title": "Component stock guard"
+          },
+          "2": {
+            "detail": "Promotions keep margin, platform fee, and Stripe fee assumptions visible before the campaign is published.",
+            "meta": "Margin",
+            "title": "Promotion economics"
+          }
+        },
+        "description": "Create product bundles and promotions that respect stock constraints, ownership splits, and checkout economics.",
+        "eyebrow": "Bundle management",
+        "insights": {
+          "0": "Reserve component stock atomically when a bundle checkout starts.",
+          "1": "Show margin after discounts, Stripe fees, platform fees, and conversion fees.",
+          "2": "Expire campaign inventory separately from evergreen catalog stock."
+        },
+        "insightTitle": "Promotion rules",
+        "metrics": {
+          "0": {
+            "detail": "Promotions with verified component availability.",
+            "label": "Active bundles",
+            "value": "18"
+          },
+          "1": {
+            "detail": "Revenue lift from bundle checkout sessions.",
+            "label": "Bundle uplift",
+            "value": "+22%"
+          },
+          "2": {
+            "detail": "Bundles paused by missing components before oversell.",
+            "label": "Paused",
+            "value": "3"
+          }
+        },
+        "title": "Bundles and promotion operations",
+        "workTitle": "Promotion board"
+      },
+      "checkout": {
+        "cards": {
+          "0": {
+            "detail": "Each checkout exposes subtotal, discounts, shipping, Stripe processing fees, Tuturuuu platform fees, conversion fees, and seller payout.",
+            "meta": "Transparent",
+            "title": "Clear customer and seller fee view"
+          },
+          "1": {
+            "detail": "Reservations are created before checkout and released automatically when sessions expire or payments fail.",
+            "meta": "Reserved",
+            "title": "Inventory-safe checkout"
+          },
+          "2": {
+            "detail": "Stripe balance transactions should reconcile against fee estimates so clients understand every settlement difference.",
+            "meta": "Reconciled",
+            "title": "Fee reconciliation"
+          }
+        },
+        "description": "Design checkout around explicit fee lines, inventory reservations, and settlement reconciliation for marketplace-style B2B2C sales.",
+        "eyebrow": "Payment checkout",
+        "insights": {
+          "0": "Never hide platform fees inside product price when the seller needs a payout statement.",
+          "1": "Persist the estimate shown at checkout and the actual Stripe fee received after settlement.",
+          "2": "Release inventory when checkout expires, payment fails, or fraud review blocks capture."
+        },
+        "insightTitle": "Checkout requirements",
+        "metrics": {
+          "0": {
+            "detail": "Checkout sessions with visible fee breakdowns.",
+            "label": "Fee clarity",
+            "value": "100%"
+          },
+          "1": {
+            "detail": "Reserved units awaiting payment confirmation.",
+            "label": "Reserved stock",
+            "value": "342"
+          },
+          "2": {
+            "detail": "Estimated fee rows reconciled to actual Stripe ledger rows.",
+            "label": "Matched fees",
+            "value": "96.8%"
+          }
+        },
+        "title": "Transparent checkout and settlement",
+        "workTitle": "Checkout flows"
+      },
+      "items": {
+        "cards": {
+          "0": {
+            "detail": "Physical products, services, experiences, digital goods, and talent-owned merchandise can live in one catalog with typed attributes.",
+            "meta": "Typed",
+            "title": "Product type taxonomy"
+          },
+          "1": {
+            "detail": "Items carry owner, talent, supplier, channel, and workspace ownership fields so payouts and inventory authority stay clear.",
+            "meta": "Owner-aware",
+            "title": "Owner and talent mapping"
+          },
+          "2": {
+            "detail": "Variants track SKU, barcode, fulfillment policy, tax category, and stock policy without splitting the business context.",
+            "meta": "Variant-ready",
+            "title": "SKU and variant layer"
+          }
+        },
+        "description": "Manage all products in one catalog while keeping type, owner, talent, supplier, and fulfillment metadata visible.",
+        "eyebrow": "Catalog management",
+        "insights": {
+          "0": "Use category, owner, and talent tags independently so one item can power multiple storefront contexts.",
+          "1": "Keep stock policy on the variant, not only the parent product.",
+          "2": "Treat digital access and physical goods as different fulfillment policies under the same inventory contract."
+        },
+        "insightTitle": "Catalog model",
+        "metrics": {
+          "0": {
+            "detail": "Products ready for checkout, bundling, or reservation.",
+            "label": "Active items",
+            "value": "1,284"
+          },
+          "1": {
+            "detail": "Items grouped by type, owner, talent, supplier, and channel.",
+            "label": "Classified",
+            "value": "92%"
+          },
+          "2": {
+            "detail": "Variants with complete SKU and stock policy metadata.",
+            "label": "Variant health",
+            "value": "87%"
+          }
+        },
+        "title": "Product catalog and ownership",
+        "workTitle": "Catalog workstreams"
+      },
+      "overview": {
+        "cards": {
+          "0": {
+            "detail": "Operators can see stock health, checkout reservations, Stripe onboarding, and fee reconciliation from the same workspace.",
+            "meta": "Command",
+            "title": "One operating surface"
+          },
+          "1": {
+            "detail": "Inventory items can be categorized by product type, owner, talent, supplier, fulfillment policy, and sales channel.",
+            "meta": "Catalog",
+            "title": "Flexible categorization"
+          },
+          "2": {
+            "detail": "Payment, fee, refund, stock, and payout events are designed to be audited together instead of stitched manually later.",
+            "meta": "Audit",
+            "title": "Ledger-first observability"
+          }
+        },
+        "description": "A workspace for managing products, stock, bundles, checkout economics, Stripe Connect readiness, and operating controls.",
+        "eyebrow": "Inventory command center",
+        "insights": {
+          "0": "Inventory reservations should be linked to checkout sessions before payment capture.",
+          "1": "Fee visibility belongs in checkout, seller reports, and finance reconciliation.",
+          "2": "Stripe Connect onboarding should be treated as a business readiness gate."
+        },
+        "insightTitle": "Operating principles",
+        "metrics": {
+          "0": {
+            "detail": "Sellable units across products, variants, and bundles.",
+            "label": "Available stock",
+            "value": "42,180"
+          },
+          "1": {
+            "detail": "Orders protected by live reservations before payment confirmation.",
+            "label": "Reserved orders",
+            "value": "126"
+          },
+          "2": {
+            "detail": "Connected sellers ready to receive Stripe payouts.",
+            "label": "Stripe-ready sellers",
+            "value": "38"
+          }
+        },
+        "title": "Inventory, checkout, and fee operations",
+        "workTitle": "Workspace streams"
+      },
+      "stock": {
+        "cards": {
+          "0": {
+            "detail": "Receiving, transfer, reservation, release, adjustment, return, and spoilage events write to the same stock movement timeline.",
+            "meta": "Ledger",
+            "title": "Movement ledger"
+          },
+          "1": {
+            "detail": "Low-stock thresholds can vary by owner, warehouse, channel, talent campaign, and bundle commitment.",
+            "meta": "Thresholds",
+            "title": "Reorder signals"
+          },
+          "2": {
+            "detail": "Stock reservations lock sellable quantity while Stripe checkout is pending and release cleanly when sessions expire.",
+            "meta": "Checkout-safe",
+            "title": "Reservation control"
+          }
+        },
+        "description": "Track inventory quantities as a ledger of stock movements rather than a single editable number.",
+        "eyebrow": "Stock management",
+        "insights": {
+          "0": "Separate available, reserved, damaged, returned, and committed quantities.",
+          "1": "Use movement reasons instead of silent quantity edits.",
+          "2": "Expose oversell risk before campaigns and promotions go live."
+        },
+        "insightTitle": "Stock safeguards",
+        "metrics": {
+          "0": {
+            "detail": "Warehouses, pop-ups, and talent campaign pools.",
+            "label": "Stock locations",
+            "value": "16"
+          },
+          "1": {
+            "detail": "Items below reorder threshold or committed to pending bundles.",
+            "label": "At risk",
+            "value": "24"
+          },
+          "2": {
+            "detail": "Movement rows reconciled against checkout reservations.",
+            "label": "Ledger health",
+            "value": "98.1%"
+          }
+        },
+        "title": "Stock ledger and reservation control",
+        "workTitle": "Stock movements"
+      },
+      "stripe": {
+        "cards": {
+          "0": {
+            "detail": "Clients can connect their Stripe account so Tuturuuu can orchestrate storefront checkout while the seller receives payouts through their account.",
+            "meta": "Connect",
+            "title": "Seller-owned Stripe accounts"
+          },
+          "1": {
+            "detail": "Account capability status, onboarding completion, payout readiness, and business profile gaps should block risky checkout flows.",
+            "meta": "Readiness",
+            "title": "Business readiness gate"
+          },
+          "2": {
+            "detail": "Application fees, processing fees, conversion fees, refunds, disputes, and payouts need separate ledger rows for seller reporting.",
+            "meta": "Fees",
+            "title": "Fee ledger"
+          }
+        },
+        "connectDescription": "The app is registered for inventory.tuturuuu.com and ready to receive a centralized Stripe Connect route from apps/web. Protected payment APIs should stay behind apps/web so bot protection, audit logging, and provider secrets remain centralized.",
+        "connectTitle": "Stripe Connect boundary",
+        "description": "Prepare B2B2C onboarding where clients link their Stripe account and sell through Tuturuuu with clear fees and payout observability.",
+        "eyebrow": "Stripe Connect",
+        "insights": {
+          "0": "Store Stripe account ids and capability status centrally; never expose provider secrets to the satellite app.",
+          "1": "Use account onboarding and account update links from the protected web API boundary.",
+          "2": "Treat Stripe balance transactions as the source of truth for actual fees after settlement."
+        },
+        "insightTitle": "Connect model",
+        "metrics": {
+          "0": {
+            "detail": "Seller workspaces with connected account identifiers.",
+            "label": "Connected sellers",
+            "value": "38"
+          },
+          "1": {
+            "detail": "Accounts with charges, transfers, and payouts ready.",
+            "label": "Payout-ready",
+            "value": "31"
+          },
+          "2": {
+            "detail": "Payments missing final Stripe fee reconciliation.",
+            "label": "Fee drift",
+            "value": "12"
+          }
+        },
+        "title": "Stripe Connect readiness",
+        "workTitle": "Connect operations"
+      }
+    }
+  }
+}

@@ -38,6 +38,13 @@ const DOMAINS = {
       : 'https://teach.tuturuuu.com',
     logo: TUTURUUU_LOGO_URL,
   },
+  INVENTORY: {
+    name: 'Inventory',
+    href: DEV_MODE
+      ? getTuturuuuPortlessAppOrigin('inventory')
+      : 'https://inventory.tuturuuu.com',
+    logo: TUTURUUU_LOGO_URL,
+  },
 } as const;
 
 interface LoginProps {

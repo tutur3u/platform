@@ -102,6 +102,7 @@
                 "group": "Applications",
                 "pages": [
                   "platform/applications/cms",
+                  "platform/applications/inventory",
                   "platform/applications/nova",
                   "platform/applications/tasks",
                   "platform/applications/learn",

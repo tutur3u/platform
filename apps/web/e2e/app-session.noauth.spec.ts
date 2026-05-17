@@ -39,6 +39,15 @@ test.describe('Gateway app-session JWT auth', () => {
         'finance',
         'https://finance.tuturuuu.com/verify-token?nextUrl=%2Fdashboard',
       ],
+      ['inventory', 'http://localhost:7815/verify-token?nextUrl=%2Fdashboard'],
+      [
+        'inventory',
+        'https://inventory.tuturuuu.localhost/verify-token?nextUrl=%2Fdashboard',
+      ],
+      [
+        'inventory',
+        'https://inventory.tuturuuu.com/verify-token?nextUrl=%2Fdashboard',
+      ],
       ['hive', 'http://localhost:7814/verify-token?nextUrl=%2Fdashboard'],
       [
         'hive',

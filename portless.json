@@ -16,6 +16,10 @@
       "name": "finance.tuturuuu",
       "script": "dev:app"
     },
+    "apps/inventory": {
+      "name": "inventory.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/hive": {
       "name": "hive.tuturuuu",
       "script": "dev:app"

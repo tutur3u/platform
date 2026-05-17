@@ -1,0 +1,55 @@
+---
+title: 'Inventory'
+description: 'How inventory.tuturuuu.com is wired as the inventory, stock, checkout fee, Stripe Connect, and audit operations app.'
+updatedAt: '2026-05-17'
+---
+
+Inventory lives in `apps/inventory` and runs locally through Portless at
+`https://inventory.tuturuuu.localhost`. Production is intended for
+`https://inventory.tuturuuu.com`.
+
+The app is a registered Tuturuuu satellite app. It uses Tuturuuu app-session
+auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
+`/api/auth/verify-app-token` handoff routes, and forwards fallback `/api/*`
+traffic to centralized `apps/web` APIs. Keep protected inventory, payment,
+Stripe Connect, checkout, and audit mutations behind `apps/web` so provider
+secrets, bot protection, request logging, and Observability stay centralized.
+
+## Local Development
+
+Use:
+
+```bash
+bun dev:inventory
+```
+
+The package `dev` script runs Portless. For direct port debugging, run
+`apps/inventory` with `bun dev:app`, which falls back to port `7815`.
+
+## Product Boundary
+
+Inventory starts with workspace-scoped surfaces for:
+
+- product catalog categorization by type, owner, talent, supplier, channel, and
+  fulfillment policy
+- stock movement and reservation ledgers
+- bundle and promotion availability controls
+- checkout fee visibility for processing fees, Tuturuuu platform fees,
+  conversion fees, settlement estimates, and net payout
+- payment and inventory audit streams
+- Stripe Connect readiness for B2B2C sellers who link their own Stripe account
+
+Do not hardcode Stripe fee schedules as durable truth. The checkout estimator is
+for quoting and operator review; production reconciliation should persist the
+estimate shown to the seller and then reconcile it against actual Stripe balance
+transaction fee rows after settlement.
+
+## Deployment
+
+Inventory has dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-inventory.yaml`
+- `.github/workflows/vercel-production-inventory.yaml`
+
+These workflows use `VERCEL_INVENTORY_PROJECT_ID`. Add that secret before
+enabling hosted deployments for `inventory.tuturuuu.com`.
