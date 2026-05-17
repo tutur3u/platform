@@ -132,13 +132,29 @@ describe('satellite app-session route inventory', () => {
     }
   });
 
-  it('keeps Learn and Teach local auth routes out of the generic API proxy guard', () => {
-    for (const file of ['apps/learn/src/proxy.ts', 'apps/teach/src/proxy.ts']) {
-      const source = readFileSync(resolve(repoRoot, file), 'utf8');
+  it('keeps Learn and Teach local auth routes covered by the generic API proxy guard', () => {
+    for (const { app, proxyFile, testFile } of [
+      {
+        app: 'learn',
+        proxyFile: 'apps/learn/src/proxy.ts',
+        testFile: 'apps/learn/src/proxy.test.ts',
+      },
+      {
+        app: 'teach',
+        proxyFile: 'apps/teach/src/proxy.ts',
+        testFile: 'apps/teach/src/proxy.test.ts',
+      },
+    ]) {
+      const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
+      const testSource = readFileSync(resolve(repoRoot, testFile), 'utf8');
 
-      expect(source, file).toContain('LOCAL_AUTH_API_PATHS');
-      expect(source, file).toContain("'/api/auth/logout'");
-      expect(source, file).toContain("'/api/auth/verify-app-token'");
+      expect(proxySource, proxyFile).toContain('guardApiProxyRequest');
+      expect(proxySource, proxyFile).toContain(
+        `prefixBase: 'proxy:${app}:api'`
+      );
+      expect(proxySource, proxyFile).not.toContain('LOCAL_AUTH_API_PATHS');
+      expect(testSource, testFile).toContain("'/api/auth/logout'");
+      expect(testSource, testFile).toContain("'/api/auth/verify-app-token'");
     }
   });
 

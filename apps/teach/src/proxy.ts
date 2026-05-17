@@ -18,10 +18,6 @@ import {
 } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
-const LOCAL_AUTH_API_PATHS = new Set([
-  '/api/auth/logout',
-  '/api/auth/verify-app-token',
-]);
 
 function getPreferredLocale(request: NextRequest): Locale {
   const cookieLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value;
@@ -90,10 +86,6 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
-    if (LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname)) {
-      return clearSupabaseAuthCookies(request, NextResponse.next());
-    }
-
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:teach:api',
     });
