@@ -5822,35 +5822,80 @@ export type Database = {
         Row: {
           actor_user_id: string | null;
           applied_event_id: string | null;
+          autonomous: boolean;
           created_at: string;
+          credit_source: string | null;
+          credit_ws_id: string | null;
+          credits_deducted: number;
+          error: string | null;
           id: string;
           input_context: Json;
+          input_tokens: number;
+          interaction_id: string | null;
+          llm_cost: number;
+          llm_model: string | null;
+          llm_provider: string | null;
           npc_id: string;
           output_decision: Json;
+          output_tokens: number;
           prompt_mode: string;
+          reasoning_tokens: number;
           server_id: string;
+          status: string;
+          target_npc_id: string | null;
+          trigger: string;
         };
         Insert: {
           actor_user_id?: string | null;
           applied_event_id?: string | null;
+          autonomous?: boolean;
           created_at?: string;
+          credit_source?: string | null;
+          credit_ws_id?: string | null;
+          credits_deducted?: number;
+          error?: string | null;
           id?: string;
           input_context?: Json;
+          input_tokens?: number;
+          interaction_id?: string | null;
+          llm_cost?: number;
+          llm_model?: string | null;
+          llm_provider?: string | null;
           npc_id: string;
           output_decision?: Json;
+          output_tokens?: number;
           prompt_mode?: string;
+          reasoning_tokens?: number;
           server_id: string;
+          status?: string;
+          target_npc_id?: string | null;
+          trigger?: string;
         };
         Update: {
           actor_user_id?: string | null;
           applied_event_id?: string | null;
+          autonomous?: boolean;
           created_at?: string;
+          credit_source?: string | null;
+          credit_ws_id?: string | null;
+          credits_deducted?: number;
+          error?: string | null;
           id?: string;
           input_context?: Json;
+          input_tokens?: number;
+          interaction_id?: string | null;
+          llm_cost?: number;
+          llm_model?: string | null;
+          llm_provider?: string | null;
           npc_id?: string;
           output_decision?: Json;
+          output_tokens?: number;
           prompt_mode?: string;
+          reasoning_tokens?: number;
           server_id?: string;
+          status?: string;
+          target_npc_id?: string | null;
+          trigger?: string;
         };
         Relationships: [
           {
@@ -5889,6 +5934,34 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
+            foreignKeyName: 'hive_npc_runs_credit_ws_id_fkey';
+            columns: ['credit_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_credit_ws_id_fkey';
+            columns: ['credit_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_credit_ws_id_fkey';
+            columns: ['credit_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_credit_ws_id_fkey';
+            columns: ['credit_ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+          {
             foreignKeyName: 'hive_npc_runs_npc_id_fkey';
             columns: ['npc_id'];
             isOneToOne: false;
@@ -5900,6 +5973,13 @@ export type Database = {
             columns: ['server_id'];
             isOneToOne: false;
             referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_target_npc_id_fkey';
+            columns: ['target_npc_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_npcs';
             referencedColumns: ['id'];
           },
         ];

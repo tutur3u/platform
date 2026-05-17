@@ -23,12 +23,14 @@ import {
 } from '@/engine/world';
 import type { useHiveMutations } from '@/hooks/use-hive-data';
 import { createDefaultNpcPayload } from './hive-npc-defaults';
+import type { HiveAiRunContext } from './use-hive-ai-context';
 import { useHiveKeyboardShortcuts } from './use-hive-keyboard-shortcuts';
 import type { createWorldEventPersistence } from './use-world-event-persistence';
 
 type UseHiveEditorActionsProps = {
   activeObject: string;
   activeTerrain: string;
+  aiRunContext: HiveAiRunContext | null;
   mutations: ReturnType<typeof useHiveMutations>;
   npcs: HiveNpc[];
   onNpcRunError?: (
@@ -60,6 +62,7 @@ type UseHiveEditorActionsProps = {
 export function useHiveEditorActions({
   activeObject,
   activeTerrain,
+  aiRunContext,
   mutations,
   npcs,
   onNpcRunError,
@@ -266,17 +269,58 @@ export function useHiveEditorActions({
 
   const runNpc = (
     npcId: string,
-    promptMode: 'custom' | 'default' | 'enhanced'
+    promptMode: 'custom' | 'default' | 'enhanced',
+    options?: {
+      maxTurns?: number;
+      prompt?: string | null;
+      targetNpcId?: string | null;
+    }
   ) => {
     onNpcRunStart?.(npcId, promptMode);
     mutations.runNpc.mutate(
       {
         npcId,
-        payload: { expectedRevision: revision, promptMode, world },
+        payload: {
+          creditSource: aiRunContext?.creditSource,
+          creditWsId: aiRunContext?.creditWsId,
+          expectedRevision: revision,
+          maxTurns: options?.maxTurns,
+          model: aiRunContext?.model,
+          prompt: options?.prompt,
+          promptMode,
+          targetNpcId: options?.targetNpcId,
+          world,
+        },
       },
       {
         onError: () => onNpcRunError?.(npcId, promptMode),
         onSuccess: () => onNpcRunSuccess?.(npcId, promptMode),
+      }
+    );
+  };
+
+  const runNpcInteraction = (input: {
+    maxTurns?: number;
+    prompt?: string | null;
+    sourceNpcId: string;
+    targetNpcId: string;
+  }) => {
+    onNpcRunStart?.(input.sourceNpcId, 'enhanced');
+    mutations.runNpcInteraction.mutate(
+      {
+        creditSource: aiRunContext?.creditSource,
+        creditWsId: aiRunContext?.creditWsId,
+        expectedRevision: revision,
+        maxTurns: input.maxTurns,
+        model: aiRunContext?.model,
+        prompt: input.prompt,
+        sourceNpcId: input.sourceNpcId,
+        targetNpcId: input.targetNpcId,
+        world,
+      },
+      {
+        onError: () => onNpcRunError?.(input.sourceNpcId, 'enhanced'),
+        onSuccess: () => onNpcRunSuccess?.(input.sourceNpcId, 'enhanced'),
       }
     );
   };
@@ -338,6 +382,7 @@ export function useHiveEditorActions({
     placeTerrain,
     resetWorld,
     rotateSelection,
+    runNpcInteraction,
     runNpc,
   };
 }

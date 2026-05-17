@@ -20,6 +20,7 @@ const TRANSLATION_DIRS = [
   'apps/calendar/messages',
   'apps/cms/messages',
   'apps/finance/messages',
+  'apps/hive/messages',
   'apps/inventory/messages',
   'apps/nova/messages',
   'apps/rewise/messages',

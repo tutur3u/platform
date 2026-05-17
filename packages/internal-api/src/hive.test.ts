@@ -2,9 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   archiveHiveWorkflow,
   createHiveWorkflow,
+  getHiveAiCredits,
   getHiveWorkflowRun,
+  listHiveAiModels,
+  listHiveTimeline,
   listHiveWorkflowRuns,
   listHiveWorkflows,
+  listHiveWorkspaces,
+  runHiveNpcInteraction,
   runHiveWorkflow,
   updateHiveWorkflow,
 } from './hive';
@@ -89,6 +94,59 @@ describe('Hive workflow internal API helpers', () => {
       ],
       [
         'https://internal.example.com/api/v1/hive/servers/server-1/workflows/workflow-1/runs/run-1',
+        undefined,
+      ],
+    ]);
+  });
+});
+
+describe('Hive AI context internal API helpers', () => {
+  it('targets workspace, credit, model, interaction, and timeline routes', async () => {
+    const fetch = createFetchMock({
+      models: [],
+      personalWorkspaceId: 'personal-ws',
+      workspaces: [],
+    });
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch,
+    };
+
+    await listHiveWorkspaces(options);
+    await getHiveAiCredits('workspace-1', options);
+    await listHiveAiModels(options);
+    await runHiveNpcInteraction(
+      'server-1',
+      {
+        creditSource: 'workspace',
+        creditWsId: 'workspace-1',
+        expectedRevision: 8,
+        model: 'google/gemini-2.5-flash-lite',
+        prompt: 'Discuss the garden.',
+        sourceNpcId: 'npc-1',
+        targetNpcId: 'npc-2',
+        world: { blocks: [], objects: [] },
+      },
+      options
+    );
+    await listHiveTimeline('server-1', options);
+
+    expect(fetch.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
+      ['https://internal.example.com/api/v1/hive/workspaces', undefined],
+      [
+        'https://internal.example.com/api/v1/hive/ai/credits?wsId=workspace-1',
+        undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/ai/models?enabled=true&type=language',
+        undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/interactions',
+        'POST',
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/timeline',
         undefined,
       ],
     ]);

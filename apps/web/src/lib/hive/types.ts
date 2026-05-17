@@ -68,6 +68,33 @@ export type HiveNpcRow = {
   system_prompt: string | null;
 };
 
+export type HiveNpcRunRow = {
+  actor_user_id: string | null;
+  autonomous: boolean | null;
+  credit_source: string | null;
+  credit_ws_id: string | null;
+  credits_deducted: string | number | null;
+  created_at: string;
+  error: string | null;
+  id: string;
+  input_context: Json;
+  input_tokens: number | null;
+  interaction_id: string | null;
+  llm_cost: string | number | null;
+  llm_model: string | null;
+  llm_provider: string | null;
+  npc_id: string;
+  npc_name?: string | null;
+  output_decision: Json;
+  output_tokens: number | null;
+  prompt_mode: string;
+  reasoning_tokens: number | null;
+  status: string | null;
+  target_npc_id: string | null;
+  target_npc_name?: string | null;
+  trigger: string | null;
+};
+
 export type HiveMemberRow = {
   created_at: string;
   enabled: boolean;

@@ -21,6 +21,7 @@ import {
   useHiveSnapshot,
 } from '@/hooks/use-hive-data';
 import type { HiveRealtimeStatus } from '@/realtime/hive-realtime-client';
+import { useHiveAiContext } from './use-hive-ai-context';
 import { useHiveEditorActions } from './use-hive-editor-actions';
 import { useHiveEnvironmentControls } from './use-hive-environment-controls';
 import {
@@ -92,6 +93,7 @@ export function useHiveStudioEngine({
   const worldEventInFlightRef = useRef(false);
   const worldEventQueuedRef = useRef<QueuedWorldEvent | null>(null);
   const environment = useHiveEnvironmentControls();
+  const aiContext = useHiveAiContext();
   const {
     npcs,
     revision,
@@ -197,6 +199,7 @@ export function useHiveStudioEngine({
   const editorActions = useHiveEditorActions({
     activeObject,
     activeTerrain,
+    aiRunContext: aiContext.aiRunContext,
     mutations,
     npcs,
     onNpcRunError: (npcId, promptMode) =>
@@ -259,6 +262,7 @@ export function useHiveStudioEngine({
     activeBuildMode,
     activeObject,
     activeTerrain,
+    aiContext,
     applyAgentInstruction: editorActions.applyAgentInstruction,
     autoTimeEnabled: environment.autoTimeEnabled,
     autoTimeSpeed: environment.autoTimeSpeed,
@@ -270,7 +274,8 @@ export function useHiveStudioEngine({
     eraseSelection: editorActions.eraseSelection,
     eventsCount: snapshotQuery.data?.events.length ?? 0,
     gaplessMode: environment.gaplessMode,
-    isRunningNpc: mutations.runNpc.isPending,
+    isRunningNpc:
+      mutations.runNpc.isPending || mutations.runNpcInteraction.isPending,
     isRunningSimulationTick: mutations.runSimulationTick.isPending,
     lastNpcRunStatus: visibleLastNpcRunStatus,
     moveSelection: editorActions.moveSelection,
@@ -288,6 +293,7 @@ export function useHiveStudioEngine({
     resetWorld: editorActions.resetWorld,
     rotateSelection: editorActions.rotateSelection,
     runNpc: editorActions.runNpc,
+    runNpcInteraction: editorActions.runNpcInteraction,
     runSimulationTick,
     selectedServer,
     selectedNpc,

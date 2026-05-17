@@ -1,4 +1,178 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { asHiveJson, getHiveSql } from './hive-db';
+import { runHiveNpcInteraction } from './npc-interactions';
+import { getLatestHiveNpcAutonomousRun } from './npcs';
+import type { HiveNpcRow, HiveWorld } from './types';
+
+type SimulationServerSettings = {
+  autonomousNpcEnabled?: boolean;
+  defaultCreditSource?: 'personal' | 'workspace';
+  defaultCreditWsId?: string | null;
+  defaultModel?: string | null;
+  maxAutonomousInteractionsPerTick?: number;
+  maxInteractionTurns?: number;
+  maxLlmSpendPerTick?: number;
+  minInteractionCooldownSeconds?: number;
+  simulationCronEnabled?: boolean;
+};
+
+function normalizeSettings(value: Record<string, unknown>) {
+  return value as SimulationServerSettings;
+}
+
+function asWorld(value: unknown): HiveWorld {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { blocks: [], objects: [] };
+  }
+
+  const world = value as Partial<HiveWorld>;
+  return {
+    blocks: Array.isArray(world.blocks) ? world.blocks : [],
+    objects: Array.isArray(world.objects) ? world.objects : [],
+  };
+}
+
+function asPosition(value: unknown) {
+  if (
+    value &&
+    typeof value === 'object' &&
+    !Array.isArray(value) &&
+    typeof (value as { x?: unknown }).x === 'number' &&
+    typeof (value as { y?: unknown }).y === 'number' &&
+    typeof (value as { z?: unknown }).z === 'number'
+  ) {
+    return value as { x: number; y: number; z: number };
+  }
+
+  return { x: 0, y: 1, z: 0 };
+}
+
+function distance(a: unknown, b: unknown) {
+  const from = asPosition(a);
+  const to = asPosition(b);
+
+  return (
+    Math.abs(from.x - to.x) + Math.abs(from.y - to.y) + Math.abs(from.z - to.z)
+  );
+}
+
+function isAutonomousNpc(npc: HiveNpcRow) {
+  return (
+    npc.settings &&
+    typeof npc.settings === 'object' &&
+    !Array.isArray(npc.settings) &&
+    (npc.settings as { autonomous?: unknown }).autonomous === true
+  );
+}
+
+async function runAutonomousNpcInteractions(input: {
+  actorUserId: string | null;
+  serverId: string;
+  settings: SimulationServerSettings;
+}) {
+  const settings = input.settings;
+  if (!settings.autonomousNpcEnabled) return 0;
+  if (!input.actorUserId || !settings.defaultCreditWsId) return 0;
+
+  const sql = getHiveSql();
+  const [[state], npcs] = await Promise.all([
+    sql<Array<{ revision: string | number; world_data: unknown }>>`
+      select revision, world_data
+      from hive_world_states
+      where server_id = ${input.serverId}
+      limit 1
+    `,
+    sql<HiveNpcRow[]>`
+      select id, server_id, name, role, model, backstory, system_prompt,
+        memory_enabled, backstory_enabled, custom_prompt_enabled, position,
+        settings, status, created_at
+      from hive_npcs
+      where server_id = ${input.serverId} and status = 'active'
+      order by created_at asc
+    `,
+  ]);
+  const autonomousNpcs = npcs.filter(isAutonomousNpc);
+
+  if (autonomousNpcs.length < 2) return 0;
+
+  const maxInteractions = Math.min(
+    Math.max(settings.maxAutonomousInteractionsPerTick ?? 1, 0),
+    20
+  );
+  const maxTurns = Math.min(Math.max(settings.maxInteractionTurns ?? 4, 1), 12);
+  const cooldownMs =
+    Math.max(settings.minInteractionCooldownSeconds ?? 900, 0) * 1000;
+  const maxSpend = Math.max(settings.maxLlmSpendPerTick ?? 0, 0);
+  let interactions = 0;
+  let creditsSpent = 0;
+
+  for (const sourceNpc of autonomousNpcs) {
+    if (interactions >= maxInteractions) break;
+    if (maxSpend > 0 && creditsSpent >= maxSpend) break;
+
+    const targetNpc =
+      autonomousNpcs
+        .filter((npc) => npc.id !== sourceNpc.id)
+        .sort(
+          (a, b) =>
+            distance(sourceNpc.position, a.position) -
+            distance(sourceNpc.position, b.position)
+        )[0] ?? null;
+
+    if (!targetNpc) continue;
+
+    const latestRun = await getLatestHiveNpcAutonomousRun({
+      npcIds: [sourceNpc.id, targetNpc.id],
+      serverId: input.serverId,
+    });
+
+    if (
+      latestRun &&
+      Date.now() - new Date(latestRun.created_at).getTime() < cooldownMs
+    ) {
+      continue;
+    }
+
+    try {
+      const result = await runHiveNpcInteraction({
+        actorUserId: input.actorUserId,
+        autonomous: true,
+        creditSource: settings.defaultCreditSource ?? 'workspace',
+        creditWsId: settings.defaultCreditWsId,
+        expectedRevision: Number(state?.revision ?? 0),
+        maxTurns,
+        model: settings.defaultModel ?? sourceNpc.model,
+        prompt:
+          'Autonomously coordinate a small, observable next action for this Hive world.',
+        promptMode: 'enhanced',
+        sbAdmin: await createAdminClient({ noCookie: true }),
+        serverId: input.serverId,
+        sourceNpcId: sourceNpc.id,
+        targetNpcId: targetNpc.id,
+        trigger: 'simulation',
+        world: asWorld(state?.world_data),
+      });
+
+      if (result.runs.length > 0) {
+        interactions += 1;
+        creditsSpent += result.runs.reduce(
+          (sum, run) => sum + Number(run.credits_deducted ?? 0),
+          0
+        );
+      }
+    } catch (error) {
+      serverLogger.warn('Hive autonomous NPC interaction skipped', {
+        error: error instanceof Error ? error.message : String(error),
+        serverId: input.serverId,
+        sourceNpcId: sourceNpc.id,
+        targetNpcId: targetNpc.id,
+      });
+    }
+  }
+
+  return interactions;
+}
 
 export async function runHiveSimulationTick(options?: {
   force?: boolean;
@@ -8,21 +182,23 @@ export async function runHiveSimulationTick(options?: {
   const servers = options?.serverId
     ? await sql<
         Array<{
+          created_by: string | null;
           id: string;
           settings: Record<string, unknown>;
         }>
       >`
-        select id, settings
+        select id, settings, created_by
         from hive_servers
         where enabled = true and id = ${options.serverId}
       `
     : await sql<
         Array<{
+          created_by: string | null;
           id: string;
           settings: Record<string, unknown>;
         }>
       >`
-        select id, settings
+        select id, settings, created_by
         from hive_servers
         where enabled = true
           and coalesce((settings ->> 'simulationCronEnabled')::boolean, false) = true
@@ -35,7 +211,8 @@ export async function runHiveSimulationTick(options?: {
   }> = [];
 
   for (const server of servers) {
-    const cronEnabled = server.settings?.simulationCronEnabled === true;
+    const serverSettings = normalizeSettings(server.settings ?? {});
+    const cronEnabled = serverSettings.simulationCronEnabled === true;
     if (!options?.force && !cronEnabled) {
       results.push({ actions: 0, serverId: server.id, status: 'skipped' });
       continue;
@@ -107,7 +284,16 @@ export async function runHiveSimulationTick(options?: {
         returning npc.id as npc_id
       `;
 
-      const actions = crops.length + needs.length + eliminated.length;
+      const autonomousInteractions = await runAutonomousNpcInteractions({
+        actorUserId: server.created_by,
+        serverId: server.id,
+        settings: serverSettings,
+      });
+      const actions =
+        crops.length +
+        needs.length +
+        eliminated.length +
+        autonomousInteractions;
       await sql`
         update hive_simulation_ticks
         set status = 'completed',
@@ -115,6 +301,7 @@ export async function runHiveSimulationTick(options?: {
           summary = ${sql.json(
             asHiveJson({
               cropsAdvanced: crops.length,
+              autonomousInteractions,
               eliminatedNpcs: eliminated.length,
               needsUpdated: needs.length,
             })

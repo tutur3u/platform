@@ -1,3 +1,4 @@
+import type { AIModelUI } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -35,6 +36,48 @@ export interface GenerateWorkspaceCourseModulesFromStorageResponse {
     creditsCharged?: number;
     truncated?: boolean;
   };
+}
+
+type GatewayModelRow = {
+  context_window?: number | null;
+  description?: string | null;
+  id: string;
+  is_enabled?: boolean | null;
+  name?: string | null;
+  provider?: string | null;
+  tags?: string[] | null;
+};
+
+export function mapGatewayModelToUi(model: GatewayModelRow): AIModelUI {
+  return {
+    context: model.context_window ?? undefined,
+    description: model.description ?? undefined,
+    disabled: model.is_enabled === false,
+    label:
+      model.name?.trim() || model.id.split('/').slice(1).join('/') || model.id,
+    provider: model.provider || model.id.split('/')[0] || 'unknown',
+    tags: Array.isArray(model.tags) ? model.tags : undefined,
+    value: model.id,
+  };
+}
+
+export async function listAiGatewayModels(
+  options?: InternalApiClientOptions & {
+    enabled?: boolean;
+    type?: 'all' | 'embedding' | 'image' | 'language' | 'other';
+  }
+) {
+  const { enabled = true, type = 'language', ...clientOptions } = options ?? {};
+  const client = getInternalApiClient(clientOptions);
+  const rows = await client.json<GatewayModelRow[]>(
+    '/api/v1/infrastructure/ai/models',
+    {
+      cache: 'no-store',
+      query: { enabled, type },
+    }
+  );
+
+  return rows.map(mapGatewayModelToUi);
 }
 
 export async function listWorkspaceAiModelFavorites(

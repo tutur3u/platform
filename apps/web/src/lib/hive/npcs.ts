@@ -1,6 +1,5 @@
-import type { Json } from '@tuturuuu/types/db';
 import { asHiveJson, getHiveSql } from './hive-db';
-import type { HiveNpcRow } from './types';
+import type { HiveNpcRow, HiveNpcRunRow } from './types';
 
 export async function createHiveNpc(input: {
   createdBy: string;
@@ -142,29 +141,36 @@ export async function listHiveNpcMemories(npcId: string) {
 }
 
 export async function persistHiveNpcRun(input: {
-  actorUserId: string;
+  actorUserId: string | null;
+  autonomous?: boolean;
+  creditSource?: 'personal' | 'workspace' | null;
+  creditWsId?: string | null;
+  creditsDeducted?: number;
   decision: Record<string, unknown>;
+  error?: string | null;
   inputContext: Record<string, unknown>;
+  inputTokens?: number;
+  interactionId?: string | null;
   llmCost: number;
   llmModel: string | null;
   llmProvider: string;
   npcId: string;
+  outputTokens?: number;
   promptMode: string;
+  reasoningTokens?: number;
   serverId: string;
+  status?: 'completed' | 'failed' | 'running' | 'skipped';
+  targetNpcId?: string | null;
+  trigger?: 'autonomous' | 'cron' | 'manual' | 'simulation' | 'workflow';
 }) {
   const sql = getHiveSql();
-  const [run] = await sql<
-    Array<{
-      created_at: string;
-      id: string;
-      input_context: Json;
-      npc_id: string;
-      output_decision: Json;
-    }>
-  >`
+  const [run] = await sql<HiveNpcRunRow[]>`
     insert into hive_npc_runs (
       server_id, npc_id, actor_user_id, prompt_mode, input_context,
-      output_decision, llm_provider, llm_model, llm_cost
+      output_decision, interaction_id, target_npc_id, trigger, status, error,
+      llm_provider, llm_model, llm_cost, input_tokens, output_tokens,
+      reasoning_tokens, credits_deducted, credit_ws_id, credit_source,
+      autonomous
     )
     values (
       ${input.serverId},
@@ -173,12 +179,74 @@ export async function persistHiveNpcRun(input: {
       ${input.promptMode},
       ${sql.json(asHiveJson(input.inputContext))},
       ${sql.json(asHiveJson(input.decision))},
+      ${input.interactionId ?? null},
+      ${input.targetNpcId ?? null},
+      ${input.trigger ?? 'manual'},
+      ${input.status ?? 'completed'},
+      ${input.error ?? null},
       ${input.llmProvider},
       ${input.llmModel},
-      ${input.llmCost}
+      ${input.llmCost},
+      ${input.inputTokens ?? 0},
+      ${input.outputTokens ?? 0},
+      ${input.reasoningTokens ?? 0},
+      ${input.creditsDeducted ?? 0},
+      ${input.creditWsId ?? null},
+      ${input.creditSource ?? null},
+      ${input.autonomous ?? false}
     )
-    returning id, npc_id, input_context, output_decision, created_at
+    returning id, server_id, npc_id, actor_user_id, prompt_mode, input_context,
+      output_decision, interaction_id, target_npc_id, trigger, status, error,
+      llm_provider, llm_model, llm_cost, input_tokens, output_tokens,
+      reasoning_tokens, credits_deducted, credit_ws_id, credit_source,
+      autonomous, created_at
   `;
+  return run ?? null;
+}
+
+export async function listHiveNpcRuns(input: {
+  limit?: number;
+  serverId: string;
+}) {
+  const sql = getHiveSql();
+  return sql<HiveNpcRunRow[]>`
+    select runs.id, runs.server_id, runs.npc_id, runs.actor_user_id,
+      runs.prompt_mode, runs.input_context, runs.output_decision,
+      runs.interaction_id, runs.target_npc_id, runs.trigger, runs.status,
+      runs.error, runs.llm_provider, runs.llm_model, runs.llm_cost,
+      runs.input_tokens, runs.output_tokens, runs.reasoning_tokens,
+      runs.credits_deducted, runs.credit_ws_id, runs.credit_source,
+      runs.autonomous, runs.created_at, source.name as npc_name,
+      target.name as target_npc_name
+    from hive_npc_runs runs
+    left join hive_npcs source on source.id = runs.npc_id
+    left join hive_npcs target on target.id = runs.target_npc_id
+    where runs.server_id = ${input.serverId}
+    order by runs.created_at desc
+    limit ${Math.min(Math.max(input.limit ?? 120, 1), 240)}
+  `;
+}
+
+export async function getLatestHiveNpcAutonomousRun(input: {
+  npcIds: string[];
+  serverId: string;
+}) {
+  if (input.npcIds.length === 0) return null;
+
+  const sql = getHiveSql();
+  const [run] = await sql<Array<{ created_at: string }>>`
+    select created_at
+    from hive_npc_runs
+    where server_id = ${input.serverId}
+      and autonomous = true
+      and (
+        npc_id = any(${sql.array(input.npcIds)})
+        or target_npc_id = any(${sql.array(input.npcIds)})
+      )
+    order by created_at desc
+    limit 1
+  `;
+
   return run ?? null;
 }
 

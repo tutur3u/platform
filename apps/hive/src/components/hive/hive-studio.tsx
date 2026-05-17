@@ -14,6 +14,7 @@ import type { HiveAgentMessage } from './hive-agent-composer';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
 import { HiveStudioServerPicker } from './hive-studio-server-picker';
 import { HiveStudioToolDock } from './hive-studio-tool-dock';
+import { HiveTimelinePanel } from './hive-timeline-panel';
 import { HiveViewportOverlays } from './hive-viewport-overlays';
 import { InspectorPanel } from './panels/inspector-panel';
 import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shortcut';
@@ -64,7 +65,7 @@ export function HiveStudio({
     { validate: isBoolean }
   );
   const [studioMode, setStudioMode] = useHivePersistedState<
-    'workflows' | 'world'
+    'timeline' | 'workflows' | 'world'
   >('hive.editor.mode', 'world', { validate: isStudioMode });
   const [miniMapCollapsed, setMiniMapCollapsed] = useHivePersistedState(
     'hive.editor.miniMapCollapsed',
@@ -182,6 +183,11 @@ export function HiveStudio({
                 world={engine.world}
               />
             </>
+          ) : studioMode === 'timeline' ? (
+            <HiveTimelinePanel
+              onExit={() => setStudioMode('world')}
+              serverId={engine.serverId}
+            />
           ) : (
             <HiveWorkflowStudio
               isAdmin={isAdmin}
@@ -193,8 +199,9 @@ export function HiveStudio({
         }
         rightCollapsed={rightCollapsed}
         top={
-          studioMode === 'world' ? (
+          studioMode === 'world' || studioMode === 'timeline' ? (
             <EditorTopChrome
+              aiContext={engine.aiContext}
               chatOpen={chatOpen}
               currentUser={currentUser}
               inspectorPanel={
@@ -209,6 +216,7 @@ export function HiveStudio({
                   world={engine.world}
                 />
               }
+              isAdmin={isAdmin}
               isRunningNpc={engine.isRunningNpc}
               lastNpcRunStatus={engine.lastNpcRunStatus}
               miniMapCollapsed={miniMapCollapsed}
@@ -223,18 +231,21 @@ export function HiveStudio({
               onToggleMiniMap={() => setMiniMapCollapsed((value) => !value)}
               onPatchNpc={engine.patchNpc}
               onRunNpc={engine.runNpc}
+              onRunNpcInteraction={engine.runNpcInteraction}
               onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
+              onUpdateServerSettings={engine.updateServerSettings}
               presenceCount={engine.presenceCount}
               realtimeStatus={engine.realtimeStatus}
               revision={engine.revision}
               rightCollapsed={rightCollapsed}
               selectedNpc={engine.selectedNpc}
+              selectedServer={engine.selectedServer ?? null}
               serverPicker={serverPicker}
               world={engine.world}
             />
           ) : null
         }
-        topCollapsed={topCollapsed || studioMode !== 'world'}
+        topCollapsed={topCollapsed || studioMode === 'workflows'}
       />
       <HiveStudioDialogs
         deleteServerOpen={deleteServerOpen}
@@ -258,6 +269,8 @@ export function HiveStudio({
   );
 }
 
-function isStudioMode(value: unknown): value is 'workflows' | 'world' {
-  return value === 'workflows' || value === 'world';
+function isStudioMode(
+  value: unknown
+): value is 'timeline' | 'workflows' | 'world' {
+  return value === 'timeline' || value === 'workflows' || value === 'world';
 }

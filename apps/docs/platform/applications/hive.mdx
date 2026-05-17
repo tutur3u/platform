@@ -37,6 +37,9 @@ checks.
   Tuturuuu and then loop back to the restricted page.
 - V1 server policy is intentionally broad: every enabled Hive member can join
   every enabled Hive server.
+- Hive servers are global research worlds. Workspace selection inside the Hive
+  editor is only an AI context and billing control; it must not filter server
+  lists, snapshots, realtime membership, or world data.
 - `apps/web` remains the login authority and verifies platform roles through
   internal APIs. Hive itself uses the app-session JWT as the local identity
   cookie. Hive product data belongs in the dedicated Docker-managed Hive
@@ -104,6 +107,33 @@ the same audited world-event path as manual editor saves.
 Shared realtime payloads and Hive CRDT helpers live in
 `@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,
 `apps/hive-realtime`, or `apps/web` need the same message or document contract.
+
+## AI Credit Context
+
+Hive uses the same AI credit and model contracts as the main dashboard. The
+editor top bar owns the workspace picker, personal/workspace credit source
+toggle, credit meter, and model picker. The selected workspace is the credit
+context only; it does not scope Hive servers.
+
+Manual NPC runs and manual NPC-to-NPC interactions send `creditSource`,
+`creditWsId`, and `model` through the Hive internal API. The web route verifies
+that the signed-in Hive user can access the selected workspace, resolves the
+requested model against the workspace plan, preflights AI credits, runs the LLM,
+and deducts credits only after successful model usage. If model access is not
+configured, the route can still persist a deterministic NPC decision for
+inspectable simulation history.
+
+Autonomous NPC interactions use server settings instead of the current browser
+selection. `defaultCreditSource`, `defaultCreditWsId`, and `defaultModel` define
+the billing/model context for scheduled simulation work. If the billing
+workspace is missing or unauthorized, scheduled LLM autonomy is skipped and the
+normal simulation tick continues.
+
+`hive_npc_runs` stores grouped interaction metadata for both manual and
+autonomous runs: `interaction_id`, source/target NPCs, trigger, status, model,
+provider, token counts, credit source/workspace, deducted credits, and errors.
+Timeline surfaces should group or filter from this persisted run history plus
+world events rather than recomputing transcripts from transient client state.
 
 ## Editor Surface
 
@@ -181,6 +211,19 @@ just create trace rows. The farm cycle template plants a relational crop, then
 uses a `world_event.worldPatch` step to stamp a visible crop plot into the Hive
 world. The cleanup template removes that starter plot by id and records the
 maintenance event.
+
+The editor mode switch also includes Timeline. Timeline mode reads
+`/api/v1/hive/servers/:serverId/timeline`, merges world events with NPC run
+history, and displays model/cost/trigger metadata for each persisted run. Keep
+manual and autonomous interaction rows grouped by `interaction_id` whenever a
+deeper transcript view is added.
+
+NPC Lab is a draft editor for the selected NPC only. Identity, brain/model,
+behavior/autonomy, memory/prompt flags, system prompt, and interaction controls
+belong in the lab tabs. Save/Reset should protect large text and settings edits
+from accidental persistence, while manual run buttons can launch one-shot
+decisions or targeted NPC-to-NPC interactions using the current AI credit
+context.
 
 The chat composer is opt-in from the editor chrome button, and the mini-map is
 a collapsible viewport overlay. If all Hive servers are deleted, the editor must

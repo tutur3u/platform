@@ -15,6 +15,7 @@ import type {
   HiveAccessRequestRow,
   HiveMemberRow,
   HiveNpcRow,
+  HiveNpcRunRow,
   HiveServerRow,
   HiveWorldEventRow,
 } from '@/lib/hive/types';
@@ -130,9 +131,15 @@ export const hiveServerSchema = z.object({
 export const hiveServerSettingsSchema = z.object({
   autonomousNpcEnabled: z.boolean().optional(),
   cronEnabled: z.boolean().optional(),
+  defaultCreditSource: z.enum(['personal', 'workspace']).optional(),
+  defaultCreditWsId: z.string().uuid().nullable().optional(),
+  defaultModel: z.string().trim().min(1).max(160).nullable().optional(),
   llmProvider: z.enum(['disabled', 'ollama', 'mira']).optional(),
+  maxAutonomousInteractionsPerTick: z.number().int().min(0).max(20).optional(),
+  maxInteractionTurns: z.number().int().min(1).max(12).optional(),
   maxLlmSpendPerTick: z.number().min(0).optional(),
   maxTickBudget: z.number().int().min(1).max(500).optional(),
+  minInteractionCooldownSeconds: z.number().int().min(0).max(86_400).optional(),
   ollamaEnabled: z.boolean().optional(),
   ollamaKeepAlive: z.string().trim().min(1).max(40).optional(),
   ollamaModel: z.literal('gemma4').optional(),
@@ -141,8 +148,32 @@ export const hiveServerSettingsSchema = z.object({
 });
 
 export const hiveNpcRunSchema = z.object({
+  creditSource: z.enum(['personal', 'workspace']).optional(),
+  creditWsId: z.string().uuid().optional(),
   expectedRevision: z.number().int().min(0),
+  maxTurns: z.number().int().min(1).max(12).optional(),
+  model: z.string().trim().min(1).max(160).optional(),
   promptMode: z.enum(['default', 'enhanced', 'custom']).default('enhanced'),
+  prompt: z.string().trim().max(4000).nullable().optional(),
+  targetNpcId: z.string().uuid().nullable().optional(),
+  trigger: z
+    .enum(['manual', 'autonomous', 'workflow', 'simulation', 'cron'])
+    .default('manual'),
+  world: hiveWorldSchema,
+});
+
+export const hiveNpcInteractionSchema = z.object({
+  creditSource: z.enum(['personal', 'workspace']).optional(),
+  creditWsId: z.string().uuid().optional(),
+  expectedRevision: z.number().int().min(0),
+  maxTurns: z.number().int().min(1).max(12).default(4),
+  model: z.string().trim().min(1).max(160).optional(),
+  prompt: z.string().trim().max(4000).nullable().optional(),
+  sourceNpcId: z.string().uuid(),
+  targetNpcId: z.string().uuid(),
+  trigger: z
+    .enum(['manual', 'autonomous', 'workflow', 'simulation', 'cron'])
+    .default('manual'),
   world: hiveWorldSchema,
 });
 
@@ -438,6 +469,57 @@ export function mapHiveNpc(row: HiveNpcRow) {
     settings: row.settings ?? {},
     status: row.status ?? 'active',
     systemPrompt: row.system_prompt ?? '',
+  };
+}
+
+export function mapHiveNpcRun(row: HiveNpcRunRow) {
+  return {
+    actorUserId: row.actor_user_id,
+    autonomous: row.autonomous === true,
+    creditSource:
+      row.credit_source === 'personal' || row.credit_source === 'workspace'
+        ? row.credit_source
+        : null,
+    creditWsId: row.credit_ws_id,
+    creditsDeducted: Number(row.credits_deducted ?? 0),
+    createdAt: row.created_at,
+    error: row.error,
+    id: row.id,
+    inputContext:
+      row.input_context &&
+      typeof row.input_context === 'object' &&
+      !Array.isArray(row.input_context)
+        ? row.input_context
+        : {},
+    inputTokens: Number(row.input_tokens ?? 0),
+    interactionId: row.interaction_id,
+    llmCost: Number(row.llm_cost ?? 0),
+    llmModel: row.llm_model,
+    llmProvider: row.llm_provider,
+    npcId: row.npc_id,
+    outputDecision:
+      row.output_decision &&
+      typeof row.output_decision === 'object' &&
+      !Array.isArray(row.output_decision)
+        ? row.output_decision
+        : {},
+    outputTokens: Number(row.output_tokens ?? 0),
+    promptMode: row.prompt_mode,
+    reasoningTokens: Number(row.reasoning_tokens ?? 0),
+    status:
+      row.status === 'running' ||
+      row.status === 'failed' ||
+      row.status === 'skipped'
+        ? row.status
+        : 'completed',
+    targetNpcId: row.target_npc_id,
+    trigger:
+      row.trigger === 'autonomous' ||
+      row.trigger === 'cron' ||
+      row.trigger === 'simulation' ||
+      row.trigger === 'workflow'
+        ? row.trigger
+        : 'manual',
   };
 }
 

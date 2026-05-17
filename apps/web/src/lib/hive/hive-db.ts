@@ -449,7 +449,7 @@ export async function getHiveSnapshot(serverId: string) {
 }
 
 export async function createHiveWorldEvent(input: {
-  actorUserId: string;
+  actorUserId: string | null;
   eventType: string;
   payload: Record<string, unknown>;
   serverId: string;

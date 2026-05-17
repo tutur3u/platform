@@ -27,16 +27,23 @@ vi.mock('@/hooks/use-hive-data', () => ({
     deleteNpc: { isPending: false, mutate: vi.fn() },
     deleteServer: { isPending: false, mutate: vi.fn() },
     runNpc: { isPending: false, mutate: vi.fn() },
+    runNpcInteraction: { isPending: false, mutate: vi.fn() },
     runSimulationTick: { isPending: false, mutate: vi.fn() },
     updateNpc: { isPending: false, mutate: vi.fn() },
     updateServer: { isPending: false, mutate: vi.fn() },
     updateServerSettings: { isPending: false, mutate: vi.fn() },
   }),
+  useHiveAiCredits: () => ({ data: null, isLoading: false }),
+  useHiveAiModels: () => ({ data: { models: [] }, isLoading: false }),
   useHiveRealtimeToken: () => ({ data: null }),
   useHiveServers: () => ({ data: serversData }),
   useHiveSnapshot: () => ({
     data: snapshotData,
     refetch: vi.fn(),
+  }),
+  useHiveWorkspaces: () => ({
+    data: { personalWorkspaceId: null, workspaces: [] },
+    isLoading: false,
   }),
 }));
 

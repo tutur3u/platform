@@ -2,6 +2,7 @@
 
 import {
   Brain,
+  Clock,
   Map as MapIcon,
   MessageSquareText,
   PanelRightClose,
@@ -18,9 +19,9 @@ type HiveTopRightToolbarProps = {
   chatOpen: boolean;
   currentUser: HiveUser;
   miniMapCollapsed: boolean;
-  mode: 'workflows' | 'world';
+  mode: 'timeline' | 'workflows' | 'world';
   npcLabCollapsed: boolean;
-  onChangeMode: (mode: 'workflows' | 'world') => void;
+  onChangeMode: (mode: 'timeline' | 'workflows' | 'world') => void;
   onToggleChat: () => void;
   onToggleInspector: () => void;
   onToggleMiniMap: () => void;
@@ -64,6 +65,12 @@ export function HiveTopRightToolbar({
         icon={Workflow}
         label={chromeT('mode_workflows')}
         onClick={() => onChangeMode('workflows')}
+      />
+      <ToolbarButton
+        active={mode === 'timeline'}
+        icon={Clock}
+        label={chromeT('mode_timeline')}
+        onClick={() => onChangeMode('timeline')}
       />
       <div className="flex max-w-0 items-center gap-1 overflow-hidden opacity-0 transition-[max-width,opacity,transform] duration-300 ease-out group-focus-within/hive-top-toolbar:max-w-[24rem] group-focus-within/hive-top-toolbar:translate-x-0 group-focus-within/hive-top-toolbar:opacity-100 group-hover/hive-top-toolbar:max-w-[24rem] group-hover/hive-top-toolbar:translate-x-0 group-hover/hive-top-toolbar:opacity-100">
         {mode === 'world' ? (

@@ -1,5 +1,10 @@
+import type { AIModelUI, InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { Json } from '@tuturuuu/types/db';
-import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export type HiveJsonObject = { [key: string]: Json | undefined };
 
@@ -32,9 +37,15 @@ export type HiveWorldData = {
 export type HiveServerSettings = {
   autonomousNpcEnabled?: boolean;
   cronEnabled?: boolean;
+  defaultCreditSource?: HiveCreditSource;
+  defaultCreditWsId?: string | null;
+  defaultModel?: string | null;
   llmProvider?: 'disabled' | 'ollama' | 'mira';
+  maxAutonomousInteractionsPerTick?: number;
+  maxInteractionTurns?: number;
   maxLlmSpendPerTick?: number;
   maxTickBudget?: number;
+  minInteractionCooldownSeconds?: number;
   ollamaEnabled?: boolean;
   ollamaKeepAlive?: string;
   ollamaModel?: 'gemma4';
@@ -131,11 +142,65 @@ export type HiveNpcMemory = {
 };
 
 export type HiveNpcRun = {
+  actorUserId?: string | null;
+  autonomous?: boolean;
+  creditSource?: HiveCreditSource | null;
+  creditWsId?: string | null;
+  creditsDeducted?: number;
   createdAt: string;
+  error?: string | null;
   id: string;
   inputContext: HiveJsonObject;
+  inputTokens?: number;
+  interactionId?: string | null;
+  llmCost?: number;
+  llmModel?: string | null;
+  llmProvider?: string | null;
   npcId: string;
   outputDecision: HiveJsonObject;
+  outputTokens?: number;
+  promptMode?: string;
+  reasoningTokens?: number;
+  status?: HiveNpcRunStatus;
+  targetNpcId?: string | null;
+  trigger?: HiveNpcRunTrigger;
+};
+
+export type HiveCreditSource = 'personal' | 'workspace';
+
+export type HiveNpcRunStatus = 'completed' | 'failed' | 'running' | 'skipped';
+
+export type HiveNpcRunTrigger =
+  | 'autonomous'
+  | 'cron'
+  | 'manual'
+  | 'simulation'
+  | 'workflow';
+
+export type HiveAiCreditStatus = {
+  allowedFeatures: string[];
+  allowedModels: string[];
+  balanceScope: 'user' | 'workspace';
+  bonusCredits: number;
+  dailyLimit: number | null;
+  dailyUsed: number;
+  defaultImageModel: string;
+  defaultLanguageModel: string;
+  maxOutputTokens: number | null;
+  payg?: {
+    nextExpiry: string | null;
+    remaining: number;
+    totalGranted: number;
+    totalUsed: number;
+  };
+  percentUsed: number;
+  periodEnd: string;
+  periodStart: string;
+  remaining: number;
+  seatCount: number | null;
+  tier: string;
+  totalAllocated: number;
+  totalUsed: number;
 };
 
 export type HiveMember = {
@@ -193,6 +258,82 @@ export type HiveSnapshotResponse = {
   revision: number;
   server: HiveServer;
   world: HiveWorldData;
+};
+
+export type HiveWorkspacesResponse = {
+  personalWorkspaceId: string | null;
+  workspaces: InternalApiWorkspaceSummary[];
+};
+
+export type HiveAiModelsResponse = {
+  models: AIModelUI[];
+};
+
+export type HiveTimelineEventItem = {
+  actorUserId: string | null;
+  createdAt: string;
+  eventType: string;
+  id: string;
+  kind: 'event';
+  payload: HiveJsonObject;
+  revision: number;
+};
+
+export type HiveTimelineRunItem = {
+  actorUserId: string | null;
+  autonomous: boolean;
+  creditSource: HiveCreditSource | null;
+  creditWsId: string | null;
+  creditsDeducted: number;
+  createdAt: string;
+  error: string | null;
+  id: string;
+  inputContext: HiveJsonObject;
+  inputTokens: number;
+  interactionId: string | null;
+  kind: 'run';
+  llmCost: number;
+  llmModel: string | null;
+  llmProvider: string | null;
+  npcId: string;
+  npcName: string | null;
+  outputDecision: HiveJsonObject;
+  outputTokens: number;
+  promptMode: string;
+  reasoningTokens: number;
+  status: HiveNpcRunStatus;
+  targetNpcId: string | null;
+  targetNpcName: string | null;
+  trigger: HiveNpcRunTrigger;
+};
+
+export type HiveTimelineInteractionItem = {
+  actorUserId: string | null;
+  autonomous: boolean;
+  createdAt: string;
+  creditSource: HiveCreditSource | null;
+  creditWsId: string | null;
+  creditsDeducted: number;
+  id: string;
+  interactionId: string;
+  kind: 'interaction';
+  llmCost: number;
+  llmModel: string | null;
+  llmProvider: string | null;
+  npcName: string | null;
+  runs: HiveTimelineRunItem[];
+  status: HiveNpcRunStatus;
+  targetNpcName: string | null;
+  trigger: HiveNpcRunTrigger;
+};
+
+export type HiveTimelineItem =
+  | HiveTimelineEventItem
+  | HiveTimelineInteractionItem
+  | HiveTimelineRunItem;
+
+export type HiveTimelineResponse = {
+  items: HiveTimelineItem[];
 };
 
 export type HiveServersResponse = {
@@ -381,8 +522,28 @@ export type HiveNpcPayload = {
 };
 
 export type HiveNpcRunPayload = {
+  creditSource?: HiveCreditSource;
+  creditWsId?: string;
   expectedRevision: number;
+  maxTurns?: number;
+  model?: string;
   promptMode: 'default' | 'enhanced' | 'custom';
+  prompt?: string | null;
+  targetNpcId?: string | null;
+  trigger?: HiveNpcRunTrigger;
+  world: HiveWorldData;
+};
+
+export type HiveNpcInteractionPayload = {
+  creditSource?: HiveCreditSource;
+  creditWsId?: string;
+  expectedRevision: number;
+  maxTurns?: number;
+  model?: string;
+  prompt?: string | null;
+  sourceNpcId: string;
+  targetNpcId: string;
+  trigger?: HiveNpcRunTrigger;
   world: HiveWorldData;
 };
 
@@ -456,6 +617,38 @@ export async function listHiveServers(options?: InternalApiClientOptions) {
   );
 }
 
+export async function listHiveWorkspaces(options?: InternalApiClientOptions) {
+  return getInternalApiClient(options).json<HiveWorkspacesResponse>(
+    '/api/v1/hive/workspaces',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getHiveAiCredits(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveAiCreditStatus>(
+    '/api/v1/hive/ai/credits',
+    {
+      cache: 'no-store',
+      query: { wsId: workspaceId },
+    }
+  );
+}
+
+export async function listHiveAiModels(options?: InternalApiClientOptions) {
+  return getInternalApiClient(options).json<HiveAiModelsResponse>(
+    '/api/v1/hive/ai/models',
+    {
+      cache: 'no-store',
+      query: { enabled: true, type: 'language' },
+    }
+  );
+}
+
 export async function createHiveServer(
   payload: HiveServerPayload,
   options?: InternalApiClientOptions
@@ -504,6 +697,18 @@ export async function getHiveSnapshot(
 ) {
   return getInternalApiClient(options).json<HiveSnapshotResponse>(
     `/api/v1/hive/servers/${encodeURIComponent(serverId)}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listHiveTimeline(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveTimelineResponse>(
+    `/api/v1/hive/servers/${encodePathSegment(serverId)}/timeline`,
     {
       cache: 'no-store',
     }
@@ -568,6 +773,22 @@ export async function updateHiveServerSettings(
       method: 'PATCH',
     }
   );
+}
+
+export async function runHiveNpcInteraction(
+  serverId: string,
+  payload: HiveNpcInteractionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    event: HiveWorldEvent;
+    interactionId: string;
+    runs: HiveNpcRun[];
+  }>(`/api/v1/hive/servers/${encodePathSegment(serverId)}/interactions`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    method: 'POST',
+  });
 }
 
 export async function getHiveEconomy(
@@ -704,7 +925,9 @@ export async function runHiveNpcDecision(
 ) {
   return getInternalApiClient(options).json<{
     event: HiveWorldEvent | null;
+    interactionId?: string;
     run: HiveNpcRun;
+    runs?: HiveNpcRun[];
   }>(
     `/api/v1/hive/servers/${encodeURIComponent(serverId)}/npcs/${encodeURIComponent(npcId)}/run`,
     {

@@ -1,20 +1,28 @@
+import type {
+  HiveServer,
+  HiveServerSettings,
+} from '@tuturuuu/internal-api/hive';
 import type { ReactNode } from 'react';
 import type { HiveNpc, HiveUser, HiveWorldData } from '@/engine/types';
 import type { HiveRealtimeStatus } from '@/realtime/hive-realtime-client';
+import { HiveAiContextPanel } from './hive-ai-context-panel';
 import { HiveStatusBadgeGroup } from './hive-status-badge-group';
 import { HiveTopRightToolbar } from './hive-top-right-toolbar';
 import { NpcLabPanel } from './panels/npc-lab-panel';
+import type { HiveAiContextState } from './use-hive-ai-context';
 
 type EditorTopChromeProps = {
+  aiContext: HiveAiContextState;
   chatOpen: boolean;
   currentUser: HiveUser;
   inspectorPanel: ReactNode;
+  isAdmin: boolean;
   isRunningNpc: boolean;
   lastNpcRunStatus?: 'completed' | 'failed' | 'running' | null;
   miniMapCollapsed: boolean;
-  mode: 'workflows' | 'world';
+  mode: 'timeline' | 'workflows' | 'world';
   npcLabCollapsed: boolean;
-  onChangeMode: (mode: 'workflows' | 'world') => void;
+  onChangeMode: (mode: 'timeline' | 'workflows' | 'world') => void;
   npcs: HiveNpc[];
   onToggleChat: () => void;
   onToggleInspector: () => void;
@@ -22,22 +30,37 @@ type EditorTopChromeProps = {
   onPatchNpc: (id: string, patch: Partial<HiveNpc>) => void;
   onRunNpc: (
     npcId: string,
-    promptMode: 'custom' | 'default' | 'enhanced'
+    promptMode: 'custom' | 'default' | 'enhanced',
+    options?: {
+      maxTurns?: number;
+      prompt?: string | null;
+      targetNpcId?: string | null;
+    }
   ) => void;
+  onRunNpcInteraction: (input: {
+    maxTurns?: number;
+    prompt?: string | null;
+    sourceNpcId: string;
+    targetNpcId: string;
+  }) => void;
   onToggleNpcLab: () => void;
+  onUpdateServerSettings: (settings: HiveServerSettings) => void;
   presenceCount: number;
   realtimeStatus: HiveRealtimeStatus;
   revision: number;
   rightCollapsed: boolean;
   selectedNpc: HiveNpc | null;
+  selectedServer: HiveServer | null;
   serverPicker: ReactNode;
   world: HiveWorldData;
 };
 
 export function EditorTopChrome({
+  aiContext,
   chatOpen,
   currentUser,
   inspectorPanel,
+  isAdmin,
   isRunningNpc,
   lastNpcRunStatus,
   miniMapCollapsed,
@@ -50,12 +73,15 @@ export function EditorTopChrome({
   onToggleMiniMap,
   onPatchNpc,
   onRunNpc,
+  onRunNpcInteraction,
   onToggleNpcLab,
+  onUpdateServerSettings,
   presenceCount,
   realtimeStatus,
   revision,
   rightCollapsed,
   selectedNpc,
+  selectedServer,
   serverPicker,
   world,
 }: EditorTopChromeProps) {
@@ -68,6 +94,12 @@ export function EditorTopChrome({
         world={world}
       />
       <div className="flex min-w-0 flex-col items-end gap-2">
+        <HiveAiContextPanel
+          aiContext={aiContext}
+          isAdmin={isAdmin}
+          onUpdateServerSettings={onUpdateServerSettings}
+          selectedServer={selectedServer}
+        />
         <HiveTopRightToolbar
           chatOpen={chatOpen}
           currentUser={currentUser}
@@ -103,11 +135,13 @@ export function EditorTopChrome({
           ].join(' ')}
         >
           <NpcLabPanel
+            aiContext={aiContext}
             isRunning={isRunningNpc}
             lastRunStatus={lastNpcRunStatus}
             npcs={npcs}
             onPatchNpc={onPatchNpc}
             onRun={onRunNpc}
+            onRunInteraction={onRunNpcInteraction}
             revision={revision}
             selectedNpc={selectedNpc}
             world={world}

@@ -9,21 +9,28 @@ import {
   createHiveWorldEvent,
   deleteHiveNpc,
   deleteHiveServer,
+  getHiveAiCredits,
   getHiveRealtimeToken,
   getHiveSnapshot,
+  type HiveNpcInteractionPayload,
   type HiveNpcPayload,
   type HiveNpcRunPayload,
   type HiveServerPayload,
   type HiveServerSettings,
   type HiveServersResponse,
   type HiveSnapshotResponse,
+  type HiveTimelineResponse,
   type HiveWorkflowPayload,
   type HiveWorkflowRunPayload,
   type HiveWorldEventPayload,
+  listHiveAiModels,
   listHiveServers,
+  listHiveTimeline,
   listHiveWorkflowRuns,
   listHiveWorkflows,
+  listHiveWorkspaces,
   runHiveNpcDecision,
+  runHiveNpcInteraction,
   runHiveSimulationTick,
   runHiveWorkflow,
   updateHiveNpc,
@@ -33,9 +40,17 @@ import {
 } from '@tuturuuu/internal-api/hive';
 
 export const hiveQueryKeys = {
+  aiCredits: (workspaceId: string | null | undefined) => [
+    'hive',
+    'ai-credits',
+    workspaceId,
+  ],
+  aiModels: ['hive', 'ai-models'],
   realtimeToken: (serverId: string) => ['hive', 'realtime-token', serverId],
   servers: ['hive', 'servers'],
   snapshot: (serverId: string) => ['hive', 'snapshot', serverId],
+  timeline: (serverId: string) => ['hive', 'timeline', serverId],
+  workspaces: ['hive', 'workspaces'],
   workflowRuns: (serverId: string, workflowId: string) => [
     'hive',
     'workflow-runs',
@@ -53,6 +68,31 @@ export function useHiveServers(initialData: HiveServersResponse) {
   });
 }
 
+export function useHiveWorkspaces() {
+  return useQuery({
+    queryFn: () => listHiveWorkspaces(),
+    queryKey: hiveQueryKeys.workspaces,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useHiveAiCredits(workspaceId: string | null | undefined) {
+  return useQuery({
+    enabled: !!workspaceId,
+    queryFn: () => getHiveAiCredits(workspaceId!),
+    queryKey: hiveQueryKeys.aiCredits(workspaceId),
+    staleTime: 30_000,
+  });
+}
+
+export function useHiveAiModels() {
+  return useQuery({
+    queryFn: () => listHiveAiModels(),
+    queryKey: hiveQueryKeys.aiModels,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
 export function useHiveSnapshot(
   serverId: string | null,
   initialData: HiveSnapshotResponse | null
@@ -64,6 +104,16 @@ export function useHiveSnapshot(
     queryKey: serverId
       ? hiveQueryKeys.snapshot(serverId)
       : ['hive', 'snapshot'],
+  });
+}
+
+export function useHiveTimeline(serverId: string | null, enabled: boolean) {
+  return useQuery<HiveTimelineResponse>({
+    enabled: !!serverId && enabled,
+    queryFn: () => listHiveTimeline(serverId!),
+    queryKey: serverId
+      ? hiveQueryKeys.timeline(serverId)
+      : ['hive', 'timeline'],
   });
 }
 
@@ -138,6 +188,19 @@ export function useHiveMutations(serverId: string | null) {
         payload: HiveNpcRunPayload;
       }) => runHiveNpcDecision(serverId!, npcId, payload),
       onSuccess: () => invalidateServer(),
+    }),
+    runNpcInteraction: useMutation({
+      mutationFn: (payload: HiveNpcInteractionPayload) =>
+        runHiveNpcInteraction(serverId!, payload),
+      onSuccess: () =>
+        Promise.all([
+          invalidateServer(),
+          serverId
+            ? queryClient.invalidateQueries({
+                queryKey: hiveQueryKeys.timeline(serverId),
+              })
+            : Promise.resolve(),
+        ]),
     }),
     runSimulationTick: useMutation({
       mutationFn: () => runHiveSimulationTick(serverId!),
