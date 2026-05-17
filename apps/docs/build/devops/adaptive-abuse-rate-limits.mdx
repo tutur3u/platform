@@ -53,6 +53,18 @@ without exposing the exact scoring rules. API keys, CLI calls, cron jobs,
 webhooks, and native clients do not receive browser challenges; they rely on
 token, workspace, and API-key reputation instead.
 
+## Local E2E Isolation
+
+The Playwright rate-limit suite intentionally exhausts budgets and records 429
+signals. Its `resetDbRateLimits()` helper must clear both PostgREST rate-limit
+counters and generated adaptive abuse state (`abuse_activity_signals`,
+`abuse_step_up_challenges`, and `abuse_reputation_subjects`) before each spec.
+The local `dev-session` endpoint also supports `resetRateLimits: true` to clear
+the app process's in-memory rate-limit fallback during E2E setup. Specs that
+intentionally hit authenticated route limits should also use a fresh local
+dev-session account per test/retry so Redis-backed user keys and asynchronous
+adaptive reputation writes cannot bleed into the next case.
+
 ## Admin Investigation
 
 Use Infrastructure -> Abuse Intelligence to inspect:

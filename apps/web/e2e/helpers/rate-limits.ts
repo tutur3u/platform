@@ -36,6 +36,69 @@ export async function resolveRateLimitResetConfig(): Promise<{
   };
 }
 
+const ADAPTIVE_ABUSE_STATE_TABLES = [
+  'abuse_activity_signals',
+  'abuse_step_up_challenges',
+  'abuse_reputation_subjects',
+] as const;
+
+function serviceRoleHeaders(serviceKey: string) {
+  return {
+    apikey: serviceKey,
+    Authorization: `Bearer ${serviceKey}`,
+  };
+}
+
+async function parseResetFailure(
+  response: Response,
+  fallbackMessage: string
+): Promise<string> {
+  try {
+    const body = (await response.json()) as {
+      error?: string;
+      message?: string;
+    };
+    const detail = body.error ?? body.message;
+
+    if (detail) {
+      return `${fallbackMessage}: ${detail}`;
+    }
+  } catch {
+    // Ignore JSON parsing issues and keep the status-based message.
+  }
+
+  return `${fallbackMessage}: ${response.status}`;
+}
+
+async function resetAdaptiveAbuseState(
+  supabaseUrl: string,
+  serviceKey: string
+): Promise<void> {
+  // Local E2E intentionally triggers 429s. Clear generated reputation state so
+  // one test's negative signals do not lower another test's adaptive budget.
+  for (const table of ADAPTIVE_ABUSE_STATE_TABLES) {
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/${table}?id=not.is.null`,
+      {
+        method: 'DELETE',
+        headers: {
+          ...serviceRoleHeaders(serviceKey),
+          Prefer: 'return=minimal',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        await parseResetFailure(
+          response,
+          `Failed to reset adaptive abuse state for ${table}`
+        )
+      );
+    }
+  }
+}
+
 export async function resetDbRateLimits(): Promise<void> {
   const { supabaseUrl, serviceKey } = await resolveRateLimitResetConfig();
 
@@ -44,8 +107,7 @@ export async function resetDbRateLimits(): Promise<void> {
     {
       method: 'POST',
       headers: {
-        apikey: serviceKey,
-        Authorization: `Bearer ${serviceKey}`,
+        ...serviceRoleHeaders(serviceKey),
         'Content-Type': 'application/json',
       },
       body: '{}',
@@ -53,24 +115,12 @@ export async function resetDbRateLimits(): Promise<void> {
   );
 
   if (!response.ok) {
-    let message = `Failed to reset DB rate limits: ${response.status}`;
-
-    try {
-      const body = (await response.json()) as {
-        error?: string;
-        message?: string;
-      };
-      const detail = body.error ?? body.message;
-
-      if (detail) {
-        message = `Failed to reset DB rate limits: ${detail}`;
-      }
-    } catch {
-      // Ignore JSON parsing issues and keep the status-based message.
-    }
-
-    throw new Error(message);
+    throw new Error(
+      await parseResetFailure(response, 'Failed to reset DB rate limits')
+    );
   }
+
+  await resetAdaptiveAbuseState(supabaseUrl, serviceKey);
 }
 
 const OTP_CONFIG_KEY = 'WEB_OTP_ENABLED';

@@ -1,4 +1,10 @@
-import { expect, test } from '@playwright/test';
+import {
+  type APIRequestContext,
+  expect,
+  type TestInfo,
+  test,
+} from '@playwright/test';
+import { DEFAULT_LOCALE } from './helpers/constants';
 import { resetDbRateLimits } from './helpers/rate-limits';
 
 /**
@@ -11,8 +17,10 @@ import { resetDbRateLimits } from './helpers/rate-limits';
  *   2. Session auth (`withSessionAuth` in `api-auth.ts`) — uses Redis with
  *      in-memory Map fallback. Always active.
  *
- * In CI (no Redis) only layer 2 runs; locally with Redis both run.
- * Each test uses a unique Cloudflare-style client IP for counter isolation.
+ * Dockerized E2E can run with either Redis or the in-memory app fallback.
+ * Each test uses a unique local dev-session account and Cloudflare-style
+ * client IP for counter isolation across Redis, memory, and adaptive reputation
+ * subjects.
  * Cross-IP isolation itself is covered in unit + pgTAP tests because the local
  * Playwright -> Next.js dev transport may normalize spoofed client-IP headers.
  *
@@ -55,6 +63,23 @@ function clientHeaders(addr: string) {
  */
 function ip(testSlot: number, retry: number, subSlot = 0): string {
   return `10.${testSlot}.${subSlot}.${retry + 1}`;
+}
+
+function slugifyEmailPart(value: string) {
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 48) || 'case'
+  );
+}
+
+function rateLimitTestEmail(testInfo: TestInfo) {
+  const title = testInfo.titlePath.at(-1) ?? testInfo.title;
+  const slug = slugifyEmailPart(title);
+
+  return `e2e-rate-limit-${testInfo.workerIndex}-${testInfo.retry}-${slug}@tuturuuu.com`;
 }
 
 /**
@@ -111,16 +136,39 @@ async function fireFullNamePatches(
   return responses;
 }
 
+async function resetAppRateLimitState(
+  request: APIRequestContext,
+  email: string
+) {
+  const response = await request.post('/api/auth/dev-session', {
+    data: {
+      email,
+      locale: DEFAULT_LOCALE,
+      resetRateLimits: true,
+    },
+    failOnStatusCode: false,
+  });
+
+  if (!response.ok()) {
+    throw new Error(
+      `Failed to reset app rate-limit state: ${response.status()} ${await response.text()}`
+    );
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 test.describe('Rate limiting (session auth)', () => {
-  test.beforeEach(async () => {
+  test.beforeEach(async ({ context }, testInfo) => {
     // The database layer also enforces authenticated-user write budgets with a
-    // cross-route backstop, so clear those counters between tests to keep each
-    // spec isolated while still exercising real downstream writes.
+    // cross-route backstop, and adaptive abuse reputation records deliberate
+    // 429s. Clear those counters plus the app process's memory fallback between
+    // tests, then switch to a unique local account so Redis/user/session
+    // subjects cannot bleed between specs or retries.
     await resetDbRateLimits();
+    await resetAppRateLimitState(context.request, rateLimitTestEmail(testInfo));
   });
 
   test('API returns 200 for a normal authenticated GET request', async ({

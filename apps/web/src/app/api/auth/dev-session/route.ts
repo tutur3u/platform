@@ -6,6 +6,7 @@ import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 import { isLocalE2EAuthBypassEnabled } from '@/lib/auth/local-e2e';
+import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   if (!DEV_MODE && !isLocalE2EAuthBypassEnabled()) {
@@ -16,7 +17,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, locale } = await request.json();
+    const { email, locale, resetRateLimits } = await request.json();
+
+    if (resetRateLimits === true) {
+      resetRateLimitMemoryStoreForTests();
+    }
+
     const validatedEmail = await validateEmail(email);
     const normalizedLocale =
       typeof locale === 'string' && locale.trim().length > 0

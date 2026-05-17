@@ -9,6 +9,7 @@ import {
   checkRateLimit,
   checkRateLimitMemory,
   type RateLimitConfig,
+  resetRateLimitMemoryStoreForTests,
 } from '../lib/rate-limit';
 
 describe('checkRateLimitMemory', () => {
@@ -79,6 +80,20 @@ describe('checkRateLimitMemory', () => {
     expect(allowed.remaining).toBe(2);
 
     vi.useRealTimers();
+  });
+
+  it('can clear the in-memory fallback for local test isolation', () => {
+    const key = 'test:clear-memory-store';
+
+    for (let i = 0; i < config.maxRequests; i++) {
+      checkRateLimitMemory(key, config);
+    }
+
+    expect(checkRateLimitMemory(key, config).allowed).toBe(false);
+
+    resetRateLimitMemoryStoreForTests();
+
+    expect(checkRateLimitMemory(key, config).allowed).toBe(true);
   });
 
   it('should respect different configs for different limits', () => {

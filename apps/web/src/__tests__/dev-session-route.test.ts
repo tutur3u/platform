@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   checkIfUserExists: vi.fn(),
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
+  resetRateLimitMemoryStoreForTests: vi.fn(),
   validateEmail: vi.fn(),
 }));
 
@@ -24,6 +25,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createAdminClient(...args),
   createClient: (...args: Parameters<typeof mocks.createClient>) =>
     mocks.createClient(...args),
+}));
+
+vi.mock('@/lib/rate-limit', () => ({
+  resetRateLimitMemoryStoreForTests: (
+    ...args: Parameters<typeof mocks.resetRateLimitMemoryStoreForTests>
+  ) => mocks.resetRateLimitMemoryStoreForTests(...args),
 }));
 
 describe('dev-session route', () => {
@@ -94,7 +101,59 @@ describe('dev-session route', () => {
       token_hash: 'hashed-token',
       type: 'magiclink',
     });
+    expect(mocks.resetRateLimitMemoryStoreForTests).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
+  });
+
+  it('can reset the app memory rate-limit store for local E2E setup', async () => {
+    const updateUserById = vi.fn().mockResolvedValue({ error: null });
+    const generateLink = vi.fn().mockResolvedValue({
+      data: {
+        properties: {
+          hashed_token: 'hashed-token',
+        },
+      },
+      error: null,
+    });
+    const verifyOtp = vi.fn().mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'token',
+        },
+      },
+      error: null,
+    });
+
+    mocks.createAdminClient.mockResolvedValue({
+      auth: {
+        admin: {
+          createUser: vi.fn(),
+          generateLink,
+          updateUserById,
+        },
+      },
+    });
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        verifyOtp,
+      },
+    });
+
+    const request = new NextRequest('http://localhost/api/auth/dev-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: 'local@tuturuuu.com',
+        locale: 'en',
+        resetRateLimits: true,
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(mocks.resetRateLimitMemoryStoreForTests).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(200);
   });
 });

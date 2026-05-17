@@ -36,7 +36,8 @@ describe('resetDbRateLimits', () => {
 
     await resetDbRateLimits();
 
-    expect(fetchMock).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
       'http://127.0.0.1:8001/rest/v1/rpc/admin_reset_rate_limits',
       {
         method: 'POST',
@@ -48,6 +49,43 @@ describe('resetDbRateLimits', () => {
         body: '{}',
       }
     );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'http://127.0.0.1:8001/rest/v1/abuse_activity_signals?id=not.is.null',
+      {
+        method: 'DELETE',
+        headers: {
+          apikey: 'secret',
+          Authorization: 'Bearer secret',
+          Prefer: 'return=minimal',
+        },
+      }
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'http://127.0.0.1:8001/rest/v1/abuse_step_up_challenges?id=not.is.null',
+      {
+        method: 'DELETE',
+        headers: {
+          apikey: 'secret',
+          Authorization: 'Bearer secret',
+          Prefer: 'return=minimal',
+        },
+      }
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'http://127.0.0.1:8001/rest/v1/abuse_reputation_subjects?id=not.is.null',
+      {
+        method: 'DELETE',
+        headers: {
+          apikey: 'secret',
+          Authorization: 'Bearer secret',
+          Prefer: 'return=minimal',
+        },
+      }
+    );
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it('uses the fixed local Supabase defaults when env vars are missing', async () => {

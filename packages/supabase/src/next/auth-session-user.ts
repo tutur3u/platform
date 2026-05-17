@@ -49,13 +49,13 @@ export async function resolveAuthenticatedSessionUser(
               ? claims.user_metadata
               : {},
           identities: [],
+          // JWT `iat` is token issue time, not account creation time. Leave
+          // account age unknown unless a caller provides an explicit claim.
           created_at:
-            typeof claims.iat === 'number'
-              ? new Date(claims.iat * 1000).toISOString()
-              : new Date(0).toISOString(),
+            typeof claims.created_at === 'string' ? claims.created_at : '',
           updated_at:
-            typeof claims.iat === 'number'
-              ? new Date(claims.iat * 1000).toISOString()
+            typeof claims.updated_at === 'string'
+              ? claims.updated_at
               : undefined,
           is_anonymous: false,
         } as SupabaseUser,

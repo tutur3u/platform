@@ -95,6 +95,10 @@ export const RATE_LIMIT_SECRET_NAMES = {
  */
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
+export function resetRateLimitMemoryStoreForTests(): void {
+  rateLimitStore.clear();
+}
+
 /**
  * Redis client type (lazy-loaded)
  */
