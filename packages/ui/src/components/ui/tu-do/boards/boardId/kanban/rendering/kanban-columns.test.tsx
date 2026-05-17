@@ -3,6 +3,7 @@ import { render } from '@testing-library/react';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import type React from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { DEFAULT_KANBAN_COLUMN_WIDTH } from './kanban-column-width';
 import { KanbanColumns } from './kanban-columns';
 
 vi.mock('@dnd-kit/sortable', () => ({
@@ -54,6 +55,39 @@ const lists: TaskList[] = [
 ];
 
 describe('KanbanColumns', () => {
+  it('keeps filtered columns at the standard Kanban width', () => {
+    const { container } = render(
+      <KanbanColumns
+        columns={lists.slice(1)}
+        tasks={[]}
+        boardId="board-1"
+        workspaceId="ws-1"
+        isPersonalWorkspace={false}
+        disableSort={false}
+        selectedTasks={new Set()}
+        isMultiSelectMode={false}
+        setIsMultiSelectMode={vi.fn()}
+        onTaskSelect={vi.fn()}
+        onClearSelection={vi.fn()}
+        onUpdate={vi.fn()}
+        createTask={vi.fn()}
+        dragPreviewPosition={null}
+        taskHeightsRef={{ current: new Map() }}
+        optimisticUpdateInProgress={new Set()}
+        listStatusFilter="active"
+        bulkUpdateCustomDueDate={vi.fn()}
+        boardRef={{ current: null }}
+        columnsId={[lists[1]?.id ?? 'list-2']}
+      />
+    );
+
+    expect(
+      (container.firstElementChild as HTMLElement).style.getPropertyValue(
+        '--kanban-column-width'
+      )
+    ).toBe(DEFAULT_KANBAN_COLUMN_WIDTH);
+  });
+
   it('uses mandatory snapping on the measured scroll container', () => {
     const { container } = render(
       <KanbanColumns
