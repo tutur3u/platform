@@ -33,6 +33,10 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  getCollectionFieldDefinitions,
+  supportsMarkdownBodyFromSchema,
+} from '../../cms-content-model';
 import { isGameLikeCollection } from '../../cms-games-shared';
 import { optimizeCmsMediaUpload } from '../../cms-media-upload';
 import {
@@ -48,6 +52,7 @@ import { EntryDetailHeader } from './entry-detail-header';
 import { EntryDetailLoadingState } from './entry-detail-loading-state';
 import { EntryDetailMainColumn } from './entry-detail-main-column';
 import { EntryDetailPreviewSheet } from './entry-detail-preview-sheet';
+import { EntryDetailSchemaFieldsCard } from './entry-detail-schema-fields-card';
 import {
   buildEntryFormState,
   type FeaturedEntryEditorConfig,
@@ -169,6 +174,44 @@ function areStringArraysEqual(left: string[], right: string[]) {
   );
 }
 
+function stableStringify(value: unknown): string {
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(',')}]`;
+  }
+
+  if (value && typeof value === 'object') {
+    return `{${Object.entries(value as Record<string, unknown>)
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`)
+      .join(',')}}`;
+  }
+
+  return JSON.stringify(value);
+}
+
+function mergeSchemaFieldValues(
+  base: Record<string, unknown>,
+  schemaValues: Record<string, unknown>,
+  definitions: ReturnType<typeof getCollectionFieldDefinitions>,
+  scope: 'metadata' | 'profile_data'
+) {
+  const next = { ...base };
+
+  for (const definition of definitions) {
+    if (definition.field_scope !== scope) {
+      continue;
+    }
+
+    if (Object.hasOwn(schemaValues, definition.key)) {
+      next[definition.key] = schemaValues[definition.key];
+    } else {
+      delete next[definition.key];
+    }
+  }
+
+  return next;
+}
+
 function getFeaturedProfileSlugs(
   profileData: Record<string, unknown>,
   keys: string[]
@@ -240,6 +283,8 @@ export function EntryDetailClient({
   const assets = studio?.assets ?? initialStudio?.assets ?? [];
   const blocks = studio?.blocks ?? initialStudio?.blocks ?? [];
   const collections = studio?.collections ?? initialStudio?.collections ?? [];
+  const fieldDefinitions =
+    studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewRefreshToken, setPreviewRefreshToken] = useState(0);
   const [deleteEntryDialogOpen, setDeleteEntryDialogOpen] = useState(false);
@@ -256,6 +301,14 @@ export function EntryDetailClient({
     collections.find(
       (collection) => collection.id === activeEntry?.collection_id
     ) ?? null;
+  const activeFieldDefinitions = useMemo(
+    () =>
+      getCollectionFieldDefinitions({
+        collection: activeCollection,
+        fieldDefinitions,
+      }),
+    [activeCollection, fieldDefinitions]
+  );
   const imageAssets = useMemo(
     () => sortImageAssets(assets, entryId),
     [assets, entryId]
@@ -348,6 +401,12 @@ export function EntryDetailClient({
   );
   const [entryForm, setEntryForm] = useState(() =>
     activeEntry ? buildEntryFormState(activeEntry) : null
+  );
+  const [schemaProfileData, setSchemaProfileData] = useState<
+    Record<string, unknown>
+  >(() => asProfileDataRecord(activeEntry?.profile_data));
+  const [schemaMetadata, setSchemaMetadata] = useState<Record<string, unknown>>(
+    () => asProfileDataRecord(activeEntry?.metadata)
   );
   const [categoryDraft, setCategoryDraft] = useState('');
   const [categoryCreateOpen, setCategoryCreateOpen] = useState(false);
@@ -646,6 +705,7 @@ export function EntryDetailClient({
     serializeEntryDescriptionContent(descriptionContent);
   const supportsMarkdownBody =
     !!markdownBlock ||
+    supportsMarkdownBodyFromSchema(activeCollection) ||
     /lore|writing|singleton|section/.test(
       [activeCollection?.slug, activeCollection?.collection_type]
         .filter(Boolean)
@@ -661,6 +721,14 @@ export function EntryDetailClient({
       initialConfiguredCategories
     ) ||
       !areStringArraysEqual(configuredTagOptions, initialConfiguredTags));
+  const schemaProfileDataDirty =
+    activeFieldDefinitions.length > 0 &&
+    stableStringify(schemaProfileData) !==
+      stableStringify(asProfileDataRecord(activeEntry?.profile_data));
+  const schemaMetadataDirty =
+    activeFieldDefinitions.length > 0 &&
+    stableStringify(schemaMetadata) !==
+      stableStringify(asProfileDataRecord(activeEntry?.metadata));
 
   const entryDirty =
     !!activeEntry &&
@@ -692,6 +760,8 @@ export function EntryDetailClient({
       (featuredEntryConfig
         ? !areStringArraysEqual(featuredEntrySlugs, initialFeaturedEntrySlugs)
         : false) ||
+      schemaProfileDataDirty ||
+      schemaMetadataDirty ||
       entryForm.status !== activeEntry.status ||
       fromDateTimeLocalValue(entryForm.scheduledFor) !==
         (activeEntry.scheduled_for ?? null));
@@ -755,6 +825,8 @@ export function EntryDetailClient({
     setCategoryCreateOpen(false);
     setTagDraft('');
     setTagCreateOpen(false);
+    setSchemaProfileData(asProfileDataRecord(activeEntry.profile_data));
+    setSchemaMetadata(asProfileDataRecord(activeEntry.metadata));
   }, [activeEntry]);
 
   useEffect(() => {
@@ -948,8 +1020,22 @@ export function EntryDetailClient({
         };
       }
 
+      currentProfileData = mergeSchemaFieldValues(
+        currentProfileData,
+        schemaProfileData,
+        activeFieldDefinitions,
+        'profile_data'
+      );
+      const currentMetadata = mergeSchemaFieldValues(
+        asProfileDataRecord(activeEntry.metadata),
+        schemaMetadata,
+        activeFieldDefinitions,
+        'metadata'
+      );
+
       const nextEntries = [
         await updateWorkspaceExternalProjectEntry(workspaceId, activeEntry.id, {
+          metadata: currentMetadata as Json,
           profile_data: currentProfileData as Json,
           scheduled_for: fromDateTimeLocalValue(entryForm.scheduledFor),
           slug: entryForm.slug.trim(),
@@ -1832,70 +1918,80 @@ export function EntryDetailClient({
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <EntryDetailMainColumn
-          activeEntry={activeEntry}
-          assetCaptions={assetCaptions}
-          bodyMarkdown={bodyMarkdown}
-          bodyMarkdownLabel={strings.bodyMarkdownLabel}
-          bodyMarkdownPlaceholder={strings.previewEmptyDescription}
-          bodyMarkdownWriteLabel={strings.markdownWriteLabel}
-          coverAltText={coverAltText}
-          coverAsset={coverAsset}
-          coverDirty={coverDirty}
-          deleteAssetsPending={deleteAssetsMutation.isPending}
-          descriptionContent={descriptionContent}
-          imageAssets={imageAssets}
-          mediaProcessing={mediaProcessing}
-          onBodyMarkdownChange={setBodyMarkdown}
-          onCaptionChange={(assetId, value) =>
-            setAssetCaptions((current) => ({
-              ...current,
-              [assetId]: value,
-            }))
-          }
-          onCoverAltTextChange={setCoverAltText}
-          onCoverInputClick={() => coverInputRef.current?.click()}
-          onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
-          onDeleteSingleAsset={deleteSingleAsset}
-          onDescriptionChange={setDescriptionContent}
-          onOpenPreview={() => setPreviewOpen(true)}
-          onSaveAssetCaption={(assetId) =>
-            saveAssetCaptionMutation.mutate(assetId)
-          }
-          onSaveCover={() => saveCoverMutation.mutate()}
-          onSelectAllMedia={() =>
-            setSelectedAssetIds((current) =>
-              current.length === imageAssets.length
-                ? []
-                : imageAssets.map((asset) => asset.id)
-            )
-          }
-          onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
-          onSubtitleChange={(value) =>
-            setEntryForm((current) =>
-              current ? { ...current, subtitle: value } : current
-            )
-          }
-          onToggleAssetSelection={toggleAssetSelection}
-          onUploadMediaClick={() => mediaInputRef.current?.click()}
-          onUploadWebglClick={() => webglInputRef.current?.click()}
-          saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
-          saveCoverPending={saveCoverMutation.isPending}
-          selectedAssetCount={selectedAssetCount}
-          selectedAssetIds={selectedAssetIds}
-          setAsCoverPending={setAsCoverMutation.isPending}
-          strings={strings}
-          subtitle={entryForm.subtitle}
-          supportsMarkdownBody={supportsMarkdownBody}
-          supportsWebglPackage={supportsWebglPackage}
-          uploadCoverPending={uploadCoverMutation.isPending}
-          uploadMediaPending={uploadMediaMutation.isPending}
-          uploadProgressItems={uploadProgressItems}
-          uploadWebglPending={uploadWebglPackageMutation.isPending}
-          webglPackageAsset={webglPackageAsset}
-          webglPackagePlayerPath={webglPackagePlayerPath}
-          webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
-        />
+        <div className="space-y-6">
+          <EntryDetailMainColumn
+            activeEntry={activeEntry}
+            assetCaptions={assetCaptions}
+            bodyMarkdown={bodyMarkdown}
+            bodyMarkdownLabel={strings.bodyMarkdownLabel}
+            bodyMarkdownPlaceholder={strings.previewEmptyDescription}
+            bodyMarkdownWriteLabel={strings.markdownWriteLabel}
+            coverAltText={coverAltText}
+            coverAsset={coverAsset}
+            coverDirty={coverDirty}
+            deleteAssetsPending={deleteAssetsMutation.isPending}
+            descriptionContent={descriptionContent}
+            imageAssets={imageAssets}
+            mediaProcessing={mediaProcessing}
+            onBodyMarkdownChange={setBodyMarkdown}
+            onCaptionChange={(assetId, value) =>
+              setAssetCaptions((current) => ({
+                ...current,
+                [assetId]: value,
+              }))
+            }
+            onCoverAltTextChange={setCoverAltText}
+            onCoverInputClick={() => coverInputRef.current?.click()}
+            onDeleteSelectedMedia={() => setDeleteMediaDialogOpen(true)}
+            onDeleteSingleAsset={deleteSingleAsset}
+            onDescriptionChange={setDescriptionContent}
+            onOpenPreview={() => setPreviewOpen(true)}
+            onSaveAssetCaption={(assetId) =>
+              saveAssetCaptionMutation.mutate(assetId)
+            }
+            onSaveCover={() => saveCoverMutation.mutate()}
+            onSelectAllMedia={() =>
+              setSelectedAssetIds((current) =>
+                current.length === imageAssets.length
+                  ? []
+                  : imageAssets.map((asset) => asset.id)
+              )
+            }
+            onSetAsCover={(assetId) => setAsCoverMutation.mutate(assetId)}
+            onSubtitleChange={(value) =>
+              setEntryForm((current) =>
+                current ? { ...current, subtitle: value } : current
+              )
+            }
+            onToggleAssetSelection={toggleAssetSelection}
+            onUploadMediaClick={() => mediaInputRef.current?.click()}
+            onUploadWebglClick={() => webglInputRef.current?.click()}
+            saveAssetCaptionPending={saveAssetCaptionMutation.isPending}
+            saveCoverPending={saveCoverMutation.isPending}
+            selectedAssetCount={selectedAssetCount}
+            selectedAssetIds={selectedAssetIds}
+            setAsCoverPending={setAsCoverMutation.isPending}
+            strings={strings}
+            subtitle={entryForm.subtitle}
+            supportsMarkdownBody={supportsMarkdownBody}
+            supportsWebglPackage={supportsWebglPackage}
+            uploadCoverPending={uploadCoverMutation.isPending}
+            uploadMediaPending={uploadMediaMutation.isPending}
+            uploadProgressItems={uploadProgressItems}
+            uploadWebglPending={uploadWebglPackageMutation.isPending}
+            webglPackageAsset={webglPackageAsset}
+            webglPackagePlayerPath={webglPackagePlayerPath}
+            webglPackagePublicPlayerPath={webglPackagePublicPlayerPath}
+          />
+          <EntryDetailSchemaFieldsCard
+            fieldDefinitions={activeFieldDefinitions}
+            metadata={schemaMetadata}
+            onMetadataChange={setSchemaMetadata}
+            onProfileDataChange={setSchemaProfileData}
+            profileData={schemaProfileData}
+            strings={strings}
+          />
+        </div>
 
         <EntryDetailSidebar
           activeCollectionDescription={activeCollection?.description}

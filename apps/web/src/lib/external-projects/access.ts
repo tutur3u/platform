@@ -289,6 +289,34 @@ async function bindWorkspaceExternalProject({
   }
 }
 
+async function importExternalProjectFieldDefinitions({
+  actorId,
+  admin,
+  schema,
+  workspaceId,
+}: {
+  actorId: string;
+  admin: AdminDb;
+  schema?: ExternalProjectSyncSchema;
+  workspaceId: string;
+}) {
+  if (!schema) {
+    return;
+  }
+
+  const { upsertWorkspaceExternalProjectFieldDefinitionsFromSchema } =
+    await import('./store');
+
+  await upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
+    {
+      actorId,
+      schema,
+      workspaceId,
+    },
+    admin
+  );
+}
+
 export async function ensureWorkspaceExternalProjectStudio({
   actorId,
   adapter,
@@ -321,6 +349,13 @@ export async function ensureWorkspaceExternalProjectStudio({
         schema,
       });
 
+    await importExternalProjectFieldDefinitions({
+      actorId,
+      admin,
+      schema,
+      workspaceId,
+    });
+
     return {
       binding: await resolveWorkspaceExternalProjectBinding(workspaceId, admin),
       createdBinding: false,
@@ -350,6 +385,13 @@ export async function ensureWorkspaceExternalProjectStudio({
     admin,
     canonicalProjectId,
     previousCanonicalId: currentBinding.canonical_id,
+    workspaceId,
+  });
+
+  await importExternalProjectFieldDefinitions({
+    actorId,
+    admin,
+    schema,
     workspaceId,
   });
 

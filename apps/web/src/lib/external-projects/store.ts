@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
+  Database,
   ExternalProjectAttentionItem,
   ExternalProjectBulkUpdatePayload,
   ExternalProjectCollection,
@@ -9,10 +10,15 @@ import type {
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
   ExternalProjectEntryStatus,
+  ExternalProjectFieldDefinition,
+  ExternalProjectFieldScope,
+  ExternalProjectFieldType,
   ExternalProjectImportReport,
   ExternalProjectLoadingData,
   ExternalProjectStudioData,
   ExternalProjectSummary,
+  ExternalProjectSyncField,
+  ExternalProjectSyncSchema,
   ExternalProjectWorkspaceBindingSummary,
   ImageTransformOptions,
   Json,
@@ -30,6 +36,13 @@ import { externalProjectAdapterFixtures } from './fixtures';
 
 type AdminDb = TypedSupabaseClient;
 const WORKSPACE_SECRET_QUERY_CHUNK_SIZE = 100;
+
+type FieldDefinitionSchemaScope = {
+  collectionId: string | null;
+  field: ExternalProjectSyncField;
+  fieldScope: ExternalProjectFieldScope;
+  sortOrder: number;
+};
 
 function chunkValues<T>(values: T[], chunkSize: number) {
   const chunks: T[][] = [];
@@ -540,6 +553,42 @@ export async function listWorkspaceExternalProjectCollections(
   return data;
 }
 
+export async function listWorkspaceExternalProjectFieldDefinitions(
+  workspaceId: string,
+  options: {
+    collectionId?: string | null;
+    includeDisabled?: boolean;
+  } = {},
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  let query = admin
+    .from('workspace_external_project_field_definitions')
+    .select('*')
+    .eq('ws_id', workspaceId)
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true });
+
+  if (Object.hasOwn(options, 'collectionId')) {
+    query =
+      options.collectionId === null
+        ? query.is('collection_id', null)
+        : query.eq('collection_id', options.collectionId as string);
+  }
+
+  if (!options.includeDisabled) {
+    query = query.eq('is_enabled', true);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
+}
+
 export async function listWorkspaceExternalProjectEntries(
   workspaceId: string,
   options: {
@@ -578,34 +627,40 @@ export async function getWorkspaceExternalProjectStudioData(
   db?: AdminDb
 ): Promise<ExternalProjectStudioData> {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const [collections, entries, importJobs, publishEvents] = await Promise.all([
-    listWorkspaceExternalProjectCollections(workspaceId, admin),
-    listWorkspaceExternalProjectEntries(
-      workspaceId,
-      { includeDrafts: true },
+  const [collections, entries, fieldDefinitions, importJobs, publishEvents] =
+    await Promise.all([
+      listWorkspaceExternalProjectCollections(workspaceId, admin),
+      listWorkspaceExternalProjectEntries(
+        workspaceId,
+        { includeDrafts: true },
+        admin
+      ),
+      listWorkspaceExternalProjectFieldDefinitions(
+        workspaceId,
+        { includeDisabled: true },
+        admin
+      ),
       admin
-    ),
-    admin
-      .from('workspace_external_project_import_jobs')
-      .select('*')
-      .eq('ws_id', workspaceId)
-      .order('created_at', { ascending: false })
-      .limit(10)
-      .then(({ data, error }) => {
-        if (error) throw new Error(error.message);
-        return data ?? [];
-      }),
-    admin
-      .from('workspace_external_project_publish_events')
-      .select('*')
-      .eq('ws_id', workspaceId)
-      .order('created_at', { ascending: false })
-      .limit(10)
-      .then(({ data, error }) => {
-        if (error) throw new Error(error.message);
-        return data ?? [];
-      }),
-  ]);
+        .from('workspace_external_project_import_jobs')
+        .select('*')
+        .eq('ws_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+        .then(({ data, error }) => {
+          if (error) throw new Error(error.message);
+          return data ?? [];
+        }),
+      admin
+        .from('workspace_external_project_publish_events')
+        .select('*')
+        .eq('ws_id', workspaceId)
+        .order('created_at', { ascending: false })
+        .limit(10)
+        .then(({ data, error }) => {
+          if (error) throw new Error(error.message);
+          return data ?? [];
+        }),
+    ]);
 
   const entryIds = entries.map((entry) => entry.id);
   const [blocks, rawAssets] = await Promise.all([
@@ -657,6 +712,7 @@ export async function getWorkspaceExternalProjectStudioData(
     blocks,
     collections,
     entries,
+    fieldDefinitions,
     importJobs,
     loadingData: buildExternalProjectLoadingData(
       entries[0]?.source_adapter ?? null,
@@ -1091,6 +1147,342 @@ export async function deleteWorkspaceExternalProjectCollection(
   }
 
   return { id: collectionId };
+}
+
+type UpsertFieldDefinitionPayload = {
+  collection_id?: string | null;
+  default_value?: Json | null;
+  description?: string | null;
+  field_scope: ExternalProjectFieldScope;
+  field_type: ExternalProjectFieldType;
+  is_enabled?: boolean;
+  is_required?: boolean;
+  key: string;
+  label?: string | null;
+  options?: string[];
+  sort_order?: number;
+  source?: string;
+  actorId: string;
+  workspaceId: string;
+};
+
+function fieldDefinitionValues(payload: UpsertFieldDefinitionPayload) {
+  return {
+    collection_id: payload.collection_id ?? null,
+    default_value: payload.default_value ?? null,
+    description: payload.description ?? null,
+    field_scope: payload.field_scope,
+    field_type: payload.field_type,
+    is_enabled: payload.is_enabled ?? true,
+    is_required: payload.is_required ?? false,
+    key: payload.key,
+    label: payload.label ?? null,
+    options: payload.options ?? [],
+    sort_order: payload.sort_order ?? 0,
+    source: payload.source ?? 'cms',
+    updated_by: payload.actorId,
+    ws_id: payload.workspaceId,
+  };
+}
+
+export async function createWorkspaceExternalProjectFieldDefinition(
+  payload: UpsertFieldDefinitionPayload,
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const values = fieldDefinitionValues(payload);
+  const { data, error } = await admin
+    .from('workspace_external_project_field_definitions')
+    .insert({
+      ...values,
+      created_by: payload.actorId,
+    })
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function updateWorkspaceExternalProjectFieldDefinition(
+  fieldDefinitionId: string,
+  payload: Partial<
+    Omit<UpsertFieldDefinitionPayload, 'actorId' | 'workspaceId'>
+  > & {
+    actorId: string;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { actorId, workspaceId, ...fields } = payload;
+  const values: Database['public']['Tables']['workspace_external_project_field_definitions']['Update'] =
+    {
+      updated_by: actorId,
+    };
+
+  if (fields.collection_id !== undefined) {
+    values.collection_id = fields.collection_id ?? null;
+  }
+  if (fields.default_value !== undefined) {
+    values.default_value = fields.default_value ?? null;
+  }
+  if (fields.description !== undefined) {
+    values.description = fields.description ?? null;
+  }
+  if (fields.field_scope) {
+    values.field_scope = fields.field_scope;
+  }
+  if (fields.field_type) {
+    values.field_type = fields.field_type;
+  }
+  if (fields.is_enabled !== undefined) {
+    values.is_enabled = fields.is_enabled ?? true;
+  }
+  if (fields.is_required !== undefined) {
+    values.is_required = fields.is_required ?? false;
+  }
+  if (fields.key) {
+    values.key = fields.key;
+  }
+  if (fields.label !== undefined) {
+    values.label = fields.label ?? null;
+  }
+  if (fields.options) {
+    values.options = fields.options;
+  }
+  if (fields.sort_order !== undefined) {
+    values.sort_order = fields.sort_order ?? 0;
+  }
+  if (fields.source) {
+    values.source = fields.source;
+  }
+
+  const { data, error } = await admin
+    .from('workspace_external_project_field_definitions')
+    .update(values)
+    .eq('ws_id', workspaceId)
+    .eq('id', fieldDefinitionId)
+    .select('*')
+    .single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+
+export async function deleteWorkspaceExternalProjectFieldDefinition(
+  fieldDefinitionId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { error } = await admin
+    .from('workspace_external_project_field_definitions')
+    .delete()
+    .eq('ws_id', payload.workspaceId)
+    .eq('id', fieldDefinitionId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: fieldDefinitionId };
+}
+
+function normalizeSyncFieldDefinition(
+  field: ExternalProjectSyncField,
+  fieldScope: ExternalProjectFieldScope,
+  collectionId: string | null,
+  sortOrder: number
+): FieldDefinitionSchemaScope {
+  return {
+    collectionId,
+    field,
+    fieldScope,
+    sortOrder,
+  };
+}
+
+function getSchemaFieldDefinitions({
+  collectionBySlug,
+  schema,
+}: {
+  collectionBySlug: Map<string, Pick<ExternalProjectCollection, 'id' | 'slug'>>;
+  schema: ExternalProjectSyncSchema;
+}) {
+  const definitions: FieldDefinitionSchemaScope[] = [];
+
+  schema.profileFields?.forEach((field, index) => {
+    definitions.push(
+      normalizeSyncFieldDefinition(field, 'profile_data', null, index)
+    );
+  });
+  schema.metadataFields?.forEach((field, index) => {
+    definitions.push(
+      normalizeSyncFieldDefinition(field, 'metadata', null, index)
+    );
+  });
+
+  for (const collection of schema.collections) {
+    const collectionId = collectionBySlug.get(collection.slug)?.id;
+    if (!collectionId) {
+      continue;
+    }
+
+    collection.profileFields?.forEach((field, index) => {
+      definitions.push(
+        normalizeSyncFieldDefinition(field, 'profile_data', collectionId, index)
+      );
+    });
+    collection.metadataFields?.forEach((field, index) => {
+      definitions.push(
+        normalizeSyncFieldDefinition(field, 'metadata', collectionId, index)
+      );
+    });
+  }
+
+  return definitions;
+}
+
+function getFieldDefinitionKey(
+  definition: Pick<
+    ExternalProjectFieldDefinition,
+    'collection_id' | 'field_scope' | 'key'
+  >
+) {
+  return `${definition.collection_id ?? 'global'}:${definition.field_scope}:${definition.key}`;
+}
+
+function getSchemaDefinitionKey(definition: FieldDefinitionSchemaScope) {
+  return `${definition.collectionId ?? 'global'}:${definition.fieldScope}:${definition.field.key}`;
+}
+
+function syncFieldToPayload({
+  actorId,
+  definition,
+  workspaceId,
+}: {
+  actorId: string;
+  definition: FieldDefinitionSchemaScope;
+  workspaceId: string;
+}): UpsertFieldDefinitionPayload {
+  return {
+    actorId,
+    collection_id: definition.collectionId,
+    default_value:
+      typeof definition.field.defaultValue === 'undefined'
+        ? null
+        : (definition.field.defaultValue as Json),
+    description: definition.field.description ?? null,
+    field_scope: definition.fieldScope,
+    field_type: definition.field.type,
+    is_enabled: true,
+    is_required: definition.field.required === true,
+    key: definition.field.key,
+    label: definition.field.label ?? null,
+    options: definition.field.options ?? [],
+    sort_order: definition.sortOrder,
+    source: 'manifest',
+    workspaceId,
+  };
+}
+
+export async function upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
+  {
+    actorId,
+    collectionBySlug,
+    deleteMissing = false,
+    schema,
+    workspaceId,
+  }: {
+    actorId: string;
+    collectionBySlug?: Map<
+      string,
+      Pick<ExternalProjectCollection, 'id' | 'slug'>
+    >;
+    deleteMissing?: boolean;
+    schema: ExternalProjectSyncSchema;
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const collections =
+    collectionBySlug ??
+    new Map(
+      (await listWorkspaceExternalProjectCollections(workspaceId, admin)).map(
+        (collection) => [collection.slug, collection] as const
+      )
+    );
+  const desiredDefinitions = getSchemaFieldDefinitions({
+    collectionBySlug: collections,
+    schema,
+  });
+  const existingDefinitions =
+    await listWorkspaceExternalProjectFieldDefinitions(
+      workspaceId,
+      { includeDisabled: true },
+      admin
+    );
+  const existingByKey = new Map(
+    existingDefinitions.map((definition) => [
+      getFieldDefinitionKey(definition),
+      definition,
+    ])
+  );
+  const desiredKeys = new Set(desiredDefinitions.map(getSchemaDefinitionKey));
+  const syncedDefinitions: ExternalProjectFieldDefinition[] = [];
+
+  for (const definition of desiredDefinitions) {
+    const current = existingByKey.get(getSchemaDefinitionKey(definition));
+    const payload = syncFieldToPayload({
+      actorId,
+      definition,
+      workspaceId,
+    });
+
+    syncedDefinitions.push(
+      current
+        ? await updateWorkspaceExternalProjectFieldDefinition(
+            current.id,
+            payload,
+            admin
+          )
+        : await createWorkspaceExternalProjectFieldDefinition(payload, admin)
+    );
+  }
+
+  if (deleteMissing) {
+    const scopedCollectionIds = new Set<string | null>([
+      null,
+      ...schema.collections
+        .map((collection) => collections.get(collection.slug)?.id ?? null)
+        .filter((value): value is string => Boolean(value)),
+    ]);
+    const missingDefinitions = existingDefinitions.filter(
+      (definition) =>
+        scopedCollectionIds.has(definition.collection_id) &&
+        !desiredKeys.has(getFieldDefinitionKey(definition))
+    );
+
+    for (const definition of missingDefinitions) {
+      await deleteWorkspaceExternalProjectFieldDefinition(
+        definition.id,
+        { workspaceId },
+        admin
+      );
+    }
+  }
+
+  return syncedDefinitions;
 }
 
 type UpsertBlockPayload = {
@@ -1695,6 +2087,7 @@ async function findOrCreateCollection(
   actorId: string,
   collection: {
     collectionType: string;
+    config?: Json;
     description?: string;
     slug: string;
     title: string;
@@ -1713,6 +2106,7 @@ async function findOrCreateCollection(
       .from('workspace_external_project_collections')
       .update({
         collection_type: collection.collectionType,
+        ...(collection.config ? { config: collection.config } : {}),
         description: collection.description ?? null,
         title: collection.title,
         updated_by: actorId,
@@ -1732,6 +2126,7 @@ async function findOrCreateCollection(
     .from('workspace_external_project_collections')
     .insert({
       collection_type: collection.collectionType,
+      ...(collection.config ? { config: collection.config } : {}),
       created_by: actorId,
       description: collection.description ?? null,
       slug: collection.slug,
@@ -1842,6 +2237,11 @@ export async function runWorkspaceExternalProjectImport(
 
   const fixture = externalProjectAdapterFixtures[binding.adapter];
   const warnings: string[] = [];
+  const schemaCollectionBySlug = new Map(
+    (fixture.schema?.collections ?? []).map(
+      (collection) => [collection.slug, collection] as const
+    )
+  );
 
   let createdCollections = 0;
   let updatedCollections = 0;
@@ -1875,7 +2275,14 @@ export async function runWorkspaceExternalProjectImport(
       const collectionResult = await findOrCreateCollection(
         workspaceId,
         actorId,
-        collection,
+        {
+          ...collection,
+          config: schemaCollectionBySlug.has(collection.slug)
+            ? ({
+                schema: schemaCollectionBySlug.get(collection.slug),
+              } as Json)
+            : undefined,
+        },
         admin
       );
 
@@ -1993,6 +2400,17 @@ export async function runWorkspaceExternalProjectImport(
           }
         }
       }
+    }
+
+    if (fixture.schema) {
+      await upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
+        {
+          actorId,
+          schema: fixture.schema,
+          workspaceId,
+        },
+        admin
+      );
     }
   } catch (error) {
     const report = {

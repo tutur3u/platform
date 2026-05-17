@@ -1,10 +1,12 @@
 import type {
   ExternalProjectCollection,
   ExternalProjectEntry,
+  ExternalProjectFieldDefinition,
   ExternalProjectPublishEvent,
   ExternalProjectStudioAsset,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import type { CmsContentModelTemplate } from './cms-content-model';
 import type { CmsStrings } from './cms-strings';
 import type { EditSection, WorkflowFilter } from './cms-studio-utils';
 
@@ -39,12 +41,16 @@ export type CmsLibrarySectionProps = {
   createEntryPending?: boolean;
   editSection: EditSection;
   entries: ExternalProjectEntry[];
+  fieldDefinitions: ExternalProjectFieldDefinition[];
   importPending: boolean;
+  deleteFieldDefinitionPending: boolean;
   onChangeEditSection: (section: EditSection) => void;
+  onApplyContentModelTemplate: (template: CmsContentModelTemplate) => void;
   onCreateCollection: () => void;
   onCreateEntry: () => void;
   onDeleteCollection: (collectionId: string) => void;
   onDeleteEntry: (entryId: string) => void;
+  onDeleteFieldDefinition: (fieldDefinitionId: string) => void;
   onDuplicateEntry: (entryId: string) => void;
   onImport: () => void;
   onOpenCollection: (collectionId: string) => void;
@@ -76,6 +82,7 @@ export type CmsLibrarySectionProps = {
   selectedEntryId: string;
   strings: CmsStrings;
   taxonomyAvailable: boolean;
+  templatePending: boolean;
   workflowEntries: ExternalProjectEntry[];
   workflowFilter: WorkflowFilter;
   workflowLanes: WorkflowLane[];

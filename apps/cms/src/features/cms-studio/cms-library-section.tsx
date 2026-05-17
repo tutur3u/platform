@@ -1,54 +1,34 @@
 'use client';
 
-import {
-  Archive,
-  Ellipsis,
-  Layers2,
-  Plus,
-  Settings2,
-  Trash2,
-} from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { cn } from '@tuturuuu/utils/format';
+import { CmsContentModelSection } from './cms-content-model-section';
 import { CmsEntriesGallery } from './cms-entries-gallery';
+import { CmsLibraryCommandCenter } from './cms-library-command-center';
 import type { CmsLibrarySectionProps } from './cms-library-section-shared';
 import { CmsSettingsSection } from './cms-settings-section';
 import { EditModeSkeleton } from './cms-studio-skeletons';
-import type { EditSection } from './cms-studio-utils';
 import { CmsWorkflowSection } from './cms-workflow-section';
 
 export function CmsLibrarySection({
   activeCollection,
-  availableEditSections = ['entries', 'workflow', 'settings'],
+  availableEditSections = ['entries', 'content-model', 'workflow', 'settings'],
   assets,
   binding,
   collections,
   counts,
   createEntryHint,
   createEntryPending,
+  deleteFieldDefinitionPending,
   editSection,
   entries,
+  fieldDefinitions,
   importPending,
+  onApplyContentModelTemplate,
   onChangeEditSection,
   onCreateCollection,
   onCreateEntry,
   onDeleteCollection,
   onDeleteEntry,
+  onDeleteFieldDefinition,
   onDuplicateEntry,
   onImport,
   onOpenCollection,
@@ -70,6 +50,7 @@ export function CmsLibrarySection({
   selectedEntryId,
   strings,
   taxonomyAvailable,
+  templatePending,
   workflowEntries,
   workflowFilter,
   workflowLanes,
@@ -79,114 +60,32 @@ export function CmsLibrarySection({
   }
 
   const canShowEntries = availableEditSections.includes('entries');
+  const canShowContentModel = availableEditSections.includes('content-model');
   const canShowWorkflow = availableEditSections.includes('workflow');
   const canShowSettings = availableEditSections.includes('settings');
 
   return (
     <div className="space-y-4">
-      <section
-        className={cn(
-          'grid gap-3 rounded-[1.35rem] border border-border/70 bg-card/95 p-3',
-          editSection === 'entries' && canShowEntries
-            ? 'md:grid-cols-[160px_220px_minmax(0,1fr)_auto]'
-            : 'md:grid-cols-[160px_minmax(0,1fr)_auto]'
-        )}
-      >
-        <Select
-          value={editSection}
-          onValueChange={(value) => onChangeEditSection(value as EditSection)}
-        >
-          <SelectTrigger className="h-9">
-            <SelectValue placeholder={strings.contentTab} />
-          </SelectTrigger>
-          <SelectContent>
-            {canShowEntries ? (
-              <SelectItem value="entries">{strings.contentTab}</SelectItem>
-            ) : null}
-            {canShowWorkflow ? (
-              <SelectItem value="workflow">{strings.workflowTab}</SelectItem>
-            ) : null}
-            {canShowSettings ? (
-              <SelectItem value="settings">{strings.settingsTab}</SelectItem>
-            ) : null}
-          </SelectContent>
-        </Select>
-
-        {editSection === 'entries' && canShowEntries ? (
-          <Select
-            disabled={collections.length === 0}
-            value={activeCollection?.id ?? ''}
-            onValueChange={onSelectCollection}
-          >
-            <SelectTrigger className="h-9">
-              <SelectValue placeholder={strings.emptyCollection} />
-            </SelectTrigger>
-            <SelectContent>
-              {collections.map((collection) => (
-                <SelectItem key={collection.id} value={collection.id}>
-                  {collection.title}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
-
-        <Input
-          className="h-9"
-          placeholder={strings.searchPlaceholder}
-          value={search}
-          onChange={(event) => onSearchChange(event.target.value)}
-        />
-
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label={strings.manageCollectionAction}
-            >
-              <Ellipsis className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuItem
-              disabled={createEntryPending}
-              onClick={onCreateEntry}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {strings.createEntryAction}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onCreateCollection}>
-              <Layers2 className="mr-2 h-4 w-4" />
-              {strings.createCollectionAction}
-            </DropdownMenuItem>
-            {canShowWorkflow ? (
-              <DropdownMenuItem onClick={() => onChangeEditSection('workflow')}>
-                <Archive className="mr-2 h-4 w-4" />
-                {strings.workflowTab}
-              </DropdownMenuItem>
-            ) : null}
-            {activeCollection ? (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onOpenCollection(activeCollection.id)}
-                >
-                  <Settings2 className="mr-2 h-4 w-4" />
-                  {strings.editCollectionAction}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => onDeleteCollection(activeCollection.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  {strings.deleteCollectionAction}
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </section>
+      <CmsLibraryCommandCenter
+        activeCollection={activeCollection}
+        availableEditSections={availableEditSections}
+        collections={collections}
+        counts={counts}
+        createEntryPending={createEntryPending}
+        editSection={editSection}
+        fieldDefinitions={fieldDefinitions}
+        importPending={importPending}
+        onChangeEditSection={onChangeEditSection}
+        onCreateCollection={onCreateCollection}
+        onCreateEntry={onCreateEntry}
+        onDeleteCollection={onDeleteCollection}
+        onImport={onImport}
+        onOpenCollection={onOpenCollection}
+        onSearchChange={onSearchChange}
+        onSelectCollection={onSelectCollection}
+        search={search}
+        strings={strings}
+      />
 
       {editSection === 'entries' && canShowEntries ? (
         <CmsEntriesGallery
@@ -222,6 +121,18 @@ export function CmsLibrarySection({
           workflowEntries={workflowEntries}
           workflowFilter={workflowFilter}
           workflowLanes={workflowLanes}
+        />
+      ) : null}
+
+      {editSection === 'content-model' && canShowContentModel ? (
+        <CmsContentModelSection
+          collections={collections}
+          deleteFieldDefinitionPending={deleteFieldDefinitionPending}
+          fieldDefinitions={fieldDefinitions}
+          onApplyTemplate={onApplyContentModelTemplate}
+          onDeleteFieldDefinition={onDeleteFieldDefinition}
+          strings={strings}
+          templatePending={templatePending}
         />
       ) : null}
 

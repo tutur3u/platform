@@ -1,7 +1,7 @@
 ---
 title: 'CMS'
-description: 'Dedicated Tuturuuu CMS app for workspace content operations and root-level project linking.'
-updatedAt: '2026-05-09'
+description: 'Dedicated Tuturuuu CMS app for workspace content operations, schema-aware authoring, and root-level project linking.'
+updatedAt: '2026-05-17'
 ---
 
 ## Overview
@@ -45,6 +45,22 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
 - The root linking console may load its initial server-render payload directly with the request-scoped CMS Supabase admin path after `getCmsWorkspaceAccess` proves root admin access. Avoid server-to-server Internal API fetches during that initial render, because production auth/origin forwarding failures turn `/internal/projects` into a hard RSC error page. Keep workspace-secret lookups batched; one `.in('ws_id', allWorkspaceIds)` query can exceed PostgREST/proxy URL limits and return `400 Bad Request` in production.
 - Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
+
+## Content Model
+
+- Collections remain the content-type container. Field definitions live in `workspace_external_project_field_definitions`, while entry values continue to be stored in the existing `profile_data` and `metadata` JSON payloads so delivery and sync payloads stay backward-compatible.
+- Field definitions support the manifest field contract: `string`, `markdown`, `number`, `boolean`, `date`, `datetime`, `json`, and `string-array`. Scope controls whether the value is saved under `profile_data` or `metadata`.
+- The CMS Library has a `Content model` section with reusable templates for Profile, Blog Posts, Gallery, Shop Products, Writing Worlds, and Social Links. Applying a template creates the collection if needed, stores the collection schema, and creates any missing field definitions without deleting CMS-only fields.
+- The Library command center is the consolidated authoring entry point for entries, content models, workflow queues, and settings. Keep new CMS operations reachable from that surface before adding another isolated toolbar or settings panel.
+- Entry detail forms render schema-aware controls for the active collection field definitions. Authors should edit those typed controls instead of hand-editing raw `profile_data` or `metadata` JSON for modeled fields.
+- Body and asset affordances should be driven by the collection schema when available. Naming heuristics for legacy Yoola collections remain as compatibility fallback only.
+- External-project setup and sync import manifest `profileFields` and `metadataFields` into DB field definitions. Sync snapshots are built from DB-managed field definitions, and field removals should only be applied during an explicit destructive sync.
+
+## Yashie Bridge
+
+- Yashie is the proof case for the generic content model. Its manifest seeds profile, blog post, gallery, shop product, writing world, and social-link collections and field definitions.
+- This phase does not change `../yashie` runtime pages. Yashie can be seeded and managed from CMS, but the public Yashie app continues to read its local static data until a later integration pass consumes CMS delivery payloads.
+- Shop product entries are catalog-only in this phase. No checkout, payment, inventory, or commerce fulfillment behavior is implied by the template.
 
 ## Client Architecture
 

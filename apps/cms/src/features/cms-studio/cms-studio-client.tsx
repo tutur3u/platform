@@ -14,11 +14,14 @@ import {
   bulkUpdateWorkspaceExternalProjectEntries,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
+  createWorkspaceExternalProjectFieldDefinition,
   deleteWorkspaceExternalProjectCollection,
   deleteWorkspaceExternalProjectEntry,
+  deleteWorkspaceExternalProjectFieldDefinition,
   duplicateWorkspaceExternalProjectEntry,
   importWorkspaceExternalProjectContent,
   publishWorkspaceExternalProjectEntry,
+  updateWorkspaceExternalProjectCollection,
   updateWorkspaceExternalProjectEntry,
 } from '@tuturuuu/internal-api';
 import type {
@@ -39,6 +42,12 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
+import {
+  buildCollectionConfigFromTemplate,
+  buildDefaultFieldValues,
+  type CmsContentModelTemplate,
+  getCollectionFieldDefinitions,
+} from './cms-content-model';
 import { isGameLikeCollection } from './cms-games-shared';
 import { CmsLibrarySection } from './cms-library-section';
 import type { CmsLibrarySectionProps } from './cms-library-section-shared';
@@ -112,7 +121,7 @@ function parseTaxonomyDraft(value: string) {
 }
 
 export function CmsStudioClient({
-  availableEditSections = ['entries', 'workflow', 'settings'],
+  availableEditSections = ['entries', 'content-model', 'workflow', 'settings'],
   binding,
   cmsGamesEnabled = false,
   collectionScope = 'all',
@@ -179,6 +188,8 @@ export function CmsStudioClient({
   const allEntries = studio?.entries ?? initialStudio?.entries ?? [];
   const allCollections =
     studio?.collections ?? initialStudio?.collections ?? [];
+  const fieldDefinitions =
+    studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
   const collections =
     collectionScope === 'games'
       ? allCollections.filter(isGameLikeCollection)
@@ -559,10 +570,29 @@ export function CmsStudioClient({
         throw new Error(strings.emptyCollection);
       }
 
+      const targetCollection =
+        createdCollection ??
+        collections.find((collection) => collection.id === collectionId) ??
+        null;
+      const targetFieldDefinitions = getCollectionFieldDefinitions({
+        collection: targetCollection,
+        fieldDefinitions,
+      });
+      const defaultProfileData = buildDefaultFieldValues(
+        targetFieldDefinitions.filter(
+          (definition) => definition.field_scope === 'profile_data'
+        )
+      );
+      const defaultMetadata = buildDefaultFieldValues(
+        targetFieldDefinitions.filter(
+          (definition) => definition.field_scope === 'metadata'
+        )
+      );
+
       const entry = await createWorkspaceExternalProjectEntry(workspaceId, {
         collection_id: collectionId,
-        metadata: {},
-        profile_data: {},
+        metadata: defaultMetadata as Json,
+        profile_data: defaultProfileData as Json,
         scheduled_for: null,
         slug: `draft-${Date.now()}`,
         status: 'draft',
@@ -631,6 +661,106 @@ export function CmsStudioClient({
       setNewCollectionTitle('');
       setNewCollectionDescription('');
       toast.success(strings.createCollectionAction);
+    },
+  });
+
+  const applyContentModelTemplateMutation = useMutation({
+    mutationFn: async (template: CmsContentModelTemplate) => {
+      const existingCollection =
+        collections.find((collection) => collection.slug === template.slug) ??
+        null;
+      const collection = existingCollection
+        ? await updateWorkspaceExternalProjectCollection(
+            workspaceId,
+            existingCollection.id,
+            {
+              collection_type: template.collection_type,
+              config: buildCollectionConfigFromTemplate(
+                template,
+                existingCollection.config
+              ),
+              description:
+                existingCollection.description ?? template.description,
+              title: existingCollection.title || template.title,
+            }
+          )
+        : await createWorkspaceExternalProjectCollection(workspaceId, {
+            collection_type: template.collection_type,
+            config: buildCollectionConfigFromTemplate(template),
+            description: template.description,
+            slug: template.slug,
+            title: template.title,
+          });
+      const existingKeys = new Set(
+        fieldDefinitions
+          .filter((definition) => definition.collection_id === collection.id)
+          .map((definition) => `${definition.field_scope}:${definition.key}`)
+      );
+      const createdFieldDefinitions = await Promise.all(
+        template.fields
+          .filter(
+            (field) => !existingKeys.has(`${field.field_scope}:${field.key}`)
+          )
+          .map((field, index) =>
+            createWorkspaceExternalProjectFieldDefinition(workspaceId, {
+              collection_id: collection.id,
+              default_value: field.default_value,
+              description: field.description,
+              field_scope: field.field_scope,
+              field_type: field.field_type,
+              is_required: field.is_required,
+              key: field.key,
+              label: field.label,
+              options: field.options,
+              sort_order: index,
+            })
+          )
+      );
+
+      return {
+        collection,
+        createdFieldDefinitions,
+      };
+    },
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : strings.contentModelTitle
+      ),
+    onSuccess: ({ collection, createdFieldDefinitions }) => {
+      updateStudioCache((current) => ({
+        ...current,
+        collections: current.collections.some(
+          (candidate) => candidate.id === collection.id
+        )
+          ? current.collections.map((candidate) =>
+              candidate.id === collection.id ? collection : candidate
+            )
+          : [collection, ...current.collections],
+        fieldDefinitions: [
+          ...createdFieldDefinitions,
+          ...(current.fieldDefinitions ?? []),
+        ],
+      }));
+      setSelectedCollectionId(collection.id);
+      setEditSection('content-model');
+      toast.success(strings.templateAppliedToast);
+    },
+  });
+
+  const deleteFieldDefinitionMutation = useMutation({
+    mutationFn: async (fieldDefinitionId: string) =>
+      deleteWorkspaceExternalProjectFieldDefinition(
+        workspaceId,
+        fieldDefinitionId
+      ),
+    onSuccess: (_, fieldDefinitionId) => {
+      updateStudioCache((current) => ({
+        ...current,
+        fieldDefinitions: (current.fieldDefinitions ?? []).filter(
+          (definition) => definition.id !== fieldDefinitionId
+        ),
+      }));
+      toast.success(strings.deleteFieldDefinitionAction);
     },
   });
 
@@ -922,14 +1052,20 @@ export function CmsStudioClient({
         ? strings.gamesAutoCreateCollectionHint
         : undefined,
     createEntryPending: createEntryMutation.isPending,
+    deleteFieldDefinitionPending: deleteFieldDefinitionMutation.isPending,
     editSection,
     entries: visibleEntries,
+    fieldDefinitions,
     importPending: importMutation.isPending,
+    onApplyContentModelTemplate: (template) =>
+      applyContentModelTemplateMutation.mutate(template),
     onChangeEditSection: setEditSection,
     onCreateCollection: () => setCreateCollectionOpen(true),
     onCreateEntry: () => createEntryMutation.mutate(),
     onDeleteCollection: setCollectionDeleteTarget,
     onDeleteEntry: setEntryDeleteTarget,
+    onDeleteFieldDefinition: (fieldDefinitionId) =>
+      deleteFieldDefinitionMutation.mutate(fieldDefinitionId),
     onDuplicateEntry: (entryId) => duplicateEntryMutation.mutate(entryId),
     onImport: () => importMutation.mutate(),
     onOpenCollection: openCollectionDetails,
@@ -951,6 +1087,7 @@ export function CmsStudioClient({
     selectedEntryId,
     strings,
     taxonomyAvailable,
+    templatePending: applyContentModelTemplateMutation.isPending,
     workflowEntries,
     workflowFilter,
     workflowLanes,

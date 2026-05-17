@@ -81,6 +81,50 @@ describe('external project adapter fixtures', () => {
       externalProjectAdapterFixtures.yashie.collections.map(
         (collection) => collection.slug
       )
-    ).toEqual(['gallery']);
+    ).toEqual([
+      'profile',
+      'blog-posts',
+      'gallery',
+      'shop-products',
+      'writing-worlds',
+      'social-links',
+    ]);
+  });
+
+  it('ships Yashie field definitions for each CMS proof collection', () => {
+    expect(
+      externalProjectAdapterFixtures.yashie.schema?.collections.map(
+        (collection) => [
+          collection.slug,
+          collection.profileFields?.map((field) => field.key) ?? [],
+          collection.metadataFields?.map((field) => field.key) ?? [],
+        ]
+      )
+    ).toEqual([
+      [
+        'profile',
+        [
+          'displayName',
+          'tagline',
+          'location',
+          'commissionStatus',
+          'featuredGallerySlugs',
+        ],
+        ['seoTitle', 'seoDescription'],
+      ],
+      [
+        'blog-posts',
+        ['author', 'publishedOn', 'tags', 'featured'],
+        ['seoTitle', 'seoDescription'],
+      ],
+      ['gallery', ['medium', 'style', 'completedOn', 'featured'], ['credit']],
+      [
+        'shop-products',
+        ['price', 'currency', 'available', 'variants'],
+        ['sku'],
+      ],
+      ['writing-worlds', ['genre', 'status', 'contentWarnings'], []],
+      ['social-links', ['url', 'platform', 'isPrimary'], ['rel']],
+    ]);
   });
 });

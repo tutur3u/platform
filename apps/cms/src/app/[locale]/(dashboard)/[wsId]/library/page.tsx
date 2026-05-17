@@ -32,10 +32,10 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
 
   return (
     <CmsStudioClient
-      availableEditSections={['entries', 'workflow']}
+      availableEditSections={['entries', 'content-model', 'workflow']}
       binding={access.binding}
       cmsGamesEnabled={cmsGamesEnabled}
-      headerDescription="Manage collections, entries, and editorial workflow from the CMS library."
+      headerDescription={t('epm.library_page_description')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

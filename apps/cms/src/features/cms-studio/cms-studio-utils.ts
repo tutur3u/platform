@@ -11,7 +11,7 @@ import type { CmsStrings } from './cms-strings';
 
 export type WorkflowFilter = 'all' | ExternalProjectEntry['status'];
 export type CmsStudioMode = 'edit' | 'preview';
-export type EditSection = 'entries' | 'settings' | 'workflow';
+export type EditSection = 'content-model' | 'entries' | 'settings' | 'workflow';
 
 export function formatStatus(
   status: ExternalProjectEntry['status'],

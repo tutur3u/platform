@@ -481,6 +481,8 @@ export type ExternalProjectCollection =
 export type ExternalProjectEntry = Tables<'workspace_external_project_entries'>;
 export type ExternalProjectBlock = Tables<'workspace_external_project_blocks'>;
 export type ExternalProjectAsset = Tables<'workspace_external_project_assets'>;
+export type ExternalProjectFieldDefinition =
+  Tables<'workspace_external_project_field_definitions'>;
 export type ExternalProjectTaxonomy =
   Tables<'workspace_external_project_taxonomies'>;
 export type ExternalProjectEntryRelation =
@@ -499,6 +501,10 @@ export type ExternalProjectImportStatus =
   Database['public']['Enums']['external_project_import_status'];
 export type ExternalProjectPublishEventKind =
   Database['public']['Enums']['external_project_publish_event_kind'];
+export type ExternalProjectFieldScope =
+  Database['public']['Enums']['external_project_field_scope'];
+export type ExternalProjectFieldType =
+  Database['public']['Enums']['external_project_field_type'];
 export type PermissionId =
   | Database['public']['Enums']['workspace_role_permission']
   | 'change_finance_wallets'
@@ -645,6 +651,7 @@ export type ExternalProjectStudioData = {
   entries: ExternalProjectEntry[];
   blocks: ExternalProjectBlock[];
   assets: ExternalProjectStudioAsset[];
+  fieldDefinitions: ExternalProjectFieldDefinition[];
   importJobs: ExternalProjectImportJob[];
   publishEvents: ExternalProjectPublishEvent[];
   loadingData: ExternalProjectLoadingData | null;

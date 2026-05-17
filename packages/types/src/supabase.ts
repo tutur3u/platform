@@ -21662,6 +21662,168 @@ export type Database = {
           },
         ];
       };
+      workspace_external_project_field_definitions: {
+        Row: {
+          collection_id: string | null;
+          created_at: string;
+          created_by: string | null;
+          default_value: Json | null;
+          description: string | null;
+          field_scope: Database['public']['Enums']['external_project_field_scope'];
+          field_type: Database['public']['Enums']['external_project_field_type'];
+          id: string;
+          is_enabled: boolean;
+          is_required: boolean;
+          key: string;
+          label: string | null;
+          options: string[];
+          sort_order: number;
+          source: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          collection_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          default_value?: Json | null;
+          description?: string | null;
+          field_scope: Database['public']['Enums']['external_project_field_scope'];
+          field_type: Database['public']['Enums']['external_project_field_type'];
+          id?: string;
+          is_enabled?: boolean;
+          is_required?: boolean;
+          key: string;
+          label?: string | null;
+          options?: string[];
+          sort_order?: number;
+          source?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          collection_id?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          default_value?: Json | null;
+          description?: string | null;
+          field_scope?: Database['public']['Enums']['external_project_field_scope'];
+          field_type?: Database['public']['Enums']['external_project_field_type'];
+          id?: string;
+          is_enabled?: boolean;
+          is_required?: boolean;
+          key?: string;
+          label?: string | null;
+          options?: string[];
+          sort_order?: number;
+          source?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_collection_id_fkey';
+            columns: ['collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_ws_collection_fkey';
+            columns: ['ws_id', 'collection_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_external_project_collections';
+            referencedColumns: ['ws_id', 'id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_external_project_field_definitions_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_external_project_import_jobs: {
         Row: {
           adapter: Database['public']['Enums']['external_project_adapter_kind'];
@@ -32383,6 +32545,16 @@ export type Database = {
         | 'scheduled'
         | 'published'
         | 'archived';
+      external_project_field_scope: 'profile_data' | 'metadata';
+      external_project_field_type:
+        | 'string'
+        | 'markdown'
+        | 'number'
+        | 'boolean'
+        | 'date'
+        | 'datetime'
+        | 'json'
+        | 'string-array';
       external_project_import_status:
         | 'queued'
         | 'running'
@@ -34543,6 +34715,17 @@ export const Constants = {
         'scheduled',
         'published',
         'archived',
+      ],
+      external_project_field_scope: ['profile_data', 'metadata'],
+      external_project_field_type: [
+        'string',
+        'markdown',
+        'number',
+        'boolean',
+        'date',
+        'datetime',
+        'json',
+        'string-array',
       ],
       external_project_import_status: [
         'queued',

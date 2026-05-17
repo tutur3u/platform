@@ -6,6 +6,9 @@ import type {
   ExternalProjectCollection,
   ExternalProjectDeliveryPayload,
   ExternalProjectEntry,
+  ExternalProjectFieldDefinition,
+  ExternalProjectFieldScope,
+  ExternalProjectFieldType,
   ExternalProjectImportReport,
   ExternalProjectStudioData,
   ExternalProjectSummary,
@@ -75,6 +78,20 @@ type WorkspaceExternalProjectAssetPayload = {
   sort_order?: number;
   source_url?: string | null;
   storage_path?: string | null;
+};
+
+type WorkspaceExternalProjectFieldDefinitionPayload = {
+  collection_id?: string | null;
+  default_value?: Json | null;
+  description?: string | null;
+  field_scope: ExternalProjectFieldScope;
+  field_type: ExternalProjectFieldType;
+  is_enabled?: boolean;
+  is_required?: boolean;
+  key: string;
+  label?: string | null;
+  options?: string[];
+  sort_order?: number;
 };
 
 type ExternalProjectUploadUrlResponse = {
@@ -425,6 +442,89 @@ export async function getWorkspaceExternalProjectSummary(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/summary`,
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceExternalProjectFieldDefinitions(
+  workspaceId: string,
+  query?: {
+    collectionId?: string | null;
+    includeDisabled?: boolean;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+
+  if (Object.hasOwn(query ?? {}, 'collectionId')) {
+    searchParams.set('collectionId', query?.collectionId ?? 'global');
+  }
+
+  if (query?.includeDisabled) {
+    searchParams.set('includeDisabled', 'true');
+  }
+
+  const suffix = searchParams.size > 0 ? `?${searchParams.toString()}` : '';
+
+  return client.json<ExternalProjectFieldDefinition[]>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/field-definitions${suffix}`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceExternalProjectFieldDefinition(
+  workspaceId: string,
+  payload: WorkspaceExternalProjectFieldDefinitionPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectFieldDefinition>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/field-definitions`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateWorkspaceExternalProjectFieldDefinition(
+  workspaceId: string,
+  fieldDefinitionId: string,
+  payload: Partial<WorkspaceExternalProjectFieldDefinitionPayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ExternalProjectFieldDefinition>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/field-definitions/${encodePathSegment(fieldDefinitionId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteWorkspaceExternalProjectFieldDefinition(
+  workspaceId: string,
+  fieldDefinitionId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/field-definitions/${encodePathSegment(fieldDefinitionId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
     }
   );
 }

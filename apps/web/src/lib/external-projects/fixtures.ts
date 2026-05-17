@@ -1,4 +1,7 @@
-import type { ExternalProjectAdapterKind } from '@tuturuuu/types';
+import type {
+  ExternalProjectAdapterKind,
+  ExternalProjectSyncSchema,
+} from '@tuturuuu/types';
 
 type FixtureAsset = {
   altText?: string;
@@ -41,8 +44,239 @@ export type ExternalProjectAdapterFixture = {
   adapter: ExternalProjectAdapterKind;
   collections: FixtureCollection[];
   profileData: Record<string, unknown>;
+  schema?: ExternalProjectSyncSchema;
   sourceReference: string;
 };
+
+const yashieSchema = {
+  collections: [
+    {
+      assetTypes: [],
+      blockTypes: ['markdown'],
+      collection_type: 'profile',
+      description: 'Creator profile, biography, and landing-page copy.',
+      metadataFields: [
+        {
+          key: 'seoTitle',
+          label: 'SEO title',
+          type: 'string',
+        },
+        {
+          key: 'seoDescription',
+          label: 'SEO description',
+          type: 'markdown',
+        },
+      ],
+      profileFields: [
+        {
+          key: 'displayName',
+          label: 'Display name',
+          required: true,
+          type: 'string',
+        },
+        {
+          key: 'tagline',
+          label: 'Tagline',
+          type: 'string',
+        },
+        {
+          key: 'location',
+          label: 'Location',
+          type: 'string',
+        },
+        {
+          key: 'commissionStatus',
+          label: 'Commission status',
+          options: ['open', 'waitlist', 'closed'],
+          type: 'string',
+        },
+        {
+          key: 'featuredGallerySlugs',
+          label: 'Featured gallery slugs',
+          type: 'string-array',
+        },
+      ],
+      slug: 'profile',
+      title: 'Profile',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'blog-posts',
+      description: 'Yashie blog posts and studio notes.',
+      metadataFields: [
+        {
+          key: 'seoTitle',
+          label: 'SEO title',
+          type: 'string',
+        },
+        {
+          key: 'seoDescription',
+          label: 'SEO description',
+          type: 'markdown',
+        },
+      ],
+      profileFields: [
+        {
+          key: 'author',
+          label: 'Author',
+          type: 'string',
+        },
+        {
+          key: 'publishedOn',
+          label: 'Published on',
+          type: 'date',
+        },
+        {
+          key: 'tags',
+          label: 'Tags',
+          type: 'string-array',
+        },
+        {
+          key: 'featured',
+          label: 'Featured',
+          type: 'boolean',
+        },
+      ],
+      slug: 'blog-posts',
+      title: 'Blog Posts',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'gallery',
+      description: 'Portfolio artwork, tattoos, flash sheets, and commissions.',
+      metadataFields: [
+        {
+          key: 'credit',
+          label: 'Credit',
+          type: 'string',
+        },
+      ],
+      profileFields: [
+        {
+          key: 'medium',
+          label: 'Medium',
+          options: ['digital', 'tattoo', 'flash', 'commission'],
+          type: 'string',
+        },
+        {
+          key: 'style',
+          label: 'Style',
+          type: 'string-array',
+        },
+        {
+          key: 'completedOn',
+          label: 'Completed on',
+          type: 'date',
+        },
+        {
+          key: 'featured',
+          label: 'Featured',
+          type: 'boolean',
+        },
+      ],
+      slug: 'gallery',
+      title: 'Gallery',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'shop-products',
+      description: 'Catalog-only shop products for prints, flash, and merch.',
+      metadataFields: [
+        {
+          key: 'sku',
+          label: 'SKU',
+          type: 'string',
+        },
+      ],
+      profileFields: [
+        {
+          key: 'price',
+          label: 'Price',
+          type: 'number',
+        },
+        {
+          key: 'currency',
+          label: 'Currency',
+          type: 'string',
+        },
+        {
+          key: 'available',
+          label: 'Available',
+          type: 'boolean',
+        },
+        {
+          key: 'variants',
+          label: 'Variants',
+          type: 'string-array',
+        },
+      ],
+      slug: 'shop-products',
+      title: 'Shop Products',
+    },
+    {
+      assetTypes: ['image'],
+      blockTypes: ['markdown'],
+      collection_type: 'writing-worlds',
+      description: 'Fiction worlds, lore pages, and long-form writing.',
+      profileFields: [
+        {
+          key: 'genre',
+          label: 'Genre',
+          type: 'string',
+        },
+        {
+          key: 'status',
+          label: 'Status',
+          options: ['drafting', 'revising', 'published'],
+          type: 'string',
+        },
+        {
+          key: 'contentWarnings',
+          label: 'Content warnings',
+          type: 'string-array',
+        },
+      ],
+      slug: 'writing-worlds',
+      title: 'Writing Worlds',
+    },
+    {
+      assetTypes: [],
+      blockTypes: [],
+      collection_type: 'social-links',
+      description: 'Public social, shop, and contact links.',
+      metadataFields: [
+        {
+          key: 'rel',
+          label: 'Link rel',
+          type: 'string',
+        },
+      ],
+      profileFields: [
+        {
+          key: 'url',
+          label: 'URL',
+          required: true,
+          type: 'string',
+        },
+        {
+          key: 'platform',
+          label: 'Platform',
+          type: 'string',
+        },
+        {
+          key: 'isPrimary',
+          label: 'Primary link',
+          type: 'boolean',
+        },
+      ],
+      slug: 'social-links',
+      title: 'Social Links',
+    },
+  ],
+} satisfies ExternalProjectSyncSchema;
 
 export const externalProjectAdapterFixtures: Record<
   ExternalProjectAdapterKind,
@@ -1119,9 +1353,82 @@ export const externalProjectAdapterFixtures: Record<
       brand: 'InkedByYashie',
       deliveryPreset: 'portfolio-shop',
     },
+    schema: yashieSchema,
     collections: [
       {
+        collectionType: 'profile',
+        description: 'Creator profile, biography, and landing-page copy.',
+        slug: 'profile',
+        sourceId: 'yashie:collection:profile',
+        title: 'Profile',
+        entries: [
+          {
+            sourceId: 'yashie:profile:main',
+            slug: 'main',
+            title: 'InkedByYashie',
+            subtitle: 'Artist profile',
+            summary:
+              'Tattoo-inspired illustration, flash sheets, and shop-ready artwork.',
+            status: 'published',
+            profileData: {
+              commissionStatus: 'waitlist',
+              displayName: 'InkedByYashie',
+              featuredGallerySlugs: ['featured-work'],
+              location: 'Online studio',
+              tagline: 'Soft lines, sharp feelings, story-led ink.',
+            },
+            blocks: [
+              {
+                sourceId: 'yashie:profile:main:bio',
+                blockType: 'markdown',
+                title: 'Bio',
+                content: {
+                  markdown:
+                    'Yashie builds expressive character pieces, tattoo flash, and small-batch shop drops with a romantic darkline feel.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'blog-posts',
+        description: 'Yashie blog posts and studio notes.',
+        slug: 'blog-posts',
+        sourceId: 'yashie:collection:blog-posts',
+        title: 'Blog Posts',
+        entries: [
+          {
+            sourceId: 'yashie:blog:first-shop-drop',
+            slug: 'first-shop-drop',
+            title: 'Planning the First Shop Drop',
+            summary:
+              'A studio note about preparing prints, flash, and commission slots.',
+            status: 'draft',
+            profileData: {
+              author: 'Yashie',
+              featured: true,
+              publishedOn: '2026-05-01',
+              tags: ['shop', 'process'],
+            },
+            blocks: [
+              {
+                sourceId: 'yashie:blog:first-shop-drop:body',
+                blockType: 'markdown',
+                title: 'Body',
+                content: {
+                  markdown:
+                    'The first drop needs to feel small, specific, and easy to browse: prints, flash claims, and a simple note about commission timing.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
         collectionType: 'gallery',
+        description:
+          'Portfolio artwork, tattoos, flash sheets, and commissions.',
         slug: 'gallery',
         sourceId: 'yashie:collection:gallery',
         title: 'Gallery',
@@ -1132,6 +1439,12 @@ export const externalProjectAdapterFixtures: Record<
             title: 'Featured Work',
             summary: 'Representative gallery entry synchronized from Yashie.',
             status: 'published',
+            profileData: {
+              completedOn: '2026-04-18',
+              featured: true,
+              medium: 'digital',
+              style: ['linework', 'romantic'],
+            },
             blocks: [
               {
                 sourceId: 'yashie:gallery:featured-work:overview',
@@ -1142,6 +1455,99 @@ export const externalProjectAdapterFixtures: Record<
                 },
               },
             ],
+          },
+        ],
+      },
+      {
+        collectionType: 'shop-products',
+        description: 'Catalog-only shop products for prints, flash, and merch.',
+        slug: 'shop-products',
+        sourceId: 'yashie:collection:shop-products',
+        title: 'Shop Products',
+        entries: [
+          {
+            sourceId: 'yashie:shop:moon-flash-print',
+            slug: 'moon-flash-print',
+            title: 'Moon Flash Print',
+            summary: 'Catalog entry for a small print release.',
+            status: 'draft',
+            metadata: {
+              sku: 'YSH-PRINT-001',
+            },
+            profileData: {
+              available: true,
+              currency: 'USD',
+              price: 24,
+              variants: ['A5', 'A4'],
+            },
+            blocks: [
+              {
+                sourceId: 'yashie:shop:moon-flash-print:description',
+                blockType: 'markdown',
+                title: 'Description',
+                content: {
+                  markdown:
+                    'A moonlit flash-inspired print prepared as a CMS catalog item only; checkout integration is intentionally out of scope.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'writing-worlds',
+        description: 'Fiction worlds, lore pages, and long-form writing.',
+        slug: 'writing-worlds',
+        sourceId: 'yashie:collection:writing-worlds',
+        title: 'Writing Worlds',
+        entries: [
+          {
+            sourceId: 'yashie:world:velvet-orbit',
+            slug: 'velvet-orbit',
+            title: 'Velvet Orbit',
+            summary: 'A world seed for long-form writing and character lore.',
+            status: 'draft',
+            profileData: {
+              contentWarnings: ['melancholy'],
+              genre: 'romantic fantasy',
+              status: 'drafting',
+            },
+            blocks: [
+              {
+                sourceId: 'yashie:world:velvet-orbit:notes',
+                blockType: 'markdown',
+                title: 'Notes',
+                content: {
+                  markdown:
+                    'A quiet orbital city where tattoo sigils act as memory keys.',
+                },
+              },
+            ],
+          },
+        ],
+      },
+      {
+        collectionType: 'social-links',
+        description: 'Public social, shop, and contact links.',
+        slug: 'social-links',
+        sourceId: 'yashie:collection:social-links',
+        title: 'Social Links',
+        entries: [
+          {
+            sourceId: 'yashie:social:instagram',
+            slug: 'instagram',
+            title: 'Instagram',
+            summary: 'Primary social profile.',
+            status: 'published',
+            metadata: {
+              rel: 'me',
+            },
+            profileData: {
+              isPrimary: true,
+              platform: 'Instagram',
+              url: 'https://instagram.com/inkedbyyashie',
+            },
+            blocks: [],
           },
         ],
       },

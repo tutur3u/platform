@@ -1,5 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
+  createWorkspaceExternalProjectFieldDefinition,
+  deleteWorkspaceExternalProjectFieldDefinition,
+  listWorkspaceExternalProjectFieldDefinitions,
+  updateWorkspaceExternalProjectFieldDefinition,
   uploadWorkspaceExternalProjectAssetFile,
   uploadWorkspaceExternalProjectWebglPackageFile,
 } from './external-projects';
@@ -144,5 +148,94 @@ describe('external project upload helpers', () => {
       originalFilename: 'cover.png',
       path: 'external-projects/yoola/artworks/mine/upload-cover.png',
     });
+  });
+});
+
+describe('external project field definition helpers', () => {
+  it('uses workspace field-definition CRUD routes', async () => {
+    const fieldDefinition = {
+      id: 'field-1',
+      key: 'medium',
+    };
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse(fieldDefinition));
+
+    await listWorkspaceExternalProjectFieldDefinitions(
+      'ws-1',
+      {
+        collectionId: null,
+        includeDisabled: true,
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await createWorkspaceExternalProjectFieldDefinition(
+      'ws-1',
+      {
+        field_scope: 'profile_data',
+        field_type: 'string',
+        key: 'medium',
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await updateWorkspaceExternalProjectFieldDefinition(
+      'ws-1',
+      'field-1',
+      {
+        label: 'Medium',
+      },
+      {
+        baseUrl: 'https://web.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteWorkspaceExternalProjectFieldDefinition('ws-1', 'field-1', {
+      baseUrl: 'https://web.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/field-definitions?collectionId=global&includeDisabled=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/field-definitions',
+      expect.objectContaining({
+        body: JSON.stringify({
+          field_scope: 'profile_data',
+          field_type: 'string',
+          key: 'medium',
+        }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/field-definitions/field-1',
+      expect.objectContaining({
+        body: JSON.stringify({
+          label: 'Medium',
+        }),
+        method: 'PATCH',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://web.example.com/api/v1/workspaces/ws-1/external-projects/field-definitions/field-1',
+      expect.objectContaining({
+        cache: 'no-store',
+        method: 'DELETE',
+      })
+    );
   });
 });

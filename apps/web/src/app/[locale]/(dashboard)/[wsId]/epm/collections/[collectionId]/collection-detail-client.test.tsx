@@ -120,6 +120,7 @@ describe('CollectionDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'artworks',

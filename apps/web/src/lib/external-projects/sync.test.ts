@@ -256,4 +256,141 @@ describe('external project sync diff', () => {
       storagePath: 'external-projects/yoola/hero.png',
     });
   });
+
+  it('builds schema snapshots from DB field definitions', () => {
+    const snapshot = buildExternalProjectSyncSnapshot({
+      binding: {
+        adapter: 'yashie',
+        canonical_id: 'yashie-main',
+        canonical_project: {
+          delivery_profile: {
+            schema: {
+              collections: [
+                {
+                  collection_type: 'gallery',
+                  profileFields: [
+                    {
+                      key: 'legacy',
+                      type: 'string',
+                    },
+                  ],
+                  slug: 'gallery',
+                  title: 'Gallery',
+                },
+              ],
+            },
+          },
+        },
+        enabled: true,
+        workspace_id: 'ws-1',
+      } as never,
+      generatedAt: '2026-05-09T00:00:00.000Z',
+      studio: {
+        assets: [],
+        blocks: [],
+        collections: [
+          {
+            collection_type: 'gallery',
+            config: {},
+            description: null,
+            id: 'collection-1',
+            is_enabled: true,
+            slug: 'gallery',
+            title: 'Gallery',
+          },
+        ],
+        entries: [],
+        fieldDefinitions: [
+          {
+            collection_id: 'collection-1',
+            created_at: '2026-05-09T00:00:00.000Z',
+            default_value: null,
+            description: 'Artwork medium',
+            field_scope: 'profile_data',
+            field_type: 'string',
+            id: 'field-1',
+            is_enabled: true,
+            is_required: true,
+            key: 'medium',
+            label: 'Medium',
+            options: ['digital', 'tattoo'],
+            sort_order: 0,
+          },
+        ],
+        importJobs: [],
+        loadingData: null,
+        publishEvents: [],
+      } as never,
+      workspaceId: 'ws-1',
+    });
+
+    expect(snapshot.schema.collections[0]?.profileFields).toEqual([
+      {
+        defaultValue: undefined,
+        description: 'Artwork medium',
+        key: 'medium',
+        label: 'Medium',
+        options: ['digital', 'tattoo'],
+        required: true,
+        type: 'string',
+      },
+    ]);
+  });
+
+  it('marks schema field removals as destructive', () => {
+    const snapshot: ExternalProjectSyncSnapshot = {
+      adapter: 'yashie',
+      canonicalProjectId: 'yashie-main',
+      content: {
+        entries: [],
+      },
+      generatedAt: '2026-05-09T00:00:00.000Z',
+      schema: {
+        collections: [
+          {
+            collection_type: 'gallery',
+            profileFields: [
+              {
+                key: 'medium',
+                type: 'string',
+              },
+            ],
+            slug: 'gallery',
+            title: 'Gallery',
+          },
+        ],
+      },
+      version: 1,
+      workspaceId: 'ws-1',
+    };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'yashie',
+      content: {
+        entries: [],
+      },
+      schema: {
+        collections: [
+          {
+            collection_type: 'gallery',
+            slug: 'gallery',
+            title: 'Gallery',
+          },
+        ],
+      },
+      version: 1,
+    });
+
+    const diff = buildExternalProjectSyncDiff(snapshot, manifest);
+
+    expect(diff.hasDestructiveOperations).toBe(true);
+    expect(diff.operations).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          destructive: true,
+          entity: 'schema',
+          reason: 'Schema removes 1 field definition',
+        }),
+      ])
+    );
+  });
 });

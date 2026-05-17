@@ -4,6 +4,7 @@ import type {
   ExternalProjectBlock,
   ExternalProjectCollection,
   ExternalProjectEntry,
+  ExternalProjectFieldDefinition,
   ExternalProjectStudioData,
   ExternalProjectSyncAction,
   ExternalProjectSyncApplyResult,
@@ -12,6 +13,7 @@ import type {
   ExternalProjectSyncCollectionSchema,
   ExternalProjectSyncDiff,
   ExternalProjectSyncEntry,
+  ExternalProjectSyncField,
   ExternalProjectSyncManifest,
   ExternalProjectSyncOperation,
   ExternalProjectSyncSchema,
@@ -269,14 +271,22 @@ export function buildExternalProjectSyncDiff(
   } satisfies ExternalProjectSyncSchema;
 
   if (valuesDiffer(snapshotSchema, manifest.schema)) {
+    const removedFieldKeys = getRemovedSchemaFieldKeys(
+      snapshotSchema,
+      manifest.schema
+    );
+
     operations.push({
       action: 'update',
       after: manifest.schema as unknown as Record<string, unknown>,
       before: snapshotSchema as unknown as Record<string, unknown>,
-      destructive: false,
+      destructive: removedFieldKeys.length > 0,
       entity: 'schema',
       manifestKey: 'schema',
-      reason: 'Schema differs from platform snapshot',
+      reason:
+        removedFieldKeys.length > 0
+          ? `Schema removes ${removedFieldKeys.length} field definition${removedFieldKeys.length === 1 ? '' : 's'}`
+          : 'Schema differs from platform snapshot',
     });
   }
 
@@ -438,6 +448,135 @@ function getCollectionSchema(
   );
 }
 
+function fieldDefinitionToSyncField(
+  definition: ExternalProjectFieldDefinition
+): ExternalProjectSyncField {
+  return {
+    defaultValue: definition.default_value ?? undefined,
+    description: definition.description,
+    key: definition.key,
+    label: definition.label,
+    options: definition.options,
+    required: definition.is_required,
+    type: definition.field_type,
+  };
+}
+
+function getFieldsForScope(
+  fieldDefinitions: ExternalProjectFieldDefinition[],
+  collectionId: string | null,
+  fieldScope: ExternalProjectFieldDefinition['field_scope']
+) {
+  return fieldDefinitions
+    .filter(
+      (definition) =>
+        definition.is_enabled &&
+        definition.collection_id === collectionId &&
+        definition.field_scope === fieldScope
+    )
+    .sort((left, right) => {
+      const orderDiff = left.sort_order - right.sort_order;
+      return orderDiff === 0
+        ? left.created_at.localeCompare(right.created_at)
+        : orderDiff;
+    })
+    .map(fieldDefinitionToSyncField);
+}
+
+function withFieldDefinitionsFromDatabase({
+  collections,
+  fieldDefinitions,
+  schema,
+}: {
+  collections: ExternalProjectCollection[];
+  fieldDefinitions: ExternalProjectFieldDefinition[];
+  schema: ExternalProjectSyncSchema;
+}): ExternalProjectSyncSchema {
+  const collectionBySlug = new Map(
+    collections.map((collection) => [collection.slug, collection])
+  );
+  const globalProfileFields = getFieldsForScope(
+    fieldDefinitions,
+    null,
+    'profile_data'
+  );
+  const globalMetadataFields = getFieldsForScope(
+    fieldDefinitions,
+    null,
+    'metadata'
+  );
+
+  return {
+    ...schema,
+    collections: schema.collections.map((collection) => {
+      const studioCollection = collectionBySlug.get(collection.slug);
+      if (!studioCollection) {
+        return collection;
+      }
+
+      const profileFields = getFieldsForScope(
+        fieldDefinitions,
+        studioCollection.id,
+        'profile_data'
+      );
+      const metadataFields = getFieldsForScope(
+        fieldDefinitions,
+        studioCollection.id,
+        'metadata'
+      );
+
+      return {
+        ...collection,
+        metadataFields:
+          metadataFields.length > 0
+            ? metadataFields
+            : (collection.metadataFields ?? []),
+        profileFields:
+          profileFields.length > 0
+            ? profileFields
+            : (collection.profileFields ?? []),
+      };
+    }),
+    metadataFields:
+      globalMetadataFields.length > 0
+        ? globalMetadataFields
+        : (schema.metadataFields ?? []),
+    profileFields:
+      globalProfileFields.length > 0
+        ? globalProfileFields
+        : (schema.profileFields ?? []),
+  };
+}
+
+function schemaFieldKeys(schema: ExternalProjectSyncSchema) {
+  const keys = new Set<string>();
+  for (const field of schema.profileFields ?? []) {
+    keys.add(`global:profile_data:${field.key}`);
+  }
+  for (const field of schema.metadataFields ?? []) {
+    keys.add(`global:metadata:${field.key}`);
+  }
+  for (const collection of schema.collections) {
+    for (const field of collection.profileFields ?? []) {
+      keys.add(`${collection.slug}:profile_data:${field.key}`);
+    }
+    for (const field of collection.metadataFields ?? []) {
+      keys.add(`${collection.slug}:metadata:${field.key}`);
+    }
+  }
+  return keys;
+}
+
+function getRemovedSchemaFieldKeys(
+  snapshotSchema: ExternalProjectSyncSchema,
+  manifestSchema: ExternalProjectSyncSchema
+) {
+  const manifestKeys = schemaFieldKeys(manifestSchema);
+  return [...schemaFieldKeys(snapshotSchema)].filter(
+    (key) => !manifestKeys.has(key)
+  );
+}
+
 export function buildExternalProjectSyncSnapshot({
   binding,
   generatedAt = new Date().toISOString(),
@@ -485,6 +624,11 @@ export function buildExternalProjectSyncSnapshot({
       getCollectionSchema(collection, canonicalSchema)
     ),
   } satisfies ExternalProjectSyncSchema;
+  const dbBackedSchema = withFieldDefinitionsFromDatabase({
+    collections: studio.collections,
+    fieldDefinitions: studio.fieldDefinitions ?? [],
+    schema,
+  });
 
   return {
     adapter: binding.adapter ?? 'yoola',
@@ -538,7 +682,7 @@ export function buildExternalProjectSyncSnapshot({
       }),
     },
     generatedAt,
-    schema,
+    schema: dbBackedSchema,
     version: 1,
     workspaceId,
   };
@@ -943,6 +1087,21 @@ export async function applyWorkspaceExternalProjectSyncManifest(
     db: admin,
     workspaceId,
   });
+
+  const { upsertWorkspaceExternalProjectFieldDefinitionsFromSchema } =
+    await import('./store');
+
+  await upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
+    {
+      actorId,
+      collectionBySlug,
+      deleteMissing: force === true,
+      schema: manifest.schema,
+      workspaceId,
+    },
+    admin
+  );
+
   const existingEntries = buildExistingEntryMaps(studio);
   const appliedEntryKeys = new Set<string>();
   const existingBlocksByEntryId = new Map<string, RawExternalProjectBlock[]>();

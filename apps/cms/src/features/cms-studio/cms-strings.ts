@@ -38,6 +38,9 @@ export type CmsStrings = {
   collectionsLabel: string;
   collectionsMetricLabel: string;
   contentTab: string;
+  contentModelDescription: string;
+  contentModelTab: string;
+  contentModelTitle: string;
   coverBadge: string;
   coverImageDescription: string;
   coverImageTitle: string;
@@ -50,6 +53,7 @@ export type CmsStrings = {
   deleteAssetConfirmDescription: string;
   deleteAssetConfirmTitle: string;
   deleteEntryAction: string;
+  deleteFieldDefinitionAction: string;
   deleteEntryConfirmDescription: string;
   deleteEntryConfirmTitle: string;
   descriptionEditorDescription: string;
@@ -99,6 +103,41 @@ export type CmsStrings = {
   featuredPlacementWritingLabel: string;
   featuredWritingEntriesDescription: string;
   featuredWritingEntriesLabel: string;
+  fieldAuthorLabel: string;
+  fieldAvailableLabel: string;
+  fieldCompletedOnLabel: string;
+  fieldContentWarningsLabel: string;
+  fieldCurrencyLabel: string;
+  fieldDefinitionsDescription: string;
+  fieldDefinitionsTitle: string;
+  fieldDisplayNameLabel: string;
+  fieldFeaturedGallerySlugsLabel: string;
+  fieldFeaturedLabel: string;
+  fieldGenreLabel: string;
+  fieldLocationLabel: string;
+  fieldMediumLabel: string;
+  fieldPlatformLabel: string;
+  fieldPriceLabel: string;
+  fieldPrimaryLinkLabel: string;
+  fieldPublishedOnLabel: string;
+  fieldRequiredLabel: string;
+  fieldScopeMetadata: string;
+  fieldScopeProfileData: string;
+  fieldSeoDescriptionLabel: string;
+  fieldSkuLabel: string;
+  fieldStyleLabel: string;
+  fieldTaglineLabel: string;
+  fieldTypeBoolean: string;
+  fieldTypeDate: string;
+  fieldTypeDatetime: string;
+  fieldTypeJson: string;
+  fieldTypeMarkdown: string;
+  fieldTypeNumber: string;
+  fieldTypeString: string;
+  fieldTypeStringArray: string;
+  fieldUrlLabel: string;
+  fieldWritingStatusLabel: string;
+  fieldsMetricLabel: string;
   filterAll: string;
   focusOperator: string;
   focusVisual: string;
@@ -110,6 +149,11 @@ export type CmsStrings = {
   gamesUntitledEntryTitle: string;
   importAction: string;
   importHint: string;
+  jsonFieldHint: string;
+  libraryCommandCenterContext: string;
+  libraryCommandCenterDescription: string;
+  libraryCommandCenterTitle: string;
+  libraryPageDescription: string;
   loadingPreviewLabel: string;
   metadataLabel: string;
   missingLeadImageLabel: string;
@@ -117,6 +161,7 @@ export type CmsStrings = {
   noCanonicalIdLabel: string;
   noCoverDescription: string;
   noCoverTitle: string;
+  noFieldDefinitions: string;
   nextAction: string;
   noneLabel: string;
   notScheduledLabel: string;
@@ -165,6 +210,8 @@ export type CmsStrings = {
   selectAllMediaAction: string;
   setAsCoverAction: string;
   settingsTab: string;
+  schemaFieldsDescription: string;
+  schemaFieldsTitle: string;
   showActivityLabel: string;
   showCollectionsLabel: string;
   showVisualsLabel: string;
@@ -198,6 +245,24 @@ export type CmsStrings = {
   tabsDescription: string;
   title: string;
   titleLabel: string;
+  templateAppliedToast: string;
+  templateBlogDescription: string;
+  templateBlogTitle: string;
+  templateGalleryDescription: string;
+  templateGalleryTitle: string;
+  templateInstalledLabel: string;
+  templateMissingFieldsLabel: string;
+  templateProfileDescription: string;
+  templateProfileTitle: string;
+  templateShopDescription: string;
+  templateShopTitle: string;
+  templateSocialDescription: string;
+  templateSocialTitle: string;
+  templateWritingDescription: string;
+  templateWritingTitle: string;
+  applyTemplateAction: string;
+  globalFieldsLabel: string;
+  stringArrayFieldHint: string;
   unboundLabel: string;
   unknownCollectionLabel: string;
   unpublishAction: string;
@@ -270,6 +335,9 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     collectionsLabel: t('epm.collections_label'),
     collectionsMetricLabel: t('epm.collections_metric_label'),
     contentTab: t('epm.content_tab'),
+    contentModelDescription: t('epm.content_model_description'),
+    contentModelTab: t('epm.content_model_tab'),
+    contentModelTitle: t('epm.content_model_title'),
     coverBadge: t('epm.cover_badge'),
     coverImageDescription: t('epm.cover_image_description'),
     coverImageTitle: t('epm.cover_image_title'),
@@ -284,6 +352,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     deleteEntryAction: t('epm.delete_entry_action'),
     deleteEntryConfirmDescription: t('epm.delete_entry_confirm_description'),
     deleteEntryConfirmTitle: t('epm.delete_entry_confirm_title'),
+    deleteFieldDefinitionAction: t('epm.delete_field_definition_action'),
     descriptionEditorDescription: t('epm.description_editor_description'),
     descriptionLabel: t('epm.description_label'),
     dashboardModeLabel: t('epm.dashboard_mode_label'),
@@ -347,6 +416,41 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
       'epm.featured_writing_entries_description'
     ),
     featuredWritingEntriesLabel: t('epm.featured_writing_entries_label'),
+    fieldAuthorLabel: t('epm.field_author_label'),
+    fieldAvailableLabel: t('epm.field_available_label'),
+    fieldCompletedOnLabel: t('epm.field_completed_on_label'),
+    fieldContentWarningsLabel: t('epm.field_content_warnings_label'),
+    fieldCurrencyLabel: t('epm.field_currency_label'),
+    fieldDefinitionsDescription: t('epm.field_definitions_description'),
+    fieldDefinitionsTitle: t('epm.field_definitions_title'),
+    fieldDisplayNameLabel: t('epm.field_display_name_label'),
+    fieldFeaturedGallerySlugsLabel: t('epm.field_featured_gallery_slugs_label'),
+    fieldFeaturedLabel: t('epm.field_featured_label'),
+    fieldGenreLabel: t('epm.field_genre_label'),
+    fieldLocationLabel: t('epm.field_location_label'),
+    fieldMediumLabel: t('epm.field_medium_label'),
+    fieldPlatformLabel: t('epm.field_platform_label'),
+    fieldPriceLabel: t('epm.field_price_label'),
+    fieldPrimaryLinkLabel: t('epm.field_primary_link_label'),
+    fieldPublishedOnLabel: t('epm.field_published_on_label'),
+    fieldRequiredLabel: t('epm.field_required_label'),
+    fieldScopeMetadata: t('epm.field_scope_metadata'),
+    fieldScopeProfileData: t('epm.field_scope_profile_data'),
+    fieldSeoDescriptionLabel: t('epm.field_seo_description_label'),
+    fieldSkuLabel: t('epm.field_sku_label'),
+    fieldStyleLabel: t('epm.field_style_label'),
+    fieldTaglineLabel: t('epm.field_tagline_label'),
+    fieldTypeBoolean: t('epm.field_type_boolean'),
+    fieldTypeDate: t('epm.field_type_date'),
+    fieldTypeDatetime: t('epm.field_type_datetime'),
+    fieldTypeJson: t('epm.field_type_json'),
+    fieldTypeMarkdown: t('epm.field_type_markdown'),
+    fieldTypeNumber: t('epm.field_type_number'),
+    fieldTypeString: t('epm.field_type_string'),
+    fieldTypeStringArray: t('epm.field_type_string_array'),
+    fieldUrlLabel: t('epm.field_url_label'),
+    fieldWritingStatusLabel: t('epm.field_writing_status_label'),
+    fieldsMetricLabel: t('epm.fields_metric_label'),
     filterAll: t('epm.filter_all'),
     focusOperator: t('epm.focus_operator'),
     focusVisual: t('epm.focus_visual'),
@@ -356,8 +460,16 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     gamesCollectionDescription: t('epm.games_collection_description'),
     gamesCollectionTitle: t('epm.games_collection_title'),
     gamesUntitledEntryTitle: t('epm.games_untitled_entry_title'),
+    globalFieldsLabel: t('epm.global_fields_label'),
     importAction: t('epm.import_action'),
     importHint: t('epm.import_hint'),
+    jsonFieldHint: t('epm.json_field_hint'),
+    libraryCommandCenterContext: t('epm.library_command_center_context'),
+    libraryCommandCenterDescription: t(
+      'epm.library_command_center_description'
+    ),
+    libraryCommandCenterTitle: t('epm.library_command_center_title'),
+    libraryPageDescription: t('epm.library_page_description'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
     metadataLabel: t('epm.metadata_label'),
     mediaProcessingLabel: t('epm.media_processing_label'),
@@ -368,6 +480,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     noCanonicalIdLabel: t('epm.no_canonical_id_label'),
     noCoverDescription: t('epm.no_cover_description'),
     noCoverTitle: t('epm.no_cover_title'),
+    noFieldDefinitions: t('epm.no_field_definitions'),
     nextAction: t('epm.next_action'),
     noneLabel: t('epm.none_label'),
     notScheduledLabel: t('epm.not_scheduled_label'),
@@ -413,6 +526,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     selectAllMediaAction: t('epm.select_all_media_action'),
     setAsCoverAction: t('epm.set_as_cover_action'),
     settingsTab: t('epm.settings_tab'),
+    schemaFieldsDescription: t('epm.schema_fields_description'),
+    schemaFieldsTitle: t('epm.schema_fields_title'),
     showActivityLabel: t('epm.show_activity_label'),
     showCollectionsLabel: t('epm.show_collections_label'),
     showVisualsLabel: t('epm.show_visuals_label'),
@@ -443,9 +558,26 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     tagsPlaceholder: t('epm.tags_placeholder'),
     tagsRemoveAction: t('epm.tags_remove_action'),
     tagsSearchPlaceholder: t('epm.tags_search_placeholder'),
+    stringArrayFieldHint: t('epm.string_array_field_hint'),
     tabsDescription: t('epm.tabs_description'),
+    templateAppliedToast: t('epm.template_applied_toast'),
+    templateBlogDescription: t('epm.template_blog_description'),
+    templateBlogTitle: t('epm.template_blog_title'),
+    templateGalleryDescription: t('epm.template_gallery_description'),
+    templateGalleryTitle: t('epm.template_gallery_title'),
+    templateInstalledLabel: t('epm.template_installed_label'),
+    templateMissingFieldsLabel: t('epm.template_missing_fields_label'),
+    templateProfileDescription: t('epm.template_profile_description'),
+    templateProfileTitle: t('epm.template_profile_title'),
+    templateShopDescription: t('epm.template_shop_description'),
+    templateShopTitle: t('epm.template_shop_title'),
+    templateSocialDescription: t('epm.template_social_description'),
+    templateSocialTitle: t('epm.template_social_title'),
+    templateWritingDescription: t('epm.template_writing_description'),
+    templateWritingTitle: t('epm.template_writing_title'),
     title: t('epm.title'),
     titleLabel: t('epm.title_label'),
+    applyTemplateAction: t('epm.apply_template_action'),
     unboundLabel: t('epm.unbound_label'),
     unknownCollectionLabel: t('epm.unknown_collection_label'),
     unpublishAction: t('epm.unpublish_action'),

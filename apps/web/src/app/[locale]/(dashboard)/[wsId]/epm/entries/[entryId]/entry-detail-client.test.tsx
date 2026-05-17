@@ -223,6 +223,7 @@ describe('EntryDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'artworks',
@@ -311,6 +312,7 @@ describe('EntryDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'artworks',
@@ -387,6 +389,7 @@ describe('EntryDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'singleton-sections',
@@ -526,6 +529,7 @@ describe('EntryDetailClient', () => {
             },
           ] as any,
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'artworks',
@@ -593,6 +597,7 @@ describe('EntryDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'singleton-sections',
@@ -712,6 +717,7 @@ describe('EntryDetailClient', () => {
         initialStudio={{
           assets: [],
           blocks: [],
+          fieldDefinitions: [],
           collections: [
             {
               collection_type: 'singleton-sections',

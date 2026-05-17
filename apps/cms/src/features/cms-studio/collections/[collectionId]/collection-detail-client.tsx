@@ -33,6 +33,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ComponentProps, useEffect, useState } from 'react';
+import {
+  buildDefaultFieldValues,
+  getCollectionFieldDefinitions,
+} from '../../cms-content-model';
 import { getCmsEntryPath, getCmsLibraryPath } from '../../cms-paths';
 import type { CmsStrings } from '../../cms-strings';
 import { ResilientMediaImage } from '../../resilient-media-image';
@@ -168,6 +172,8 @@ export function CollectionDetailClient({
   const collections = studio?.collections ?? initialStudio?.collections ?? [];
   const entries = studio?.entries ?? initialStudio?.entries ?? [];
   const assets = studio?.assets ?? initialStudio?.assets ?? [];
+  const fieldDefinitions =
+    studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
   const [search, setSearch] = useState('');
 
   const activeCollection =
@@ -261,10 +267,25 @@ export function CollectionDetailClient({
         throw new Error('Collection is required');
       }
 
+      const activeFieldDefinitions = getCollectionFieldDefinitions({
+        collection: activeCollection,
+        fieldDefinitions,
+      });
+      const defaultProfileData = buildDefaultFieldValues(
+        activeFieldDefinitions.filter(
+          (definition) => definition.field_scope === 'profile_data'
+        )
+      );
+      const defaultMetadata = buildDefaultFieldValues(
+        activeFieldDefinitions.filter(
+          (definition) => definition.field_scope === 'metadata'
+        )
+      );
+
       return createWorkspaceExternalProjectEntry(workspaceId, {
         collection_id: activeCollection.id,
-        metadata: {},
-        profile_data: {},
+        metadata: defaultMetadata as Json,
+        profile_data: defaultProfileData as Json,
         scheduled_for: null,
         slug: `draft-${Date.now()}`,
         status: 'draft',
