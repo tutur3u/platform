@@ -37,6 +37,9 @@ describe('workspace route permission mapping', () => {
     expect(
       getWorkspaceRoutePermissionRequirements(['users', 'guest-leads'])
     ).toEqual(['create_lead_generations']);
+    expect(
+      getWorkspaceRoutePermissionRequirements(['users', 'topic-announcements'])
+    ).toEqual(['manage_users', 'send_user_group_post_emails']);
   });
 
   it('allows guest admin to satisfy mapped route permissions only', () => {

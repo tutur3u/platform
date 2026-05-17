@@ -114,6 +114,7 @@ import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
+import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 
 export async function WorkspaceNavigationLinks({
   wsId,
@@ -142,6 +143,10 @@ export async function WorkspaceNavigationLinks({
 
   const ENABLE_AI_ONLY = hasSecret('ENABLE_AI_ONLY', 'true');
   const ENABLE_HABITS = hasSecret(HABITS_ENABLED_SECRET, 'true');
+  const ENABLE_TOPIC_ANNOUNCEMENTS = hasSecret(
+    TOPIC_ANNOUNCEMENTS_SECRET,
+    'true'
+  );
 
   // Parallelize user-dependent queries
   const [
@@ -591,6 +596,7 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/users/groups/indicators`,
             `/${personalOrWsId}/users/group-tags`,
             `/${personalOrWsId}/users/feedbacks`,
+            `/${personalOrWsId}/users/topic-announcements`,
             `/${personalOrWsId}/users/tutoring`,
             `/${personalOrWsId}/users/reports`,
             `/${personalOrWsId}/users/approvals`,
@@ -661,6 +667,15 @@ export async function WorkspaceNavigationLinks({
               href: `/${personalOrWsId}/users/tutoring`,
               icon: <BookUser className="h-5 w-5" />,
               disabled: withoutPermission('view_user_groups'),
+            },
+            {
+              title: t('workspace-users-tabs.topic_announcements'),
+              href: `/${personalOrWsId}/users/topic-announcements`,
+              icon: <Megaphone className="h-5 w-5" />,
+              disabled:
+                !ENABLE_TOPIC_ANNOUNCEMENTS ||
+                withoutPermission('manage_users'),
+              experimental: 'beta',
             },
             null,
             {
