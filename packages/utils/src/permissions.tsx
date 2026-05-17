@@ -69,18 +69,32 @@ export type RolePermissionGroup = {
   permissions: RolePermission[];
 };
 
+export type PermissionCatalog = 'workspace' | 'full';
+
+export type PermissionGroupsOptions = {
+  catalog?: PermissionCatalog;
+  t?: (key: string) => string;
+  user: SupabaseUser | null;
+  wsId: string;
+};
+
 export const permissionGroups = ({
+  catalog = 'workspace',
   t = (key: string) => key,
   wsId,
   user,
-}: {
-  t?: (key: string) => string;
-  wsId: string;
-  user: SupabaseUser | null;
-}) => {
+}: PermissionGroupsOptions) => {
+  const includeFullCatalog = catalog === 'full';
+  const includeRootPermissions =
+    includeFullCatalog || wsId === ROOT_WORKSPACE_ID;
+  const includeInternalWorkspacePermissions =
+    includeFullCatalog ||
+    wsId === ROOT_WORKSPACE_ID ||
+    user?.email?.endsWith('@tuturuuu.com');
+
   return (
     [
-      ...(wsId === ROOT_WORKSPACE_ID
+      ...(includeRootPermissions
         ? [
             {
               id: 'infrastructure',
@@ -134,8 +148,7 @@ export const permissionGroups = ({
         title: t('ws-roles.workspace'),
         description: t('ws-roles.workspace_description'),
         permissions: [
-          ...(wsId === ROOT_WORKSPACE_ID ||
-          user?.email?.endsWith('@tuturuuu.com')
+          ...(includeInternalWorkspacePermissions
             ? [
                 {
                   id: 'manage_workspace_secrets',
@@ -1085,6 +1098,7 @@ export const permissionGroups = ({
 };
 
 export const permissions = (args: {
+  catalog?: PermissionCatalog;
   t?: (key: string) => string;
   wsId: string;
   user: SupabaseUser | null;
@@ -1096,9 +1110,11 @@ export const permissions = (args: {
 };
 
 export const totalPermissions = ({
+  catalog,
   wsId,
   user,
 }: {
+  catalog?: PermissionCatalog;
   wsId: string;
   user: SupabaseUser | null;
-}) => permissions({ wsId, user }).length;
+}) => permissions({ catalog, wsId, user }).length;

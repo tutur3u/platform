@@ -280,6 +280,7 @@ async function hasBypassApprovalPermission(
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', workspaceId)
+    .eq('member_type', 'MEMBER')
     .eq('enabled', true)
     .eq('permission', 'bypass_time_tracking_request_approval')
     .limit(1);

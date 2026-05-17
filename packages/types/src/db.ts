@@ -877,6 +877,19 @@ export type WorkspaceRole = Tables<'workspace_roles'> & {
   }>;
 };
 
+export type WorkspaceDefaultPermissionMemberType =
+  Database['public']['Enums']['workspace_member_type'];
+
+export type WorkspaceDefaultPermissionsRole = {
+  id: 'DEFAULT';
+  member_type: WorkspaceDefaultPermissionMemberType;
+  name: string;
+  permissions: Array<{
+    id: PermissionId;
+    enabled: boolean;
+  }>;
+};
+
 export type PermissionSource = 'creator' | 'default' | 'role';
 
 export type PermissionWithSource = {

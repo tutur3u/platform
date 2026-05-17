@@ -115,6 +115,20 @@ const AUTH_RATE_LIMITS: RateLimitProfile = {
   ],
 };
 
+const CROSS_APP_RETURN_RATE_LIMITS: RateLimitProfile = {
+  get: NO_READ_RATE_LIMITS,
+  mutate: [
+    createConfig(
+      'minute',
+      '1 m',
+      180,
+      'API_PROXY_CROSS_APP_RETURN_LIMIT_MINUTE'
+    ),
+    createConfig('hour', '1 h', 2000, 'API_PROXY_CROSS_APP_RETURN_LIMIT_HOUR'),
+    createConfig('day', '1 d', 10_000, 'API_PROXY_CROSS_APP_RETURN_LIMIT_DAY'),
+  ],
+};
+
 const HIGH_FANOUT_RATE_LIMITS: RateLimitProfile = {
   get: NO_READ_RATE_LIMITS,
   mutate: [
@@ -155,6 +169,12 @@ const DEFAULT_ROUTE_POLICIES: ProxyRoutePolicy[] = [
         req.nextUrl.pathname
       ),
     rateLimits: AUTH_RATE_LIMITS,
+  },
+  {
+    key: 'cross-app-return',
+    matches: (req) =>
+      /^\/api\/v1\/auth\/cross-app-return(?:\/|$)/.test(req.nextUrl.pathname),
+    rateLimits: CROSS_APP_RETURN_RATE_LIMITS,
   },
   {
     key: 'form-submission',

@@ -1122,19 +1122,25 @@ export default function LoginForm() {
 
   useEffect(() => {
     async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-      setUser(user);
+        setUser(user);
 
-      if (user) {
-        setRequiresMFA(await needsMFA());
-      } else {
+        if (user) {
+          setRequiresMFA(await needsMFA());
+        } else {
+          setRequiresMFA(false);
+        }
+      } catch (error) {
+        console.error('[login] Failed to initialize auth state:', error);
+        setUser(null);
         setRequiresMFA(false);
+      } finally {
+        setInitialized(true);
       }
-
-      setInitialized(true);
     }
 
     void checkUser();

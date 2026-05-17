@@ -12,6 +12,7 @@ import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
+import { getKanbanColumnWidth } from './kanban-column-width';
 
 interface KanbanColumnsProps {
   columns: TaskList[];
@@ -71,19 +72,15 @@ export function KanbanColumns({
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
-  const columnGapRem = 0.75;
   const collapsedColumnCount = columns.filter(
     (column) => column.is_external_collapsed
   ).length;
-  const expandedColumnCount = Math.max(
-    1,
-    columns.length - collapsedColumnCount
-  );
-  const collapsedColumnsWidthRem = collapsedColumnCount * 3.5;
-  const dynamicColumnWidth =
-    columns.length > 0
-      ? `max(21.875rem, calc((100% - (${snapEdgePadding} * 2) - ${(columns.length - 1) * columnGapRem}rem - ${collapsedColumnsWidthRem}rem) / ${expandedColumnCount}))`
-      : '21.875rem';
+  const dynamicColumnWidth = getKanbanColumnWidth({
+    columnCount: columns.length,
+    collapsedColumnCount,
+    snapEdgePadding,
+    fillAvailableWidth: listStatusFilter === 'all',
+  });
 
   return (
     <div

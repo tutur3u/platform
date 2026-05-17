@@ -427,9 +427,11 @@ function hasWorkspaceExternalProjectPermission(
 function createPermissionsResult({
   isCreator,
   permissions,
+  wsId,
 }: {
   isCreator: boolean;
   permissions: PermissionId[];
+  wsId: string;
 }): PermissionsResult {
   const isAdmin = permissions.includes('admin');
   const containsPermission = (permission: PermissionId) =>
@@ -437,7 +439,9 @@ function createPermissionsResult({
 
   return {
     containsPermission,
+    membershipType: 'MEMBER',
     permissions,
+    wsId,
     withoutPermission: (permission: PermissionId) =>
       !containsPermission(permission),
   };
@@ -534,6 +538,7 @@ async function getPermissionsForUserId({
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', wsId)
+    .eq('member_type', 'MEMBER')
     .eq('enabled', true);
 
   const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
@@ -575,6 +580,7 @@ async function getPermissionsForUserId({
   return createPermissionsResult({
     isCreator,
     permissions,
+    wsId,
   });
 }
 

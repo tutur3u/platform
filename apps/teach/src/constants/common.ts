@@ -48,8 +48,6 @@ export const LEARN_APP_URL = resolveInternalAppUrl({
   candidates: [
     process.env.NEXT_PUBLIC_LEARN_APP_URL,
     process.env.LEARN_APP_URL,
-    process.env.NEXT_PUBLIC_TULEARN_APP_URL,
-    process.env.TULEARN_APP_URL,
   ],
   fallback: DEFAULT_LEARN_APP_URL,
 });

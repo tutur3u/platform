@@ -75,10 +75,12 @@ describe('useTaskDialogClose', () => {
       })
     );
 
+    let closeAccepted = true;
     await act(async () => {
-      await result.current.handleClose();
+      closeAccepted = await result.current.handleClose();
     });
 
+    expect(closeAccepted).toBe(false);
     expect(onClose).not.toHaveBeenCalled();
     expect(onCloseBlocked).toHaveBeenCalledTimes(1);
   });
@@ -103,10 +105,12 @@ describe('useTaskDialogClose', () => {
       })
     );
 
+    let closeAccepted = true;
     await act(async () => {
-      await result.current.handleClose();
+      closeAccepted = await result.current.handleClose();
     });
 
+    expect(closeAccepted).toBe(false);
     expect(setShowSyncWarning).toHaveBeenCalledWith(true);
     expect(persistTaskDescription).not.toHaveBeenCalled();
   });

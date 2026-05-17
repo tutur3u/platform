@@ -1,18 +1,13 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspaceRole } from '@tuturuuu/types';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
-import { Separator } from '@tuturuuu/ui/separator';
-import { permissions, totalPermissions } from '@tuturuuu/utils/permissions';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
+import { Suspense } from 'react';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { normalizeRoleMembers } from '@/lib/workspace-role-members';
-import { roleColumns } from './columns';
-import { RoleForm } from './form';
+import { WorkspaceRolesClient } from './roles-client';
+
+const REQUIRED_PERMISSION = 'manage_workspace_roles';
 
 export const metadata: Metadata = {
   title: 'Roles',
@@ -24,177 +19,60 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q?: string;
-    page?: string;
-    pageSize?: string;
-  }>;
 }
 
-export default async function WorkspaceRolesPage({
-  params,
-  searchParams,
-}: Props) {
+async function getRolesPageContext(wsId: string) {
+  const supabase = await createClient();
+
+  const [workspacePermissions, { user }] = await Promise.all([
+    getPermissions({ wsId }),
+    resolveAuthenticatedSessionUser(supabase),
+  ]);
+
+  if (!workspacePermissions) {
+    notFound();
+  }
+
+  if (workspacePermissions.withoutPermission(REQUIRED_PERMISSION)) {
+    redirect(`/${wsId}/settings`);
+  }
+
+  return { user };
+}
+
+export default async function WorkspaceRolesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ workspace, wsId }) => {
-        if (workspace.personal) redirect(`/${wsId}/settings`);
-
-        const supabase = await createClient();
-
-        const workspacePermissions = await getPermissions({
-          wsId,
-        });
-        if (!workspacePermissions) notFound();
-        const { withoutPermission } = workspacePermissions;
-
-        if (withoutPermission('manage_workspace_roles'))
+        if (workspace.personal) {
           redirect(`/${wsId}/settings`);
+        }
 
-        const {
-          data: rawData,
-          defaultData,
-          count,
-        } = await getRoles(wsId, await searchParams);
-
-        const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-        const t = await getTranslations();
-
-        const data = rawData.map((role) => ({
-          ...role,
-          ws_id: wsId,
-        }));
-
-        const permissionsCount = totalPermissions({ wsId, user });
-
-        const adminEnabled = defaultData.permissions.some(
-          (p) => p.id === 'admin' && p.enabled
-        );
-
-        const enabledInfos = permissions({ wsId, user }).filter((p) =>
-          defaultData.permissions.some((dp) => dp.id === p.id && dp.enabled)
-        );
-
-        const currentCount = adminEnabled
-          ? permissionsCount
-          : enabledInfos.length;
+        const { user } = await getRolesPageContext(wsId);
 
         return (
-          <>
-            <FeatureSummary
-              pluralTitle={t('ws-roles.plural')}
-              singularTitle={t('ws-roles.singular')}
-              description={t('ws-roles.description')}
-              createTitle={t('ws-roles.create')}
-              createDescription={t('ws-roles.create_description')}
-              form={<RoleForm wsId={wsId} user={user} />}
-              defaultData={defaultData}
-              secondaryTriggerTitle={`${t(
-                'ws-roles.manage_default_permissions'
-              )} (${currentCount}/${permissionsCount})`}
-              secondaryTitle={t('ws-roles.default_permissions')}
-              secondaryDescription={t(
-                'ws-roles.default_permissions_description'
-              )}
-              showDefaultFormAsSecondary
-              requireExpansion
-            />
-            <Separator className="my-4" />
-            <CustomDataTable
-              extraData={permissionsCount}
-              columnGenerator={roleColumns}
-              namespace="workspace-role-data-table"
-              data={data}
-              count={count}
-              defaultVisibility={{
-                id: false,
-                created_at: false,
-              }}
-            />
-          </>
+          <Suspense fallback={<RolesPageFallback />}>
+            <WorkspaceRolesClient user={user} wsId={wsId} />
+          </Suspense>
         );
       }}
     </WorkspaceWrapper>
   );
 }
 
-async function getRoles(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = await createClient();
-
-  const rolesQuery = supabase
-    .from('workspace_roles')
-    .select(
-      'id, name, permissions:workspace_role_permissions(id:permission, enabled), workspace_role_members(user_id, users:user_id(id, display_name, avatar_url, user_private_details(email))), created_at',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  if (q) rolesQuery.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    rolesQuery.range(start, end).limit(parsedSize);
-  }
-
-  const defaultPermissionsQuery = supabase
-    .from('workspace_default_permissions')
-    .select('id:permission, enabled, created_at')
-    .eq('ws_id', wsId)
-    .order('created_at', { ascending: false });
-
-  const [rolesRes, defaultPermissionsRes] = await Promise.all([
-    rolesQuery,
-    defaultPermissionsQuery,
-  ]);
-
-  const { data: roleData, error, count } = rolesRes;
-  const { data: defaultPermissionsData, error: defaultPermissionsError } =
-    defaultPermissionsRes;
-
-  if (error) throw error;
-  if (defaultPermissionsError) throw defaultPermissionsError;
-
-  const defaultData = {
-    id: 'DEFAULT',
-    name: 'DEFAULT',
-    permissions: defaultPermissionsData.map((p) => ({
-      id: p.id,
-      enabled: p.enabled,
-    })),
-  };
-
-  const data = roleData.map(
-    ({ id, name, permissions, workspace_role_members, created_at }) => {
-      const members = normalizeRoleMembers(workspace_role_members as any[]);
-
-      return {
-        id,
-        name,
-        permissions,
-        user_count: members.length,
-        members,
-        created_at,
-      };
-    }
+function RolesPageFallback() {
+  return (
+    <div className="space-y-4">
+      <div className="grid h-10 w-full grid-cols-1 gap-2 rounded-lg bg-muted p-1 md:grid-cols-3">
+        <div className="animate-pulse rounded-md bg-background" />
+        <div className="animate-pulse rounded-md bg-background" />
+        <div className="animate-pulse rounded-md bg-background" />
+      </div>
+      <div className="space-y-4 rounded-lg border bg-background p-4">
+        <div className="h-7 w-48 animate-pulse rounded bg-muted" />
+        <div className="h-4 w-full max-w-2xl animate-pulse rounded bg-muted" />
+        <div className="h-64 w-full animate-pulse rounded bg-muted" />
+      </div>
+    </div>
   );
-
-  return { data, defaultData, count } as {
-    data: WorkspaceRole[];
-    defaultData: WorkspaceRole;
-    count: number;
-  };
 }

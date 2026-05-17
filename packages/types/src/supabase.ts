@@ -19397,18 +19397,21 @@ export type Database = {
         Row: {
           created_at: string;
           enabled: boolean;
+          member_type: Database['public']['Enums']['workspace_member_type'];
           permission: Database['public']['Enums']['workspace_role_permission'];
           ws_id: string;
         };
         Insert: {
           created_at?: string;
           enabled?: boolean;
+          member_type?: Database['public']['Enums']['workspace_member_type'];
           permission: Database['public']['Enums']['workspace_role_permission'];
           ws_id: string;
         };
         Update: {
           created_at?: string;
           enabled?: boolean;
+          member_type?: Database['public']['Enums']['workspace_member_type'];
           permission?: Database['public']['Enums']['workspace_role_permission'];
           ws_id?: string;
         };

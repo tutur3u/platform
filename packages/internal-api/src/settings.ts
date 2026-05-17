@@ -1,7 +1,13 @@
+import type {
+  WorkspaceDefaultPermissionMemberType,
+  WorkspaceDefaultPermissionsRole,
+  WorkspaceRole,
+} from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  type InternalApiQuery,
 } from './client';
 
 export interface WorkspacePermissionSetupStatus {
@@ -13,6 +19,24 @@ export interface WorkspacePermissionsSummary {
   manage_workspace_settings: boolean;
   manage_workspace_members: boolean;
 }
+
+export interface WorkspaceRolesListResponse {
+  count: number;
+  data: WorkspaceRole[];
+}
+
+export interface WorkspaceRolesListQuery extends InternalApiQuery {
+  page?: string | number;
+  pageSize?: string | number;
+  q?: string;
+}
+
+export type WorkspaceRoleMutationPayload = Pick<
+  WorkspaceRole,
+  'name' | 'permissions'
+> & {
+  id?: string;
+};
 
 export async function getWorkspacePermissionSetupStatus(
   workspaceId: string,
@@ -54,6 +78,118 @@ export async function checkWorkspacePermission(
         permission,
         userId,
       },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceRoles(
+  workspaceId: string,
+  query?: WorkspaceRolesListQuery,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceRolesListResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles`,
+    {
+      query,
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceRole(
+  workspaceId: string,
+  payload: WorkspaceRoleMutationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceRole(
+  workspaceId: string,
+  roleId: string,
+  payload: WorkspaceRoleMutationPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceRole(
+  workspaceId: string,
+  roleId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/${encodePathSegment(roleId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceDefaultPermissions(
+  workspaceId: string,
+  memberType: WorkspaceDefaultPermissionMemberType = 'MEMBER',
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceDefaultPermissionsRole>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/default`,
+    {
+      query: {
+        memberType,
+      },
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceDefaultPermissions(
+  workspaceId: string,
+  memberType: WorkspaceDefaultPermissionMemberType,
+  payload: Pick<WorkspaceDefaultPermissionsRole, 'permissions'>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/roles/default`,
+    {
+      method: 'PUT',
+      query: {
+        memberType,
+      },
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...payload,
+        member_type: memberType,
+      }),
       cache: 'no-store',
     }
   );

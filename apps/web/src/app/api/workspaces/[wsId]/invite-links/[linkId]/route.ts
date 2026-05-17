@@ -161,6 +161,7 @@ export async function PATCH(req: Request, { params }: Params) {
       .select('permission')
       .eq('ws_id', wsId)
       .eq('permission', 'manage_workspace_members')
+      .eq('member_type', 'MEMBER')
       .eq('enabled', true)
       .maybeSingle();
 
@@ -285,6 +286,7 @@ export async function DELETE(req: Request, { params }: Params) {
       .select('permission')
       .eq('ws_id', wsId)
       .eq('permission', 'manage_workspace_members')
+      .eq('member_type', 'MEMBER')
       .eq('enabled', true)
       .maybeSingle();
 

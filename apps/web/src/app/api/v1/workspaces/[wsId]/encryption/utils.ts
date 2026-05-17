@@ -100,6 +100,7 @@ export async function checkE2EEPermission(
     .select('permission')
     .eq('ws_id', wsId)
     .eq('permission', 'manage_e2ee')
+    .eq('member_type', 'MEMBER')
     .eq('enabled', true)
     .maybeSingle();
 

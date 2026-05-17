@@ -1,7 +1,7 @@
 ---
 title: "Workspace Routing"
 description: "Legacy entry point for workspace routing documentation"
-updatedAt: "2026-05-05"
+updatedAt: "2026-05-17"
 ---
 
 This legacy page has been superseded by the architecture docs:
@@ -17,6 +17,6 @@ The short version is:
 - `WorkspaceWrapper` is the server-page entry point for workspace resolution.
 - `normalizeWorkspaceId()` is the route-handler entry point for workspace-scoped params.
 - `getPermissions()` is the fine-grained authorization helper layered on top of routing and membership.
-- Root redirects can be user-configured per workspace via `user_workspace_configs` (config id: `ROOT_DEFAULT_NAVIGATION`). Redirect targets should be validated at request time and stale deep links (for example deleted task boards) must gracefully fall back to a broader route.
+- Root redirects can be user-configured per workspace via `user_workspace_configs` (config id: `ROOT_DEFAULT_NAVIGATION`), but those defaults only apply when the user visits the app root (`/` or a locale root such as `/vi`). Direct workspace home routes such as `/personal` or `/{workspace}` must stay on the workspace home surface instead of auto-opening a configured app or task board. Redirect targets should be validated at request time and stale deep links (for example deleted task boards) must gracefully fall back to a broader route.
 
 Prefer the two architecture pages above for current implementation details.

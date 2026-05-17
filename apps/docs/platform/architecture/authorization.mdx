@@ -1,7 +1,7 @@
 ---
 title: "Authorization & Permissions"
 description: "How apps/web evaluates workspace-scoped permissions and where those checks are enforced"
-updatedAt: "2026-04-19"
+updatedAt: "2026-05-16"
 ---
 
 `apps/web` uses workspace-scoped permissions, not a single coarse role string, to decide what a signed-in user can see or mutate.
@@ -13,6 +13,13 @@ The important implementation detail is that modern permission checks do **not** 
 - `workspace_default_permissions`
 - workspace creator fallback logic in `getPermissions()`
 
+`workspace_default_permissions` is typed by `member_type`:
+
+- `MEMBER` rows are the normal workspace defaults for members and API keys.
+- `GUEST` rows are signed-in guest defaults. Missing guest rows mean denied.
+
+Guest defaults use the same `workspace_role_permission` catalog as member defaults, including management and `admin` bits, but guests are still denied on dashboard routes that have no mapped permission.
+
 For the full workspace model, including URL resolution and API-key auth, see `platform/architecture/workspaces-permissions`.
 
 ## Core Helper
@@ -23,19 +30,21 @@ It evaluates permissions in this order:
 
 1. Authenticate the current user with a request-scoped or cookie-scoped Supabase client.
 2. Normalize the incoming workspace identifier so `personal` and `internal` become real workspace IDs.
-3. Enforce caller membership type with `verifyWorkspaceMembershipType(...)` (default `MEMBER`).
-4. Load role-derived permissions from `workspace_role_members -> workspace_roles -> workspace_role_permissions`.
-5. Load workspace-wide defaults from `workspace_default_permissions`.
-6. Load the workspace creator and treat that user as an implicit superuser.
+3. Verify caller membership with `verifyWorkspaceMembershipType(..., requiredType: 'ANY')` so the helper can distinguish `MEMBER` from `GUEST`.
+4. For `MEMBER`, load role-derived permissions from `workspace_role_members -> workspace_roles -> workspace_role_permissions`.
+5. Load workspace-wide defaults from `workspace_default_permissions` using the resolved `member_type`.
+6. Load the workspace creator and treat that member as an implicit superuser.
 
 If the user is the workspace creator, `getPermissions()` returns the full permission catalog from `packages/utils/src/permissions.tsx`.
 
 If the user is not the creator, `getPermissions()` returns the deduplicated union of:
 
 - enabled permissions from every assigned workspace role
-- enabled default workspace permissions
+- enabled default workspace permissions for the resolved membership type
 
 If the user has no effective permissions and is not the creator, the helper returns `null`.
+
+For `GUEST`, role-derived permissions and creator fallback are skipped. The helper only reads `workspace_default_permissions.member_type = 'GUEST'`, so a guest with no enabled guest defaults receives no effective permissions.
 
 ## `admin` Is A Permission Bit
 
@@ -55,6 +64,8 @@ That means creator and `admin` behave similarly at call sites, even though they 
 
 - creator access is implicit and computed in code
 - `admin` access is explicit and stored like any other permission
+
+For guests, `admin` can satisfy a mapped permission route, but it does not open routes with no permission mapping. The dashboard shell stays default-deny for guest routes that cannot be tied to a permission ID.
 
 ## Permission Catalog
 
@@ -138,6 +149,8 @@ if (!membership.ok) {
 
 `normalizeWorkspaceId('personal', ...)` also enforces MEMBER membership on the personal-workspace join path by filtering `workspace_members.type = 'MEMBER'`.
 
+Course consumption routes are the exception that combine both models: `MEMBER` workspace rows keep normal course access, while `GUEST` rows must pass `workspace_guest_permissions` resource checks such as `course:view`.
+
 ### 3. Membership + explicit permission gate
 
 Privileged routes call `getPermissions()` after normalization and reject when `containsPermission(...)` fails.
@@ -152,7 +165,7 @@ The API key evaluator:
 
 - authenticates a workspace API key from `workspace_api_keys`
 - binds the request to exactly one workspace
-- computes the effective permissions as `role permissions ∪ default permissions`
+- computes the effective permissions as `role permissions ∪ MEMBER default permissions`
 - rejects requests whose `[wsId]` route param does not match the API key's workspace
 
 That keeps permission IDs consistent across browser/session routes and external API routes, even though the authentication mechanism is different.

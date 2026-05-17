@@ -214,6 +214,10 @@ describe('API Key Validation with Permissions', () => {
     expect(result?.permissions).toContain('manage_workspace_settings');
     expect(result?.permissions).toContain('manage_workspace_members');
     expect(result?.permissions).toContain('ai_chat');
+    expect(mockDefaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'member_type',
+      'MEMBER'
+    );
   });
 
   it('should use only default permissions when no role assigned', async () => {
@@ -275,6 +279,10 @@ describe('API Key Validation with Permissions', () => {
     expect(result?.permissions).toHaveLength(2);
     expect(result?.permissions).toContain('manage_workspace_settings');
     expect(result?.permissions).toContain('manage_workspace_members');
+    expect(mockDefaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'member_type',
+      'MEMBER'
+    );
   });
 
   it('should return empty permissions when no role and no defaults', async () => {
@@ -328,6 +336,10 @@ describe('API Key Validation with Permissions', () => {
 
     expect(result).not.toBeNull();
     expect(result?.permissions).toHaveLength(0);
+    expect(mockDefaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'member_type',
+      'MEMBER'
+    );
   });
 });
 

@@ -11,6 +11,7 @@ import {
   listWorkspaceTasks,
   removeCurrentUserTaskPersonalPlacement,
   updateWorkspaceTaskBoard,
+  updateWorkspaceTaskBoardEstimation,
   upsertCurrentUserTaskPersonalPlacement,
 } from './tasks';
 
@@ -105,6 +106,49 @@ describe('workspace board internal-api helpers', () => {
       'https://internal.example.com/api/v1/workspaces/ws-1/task-boards/board-1',
       expect.objectContaining({
         method: 'DELETE',
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('updates workspace task board estimation via estimation endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        id: 'board-1',
+        name: 'Planning',
+        estimation_type: 'fibonacci',
+        extended_estimation: true,
+        allow_zero_estimates: true,
+        count_unestimated_issues: false,
+        created_at: '2026-05-17T00:00:00.000Z',
+      })
+    );
+
+    await updateWorkspaceTaskBoardEstimation(
+      'ws-1',
+      'board-1',
+      {
+        estimation_type: 'fibonacci',
+        extended_estimation: true,
+        allow_zero_estimates: true,
+        count_unestimated_issues: false,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/boards/board-1/estimation',
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          estimation_type: 'fibonacci',
+          extended_estimation: true,
+          allow_zero_estimates: true,
+          count_unestimated_issues: false,
+        }),
         cache: 'no-store',
       })
     );

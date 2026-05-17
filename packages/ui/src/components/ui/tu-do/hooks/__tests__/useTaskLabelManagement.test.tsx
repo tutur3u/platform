@@ -22,10 +22,8 @@ vi.mock('@tuturuuu/internal-api/tasks', () => ({
   updateWorkspaceTask: vi.fn(),
   addWorkspaceTaskLabel: vi.fn(),
   removeWorkspaceTaskLabel: vi.fn(),
+  createWorkspaceLabel: vi.fn(),
 }));
-
-// Mock fetch globally
-global.fetch = vi.fn() as any;
 
 describe('useTaskLabelManagement', () => {
   let queryClient: QueryClient;
@@ -33,6 +31,7 @@ describe('useTaskLabelManagement', () => {
   let mockUpdateWorkspaceTask: any;
   let mockAddWorkspaceTaskLabel: any;
   let mockRemoveWorkspaceTaskLabel: any;
+  let mockCreateWorkspaceLabel: any;
 
   const mockTask: Task = {
     id: 'task-1',
@@ -79,19 +78,24 @@ describe('useTaskLabelManagement', () => {
       updateWorkspaceTask,
       addWorkspaceTaskLabel,
       removeWorkspaceTaskLabel,
+      createWorkspaceLabel,
     } = await import('@tuturuuu/internal-api/tasks');
 
     mockToast = toast as any;
     mockUpdateWorkspaceTask = updateWorkspaceTask as any;
     mockAddWorkspaceTaskLabel = addWorkspaceTaskLabel as any;
     mockRemoveWorkspaceTaskLabel = removeWorkspaceTaskLabel as any;
+    mockCreateWorkspaceLabel = createWorkspaceLabel as any;
 
     vi.clearAllMocks();
     mockUpdateWorkspaceTask.mockResolvedValue({ task: { id: 'task-1' } });
     mockAddWorkspaceTaskLabel.mockResolvedValue({ success: true });
     mockRemoveWorkspaceTaskLabel.mockResolvedValue({ success: true });
-
-    (global.fetch as any).mockClear();
+    mockCreateWorkspaceLabel.mockResolvedValue({
+      id: 'label-4',
+      name: 'New Label',
+      color: '#8b5cf6',
+    });
   });
 
   describe('initialization', () => {
@@ -224,15 +228,6 @@ describe('useTaskLabelManagement', () => {
 
   describe('createNewLabel', () => {
     it('should create new label and apply to task', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: 'label-4',
-          name: 'New Label',
-          color: '#8b5cf6',
-        }),
-      });
-
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
 
       const { result } = renderHook(
@@ -256,17 +251,13 @@ describe('useTaskLabelManagement', () => {
         await result.current.createNewLabel();
       });
 
-      // Verify fetch was called with correct data
-      expect(global.fetch).toHaveBeenCalledWith(
-        '/api/v1/workspaces/ws-1/labels',
-        expect.objectContaining({
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: 'New Label',
-            color: '#8b5cf6',
-          }),
-        })
+      expect(mockCreateWorkspaceLabel).toHaveBeenCalledWith(
+        'ws-1',
+        {
+          name: 'New Label',
+          color: '#8b5cf6',
+        },
+        expect.anything()
       );
 
       // Verify label was applied to task
@@ -300,7 +291,7 @@ describe('useTaskLabelManagement', () => {
         await result.current.createNewLabel();
       });
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockCreateWorkspaceLabel).not.toHaveBeenCalled();
     });
 
     it('should not create label without workspaceId', async () => {
@@ -323,13 +314,13 @@ describe('useTaskLabelManagement', () => {
         await result.current.createNewLabel();
       });
 
-      expect(global.fetch).not.toHaveBeenCalled();
+      expect(mockCreateWorkspaceLabel).not.toHaveBeenCalled();
     });
 
     it('should handle API error when creating label', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: false,
-      });
+      mockCreateWorkspaceLabel.mockRejectedValueOnce(
+        new Error('Failed to create label')
+      );
 
       const { result } = renderHook(
         () =>
@@ -360,15 +351,6 @@ describe('useTaskLabelManagement', () => {
     });
 
     it('should show partial success toast when label created but not applied', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: 'label-4',
-          name: 'New Label',
-          color: '#8b5cf6',
-        }),
-      });
-
       mockUpdateWorkspaceTask.mockRejectedValueOnce(new Error('Insert failed'));
 
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
@@ -403,17 +385,14 @@ describe('useTaskLabelManagement', () => {
 
     it('should set creatingLabel state during operation', async () => {
       let resolvePromise: any;
-      (global.fetch as any).mockImplementationOnce(
+      mockCreateWorkspaceLabel.mockImplementationOnce(
         () =>
           new Promise((resolve) => {
             resolvePromise = () =>
               resolve({
-                ok: true,
-                json: async () => ({
-                  id: 'label-4',
-                  name: 'New Label',
-                  color: '#8b5cf6',
-                }),
+                id: 'label-4',
+                name: 'New Label',
+                color: '#8b5cf6',
               });
           })
       );
@@ -455,18 +434,13 @@ describe('useTaskLabelManagement', () => {
     });
 
     it('should optimistically update workspace labels cache after creation', async () => {
-      (global.fetch as any).mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          id: 'label-4',
-          name: 'New Label',
-          color: '#8b5cf6',
-        }),
-      });
-
       queryClient.setQueryData(['tasks', 'board-1'], [mockTask]);
       queryClient.setQueryData(
         ['workspace-labels', 'ws-1'],
+        mockWorkspaceLabels
+      );
+      queryClient.setQueryData(
+        ['workspace-labels', 'route-ws'],
         mockWorkspaceLabels
       );
 
@@ -479,6 +453,7 @@ describe('useTaskLabelManagement', () => {
             boardId: 'board-1',
             workspaceLabels: mockWorkspaceLabels,
             workspaceId: 'ws-1',
+            labelCacheWorkspaceIds: ['route-ws'],
           }),
         { wrapper }
       );
@@ -494,6 +469,10 @@ describe('useTaskLabelManagement', () => {
       // The implementation uses setQueryData for optimistic updates, not invalidateQueries
       expect(setQueryDataSpy).toHaveBeenCalledWith(
         ['workspace-labels', 'ws-1'],
+        expect.any(Function)
+      );
+      expect(setQueryDataSpy).toHaveBeenCalledWith(
+        ['workspace-labels', 'route-ws'],
         expect.any(Function)
       );
 

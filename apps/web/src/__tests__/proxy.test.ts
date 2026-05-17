@@ -722,65 +722,45 @@ describe('web proxy api handling', () => {
     );
   });
 
-  it('preserves task query when canonicalizing workspace-home board redirects', async () => {
-    const workspaceId = '11111111-1111-4111-8111-111111111111';
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValueOnce({
-          data: {
-            value: JSON.stringify({
-              target: 'tasks',
-              submodule: 'boards',
-              boardId: 'board-1',
-            }),
-          },
-        })
-        .mockResolvedValueOnce({ data: { id: 'board-1' }, error: null }),
-    };
-
+  it('does not apply configured board navigation on direct personal workspace home paths', async () => {
     mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
-      new NextRequest(`http://localhost/vi/${workspaceId}?task=task-1`)
+      new NextRequest('http://localhost/personal?task=task-1')
     );
 
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      `http://localhost/vi/${workspaceId}/tasks/boards/board-1?task=task-1`
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      'personal',
+      expect.anything()
     );
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+    expect(mocks.getUserDefaultWorkspace).not.toHaveBeenCalled();
   });
 
-  it('applies workspace-home board redirects for non-UUID workspace slugs', async () => {
-    const adminQueryBuilder = {
-      select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
-      is: vi.fn().mockReturnThis(),
-      maybeSingle: vi
-        .fn()
-        .mockResolvedValueOnce({
-          data: {
-            value: JSON.stringify({
-              target: 'tasks',
-              submodule: 'boards',
-              boardId: 'board-1',
-            }),
-          },
-        })
-        .mockResolvedValueOnce({ data: { id: 'board-1' }, error: null }),
-    };
+  it('preserves direct workspace home paths instead of applying configured board navigation', async () => {
+    const workspaceId = '11111111-1111-4111-8111-111111111111';
 
     mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
-    mocks.createAdminClient.mockResolvedValue({
-      from: vi.fn().mockReturnValue(adminQueryBuilder),
-    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(`http://localhost/${workspaceId}?task=task-1`)
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      workspaceId,
+      expect.anything()
+    );
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
+  });
+
+  it('leaves non-UUID workspace home slugs on their home route', async () => {
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
 
     const { proxy } = await import('../proxy');
     const response = await proxy(
@@ -791,10 +771,9 @@ describe('web proxy api handling', () => {
       'team-slug',
       expect.anything()
     );
-    expect(response.status).toBe(307);
-    expect(response.headers.get('location')).toBe(
-      'http://localhost/team-slug/tasks/boards/board-1?task=task-1'
-    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(mocks.createAdminClient).not.toHaveBeenCalled();
   });
 
   it('skips workspace-home admin reads when the user is not a workspace member', async () => {
@@ -815,6 +794,91 @@ describe('web proxy api handling', () => {
 
     expect(response.status).toBe(200);
     expect(adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('denies guest workspace home routes before default navigation admin reads', async () => {
+    const adminFrom = vi.fn();
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest('http://localhost/11111111-1111-4111-8111-111111111111')
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('denies guest dashboard routes without mapped permissions', async () => {
+    const adminFrom = vi.fn();
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/11111111-1111-4111-8111-111111111111/unknown'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/__reserved-root-not-found__'
+    );
+    expect(adminFrom).not.toHaveBeenCalled();
+  });
+
+  it('allows guest dashboard routes when the mapped guest default is enabled', async () => {
+    const defaultPermissionsBuilder = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn(),
+    };
+    defaultPermissionsBuilder.eq
+      .mockReturnValueOnce(defaultPermissionsBuilder)
+      .mockReturnValueOnce(defaultPermissionsBuilder)
+      .mockResolvedValueOnce({
+        data: [{ permission: 'manage_projects' }],
+        error: null,
+      });
+    const adminFrom = vi.fn().mockReturnValue(defaultPermissionsBuilder);
+
+    mocks.verifyWorkspaceMembershipType.mockResolvedValueOnce({
+      ok: true,
+      membershipType: 'GUEST',
+    });
+    mocks.createClient.mockResolvedValue(createAuthenticatedSupabaseClient());
+    mocks.createAdminClient.mockResolvedValue({
+      from: adminFrom,
+    });
+
+    const { proxy } = await import('../proxy');
+    const response = await proxy(
+      new NextRequest(
+        'http://localhost/11111111-1111-4111-8111-111111111111/tasks'
+      )
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('x-middleware-rewrite')).toBe(
+      'http://localhost/en/11111111-1111-4111-8111-111111111111/tasks'
+    );
+    expect(adminFrom).toHaveBeenCalledWith('workspace_default_permissions');
   });
 
   it('falls back to tasks boards and self-heals when configured board no longer exists', async () => {

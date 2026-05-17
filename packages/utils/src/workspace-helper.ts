@@ -612,7 +612,9 @@ export async function getGuestGroup({ groupId }: { groupId: string }) {
 }
 
 export interface PermissionsResult {
+  membershipType: WorkspaceMemberType;
   permissions: PermissionId[];
+  wsId: string;
   containsPermission(permission: PermissionId): boolean;
   withoutPermission(permission: PermissionId): boolean;
 }
@@ -659,18 +661,26 @@ export async function getPermissions({
     wsId: resolvedWorkspaceId,
     userId,
     supabase: authorizationClient as TypedSupabaseClient,
+    requiredType: 'ANY',
   });
 
   if (!membership.ok) {
     return null;
   }
 
-  const permissionsQuery = sbAdmin
-    .from('workspace_role_members')
-    .select('workspace_roles!inner(workspace_role_permissions(permission))')
-    .eq('user_id', userId)
-    .eq('workspace_roles.ws_id', resolvedWorkspaceId)
-    .eq('workspace_roles.workspace_role_permissions.enabled', true);
+  const membershipType = membership.membershipType ?? 'MEMBER';
+
+  const permissionsQuery =
+    membershipType === 'MEMBER'
+      ? sbAdmin
+          .from('workspace_role_members')
+          .select(
+            'workspace_roles!inner(workspace_role_permissions(permission))'
+          )
+          .eq('user_id', userId)
+          .eq('workspace_roles.ws_id', resolvedWorkspaceId)
+          .eq('workspace_roles.workspace_role_permissions.enabled', true)
+      : Promise.resolve({ data: [], error: null });
 
   const workspaceQuery = sbAdmin
     .from('workspaces')
@@ -682,6 +692,7 @@ export async function getPermissions({
     .from('workspace_default_permissions')
     .select('permission')
     .eq('ws_id', resolvedWorkspaceId)
+    .eq('member_type', membershipType)
     .eq('enabled', true);
 
   const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
@@ -703,7 +714,8 @@ export async function getPermissions({
   if (workspaceError) return null;
   if (defaultError) return null;
 
-  const isCreator = workspaceData.creator_id === userId;
+  const isCreator =
+    membershipType === 'MEMBER' && workspaceData.creator_id === userId;
   const hasPermissions =
     permissionsData.length > 0 || defaultData.length > 0 || isCreator;
 
@@ -749,7 +761,13 @@ export async function getPermissions({
   const withoutPermission = (permission: PermissionId) =>
     !containsPermission(permission);
 
-  return { permissions, containsPermission, withoutPermission };
+  return {
+    membershipType,
+    permissions,
+    wsId: resolvedWorkspaceId,
+    containsPermission,
+    withoutPermission,
+  };
 }
 
 export async function verifyWorkspaceMembershipType({

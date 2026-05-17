@@ -22,7 +22,7 @@ export interface YjsCollaborationConfig {
   /** Debounce time for persistence writes (broadcast stays realtime). */
   saveDebounceMs?: number;
   loadDocumentState?: () => Promise<number[] | null>;
-  saveDocumentState?: (state: number[]) => Promise<void>;
+  saveDocumentState?: (state: number[]) => Promise<boolean | undefined>;
   onSync?: (synced: boolean) => void;
   onError?: (error: Error) => void;
   onSave?: (version: number) => void;

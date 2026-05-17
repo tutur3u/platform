@@ -1,0 +1,88 @@
+import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
+import { type MouseEvent, useEffect, useRef } from 'react';
+import { TaskCard } from './task-card';
+
+interface MeasuredTaskCardProps {
+  task: Task;
+  taskList: TaskList;
+  boardId: string;
+  workspaceId?: string;
+  availableLists?: TaskList[];
+  onUpdate: () => void;
+  isSelected: boolean;
+  isMultiSelectMode?: boolean;
+  isPersonalWorkspace?: boolean;
+  onSelect?: (taskId: string, event: MouseEvent) => void;
+  onClearSelection?: () => void;
+  onHeight: (height: number) => void;
+  optimisticUpdateInProgress?: Set<string>;
+  selectedTasks?: Set<string>;
+  bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+}
+
+export function MeasuredTaskCard({
+  task,
+  taskList,
+  boardId,
+  workspaceId,
+  availableLists,
+  onUpdate,
+  isSelected,
+  isMultiSelectMode,
+  isPersonalWorkspace,
+  onSelect,
+  onClearSelection,
+  onHeight,
+  optimisticUpdateInProgress,
+  selectedTasks,
+  bulkUpdateCustomDueDate,
+}: MeasuredTaskCardProps) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const onHeightRef = useRef(onHeight);
+
+  useEffect(() => {
+    onHeightRef.current = onHeight;
+  }, [onHeight]);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const node = ref.current;
+    const card = node.firstElementChild as HTMLElement;
+    if (!card) return;
+
+    onHeightRef.current(card.getBoundingClientRect().height);
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target === card) {
+          onHeightRef.current(entry.contentRect.height);
+        }
+      }
+    });
+
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={ref} data-id={task.id}>
+      <TaskCard
+        task={task}
+        taskList={taskList}
+        boardId={boardId}
+        workspaceId={workspaceId}
+        availableLists={availableLists}
+        onUpdate={onUpdate}
+        isSelected={isSelected}
+        isMultiSelectMode={isMultiSelectMode}
+        isPersonalWorkspace={isPersonalWorkspace}
+        onSelect={onSelect}
+        onClearSelection={onClearSelection}
+        optimisticUpdateInProgress={optimisticUpdateInProgress}
+        selectedTasks={selectedTasks}
+        bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+      />
+    </div>
+  );
+}

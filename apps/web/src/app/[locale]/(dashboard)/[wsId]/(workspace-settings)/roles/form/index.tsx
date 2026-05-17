@@ -1,10 +1,19 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Banknote, Monitor, PencilRuler, Users } from '@tuturuuu/icons';
+import {
+  createWorkspaceRole,
+  updateWorkspaceDefaultPermissions,
+  updateWorkspaceRole,
+} from '@tuturuuu/internal-api/settings';
 import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
-import type { PermissionId, WorkspaceRole } from '@tuturuuu/types';
+import type {
+  PermissionId,
+  WorkspaceDefaultPermissionMemberType,
+  WorkspaceRole,
+} from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
@@ -16,10 +25,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import {
+  type PermissionCatalog,
   permissionGroups,
   totalPermissions,
 } from '@tuturuuu/utils/permissions';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
@@ -60,7 +69,10 @@ interface Props {
   wsId: string;
   user: SupabaseUser | null;
   data?: WorkspaceRole;
+  defaultMemberType?: WorkspaceDefaultPermissionMemberType;
+  defaultName?: string;
   forceDefault?: boolean;
+  permissionCatalog?: PermissionCatalog;
 
   onFinish?: (data: FormType) => void;
 }
@@ -71,23 +83,35 @@ export interface SectionProps {
   roleId?: string;
   initialMembers?: WorkspaceUser[];
   initialMembersCount?: number;
+  permissionCatalog: PermissionCatalog;
   form: ReturnType<typeof useForm<FormType>>;
   enabledPermissionsCount: { id: string; count: number }[];
 }
 
-export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
+export function RoleForm({
+  wsId,
+  user,
+  data,
+  defaultMemberType = 'MEMBER',
+  defaultName,
+  forceDefault,
+  permissionCatalog = forceDefault ? 'full' : 'workspace',
+  onFinish,
+}: Props) {
   const t = useTranslations();
-  const router = useRouter();
+  const queryClient = useQueryClient();
 
   const roleId = data?.id;
 
   const rootGroups = permissionGroups({
+    catalog: 'full',
     t: t as (key: string) => string,
-    wsId: ROOT_WORKSPACE_ID,
+    wsId,
     user,
   });
 
   const groups = permissionGroups({
+    catalog: permissionCatalog,
     t: t as (key: string) => string,
     wsId,
     user,
@@ -111,7 +135,9 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     resolver: zodResolver(FormSchema),
     values: {
       id: forceDefault ? 'DEFAULT' : roleId,
-      name: forceDefault ? t('ws-roles.default_permissions') : data?.name || '',
+      name: forceDefault
+        ? (defaultName ?? t('ws-roles.default_permissions'))
+        : data?.name || '',
       permissions: rootGroups.reduce(
         (acc, group) => {
           group.permissions.forEach((permission) => {
@@ -131,46 +157,57 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
   const isValid = form.formState.isValid;
   const isSubmitting = form.formState.isSubmitting;
 
-  const [loading, setLoading] = useState(false);
+  const mutation = useMutation({
+    mutationFn: async (formData: FormType) => {
+      const payload = {
+        ...formData,
+        permissions: Object.entries(formData.permissions).map(
+          ([id, enabled]) => ({
+            id: id as PermissionId,
+            enabled,
+          })
+        ),
+      };
 
-  const onSubmit = async (data: FormType) => {
-    setLoading(true);
-
-    const res = await fetch(
-      forceDefault
-        ? `/api/v1/workspaces/${wsId}/roles/default`
-        : roleId
-          ? `/api/v1/workspaces/${wsId}/roles/${roleId}`
-          : `/api/v1/workspaces/${wsId}/roles`,
-      {
-        method: roleId || forceDefault ? 'PUT' : 'POST',
-        body: JSON.stringify({
-          ...data,
-          permissions: Object.entries(data.permissions).map(
-            ([id, enabled]) => ({
-              id,
-              enabled,
-            })
-          ),
-        }),
+      if (forceDefault) {
+        return updateWorkspaceDefaultPermissions(wsId, defaultMemberType, {
+          permissions: payload.permissions,
+        });
       }
-    );
 
-    if (res.ok) {
-      onFinish?.(data);
-      router.refresh();
-    } else {
-      setLoading(false);
-      const data = await res.json();
+      if (roleId) {
+        return updateWorkspaceRole(wsId, roleId, payload);
+      }
+
+      return createWorkspaceRole(wsId, payload);
+    },
+    onSuccess: async (_result, formData) => {
+      onFinish?.(formData);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-roles', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['workspace-default-permissions', wsId],
+        }),
+      ]);
+      form.reset(formData);
+    },
+    onError: (error) => {
       toast({
-        title: `Failed to ${roleId ? 'edit' : 'create'} role`,
-        description: data.message,
+        title: t('ws-roles.save_failed'),
+        description:
+          error instanceof Error ? error.message : t('common.500-msg'),
       });
-    }
+    },
+  });
+
+  const onSubmit = (data: FormType) => {
+    mutation.mutate(data);
   };
 
   const isEdit = !!roleId;
-  const disabled = !isDirty || !isValid || isSubmitting || loading;
+  const disabled = !isDirty || !isValid || isSubmitting || mutation.isPending;
 
   const enabledPermissionsCount = Object.values(groups).map((group) => ({
     id: group.id,
@@ -180,7 +217,11 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
   }));
 
   const adminEnabled = form.watch('permissions.admin');
-  const totalCount = totalPermissions({ wsId, user });
+  const totalCount = totalPermissions({
+    catalog: permissionCatalog,
+    wsId,
+    user,
+  });
 
   const currentCount = adminEnabled
     ? totalCount
@@ -192,6 +233,7 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
     roleId,
     initialMembers: data?.members as WorkspaceUser[] | undefined,
     initialMembersCount: data?.user_count,
+    permissionCatalog,
     form,
     enabledPermissionsCount,
   };
@@ -219,8 +261,7 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
             </TabsTrigger>
             <TabsTrigger value="permissions">
               <PencilRuler className="mr-1 h-5 w-5" />
-              {t('ws-roles.permissions')} ({currentCount}/
-              {totalPermissions({ wsId, user })})
+              {t('ws-roles.permissions')} ({currentCount}/{totalCount})
             </TabsTrigger>
             <TabsTrigger value="members" disabled={forceDefault || !isEdit}>
               <Users className="mr-1 h-5 w-5" />
@@ -254,11 +295,13 @@ export function RoleForm({ wsId, user, data, forceDefault, onFinish }: Props) {
         </Tabs>
 
         <Button type="submit" className="w-full" disabled={disabled}>
-          {loading
+          {mutation.isPending
             ? t('common.processing')
-            : isEdit
-              ? t('ws-roles.edit')
-              : t('ws-roles.create')}
+            : forceDefault
+              ? t('common.save')
+              : isEdit
+                ? t('ws-roles.edit')
+                : t('ws-roles.create')}
         </Button>
       </form>
     </Form>

@@ -17,7 +17,7 @@ export interface SupabaseProviderConfig {
   saveDebounceMs?: number; // Debounce time for database saves (default: 1000ms)
   broadcastDebounceMs?: number; // Debounce time for broadcasting updates (0 = immediate, default: 0)
   loadState?: () => Promise<number[] | null>;
-  saveState?: (state: number[]) => Promise<void>;
+  saveState?: (state: number[]) => Promise<boolean | undefined>;
 }
 
 export default class SupabaseProvider extends EventEmitter {
@@ -188,7 +188,19 @@ export default class SupabaseProvider extends EventEmitter {
       this.logger(`saving ${content.length} bytes to database`);
 
       if (this.config.saveState) {
-        await this.config.saveState(content);
+        const saved = await this.config.saveState(content);
+
+        if (saved === false) {
+          this.logger('custom saveState reported failure');
+          this.synced = false;
+          this.emit('error', {
+            message: 'Failed to save document state',
+            channelError: null,
+            channel: this.config.channel,
+            status: 'SAVE_FAILED',
+          });
+          return false;
+        }
       } else {
         const { error, status } = await this.supabase
           .from(this.config.tableName as any)

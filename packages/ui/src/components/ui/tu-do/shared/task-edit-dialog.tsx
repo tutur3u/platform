@@ -320,7 +320,7 @@ export function TaskEditDialog({
 
   const saveTaskDescriptionState = useCallback(
     async (yjsState: number[]) => {
-      if (!task?.id) return;
+      if (!task?.id) return false;
 
       const content =
         flushEditorPendingRef.current?.() ?? descriptionRef.current;
@@ -330,7 +330,7 @@ export function TaskEditDialog({
         serializedDescription &&
         serializedDescription.length > MAX_TASK_DESCRIPTION_LENGTH
       ) {
-        return;
+        return false;
       }
 
       const didPersist = await saveYjsDescriptionToDatabase({
@@ -343,7 +343,7 @@ export function TaskEditDialog({
         context: 'realtime-persist',
       });
 
-      if (!didPersist) return;
+      if (!didPersist) return false;
 
       persistedDescriptionRef.current = serializedDescription;
 
@@ -353,6 +353,8 @@ export function TaskEditDialog({
         descriptionString: serializedDescription,
         broadcast: broadcast ?? undefined,
       });
+
+      return true;
     },
     [boardId, effectiveTaskWsId, queryClient, task?.id]
   );
@@ -486,6 +488,8 @@ export function TaskEditDialog({
   const [showSyncWarning, setShowSyncWarning] = useState(false);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [showDescriptionOverflowWarning, setShowDescriptionOverflowWarning] =
+    useState(false);
+  const [showDescriptionCloseWarning, setShowDescriptionCloseWarning] =
     useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [saveAsDraft, setSaveAsDraft] = useState(draftModeEnabled);
@@ -1304,29 +1308,18 @@ export function TaskEditDialog({
           return;
         }
 
-        const closeFailedTitle = dialogT.has('description_close_failed_title')
-          ? dialogT('description_close_failed_title')
-          : 'Task description is still syncing';
-        const closeFailedDescription = dialogT.has(
-          'description_close_failed_description'
-        )
-          ? dialogT('description_close_failed_description')
-          : 'The latest description changes have not been confirmed on the server yet. Keep the dialog open and try again.';
-
-        toast.error(closeFailedTitle, {
-          description: closeFailedDescription,
-        });
+        setShowDescriptionCloseWarning(true);
       },
       setShowSyncWarning,
     });
 
   // Attempt close — intercepts in create mode with unsaved changes
-  const handleAttemptClose = useCallback(() => {
+  const handleAttemptClose = useCallback(async () => {
     if (isCreateMode && hasUnsavedChanges && formState.name.trim()) {
       setShowUnsavedWarning(true);
-      return;
+      return false;
     }
-    handleClose();
+    return handleClose();
   }, [isCreateMode, hasUnsavedChanges, formState.name, handleClose]);
 
   const handleConfirmCloseWithOverflow = useCallback(async () => {
@@ -1342,6 +1335,11 @@ export function TaskEditDialog({
     onClose();
   }, [flushNameUpdate, isCreateMode, draftStorageKey, onClose]);
 
+  const handleConfirmCloseWithUnconfirmedDescription = useCallback(async () => {
+    setShowDescriptionCloseWarning(false);
+    await handleForceClose();
+  }, [handleForceClose]);
+
   // Dialog open change - prevents close when menus are open
   const handleDialogOpenChange = useCallback(
     (open: boolean) => {
@@ -1351,7 +1349,7 @@ export function TaskEditDialog({
         !suggestionMenus.slashState.open &&
         !suggestionMenus.mentionState.open
       ) {
-        handleAttemptClose();
+        void handleAttemptClose();
       }
     },
     [
@@ -1369,7 +1367,7 @@ export function TaskEditDialog({
     }
 
     registerCloseRequestHandler(() => {
-      handleAttemptClose();
+      return handleAttemptClose();
     });
 
     return () => {
@@ -1984,6 +1982,37 @@ export function TaskEditDialog({
         synced={synced}
         connected={connected}
         onForceClose={handleForceClose}
+      />
+
+      <DescriptionOverflowWarningDialog
+        open={showDescriptionCloseWarning}
+        onOpenChange={setShowDescriptionCloseWarning}
+        onConfirmClose={handleConfirmCloseWithUnconfirmedDescription}
+        title={
+          dialogT.has('description_close_failed_title')
+            ? dialogT('description_close_failed_title')
+            : 'Task description is still syncing'
+        }
+        description={
+          dialogT.has('description_close_failed_description')
+            ? dialogT('description_close_failed_description')
+            : 'The latest description changes have not been confirmed on the server yet. You can wait and try closing again, or close now without saving those description changes.'
+        }
+        cancelLabel={
+          dialogT.has('description_overflow_close_warning_cancel')
+            ? dialogT('description_overflow_close_warning_cancel')
+            : 'Go back and edit'
+        }
+        confirmLabel={
+          dialogT.has('description_overflow_close_warning_confirm')
+            ? dialogT('description_overflow_close_warning_confirm')
+            : 'Close without saving description'
+        }
+        warningMessage={
+          dialogT.has('description_close_failed_warning')
+            ? dialogT('description_close_failed_warning')
+            : 'Unconfirmed description changes may be lost if you close now.'
+        }
       />
 
       <DescriptionOverflowWarningDialog
