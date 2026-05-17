@@ -9,6 +9,19 @@ const PRODUCTION_SHA = 'c'.repeat(40);
 const FEATURE_SHA = 'd'.repeat(40);
 
 const sink = { write() {} };
+const TEST_WORKTREE_PATH = '/tmp/tuturuuu-git-sync-test';
+
+function runFakeGitSync(git, options = {}) {
+  return runGitSync({
+    execFile: git.execFile,
+    makeTempDir: () => TEST_WORKTREE_PATH,
+    removeDir() {},
+    stderr: sink,
+    stdout: sink,
+    tempRoot: '/tmp',
+    ...options,
+  });
+}
 
 function createFakeGit({
   ancestors = [
@@ -83,6 +96,27 @@ function createFakeGit({
       return '';
     }
 
+    if (args[0] === 'worktree' && args[1] === 'add') {
+      assert.deepEqual(args, [
+        'worktree',
+        'add',
+        '--detach',
+        TEST_WORKTREE_PATH,
+        'origin/main',
+      ]);
+      return '';
+    }
+
+    if (args[0] === 'worktree' && args[1] === 'remove') {
+      assert.deepEqual(args, [
+        'worktree',
+        'remove',
+        '--force',
+        TEST_WORKTREE_PATH,
+      ]);
+      return '';
+    }
+
     if (args[0] === 'show-ref' && args[1] === '--verify') {
       if (!gitRefs[args[3]]) {
         throw new Error(`missing ref ${args[3]}`);
@@ -94,6 +128,19 @@ function createFakeGit({
       const branch = args[2];
       const remoteBranch = args[3];
       gitRefs[localRef(branch)] = resolveRef(remoteBranch);
+      return '';
+    }
+
+    if (args[0] === 'branch' && args[1] === '--force') {
+      const branch = args[2];
+      const targetSha = resolveRef(args[3]);
+      if (!targetSha) {
+        throw new Error(`missing revision ${args[3]}`);
+      }
+      if (branch === current && gitRefs[localRef(branch)] !== targetSha) {
+        throw new Error(`cannot force update checked out branch ${branch}`);
+      }
+      gitRefs[localRef(branch)] = targetSha;
       return '';
     }
 
@@ -212,11 +259,7 @@ test('parseArgs rejects empty branch scopes', () => {
 test('runGitSync fast-forwards staging and production to main and pushes all branches', () => {
   const git = createFakeGit();
 
-  const result = runGitSync({
-    execFile: git.execFile,
-    stderr: sink,
-    stdout: sink,
-  });
+  const result = runFakeGitSync(git);
 
   assert.equal(result.mainSha, MAIN_SHA);
   assert.deepEqual(result.selectedBranches, ['main', 'staging', 'production']);
@@ -236,16 +279,20 @@ test('runGitSync fast-forwards staging and production to main and pushes all bra
       ['push', 'origin', 'production'],
     ]
   );
+  assert.deepEqual(
+    git.calls.filter((args) => args[0] === 'worktree'),
+    [
+      ['worktree', 'add', '--detach', TEST_WORKTREE_PATH, 'origin/main'],
+      ['worktree', 'remove', '--force', TEST_WORKTREE_PATH],
+    ]
+  );
 });
 
 test('runGitSync can sync only staging', () => {
   const git = createFakeGit();
 
-  const result = runGitSync({
-    execFile: git.execFile,
+  const result = runFakeGitSync(git, {
     selectedBranches: ['staging'],
-    stderr: sink,
-    stdout: sink,
   });
 
   assert.deepEqual(result.selectedBranches, ['staging']);
@@ -269,11 +316,8 @@ test('runGitSync can sync only staging', () => {
 test('runGitSync can update local branches without pushing', () => {
   const git = createFakeGit();
 
-  const result = runGitSync({
-    execFile: git.execFile,
+  const result = runFakeGitSync(git, {
     push: false,
-    stderr: sink,
-    stdout: sink,
   });
 
   assert.deepEqual(result.pushedBranches, []);
@@ -288,20 +332,14 @@ test('runGitSync can update local branches without pushing', () => {
   );
 });
 
-test('runGitSync refuses to run with a dirty worktree', () => {
+test('runGitSync leaves a dirty current worktree alone', () => {
   const git = createFakeGit({ status: ' M package.json\n?? tmp-file\n' });
 
-  assert.throws(
-    () =>
-      runGitSync({
-        execFile: git.execFile,
-        stderr: sink,
-        stdout: sink,
-      }),
-    /requires a clean worktree/
-  );
+  const result = runFakeGitSync(git);
+
+  assert.equal(result.mainSha, MAIN_SHA);
   assert.equal(
-    git.calls.some((args) => args[0] === 'fetch'),
+    git.calls.some((args) => args[0] === 'status'),
     false
   );
   assert.equal(git.currentBranch, 'feature/work');
@@ -318,12 +356,7 @@ test('runGitSync refuses target branches that cannot fast-forward to main', () =
   });
 
   assert.throws(
-    () =>
-      runGitSync({
-        execFile: git.execFile,
-        stderr: sink,
-        stdout: sink,
-      }),
+    () => runFakeGitSync(git),
     /staging cannot fast-forward to main/
   );
   assert.equal(git.currentBranch, 'feature/work');
@@ -341,11 +374,7 @@ test('runGitSync creates missing local release branches from origin tracking ref
     },
   });
 
-  runGitSync({
-    execFile: git.execFile,
-    stderr: sink,
-    stdout: sink,
-  });
+  runFakeGitSync(git);
 
   assert.deepEqual(
     git.calls.filter((args) => args[0] === 'branch' && args[1] === '--track'),
