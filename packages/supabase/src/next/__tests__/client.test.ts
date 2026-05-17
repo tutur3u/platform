@@ -8,7 +8,10 @@ import {
   createDynamicClient,
   switchClientSession,
 } from '../client';
-import { getProxyOnlyPublicTableError } from '../protected-tables';
+import {
+  getProxyOnlyPublicTableError,
+  isProxyOnlyPublicTable,
+} from '../protected-tables';
 
 vi.mock('@supabase/ssr', () => ({
   createBrowserClient: vi.fn(),
@@ -56,6 +59,16 @@ describe('Supabase Client', () => {
     vi.unstubAllEnvs();
     __resetSupabaseClientDeprecationWarningForTests();
     __resetBrowserClientCacheForTests();
+  });
+
+  it('treats topic announcement tables as proxy-only', () => {
+    expect(isProxyOnlyPublicTable('topic_announcement_batches')).toBe(true);
+    expect(
+      isProxyOnlyPublicTable('topic_announcement_contact_verifications')
+    ).toBe(true);
+    expect(isProxyOnlyPublicTable('topic_announcement_contacts')).toBe(true);
+    expect(isProxyOnlyPublicTable('topic_announcement_recipients')).toBe(true);
+    expect(isProxyOnlyPublicTable('topic_announcements')).toBe(true);
   });
 
   describe('createClient', () => {

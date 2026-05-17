@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2026-05-13'
+updatedAt: '2026-05-17'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -262,6 +262,45 @@ $$;
 revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from public;
 revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from anon;
 revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from authenticated;
+```
+
+### Pattern 8: API-Only Workspace Tables
+
+**Use Case:** The `apps/web` API performs stricter permission checks than a
+plain workspace membership policy can express safely, then reads or writes with
+`createAdminClient()`.
+
+For these tables, do not grant `anon` or `authenticated` direct Data API access
+and do not leave member-only RLS policies in place. A browser or REST client can
+call exposed Supabase tables directly with the publishable key, bypassing route
+checks such as `manage_users` or `send_user_group_post_emails`.
+
+Required controls:
+
+- Revoke table privileges from `public`, `anon`, and `authenticated`.
+- Keep table access behind service-role API routes that perform the workspace
+  permission check first.
+- Drop permissive member-only RLS policies on the underlying tables; use
+  service-role-only policies when an explicit policy is useful for review.
+- Add the tables to `PROXY_ONLY_PUBLIC_TABLES` in
+  `packages/supabase/src/next/protected-tables.ts` so deprecated direct clients
+  fail loudly during app development.
+- Revoke direct `EXECUTE` from exposed helper RPCs unless the function performs
+  its own caller authorization.
+
+```sql
+revoke all privileges on table public.sensitive_workspace_table
+from public, anon, authenticated;
+
+drop policy if exists "Allow workspace members to manage sensitive workspace table"
+  on public.sensitive_workspace_table;
+
+create policy "Allow service role to manage sensitive workspace table"
+  on public.sensitive_workspace_table
+  for all
+  to service_role
+  using (true)
+  with check (true);
 ```
 
 ## Common RLS Helpers
