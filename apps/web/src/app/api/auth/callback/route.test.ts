@@ -48,4 +48,17 @@ describe('auth callback route', () => {
       'http://localhost/login?returnUrl=https%3A%2F%2Fcms.tuturuuu.com'
     );
   });
+
+  it('allows the root platform returnUrl when supplied over http and redirects to https', async () => {
+    const returnUrl = encodeURIComponent('http://tuturuuu.com/mail?tab=inbox');
+    const response = await GET(
+      new NextRequest(
+        `http://tuturuuu.com/api/auth/callback?returnUrl=${returnUrl}`
+      )
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://tuturuuu.com/mail?tab=inbox'
+    );
+  });
 });

@@ -175,6 +175,10 @@ export type AppDomain = {
   url: string;
 };
 
+export type AppDomainUrlMatch = AppDomain & {
+  canonicalUrl: string;
+};
+
 export function getPortlessInternalAppUrl(appName: AppName) {
   return (
     PORTLESS_INTERNAL_APP_DOMAINS.find((domain) => domain.name === appName)
@@ -240,6 +244,87 @@ export function getAppDomainMap(): AppDomain[] {
     })),
     ...getConfiguredExternalAppDomains(),
   ];
+}
+
+function parseHttpUrl(value: string) {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+      return null;
+    }
+
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+function canUpgradeToRegisteredHttpsOrigin(value: URL, registeredUrl: URL) {
+  return (
+    registeredUrl.protocol === 'https:' &&
+    value.protocol === 'http:' &&
+    value.hostname === registeredUrl.hostname &&
+    value.port === registeredUrl.port
+  );
+}
+
+function serializeUrl(value: URL) {
+  return value.pathname === '/' && !value.search && !value.hash
+    ? value.origin
+    : value.toString();
+}
+
+function matchesAppDomainUrl(value: URL, domain: AppDomain) {
+  const registeredUrl = parseHttpUrl(domain.url);
+
+  if (!registeredUrl) {
+    return false;
+  }
+
+  if (value.origin === registeredUrl.origin) {
+    return true;
+  }
+
+  return domain.kind === 'internal'
+    ? canUpgradeToRegisteredHttpsOrigin(value, registeredUrl)
+    : false;
+}
+
+function canonicalizeAppDomainUrl(value: URL, domain: AppDomain) {
+  const registeredUrl = parseHttpUrl(domain.url);
+
+  if (
+    registeredUrl &&
+    domain.kind === 'internal' &&
+    canUpgradeToRegisteredHttpsOrigin(value, registeredUrl)
+  ) {
+    const canonicalUrl = new URL(value.toString());
+    canonicalUrl.protocol = registeredUrl.protocol;
+    canonicalUrl.host = registeredUrl.host;
+    return serializeUrl(canonicalUrl);
+  }
+
+  return serializeUrl(value);
+}
+
+export function getAppDomainByUrl(value: string): AppDomainUrlMatch | null {
+  const url = parseHttpUrl(value);
+
+  if (!url) {
+    return null;
+  }
+
+  const domain = getAppDomainMap().find((entry) =>
+    matchesAppDomainUrl(url, entry)
+  );
+
+  return domain
+    ? {
+        ...domain,
+        canonicalUrl: canonicalizeAppDomainUrl(url, domain),
+      }
+    : null;
 }
 
 export const INTERNAL_DOMAINS = [

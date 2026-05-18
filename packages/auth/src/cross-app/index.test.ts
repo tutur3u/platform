@@ -44,6 +44,12 @@ describe('mapUrlToApp', () => {
     ).toBe('cms');
   });
 
+  it('maps the root platform URL when supplied over http', () => {
+    expect(mapUrlToApp('http://tuturuuu.com/verify-token?nextUrl=%2F')).toBe(
+      'platform'
+    );
+  });
+
   it('maps the CMS development URL to the cms app', () => {
     expect(mapUrlToApp('http://localhost:7811/verify-token?nextUrl=%2F')).toBe(
       'cms'

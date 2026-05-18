@@ -1,7 +1,7 @@
 import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_NAME_LENGTH, MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
-import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
+import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
@@ -55,6 +55,24 @@ async function validateRedirectUrl(
       return null;
     }
 
+    const internalAppDomain = getAppDomainByUrl(decodedUrl);
+    const requestAppDomain = getAppDomainByUrl(requestOrigin);
+
+    if (internalAppDomain) {
+      const canonicalUrl = internalAppDomain.canonicalUrl;
+      const canonicalOrigin = new URL(canonicalUrl).origin;
+      const isSameOrigin = canonicalOrigin === requestOrigin;
+      const isSameApp = requestAppDomain?.name === internalAppDomain.name;
+
+      return {
+        url: isSameOrigin
+          ? normalizeAuthRedirectPath(canonicalUrl, requestOrigin, '/')
+          : canonicalUrl,
+        isExternal: !(isSameOrigin || isSameApp),
+        targetApp: isSameOrigin || isSameApp ? null : internalAppDomain.name,
+      };
+    }
+
     // Check if it's a same-origin URL
     if (url.origin === requestOrigin) {
       return {
@@ -65,12 +83,7 @@ async function validateRedirectUrl(
     }
 
     // Check if it's a trusted internal app domain or registered external app.
-    const targetApp =
-      getAppDomainMap().find(
-        (domain) => new URL(domain.url).origin === url.origin
-      )?.name ??
-      (await getExternalAppByReturnUrl(decodedUrl))?.id ??
-      null;
+    const targetApp = (await getExternalAppByReturnUrl(decodedUrl))?.id ?? null;
     if (targetApp) {
       return { url: decodedUrl, isExternal: true, targetApp };
     }

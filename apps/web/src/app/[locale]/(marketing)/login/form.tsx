@@ -43,6 +43,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@tuturuuu/ui/input-otp';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
+import { getAppDomainByUrl } from '@tuturuuu/utils/internal-domains';
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -535,11 +536,19 @@ export default function LoginForm() {
     if (returnUrl) {
       const isRelativePath = returnUrl.startsWith('/');
       const returnApp = isRelativePath ? 'web' : mapUrlToApp(returnUrl);
+      const canonicalReturnUrl = isRelativePath
+        ? returnUrl
+        : (getAppDomainByUrl(returnUrl)?.canonicalUrl ?? returnUrl);
 
       if (returnApp === 'web' || returnApp === 'platform') {
-        const redirectUrl = new URL(returnUrl, window.location.origin);
-        router.push(redirectUrl.pathname + redirectUrl.search);
-        router.refresh();
+        const redirectUrl = new URL(canonicalReturnUrl, window.location.origin);
+
+        if (redirectUrl.origin !== window.location.origin) {
+          window.location.assign(redirectUrl.toString());
+        } else {
+          router.push(redirectUrl.pathname + redirectUrl.search);
+          router.refresh();
+        }
         return;
       }
 

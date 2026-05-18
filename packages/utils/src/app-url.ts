@@ -1,4 +1,4 @@
-import { type AppName, getAppDomainMap } from './internal-domains';
+import { type AppName, getAppDomainByUrl } from './internal-domains';
 
 type AppUrlCandidate = string | null | undefined;
 
@@ -62,13 +62,7 @@ export function resolveAppUrl({ candidates, fallback }: ResolveAppUrlOptions) {
 }
 
 function getRegisteredAppNameForUrl(value: string) {
-  const candidateOrigin = new URL(value).origin;
-
-  return (
-    getAppDomainMap().find(
-      (domain) => new URL(domain.url).origin === candidateOrigin
-    )?.name ?? null
-  );
+  return getAppDomainByUrl(value)?.name ?? null;
 }
 
 export function resolveInternalAppUrl({
@@ -87,6 +81,12 @@ export function resolveInternalAppUrl({
 
     if (registeredAppName && registeredAppName !== appName) {
       continue;
+    }
+
+    const registeredAppUrl = getAppDomainByUrl(resolvedUrl);
+
+    if (registeredAppUrl?.kind === 'internal') {
+      return trimTrailingSlashes(registeredAppUrl.canonicalUrl);
     }
 
     return resolvedUrl;

@@ -1,7 +1,11 @@
+import { normalizeAuthRedirectPath } from '@tuturuuu/auth/proxy';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_URL_LENGTH } from '@tuturuuu/utils/constants';
-import { getAppDomainMap } from '@tuturuuu/utils/internal-domains';
+import {
+  type AppDomain,
+  getAppDomainByUrl,
+} from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getExternalAppByReturnUrl } from '@/lib/app-coordination/external-apps';
@@ -23,29 +27,39 @@ function decodeReturnUrl(returnUrl: string) {
   }
 }
 
+type ResolvedCrossAppTarget = {
+  appName: string;
+  canonicalReturnUrl: string;
+  kind: AppDomain['kind'];
+  targetApp: string;
+};
+
 function mapConfiguredUrlToApp(returnUrl: string) {
   const decodedUrl = decodeReturnUrl(returnUrl);
 
   try {
-    const parsedUrl = new URL(decodedUrl);
-    return (
-      getAppDomainMap().find(
-        (domain) => new URL(domain.url).origin === parsedUrl.origin
-      )?.name ?? null
-    );
+    const appDomain = getAppDomainByUrl(decodedUrl);
+
+    return appDomain
+      ? {
+          appName: appDomain.name,
+          canonicalReturnUrl: appDomain.canonicalUrl,
+          kind: appDomain.kind,
+          targetApp: appDomain.name,
+        }
+      : null;
   } catch {
     return null;
   }
 }
 
-async function resolveTargetApp(returnUrl: string) {
+async function resolveTargetApp(
+  returnUrl: string
+): Promise<ResolvedCrossAppTarget | null> {
   const configuredTarget = mapConfiguredUrlToApp(returnUrl);
 
   if (configuredTarget) {
-    return {
-      appName: configuredTarget,
-      targetApp: configuredTarget,
-    };
+    return configuredTarget;
   }
 
   const externalApp = await getExternalAppByReturnUrl(
@@ -55,9 +69,29 @@ async function resolveTargetApp(returnUrl: string) {
   return externalApp
     ? {
         appName: externalApp.displayName,
+        canonicalReturnUrl: decodeReturnUrl(returnUrl),
+        kind: 'external',
         targetApp: externalApp.id,
       }
     : null;
+}
+
+function buildTokenReturnUrl(target: ResolvedCrossAppTarget) {
+  const nextUrl = new URL(target.canonicalReturnUrl);
+
+  if (target.kind === 'internal') {
+    const normalizedTargetPath = normalizeAuthRedirectPath(
+      `${nextUrl.pathname}${nextUrl.search}`,
+      nextUrl.origin,
+      '/'
+    );
+    const verifyUrl = new URL('/verify-token', nextUrl.origin);
+    verifyUrl.searchParams.set('nextUrl', normalizedTargetPath);
+
+    return verifyUrl;
+  }
+
+  return nextUrl;
 }
 
 async function createCrossAppReturn(request: NextRequest) {
@@ -112,7 +146,7 @@ async function createCrossAppReturn(request: NextRequest) {
     );
   }
 
-  const nextUrl = new URL(decodedReturnUrl);
+  const nextUrl = buildTokenReturnUrl(target);
   nextUrl.searchParams.set('token', data as string);
   nextUrl.searchParams.set('originApp', 'web');
   nextUrl.searchParams.set('targetApp', target.targetApp);

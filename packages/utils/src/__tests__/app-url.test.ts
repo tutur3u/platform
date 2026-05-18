@@ -62,6 +62,16 @@ describe('resolveInternalAppUrl', () => {
     ).toBe('https://learn.tuturuuu.localhost');
   });
 
+  it('canonicalizes production internal app URLs to their registered HTTPS origins', () => {
+    expect(
+      resolveInternalAppUrl({
+        appName: 'platform',
+        candidates: ['http://tuturuuu.com/'],
+        fallback: 'http://localhost:7803',
+      })
+    ).toBe('https://tuturuuu.com');
+  });
+
   it('falls back when every configured URL points at another internal app', () => {
     expect(
       resolveInternalAppUrl({
