@@ -261,10 +261,44 @@ describe('readObservabilityDeployments', () => {
             deploymentStamp: 'deploy-abc1234',
             finishedAt: Date.UTC(2026, 4, 17, 9, 0, 1),
             imageTag: 'platform-web-cache:abc1234',
+            stages: [
+              {
+                color: 'blue',
+                id: 'web-promote',
+                status: 'succeeded',
+                target: 'web',
+              },
+              {
+                failureReason: 'hive migration failed',
+                id: 'hive-migrate',
+                status: 'failed',
+                target: 'hive',
+              },
+            ],
             startedAt: Date.UTC(2026, 4, 17, 9, 0, 0),
-            status: 'successful',
+            status: 'failed',
           },
         ])
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'target-state.json'),
+        JSON.stringify({
+          targets: {
+            hive: {
+              activeColor: 'green',
+              commitShortHash: 'oldhive',
+              health: 'blocked',
+              lastPromotedAt: Date.UTC(2026, 4, 17, 8, 0, 0),
+            },
+            web: {
+              activeColor: 'blue',
+              commitShortHash: 'abc1234',
+              health: 'healthy',
+              lastPromotedAt: Date.UTC(2026, 4, 17, 9, 0, 1),
+            },
+          },
+          version: 1,
+        })
       );
       fs.writeFileSync(
         path.join(tempDir, 'prod', 'build-input-hashes.history.json'),
@@ -297,9 +331,29 @@ describe('readObservabilityDeployments', () => {
         commitShortHash: 'abc1234',
         deploymentKind: 'promotion',
         imageTag: 'platform-web-cache:abc1234',
+        stageSummary: {
+          blockedTargets: ['hive'],
+          failedStageCount: 1,
+          promotedTargets: ['web'],
+          totalStageCount: 2,
+        },
+        stages: [
+          expect.objectContaining({ id: 'web-promote', status: 'succeeded' }),
+          expect.objectContaining({ id: 'hive-migrate', status: 'failed' }),
+        ],
         supportBuildCacheHits: 2,
         supportBuildServiceCount: 3,
         supportBuildServices: ['hive-blue'],
+        targetStates: {
+          hive: expect.objectContaining({
+            activeColor: 'green',
+            health: 'blocked',
+          }),
+          web: expect.objectContaining({
+            activeColor: 'blue',
+            health: 'healthy',
+          }),
+        },
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

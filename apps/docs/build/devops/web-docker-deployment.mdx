@@ -176,44 +176,51 @@ Blue/green deploy does this:
 
 1. Reads the last active color from `tmp/docker-web/prod/active-color`.
 2. Ignores that state if the corresponding container no longer exists.
-3. Stops and removes the old inactive-color container, then builds and starts
-   its fresh replacement.
-4. Starts the shared `markitdown`, `storage-unzip-proxy`, and
-   `web-cron-runner` helper containers alongside the target color. The build
-   step is scoped separately: ordinary web commits build only `web-blue` or
-   `web-green`, while Hive and helper images are rebuilt only when their source,
-   Dockerfile, compose wiring, or shared dependency inputs changed. Image-only
-   services such as `redis`, `serverless-redis-http`, `web-proxy`, and
-   `cloudflared` are never passed to `docker compose build`.
-5. Injects Docker-internal helper URLs into `apps/web`:
+3. Builds the target web image through Docker Buildx Bake using Compose-derived
+   targets, then stops/removes only the old target web lane and starts the fresh
+   replacement.
+4. Promotes web immediately after its healthcheck and proxy request check pass.
+   The deploy writes `tmp/docker-web/prod/active-color`, updates
+   `tmp/docker-web/prod/target-state.json`, reloads `web-proxy`, and records the
+   `web-build` / `web-promote` stages before Hive migration starts.
+5. Builds and runs Hive separately. `hive-db-migrate` gates only
+   `hive-blue`/`hive-green` and `hive-realtime`; a migration failure marks
+   `hive-migrate` failed and leaves the already promoted web color serving.
+6. Refreshes support services (`markitdown`, `storage-unzip-proxy`, and
+   `web-cron-runner`) after web/Hive target work. Their build step is scoped:
+   ordinary web commits build only `web-blue` or `web-green`, while Hive and
+   helper images rebuild only when their source, Dockerfile, compose wiring, or
+   shared dependency inputs changed. Image-only services such as `redis`,
+   `serverless-redis-http`, `web-proxy`, and `cloudflared` are never passed to
+   Bake.
+7. Injects Docker-internal helper URLs into `apps/web`:
    `MARKITDOWN_ENDPOINT_URL=http://markitdown:8000/markitdown`,
    `DISCORD_APP_DEPLOYMENT_URL=http://markitdown:8000`,
    `DRIVE_AUTO_EXTRACT_PROXY_URL=http://storage-unzip-proxy:8788/extract`,
    `VALSEA_PRONUNCIATION_ASSESSOR_URL=http://pronunciation-assessor:8010/assess`,
    and `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`.
-6. Waits for the new web container and helper container healthchecks to pass.
-7. Keeps the stable `web-proxy` container running in place during ordinary
+8. Keeps the stable `web-proxy` container running in place during ordinary
    promotions instead of re-running `compose up` against the public `:7803`
    listener. If the running proxy is missing required host ports or its
    container image no longer matches the resolved Compose image, the deploy
    defers the forced proxy recreate until after the replacement lane is healthy.
-8. Validates the generated nginx config with `nginx -t`, then reloads nginx
+9. Validates the generated nginx config with `nginx -t`, then reloads nginx
    inside the existing or freshly recreated proxy only after the new color is
    healthy.
-9. Immediately verifies the proxy can serve the internal
+10. Immediately verifies the proxy can serve the internal
    `/__platform/drain-status` endpoint through the newly promoted color before
    marking the new color active. This avoids false deployment failures from
    public API middleware or rate limits.
-10. Polls an internal drain-status endpoint on the old color and waits until it
+11. Polls an internal drain-status endpoint on the old color and waits until it
    has no in-flight HTTP work left before demoting it to standby. This keeps
    long-running server actions, route handlers, and other open requests from
    being cut off mid-flight.
-11. Falls back to the short fixed drain window only when the old image predates
+12. Falls back to the short fixed drain window only when the old image predates
    the drain-status endpoint and cannot report its active requests yet.
-12. Keeps the demoted color online as a warm nginx backup target instead of
+13. Keeps the demoted color online as a warm nginx backup target instead of
     removing it immediately, so stale keepalive workers and Cloudflare Tunnel
     connections can still fail over cleanly during the post-promotion window.
-13. If the demoted standby color is still on the previous revision after 15
+14. If the demoted standby color is still on the previous revision after 15
     minutes, the watcher automatically rebuilds that stale standby in place so
     both colors converge on the latest checked-out code without flipping the
     active port or promoting traffic again.
@@ -320,8 +327,12 @@ The local runtime state lives in:
 - `tmp/docker-web/prod/active-color`
 - `tmp/docker-web/prod/deployment-stamp`
 - `tmp/docker-web/prod/nginx.conf`
+- `tmp/docker-web/prod/target-state.json`
 
 These files are intentionally local-only and safe to regenerate.
+Infrastructure Monitoring → Deployments reads `target-state.json` and the
+watcher deployment history together, so operators can see a partial promotion
+such as web serving a new commit while Hive remains blocked on migration.
 
 ## Native Cron Runner
 
@@ -638,7 +649,7 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILD_BUILDER_NAME=tuturuuu`
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
-- `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1`
+- `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` for blue/green watcher handoffs
 - `DOCKER_WEB_DOCKER_MEMORY_LIMIT=<bytes from docker info>`
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
 - `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=auto`
@@ -664,23 +675,15 @@ How it works:
   `DOCKER_WEB_BUILDKIT_ENDPOINT` (default
   `tcp://127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}`). The watcher container
   uses `tcp://buildkit:1234` on the Compose network.
-- After each blue/green deployment handoff finishes, the helper runs
-  `docker buildx prune --builder <builder> --all --force` against the active
-  Compose-owned builder so the `platform-buildkit-state` volume does not keep
-  multi-gigabyte build cache indefinitely. The CLI runs this cleanup again
-  after starting the watcher container, so watcher-image build cache is also
-  removed before the command exits. The cleanup then stops and removes the
-  Compose-owned `buildkit` service by default so it does not keep CPU or memory
-  reserved or appear as a stopped container in the `tuturuuu` Docker Desktop
-  stack while no deployment is building. Set
-  `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` only when you are intentionally
-  preserving BuildKit cache for repeated local diagnostics, and set
-  `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when you intentionally want to
-  keep the builder warm between back-to-back deploys.
+- Blue/green watcher handoffs preserve the Compose-owned BuildKit cache by
+  default (`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` and
+  `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0`) so the next staged retry can reuse
+  layers instead of rebuilding already successful targets. Set either variable
+  to `1` only when an operator intentionally wants a post-handoff cleanup.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
-  workflow builds each service image in its own Compose build call so image
-  export and web compilation do not overlap on memory-constrained hosts.
+  workflow builds each Bake target group separately so image export and web
+  compilation do not overlap on memory-constrained hosts.
 - When Docker reports less than 10 GB of total memory for a blue/green run, the
   helper also restarts the Compose-owned `buildkit` service immediately before
   the build batch. This clears long-lived BuildKit RSS before the replacement

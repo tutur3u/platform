@@ -21,7 +21,6 @@ import {
   RefreshCw,
   Search,
   Trash2,
-  TriangleAlert,
 } from '@tuturuuu/icons';
 import {
   type CronExecutionRecord,
@@ -90,6 +89,7 @@ import {
   formatLatencyMs,
 } from './formatters';
 import { ObservabilityBuildResources } from './observability-build-resources';
+import { ObservabilityDeploymentsPanel } from './observability-deployments-panel';
 import { ObservabilityResourceClusters } from './observability-resource-clusters';
 
 export type ObservabilityDashboardMode =
@@ -411,15 +411,6 @@ function isDeploymentInProgress(deployment: ObservabilityDeployment) {
       ready: 'ready',
     }).tone === 'amber'
   );
-}
-
-function getElapsedTime(deployment: ObservabilityDeployment, now = Date.now()) {
-  if (!deployment.startedAt) return null;
-
-  const elapsed = now - deployment.startedAt;
-  if (!Number.isFinite(elapsed) || elapsed < 0) return null;
-
-  return formatDuration(elapsed);
 }
 
 function LoadingSkeleton({
@@ -944,144 +935,6 @@ function RequestRow({ request }: { request: ObservabilityRequest }) {
   );
 }
 
-function DeploymentRow({
-  cacheLabels,
-  deployment,
-  failureCauseLabel,
-  now,
-  stateLabels,
-}: {
-  cacheLabels: {
-    active: string;
-    cachedImage: string;
-    kind: string;
-    standby: string;
-    supportCache: (hits: number, total: number) => string;
-    supportRebuilt: (services: string) => string;
-  };
-  deployment: ObservabilityDeployment;
-  failureCauseLabel: string;
-  now: number;
-  stateLabels: Record<
-    'building' | 'deploying' | 'error' | 'queued' | 'ready',
-    string
-  >;
-}) {
-  const state = getDeploymentStateView(deployment, stateLabels);
-  const elapsed =
-    state.tone === 'amber' ? getElapsedTime(deployment, now) : null;
-  const hash =
-    deployment.commitShortHash ?? deployment.commitHash?.slice(0, 10) ?? '-';
-  const failureReason =
-    state.tone === 'red' && deployment.failureReason
-      ? deployment.failureReason
-      : null;
-  const supportBuiltServices = deployment.supportBuildServices.filter(
-    (service) => !service.startsWith('web-')
-  );
-  const supportCacheTone =
-    deployment.supportBuildServiceCount > 0 && supportBuiltServices.length === 0
-      ? 'green'
-      : 'amber';
-
-  return (
-    <div className="h-full border-border/50 border-b px-4 py-3 text-sm">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px] lg:items-center">
-        <div className="min-w-0">
-          <div className="flex min-w-0 items-center gap-2">
-            <span className="shrink-0 rounded border border-border/70 bg-muted/30 px-1.5 py-0.5 font-mono text-muted-foreground text-xs">
-              {hash}
-            </span>
-            <span className="truncate font-semibold">
-              {deployment.commitSubject ?? tFallbackDeployment(deployment)}
-            </span>
-          </div>
-          <p className="mt-1 truncate font-mono text-muted-foreground text-xs">
-            {deployment.deploymentStamp ??
-              deployment.color ??
-              deployment.commitHash ??
-              'unknown'}
-          </p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {deployment.runtimeState ? (
-              <ToneBadge
-                tone={deployment.runtimeState === 'active' ? 'green' : 'blue'}
-              >
-                {deployment.runtimeState === 'active'
-                  ? cacheLabels.active
-                  : cacheLabels.standby}
-              </ToneBadge>
-            ) : null}
-            {deployment.deploymentKind ? (
-              <ToneBadge tone="muted">
-                {cacheLabels.kind}: {deployment.deploymentKind}
-              </ToneBadge>
-            ) : null}
-            {deployment.imageTag ? (
-              <ToneBadge tone="green">{cacheLabels.cachedImage}</ToneBadge>
-            ) : null}
-            {deployment.supportBuildServiceCount > 0 ? (
-              <ToneBadge tone={supportCacheTone}>
-                {cacheLabels.supportCache(
-                  deployment.supportBuildCacheHits,
-                  deployment.supportBuildServiceCount
-                )}
-              </ToneBadge>
-            ) : null}
-            {supportBuiltServices.length > 0 ? (
-              <ToneBadge tone="orange">
-                {cacheLabels.supportRebuilt(supportBuiltServices.join(', '))}
-              </ToneBadge>
-            ) : null}
-          </div>
-        </div>
-        <div className="min-w-0">
-          <span
-            className={cn(
-              'inline-flex items-center gap-2 font-medium',
-              toneClasses[state.tone].text
-            )}
-          >
-            <span
-              className={cn(
-                'h-2 w-2 rounded-full',
-                toneClasses[state.tone].dot
-              )}
-            />
-            {state.label}
-          </span>
-        </div>
-        <span className="font-mono text-muted-foreground text-xs">
-          {elapsed ?? formatDuration(deployment.durationMs)}
-        </span>
-        <span>{formatNumber(deployment.requestCount)}</span>
-        <span className="text-dynamic-red">
-          {formatNumber(deployment.errorCount)}
-        </span>
-        <span className="text-muted-foreground text-xs">
-          {formatTime(deployment.lastRequestAt)}
-        </span>
-      </div>
-
-      {failureReason ? (
-        <div className="mt-3 flex gap-2 rounded-md border border-dynamic-red/25 bg-dynamic-red/5 px-3 py-2 text-dynamic-red text-xs">
-          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <div className="min-w-0">
-            <p className="font-medium">{failureCauseLabel}</p>
-            <p className="mt-1 line-clamp-2 whitespace-pre-wrap font-mono text-[11px] text-foreground">
-              {failureReason}
-            </p>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function tFallbackDeployment(deployment: ObservabilityDeployment) {
-  return deployment.deploymentStamp ?? deployment.color ?? 'unknown';
-}
-
 function getProjectStatusTone(status: string | null | undefined): Tone {
   if (status === 'failed' || status === 'blocked') {
     return 'red';
@@ -1274,7 +1127,6 @@ export function ObservabilityDashboardClient({
   const [requestFreezeUntil, setRequestFreezeUntil] = useState(() =>
     Date.now()
   );
-  const [now, setNow] = useState(() => Date.now());
   const [selectedExecution, setSelectedExecution] =
     useState<CronExecutionRecord | null>(null);
   const [projectPendingDelete, setProjectPendingDelete] =
@@ -1598,7 +1450,6 @@ export function ObservabilityDashboardClient({
     () => deploymentsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [deploymentsQuery.data]
   );
-  const hasDeploymentInProgress = deployments.some(isDeploymentInProgress);
   const cronExecutions = useMemo(
     () => cronExecutionsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [cronExecutionsQuery.data]
@@ -1606,21 +1457,6 @@ export function ObservabilityDashboardClient({
   const logsTotal = logsQuery.data?.pages[0]?.total ?? 0;
   const requestsTotal = requestsQuery.data?.pages[0]?.total ?? 0;
   const deploymentsTotal = deploymentsQuery.data?.pages[0]?.total ?? 0;
-  const cachedDeploymentCount = deployments.filter(
-    (deployment) => deployment.imageTag
-  ).length;
-  const supportBuildServiceCount = deployments.reduce(
-    (sum, deployment) => sum + deployment.supportBuildServiceCount,
-    0
-  );
-  const supportBuildCacheHitCount = deployments.reduce(
-    (sum, deployment) => sum + deployment.supportBuildCacheHits,
-    0
-  );
-  const supportBuildRebuildCount = deployments.reduce(
-    (sum, deployment) => sum + deployment.supportBuildServices.length,
-    0
-  );
   const cronExecutionsTotal = cronExecutionsQuery.data?.pages[0]?.total ?? 0;
   const newRequestCount = newRequestsQuery.data?.total ?? 0;
   const buildResourceBuckets = resourcesQuery.data?.buildBuckets ?? [];
@@ -1645,37 +1481,12 @@ export function ObservabilityDashboardClient({
     );
   }, [projectId, resources?.allContainers]);
   useEffect(() => {
-    if (mode !== 'deployments' || !hasDeploymentInProgress) {
-      return;
-    }
-
-    const interval = window.setInterval(() => setNow(Date.now()), 100);
-    return () => window.clearInterval(interval);
-  }, [hasDeploymentInProgress, mode]);
-  useEffect(() => {
     setRequestFreezeUntil((current) => (projectId ? Date.now() : current));
   }, [projectId]);
   const infiniteLabels = {
     end: t('infinite.end'),
     loading: t('infinite.loading'),
     more: t('infinite.more'),
-  };
-  const deploymentStateLabels = {
-    building: t('deployment_states.building'),
-    deploying: t('deployment_states.deploying'),
-    error: t('deployment_states.error'),
-    queued: t('deployment_states.queued'),
-    ready: t('deployment_states.ready'),
-  };
-  const deploymentCacheLabels = {
-    active: t('deployments.badges.active'),
-    cachedImage: t('deployments.badges.cached_image'),
-    kind: t('deployments.badges.kind'),
-    standby: t('deployments.badges.standby'),
-    supportCache: (hits: number, total: number) =>
-      t('deployments.badges.support_cache', { hits, total }),
-    supportRebuilt: (services: string) =>
-      t('deployments.badges.support_rebuilt', { services }),
   };
   const cronScheduleLabels = {
     dailyAt: (time: string) => cronT('schedule.daily_at', { time }),
@@ -2538,83 +2349,16 @@ export function ObservabilityDashboardClient({
       )}
 
       {mode === 'deployments' && (
-        <div className="space-y-4">
-          <section className="grid overflow-hidden rounded-lg border border-border md:grid-cols-4">
-            <MetricCard
-              label={t('deployments.summary.history')}
-              meta={t('deployments.summary.history_meta')}
-              value={`${formatNumber(deployments.length)} / ${formatNumber(
-                deploymentsTotal
-              )}`}
-            />
-            <MetricCard
-              label={t('deployments.summary.recovery_cache')}
-              meta={t('deployments.summary.recovery_cache_meta')}
-              value={formatNumber(cachedDeploymentCount)}
-            />
-            <MetricCard
-              label={t('deployments.summary.support_cache')}
-              meta={t('deployments.summary.support_cache_meta', {
-                total: supportBuildServiceCount,
-              })}
-              value={`${formatNumber(supportBuildCacheHitCount)} / ${formatNumber(
-                supportBuildServiceCount
-              )}`}
-            />
-            <MetricCard
-              label={t('deployments.summary.support_rebuilds')}
-              meta={t('deployments.summary.support_rebuilds_meta')}
-              value={formatNumber(supportBuildRebuildCount)}
-            />
-          </section>
-
-          <section className="rounded-lg border border-border bg-background">
-            <div className="grid gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs lg:grid-cols-[minmax(0,1fr)_110px_110px_100px_90px_120px]">
-              <span>{t('columns.deployment')}</span>
-              <span>{t('columns.state')}</span>
-              <span>{t('columns.build_time')}</span>
-              <span>{t('columns.requests')}</span>
-              <span>{t('columns.errors')}</span>
-              <span>{t('columns.last_request')}</span>
-            </div>
-            {deploymentsQuery.isLoading ? (
-              <LoadingSkeleton rows={8} />
-            ) : (
-              <VirtualizedList
-                empty={t('empty.deployments')}
-                estimateRowHeight={168}
-                hasMore={deploymentsQuery.hasNextPage}
-                isFetchingMore={deploymentsQuery.isFetchingNextPage}
-                items={deployments}
-                onEndReached={() => void deploymentsQuery.fetchNextPage()}
-                renderRow={(deployment) => (
-                  <DeploymentRow
-                    cacheLabels={deploymentCacheLabels}
-                    deployment={deployment}
-                    failureCauseLabel={t('deployments.failure_cause')}
-                    key={
-                      deployment.commitHash ??
-                      deployment.deploymentStamp ??
-                      deployment.color ??
-                      'unknown'
-                    }
-                    now={now}
-                    stateLabels={deploymentStateLabels}
-                  />
-                )}
-              />
-            )}
-            <InfiniteFooter
-              endLabel={infiniteLabels.end}
-              hasMore={deploymentsQuery.hasNextPage}
-              isFetchingMore={deploymentsQuery.isFetchingNextPage}
-              loaded={deployments.length}
-              loadingLabel={infiniteLabels.loading}
-              moreLabel={infiniteLabels.more}
-              total={deploymentsTotal}
-            />
-          </section>
-        </div>
+        <ObservabilityDeploymentsPanel
+          deployments={deployments}
+          emptyLabel={t('empty.deployments')}
+          hasMore={deploymentsQuery.hasNextPage}
+          isFetchingMore={deploymentsQuery.isFetchingNextPage}
+          isLoading={deploymentsQuery.isLoading}
+          loaded={deployments.length}
+          onLoadMore={() => void deploymentsQuery.fetchNextPage()}
+          total={deploymentsTotal}
+        />
       )}
 
       {mode === 'cron' && (

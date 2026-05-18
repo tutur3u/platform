@@ -46,6 +46,7 @@ const {
 } = require('./docker-web.js');
 const {
   buildBlueGreenServices,
+  getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
   hasComposeServiceExpectedImage,
@@ -88,6 +89,27 @@ test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only 
       targetColor: 'green',
     }),
     ['web-green']
+  );
+});
+
+test('renderBlueGreenProxyConfig can route web and Hive to different active colors', () => {
+  const config = renderBlueGreenProxyConfig('green', {
+    hiveColor: 'blue',
+    hiveStandbyColor: 'green',
+    standbyColor: 'blue',
+  });
+
+  assert.match(
+    config,
+    /upstream web_upstream \{\n {2}zone web_upstream 64k;\n {2}server web-green:7803 resolve/u
+  );
+  assert.match(
+    config,
+    /upstream hive_app_upstream \{\n {2}zone hive_app_upstream 64k;\n {2}server hive-blue:7814 resolve/u
+  );
+  assert.match(
+    config,
+    /server hive-green:7814 backup resolve max_fails=1 fail_timeout=5s;/u
   );
 });
 
@@ -1515,6 +1537,36 @@ test('buildBlueGreenServices leaves BuildKit cache pruning to deployment cleanup
   );
 });
 
+test('buildBlueGreenServices can build Compose targets with Buildx Bake', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME },
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.timeoutMs]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green', 'hive-green'],
+  });
+
+  assert.deepEqual(calls, [
+    [
+      'docker',
+      getBlueGreenBuildxBakeArgs({
+        bakeFile: path.resolve(__dirname, '..', 'docker-bake.web.prod.hcl'),
+        composeFile: PROD_COMPOSE_FILE,
+        env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME },
+        noCache: false,
+        serviceBatch: ['web-green', 'hive-green'],
+      }),
+      DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
+    ],
+  ]);
+});
+
 test('buildBlueGreenServices restarts BuildKit when low-memory restart is requested', async () => {
   const calls = [];
 
@@ -2065,7 +2117,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
         args.includes('up') &&
         args.includes('web-blue') &&
         !args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-        BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.every((service) =>
+        !BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
           args.includes(service)
         ) &&
         !BLUE_GREEN_DEFERRED_SUPPORT_SERVICES.some((service) =>
@@ -2100,21 +2152,21 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
     assert.notEqual(runtimeUpIndex, -1);
     assert.notEqual(hiveUpIndex, -1);
     assert.notEqual(proxyUpIndex, -1);
-    assert.ok(runtimeUpIndex < hiveUpIndex);
-    assert.ok(hiveUpIndex < proxyUpIndex);
+    assert.ok(runtimeUpIndex < proxyUpIndex);
+    assert.ok(proxyUpIndex < hiveUpIndex);
     const buildCalls = calls.filter(
       ([command, args]) =>
         command === 'docker' &&
-        args[0] === 'compose' &&
-        args.includes('build') &&
+        args[0] === 'buildx' &&
+        args.includes('bake') &&
         !args.includes('--no-cache')
     );
     assert.ok(buildCalls.length > 1);
     assert.ok(
       buildCalls.every(([, args, callEnv]) => {
-        const buildIndex = args.indexOf('build');
         return (
-          args.slice(buildIndex + 1).length === 1 &&
+          args.includes('--builder') &&
+          args.includes(DEFAULT_BUILDER_NAME) &&
           callEnv.BUILDX_BUILDER === DEFAULT_BUILDER_NAME &&
           callEnv.COMPOSE_PARALLEL_LIMIT === '1'
         );
@@ -2334,7 +2386,7 @@ test('runDockerWebWorkflow recovers from stale blue-green container name conflic
         ([command, args]) =>
           command === 'docker' && args[0] === 'compose' && args.includes('up')
       ).length,
-      4
+      5
     );
     assert.equal(readBlueGreenActiveColor(getBlueGreenPaths(tempDir)), 'blue');
   } finally {
@@ -2486,6 +2538,191 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
           call.includes(' rm -f web-green')
       ),
       false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('runBlueGreenProdWorkflow keeps a promoted web lane when Hive migration fails', async () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-web-promoted-hive-fails-')
+  );
+  const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
+  const paths = getBlueGreenPaths(tempDir);
+  const calls = [];
+  let webStarted = false;
+  let proxyStarted = false;
+
+  fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
+  fs.writeFileSync(
+    envFilePath,
+    'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
+  );
+  writeBlueGreenActiveColor('blue', paths);
+
+  const resultFor = (stdout = '') => ({
+    code: 0,
+    signal: null,
+    stderr: '',
+    stdout,
+  });
+
+  const runCommand = async (command, args) => {
+    const key = `${command} ${args.join(' ')}`;
+    calls.push(key);
+
+    if (command === 'docker' && args[0] === 'ps') {
+      return resultFor('');
+    }
+
+    if (args.includes('ps') && args.includes('-q')) {
+      const serviceName = args.at(-1);
+
+      if (serviceName === 'web-blue') return resultFor('blue-123\n');
+      if (serviceName === 'web-green') {
+        return resultFor(webStarted ? 'green-123\n' : '');
+      }
+      if (serviceName === BLUE_GREEN_PROXY_SERVICE) {
+        return resultFor(proxyStarted ? 'proxy-123\n' : '');
+      }
+      if (serviceName === 'web') return resultFor('');
+      if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
+        return resultFor('');
+      }
+
+      return resultFor('');
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{json .NetworkSettings.Ports}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor(`${BLUE_GREEN_PROXY_PORTS_JSON}\n`);
+    }
+
+    if (args.includes('config') && args.includes('--format')) {
+      return resultFor(
+        JSON.stringify({
+          services: {
+            [BLUE_GREEN_PROXY_SERVICE]: { image: 'nginx:1.31.0-alpine' },
+          },
+        })
+      );
+    }
+
+    if (
+      args[0] === 'inspect' &&
+      args[2] === '{{.Config.Image}}' &&
+      args.at(-1) === 'proxy-123'
+    ) {
+      return resultFor('nginx:1.31.0-alpine\n');
+    }
+
+    if (args[0] === 'inspect') {
+      return resultFor('healthy\n');
+    }
+
+    if (args.includes('build')) {
+      return resultFor('');
+    }
+
+    if (args[0] === 'buildx' && args[1] === 'bake') {
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes('web-green')) {
+      webStarted = true;
+      return resultFor('');
+    }
+
+    if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
+      proxyStarted = true;
+      return resultFor('');
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes(BLUE_GREEN_PROXY_SERVICE) &&
+      (args.includes('wget') || args.includes('nginx'))
+    ) {
+      return resultFor('');
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return {
+        code: 1,
+        signal: null,
+        stderr: 'hive migration failed',
+        stdout: '',
+      };
+    }
+
+    if (
+      args.includes('exec') &&
+      args.includes('web-blue') &&
+      args.includes('node')
+    ) {
+      return resultFor(JSON.stringify({ inflightRequests: 0 }));
+    }
+
+    if (args.includes('stop') || args.includes('rm')) {
+      return resultFor('');
+    }
+
+    throw new Error(`Unexpected command: ${key}`);
+  };
+
+  try {
+    await assert.rejects(
+      () =>
+        runBlueGreenProdWorkflow(
+          {
+            action: 'up',
+            composeArgs: [],
+            composeGlobalArgs: [],
+            mode: 'prod',
+            strategy: 'blue-green',
+          },
+          {
+            drainPollMs: 0,
+            drainTimeoutMs: 5_000,
+            env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+            envFilePath,
+            latestCommit: {
+              hash: 'commit-green',
+              shortHash: 'green',
+              subject: 'Promote web before Hive',
+            },
+            proxyDrainMs: 0,
+            rootDir: tempDir,
+            runCommand,
+          }
+        ),
+      (error) => {
+        assert.match(error.message, /hive migration failed/);
+        assert.equal(
+          error.blueGreenStages.find((stage) => stage.id === 'web-promote')
+            ?.status,
+          'succeeded'
+        );
+        assert.equal(
+          error.blueGreenStages.find((stage) => stage.id === 'hive-migrate')
+            ?.status,
+          'failed'
+        );
+        return true;
+      }
+    );
+
+    assert.equal(readBlueGreenActiveColor(paths), 'green');
+    assert.ok(
+      calls.findIndex(
+        (call) =>
+          call.includes(' exec -T web-proxy nginx -s reload') ||
+          call.includes(' exec -T web-proxy wget')
+      ) < calls.findIndex((call) => call.includes(' hive-db-migrate'))
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -2728,6 +2965,15 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       return resultFor('');
     }
 
+    if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      )
+    ) {
+      return resultFor('');
+    }
+
     if (args.includes('up') && args.includes(BLUE_GREEN_PROXY_SERVICE)) {
       forcedProxyRefresh =
         forcedProxyRefresh || args.includes('--force-recreate');
@@ -2788,22 +3034,16 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       )
     );
     assert.ok(
-      calls.findIndex((call) => call.includes(' hive-green')) <
-        calls.findIndex(
-          (call) =>
-            call.includes(' up --detach --no-build --force-recreate') &&
-            (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
-              call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
-        )
+      calls.findIndex(
+        (call) =>
+          call.includes(' up --detach --no-build --force-recreate') &&
+          (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
+            call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
+      ) < calls.findIndex((call) => call.includes(' hive-green'))
     );
-    assert.ok(
-      calls.findIndex((call) => call.includes(' buildx prune ')) >
-        calls.findIndex(
-          (call) =>
-            call.includes(' up --detach --no-build --force-recreate') &&
-            (call.includes(` ${BLUE_GREEN_PROXY_SERVICE} `) ||
-              call.endsWith(` ${BLUE_GREEN_PROXY_SERVICE}`))
-        )
+    assert.equal(
+      calls.some((call) => call.includes(' buildx prune ')),
+      false
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -2908,6 +3148,15 @@ test('runBlueGreenProdWorkflow recreates web-proxy when its image is stale', asy
     }
 
     if (args.includes('up') && args.includes('hive-green')) {
+      return resultFor('');
+    }
+
+    if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      )
+    ) {
       return resultFor('');
     }
 
@@ -3063,9 +3312,19 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
     }
 
     if (
+      args.includes('up') &&
+      BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.some((service) =>
+        args.includes(service)
+      ) &&
+      env.COMPOSE_PROJECT_NAME === 'tuturuuu'
+    ) {
+      return resultFor('');
+    }
+
+    if (
       args.includes('exec') &&
       args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-      args.includes('wget')
+      (args.includes('wget') || args.includes('nginx'))
     ) {
       return resultFor('');
     }
@@ -3095,6 +3354,13 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
     ) {
       assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
       assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '7803');
+      return resultFor('');
+    }
+
+    if (
+      (args.includes('stop') || args.includes('rm')) &&
+      args.some((arg) => typeof arg === 'string' && arg.startsWith('hive'))
+    ) {
       return resultFor('');
     }
 
@@ -3569,12 +3835,12 @@ test('runDockerWebWorkflow ignores stale active colors without live containers',
     assert.notEqual(proxyUpIndex, -1);
     assert.ok(runtimeUpIndex < proxyUpIndex);
     assert.ok(
-      !calls.some(
+      calls.some(
         ([command, args]) =>
           command === 'docker' &&
           args.includes('exec') &&
           args.includes(BLUE_GREEN_PROXY_SERVICE) &&
-          args.includes('reload')
+          args.includes('wget')
       )
     );
   } finally {

@@ -261,6 +261,39 @@ export interface BlueGreenMonitoringServiceHealth {
   status: string | null;
 }
 
+export type BlueGreenDeploymentStageStatus =
+  | 'failed'
+  | 'queued'
+  | 'running'
+  | 'skipped'
+  | 'succeeded';
+
+export type BlueGreenDeploymentTarget = 'hive' | 'proxy' | 'support' | 'web';
+
+export interface BlueGreenDeploymentStage {
+  buildServices: string[];
+  color: string | null;
+  durationMs: number | null;
+  failureReason: string | null;
+  finishedAt: number | null;
+  id: string;
+  serviceNames: string[];
+  skippedReason: string | null;
+  startedAt: number | null;
+  status: BlueGreenDeploymentStageStatus;
+  target: BlueGreenDeploymentTarget;
+}
+
+export interface BlueGreenTargetRuntime {
+  activeColor: string | null;
+  commitHash: string | null;
+  commitShortHash: string | null;
+  deploymentStamp: string | null;
+  health: string;
+  lastPromotedAt: number | null;
+  standbyColor: string | null;
+}
+
 export interface BlueGreenMonitoringDeployment {
   activatedAt?: number | null;
   averageLatencyMs?: number | null;
@@ -289,6 +322,7 @@ export interface BlueGreenMonitoringDeployment {
   runtimeState?: 'active' | 'standby' | null;
   startedAt?: number | null;
   status?: string | null;
+  stages?: BlueGreenDeploymentStage[];
 }
 
 export interface BlueGreenBuildCacheHistoryEntry {
@@ -671,6 +705,7 @@ export interface BlueGreenMonitoringSnapshot {
     serviceContainers: Record<string, string>;
     standbyColor: string | null;
     state: string;
+    targets: Record<'hive' | 'web', BlueGreenTargetRuntime>;
   };
   source: {
     historyAvailable: boolean;
@@ -918,9 +953,21 @@ export interface ObservabilityDeployment {
   requestCount: number;
   startedAt: number | null;
   status: string;
+  stageSummary: {
+    blockedTargets: BlueGreenDeploymentTarget[];
+    cacheHitCount: number;
+    failedStageCount: number;
+    promotedTargets: BlueGreenDeploymentTarget[];
+    rebuildCount: number;
+    runningStageCount: number;
+    skippedStageCount: number;
+    totalStageCount: number;
+  };
+  stages: BlueGreenDeploymentStage[];
   supportBuildCacheHits: number;
   supportBuildServiceCount: number;
   supportBuildServices: string[];
+  targetStates: Record<'hive' | 'web', BlueGreenTargetRuntime>;
 }
 
 export interface ObservabilityLogEvent {

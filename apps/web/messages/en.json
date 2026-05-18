@@ -1947,23 +1947,58 @@
       "deployments": {
         "badges": {
           "active": "Active",
+          "cache_hits": "{count} cached",
           "cached_image": "Recovery cache",
           "kind": "Kind",
+          "rebuilds": "{count} rebuilt",
           "standby": "Standby",
           "support_cache": "{hits}/{total} support cached",
           "support_rebuilt": "Rebuilt {services}"
         },
         "description": "Deployment stamps grouped by request traffic and server errors.",
+        "failed_callout": "{stage} failed; Web is already serving {commit}",
         "failure_cause": "Failure cause",
+        "filters": {
+          "all_cache": "All cache modes",
+          "all_stages": "All stages",
+          "all_statuses": "All statuses",
+          "all_targets": "All targets",
+          "cached": "Cache hits",
+          "rebuilt": "Rebuilds",
+          "search": "Search deployments"
+        },
+        "loaded": "{loaded}/{total} rows",
+        "next_retry": {
+          "none": "No retry queued",
+          "retry_target": "Retry {target}"
+        },
+        "stages": {
+          "hive-migrate": "Hive Migration",
+          "hive-promote": "Hive Promote",
+          "proxy-reload": "Proxy Reload",
+          "support-refresh": "Support Refresh",
+          "web-build": "Web Build",
+          "web-promote": "Web Promote"
+        },
         "summary": {
+          "blocked_targets": "Blocked Targets",
+          "cache_hits": "Cache Hits",
           "history": "History",
           "history_meta": "Loaded deployment rows",
+          "promoted_targets": "Promoted Targets",
+          "rebuilds": "Rebuilds",
           "recovery_cache": "Recovery Images",
           "recovery_cache_meta": "Cached web images available for fallback",
           "support_cache": "Support Cache",
           "support_cache_meta": "{total} support image inputs tracked",
           "support_rebuilds": "Support Rebuilds",
           "support_rebuilds_meta": "Support images rebuilt in loaded rows"
+        },
+        "targets": {
+          "hive": "Hive",
+          "proxy": "Proxy",
+          "support": "Support",
+          "web": "Web"
         },
         "title": "Deployments"
       },
@@ -2109,6 +2144,10 @@
         "routes_meta": "Hot routes in this window",
         "server_errors": "Server Errors",
         "slow_requests": "Slow Requests"
+      },
+      "states": {
+        "none": "None",
+        "unknown": "Unknown"
       },
       "status_families": {
         "clientError": "4xx",

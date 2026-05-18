@@ -851,8 +851,18 @@ async function runDockerWebWorkflow(parsed, options = {}) {
       ? {
           ...composeEnv,
           [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: blueGreenBuildLock.token,
+          DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
+            composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
+          DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
+            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '0',
         }
-      : composeEnv;
+      : {
+          ...composeEnv,
+          DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
+            composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
+          DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
+            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '0',
+        };
     const changedFiles = await getBlueGreenDeploymentChangedFiles({
       env,
       fsImpl,
@@ -862,7 +872,8 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     });
 
     try {
-      await runBlueGreenProdWorkflow(parsed, {
+      const workflowResult = await runBlueGreenProdWorkflow(parsed, {
+        buildStrategy: options.buildStrategy ?? 'bake',
         changedFiles,
         drainPollMs: options.drainPollMs,
         drainTimeoutMs: options.drainTimeoutMs,
@@ -888,6 +899,7 @@ async function runDockerWebWorkflow(parsed, options = {}) {
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
             finishedAt: deployFinishedAt,
+            stages: workflowResult.stages,
             startedAt: deployStartedAt,
             status: 'successful',
           },
@@ -918,11 +930,19 @@ async function runDockerWebWorkflow(parsed, options = {}) {
 
         appendDeploymentHistory(
           {
+            activeColor: readBlueGreenActiveColor(
+              getBlueGreenPaths(options.rootDir ?? ROOT_DIR),
+              fsImpl
+            ),
             buildDurationMs: Math.max(0, deployFinishedAt - deployStartedAt),
             commitHash: latestCommit.hash,
             commitShortHash: latestCommit.shortHash,
             commitSubject: latestCommit.subject,
             finishedAt: deployFinishedAt,
+            stages:
+              error && typeof error === 'object'
+                ? error.blueGreenStages
+                : undefined,
             startedAt: deployStartedAt,
             status: 'failed',
           },

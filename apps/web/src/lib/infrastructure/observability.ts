@@ -1,8 +1,11 @@
 import type {
+  BlueGreenDeploymentStage,
+  BlueGreenDeploymentTarget,
   BlueGreenMonitoringDeployment,
   BlueGreenMonitoringRequestConsoleLog,
   BlueGreenMonitoringRequestLog,
   BlueGreenMonitoringWatcherLog,
+  BlueGreenTargetRuntime,
   ObservabilityAnalytics,
   ObservabilityBuildResources,
   ObservabilityCronRun,
@@ -783,6 +786,60 @@ export async function readObservabilityCronRuns(
   });
 }
 
+function createEmptyTargetState(): BlueGreenTargetRuntime {
+  return {
+    activeColor: null,
+    commitHash: null,
+    commitShortHash: null,
+    deploymentStamp: null,
+    health: 'unknown',
+    lastPromotedAt: null,
+    standbyColor: null,
+  };
+}
+
+function createDeploymentStageSummary(
+  stages: BlueGreenDeploymentStage[],
+  supportBuildCacheHits: number,
+  supportBuildServices: string[]
+): ObservabilityDeployment['stageSummary'] {
+  const promotedTargets = new Set<BlueGreenDeploymentTarget>();
+  const blockedTargets = new Set<BlueGreenDeploymentTarget>();
+
+  for (const stage of stages) {
+    if (stage.status === 'succeeded' && stage.target !== 'proxy') {
+      promotedTargets.add(stage.target);
+    }
+
+    if (stage.status === 'failed') {
+      blockedTargets.add(stage.target);
+    }
+  }
+
+  return {
+    blockedTargets: [...blockedTargets],
+    cacheHitCount: supportBuildCacheHits,
+    failedStageCount: stages.filter((stage) => stage.status === 'failed')
+      .length,
+    promotedTargets: [...promotedTargets],
+    rebuildCount: supportBuildServices.length,
+    runningStageCount: stages.filter((stage) => stage.status === 'running')
+      .length,
+    skippedStageCount: stages.filter((stage) => stage.status === 'skipped')
+      .length,
+    totalStageCount: stages.length,
+  };
+}
+
+function createDeploymentTargetStates(
+  snapshotTargets: Record<'hive' | 'web', BlueGreenTargetRuntime>
+): Record<'hive' | 'web', BlueGreenTargetRuntime> {
+  return {
+    hive: snapshotTargets.hive ?? createEmptyTargetState(),
+    web: snapshotTargets.web ?? createEmptyTargetState(),
+  };
+}
+
 export async function readObservabilityDeployments(
   filters: ObservabilityFilters = {}
 ) {
@@ -793,6 +850,7 @@ export async function readObservabilityDeployments(
     requestPreviewLimit: 0,
     watcherLogLimit: 0,
   });
+  const targetStates = createDeploymentTargetStates(snapshot.runtime.targets);
   const supportBuildCacheEntries = snapshot.buildCache.history ?? [];
   const supportBuildCacheByCommit = new Map(
     supportBuildCacheEntries
@@ -878,6 +936,19 @@ export async function readObservabilityDeployments(
           ? 'standby'
           : null;
 
+    const stages = right.stages.length > 0 ? right.stages : left.stages;
+    const supportBuildCacheHits = Math.max(
+      left.supportBuildCacheHits,
+      right.supportBuildCacheHits
+    );
+    const supportBuildServiceCount = Math.max(
+      left.supportBuildServiceCount,
+      right.supportBuildServiceCount
+    );
+    const supportBuildServices = [
+      ...new Set([...left.supportBuildServices, ...right.supportBuildServices]),
+    ];
+
     return {
       ...left,
       color: mergeText(left.color, right.color),
@@ -905,20 +976,19 @@ export async function readObservabilityDeployments(
         (left.status === 'failed' || right.status === 'failed'
           ? 'failed'
           : left.status || right.status),
-      supportBuildCacheHits: Math.max(
-        left.supportBuildCacheHits,
-        right.supportBuildCacheHits
+      stageSummary: createDeploymentStageSummary(
+        stages,
+        supportBuildCacheHits,
+        supportBuildServices
       ),
-      supportBuildServiceCount: Math.max(
-        left.supportBuildServiceCount,
-        right.supportBuildServiceCount
-      ),
-      supportBuildServices: [
-        ...new Set([
-          ...left.supportBuildServices,
-          ...right.supportBuildServices,
-        ]),
-      ],
+      stages,
+      supportBuildCacheHits,
+      supportBuildServiceCount,
+      supportBuildServices,
+      targetStates: {
+        hive: right.targetStates.hive ?? left.targetStates.hive,
+        web: right.targetStates.web ?? left.targetStates.web,
+      },
     };
   };
   const upsertDeployment = (deployment: ObservabilityDeployment) => {
@@ -957,8 +1027,15 @@ export async function readObservabilityDeployments(
       requestCount: deployment.requestCount ?? 0,
       runtimeState: deployment.runtimeState ?? null,
       startedAt: deployment.startedAt ?? deployment.activatedAt ?? null,
+      stageSummary: createDeploymentStageSummary(
+        deployment.stages ?? [],
+        supportBuildCacheStats.supportBuildCacheHits,
+        supportBuildCacheStats.supportBuildServices
+      ),
+      stages: deployment.stages ?? [],
       status: deployment.status ?? 'unknown',
       ...supportBuildCacheStats,
+      targetStates,
     });
   }
 
@@ -989,9 +1066,12 @@ export async function readObservabilityDeployments(
       requestCount: 0,
       startedAt: null,
       status: 'ready',
+      stageSummary: createDeploymentStageSummary([], 0, []),
+      stages: [],
       supportBuildCacheHits: 0,
       supportBuildServiceCount: 0,
       supportBuildServices: [],
+      targetStates,
     };
 
     current.requestCount += 1;

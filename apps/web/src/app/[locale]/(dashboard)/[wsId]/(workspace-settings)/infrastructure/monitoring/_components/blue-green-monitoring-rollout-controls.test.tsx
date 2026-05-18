@@ -175,6 +175,26 @@ function createSnapshot(overrides: SnapshotOverrides = {}) {
       serviceContainers: {},
       standbyColor: 'green',
       state: 'serving',
+      targets: {
+        hive: {
+          activeColor: null,
+          commitHash: null,
+          commitShortHash: null,
+          deploymentStamp: null,
+          health: 'unknown',
+          lastPromotedAt: null,
+          standbyColor: null,
+        },
+        web: {
+          activeColor: 'blue',
+          commitHash: 'live-commit',
+          commitShortHash: 'live',
+          deploymentStamp: null,
+          health: 'healthy',
+          lastPromotedAt: null,
+          standbyColor: 'green',
+        },
+      },
     },
     overview: {
       averageBuildDurationMs: null,

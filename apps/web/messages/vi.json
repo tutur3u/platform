@@ -1947,17 +1947,46 @@
       "deployments": {
         "badges": {
           "active": "Đang chạy",
+          "cache_hits": "{count} dùng cache",
           "cached_image": "Cache khôi phục",
           "kind": "Loại",
+          "rebuilds": "{count} build lại",
           "standby": "Dự phòng",
           "support_cache": "{hits}/{total} image hỗ trợ dùng cache",
           "support_rebuilt": "Đã build lại {services}"
         },
         "description": "Dấu triển khai được nhóm theo lưu lượng request và lỗi server.",
+        "failed_callout": "{stage} thất bại; Web đã phục vụ {commit}",
         "failure_cause": "Nguyên nhân lỗi",
+        "filters": {
+          "all_cache": "Tất cả chế độ cache",
+          "all_stages": "Tất cả giai đoạn",
+          "all_statuses": "Tất cả trạng thái",
+          "all_targets": "Tất cả mục tiêu",
+          "cached": "Trúng cache",
+          "rebuilt": "Build lại",
+          "search": "Tìm triển khai"
+        },
+        "loaded": "{loaded}/{total} dòng",
+        "next_retry": {
+          "none": "Chưa xếp lịch thử lại",
+          "retry_target": "Thử lại {target}"
+        },
+        "stages": {
+          "hive-migrate": "Di trú Hive",
+          "hive-promote": "Quảng bá Hive",
+          "proxy-reload": "Tải lại proxy",
+          "support-refresh": "Làm mới hỗ trợ",
+          "web-build": "Build Web",
+          "web-promote": "Quảng bá Web"
+        },
         "summary": {
+          "blocked_targets": "Mục tiêu bị chặn",
+          "cache_hits": "Trúng cache",
           "history": "Lịch sử",
           "history_meta": "Các dòng triển khai đã tải",
+          "promoted_targets": "Mục tiêu đã quảng bá",
+          "rebuilds": "Build lại",
           "recovery_cache": "Image khôi phục",
           "recovery_cache_meta": "Image web đã cache để khôi phục",
           "support_cache": "Cache hỗ trợ",
@@ -1965,7 +1994,13 @@
           "support_rebuilds": "Build lại support",
           "support_rebuilds_meta": "Image support đã build lại trong các dòng đã tải"
         },
-        "title": "Deployments"
+        "targets": {
+          "hive": "Hive",
+          "proxy": "Proxy",
+          "support": "Hỗ trợ",
+          "web": "Web"
+        },
+        "title": "Triển khai"
       },
       "empty": {
         "containers": "Không có số liệu container trong snapshot này.",
@@ -2109,6 +2144,10 @@
         "routes_meta": "Route nổi bật trong khung này",
         "server_errors": "Lỗi server",
         "slow_requests": "Request chậm"
+      },
+      "states": {
+        "none": "Không có",
+        "unknown": "Không xác định"
       },
       "status_families": {
         "clientError": "4xx",

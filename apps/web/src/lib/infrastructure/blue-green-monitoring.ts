@@ -4,8 +4,12 @@ import type {
   BlueGreenBuildCache,
   BlueGreenBuildCacheHistoryEntry,
   BlueGreenDeploymentPin,
+  BlueGreenDeploymentStage,
+  BlueGreenDeploymentStageStatus,
+  BlueGreenDeploymentTarget,
   BlueGreenDockerRecoverySettings,
   BlueGreenInstantRolloutRequest,
+  BlueGreenMonitoringDeployment,
   BlueGreenMonitoringDockerContainer,
   BlueGreenMonitoringDockerHealth,
   BlueGreenMonitoringPaginatedResult,
@@ -19,6 +23,7 @@ import type {
   BlueGreenMonitoringStatus,
   BlueGreenMonitoringWatcherHealth,
   BlueGreenMonitoringWatcherLog,
+  BlueGreenTargetRuntime,
 } from '@tuturuuu/internal-api/infrastructure';
 import { normalizeBlueGreenDockerRecoverySettings } from './blue-green-monitoring-controls';
 
@@ -122,6 +127,92 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, unknown>)
     : null;
+}
+
+function normalizeStageStringArray(value: unknown) {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === 'string')
+    : [];
+}
+
+function normalizeDeploymentStageStatus(
+  value: unknown
+): BlueGreenDeploymentStageStatus {
+  return value === 'failed' ||
+    value === 'queued' ||
+    value === 'running' ||
+    value === 'skipped' ||
+    value === 'succeeded'
+    ? value
+    : 'queued';
+}
+
+function normalizeDeploymentTarget(value: unknown): BlueGreenDeploymentTarget {
+  return value === 'hive' ||
+    value === 'proxy' ||
+    value === 'support' ||
+    value === 'web'
+    ? value
+    : 'support';
+}
+
+function normalizeDeploymentStage(
+  value: unknown
+): BlueGreenDeploymentStage | null {
+  const record = toRecord(value);
+
+  if (!record || typeof record.id !== 'string' || record.id.length === 0) {
+    return null;
+  }
+
+  return {
+    buildServices: normalizeStageStringArray(record.buildServices),
+    color: typeof record.color === 'string' ? record.color : null,
+    durationMs: toFiniteNumber(record.durationMs),
+    failureReason:
+      typeof record.failureReason === 'string' ? record.failureReason : null,
+    finishedAt: toFiniteNumber(record.finishedAt),
+    id: record.id,
+    serviceNames: normalizeStageStringArray(record.serviceNames),
+    skippedReason:
+      typeof record.skippedReason === 'string' ? record.skippedReason : null,
+    startedAt: toFiniteNumber(record.startedAt),
+    status: normalizeDeploymentStageStatus(record.status),
+    target: normalizeDeploymentTarget(record.target),
+  };
+}
+
+function normalizeDeploymentStages(value: unknown): BlueGreenDeploymentStage[] {
+  return Array.isArray(value)
+    ? value
+        .map(normalizeDeploymentStage)
+        .filter((stage): stage is BlueGreenDeploymentStage => Boolean(stage))
+    : [];
+}
+
+function normalizeBlueGreenTargetRuntime(
+  value: unknown
+): BlueGreenTargetRuntime {
+  const record = toRecord(value);
+
+  return {
+    activeColor:
+      typeof record?.activeColor === 'string' ? record.activeColor : null,
+    commitHash:
+      typeof record?.commitHash === 'string' ? record.commitHash : null,
+    commitShortHash:
+      typeof record?.commitShortHash === 'string'
+        ? record.commitShortHash
+        : null,
+    deploymentStamp:
+      typeof record?.deploymentStamp === 'string'
+        ? record.deploymentStamp
+        : null,
+    health: typeof record?.health === 'string' ? record.health : 'unknown',
+    lastPromotedAt: toFiniteNumber(record?.lastPromotedAt),
+    standbyColor:
+      typeof record?.standbyColor === 'string' ? record.standbyColor : null,
+  };
 }
 
 function toPositiveInteger(value: unknown) {
@@ -939,7 +1030,7 @@ function normalizeWatcherLogs(
   });
 }
 
-function getDeploymentSortTime(deployment: Record<string, unknown>) {
+function getDeploymentSortTime(deployment: BlueGreenMonitoringDeployment) {
   return (
     toFiniteNumber(deployment.finishedAt) ??
     toFiniteNumber(deployment.activatedAt) ??
@@ -949,7 +1040,7 @@ function getDeploymentSortTime(deployment: Record<string, unknown>) {
 }
 
 function getRecoverableCachedDeployments(
-  deployments: Array<Record<string, unknown>>,
+  deployments: BlueGreenMonitoringDeployment[],
   limit = DEFAULT_RECOVERY_CACHE_LIMIT
 ) {
   const seenImageTags = new Set<string>();
@@ -1500,6 +1591,11 @@ export function readBlueGreenMonitoringSnapshot({
       fsImpl
     )
   );
+  const targetState = readJsonFile<Record<string, unknown>>(
+    path.join(prodDir, 'target-state.json'),
+    fsImpl
+  );
+  const targetStateRecord = toRecord(targetState?.targets);
   const runtime =
     (status?.currentBlueGreen as Record<string, unknown> | null) ?? null;
   const dockerResources =
@@ -1523,11 +1619,18 @@ export function readBlueGreenMonitoringSnapshot({
     Boolean(lock),
     now
   );
-  const deployments = mergeDeploymentMetrics(
+  const deployments: BlueGreenMonitoringDeployment[] = mergeDeploymentMetrics(
     rawDeployments,
     telemetrySummary,
     now
-  );
+  ).map((deployment) => {
+    const entry = deployment as BlueGreenMonitoringDeployment;
+
+    return {
+      ...entry,
+      stages: normalizeDeploymentStages(entry.stages),
+    };
+  });
   const recoveryCache = getRecoverableCachedDeployments(deployments);
   const successfulDeployments = deployments.filter(
     (entry) => entry.status === 'successful'
@@ -1689,6 +1792,10 @@ export function readBlueGreenMonitoringSnapshot({
       standbyColor:
         typeof runtime?.standbyColor === 'string' ? runtime.standbyColor : null,
       state: typeof runtime?.state === 'string' ? runtime.state : 'idle',
+      targets: {
+        hive: normalizeBlueGreenTargetRuntime(targetStateRecord?.hive),
+        web: normalizeBlueGreenTargetRuntime(targetStateRecord?.web),
+      },
     },
     source: {
       historyAvailable: history.length > 0,

@@ -404,6 +404,97 @@ describe('readBlueGreenMonitoringSnapshot', () => {
       fs.rmSync(tempDir, { force: true, recursive: true });
     }
   });
+
+  it('exposes per-target runtime state and deployment stages', () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'blue-green-monitoring-stages-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'prod'), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(path.join(tempDir, 'prod', 'active-color'), 'green\n');
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'target-state.json'),
+        JSON.stringify({
+          targets: {
+            hive: {
+              activeColor: 'blue',
+              commitShortHash: 'oldhive',
+              health: 'blocked',
+              lastPromotedAt: 1000,
+              standbyColor: 'green',
+            },
+            web: {
+              activeColor: 'green',
+              commitShortHash: 'newweb',
+              health: 'healthy',
+              lastPromotedAt: 2000,
+              standbyColor: 'blue',
+            },
+          },
+          version: 1,
+        })
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.history.json'),
+        JSON.stringify([
+          {
+            activeColor: 'green',
+            commitHash: 'commit-green',
+            commitShortHash: 'newweb',
+            deploymentStamp: 'deploy-green',
+            stages: [
+              {
+                color: 'green',
+                finishedAt: 2000,
+                id: 'web-promote',
+                startedAt: 1000,
+                status: 'succeeded',
+                target: 'web',
+              },
+              {
+                failureReason: 'hive migration failed',
+                id: 'hive-migrate',
+                status: 'failed',
+                target: 'hive',
+              },
+            ],
+            status: 'failed',
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const snapshot = readBlueGreenMonitoringSnapshot({ now: 3000 });
+      const runtime = snapshot.runtime as typeof snapshot.runtime & {
+        targets?: Record<string, { activeColor: string | null }>;
+      };
+      const deployment = snapshot
+        .deployments[0] as (typeof snapshot.deployments)[number] & {
+        stages?: Array<{ id: string; status: string; target: string }>;
+      };
+
+      expect(runtime.targets?.web?.activeColor).toBe('green');
+      expect(runtime.targets?.hive?.activeColor).toBe('blue');
+      expect(deployment.stages).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: 'web-promote',
+            status: 'succeeded',
+            target: 'web',
+          }),
+          expect.objectContaining({
+            id: 'hive-migrate',
+            status: 'failed',
+            target: 'hive',
+          }),
+        ])
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
 });
 
 describe('readBlueGreenMonitoringRequestArchive', () => {
