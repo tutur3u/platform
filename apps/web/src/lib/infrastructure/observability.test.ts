@@ -361,6 +361,96 @@ describe('readObservabilityDeployments', () => {
     }
   });
 
+  it('infers completed stage status for modern watcher rows missing persisted stages', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-inferred-deployment-stages-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'prod'), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.history.json'),
+        JSON.stringify([
+          {
+            activeColor: 'green',
+            buildDurationMs: 1234,
+            commitHash: 'abc123456789',
+            commitShortHash: 'abc1234',
+            commitSubject: 'Deploy without stage handoff',
+            deploymentKind: 'promotion',
+            deploymentStamp: 'deploy-abc1234',
+            finishedAt: Date.UTC(2026, 4, 17, 9, 0, 1),
+            imageTag: 'platform-web-cache:abc1234',
+            startedAt: Date.UTC(2026, 4, 17, 9, 0, 0),
+            status: 'successful',
+          },
+        ])
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'build-input-hashes.history.json'),
+        JSON.stringify([
+          {
+            buildServices: [
+              'web-green',
+              'hive-green',
+              'hive-realtime',
+              'markitdown',
+            ],
+            commitHash: 'abc123456789',
+            commitShortHash: 'abc1234',
+            commitSubject: 'Deploy without stage handoff',
+            deploymentKind: 'promotion',
+            deploymentStamp: 'deploy-abc1234',
+            serviceHashes: {
+              'hive-green': 'hash-hive',
+              'hive-realtime': 'hash-realtime',
+              markitdown: 'hash-markitdown',
+              'web-cron-runner': 'hash-cron',
+            },
+            targetColor: 'green',
+            updatedAt: '2026-05-17T09:00:01.000Z',
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const deployments = await readObservabilityDeployments({
+        pageSize: 10,
+        projectId: 'test-project',
+      });
+
+      expect(deployments.items[0]).toMatchObject({
+        commitShortHash: 'abc1234',
+        stageSummary: {
+          failedStageCount: 0,
+          runningStageCount: 0,
+          totalStageCount: 6,
+        },
+        stages: [
+          expect.objectContaining({ id: 'web-build', status: 'succeeded' }),
+          expect.objectContaining({ id: 'web-promote', status: 'succeeded' }),
+          expect.objectContaining({
+            id: 'hive-migrate',
+            status: 'succeeded',
+          }),
+          expect.objectContaining({
+            id: 'hive-promote',
+            status: 'succeeded',
+          }),
+          expect.objectContaining({
+            id: 'support-refresh',
+            status: 'succeeded',
+          }),
+          expect.objectContaining({ id: 'proxy-reload', status: 'succeeded' }),
+        ],
+        synthesizedStages: true,
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('synthesizes a running stage for active watcher deployments', async () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'observability-active-deployment-')

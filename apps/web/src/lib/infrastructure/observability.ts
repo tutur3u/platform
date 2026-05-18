@@ -1,6 +1,4 @@
 import type {
-  BlueGreenDeploymentStage,
-  BlueGreenDeploymentTarget,
   BlueGreenMonitoringDeployment,
   BlueGreenMonitoringRequestConsoleLog,
   BlueGreenMonitoringRequestLog,
@@ -28,6 +26,10 @@ import {
   getLogDrainSqlClient,
   pruneOldLogDrainRecords,
 } from './log-drain';
+import {
+  createDeploymentStageSummary,
+  createDeploymentStagesForObservability,
+} from './observability-deployment-stages';
 
 interface ObservabilityFilters {
   level?: string | null;
@@ -798,74 +800,6 @@ function createEmptyTargetState(): BlueGreenTargetRuntime {
   };
 }
 
-function createDeploymentStageSummary(
-  stages: BlueGreenDeploymentStage[],
-  supportBuildCacheHits: number,
-  supportBuildServices: string[]
-): ObservabilityDeployment['stageSummary'] {
-  const promotedTargets = new Set<BlueGreenDeploymentTarget>();
-  const blockedTargets = new Set<BlueGreenDeploymentTarget>();
-
-  for (const stage of stages) {
-    if (stage.status === 'succeeded' && stage.target !== 'proxy') {
-      promotedTargets.add(stage.target);
-    }
-
-    if (stage.status === 'failed') {
-      blockedTargets.add(stage.target);
-    }
-  }
-
-  return {
-    blockedTargets: [...blockedTargets],
-    cacheHitCount: supportBuildCacheHits,
-    failedStageCount: stages.filter((stage) => stage.status === 'failed')
-      .length,
-    promotedTargets: [...promotedTargets],
-    rebuildCount: supportBuildServices.length,
-    runningStageCount: stages.filter((stage) => stage.status === 'running')
-      .length,
-    skippedStageCount: stages.filter((stage) => stage.status === 'skipped')
-      .length,
-    totalStageCount: stages.length,
-  };
-}
-
-function createSyntheticDeploymentStages(
-  deployment: BlueGreenMonitoringDeployment
-): BlueGreenDeploymentStage[] {
-  const status = String(deployment.status ?? '');
-
-  if (status !== 'building' && status !== 'deploying') {
-    return [];
-  }
-
-  const startedAt =
-    typeof deployment.startedAt === 'number' &&
-    Number.isFinite(deployment.startedAt)
-      ? deployment.startedAt
-      : null;
-  const color =
-    typeof deployment.activeColor === 'string' ? deployment.activeColor : null;
-  const id = status === 'deploying' ? 'web-promote' : 'web-build';
-
-  return [
-    {
-      buildServices: [],
-      color,
-      durationMs: null,
-      failureReason: null,
-      finishedAt: null,
-      id,
-      serviceNames: color ? [`web-${color}`] : [],
-      skippedReason: null,
-      startedAt,
-      status: 'running',
-      target: 'web',
-    },
-  ];
-}
-
 function createDeploymentTargetStates(
   snapshotTargets: Record<'hive' | 'web', BlueGreenTargetRuntime>
 ): Record<'hive' | 'web', BlueGreenTargetRuntime> {
@@ -1051,10 +985,11 @@ export async function readObservabilityDeployments(
     const supportBuildCacheStats = getSupportBuildCacheStats(
       getSupportBuildCacheEntry(deployment)
     );
-    const deploymentStages =
-      deployment.stages && deployment.stages.length > 0
-        ? deployment.stages
-        : createSyntheticDeploymentStages(deployment);
+    const { stages: deploymentStages, synthesizedStages } =
+      createDeploymentStagesForObservability(
+        deployment,
+        supportBuildCacheStats
+      );
 
     upsertDeployment({
       color: deployment.activeColor ?? null,
@@ -1078,9 +1013,7 @@ export async function readObservabilityDeployments(
       ),
       stages: deploymentStages,
       status: deployment.status ?? 'unknown',
-      synthesizedStages:
-        (!deployment.stages || deployment.stages.length === 0) &&
-        deploymentStages.length > 0,
+      synthesizedStages,
       ...supportBuildCacheStats,
       targetStates,
     });

@@ -51,9 +51,12 @@ const {
   getWatchPaths,
 } = require('./paths.js');
 const {
+  DEPLOYMENT_KIND_ENV,
+  DEPLOYMENT_STAGES_FILE_ENV,
   MAX_DEPLOYMENTS,
   SKIP_WATCH_HISTORY_ENV,
   appendDeploymentHistory,
+  clearDeploymentStagesHandoff,
   createPendingDeploymentEntry,
   getLatestDeploymentSummary,
   prependPendingDeployment,
@@ -2230,13 +2233,16 @@ async function runBlueGreenDeploy({
     paths,
     processImpl,
   });
+  clearDeploymentStagesHandoff(paths.deploymentStagesFile, fsImpl);
 
   try {
     const timeoutMs = getDeploymentBuildTimeoutMs(env ?? process.env);
     await runChecked(command, args, {
       env: {
         ...(env ?? process.env),
+        ...(deploymentKind ? { [DEPLOYMENT_KIND_ENV]: deploymentKind } : {}),
         [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+        [DEPLOYMENT_STAGES_FILE_ENV]: paths.deploymentStagesFile,
         [SKIP_WATCH_HISTORY_ENV]: '1',
       },
       runCommand: run,

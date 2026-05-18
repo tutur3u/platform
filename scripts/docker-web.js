@@ -77,9 +77,12 @@ const {
   ensureBuildkitBuilder,
 } = require('./docker-web/buildkit-builder.js');
 const {
+  DEPLOYMENT_KIND_ENV,
+  DEPLOYMENT_STAGES_FILE_ENV,
   SKIP_WATCH_HISTORY_ENV,
   appendDeploymentHistory,
   readDeploymentHistory,
+  writeDeploymentStagesHandoff,
 } = require('./watch-blue-green/history.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
@@ -885,6 +888,16 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         rootDir: options.rootDir,
         runCommand: run,
       });
+      writeDeploymentStagesHandoff(
+        {
+          commitHash: latestCommit.hash,
+          deploymentKind: env[DEPLOYMENT_KIND_ENV] ?? null,
+          stages: workflowResult.stages,
+          status: 'successful',
+        },
+        env[DEPLOYMENT_STAGES_FILE_ENV],
+        fsImpl
+      );
 
       if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
         const deployFinishedAt = Date.now();
@@ -925,6 +938,20 @@ async function runDockerWebWorkflow(parsed, options = {}) {
         });
       }
     } catch (error) {
+      writeDeploymentStagesHandoff(
+        {
+          commitHash: latestCommit.hash,
+          deploymentKind: env[DEPLOYMENT_KIND_ENV] ?? null,
+          stages:
+            error && typeof error === 'object'
+              ? error.blueGreenStages
+              : undefined,
+          status: 'failed',
+        },
+        env[DEPLOYMENT_STAGES_FILE_ENV],
+        fsImpl
+      );
+
       if (env[SKIP_WATCH_HISTORY_ENV] !== '1') {
         const deployFinishedAt = Date.now();
 

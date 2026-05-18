@@ -333,14 +333,17 @@ The local runtime state lives in:
 - `tmp/docker-web/prod/target-state.json`
 
 These files are intentionally local-only and safe to regenerate.
-Infrastructure Monitoring → Deployments reads `target-state.json` and the
-watcher deployment history together, so operators can see a partial promotion
-such as web serving a new commit while Hive remains blocked on migration.
-Rows recorded before staged deployment tracking do not invent queued stages;
-their stage chips are shown as not applicable. Active watcher deployments that
-only have pending build/deploy status are surfaced with a synthetic current
-stage so operators can see the build is in progress before full stage history is
-written.
+Infrastructure Monitoring → Deployments reads `target-state.json`, the watcher
+deployment history, and the latest deployment stage handoff together, so
+operators can see a partial promotion such as web serving a new commit while
+Hive remains blocked on migration. Watcher-managed deployments persist the
+`web-build`, `web-promote`, `hive-migrate`, `hive-promote`,
+`support-refresh`, and `proxy-reload` stage results into deployment history.
+Modern rows that were recorded without a stage array are inferred from final
+deployment status and build-cache metadata; truly pre-tracking rows still show
+stage chips as not applicable. Active watcher deployments that only have
+pending build/deploy status are surfaced with a synthetic current stage so
+operators can see the build is in progress before full stage history is written.
 After each Hive migration pass, the deploy helper removes the completed
 `hive-db-migrate` Compose container. This keeps the one-shot migration service
 from accumulating as an exited container after `depends_on` starts it while Hive

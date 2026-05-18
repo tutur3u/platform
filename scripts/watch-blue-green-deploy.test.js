@@ -82,6 +82,7 @@ const {
   restoreTargetBranchIfDetached,
   resolveCurrentBlueGreenStatus,
   runBunUpgradeAndInstall,
+  runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
   runDeployWatchLoop,
@@ -112,6 +113,12 @@ const {
   writePendingDeployRequest,
   writeWatchStatus,
 } = require('./watch-blue-green-deploy.js');
+const {
+  DEPLOYMENT_KIND_ENV,
+  DEPLOYMENT_STAGES_FILE_ENV,
+  readDeploymentStagesHandoff,
+  writeDeploymentStagesHandoff,
+} = require('./watch-blue-green/history.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const PROD_COMPOSE_FILE = path.join(ROOT_DIR, 'docker-compose.web.prod.yml');
@@ -177,6 +184,42 @@ function createRunCommandMock(responses) {
     return typeof response === 'function' ? response() : response;
   };
 }
+
+test('runBlueGreenDeploy gives child deploys a stage handoff file', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-run-stages-'));
+  const paths = getWatchPaths(tempDir);
+  let childEnv = null;
+
+  try {
+    fs.mkdirSync(paths.runtimeDir, { recursive: true });
+    fs.writeFileSync(paths.deploymentStagesFile, 'stale', 'utf8');
+
+    await runBlueGreenDeploy({
+      deploymentKind: 'promotion',
+      deployCommand: ['bun', 'serve:web:docker:bg'],
+      env: {},
+      latestCommit: {
+        hash: 'abc123',
+        shortHash: 'abc123',
+        subject: 'Stage handoff',
+      },
+      paths,
+      runCommand: async (_command, _args, options = {}) => {
+        childEnv = options.env;
+        assert.equal(fs.existsSync(paths.deploymentStagesFile), false);
+        return createResult('');
+      },
+    });
+
+    assert.equal(childEnv?.[DEPLOYMENT_KIND_ENV], 'promotion');
+    assert.equal(
+      childEnv?.[DEPLOYMENT_STAGES_FILE_ENV],
+      paths.deploymentStagesFile
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
 
 test('docker daemon restart configuration defaults to host service commands', () => {
   assert.equal(
@@ -1794,6 +1837,72 @@ test('appendDeploymentHistory keeps the active deployment open during standby re
     assert.equal(history[0].activeColor, 'blue');
     assert.equal(history[1].activeColor, 'green');
     assert.equal(history[1].endedAt, undefined);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('appendDeploymentHistory consumes deployment stage handoff for watcher-managed rows', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'watch-history-stages-')
+  );
+  const paths = getWatchPaths(tempDir);
+  const stages = [
+    {
+      finishedAt: 2000,
+      id: 'web-build',
+      startedAt: 1000,
+      status: 'succeeded',
+      target: 'web',
+    },
+    {
+      finishedAt: 3000,
+      id: 'hive-migrate',
+      startedAt: 2000,
+      status: 'succeeded',
+      target: 'hive',
+    },
+  ];
+
+  try {
+    assert.equal(
+      writeDeploymentStagesHandoff(
+        {
+          commitHash: 'abc123',
+          deploymentKind: 'promotion',
+          stages,
+          status: 'successful',
+        },
+        paths.deploymentStagesFile,
+        fs
+      ),
+      true
+    );
+    assert.deepEqual(
+      readDeploymentStagesHandoff(paths.deploymentStagesFile, fs),
+      {
+        commitHash: 'abc123',
+        deploymentKind: 'promotion',
+        stages,
+        status: 'successful',
+      }
+    );
+
+    const history = appendDeploymentHistory(
+      {
+        activeColor: 'green',
+        commitHash: 'abc123',
+        commitShortHash: 'abc123',
+        deploymentKind: 'promotion',
+        finishedAt: 3000,
+        startedAt: 1000,
+        status: 'successful',
+      },
+      { fsImpl: fs, paths }
+    );
+
+    assert.deepEqual(history[0].stages, stages);
+    assert.equal(fs.existsSync(paths.deploymentStagesFile), false);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
