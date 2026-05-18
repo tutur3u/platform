@@ -2,7 +2,7 @@
 
 import { BookOpen, Info, Shield } from '@tuturuuu/icons';
 import type { ReactNode } from 'react';
-import { CENTRAL_PORT, DEV_MODE } from '@/constants/common';
+import { DEV_MODE, TTR_URL } from '@/constants/common';
 
 export interface NavItem {
   href: string;
@@ -21,33 +21,25 @@ export interface NavCategory {
 export const useNavigation = (t: any): { categories: NavCategory[] } => {
   const resources: NavItem[] = [
     {
-      href: DEV_MODE
-        ? `http://localhost:${CENTRAL_PORT}/about`
-        : 'https://tuturuuu.com/about',
+      href: `${TTR_URL}/about`,
       label: t('common.about'),
       description: t('common.about-description'),
       icon: <Info className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE
-        ? `http://localhost:${CENTRAL_PORT}/security`
-        : 'https://tuturuuu.com/security',
+      href: `${TTR_URL}/security`,
       label: t('common.security'),
       description: t('common.security-description'),
       icon: <Shield className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE
-        ? `http://localhost:${CENTRAL_PORT}/terms`
-        : 'https://tuturuuu.com/terms',
+      href: `${TTR_URL}/terms`,
       label: t('common.terms'),
       description: t('common.terms-description'),
       icon: <Shield className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE
-        ? `http://localhost:${CENTRAL_PORT}/privacy`
-        : 'https://tuturuuu.com/privacy',
+      href: `${TTR_URL}/privacy`,
       label: t('common.privacy'),
       description: t('common.privacy-description'),
       icon: <Shield className="h-4 w-4" />,
@@ -64,9 +56,7 @@ export const useNavigation = (t: any): { categories: NavCategory[] } => {
       icon: <BookOpen className="h-4 w-4" />,
     },
     {
-      href: DEV_MODE
-        ? `http://localhost:${CENTRAL_PORT}/contact`
-        : 'https://tuturuuu.com/contact',
+      href: `${TTR_URL}/contact`,
       label: t('common.contact'),
       description: '',
     },

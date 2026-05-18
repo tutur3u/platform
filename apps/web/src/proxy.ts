@@ -31,7 +31,7 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import { LOCALE_COOKIE_NAME, PORT, PUBLIC_PATHS } from './constants/common';
+import { BASE_URL, LOCALE_COOKIE_NAME, PUBLIC_PATHS } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import {
   getWorkspaceRoutePermissionRequirements,
@@ -83,7 +83,7 @@ function resolveConfiguredOrigin(value?: string) {
 }
 
 const WEB_APP_URL = isDev
-  ? `http://localhost:${PORT}`
+  ? BASE_URL
   : resolveConfiguredOrigin(process.env.WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_WEB_APP_URL) ||
     resolveConfiguredOrigin(process.env.NEXT_PUBLIC_APP_URL) ||

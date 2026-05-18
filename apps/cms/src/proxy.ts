@@ -22,21 +22,12 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import {
-  CENTRAL_PORT,
-  LOCALE_COOKIE_NAME,
-  PUBLIC_PATHS,
-} from './constants/common';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 import {
   hasRootExternalProjectsAdminPermission,
   resolveWorkspaceExternalProjectBinding,
 } from './lib/external-projects/access';
-
-const WEB_APP_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
 
 type JoinedWorkspace = NonNullable<
   Awaited<ReturnType<typeof getWorkspaces>>
@@ -47,7 +38,7 @@ type JoinedWorkspace = NonNullable<
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
   appSession: { targetApp: 'cms' },
-  webAppUrl: WEB_APP_URL,
+  webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,

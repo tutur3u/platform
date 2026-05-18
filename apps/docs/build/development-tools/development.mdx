@@ -135,8 +135,16 @@ through `dev:app` for direct port-based debugging.
 | Teach | `https://teach.tuturuuu.localhost` |
 | Track | `https://track.tuturuuu.localhost` |
 
-When debugging without Portless, run an app's `dev:app` script directly and use
-the legacy fallback port from that package script.
+When debugging without Portless, run an app's `dev:app` script directly. If
+auth redirects or absolute links must stay on the raw listener port, set
+`BASE_URL`, `WEB_APP_URL`, or the app-specific URL environment variable to that
+legacy fallback port for the direct debug session.
+
+Keep runtime defaults, auth redirects, and cross-app links on the Portless
+origins during local development. Use the shared local app URL helpers instead
+of hard-coding `localhost` fallbacks in satellite app constants or proxies, so a
+browser session that starts on `tasks.tuturuuu.localhost` stays under the
+`tuturuuu.localhost` namespace through login and return URLs.
 
 Use `bun dev:edu` when working on the education apps together. It starts Learn,
 Teach, their shared packages, and the central web app so cross-app login can

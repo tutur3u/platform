@@ -221,6 +221,29 @@ describe('auth proxy redirect helpers', () => {
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
+  it('keeps Portless app requests under the Tuturuuu localhost namespace', async () => {
+    const authProxy = createCentralizedAuthProxy({
+      appSession: { targetApp: 'tudo' },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.localhost',
+    });
+    const request = new NextRequest(
+      'https://tasks.tuturuuu.localhost/personal/tasks'
+    );
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location') ?? '';
+
+    expect(location).toContain('https://tuturuuu.localhost/login?returnUrl=');
+    expect(location).toContain(
+      encodeURIComponent(
+        'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal%2Ftasks'
+      )
+    );
+    expect(location).not.toContain('http://localhost:7803');
+    expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
   it('builds registered app return URLs from forwarded public app hosts', async () => {
     const authProxy = createCentralizedAuthProxy({
       appSession: { targetApp: 'learn' },

@@ -92,6 +92,75 @@ test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
   );
 });
 
+test('satellite runtime defaults keep Portless origins in local redirects', () => {
+  const appConstantFiles = [
+    'apps/calendar/src/constants/common.ts',
+    'apps/cms/src/constants/common.ts',
+    'apps/finance/src/constants/common.ts',
+    'apps/rewise/src/constants/common.ts',
+    'apps/tasks/src/constants/common.ts',
+    'apps/track/src/constants/common.ts',
+  ];
+  const centralAuthProxyFiles = [
+    'apps/calendar/src/proxy.ts',
+    'apps/cms/src/proxy.ts',
+    'apps/finance/src/proxy.ts',
+    'apps/meet/src/proxy.ts',
+    'apps/nova/src/proxy.ts',
+    'apps/rewise/src/proxy.ts',
+    'apps/tasks/src/proxy.ts',
+    'apps/track/src/proxy.ts',
+  ];
+
+  for (const relativePath of appConstantFiles) {
+    const source = fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
+    assert.match(
+      source,
+      /getLocalInternalAppUrl/u,
+      `${relativePath} should use Portless local app defaults`
+    );
+    assert.doesNotMatch(
+      source,
+      /:\s*`http:\/\/localhost:\$\{(?:CENTRAL_)?PORT\}`/u,
+      `${relativePath} should not fall back directly to localhost origins`
+    );
+  }
+
+  for (const relativePath of centralAuthProxyFiles) {
+    const source = fs.readFileSync(path.join(repoRoot, relativePath), 'utf8');
+    assert.match(
+      source,
+      /webAppUrl:\s*TTR_URL/u,
+      `${relativePath} should redirect through the configured central app URL`
+    );
+    assert.doesNotMatch(
+      source,
+      /http:\/\/localhost:\$\{CENTRAL_PORT\}/u,
+      `${relativePath} should not send local auth redirects to localhost`
+    );
+  }
+
+  const webProxySource = fs.readFileSync(
+    path.join(repoRoot, 'apps/web/src/proxy.ts'),
+    'utf8'
+  );
+  assert.match(webProxySource, /\?\s*BASE_URL/u);
+  assert.doesNotMatch(webProxySource, /http:\/\/localhost:\$\{PORT\}/u);
+
+  const novaNavigationSource = fs.readFileSync(
+    path.join(
+      repoRoot,
+      'apps/nova/src/app/[locale]/(marketing)/shared/navigation-config.tsx'
+    ),
+    'utf8'
+  );
+  assert.match(novaNavigationSource, /TTR_URL/u);
+  assert.doesNotMatch(
+    novaNavigationSource,
+    /http:\/\/localhost:\$\{CENTRAL_PORT\}/u
+  );
+});
+
 test('root setup runs Portless setup before build tasks', () => {
   const pkg = readJson(path.join(repoRoot, 'package.json'));
 

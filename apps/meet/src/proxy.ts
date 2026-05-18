@@ -8,23 +8,14 @@ import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
-import {
-  CENTRAL_PORT,
-  LOCALE_COOKIE_NAME,
-  PUBLIC_PATHS,
-} from './constants/common';
+import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
-
-const WEB_APP_URL =
-  process.env.NODE_ENV === 'production'
-    ? 'https://tuturuuu.com'
-    : `http://localhost:${CENTRAL_PORT}`;
 
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
-  webAppUrl: WEB_APP_URL,
+  webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
   mfa: { enabled: false },
