@@ -19,6 +19,8 @@ import {
 } from '@/lib/workspace-storage-provider';
 
 const WEBGL_VIEWPORT_FILL_MARKER = 'data-tuturuuu-webgl-viewport-fill';
+const WEBGL_PACKAGE_SANDBOX_CSP =
+  'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
 
 function escapeHtmlAttribute(value: string) {
   return value
@@ -465,6 +467,7 @@ export async function GET(
         : downloaded.contentType;
     const headers = new Headers({
       'Cache-Control': 'no-store, max-age=0',
+      'Content-Security-Policy': WEBGL_PACKAGE_SANDBOX_CSP,
       'Content-Type': contentType,
       'X-Content-Type-Options': 'nosniff',
     });

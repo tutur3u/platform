@@ -140,12 +140,17 @@ export async function resolveWorkspaceStorageAutoExtractConfig(
   const enabled =
     isTruthySecret(secretMap.get(DRIVE_AUTO_EXTRACT_ZIP_SECRET)) ||
     isTruthySecret(secretMap.get(EXTERNAL_PROJECT_ENABLED_SECRET));
+  const workspaceProxyUrl = secretMap
+    .get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)
+    ?.trim();
+  const workspaceProxyToken = secretMap
+    .get(DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET)
+    ?.trim();
   const proxyUrl =
-    secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET)?.trim() ||
-    process.env.DRIVE_AUTO_EXTRACT_PROXY_URL?.trim();
-  const proxyToken =
-    secretMap.get(DRIVE_AUTO_EXTRACT_PROXY_TOKEN_SECRET)?.trim() ||
-    process.env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN?.trim();
+    workspaceProxyUrl || process.env.DRIVE_AUTO_EXTRACT_PROXY_URL?.trim();
+  const proxyToken = workspaceProxyUrl
+    ? workspaceProxyToken
+    : workspaceProxyToken || process.env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN?.trim();
 
   return {
     enabled,

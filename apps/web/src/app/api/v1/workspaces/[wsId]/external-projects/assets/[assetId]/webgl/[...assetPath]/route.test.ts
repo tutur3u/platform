@@ -61,6 +61,8 @@ const artifactMetadata = {
     'external-projects/yoola/games/mine/webgl-packages/package/Mine Blast WebGL',
   version: 1,
 };
+const webglSandboxCsp =
+  'sandbox allow-scripts allow-downloads allow-pointer-lock allow-modals';
 
 function createAdminWithAsset(status: 'draft' | 'published') {
   return {
@@ -175,6 +177,9 @@ describe('WebGL package asset route', () => {
     expect(response.headers.get('content-type')).toBe(
       'text/html; charset=utf-8'
     );
+    expect(response.headers.get('content-security-policy')).toBe(
+      webglSandboxCsp
+    );
     expect(response.headers.get('content-length')).toBeTruthy();
     const html = await response.text();
     expect(html).toContain(
@@ -189,6 +194,24 @@ describe('WebGL package asset route', () => {
     expect(html).toContain('HTMLScriptElement');
     expect(html).toContain('canvas.width');
     expect(html).toContain('tuturuuu-webgl-download-status');
+  });
+
+  it('keeps published WebGL package documents sandboxed without requester auth', async () => {
+    mocks.createAdminClient.mockResolvedValue(
+      createAdminWithAsset('published')
+    );
+    mocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new TextEncoder().encode('<!DOCTYPE html><html></html>'),
+      contentType: 'application/octet-stream',
+    });
+
+    const response = await callRoute(['index.html']);
+
+    expect(response.status).toBe(200);
+    expect(mocks.requireWorkspaceExternalProjectAccess).not.toHaveBeenCalled();
+    expect(response.headers.get('content-security-policy')).toBe(
+      webglSandboxCsp
+    );
   });
 
   it('serves Unity Build resources from the same WebGL package route', async () => {
@@ -206,6 +229,9 @@ describe('WebGL package asset route', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('content-type')).toBe(
       'application/javascript; charset=utf-8'
+    );
+    expect(response.headers.get('content-security-policy')).toBe(
+      webglSandboxCsp
     );
     await expect(response.text()).resolves.toBe('createUnityInstance();');
     expect(

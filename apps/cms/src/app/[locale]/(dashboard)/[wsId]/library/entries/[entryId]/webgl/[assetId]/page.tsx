@@ -74,6 +74,7 @@ export default async function CmsWebglPackagePlayerPage({ params }: Props) {
       <iframe
         allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
         className="h-full min-h-0 w-full flex-1 border-0 bg-black"
+        sandbox="allow-downloads allow-modals allow-pointer-lock allow-scripts"
         src={entryUrl}
         title={entry.title}
       />

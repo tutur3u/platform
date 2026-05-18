@@ -53,4 +53,58 @@ describe('workspace storage auto extract config', () => {
       proxyUrl: 'https://zip-proxy.example.com/extract',
     });
   });
+
+  it('uses the process fallback proxy pair when workspace proxy secrets are absent', async () => {
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_URL =
+      'http://storage-unzip-proxy:8788/extract';
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN = 'global-token';
+    mocks.getSecrets.mockResolvedValue([
+      {
+        name: EXTERNAL_PROJECT_ENABLED_SECRET,
+        value: 'true',
+      },
+    ]);
+
+    const { resolveWorkspaceStorageAutoExtractConfig } = await import(
+      './workspace-storage-auto-extract'
+    );
+
+    await expect(
+      resolveWorkspaceStorageAutoExtractConfig('ws-1')
+    ).resolves.toEqual({
+      configured: true,
+      enabled: true,
+      proxyToken: 'global-token',
+      proxyUrl: 'http://storage-unzip-proxy:8788/extract',
+    });
+  });
+
+  it('does not pair a workspace proxy URL with the process fallback token', async () => {
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_URL =
+      'http://storage-unzip-proxy:8788/extract';
+    process.env.DRIVE_AUTO_EXTRACT_PROXY_TOKEN = 'global-token';
+    mocks.getSecrets.mockResolvedValue([
+      {
+        name: EXTERNAL_PROJECT_ENABLED_SECRET,
+        value: 'true',
+      },
+      {
+        name: DRIVE_AUTO_EXTRACT_PROXY_URL_SECRET,
+        value: 'https://attacker.example.com/extract',
+      },
+    ]);
+
+    const { resolveWorkspaceStorageAutoExtractConfig } = await import(
+      './workspace-storage-auto-extract'
+    );
+
+    await expect(
+      resolveWorkspaceStorageAutoExtractConfig('ws-1')
+    ).resolves.toEqual({
+      configured: false,
+      enabled: true,
+      proxyToken: undefined,
+      proxyUrl: 'https://attacker.example.com/extract',
+    });
+  });
 });

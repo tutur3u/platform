@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-17'
+updatedAt: '2026-05-18'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -239,7 +239,10 @@ Workspace ZIP auto-extract is enabled by the workspace-level
 `DRIVE_AUTO_EXTRACT_ZIP` secret. Workspaces with `EXTERNAL_PROJECT_ENABLED=true`
 also opt in automatically so CMS/WebGL workspaces can reuse the unzipper without
 duplicating storage automation setup. The Docker-internal URL and token are
-fallbacks for workspaces that have not supplied custom proxy secrets.
+fallbacks for workspaces that have not supplied custom proxy secrets. If a
+workspace supplies a custom `DRIVE_AUTO_EXTRACT_PROXY_URL`, it must also supply
+its own `DRIVE_AUTO_EXTRACT_PROXY_TOKEN`; the process-wide fallback token must
+not be sent to a workspace-controlled proxy URL.
 
 The `pronunciation-assessor` helper is local-only. It defaults to
 `PRONUNCIATION_ASSESSOR_DEFAULT_MODEL=local-whisper-large-v3-turbo`, can switch

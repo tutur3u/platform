@@ -19,6 +19,7 @@ export default async function PublicWebglGamePage({ params }: Props) {
       <iframe
         allow="autoplay; fullscreen; gamepad; xr-spatial-tracking"
         className="h-svh w-screen border-0 bg-black"
+        sandbox="allow-downloads allow-modals allow-pointer-lock allow-scripts"
         src={src}
         title={t('epm.webgl_package_title')}
       />
