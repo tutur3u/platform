@@ -5,17 +5,13 @@ import {
   handleTaskDetailRoutePUT,
 } from '@tuturuuu/apis/tu-do/tasks/taskId/route';
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import {
-  CLI_APP_ACCESS_SCOPE,
-  CLI_APP_TARGET_APP,
-} from '@tuturuuu/auth/cli-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string; taskId: string };
 
-const CLI_APP_SESSION_AUTH = {
-  requiredScope: CLI_APP_ACCESS_SCOPE,
-  targetApp: CLI_APP_TARGET_APP,
+const TASKS_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
 } as const;
 
 function createTaskDetailRouteContext(params: Params) {
@@ -33,7 +29,7 @@ export const GET = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );
 
 export const PUT = withSessionAuth<Params>(
@@ -43,7 +39,7 @@ export const PUT = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );
 
 export const DELETE = withSessionAuth<Params>(
@@ -53,7 +49,7 @@ export const DELETE = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );
 
 export const PATCH = withSessionAuth<Params>(
@@ -63,5 +59,5 @@ export const PATCH = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );

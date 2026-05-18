@@ -18,6 +18,7 @@ const fromMock = vi.fn();
 const createClientMock = vi.fn();
 const createAdminClientMock = vi.fn();
 const getAppSessionTokenFromRequestMock = vi.fn();
+const verifyAppSessionRequestMock = vi.fn();
 const verifyCliAccessTokenMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const getPermissionsMock = vi.fn();
@@ -27,9 +28,17 @@ const workspacesEqMock = vi.fn();
 const workspacesSelectMock = vi.fn();
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  createAppSessionUser: (claims: { email?: string | null; sub: string }) => ({
+    aud: 'authenticated',
+    email: claims.email ?? undefined,
+    id: claims.sub,
+  }),
   getAppSessionTokenFromRequest: (
     ...args: Parameters<typeof getAppSessionTokenFromRequestMock>
   ) => getAppSessionTokenFromRequestMock(...args),
+  verifyAppSessionRequest: (
+    ...args: Parameters<typeof verifyAppSessionRequestMock>
+  ) => verifyAppSessionRequestMock(...args),
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
@@ -78,6 +87,7 @@ describe('task boards route GET', () => {
     });
     ensureDefaultPersonalTaskBoardMock.mockResolvedValue(null);
     getAppSessionTokenFromRequestMock.mockReturnValue(null);
+    verifyAppSessionRequestMock.mockReturnValue({ ok: false });
     verifyCliAccessTokenMock.mockReturnValue({ ok: false });
 
     authGetUserMock.mockResolvedValue({
@@ -249,6 +259,45 @@ describe('task boards route GET', () => {
     expect(createClientMock).not.toHaveBeenCalled();
     expect(workspacesSelectMock).toHaveBeenCalledWith(
       'id, workspace_members!inner(user_id, type)'
+    );
+  });
+
+  it('allows Tasks app-session tokens to list personal workspace boards', async () => {
+    verifyAppSessionRequestMock.mockReturnValue({
+      claims: {
+        email: 'tasks-user@example.com',
+        sub: '00000000-0000-4000-8000-000000000999',
+      },
+      ok: true,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards?status=all',
+        {
+          headers: {
+            cookie: 'tuturuuu_app_session=ttr_app_tasks',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    if (!response) {
+      throw new Error('Expected GET to return a response');
+    }
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
+    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { targetApp: 'tasks' }
     );
   });
 });

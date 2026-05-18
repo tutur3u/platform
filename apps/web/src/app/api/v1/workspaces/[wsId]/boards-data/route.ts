@@ -10,6 +10,10 @@ import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
+const TASKS_APP_SESSION_AUTH = {
+  targetApp: 'tasks',
+} as const;
+
 const paramsSchema = z.object({
   wsId: z.guid(),
 });
@@ -133,5 +137,8 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
     }
   },
-  { cache: { maxAge: 10, swr: 20 } }
+  {
+    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
+    cache: { maxAge: 10, swr: 20 },
+  }
 );

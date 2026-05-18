@@ -96,7 +96,7 @@ describe('workspace task API route app-session bridge', () => {
     );
   });
 
-  it('requires platform CLI app-session auth on task routes', async () => {
+  it('allows platform CLI and Tasks app-session auth on task routes', async () => {
     await import('@/app/api/v1/workspaces/[wsId]/tasks/route');
 
     expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
@@ -104,8 +104,7 @@ describe('workspace task API route app-session bridge', () => {
       expect.any(Function),
       {
         allowAppSessionAuth: {
-          requiredScope: 'cli:access',
-          targetApp: 'platform',
+          targetApp: ['platform', 'tasks'],
         },
       }
     );
@@ -114,8 +113,7 @@ describe('workspace task API route app-session bridge', () => {
       expect.any(Function),
       {
         allowAppSessionAuth: {
-          requiredScope: 'cli:access',
-          targetApp: 'platform',
+          targetApp: ['platform', 'tasks'],
         },
       }
     );

@@ -11,6 +11,10 @@ import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
+const TASKS_APP_SESSION_AUTH = {
+  targetApp: 'tasks',
+} as const;
+
 /** Row shape returned by get_user_tasks_with_relations RPC */
 interface RpcTaskRow {
   task_id: string;
@@ -313,5 +317,8 @@ export const GET = withSessionAuth(
       );
     }
   },
-  { cache: { maxAge: 5, swr: 10 } }
+  {
+    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
+    cache: { maxAge: 5, swr: 10 },
+  }
 );

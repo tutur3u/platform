@@ -3,17 +3,13 @@ import {
   handleTaskRoutePOST,
 } from '@tuturuuu/apis/tu-do/tasks/route';
 import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
-import {
-  CLI_APP_ACCESS_SCOPE,
-  CLI_APP_TARGET_APP,
-} from '@tuturuuu/auth/cli-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { withSessionAuth } from '@/lib/api-auth';
 
 type Params = { wsId: string };
 
-const CLI_APP_SESSION_AUTH = {
-  requiredScope: CLI_APP_ACCESS_SCOPE,
-  targetApp: CLI_APP_TARGET_APP,
+const TASKS_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
 } as const;
 
 function createTaskRouteContext(params: Params) {
@@ -31,7 +27,7 @@ export const GET = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );
 
 export const POST = withSessionAuth<Params>(
@@ -41,5 +37,5 @@ export const POST = withSessionAuth<Params>(
       supabase,
       user,
     }),
-  { allowAppSessionAuth: CLI_APP_SESSION_AUTH }
+  { allowAppSessionAuth: TASKS_ROUTE_APP_SESSION_AUTH }
 );

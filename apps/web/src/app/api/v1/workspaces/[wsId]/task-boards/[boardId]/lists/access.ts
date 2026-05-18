@@ -1,4 +1,8 @@
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  createAppSessionUser,
+  getAppSessionTokenFromRequest,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session';
 import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
@@ -52,17 +56,26 @@ type BoardAccessResult =
       error: NextResponse;
     };
 
-function createCliSessionUser(claims: { email: string | null; sub: string }) {
-  return {
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  } as SupabaseUser;
-}
-
 async function resolveBoardRequestAuth(
   request: Request
 ): Promise<BoardRequestAuth> {
+  const taskAppSessionVerification = verifyAppSessionRequest(request, {
+    targetApp: 'tasks',
+  });
+
+  if (taskAppSessionVerification.ok) {
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
+
+    return {
+      appSession: true,
+      sbAdmin,
+      supabase: sbAdmin as TypedSupabaseClient,
+      user: createAppSessionUser(taskAppSessionVerification.claims),
+    };
+  }
+
   const appSessionToken = getAppSessionTokenFromRequest(request);
 
   if (appSessionToken) {
@@ -77,7 +90,7 @@ async function resolveBoardRequestAuth(
         appSession: true,
         sbAdmin,
         supabase: sbAdmin as TypedSupabaseClient,
-        user: createCliSessionUser(verification.claims),
+        user: createAppSessionUser(verification.claims),
       };
     }
   }

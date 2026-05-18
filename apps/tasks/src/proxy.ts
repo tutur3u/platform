@@ -2,9 +2,11 @@ import { match } from '@formatjs/intl-localematcher';
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
   createCentralizedAuthProxy,
+  normalizeAuthRedirectPath,
   propagateAuthCookies,
 } from '@tuturuuu/auth/proxy';
 import {
@@ -22,13 +24,19 @@ import createIntlMiddleware from 'next-intl/middleware';
 import { LOCALE_COOKIE_NAME, PUBLIC_PATHS, TTR_URL } from './constants/common';
 import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 
+const AUTH_PUBLIC_PATHS = [
+  ...PUBLIC_PATHS,
+  '/login',
+  ...supportedLocales.map((locale) => `/${locale}/login`),
+];
+
 // Create the centralized auth middleware
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
   appSession: { targetApp: 'tasks' },
   webAppUrl: TTR_URL,
-  publicPaths: PUBLIC_PATHS,
+  publicPaths: AUTH_PUBLIC_PATHS,
   skipApiRoutes: true,
   excludeRootPath: true,
   mfa: { enabled: false },
@@ -57,6 +65,7 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
   const appSession = getAppSessionClaimsFromRequest(req, {
     targetApp: 'tasks',
   });
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest(req);
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID
@@ -69,6 +78,26 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
 
   const isRootWorkspaceSegment = (segment?: string) =>
     segment?.toLowerCase() === ROOT_WORKSPACE_ID.toLowerCase();
+  const loginSegmentIndex =
+    pathSegments[0] && supportedLocales.includes(pathSegments[0] as Locale)
+      ? 1
+      : 0;
+  const isLoginPath = pathSegments[loginSegmentIndex] === 'login';
+
+  if (isLoginPath && appSession && hasWebAppSession) {
+    const nextPath = normalizeAuthRedirectPath(
+      req.nextUrl.searchParams.get('next') ??
+        req.nextUrl.searchParams.get('nextUrl'),
+      req.nextUrl.origin,
+      '/personal/tasks'
+    );
+    const loginRedirect = clearSupabaseAuthCookies(
+      req,
+      NextResponse.redirect(new URL(nextPath, req.nextUrl))
+    );
+    propagateAuthCookies(authRes, loginRedirect);
+    return loginRedirect;
+  }
 
   if (pathSegments.length >= 1) {
     // Check if first segment is a locale

@@ -5,13 +5,22 @@ const createAdminClientMock = vi.fn();
 const createClientMock = vi.fn();
 const getAppSessionTokenFromRequestMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
+const verifyAppSessionRequestMock = vi.fn();
 const verifyCliAccessTokenMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  createAppSessionUser: (claims: { email?: string | null; sub: string }) => ({
+    aud: 'authenticated',
+    email: claims.email ?? undefined,
+    id: claims.sub,
+  }),
   getAppSessionTokenFromRequest: (
     ...args: Parameters<typeof getAppSessionTokenFromRequestMock>
   ) => getAppSessionTokenFromRequestMock(...args),
+  verifyAppSessionRequest: (
+    ...args: Parameters<typeof verifyAppSessionRequestMock>
+  ) => verifyAppSessionRequestMock(...args),
 }));
 
 vi.mock('@tuturuuu/auth/cli-session', () => ({
@@ -48,6 +57,7 @@ describe('task board list access', () => {
     vi.clearAllMocks();
 
     getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_access');
+    verifyAppSessionRequestMock.mockReturnValue({ ok: false });
     verifyCliAccessTokenMock.mockReturnValue({
       claims: {
         email: 'agent@example.com',
@@ -120,6 +130,40 @@ describe('task board list access', () => {
         userId: '00000000-0000-4000-8000-000000000999',
         wsId: '00000000-0000-4000-8000-000000000123',
       })
+    );
+  });
+
+  it('resolves personal board access from a Tasks app-session token', async () => {
+    getAppSessionTokenFromRequestMock.mockReturnValue('ttr_app_tasks');
+    verifyAppSessionRequestMock.mockReturnValue({
+      claims: {
+        email: 'tasks-user@example.com',
+        sub: '00000000-0000-4000-8000-000000000999',
+      },
+      ok: true,
+    });
+
+    const access = await requireBoardAccess(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards/00000000-0000-4000-8000-000000000456/lists',
+        {
+          headers: {
+            cookie: 'tuturuuu_app_session=ttr_app_tasks',
+          },
+        }
+      ),
+      {
+        boardId: '00000000-0000-4000-8000-000000000456',
+        wsId: 'personal',
+      }
+    );
+
+    expect('error' in access).toBe(false);
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
+    expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
+      expect.any(NextRequest),
+      { targetApp: 'tasks' }
     );
   });
 });

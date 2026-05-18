@@ -1,3 +1,4 @@
+import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
@@ -106,7 +107,7 @@ describe('notifications unread-count route', () => {
     });
 
     const response = await GET(
-      new Request(
+      new NextRequest(
         'http://localhost/api/v1/notifications/unread-count?wsId=841a71e7-2015-47e5-8f23-0d85f6c456eb'
       )
     );
@@ -148,7 +149,7 @@ describe('notifications unread-count route', () => {
     });
 
     const response = await GET(
-      new Request(
+      new NextRequest(
         'http://localhost/api/v1/notifications/unread-count?wsId=841a71e7-2015-47e5-8f23-0d85f6c456eb'
       )
     );

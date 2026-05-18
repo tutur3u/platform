@@ -40,13 +40,26 @@ describe('workspace API route app-session bridge', () => {
     );
   });
 
-  it('requires platform CLI app-session auth on the workspace list route', async () => {
+  it('allows internal app-session auth on the workspace list route', async () => {
     await import('@/app/api/v1/workspaces/route');
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(expect.any(Function), {
       allowAppSessionAuth: {
-        requiredScope: 'cli:access',
-        targetApp: 'platform',
+        targetApp: [
+          'calendar',
+          'cms',
+          'finance',
+          'hive',
+          'inventory',
+          'learn',
+          'mira',
+          'nova',
+          'rewise',
+          'tasks',
+          'teach',
+          'track',
+          'platform',
+        ],
       },
       cache: { maxAge: 60, swr: 30 },
     });

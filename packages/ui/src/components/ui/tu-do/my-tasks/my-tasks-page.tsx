@@ -7,6 +7,10 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  user?: {
+    email?: string | null;
+    id: string;
+  } | null;
 }
 
 /**
@@ -14,19 +18,22 @@ interface Props {
  * Handles workspace resolution and user authentication.
  * Used by both apps/web and apps/tasks.
  */
-export default async function MyTasksPage({ params }: Props) {
+export default async function MyTasksPage({ params, user }: Props) {
   const { wsId: id } = await params;
 
-  const user = await getCurrentUser();
-  if (!user) redirect('/login');
+  const currentUser = user ?? (await getCurrentUser());
+  if (!currentUser) redirect('/login');
 
-  const workspace = await getWorkspace(id);
+  const workspace = await getWorkspace(
+    id,
+    user ? { useAdmin: true, user: currentUser } : {}
+  );
   if (!workspace) notFound();
 
   return (
     <MyTasksDataLoader
       wsId={workspace.id}
-      userId={user.id}
+      userId={currentUser.id}
       isPersonal={workspace.personal}
     />
   );

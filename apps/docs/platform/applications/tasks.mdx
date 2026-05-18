@@ -30,6 +30,19 @@ both the host-only Tasks app-session cookie and the Web-issued app-session
 cookie used by central API requests. Do not reintroduce Tasks-local Supabase
 session validation for cross-app login.
 
+Tasks must also keep a local `/login` page. It is a redirect-only route: valid
+Tasks app-session cookies continue to `/personal/tasks` or the safe `next`
+path, while missing or stale cookies redirect to `apps/web` login with a
+`/verify-token` return URL. Without this route, a successful Web handoff can set
+cookies and still leave the browser on a Next.js 404.
+
+The Tasks app should not authenticate protected product APIs with local
+Supabase Auth cookies. Fallback `/api/*` traffic is proxied through the local
+catch-all API route, which strips `sb-*-auth-token` cookies before forwarding to
+Web. Keep the corresponding Web routes app-session aware for
+`targetApp: 'tasks'`; otherwise the browser can have valid Tasks cookies while
+the data layer still loops through `401` and proxy-side `429` responses.
+
 ## Rich Text Editor Notes
 
 The task editor includes isolated React roots inside some Tiptap node views, especially task mention chips.

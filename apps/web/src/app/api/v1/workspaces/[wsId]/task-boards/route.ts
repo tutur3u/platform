@@ -1,4 +1,8 @@
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  createAppSessionUser,
+  getAppSessionTokenFromRequest,
+  verifyAppSessionRequest,
+} from '@tuturuuu/auth/app-session';
 import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
@@ -58,17 +62,26 @@ interface Params {
   }>;
 }
 
-function createCliSessionUser(claims: { email: string | null; sub: string }) {
-  return {
-    aud: 'authenticated',
-    email: claims.email ?? undefined,
-    id: claims.sub,
-  } as SupabaseUser;
-}
-
 async function resolveTaskBoardRequestAuth(
   req: Request
 ): Promise<TaskBoardRequestAuth> {
+  const taskAppSessionVerification = verifyAppSessionRequest(req, {
+    targetApp: 'tasks',
+  });
+
+  if (taskAppSessionVerification.ok) {
+    const sbAdmin = (await createAdminClient({
+      noCookie: true,
+    })) as TypedSupabaseClient;
+
+    return {
+      appSession: true,
+      sbAdmin,
+      supabase: sbAdmin as TypedSupabaseClient,
+      user: createAppSessionUser(taskAppSessionVerification.claims),
+    };
+  }
+
   const appSessionToken = getAppSessionTokenFromRequest(req);
 
   if (appSessionToken) {
@@ -83,7 +96,7 @@ async function resolveTaskBoardRequestAuth(
         appSession: true,
         sbAdmin,
         supabase: sbAdmin as TypedSupabaseClient,
-        user: createCliSessionUser(verification.claims),
+        user: createAppSessionUser(verification.claims),
       };
     }
   }

@@ -2,17 +2,9 @@ import {
   DELETE as deleteBoard,
   PUT as updateBoard,
 } from '@tuturuuu/apis/tu-do/board/boardId/route';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { requireBoardAccess } from './lists/access';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -24,17 +16,11 @@ export async function GET(
   { params }: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {
-    const { wsId: rawWsId, boardId } = paramsSchema.parse(await params);
-    const supabase = await createClient(request);
+    const parsedParams = paramsSchema.parse(await params);
+    const access = await requireBoardAccess(request, parsedParams);
+    if ('error' in access) return access.error;
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-    const sbAdmin = await createAdminClient();
+    const { boardId, sbAdmin } = access;
 
     const { data: board, error } = await sbAdmin
       .from('workspace_boards')
@@ -53,34 +39,6 @@ export async function GET(
 
     if (!board) {
       return NextResponse.json({ error: 'Board not found' }, { status: 404 });
-    }
-
-    if (wsId !== board.ws_id) {
-      console.warn('Board workspace did not match route workspace', {
-        boardId,
-        boardWsId: board.ws_id,
-        routeWsId: wsId,
-      });
-    }
-
-    const memberCheck = await verifyWorkspaceMembershipType({
-      wsId: board.ws_id,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (memberCheck.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      );
-    }
-
-    if (!memberCheck.ok) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
     }
 
     const normalizedBoard = {

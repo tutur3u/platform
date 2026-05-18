@@ -1,14 +1,15 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 import {
   buildNotificationAccessFilter,
   getNotificationAccessContext,
 } from './access';
+
+const TASKS_APP_SESSION_AUTH = {
+  targetApp: 'tasks',
+} as const;
 
 const querySchema = z.object({
   wsId: z
@@ -90,145 +91,151 @@ const querySchema = z.object({
  * GET /api/v1/notifications
  * Fetches notifications for the authenticated user (workspace, user-level, or system notifications)
  */
-export async function GET(req: Request) {
-  try {
-    const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
+export const GET = withSessionAuth(
+  async (req, { user, supabase }) => {
+    try {
+      const sbAdmin = await createAdminClient();
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+      const accessContext = await getNotificationAccessContext(supabase, user);
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      // Parse and validate query parameters
+      const { searchParams } = new URL(req.url);
+      const queryParams = querySchema.safeParse({
+        wsId: searchParams.get('wsId'),
+        scope: searchParams.get('scope'),
+        limit: searchParams.get('limit'),
+        offset: searchParams.get('offset'),
+        unreadOnly: searchParams.get('unreadOnly'),
+        readOnly: searchParams.get('readOnly'),
+        type: searchParams.get('type'),
+        priority: searchParams.get('priority'),
+      });
 
-    const accessContext = await getNotificationAccessContext(supabase, user);
-
-    // Parse and validate query parameters
-    const { searchParams } = new URL(req.url);
-    const queryParams = querySchema.safeParse({
-      wsId: searchParams.get('wsId'),
-      scope: searchParams.get('scope'),
-      limit: searchParams.get('limit'),
-      offset: searchParams.get('offset'),
-      unreadOnly: searchParams.get('unreadOnly'),
-      readOnly: searchParams.get('readOnly'),
-      type: searchParams.get('type'),
-      priority: searchParams.get('priority'),
-    });
-
-    if (!queryParams.success) {
-      console.error('Query validation error:', queryParams.error);
-      return NextResponse.json(
-        {
-          error: 'Invalid query parameters',
-          details: queryParams.error.issues,
-          received: {
-            wsId: searchParams.get('wsId'),
-            scope: searchParams.get('scope'),
-            limit: searchParams.get('limit'),
-            offset: searchParams.get('offset'),
-            unreadOnly: searchParams.get('unreadOnly'),
-            type: searchParams.get('type'),
-            priority: searchParams.get('priority'),
+      if (!queryParams.success) {
+        console.error('Query validation error:', queryParams.error);
+        return NextResponse.json(
+          {
+            error: 'Invalid query parameters',
+            details: queryParams.error.issues,
+            received: {
+              wsId: searchParams.get('wsId'),
+              scope: searchParams.get('scope'),
+              limit: searchParams.get('limit'),
+              offset: searchParams.get('offset'),
+              unreadOnly: searchParams.get('unreadOnly'),
+              type: searchParams.get('type'),
+              priority: searchParams.get('priority'),
+            },
           },
+          { status: 400 }
+        );
+      }
+
+      const {
+        wsId,
+        scope,
+        limit,
+        offset,
+        unreadOnly,
+        readOnly,
+        type,
+        priority,
+      } = queryParams.data;
+
+      // Build query - DO NOT add order yet, apply it after all filters.
+      // notifications uses the proxy-only admin path, so ownership must be
+      // enforced explicitly here instead of relying on RLS.
+      let query = sbAdmin
+        .from('notifications')
+        .select(
+          '*, workspace:workspaces(name), actor:users!notifications_created_by_fkey(id, display_name, avatar_url)',
+          { count: 'exact' }
+        )
+        .or(buildNotificationAccessFilter(accessContext));
+
+      // Filter by workspace if specifically requested
+      if (wsId) {
+        query = query.eq('ws_id', wsId);
+      }
+      // Otherwise: fetch ALL notifications for this user (RLS handles access control)
+
+      // Filter by scope if provided
+      if (scope) {
+        query = query.eq('scope', scope);
+      }
+
+      // Filter by read status
+      if (unreadOnly) {
+        query = query.is('read_at', null);
+      } else if (readOnly) {
+        query = query.not('read_at', 'is', null) as typeof query;
+      }
+
+      // Filter by type
+      if (type) {
+        query = query.eq('type', type);
+      }
+
+      // Filter by priority
+      if (priority) {
+        query = query.eq('priority', priority);
+      }
+
+      // CRITICAL: Apply order AFTER all filters to ensure consistent ordering
+      // Sort by created_at DESC, then by id DESC as tiebreaker for same timestamps
+      query = query
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false });
+
+      // Apply pagination last
+      query = query.range(offset, offset + limit - 1);
+
+      const { data: notifications, error, count } = await query;
+
+      if (error) {
+        console.error('Error fetching notifications:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch notifications' },
+          { status: 500 }
+        );
+      }
+
+      // Transform notifications to include workspace_name and actor info
+      const transformedNotifications = (notifications || []).map((n: any) => ({
+        ...n,
+        data: {
+          ...n.data,
+          workspace_name: n.workspace?.name || n.data?.workspace_name,
         },
-        { status: 400 }
-      );
-    }
+        actor: n.actor
+          ? {
+              id: n.actor.id,
+              display_name: n.actor.display_name,
+              avatar_url: n.actor.avatar_url,
+            }
+          : null,
+        workspace: undefined, // Remove the joined workspace object
+      }));
 
-    const { wsId, scope, limit, offset, unreadOnly, readOnly, type, priority } =
-      queryParams.data;
-
-    // Build query - DO NOT add order yet, apply it after all filters.
-    // notifications uses the proxy-only admin path, so ownership must be
-    // enforced explicitly here instead of relying on RLS.
-    let query = sbAdmin
-      .from('notifications')
-      .select(
-        '*, workspace:workspaces(name), actor:users!notifications_created_by_fkey(id, display_name, avatar_url)',
-        { count: 'exact' }
-      )
-      .or(buildNotificationAccessFilter(accessContext));
-
-    // Filter by workspace if specifically requested
-    if (wsId) {
-      query = query.eq('ws_id', wsId);
-    }
-    // Otherwise: fetch ALL notifications for this user (RLS handles access control)
-
-    // Filter by scope if provided
-    if (scope) {
-      query = query.eq('scope', scope);
-    }
-
-    // Filter by read status
-    if (unreadOnly) {
-      query = query.is('read_at', null);
-    } else if (readOnly) {
-      query = query.not('read_at', 'is', null) as typeof query;
-    }
-
-    // Filter by type
-    if (type) {
-      query = query.eq('type', type);
-    }
-
-    // Filter by priority
-    if (priority) {
-      query = query.eq('priority', priority);
-    }
-
-    // CRITICAL: Apply order AFTER all filters to ensure consistent ordering
-    // Sort by created_at DESC, then by id DESC as tiebreaker for same timestamps
-    query = query
-      .order('created_at', { ascending: false })
-      .order('id', { ascending: false });
-
-    // Apply pagination last
-    query = query.range(offset, offset + limit - 1);
-
-    const { data: notifications, error, count } = await query;
-
-    if (error) {
-      console.error('Error fetching notifications:', error);
+      return NextResponse.json({
+        notifications: transformedNotifications,
+        count: count || 0,
+        limit,
+        offset,
+      });
+    } catch (error) {
+      console.error('Error in notifications API:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch notifications' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    // Transform notifications to include workspace_name and actor info
-    const transformedNotifications = (notifications || []).map((n: any) => ({
-      ...n,
-      data: {
-        ...n.data,
-        workspace_name: n.workspace?.name || n.data?.workspace_name,
-      },
-      actor: n.actor
-        ? {
-            id: n.actor.id,
-            display_name: n.actor.display_name,
-            avatar_url: n.actor.avatar_url,
-          }
-        : null,
-      workspace: undefined, // Remove the joined workspace object
-    }));
-
-    return NextResponse.json({
-      notifications: transformedNotifications,
-      count: count || 0,
-      limit,
-      offset,
-    });
-  } catch (error) {
-    console.error('Error in notifications API:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
+    cache: { maxAge: 15, swr: 15 },
   }
-}
+);
 
 const bulkUpdateSchema = z.object({
   wsId: z
@@ -249,80 +256,77 @@ const bulkUpdateSchema = z.object({
  * PATCH /api/v1/notifications
  * Bulk update notifications (mark all as read/unread) for workspace or user-level notifications
  */
-export async function PATCH(req: Request) {
-  try {
-    const supabase = await createClient(req);
-    const sbAdmin = await createAdminClient();
+export const PATCH = withSessionAuth(
+  async (req, { user, supabase }) => {
+    try {
+      const sbAdmin = await createAdminClient();
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+      const accessContext = await getNotificationAccessContext(supabase, user);
 
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+      // Parse and validate body
+      const body = await req.json();
+      const validatedData = bulkUpdateSchema.safeParse(body);
 
-    const accessContext = await getNotificationAccessContext(supabase, user);
+      if (!validatedData.success) {
+        return NextResponse.json(
+          { error: 'Invalid request body', details: validatedData.error },
+          { status: 400 }
+        );
+      }
 
-    // Parse and validate body
-    const body = await req.json();
-    const validatedData = bulkUpdateSchema.safeParse(body);
+      const { wsId, scope, action } = validatedData.data;
 
-    if (!validatedData.success) {
+      // Perform bulk update
+      const update =
+        action === 'mark_all_read'
+          ? { read_at: new Date().toISOString() }
+          : { read_at: null };
+
+      // notifications uses the proxy-only admin path, so ownership must be
+      // enforced explicitly instead of relying on RLS.
+      let query = sbAdmin
+        .from('notifications')
+        .update(update)
+        .or(buildNotificationAccessFilter(accessContext));
+
+      // Filter by workspace if specifically requested
+      if (wsId) {
+        query = query.eq('ws_id', wsId);
+      }
+      // Otherwise: update ALL notifications for this user (RLS handles access control)
+
+      // Filter by scope if provided (additional filter)
+      if (scope) {
+        query = query.eq('scope', scope);
+      }
+
+      // Only update notifications with the opposite read status
+      if (action === 'mark_all_read') {
+        query = query.is('read_at', null);
+      } else {
+        query = query.not('read_at', 'is', null) as typeof query;
+      }
+
+      const { error } = await query;
+
+      if (error) {
+        console.error('Error updating notifications:', error);
+        return NextResponse.json(
+          { error: 'Failed to update notifications' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      console.error('Error in bulk notifications update:', error);
       return NextResponse.json(
-        { error: 'Invalid request body', details: validatedData.error },
-        { status: 400 }
-      );
-    }
-
-    const { wsId, scope, action } = validatedData.data;
-
-    // Perform bulk update
-    const update =
-      action === 'mark_all_read'
-        ? { read_at: new Date().toISOString() }
-        : { read_at: null };
-
-    // notifications uses the proxy-only admin path, so ownership must be
-    // enforced explicitly instead of relying on RLS.
-    let query = sbAdmin
-      .from('notifications')
-      .update(update)
-      .or(buildNotificationAccessFilter(accessContext));
-
-    // Filter by workspace if specifically requested
-    if (wsId) {
-      query = query.eq('ws_id', wsId);
-    }
-    // Otherwise: update ALL notifications for this user (RLS handles access control)
-
-    // Filter by scope if provided (additional filter)
-    if (scope) {
-      query = query.eq('scope', scope);
-    }
-
-    // Only update notifications with the opposite read status
-    if (action === 'mark_all_read') {
-      query = query.is('read_at', null);
-    } else {
-      query = query.not('read_at', 'is', null) as typeof query;
-    }
-
-    const { error } = await query;
-
-    if (error) {
-      console.error('Error updating notifications:', error);
-      return NextResponse.json(
-        { error: 'Failed to update notifications' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error in bulk notifications update:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  },
+  {
+    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
   }
-}
+);
