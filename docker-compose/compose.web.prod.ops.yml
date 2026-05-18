@@ -69,8 +69,8 @@ services:
     init: true
     restart: unless-stopped
     depends_on:
-      hive-postgres:
-        condition: service_healthy
+      hive-db-migrate:
+        condition: service_completed_successfully
     volumes:
       - ..:/workspace:ro
       - ..:${PLATFORM_HOST_WORKSPACE_DIR:-/workspace-host}

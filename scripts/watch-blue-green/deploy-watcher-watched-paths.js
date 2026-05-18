@@ -21,6 +21,7 @@ const CONTAINER_REFRESH_WATCHED_FILES = [
   'apps/discord/local_server.py',
   'apps/discord/markitdown_service.py',
   'apps/hive/Dockerfile',
+  'apps/hive/db/',
   'apps/hive/package.json',
   'apps/hive/next.config.ts',
   'apps/hive-realtime/Dockerfile',

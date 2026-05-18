@@ -35,8 +35,8 @@ x-hive-service: &hive-service
   init: true
   restart: unless-stopped
   depends_on:
-    hive-postgres:
-      condition: service_healthy
+    hive-db-migrate:
+      condition: service_completed_successfully
 
 services:
   hive-postgres:
@@ -56,6 +56,26 @@ services:
     volumes:
       - platform-hive-postgres:/var/lib/postgresql/data
       - ../apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro
+
+  hive-db-migrate:
+    image: postgres:16-alpine
+    command: ["/bin/sh", "/hive-db/migrate-forward.sh"]
+    env_file:
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+        required: false
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+        required: false
+    environment:
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+      - HIVE_DB_ALLOW_DESTRUCTIVE_RESET=${HIVE_DB_ALLOW_DESTRUCTIVE_RESET:-0}
+      - HIVE_DB_DEVOPS_ADMIN_APPROVED=${HIVE_DB_DEVOPS_ADMIN_APPROVED:-0}
+      - HIVE_DB_OPERATOR_ROLE=${HIVE_DB_OPERATOR_ROLE:-runtime}
+    depends_on:
+      hive-postgres:
+        condition: service_healthy
+    restart: "no"
+    volumes:
+      - ../apps/hive/db:/hive-db:ro
 
   hive-ollama:
     profiles: ["hive-ollama"]
@@ -123,8 +143,8 @@ services:
     init: true
     restart: unless-stopped
     depends_on:
-      hive-postgres:
-        condition: service_healthy
+      hive-db-migrate:
+        condition: service_completed_successfully
 
   hive-blue:
     <<: *hive-service

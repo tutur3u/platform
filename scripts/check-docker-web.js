@@ -15,6 +15,13 @@ const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
   'hive-realtime',
   'Dockerfile'
 );
+const HIVE_DB_MIGRATE_SCRIPT_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'hive',
+  'db',
+  'migrate-forward.sh'
+);
 const DOCKERIGNORE_PATH = path.join(ROOT_DIR, '.dockerignore');
 const WATCHER_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
@@ -506,6 +513,22 @@ function validateDockerCompose(
     '  hive-postgres:',
     '      - platform-hive-postgres:/var/lib/postgresql/data',
     '      - ./apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro',
+    '  hive-db-migrate:',
+    '    command: ["/bin/sh", "/hive-db/migrate-forward.sh"]',
+    '      - HIVE_DB_ALLOW_DESTRUCTIVE_RESET=' +
+      '${' +
+      'HIVE_DB_ALLOW_DESTRUCTIVE_RESET:-0' +
+      '}',
+    '      - HIVE_DB_DEVOPS_ADMIN_APPROVED=' +
+      '${' +
+      'HIVE_DB_DEVOPS_ADMIN_APPROVED:-0' +
+      '}',
+    '      - HIVE_DB_OPERATOR_ROLE=' +
+      '${' +
+      'HIVE_DB_OPERATOR_ROLE:-runtime' +
+      '}',
+    '      hive-db-migrate:\n        condition: service_completed_successfully',
+    '      - ./apps/hive/db:/hive-db:ro',
     '  hive-ollama:',
     '    profiles: ["hive-ollama"]',
     '  platform-hive-postgres:',
@@ -582,6 +605,7 @@ function validateDockerProdCompose(composeContent) {
     '  hive-green:',
     '  hive-realtime:',
     '  hive-postgres:',
+    '  hive-db-migrate:',
     '  hive-ollama:',
     '  markitdown:',
     '  storage-unzip-proxy:',
@@ -717,6 +741,21 @@ function validateDockerProdCompose(composeContent) {
     '      POSTGRES_USER: hive',
     '      - platform-hive-postgres:/var/lib/postgresql/data',
     '      - ../apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro',
+    '    command: ["/bin/sh", "/hive-db/migrate-forward.sh"]',
+    '      - HIVE_DB_ALLOW_DESTRUCTIVE_RESET=' +
+      '${' +
+      'HIVE_DB_ALLOW_DESTRUCTIVE_RESET:-0' +
+      '}',
+    '      - HIVE_DB_DEVOPS_ADMIN_APPROVED=' +
+      '${' +
+      'HIVE_DB_DEVOPS_ADMIN_APPROVED:-0' +
+      '}',
+    '      - HIVE_DB_OPERATOR_ROLE=' +
+      '${' +
+      'HIVE_DB_OPERATOR_ROLE:-runtime' +
+      '}',
+    '      hive-db-migrate:\n        condition: service_completed_successfully',
+    '      - ../apps/hive/db:/hive-db:ro',
     '  hive-ollama:',
     '    profiles: ["hive-ollama"]',
     '  log-drain-postgres:',
@@ -934,6 +973,46 @@ function validateHiveRealtimeDockerfile(
   return errors;
 }
 
+function validateHiveDbMigrateScript(scriptContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'HIVE_DATABASE_URL="$' +
+      '{' +
+      'HIVE_DATABASE_URL:?HIVE_DATABASE_URL is required' +
+      '}"',
+    'HIVE_DB_BASELINE_VERSION="$' +
+      '{' +
+      'HIVE_DB_BASELINE_VERSION:-20260518104000' +
+      '}"',
+    'create table if not exists hive_schema_migrations',
+    'version_lte()',
+    'assert_not_before_recorded_floor()',
+    'max(applied_at)::text',
+    'HIVE_DB_OPERATOR_ROLE="$' + '{' + 'HIVE_DB_OPERATOR_ROLE:-runtime' + '}"',
+    'HIVE_DB_ALLOW_DESTRUCTIVE_RESET="$' +
+      '{' +
+      'HIVE_DB_ALLOW_DESTRUCTIVE_RESET:-0' +
+      '}"',
+    'HIVE_DB_DEVOPS_ADMIN_APPROVED="$' +
+      '{' +
+      'HIVE_DB_DEVOPS_ADMIN_APPROVED:-0' +
+      '}"',
+    'HIVE_DB_OPERATOR_ROLE" = "devops-admin"',
+    'HIVE_DB_ALLOW_DESTRUCTIVE_RESET" = "1"',
+    'HIVE_DB_DEVOPS_ADMIN_APPROVED" = "1"',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!scriptContent.includes(snippet)) {
+      errors.push(
+        `apps/hive/db/migrate-forward.sh is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -976,6 +1055,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'hive-realtime', 'Dockerfile'),
     'utf8'
   ),
+  hiveDbMigrateScriptContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'hive', 'db', 'migrate-forward.sh'),
+    'utf8'
+  ),
   workspacePackageJsonPaths = listWorkspacePackageJsonPaths(rootDir, fsImpl),
   fileDependencyPaths = listFileDependencyPaths(rootDir, fsImpl),
 } = {}) {
@@ -999,6 +1082,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
 
@@ -1024,6 +1108,7 @@ if (require.main === module) {
 module.exports = {
   ROOT_DIR,
   HIVE_DOCKERFILE_PATH,
+  HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
@@ -1045,6 +1130,7 @@ module.exports = {
   validateCronRunnerDockerfile,
   validateDepsStageManifestCopies,
   validateHiveDockerfile,
+  validateHiveDbMigrateScript,
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,

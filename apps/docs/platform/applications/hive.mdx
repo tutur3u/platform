@@ -71,6 +71,32 @@ Hive stores product state in the dedicated Hive Postgres database:
 - `hive_members`
 - `hive_access_requests`
 
+## Database Migrations
+
+Hive Postgres is forward-migrated by the `hive-db-migrate` Docker Compose job
+before web, Hive, Hive realtime, or Hive cron processes are allowed to start.
+The deployment watcher also runs that job explicitly with
+`docker compose run --rm --no-build hive-db-migrate` on every blue/green
+deployment so an already-completed migration container cannot silently satisfy a
+new deploy.
+
+The migration runner records successful work in `hive_schema_migrations` with a
+timestamp version, filename, checksum, `applied_at`, and `applied_by`. The
+current `apps/hive/db/001_schema.sql` file is the immutable baseline; future
+changes belong in `apps/hive/db/migrations/YYYYMMDDHHMMSS_description.sql`.
+Deployment fails when a pending migration checksum disagrees with history, when
+its timestamp is not newer than the last recorded migration version, or when its
+timestamp is not newer than the last recorded `applied_at` time at deployment
+start.
+
+The runner rejects reset-style SQL such as `DROP DATABASE`, `DROP SCHEMA`,
+`DROP TABLE`, `TRUNCATE`, `ALTER TABLE ... DROP COLUMN`, and mutation of
+`hive_schema_migrations`. A destructive Hive DB operation requires an explicit
+DevOps-admin override by setting `HIVE_DB_OPERATOR_ROLE=devops-admin`,
+`HIVE_DB_ALLOW_DESTRUCTIVE_RESET=1`, and
+`HIVE_DB_DEVOPS_ADMIN_APPROVED=1`; do not set those values in normal deploy
+environments.
+
 Shared editor state is a Yjs CRDT document per Hive server. Terrain blocks,
 objects, public NPC projections, farm tiles, and visual warehouse/crop
 projections live in keyed CRDT maps. Money, item ownership, trade settlement,

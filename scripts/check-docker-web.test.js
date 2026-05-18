@@ -21,6 +21,7 @@ const {
 const {
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
+  HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
@@ -40,6 +41,7 @@ const {
   validateDockerfile,
   validateCronRunnerDockerfile,
   validateHiveDockerfile,
+  validateHiveDbMigrateScript,
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateWatcherDockerfile,
@@ -166,6 +168,16 @@ test('Hive Docker image copies every workspace manifest before frozen install', 
     validateHiveDockerfile(driftedDockerfileContent).join('\n'),
     /apps\/hive\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
   );
+});
+
+test('Hive DB migration runner enforces forward-only deployment guards', () => {
+  const scriptContent = fs.readFileSync(HIVE_DB_MIGRATE_SCRIPT_PATH, 'utf8');
+
+  assert.deepEqual(validateHiveDbMigrateScript(scriptContent), []);
+  assert.match(scriptContent, /hive_schema_migrations/u);
+  assert.match(scriptContent, /pending migration .* timestamp/u);
+  assert.match(scriptContent, /last recorded migration time/u);
+  assert.match(scriptContent, /devops-admin/u);
 });
 
 test('Hive realtime Docker image copies every workspace manifest before frozen install', () => {
@@ -732,6 +744,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'hive'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'hive', 'db'), {
+      recursive: true,
+    });
     fs.mkdirSync(path.join(tempDir, 'apps', 'hive-realtime'), {
       recursive: true,
     });
@@ -760,6 +775,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'hive', 'Dockerfile'),
       'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'hive', 'db', 'migrate-forward.sh'),
+      ''
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'hive-realtime', 'Dockerfile'),

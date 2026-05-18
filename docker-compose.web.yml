@@ -125,8 +125,8 @@ services:
       - platform-web-workflows-node_modules:/workspace/packages/workflows/node_modules
       - platform-web-workflows-dist:/workspace/packages/workflows/dist
     depends_on:
-      hive-postgres:
-        condition: service_healthy
+      hive-db-migrate:
+        condition: service_completed_successfully
       log-drain-postgres:
         condition: service_healthy
 
@@ -154,8 +154,8 @@ services:
     ports:
       - "7815:7815"
     depends_on:
-      hive-postgres:
-        condition: service_healthy
+      hive-db-migrate:
+        condition: service_completed_successfully
     volumes:
       - .:/workspace
       - platform-hive-realtime-node_modules:/workspace/apps/hive-realtime/node_modules
@@ -193,8 +193,8 @@ services:
     ports:
       - "7814:7814"
     depends_on:
-      hive-postgres:
-        condition: service_healthy
+      hive-db-migrate:
+        condition: service_completed_successfully
     volumes:
       - .:/workspace
       - platform-hive-next:/workspace/apps/hive/.next
@@ -236,6 +236,26 @@ services:
     volumes:
       - platform-hive-postgres:/var/lib/postgresql/data
       - ./apps/hive/db/001_schema.sql:/docker-entrypoint-initdb.d/001-hive.sql:ro
+
+  hive-db-migrate:
+    image: postgres:16-alpine
+    command: ["/bin/sh", "/hive-db/migrate-forward.sh"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - HIVE_DATABASE_URL=${HIVE_DATABASE_URL:-postgres://hive:hive@hive-postgres:5432/hive}
+      - HIVE_DB_ALLOW_DESTRUCTIVE_RESET=${HIVE_DB_ALLOW_DESTRUCTIVE_RESET:-0}
+      - HIVE_DB_DEVOPS_ADMIN_APPROVED=${HIVE_DB_DEVOPS_ADMIN_APPROVED:-0}
+      - HIVE_DB_OPERATOR_ROLE=${HIVE_DB_OPERATOR_ROLE:-runtime}
+    depends_on:
+      hive-postgres:
+        condition: service_healthy
+    restart: "no"
+    volumes:
+      - ./apps/hive/db:/hive-db:ro
 
   hive-ollama:
     profiles: ["hive-ollama"]

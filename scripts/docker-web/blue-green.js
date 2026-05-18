@@ -52,6 +52,7 @@ const BLUE_GREEN_DRAIN_POLL_MS = 1_000;
 const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
+const HIVE_DB_MIGRATE_SERVICE = 'hive-db-migrate';
 /** Started after the core web/support services so Hive can warm independently. */
 const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive-blue',
@@ -85,6 +86,7 @@ const BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS = Object.freeze([
   'turbo.json',
 ]);
 const BLUE_GREEN_HIVE_BUILD_PATHS = Object.freeze([
+  'apps/hive/db/',
   'apps/hive/',
   'packages/ai/',
   'packages/auth/',
@@ -1445,6 +1447,29 @@ async function buildBlueGreenServices({
   }
 }
 
+async function runHiveDbForwardMigrations({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'run',
+      '--rm',
+      '--no-build',
+      HIVE_DB_MIGRATE_SERVICE
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
+}
+
 async function pruneBlueGreenBuildkitCacheAfterWorkflow({
   composeFile,
   composeGlobalArgs = [],
@@ -2106,6 +2131,13 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       }
     );
 
+    await runHiveDbForwardMigrations({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: targetEnv,
+      runCommand: run,
+    });
+
     await runComposeUpWithNameConflictRecovery({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
@@ -2382,6 +2414,13 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       }
     );
 
+    await runHiveDbForwardMigrations({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: standbyEnv,
+      runCommand: run,
+    });
+
     const { phase1Services: standbyPhase1, phase2Services: standbyPhase2 } =
       splitBlueGreenProdServicePhases(standbyServices);
 
@@ -2538,6 +2577,12 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
   await removeLegacyHiveContainerIfPresent({
     composeFile,
     env,
+    runCommand: run,
+  });
+  await runHiveDbForwardMigrations({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
     runCommand: run,
   });
   await runComposeUpWithNameConflictRecovery({

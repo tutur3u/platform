@@ -398,6 +398,10 @@ function prodComposeWatcherLogsKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis logs --follow --tail 100 ${BLUE_GREEN_WATCHER_SERVICE}`;
 }
 
+function prodComposeHiveDbMigrateKey() {
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis run --rm --no-build hive-db-migrate`;
+}
+
 function prodComposeProxyHealthKey() {
   return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis exec -T ${BLUE_GREEN_PROXY_SERVICE} wget -q -O /dev/null http://127.0.0.1:7803/__platform/drain-status`;
 }
@@ -3768,6 +3772,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
         createResult(''),
       ],
+      [prodComposeHiveDbMigrateKey(), createResult('')],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
         createResult(''),
@@ -4045,6 +4050,10 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
 
       if (key === prodComposePsKey('web-green')) {
         return createResult(standbyBootstrapped ? 'green-123\n' : '');
+      }
+
+      if (key === prodComposeHiveDbMigrateKey()) {
+        return createResult('');
       }
 
       if (
@@ -4334,6 +4343,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis build web-blue`,
           createResult(''),
         ],
+        [prodComposeHiveDbMigrateKey(), createResult('')],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
           createResult(''),

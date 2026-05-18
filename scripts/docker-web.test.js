@@ -70,6 +70,17 @@ const BLUE_GREEN_PROXY_PORTS_JSON = JSON.stringify({
   '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
 });
 
+function isHiveDbMigrateRun(command, args) {
+  return (
+    command === 'docker' &&
+    args[0] === 'compose' &&
+    args.includes('run') &&
+    args.includes('--rm') &&
+    args.includes('--no-build') &&
+    args.at(-1) === 'hive-db-migrate'
+  );
+}
+
 test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only changes', () => {
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
@@ -90,6 +101,13 @@ test('getBlueGreenDeploymentBuildServices scopes support image builds to changed
       targetColor: 'blue',
     }),
     ['web-blue', 'hive-blue', 'storage-unzip-proxy']
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/hive/db/migrations/20260518120000_add_field.sql'],
+      targetColor: 'green',
+    }),
+    ['web-green', 'hive-green']
   );
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
@@ -2697,6 +2715,10 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       return resultFor('');
     }
 
+    if (isHiveDbMigrateRun(command, args)) {
+      return resultFor('');
+    }
+
     if (args.includes('up') && args.includes('web-green')) {
       targetStarted = true;
       return resultFor('');
@@ -2876,6 +2898,10 @@ test('runBlueGreenProdWorkflow recreates web-proxy when its image is stale', asy
       return resultFor('');
     }
 
+    if (isHiveDbMigrateRun(command, args)) {
+      return resultFor('');
+    }
+
     if (args.includes('up') && args.includes('web-green')) {
       targetStarted = true;
       return resultFor('');
@@ -3009,6 +3035,13 @@ test('runBlueGreenProdWorkflow uses staged ports before direct migration proxy h
         return resultFor(`${serviceName}-id\n`);
       }
 
+      return resultFor('');
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      assert.equal(env.COMPOSE_PROJECT_NAME, 'tuturuuu');
+      assert.equal(env.DOCKER_WEB_REDIS_HOST_PORT, '16379');
+      assert.equal(env.DOCKER_WEB_PROXY_HOST_PORT, '17803');
       return resultFor('');
     }
 
@@ -3265,6 +3298,10 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
 
     if (args[0] === 'inspect') {
       return { code: 0, signal: null, stderr: '', stdout: 'healthy\n' };
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 
     if (
@@ -3649,6 +3686,10 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
         stderr: '',
         stdout: standbyBootstrapped ? 'hive-green-123\n' : '',
       };
+    }
+
+    if (isHiveDbMigrateRun(command, args)) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 
     if (args[0] === 'inspect') {
