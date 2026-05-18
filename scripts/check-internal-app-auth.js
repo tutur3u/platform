@@ -17,6 +17,19 @@ const REGISTERED_APPS = [
   'teach',
   'track',
 ];
+const REGISTERED_APP_TARGETS = {
+  calendar: 'calendar',
+  cms: 'cms',
+  finance: 'finance',
+  hive: 'hive',
+  inventory: 'inventory',
+  learn: 'learn',
+  nova: 'nova',
+  rewise: 'rewise',
+  tasks: 'tudo',
+  teach: 'teach',
+  track: 'track',
+};
 const FORBIDDEN_PATTERNS = [
   {
     pattern: /@tuturuuu\/supabase\/next\/auth-session-user/u,
@@ -214,17 +227,17 @@ for (const proxyPath of registeredProxyPaths) {
 }
 
 const registeredAppConstantPaths = [
-  ['apps/calendar/src/constants/common.ts', 'calendar'],
-  ['apps/cms/src/constants/common.ts', 'cms'],
-  ['apps/finance/src/constants/common.ts', 'finance'],
-  ['apps/hive/src/constants/common.ts', 'hive'],
-  ['apps/inventory/src/constants/common.ts', 'inventory'],
-  ['apps/learn/src/constants/common.ts', 'learn'],
-  ['apps/nova/src/constants/common.ts', 'nova'],
-  ['apps/rewise/src/constants/common.ts', 'rewise'],
-  ['apps/tasks/src/constants/common.ts', 'tudo'],
-  ['apps/teach/src/constants/common.ts', 'teach'],
-  ['apps/track/src/constants/common.ts', 'track'],
+  ['apps/calendar/src/constants/common.ts', REGISTERED_APP_TARGETS.calendar],
+  ['apps/cms/src/constants/common.ts', REGISTERED_APP_TARGETS.cms],
+  ['apps/finance/src/constants/common.ts', REGISTERED_APP_TARGETS.finance],
+  ['apps/hive/src/constants/common.ts', REGISTERED_APP_TARGETS.hive],
+  ['apps/inventory/src/constants/common.ts', REGISTERED_APP_TARGETS.inventory],
+  ['apps/learn/src/constants/common.ts', REGISTERED_APP_TARGETS.learn],
+  ['apps/nova/src/constants/common.ts', REGISTERED_APP_TARGETS.nova],
+  ['apps/rewise/src/constants/common.ts', REGISTERED_APP_TARGETS.rewise],
+  ['apps/tasks/src/constants/common.ts', REGISTERED_APP_TARGETS.tasks],
+  ['apps/teach/src/constants/common.ts', REGISTERED_APP_TARGETS.teach],
+  ['apps/track/src/constants/common.ts', REGISTERED_APP_TARGETS.track],
 ];
 
 for (const [constantPath, appName] of registeredAppConstantPaths) {
@@ -280,6 +293,50 @@ if (
   failures.push(
     'packages/supabase/src/next/server.ts: App-session requests must not fall back to Supabase cookie-backed clients.'
   );
+}
+
+for (const app of REGISTERED_APPS) {
+  const targetApp = REGISTERED_APP_TARGETS[app];
+  const verifierPath = `apps/${app}/src/app/api/auth/verify-app-token/route.ts`;
+  const verifierAbsolutePath = path.join(ROOT, verifierPath);
+
+  if (!fs.existsSync(verifierAbsolutePath)) {
+    failures.push(
+      `${verifierPath}: Registered apps must expose a local cross-app token verifier.`
+    );
+    continue;
+  }
+
+  const verifierRouteSource = fs.readFileSync(verifierAbsolutePath, 'utf8');
+
+  if (
+    !new RegExp(`createPOST\\(['"]${targetApp}['"]`, 'u').test(
+      verifierRouteSource
+    )
+  ) {
+    failures.push(
+      `${verifierPath}: Cross-app verifier must mint app-session cookies for target app ${targetApp}.`
+    );
+  }
+
+  if (
+    !/verificationBaseUrl:\s*(?:WEB_APP_URL|TTR_URL)/u.test(verifierRouteSource)
+  ) {
+    failures.push(
+      `${verifierPath}: Cross-app verifier must delegate token validation to the central Web verifier so the Web-issued app-session cookie is set.`
+    );
+  }
+}
+
+const tasksSourceFiles = walkFiles('apps/tasks/src');
+for (const filePath of tasksSourceFiles) {
+  const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
+
+  if (/targetApp:\s*['"]tasks['"]/u.test(source)) {
+    failures.push(
+      `${filePath}: Tasks app-session target must use the registered app name "tudo", not the hostname label "tasks".`
+    );
+  }
 }
 
 const withSessionAuthStart = webApiAuthSource.indexOf(
