@@ -3,6 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_SHORT_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const calendarSettingsSchema = z.object({
   timezone: z.string().max(MAX_SHORT_TEXT_LENGTH).optional(),
@@ -25,13 +26,13 @@ export async function GET() {
 
     // Fetch user calendar settings
     const { data: userData, error } = await supabase
-      .from('users')
+      .from('user_private_details')
       .select('timezone, first_day_of_week, time_format')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
-      console.error('Error fetching user calendar settings:', error);
+      serverLogger.error('Error fetching user calendar settings:', error);
       return NextResponse.json(
         { error: 'Failed to fetch user calendar settings' },
         { status: 500 }
@@ -44,7 +45,7 @@ export async function GET() {
       time_format: userData.time_format || 'auto',
     });
   } catch (error) {
-    console.error('Error in user calendar settings API:', error);
+    serverLogger.error('Error in user calendar settings API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -67,20 +68,27 @@ export async function PATCH(req: NextRequest) {
     const body = await req.json();
     const validatedData = calendarSettingsSchema.parse(body);
 
+    const updateData: z.infer<typeof calendarSettingsSchema> = {};
+    if (validatedData.timezone !== undefined) {
+      updateData.timezone = validatedData.timezone;
+    }
+    if (validatedData.first_day_of_week !== undefined) {
+      updateData.first_day_of_week = validatedData.first_day_of_week;
+    }
+    if (validatedData.time_format !== undefined) {
+      updateData.time_format = validatedData.time_format;
+    }
+
     // Update user calendar settings
     const { data, error } = await supabase
-      .from('users')
-      .update({
-        timezone: validatedData.timezone,
-        first_day_of_week: validatedData.first_day_of_week,
-        time_format: validatedData.time_format,
-      })
-      .eq('id', user.id)
+      .from('user_private_details')
+      .update(updateData)
+      .eq('user_id', user.id)
       .select('timezone, first_day_of_week, time_format')
       .single();
 
     if (error) {
-      console.error('Error updating user calendar settings:', error);
+      serverLogger.error('Error updating user calendar settings:', error);
       return NextResponse.json(
         { error: 'Failed to update user calendar settings' },
         { status: 500 }
@@ -100,7 +108,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    console.error('Error in user calendar settings API:', error);
+    serverLogger.error('Error in user calendar settings API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

@@ -17640,31 +17640,46 @@ export type Database = {
         Row: {
           birthday: string | null;
           default_workspace_id: string | null;
+          deleted: boolean | null;
           email: string | null;
           fade_completed_tasks: boolean | null;
+          first_day_of_week: string | null;
           full_name: string | null;
           new_email: string | null;
+          services: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self: boolean | null;
+          time_format: string | null;
+          timezone: string | null;
           user_id: string;
         };
         Insert: {
           birthday?: string | null;
           default_workspace_id?: string | null;
+          deleted?: boolean | null;
           email?: string | null;
           fade_completed_tasks?: boolean | null;
+          first_day_of_week?: string | null;
           full_name?: string | null;
           new_email?: string | null;
+          services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
+          timezone?: string | null;
           user_id: string;
         };
         Update: {
           birthday?: string | null;
           default_workspace_id?: string | null;
+          deleted?: boolean | null;
           email?: string | null;
           fade_completed_tasks?: boolean | null;
+          first_day_of_week?: string | null;
           full_name?: string | null;
           new_email?: string | null;
+          services?: Database['public']['Enums']['platform_service'][];
           task_auto_assign_to_self?: boolean | null;
+          time_format?: string | null;
+          timezone?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -17854,40 +17869,25 @@ export type Database = {
           avatar_url: string | null;
           bio: string | null;
           created_at: string | null;
-          deleted: boolean | null;
           display_name: string | null;
-          first_day_of_week: string | null;
           handle: string | null;
           id: string;
-          services: Database['public']['Enums']['platform_service'][];
-          time_format: string | null;
-          timezone: string | null;
         };
         Insert: {
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
-          deleted?: boolean | null;
           display_name?: string | null;
-          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
-          services?: Database['public']['Enums']['platform_service'][];
-          time_format?: string | null;
-          timezone?: string | null;
         };
         Update: {
           avatar_url?: string | null;
           bio?: string | null;
           created_at?: string | null;
-          deleted?: boolean | null;
           display_name?: string | null;
-          first_day_of_week?: string | null;
           handle?: string | null;
           id?: string;
-          services?: Database['public']['Enums']['platform_service'][];
-          time_format?: string | null;
-          timezone?: string | null;
         };
         Relationships: [
           {
@@ -29006,6 +29006,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: string;
+      };
+      current_user_shares_workspace_with: {
+        Args: { target_user_id: string };
+        Returns: boolean;
       };
       deduct_ai_credits:
         | {

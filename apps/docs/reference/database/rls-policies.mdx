@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2026-05-17'
+updatedAt: '2026-05-18'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -200,7 +200,47 @@ USING (
 );
 ```
 
-### Pattern 7: Workspace-Scoped Security Definer RPCs
+### Pattern 7: Platform User Profile Visibility
+
+**Use Case:** Platform profile rows are useful for names and avatars, but the
+Data API must not let any authenticated user enumerate every account.
+
+`public.users` is not a globally readable directory. Authenticated callers can
+read their own row and rows for users who share at least one workspace with
+them. Private account fields such as email and full name belong in
+`public.user_private_details`. Account state and preferences such as
+`services`, `timezone`, `first_day_of_week`, `time_format`, and `deleted` also
+belong there instead of on the public profile row.
+
+`public.user_private_details` may be used for self-profile and shared-workspace
+profile lookups, but the policy must correlate the target user to the current
+requesting user. Do not use an uncorrelated `EXISTS` check that only proves the
+target user belongs to some workspace.
+
+Use a `SECURITY DEFINER` helper for the shared-workspace check so the profile
+policy does not recurse through `workspace_members` RLS under the caller's
+permissions.
+
+Do not restore a policy equivalent to `USING (true)` on `public.users`. If a
+feature needs a global user directory or public profile page, expose only the
+intended columns through an application route or a purpose-built API contract
+instead of widening the table policy.
+
+```sql
+CREATE POLICY "Enable read access for current user and workspace members"
+ON public.users
+FOR SELECT
+TO authenticated
+USING (
+  (select auth.uid()) is not null
+  and (
+    id = (select auth.uid())
+    or public.current_user_shares_workspace_with(users.id)
+  )
+);
+```
+
+### Pattern 8: Workspace-Scoped Security Definer RPCs
 
 **Use Case:** An RPC must run with elevated database privileges to read audit,
 private, or RLS-protected tables.
@@ -264,7 +304,7 @@ revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from a
 revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from authenticated;
 ```
 
-### Pattern 8: API-Only Workspace Tables
+### Pattern 9: API-Only Workspace Tables
 
 **Use Case:** The `apps/web` API performs stricter permission checks than a
 plain workspace membership policy can express safely, then reads or writes with

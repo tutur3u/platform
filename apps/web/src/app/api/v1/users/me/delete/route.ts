@@ -207,7 +207,7 @@ export const POST = withSessionAuth(
 
       // Delete the user from auth.users
       // This fires the existing on_delete_user trigger which:
-      // 1. Sets public.users.deleted = true (soft-delete)
+      // 1. Sets public.user_private_details.deleted = true (soft-delete)
       // 2. Deletes from workspace_members (hard-delete memberships)
       const { error: deleteError } = await sbAdmin.auth.admin.deleteUser(
         user.id

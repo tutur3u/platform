@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { User } from '@tuturuuu/types';
+import type { UserPrivateDetails } from '@tuturuuu/types';
 import { notFound } from 'next/navigation';
 import { listHiveAccessRequests, listHiveMembers } from '@/lib/hive/hive-db';
 import type {
@@ -95,7 +95,7 @@ function mapSearchUser(user: SearchUserResult): PlatformUserWithDetails {
     allow_discord_integrations: user.allow_discord_integrations ?? false,
     allow_workspace_creation: user.allow_workspace_creation ?? false,
     first_day_of_week: user.first_day_of_week ?? null,
-    services: [] as User['services'],
+    services: [] as UserPrivateDetails['services'],
     task_auto_assign_to_self: user.task_auto_assign_to_self ?? null,
     time_format: user.time_format ?? null,
     timezone: user.timezone ?? null,

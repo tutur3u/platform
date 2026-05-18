@@ -26,15 +26,21 @@ export type SearchUserResult = {
   user_id: string;
 };
 
-export type PlatformUserWithDetails = Omit<User, 'services'> &
+type PlatformUserPrivateDetails = Omit<
+  Partial<UserPrivateDetails>,
+  'services'
+> & {
+  services?: UserPrivateDetails['services'] | null;
+};
+
+export type PlatformUserWithDetails = User &
   Omit<
     PlatformUser,
     'allow_workspace_creation' | 'allow_discord_integrations'
   > &
-  Partial<UserPrivateDetails> & {
+  PlatformUserPrivateDetails & {
     allow_discord_integrations?: boolean;
     allow_workspace_creation?: boolean;
-    services?: User['services'];
   };
 
 export type PlatformRoleStats = {

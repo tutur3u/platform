@@ -42,9 +42,9 @@ async function getWeekStartsOn(wsId: string): Promise<0 | 1 | 6> {
   // Try user preference first
   if (user) {
     const { data: userData } = await supabase
-      .from('users')
+      .from('user_private_details')
       .select('first_day_of_week')
-      .eq('id', user.id)
+      .eq('user_id', user.id)
       .single();
 
     if (userData?.first_day_of_week && userData.first_day_of_week !== 'auto') {

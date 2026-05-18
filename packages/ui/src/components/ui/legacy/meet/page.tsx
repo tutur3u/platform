@@ -148,10 +148,8 @@ export async function MeetTogetherPage({
                         avatar_url: user.user_metadata?.avatar_url ?? null,
                         bio: user.user_metadata?.bio ?? null,
                         created_at: user.created_at ?? null,
-                        deleted: user.user_metadata?.deleted ?? null,
                         display_name: user.user_metadata?.display_name ?? null,
                         handle: user.user_metadata?.handle ?? null,
-                        services: user.user_metadata?.services ?? [],
                       }
                     : null
                 }
