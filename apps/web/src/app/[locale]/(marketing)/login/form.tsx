@@ -292,6 +292,9 @@ export default function LoginForm() {
   const [mobileMfaChallenge, setMobileMfaChallenge] =
     useState<MobileMfaApprovalChallenge | null>(null);
   const [mobileMfaHandled, setMobileMfaHandled] = useState(false);
+  const [passwordRateLimitedEmail, setPasswordRateLimitedEmail] = useState<
+    string | null
+  >(null);
   const [confirmingReturn, setConfirmingReturn] = useState(false);
   const [returnUrlValidationFailure, setReturnUrlValidationFailure] =
     useState<ReturnUrlValidationFailure | null>(null);
@@ -437,6 +440,7 @@ export default function LoginForm() {
       setShowPassword(false);
       setOtpRetryAfterSeconds(0);
       setCaptchaError(undefined);
+      setPasswordRateLimitedEmail(null);
       resetCaptcha();
       setAuthStage('password');
     },
@@ -890,6 +894,7 @@ export default function LoginForm() {
     if (!locale || !data.email || !data.password) return;
 
     setLoading(true);
+    setPasswordRateLimitedEmail(null);
 
     try {
       const result = await passwordLoginAction({
@@ -905,13 +910,20 @@ export default function LoginForm() {
         const errorMessage = result.retryAfter
           ? `${result.error} (retry in ${result.retryAfter}s)`
           : result.error;
+        const socialAuthHint = result.retryAfter
+          ? t('login.rate_limited_social_auth_hint', { email: data.email })
+          : null;
+
+        setPasswordRateLimitedEmail(result.retryAfter ? data.email : null);
 
         passwordForm.setError('password', {
           message: errorMessage,
         });
 
         toast.error(t('login.failed'), {
-          description: errorMessage,
+          description: socialAuthHint
+            ? `${errorMessage} ${socialAuthHint}`
+            : errorMessage,
         });
 
         setLoading(false);
@@ -922,6 +934,7 @@ export default function LoginForm() {
     } catch (error) {
       console.error('[loginWithPassword] Unexpected error:', error);
       resetCaptcha();
+      setPasswordRateLimitedEmail(null);
 
       passwordForm.setError('password', {
         message: t('login.invalid_credentials'),
@@ -1058,6 +1071,67 @@ export default function LoginForm() {
     [buildOAuthRedirectUrl, supabase.auth, t]
   );
 
+  const renderSocialLoginButtons = () => (
+    <div className="space-y-3">
+      <SocialLoginButton
+        disabled={loading}
+        onClick={() => void handleOAuthLogin('google')}
+        icon={
+          <Image
+            src="/media/google-logo.png"
+            alt="Google"
+            width={20}
+            height={20}
+            className="object-contain transition-transform duration-200 group-hover:scale-110"
+          />
+        }
+      >
+        {t('login.continue_with_google')}
+      </SocialLoginButton>
+
+      <SocialLoginButton
+        disabled={loading}
+        onClick={() => void handleOAuthLogin('azure')}
+        icon={
+          <Image
+            src="/media/logos/microsoft.svg"
+            alt="Microsoft"
+            width={20}
+            height={20}
+            className="object-contain transition-transform duration-200 group-hover:scale-110"
+          />
+        }
+      >
+        {t('login.continue_with_microsoft')}
+      </SocialLoginButton>
+
+      <SocialLoginButton
+        disabled={loading}
+        onClick={() => void handleOAuthLogin('apple')}
+        icon={<SocialLogoMask src="/media/logos/apple.svg" alt="Apple" />}
+      >
+        {t('login.continue_with_apple')}
+      </SocialLoginButton>
+
+      <SocialLoginButton
+        disabled={loading}
+        onClick={() => void handleOAuthLogin('github')}
+        icon={<SocialLogoMask src="/media/logos/github.svg" alt="GitHub" />}
+      >
+        {t('login.continue_with_github')}
+      </SocialLoginButton>
+    </div>
+  );
+
+  const renderRateLimitedSocialAuthSuggestion = (email: string) => (
+    <div className="space-y-3 rounded-2xl border border-border/70 bg-muted/20 p-4">
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {t('login.rate_limited_social_auth_hint', { email })}
+      </p>
+      {renderSocialLoginButtons()}
+    </div>
+  );
+
   useEffect(() => {
     if (!initialized || !readyForAuth || requiresMFA || user) {
       return;
@@ -1122,6 +1196,7 @@ export default function LoginForm() {
     setShowPassword(false);
     setShowDomainPreview(false);
     setOtpRetryAfterSeconds(0);
+    setPasswordRateLimitedEmail(null);
     setCaptchaError(undefined);
     resetCaptcha();
     setAuthStage('identify');
@@ -1694,65 +1769,7 @@ export default function LoginForm() {
 
                   <LoginMethodSeparator label={t('login.or')} />
 
-                  <div className="space-y-3">
-                    <SocialLoginButton
-                      disabled={loading}
-                      onClick={() => void handleOAuthLogin('google')}
-                      icon={
-                        <Image
-                          src="/media/google-logo.png"
-                          alt="Google"
-                          width={20}
-                          height={20}
-                          className="object-contain transition-transform duration-200 group-hover:scale-110"
-                        />
-                      }
-                    >
-                      {t('login.continue_with_google')}
-                    </SocialLoginButton>
-
-                    <SocialLoginButton
-                      disabled={loading}
-                      onClick={() => void handleOAuthLogin('azure')}
-                      icon={
-                        <Image
-                          src="/media/logos/microsoft.svg"
-                          alt="Microsoft"
-                          width={20}
-                          height={20}
-                          className="object-contain transition-transform duration-200 group-hover:scale-110"
-                        />
-                      }
-                    >
-                      {t('login.continue_with_microsoft')}
-                    </SocialLoginButton>
-
-                    <SocialLoginButton
-                      disabled={loading}
-                      onClick={() => void handleOAuthLogin('apple')}
-                      icon={
-                        <SocialLogoMask
-                          src="/media/logos/apple.svg"
-                          alt="Apple"
-                        />
-                      }
-                    >
-                      {t('login.continue_with_apple')}
-                    </SocialLoginButton>
-
-                    <SocialLoginButton
-                      disabled={loading}
-                      onClick={() => void handleOAuthLogin('github')}
-                      icon={
-                        <SocialLogoMask
-                          src="/media/logos/github.svg"
-                          alt="GitHub"
-                        />
-                      }
-                    >
-                      {t('login.continue_with_github')}
-                    </SocialLoginButton>
-                  </div>
+                  {renderSocialLoginButtons()}
                 </motion.div>
               ) : authStage === 'qr' ? (
                 <motion.div
@@ -1933,6 +1950,12 @@ export default function LoginForm() {
                       </div>
                     </form>
                   </Form>
+
+                  {otpRetryAfterSeconds > 0
+                    ? renderRateLimitedSocialAuthSuggestion(
+                        emailForm.getValues('email')
+                      )
+                    : null}
                 </motion.div>
               ) : (
                 <motion.div
@@ -2084,6 +2107,12 @@ export default function LoginForm() {
                       ) : null}
                     </form>
                   </Form>
+
+                  {passwordRateLimitedEmail
+                    ? renderRateLimitedSocialAuthSuggestion(
+                        passwordRateLimitedEmail
+                      )
+                    : null}
                 </motion.div>
               )}
             </AnimatePresence>
