@@ -3748,6 +3748,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
         createResult('hive-blue-123\n'),
       ],
+      [prodComposePsAllKey('hive-db-migrate'), createResult('')],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
         createResult(''),
@@ -4056,6 +4057,10 @@ test('runDeployWatchIteration bootstraps active and standby deployments when no 
         return createResult('');
       }
 
+      if (key === prodComposePsAllKey('hive-db-migrate')) {
+        return createResult('');
+      }
+
       if (
         key ===
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans ${BLUE_GREEN_PROXY_SERVICE} web-blue hive-blue hive-realtime`
@@ -4319,6 +4324,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -a -q hive-blue`,
           createResult('hive-blue-123\n'),
         ],
+        [prodComposePsAllKey('hive-db-migrate'), createResult('')],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis stop web-blue`,
           createResult(''),

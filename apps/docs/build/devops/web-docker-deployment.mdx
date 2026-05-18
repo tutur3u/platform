@@ -338,6 +338,10 @@ their stage chips are shown as not applicable. Active watcher deployments that
 only have pending build/deploy status are surfaced with a synthetic current
 stage so operators can see the build is in progress before full stage history is
 written.
+After each Hive migration pass, the deploy helper removes the completed
+`hive-db-migrate` Compose container. This keeps the one-shot migration service
+from accumulating as an exited container after `depends_on` starts it while Hive
+services come up.
 
 ## Native Cron Runner
 

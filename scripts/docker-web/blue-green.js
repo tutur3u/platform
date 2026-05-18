@@ -1726,6 +1726,55 @@ async function runHiveDbForwardMigrations({
   );
 }
 
+async function removeHiveDbMigrateContainerIfPresent({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  await removeComposeServicesIfPresent([HIVE_DB_MIGRATE_SERVICE], {
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+}
+
+async function runHiveDbForwardMigrationsAndCleanup({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  runCommand: run,
+}) {
+  try {
+    await runHiveDbForwardMigrations({
+      composeFile,
+      composeGlobalArgs,
+      env,
+      runCommand: run,
+    });
+  } catch (error) {
+    try {
+      await removeHiveDbMigrateContainerIfPresent({
+        composeFile,
+        composeGlobalArgs,
+        env,
+        runCommand: run,
+      });
+    } catch {
+      // Preserve the migration failure; cleanup errors are secondary here.
+    }
+    throw error;
+  }
+
+  await removeHiveDbMigrateContainerIfPresent({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    runCommand: run,
+  });
+}
+
 async function pruneBlueGreenBuildkitCacheAfterWorkflow({
   composeFile,
   composeGlobalArgs = [],
@@ -2704,7 +2753,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       });
 
       await runBlueGreenStage(stages, 'hive-migrate', async () => {
-        await runHiveDbForwardMigrations({
+        await runHiveDbForwardMigrationsAndCleanup({
           composeFile,
           composeGlobalArgs: parsed.composeGlobalArgs,
           env: targetEnv,
@@ -2747,6 +2796,12 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
             ...parsed.composeArgs,
             ...hiveServices,
           ],
+        });
+        await removeHiveDbMigrateContainerIfPresent({
+          composeFile,
+          composeGlobalArgs: parsed.composeGlobalArgs,
+          env: targetEnv,
+          runCommand: run,
         });
 
         for (const serviceName of hiveServices) {
@@ -3040,7 +3095,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
       }
     );
 
-    await runHiveDbForwardMigrations({
+    await runHiveDbForwardMigrationsAndCleanup({
       composeFile,
       composeGlobalArgs: parsed.composeGlobalArgs,
       env: standbyEnv,
@@ -3065,6 +3120,12 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
         ...parsed.composeArgs,
         ...standbyPhase1,
       ],
+    });
+    await removeHiveDbMigrateContainerIfPresent({
+      composeFile,
+      composeGlobalArgs: parsed.composeGlobalArgs,
+      env: standbyEnv,
+      runCommand: run,
     });
 
     if (standbyPhase2.length > 0) {
@@ -3205,7 +3266,7 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     env,
     runCommand: run,
   });
-  await runHiveDbForwardMigrations({
+  await runHiveDbForwardMigrationsAndCleanup({
     composeFile,
     composeGlobalArgs: parsed.composeGlobalArgs,
     env: activeEnv,
@@ -3225,6 +3286,12 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
       '--remove-orphans',
       ...activeServices,
     ],
+  });
+  await removeHiveDbMigrateContainerIfPresent({
+    composeFile,
+    composeGlobalArgs: parsed.composeGlobalArgs,
+    env: activeEnv,
+    runCommand: run,
   });
 
   await waitForComposeServiceHealthy(BLUE_GREEN_PROXY_SERVICE, {

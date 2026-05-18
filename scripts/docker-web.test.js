@@ -2032,6 +2032,15 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
     }
 
+    if (args.includes('ps') && args.at(-1) === 'hive-db-migrate') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'hive-db-migrate-123\n',
+      };
+    }
+
     if (
       args.includes('ps') &&
       BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
@@ -2225,6 +2234,15 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
 
     if (args.includes('ps') && args.at(-1) === 'web-blue') {
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'hive-db-migrate') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'hive-db-migrate-123\n',
+      };
     }
 
     if (
@@ -3511,6 +3529,15 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
       return { code: 0, signal: null, stderr: '', stdout: 'container-blue\n' };
     }
 
+    if (args.includes('ps') && args.at(-1) === 'hive-db-migrate') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'hive-db-migrate-123\n',
+      };
+    }
+
     if (
       args.includes('ps') &&
       BLUE_GREEN_SUPPORT_SERVICES.includes(args.at(-1))
@@ -3729,6 +3756,15 @@ test('runDockerWebWorkflow switches traffic to the new color after it becomes he
           args.includes('web-blue')
       )
     );
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('rm') &&
+          args.at(-1) === 'hive-db-migrate'
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -3936,6 +3972,15 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
       };
     }
 
+    if (args.includes('ps') && args.at(-1) === 'hive-db-migrate') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: 'hive-db-migrate-123\n',
+      };
+    }
+
     if (args.includes('ps') && args.at(-1) === 'web-green') {
       return {
         code: 0,
@@ -3955,6 +4000,10 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
     }
 
     if (isHiveDbMigrateRun(command, args)) {
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('rm') && args.at(-1) === 'hive-db-migrate') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
     }
 
