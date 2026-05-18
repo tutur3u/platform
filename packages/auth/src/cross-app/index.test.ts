@@ -74,7 +74,7 @@ describe('mapUrlToApp', () => {
     ).toBe('calendar');
     expect(
       mapUrlToApp('http://localhost:7809/verify-token?nextUrl=%2Fpersonal')
-    ).toBe('tudo');
+    ).toBe('tasks');
   });
 
   it.each([
@@ -87,7 +87,7 @@ describe('mapUrlToApp', () => {
     ['nova', 'https://nova.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['rewise', 'https://rewise.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     [
-      'tudo',
+      'tasks',
       'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal',
     ],
     ['finance', 'https://finance.tuturuuu.localhost/verify-token?nextUrl=%2F'],
@@ -108,7 +108,7 @@ describe('mapUrlToApp', () => {
       mapUrlToApp(
         'https://tasks.tuturuuu.localhost/verify-token?nextUrl=%2Fpersonal'
       )
-    ).toBe('tudo');
+    ).toBe('tasks');
     expect(
       mapUrlToApp(
         'https://calendar.tuturuuu.localhost/verify-token?nextUrl=%2Fcalendar'

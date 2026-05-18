@@ -51,7 +51,7 @@ export function SettingsDialog({
     staleTime: 5 * 60 * 1000,
   });
 
-  // Tasks is the primary group for tudo — expanded by default, listed first.
+  // Tasks is the primary group for the Tasks app: expanded by default, listed first.
   // All other groups are collapsed by default.
   const tasksLabel = t('settings.tasks.title');
 

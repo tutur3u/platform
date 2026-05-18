@@ -24,7 +24,7 @@ sessions. Apps coordinate through web-owned auth routes:
 
 Registered internal apps are the apps listed in
 `packages/utils/src/internal-domains.ts`, such as `cms`, `calendar`, `nova`,
-`rewise`, `tudo`, `finance`, `inventory`, `track`, `learn`, `teach`, and
+`rewise`, `tasks`, `finance`, `inventory`, `track`, `learn`, `teach`, and
 `hive`.
 
 1. The app redirects unauthenticated users to `apps/web` login with a
@@ -34,6 +34,9 @@ Registered internal apps are the apps listed in
    `BASE_URL`/app URL constants so shared environment variables such as
    `BASE_URL=https://tuturuuu.com` are rejected for satellite hosts instead of
    minting the host-only app-session cookie on the wrong domain.
+   If `apps/web` receives a registered internal app `returnUrl` that points at
+   `/login` or a protected product route, it must normalize the token handoff
+   back through that app's `/verify-token` route before redirecting.
 2. `apps/web` validates the return target and mints the normal one-time
    cross-app handoff token.
 3. The app `/verify-token` client posts only that handoff token to

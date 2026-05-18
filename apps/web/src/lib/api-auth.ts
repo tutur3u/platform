@@ -157,9 +157,9 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'mira',
   'nova',
   'rewise',
+  'tasks',
   'teach',
   'track',
-  'tudo',
 ] as const;
 
 const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {

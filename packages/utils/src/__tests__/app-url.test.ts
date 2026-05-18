@@ -98,7 +98,7 @@ describe('getLocalInternalAppUrl', () => {
     expect(getLocalInternalAppUrl('platform', 'http://localhost:7803')).toBe(
       'https://tuturuuu.localhost'
     );
-    expect(getLocalInternalAppUrl('tudo', 'http://localhost:7809')).toBe(
+    expect(getLocalInternalAppUrl('tasks', 'http://localhost:7809')).toBe(
       'https://tasks.tuturuuu.localhost'
     );
   });
@@ -109,7 +109,7 @@ describe('getLocalInternalAppUrl', () => {
     ['calendar', 'https://calendar.tuturuuu.localhost'],
     ['nova', 'https://nova.tuturuuu.localhost'],
     ['rewise', 'https://rewise.tuturuuu.localhost'],
-    ['tudo', 'https://tasks.tuturuuu.localhost'],
+    ['tasks', 'https://tasks.tuturuuu.localhost'],
     ['finance', 'https://finance.tuturuuu.localhost'],
     ['inventory', 'https://inventory.tuturuuu.localhost'],
     ['track', 'https://track.tuturuuu.localhost'],

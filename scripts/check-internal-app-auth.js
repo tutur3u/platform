@@ -26,7 +26,7 @@ const REGISTERED_APP_TARGETS = {
   learn: 'learn',
   nova: 'nova',
   rewise: 'rewise',
-  tasks: 'tudo',
+  tasks: 'tasks',
   teach: 'teach',
   track: 'track',
 };
@@ -332,9 +332,9 @@ const tasksSourceFiles = walkFiles('apps/tasks/src');
 for (const filePath of tasksSourceFiles) {
   const source = fs.readFileSync(path.join(ROOT, filePath), 'utf8');
 
-  if (/targetApp:\s*['"]tasks['"]/u.test(source)) {
+  if (/targetApp:\s*['"]tudo['"]/u.test(source)) {
     failures.push(
-      `${filePath}: Tasks app-session target must use the registered app name "tudo", not the hostname label "tasks".`
+      `${filePath}: Tasks app-session target must use the registered app name "tasks", not the legacy app name "tudo".`
     );
   }
 }

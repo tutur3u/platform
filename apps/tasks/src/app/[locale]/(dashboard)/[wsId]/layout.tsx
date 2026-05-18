@@ -30,7 +30,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   const user = getAppSessionUserFromRequest(
     { headers: await headers() },
-    { targetApp: 'tudo' }
+    { targetApp: 'tasks' }
   );
   if (!user?.id) redirect('/login');
 

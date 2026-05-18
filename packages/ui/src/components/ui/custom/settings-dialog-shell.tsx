@@ -96,7 +96,7 @@ export interface SettingsDialogShellProps {
  * Each app provides its own `navItems` (ordered by priority) and
  * renders tab-specific content via `children`. The `primaryGroupLabels`
  * prop controls which groups expand by default — enabling apps to
- * highlight their domain (e.g., tasks-first in tudo, calendar-first
+ * highlight their domain (e.g., tasks-first in Tasks, calendar-first
  * in a future calendar app).
  */
 export function SettingsDialogShell({

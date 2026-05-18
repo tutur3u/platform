@@ -26,7 +26,7 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://rewise.me',
   },
   {
-    name: 'tudo',
+    name: 'tasks',
     url: 'https://tasks.tuturuuu.com',
   },
   {
@@ -77,7 +77,7 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('rewise'),
   },
   {
-    name: 'tudo',
+    name: 'tasks',
     url: getTuturuuuPortlessAppOrigin('tasks'),
   },
   {
@@ -128,7 +128,7 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
     url: 'http://localhost:7805',
   },
   {
-    name: 'tudo',
+    name: 'tasks',
     url: 'http://localhost:7809',
   },
   {

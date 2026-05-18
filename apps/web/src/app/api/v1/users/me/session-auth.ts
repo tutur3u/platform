@@ -10,9 +10,9 @@ const CURRENT_USER_APP_SESSION_TARGETS = [
   'mira',
   'nova',
   'rewise',
+  'tasks',
   'teach',
   'track',
-  'tudo',
   CLI_APP_TARGET_APP,
 ] as const;
 

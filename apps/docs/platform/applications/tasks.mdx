@@ -20,10 +20,9 @@ Tasks provides:
 
 ## Satellite Auth And API Ownership
 
-`apps/tasks` is registered internally as the `tudo` app. All app-session
+`apps/tasks` is registered internally as the `tasks` app. All app-session
 checks, cross-app token verification, and Web API allowlists must use
-`targetApp: 'tudo'`; `tasks` is only the hostname label used by
-`tasks.tuturuuu.com` and `tasks.tuturuuu.localhost`.
+`targetApp: 'tasks'`.
 
 The local `/api/auth/verify-app-token` route must delegate token validation to
 the central Web verifier with `verificationBaseUrl: TTR_URL`. That handoff sets

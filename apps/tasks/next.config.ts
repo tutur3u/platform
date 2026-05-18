@@ -51,7 +51,7 @@ const nextConfig: NextConfig = {
       beforeFiles: [],
       afterFiles: [],
       // Fallback rewrites only apply when no local route matches,
-      // so tudo's existing API routes (task-boards, members, auth) still work.
+      // so Tasks' existing API routes (task-boards, members, auth) still work.
       // Everything else is proxied to the central web app.
       fallback: [
         {

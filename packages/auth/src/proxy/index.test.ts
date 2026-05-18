@@ -223,7 +223,7 @@ describe('auth proxy redirect helpers', () => {
 
   it('keeps Portless app requests under the Tuturuuu localhost namespace', async () => {
     const authProxy = createCentralizedAuthProxy({
-      appSession: { targetApp: 'tudo' },
+      appSession: { targetApp: 'tasks' },
       skipApiRoutes: true,
       webAppUrl: 'https://tuturuuu.localhost',
     });

@@ -709,9 +709,9 @@ describe('withSessionAuth', () => {
         'mira',
         'nova',
         'rewise',
+        'tasks',
         'teach',
         'track',
-        'tudo',
       ],
     });
   });

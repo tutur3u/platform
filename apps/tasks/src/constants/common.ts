@@ -20,14 +20,14 @@ export const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const DEFAULT_TASKS_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tasks.tuturuuu.com'
-    : getLocalInternalAppUrl('tudo', `http://localhost:${PORT}`);
+    : getLocalInternalAppUrl('tasks', `http://localhost:${PORT}`);
 const DEFAULT_WEB_APP_URL =
   process.env.NODE_ENV === 'production'
     ? 'https://tuturuuu.com'
     : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`);
 
 export const BASE_URL = resolveInternalAppUrl({
-  appName: 'tudo',
+  appName: 'tasks',
   candidates: [
     process.env.TASKS_APP_URL,
     process.env.NEXT_PUBLIC_TASKS_APP_URL,
