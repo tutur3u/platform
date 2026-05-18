@@ -1,6 +1,6 @@
 'use client';
 
-import { Bot, Loader2, Send, WandSparkles } from '@tuturuuu/icons';
+import { Bot, Loader2, Send } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
   Select,
@@ -11,9 +11,16 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import type { ComponentType, FormEvent, ReactNode } from 'react';
+import {
+  type ComponentType,
+  type FormEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+} from 'react';
 import MiraChatPanel from '../../../(dashboard)/components/mira-chat-panel';
 import type {
   TaskBoardAiChatBarList,
@@ -25,32 +32,52 @@ export function ModeButton({
   children,
   icon: Icon,
   onClick,
+  showLabel,
 }: {
   active: boolean;
   children: ReactNode;
   icon: ComponentType<{ className?: string }>;
   onClick: () => void;
+  showLabel: boolean;
 }) {
   return (
-    <Button
-      type="button"
-      size="sm"
-      variant={active ? 'secondary' : 'ghost'}
-      className={cn(
-        'h-7 shrink-0 gap-1.5 rounded-full px-2.5 text-xs transition-colors',
-        active && 'bg-dynamic-purple/10 text-dynamic-purple'
-      )}
-      aria-pressed={active}
-      onClick={onClick}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      <span className="hidden sm:inline">{children}</span>
-    </Button>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant={active ? 'secondary' : 'ghost'}
+          className={cn(
+            'h-8 shrink-0 gap-1.5 overflow-hidden rounded-full text-xs transition-[width,padding,background-color,color,box-shadow,transform] duration-300 ease-out',
+            showLabel ? 'w-auto px-2.5' : 'w-8 px-0',
+            active && 'bg-dynamic-purple/10 text-dynamic-purple shadow-sm',
+            !active && 'hover:bg-muted/70'
+          )}
+          aria-label={typeof children === 'string' ? children : undefined}
+          aria-pressed={active}
+          onClick={onClick}
+        >
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+          <span
+            className={cn(
+              'hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-300 ease-out sm:inline-block',
+              showLabel
+                ? 'max-w-28 translate-x-0 opacity-100'
+                : 'max-w-0 -translate-x-1 opacity-0'
+            )}
+          >
+            {children}
+          </span>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent>{children}</TooltipContent>
+    </Tooltip>
   );
 }
 
 export function TaskBoardMiraChatPopup({
   assistantName,
+  autoFocusSignal,
   boardId,
   chatPanelResetKey,
   currentUser,
@@ -60,6 +87,7 @@ export function TaskBoardMiraChatPopup({
   wsId,
 }: {
   assistantName: string;
+  autoFocusSignal: number;
   boardId: string;
   chatPanelResetKey: number;
   currentUser: TaskBoardAiChatBarUser;
@@ -82,6 +110,7 @@ export function TaskBoardMiraChatPopup({
         key={`${wsId}-${boardId}-${chatPanelResetKey}`}
         wsId={wsId}
         taskBoardId={boardId}
+        autoFocusSignal={autoFocusSignal}
         assistantName={assistantName}
         userName={userName}
         userAvatarUrl={currentUser.avatar_url}
@@ -94,6 +123,7 @@ export function TaskBoardMiraChatPopup({
 export function TaskBoardTaskComposer({
   activeLists,
   aiTaskMode,
+  autoFocusSignal,
   canCreateTask,
   isCreating,
   listsLoading,
@@ -102,11 +132,13 @@ export function TaskBoardTaskComposer({
   onListChange,
   onSubmit,
   onSubmitShortcut,
+  open,
   selectedListId,
   taskInput,
 }: {
   activeLists: TaskBoardAiChatBarList[];
   aiTaskMode: boolean;
+  autoFocusSignal: number;
   canCreateTask: boolean;
   isCreating: boolean;
   listsLoading: boolean;
@@ -115,20 +147,44 @@ export function TaskBoardTaskComposer({
   onListChange: (value: string) => void;
   onSubmit: (event: FormEvent) => void;
   onSubmitShortcut: () => void;
+  open: boolean;
   selectedListId: string;
   taskInput: string;
 }) {
   const tCommon = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (!open || autoFocusSignal === 0) return;
+
+    const focusInput = () => {
+      inputRef.current?.focus({ preventScroll: true });
+    };
+    const animationFrame = window.requestAnimationFrame(focusInput);
+    const timer = window.setTimeout(focusInput, 180);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(timer);
+    };
+  }, [autoFocusSignal, open]);
 
   return (
     <form
-      className="border-border/70 border-t px-2 pt-2 pb-2"
+      className={cn(
+        'border-border/70 border-t px-2 pt-2 pb-2 transition-[opacity,transform] duration-300 ease-out',
+        open
+          ? 'translate-y-0 opacity-100'
+          : 'pointer-events-none translate-y-1 opacity-0'
+      )}
       onSubmit={onSubmit}
+      aria-hidden={!open}
     >
       <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <Textarea
+            ref={inputRef}
             value={taskInput}
             onChange={(event) => onInputChange(event.target.value)}
             onKeyDown={(event) => {
@@ -144,7 +200,7 @@ export function TaskBoardTaskComposer({
                 : tTasks('cmd_task_placeholder')
             }
             className="min-h-10 resize-none rounded-xl border-border/70 bg-background/70 px-3 py-2 text-sm"
-            disabled={isCreating}
+            disabled={!open || isCreating}
           />
         </div>
 
@@ -152,7 +208,7 @@ export function TaskBoardTaskComposer({
           <Select
             value={selectedListId}
             onValueChange={onListChange}
-            disabled={listsLoading || isCreating}
+            disabled={!open || listsLoading || isCreating}
           >
             <SelectTrigger className="h-9 w-32 rounded-xl sm:w-36">
               <SelectValue
@@ -182,7 +238,7 @@ export function TaskBoardTaskComposer({
             <Switch
               checked={aiTaskMode}
               onCheckedChange={onAiTaskModeChange}
-              disabled={isCreating}
+              disabled={!open || isCreating}
               aria-label={tCommon('generate_with_ai')}
             />
           </div>
@@ -191,12 +247,10 @@ export function TaskBoardTaskComposer({
             type="submit"
             size="icon"
             className="h-9 w-9 rounded-xl"
-            disabled={!canCreateTask || isCreating}
+            disabled={!open || !canCreateTask || isCreating}
           >
             {isCreating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : aiTaskMode ? (
-              <WandSparkles className="h-4 w-4" />
             ) : (
               <Send className="h-4 w-4" />
             )}

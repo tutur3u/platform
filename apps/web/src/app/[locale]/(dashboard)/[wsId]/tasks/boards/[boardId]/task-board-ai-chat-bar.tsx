@@ -1,13 +1,7 @@
 'use client';
 
-import { ChevronDown, MessageCircle, Plus, Sparkles, X } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@tuturuuu/ui/tooltip';
+import { MessageCircle, Plus } from '@tuturuuu/icons';
+import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { TaskPreviewDialog } from '@tuturuuu/ui/tu-do/my-tasks/task-preview-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -39,19 +33,22 @@ export function TaskBoardAiChatBar({
   wsId,
 }: TaskBoardAiChatBarProps) {
   const tCommon = useTranslations('common');
-  const tMira = useTranslations('dashboard.mira_chat');
   const tTasks = useTranslations('ws-tasks');
   const islandRef = useRef<HTMLDivElement>(null);
   const [expanded, setExpanded] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const [mode, setMode] = useState<TaskBoardAiChatBarMode>('task');
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
   const [renderChatPopup, setRenderChatPopup] = useState(false);
   const [chatPopupExiting, setChatPopupExiting] = useState(false);
+  const [taskFocusSignal, setTaskFocusSignal] = useState(0);
+  const [assistantFocusSignal, setAssistantFocusSignal] = useState(0);
+  const islandExpanded = expanded || hovered;
 
   const taskFlow = useTaskBoardAiChatBarTaskFlow({
     boardId,
     currentUser,
-    expanded,
+    expanded: islandExpanded,
     wsId,
   });
 
@@ -80,6 +77,9 @@ export function TaskBoardAiChatBar({
   const userName =
     currentUser.display_name || currentUser.full_name || currentUser.email;
   const chatPopupOpen = expanded && mode === 'chat';
+  const taskComposerOpen = islandExpanded && mode === 'task' && !chatPopupOpen;
+  const showTaskSummary = taskComposerOpen;
+  const showSwitcherLabels = islandExpanded && mode === 'task';
 
   useEffect(() => {
     if (chatPopupOpen) {
@@ -99,28 +99,49 @@ export function TaskBoardAiChatBar({
     return () => window.clearTimeout(timer);
   }, [chatPopupOpen, renderChatPopup]);
 
-  const summaryText = expanded
-    ? mode === 'task'
-      ? tCommon('add_task')
-      : tCommon('ai-assistant')
-    : mode === 'task'
-      ? tTasks('cmd_ai_placeholder')
-      : tMira('placeholder', { name: assistantName });
+  const taskSummaryText = taskFlow.aiTaskMode
+    ? tTasks('cmd_ai_placeholder')
+    : tTasks('cmd_task_placeholder');
+
+  const openTaskComposer = () => {
+    setMode('task');
+    setExpanded(true);
+    setTaskFocusSignal((current) => current + 1);
+  };
+
+  const openAssistant = () => {
+    setMode('chat');
+    setExpanded(true);
+    setAssistantFocusSignal((current) => current + 1);
+  };
 
   return (
     <TooltipProvider>
       <div className="pointer-events-none fixed inset-x-3 bottom-4 z-40 flex justify-center sm:bottom-6">
         <div
           ref={islandRef}
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onFocusCapture={() => setHovered(true)}
+          onBlurCapture={(event) => {
+            const nextTarget = event.relatedTarget;
+            if (
+              !(nextTarget instanceof Node) ||
+              !event.currentTarget.contains(nextTarget)
+            ) {
+              setHovered(false);
+            }
+          }}
           className={cn(
-            'pointer-events-auto flex w-full max-w-xl flex-col items-stretch transition-[max-width,transform] duration-300',
-            expanded && mode === 'task' && 'max-w-2xl',
+            'pointer-events-auto flex w-full flex-col items-stretch transition-[max-width,opacity,transform] duration-300 ease-out',
+            showTaskSummary ? 'max-w-2xl' : 'max-w-[6rem]',
             renderChatPopup && 'max-w-3xl'
           )}
         >
           {renderChatPopup && (
             <TaskBoardMiraChatPopup
               assistantName={assistantName}
+              autoFocusSignal={assistantFocusSignal}
               boardId={boardId}
               chatPanelResetKey={chatPanelResetKey}
               currentUser={currentUser}
@@ -136,24 +157,36 @@ export function TaskBoardAiChatBar({
           <div
             className={cn(
               'overflow-hidden rounded-2xl border border-border/70 bg-background/90 shadow-lg backdrop-blur-xl',
-              'transition-[width,opacity,transform] duration-300',
-              expanded ? 'w-full' : 'mx-auto w-full max-w-xl'
+              'mx-auto transition-[width,max-width,opacity,transform] duration-300 ease-out',
+              showTaskSummary ? 'w-full max-w-2xl' : 'w-auto max-w-[6rem]',
+              islandExpanded
+                ? 'scale-100 opacity-100'
+                : 'scale-[0.98] opacity-95'
             )}
           >
-            <div className="flex items-center gap-1.5 px-2 py-1.5">
+            <div
+              className={cn(
+                'flex items-center gap-1.5 transition-[padding] duration-300 ease-out',
+                showTaskSummary ? 'px-2 py-1.5' : 'p-1.5'
+              )}
+            >
               <button
                 type="button"
-                className="flex min-w-0 flex-1 items-center gap-2 rounded-xl px-2 py-1 text-left transition hover:bg-muted/70"
-                onClick={() => setExpanded(true)}
-                aria-expanded={expanded}
+                className={cn(
+                  'flex min-w-0 items-center rounded-xl text-left transition-[background-color,opacity,max-width,padding,transform] duration-300 ease-out hover:bg-muted/70',
+                  showTaskSummary
+                    ? 'max-w-lg flex-1 px-2 py-1 opacity-100'
+                    : 'pointer-events-none max-w-0 overflow-hidden p-0 opacity-0'
+                )}
+                onClick={openTaskComposer}
+                aria-expanded={taskComposerOpen}
+                aria-hidden={!showTaskSummary}
+                tabIndex={showTaskSummary ? 0 : -1}
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dynamic-purple/20 bg-dynamic-purple/10 text-dynamic-purple">
-                  <Sparkles className="h-3.5 w-3.5" />
-                </span>
                 <span className="min-w-0 flex-1 truncate text-muted-foreground text-xs sm:text-sm">
-                  {summaryText}
+                  {taskSummaryText}
                 </span>
-                {taskFlow.selectedList && mode === 'task' && !expanded && (
+                {taskFlow.selectedList && (
                   <span className="hidden max-w-36 truncate rounded-full border border-border/70 px-2 py-0.5 text-muted-foreground text-xs sm:inline">
                     {taskFlow.selectedList.name || tCommon('list')}
                   </span>
@@ -164,63 +197,49 @@ export function TaskBoardAiChatBar({
                 <ModeButton
                   active={mode === 'task'}
                   icon={Plus}
-                  onClick={() => {
-                    setMode('task');
-                    setExpanded(true);
-                  }}
+                  onClick={openTaskComposer}
+                  showLabel={showSwitcherLabels}
                 >
                   {tCommon('add_task')}
                 </ModeButton>
                 <ModeButton
                   active={mode === 'chat'}
                   icon={MessageCircle}
-                  onClick={() => {
-                    setMode('chat');
-                    setExpanded(true);
-                  }}
+                  onClick={openAssistant}
+                  showLabel={showSwitcherLabels}
                 >
                   {tCommon('ai-assistant')}
                 </ModeButton>
               </div>
-
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8 shrink-0 rounded-full"
-                    onClick={() => setExpanded((value) => !value)}
-                  >
-                    {expanded ? (
-                      <X className="h-4 w-4" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 rotate-180" />
-                    )}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {expanded ? tCommon('close') : tCommon('expand')}
-                </TooltipContent>
-              </Tooltip>
             </div>
 
-            {expanded && mode === 'task' && (
-              <TaskBoardTaskComposer
-                activeLists={taskFlow.activeLists}
-                aiTaskMode={taskFlow.aiTaskMode}
-                canCreateTask={taskFlow.canCreateTask}
-                isCreating={taskFlow.isWorking}
-                listsLoading={taskFlow.listsLoading}
-                onAiTaskModeChange={taskFlow.setAiTaskMode}
-                onInputChange={taskFlow.setTaskInput}
-                onListChange={taskFlow.setSelectedListId}
-                onSubmit={taskFlow.handleTaskSubmit}
-                onSubmitShortcut={taskFlow.submitTaskInput}
-                selectedListId={taskFlow.selectedListId}
-                taskInput={taskFlow.taskInput}
-              />
-            )}
+            <div
+              className={cn(
+                'grid transition-[grid-template-rows,opacity] duration-300 ease-out',
+                taskComposerOpen
+                  ? 'grid-rows-[1fr] opacity-100'
+                  : 'grid-rows-[0fr] opacity-0'
+              )}
+            >
+              <div className="overflow-hidden">
+                <TaskBoardTaskComposer
+                  activeLists={taskFlow.activeLists}
+                  aiTaskMode={taskFlow.aiTaskMode}
+                  autoFocusSignal={taskFocusSignal}
+                  canCreateTask={taskFlow.canCreateTask}
+                  isCreating={taskFlow.isWorking}
+                  listsLoading={taskFlow.listsLoading}
+                  onAiTaskModeChange={taskFlow.setAiTaskMode}
+                  onInputChange={taskFlow.setTaskInput}
+                  onListChange={taskFlow.setSelectedListId}
+                  onSubmit={taskFlow.handleTaskSubmit}
+                  onSubmitShortcut={taskFlow.submitTaskInput}
+                  open={taskComposerOpen}
+                  selectedListId={taskFlow.selectedListId}
+                  taskInput={taskFlow.taskInput}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>

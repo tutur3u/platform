@@ -34,6 +34,7 @@ import { useMiraMessageQueue } from './use-mira-message-queue';
 interface MiraChatPanelProps {
   wsId: string;
   taskBoardId?: string;
+  autoFocusSignal?: number;
   assistantName: string;
   userName?: string;
   userAvatarUrl?: string | null;
@@ -48,6 +49,7 @@ interface MiraChatPanelProps {
 export default function MiraChatPanel({
   wsId,
   taskBoardId,
+  autoFocusSignal = 0,
   assistantName,
   userName,
   userAvatarUrl,
@@ -70,6 +72,21 @@ export default function MiraChatPanel({
   const toolbarVisibilityAnchorRef = useRef<HTMLDivElement>(null);
   const greetingKey = useMemo(() => getGreetingKey(), []);
   const generativeUIStore = useMemo(() => createGenerativeUIAdapter(), []);
+
+  useEffect(() => {
+    if (autoFocusSignal === 0) return;
+
+    const focusInput = () => {
+      inputRef.current?.focus({ preventScroll: true });
+    };
+    const animationFrame = window.requestAnimationFrame(focusInput);
+    const timer = window.setTimeout(focusInput, 180);
+
+    return () => {
+      window.cancelAnimationFrame(animationFrame);
+      window.clearTimeout(timer);
+    };
+  }, [autoFocusSignal]);
 
   const createTransactionMutation = useCreateTransaction();
   const createTransactionRef = useRef<
