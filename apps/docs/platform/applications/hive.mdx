@@ -97,6 +97,13 @@ DevOps-admin override by setting `HIVE_DB_OPERATOR_ROLE=devops-admin`,
 `HIVE_DB_DEVOPS_ADMIN_APPROVED=1`; do not set those values in normal deploy
 environments.
 
+When the migration runner finds an older Hive DB that already has runtime tables
+but no `hive_schema_migrations` history, it performs a forward-only compatibility
+pass before recording the baseline. That pass creates the research-session table
+when needed and adds missing nullable `research_session_id` columns to legacy
+event, NPC run, and simulation tick tables so the immutable baseline can replay
+without failing on partial indexes.
+
 Shared editor state is a Yjs CRDT document per Hive server. Terrain blocks,
 objects, public NPC projections, farm tiles, and visual warehouse/crop
 projections live in keyed CRDT maps. Money, item ownership, trade settlement,

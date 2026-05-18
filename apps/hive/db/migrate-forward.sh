@@ -170,6 +170,56 @@ validate_applied_migration() {
   return 0
 }
 
+prepare_legacy_baseline_tables() {
+  has_hive_servers="$(psql_scalar -c "select case when to_regclass('hive_servers') is null then '0' else '1' end")"
+
+  if [ "$has_hive_servers" != "1" ]; then
+    return
+  fi
+
+  psql_hive <<'SQL'
+create table if not exists hive_research_sessions (
+  id uuid primary key default gen_random_uuid(),
+  server_id uuid not null references hive_servers(id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 160),
+  description text,
+  status text not null default 'running'
+    check (status in ('running', 'paused', 'completed', 'archived')),
+  created_by uuid,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists hive_research_sessions_one_running_idx
+  on hive_research_sessions(server_id)
+  where status = 'running';
+
+create index if not exists hive_research_sessions_server_created_idx
+  on hive_research_sessions(server_id, created_at desc);
+
+do $$
+begin
+  if to_regclass('hive_world_events') is not null then
+    alter table hive_world_events
+      add column if not exists research_session_id uuid references hive_research_sessions(id) on delete set null;
+  end if;
+
+  if to_regclass('hive_npc_runs') is not null then
+    alter table hive_npc_runs
+      add column if not exists research_session_id uuid references hive_research_sessions(id) on delete set null;
+  end if;
+
+  if to_regclass('hive_simulation_ticks') is not null then
+    alter table hive_simulation_ticks
+      add column if not exists research_session_id uuid references hive_research_sessions(id) on delete set null;
+  end if;
+end $$;
+SQL
+}
+
 if [ ! -f "$HIVE_DB_BASELINE_FILE" ]; then
   fail "baseline schema file not found at $HIVE_DB_BASELINE_FILE"
 fi
@@ -189,6 +239,7 @@ if ! validate_applied_migration "$HIVE_DB_BASELINE_VERSION" "$baseline_filename"
   fi
 
   log "Applying Hive DB baseline $HIVE_DB_BASELINE_VERSION from $baseline_filename."
+  prepare_legacy_baseline_tables
   apply_migration "$HIVE_DB_BASELINE_VERSION" "$baseline_filename" "$baseline_checksum" "$HIVE_DB_BASELINE_FILE"
 fi
 
