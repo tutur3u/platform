@@ -399,7 +399,7 @@ function prodComposeWatcherLogsKey() {
 }
 
 function prodComposeHiveDbMigrateKey() {
-  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis run --rm --no-build hive-db-migrate`;
+  return `docker compose -f ${PROD_COMPOSE_FILE} --profile redis run --rm hive-db-migrate`;
 }
 
 function prodComposeProxyHealthKey() {

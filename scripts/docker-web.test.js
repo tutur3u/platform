@@ -76,7 +76,7 @@ function isHiveDbMigrateRun(command, args) {
     args[0] === 'compose' &&
     args.includes('run') &&
     args.includes('--rm') &&
-    args.includes('--no-build') &&
+    !args.includes('--no-build') &&
     args.at(-1) === 'hive-db-migrate'
   );
 }

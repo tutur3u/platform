@@ -1460,7 +1460,6 @@ async function runHiveDbForwardMigrations({
       composeGlobalArgs,
       'run',
       '--rm',
-      '--no-build',
       HIVE_DB_MIGRATE_SERVICE
     ),
     {
