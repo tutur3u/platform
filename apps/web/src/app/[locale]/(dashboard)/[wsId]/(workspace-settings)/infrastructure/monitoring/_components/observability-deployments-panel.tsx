@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 
 type StageStatus = BlueGreenDeploymentStage['status'];
+type StageDisplayStatus = StageStatus | 'not-applicable';
 type CacheMode = 'all' | 'cached' | 'rebuilt';
 type StageFilter = 'all' | string;
 type TargetFilter = 'all' | BlueGreenDeploymentTarget;
@@ -40,8 +41,9 @@ const TARGETS: BlueGreenDeploymentTarget[] = [
   'proxy',
 ];
 type StageKey = (typeof STAGE_ORDER)[number];
-const STATUS_TONES: Record<StageStatus, string> = {
+const STATUS_TONES: Record<StageDisplayStatus, string> = {
   failed: 'border-dynamic-red/35 bg-dynamic-red/10 text-dynamic-red',
+  'not-applicable': 'border-border bg-background text-muted-foreground',
   queued: 'border-border bg-muted/30 text-muted-foreground',
   running: 'border-dynamic-blue/35 bg-dynamic-blue/10 text-dynamic-blue',
   skipped: 'border-dynamic-yellow/35 bg-dynamic-yellow/10 text-dynamic-yellow',
@@ -84,8 +86,18 @@ function getLatestStageForTarget(
       .flatMap((deployment) => deployment.stages)
       .filter((stage) => stage.target === target)
       .sort(
-        (left, right) => (right.finishedAt ?? 0) - (left.finishedAt ?? 0)
+        (left, right) =>
+          (right.finishedAt ?? right.startedAt ?? 0) -
+          (left.finishedAt ?? left.startedAt ?? 0)
       )[0] ?? null
+  );
+}
+
+function getCurrentStage(deployment: ObservabilityDeployment) {
+  return (
+    deployment.stages.find((stage) => stage.status === 'running') ??
+    deployment.stages.find((stage) => stage.status === 'failed') ??
+    null
   );
 }
 
@@ -156,7 +168,8 @@ function StagePill({
   label: string;
   stage: BlueGreenDeploymentStage | null;
 }) {
-  const status = stage?.status ?? 'queued';
+  const t = useTranslations('blue-green-monitoring.observability');
+  const status = stage?.status ?? 'not-applicable';
   return (
     <div
       className={cn(
@@ -165,7 +178,11 @@ function StagePill({
       )}
     >
       <div className="truncate font-medium">{label}</div>
-      <div className="truncate opacity-80">{status}</div>
+      <div className="truncate opacity-80">
+        {status === 'not-applicable'
+          ? t('deployments.stage_status.not_applicable')
+          : status}
+      </div>
     </div>
   );
 }
@@ -184,7 +201,7 @@ function MatrixCell({
   const t = useTranslations('blue-green-monitoring.observability');
   const unknownLabel = t('states.unknown');
   const noneLabel = t('states.none');
-  const status = lastStage?.status ?? 'queued';
+  const status = lastStage?.status ?? 'not-applicable';
   const failed = status === 'failed';
   const Icon = failed
     ? TriangleAlert
@@ -213,7 +230,9 @@ function MatrixCell({
           {liveColor ?? noneLabel}
         </Badge>
         <Badge className={STATUS_TONES[status]} variant="outline">
-          {status}
+          {status === 'not-applicable'
+            ? t('deployments.stage_status.not_applicable')
+            : status}
         </Badge>
       </div>
       <div className="mt-2 text-muted-foreground text-xs">
@@ -274,6 +293,13 @@ export function ObservabilityDeploymentsPanel({
     [cacheMode, deployments, q, stage, status, target]
   );
   const latest = deployments[0] ?? null;
+  const activeDeployment =
+    deployments.find((deployment) =>
+      ['building', 'deploying'].includes(deployment.status)
+    ) ?? null;
+  const activeStage = activeDeployment
+    ? getCurrentStage(activeDeployment)
+    : null;
   const failedStage = deployments
     .flatMap((deployment) => deployment.stages)
     .find((item) => item.status === 'failed');
@@ -295,6 +321,30 @@ export function ObservabilityDeploymentsPanel({
 
   return (
     <div className="space-y-4">
+      {activeDeployment && activeStage ? (
+        <div className="flex gap-3 rounded-lg border border-dynamic-blue/30 bg-dynamic-blue/10 p-3 text-sm">
+          <Clock className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-blue" />
+          <div className="min-w-0">
+            <div className="font-medium text-dynamic-blue">
+              {t('deployments.current_stage_callout', {
+                commit:
+                  activeDeployment.commitShortHash ??
+                  activeDeployment.commitHash?.slice(0, 8) ??
+                  t('states.unknown'),
+                stage: getStageLabel(activeStage.id),
+                status: activeDeployment.status,
+              })}
+            </div>
+            <div className="mt-1 truncate text-muted-foreground text-xs">
+              {activeDeployment.commitSubject ??
+                activeDeployment.deploymentKind ??
+                activeDeployment.deploymentStamp ??
+                activeStage.id}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {failedStage ? (
         <div className="flex gap-3 rounded-lg border border-dynamic-red/30 bg-dynamic-red/10 p-3 text-sm">
           <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-red" />
@@ -443,79 +493,90 @@ export function ObservabilityDeploymentsPanel({
           </div>
         ) : (
           <div className="divide-y divide-border">
-            {filtered.map((deployment) => (
-              <div
-                className="p-3"
-                key={
-                  deployment.commitHash ??
-                  deployment.deploymentStamp ??
-                  deployment.color ??
-                  'deployment'
-                }
-              >
-                <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_140px_120px] lg:items-start">
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 font-mono text-xs">
-                        {deployment.commitShortHash ??
-                          deployment.commitHash?.slice(0, 8) ??
-                          '-'}
-                      </span>
-                      <span className="truncate font-medium">
-                        {deployment.commitSubject ??
-                          deployment.deploymentStamp ??
-                          deployment.color ??
-                          'deployment'}
-                      </span>
+            {filtered.map((deployment) => {
+              const currentStage = getCurrentStage(deployment);
+
+              return (
+                <div
+                  className="p-3"
+                  key={
+                    deployment.commitHash ??
+                    deployment.deploymentStamp ??
+                    deployment.color ??
+                    'deployment'
+                  }
+                >
+                  <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_140px_120px] lg:items-start">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded border border-border bg-muted/30 px-1.5 py-0.5 font-mono text-xs">
+                          {deployment.commitShortHash ??
+                            deployment.commitHash?.slice(0, 8) ??
+                            '-'}
+                        </span>
+                        <span className="truncate font-medium">
+                          {deployment.commitSubject ??
+                            deployment.deploymentStamp ??
+                            deployment.color ??
+                            'deployment'}
+                        </span>
+                      </div>
+                      <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
+                        {STAGE_ORDER.map((item) => (
+                          <StagePill
+                            key={item}
+                            label={stageLabels[item]}
+                            stage={getStage(deployment, item)}
+                          />
+                        ))}
+                      </div>
+                      {currentStage ? (
+                        <div className="mt-2 text-muted-foreground text-xs">
+                          {t('deployments.current_stage', {
+                            stage: getStageLabel(currentStage.id),
+                          })}
+                        </div>
+                      ) : null}
                     </div>
-                    <div className="mt-2 grid gap-1.5 sm:grid-cols-6">
-                      {STAGE_ORDER.map((item) => (
-                        <StagePill
-                          key={item}
-                          label={stageLabels[item]}
-                          stage={getStage(deployment, item)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    <Badge
-                      className="border-border bg-muted/30"
-                      variant="outline"
-                    >
-                      {deployment.status}
-                    </Badge>
-                    {deployment.stageSummary.cacheHitCount > 0 ? (
+                    <div className="flex flex-wrap gap-1.5">
                       <Badge
-                        className="border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green"
+                        className="border-border bg-muted/30"
                         variant="outline"
                       >
-                        {t('deployments.badges.cache_hits', {
-                          count: deployment.stageSummary.cacheHitCount,
-                        })}
+                        {deployment.status}
                       </Badge>
-                    ) : null}
-                    {deployment.stageSummary.rebuildCount > 0 ? (
-                      <Badge
-                        className="border-dynamic-orange/35 bg-dynamic-orange/10 text-dynamic-orange"
-                        variant="outline"
-                      >
-                        {t('deployments.badges.rebuilds', {
-                          count: deployment.stageSummary.rebuildCount,
-                        })}
-                      </Badge>
-                    ) : null}
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    <div>{timeLabel(deployment.startedAt)}</div>
-                    <div className="mt-1 flex items-center gap-1">
-                      <RefreshCw className="h-3.5 w-3.5" />
-                      {deployment.requestCount} / {deployment.errorCount}
+                      {deployment.stageSummary.cacheHitCount > 0 ? (
+                        <Badge
+                          className="border-dynamic-green/35 bg-dynamic-green/10 text-dynamic-green"
+                          variant="outline"
+                        >
+                          {t('deployments.badges.cache_hits', {
+                            count: deployment.stageSummary.cacheHitCount,
+                          })}
+                        </Badge>
+                      ) : null}
+                      {deployment.stageSummary.rebuildCount > 0 ? (
+                        <Badge
+                          className="border-dynamic-orange/35 bg-dynamic-orange/10 text-dynamic-orange"
+                          variant="outline"
+                        >
+                          {t('deployments.badges.rebuilds', {
+                            count: deployment.stageSummary.rebuildCount,
+                          })}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="text-muted-foreground text-xs">
+                      <div>{timeLabel(deployment.startedAt)}</div>
+                      <div className="mt-1 flex items-center gap-1">
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        {deployment.requestCount} / {deployment.errorCount}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

@@ -831,6 +831,41 @@ function createDeploymentStageSummary(
   };
 }
 
+function createSyntheticDeploymentStages(
+  deployment: BlueGreenMonitoringDeployment
+): BlueGreenDeploymentStage[] {
+  const status = String(deployment.status ?? '');
+
+  if (status !== 'building' && status !== 'deploying') {
+    return [];
+  }
+
+  const startedAt =
+    typeof deployment.startedAt === 'number' &&
+    Number.isFinite(deployment.startedAt)
+      ? deployment.startedAt
+      : null;
+  const color =
+    typeof deployment.activeColor === 'string' ? deployment.activeColor : null;
+  const id = status === 'deploying' ? 'web-promote' : 'web-build';
+
+  return [
+    {
+      buildServices: [],
+      color,
+      durationMs: null,
+      failureReason: null,
+      finishedAt: null,
+      id,
+      serviceNames: color ? [`web-${color}`] : [],
+      skippedReason: null,
+      startedAt,
+      status: 'running',
+      target: 'web',
+    },
+  ];
+}
+
 function createDeploymentTargetStates(
   snapshotTargets: Record<'hive' | 'web', BlueGreenTargetRuntime>
 ): Record<'hive' | 'web', BlueGreenTargetRuntime> {
@@ -937,6 +972,10 @@ export async function readObservabilityDeployments(
           : null;
 
     const stages = right.stages.length > 0 ? right.stages : left.stages;
+    const synthesizedStages =
+      right.stages.length > 0
+        ? right.synthesizedStages
+        : left.synthesizedStages;
     const supportBuildCacheHits = Math.max(
       left.supportBuildCacheHits,
       right.supportBuildCacheHits
@@ -982,6 +1021,7 @@ export async function readObservabilityDeployments(
         supportBuildServices
       ),
       stages,
+      synthesizedStages,
       supportBuildCacheHits,
       supportBuildServiceCount,
       supportBuildServices,
@@ -1011,6 +1051,10 @@ export async function readObservabilityDeployments(
     const supportBuildCacheStats = getSupportBuildCacheStats(
       getSupportBuildCacheEntry(deployment)
     );
+    const deploymentStages =
+      deployment.stages && deployment.stages.length > 0
+        ? deployment.stages
+        : createSyntheticDeploymentStages(deployment);
 
     upsertDeployment({
       color: deployment.activeColor ?? null,
@@ -1028,12 +1072,15 @@ export async function readObservabilityDeployments(
       runtimeState: deployment.runtimeState ?? null,
       startedAt: deployment.startedAt ?? deployment.activatedAt ?? null,
       stageSummary: createDeploymentStageSummary(
-        deployment.stages ?? [],
+        deploymentStages,
         supportBuildCacheStats.supportBuildCacheHits,
         supportBuildCacheStats.supportBuildServices
       ),
-      stages: deployment.stages ?? [],
+      stages: deploymentStages,
       status: deployment.status ?? 'unknown',
+      synthesizedStages:
+        (!deployment.stages || deployment.stages.length === 0) &&
+        deploymentStages.length > 0,
       ...supportBuildCacheStats,
       targetStates,
     });
@@ -1068,6 +1115,7 @@ export async function readObservabilityDeployments(
       status: 'ready',
       stageSummary: createDeploymentStageSummary([], 0, []),
       stages: [],
+      synthesizedStages: false,
       supportBuildCacheHits: 0,
       supportBuildServiceCount: 0,
       supportBuildServices: [],

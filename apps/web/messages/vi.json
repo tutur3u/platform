@@ -1955,6 +1955,8 @@
           "support_cache": "{hits}/{total} image hỗ trợ dùng cache",
           "support_rebuilt": "Đã build lại {services}"
         },
+        "current_stage": "Giai đoạn hiện tại: {stage}",
+        "current_stage_callout": "{status} {commit} tại {stage}",
         "description": "Dấu triển khai được nhóm theo lưu lượng request và lỗi server.",
         "failed_callout": "{stage} thất bại; Web đã phục vụ {commit}",
         "failure_cause": "Nguyên nhân lỗi",
@@ -1971,6 +1973,9 @@
         "next_retry": {
           "none": "Chưa xếp lịch thử lại",
           "retry_target": "Thử lại {target}"
+        },
+        "stage_status": {
+          "not_applicable": "không áp dụng"
         },
         "stages": {
           "hive-migrate": "Di trú Hive",

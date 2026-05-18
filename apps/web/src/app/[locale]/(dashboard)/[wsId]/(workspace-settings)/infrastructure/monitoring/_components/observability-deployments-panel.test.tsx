@@ -9,6 +9,8 @@ import { ObservabilityDeploymentsPanel } from './observability-deployments-panel
 const messages: Record<string, string> = {
   'deployments.badges.cache_hits': '{count} cached',
   'deployments.badges.rebuilds': '{count} rebuilt',
+  'deployments.current_stage': 'Current stage: {stage}',
+  'deployments.current_stage_callout': '{status} {commit} at {stage}',
   'deployments.failed_callout':
     '{stage} failed; Web is already serving {commit}',
   'deployments.filters.all_cache': 'All cache modes',
@@ -21,6 +23,7 @@ const messages: Record<string, string> = {
   'deployments.loaded': '{loaded}/{total} rows',
   'deployments.next_retry.none': 'No retry queued',
   'deployments.next_retry.retry_target': 'Retry {target}',
+  'deployments.stage_status.not_applicable': 'not applicable',
   'deployments.stages.hive-migrate': 'Hive Migration',
   'deployments.stages.hive-promote': 'Hive Promote',
   'deployments.stages.proxy-reload': 'Proxy Reload',
@@ -120,6 +123,7 @@ function createDeployment(): ObservabilityDeployment {
       },
     ],
     status: 'failed',
+    synthesizedStages: false,
     supportBuildCacheHits: 2,
     supportBuildServiceCount: 3,
     supportBuildServices: ['hive-green'],
@@ -173,5 +177,92 @@ describe('ObservabilityDeploymentsPanel', () => {
 
     fireEvent.change(selects[0]!, { target: { value: 'proxy' } });
     expect(screen.getByText('No deployments')).toBeInTheDocument();
+  });
+
+  it('marks missing historical stages as not applicable', () => {
+    const deployment = {
+      ...createDeployment(),
+      stageSummary: {
+        blockedTargets: [],
+        cacheHitCount: 0,
+        failedStageCount: 0,
+        promotedTargets: [],
+        rebuildCount: 0,
+        runningStageCount: 0,
+        skippedStageCount: 0,
+        totalStageCount: 0,
+      },
+      stages: [],
+      status: 'successful',
+    } satisfies ObservabilityDeployment;
+
+    render(
+      <ObservabilityDeploymentsPanel
+        deployments={[deployment]}
+        emptyLabel="No deployments"
+        hasMore={false}
+        isFetchingMore={false}
+        isLoading={false}
+        loaded={1}
+        onLoadMore={() => {}}
+        total={1}
+      />
+    );
+
+    expect(screen.getAllByText('not applicable').length).toBeGreaterThanOrEqual(
+      6
+    );
+  });
+
+  it('surfaces the current stage for an active deployment', () => {
+    const deployment = {
+      ...createDeployment(),
+      failureReason: null,
+      stageSummary: {
+        blockedTargets: [],
+        cacheHitCount: 0,
+        failedStageCount: 0,
+        promotedTargets: [],
+        rebuildCount: 0,
+        runningStageCount: 1,
+        skippedStageCount: 0,
+        totalStageCount: 1,
+      },
+      stages: [
+        {
+          buildServices: ['web-green'],
+          color: 'green',
+          durationMs: null,
+          failureReason: null,
+          finishedAt: null,
+          id: 'web-build',
+          serviceNames: ['web-green'],
+          skippedReason: null,
+          startedAt: 1000,
+          status: 'running',
+          target: 'web',
+        },
+      ],
+      status: 'building',
+      synthesizedStages: true,
+    } satisfies ObservabilityDeployment;
+
+    render(
+      <ObservabilityDeploymentsPanel
+        deployments={[deployment]}
+        emptyLabel="No deployments"
+        hasMore={false}
+        isFetchingMore={false}
+        isLoading={false}
+        loaded={1}
+        onLoadMore={() => {}}
+        total={1}
+      />
+    );
+
+    expect(
+      screen.getByText('building abc1234 at Web Build')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Current stage: Web Build')).toBeInTheDocument();
   });
 });

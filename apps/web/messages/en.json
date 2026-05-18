@@ -1955,6 +1955,8 @@
           "support_cache": "{hits}/{total} support cached",
           "support_rebuilt": "Rebuilt {services}"
         },
+        "current_stage": "Current stage: {stage}",
+        "current_stage_callout": "{status} {commit} at {stage}",
         "description": "Deployment stamps grouped by request traffic and server errors.",
         "failed_callout": "{stage} failed; Web is already serving {commit}",
         "failure_cause": "Failure cause",
@@ -1971,6 +1973,9 @@
         "next_retry": {
           "none": "No retry queued",
           "retry_target": "Retry {target}"
+        },
+        "stage_status": {
+          "not_applicable": "not applicable"
         },
         "stages": {
           "hive-migrate": "Hive Migration",

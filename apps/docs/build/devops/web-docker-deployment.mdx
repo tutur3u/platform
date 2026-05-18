@@ -333,6 +333,11 @@ These files are intentionally local-only and safe to regenerate.
 Infrastructure Monitoring → Deployments reads `target-state.json` and the
 watcher deployment history together, so operators can see a partial promotion
 such as web serving a new commit while Hive remains blocked on migration.
+Rows recorded before staged deployment tracking do not invent queued stages;
+their stage chips are shown as not applicable. Active watcher deployments that
+only have pending build/deploy status are surfaced with a synthetic current
+stage so operators can see the build is in progress before full stage history is
+written.
 
 ## Native Cron Runner
 

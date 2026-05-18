@@ -964,6 +964,7 @@ export interface ObservabilityDeployment {
     totalStageCount: number;
   };
   stages: BlueGreenDeploymentStage[];
+  synthesizedStages: boolean;
   supportBuildCacheHits: number;
   supportBuildServiceCount: number;
   supportBuildServices: string[];

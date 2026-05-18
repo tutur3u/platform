@@ -341,6 +341,7 @@ describe('readObservabilityDeployments', () => {
           expect.objectContaining({ id: 'web-promote', status: 'succeeded' }),
           expect.objectContaining({ id: 'hive-migrate', status: 'failed' }),
         ],
+        synthesizedStages: false,
         supportBuildCacheHits: 2,
         supportBuildServiceCount: 3,
         supportBuildServices: ['hive-blue'],
@@ -354,6 +355,56 @@ describe('readObservabilityDeployments', () => {
             health: 'healthy',
           }),
         },
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('synthesizes a running stage for active watcher deployments', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-active-deployment-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'prod'), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.history.json'),
+        JSON.stringify([
+          {
+            activeColor: 'green',
+            commitHash: 'def123456789',
+            commitShortHash: 'def1234',
+            commitSubject: 'Build current deployment',
+            deploymentKind: 'promotion',
+            startedAt: Date.UTC(2026, 4, 17, 10, 0, 0),
+            status: 'building',
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const deployments = await readObservabilityDeployments({
+        pageSize: 10,
+        projectId: 'test-project',
+      });
+
+      expect(deployments.items[0]).toMatchObject({
+        commitShortHash: 'def1234',
+        stageSummary: {
+          runningStageCount: 1,
+          totalStageCount: 1,
+        },
+        stages: [
+          expect.objectContaining({
+            id: 'web-build',
+            status: 'running',
+            target: 'web',
+          }),
+        ],
+        status: 'building',
+        synthesizedStages: true,
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });
