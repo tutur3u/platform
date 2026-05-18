@@ -132,6 +132,7 @@ describe('EditorTopChrome', () => {
     expect(screen.getByText('Server picker')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'AI context' })).toBeTruthy();
     expect(screen.queryByText('Credit source')).toBeNull();
+    expect(screen.getByRole('button', { name: 'Agent Studio' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'World view' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Timeline' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Workflow graph' })).toBeTruthy();

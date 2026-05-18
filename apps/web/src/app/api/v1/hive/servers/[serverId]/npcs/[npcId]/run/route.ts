@@ -50,6 +50,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
           model: parsed.data.model,
           prompt: parsed.data.prompt,
           promptMode: parsed.data.promptMode,
+          researchSessionId: parsed.data.researchSessionId,
           sbAdmin: access.access.sbAdmin,
           serverId,
           sourceNpcId: npcId,

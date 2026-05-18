@@ -4,6 +4,7 @@ import {
   encodePathSegment,
   getInternalApiClient,
   type InternalApiClientOptions,
+  InternalApiError,
 } from './client';
 
 export type HiveJsonObject = { [key: string]: Json | undefined };
@@ -72,6 +73,7 @@ export type HiveWorldEvent = {
   eventType: string;
   id: string;
   payload: HiveJsonObject;
+  researchSessionId?: string | null;
   revision: number;
   serverId: string;
 };
@@ -160,6 +162,7 @@ export type HiveNpcRun = {
   outputDecision: HiveJsonObject;
   outputTokens?: number;
   promptMode?: string;
+  researchSessionId?: string | null;
   reasoningTokens?: number;
   status?: HiveNpcRunStatus;
   targetNpcId?: string | null;
@@ -276,6 +279,7 @@ export type HiveTimelineEventItem = {
   id: string;
   kind: 'event';
   payload: HiveJsonObject;
+  researchSessionId: string | null;
   revision: number;
 };
 
@@ -300,6 +304,7 @@ export type HiveTimelineRunItem = {
   outputDecision: HiveJsonObject;
   outputTokens: number;
   promptMode: string;
+  researchSessionId: string | null;
   reasoningTokens: number;
   status: HiveNpcRunStatus;
   targetNpcId: string | null;
@@ -321,6 +326,7 @@ export type HiveTimelineInteractionItem = {
   llmModel: string | null;
   llmProvider: string | null;
   npcName: string | null;
+  researchSessionId: string | null;
   runs: HiveTimelineRunItem[];
   status: HiveNpcRunStatus;
   targetNpcName: string | null;
@@ -330,10 +336,51 @@ export type HiveTimelineInteractionItem = {
 export type HiveTimelineItem =
   | HiveTimelineEventItem
   | HiveTimelineInteractionItem
-  | HiveTimelineRunItem;
+  | HiveTimelineRunItem
+  | HiveTimelineSessionEventItem
+  | HiveTimelineSimulationTickItem
+  | HiveTimelineWorkflowRunItem;
 
 export type HiveTimelineResponse = {
   items: HiveTimelineItem[];
+};
+
+export type HiveTimelineSessionEventItem = HiveResearchSessionEvent & {
+  kind: 'session_event';
+  researchSessionId: string;
+};
+
+export type HiveTimelineSimulationTickItem = {
+  actionsCount: number;
+  createdAt: string;
+  error: string | null;
+  finishedAt: string | null;
+  id: string;
+  kind: 'simulation_tick';
+  llmSpend: number;
+  researchSessionId: string | null;
+  serverId: string;
+  startedAt: string;
+  status: 'completed' | 'failed' | 'running' | 'skipped';
+  summary: Json;
+};
+
+export type HiveTimelineWorkflowRunItem = {
+  actorUserId: string | null;
+  createdAt: string;
+  error: string | null;
+  finishedAt: string | null;
+  id: string;
+  input: Json;
+  kind: 'workflow_run';
+  output: Json;
+  researchSessionId: string | null;
+  serverId: string;
+  startedAt: string;
+  status: HiveWorkflowRunStatus;
+  stepTrace: HiveWorkflowStepTrace[];
+  workflowId: string;
+  workflowName: string | null;
 };
 
 export type HiveServersResponse = {
@@ -351,6 +398,7 @@ export type HiveWorldEventPayload = {
   eventType: string;
   expectedRevision: number;
   payload: HiveJsonObject;
+  researchSessionId?: string | null;
   world: HiveWorldData;
 };
 
@@ -490,6 +538,7 @@ export type HiveWorkflowRun = {
   id: string;
   input: Json;
   output: Json;
+  researchSessionId?: string | null;
   serverId: string;
   startedAt: string;
   status: HiveWorkflowRunStatus;
@@ -506,6 +555,7 @@ export type HiveWorkflowPayload = {
 
 export type HiveWorkflowRunPayload = {
   input?: HiveJsonObject;
+  researchSessionId?: string | null;
 };
 
 export type HiveNpcPayload = {
@@ -529,6 +579,7 @@ export type HiveNpcRunPayload = {
   model?: string;
   promptMode: 'default' | 'enhanced' | 'custom';
   prompt?: string | null;
+  researchSessionId?: string | null;
   targetNpcId?: string | null;
   trigger?: HiveNpcRunTrigger;
   world: HiveWorldData;
@@ -541,6 +592,7 @@ export type HiveNpcInteractionPayload = {
   maxTurns?: number;
   model?: string;
   prompt?: string | null;
+  researchSessionId?: string | null;
   sourceNpcId: string;
   targetNpcId: string;
   trigger?: HiveNpcRunTrigger;
@@ -556,6 +608,100 @@ export type HiveMemberPayload = {
   enabled?: boolean;
   notes?: string | null;
   userId: string;
+};
+
+export type HiveResearchSessionStatus =
+  | 'archived'
+  | 'completed'
+  | 'paused'
+  | 'running';
+
+export type HiveResearchSession = {
+  createdAt: string;
+  createdBy: string | null;
+  description: string | null;
+  endedAt: string | null;
+  id: string;
+  metadata: Json;
+  name: string;
+  serverId: string;
+  startedAt: string;
+  status: HiveResearchSessionStatus;
+  updatedAt: string;
+};
+
+export type HiveResearchSessionEvent = {
+  actorUserId: string | null;
+  createdAt: string;
+  eventKind: string;
+  id: string;
+  payload: Json;
+  serverId: string;
+  sessionId: string;
+  sourceId: string | null;
+  sourceType: string;
+};
+
+export type HiveResearchSessionsResponse = {
+  activeSession: HiveResearchSession | null;
+  sessions: HiveResearchSession[];
+};
+
+export type HiveResearchSessionPayload = {
+  description?: string | null;
+  metadata?: HiveJsonObject;
+  name: string;
+  status?: Extract<HiveResearchSessionStatus, 'paused' | 'running'>;
+};
+
+export type HiveResearchSessionPatchPayload = Partial<
+  Omit<HiveResearchSessionPayload, 'status'>
+> & {
+  status?: HiveResearchSessionStatus;
+};
+
+export type HivePairQueuePair = {
+  sourceNpcId: string;
+  targetNpcId: string;
+};
+
+export type HivePairQueuePayload = {
+  creditSource?: HiveCreditSource;
+  creditWsId?: string;
+  expectedRevision: number;
+  maxPairs?: number;
+  maxTurns?: number;
+  model?: string;
+  pairs: HivePairQueuePair[];
+  prompt?: string | null;
+  world: HiveWorldData;
+};
+
+export type HivePairQueueResult = {
+  error?: string;
+  event?: HiveWorldEvent | null;
+  index: number;
+  interactionId?: string;
+  ok: boolean;
+  pair: HivePairQueuePair;
+  runs: HiveNpcRun[];
+};
+
+export type HivePairQueueResponse = {
+  results: HivePairQueueResult[];
+  summary: {
+    completed: number;
+    failed: number;
+    total: number;
+  };
+};
+
+export type HiveResearchExport = {
+  exportedAt: string;
+  formatVersion: 1;
+  serverId: string;
+  session: HiveResearchSession;
+  timeline: HiveTimelineItem[];
 };
 
 export async function getMyHiveAccessRequestStatus(
@@ -705,12 +851,147 @@ export async function getHiveSnapshot(
 
 export async function listHiveTimeline(
   serverId: string,
+  paramsOrOptions?:
+    | {
+        actorUserId?: string | null;
+        eventType?: string | null;
+        limit?: number;
+        npcId?: string | null;
+        researchSessionId?: string | null;
+        status?: string | null;
+        trigger?: string | null;
+        workflowId?: string | null;
+      }
+    | InternalApiClientOptions,
   options?: InternalApiClientOptions
 ) {
-  return getInternalApiClient(options).json<HiveTimelineResponse>(
+  const isClientOptions =
+    !!paramsOrOptions &&
+    ('baseUrl' in paramsOrOptions || 'fetch' in paramsOrOptions);
+  const params = isClientOptions
+    ? undefined
+    : (paramsOrOptions as
+        | {
+            actorUserId?: string | null;
+            eventType?: string | null;
+            limit?: number;
+            npcId?: string | null;
+            researchSessionId?: string | null;
+            status?: string | null;
+            trigger?: string | null;
+            workflowId?: string | null;
+          }
+        | undefined);
+  const clientOptions = isClientOptions
+    ? (paramsOrOptions as InternalApiClientOptions)
+    : options;
+
+  return getInternalApiClient(clientOptions).json<HiveTimelineResponse>(
     `/api/v1/hive/servers/${encodePathSegment(serverId)}/timeline`,
     {
       cache: 'no-store',
+      query: Object.fromEntries(
+        Object.entries(params ?? {}).filter(([, value]) => value != null)
+      ),
+    }
+  );
+}
+
+export async function listHiveResearchSessions(
+  serverId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveResearchSessionsResponse>(
+    `/api/v1/hive/servers/${encodePathSegment(serverId)}/research-sessions`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createHiveResearchSession(
+  serverId: string,
+  payload: HiveResearchSessionPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    session: HiveResearchSession;
+  }>(`/api/v1/hive/servers/${encodePathSegment(serverId)}/research-sessions`, {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    method: 'POST',
+  });
+}
+
+export async function updateHiveResearchSession(
+  serverId: string,
+  sessionId: string,
+  payload: HiveResearchSessionPatchPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    session: HiveResearchSession;
+  }>(
+    `/api/v1/hive/servers/${encodePathSegment(serverId)}/research-sessions/${encodePathSegment(sessionId)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'PATCH',
+    }
+  );
+}
+
+export function exportHiveResearchSession(
+  serverId: string,
+  sessionId: string,
+  format: 'jsonl',
+  options?: InternalApiClientOptions
+): Promise<string>;
+export function exportHiveResearchSession(
+  serverId: string,
+  sessionId: string,
+  format?: 'json',
+  options?: InternalApiClientOptions
+): Promise<HiveResearchExport>;
+export async function exportHiveResearchSession(
+  serverId: string,
+  sessionId: string,
+  format: 'json' | 'jsonl' = 'json',
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const path = `/api/v1/hive/servers/${encodePathSegment(serverId)}/research-sessions/${encodePathSegment(sessionId)}/export`;
+  const request = {
+    cache: 'no-store' as const,
+    query: { format },
+  };
+
+  if (format === 'jsonl') {
+    const response = await client.fetch(path, request);
+    if (!response.ok) {
+      throw new InternalApiError(
+        `Internal API request failed: ${response.status}`,
+        response.status
+      );
+    }
+    return response.text();
+  }
+
+  return client.json<HiveResearchExport>(path, request);
+}
+
+export async function runHivePairQueue(
+  serverId: string,
+  sessionId: string,
+  payload: HivePairQueuePayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HivePairQueueResponse>(
+    `/api/v1/hive/servers/${encodePathSegment(serverId)}/research-sessions/${encodePathSegment(sessionId)}/run-pair-queue`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      method: 'POST',
     }
   );
 }

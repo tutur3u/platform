@@ -7,6 +7,7 @@ import {
   MessageSquareText,
   PanelRightClose,
   PanelRightOpen,
+  Users,
   Workflow,
 } from '@tuturuuu/icons';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
@@ -20,9 +21,9 @@ type HiveTopRightToolbarProps = {
   chatOpen: boolean;
   currentUser: HiveUser;
   miniMapCollapsed: boolean;
-  mode: 'timeline' | 'workflows' | 'world';
+  mode: 'agents' | 'timeline' | 'workflows' | 'world';
   npcLabCollapsed: boolean;
-  onChangeMode: (mode: 'timeline' | 'workflows' | 'world') => void;
+  onChangeMode: (mode: 'agents' | 'timeline' | 'workflows' | 'world') => void;
   onToggleChat: () => void;
   onToggleInspector: () => void;
   onToggleMiniMap: () => void;
@@ -58,6 +59,12 @@ export function HiveTopRightToolbar({
       <div className="my-1 h-7 w-px shrink-0 bg-border" />
       {aiContextPanel}
       <div className="my-1 h-7 w-px shrink-0 bg-border" />
+      <ToolbarButton
+        active={mode === 'agents'}
+        icon={Users}
+        label={chromeT('mode_agents')}
+        onClick={() => onChangeMode('agents')}
+      />
       <ToolbarButton
         active={mode === 'world'}
         icon={MapIcon}

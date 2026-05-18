@@ -46,6 +46,7 @@ export type HiveWorldEventRow = {
   id: string;
   payload: Json;
   op_seq: string | number;
+  research_session_id?: string | null;
   revision: string | number;
   server_id: string;
   world_data?: Json | null;
@@ -88,6 +89,7 @@ export type HiveNpcRunRow = {
   output_decision: Json;
   output_tokens: number | null;
   prompt_mode: string;
+  research_session_id?: string | null;
   reasoning_tokens: number | null;
   status: string | null;
   target_npc_id: string | null;
@@ -117,4 +119,50 @@ export type HiveAccessRequestRow = {
   status: HiveAccessRequestStatus;
   updated_at: string;
   user_id: string;
+};
+
+export type HiveResearchSessionStatus =
+  | 'archived'
+  | 'completed'
+  | 'paused'
+  | 'running';
+
+export type HiveResearchSessionRow = {
+  created_at: string;
+  created_by: string | null;
+  description: string | null;
+  ended_at: string | null;
+  id: string;
+  metadata: Json;
+  name: string;
+  server_id: string;
+  started_at: string;
+  status: HiveResearchSessionStatus;
+  updated_at: string;
+};
+
+export type HiveResearchSessionEventRow = {
+  actor_user_id: string | null;
+  created_at: string;
+  event_kind: string;
+  id: string;
+  payload: Json;
+  server_id: string;
+  session_id: string;
+  source_id: string | null;
+  source_type: string;
+};
+
+export type HiveSimulationTickRow = {
+  actions_count: number;
+  created_at?: string;
+  error: string | null;
+  finished_at: string | null;
+  id: string;
+  llm_spend: string | number;
+  research_session_id: string | null;
+  server_id: string;
+  started_at: string;
+  status: 'completed' | 'failed' | 'running' | 'skipped';
+  summary: Json;
 };

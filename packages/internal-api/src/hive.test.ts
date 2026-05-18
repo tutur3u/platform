@@ -1,16 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   archiveHiveWorkflow,
+  createHiveResearchSession,
   createHiveWorkflow,
+  exportHiveResearchSession,
   getHiveAiCredits,
   getHiveWorkflowRun,
   listHiveAiModels,
+  listHiveResearchSessions,
   listHiveTimeline,
   listHiveWorkflowRuns,
   listHiveWorkflows,
   listHiveWorkspaces,
   runHiveNpcInteraction,
+  runHivePairQueue,
   runHiveWorkflow,
+  updateHiveResearchSession,
   updateHiveWorkflow,
 } from './hive';
 
@@ -19,6 +24,7 @@ function createFetchMock(response: unknown = { ok: true }) {
     json: async () => response,
     ok: true,
     status: 200,
+    text: async () => JSON.stringify(response),
   });
 }
 
@@ -130,6 +136,11 @@ describe('Hive AI context internal API helpers', () => {
       options
     );
     await listHiveTimeline('server-1', options);
+    await listHiveTimeline(
+      'server-1',
+      { limit: 50, researchSessionId: 'session-1', trigger: 'manual' },
+      options
+    );
 
     expect(fetch.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
       ['https://internal.example.com/api/v1/hive/workspaces', undefined],
@@ -148,6 +159,72 @@ describe('Hive AI context internal API helpers', () => {
       [
         'https://internal.example.com/api/v1/hive/servers/server-1/timeline',
         undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/timeline?limit=50&researchSessionId=session-1&trigger=manual',
+        undefined,
+      ],
+    ]);
+  });
+});
+
+describe('Hive research session internal API helpers', () => {
+  it('targets session, export, and pair queue routes', async () => {
+    const fetch = createFetchMock({ sessions: [] });
+    const options = {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetch as unknown as typeof globalThis.fetch,
+    };
+
+    await listHiveResearchSessions('server-1', options);
+    await createHiveResearchSession(
+      'server-1',
+      { name: 'Session A', status: 'running' },
+      options
+    );
+    await updateHiveResearchSession(
+      'server-1',
+      'session-1',
+      { status: 'completed' },
+      options
+    );
+    await exportHiveResearchSession('server-1', 'session-1', 'json', options);
+    await exportHiveResearchSession('server-1', 'session-1', 'jsonl', options);
+    await runHivePairQueue(
+      'server-1',
+      'session-1',
+      {
+        expectedRevision: 8,
+        pairs: [{ sourceNpcId: 'npc-1', targetNpcId: 'npc-2' }],
+        world: { blocks: [], objects: [] },
+      },
+      options
+    );
+
+    expect(fetch.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions',
+        undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions',
+        'POST',
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions/session-1',
+        'PATCH',
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions/session-1/export?format=json',
+        undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions/session-1/export?format=jsonl',
+        undefined,
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/research-sessions/session-1/run-pair-queue',
+        'POST',
       ],
     ]);
   });

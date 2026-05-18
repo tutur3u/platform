@@ -46,6 +46,7 @@ export async function POST(request: NextRequest, { params }: Params) {
           model: parsed.data.model,
           prompt: parsed.data.prompt,
           promptMode: 'enhanced',
+          researchSessionId: parsed.data.researchSessionId,
           sbAdmin: access.access.sbAdmin,
           serverId,
           sourceNpcId: parsed.data.sourceNpcId,

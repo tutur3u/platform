@@ -1,4 +1,5 @@
 import { asHiveJson, getHiveSql } from './hive-db';
+import { ensureHiveResearchSchema } from './research-schema';
 import type { HiveNpcRow, HiveNpcRunRow } from './types';
 
 export async function createHiveNpc(input: {
@@ -157,12 +158,14 @@ export async function persistHiveNpcRun(input: {
   npcId: string;
   outputTokens?: number;
   promptMode: string;
+  researchSessionId?: string | null;
   reasoningTokens?: number;
   serverId: string;
   status?: 'completed' | 'failed' | 'running' | 'skipped';
   targetNpcId?: string | null;
   trigger?: 'autonomous' | 'cron' | 'manual' | 'simulation' | 'workflow';
 }) {
+  await ensureHiveResearchSchema();
   const sql = getHiveSql();
   const [run] = await sql<HiveNpcRunRow[]>`
     insert into hive_npc_runs (
@@ -170,7 +173,7 @@ export async function persistHiveNpcRun(input: {
       output_decision, interaction_id, target_npc_id, trigger, status, error,
       llm_provider, llm_model, llm_cost, input_tokens, output_tokens,
       reasoning_tokens, credits_deducted, credit_ws_id, credit_source,
-      autonomous
+      autonomous, research_session_id
     )
     values (
       ${input.serverId},
@@ -193,13 +196,14 @@ export async function persistHiveNpcRun(input: {
       ${input.creditsDeducted ?? 0},
       ${input.creditWsId ?? null},
       ${input.creditSource ?? null},
-      ${input.autonomous ?? false}
+      ${input.autonomous ?? false},
+      ${input.researchSessionId ?? null}
     )
     returning id, server_id, npc_id, actor_user_id, prompt_mode, input_context,
       output_decision, interaction_id, target_npc_id, trigger, status, error,
       llm_provider, llm_model, llm_cost, input_tokens, output_tokens,
       reasoning_tokens, credits_deducted, credit_ws_id, credit_source,
-      autonomous, created_at
+      autonomous, research_session_id, created_at
   `;
   return run ?? null;
 }
@@ -208,6 +212,7 @@ export async function listHiveNpcRuns(input: {
   limit?: number;
   serverId: string;
 }) {
+  await ensureHiveResearchSchema();
   const sql = getHiveSql();
   return sql<HiveNpcRunRow[]>`
     select runs.id, runs.server_id, runs.npc_id, runs.actor_user_id,
@@ -217,7 +222,7 @@ export async function listHiveNpcRuns(input: {
       runs.input_tokens, runs.output_tokens, runs.reasoning_tokens,
       runs.credits_deducted, runs.credit_ws_id, runs.credit_source,
       runs.autonomous, runs.created_at, source.name as npc_name,
-      target.name as target_npc_name
+      runs.research_session_id, target.name as target_npc_name
     from hive_npc_runs runs
     left join hive_npcs source on source.id = runs.npc_id
     left join hive_npcs target on target.id = runs.target_npc_id

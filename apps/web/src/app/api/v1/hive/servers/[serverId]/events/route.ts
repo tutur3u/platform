@@ -1,6 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { createHiveWorldEvent } from '@/lib/hive/hive-db';
 import {
+  ensureHiveResearchSchema,
+  resolveHiveResearchSessionId,
+} from '@/lib/hive/research-schema';
+import {
   hiveEventSchema,
   mapHiveEvent,
   requireHiveAccess,
@@ -29,13 +33,21 @@ async function createEvent(request: NextRequest, serverId: string) {
     );
   }
 
+  await ensureHiveResearchSchema();
+  const researchSessionId = await resolveHiveResearchSessionId({
+    researchSessionId: parsed.data.researchSessionId,
+    serverId,
+  });
+
   const event = await createHiveWorldEvent({
     actorUserId: result.access.user.id,
     eventType: parsed.data.eventType,
     payload: {
       expectedRevision: parsed.data.expectedRevision,
+      researchSessionId,
       ...parsed.data.payload,
     },
+    researchSessionId,
     serverId,
     world: parsed.data.world,
   });

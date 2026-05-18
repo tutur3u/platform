@@ -80,6 +80,46 @@ create table if not exists hive_world_events (
 create index if not exists hive_world_events_server_op_seq_idx
   on hive_world_events(server_id, op_seq desc);
 
+create table if not exists hive_research_sessions (
+  id uuid primary key default gen_random_uuid(),
+  server_id uuid not null references hive_servers(id) on delete cascade,
+  name text not null check (char_length(name) between 1 and 160),
+  description text,
+  status text not null default 'running'
+    check (status in ('running', 'paused', 'completed', 'archived')),
+  created_by uuid,
+  started_at timestamptz not null default now(),
+  ended_at timestamptz,
+  metadata jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists hive_research_sessions_one_running_idx
+  on hive_research_sessions(server_id)
+  where status = 'running';
+
+create index if not exists hive_research_sessions_server_created_idx
+  on hive_research_sessions(server_id, created_at desc);
+
+create table if not exists hive_research_session_events (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references hive_research_sessions(id) on delete cascade,
+  server_id uuid not null references hive_servers(id) on delete cascade,
+  actor_user_id uuid,
+  event_kind text not null,
+  source_type text not null default 'system',
+  source_id uuid,
+  payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists hive_research_session_events_session_created_idx
+  on hive_research_session_events(session_id, created_at desc);
+
+create index if not exists hive_research_session_events_server_created_idx
+  on hive_research_session_events(server_id, created_at desc);
+
 create table if not exists hive_crdt_updates (
   id uuid primary key default gen_random_uuid(),
   server_id uuid not null references hive_servers(id) on delete cascade,
@@ -149,6 +189,7 @@ create table if not exists hive_npc_runs (
   id uuid primary key default gen_random_uuid(),
   server_id uuid not null references hive_servers(id) on delete cascade,
   npc_id uuid not null references hive_npcs(id) on delete cascade,
+  research_session_id uuid references hive_research_sessions(id) on delete set null,
   actor_user_id uuid,
   prompt_mode text not null default 'enhanced',
   input_context jsonb not null default '{}'::jsonb,
@@ -158,6 +199,17 @@ create table if not exists hive_npc_runs (
   llm_cost numeric(18, 4) not null default 0,
   created_at timestamptz not null default now()
 );
+
+alter table hive_world_events
+  add column if not exists research_session_id uuid references hive_research_sessions(id) on delete set null;
+
+create index if not exists hive_world_events_research_session_created_idx
+  on hive_world_events(research_session_id, created_at desc)
+  where research_session_id is not null;
+
+create index if not exists hive_npc_runs_research_session_created_idx
+  on hive_npc_runs(research_session_id, created_at desc)
+  where research_session_id is not null;
 
 create table if not exists hive_ledger_entries (
   id uuid primary key default gen_random_uuid(),
@@ -233,6 +285,7 @@ create index if not exists hive_crop_instances_server_idx
 create table if not exists hive_simulation_ticks (
   id uuid primary key default gen_random_uuid(),
   server_id uuid not null references hive_servers(id) on delete cascade,
+  research_session_id uuid references hive_research_sessions(id) on delete set null,
   started_at timestamptz not null default now(),
   finished_at timestamptz,
   status text not null default 'running' check (status in ('running', 'completed', 'skipped', 'failed')),
@@ -241,3 +294,7 @@ create table if not exists hive_simulation_ticks (
   summary jsonb not null default '{}'::jsonb,
   error text
 );
+
+create index if not exists hive_simulation_ticks_research_session_started_idx
+  on hive_simulation_ticks(research_session_id, started_at desc)
+  where research_session_id is not null;

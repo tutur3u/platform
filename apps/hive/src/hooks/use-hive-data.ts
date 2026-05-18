@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   archiveHiveWorkflow,
   createHiveNpc,
+  createHiveResearchSession,
   createHiveServer,
   createHiveWorkflow,
   createHiveWorldEvent,
@@ -15,6 +16,9 @@ import {
   type HiveNpcInteractionPayload,
   type HiveNpcPayload,
   type HiveNpcRunPayload,
+  type HivePairQueuePayload,
+  type HiveResearchSessionPatchPayload,
+  type HiveResearchSessionPayload,
   type HiveServerPayload,
   type HiveServerSettings,
   type HiveServersResponse,
@@ -24,6 +28,7 @@ import {
   type HiveWorkflowRunPayload,
   type HiveWorldEventPayload,
   listHiveAiModels,
+  listHiveResearchSessions,
   listHiveServers,
   listHiveTimeline,
   listHiveWorkflowRuns,
@@ -31,9 +36,11 @@ import {
   listHiveWorkspaces,
   runHiveNpcDecision,
   runHiveNpcInteraction,
+  runHivePairQueue,
   runHiveSimulationTick,
   runHiveWorkflow,
   updateHiveNpc,
+  updateHiveResearchSession,
   updateHiveServer,
   updateHiveServerSettings,
   updateHiveWorkflow,
@@ -47,9 +54,19 @@ export const hiveQueryKeys = {
   ],
   aiModels: ['hive', 'ai-models'],
   realtimeToken: (serverId: string) => ['hive', 'realtime-token', serverId],
+  researchSessions: (serverId: string) => [
+    'hive',
+    'research-sessions',
+    serverId,
+  ],
   servers: ['hive', 'servers'],
   snapshot: (serverId: string) => ['hive', 'snapshot', serverId],
-  timeline: (serverId: string) => ['hive', 'timeline', serverId],
+  timeline: (serverId: string, filters?: HiveTimelineFilters) => [
+    'hive',
+    'timeline',
+    serverId,
+    filters ?? null,
+  ],
   workspaces: ['hive', 'workspaces'],
   workflowRuns: (serverId: string, workflowId: string) => [
     'hive',
@@ -58,6 +75,17 @@ export const hiveQueryKeys = {
     workflowId,
   ],
   workflows: (serverId: string) => ['hive', 'workflows', serverId],
+};
+
+export type HiveTimelineFilters = {
+  actorUserId?: string | null;
+  eventType?: string | null;
+  limit?: number;
+  npcId?: string | null;
+  researchSessionId?: string | null;
+  status?: string | null;
+  trigger?: string | null;
+  workflowId?: string | null;
 };
 
 export function useHiveServers(initialData: HiveServersResponse) {
@@ -107,14 +135,77 @@ export function useHiveSnapshot(
   });
 }
 
-export function useHiveTimeline(serverId: string | null, enabled: boolean) {
+export function useHiveTimeline(
+  serverId: string | null,
+  enabled: boolean,
+  filters?: HiveTimelineFilters
+) {
   return useQuery<HiveTimelineResponse>({
     enabled: !!serverId && enabled,
-    queryFn: () => listHiveTimeline(serverId!),
+    queryFn: () => listHiveTimeline(serverId!, filters),
     queryKey: serverId
-      ? hiveQueryKeys.timeline(serverId)
+      ? hiveQueryKeys.timeline(serverId, filters)
       : ['hive', 'timeline'],
   });
+}
+
+export function useHiveResearchSessions(
+  serverId: string | null,
+  enabled: boolean
+) {
+  return useQuery({
+    enabled: !!serverId && enabled,
+    queryFn: () => listHiveResearchSessions(serverId!),
+    queryKey: serverId
+      ? hiveQueryKeys.researchSessions(serverId)
+      : ['hive', 'research-sessions'],
+  });
+}
+
+export function useHiveResearchMutations(serverId: string | null) {
+  const queryClient = useQueryClient();
+  const invalidateResearch = async () => {
+    if (!serverId) return;
+    await Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: hiveQueryKeys.researchSessions(serverId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['hive', 'timeline', serverId],
+      }),
+      queryClient.invalidateQueries({
+        queryKey: hiveQueryKeys.snapshot(serverId),
+      }),
+    ]);
+  };
+
+  return {
+    createSession: useMutation({
+      mutationFn: (payload: HiveResearchSessionPayload) =>
+        createHiveResearchSession(serverId!, payload),
+      onSuccess: invalidateResearch,
+    }),
+    runPairQueue: useMutation({
+      mutationFn: ({
+        payload,
+        sessionId,
+      }: {
+        payload: HivePairQueuePayload;
+        sessionId: string;
+      }) => runHivePairQueue(serverId!, sessionId, payload),
+      onSuccess: invalidateResearch,
+    }),
+    updateSession: useMutation({
+      mutationFn: ({
+        payload,
+        sessionId,
+      }: {
+        payload: HiveResearchSessionPatchPayload;
+        sessionId: string;
+      }) => updateHiveResearchSession(serverId!, sessionId, payload),
+      onSuccess: invalidateResearch,
+    }),
+  };
 }
 
 export function useHiveMutations(serverId: string | null) {
@@ -164,6 +255,9 @@ export function useHiveMutations(serverId: string | null) {
           hiveQueryKeys.servers,
           (servers) => (servers ? { ...servers } : servers)
         );
+        void queryClient.invalidateQueries({
+          queryKey: ['hive', 'timeline', serverId],
+        });
       },
     }),
     deleteServer: useMutation({
@@ -197,14 +291,22 @@ export function useHiveMutations(serverId: string | null) {
           invalidateServer(),
           serverId
             ? queryClient.invalidateQueries({
-                queryKey: hiveQueryKeys.timeline(serverId),
+                queryKey: ['hive', 'timeline', serverId],
               })
             : Promise.resolve(),
         ]),
     }),
     runSimulationTick: useMutation({
       mutationFn: () => runHiveSimulationTick(serverId!),
-      onSuccess: () => invalidateServer(),
+      onSuccess: () =>
+        Promise.all([
+          invalidateServer(),
+          serverId
+            ? queryClient.invalidateQueries({
+                queryKey: ['hive', 'timeline', serverId],
+              })
+            : Promise.resolve(),
+        ]),
     }),
     updateNpc: useMutation({
       mutationFn: ({
@@ -290,6 +392,9 @@ export function useHiveWorkflowMutations(
       }),
       queryClient.invalidateQueries({
         queryKey: hiveQueryKeys.snapshot(serverId),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['hive', 'timeline', serverId],
       }),
     ]);
   };

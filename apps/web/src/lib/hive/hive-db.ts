@@ -452,6 +452,7 @@ export async function createHiveWorldEvent(input: {
   actorUserId: string | null;
   eventType: string;
   payload: Record<string, unknown>;
+  researchSessionId?: string | null;
   serverId: string;
   world: HiveWorld;
 }) {
@@ -479,17 +480,19 @@ export async function createHiveWorldEvent(input: {
 
     const [event] = await tx<HiveWorldEventRow[]>`
       insert into hive_world_events (
-        server_id, actor_user_id, op_seq, event_type, payload
+        server_id, actor_user_id, op_seq, event_type, payload,
+        research_session_id
       )
       values (
         ${input.serverId},
         ${input.actorUserId},
         ${nextSeq},
         ${input.eventType},
-        ${tx.json(asHiveJson(input.payload))}
+        ${tx.json(asHiveJson(input.payload))},
+        ${input.researchSessionId ?? null}
       )
       returning id, server_id, actor_user_id, op_seq, revision, event_type,
-        payload, created_at
+        payload, research_session_id, created_at
     `;
 
     return event ?? null;

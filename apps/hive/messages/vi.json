@@ -56,6 +56,29 @@
       "send": "Gửi yêu cầu chỉnh thế giới",
       "you": "Bạn"
     },
+    "agents": {
+      "agents": "Agent",
+      "all_sessions": "Tất cả phiên",
+      "apply_batch": "Áp dụng chỉnh sửa hàng loạt",
+      "autonomous": "Tự chủ",
+      "batch_role": "Vai trò hàng loạt",
+      "context": "Ngữ cảnh gồm {blocks} khối và {objects} vật thể",
+      "custom_target": "Agent đích",
+      "fallback_session": "Phiên nghiên cứu",
+      "memory": "Bộ nhớ",
+      "mode_all_to_all": "Ghép tất cả với nhau",
+      "mode_custom": "Đích tùy chỉnh",
+      "mode_round_robin": "Ghép vòng tròn",
+      "no_session": "Bắt đầu một phiên nghiên cứu để gắn nhãn hàng đợi cặp và sự kiện kiểm toán.",
+      "pair_mode": "Chế độ ghép cặp",
+      "queue_prompt": "Prompt cho hàng đợi",
+      "run_pairs": "Chạy {count} cặp",
+      "selected_count": "Đã chọn {count}",
+      "session_name": "Tên phiên",
+      "start_session": "Bắt đầu phiên",
+      "title": "Studio Agent",
+      "turns": "Lượt thoại"
+    },
     "ai": {
       "autonomy": "Tương tác LLM tự chủ",
       "context": "Ngữ cảnh AI",
@@ -76,6 +99,7 @@
       "blocks_count": "{count} khối",
       "close_chat": "Đóng khung chat agent",
       "collapse_npc_lab": "Thu gọn phòng NPC",
+      "mode_agents": "Studio Agent",
       "mode_timeline": "Dòng thời gian",
       "mode_workflows": "Sơ đồ quy trình",
       "mode_world": "Chế độ thế giới",
@@ -256,9 +280,12 @@
       "version": "Phiên bản Hive"
     },
     "timeline": {
+      "all_sessions": "Tất cả phiên",
       "back_to_world": "Quay lại thế giới",
+      "close": "Đóng",
       "deterministic": "Tất định",
       "empty": "Không có mục dòng thời gian phù hợp bộ lọc này.",
+      "export_json": "Xuất JSON",
       "eyebrow": "Lịch sử tương tác NPC",
       "filter_all": "Tất cả",
       "filter_autonomous": "Tự chủ",
@@ -267,8 +294,16 @@
       "loading": "Đang tải dòng thời gian...",
       "no_server": "Chọn một máy chủ Hive để xem dòng thời gian.",
       "revision": "Phiên bản {revision}",
+      "session_filter": "Phiên nghiên cứu",
       "title": "Dòng thời gian",
       "unknown_npc": "NPC không rõ"
+    },
+    "trace": {
+      "empty": "Chạy hàng đợi cặp hoặc quy trình để xem dấu vết.",
+      "empty_badge": "Đang chờ",
+      "pairs": "{count} cặp",
+      "steps": "{count} bước",
+      "title": "Dấu vết chạy"
     },
     "workflows": {
       "chrome": {

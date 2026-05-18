@@ -56,6 +56,29 @@
       "send": "Send world instruction",
       "you": "You"
     },
+    "agents": {
+      "agents": "Agents",
+      "all_sessions": "All sessions",
+      "apply_batch": "Apply batch edits",
+      "autonomous": "Autonomous",
+      "batch_role": "Batch role",
+      "context": "{blocks, plural, one {# block} other {# blocks}} and {objects, plural, one {# object} other {# objects}} in context",
+      "custom_target": "Target agent",
+      "fallback_session": "Research session",
+      "memory": "Memory",
+      "mode_all_to_all": "All-to-all pairs",
+      "mode_custom": "Custom target",
+      "mode_round_robin": "Round-robin pairs",
+      "no_session": "Start a research session to tag pair queues and audit events.",
+      "pair_mode": "Pairing mode",
+      "queue_prompt": "Queue prompt",
+      "run_pairs": "Run {count, plural, one {# pair} other {# pairs}}",
+      "selected_count": "{count, plural, one {# selected} other {# selected}}",
+      "session_name": "Session name",
+      "start_session": "Start session",
+      "title": "Agent Studio",
+      "turns": "Turns"
+    },
     "ai": {
       "autonomy": "Autonomous LLM interactions",
       "context": "AI context",
@@ -76,6 +99,7 @@
       "blocks_count": "{count, plural, one {# block} other {# blocks}}",
       "close_chat": "Close agent chat",
       "collapse_npc_lab": "Collapse NPC lab",
+      "mode_agents": "Agent Studio",
       "mode_timeline": "Timeline",
       "mode_workflows": "Workflow graph",
       "mode_world": "World view",
@@ -256,9 +280,12 @@
       "version": "Hive version"
     },
     "timeline": {
+      "all_sessions": "All sessions",
       "back_to_world": "Back to world",
+      "close": "Close",
       "deterministic": "Deterministic",
       "empty": "No timeline items match this filter.",
+      "export_json": "Export JSON",
       "eyebrow": "NPC interaction history",
       "filter_all": "All",
       "filter_autonomous": "Autonomous",
@@ -267,8 +294,16 @@
       "loading": "Loading timeline...",
       "no_server": "Select a Hive server to inspect its timeline.",
       "revision": "Revision {revision}",
+      "session_filter": "Research session",
       "title": "Timeline",
       "unknown_npc": "Unknown NPC"
+    },
+    "trace": {
+      "empty": "Run a pair queue or workflow to inspect the trace.",
+      "empty_badge": "Idle",
+      "pairs": "{count, plural, one {# pair} other {# pairs}}",
+      "steps": "{count, plural, one {# step} other {# steps}}",
+      "title": "Run trace"
     },
     "workflows": {
       "chrome": {

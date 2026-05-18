@@ -9,19 +9,17 @@ import type {
   HiveServer,
   HiveUser,
 } from '@/engine/types';
-import { EditorTopChrome } from './editor-top-chrome';
 import type { HiveAgentMessage } from './hive-agent-composer';
+import { HiveAgentStudioPanel } from './hive-agent-studio-panel';
+import { HiveStudioCenter } from './hive-studio-center';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
 import { HiveStudioServerPicker } from './hive-studio-server-picker';
 import { HiveStudioToolDock } from './hive-studio-tool-dock';
-import { HiveTimelinePanel } from './hive-timeline-panel';
-import { HiveViewportOverlays } from './hive-viewport-overlays';
-import { InspectorPanel } from './panels/inspector-panel';
+import { HiveStudioTop } from './hive-studio-top';
+import { ResearchTimeline } from './research-timeline';
 import { useHiveDeleteSelectionShortcut } from './use-hive-delete-selection-shortcut';
 import { isBoolean, useHivePersistedState } from './use-hive-persisted-state';
 import { useHiveStudioEngine } from './use-hive-studio-engine';
-import { HiveViewport } from './viewport/hive-viewport';
-import { HiveWorkflowStudio } from './workflows/hive-workflow-studio';
 
 type HiveStudioProps = {
   buildInfo: HiveBuildInfo;
@@ -64,9 +62,9 @@ export function HiveStudio({
     false,
     { validate: isBoolean }
   );
-  const [studioMode, setStudioMode] = useHivePersistedState<
-    'timeline' | 'workflows' | 'world'
-  >('hive.editor.mode', 'world', { validate: isStudioMode });
+  const [activePanel, setActivePanel] = useHivePersistedState<
+    'agents' | 'timeline' | 'workflows' | 'world'
+  >('hive.editor.mode', 'agents', { validate: isStudioMode });
   const [miniMapCollapsed, setMiniMapCollapsed] = useHivePersistedState(
     'hive.editor.miniMapCollapsed',
     false,
@@ -133,119 +131,70 @@ export function HiveStudio({
     <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
       <SatelliteWorkspaceShell
         bottom={
-          studioMode === 'world' ? (
-            <HiveStudioToolDock
-              engine={engine}
-              onToggle={() => setBottomCollapsed(true)}
-            />
-          ) : null
+          <HiveStudioToolDock
+            engine={engine}
+            onToggle={() => setBottomCollapsed(true)}
+          />
         }
-        bottomCollapsed={bottomCollapsed || studioMode !== 'world'}
+        bottomCollapsed={bottomCollapsed}
         center={
-          studioMode === 'world' ? (
-            <>
-              <HiveViewport
-                activeBuildMode={engine.activeBuildMode}
-                activeObject={engine.activeObject}
-                activeTerrain={engine.activeTerrain}
-                cameraView={engine.cameraView}
-                gaplessMode={engine.gaplessMode}
-                npcs={engine.npcs}
-                onErase={engine.eraseSelection}
-                onMoveSelection={engine.moveSelection}
-                onPlaceNpc={engine.placeNpc}
-                onPlaceObject={engine.placeObject}
-                onPlaceTerrain={engine.placeTerrain}
-                onRealtimeCursor={engine.sendCursorPosition}
-                onSelect={selectEntity}
-                remoteAwareness={engine.remoteAwareness}
-                season={engine.season}
-                selection={engine.selection}
-                tool={engine.tool}
-                timeTheme={engine.timeTheme}
-                weather={engine.weather}
-                world={engine.world}
-              />
-              <HiveViewportOverlays
-                agentMessages={agentMessages}
-                bottomCollapsed={bottomCollapsed}
-                chatOpen={chatOpen}
-                miniMapCollapsed={miniMapCollapsed}
-                npcs={engine.npcs}
-                onSetBottomCollapsed={setBottomCollapsed}
-                onSetMiniMapCollapsed={setMiniMapCollapsed}
-                onSetTopCollapsed={setTopCollapsed}
-                onSubmitAgentPrompt={submitAgentPrompt}
-                selectedServer={engine.selectedServer}
-                selection={engine.selection}
-                syncNotice={engine.syncNotice}
-                topCollapsed={topCollapsed}
-                world={engine.world}
-              />
-            </>
-          ) : studioMode === 'timeline' ? (
-            <HiveTimelinePanel
-              onExit={() => setStudioMode('world')}
-              serverId={engine.serverId}
-            />
-          ) : (
-            <HiveWorkflowStudio
-              isAdmin={isAdmin}
-              onExitWorkflows={() => setStudioMode('world')}
-              serverId={engine.serverId}
-              serverPicker={serverPicker}
-            />
-          )
+          <HiveStudioCenter
+            activePanel={activePanel}
+            agentMessages={agentMessages}
+            bottomCollapsed={bottomCollapsed}
+            chatOpen={chatOpen}
+            engine={engine}
+            isAdmin={isAdmin}
+            miniMapCollapsed={miniMapCollapsed}
+            onSelectEntity={selectEntity}
+            onSetActivePanel={setActivePanel}
+            onSetBottomCollapsed={setBottomCollapsed}
+            onSetMiniMapCollapsed={setMiniMapCollapsed}
+            onSetTopCollapsed={setTopCollapsed}
+            onSubmitAgentPrompt={submitAgentPrompt}
+            serverPicker={serverPicker}
+            topCollapsed={topCollapsed}
+          />
         }
-        rightCollapsed={rightCollapsed}
+        left={
+          <HiveAgentStudioPanel
+            aiContext={engine.aiContext}
+            npcs={engine.npcs}
+            onPatchNpc={engine.patchNpc}
+            onSelectNpc={(npc) => selectEntity({ id: npc.id, kind: 'npc' })}
+            revision={engine.revision}
+            serverId={engine.serverId}
+            world={engine.world}
+          />
+        }
+        leftCollapsed={activePanel !== 'agents'}
+        right={
+          <ResearchTimeline
+            onClose={() => setActivePanel('world')}
+            serverId={engine.serverId}
+          />
+        }
+        rightCollapsed={activePanel !== 'timeline'}
         top={
-          studioMode === 'world' || studioMode === 'timeline' ? (
-            <EditorTopChrome
-              aiContext={engine.aiContext}
-              chatOpen={chatOpen}
-              currentUser={currentUser}
-              inspectorPanel={
-                <InspectorPanel
-                  npcs={engine.npcs}
-                  onPatchBlock={engine.patchBlock}
-                  onPatchNpc={engine.patchNpc}
-                  onPatchObject={engine.patchObject}
-                  onRequestDelete={setDeleteSelectionTarget}
-                  onToggle={() => setRightCollapsed(true)}
-                  selection={engine.selection}
-                  world={engine.world}
-                />
-              }
-              isAdmin={isAdmin}
-              isRunningNpc={engine.isRunningNpc}
-              lastNpcRunStatus={engine.lastNpcRunStatus}
-              miniMapCollapsed={miniMapCollapsed}
-              mode={studioMode}
-              npcLabCollapsed={npcLabCollapsed}
-              npcs={engine.npcs}
-              onChangeMode={setStudioMode}
-              onToggleChat={() => setChatOpen((value) => !value)}
-              onToggleInspector={() =>
-                setRightCollapsed((value) => (engine.selection ? !value : true))
-              }
-              onToggleMiniMap={() => setMiniMapCollapsed((value) => !value)}
-              onPatchNpc={engine.patchNpc}
-              onRunNpc={engine.runNpc}
-              onRunNpcInteraction={engine.runNpcInteraction}
-              onToggleNpcLab={() => setNpcLabCollapsed((value) => !value)}
-              onUpdateServerSettings={engine.updateServerSettings}
-              presenceCount={engine.presenceCount}
-              realtimeStatus={engine.realtimeStatus}
-              revision={engine.revision}
-              rightCollapsed={rightCollapsed}
-              selectedNpc={engine.selectedNpc}
-              selectedServer={engine.selectedServer ?? null}
-              serverPicker={serverPicker}
-              world={engine.world}
-            />
-          ) : null
+          <HiveStudioTop
+            activePanel={activePanel}
+            chatOpen={chatOpen}
+            currentUser={currentUser}
+            engine={engine}
+            isAdmin={isAdmin}
+            miniMapCollapsed={miniMapCollapsed}
+            npcLabCollapsed={npcLabCollapsed}
+            onChangePanel={setActivePanel}
+            onRequestDeleteSelection={setDeleteSelectionTarget}
+            onSetChatOpen={setChatOpen}
+            onSetMiniMapCollapsed={setMiniMapCollapsed}
+            onSetNpcLabCollapsed={setNpcLabCollapsed}
+            onSetRightCollapsed={setRightCollapsed}
+            rightCollapsed={rightCollapsed}
+            serverPicker={serverPicker}
+          />
         }
-        topCollapsed={topCollapsed || studioMode === 'workflows'}
+        topCollapsed={topCollapsed}
       />
       <HiveStudioDialogs
         deleteServerOpen={deleteServerOpen}
@@ -271,6 +220,11 @@ export function HiveStudio({
 
 function isStudioMode(
   value: unknown
-): value is 'timeline' | 'workflows' | 'world' {
-  return value === 'timeline' || value === 'workflows' || value === 'world';
+): value is 'agents' | 'timeline' | 'workflows' | 'world' {
+  return (
+    value === 'agents' ||
+    value === 'timeline' ||
+    value === 'workflows' ||
+    value === 'world'
+  );
 }

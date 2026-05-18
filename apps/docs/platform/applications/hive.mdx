@@ -66,6 +66,8 @@ Hive stores product state in the dedicated Hive Postgres database:
 - `hive_simulation_ticks`
 - `hive_workflows`
 - `hive_workflow_runs`
+- `hive_research_sessions`
+- `hive_research_session_events`
 - `hive_members`
 - `hive_access_requests`
 
@@ -104,6 +106,18 @@ only. Do not add arbitrary JavaScript evaluation to workflow config. Workflow
 applies that patch to the latest server snapshot and persists the result through
 the same audited world-event path as manual editor saves.
 
+Research sessions are the shared audit spine for multi-agent experiments. A
+running `hive_research_sessions` row can be attached to NPC runs, workflow
+runs, world events, and simulation ticks through nullable `research_session_id`
+columns. When a run payload omits `researchSessionId`, the backend attaches the
+active running session for that server when one exists. Session events in
+`hive_research_session_events` record operational actions such as session
+creation/update and pair queue start/complete markers. Session exports are
+available from
+`/api/v1/hive/servers/:serverId/research-sessions/:sessionId/export` as JSON or
+JSONL and should preserve enough identifiers to replay research timelines
+outside the app.
+
 Shared realtime payloads and Hive CRDT helpers live in
 `@tuturuuu/realtime/hive`. Keep protocol schemas there when both `apps/hive`,
 `apps/hive-realtime`, or `apps/web` need the same message or document contract.
@@ -129,18 +143,22 @@ the billing/model context for scheduled simulation work. If the billing
 workspace is missing or unauthorized, scheduled LLM autonomy is skipped and the
 normal simulation tick continues.
 
-`hive_npc_runs` stores grouped interaction metadata for both manual and
-autonomous runs: `interaction_id`, source/target NPCs, trigger, status, model,
-provider, token counts, credit source/workspace, deducted credits, and errors.
-Timeline surfaces should group or filter from this persisted run history plus
-world events rather than recomputing transcripts from transient client state.
+`hive_npc_runs` stores grouped interaction metadata for manual pair queues,
+one-shot manual runs, autonomous runs, and workflow-triggered decisions:
+`interaction_id`, source/target NPCs, trigger, status, model, provider, token
+counts, credit source/workspace, deducted credits, errors, and optional
+`research_session_id`. Timeline surfaces should group or filter from this
+persisted run history plus world events, workflow runs, simulation ticks, and
+session events rather than recomputing transcripts from transient client state.
 
 ## Editor Surface
 
 `apps/hive` is a hidden-locale Next.js satellite app. The editor uses a
 full-bleed React Three Fiber viewport, compact top status chips, a bottom tool
-dock with the server picker and build/settings controls, a right inspector, and
-an NPC Lab panel for manual research runs.
+dock with build/settings controls, an Agent Studio rail, a research timeline
+drawer, and selected-detail overlays. The 3D world remains mounted while users
+open agent setup, workflow authoring, timeline observability, AI context, or
+operations controls.
 
 The editor is built on the shared `@tuturuuu/satellite` workspace shell. Hive
 uses that shell for collapsible left/right rails, top research overlays, and the
@@ -186,25 +204,30 @@ visible time buttons as the primary time control.
 
 Live operations in the dock must use existing Hive snapshot state rather than a
 new route: world counts, crops, warehouses, server currency, events, online
-users, realtime status, revision, and the last sync notice. The NPC Lab edits
-only the selected NPC. When no NPC is selected, it should show a selection
-prompt instead of silently mutating the first NPC in the server.
+users, realtime status, revision, and the last sync notice. Agent Studio owns
+multi-agent setup and ordered pair queues: multi-select NPCs, batch role/memory
+/autonomy edits, round-robin pairs, all-to-all pairs, custom target pairs, run
+prompt, turn count, and current AI context. NPC Lab remains the selected-agent
+detail editor only. When no NPC is selected, it should show a selection prompt
+instead of silently mutating the first NPC in the server.
 
-The editor also has a `World / Workflows` mode switch. Workflow mode is a 2D
-React Flow graph builder for manual Hive automations. The workflow command bar
-owns server selection, always-visible server info, workflow selection, editable
-workflow title/description, latest run status, Save/Run actions, and collapse
-toggles for the palette, node inspector, and run trace. Keep those controls in
-the top bar instead of restoring separate title blocks, hover-only server info,
-or large tutorial chrome inside workflow mode. Admins can drag nodes from the
-palette, use starter templates, edit JSON config in the inspector, save shared
-workflows, and run them against the selected server. Members see the same graph
-read-only and can manually run saved workflows. Workflow runs apply live effects
-through the same gateway-backed Hive actions used elsewhere: world events,
-simulation ticks, NPC decision records, farming, warehouses, and trades. Effects
-are audited through the workflow run trace plus the existing Hive event/economy
-tables; v1 has no schedule, webhook trigger, retry queue, credential vault, or
-rollback approval layer.
+The editor uses a single Research Studio panel state instead of separate
+full-screen World / Workflow graph / Timeline destinations. Workflow graph is a
+focused overlay on top of the persistent world viewport. Timeline is a drawer
+that reads `/api/v1/hive/servers/:serverId/timeline`, filters by research
+session and run metadata, and expands rows into input/output context, status,
+model/provider, credits, and export identifiers. Workflow mode is still a 2D
+React Flow graph builder for manual Hive automations, but it must reuse the same
+AI context, run trace, and research timeline contracts as NPC pair queues.
+Admins can drag nodes from the palette, use starter templates, edit JSON config
+in the inspector, save shared workflows, and run them against the selected
+server. Members see the same graph read-only and can manually run saved
+workflows. Workflow runs apply live effects through the same gateway-backed Hive
+actions used elsewhere: world events, simulation ticks, NPC decision records,
+farming, warehouses, and trades. Effects are audited through the workflow run
+trace, research session timeline, and existing Hive event/economy tables; v1 has
+no schedule, webhook trigger, retry queue, credential vault, or rollback
+approval layer.
 
 Starter workflow templates should demonstrate a real server-side use case, not
 just create trace rows. The farm cycle template plants a relational crop, then
@@ -212,11 +235,9 @@ uses a `world_event.worldPatch` step to stamp a visible crop plot into the Hive
 world. The cleanup template removes that starter plot by id and records the
 maintenance event.
 
-The editor mode switch also includes Timeline. Timeline mode reads
-`/api/v1/hive/servers/:serverId/timeline`, merges world events with NPC run
-history, and displays model/cost/trigger metadata for each persisted run. Keep
-manual and autonomous interaction rows grouped by `interaction_id` whenever a
-deeper transcript view is added.
+Keep manual and autonomous interaction rows grouped by `interaction_id` whenever
+a deeper transcript view is added. Pair queue runs must execute pairs in request
+order and return partial failures without dropping successful earlier pairs.
 
 NPC Lab is a draft editor for the selected NPC only. Identity, brain/model,
 behavior/autonomy, memory/prompt flags, system prompt, and interaction controls

@@ -36,6 +36,7 @@ export async function POST(request: NextRequest, { params }: Params) {
       actorUserId: access.access.user.id,
       input: parsed.data.input,
       isAdmin: access.access.isAdmin,
+      researchSessionId: parsed.data.researchSessionId,
       serverId,
       workflowId,
     });

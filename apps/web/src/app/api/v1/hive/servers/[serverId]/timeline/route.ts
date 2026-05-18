@@ -1,13 +1,6 @@
-import type { HiveNpcRunStatus } from '@tuturuuu/internal-api/hive';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getHiveSnapshot } from '@/lib/hive/hive-db';
-import { listHiveNpcRuns } from '@/lib/hive/npcs';
-import {
-  mapHiveEvent,
-  mapHiveNpcRun,
-  requireHiveAccess,
-  withHiveRoute,
-} from '../../../_shared';
+import { listHiveResearchTimeline } from '@/lib/hive/research-sessions';
+import { requireHiveAccess, withHiveRoute } from '../../../_shared';
 
 type Params = {
   params: Promise<{
@@ -15,74 +8,14 @@ type Params = {
   }>;
 };
 
-type MappedRun = ReturnType<typeof mapHiveNpcRun> & {
-  kind: 'run';
-  npcName: string | null;
-  targetNpcName: string | null;
-};
-
-function aggregateStatus(runs: MappedRun[]): HiveNpcRunStatus {
-  if (runs.some((run) => run.status === 'failed')) return 'failed';
-  if (runs.some((run) => run.status === 'running')) return 'running';
-  if (runs.every((run) => run.status === 'skipped')) return 'skipped';
-  return 'completed';
+function nullableParam(request: NextRequest, key: string) {
+  const value = request.nextUrl.searchParams.get(key)?.trim();
+  return value || null;
 }
 
-function groupRuns(runs: MappedRun[]) {
-  const grouped = new Map<string, MappedRun[]>();
-  const standalone: MappedRun[] = [];
-
-  for (const run of runs) {
-    if (!run.interactionId) {
-      standalone.push(run);
-      continue;
-    }
-
-    grouped.set(run.interactionId, [
-      ...(grouped.get(run.interactionId) ?? []),
-      run,
-    ]);
-  }
-
-  const interactions = Array.from(grouped.entries()).map(
-    ([interactionId, group]) => {
-      const sortedRuns = [...group].sort(
-        (a, b) =>
-          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-      );
-      const latestRun = sortedRuns.reduce((latest, run) =>
-        new Date(run.createdAt).getTime() > new Date(latest.createdAt).getTime()
-          ? run
-          : latest
-      );
-      const firstRun = sortedRuns[0] ?? latestRun;
-
-      return {
-        actorUserId: firstRun.actorUserId,
-        autonomous: sortedRuns.some((run) => run.autonomous),
-        createdAt: latestRun.createdAt,
-        creditSource: firstRun.creditSource,
-        creditWsId: firstRun.creditWsId,
-        creditsDeducted: sortedRuns.reduce(
-          (sum, run) => sum + run.creditsDeducted,
-          0
-        ),
-        id: interactionId,
-        interactionId,
-        kind: 'interaction' as const,
-        llmCost: sortedRuns.reduce((sum, run) => sum + run.llmCost, 0),
-        llmModel: firstRun.llmModel,
-        llmProvider: firstRun.llmProvider,
-        npcName: firstRun.npcName,
-        runs: sortedRuns,
-        status: aggregateStatus(sortedRuns),
-        targetNpcName: firstRun.targetNpcName,
-        trigger: firstRun.trigger,
-      };
-    }
-  );
-
-  return [...interactions, ...standalone];
+function limitParam(request: NextRequest) {
+  const value = Number(request.nextUrl.searchParams.get('limit') ?? 180);
+  return Number.isFinite(value) ? value : 180;
 }
 
 export async function GET(request: NextRequest, { params }: Params) {
@@ -95,29 +28,21 @@ export async function GET(request: NextRequest, { params }: Params) {
       const access = await requireHiveAccess(request);
       if (!access.ok) return access.response;
 
-      const [snapshot, runs] = await Promise.all([
-        getHiveSnapshot(serverId),
-        listHiveNpcRuns({ serverId }),
-      ]);
-      const events = snapshot.events.map((event) => ({
-        ...mapHiveEvent(event),
-        kind: 'event' as const,
-      }));
-      const runItems = runs.map((run) => ({
-        ...mapHiveNpcRun(run),
-        kind: 'run' as const,
-        npcName: run.npc_name ?? null,
-        targetNpcName: run.target_npc_name ?? null,
-      }));
+      const timeline = await listHiveResearchTimeline({
+        filters: {
+          actorUserId: nullableParam(request, 'actorUserId'),
+          eventType: nullableParam(request, 'eventType'),
+          limit: limitParam(request),
+          npcId: nullableParam(request, 'npcId'),
+          researchSessionId: nullableParam(request, 'researchSessionId'),
+          status: nullableParam(request, 'status'),
+          trigger: nullableParam(request, 'trigger'),
+          workflowId: nullableParam(request, 'workflowId'),
+        },
+        serverId,
+      });
 
-      const items = [...events, ...groupRuns(runItems)]
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )
-        .slice(0, 180);
-
-      return NextResponse.json({ items });
+      return NextResponse.json(timeline);
     }
   );
 }

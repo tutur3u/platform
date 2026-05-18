@@ -3,6 +3,10 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { asHiveJson, getHiveSql } from './hive-db';
 import { runHiveNpcInteraction } from './npc-interactions';
 import { getLatestHiveNpcAutonomousRun } from './npcs';
+import {
+  ensureHiveResearchSchema,
+  resolveHiveResearchSessionId,
+} from './research-schema';
 import type { HiveNpcRow, HiveWorld } from './types';
 
 type SimulationServerSettings = {
@@ -68,6 +72,7 @@ function isAutonomousNpc(npc: HiveNpcRow) {
 
 async function runAutonomousNpcInteractions(input: {
   actorUserId: string | null;
+  researchSessionId?: string | null;
   serverId: string;
   settings: SimulationServerSettings;
 }) {
@@ -146,6 +151,7 @@ async function runAutonomousNpcInteractions(input: {
         prompt:
           'Autonomously coordinate a small, observable next action for this Hive world.',
         promptMode: 'enhanced',
+        researchSessionId: input.researchSessionId,
         sbAdmin: await createAdminClient({ noCookie: true }),
         serverId: input.serverId,
         sourceNpcId: sourceNpc.id,
@@ -176,8 +182,10 @@ async function runAutonomousNpcInteractions(input: {
 
 export async function runHiveSimulationTick(options?: {
   force?: boolean;
+  researchSessionId?: string | null;
   serverId?: string;
 }) {
+  await ensureHiveResearchSchema();
   const sql = getHiveSql();
   const servers = options?.serverId
     ? await sql<
@@ -211,6 +219,10 @@ export async function runHiveSimulationTick(options?: {
   }> = [];
 
   for (const server of servers) {
+    const researchSessionId = await resolveHiveResearchSessionId({
+      researchSessionId: options?.researchSessionId,
+      serverId: server.id,
+    });
     const serverSettings = normalizeSettings(server.settings ?? {});
     const cronEnabled = serverSettings.simulationCronEnabled === true;
     if (!options?.force && !cronEnabled) {
@@ -219,8 +231,10 @@ export async function runHiveSimulationTick(options?: {
     }
 
     const [tick] = await sql<Array<{ id: string }>>`
-      insert into hive_simulation_ticks (server_id, status)
-      values (${server.id}, 'running')
+      insert into hive_simulation_ticks (
+        server_id, status, research_session_id
+      )
+      values (${server.id}, 'running', ${researchSessionId})
       returning id
     `;
 
@@ -286,6 +300,7 @@ export async function runHiveSimulationTick(options?: {
 
       const autonomousInteractions = await runAutonomousNpcInteractions({
         actorUserId: server.created_by,
+        researchSessionId,
         serverId: server.id,
         settings: serverSettings,
       });

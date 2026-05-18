@@ -34,6 +34,7 @@ export type HiveWorkflowRunRow = {
   id: string;
   input: unknown;
   output: unknown;
+  research_session_id?: string | null;
   server_id: string;
   started_at: string;
   status: 'completed' | 'failed' | 'running';

@@ -20,9 +20,9 @@ type EditorTopChromeProps = {
   isRunningNpc: boolean;
   lastNpcRunStatus?: 'completed' | 'failed' | 'running' | null;
   miniMapCollapsed: boolean;
-  mode: 'timeline' | 'workflows' | 'world';
+  mode: 'agents' | 'timeline' | 'workflows' | 'world';
   npcLabCollapsed: boolean;
-  onChangeMode: (mode: 'timeline' | 'workflows' | 'world') => void;
+  onChangeMode: (mode: 'agents' | 'timeline' | 'workflows' | 'world') => void;
   npcs: HiveNpc[];
   onToggleChat: () => void;
   onToggleInspector: () => void;

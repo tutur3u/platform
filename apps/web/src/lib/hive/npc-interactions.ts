@@ -21,6 +21,10 @@ import {
   listHiveNpcMemories,
   persistHiveNpcRun,
 } from './npcs';
+import {
+  ensureHiveResearchSchema,
+  resolveHiveResearchSessionId,
+} from './research-schema';
 import type { HiveNpcRow, HiveNpcRunRow, HiveWorld } from './types';
 
 type HiveNpcTrigger =
@@ -467,6 +471,7 @@ export async function runHiveNpcInteraction(input: {
   model?: string | null;
   prompt?: string | null;
   promptMode?: 'custom' | 'default' | 'enhanced';
+  researchSessionId?: string | null;
   sbAdmin: import('@tuturuuu/supabase/types').TypedSupabaseClient;
   serverId: string;
   sourceNpcId: string;
@@ -478,6 +483,11 @@ export async function runHiveNpcInteraction(input: {
   interactionId: string;
   runs: HiveNpcRunRow[];
 }> {
+  await ensureHiveResearchSchema();
+  const researchSessionId = await resolveHiveResearchSessionId({
+    researchSessionId: input.researchSessionId,
+    serverId: input.serverId,
+  });
   const sourceNpc = await getHiveNpc({
     npcId: input.sourceNpcId,
     serverId: input.serverId,
@@ -568,6 +578,7 @@ export async function runHiveNpcInteraction(input: {
       outputTokens:
         turn === conversation.turns.at(-1) ? generated.usage.outputTokens : 0,
       promptMode: input.promptMode ?? 'enhanced',
+      researchSessionId,
       reasoningTokens:
         turn === conversation.turns.at(-1)
           ? generated.usage.reasoningTokens
@@ -601,6 +612,7 @@ export async function runHiveNpcInteraction(input: {
       interactionId,
       model: generated.modelId,
       provider: generated.provider,
+      researchSessionId,
       runIds: runs.map((run) => run.id),
       sourceNpcId: sourceNpc.id,
       summary: conversation.summary,
@@ -608,6 +620,7 @@ export async function runHiveNpcInteraction(input: {
       trigger: input.trigger ?? 'manual',
       worldImpact: conversation.worldImpact,
     },
+    researchSessionId,
     serverId: input.serverId,
     world: input.world,
   });

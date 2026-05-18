@@ -5840,6 +5840,7 @@ export type Database = {
           output_tokens: number;
           prompt_mode: string;
           reasoning_tokens: number;
+          research_session_id: string | null;
           server_id: string;
           status: string;
           target_npc_id: string | null;
@@ -5866,6 +5867,7 @@ export type Database = {
           output_tokens?: number;
           prompt_mode?: string;
           reasoning_tokens?: number;
+          research_session_id?: string | null;
           server_id: string;
           status?: string;
           target_npc_id?: string | null;
@@ -5892,6 +5894,7 @@ export type Database = {
           output_tokens?: number;
           prompt_mode?: string;
           reasoning_tokens?: number;
+          research_session_id?: string | null;
           server_id?: string;
           status?: string;
           target_npc_id?: string | null;
@@ -5966,6 +5969,13 @@ export type Database = {
             columns: ['npc_id'];
             isOneToOne: false;
             referencedRelation: 'hive_npcs';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_npc_runs_research_session_id_fkey';
+            columns: ['research_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_research_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -6074,6 +6084,163 @@ export type Database = {
           },
         ];
       };
+      hive_research_session_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          event_kind: string;
+          id: string;
+          payload: Json;
+          server_id: string;
+          session_id: string;
+          source_id: string | null;
+          source_type: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_kind: string;
+          id?: string;
+          payload?: Json;
+          server_id: string;
+          session_id: string;
+          source_id?: string | null;
+          source_type?: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_kind?: string;
+          id?: string;
+          payload?: Json;
+          server_id?: string;
+          session_id?: string;
+          source_id?: string | null;
+          source_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_research_session_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_research_session_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_research_session_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_research_session_events_actor_user_id_fkey';
+            columns: ['actor_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_research_session_events_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_research_session_events_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_research_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      hive_research_sessions: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          ended_at: string | null;
+          id: string;
+          metadata: Json;
+          name: string;
+          server_id: string;
+          started_at: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          server_id: string;
+          started_at?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          server_id?: string;
+          started_at?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'hive_research_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_research_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'hive_research_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_research_sessions_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_research_sessions_server_id_fkey';
+            columns: ['server_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_servers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       hive_servers: {
         Row: {
           created_at: string;
@@ -6148,6 +6315,7 @@ export type Database = {
           id: string;
           input: Json;
           output: Json;
+          research_session_id: string | null;
           server_id: string;
           started_at: string;
           status: string;
@@ -6162,6 +6330,7 @@ export type Database = {
           id?: string;
           input?: Json;
           output?: Json;
+          research_session_id?: string | null;
           server_id: string;
           started_at?: string;
           status?: string;
@@ -6176,6 +6345,7 @@ export type Database = {
           id?: string;
           input?: Json;
           output?: Json;
+          research_session_id?: string | null;
           server_id?: string;
           started_at?: string;
           status?: string;
@@ -6209,6 +6379,13 @@ export type Database = {
             columns: ['actor_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_workflow_runs_research_session_id_fkey';
+            columns: ['research_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_research_sessions';
             referencedColumns: ['id'];
           },
           {
@@ -6343,6 +6520,7 @@ export type Database = {
           event_type: string;
           id: string;
           payload: Json;
+          research_session_id: string | null;
           revision: number;
           server_id: string;
         };
@@ -6352,6 +6530,7 @@ export type Database = {
           event_type: string;
           id?: string;
           payload?: Json;
+          research_session_id?: string | null;
           revision: number;
           server_id: string;
         };
@@ -6361,6 +6540,7 @@ export type Database = {
           event_type?: string;
           id?: string;
           payload?: Json;
+          research_session_id?: string | null;
           revision?: number;
           server_id?: string;
         };
@@ -6391,6 +6571,13 @@ export type Database = {
             columns: ['actor_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'hive_world_events_research_session_id_fkey';
+            columns: ['research_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'hive_research_sessions';
             referencedColumns: ['id'];
           },
           {

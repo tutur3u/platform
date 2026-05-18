@@ -118,6 +118,7 @@ export const hiveEventSchema = z.object({
     .or(z.string().trim().min(1).max(80)),
   expectedRevision: z.number().int().min(0),
   payload: hiveJsonObjectSchema.default({}),
+  researchSessionId: z.string().uuid().nullable().optional(),
   world: hiveWorldSchema,
 });
 
@@ -155,6 +156,7 @@ export const hiveNpcRunSchema = z.object({
   model: z.string().trim().min(1).max(160).optional(),
   promptMode: z.enum(['default', 'enhanced', 'custom']).default('enhanced'),
   prompt: z.string().trim().max(4000).nullable().optional(),
+  researchSessionId: z.string().uuid().nullable().optional(),
   targetNpcId: z.string().uuid().nullable().optional(),
   trigger: z
     .enum(['manual', 'autonomous', 'workflow', 'simulation', 'cron'])
@@ -169,6 +171,7 @@ export const hiveNpcInteractionSchema = z.object({
   maxTurns: z.number().int().min(1).max(12).default(4),
   model: z.string().trim().min(1).max(160).optional(),
   prompt: z.string().trim().max(4000).nullable().optional(),
+  researchSessionId: z.string().uuid().nullable().optional(),
   sourceNpcId: z.string().uuid(),
   targetNpcId: z.string().uuid(),
   trigger: z
@@ -250,6 +253,41 @@ export const hiveWorkflowPatchSchema = hiveWorkflowPayloadSchema.partial();
 
 export const hiveWorkflowRunPayloadSchema = z.object({
   input: hiveJsonObjectSchema.default({}),
+  researchSessionId: z.string().uuid().nullable().optional(),
+});
+
+export const hiveResearchSessionPayloadSchema = z.object({
+  description: z.string().trim().max(2000).nullable().optional(),
+  metadata: hiveJsonObjectSchema.default({}),
+  name: z.string().trim().min(1).max(160),
+  status: z.enum(['paused', 'running']).default('running'),
+});
+
+export const hiveResearchSessionPatchSchema = z.object({
+  description: z.string().trim().max(2000).nullable().optional(),
+  metadata: hiveJsonObjectSchema.optional(),
+  name: z.string().trim().min(1).max(160).optional(),
+  status: z.enum(['archived', 'completed', 'paused', 'running']).optional(),
+});
+
+export const hivePairQueueRunSchema = z.object({
+  creditSource: z.enum(['personal', 'workspace']).optional(),
+  creditWsId: z.string().uuid().optional(),
+  expectedRevision: z.number().int().min(0),
+  maxPairs: z.number().int().min(1).max(100).default(50),
+  maxTurns: z.number().int().min(1).max(12).default(4),
+  model: z.string().trim().min(1).max(160).optional(),
+  pairs: z
+    .array(
+      z.object({
+        sourceNpcId: z.string().uuid(),
+        targetNpcId: z.string().uuid(),
+      })
+    )
+    .min(1)
+    .max(100),
+  prompt: z.string().trim().max(4000).nullable().optional(),
+  world: hiveWorldSchema,
 });
 
 export type HiveAccess = {
@@ -449,6 +487,7 @@ export function mapHiveEvent(row: HiveWorldEventRow) {
     eventType: row.event_type,
     id: row.id,
     payload: row.payload ?? {},
+    researchSessionId: row.research_session_id ?? null,
     revision: Number(row.revision ?? row.op_seq ?? 0),
     serverId: row.server_id,
   };
@@ -505,6 +544,7 @@ export function mapHiveNpcRun(row: HiveNpcRunRow) {
         : {},
     outputTokens: Number(row.output_tokens ?? 0),
     promptMode: row.prompt_mode,
+    researchSessionId: row.research_session_id ?? null,
     reasoningTokens: Number(row.reasoning_tokens ?? 0),
     status:
       row.status === 'running' ||
