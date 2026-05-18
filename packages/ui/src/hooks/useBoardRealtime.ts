@@ -110,23 +110,6 @@ export function useBoardRealtime(
     []
   );
 
-  const sendBoardRealtimeEvent = useCallback(
-    (
-      channel: RealtimeChannel | null,
-      event: string,
-      payload: Record<string, unknown>
-    ) => {
-      const payloadWithMetadata = withEventMetadata(payload);
-      postLocalBroadcast(event, payloadWithMetadata);
-      channel?.send({
-        type: 'broadcast',
-        event,
-        payload: payloadWithMetadata,
-      });
-    },
-    [postLocalBroadcast, withEventMetadata]
-  );
-
   const handleBoardRealtimeEvent = useBoardRealtimeEventHandler({
     boardId,
     onListChangeRef,
@@ -134,6 +117,24 @@ export function useBoardRealtime(
     queryClient,
     rememberEventId,
   });
+
+  const sendBoardRealtimeEvent = useCallback(
+    (
+      channel: RealtimeChannel | null,
+      event: string,
+      payload: Record<string, unknown>
+    ) => {
+      const payloadWithMetadata = withEventMetadata(payload);
+      handleBoardRealtimeEvent(event, payloadWithMetadata);
+      postLocalBroadcast(event, payloadWithMetadata);
+      channel?.send({
+        type: 'broadcast',
+        event,
+        payload: payloadWithMetadata,
+      });
+    },
+    [handleBoardRealtimeEvent, postLocalBroadcast, withEventMetadata]
+  );
 
   useEffect(() => {
     if (!boardId || typeof BroadcastChannel === 'undefined') return;
@@ -290,8 +291,7 @@ export function useBoardRealtime(
     batchFlushTimerRef.current = null;
     const buffer = batchBufferRef.current;
     const channel = channelRef.current;
-    const localChannel = localChannelRef.current;
-    if (buffer.size === 0 || (!channel && !localChannel)) {
+    if (buffer.size === 0) {
       buffer.clear();
       return;
     }

@@ -2,6 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { getActiveBoardRefresh } from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import type { Dispatch, MutableRefObject, SetStateAction } from 'react';
 import { useEffect, useRef } from 'react';
@@ -99,6 +100,7 @@ function invalidateMiraTaskCaches({
       queryKey: ['task-board', wsId, boardId],
     });
     void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    getActiveBoardRefresh()?.({ includeLists });
   }
 
   if (includeLists) {

@@ -14,9 +14,11 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { useBoardRealtime } from '@tuturuuu/ui/hooks/useBoardRealtime';
 import { useWorkspaceLabels } from '@tuturuuu/utils/task-helper';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   BoardBroadcastProvider,
+  type BoardRefreshOptions,
+  setActiveBoardRefresh,
   setActiveBroadcast,
 } from './board-broadcast-context';
 import { BoardViews } from './board-views';
@@ -129,12 +131,45 @@ export function BoardClient({
     enabled: !workspace.personal,
   });
 
+  const refreshActiveBoard = useCallback(
+    (options?: BoardRefreshOptions) => {
+      void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+      void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
+      void progressiveLoader.revalidateLoadedLists().catch(() => {
+        // Best effort: direct cache broadcasts still keep the visible board moving.
+      });
+
+      if (!options?.includeLists) return;
+
+      void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+      void queryClient.invalidateQueries({
+        queryKey: ['task-board', workspace.id, boardId],
+      });
+      if (boardWorkspaceId !== workspace.id) {
+        void queryClient.invalidateQueries({
+          queryKey: ['task-board', boardWorkspaceId, boardId],
+        });
+      }
+    },
+    [
+      boardId,
+      boardWorkspaceId,
+      progressiveLoader.revalidateLoadedLists,
+      queryClient,
+      workspace.id,
+    ]
+  );
+
   // Register broadcast at module level so components outside the
   // BoardBroadcastProvider tree (e.g. task dialog) can access it.
   useEffect(() => {
     setActiveBroadcast(broadcast);
-    return () => setActiveBroadcast(null);
-  }, [broadcast]);
+    setActiveBoardRefresh(refreshActiveBoard);
+    return () => {
+      setActiveBroadcast(null);
+      setActiveBoardRefresh(null);
+    };
+  }, [broadcast, refreshActiveBoard]);
 
   useEffect(() => {
     queryClient.setQueryData(

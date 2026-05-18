@@ -18,6 +18,9 @@ import type {
 import { useTaskBoardAiChatBarTaskFlow } from './use-task-board-ai-chat-bar-task-flow';
 
 const CHAT_POPUP_EXIT_MS = 220;
+const HOVER_CLOSE_DELAY_MS = 180;
+const HOVER_OPEN_DELAY_MS = 80;
+const HOVER_REOPEN_COOLDOWN_MS = 220;
 
 interface TaskBoardAiChatBarProps {
   assistantName: string;
@@ -35,15 +38,18 @@ export function TaskBoardAiChatBar({
   const tCommon = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
   const islandRef = useRef<HTMLDivElement>(null);
+  const hoverCloseTimerRef = useRef<number | null>(null);
+  const hoverOpenTimerRef = useRef<number | null>(null);
+  const lastHoverCloseAtRef = useRef(0);
   const [expanded, setExpanded] = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const [hoverPreview, setHoverPreview] = useState(false);
   const [mode, setMode] = useState<TaskBoardAiChatBarMode>('task');
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
   const [renderChatPopup, setRenderChatPopup] = useState(false);
   const [chatPopupExiting, setChatPopupExiting] = useState(false);
   const [taskFocusSignal, setTaskFocusSignal] = useState(0);
   const [assistantFocusSignal, setAssistantFocusSignal] = useState(0);
-  const islandExpanded = expanded || hovered;
+  const islandExpanded = expanded || hoverPreview;
 
   const taskFlow = useTaskBoardAiChatBarTaskFlow({
     boardId,
@@ -74,11 +80,24 @@ export function TaskBoardAiChatBar({
     return () => document.removeEventListener('pointerdown', handlePointerDown);
   }, [expanded]);
 
+  useEffect(() => {
+    return () => {
+      if (hoverOpenTimerRef.current !== null) {
+        window.clearTimeout(hoverOpenTimerRef.current);
+      }
+      if (hoverCloseTimerRef.current !== null) {
+        window.clearTimeout(hoverCloseTimerRef.current);
+      }
+    };
+  }, []);
+
   const userName =
     currentUser.display_name || currentUser.full_name || currentUser.email;
   const chatPopupOpen = expanded && mode === 'chat';
-  const taskComposerOpen = islandExpanded && mode === 'task' && !chatPopupOpen;
-  const showTaskSummary = taskComposerOpen;
+  const taskComposerOpen = expanded && mode === 'task' && !chatPopupOpen;
+  const showTaskSummary =
+    hoverPreview && mode === 'task' && !chatPopupOpen && !taskComposerOpen;
+  const islandWide = taskComposerOpen || showTaskSummary;
   const showSwitcherLabels = islandExpanded && mode === 'task';
 
   useEffect(() => {
@@ -106,13 +125,61 @@ export function TaskBoardAiChatBar({
   const openTaskComposer = () => {
     setMode('task');
     setExpanded(true);
+    setHoverPreview(false);
     setTaskFocusSignal((current) => current + 1);
   };
 
   const openAssistant = () => {
     setMode('chat');
     setExpanded(true);
+    setHoverPreview(false);
     setAssistantFocusSignal((current) => current + 1);
+  };
+
+  const clearHoverTimers = () => {
+    if (hoverOpenTimerRef.current !== null) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (hoverCloseTimerRef.current !== null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+  };
+
+  const scheduleHoverOpen = () => {
+    if (expanded) return;
+    if (hoverCloseTimerRef.current !== null) {
+      window.clearTimeout(hoverCloseTimerRef.current);
+      hoverCloseTimerRef.current = null;
+    }
+    if (
+      lastHoverCloseAtRef.current > 0 &&
+      Date.now() - lastHoverCloseAtRef.current < HOVER_REOPEN_COOLDOWN_MS
+    ) {
+      return;
+    }
+    if (hoverPreview || hoverOpenTimerRef.current !== null) return;
+    hoverOpenTimerRef.current = window.setTimeout(() => {
+      setHoverPreview(true);
+      hoverOpenTimerRef.current = null;
+    }, HOVER_OPEN_DELAY_MS);
+  };
+
+  const scheduleHoverClose = () => {
+    if (expanded) return;
+    if (hoverOpenTimerRef.current !== null) {
+      window.clearTimeout(hoverOpenTimerRef.current);
+      hoverOpenTimerRef.current = null;
+    }
+    if (!hoverPreview) return;
+    if (hoverCloseTimerRef.current !== null) return;
+
+    hoverCloseTimerRef.current = window.setTimeout(() => {
+      setHoverPreview(false);
+      lastHoverCloseAtRef.current = Date.now();
+      hoverCloseTimerRef.current = null;
+    }, HOVER_CLOSE_DELAY_MS);
   };
 
   return (
@@ -120,21 +187,24 @@ export function TaskBoardAiChatBar({
       <div className="pointer-events-none fixed inset-x-3 bottom-4 z-40 flex justify-center sm:bottom-6">
         <div
           ref={islandRef}
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-          onFocusCapture={() => setHovered(true)}
+          onMouseEnter={scheduleHoverOpen}
+          onMouseLeave={scheduleHoverClose}
+          onFocusCapture={() => {
+            clearHoverTimers();
+            setHoverPreview(true);
+          }}
           onBlurCapture={(event) => {
             const nextTarget = event.relatedTarget;
             if (
               !(nextTarget instanceof Node) ||
               !event.currentTarget.contains(nextTarget)
             ) {
-              setHovered(false);
+              scheduleHoverClose();
             }
           }}
           className={cn(
             'pointer-events-auto flex w-full flex-col items-stretch transition-[max-width,opacity,transform] duration-300 ease-out',
-            showTaskSummary ? 'max-w-2xl' : 'max-w-[6rem]',
+            islandWide ? 'max-w-2xl' : 'max-w-[6rem]',
             renderChatPopup && 'max-w-3xl'
           )}
         >
@@ -158,16 +228,16 @@ export function TaskBoardAiChatBar({
             className={cn(
               'overflow-hidden rounded-2xl border border-border/70 bg-background/90 shadow-lg backdrop-blur-xl',
               'mx-auto transition-[width,max-width,opacity,transform] duration-300 ease-out',
-              showTaskSummary ? 'w-full max-w-2xl' : 'w-auto max-w-[6rem]',
+              islandWide ? 'w-full max-w-2xl' : 'w-auto max-w-[6rem]',
               islandExpanded
                 ? 'scale-100 opacity-100'
-                : 'scale-[0.98] opacity-95'
+                : 'scale-[0.98] opacity-70'
             )}
           >
             <div
               className={cn(
                 'flex items-center gap-1.5 transition-[padding] duration-300 ease-out',
-                showTaskSummary ? 'px-2 py-1.5' : 'p-1.5'
+                islandWide ? 'px-2 py-1.5' : 'p-1.5'
               )}
             >
               <button

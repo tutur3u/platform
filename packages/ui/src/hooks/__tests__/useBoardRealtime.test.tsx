@@ -835,6 +835,8 @@ describe('useBoardRealtime', () => {
     });
 
     it('should call channel.send with correct format after debounce', () => {
+      queryClient.setQueryData(['tasks', 'board-1'], []);
+
       const { result } = renderHook(
         () => useBoardRealtime('board-1', { enabled: true }),
         { wrapper }
@@ -863,6 +865,9 @@ describe('useBoardRealtime', () => {
           task: { id: 'task-1', name: 'Updated' },
         }),
       });
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+        expect.objectContaining({ id: 'task-1', name: 'Updated' }),
+      ]);
       expect(
         MockBroadcastChannel.instances[0]?.postMessage
       ).toHaveBeenCalledWith({
@@ -939,6 +944,9 @@ describe('useBoardRealtime', () => {
       });
 
       expect(mockChannel.subscribe).not.toHaveBeenCalled();
+      expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
+        expect.objectContaining({ id: 'task-1' }),
+      ]);
       expect(
         receiverQueryClient.getQueryData<Task[]>(['tasks', 'board-1'])
       ).toEqual([expect.objectContaining({ id: 'task-1' })]);

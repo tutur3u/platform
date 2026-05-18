@@ -14,7 +14,10 @@ import type {
   ConfirmedTask,
   JournalTaskResponse,
 } from '@tuturuuu/ui/tu-do/my-tasks/task-preview-dialog';
-import { getActiveBroadcast } from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
+import {
+  getActiveBoardRefresh,
+  getActiveBroadcast,
+} from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
 import { useTranslations } from 'next-intl';
 import {
   type FormEvent,
@@ -190,6 +193,7 @@ export function useTaskBoardAiChatBarTaskFlow({
       if (tasksWithRelations.length > 0) {
         broadcast?.('task:relations-changed', { taskIds: tasksWithRelations });
       }
+      getActiveBoardRefresh()?.();
     },
     [boardId, queryClient, wsId]
   );

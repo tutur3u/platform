@@ -45,11 +45,11 @@ export function ModeButton({
       <TooltipTrigger asChild>
         <Button
           type="button"
-          size="sm"
+          size={showLabel ? 'sm' : 'icon'}
           variant={active ? 'secondary' : 'ghost'}
           className={cn(
-            'h-8 shrink-0 gap-1.5 overflow-hidden rounded-full text-xs transition-[width,padding,background-color,color,box-shadow,transform] duration-300 ease-out',
-            showLabel ? 'w-auto px-2.5' : 'w-8 px-0',
+            'h-8 shrink-0 items-center justify-center overflow-hidden rounded-full text-xs transition-[width,padding,background-color,color,box-shadow,transform] duration-300 ease-out',
+            showLabel ? 'w-auto gap-1.5 px-2.5' : '!px-0 size-8 gap-0',
             active && 'bg-dynamic-purple/10 text-dynamic-purple shadow-sm',
             !active && 'hover:bg-muted/70'
           )}

@@ -1,9 +1,10 @@
 import { QueryClient } from '@tanstack/react-query';
 import { render, waitFor } from '@testing-library/react';
 import type { UIMessage } from '@tuturuuu/ai/types';
+import { setActiveBoardRefresh } from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import type { Dispatch, SetStateAction } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { MessageFileAttachment } from '../file-preview-chips';
 import {
   WORKSPACE_CONTEXT_EVENT,
@@ -34,6 +35,10 @@ function TestHarness(props: {
 }
 
 describe('useMiraChatEffects', () => {
+  afterEach(() => {
+    setActiveBoardRefresh(null);
+  });
+
   it('syncs assistant workspace context changes from tool parts keyed only by type', async () => {
     const wsId = 'dashboard-ws';
     const nextWorkspaceContextId = 'workspace-team-123';
@@ -187,6 +192,8 @@ describe('useMiraChatEffects', () => {
     const setWorkspaceContextId = vi.fn();
     const setMessageAttachments = vi.fn();
     const routerRefresh = vi.fn();
+    const refreshActiveBoard = vi.fn();
+    setActiveBoardRefresh(refreshActiveBoard);
 
     render(
       <TestHarness
@@ -234,6 +241,9 @@ describe('useMiraChatEffects', () => {
     });
     expect(invalidateSpy).toHaveBeenCalledWith({
       queryKey: ['task_lists', boardId],
+    });
+    expect(refreshActiveBoard).toHaveBeenCalledWith({
+      includeLists: undefined,
     });
   });
 });
