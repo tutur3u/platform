@@ -1,24 +1,15 @@
 'use client';
 
-import { RotateCcw, Save } from '@tuturuuu/icons';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
-import { Button } from '@tuturuuu/ui/button';
-import { StickyBottomBar } from '@tuturuuu/ui/sticky-bottom-bar';
-import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
-import {
-  AddCategoryDialog,
-  AddIndicatorDialog,
-  EditIndicatorDialog,
-} from './indicator-dialogs';
+import { GroupIndicatorDialogs } from './group-indicator-dialogs';
+import { IndicatorCategoryTabs } from './indicator-category-tabs';
+import { IndicatorSaveBar } from './indicator-save-bar';
 import { IndicatorSummaryStats } from './indicator-summary-stats';
 import { IndicatorTable } from './indicator-table';
 import { IndicatorToolbar } from './indicator-toolbar';
 import type { GroupIndicator, MetricCategory, UserIndicator } from './types';
 import { useIndicators } from './use-indicators';
-import UserFeedbackDialog from './user-feedback-dialog';
 
 interface Props {
   wsId: string;
@@ -45,9 +36,6 @@ export default function GroupIndicatorsManager({
   canUpdateUserGroupsScores = false,
   canDeleteUserGroupsScores = false,
 }: Props) {
-  const t = useTranslations();
-  const tIndicators = useTranslations('ws-user-group-indicators');
-
   // Dialog states
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [addCategoryDialogOpen, setAddCategoryDialogOpen] = useState(false);
@@ -133,33 +121,12 @@ export default function GroupIndicatorsManager({
 
   return (
     <div>
-      <StickyBottomBar
+      <IndicatorSaveBar
         show={hasChanges}
-        message={t('common.unsaved-changes')}
-        actions={
-          <>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleReset}
-              disabled={isAnyMutationPending}
-            >
-              <RotateCcw className="h-4 w-4" />
-              {t('common.reset')}
-            </Button>
-            <Button
-              size="sm"
-              onClick={handleSubmit}
-              disabled={isAnyMutationPending}
-              className={cn(
-                'border border-dynamic-blue/20 bg-dynamic-blue/10 text-dynamic-blue hover:bg-dynamic-blue/20'
-              )}
-            >
-              <Save className="h-4 w-4" />
-              {isSubmitting ? t('common.saving') : t('common.save')}
-            </Button>
-          </>
-        }
+        disabled={isAnyMutationPending}
+        isSubmitting={isSubmitting}
+        onReset={handleReset}
+        onSubmit={handleSubmit}
       />
 
       <div className="space-y-4">
@@ -170,24 +137,15 @@ export default function GroupIndicatorsManager({
         />
 
         {(metricCategories.length > 0 || hasUncategorizedIndicators) && (
-          <Tabs
+          <IndicatorCategoryTabs
+            canDelete={canDeleteUserGroupsScores}
+            groupId={groupId}
+            hasUncategorizedIndicators={hasUncategorizedIndicators}
+            metricCategories={metricCategories}
             value={selectedCategoryView}
             onValueChange={setSelectedCategoryView}
-          >
-            <TabsList className="h-auto flex-wrap justify-start">
-              <TabsTrigger value="all">{t('common.all')}</TabsTrigger>
-              {metricCategories.map((category) => (
-                <TabsTrigger key={category.id} value={category.id}>
-                  {category.name}
-                </TabsTrigger>
-              ))}
-              {hasUncategorizedIndicators && (
-                <TabsTrigger value="uncategorized">
-                  {tIndicators('uncategorized')}
-                </TabsTrigger>
-              )}
-            </TabsList>
-          </Tabs>
+            wsId={wsId}
+          />
         )}
 
         {visibleIndicators.length > 0 && (
@@ -212,39 +170,27 @@ export default function GroupIndicatorsManager({
         />
       </div>
 
-      <AddIndicatorDialog
-        open={addDialogOpen}
-        onOpenChange={setAddDialogOpen}
-        createMutation={createVitalMutation}
-        metricCategories={metricCategories}
-        isAnyMutationPending={isAnyMutationPending}
-      />
-
-      <AddCategoryDialog
-        open={addCategoryDialogOpen}
-        onOpenChange={setAddCategoryDialogOpen}
-        createMutation={createCategoryMutation}
-        isAnyMutationPending={isAnyMutationPending}
-      />
-
-      <EditIndicatorDialog
-        open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
-        indicator={selectedIndicator}
-        updateMutation={updateIndicatorMutation}
-        deleteMutation={deleteIndicatorMutation}
-        metricCategories={metricCategories}
+      <GroupIndicatorDialogs
+        addCategoryDialogOpen={addCategoryDialogOpen}
+        addDialogOpen={addDialogOpen}
         canDelete={canDeleteUserGroupsScores}
-        isAnyMutationPending={isAnyMutationPending}
-      />
-
-      <UserFeedbackDialog
-        open={feedbackDialogOpen}
-        onOpenChange={setFeedbackDialogOpen}
-        user={selectedUser}
-        groupName={groupName}
-        wsId={wsId}
+        createCategoryMutation={createCategoryMutation}
+        createVitalMutation={createVitalMutation}
+        deleteIndicatorMutation={deleteIndicatorMutation}
+        editDialogOpen={editDialogOpen}
+        feedbackDialogOpen={feedbackDialogOpen}
         groupId={groupId}
+        groupName={groupName}
+        isAnyMutationPending={isAnyMutationPending}
+        metricCategories={metricCategories}
+        selectedIndicator={selectedIndicator}
+        selectedUser={selectedUser}
+        setAddCategoryDialogOpen={setAddCategoryDialogOpen}
+        setAddDialogOpen={setAddDialogOpen}
+        setEditDialogOpen={setEditDialogOpen}
+        setFeedbackDialogOpen={setFeedbackDialogOpen}
+        updateIndicatorMutation={updateIndicatorMutation}
+        wsId={wsId}
       />
     </div>
   );

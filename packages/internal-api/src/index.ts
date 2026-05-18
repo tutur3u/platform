@@ -613,6 +613,8 @@ export {
   listAllWorkspaceUserGroups,
   listWorkspaceUserGroups,
   listWorkspaceUserGroupsByIds,
+  type RemoveWorkspaceUserGroupIndicatorCategoryResponse,
+  removeWorkspaceUserGroupIndicatorCategory,
   type UserGroupStatusFilter,
   type WorkspaceUserGroupsPageResponse,
   type WorkspaceUserGroupsParams,

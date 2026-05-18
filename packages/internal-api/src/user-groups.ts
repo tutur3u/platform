@@ -29,6 +29,10 @@ export type WorkspaceUserGroupsPageResponse = WorkspaceUserGroupsResponse & {
   pageSize: number;
 };
 
+export type RemoveWorkspaceUserGroupIndicatorCategoryResponse = {
+  message: string;
+};
+
 const DEFAULT_PAGE_SIZE = 50;
 const ALL_GROUPS_PAGE_SIZE = 200;
 
@@ -150,4 +154,17 @@ export async function listWorkspaceUserGroupsByIds(
   );
 
   return payload.data;
+}
+
+export function removeWorkspaceUserGroupIndicatorCategory(
+  workspaceId: string,
+  groupId: string,
+  categoryId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RemoveWorkspaceUserGroupIndicatorCategoryResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/user-groups/${encodePathSegment(groupId)}/indicators/categories/${encodePathSegment(categoryId)}`,
+    { cache: 'no-store', method: 'DELETE' }
+  );
 }
