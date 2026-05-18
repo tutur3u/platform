@@ -426,6 +426,23 @@ export default function LoginForm() {
     setCaptchaToken(undefined);
   }, []);
 
+  const openPasswordStage = useCallback(
+    (normalizedEmail: string) => {
+      passwordForm.reset({
+        email: normalizedEmail,
+        password: defaultPassword,
+      });
+      setTransitionDirection(1);
+      setShowDomainPreview(false);
+      setShowPassword(false);
+      setOtpRetryAfterSeconds(0);
+      setCaptchaError(undefined);
+      resetCaptcha();
+      setAuthStage('password');
+    },
+    [defaultPassword, passwordForm, resetCaptcha]
+  );
+
   const markReturnUrlValidationFailure = useCallback(
     (failedReturnUrl: string, error?: unknown) => {
       setReturnUrlValidationFailure({
@@ -812,6 +829,7 @@ export default function LoginForm() {
           toast.error(t('login.failed_to_send'), {
             description: result.error,
           });
+          openPasswordStage(normalizedEmail);
         }
 
         setLoading(false);
@@ -826,6 +844,7 @@ export default function LoginForm() {
       toast.error(t('login.failed_to_send'), {
         description: t('login.failed_to_send'),
       });
+      openPasswordStage(normalizedEmail);
       setLoading(false);
     }
   };
@@ -1077,17 +1096,7 @@ export default function LoginForm() {
     const normalizedEmail = emailSchema.parse(emailForm.getValues('email'));
 
     emailForm.setValue('email', normalizedEmail, { shouldValidate: true });
-    passwordForm.reset({
-      email: normalizedEmail,
-      password: defaultPassword,
-    });
-    setTransitionDirection(1);
-    setShowDomainPreview(false);
-    setShowPassword(false);
-    setOtpRetryAfterSeconds(0);
-    setCaptchaError(undefined);
-    resetCaptcha();
-    setAuthStage('password');
+    openPasswordStage(normalizedEmail);
   };
 
   const advanceToQrStage = () => {
@@ -1655,6 +1664,18 @@ export default function LoginForm() {
                           t('login.continue_with_email')
                         )}
                       </Button>
+
+                      {webOtpEnabled ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          className="h-11 w-full rounded-2xl"
+                          onClick={() => void advanceToPasswordStage()}
+                          disabled={loading || isResolvingOtpEnablement}
+                        >
+                          {t('login.use_password_instead')}
+                        </Button>
+                      ) : null}
                     </form>
                   </Form>
 
