@@ -279,6 +279,7 @@ export async function PATCH(
         sort_order: payload.sort_order,
         source_url: payload.source_url,
         storage_path: payload.storage_path,
+        workspaceId: access.normalizedWorkspaceId,
       },
       access.admin
     );

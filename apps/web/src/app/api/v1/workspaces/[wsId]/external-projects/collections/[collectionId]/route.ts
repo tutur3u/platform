@@ -41,6 +41,7 @@ export async function PATCH(
         is_enabled: payload.is_enabled,
         slug: payload.slug,
         title: payload.title,
+        workspaceId: access.normalizedWorkspaceId,
       },
       access.admin
     );

@@ -290,6 +290,53 @@ describe('external project asset route', () => {
     expect(mocks.createWorkspaceStorageSignedReadUrl).not.toHaveBeenCalled();
   });
 
+  it('passes the authorized workspace to asset updates', async () => {
+    mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
+      admin: {},
+      normalizedWorkspaceId: 'ws-1',
+      ok: true,
+      user: {
+        id: 'user-1',
+      },
+    });
+    mocks.updateWorkspaceExternalProjectAsset.mockResolvedValue({
+      id: 'asset-1',
+    });
+
+    const { PATCH } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await PATCH(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1',
+        {
+          body: JSON.stringify({
+            alt_text: 'Updated alt text',
+          }),
+          method: 'PATCH',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.updateWorkspaceExternalProjectAsset).toHaveBeenCalledWith(
+      'asset-1',
+      expect.objectContaining({
+        actorId: 'user-1',
+        alt_text: 'Updated alt text',
+        workspaceId: 'ws-1',
+      }),
+      {}
+    );
+  });
+
   it('rejects asset updates that point outside external project storage', async () => {
     mocks.requireWorkspaceExternalProjectAccess.mockResolvedValue({
       admin: {},

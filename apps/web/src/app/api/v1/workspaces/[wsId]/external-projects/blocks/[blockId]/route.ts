@@ -33,6 +33,7 @@ export async function PATCH(
         content: payload.content as Json | undefined,
         sort_order: payload.sort_order,
         title: payload.title,
+        workspaceId: access.normalizedWorkspaceId,
       },
       access.admin
     );

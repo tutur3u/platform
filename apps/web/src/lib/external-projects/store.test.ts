@@ -30,6 +30,34 @@ function createMaybeSingleEqChain<T>(result: T) {
   };
 }
 
+function createScopedUpdateDb(row: Record<string, unknown>) {
+  const eqCalls: Array<[column: string, value: string]> = [];
+  const query = {
+    eq: vi.fn((column: string, value: string) => {
+      eqCalls.push([column, value]);
+      return query;
+    }),
+    select: vi.fn(() => query),
+    single: vi.fn().mockResolvedValue({
+      data: row,
+      error: null,
+    }),
+  };
+  const updateMock = vi.fn(() => query);
+  const fromMock = vi.fn(() => ({
+    update: updateMock,
+  }));
+
+  return {
+    db: {
+      from: fromMock,
+    },
+    eqCalls,
+    fromMock,
+    updateMock,
+  };
+}
+
 describe('external project store cleanup', () => {
   beforeEach(() => {
     mocks.deleteWorkspaceStorageObjectByPath.mockReset();
@@ -250,5 +278,101 @@ describe('external project store cleanup', () => {
     });
 
     expect(mocks.deleteWorkspaceStorageObjectByPath).not.toHaveBeenCalled();
+  });
+});
+
+describe('external project store update scoping', () => {
+  const workspaceId = 'ws-authorized';
+  const actorId = 'user-1';
+
+  it.each([
+    {
+      id: 'collection-1',
+      run: async (db: ReturnType<typeof createScopedUpdateDb>['db']) => {
+        const { updateWorkspaceExternalProjectCollection } = await import(
+          './store'
+        );
+
+        return updateWorkspaceExternalProjectCollection(
+          'collection-1',
+          {
+            actorId,
+            title: 'Updated collection',
+            workspaceId,
+          },
+          db as never
+        );
+      },
+      table: 'workspace_external_project_collections',
+    },
+    {
+      id: 'block-1',
+      run: async (db: ReturnType<typeof createScopedUpdateDb>['db']) => {
+        const { updateWorkspaceExternalProjectBlock } = await import('./store');
+
+        return updateWorkspaceExternalProjectBlock(
+          'block-1',
+          {
+            actorId,
+            title: 'Updated block',
+            workspaceId,
+          },
+          db as never
+        );
+      },
+      table: 'workspace_external_project_blocks',
+    },
+    {
+      id: 'entry-1',
+      run: async (db: ReturnType<typeof createScopedUpdateDb>['db']) => {
+        const { updateWorkspaceExternalProjectEntry } = await import('./store');
+
+        return updateWorkspaceExternalProjectEntry(
+          'entry-1',
+          {
+            actorId,
+            title: 'Updated entry',
+            workspaceId,
+          },
+          db as never
+        );
+      },
+      table: 'workspace_external_project_entries',
+    },
+    {
+      id: 'asset-1',
+      run: async (db: ReturnType<typeof createScopedUpdateDb>['db']) => {
+        const { updateWorkspaceExternalProjectAsset } = await import('./store');
+
+        return updateWorkspaceExternalProjectAsset(
+          'asset-1',
+          {
+            actorId,
+            alt_text: 'Updated asset',
+            workspaceId,
+          },
+          db as never
+        );
+      },
+      table: 'workspace_external_project_assets',
+    },
+  ])('scopes $table updates by workspace before id', async (testCase) => {
+    const { db, eqCalls, fromMock, updateMock } = createScopedUpdateDb({
+      id: testCase.id,
+      ws_id: workspaceId,
+    });
+
+    await testCase.run(db);
+
+    expect(fromMock).toHaveBeenCalledWith(testCase.table);
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        updated_by: actorId,
+      })
+    );
+    expect(eqCalls).toEqual([
+      ['ws_id', workspaceId],
+      ['id', testCase.id],
+    ]);
   });
 });

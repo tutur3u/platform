@@ -1082,17 +1082,19 @@ export async function updateWorkspaceExternalProjectCollection(
     title: string;
   }> & {
     actorId: string;
+    workspaceId: string;
   },
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const { actorId, ...values } = payload;
+  const { actorId, workspaceId, ...values } = payload;
   const { data, error } = await admin
     .from('workspace_external_project_collections')
     .update({
       ...values,
       updated_by: actorId,
     })
+    .eq('ws_id', workspaceId)
     .eq('id', collectionId)
     .select('*')
     .single();
@@ -1616,17 +1618,19 @@ export async function updateWorkspaceExternalProjectBlock(
     title: string | null;
   }> & {
     actorId: string;
+    workspaceId: string;
   },
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const { actorId, ...values } = payload;
+  const { actorId, workspaceId, ...values } = payload;
   const { data, error } = await admin
     .from('workspace_external_project_blocks')
     .update({
       ...values,
       updated_by: actorId,
     })
+    .eq('ws_id', workspaceId)
     .eq('id', blockId)
     .select('*')
     .single();
@@ -1689,17 +1693,19 @@ export async function updateWorkspaceExternalProjectEntry(
     title: string;
   }> & {
     actorId: string;
+    workspaceId: string;
   },
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const { actorId, ...values } = payload;
+  const { actorId, workspaceId, ...values } = payload;
   const { data, error } = await admin
     .from('workspace_external_project_entries')
     .update({
       ...values,
       updated_by: actorId,
     })
+    .eq('ws_id', workspaceId)
     .eq('id', entryId)
     .select('*')
     .single();
@@ -2055,11 +2061,12 @@ export async function updateWorkspaceExternalProjectAsset(
     storage_path: string | null;
   }> & {
     actorId: string;
+    workspaceId: string;
   },
   db?: AdminDb
 ) {
   const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
-  const { actorId, ...values } = payload;
+  const { actorId, workspaceId, ...values } = payload;
   assertExternalProjectStoragePath(values.storage_path);
   const { data, error } = await admin
     .from('workspace_external_project_assets')
@@ -2067,6 +2074,7 @@ export async function updateWorkspaceExternalProjectAsset(
       ...values,
       updated_by: actorId,
     })
+    .eq('ws_id', workspaceId)
     .eq('id', assetId)
     .select('*')
     .single();

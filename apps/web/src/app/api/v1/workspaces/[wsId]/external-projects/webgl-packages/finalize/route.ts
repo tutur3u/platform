@@ -223,6 +223,7 @@ export async function POST(
         metadata: artifact as Json,
         source_url: null,
         storage_path: artifact.rootPath,
+        workspaceId: access.normalizedWorkspaceId,
       },
       access.admin
     );

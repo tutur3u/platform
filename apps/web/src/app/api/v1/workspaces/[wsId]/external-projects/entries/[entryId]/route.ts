@@ -45,6 +45,7 @@ export async function PATCH(
         subtitle: payload.subtitle,
         summary: payload.summary,
         title: payload.title,
+        workspaceId: access.normalizedWorkspaceId,
       },
       access.admin
     );
