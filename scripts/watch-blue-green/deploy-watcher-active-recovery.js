@@ -30,7 +30,7 @@ module.exports = function createActiveRecovery({
   pruneBlueGreenRecoveryCacheImages,
   runBlueGreenCachedRecovery,
   runBlueGreenDeploy,
-  runBunUpgradeAndInstall,
+  runBunFrozenInstall,
 }) {
   function noBlueGreenComposeContainersForRecovery(currentBlueGreen) {
     if (!currentBlueGreen || currentBlueGreen.state === 'unknown') {
@@ -287,10 +287,10 @@ module.exports = function createActiveRecovery({
     }
 
     log.info?.(
-      `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before runtime recovery.`
+      `Installing dependencies from the reviewed frozen lockfile for ${latestCommit.shortHash} before runtime recovery.`
     );
 
-    await runBunUpgradeAndInstall({
+    await runBunFrozenInstall({
       env,
       runCommand: run,
     });

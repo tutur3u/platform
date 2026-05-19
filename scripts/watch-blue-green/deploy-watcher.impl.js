@@ -1879,7 +1879,7 @@ async function runDetachedCommitFullBlueGreenDeploy({
   await checkoutRevision(deployCommit.hash, { env, runCommand: run });
 
   try {
-    await runBunUpgradeAndInstall({ env, runCommand: run });
+    await runBunFrozenInstall({ env, runCommand: run });
 
     if (typeof afterBunBeforeDeploy === 'function') {
       await afterBunBeforeDeploy();
@@ -2581,36 +2581,8 @@ async function finalizeComposeProjectMigrationIfRequested({
   };
 }
 
-function isRecoverableBunUpgradeError(error) {
-  const message = error instanceof Error ? error.message : String(error);
-
-  return (
-    /HTTPForbidden/iu.test(message) ||
-    /bun\s+upgrade\s+failed\s+with\s+error:\s*HTTPForbidden/iu.test(message)
-  );
-}
-
-async function runBunUpgradeAndInstall({
-  env,
-  log = console,
-  runCommand: run = runCommand,
-} = {}) {
-  try {
-    await runChecked('bun', ['upgrade'], {
-      env,
-      runCommand: run,
-    });
-  } catch (error) {
-    if (!isRecoverableBunUpgradeError(error)) {
-      throw error;
-    }
-
-    log.warn?.(
-      `bun upgrade failed with a recoverable Bun download error; continuing with bun i. ${error instanceof Error ? error.message : String(error)}`
-    );
-  }
-
-  await runChecked('bun', ['i'], {
+async function runBunFrozenInstall({ env, runCommand: run = runCommand } = {}) {
+  await runChecked('bun', ['install', '--frozen-lockfile'], {
     env,
     runCommand: run,
   });
@@ -2806,7 +2778,7 @@ const { runMissingActiveDeploymentRecovery } =
     pruneBlueGreenRecoveryCacheImages,
     runBlueGreenCachedRecovery,
     runBlueGreenDeploy,
-    runBunUpgradeAndInstall,
+    runBunFrozenInstall,
   });
 async function runPendingDeployAfterRestart({
   deployCommand = DEFAULT_DEPLOY_COMMAND,
@@ -3107,7 +3079,6 @@ async function runPinnedDeploymentIteration(
   };
   const hasBlockingDirtyWorktree = await hasDirtyWorktree({
     env,
-    ignoredPaths: ['bun.lock'],
     runCommand: run,
   });
 
@@ -3428,7 +3399,6 @@ async function runDeployWatchIteration(
   if (currentBranch === 'HEAD') {
     const hasBlockingDirtyWorktree = await hasDirtyWorktree({
       env,
-      ignoredPaths: ['bun.lock'],
       runCommand: run,
     });
 
@@ -3460,7 +3430,6 @@ async function runDeployWatchIteration(
 
   const hasBlockingDirtyWorktree = await hasDirtyWorktree({
     env,
-    ignoredPaths: ['bun.lock'],
     runCommand: run,
   });
 
@@ -3716,7 +3685,7 @@ async function runDeployWatchIteration(
           },
           status: 'building',
         });
-        await runBunUpgradeAndInstall({
+        await runBunFrozenInstall({
           env,
           runCommand: run,
         });
@@ -4108,10 +4077,10 @@ async function runDeployWatchIteration(
           `Latest successful deployment is ${latestDeployedCommitHash ? latestDeployedCommitHash.slice(0, 12) : 'missing'}. Rebuilding ${latestCommit.shortHash} to reconcile runtime drift.`
         );
         log.info?.(
-          `Refreshing Bun runtime and dependencies for ${latestCommit.shortHash} before reconciliation deploy.`
+          `Installing dependencies from the reviewed frozen lockfile for ${latestCommit.shortHash} before reconciliation deploy.`
         );
 
-        await runBunUpgradeAndInstall({
+        await runBunFrozenInstall({
           env,
           runCommand: run,
         });
@@ -4661,7 +4630,7 @@ async function runDeployWatchIteration(
       );
 
       log.info?.(
-        `Refreshing Bun runtime and dependencies for ${updatedHead.slice(0, 12)}.`
+        `Installing dependencies from the reviewed frozen lockfile for ${updatedHead.slice(0, 12)}.`
       );
 
       if (
@@ -4900,7 +4869,7 @@ async function runDeployWatchIteration(
         });
       }
 
-      await runBunUpgradeAndInstall({
+      await runBunFrozenInstall({
         env,
         runCommand: run,
       });
@@ -5397,7 +5366,6 @@ async function resolveInitialWatcherTarget({
 
     const hasBlockingDirtyWorktree = await hasDirtyWorktree({
       env,
-      ignoredPaths: ['bun.lock'],
       runCommand: run,
     });
     const platformProject = await readPlatformProject({ env });
@@ -5456,7 +5424,6 @@ async function restoreTargetBranchIfDetached(
     hasBlockingDirtyWorktree = await hasDirtyWorktree({
       cwd: rootDir,
       env,
-      ignoredPaths: ['bun.lock'],
       runCommand: run,
     });
   } catch (error) {
@@ -6280,7 +6247,7 @@ module.exports = {
   restoreTargetBranchIfDetached,
   resolveLockedBranchTarget,
   resolvePlatformProjectTarget,
-  runBunUpgradeAndInstall,
+  runBunFrozenInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,

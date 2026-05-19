@@ -81,7 +81,7 @@ const {
   releaseWatchLock,
   restoreTargetBranchIfDetached,
   resolveCurrentBlueGreenStatus,
-  runBunUpgradeAndInstall,
+  runBunFrozenInstall,
   runBlueGreenDeploy,
   runPendingDeployAfterRestart,
   runDeployWatchIteration,
@@ -537,45 +537,35 @@ test('listDirtyWorktreePaths expands rename records and keeps bun.lock visible',
   );
 });
 
-test('runBunUpgradeAndInstall runs bun upgrade before bun i', async () => {
+test('runBunFrozenInstall installs dependencies with a frozen lockfile', async () => {
   const calls = [];
 
-  await runBunUpgradeAndInstall({
+  await runBunFrozenInstall({
     runCommand: async (command, args) => {
       calls.push(`${command} ${args.join(' ')}`);
       return createResult('');
     },
   });
 
-  assert.deepEqual(calls, ['bun upgrade', 'bun i']);
+  assert.deepEqual(calls, ['bun install --frozen-lockfile']);
 });
 
-test('runBunUpgradeAndInstall continues when bun upgrade is HTTPForbidden', async () => {
+test('runBunFrozenInstall fails when the frozen install fails', async () => {
   const calls = [];
-  const warnings = [];
 
-  await runBunUpgradeAndInstall({
-    log: {
-      warn(message) {
-        warnings.push(message);
-      },
-    },
-    runCommand: async (command, args) => {
-      calls.push(`${command} ${args.join(' ')}`);
-
-      if (command === 'bun' && args[0] === 'upgrade') {
+  await assert.rejects(() =>
+    runBunFrozenInstall({
+      runCommand: async (command, args) => {
+        calls.push(`${command} ${args.join(' ')}`);
         return createResult('', {
           code: 1,
-          stderr: 'Bun upgrade failed with error: HTTPForbidden',
+          stderr: 'install failed',
         });
-      }
+      },
+    })
+  );
 
-      return createResult('');
-    },
-  });
-
-  assert.deepEqual(calls, ['bun upgrade', 'bun i']);
-  assert.match(warnings.join('\n'), /recoverable Bun download error/);
+  assert.deepEqual(calls, ['bun install --frozen-lockfile']);
 });
 
 test('getGitFailureBackoffMs starts at one minute and caps exponential retries', () => {
@@ -3070,11 +3060,7 @@ test('runDeployWatchIteration restarts before deployment when the watcher script
       return createResult('Updating aaa111..bbb222\n');
     }
 
-    if (key === 'bun upgrade') {
-      return createResult('');
-    }
-
-    if (key === 'bun i') {
+    if (key === 'bun install --frozen-lockfile') {
       return createResult('');
     }
 
@@ -3183,11 +3169,7 @@ test('runDeployWatchIteration emits a pending deployment before deploy completio
       return createResult('Updating aaa111..bbb222\n');
     }
 
-    if (key === 'bun upgrade') {
-      return createResult('');
-    }
-
-    if (key === 'bun i') {
+    if (key === 'bun install --frozen-lockfile') {
       return createResult('');
     }
 
@@ -3592,7 +3574,7 @@ test('runDeployWatchIteration clears a timed-out self-owned deployment build loc
   }
 });
 
-test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file', async () => {
+test('runDeployWatchIteration blocks when bun.lock is the only dirty file', async () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-bun-lock-'));
   const envFilePath = path.join(tempDir, 'apps', 'web', '.env.local');
   const paths = getWatchPaths(tempDir);
@@ -3658,8 +3640,8 @@ test('runDeployWatchIteration keeps polling when bun.lock is the only dirty file
       }
     );
 
-    assert.equal(result.status, 'up-to-date');
-    assert.ok(calls.includes('git fetch origin main'));
+    assert.equal(result.status, 'dirty');
+    assert.ok(!calls.includes('git fetch origin main'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -5640,7 +5622,7 @@ test('restoreTargetBranchIfDetached checks out the locked branch on a clean deta
   ]);
 });
 
-test('restoreTargetBranchIfDetached leaves dirty detached worktrees untouched', async () => {
+test('restoreTargetBranchIfDetached leaves bun.lock-dirty detached worktrees untouched', async () => {
   const calls = [];
 
   const restored = await restoreTargetBranchIfDetached(
@@ -5662,7 +5644,7 @@ test('restoreTargetBranchIfDetached leaves dirty detached worktrees untouched', 
         }
 
         if (key === 'git status --porcelain') {
-          return createResult(' M scripts/watch-blue-green-deploy.js\n');
+          return createResult(' M bun.lock\n');
         }
 
         throw new Error(`Unexpected command: ${key}`);
@@ -6483,7 +6465,7 @@ test('runDeployWatchIteration stops retrying a commit after three failed deploym
     );
     assert.equal(warnings.length, 1);
     assert.match(warnings[0], /already failed 3 deployment attempts/);
-    assert.ok(!calls.includes('bun upgrade'));
+    assert.ok(!calls.includes('bun install --frozen-lockfile'));
     assert.ok(
       !calls.includes(
         `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
@@ -6737,7 +6719,7 @@ test('main keeps watching after recovered pending deployment failure and caps re
       MAX_FAILED_DEPLOYMENTS_PER_COMMIT
     );
     assert.equal(calls.filter((key) => key === deployKey).length, 1);
-    assert.ok(!calls.includes('bun upgrade'));
+    assert.ok(!calls.includes('bun install --frozen-lockfile'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7328,7 +7310,7 @@ test('main reconciles HEAD when git is current but the latest successful deploym
           return createResult('bbb222\n');
         }
 
-        if (key === 'bun upgrade' || key === 'bun i') {
+        if (key === 'bun install --frozen-lockfile') {
           return createResult('');
         }
 
@@ -7360,8 +7342,7 @@ test('main reconciles HEAD when git is current but the latest successful deploym
         `${DEFAULT_DEPLOY_COMMAND[0]} ${DEFAULT_DEPLOY_COMMAND.slice(1).join(' ')}`
       )
     );
-    assert.ok(calls.includes('bun upgrade'));
-    assert.ok(calls.includes('bun i'));
+    assert.ok(calls.includes('bun install --frozen-lockfile'));
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
@@ -7444,11 +7425,7 @@ test('main restarts the watcher with a pending deploy handoff env when the watch
           return createResult('Updating aaa111..bbb222\n');
         }
 
-        if (key === 'bun upgrade') {
-          return createResult('');
-        }
-
-        if (key === 'bun i') {
+        if (key === 'bun install --frozen-lockfile') {
           return createResult('');
         }
 
@@ -7584,11 +7561,7 @@ test('main exits with the container restart code when the watcher script changes
           return createResult('Updating aaa111..bbb222\n');
         }
 
-        if (key === 'bun upgrade') {
-          return createResult('');
-        }
-
-        if (key === 'bun i') {
+        if (key === 'bun install --frozen-lockfile') {
           return createResult('');
         }
 
@@ -7713,11 +7686,7 @@ test('main exits with the container refresh code when critical watcher runtime f
           return createResult('Updating aaa111..bbb222\n');
         }
 
-        if (key === 'bun upgrade') {
-          return createResult('');
-        }
-
-        if (key === 'bun i') {
+        if (key === 'bun install --frozen-lockfile') {
           return createResult('');
         }
 
