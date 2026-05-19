@@ -390,6 +390,10 @@ Legacy `public` bridging RPCs may exist while older code is migrated, but do
 not add new public RPCs for tables or protected helper queries that can be
 reached through the server-side database connection.
 
+If a public table has no app/package consumers and is not part of an active
+database contract, prefer dropping it in a forward migration instead of moving
+dead schema surface into `private`.
+
 Required controls:
 
 - Keep `anon` and `authenticated` without `USAGE` on `private`.

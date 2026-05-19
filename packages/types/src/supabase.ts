@@ -9,6 +9,57 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
+      ai_credit_reservations: {
+        Row: {
+          amount: number;
+          balance_id: string;
+          committed_at: string | null;
+          created_at: string;
+          expires_at: string;
+          feature: string | null;
+          id: string;
+          metadata: Json;
+          model_id: string | null;
+          released_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          amount: number;
+          balance_id: string;
+          committed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          feature?: string | null;
+          id?: string;
+          metadata?: Json;
+          model_id?: string | null;
+          released_at?: string | null;
+          status: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          balance_id?: string;
+          committed_at?: string | null;
+          created_at?: string;
+          expires_at?: string;
+          feature?: string | null;
+          id?: string;
+          metadata?: Json;
+          model_id?: string | null;
+          released_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       ai_models: {
         Row: {
           created_at: string;
@@ -110,6 +161,45 @@ export type Database = {
         Update: {
           code?: string;
           name?: string;
+        };
+        Relationships: [];
+      };
+      email_bounce_complaints: {
+        Row: {
+          bounce_subtype: string | null;
+          bounce_type: string | null;
+          complaint_feedback_id: string | null;
+          complaint_type: string | null;
+          created_at: string;
+          email_hash: string;
+          event_type: string;
+          id: string;
+          original_email_id: string | null;
+          raw_notification: Json | null;
+        };
+        Insert: {
+          bounce_subtype?: string | null;
+          bounce_type?: string | null;
+          complaint_feedback_id?: string | null;
+          complaint_type?: string | null;
+          created_at?: string;
+          email_hash: string;
+          event_type: string;
+          id?: string;
+          original_email_id?: string | null;
+          raw_notification?: Json | null;
+        };
+        Update: {
+          bounce_subtype?: string | null;
+          bounce_type?: string | null;
+          complaint_feedback_id?: string | null;
+          complaint_type?: string | null;
+          created_at?: string;
+          email_hash?: string;
+          event_type?: string;
+          id?: string;
+          original_email_id?: string | null;
+          raw_notification?: Json | null;
         };
         Relationships: [];
       };
@@ -1406,32 +1496,6 @@ export type Database = {
           },
         ];
       };
-      ai_chat_members: {
-        Row: {
-          chat_id: string;
-          created_at: string;
-          email: string;
-        };
-        Insert: {
-          chat_id: string;
-          created_at?: string;
-          email: string;
-        };
-        Update: {
-          chat_id?: string;
-          created_at?: string;
-          email?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'ai_chat_members_chat_id_fkey';
-            columns: ['chat_id'];
-            isOneToOne: false;
-            referencedRelation: 'ai_chats';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       ai_chat_messages: {
         Row: {
           chat_id: string;
@@ -1680,121 +1744,6 @@ export type Database = {
             columns: ['default_language_model'];
             isOneToOne: false;
             referencedRelation: 'ai_gateway_models';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      ai_credit_reservations: {
-        Row: {
-          amount: number;
-          balance_id: string;
-          committed_at: string | null;
-          created_at: string;
-          expires_at: string;
-          feature: string | null;
-          id: string;
-          metadata: Json;
-          model_id: string | null;
-          released_at: string | null;
-          status: string;
-          updated_at: string;
-          user_id: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          amount: number;
-          balance_id: string;
-          committed_at?: string | null;
-          created_at?: string;
-          expires_at?: string;
-          feature?: string | null;
-          id?: string;
-          metadata?: Json;
-          model_id?: string | null;
-          released_at?: string | null;
-          status: string;
-          updated_at?: string;
-          user_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          amount?: number;
-          balance_id?: string;
-          committed_at?: string | null;
-          created_at?: string;
-          expires_at?: string;
-          feature?: string | null;
-          id?: string;
-          metadata?: Json;
-          model_id?: string | null;
-          released_at?: string | null;
-          status?: string;
-          updated_at?: string;
-          user_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'ai_credit_reservations_balance_id_fkey';
-            columns: ['balance_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_ai_credit_balances';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_reservations_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
         ];
@@ -4277,53 +4226,6 @@ export type Database = {
             columns: ['added_by_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      email_bounce_complaints: {
-        Row: {
-          bounce_subtype: string | null;
-          bounce_type: string | null;
-          complaint_feedback_id: string | null;
-          complaint_type: string | null;
-          created_at: string;
-          email_hash: string;
-          event_type: string;
-          id: string;
-          original_email_id: string | null;
-          raw_notification: Json | null;
-        };
-        Insert: {
-          bounce_subtype?: string | null;
-          bounce_type?: string | null;
-          complaint_feedback_id?: string | null;
-          complaint_type?: string | null;
-          created_at?: string;
-          email_hash: string;
-          event_type: string;
-          id?: string;
-          original_email_id?: string | null;
-          raw_notification?: Json | null;
-        };
-        Update: {
-          bounce_subtype?: string | null;
-          bounce_type?: string | null;
-          complaint_feedback_id?: string | null;
-          complaint_type?: string | null;
-          created_at?: string;
-          email_hash?: string;
-          event_type?: string;
-          id?: string;
-          original_email_id?: string | null;
-          raw_notification?: Json | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'email_bounce_complaints_original_email_id_fkey';
-            columns: ['original_email_id'];
-            isOneToOne: false;
-            referencedRelation: 'email_audit';
             referencedColumns: ['id'];
           },
         ];
@@ -9601,39 +9503,6 @@ export type Database = {
           },
         ];
       };
-      nova_challenge_manager_emails: {
-        Row: {
-          challenge_id: string;
-          created_at: string;
-          email: string;
-        };
-        Insert: {
-          challenge_id?: string;
-          created_at?: string;
-          email: string;
-        };
-        Update: {
-          challenge_id?: string;
-          created_at?: string;
-          email?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_challenges';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'nova_challenge_manager_emails_challenge_id_fkey';
-            columns: ['challenge_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['challenge_id'];
-          },
-        ];
-      };
       nova_challenge_whitelisted_emails: {
         Row: {
           challenge_id: string;
@@ -10766,41 +10635,6 @@ export type Database = {
           },
         ];
       };
-      poll_guest_permissions: {
-        Row: {
-          can_vote: boolean;
-          created_at: string;
-          delete_poll: boolean;
-          poll_id: string;
-          read_poll: boolean;
-          update_poll: boolean;
-        };
-        Insert: {
-          can_vote?: boolean;
-          created_at?: string;
-          delete_poll?: boolean;
-          poll_id: string;
-          read_poll?: boolean;
-          update_poll?: boolean;
-        };
-        Update: {
-          can_vote?: boolean;
-          created_at?: string;
-          delete_poll?: boolean;
-          poll_id?: string;
-          read_poll?: boolean;
-          update_poll?: boolean;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'poll_guest_permissions_poll_id_fkey';
-            columns: ['poll_id'];
-            isOneToOne: true;
-            referencedRelation: 'polls';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       poll_guest_votes: {
         Row: {
           created_at: string;
@@ -10862,72 +10696,6 @@ export type Database = {
             columns: ['poll_id'];
             isOneToOne: false;
             referencedRelation: 'polls';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      poll_user_permissions: {
-        Row: {
-          can_vote: boolean;
-          created_at: string;
-          delete_poll: boolean;
-          poll_id: string;
-          read_poll: boolean;
-          update_poll: boolean;
-          user_id: string;
-        };
-        Insert: {
-          can_vote?: boolean;
-          created_at?: string;
-          delete_poll?: boolean;
-          poll_id: string;
-          read_poll?: boolean;
-          update_poll?: boolean;
-          user_id: string;
-        };
-        Update: {
-          can_vote?: boolean;
-          created_at?: string;
-          delete_poll?: boolean;
-          poll_id?: string;
-          read_poll?: boolean;
-          update_poll?: boolean;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'poll_user_permissions_poll_id_fkey';
-            columns: ['poll_id'];
-            isOneToOne: false;
-            referencedRelation: 'polls';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'poll_user_permissions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'poll_user_permissions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'poll_user_permissions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'poll_user_permissions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
