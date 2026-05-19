@@ -2596,48 +2596,63 @@
   "bug-bounty": {
     "assessment": {
       "accepted": {
-        "description": "The reported access pattern was broader than intended for authenticated Data API callers and needed workspace-level scoping.",
-        "title": "Accepted finding"
+        "description": "Both public Hall of Fame entries are verified reports. Verification means Tuturuuu reproduced or validated the relevant behavior, then published the narrower confirmed scope.",
+        "title": "Verified finding"
       },
       "badge": "Verified scope",
-      "description": "Rana's submission described a severe platform-wide user-data exposure. Tuturuuu verified the security issue, then narrowed the confirmed impact before publishing public recognition.",
+      "description": "We separate each researcher's claim from Tuturuuu's verified scope. That lets us credit reports without overstating direct infrastructure or product impact.",
       "remediation": {
-        "description": "The remediation path is to restrict profile reads to the signed-in user or shared-workspace members, and keep private account details outside broad public profile reads.",
-        "title": "Fix direction"
+        "description": "For direct Tuturuuu exposure, we fix the affected route or policy. For upstream platform behavior, we harden our integration and track provider-level mitigation separately.",
+        "title": "Remediation path"
       },
       "scope": {
-        "description": "We did not verify leakage of emails, provider metadata, or authentication secrets in the confirmed public impact. The visible data was public-scope profile information such as display names and profile pictures.",
-        "title": "Scope correction"
+        "description": "A verified report can describe direct Tuturuuu product impact, workspace-level exposure, or upstream provider behavior. The public card names which category applies.",
+        "title": "Impact classification"
       },
-      "title": "Researcher report, Tuturuuu assessment"
+      "title": "Verified report scope, without overclaiming",
+      "upstream": {
+        "description": "Hiep's finding is credited as verified, but the risky execution path is native to Supabase Storage file delivery and does not directly affect Tuturuuu infrastructure or products.",
+        "title": "Upstream storage scope"
+      }
     },
     "hall": {
       "badge": "Hall of Fame",
-      "description": "Every entry is written from Tuturuuu's verified scope, not copied directly from a reporter's severity claim.",
-      "title": "Researchers we credit publicly"
+      "description": "Both current reports are verified. Each card separates the researcher's report, Tuturuuu's confirmed impact, and whether the issue is direct product scope or upstream platform behavior.",
+      "title": "Verified researchers we credit publicly"
     },
     "hero": {
       "badge": "Responsible disclosure",
-      "description": "A transparent Hall of Fame for researchers who report issues privately, give us time to validate impact, and help make Tuturuuu safer for everyone.",
+      "description": "A transparent Hall of Fame for verified research reports, with public credit and precise impact notes for what affects Tuturuuu directly versus third-party platform behavior.",
       "policy_cta": "Read security policy",
       "report_cta": "Report a vulnerability",
       "title_highlight": "Security Hall of Fame",
       "title_prefix": "Tuturuuu"
     },
     "labels": {
+      "cwe": "CWE",
       "remediation": "Remediation",
+      "report_date": "Report date",
       "report_summary": "Report summary",
+      "scope": "Scope",
+      "severity": "Severity",
       "verified_impact": "Verified impact"
     },
     "ledger": {
+      "description": "Verification is public, but impact scope stays exact.",
+      "details": {
+        "direct_product_cases": "Rana's report involved Tuturuuu-managed workspace privacy scope.",
+        "upstream_platform_cases": "Hiep's report is a native Supabase Storage delivery behavior.",
+        "verified_reports": "Both listed reports have been validated and credited."
+      },
       "eyebrow": "Disclosure ledger",
       "metrics": {
         "channel": "Reporting channel",
-        "researchers": "Researchers featured",
-        "reward": "Current reward"
+        "direct_product_cases": "Direct product cases",
+        "upstream_platform_cases": "Upstream platform cases",
+        "verified_reports": "Verified reports"
       },
       "recognition": "Public credit",
-      "title": "Recognition today, paid bounty later"
+      "title": "Verified reports, precise scope"
     },
     "meta": {
       "description": "See the Tuturuuu responsible disclosure Hall of Fame and the verified scope of credited security reports.",
@@ -2671,25 +2686,27 @@
     "researchers": {
       "rana": {
         "cwe": "CWE-200 / CWE-284",
-        "date": "May 2026",
+        "date": "May 18, 2026",
         "description": "Rana reported that authenticated Supabase REST access to user profile rows could enumerate records more broadly than intended.",
         "impact": "Tuturuuu verified a workspace-scoping issue for public profile data. Confirmed visible fields were display names and profile pictures intended for social features, not user emails.",
         "name": "Rana Zeeshan (nova cyber force)",
         "remediation": "Restrict profile reads to the signed-in user or users sharing a workspace, and keep private account details behind narrower access paths.",
         "report": "Over-broad Supabase REST profile visibility",
+        "scope": "Direct Tuturuuu workspace privacy scope",
         "severity": "Workspace privacy scope",
         "status": "Verified"
       },
       "vapour": {
         "cwe": "CWE-79 / CWE-434",
         "date": "2025-03-30",
-        "description": "Nguyen Nghia Hiep reported a stored XSS risk involving direct access to uploaded SVG avatar files through Supabase storage URLs.",
-        "impact": "The issue required a user to directly open a stored SVG file. Tuturuuu-powered pages already blocked script execution in the normal avatar flow.",
+        "description": "Nguyen Nghia Hiep reported a stored XSS behavior caused by SVG delivery through Supabase Storage public URLs.",
+        "impact": "Tuturuuu verified the storage behavior and credits the report. The exploitable path is direct Supabase Storage file access, not normal Tuturuuu product rendering, and it does not directly affect Tuturuuu infrastructure or products.",
         "name": "Nguyen Nghia Hiep (vapour)",
-        "remediation": "Block or sanitize risky SVG uploads and keep tightening image handling rules for avatar storage.",
+        "remediation": "Keep blocking or sanitizing risky SVG avatar uploads in Tuturuuu flows and track provider-level handling for Supabase Storage SVG delivery.",
         "report": "Stored SVG avatar upload XSS risk",
-        "severity": "Low severity",
-        "status": "Scheduled"
+        "scope": "Native Supabase Storage offering",
+        "severity": "Upstream storage behavior",
+        "status": "Verified"
       }
     }
   },

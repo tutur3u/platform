@@ -2596,48 +2596,63 @@
   "bug-bounty": {
     "assessment": {
       "accepted": {
-        "description": "Mẫu truy cập được báo cáo rộng hơn phạm vi dự định đối với người gọi Data API đã đăng nhập và cần được giới hạn theo cấp không gian làm việc.",
-        "title": "Ghi nhận phát hiện"
+        "description": "Cả hai mục công khai trong Bảng vinh danh đều là báo cáo đã được xác minh. Xác minh nghĩa là Tuturuuu đã tái hiện hoặc kiểm chứng hành vi liên quan, rồi công bố phạm vi đã xác nhận ở mức chính xác hơn.",
+        "title": "Phát hiện đã xác minh"
       },
       "badge": "Phạm vi đã xác minh",
-      "description": "Báo cáo của Rana mô tả một lỗi lộ dữ liệu người dùng ở phạm vi toàn nền tảng với mức độ nghiêm trọng cao. Tuturuuu đã xác minh vấn đề bảo mật, sau đó thu hẹp tác động được xác nhận trước khi công bố ghi nhận.",
+      "description": "Chúng tôi tách tuyên bố của nhà nghiên cứu khỏi phạm vi Tuturuuu đã xác minh. Nhờ vậy, báo cáo vẫn được ghi nhận mà không phóng đại tác động trực tiếp tới hạ tầng hoặc sản phẩm.",
       "remediation": {
-        "description": "Hướng khắc phục là giới hạn quyền đọc hồ sơ cho chính người dùng đang đăng nhập hoặc các thành viên có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư ngoài các lượt đọc hồ sơ công khai rộng.",
-        "title": "Hướng khắc phục"
+        "description": "Với tác động trực tiếp tới Tuturuuu, chúng tôi sửa route hoặc chính sách liên quan. Với hành vi thuộc nền tảng bên thứ ba, chúng tôi gia cố tích hợp của mình và theo dõi hướng xử lý ở cấp nhà cung cấp riêng.",
+        "title": "Lộ trình khắc phục"
       },
       "scope": {
-        "description": "Chúng tôi không xác minh việc rò rỉ email, metadata nhà cung cấp hay bí mật xác thực trong tác động công khai đã xác nhận. Dữ liệu nhìn thấy là thông tin hồ sơ phạm vi công khai như tên hiển thị và ảnh đại diện.",
-        "title": "Hiệu chỉnh phạm vi"
+        "description": "Một báo cáo đã xác minh có thể mô tả tác động trực tiếp tới sản phẩm Tuturuuu, lộ dữ liệu theo phạm vi workspace hoặc hành vi của nhà cung cấp bên thứ ba. Thẻ công khai sẽ nêu rõ nhóm áp dụng.",
+        "title": "Phân loại tác động"
       },
-      "title": "Báo cáo của nhà nghiên cứu, đánh giá của Tuturuuu"
+      "title": "Phạm vi báo cáo đã xác minh, không phóng đại",
+      "upstream": {
+        "description": "Phát hiện của Hiệp được ghi nhận là đã xác minh, nhưng đường khai thác rủi ro là hành vi gốc trong cách Supabase Storage phân phối tệp và không ảnh hưởng trực tiếp tới hạ tầng hoặc sản phẩm của Tuturuuu.",
+        "title": "Phạm vi storage bên thứ ba"
+      }
     },
     "hall": {
       "badge": "Bảng vinh danh",
-      "description": "Mỗi mục được viết theo phạm vi Tuturuuu đã xác minh, không sao chép trực tiếp tuyên bố mức độ nghiêm trọng từ người báo cáo.",
-      "title": "Những nhà nghiên cứu được ghi nhận công khai"
+      "description": "Cả hai báo cáo hiện tại đều đã được xác minh. Mỗi thẻ tách rõ báo cáo của nhà nghiên cứu, tác động Tuturuuu đã xác nhận và việc vấn đề thuộc phạm vi sản phẩm trực tiếp hay hành vi của nền tảng bên thứ ba.",
+      "title": "Những nhà nghiên cứu đã xác minh được ghi nhận công khai"
     },
     "hero": {
       "badge": "Công bố có trách nhiệm",
-      "description": "Bảng vinh danh minh bạch dành cho các nhà nghiên cứu báo cáo vấn đề riêng tư, cho chúng tôi thời gian xác minh tác động và giúp Tuturuuu an toàn hơn cho mọi người.",
+      "description": "Bảng vinh danh minh bạch cho các báo cáo nghiên cứu đã xác minh, với ghi nhận công khai và ghi chú tác động chính xác cho phần ảnh hưởng trực tiếp tới Tuturuuu so với hành vi của nền tảng bên thứ ba.",
       "policy_cta": "Đọc chính sách bảo mật",
       "report_cta": "Báo cáo lỗ hổng",
       "title_highlight": "Bảng vinh danh bảo mật",
       "title_prefix": "Tuturuuu"
     },
     "labels": {
+      "cwe": "CWE",
       "remediation": "Khắc phục",
+      "report_date": "Ngày báo cáo",
       "report_summary": "Tóm tắt báo cáo",
+      "scope": "Phạm vi",
+      "severity": "Mức độ",
       "verified_impact": "Tác động đã xác minh"
     },
     "ledger": {
+      "description": "Trạng thái xác minh được công khai, nhưng phạm vi tác động vẫn phải chính xác.",
+      "details": {
+        "direct_product_cases": "Báo cáo của Rana liên quan đến phạm vi riêng tư workspace do Tuturuuu quản lý.",
+        "upstream_platform_cases": "Báo cáo của Hiệp là hành vi phân phối tệp gốc của Supabase Storage.",
+        "verified_reports": "Cả hai báo cáo được liệt kê đều đã được xác thực và ghi nhận."
+      },
       "eyebrow": "Sổ ghi nhận công bố",
       "metrics": {
         "channel": "Kênh báo cáo",
-        "researchers": "Nhà nghiên cứu được vinh danh",
-        "reward": "Phần thưởng hiện tại"
+        "direct_product_cases": "Ca tác động trực tiếp",
+        "upstream_platform_cases": "Ca nền tảng bên thứ ba",
+        "verified_reports": "Báo cáo đã xác minh"
       },
       "recognition": "Ghi nhận công khai",
-      "title": "Hiện ghi nhận danh tiếng, chương trình trả thưởng sau"
+      "title": "Báo cáo đã xác minh, phạm vi chính xác"
     },
     "meta": {
       "description": "Xem Bảng vinh danh công bố có trách nhiệm của Tuturuuu và phạm vi đã xác minh của các báo cáo bảo mật được ghi nhận.",
@@ -2671,25 +2686,27 @@
     "researchers": {
       "rana": {
         "cwe": "CWE-200 / CWE-284",
-        "date": "Tháng 5 năm 2026",
+        "date": "Ngày 18 tháng 5 năm 2026",
         "description": "Rana báo cáo rằng quyền truy cập Supabase REST đã đăng nhập vào các hàng hồ sơ người dùng có thể liệt kê bản ghi rộng hơn phạm vi dự định.",
         "impact": "Tuturuuu đã xác minh một vấn đề giới hạn theo không gian làm việc đối với dữ liệu hồ sơ công khai. Các trường nhìn thấy đã xác nhận là tên hiển thị và ảnh đại diện phục vụ tính năng xã hội, không phải email người dùng.",
         "name": "Rana Zeeshan (nova cyber force)",
         "remediation": "Giới hạn quyền đọc hồ sơ cho người dùng đang đăng nhập hoặc người dùng có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư sau các đường truy cập chặt chẽ hơn.",
         "report": "Phạm vi hiển thị hồ sơ Supabase REST quá rộng",
+        "scope": "Phạm vi riêng tư workspace trực tiếp của Tuturuuu",
         "severity": "Phạm vi riêng tư theo workspace",
         "status": "Đã xác minh"
       },
       "vapour": {
         "cwe": "CWE-79 / CWE-434",
         "date": "2025-03-30",
-        "description": "Nguyễn Nghĩa Hiệp báo cáo rủi ro stored XSS liên quan đến việc truy cập trực tiếp các tệp SVG ảnh đại diện đã tải lên qua URL Supabase storage.",
-        "impact": "Vấn đề yêu cầu người dùng mở trực tiếp tệp SVG đã lưu. Các trang do Tuturuuu vận hành đã chặn thực thi script trong luồng ảnh đại diện thông thường.",
+        "description": "Nguyễn Nghĩa Hiệp báo cáo hành vi stored XSS phát sinh từ việc Supabase Storage phân phối SVG qua URL công khai.",
+        "impact": "Tuturuuu đã xác minh hành vi storage này và ghi nhận báo cáo. Đường khai thác là truy cập trực tiếp tệp qua Supabase Storage, không phải luồng render thông thường trong sản phẩm Tuturuuu, và không ảnh hưởng trực tiếp tới hạ tầng hoặc sản phẩm của Tuturuuu.",
         "name": "Nguyễn Nghĩa Hiệp (vapour)",
-        "remediation": "Chặn hoặc làm sạch các lượt tải lên SVG rủi ro và tiếp tục siết chặt quy tắc xử lý ảnh cho kho ảnh đại diện.",
+        "remediation": "Tiếp tục chặn hoặc làm sạch các lượt tải lên SVG rủi ro trong luồng Tuturuuu và theo dõi cách xử lý ở cấp nhà cung cấp cho việc Supabase Storage phân phối SVG.",
         "report": "Rủi ro stored XSS từ SVG ảnh đại diện",
-        "severity": "Mức độ thấp",
-        "status": "Đã lên lịch"
+        "scope": "Tính năng gốc của Supabase Storage",
+        "severity": "Hành vi storage bên thứ ba",
+        "status": "Đã xác minh"
       }
     }
   },

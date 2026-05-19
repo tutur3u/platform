@@ -48,7 +48,9 @@ export default async function BugBountyPage() {
     {
       accent: 'green',
       cwe: t('researchers.rana.cwe'),
+      cweLabel: t('labels.cwe'),
       date: t('researchers.rana.date'),
+      dateLabel: t('labels.report_date'),
       description: t('researchers.rana.description'),
       descriptionLabel: t('labels.report_summary'),
       icon: ScanSearch,
@@ -59,12 +61,17 @@ export default async function BugBountyPage() {
       remediationLabel: t('labels.remediation'),
       report: t('researchers.rana.report'),
       severity: t('researchers.rana.severity'),
+      severityLabel: t('labels.severity'),
+      scope: t('researchers.rana.scope'),
+      scopeLabel: t('labels.scope'),
       status: t('researchers.rana.status'),
     },
     {
       accent: 'orange',
       cwe: t('researchers.vapour.cwe'),
+      cweLabel: t('labels.cwe'),
       date: t('researchers.vapour.date'),
+      dateLabel: t('labels.report_date'),
       description: t('researchers.vapour.description'),
       descriptionLabel: t('labels.report_summary'),
       icon: Bug,
@@ -75,6 +82,9 @@ export default async function BugBountyPage() {
       remediationLabel: t('labels.remediation'),
       report: t('researchers.vapour.report'),
       severity: t('researchers.vapour.severity'),
+      severityLabel: t('labels.severity'),
+      scope: t('researchers.vapour.scope'),
+      scopeLabel: t('labels.scope'),
       status: t('researchers.vapour.status'),
     },
   ];
@@ -112,6 +122,11 @@ export default async function BugBountyPage() {
       description: t('assessment.scope.description'),
       icon: AlertTriangle,
       title: t('assessment.scope.title'),
+    },
+    {
+      description: t('assessment.upstream.description'),
+      icon: Globe2,
+      title: t('assessment.upstream.title'),
     },
     {
       description: t('assessment.remediation.description'),
@@ -176,14 +191,27 @@ export default async function BugBountyPage() {
                 <h2 className="mt-3 font-semibold text-2xl">
                   {t('ledger.title')}
                 </h2>
+                <p className="mt-3 text-foreground/60 text-sm leading-relaxed">
+                  {t('ledger.description')}
+                </p>
               </div>
               <Trophy className="h-10 w-10 shrink-0 text-dynamic-yellow" />
             </div>
-            <div className="mt-8 grid gap-4 sm:grid-cols-3 lg:grid-cols-1">
-              <LedgerMetric label={t('ledger.metrics.researchers')} value="2" />
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
               <LedgerMetric
-                label={t('ledger.metrics.reward')}
-                value={t('ledger.recognition')}
+                detail={t('ledger.details.verified_reports')}
+                label={t('ledger.metrics.verified_reports')}
+                value="2"
+              />
+              <LedgerMetric
+                detail={t('ledger.details.direct_product_cases')}
+                label={t('ledger.metrics.direct_product_cases')}
+                value="1"
+              />
+              <LedgerMetric
+                detail={t('ledger.details.upstream_platform_cases')}
+                label={t('ledger.metrics.upstream_platform_cases')}
+                value="1"
               />
               <LedgerMetric
                 label={t('ledger.metrics.channel')}

@@ -1,6 +1,7 @@
 import {
   Calendar,
   FileText,
+  Globe2,
   type LucideIcon,
   ShieldCheck,
 } from '@tuturuuu/icons';
@@ -11,7 +12,9 @@ import { cn } from '@tuturuuu/utils/format';
 export type Researcher = {
   accent: 'green' | 'orange';
   cwe: string;
+  cweLabel: string;
   date: string;
+  dateLabel: string;
   description: string;
   descriptionLabel: string;
   icon: LucideIcon;
@@ -22,6 +25,9 @@ export type Researcher = {
   remediationLabel: string;
   report: string;
   severity: string;
+  severityLabel: string;
+  scope: string;
+  scopeLabel: string;
   status: string;
 };
 
@@ -48,9 +54,11 @@ const hallOfFameAccentClasses = {
 } as const;
 
 export function LedgerMetric({
+  detail,
   label,
   value,
 }: {
+  detail?: string;
   label: string;
   value: string;
 }) {
@@ -58,6 +66,11 @@ export function LedgerMetric({
     <div className="border-dynamic-blue/20 border-l-2 pl-4">
       <div className="font-semibold text-xl">{value}</div>
       <div className="mt-1 text-foreground/60 text-sm">{label}</div>
+      {detail ? (
+        <div className="mt-2 text-foreground/50 text-xs leading-relaxed">
+          {detail}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -70,45 +83,97 @@ export function ResearcherCard({ researcher }: { researcher: Researcher }) {
       : hallOfFameAccentClasses.orange;
 
   return (
-    <Card className={cn('h-full p-6 sm:p-8', accentClass)}>
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-background/80">
-            <Icon className="h-6 w-6 text-primary" />
+    <Card className={cn('h-full overflow-hidden p-0', accentClass)}>
+      <div
+        className={cn(
+          'h-1.5',
+          researcher.accent === 'green'
+            ? 'bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-blue'
+            : 'bg-linear-to-r from-dynamic-orange via-dynamic-yellow to-dynamic-green'
+        )}
+      />
+      <div className="p-6 sm:p-8">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-background/80 shadow-sm">
+              <Icon className="h-6 w-6 text-primary" />
+            </div>
+            <h3 className="font-semibold text-2xl">{researcher.name}</h3>
+            <p className="mt-2 text-foreground/70">{researcher.report}</p>
           </div>
-          <h3 className="font-semibold text-2xl">{researcher.name}</h3>
-          <p className="mt-2 text-foreground/70">{researcher.report}</p>
+          <Badge
+            variant="secondary"
+            className={
+              researcher.accent === 'green'
+                ? badgeAccentClasses.green
+                : badgeAccentClasses.orange
+            }
+          >
+            {researcher.status}
+          </Badge>
         </div>
-        <Badge
-          variant="secondary"
-          className={
-            researcher.accent === 'green'
-              ? badgeAccentClasses.green
-              : badgeAccentClasses.orange
-          }
-        >
-          {researcher.status}
-        </Badge>
-      </div>
 
-      <div className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-        <Pill icon={Calendar} label={researcher.date} />
-        <Pill icon={ShieldCheck} label={researcher.severity} />
-        <Pill icon={FileText} label={researcher.cwe} />
-      </div>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
+          <FindingFact
+            icon={Calendar}
+            label={researcher.dateLabel}
+            value={researcher.date}
+          />
+          <FindingFact
+            icon={ShieldCheck}
+            label={researcher.severityLabel}
+            value={researcher.severity}
+          />
+          <FindingFact
+            icon={Globe2}
+            label={researcher.scopeLabel}
+            value={researcher.scope}
+          />
+          <FindingFact
+            icon={FileText}
+            label={researcher.cweLabel}
+            value={researcher.cwe}
+          />
+        </div>
 
-      <div className="mt-6 space-y-5">
-        <ReportBlock
-          title={researcher.descriptionLabel}
-          value={researcher.description}
-        />
-        <ReportBlock title={researcher.impactLabel} value={researcher.impact} />
-        <ReportBlock
-          title={researcher.remediationLabel}
-          value={researcher.remediation}
-        />
+        <div className="mt-6 space-y-5">
+          <ReportBlock
+            title={researcher.descriptionLabel}
+            value={researcher.description}
+          />
+          <ReportBlock
+            title={researcher.impactLabel}
+            value={researcher.impact}
+          />
+          <ReportBlock
+            title={researcher.remediationLabel}
+            value={researcher.remediation}
+          />
+        </div>
       </div>
     </Card>
+  );
+}
+
+function FindingFact({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="min-w-0 rounded-lg border border-border/80 bg-background/70 p-3">
+      <div className="font-medium text-muted-foreground text-xs uppercase tracking-wider">
+        {label}
+      </div>
+      <div className="mt-2 flex items-start gap-2 text-foreground/75 text-sm leading-relaxed">
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+        <span className="min-w-0 break-words">{value}</span>
+      </div>
+    </div>
   );
 }
 
@@ -139,15 +204,6 @@ export function ProgramStepCard({ step }: { step: ProgramStep }) {
         {step.description}
       </p>
     </Card>
-  );
-}
-
-function Pill({ icon: Icon, label }: { icon: LucideIcon; label: string }) {
-  return (
-    <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/70 px-3 py-2 text-foreground/70">
-      <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
-      <span className="min-w-0 truncate">{label}</span>
-    </div>
   );
 }
 
