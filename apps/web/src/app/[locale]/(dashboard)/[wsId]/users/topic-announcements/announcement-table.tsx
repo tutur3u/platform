@@ -22,6 +22,15 @@ function canSendAnnouncement(announcement: TopicAnnouncementRecord) {
   );
 }
 
+function unverifiedRecipientCount(announcement: TopicAnnouncementRecord) {
+  return announcement.contacts.filter(
+    (contact) =>
+      !['verified', 'linked_confirmed_account'].includes(
+        contact.verificationStatus
+      )
+  ).length;
+}
+
 const STATUS_LABEL_KEYS = {
   cancelled: 'status_cancelled',
   draft: 'status_draft',
@@ -70,9 +79,18 @@ export function AnnouncementTable({
                 </div>
               </TableCell>
               <TableCell>
-                {announcement.contacts
-                  .map((contact) => contact.name)
-                  .join(', ')}
+                <div>
+                  {announcement.contacts
+                    .map((contact) => contact.name)
+                    .join(', ')}
+                </div>
+                {unverifiedRecipientCount(announcement) > 0 ? (
+                  <div className="mt-1 text-dynamic-orange text-xs">
+                    {t('unverified_recipients', {
+                      count: unverifiedRecipientCount(announcement).toString(),
+                    })}
+                  </div>
+                ) : null}
               </TableCell>
               <TableCell>
                 {[
@@ -81,7 +99,7 @@ export function AnnouncementTable({
                   announcement.place,
                 ]
                   .filter(Boolean)
-                  .join(' / ')}
+                  .join(' / ') || t('none')}
               </TableCell>
               <TableCell>
                 <Badge

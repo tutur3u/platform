@@ -5,6 +5,7 @@ import type {
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
 } from '@tuturuuu/internal-api';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { Input } from '@tuturuuu/ui/input';
@@ -17,6 +18,12 @@ interface Props {
   contacts: TopicAnnouncementContact[];
   isCreating: boolean;
   onCreate: (payload: TopicAnnouncementPayload) => void;
+}
+
+function canReceiveAnnouncement(contact: TopicAnnouncementContact) {
+  return ['verified', 'linked_confirmed_account'].includes(
+    contact.verificationStatus
+  );
 }
 
 export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
@@ -93,22 +100,44 @@ export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
       <div className="space-y-2 lg:col-span-2">
         <Label>{t('recipients')}</Label>
         <div className="max-h-32 space-y-2 overflow-auto rounded-md border p-2">
-          {contacts.map((contact) => (
-            <label className="flex items-center gap-2 text-sm" key={contact.id}>
-              <Checkbox
-                checked={form.contactIds.includes(contact.id)}
-                onCheckedChange={(checked) =>
-                  setForm((current) => ({
-                    ...current,
-                    contactIds: checked
-                      ? [...current.contactIds, contact.id]
-                      : current.contactIds.filter((id) => id !== contact.id),
-                  }))
-                }
-              />
-              <span>{contact.name}</span>
-            </label>
-          ))}
+          {contacts.map((contact) => {
+            const isReady = canReceiveAnnouncement(contact);
+
+            return (
+              <label
+                className="flex items-center gap-2 text-sm"
+                key={contact.id}
+              >
+                <Checkbox
+                  checked={form.contactIds.includes(contact.id)}
+                  disabled={!isReady}
+                  onCheckedChange={(checked) =>
+                    setForm((current) => ({
+                      ...current,
+                      contactIds: checked
+                        ? [...current.contactIds, contact.id]
+                        : current.contactIds.filter((id) => id !== contact.id),
+                    }))
+                  }
+                />
+                <span className="min-w-0 flex-1 truncate">{contact.name}</span>
+                {!isReady ? (
+                  <Badge variant="warning">{t('verification_pending')}</Badge>
+                ) : null}
+              </label>
+            );
+          })}
+          {contacts.length === 0 ? (
+            <p className="text-muted-foreground text-sm">
+              {t('no_ready_contacts')}
+            </p>
+          ) : null}
+          {contacts.length > 0 &&
+          contacts.every((contact) => !canReceiveAnnouncement(contact)) ? (
+            <p className="text-muted-foreground text-sm">
+              {t('no_ready_contacts')}
+            </p>
+          ) : null}
         </div>
       </div>
       <div className="flex items-end">

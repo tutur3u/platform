@@ -1,6 +1,6 @@
 'use client';
 
-import { MailCheck } from '@tuturuuu/icons';
+import { MailCheck, ShieldCheck, TimerReset } from '@tuturuuu/icons';
 import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -31,6 +31,19 @@ const VERIFICATION_LABEL_KEYS = {
   verified: 'verification_verified',
 } as const;
 
+const VERIFICATION_HELPER_KEYS = {
+  linked_confirmed_account: 'verification_linked_helper',
+  needs_verification: 'verification_needed_helper',
+  pending: 'verification_pending_helper',
+  verified: 'verification_verified_helper',
+} as const;
+
+function canRequestVerification(
+  status: TopicAnnouncementContact['verificationStatus']
+) {
+  return status === 'needs_verification';
+}
+
 interface Props {
   contacts: TopicAnnouncementContact[];
   isLoading: boolean;
@@ -60,29 +73,62 @@ export function ContactTable({
         <TableBody>
           {contacts.map((contact) => (
             <TableRow key={contact.id}>
-              <TableCell>{contact.name}</TableCell>
-              <TableCell>{contact.email}</TableCell>
               <TableCell>
-                <Badge
-                  variant={verificationVariant(contact.verificationStatus)}
-                >
-                  {t(VERIFICATION_LABEL_KEYS[contact.verificationStatus])}
-                </Badge>
+                <div className="font-medium">{contact.name}</div>
+                {contact.tags.length > 0 ? (
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {contact.tags.map((tag) => (
+                      <Badge key={tag} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null}
+              </TableCell>
+              <TableCell>
+                <div>{contact.email}</div>
+                {contact.workspaceUserId ? (
+                  <div className="mt-1 flex items-center gap-1 text-dynamic-green text-xs">
+                    <ShieldCheck className="h-3 w-3" />
+                    {t('linked_user')}
+                  </div>
+                ) : null}
+              </TableCell>
+              <TableCell>
+                <div className="space-y-1">
+                  <Badge
+                    variant={verificationVariant(contact.verificationStatus)}
+                  >
+                    {t(VERIFICATION_LABEL_KEYS[contact.verificationStatus])}
+                  </Badge>
+                  <p className="max-w-72 text-muted-foreground text-xs">
+                    {t(VERIFICATION_HELPER_KEYS[contact.verificationStatus])}
+                  </p>
+                </div>
               </TableCell>
               <TableCell className="text-right">
                 <Button
                   className="gap-2"
                   disabled={
                     isVerifying ||
-                    contact.verificationStatus === 'verified' ||
-                    contact.verificationStatus === 'linked_confirmed_account'
+                    !canRequestVerification(contact.verificationStatus)
                   }
                   onClick={() => onVerify(contact.id)}
                   size="sm"
-                  variant="outline"
+                  variant={
+                    contact.verificationStatus === 'pending'
+                      ? 'secondary'
+                      : 'outline'
+                  }
                 >
-                  <MailCheck className="h-4 w-4" />
-                  {t('send_verification')}
+                  {contact.verificationStatus === 'pending' ? (
+                    <TimerReset className="h-4 w-4" />
+                  ) : (
+                    <MailCheck className="h-4 w-4" />
+                  )}
+                  {contact.verificationStatus === 'pending'
+                    ? t('verification_pending')
+                    : t('send_verification')}
                 </Button>
               </TableCell>
             </TableRow>

@@ -151,7 +151,7 @@ export async function requestTopicAnnouncementContactVerification(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ expiresAt: string }>(
+  return client.json<{ alreadyPending?: boolean; expiresAt: string }>(
     `${basePath(workspaceId)}/contacts/${encodePathSegment(contactId)}/verify`,
     { method: 'POST' }
   );

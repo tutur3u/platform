@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sendTopicVerificationEmail } from '../../../email';
-import {
-  getRequestOrigin,
-  resolveTopicAnnouncementsAccess,
-} from '../../../shared';
+import { resolveTopicAnnouncementsAccess } from '../../../shared';
 
 interface Params {
   params: Promise<{ contactId: string; wsId: string }>;
@@ -32,18 +29,27 @@ export async function POST(request: Request, { params }: Params) {
   const result = await sendTopicVerificationEmail({
     contact,
     normalizedWsId,
-    origin: getRequestOrigin(request),
     request,
     sbAdmin,
     userId: actorUserId,
   });
 
   if ('error' in result) {
+    const retryAfter = 'retryAfter' in result ? result.retryAfter : undefined;
+
     return NextResponse.json(
       { message: result.error },
-      { status: result.status }
+      {
+        headers: retryAfter
+          ? { 'Retry-After': retryAfter.toString() }
+          : undefined,
+        status: result.status,
+      }
     );
   }
 
-  return NextResponse.json({ expiresAt: result.expiresAt });
+  return NextResponse.json({
+    alreadyPending: result.alreadyPending,
+    expiresAt: result.expiresAt,
+  });
 }

@@ -1,10 +1,34 @@
-import { sendSystemEmail, sendWorkspaceEmail } from '@tuturuuu/email-service';
+import {
+  EmailService,
+  type RateLimitConfig,
+  sendWorkspaceEmail,
+} from '@tuturuuu/email-service';
+import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  buildTopicAnnouncementVerificationUrl,
   generateVerificationToken,
   hashVerificationToken,
   type TopicAnnouncementsSupabaseClient,
 } from './shared';
+
+const VERIFICATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const VERIFICATION_RESEND_COOLDOWN_MS = 15 * 60 * 1000;
+const TOPIC_VERIFICATION_RATE_LIMITS = {
+  invitePerDay: 200,
+  invitePerHour: 30,
+  invitePerMinute: 5,
+  ipPerHour: 40,
+  ipPerMinute: 5,
+  recipientPerDay: 4,
+  recipientPerHour: 2,
+  userPerHour: 20,
+  userPerMinute: 3,
+  workspacePerDay: 200,
+  workspacePerHour: 30,
+  workspacePerMinute: 5,
+} satisfies Partial<RateLimitConfig>;
 
 export function htmlEscape(value: string) {
   return value
@@ -25,7 +49,7 @@ export function renderVerificationEmail({
   const safeName = htmlEscape(contactName);
   const safeUrl = htmlEscape(verificationUrl);
   return {
-    html: `<p>Hello ${safeName},</p><p>Please verify this email address before it can receive Topic Announcements from Tuturuuu workspaces.</p><p><a href="${safeUrl}">Verify email address</a></p><p>This verification link expires in 7 days.</p>`,
+    html: `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827"><p>Hello ${safeName},</p><p>Please verify this email address before it can receive Topic Announcements from Tuturuuu workspaces.</p><p><a href="${safeUrl}" style="display:inline-block;border-radius:6px;background:#111827;color:#ffffff;padding:10px 14px;text-decoration:none">Verify email address</a></p><p>If the button does not work, open this link:</p><p><a href="${safeUrl}">${safeUrl}</a></p><p>This verification link expires in 7 days. If you did not expect this email, you can ignore it.</p></div>`,
     subject: 'Verify your email for Topic Announcements',
     text: `Hello ${contactName},\n\nPlease verify this email address before it can receive Topic Announcements from Tuturuuu workspaces.\n\nVerify: ${verificationUrl}\n\nThis verification link expires in 7 days.`,
   };
@@ -197,7 +221,7 @@ export async function sendTopicAnnouncement({
     metadata: {
       entityId: announcementId,
       entityType: 'topic_announcement',
-      ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+      ipAddress: extractIPFromHeaders(request.headers),
       templateType: 'topic-announcement',
       userAgent: request.headers.get('user-agent') ?? undefined,
       userId: actorUserId,
@@ -239,23 +263,48 @@ export async function sendTopicAnnouncement({
 export async function sendTopicVerificationEmail({
   contact,
   normalizedWsId,
-  origin,
   request,
   sbAdmin,
   userId,
 }: {
   contact: { email: string; id: string; name: string };
   normalizedWsId: string;
-  origin: string;
   request: Request;
   sbAdmin: TopicAnnouncementsSupabaseClient;
   userId: string;
 }) {
+  const now = Date.now();
+  const nowIso = new Date(now).toISOString();
+  const { data: pendingVerification, error: pendingError } = await sbAdmin
+    .from('topic_announcement_contact_verifications')
+    .select('id,created_at,expires_at')
+    .eq('contact_id', contact.id)
+    .eq('email', contact.email)
+    .eq('status', 'pending')
+    .gt('expires_at', nowIso)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (pendingError) throw pendingError;
+
+  if (pendingVerification) {
+    const createdAt = new Date(pendingVerification.created_at).getTime();
+
+    if (
+      Number.isFinite(createdAt) &&
+      createdAt > now - VERIFICATION_RESEND_COOLDOWN_MS
+    ) {
+      return {
+        alreadyPending: true,
+        expiresAt: pendingVerification.expires_at,
+      };
+    }
+  }
+
   const token = generateVerificationToken();
   const tokenHash = hashVerificationToken(token);
-  const expiresAt = new Date(
-    Date.now() + 7 * 24 * 60 * 60 * 1000
-  ).toISOString();
+  const expiresAt = new Date(now + VERIFICATION_TOKEN_TTL_MS).toISOString();
 
   await sbAdmin
     .from('topic_announcement_contact_verifications')
@@ -277,8 +326,14 @@ export async function sendTopicVerificationEmail({
     });
   if (insertError) throw insertError;
 
-  const verificationUrl = `${origin}/api/v1/topic-announcement-verifications/${encodeURIComponent(token)}`;
-  const result = await sendSystemEmail({
+  const verificationUrl = buildTopicAnnouncementVerificationUrl(token);
+  const verificationEmailService = await EmailService.fromWorkspace(
+    ROOT_WORKSPACE_ID,
+    {
+      rateLimits: TOPIC_VERIFICATION_RATE_LIMITS,
+    }
+  );
+  const result = await verificationEmailService.send({
     content: renderVerificationEmail({
       contactName: contact.name,
       verificationUrl,
@@ -286,7 +341,8 @@ export async function sendTopicVerificationEmail({
     metadata: {
       entityId: contact.id,
       entityType: 'topic_announcement_contact',
-      ipAddress: request.headers.get('x-forwarded-for') ?? undefined,
+      ipAddress: extractIPFromHeaders(request.headers),
+      isInvite: true,
       templateType: 'topic-announcement-contact-verification',
       userAgent: request.headers.get('user-agent') ?? undefined,
       userId,
@@ -305,8 +361,15 @@ export async function sendTopicVerificationEmail({
       error: result.error,
       wsId: normalizedWsId,
     });
+    if (result.rateLimitInfo && !result.rateLimitInfo.allowed) {
+      return {
+        error: result.error ?? 'RATE_LIMITED',
+        retryAfter: result.rateLimitInfo.retryAfter,
+        status: 429,
+      };
+    }
     return { error: result.error ?? 'SEND_FAILED', status: 502 };
   }
 
-  return { expiresAt };
+  return { alreadyPending: false, expiresAt };
 }

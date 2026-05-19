@@ -1,26 +1,21 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  createTopicAnnouncement,
-  createTopicAnnouncementContact,
-  importTopicAnnouncements,
   listTopicAnnouncementContacts,
   listTopicAnnouncements,
   listWorkspaceBasicUsers,
-  requestTopicAnnouncementContactVerification,
-  sendTopicAnnouncement,
-  type TopicAnnouncementContactPayload,
-  type TopicAnnouncementPayload,
 } from '@tuturuuu/internal-api';
-import { toast } from '@tuturuuu/ui/sonner';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
-import { useTranslations } from 'next-intl';
+import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
+import { useMemo } from 'react';
+import { useTopicAnnouncementActions } from './topic-announcements-actions';
 import { ContactsPanel } from './topic-announcements-contacts';
 import { DeliveryPanel } from './topic-announcements-delivery';
+import { TopicAnnouncementsHeader } from './topic-announcements-header';
 import { ImportPanel } from './topic-announcements-import';
 import { AnnouncementsPanel } from './topic-announcements-panels';
+import { TopicAnnouncementsTabs } from './topic-announcements-tabs';
 
 interface Props {
   canSend: boolean;
@@ -28,7 +23,6 @@ interface Props {
 }
 
 export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
-  const t = useTranslations('ws-topic-announcements');
   const queryClient = useQueryClient();
   const [tab, setTab] = useQueryState(
     'tab',
@@ -76,78 +70,43 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
       queryKey: ['topic-announcements', wsId],
     });
   };
-
-  const createContactMutation = useMutation({
-    mutationFn: (payload: TopicAnnouncementContactPayload) =>
-      createTopicAnnouncementContact(wsId, payload),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('contact_failed')),
-    onSuccess: () => {
-      toast.success(t('contact_created'));
-      invalidate();
-    },
-  });
-  const createAnnouncementMutation = useMutation({
-    mutationFn: (payload: TopicAnnouncementPayload) =>
-      createTopicAnnouncement(wsId, payload),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('create_failed')),
-    onSuccess: () => {
-      toast.success(t('announcement_created'));
-      invalidate();
-    },
-  });
-  const verifyMutation = useMutation({
-    mutationFn: (contactId: string) =>
-      requestTopicAnnouncementContactVerification(wsId, contactId),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('verify_failed')),
-    onSuccess: () => {
-      toast.success(t('verify_sent'));
-      invalidate();
-    },
-  });
-  const sendMutation = useMutation({
-    mutationFn: (announcementId: string) =>
-      sendTopicAnnouncement(wsId, announcementId),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('send_failed')),
-    onSuccess: () => {
-      toast.success(t('sent'));
-      invalidate();
-    },
-  });
-  const importMutation = useMutation({
-    mutationFn: (rows: Parameters<typeof importTopicAnnouncements>[1]) =>
-      importTopicAnnouncements(wsId, rows),
-    onError: (error) =>
-      toast.error(error instanceof Error ? error.message : t('import_failed')),
-    onSuccess: (result) => {
-      toast.success(
-        t('imported', { count: result.createdAnnouncements.toString() })
-      );
-      invalidate();
-    },
-  });
+  const {
+    createAnnouncementMutation,
+    createContactMutation,
+    importMutation,
+    sendMutation,
+    verifyMutation,
+  } = useTopicAnnouncementActions({ invalidate, wsId });
 
   const contacts = contactsQuery.data?.data ?? [];
   const workspaceUsers = usersQuery.data?.data ?? [];
+  const announcementCount =
+    announcementsQuery.data?.count ?? announcementsQuery.data?.data.length ?? 0;
+  const contactStats = useMemo(
+    () => ({
+      pending: contacts.filter(
+        (contact) => contact.verificationStatus === 'pending'
+      ).length,
+      ready: contacts.filter((contact) =>
+        ['verified', 'linked_confirmed_account'].includes(
+          contact.verificationStatus
+        )
+      ).length,
+    }),
+    [contacts]
+  );
 
   return (
-    <Tabs value={tab} onValueChange={setTab}>
+    <Tabs className="space-y-4" value={tab} onValueChange={setTab}>
+      <TopicAnnouncementsHeader
+        announcementCount={announcementCount}
+        contactCount={contacts.length}
+        pendingContactCount={contactStats.pending}
+        readyContactCount={contactStats.ready}
+      />
+
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="font-semibold text-2xl">{t('title')}</h1>
-          <p className="text-muted-foreground text-sm">{t('description')}</p>
-        </div>
-        <TabsList>
-          <TabsTrigger value="announcements">
-            {t('tab_announcements')}
-          </TabsTrigger>
-          <TabsTrigger value="contacts">{t('tab_contacts')}</TabsTrigger>
-          <TabsTrigger value="import">{t('tab_import')}</TabsTrigger>
-          <TabsTrigger value="delivery">{t('tab_delivery')}</TabsTrigger>
-        </TabsList>
+        <TopicAnnouncementsTabs />
       </div>
 
       <TabsContent value="announcements">
