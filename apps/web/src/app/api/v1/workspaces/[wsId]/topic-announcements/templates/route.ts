@@ -80,6 +80,7 @@ export async function POST(request: Request, { params }: Params) {
       created_by: actorUserId,
       day_label: payload.dayLabel,
       default_contact_ids: payload.defaultContactIds,
+      end_time: payload.endTime ?? null,
       group_id: payload.groupId ?? null,
       name: payload.name,
       place: payload.place,

@@ -94,6 +94,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(payload.dayLabel !== undefined
         ? { day_label: payload.dayLabel }
         : {}),
+      ...(payload.endTime !== undefined ? { end_time: payload.endTime } : {}),
       ...(payload.groupId !== undefined ? { group_id: payload.groupId } : {}),
       ...(payload.place !== undefined ? { place: payload.place } : {}),
       ...(payload.room !== undefined ? { room: payload.room } : {}),

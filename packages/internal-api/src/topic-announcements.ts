@@ -43,6 +43,7 @@ export interface TopicAnnouncementRecord {
   contacts: TopicAnnouncementContact[];
   created_at: string;
   day_label: string | null;
+  end_time: string | null;
   group: TopicAnnouncementGroupSummary | null;
   group_id: string | null;
   id: string;
@@ -64,6 +65,7 @@ export interface TopicAnnouncementTemplateRecord {
   created_at: string;
   day_label: string | null;
   default_contact_ids: string[];
+  end_time: string | null;
   group: TopicAnnouncementGroupSummary | null;
   group_id: string | null;
   id: string;
@@ -81,6 +83,7 @@ export interface TopicAnnouncementTemplatePayload {
   classLabel?: string | null;
   dayLabel?: string | null;
   defaultContactIds?: string[];
+  endTime?: string | null;
   groupId?: string | null;
   name: string;
   place?: string | null;
@@ -96,6 +99,7 @@ export interface TopicAnnouncementPayload {
   classLabel?: string | null;
   contactIds: string[];
   dayLabel?: string | null;
+  endTime?: string | null;
   groupId?: string | null;
   place?: string | null;
   room?: string | null;
@@ -121,6 +125,7 @@ export interface TopicAnnouncementImportRow {
   contactEmail?: string;
   contactName?: string;
   dayLabel?: string;
+  endTime?: string;
   place?: string;
   room?: string;
   sessionDate?: string;

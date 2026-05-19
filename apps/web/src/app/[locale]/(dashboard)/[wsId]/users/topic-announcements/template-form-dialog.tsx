@@ -16,15 +16,28 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 
 const NO_GROUP = '__none__';
 
+const TIME_INTERVALS = Array.from({ length: 96 }, (_, i) => {
+  const hours = Math.floor(i / 4);
+  const minutes = (i % 4) * 15;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+});
+
 export interface TemplateFormValues {
-  classLabel: string;
   defaultContactIds: string[];
+  endTime: string;
   groupId: string;
   name: string;
   place: string;
@@ -58,8 +71,8 @@ export function TemplateFormDialog({
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [form, setForm] = useState<TemplateFormValues>({
-    classLabel: '',
     defaultContactIds: [],
+    endTime: '',
     groupId: NO_GROUP,
     name: '',
     place: '',
@@ -73,8 +86,8 @@ export function TemplateFormDialog({
     if (!isOpen) return;
     if (!initial) {
       setForm({
-        classLabel: '',
         defaultContactIds: [],
+        endTime: '',
         groupId: NO_GROUP,
         name: '',
         place: '',
@@ -88,8 +101,8 @@ export function TemplateFormDialog({
 
     if ('id' in initial) {
       setForm({
-        classLabel: initial.class_label ?? '',
         defaultContactIds: initial.default_contact_ids ?? [],
+        endTime: initial.end_time ?? '',
         groupId: initial.group_id ?? NO_GROUP,
         name: initial.name,
         place: initial.place ?? '',
@@ -147,7 +160,7 @@ export function TemplateFormDialog({
             />
           </div>
           <div className="space-y-2">
-            <Label>{t('linked_group')}</Label>
+            <Label>{t('classLabel')}</Label>
             <Combobox
               disabled={isSaving}
               emptyText={t('no_user_groups')}
@@ -181,24 +194,75 @@ export function TemplateFormDialog({
               value={form.topic}
             />
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {(['classLabel', 'room', 'startTime', 'place'] as const).map(
-              (key) => (
-                <div className="space-y-2" key={key}>
-                  <Label htmlFor={`template-${key}`}>{t(key)}</Label>
-                  <Input
-                    id={`template-${key}`}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        [key]: event.target.value,
-                      }))
-                    }
-                    value={form[key]}
-                  />
-                </div>
-              )
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>{t('startTime')}</Label>
+              <Select
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, startTime: value }))
+                }
+                value={form.startTime}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="--:--" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_INTERVALS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{t('endTime')}</Label>
+              <Select
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, endTime: value }))
+                }
+                value={form.endTime}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="--:--" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_INTERVALS.map((time) => (
+                    <SelectItem key={time} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="template-room">{t('room')}</Label>
+              <Input
+                id="template-room"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    room: event.target.value,
+                  }))
+                }
+                value={form.room}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="template-place">{t('place')}</Label>
+              <Input
+                id="template-place"
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    place: event.target.value,
+                  }))
+                }
+                value={form.place}
+              />
+            </div>
           </div>
         </div>
 
@@ -210,8 +274,8 @@ export function TemplateFormDialog({
             disabled={isSaving || !form.name.trim() || !form.title.trim()}
             onClick={() =>
               onSave({
-                classLabel: form.classLabel || null,
                 defaultContactIds: form.defaultContactIds,
+                endTime: form.endTime || null,
                 groupId: form.groupId === NO_GROUP ? null : form.groupId,
                 name: form.name.trim(),
                 place: form.place || null,

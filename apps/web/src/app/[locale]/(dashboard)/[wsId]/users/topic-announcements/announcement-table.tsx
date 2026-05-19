@@ -84,7 +84,7 @@ export function AnnouncementTable({
           <TableHeader>
             <TableRow>
               <TableHead>{t('announcement_title')}</TableHead>
-              <TableHead>{t('linked_group')}</TableHead>
+              <TableHead>{t('classLabel')}</TableHead>
               <TableHead>{t('recipients')}</TableHead>
               <TableHead>{t('class_schedule')}</TableHead>
               <TableHead>{t('send_at')}</TableHead>
@@ -100,6 +100,11 @@ export function AnnouncementTable({
                 announcement.scheduled_send_at,
                 schedulingTimezone ?? 'UTC'
               );
+
+              const timeRange =
+                announcement.start_time && announcement.end_time
+                  ? `${announcement.start_time} - ${announcement.end_time}`
+                  : announcement.start_time || announcement.end_time || null;
 
               return (
                 <TableRow key={announcement.id}>
@@ -128,11 +133,7 @@ export function AnnouncementTable({
                     ) : null}
                   </TableCell>
                   <TableCell>
-                    {[
-                      announcement.class_label,
-                      announcement.start_time,
-                      announcement.place,
-                    ]
+                    {[announcement.group?.name, timeRange, announcement.place]
                       .filter(Boolean)
                       .join(' / ') || t('none')}
                   </TableCell>

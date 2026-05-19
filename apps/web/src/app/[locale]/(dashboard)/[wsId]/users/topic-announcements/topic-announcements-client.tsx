@@ -155,8 +155,8 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
 
   const saveTemplateFromForm = (values: TemplateFormValues) => {
     const payload: TopicAnnouncementTemplatePayload = {
-      classLabel: values.classLabel || null,
       defaultContactIds: values.defaultContactIds,
+      endTime: values.endTime || null,
       groupId: values.groupId.startsWith('__') ? null : values.groupId,
       name: values.name,
       place: values.place || null,

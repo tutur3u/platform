@@ -69,7 +69,7 @@ export function TopicAnnouncementsTemplates({
             <TableRow>
               <TableHead>{t('template_name')}</TableHead>
               <TableHead>{t('announcement_title')}</TableHead>
-              <TableHead>{t('linked_group')}</TableHead>
+              <TableHead>{t('classLabel')}</TableHead>
               <TableHead className="text-right">{t('actions')}</TableHead>
             </TableRow>
           </TableHeader>

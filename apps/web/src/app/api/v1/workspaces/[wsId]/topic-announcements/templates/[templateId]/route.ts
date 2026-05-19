@@ -66,6 +66,7 @@ export async function PATCH(request: Request, { params }: Params) {
       ...(payload.defaultContactIds !== undefined
         ? { default_contact_ids: payload.defaultContactIds }
         : {}),
+      ...(payload.endTime !== undefined ? { end_time: payload.endTime } : {}),
       ...(payload.groupId !== undefined ? { group_id: payload.groupId } : {}),
       ...(payload.name !== undefined ? { name: payload.name } : {}),
       ...(payload.place !== undefined ? { place: payload.place } : {}),

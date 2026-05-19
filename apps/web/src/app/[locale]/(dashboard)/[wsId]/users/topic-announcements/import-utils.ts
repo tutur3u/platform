@@ -9,6 +9,8 @@ const HEADER_ALIASES: Record<string, keyof TopicAnnouncementImportRow> = {
   date: 'sessionDate',
   day: 'dayLabel',
   email: 'contactEmail',
+  'end time': 'endTime',
+  'giờ kết thúc': 'endTime',
   lop: 'classLabel',
   lớp: 'classLabel',
   place: 'place',

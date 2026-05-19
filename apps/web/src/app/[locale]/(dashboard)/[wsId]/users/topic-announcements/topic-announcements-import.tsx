@@ -63,17 +63,22 @@ export function ImportPanel({ isImporting, onImport }: Props) {
         </div>
       </div>
       <div className="overflow-hidden rounded-md border">
-        <div className="grid grid-cols-4 border-b px-3 py-2 font-medium text-sm">
+        <div className="grid grid-cols-5 border-b px-3 py-2 font-medium text-sm">
           <span>{t('contact_name')}</span>
           <span>{t('email')}</span>
           <span>{t('classLabel')}</span>
+          <span>{t('startTime')}</span>
           <span>{t('topic')}</span>
         </div>
         {rows.slice(0, 10).map((row, index) => (
-          <div className="grid grid-cols-4 px-3 py-2 text-sm" key={index}>
-            <span>{row.contactName}</span>
-            <span>{row.contactEmail}</span>
-            <span>{row.classLabel}</span>
+          <div className="grid grid-cols-5 px-3 py-2 text-sm" key={index}>
+            <span className="truncate">{row.contactName}</span>
+            <span className="truncate">{row.contactEmail}</span>
+            <span className="truncate">{row.classLabel}</span>
+            <span>
+              {row.startTime}
+              {row.endTime ? ` - ${row.endTime}` : ''}
+            </span>
             <span className="truncate">{row.topic}</span>
           </div>
         ))}

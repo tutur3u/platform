@@ -58,6 +58,12 @@ export const TopicAnnouncementPayloadSchema = z.object({
   classLabel: OPTIONAL_TEXT_SCHEMA,
   contactIds: z.array(z.string().uuid()).min(1).max(50),
   dayLabel: OPTIONAL_TEXT_SCHEMA,
+  endTime: z
+    .string()
+    .trim()
+    .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+    .nullable()
+    .optional(),
   groupId: z.string().uuid().nullable().optional(),
   place: OPTIONAL_TEXT_SCHEMA,
   room: OPTIONAL_TEXT_SCHEMA,
@@ -82,6 +88,7 @@ export const TopicAnnouncementImportSchema = z.object({
         contactEmail: EMAIL_SCHEMA.optional(),
         contactName: z.string().trim().optional(),
         dayLabel: z.string().trim().optional(),
+        endTime: z.string().trim().optional(),
         place: z.string().trim().optional(),
         room: z.string().trim().optional(),
         sessionDate: z.string().date().optional(),
@@ -118,6 +125,12 @@ export const TopicAnnouncementTemplateSchema = z.object({
   classLabel: OPTIONAL_TEXT_SCHEMA,
   dayLabel: OPTIONAL_TEXT_SCHEMA,
   defaultContactIds: z.array(z.string().uuid()).max(50).default([]),
+  endTime: z
+    .string()
+    .trim()
+    .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+    .nullable()
+    .optional(),
   groupId: z.string().uuid().nullable().optional(),
   name: z.string().trim().min(1).max(120),
   place: OPTIONAL_TEXT_SCHEMA,

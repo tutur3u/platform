@@ -187,6 +187,7 @@ export async function POST(request: Request, { params }: Params) {
       class_label: payload.classLabel,
       created_by: actorUserId,
       day_label: payload.dayLabel,
+      end_time: payload.endTime ?? null,
       group_id: payload.groupId ?? null,
       place: payload.place,
       room: payload.room,
