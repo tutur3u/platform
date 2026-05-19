@@ -767,6 +767,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      nova_challenge_manager_emails: {
+        Row: {
+          challenge_id: string;
+          created_at: string;
+          email: string;
+        };
+        Insert: {
+          challenge_id: string;
+          created_at?: string;
+          email: string;
+        };
+        Update: {
+          challenge_id?: string;
+          created_at?: string;
+          email?: string;
+        };
+        Relationships: [];
+      };
       personal_notes: {
         Row: {
           content: string | null;

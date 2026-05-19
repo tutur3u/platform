@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     !userRole.allow_role_management
   ) {
     const { count, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_manager_emails')
       .select('email', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)
@@ -97,6 +98,7 @@ export async function POST(request: NextRequest) {
 
     // Insert into nova_challenge_manager_emails
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_manager_emails')
       .insert({
         challenge_id: challengeId,
@@ -170,6 +172,7 @@ export async function DELETE(request: NextRequest) {
     !userRole.allow_role_management
   ) {
     const { count, error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_manager_emails')
       .select('email', { count: 'exact', head: true })
       .eq('challenge_id', challengeId)
@@ -183,6 +186,7 @@ export async function DELETE(request: NextRequest) {
   try {
     // Delete the admin manager relation
     const { error } = await sbAdmin
+      .schema('private')
       .from('nova_challenge_manager_emails')
       .delete()
       .eq('challenge_id', challengeId)

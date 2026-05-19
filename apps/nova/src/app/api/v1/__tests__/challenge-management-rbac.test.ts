@@ -42,58 +42,69 @@ function createMockAdminClient({
 }: MockAdminOptions = {}) {
   const operations: string[] = [];
 
+  const createBuilder = (table: string) => {
+    const filters: Record<string, unknown> = {};
+
+    const builder = {
+      delete() {
+        operations.push(`${table}.delete`);
+        return builder;
+      },
+      eq(column: string, value: unknown) {
+        filters[column] = value;
+        return builder;
+      },
+      insert() {
+        operations.push(`${table}.insert`);
+        return builder;
+      },
+      maybeSingle: async () => {
+        if (table === 'platform_user_roles') {
+          return { data: role, error: null };
+        }
+
+        if (table === 'private.nova_challenge_manager_emails') {
+          const challengeId = String(filters.challenge_id);
+          return {
+            data: manageableChallenges.includes(challengeId)
+              ? { challenge_id: challengeId }
+              : null,
+            error: null,
+          };
+        }
+
+        return { data: null, error: null };
+      },
+      select() {
+        return builder;
+      },
+      single: async () => ({
+        data: { id: filters.id ?? 'row-id' },
+        error: null,
+      }),
+      update() {
+        operations.push(`${table}.update`);
+        return builder;
+      },
+      upsert() {
+        operations.push(`${table}.upsert`);
+        return builder;
+      },
+    };
+
+    return builder;
+  };
+
   const client = {
     from(table: string) {
-      const filters: Record<string, unknown> = {};
-
-      const builder = {
-        delete() {
-          operations.push(`${table}.delete`);
-          return builder;
-        },
-        eq(column: string, value: unknown) {
-          filters[column] = value;
-          return builder;
-        },
-        insert() {
-          operations.push(`${table}.insert`);
-          return builder;
-        },
-        maybeSingle: async () => {
-          if (table === 'platform_user_roles') {
-            return { data: role, error: null };
-          }
-
-          if (table === 'nova_challenge_manager_emails') {
-            const challengeId = String(filters.challenge_id);
-            return {
-              data: manageableChallenges.includes(challengeId)
-                ? { challenge_id: challengeId }
-                : null,
-              error: null,
-            };
-          }
-
-          return { data: null, error: null };
-        },
-        select() {
-          return builder;
-        },
-        single: async () => ({
-          data: { id: filters.id ?? 'row-id' },
-          error: null,
-        }),
-        update() {
-          operations.push(`${table}.update`);
-          return builder;
-        },
-        upsert() {
-          operations.push(`${table}.upsert`);
-          return builder;
+      return createBuilder(table);
+    },
+    schema(schemaName: string) {
+      return {
+        from(table: string) {
+          return createBuilder(`${schemaName}.${table}`);
         },
       };
-
-      return builder;
     },
   };
 

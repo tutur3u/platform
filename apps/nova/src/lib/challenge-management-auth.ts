@@ -58,6 +58,7 @@ export async function canManageNovaChallenge(
   if (!role?.allow_challenge_management || !user.email) return false;
 
   const { data, error } = await client
+    .schema('private')
     .from('nova_challenge_manager_emails')
     .select('challenge_id')
     .eq('challenge_id', challengeId)

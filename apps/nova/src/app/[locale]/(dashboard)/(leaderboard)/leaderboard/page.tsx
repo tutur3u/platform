@@ -131,6 +131,7 @@ async function fetchLeaderboard(
   );
 
   const { data: managedChallenges, error: managerError } = await sbAdmin
+    .schema('private')
     .from('nova_challenge_manager_emails')
     .select('challenge_id')
     .eq('email', user.email);

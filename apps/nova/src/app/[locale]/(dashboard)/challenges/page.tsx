@@ -114,6 +114,7 @@ async function fetchChallenges(
       }
 
       const { data: allManagers, error: managedError } = await sbAdmin
+        .schema('private')
         .from('nova_challenge_manager_emails')
         .select('*');
 
@@ -124,6 +125,7 @@ async function fetchChallenges(
       }
 
       const { data: managedChallenges, error: managerError } = await sbAdmin
+        .schema('private')
         .from('nova_challenge_manager_emails')
         .select('challenge_id')
         .eq('email', user.email);

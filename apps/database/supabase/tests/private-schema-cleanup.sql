@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(18);
+select plan(21);
 
 select ok(
   not exists (
@@ -12,7 +12,8 @@ select ok(
     from (
       values
         ('email_bounce_complaints'),
-        ('ai_credit_reservations')
+        ('ai_credit_reservations'),
+        ('nova_challenge_manager_emails')
     ) as tables(table_name)
     where to_regclass(format('public.%I', table_name)) is not null
   ),
@@ -25,7 +26,8 @@ select ok(
     from (
       values
         ('email_bounce_complaints'),
-        ('ai_credit_reservations')
+        ('ai_credit_reservations'),
+        ('nova_challenge_manager_emails')
     ) as tables(table_name)
     where to_regclass(format('private.%I', table_name)) is null
   ),
@@ -38,7 +40,6 @@ select ok(
     from (
       values
         ('ai_chat_members'),
-        ('nova_challenge_manager_emails'),
         ('poll_guest_permissions'),
         ('poll_user_permissions')
     ) as tables(table_name)
@@ -53,7 +54,6 @@ select ok(
     from (
       values
         ('ai_chat_members'),
-        ('nova_challenge_manager_emails'),
         ('poll_guest_permissions'),
         ('poll_user_permissions')
     ) as tables(table_name)
@@ -78,7 +78,8 @@ select ok(
     from (
       values
         ('email_bounce_complaints'),
-        ('ai_credit_reservations')
+        ('ai_credit_reservations'),
+        ('nova_challenge_manager_emails')
     ) as tables(table_name)
     where has_table_privilege('anon', format('private.%I', table_name), 'select')
   ),
@@ -91,7 +92,8 @@ select ok(
     from (
       values
         ('email_bounce_complaints'),
-        ('ai_credit_reservations')
+        ('ai_credit_reservations'),
+        ('nova_challenge_manager_emails')
     ) as tables(table_name)
     cross join (
       values
@@ -115,7 +117,8 @@ select ok(
     from (
       values
         ('email_bounce_complaints'),
-        ('ai_credit_reservations')
+        ('ai_credit_reservations'),
+        ('nova_challenge_manager_emails')
     ) as tables(table_name)
     cross join (
       values
@@ -144,6 +147,15 @@ select ok(
 );
 
 select ok(
+  (
+    select relrowsecurity
+    from pg_class
+    where oid = 'private.nova_challenge_manager_emails'::regclass
+  ),
+  'private Nova challenge manager emails have RLS enabled'
+);
+
+select ok(
   exists (
     select 1
     from pg_policies
@@ -168,6 +180,17 @@ select ok(
 select ok(
   exists (
     select 1
+    from pg_policies
+    where schemaname = 'private'
+      and tablename = 'nova_challenge_manager_emails'
+      and policyname = 'Service role can manage private Nova challenge managers'
+  ),
+  'private Nova challenge manager emails have a service-role policy'
+);
+
+select ok(
+  exists (
+    select 1
     from pg_constraint
     where conname = 'email_bounce_complaints_original_email_id_fkey'
       and conrelid = 'private.email_bounce_complaints'::regclass
@@ -185,6 +208,17 @@ select ok(
       and confrelid = 'public.workspace_ai_credit_balances'::regclass
   ),
   'AI credit reservations still reference public balances'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'nova_challenge_manager_emails_challenge_id_fkey'
+      and conrelid = 'private.nova_challenge_manager_emails'::regclass
+      and confrelid = 'public.nova_challenges'::regclass
+  ),
+  'Nova challenge manager emails still reference public challenges'
 );
 
 select ok(
