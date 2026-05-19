@@ -71,6 +71,10 @@ describe('Supabase Client', () => {
     expect(isProxyOnlyPublicTable('topic_announcements')).toBe(true);
   });
 
+  it('treats tutoring sessions as proxy-only', () => {
+    expect(isProxyOnlyPublicTable('workspace_tutoring_sessions')).toBe(true);
+  });
+
   describe('createClient', () => {
     it('creates a typed client, warns once, and wraps proxy-only tables', () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
@@ -84,6 +88,9 @@ describe('Supabase Client', () => {
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(() => client.from('mira_accessories')).toThrow(
         getProxyOnlyPublicTableError('mira_accessories')
+      );
+      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
+        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',

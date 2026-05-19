@@ -42,6 +42,7 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'workspace_scheduling_metadata',
   'workspace_subscription_errors',
   'workspace_subscription_products',
+  'workspace_tutoring_sessions',
   'workspace_wallets',
 ] as const;
 

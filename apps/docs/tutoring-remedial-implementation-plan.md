@@ -84,6 +84,11 @@ Add workspace-scoped routes under `apps/web/src/app/api/v1/workspaces/[wsId]/tut
 - `GET /export`: paginated export payload for detailed + payroll views.
 
 Use existing permission style and add/extend permission keys if needed.
+`workspace_tutoring_sessions` must stay API-only: do not grant direct
+`anon`/`authenticated` Data API CRUD on the table. Dashboard and satellite
+clients should use the tutoring routes/internal API helpers so the
+workspace-permission and teacher/manager visibility rules are enforced before
+server-side writes use the service-role path.
 
 ## UI Plan
 
@@ -152,6 +157,9 @@ The following foundation has been implemented:
 
 - **DB**
   - `workspace_tutoring_sessions` migration created and applied.
+  - Direct `anon`/`authenticated` table access is revoked; server APIs keep
+    service-role access and enforce workspace permissions before querying or
+    mutating tutoring sessions.
 - **API routes** (`apps/web/src/app/api/v1/workspaces/[wsId]/tutoring/*`)
   - `GET/POST /sessions`
   - `PUT /sessions/[id]`
@@ -188,3 +196,15 @@ The following foundation has been implemented:
 - Issue: scheduling conflicts could be missed when time strings arrived in 12-hour format (for example `06:00 PM`) while overlap parsing expected 24-hour-only values.
 - Fix: conflict parsing now normalizes both 24-hour (`18:00`, `18:00:00`) and 12-hour (`06:00 PM`) formats in client pre-submit checks and server conflict checks.
 - Guardrail: tutoring create/update API validation now accepts both time formats so localized time input cannot bypass overlap detection.
+
+## Session Retrospective (2026-05-19)
+
+- Issue: the tutoring sessions table still exposed direct authenticated CRUD
+  through Supabase/PostgREST, so ordinary workspace members could bypass the
+  permission-checked tutoring API routes.
+- Fix: a forward migration now revokes direct `anon`/`authenticated` table
+  privileges, drops the broad workspace-member RLS policies, and keeps
+  service-role access for the existing API routes.
+- Guardrail: tutoring sessions are now listed as proxy-only in
+  `@tuturuuu/supabase` client wrappers, with pgTAP coverage asserting the
+  direct table privileges and broad RLS policies stay removed.

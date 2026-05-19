@@ -261,6 +261,10 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         table: 'workspace_calendars',
       });
+      expect(client.from('workspace_tutoring_sessions')).toEqual({
+        client: 'admin',
+        table: 'workspace_tutoring_sessions',
+      });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
         table: 'workspace_boards',
@@ -317,6 +321,10 @@ describe('Supabase Server Client', () => {
       expect(client.from('mira_accessories')).toEqual({
         client: 'admin',
         table: 'mira_accessories',
+      });
+      expect(client.from('workspace_tutoring_sessions')).toEqual({
+        client: 'admin',
+        table: 'workspace_tutoring_sessions',
       });
     });
 
