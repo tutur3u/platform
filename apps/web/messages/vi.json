@@ -2593,6 +2593,106 @@
     "scheduled_break": "Giờ nghỉ đã lên lịch",
     "take_a_break_after": "Nghỉ ngơi sau khi hoàn thành"
   },
+  "bug-bounty": {
+    "assessment": {
+      "accepted": {
+        "description": "Mẫu truy cập được báo cáo rộng hơn phạm vi dự định đối với người gọi Data API đã đăng nhập và cần được giới hạn theo cấp không gian làm việc.",
+        "title": "Ghi nhận phát hiện"
+      },
+      "badge": "Phạm vi đã xác minh",
+      "description": "Báo cáo của Rana mô tả một lỗi lộ dữ liệu người dùng ở phạm vi toàn nền tảng với mức độ nghiêm trọng cao. Tuturuuu đã xác minh vấn đề bảo mật, sau đó thu hẹp tác động được xác nhận trước khi công bố ghi nhận.",
+      "remediation": {
+        "description": "Hướng khắc phục là giới hạn quyền đọc hồ sơ cho chính người dùng đang đăng nhập hoặc các thành viên có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư ngoài các lượt đọc hồ sơ công khai rộng.",
+        "title": "Hướng khắc phục"
+      },
+      "scope": {
+        "description": "Chúng tôi không xác minh việc rò rỉ email, metadata nhà cung cấp hay bí mật xác thực trong tác động công khai đã xác nhận. Dữ liệu nhìn thấy là thông tin hồ sơ phạm vi công khai như tên hiển thị và ảnh đại diện.",
+        "title": "Hiệu chỉnh phạm vi"
+      },
+      "title": "Báo cáo của nhà nghiên cứu, đánh giá của Tuturuuu"
+    },
+    "hall": {
+      "badge": "Bảng vinh danh",
+      "description": "Mỗi mục được viết theo phạm vi Tuturuuu đã xác minh, không sao chép trực tiếp tuyên bố mức độ nghiêm trọng từ người báo cáo.",
+      "title": "Những nhà nghiên cứu được ghi nhận công khai"
+    },
+    "hero": {
+      "badge": "Công bố có trách nhiệm",
+      "description": "Bảng vinh danh minh bạch dành cho các nhà nghiên cứu báo cáo vấn đề riêng tư, cho chúng tôi thời gian xác minh tác động và giúp Tuturuuu an toàn hơn cho mọi người.",
+      "policy_cta": "Đọc chính sách bảo mật",
+      "report_cta": "Báo cáo lỗ hổng",
+      "title_highlight": "Bảng vinh danh bảo mật",
+      "title_prefix": "Tuturuuu"
+    },
+    "labels": {
+      "remediation": "Khắc phục",
+      "report_summary": "Tóm tắt báo cáo",
+      "verified_impact": "Tác động đã xác minh"
+    },
+    "ledger": {
+      "eyebrow": "Sổ ghi nhận công bố",
+      "metrics": {
+        "channel": "Kênh báo cáo",
+        "researchers": "Nhà nghiên cứu được vinh danh",
+        "reward": "Phần thưởng hiện tại"
+      },
+      "recognition": "Ghi nhận công khai",
+      "title": "Hiện ghi nhận danh tiếng, chương trình trả thưởng sau"
+    },
+    "meta": {
+      "description": "Xem Bảng vinh danh công bố có trách nhiệm của Tuturuuu và phạm vi đã xác minh của các báo cáo bảo mật được ghi nhận.",
+      "title": "Bảng vinh danh bảo mật"
+    },
+    "program": {
+      "badge": "Quy tắc chương trình",
+      "contact_cta": "Email đội bảo mật",
+      "description": "Hiện chúng tôi chưa vận hành chương trình bug bounty có trả thưởng. Chúng tôi vẫn hoan nghênh các báo cáo có trách nhiệm và có thể ghi nhận công khai nhà nghiên cứu đã được xác minh tại đây khi họ muốn được nêu tên.",
+      "security_cta": "Trang bảo mật",
+      "steps": {
+        "credit": {
+          "description": "Sau khi xác minh, chúng tôi có thể liệt kê tên hoặc handle mà nhà nghiên cứu cung cấp cho Bảng vinh danh.",
+          "title": "Ghi nhận công khai theo đồng ý"
+        },
+        "private": {
+          "description": "Gửi chi tiết lỗ hổng riêng tư tới security@tuturuuu.com trước khi chia sẻ ở bất kỳ nơi công khai nào.",
+          "title": "Báo cáo riêng tư"
+        },
+        "scope": {
+          "description": "Tránh thu thập dữ liệu diện rộng, kiểm thử phá hoại, duy trì quyền truy cập hoặc xem nhiều bản ghi hơn mức cần thiết để chứng minh tác động.",
+          "title": "Giảm thiểu truy cập"
+        },
+        "triage": {
+          "description": "Chúng tôi tái hiện, đánh giá mức độ nghiêm trọng dựa trên bằng chứng của chính mình và làm rõ dữ liệu nào thực sự bị lộ.",
+          "title": "Phân loại dựa trên bằng chứng"
+        }
+      },
+      "title": "Cách báo cáo có trách nhiệm"
+    },
+    "researchers": {
+      "rana": {
+        "cwe": "CWE-200 / CWE-284",
+        "date": "Tháng 5 năm 2026",
+        "description": "Rana báo cáo rằng quyền truy cập Supabase REST đã đăng nhập vào các hàng hồ sơ người dùng có thể liệt kê bản ghi rộng hơn phạm vi dự định.",
+        "impact": "Tuturuuu đã xác minh một vấn đề giới hạn theo không gian làm việc đối với dữ liệu hồ sơ công khai. Các trường nhìn thấy đã xác nhận là tên hiển thị và ảnh đại diện phục vụ tính năng xã hội, không phải email người dùng.",
+        "name": "Rana Zeeshan (nova cyber force)",
+        "remediation": "Giới hạn quyền đọc hồ sơ cho người dùng đang đăng nhập hoặc người dùng có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư sau các đường truy cập chặt chẽ hơn.",
+        "report": "Phạm vi hiển thị hồ sơ Supabase REST quá rộng",
+        "severity": "Phạm vi riêng tư theo workspace",
+        "status": "Đã xác minh"
+      },
+      "vapour": {
+        "cwe": "CWE-79 / CWE-434",
+        "date": "2025-03-30",
+        "description": "Nguyễn Nghĩa Hiệp báo cáo rủi ro stored XSS liên quan đến việc truy cập trực tiếp các tệp SVG ảnh đại diện đã tải lên qua URL Supabase storage.",
+        "impact": "Vấn đề yêu cầu người dùng mở trực tiếp tệp SVG đã lưu. Các trang do Tuturuuu vận hành đã chặn thực thi script trong luồng ảnh đại diện thông thường.",
+        "name": "Nguyễn Nghĩa Hiệp (vapour)",
+        "remediation": "Chặn hoặc làm sạch các lượt tải lên SVG rủi ro và tiếp tục siết chặt quy tắc xử lý ảnh cho kho ảnh đại diện.",
+        "report": "Rủi ro stored XSS từ SVG ảnh đại diện",
+        "severity": "Mức độ thấp",
+        "status": "Đã lên lịch"
+      }
+    }
+  },
   "calendar": {
     "4-days": "4 ngày",
     "account_disconnected": "Đã ngắt kết nối tài khoản thành công",

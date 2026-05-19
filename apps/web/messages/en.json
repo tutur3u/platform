@@ -2593,6 +2593,106 @@
     "scheduled_break": "Scheduled break",
     "take_a_break_after": "Take a break after"
   },
+  "bug-bounty": {
+    "assessment": {
+      "accepted": {
+        "description": "The reported access pattern was broader than intended for authenticated Data API callers and needed workspace-level scoping.",
+        "title": "Accepted finding"
+      },
+      "badge": "Verified scope",
+      "description": "Rana's submission described a severe platform-wide user-data exposure. Tuturuuu verified the security issue, then narrowed the confirmed impact before publishing public recognition.",
+      "remediation": {
+        "description": "The remediation path is to restrict profile reads to the signed-in user or shared-workspace members, and keep private account details outside broad public profile reads.",
+        "title": "Fix direction"
+      },
+      "scope": {
+        "description": "We did not verify leakage of emails, provider metadata, or authentication secrets in the confirmed public impact. The visible data was public-scope profile information such as display names and profile pictures.",
+        "title": "Scope correction"
+      },
+      "title": "Researcher report, Tuturuuu assessment"
+    },
+    "hall": {
+      "badge": "Hall of Fame",
+      "description": "Every entry is written from Tuturuuu's verified scope, not copied directly from a reporter's severity claim.",
+      "title": "Researchers we credit publicly"
+    },
+    "hero": {
+      "badge": "Responsible disclosure",
+      "description": "A transparent Hall of Fame for researchers who report issues privately, give us time to validate impact, and help make Tuturuuu safer for everyone.",
+      "policy_cta": "Read security policy",
+      "report_cta": "Report a vulnerability",
+      "title_highlight": "Security Hall of Fame",
+      "title_prefix": "Tuturuuu"
+    },
+    "labels": {
+      "remediation": "Remediation",
+      "report_summary": "Report summary",
+      "verified_impact": "Verified impact"
+    },
+    "ledger": {
+      "eyebrow": "Disclosure ledger",
+      "metrics": {
+        "channel": "Reporting channel",
+        "researchers": "Researchers featured",
+        "reward": "Current reward"
+      },
+      "recognition": "Public credit",
+      "title": "Recognition today, paid bounty later"
+    },
+    "meta": {
+      "description": "See the Tuturuuu responsible disclosure Hall of Fame and the verified scope of credited security reports.",
+      "title": "Security Hall of Fame"
+    },
+    "program": {
+      "badge": "Program rules",
+      "contact_cta": "Email security team",
+      "description": "We do not currently operate a paid bug bounty program. We still welcome responsible reports and can recognize verified researchers here when they want public credit.",
+      "security_cta": "Security page",
+      "steps": {
+        "credit": {
+          "description": "After validation, we can list the researcher name or handle they provide for the Hall of Fame.",
+          "title": "Public credit by consent"
+        },
+        "private": {
+          "description": "Send vulnerability details privately to security@tuturuuu.com before sharing them anywhere public.",
+          "title": "Report privately"
+        },
+        "scope": {
+          "description": "Avoid broad scraping, destructive testing, persistence, or accessing more records than needed to prove impact.",
+          "title": "Minimize access"
+        },
+        "triage": {
+          "description": "We reproduce, evaluate severity from our own evidence, and clarify what data was actually exposed.",
+          "title": "Evidence-led triage"
+        }
+      },
+      "title": "How to report responsibly"
+    },
+    "researchers": {
+      "rana": {
+        "cwe": "CWE-200 / CWE-284",
+        "date": "May 2026",
+        "description": "Rana reported that authenticated Supabase REST access to user profile rows could enumerate records more broadly than intended.",
+        "impact": "Tuturuuu verified a workspace-scoping issue for public profile data. Confirmed visible fields were display names and profile pictures intended for social features, not user emails.",
+        "name": "Rana Zeeshan (nova cyber force)",
+        "remediation": "Restrict profile reads to the signed-in user or users sharing a workspace, and keep private account details behind narrower access paths.",
+        "report": "Over-broad Supabase REST profile visibility",
+        "severity": "Workspace privacy scope",
+        "status": "Verified"
+      },
+      "vapour": {
+        "cwe": "CWE-79 / CWE-434",
+        "date": "2025-03-30",
+        "description": "Nguyen Nghia Hiep reported a stored XSS risk involving direct access to uploaded SVG avatar files through Supabase storage URLs.",
+        "impact": "The issue required a user to directly open a stored SVG file. Tuturuuu-powered pages already blocked script execution in the normal avatar flow.",
+        "name": "Nguyen Nghia Hiep (vapour)",
+        "remediation": "Block or sanitize risky SVG uploads and keep tightening image handling rules for avatar storage.",
+        "report": "Stored SVG avatar upload XSS risk",
+        "severity": "Low severity",
+        "status": "Scheduled"
+      }
+    }
+  },
   "calendar": {
     "4-days": "4 Days",
     "account_disconnected": "Account disconnected successfully",
