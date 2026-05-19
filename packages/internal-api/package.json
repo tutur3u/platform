@@ -62,6 +62,11 @@
       "import": "./dist/infrastructure.js",
       "require": "./dist/infrastructure.js"
     },
+    "./inventory": {
+      "types": "./dist/inventory.d.ts",
+      "import": "./dist/inventory.js",
+      "require": "./dist/inventory.js"
+    },
     "./mail": {
       "types": "./dist/mail.d.ts",
       "import": "./dist/mail.js",

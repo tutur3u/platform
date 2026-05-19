@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
-description: 'How inventory.tuturuuu.com is wired as the inventory, stock, checkout fee, Stripe Connect, and audit operations app.'
-updatedAt: '2026-05-17'
+description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
+updatedAt: '2026-05-19'
 ---
 
 Inventory lives in `apps/inventory` and runs locally through Portless at
@@ -23,6 +23,13 @@ as `/api/v1/users/me/default-workspace` and `/api/v1/users/me/profile` must keep
 `inventory` in their app-session audience allowlist, or `/dashboard` will accept
 the local handoff cookies and then bounce back to Web auth after the bootstrap
 request returns `401`.
+
+Public storefront routes live at `/store/[storeSlug]` inside `apps/inventory`
+and are intentionally exempt from the operator auth proxy. They should only
+read published storefront data through `apps/web` public APIs and should create
+checkout reservations through the central `apps/web` RPC wrapper. Do not add
+storefront CRUD, reservation writes, invoice finalization, or settlement writes
+directly to `apps/inventory`.
 
 ## Local Development
 
@@ -47,6 +54,25 @@ Inventory starts with workspace-scoped surfaces for:
   conversion fees, settlement estimates, and net payout
 - payment and inventory audit streams
 - Stripe Connect readiness for B2B2C sellers who link their own Stripe account
+
+The commerce storefront extension adds:
+
+- operator routes for overview, catalog, stock, bundles, storefronts,
+  checkouts, sales, setup readiness, and audits
+- public routes for `/store/[storeSlug]`,
+  `/store/[storeSlug]/products/[listingId]`, cart, checkout, and order status
+- private-schema tables for storefronts, listings, bundles, checkout sessions,
+  checkout lines, reservations, and settlement ledger entries
+- service-role-only RPCs for creating reservations, releasing or expiring
+  reservations, and linking a completed checkout to a `finance_invoice`
+
+New commerce tables belong in the `private` schema, not `public`. Public and
+satellite clients must go through `apps/web` APIs plus
+`@tuturuuu/internal-api`; direct Supabase client access to these tables is not
+part of the contract. Protected workspace routes must authenticate and normalize
+the workspace with the request-scoped client before any private-table read or
+write, then use server-only database access or service-role RPCs behind
+`apps/web`.
 
 Do not hardcode Stripe fee schedules as durable truth. The checkout estimator is
 for quoting and operator review; production reconciliation should persist the

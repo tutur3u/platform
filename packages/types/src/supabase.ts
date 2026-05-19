@@ -155,6 +155,483 @@ export type Database = {
         };
         Relationships: [];
       };
+      inventory_bundle_components: {
+        Row: {
+          bundle_id: string;
+          created_at: string | null;
+          id: string;
+          product_id: string;
+          quantity: number;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          bundle_id: string;
+          created_at?: string | null;
+          id?: string;
+          product_id: string;
+          quantity: number;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          bundle_id?: string;
+          created_at?: string | null;
+          id?: string;
+          product_id?: string;
+          quantity?: number;
+          unit_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_bundle_components_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_bundles: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          image_url: string | null;
+          max_per_order: number;
+          metadata: Json;
+          name: string;
+          price: number;
+          slug: string;
+          status: string;
+          storefront_id: string | null;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          max_per_order?: number;
+          metadata?: Json;
+          name: string;
+          price?: number;
+          slug: string;
+          status?: string;
+          storefront_id?: string | null;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          max_per_order?: number;
+          metadata?: Json;
+          name?: string;
+          price?: number;
+          slug?: string;
+          status?: string;
+          storefront_id?: string | null;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_bundles_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_checkout_lines: {
+        Row: {
+          bundle_id: string | null;
+          checkout_session_id: string;
+          created_at: string | null;
+          id: string;
+          listing_id: string | null;
+          product_id: string;
+          quantity: number;
+          subtotal_amount: number;
+          title: string;
+          unit_id: string;
+          unit_price: number;
+          warehouse_id: string;
+        };
+        Insert: {
+          bundle_id?: string | null;
+          checkout_session_id: string;
+          created_at?: string | null;
+          id?: string;
+          listing_id?: string | null;
+          product_id: string;
+          quantity: number;
+          subtotal_amount?: number;
+          title: string;
+          unit_id: string;
+          unit_price?: number;
+          warehouse_id: string;
+        };
+        Update: {
+          bundle_id?: string | null;
+          checkout_session_id?: string;
+          created_at?: string | null;
+          id?: string;
+          listing_id?: string | null;
+          product_id?: string;
+          quantity?: number;
+          subtotal_amount?: number;
+          title?: string;
+          unit_id?: string;
+          unit_price?: number;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_checkout_lines_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_lines_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_checkout_lines_listing_id_fkey';
+            columns: ['listing_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefront_listings';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_checkout_sessions: {
+        Row: {
+          completed_at: string | null;
+          conversion_fee_estimate_amount: number;
+          created_at: string | null;
+          currency: string;
+          customer_email: string;
+          customer_name: string;
+          customer_phone: string | null;
+          discount_amount: number;
+          expires_at: string;
+          finance_invoice_id: string | null;
+          id: string;
+          metadata: Json;
+          note: string | null;
+          platform_fee_amount: number;
+          processing_fee_estimate_amount: number;
+          public_token: string;
+          status: string;
+          storefront_id: string;
+          subtotal_amount: number;
+          total_amount: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          completed_at?: string | null;
+          conversion_fee_estimate_amount?: number;
+          created_at?: string | null;
+          currency?: string;
+          customer_email: string;
+          customer_name: string;
+          customer_phone?: string | null;
+          discount_amount?: number;
+          expires_at: string;
+          finance_invoice_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          note?: string | null;
+          platform_fee_amount?: number;
+          processing_fee_estimate_amount?: number;
+          public_token?: string;
+          status?: string;
+          storefront_id: string;
+          subtotal_amount?: number;
+          total_amount?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          completed_at?: string | null;
+          conversion_fee_estimate_amount?: number;
+          created_at?: string | null;
+          currency?: string;
+          customer_email?: string;
+          customer_name?: string;
+          customer_phone?: string | null;
+          discount_amount?: number;
+          expires_at?: string;
+          finance_invoice_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          note?: string | null;
+          platform_fee_amount?: number;
+          processing_fee_estimate_amount?: number;
+          public_token?: string;
+          status?: string;
+          storefront_id?: string;
+          subtotal_amount?: number;
+          total_amount?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_checkout_sessions_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_reservations: {
+        Row: {
+          amount: number;
+          checkout_line_id: string;
+          checkout_session_id: string;
+          created_at: string | null;
+          expires_at: string;
+          id: string;
+          product_id: string;
+          released_at: string | null;
+          status: string;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Insert: {
+          amount: number;
+          checkout_line_id: string;
+          checkout_session_id: string;
+          created_at?: string | null;
+          expires_at: string;
+          id?: string;
+          product_id: string;
+          released_at?: string | null;
+          status?: string;
+          unit_id: string;
+          warehouse_id: string;
+        };
+        Update: {
+          amount?: number;
+          checkout_line_id?: string;
+          checkout_session_id?: string;
+          created_at?: string | null;
+          expires_at?: string;
+          id?: string;
+          product_id?: string;
+          released_at?: string | null;
+          status?: string;
+          unit_id?: string;
+          warehouse_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_reservations_checkout_line_id_fkey';
+            columns: ['checkout_line_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_lines';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_reservations_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_settlement_ledger_entries: {
+        Row: {
+          amount: number;
+          checkout_session_id: string;
+          created_at: string | null;
+          currency: string;
+          entry_kind: string;
+          finance_invoice_id: string | null;
+          id: string;
+          metadata: Json;
+          provider_ref: string | null;
+          source: string;
+          ws_id: string;
+        };
+        Insert: {
+          amount: number;
+          checkout_session_id: string;
+          created_at?: string | null;
+          currency?: string;
+          entry_kind: string;
+          finance_invoice_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          provider_ref?: string | null;
+          source?: string;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          checkout_session_id?: string;
+          created_at?: string | null;
+          currency?: string;
+          entry_kind?: string;
+          finance_invoice_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          provider_ref?: string | null;
+          source?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_settlement_ledger_entries_checkout_session_id_fkey';
+            columns: ['checkout_session_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_checkout_sessions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_storefront_listings: {
+        Row: {
+          bundle_id: string | null;
+          compare_at_price: number | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          image_url: string | null;
+          listing_type: string;
+          max_per_order: number;
+          metadata: Json;
+          price: number;
+          product_id: string | null;
+          sort_order: number;
+          status: string;
+          storefront_id: string;
+          title: string;
+          unit_id: string | null;
+          updated_at: string | null;
+          warehouse_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          bundle_id?: string | null;
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_type?: string;
+          max_per_order?: number;
+          metadata?: Json;
+          price?: number;
+          product_id?: string | null;
+          sort_order?: number;
+          status?: string;
+          storefront_id: string;
+          title: string;
+          unit_id?: string | null;
+          updated_at?: string | null;
+          warehouse_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          bundle_id?: string | null;
+          compare_at_price?: number | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          image_url?: string | null;
+          listing_type?: string;
+          max_per_order?: number;
+          metadata?: Json;
+          price?: number;
+          product_id?: string | null;
+          sort_order?: number;
+          status?: string;
+          storefront_id?: string;
+          title?: string;
+          unit_id?: string | null;
+          updated_at?: string | null;
+          warehouse_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_storefront_listings_bundle_id_fkey';
+            columns: ['bundle_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_bundles';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_storefront_listings_storefront_id_fkey';
+            columns: ['storefront_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_storefronts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      inventory_storefronts: {
+        Row: {
+          accent_color: string | null;
+          created_at: string | null;
+          currency: string;
+          description: string | null;
+          hero_image_url: string | null;
+          id: string;
+          metadata: Json;
+          name: string;
+          slug: string;
+          status: string;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          accent_color?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          description?: string | null;
+          hero_image_url?: string | null;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          slug: string;
+          status?: string;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          accent_color?: string | null;
+          created_at?: string | null;
+          currency?: string;
+          description?: string | null;
+          hero_image_url?: string | null;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          slug?: string;
+          status?: string;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -28323,6 +28800,31 @@ export type Database = {
         Returns: number;
       };
       _get_active_payg_credits: { Args: { p_ws_id: string }; Returns: number };
+      _inventory_create_reserved_line: {
+        Args: {
+          p_bundle_id: string;
+          p_checkout_id: string;
+          p_expires_at: string;
+          p_listing_id: string;
+          p_now: string;
+          p_product_id: string;
+          p_quantity: number;
+          p_title: string;
+          p_unit_id: string;
+          p_unit_price: number;
+          p_warehouse_id: string;
+        };
+        Returns: number;
+      };
+      _inventory_reserved_quantity: {
+        Args: {
+          p_now?: string;
+          p_product_id: string;
+          p_unit_id: string;
+          p_warehouse_id: string;
+        };
+        Returns: number;
+      };
       _release_expired_ai_credit_reservations: {
         Args: { p_balance_id: string };
         Returns: undefined;
@@ -28737,6 +29239,14 @@ export type Database = {
           success: boolean;
         }[];
       };
+      complete_inventory_checkout_session: {
+        Args: {
+          p_checkout_id: string;
+          p_finance_invoice_id: string;
+          p_now?: string;
+        };
+        Returns: string;
+      };
       complete_mira_focus_session: {
         Args: { p_notes?: string; p_session_id: string };
         Returns: {
@@ -28813,6 +29323,10 @@ export type Database = {
           p_subject: string;
           p_ws_id: string;
         };
+        Returns: Json;
+      };
+      create_inventory_checkout_session: {
+        Args: { p_now?: string; p_payload: Json; p_storefront_slug: string };
         Returns: Json;
       };
       create_missing_personal_workspaces: {
@@ -31933,6 +32447,10 @@ export type Database = {
           remaining_credits: number;
           success: boolean;
         }[];
+      };
+      release_inventory_checkout_session: {
+        Args: { p_checkout_id: string; p_now?: string };
+        Returns: undefined;
       };
       remove_task_label_with_actor: {
         Args: {

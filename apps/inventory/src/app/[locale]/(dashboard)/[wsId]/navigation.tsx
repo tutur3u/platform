@@ -1,12 +1,13 @@
 import {
-  BadgeDollarSign,
   Boxes,
   ClipboardList,
   CreditCard,
   Layers3,
   LayoutDashboard,
   PackageSearch,
+  Settings2,
   ShieldCheck,
+  Store,
 } from '@tuturuuu/icons';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
@@ -33,9 +34,9 @@ export async function getNavigationLinks({
       icon: <LayoutDashboard className="h-4 w-4" />,
     },
     {
-      title: t('items.title'),
-      description: t('items.description'),
-      href: `/${workspaceSlug}/items`,
+      title: t('catalog.title'),
+      description: t('catalog.description'),
+      href: `/${workspaceSlug}/catalog`,
       icon: <PackageSearch className="h-4 w-4" />,
     },
     {
@@ -51,10 +52,22 @@ export async function getNavigationLinks({
       icon: <Layers3 className="h-4 w-4" />,
     },
     {
-      title: t('checkout.title'),
-      description: t('checkout.description'),
-      href: `/${workspaceSlug}/checkout`,
+      title: t('checkouts.title'),
+      description: t('checkouts.description'),
+      href: `/${workspaceSlug}/checkouts`,
       icon: <CreditCard className="h-4 w-4" />,
+    },
+    {
+      title: t('sales.title'),
+      description: t('sales.description'),
+      href: `/${workspaceSlug}/sales`,
+      icon: <ShieldCheck className="h-4 w-4" />,
+    },
+    {
+      title: t('setup.title'),
+      description: t('setup.description'),
+      href: `/${workspaceSlug}/setup`,
+      icon: <Settings2 className="h-4 w-4" />,
     },
     {
       title: t('audits.title'),
@@ -63,16 +76,10 @@ export async function getNavigationLinks({
       icon: <ClipboardList className="h-4 w-4" />,
     },
     {
-      title: t('stripe.title'),
-      description: t('stripe.description'),
-      href: `/${workspaceSlug}/stripe`,
-      icon: <BadgeDollarSign className="h-4 w-4" />,
-    },
-    {
-      title: t('controls.title'),
-      description: t('controls.description'),
-      href: `/${workspaceSlug}/audits`,
-      icon: <ShieldCheck className="h-4 w-4" />,
+      title: t('storefront.title'),
+      description: t('storefront.description'),
+      href: `/${workspaceSlug}/storefront`,
+      icon: <Store className="h-4 w-4" />,
     },
   ];
 }

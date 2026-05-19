@@ -276,6 +276,7 @@
       "name": "@tuturuuu/inventory",
       "version": "0.1.0",
       "dependencies": {
+        "@tanstack/react-query": "^5.100.10",
         "@tuturuuu/auth": "workspace:*",
         "@tuturuuu/icons": "workspace:*",
         "@tuturuuu/internal-api": "workspace:*",
@@ -289,8 +290,10 @@
         "next": "^16.2.6",
         "next-intl": "^4.11.2",
         "next-themes": "^0.4.6",
+        "nuqs": "^2.8.9",
         "react": "^19.2.6",
         "react-dom": "^19.2.6",
+        "zod": "^4.4.3",
       },
       "devDependencies": {
         "@tailwindcss/postcss": "^4.3.0",
@@ -1237,7 +1240,7 @@
     },
     "packages/sdk": {
       "name": "tuturuuu",
-      "version": "0.4.6",
+      "version": "0.4.7",
       "bin": {
         "ttr": "./dist/cli/index.js",
         "tuturuuu": "./dist/cli/index.js",

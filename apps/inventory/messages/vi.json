@@ -31,8 +31,16 @@
         "description": "Tạo combo, khuyến mãi và gói chiến dịch.",
         "title": "Combo"
       },
+      "catalog": {
+        "description": "Tìm mặt hàng, chủ sở hữu, danh mục và trạng thái sẵn sàng lên kệ.",
+        "title": "Danh mục"
+      },
       "checkout": {
         "description": "Xem trước các dòng phí rõ ràng trước checkout.",
+        "title": "Checkout"
+      },
+      "checkouts": {
+        "description": "Theo dõi giỏ đã giữ hàng, thời hạn giữ và trạng thái đơn.",
         "title": "Checkout"
       },
       "controls": {
@@ -47,13 +55,96 @@
         "description": "Tồn kho, thanh toán và sức khỏe vận hành.",
         "title": "Tổng quan"
       },
+      "sales": {
+        "description": "Rà soát đơn bán đã hoàn tất và liên kết hóa đơn tài chính.",
+        "title": "Bán hàng"
+      },
+      "setup": {
+        "description": "Kiểm tra sản phẩm, đơn vị, kho và chủ sở hữu đã sẵn sàng.",
+        "title": "Thiết lập"
+      },
       "stock": {
         "description": "Theo dõi nhập kho, giữ hàng và giải phóng hàng.",
         "title": "Tồn kho"
       },
+      "storefront": {
+        "description": "Xuất bản cửa hàng và listing sẵn sàng cho khách.",
+        "title": "Cửa hàng"
+      },
       "stripe": {
         "description": "Chuẩn bị onboarding Stripe Connect và sổ cái phí.",
         "title": "Stripe"
+      }
+    },
+    "operator": {
+      "columns": {
+        "category": "Danh mục",
+        "item": "Mặt hàng",
+        "location": "Vị trí",
+        "owner": "Chủ sở hữu",
+        "stock": "Tồn kho"
+      },
+      "empty": "Không có bản ghi kho hàng phù hợp với chế độ xem này.",
+      "forms": {
+        "bundleName": "Tên combo",
+        "create": "Tạo",
+        "price": "Giá",
+        "slug": "slug",
+        "storeName": "Tên cửa hàng"
+      },
+      "metrics": {
+        "bundles": "Combo",
+        "lowStock": "Sắp hết hàng",
+        "products": "Sản phẩm",
+        "storefronts": "Cửa hàng"
+      },
+      "openStore": "Mở cửa hàng",
+      "search": "Tìm trong kho",
+      "statuses": {
+        "active": "Đang hoạt động",
+        "all": "Tất cả",
+        "completed": "Hoàn tất",
+        "draft": "Nháp",
+        "published": "Đã xuất bản",
+        "reserved": "Đã giữ hàng"
+      },
+      "views": {
+        "audits": {
+          "description": "Truy vết tồn kho, checkout và tài chính trong một timeline kiểm toán.",
+          "title": "Timeline kiểm toán"
+        },
+        "bundles": {
+          "description": "Tạo SKU combo từ các sản phẩm thành phần có tồn kho.",
+          "title": "Quản lý combo"
+        },
+        "catalog": {
+          "description": "Vận hành sản phẩm với chủ sở hữu, danh mục và dòng tồn kho có thể tìm kiếm.",
+          "title": "Bảng điều khiển danh mục"
+        },
+        "checkouts": {
+          "description": "Theo dõi giữ hàng, thời hạn hết hạn và trạng thái checkout công khai.",
+          "title": "Hàng đợi checkout"
+        },
+        "overview": {
+          "description": "Quét nhanh sức khỏe sản phẩm, mức sẵn sàng cửa hàng và rủi ro sắp hết hàng.",
+          "title": "Trung tâm điều phối kho"
+        },
+        "sales": {
+          "description": "Rà soát doanh số dựa trên hóa đơn từ các checkout kho đã hoàn tất.",
+          "title": "Sổ cái bán hàng"
+        },
+        "setup": {
+          "description": "Xác thực thiết lập sản phẩm trước khi xuất bản listing lên cửa hàng.",
+          "title": "Mức sẵn sàng thiết lập"
+        },
+        "stock": {
+          "description": "Tìm tồn kho thấp và rủi ro biến động theo từng kho.",
+          "title": "Giám sát tồn kho"
+        },
+        "storefront": {
+          "description": "Tạo cửa hàng và chuẩn bị listing đã xuất bản cho checkout công khai.",
+          "title": "Điều khiển cửa hàng"
+        }
       }
     },
     "shell": {
@@ -62,6 +153,27 @@
       "signOut": "Đăng xuất",
       "switchWorkspace": "Đổi workspace",
       "workspace": "Workspace {workspace}"
+    },
+    "storefront": {
+      "add": "Thêm",
+      "bundleAvailability": "Tồn combo",
+      "cart": "Giỏ hàng",
+      "checkout": "Checkout",
+      "fallbackDescription": "Chưa có mô tả.",
+      "form": {
+        "email": "Email",
+        "name": "Họ và tên",
+        "note": "Ghi chú đơn hàng",
+        "phone": "Số điện thoại"
+      },
+      "loading": "Đang tải kho hàng...",
+      "notFound": "Cửa hàng này chưa khả dụng.",
+      "order": "Đơn hàng",
+      "orderStatus": "Trạng thái đơn: {status}",
+      "reserve": "Giữ đơn hàng",
+      "reservedCopy": "Checkout giữ tồn kho trong một khoảng thời gian ngắn trước khi chốt hóa đơn.",
+      "store": "Cửa hàng",
+      "total": "Tổng cộng"
     },
     "views": {
       "audits": {

@@ -68,6 +68,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
     unlocalizedPath.startsWith('/login') ||
+    unlocalizedPath.startsWith('/store') ||
     unlocalizedPath.startsWith('/verify-token');
 
   if (!isPublicPath) {

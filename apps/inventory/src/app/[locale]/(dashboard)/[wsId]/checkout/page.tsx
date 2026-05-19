@@ -1,5 +1,10 @@
-import { InventoryWorkspacePage } from '@/components/inventory-workspace-page';
+import { redirect } from 'next/navigation';
 
-export default function InventoryCheckoutPage() {
-  return <InventoryWorkspacePage view="checkout" />;
+export default async function InventoryCheckoutPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId } = await params;
+  redirect(`/${wsId}/checkouts`);
 }

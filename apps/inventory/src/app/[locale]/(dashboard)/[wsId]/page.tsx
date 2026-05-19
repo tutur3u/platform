@@ -1,5 +1,10 @@
-import { InventoryWorkspacePage } from '@/components/inventory-workspace-page';
+import { InventoryOperatorClient } from '@/components/operator/inventory-operator-client';
 
-export default function WorkspaceInventoryPage() {
-  return <InventoryWorkspacePage view="overview" />;
+export default async function WorkspaceInventoryPage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId } = await params;
+  return <InventoryOperatorClient view="overview" wsId={wsId} />;
 }

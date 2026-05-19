@@ -31,9 +31,17 @@
         "description": "Build bundles, promotions, and campaign packs.",
         "title": "Bundles"
       },
+      "catalog": {
+        "description": "Search items, owners, categories, and listing readiness.",
+        "title": "Catalog"
+      },
       "checkout": {
         "description": "Preview clear fee lines before checkout.",
         "title": "Checkout"
+      },
+      "checkouts": {
+        "description": "Monitor reserved carts, checkout expiry, and order status.",
+        "title": "Checkouts"
       },
       "controls": {
         "description": "Review observability and control coverage.",
@@ -47,13 +55,96 @@
         "description": "Inventory, payments, and operating health.",
         "title": "Overview"
       },
+      "sales": {
+        "description": "Review finalized sales linked to finance invoices.",
+        "title": "Sales"
+      },
+      "setup": {
+        "description": "Verify product, unit, warehouse, and owner readiness.",
+        "title": "Setup"
+      },
       "stock": {
         "description": "Track stock intake, reservations, and releases.",
         "title": "Stock"
       },
+      "storefront": {
+        "description": "Publish storefronts and customer-ready listings.",
+        "title": "Storefront"
+      },
       "stripe": {
         "description": "Prepare Stripe Connect onboarding and fee ledgers.",
         "title": "Stripe"
+      }
+    },
+    "operator": {
+      "columns": {
+        "category": "Category",
+        "item": "Item",
+        "location": "Location",
+        "owner": "Owner",
+        "stock": "Stock"
+      },
+      "empty": "No inventory records match this view.",
+      "forms": {
+        "bundleName": "Bundle name",
+        "create": "Create",
+        "price": "Price",
+        "slug": "slug",
+        "storeName": "Store name"
+      },
+      "metrics": {
+        "bundles": "Bundles",
+        "lowStock": "Low stock",
+        "products": "Products",
+        "storefronts": "Storefronts"
+      },
+      "openStore": "Open store",
+      "search": "Search inventory",
+      "statuses": {
+        "active": "Active",
+        "all": "All",
+        "completed": "Completed",
+        "draft": "Draft",
+        "published": "Published",
+        "reserved": "Reserved"
+      },
+      "views": {
+        "audits": {
+          "description": "Trace inventory, checkout, and finance events in one audit timeline.",
+          "title": "Audit timeline"
+        },
+        "bundles": {
+          "description": "Build bundle SKUs from stock-backed component products.",
+          "title": "Bundle manager"
+        },
+        "catalog": {
+          "description": "Operate products with searchable owners, categories, and stock rows.",
+          "title": "Catalog console"
+        },
+        "checkouts": {
+          "description": "Watch reservations, expiry windows, and public checkout status.",
+          "title": "Checkout queue"
+        },
+        "overview": {
+          "description": "Scan product health, storefront readiness, and low-stock risk.",
+          "title": "Inventory command center"
+        },
+        "sales": {
+          "description": "Review invoice-backed sales created from finalized inventory checkouts.",
+          "title": "Sales ledger"
+        },
+        "setup": {
+          "description": "Validate product setup before publishing listings to a storefront.",
+          "title": "Setup readiness"
+        },
+        "stock": {
+          "description": "Find low stock and warehouse-level inventory movement risks.",
+          "title": "Stock monitor"
+        },
+        "storefront": {
+          "description": "Create storefronts and prepare published listings for public checkout.",
+          "title": "Storefront control"
+        }
       }
     },
     "shell": {
@@ -62,6 +153,27 @@
       "signOut": "Sign out",
       "switchWorkspace": "Switch workspace",
       "workspace": "{workspace} workspace"
+    },
+    "storefront": {
+      "add": "Add",
+      "bundleAvailability": "Bundle stock",
+      "cart": "Cart",
+      "checkout": "Checkout",
+      "fallbackDescription": "No description provided.",
+      "form": {
+        "email": "Email",
+        "name": "Full name",
+        "note": "Order note",
+        "phone": "Phone"
+      },
+      "loading": "Loading inventory...",
+      "notFound": "This storefront is not available.",
+      "order": "Order",
+      "orderStatus": "Order status: {status}",
+      "reserve": "Reserve order",
+      "reservedCopy": "Checkout reserves stock for a short window before invoice finalization.",
+      "store": "Store",
+      "total": "Total"
     },
     "views": {
       "audits": {

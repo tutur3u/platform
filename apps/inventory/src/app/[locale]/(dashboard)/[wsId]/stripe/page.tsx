@@ -1,5 +1,10 @@
-import { InventoryWorkspacePage } from '@/components/inventory-workspace-page';
+import { redirect } from 'next/navigation';
 
-export default function InventoryStripePage() {
-  return <InventoryWorkspacePage view="stripe" />;
+export default async function InventoryStripePage({
+  params,
+}: {
+  params: Promise<{ wsId: string }>;
+}) {
+  const { wsId } = await params;
+  redirect(`/${wsId}/storefront`);
 }
