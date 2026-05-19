@@ -48,7 +48,7 @@ dependencies:
   image_cropper: ^12.1.1
   image_picker: ^1.2.1
   intl: ^0.20.2
-  json_annotation: ^4.11.0
+  json_annotation: ^4.12.0
   local_auth: ^3.0.1
   lucide_icons: ^0.257.0
   markdown: ^7.3.1
