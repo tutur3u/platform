@@ -679,6 +679,18 @@ CREATE INDEX idx_new_feature_ws_id ON new_feature(ws_id);
 CREATE INDEX idx_new_feature_created_by ON new_feature(created_by);
 ```
 
+## Privilege Grants vs RLS Scope
+
+RLS policies only apply after SQL privileges have already allowed the role to
+touch a table. For sensitive workspace configuration tables, avoid granting
+`insert`, `update`, or `delete` to the broad `authenticated` role when the
+matching RLS policies only check workspace membership.
+
+Keep `authenticated` grants read-only unless the table policy itself enforces
+the same granular permission that the application route requires. Route
+privileged writes through permission-gated API handlers using elevated
+service-role access.
+
 ## Related Documentation
 
 - [Database Schema Overview](/reference/database/schema-overview)
