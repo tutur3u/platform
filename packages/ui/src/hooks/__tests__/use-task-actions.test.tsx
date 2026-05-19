@@ -1661,6 +1661,81 @@ describe('useTaskActions', () => {
       ]);
     });
 
+    it('bulk-moves selected external tasks through personal placement', async () => {
+      const localTask = {
+        ...mockTask,
+        id: 'local-task',
+      } as unknown as Task;
+      const externalTask = {
+        ...mockExternalTask,
+        id: 'external-task',
+      } as unknown as Task;
+      const targetList = {
+        id: 'list-2',
+        name: 'Later',
+        board_id: 'board-1',
+        status: 'active',
+        created_at: '2025-01-01T00:00:00Z',
+        archived: false,
+        deleted: false,
+        creator_id: 'user-1',
+        color: null,
+        position: 3,
+      } as unknown as TaskList;
+
+      queryClient.setQueryData(['tasks', 'board-1'], [localTask, externalTask]);
+      mockUpsertCurrentUserTaskPersonalPlacement.mockResolvedValueOnce({
+        task: {
+          ...externalTask,
+          list_id: 'list-2',
+          personal_list_id: 'list-2',
+          personal_sort_key: 2_000_000,
+          sort_key: 2_000_000,
+        },
+      });
+
+      const { result } = renderHook(
+        () =>
+          useTaskActions({
+            task: externalTask,
+            boardId: 'board-1',
+            targetCompletionList: mockCompletionList,
+            targetClosedList: mockClosedList,
+            availableLists: [...mockAvailableLists, targetList],
+            onUpdate: vi.fn(),
+            setIsLoading: vi.fn(),
+            setMenuOpen: vi.fn(),
+            selectedTasks: new Set(['local-task', 'external-task']),
+            isMultiSelectMode: true,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        await result.current.handleMoveToList('list-2');
+      });
+
+      expect(mockUpdateWorkspaceTask).toHaveBeenCalledWith(
+        'ws-1',
+        'local-task',
+        {
+          list_id: 'list-2',
+        }
+      );
+      expect(mockUpdateWorkspaceTask).not.toHaveBeenCalledWith(
+        'ws-1',
+        'external-task',
+        expect.anything()
+      );
+      expect(mockUpsertCurrentUserTaskPersonalPlacement).toHaveBeenCalledWith(
+        'external-task',
+        expect.objectContaining({
+          personal_board_id: 'board-1',
+          personal_list_id: 'list-2',
+        })
+      );
+    });
+
     it('falls back to a source not-started list when no matching non-terminal source list exists', async () => {
       const sourceDoneExternalTask = {
         ...mockExternalTask,

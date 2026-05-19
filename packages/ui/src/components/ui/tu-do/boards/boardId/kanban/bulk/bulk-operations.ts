@@ -82,6 +82,7 @@ export function useBulkOperations(config: BulkOperationsConfig) {
     queryClient,
     wsId,
     boardId,
+    columns,
     broadcast,
     i18n
   );

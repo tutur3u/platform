@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/internal-api/tasks';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import type { Task } from '@tuturuuu/types/primitives/Task';
+import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { toast } from '@tuturuuu/ui/sonner';
 import {
@@ -62,29 +63,53 @@ export function useTaskActions({
   const queryClient = useQueryClient();
   const broadcast = useBoardBroadcast();
 
-  const getWorkspaceId = useCallback(async () => {
-    const sourceWorkspaceId = task?.source_workspace_id ?? undefined;
-    const taskWorkspaceId =
-      (task as Task & { ws_id?: string })?.ws_id ??
-      (
-        task as Task & {
-          task_lists?: { workspace_boards?: { ws_id?: string } };
-        }
-      )?.task_lists?.workspace_boards?.ws_id;
-    const resolvedWorkspaceId =
-      sourceWorkspaceId ??
-      taskWorkspaceId ??
-      (boardId
-        ? await resolveTaskProjectWorkspaceId({ boardId }).catch(() => null)
-        : null) ??
-      workspaceId;
+  const resolveWorkspaceIdForTask = useCallback(
+    async (taskRecord?: Task) => {
+      const sourceWorkspaceId = taskRecord?.source_workspace_id ?? undefined;
+      const taskWorkspaceId =
+        (taskRecord as Task & { ws_id?: string })?.ws_id ??
+        (
+          taskRecord as Task & {
+            task_lists?: { workspace_boards?: { ws_id?: string } };
+          }
+        )?.task_lists?.workspace_boards?.ws_id;
+      const resolvedWorkspaceId =
+        sourceWorkspaceId ??
+        taskWorkspaceId ??
+        (boardId
+          ? await resolveTaskProjectWorkspaceId({ boardId }).catch(() => null)
+          : null) ??
+        workspaceId;
 
-    if (!resolvedWorkspaceId) {
-      throw new Error('Workspace ID is required');
+      if (!resolvedWorkspaceId) {
+        throw new Error('Workspace ID is required');
+      }
+
+      return resolvedWorkspaceId;
+    },
+    [boardId, workspaceId]
+  );
+
+  const getWorkspaceId = useCallback(async () => {
+    return resolveWorkspaceIdForTask(task);
+  }, [resolveWorkspaceIdForTask, task]);
+
+  const getExternalMoveOptions = useCallback((targetList: TaskList) => {
+    const options: {
+      sourceStatus?: TaskBoardStatus;
+      placementPosition: 'top' | 'end';
+    } = {
+      placementPosition: isTaskBoardResolvedStatus(targetList.status)
+        ? 'top'
+        : 'end',
+    };
+
+    if (isTaskBoardTerminalStatus(targetList.status)) {
+      options.sourceStatus = targetList.status;
     }
 
-    return resolvedWorkspaceId;
-  }, [boardId, task, workspaceId]);
+    return options;
+  }, []);
 
   const markLocallyMutatedTask = useCallback((taskRecord: Task): Task => {
     return {
@@ -918,7 +943,6 @@ export function useTaskActions({
       const targetList = availableLists.find(
         (list) => list.id === targetListId
       );
-      const isCompletionList = isTaskBoardResolvedStatus(targetList?.status);
       const isTargetCompletedList = isTaskBoardCompletedStatus(
         targetList?.status
       );
@@ -926,27 +950,38 @@ export function useTaskActions({
         targetList?.status
       );
       const now = new Date().toISOString();
+      const previousTaskMap = new Map(
+        previousTasks?.map((item) => [item.id, item]) ?? []
+      );
+      const selectedTaskById = new Map<string, Task>();
+
+      for (const taskId of tasksToMove) {
+        const selectedTask = previousTaskMap.get(taskId) ?? task;
+        if (selectedTask.id === taskId) {
+          selectedTaskById.set(taskId, selectedTask);
+        }
+      }
+
+      const externalTaskById = new Map(
+        targetList
+          ? [...selectedTaskById.values()]
+              .filter((selectedTask) => isPersonalExternalTask(selectedTask))
+              .map((selectedTask) => [selectedTask.id, selectedTask] as const)
+          : []
+      );
+      const localTaskIdsToMove = tasksToMove.filter(
+        (taskId) => !externalTaskById.has(taskId)
+      );
 
       if (isPersonalExternalTask(task) && !shouldBulkMove && targetList) {
         try {
-          const externalMoveOptions: {
-            sourceStatus?: 'done' | 'closed';
-            placementPosition: 'top' | 'end';
-          } = {
-            placementPosition: isCompletionList ? 'top' : 'end',
-          };
-
-          if (targetList.status === 'done' || targetList.status === 'closed') {
-            externalMoveOptions.sourceStatus = targetList.status;
-          }
-
           await moveExternalTaskToPersonalList({
             boardId,
             markLocallyMutatedTask,
             queryClient,
             task,
             targetList,
-            ...externalMoveOptions,
+            ...getExternalMoveOptions(targetList),
           });
 
           toast.success('Success', {
@@ -971,7 +1006,7 @@ export function useTaskActions({
           (old: Task[] | undefined) => {
             if (!old) return old;
             return old.map((t) => {
-              if (tasksToMove.includes(t.id)) {
+              if (localTaskIdsToMove.includes(t.id)) {
                 const currentList = availableLists.find(
                   (list) => list.id === t.list_id
                 );
@@ -1002,17 +1037,36 @@ export function useTaskActions({
         );
 
         // Move tasks one by one to ensure triggers fire for each task
-        const workspaceId = await getWorkspaceId();
-
         let successCount = 0;
         const failedTaskIds: string[] = [];
-        const previousTaskMap = new Map(
-          previousTasks?.map((item) => [item.id, item]) ?? []
-        );
         for (const taskId of tasksToMove) {
           try {
+            const externalTask = externalTaskById.get(taskId);
+
+            if (externalTask && targetList) {
+              await moveExternalTaskToPersonalList({
+                boardId,
+                markLocallyMutatedTask,
+                queryClient,
+                task: externalTask,
+                targetList,
+                ...getExternalMoveOptions(targetList),
+              });
+              broadcast?.('task:upsert', {
+                task: {
+                  id: taskId,
+                  list_id: targetListId,
+                },
+              });
+              successCount++;
+              continue;
+            }
+
+            const selectedTask = selectedTaskById.get(taskId);
+            const taskWorkspaceId =
+              await resolveWorkspaceIdForTask(selectedTask);
             const { task: movedTask } = await updateWorkspaceTask(
-              workspaceId,
+              taskWorkspaceId,
               taskId,
               {
                 list_id: targetListId,
@@ -1079,8 +1133,9 @@ export function useTaskActions({
       boardId,
       task,
       broadcast,
-      getWorkspaceId,
+      getExternalMoveOptions,
       markLocallyMutatedTask,
+      resolveWorkspaceIdForTask,
       rollbackTaskIds,
     ]
   );

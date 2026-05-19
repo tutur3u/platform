@@ -8,6 +8,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import type { BoardBroadcastFn } from '../../../../shared/board-broadcast-context';
 import type { BulkOperationI18n } from './bulk-operation-i18n';
 import { getInternalApiOptions } from './bulk-operation-utils';
+import {
+  getExternalTaskIdSet,
+  getMovePartitions,
+  moveExternalTasksToPersonalList,
+} from './bulk-personal-external-move';
 
 export function useBulkMoveToBoard(
   queryClient: QueryClient,
@@ -241,6 +246,7 @@ export function useBulkMoveToList(
   queryClient: QueryClient,
   wsId: string,
   boardId: string,
+  columns: TaskList[],
   broadcast?: BoardBroadcastFn | null,
   i18n?: BulkOperationI18n
 ) {
@@ -262,29 +268,66 @@ export function useBulkMoveToList(
         { completed_at: string | null; closed_at: string | null }
       >();
       const apiOptions = getInternalApiOptions();
+      const targetList = columns.find((column) => column.id === listId);
+      const { externalTasks, localTaskIds } = getMovePartitions({
+        boardId,
+        queryClient,
+        taskIds,
+      });
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'move_to_list',
-            listId,
+      if (localTaskIds.length > 0) {
+        const result = await bulkWorkspaceTasks(
+          wsId,
+          {
+            taskIds: localTaskIds,
+            operation: {
+              type: 'move_to_list',
+              listId,
+            },
           },
-        },
-        apiOptions
-      );
+          apiOptions
+        );
 
-      successCount = result.successCount;
-      failures.push(...result.failures);
-      movedTaskIds.push(...result.succeededTaskIds);
+        successCount += result.successCount;
+        failures.push(...result.failures);
+        movedTaskIds.push(...result.succeededTaskIds);
 
-      for (const taskId of result.succeededTaskIds) {
-        const taskMeta = result.taskMetaById?.[taskId];
-        taskTimestamps.set(taskId, {
-          completed_at: taskMeta?.completed_at ?? null,
-          closed_at: taskMeta?.closed_at ?? null,
-        });
+        for (const taskId of result.succeededTaskIds) {
+          const taskMeta = result.taskMetaById?.[taskId];
+          taskTimestamps.set(taskId, {
+            completed_at: taskMeta?.completed_at ?? null,
+            closed_at: taskMeta?.closed_at ?? null,
+          });
+        }
+      }
+
+      if (externalTasks.length > 0) {
+        if (!targetList) {
+          failures.push(
+            ...externalTasks.map((task) => ({
+              taskId: task.id,
+              error: 'Target list not found',
+            }))
+          );
+        } else {
+          const externalMoveResult = await moveExternalTasksToPersonalList({
+            boardId,
+            queryClient,
+            targetList,
+            tasks: externalTasks,
+          });
+
+          successCount += externalMoveResult.movedTaskIds.length;
+          movedTaskIds.push(...externalMoveResult.movedTaskIds);
+          failures.push(...externalMoveResult.failures);
+
+          for (const [
+            taskId,
+            timestamps,
+          ] of externalMoveResult.taskTimestamps) {
+            taskTimestamps.set(taskId, timestamps);
+          }
+        }
       }
 
       if (successCount === 0) {
@@ -305,13 +348,21 @@ export function useBulkMoveToList(
       await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
       const previousTasks = queryClient.getQueryData(['tasks', boardId]);
       const taskIdSet = new Set(taskIds);
+      const previousTasksArray = Array.isArray(previousTasks)
+        ? (previousTasks as Task[])
+        : [];
+      const externalTaskIds = getExternalTaskIdSet(
+        previousTasksArray.filter((task) => taskIdSet.has(task.id))
+      );
 
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, list_id: listId } : t
+            taskIdSet.has(t.id) && !externalTaskIds.has(t.id)
+              ? { ...t, list_id: listId }
+              : t
           );
         }
       );
@@ -429,29 +480,53 @@ export function useBulkMoveToStatus(
         { completed_at: string | null; closed_at: string | null }
       >();
       const apiOptions = getInternalApiOptions();
+      const { externalTasks, localTaskIds } = getMovePartitions({
+        boardId,
+        queryClient,
+        taskIds,
+      });
 
-      const result = await bulkWorkspaceTasks(
-        wsId,
-        {
-          taskIds,
-          operation: {
-            type: 'move_to_list',
-            listId: targetList.id,
+      if (localTaskIds.length > 0) {
+        const result = await bulkWorkspaceTasks(
+          wsId,
+          {
+            taskIds: localTaskIds,
+            operation: {
+              type: 'move_to_list',
+              listId: targetList.id,
+            },
           },
-        },
-        apiOptions
-      );
+          apiOptions
+        );
 
-      successCount = result.successCount;
-      failures.push(...result.failures);
-      movedTaskIds.push(...result.succeededTaskIds);
+        successCount += result.successCount;
+        failures.push(...result.failures);
+        movedTaskIds.push(...result.succeededTaskIds);
 
-      for (const taskId of result.succeededTaskIds) {
-        const taskMeta = result.taskMetaById?.[taskId];
-        taskTimestamps.set(taskId, {
-          completed_at: taskMeta?.completed_at ?? null,
-          closed_at: taskMeta?.closed_at ?? null,
+        for (const taskId of result.succeededTaskIds) {
+          const taskMeta = result.taskMetaById?.[taskId];
+          taskTimestamps.set(taskId, {
+            completed_at: taskMeta?.completed_at ?? null,
+            closed_at: taskMeta?.closed_at ?? null,
+          });
+        }
+      }
+
+      if (externalTasks.length > 0) {
+        const externalMoveResult = await moveExternalTasksToPersonalList({
+          boardId,
+          queryClient,
+          targetList,
+          tasks: externalTasks,
         });
+
+        successCount += externalMoveResult.movedTaskIds.length;
+        movedTaskIds.push(...externalMoveResult.movedTaskIds);
+        failures.push(...externalMoveResult.failures);
+
+        for (const [taskId, timestamps] of externalMoveResult.taskTimestamps) {
+          taskTimestamps.set(taskId, timestamps);
+        }
       }
 
       if (successCount === 0) {
@@ -477,12 +552,20 @@ export function useBulkMoveToStatus(
       if (!targetList) return { previousTasks };
 
       const taskIdSet = new Set(taskIds);
+      const previousTasksArray = Array.isArray(previousTasks)
+        ? (previousTasks as Task[])
+        : [];
+      const externalTaskIds = getExternalTaskIdSet(
+        previousTasksArray.filter((task) => taskIdSet.has(task.id))
+      );
       queryClient.setQueryData(
         ['tasks', boardId],
         (old: Task[] | undefined) => {
           if (!old) return old;
           return old.map((t) =>
-            taskIdSet.has(t.id) ? { ...t, list_id: targetList.id } : t
+            taskIdSet.has(t.id) && !externalTaskIds.has(t.id)
+              ? { ...t, list_id: targetList.id }
+              : t
           );
         }
       );
