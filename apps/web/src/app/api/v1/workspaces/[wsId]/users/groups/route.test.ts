@@ -3,12 +3,12 @@ import { GET } from './route';
 
 const mocks = vi.hoisted(() => ({
   applyAttendanceMemberCounts: vi.fn(),
-  buildPostgrestRateLimitResponse: vi.fn(),
   createAdminClient: vi.fn(),
   fetchManagersForGroups: vi.fn(),
   getPermissions: vi.fn(),
   getShouldCountManagersInAttendance: vi.fn(),
-  matchesUserGroupSearch: vi.fn(),
+  listUserGroupsForTable: vi.fn(),
+  countUserGroupsForTable: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveSessionAuthContext: vi.fn(),
   serverLogger: {
@@ -39,9 +39,6 @@ vi.mock('@/app/[locale]/(dashboard)/[wsId]/users/groups/utils', () => ({
   getShouldCountManagersInAttendance: (
     ...args: Parameters<typeof mocks.getShouldCountManagersInAttendance>
   ) => mocks.getShouldCountManagersInAttendance(...args),
-  matchesUserGroupSearch: (
-    ...args: Parameters<typeof mocks.matchesUserGroupSearch>
-  ) => mocks.matchesUserGroupSearch(...args),
 }));
 
 vi.mock('@/lib/api-auth', () => ({
@@ -54,10 +51,13 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   serverLogger: mocks.serverLogger,
 }));
 
-vi.mock('@/lib/postgrest-rate-limit', () => ({
-  buildPostgrestRateLimitResponse: (
-    ...args: Parameters<typeof mocks.buildPostgrestRateLimitResponse>
-  ) => mocks.buildPostgrestRateLimitResponse(...args),
+vi.mock('@/lib/user-groups/table-repository', () => ({
+  countUserGroupsForTable: (
+    ...args: Parameters<typeof mocks.countUserGroupsForTable>
+  ) => mocks.countUserGroupsForTable(...args),
+  listUserGroupsForTable: (
+    ...args: Parameters<typeof mocks.listUserGroupsForTable>
+  ) => mocks.listUserGroupsForTable(...args),
 }));
 
 type QueryResult = {
@@ -134,30 +134,22 @@ describe('workspace user groups route app-session auth', () => {
     mocks.fetchManagersForGroups.mockResolvedValue({});
     mocks.getShouldCountManagersInAttendance.mockResolvedValue(false);
     mocks.applyAttendanceMemberCounts.mockImplementation((groups) => groups);
-    mocks.matchesUserGroupSearch.mockReturnValue(true);
-    mocks.buildPostgrestRateLimitResponse.mockReturnValue(null);
+    mocks.listUserGroupsForTable.mockResolvedValue([
+      {
+        archived: false,
+        id: 'group-1',
+        name: 'Physics',
+        ws_id: 'ws-1',
+      },
+    ]);
+    mocks.countUserGroupsForTable.mockResolvedValue(1);
   });
 
   it('resolves the forwarded Teach app-session before listing groups', async () => {
     mocks.getPermissions.mockResolvedValue(
       permissions(['view_user_groups', 'manage_users'])
     );
-    const { admin } = createAdminMock({
-      workspace_user_groups_with_guest: [
-        {
-          count: 1,
-          data: [
-            {
-              archived: false,
-              id: 'group-1',
-              name: 'Physics',
-              ws_id: 'ws-1',
-            },
-          ],
-          error: null,
-        },
-      ],
-    });
+    const { admin } = createAdminMock({});
     mocks.createAdminClient.mockResolvedValue(admin);
 
     const request = new Request(
@@ -180,6 +172,22 @@ describe('workspace user groups route app-session auth', () => {
       user: expect.objectContaining({ id: 'teacher-1' }),
       wsId: 'ws-1',
     });
+    expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: null,
+      groupIds: null,
+      page: 1,
+      pageSize: 8,
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+    expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: null,
+      groupIds: null,
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
   });
 
   it('filters non-manager group lists with the linked workspace user id', async () => {
@@ -188,20 +196,6 @@ describe('workspace user groups route app-session auth', () => {
       workspace_user_groups_users: [
         {
           data: [{ group_id: 'group-1' }],
-          error: null,
-        },
-      ],
-      workspace_user_groups_with_guest: [
-        {
-          count: 1,
-          data: [
-            {
-              archived: false,
-              id: 'group-1',
-              name: 'Physics',
-              ws_id: 'ws-1',
-            },
-          ],
           error: null,
         },
       ],
@@ -227,17 +221,57 @@ describe('workspace user groups route app-session auth', () => {
     });
     expect(response.status).toBe(200);
 
-    const groupQuery = queries.find(
-      (entry) => entry.table === 'workspace_user_groups_with_guest'
-    )?.query;
     const membershipsQuery = queries.find(
       (entry) => entry.table === 'workspace_user_groups_users'
     )?.query;
 
-    expect(groupQuery?.in).toHaveBeenCalledWith('id', ['group-1']);
     expect(membershipsQuery?.in).toHaveBeenCalledWith('user_id', [
       'virtual-user-1',
       'teacher-1',
     ]);
+    expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: ['group-1'],
+      groupIds: null,
+      page: 1,
+      pageSize: 10,
+      q: undefined,
+      status: 'active',
+      wsId: 'ws-1',
+    });
+  });
+
+  it('passes requested ids, search, archived status, and pagination to the private helper', async () => {
+    mocks.getPermissions.mockResolvedValue(
+      permissions(['view_user_groups', 'manage_users'])
+    );
+    const { admin } = createAdminMock({});
+    mocks.createAdminClient.mockResolvedValue(admin);
+
+    const request = new Request(
+      'http://localhost/api/v1/workspaces/ws-1/users/groups?ids=group-2,group-3&q=tuyet&status=archived&page=2&pageSize=25'
+    );
+    const response = await GET(request, {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    await response.json();
+
+    expect(response.status).toBe(200);
+    expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: null,
+      groupIds: ['group-2', 'group-3'],
+      page: 2,
+      pageSize: 25,
+      q: 'tuyet',
+      status: 'archived',
+      wsId: 'ws-1',
+    });
+    expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
+      accessibleGroupIds: null,
+      groupIds: ['group-2', 'group-3'],
+      q: 'tuyet',
+      status: 'archived',
+      wsId: 'ws-1',
+    });
   });
 });

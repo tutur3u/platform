@@ -12,11 +12,13 @@ import {
   applyAttendanceMemberCounts,
   fetchManagersForGroups,
   getShouldCountManagersInAttendance,
-  matchesUserGroupSearch,
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
+import {
+  countUserGroupsForTable,
+  listUserGroupsForTable,
+} from '@/lib/user-groups/table-repository';
 
 function normalizeListParam(value: string | undefined) {
   if (!value) return [];
@@ -125,93 +127,54 @@ export async function GET(request: Request, { params }: Params) {
 
     const hasManageUsers = containsPermission('manage_users');
 
-    let data: UserGroup[] = [];
-    let count = 0;
-
     const status = sp.status ?? (sp.includeArchived ? 'all' : 'active');
-
-    const queryBuilder = sbAdmin
-      .from('workspace_user_groups_with_guest')
-      .select(
-        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, created_at',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId)
-      .order('name');
-
-    if (status === 'active') {
-      queryBuilder.eq('archived', false);
-    } else if (status === 'archived') {
-      queryBuilder.eq('archived', true);
-    }
-
-    const shouldUseAccentInsensitiveSearch = Boolean(sp.q?.trim());
-
     const requestedGroupIds = normalizeListParam(sp.ids);
+    let groupIds: string[] | null = requestedGroupIds.length
+      ? requestedGroupIds
+      : null;
+    let accessibleGroupIds: string[] | null = null;
 
-    if (requestedGroupIds.length > 0) {
-      queryBuilder.in('id', requestedGroupIds);
-    } else if (sp.userId) {
+    if (requestedGroupIds.length === 0 && sp.userId) {
       const { data: userGroups } = await sbAdmin
         .from('workspace_user_groups_users')
         .select('group_id')
         .eq('user_id', sp.userId);
 
-      const groupIds = userGroups?.map((ug) => ug.group_id) || [];
+      groupIds = userGroups?.map((ug) => ug.group_id).filter(Boolean) || [];
       if (groupIds.length === 0) {
         return NextResponse.json({ data: [], count: 0 });
       }
-      queryBuilder.in('id', groupIds);
-    } else if (!hasManageUsers) {
-      const groupIds = await getUserGroupMembershipsForUser({
+    } else if (requestedGroupIds.length === 0 && !hasManageUsers) {
+      accessibleGroupIds = await getUserGroupMembershipsForUser({
         platformUserId: auth.user.id,
         sbAdmin,
         wsId,
       });
-      if (groupIds.length === 0) {
+      if (accessibleGroupIds.length === 0) {
         return NextResponse.json({ data: [], count: 0 });
       }
-      queryBuilder.in('id', groupIds);
     }
 
-    if (!shouldUseAccentInsensitiveSearch) {
-      const start = (sp.page - 1) * sp.pageSize;
-      const end = sp.page * sp.pageSize - 1;
-      queryBuilder.range(start, end);
-    }
+    const [fetchedData, count] = await Promise.all([
+      listUserGroupsForTable({
+        accessibleGroupIds,
+        groupIds,
+        page: sp.page,
+        pageSize: sp.pageSize,
+        q: sp.q,
+        status,
+        wsId,
+      }),
+      countUserGroupsForTable({
+        accessibleGroupIds,
+        groupIds,
+        q: sp.q,
+        status,
+        wsId,
+      }),
+    ]);
 
-    const {
-      data: fetchedData,
-      error,
-      count: fetchedCount,
-    } = await queryBuilder;
-
-    if (error) {
-      const rateLimitResponse = buildPostgrestRateLimitResponse(error);
-      if (rateLimitResponse) {
-        return rateLimitResponse;
-      }
-
-      throw error;
-    }
-
-    let filteredData = (fetchedData as UserGroup[]) ?? [];
-
-    if (shouldUseAccentInsensitiveSearch) {
-      filteredData = filteredData.filter((group) =>
-        matchesUserGroupSearch(group.name, sp.q ?? '')
-      );
-
-      count = filteredData.length;
-
-      const start = (sp.page - 1) * sp.pageSize;
-      data = filteredData.slice(start, start + sp.pageSize);
-    } else {
-      data = filteredData;
-      count = fetchedCount ?? 0;
-    }
+    let data = fetchedData as UserGroup[];
 
     // Fetch managers for the fetched groups
     if (data.length > 0) {

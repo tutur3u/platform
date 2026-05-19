@@ -58,6 +58,20 @@ export type HiveWorldState = Tables<'hive_world_states'>;
 export type UserGroupPost = Tables<'user_group_posts'> & {
   group_name?: string | null;
 };
+export interface WorkspaceUserGroupTableRow {
+  id: string;
+  ws_id: string;
+  name: string;
+  starting_date: string | null;
+  ending_date: string | null;
+  archived: boolean;
+  notes: string | null;
+  is_guest: boolean;
+  amount: number;
+  sessions: string[] | null;
+  created_at: string | null;
+  has_session_today: boolean;
+}
 export type TulearnGamificationEvent = Tables<'tulearn_gamification_events'>;
 export type TulearnLearnerState = Tables<'tulearn_learner_state'>;
 export type TulearnParentInvite = Tables<'tulearn_parent_invites'>;

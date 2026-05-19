@@ -1,17 +1,16 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, Link2, Link2Off, Users, X } from '@tuturuuu/icons';
+import { Check, X } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
-import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
-import { Button } from '@tuturuuu/ui/button';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
-import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import moment from 'moment';
 import Link from 'next/link';
 import GroupAttendanceStats from './attendance-stats';
+import { ManagerCell } from './manager-cell';
+import { MemberCountCell } from './member-count-cell';
 import { UserGroupRowActions } from './row-actions';
 
 export const getUserGroupColumns = ({
@@ -25,27 +24,6 @@ export const getUserGroupColumns = ({
     canCreateUserGroups?: boolean;
   };
 }): ColumnDef<UserGroup>[] => [
-  // {
-  //   id: 'select',
-  //   header: ({ table }) => (
-  //     <Checkbox
-  //       checked={table.getIsAllPageRowsSelected()}
-  //       onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-  //       aria-label="Select all"
-  //       className="translate-y-[2px]"
-  //     />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <Checkbox
-  //       checked={row.getIsSelected()}
-  //       onCheckedChange={(value) => row.toggleSelected(!!value)}
-  //       aria-label="Select row"
-  //       className="translate-y-[2px]"
-  //     />
-  //   ),
-  //   enableSorting: false,
-  //   enableHiding: false,
-  // },
   {
     accessorKey: 'id',
     header: ({ column }) => (
@@ -96,86 +74,25 @@ export const getUserGroupColumns = ({
     ),
     cell: ({ row }) => {
       const managers = row.original.managers;
-      if (!managers || managers.length === 0) return <div>-</div>;
-      if (managers.length === 1) {
-        const m = managers[0];
-        if (!m) return null;
-        return (
-          <div className="flex items-center gap-2">
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={m.avatar_url || undefined} />
-              <AvatarFallback>
-                {m.full_name?.[0] || m.display_name?.[0] || '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col overflow-hidden">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate font-medium text-sm">
-                  {m.full_name || m.display_name || m.email}
-                </span>
-                {m.hasLinkedPlatformUser ? (
-                  <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
-                ) : (
-                  <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
-                )}
-              </div>
-              {m.email && (m.full_name || m.display_name) && (
-                <span className="truncate text-muted-foreground text-xs">
-                  {m.email}
-                </span>
-              )}
-            </div>
-          </div>
-        );
-      }
+      const linkedCount =
+        managers?.filter((manager) => manager.hasLinkedPlatformUser).length ??
+        0;
+      const total = managers?.length ?? 0;
+
       return (
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
-              <Users className="h-4 w-4" />
-              <span>
-                {managers.length}
-                <span className="ml-1 hidden sm:inline">
-                  {t(`${namespace}.managers`)}
-                </span>
-              </span>
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="start">
-            <div className="flex flex-col gap-2 p-4">
-              <h4 className="font-medium leading-none">
-                {t(`${namespace}.managers`)}
-              </h4>
-              <div className="grid gap-2">
-                {managers.map((m) => (
-                  <div key={m.id} className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={m.avatar_url || undefined} />
-                      <AvatarFallback>
-                        {m.full_name?.[0] || m.display_name?.[0] || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col overflow-hidden">
-                      <div className="flex items-center gap-1.5">
-                        <span className="truncate font-medium text-sm">
-                          {m.full_name || m.display_name}
-                        </span>
-                        {m.hasLinkedPlatformUser ? (
-                          <Link2 className="h-3.5 w-3.5 shrink-0 text-dynamic-green" />
-                        ) : (
-                          <Link2Off className="h-3.5 w-3.5 shrink-0 text-dynamic-red" />
-                        )}
-                      </div>
-                      <span className="truncate text-muted-foreground text-xs">
-                        {m.email}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+        <ManagerCell
+          managers={managers}
+          labels={{
+            linkedAll: t(`${namespace}.managers_linked_all`),
+            linkedCount: t(`${namespace}.linked_managers`, {
+              linked: linkedCount,
+              total,
+            }),
+            linkedNone: t(`${namespace}.managers_linked_none`),
+            linkedSome: t(`${namespace}.managers_linked_some`),
+            managers: t(`${namespace}.managers`),
+          }}
+        />
       );
     },
   },
@@ -218,7 +135,15 @@ export const getUserGroupColumns = ({
         title={t(`${namespace}.amount`)}
       />
     ),
-    cell: ({ row }) => <div>{row.getValue('amount')}</div>,
+    cell: ({ row }) => (
+      <MemberCountCell
+        group={row.original}
+        labels={{
+          managers: t(`${namespace}.managers`),
+          members: t(`${namespace}.members`),
+        }}
+      />
+    ),
   },
   {
     accessorKey: 'locked',

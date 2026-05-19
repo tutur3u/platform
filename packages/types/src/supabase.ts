@@ -843,6 +843,16 @@ export type Database = {
         Args: { p_confidence: number; p_score: number };
         Returns: Database['public']['Enums']['abuse_risk_tier'];
       };
+      count_workspace_user_groups_for_table: {
+        Args: {
+          p_accessible_group_ids?: string[];
+          p_group_ids?: string[];
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: number;
+      };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
@@ -853,6 +863,35 @@ export type Database = {
         }[];
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      list_workspace_user_groups_for_table: {
+        Args: {
+          p_accessible_group_ids?: string[];
+          p_group_ids?: string[];
+          p_limit?: number;
+          p_offset?: number;
+          p_search?: string;
+          p_status?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          amount: number;
+          archived: boolean;
+          created_at: string;
+          ending_date: string;
+          has_session_today: boolean;
+          id: string;
+          is_guest: boolean;
+          name: string;
+          notes: string;
+          sessions: string[];
+          starting_date: string;
+          ws_id: string;
+        }[];
+      };
+      normalize_user_group_search_text: {
+        Args: { input: string };
+        Returns: string;
+      };
       raise_rate_limit_exceeded: {
         Args: { p_retry_after: number };
         Returns: undefined;
@@ -866,6 +905,10 @@ export type Database = {
           p_user_id: string;
         };
         Returns: undefined;
+      };
+      resolve_user_groups_table_timezone: {
+        Args: { p_ws_id: string };
+        Returns: string;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
       try_consume_rate_limit_bucket: {

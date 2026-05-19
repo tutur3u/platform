@@ -184,6 +184,7 @@ export function UserGroupsTable({ wsId, initialData, permissions }: Props) {
         }}
         defaultVisibility={{
           id: false,
+          is_guest: false,
           locked: false,
           created_at: false,
         }}

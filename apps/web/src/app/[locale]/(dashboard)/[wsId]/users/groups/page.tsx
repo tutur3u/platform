@@ -7,6 +7,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  countUserGroupsForTable,
+  listUserGroupsForTable,
+} from '@/lib/user-groups/table-repository';
 import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';
 import {
@@ -14,7 +18,6 @@ import {
   fetchManagersForGroups,
   getShouldCountManagersInAttendance,
   getUserGroupMemberships,
-  matchesUserGroupSearch,
 } from './utils';
 
 export const metadata: Metadata = {
@@ -83,6 +86,8 @@ export default async function WorkspaceUserGroupsPage({
         const initialData = await getInitialData(
           wsId,
           {
+            page: sp.page,
+            pageSize: sp.pageSize,
             q: sp.q,
             status: parseUserGroupStatusFilter(sp.status, sp.includeArchived),
           },
@@ -149,31 +154,14 @@ async function getInitialData(
   try {
     const supabase = await createClient();
 
-    const queryBuilder = supabase
-      .from('workspace_user_groups_with_guest')
-      .select(
-        'id, ws_id, name, starting_date, ending_date, archived, notes, is_guest, amount, created_at',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId)
-      .order('name');
-
-    if (status === 'active') {
-      queryBuilder.eq('archived', false);
-    } else if (status === 'archived') {
-      queryBuilder.eq('archived', true);
-    }
-
-    const shouldUseAccentInsensitiveSearch = Boolean(q?.trim());
+    let accessibleGroupIds: string[] | null = null;
 
     if (!hasManageUsers) {
       const groupIds = await getUserGroupMemberships(wsId);
       if (groupIds.length === 0) {
         return { data: [], count: 0 };
       }
-      queryBuilder.in('id', groupIds);
+      accessibleGroupIds = groupIds;
     }
 
     // Validate and clamp page and pageSize parameters
@@ -189,26 +177,24 @@ async function getInitialData(
       !Number.isNaN(parsedSize) && parsedSize > 0 ? parsedSize : 10;
     validPageSize = Math.min(validPageSize, 100);
 
-    if (!shouldUseAccentInsensitiveSearch) {
-      const start = (validPage - 1) * validPageSize;
-      const end = start + validPageSize - 1;
-      queryBuilder.range(start, end);
-    }
+    const [fetchedGroups, filteredCount] = await Promise.all([
+      listUserGroupsForTable({
+        accessibleGroupIds,
+        page: validPage,
+        pageSize: validPageSize,
+        q,
+        status,
+        wsId,
+      }),
+      countUserGroupsForTable({
+        accessibleGroupIds,
+        q,
+        status,
+        wsId,
+      }),
+    ]);
 
-    const { data: fetchedData, error, count } = await queryBuilder;
-    if (error) throw error;
-
-    let groups = (fetchedData as UserGroup[]) ?? [];
-    let filteredCount = count ?? 0;
-
-    if (shouldUseAccentInsensitiveSearch) {
-      groups = groups.filter((group) =>
-        matchesUserGroupSearch(group.name, q ?? '')
-      );
-      filteredCount = groups.length;
-      const start = (validPage - 1) * validPageSize;
-      groups = groups.slice(start, start + validPageSize);
-    }
+    let groups = fetchedGroups as UserGroup[];
 
     // Fetch managers for the fetched groups
     if (groups.length > 0) {

@@ -373,20 +373,22 @@ create policy "Allow service role to manage sensitive workspace table"
 
 ### Pattern 11: Private Schema Server-Owned Tables
 
-**Use Case:** A table is only needed by cron jobs, service-role routes, or
-database internals and should not be exposed through Supabase's generated REST
-API at all.
+**Use Case:** A table, helper function, or protected query surface is only
+needed by cron jobs, service-role routes, Tuturuuu API routes, or database
+internals and should not be exposed through Supabase's generated REST API at
+all.
 
-Use the existing `private` schema for these tables. Do not add `private` to the
-Supabase Data API exposed schemas or extra search path. New migrations should
-prefer direct server-side Postgres access from `apps/web` through
-`getPlatformSql()` when an app route or server component needs private table
-access. This keeps browser and mobile consumers on centralized `apps/web` API
-routes while avoiding new Supabase REST endpoints for private data.
+Default new protected database access to the existing `private` schema unless
+the data is intentionally public. Do not add `private` to the Supabase Data API
+exposed schemas or extra search path. New migrations should prefer direct
+server-side Postgres access from `apps/web` through `getPlatformSql()` when an
+app route or server component needs private table or helper access. This keeps
+browser and mobile consumers on centralized `apps/web` API routes while avoiding
+new Supabase REST endpoints for private data.
 
 Legacy `public` bridging RPCs may exist while older code is migrated, but do
-not add new public RPCs for tables that can be reached through the server-side
-database connection.
+not add new public RPCs for tables or protected helper queries that can be
+reached through the server-side database connection.
 
 Required controls:
 
