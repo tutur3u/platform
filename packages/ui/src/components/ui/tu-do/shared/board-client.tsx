@@ -133,8 +133,15 @@ export function BoardClient({
 
   const refreshActiveBoard = useCallback(
     (options?: BoardRefreshOptions) => {
-      void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      void queryClient.invalidateQueries({ queryKey: ['tasks-full', boardId] });
+      const invalidateTasks = options?.invalidateTasks ?? true;
+
+      if (invalidateTasks) {
+        void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
+        void queryClient.invalidateQueries({
+          queryKey: ['tasks-full', boardId],
+        });
+      }
+
       void progressiveLoader.revalidateLoadedLists().catch(() => {
         // Best effort: direct cache broadcasts still keep the visible board moving.
       });

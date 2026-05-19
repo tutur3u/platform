@@ -1,16 +1,23 @@
 import '@testing-library/jest-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+  getActiveBoardRefresh,
+  setActiveBoardRefresh,
+} from '../board-broadcast-context';
 import { BoardClient } from '../board-client';
 
 const useWorkspaceLabelsMock = vi.fn();
 const getWorkspaceTaskBoardMock = vi.fn();
+const listWorkspaceTasksMock = vi.fn();
 const useProgressiveBoardLoaderMock = vi.fn();
+const revalidateLoadedListsMock = vi.fn();
 
 vi.mock('@tuturuuu/internal-api/tasks', () => ({
   getWorkspaceTaskBoard: (...args: unknown[]) =>
     getWorkspaceTaskBoardMock(...args),
+  listWorkspaceTasks: (...args: unknown[]) => listWorkspaceTasksMock(...args),
 }));
 
 vi.mock('@tuturuuu/utils/task-helper', () => ({
@@ -33,7 +40,7 @@ vi.mock('../use-progressive-board-loader', () => ({
     return {
       pagination: {},
       loadListPage: vi.fn(),
-      revalidateLoadedLists: vi.fn().mockResolvedValue(undefined),
+      revalidateLoadedLists: revalidateLoadedListsMock,
     };
   },
 }));
@@ -51,6 +58,8 @@ describe('BoardClient', () => {
     useWorkspaceLabelsMock.mockReset();
     useWorkspaceLabelsMock.mockReturnValue({ data: [] });
     getWorkspaceTaskBoardMock.mockReset();
+    listWorkspaceTasksMock.mockReset();
+    listWorkspaceTasksMock.mockResolvedValue({ tasks: [] });
     getWorkspaceTaskBoardMock.mockResolvedValue({
       board: {
         id: 'board-1',
@@ -70,6 +79,9 @@ describe('BoardClient', () => {
       },
     });
     useProgressiveBoardLoaderMock.mockReset();
+    revalidateLoadedListsMock.mockReset();
+    revalidateLoadedListsMock.mockResolvedValue(undefined);
+    setActiveBoardRefresh(null);
   });
 
   it('loads dependent board data with the fetched board workspace id', async () => {
@@ -97,5 +109,44 @@ describe('BoardClient', () => {
       'board-ws-uuid',
       'board-1'
     );
+  });
+
+  it('can revalidate loaded board lists without invalidating visible task caches', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+      },
+    });
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <BoardClient
+          boardId="board-1"
+          workspace={{ id: 'workspace-uuid', personal: false } as any}
+          currentUserId="user-1"
+        />
+      </QueryClientProvider>
+    );
+
+    expect(await screen.findByTestId('board-views')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(getActiveBoardRefresh()).toBeInstanceOf(Function);
+    });
+
+    await act(async () => {
+      getActiveBoardRefresh()?.({ invalidateTasks: false });
+    });
+
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks', 'board-1'],
+    });
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks-full', 'board-1'],
+    });
+    expect(revalidateLoadedListsMock).toHaveBeenCalledTimes(1);
   });
 });

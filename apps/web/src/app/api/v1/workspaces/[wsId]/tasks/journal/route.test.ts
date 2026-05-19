@@ -3,7 +3,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const getUser = vi.fn();
 const workspaceMemberMaybeSingle = vi.fn();
 const listMaybeSingle = vi.fn();
+const firstTaskMaybeSingle = vi.fn();
 const tasksInsertSelect = vi.fn();
+const tasksInsert = vi.fn(() => ({
+  select: tasksInsertSelect,
+}));
 const workspaceLabelsEq = vi.fn();
 const workspaceTaskLabelSingle = vi.fn();
 const taskProjectsEq = vi.fn();
@@ -39,9 +43,7 @@ const userClient = {
         };
       case 'tasks':
         return {
-          insert: vi.fn(() => ({
-            select: tasksInsertSelect,
-          })),
+          insert: tasksInsert,
         };
       case 'workspace_task_labels':
         return {
@@ -76,9 +78,18 @@ const adminClient = {
         };
       case 'tasks':
         return {
-          insert: vi.fn(() => ({
-            select: tasksInsertSelect,
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              is: vi.fn(() => ({
+                order: vi.fn(() => ({
+                  limit: vi.fn(() => ({
+                    maybeSingle: firstTaskMaybeSingle,
+                  })),
+                })),
+              })),
+            })),
           })),
+          insert: tasksInsert,
         };
       case 'workspace_task_labels':
         return {
@@ -168,6 +179,12 @@ describe('task journal route', () => {
     getUser.mockReset();
     workspaceMemberMaybeSingle.mockReset();
     listMaybeSingle.mockReset();
+    firstTaskMaybeSingle.mockReset();
+    firstTaskMaybeSingle.mockResolvedValue({
+      data: { sort_key: 1000 },
+      error: null,
+    });
+    tasksInsert.mockClear();
     tasksInsertSelect.mockReset();
     workspaceLabelsEq.mockReset();
     workspaceTaskLabelSingle.mockReset();
@@ -261,6 +278,7 @@ describe('task journal route', () => {
           description: null,
           priority: null,
           completed: false,
+          sort_key: 500,
           start_date: null,
           end_date: null,
           created_at: '2026-04-21T10:00:00.000Z',
@@ -328,6 +346,7 @@ describe('task journal route', () => {
         {
           id: 'task-1',
           name: 'Follow up customer',
+          sort_key: 500,
         },
       ],
     });
@@ -335,6 +354,12 @@ describe('task journal route', () => {
     expect(checkAiCredits).not.toHaveBeenCalled();
     expect(generateObject).not.toHaveBeenCalled();
     expect(tasksInsertSelect).toHaveBeenCalledTimes(1);
+    expect(tasksInsert).toHaveBeenCalledWith([
+      expect.objectContaining({
+        name: 'Follow up customer',
+        sort_key: 500,
+      }),
+    ]);
     expect(adminClient.from).toHaveBeenCalledWith('tasks');
     expect(userClient.from).not.toHaveBeenCalledWith('tasks');
   });

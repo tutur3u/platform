@@ -416,6 +416,36 @@ describe('useBoardRealtime', () => {
       expect(cachedTasks?.[0]?.assignees).toEqual([]);
     });
 
+    it('should update the full task cache when it exists', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [{ ...mockTaskWithRelations, name: 'Original Name' }]
+      );
+      queryClient.setQueryData(
+        ['tasks-full', 'board-1'],
+        [{ ...mockTaskWithRelations, name: 'Original Name' }]
+      );
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:upsert')!;
+
+      await act(async () => {
+        listener({
+          payload: { task: { id: 'task-1', name: 'Updated Name' } },
+        });
+      });
+
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])?.[0]?.name
+      ).toBe('Updated Name');
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1'])?.[0]?.name
+      ).toBe('Updated Name');
+    });
+
     it('should not duplicate task if already exists in cache', async () => {
       queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithRelations]);
 
@@ -561,6 +591,31 @@ describe('useBoardRealtime', () => {
         'board-1',
       ]);
       expect(cachedTasks).toHaveLength(0);
+    });
+
+    it('should remove task from the full task cache when it exists', async () => {
+      queryClient.setQueryData(['tasks', 'board-1'], [mockTaskWithRelations]);
+      queryClient.setQueryData(
+        ['tasks-full', 'board-1'],
+        [mockTaskWithRelations]
+      );
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:delete')!;
+
+      await act(async () => {
+        listener({ payload: { taskId: 'task-1' } });
+      });
+
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks', 'board-1'])
+      ).toHaveLength(0);
+      expect(
+        queryClient.getQueryData<Task[]>(['tasks-full', 'board-1'])
+      ).toHaveLength(0);
     });
 
     it('should call onTaskChange with DELETE', async () => {
@@ -724,6 +779,39 @@ describe('useBoardRealtime', () => {
       expect(cachedTasks?.[0]?.id).toBe('task-2');
     });
 
+    it('should also remove full-cache tasks belonging to deleted list', async () => {
+      const task1 = {
+        ...mockTaskWithRelations,
+        id: 'task-1',
+        list_id: 'list-1',
+      };
+      const task2 = {
+        ...mockTaskWithRelations,
+        id: 'task-2',
+        list_id: 'list-2',
+      };
+      queryClient.setQueryData(['tasks', 'board-1'], [task1, task2]);
+      queryClient.setQueryData(['tasks-full', 'board-1'], [task1, task2]);
+      queryClient.setQueryData(['task_lists', 'board-1'], [mockList]);
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('list:delete')!;
+
+      await act(async () => {
+        listener({ payload: { listId: 'list-1' } });
+      });
+
+      const cachedFullTasks = queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        'board-1',
+      ]);
+      expect(cachedFullTasks).toHaveLength(1);
+      expect(cachedFullTasks?.[0]?.id).toBe('task-2');
+    });
+
     it('should call onListChange with DELETE', async () => {
       queryClient.setQueryData(['task_lists', 'board-1'], [mockList]);
       const onListChange = vi.fn();
@@ -778,6 +866,41 @@ describe('useBoardRealtime', () => {
       ]);
       const task = cachedTasks?.[0];
       // The mock returns one assignee, one label, one project
+      expect(task?.assignees).toHaveLength(1);
+      expect(task?.labels).toHaveLength(1);
+      expect(task?.projects).toHaveLength(1);
+    });
+
+    it('should merge fetched relations into the full task cache when it exists', async () => {
+      queryClient.setQueryData(
+        ['tasks', 'board-1'],
+        [{ ...mockTaskWithRelations, id: 'task-1' }]
+      );
+      queryClient.setQueryData(
+        ['tasks-full', 'board-1'],
+        [{ ...mockTaskWithRelations, id: 'task-1' }]
+      );
+
+      renderHook(() => useBoardRealtime('board-1', { enabled: true }), {
+        wrapper,
+      });
+
+      const listener = broadcastListeners.get('task:relations-changed')!;
+
+      await act(async () => {
+        listener({ payload: { taskId: 'task-1' } });
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(200);
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      const task = queryClient.getQueryData<Task[]>([
+        'tasks-full',
+        'board-1',
+      ])?.[0];
       expect(task?.assignees).toHaveLength(1);
       expect(task?.labels).toHaveLength(1);
       expect(task?.projects).toHaveLength(1);

@@ -20,15 +20,17 @@ function TestHarness(props: {
     SetStateAction<Map<string, MessageFileAttachment[]>>
   >;
   setWorkspaceContextId: (value: string) => void;
+  status?: string;
   taskBoardId?: string;
   wsId: string;
 }) {
+  const { status = 'ready', ...rest } = props;
   useMiraChatEffects({
     messageAttachmentsRef: { current: new Map() },
-    status: 'ready',
+    status,
     isFullscreen: false,
     onToggleFullscreen: undefined,
-    ...props,
+    ...rest,
   });
 
   return null;
@@ -184,7 +186,7 @@ describe('useMiraChatEffects', () => {
     );
   });
 
-  it('invalidates task-board caches when Mira task tools finish', async () => {
+  it('revalidates active board caches without invalidating visible Kanban tasks when Mira task tools finish', async () => {
     const wsId = 'dashboard-ws';
     const boardId = 'board-123';
     const queryClient = new QueryClient();
@@ -228,22 +230,125 @@ describe('useMiraChatEffects', () => {
     );
 
     await waitFor(() => {
-      expect(invalidateSpy).toHaveBeenCalledWith({
-        queryKey: ['tasks', boardId],
+      expect(refreshActiveBoard).toHaveBeenCalledWith({
+        includeLists: undefined,
+        invalidateTasks: false,
       });
     });
 
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['tasks'] });
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['tasks'],
+      exact: true,
+    });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['task'] });
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['my-tasks'] });
     expect(invalidateSpy).toHaveBeenCalledWith({
-      queryKey: ['task-board', wsId, boardId],
+      queryKey: ['task-board', wsId],
+      exact: true,
     });
-    expect(invalidateSpy).toHaveBeenCalledWith({
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
+      queryKey: ['tasks', boardId],
+    });
+    expect(invalidateSpy).not.toHaveBeenCalledWith({
       queryKey: ['task_lists', boardId],
     });
-    expect(refreshActiveBoard).toHaveBeenCalledWith({
-      includeLists: undefined,
+  });
+
+  it('invalidates list caches only for Mira task-list tools', async () => {
+    const wsId = 'dashboard-ws';
+    const boardId = 'board-123';
+    const queryClient = new QueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const setWorkspaceContextId = vi.fn();
+    const setMessageAttachments = vi.fn();
+    const routerRefresh = vi.fn();
+    const refreshActiveBoard = vi.fn();
+    setActiveBoardRefresh(refreshActiveBoard);
+
+    render(
+      <TestHarness
+        wsId={wsId}
+        taskBoardId={boardId}
+        queryClient={queryClient}
+        routerRefresh={routerRefresh}
+        setMessageAttachments={setMessageAttachments}
+        setWorkspaceContextId={setWorkspaceContextId}
+        messages={[
+          {
+            id: 'assistant-list-tool',
+            role: 'assistant',
+            parts: [
+              {
+                type: 'tool-create_task_list',
+                toolCallId: 'tool-call-list',
+                state: 'output-available',
+                input: {
+                  boardId,
+                  name: 'Review',
+                },
+                output: {
+                  success: true,
+                  list: { id: 'list-1', name: 'Review' },
+                },
+              },
+            ],
+          },
+        ]}
+      />
+    );
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['task_lists', boardId],
+      });
     });
+
+    expect(invalidateSpy).toHaveBeenCalledWith({
+      queryKey: ['task-board', wsId, boardId],
+    });
+    expect(refreshActiveBoard).toHaveBeenCalledWith({
+      includeLists: true,
+      invalidateTasks: false,
+    });
+  });
+
+  it('does not refresh the whole route when a board-scoped Mira exchange completes', async () => {
+    const queryClient = new QueryClient();
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    const setWorkspaceContextId = vi.fn();
+    const setMessageAttachments = vi.fn();
+    const routerRefresh = vi.fn();
+    const { rerender } = render(
+      <TestHarness
+        wsId="dashboard-ws"
+        taskBoardId="board-123"
+        queryClient={queryClient}
+        routerRefresh={routerRefresh}
+        setMessageAttachments={setMessageAttachments}
+        setWorkspaceContextId={setWorkspaceContextId}
+        messages={[]}
+        status="streaming"
+      />
+    );
+
+    rerender(
+      <TestHarness
+        wsId="dashboard-ws"
+        taskBoardId="board-123"
+        queryClient={queryClient}
+        routerRefresh={routerRefresh}
+        setMessageAttachments={setMessageAttachments}
+        setWorkspaceContextId={setWorkspaceContextId}
+        messages={[]}
+        status="ready"
+      />
+    );
+
+    await waitFor(() => {
+      expect(invalidateSpy).toHaveBeenCalledWith({
+        queryKey: ['ai-credits'],
+      });
+    });
+    expect(routerRefresh).not.toHaveBeenCalled();
   });
 });

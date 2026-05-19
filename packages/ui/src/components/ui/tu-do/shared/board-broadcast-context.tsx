@@ -9,6 +9,7 @@ export type BoardBroadcastFn = (
 
 export interface BoardRefreshOptions {
   includeLists?: boolean;
+  invalidateTasks?: boolean;
 }
 
 export type BoardRefreshFn = (options?: BoardRefreshOptions) => void;

@@ -32,6 +32,56 @@ type UseBoardRealtimeEventHandlerOptions = {
 const isDefined = <T>(value: T | null | undefined): value is T =>
   value !== null && value !== undefined;
 
+function mergeRealtimeTask(
+  old: Task[] | undefined,
+  taskData: Partial<Task> & { id: string }
+) {
+  if (!old) {
+    return [
+      {
+        ...taskData,
+        assignees: taskData.assignees ?? [],
+        labels: taskData.labels ?? [],
+        projects: taskData.projects ?? [],
+      } as Task,
+    ];
+  }
+
+  const exists = old.some((task) => task.id === taskData.id);
+  if (exists) {
+    return old.map((task) =>
+      task.id === taskData.id ? { ...task, ...taskData } : task
+    );
+  }
+
+  return [
+    ...old,
+    {
+      ...taskData,
+      assignees: taskData.assignees ?? [],
+      labels: taskData.labels ?? [],
+      projects: taskData.projects ?? [],
+    } as Task,
+  ];
+}
+
+function deleteRealtimeTask(old: Task[] | undefined, taskId: string) {
+  if (!old) return old;
+  return old.filter((task) => task.id !== taskId);
+}
+
+function updateBoardTaskCaches(
+  queryClient: QueryClient,
+  boardId: string,
+  updater: (old: Task[] | undefined) => Task[] | undefined
+) {
+  queryClient.setQueryData(['tasks', boardId], updater);
+
+  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
+    queryClient.setQueryData(['tasks-full', boardId], updater);
+  }
+}
+
 export function useBoardRealtimeEventHandler({
   boardId,
   queryClient,
@@ -105,16 +155,13 @@ export function useBoardRealtimeEventHandler({
         });
       }
 
-      queryClient.setQueryData(
-        ['tasks', boardId],
-        (old: Task[] | undefined) => {
-          if (!old) return old;
-          return old.map((task) => {
-            const relations = relationsMap.get(task.id);
-            return relations ? { ...task, ...relations } : task;
-          });
-        }
-      );
+      updateBoardTaskCaches(queryClient, boardId, (old) => {
+        if (!old) return old;
+        return old.map((task) => {
+          const relations = relationsMap.get(task.id);
+          return relations ? { ...task, ...relations } : task;
+        });
+      });
     } catch (err) {
       if (DEV_MODE) {
         console.error(
@@ -135,37 +182,14 @@ export function useBoardRealtimeEventHandler({
           console.log('[useBoardRealtime] task:upsert received', taskData.id);
         }
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) {
-              return [
-                {
-                  ...taskData,
-                  assignees: taskData.assignees ?? [],
-                  labels: taskData.labels ?? [],
-                  projects: taskData.projects ?? [],
-                } as Task,
-              ];
-            }
-            const exists = old.some((t) => t.id === taskData.id);
-            if (exists) {
-              onTaskChangeRef.current?.(taskData as Task, 'UPDATE');
-              return old.map((t) =>
-                t.id === taskData.id ? { ...t, ...taskData } : t
-              );
-            }
-            onTaskChangeRef.current?.(taskData as Task, 'INSERT');
-            return [
-              ...old,
-              {
-                ...taskData,
-                assignees: taskData.assignees ?? [],
-                labels: taskData.labels ?? [],
-                projects: taskData.projects ?? [],
-              } as Task,
-            ];
-          }
+        const current = queryClient.getQueryData<Task[]>(['tasks', boardId]);
+        const eventType = current?.some((task) => task.id === taskData.id)
+          ? 'UPDATE'
+          : 'INSERT';
+        onTaskChangeRef.current?.(taskData as Task, eventType);
+
+        updateBoardTaskCaches(queryClient, boardId, (old) =>
+          mergeRealtimeTask(old, taskData)
         );
         return;
       }
@@ -179,12 +203,8 @@ export function useBoardRealtimeEventHandler({
         const current = queryClient.getQueryData<Task[]>(['tasks', boardId]);
         const deleted = current?.find((t) => t.id === taskId);
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.filter((t) => t.id !== taskId);
-          }
+        updateBoardTaskCaches(queryClient, boardId, (old) =>
+          deleteRealtimeTask(old, taskId)
         );
 
         if (deleted) {
@@ -237,12 +257,8 @@ export function useBoardRealtimeEventHandler({
           }
         );
 
-        queryClient.setQueryData(
-          ['tasks', boardId],
-          (old: Task[] | undefined) => {
-            if (!old) return old;
-            return old.filter((t) => t.list_id !== listId);
-          }
+        updateBoardTaskCaches(queryClient, boardId, (old) =>
+          old?.filter((task) => task.list_id !== listId)
         );
 
         if (deleted) {

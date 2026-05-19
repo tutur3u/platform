@@ -30,7 +30,7 @@ import type {
   TaskBoardAiChatBarTask,
   TaskBoardAiChatBarUser,
 } from './task-board-ai-chat-bar-types';
-import { mergeCreatedTasks } from './task-board-ai-chat-bar-utils';
+import { publishTaskBoardAiCreatedTasks } from './task-board-ai-chat-bar-utils';
 
 const LAST_SELECTED_LIST_STORAGE_KEY_PREFIX =
   'tuturuuu:task-board-ai-chat-bar:last-selected-list';
@@ -167,35 +167,15 @@ export function useTaskBoardAiChatBarTaskFlow({
     (tasks: TaskBoardAiChatBarTask[]) => {
       if (!tasks.length) return;
 
-      queryClient.setQueryData<TaskBoardAiChatBarTask[]>(
-        ['tasks', boardId],
-        (current) => mergeCreatedTasks(current, tasks)
-      );
-      queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-      queryClient.invalidateQueries({
-        queryKey: ['task-board', wsId, boardId],
+      publishTaskBoardAiCreatedTasks({
+        boardId,
+        broadcast: getActiveBroadcast(),
+        queryClient,
+        refreshActiveBoard: getActiveBoardRefresh(),
+        tasks,
       });
-
-      const broadcast = getActiveBroadcast();
-      for (const task of tasks) {
-        broadcast?.('task:upsert', { task });
-      }
-
-      const tasksWithRelations = tasks
-        .filter(
-          (task) =>
-            (task.assignee_ids?.length ?? 0) > 0 ||
-            (task.label_ids?.length ?? 0) > 0 ||
-            (task.project_ids?.length ?? 0) > 0
-        )
-        .map((task) => task.id);
-
-      if (tasksWithRelations.length > 0) {
-        broadcast?.('task:relations-changed', { taskIds: tasksWithRelations });
-      }
-      getActiveBoardRefresh()?.();
     },
-    [boardId, queryClient, wsId]
+    [boardId, queryClient]
   );
 
   const simpleCreateMutation = useMutation({

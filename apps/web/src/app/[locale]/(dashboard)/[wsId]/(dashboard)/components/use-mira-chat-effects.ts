@@ -88,19 +88,23 @@ function invalidateMiraTaskCaches({
 }) {
   const boardId = taskBoardId?.trim();
 
-  void queryClient.invalidateQueries({ queryKey: ['tasks'] });
+  void queryClient.invalidateQueries({ queryKey: ['tasks'], exact: true });
   void queryClient.invalidateQueries({ queryKey: ['task'] });
   void queryClient.invalidateQueries({ queryKey: ['my-tasks'] });
-  void queryClient.invalidateQueries({ queryKey: ['task-board', wsId] });
+  void queryClient.invalidateQueries({
+    queryKey: ['task-board', wsId],
+    exact: true,
+  });
   void queryClient.invalidateQueries({ queryKey: ['task-boards', wsId] });
 
   if (boardId) {
-    void queryClient.invalidateQueries({ queryKey: ['tasks', boardId] });
-    void queryClient.invalidateQueries({
-      queryKey: ['task-board', wsId, boardId],
-    });
-    void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
-    getActiveBoardRefresh()?.({ includeLists });
+    if (includeLists) {
+      void queryClient.invalidateQueries({
+        queryKey: ['task-board', wsId, boardId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ['task_lists', boardId] });
+    }
+    getActiveBoardRefresh()?.({ includeLists, invalidateTasks: false });
   }
 
   if (includeLists) {
@@ -161,9 +165,11 @@ export function useMiraChatEffects({
     const wasBusy = prev === 'submitted' || prev === 'streaming';
     if (wasBusy && (status === 'ready' || status === 'error')) {
       queryClient.invalidateQueries({ queryKey: ['ai-credits'] });
-      routerRefresh();
+      if (!taskBoardId) {
+        routerRefresh();
+      }
     }
-  }, [queryClient, routerRefresh, status]);
+  }, [queryClient, routerRefresh, status, taskBoardId]);
 
   const handledToolOutputs = useRef(new Set<string>());
   useEffect(() => {

@@ -28,6 +28,7 @@ import {
   MAX_SHORT_TEXT_LENGTH,
   MAX_TASK_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { calculateTopSortKey } from '@tuturuuu/utils/task-helper';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -870,8 +871,32 @@ export async function POST(
       return createdLabel.id;
     };
 
+    const { data: firstTask, error: firstTaskError } = await sbAdmin
+      .from('tasks')
+      .select('sort_key')
+      .eq('list_id', listCheck.id)
+      .is('deleted_at', null)
+      .order('sort_key', { ascending: true, nullsFirst: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (firstTaskError) {
+      return NextResponse.json(
+        { error: 'Failed to prepare task ordering' },
+        { status: 500 }
+      );
+    }
+
+    const sortKeys = new Array<number>(candidateTasks.length);
+    let nextSortKey = firstTask?.sort_key ?? null;
+    for (let index = candidateTasks.length - 1; index >= 0; index -= 1) {
+      const sortKey = calculateTopSortKey(nextSortKey);
+      sortKeys[index] = sortKey;
+      nextSortKey = sortKey;
+    }
+
     const nowIso = new Date().toISOString();
-    const tasksToInsert = candidateTasks.map((task) => ({
+    const tasksToInsert = candidateTasks.map((task, index) => ({
       name: task.title,
       description: task.description || null,
       creator_id: user.id,
@@ -879,6 +904,7 @@ export async function POST(
       priority: task.priority,
       end_date: task.dueDate,
       estimation_points: task.estimationPoints ?? null,
+      sort_key: sortKeys[index] as number,
       created_at: nowIso,
     }));
 
@@ -892,6 +918,7 @@ export async function POST(
         description,
         priority,
         completed,
+        sort_key,
         start_date,
         end_date,
         created_at,
