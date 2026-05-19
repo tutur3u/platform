@@ -180,6 +180,7 @@ async function getInitialData(
     const [fetchedGroups, filteredCount] = await Promise.all([
       listUserGroupsForTable({
         accessibleGroupIds,
+        client: supabase,
         page: validPage,
         pageSize: validPageSize,
         q,
@@ -188,6 +189,7 @@ async function getInitialData(
       }),
       countUserGroupsForTable({
         accessibleGroupIds,
+        client: supabase,
         q,
         status,
         wsId,

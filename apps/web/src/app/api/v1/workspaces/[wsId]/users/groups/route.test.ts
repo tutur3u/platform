@@ -174,6 +174,7 @@ describe('workspace user groups route app-session auth', () => {
     });
     expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: null,
+      client: admin,
       groupIds: null,
       page: 1,
       pageSize: 8,
@@ -183,6 +184,7 @@ describe('workspace user groups route app-session auth', () => {
     });
     expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: null,
+      client: admin,
       groupIds: null,
       q: undefined,
       status: 'active',
@@ -231,6 +233,7 @@ describe('workspace user groups route app-session auth', () => {
     ]);
     expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: ['group-1'],
+      client: admin,
       groupIds: null,
       page: 1,
       pageSize: 10,
@@ -259,6 +262,7 @@ describe('workspace user groups route app-session auth', () => {
     expect(response.status).toBe(200);
     expect(mocks.listUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: null,
+      client: admin,
       groupIds: ['group-2', 'group-3'],
       page: 2,
       pageSize: 25,
@@ -268,6 +272,7 @@ describe('workspace user groups route app-session auth', () => {
     });
     expect(mocks.countUserGroupsForTable).toHaveBeenCalledWith({
       accessibleGroupIds: null,
+      client: admin,
       groupIds: ['group-2', 'group-3'],
       q: 'tuyet',
       status: 'archived',

@@ -15,6 +15,7 @@ import {
 } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/utils';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { buildPostgrestRateLimitResponse } from '@/lib/postgrest-rate-limit';
 import {
   countUserGroupsForTable,
   listUserGroupsForTable,
@@ -158,6 +159,7 @@ export async function GET(request: Request, { params }: Params) {
     const [fetchedData, count] = await Promise.all([
       listUserGroupsForTable({
         accessibleGroupIds,
+        client: sbAdmin,
         groupIds,
         page: sp.page,
         pageSize: sp.pageSize,
@@ -167,6 +169,7 @@ export async function GET(request: Request, { params }: Params) {
       }),
       countUserGroupsForTable({
         accessibleGroupIds,
+        client: sbAdmin,
         groupIds,
         q: sp.q,
         status,
@@ -196,6 +199,13 @@ export async function GET(request: Request, { params }: Params) {
       count,
     });
   } catch (error) {
+    const rateLimitResponse = buildPostgrestRateLimitResponse(
+      error && typeof error === 'object' ? error : {}
+    );
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     serverLogger.error('Error in workspace user groups API', { error });
     return NextResponse.json(
       { message: 'Internal server error' },
