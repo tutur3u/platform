@@ -25,7 +25,6 @@ import { Card } from '@tuturuuu/ui/card';
 import { cn } from '@tuturuuu/utils/format';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 
 interface SecurityFeature {
   icon: LucideIcon;
@@ -288,14 +287,10 @@ export default function SecurityPage() {
                       </a>
                     </Button>
                     <Button size="lg" variant="outline" asChild>
-                      <a
-                        href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/SECURITY.md`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
+                      <Link href="/security/policy">
                         <FileText className="mr-2 h-5 w-5" />
                         Security Policy
-                      </a>
+                      </Link>
                     </Button>
                   </div>
 

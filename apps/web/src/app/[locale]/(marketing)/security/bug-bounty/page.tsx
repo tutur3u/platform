@@ -1,7 +1,7 @@
 import {
   ArrowRight,
   Bug,
-  GithubIcon,
+  FileText,
   Mail,
   ScanSearch,
   Shield,
@@ -16,7 +16,6 @@ import { cn } from '@tuturuuu/utils/format';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
-import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   badgeAccentClasses,
   LedgerMetric,
@@ -91,8 +90,8 @@ export default async function BugBountyPage() {
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] bg-[size:56px_56px] opacity-30" />
       <div className="pointer-events-none fixed inset-0 -z-10 bg-linear-to-br from-dynamic-green/10 via-transparent to-dynamic-orange/10" />
 
-      <section className="px-4 pt-24 pb-14 sm:px-6 sm:pt-32 lg:px-8 lg:pt-40">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+      <section className="px-4 pt-24 pb-10 sm:px-6 sm:pt-28 sm:pb-12 lg:px-8 lg:pt-32 lg:pb-16">
+        <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(360px,0.82fr)] lg:items-center">
           <div>
             <Badge
               variant="secondary"
@@ -102,7 +101,7 @@ export default async function BugBountyPage() {
               {t('hero.badge')}
             </Badge>
 
-            <h1 className="max-w-5xl font-bold text-4xl tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="max-w-5xl font-bold text-4xl tracking-tight sm:text-5xl lg:text-6xl xl:text-7xl">
               {t('hero.title_prefix')}{' '}
               <span className="bg-linear-to-r from-dynamic-green via-dynamic-cyan to-dynamic-orange bg-clip-text text-transparent">
                 {t('hero.title_highlight')}
@@ -121,14 +120,10 @@ export default async function BugBountyPage() {
                 </a>
               </Button>
               <Button size="lg" variant="outline" asChild>
-                <a
-                  href={`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/blob/main/SECURITY.md`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <GithubIcon className="mr-2 h-5 w-5" />
+                <Link href="/security/policy">
+                  <FileText className="mr-2 h-5 w-5" />
                   {t('hero.policy_cta')}
-                </a>
+                </Link>
               </Button>
             </div>
           </div>
@@ -155,6 +150,7 @@ export default async function BugBountyPage() {
                 value={t('community.public_credit')}
               />
               <LedgerMetric
+                className="sm:col-span-2"
                 label={t('community.metrics.channel')}
                 value="security@tuturuuu.com"
               />
@@ -163,7 +159,7 @@ export default async function BugBountyPage() {
         </div>
       </section>
 
-      <section className="px-4 py-14 sm:px-6 lg:px-8">
+      <section className="px-4 py-10 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
             <div>

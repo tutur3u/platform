@@ -9289,6 +9289,118 @@
     "name": "Tên",
     "value": "Giá trị"
   },
+  "security-policy": {
+    "cta": {
+      "description": "Hãy gửi báo cáo riêng tư trước. Chúng tôi sẽ xác nhận, kiểm chứng tác động, phối hợp sửa lỗi và trao đổi về ghi nhận công khai khi vấn đề đã được xử lý.",
+      "hall_cta": "Xem Bảng vinh danh",
+      "report_cta": "Email đội bảo mật",
+      "title": "Sẵn sàng báo cáo?"
+    },
+    "hero": {
+      "badge": "Chính sách bảo mật",
+      "description": "Cách báo cáo lỗ hổng an toàn, phạm vi áp dụng và cách chúng tôi phối hợp sửa lỗi cũng như ghi nhận công khai.",
+      "hall_cta": "Xem Bảng vinh danh",
+      "report_cta": "Báo cáo riêng tư",
+      "title_highlight": "công bố có trách nhiệm",
+      "title_prefix": "Chính sách bảo mật Tuturuuu cho"
+    },
+    "meta": {
+      "description": "Đọc chính sách bảo mật của Tuturuuu về công bố có trách nhiệm, phạm vi, quy tắc kiểm thử an toàn và kỳ vọng phản hồi.",
+      "title": "Chính sách bảo mật"
+    },
+    "reporting": {
+      "ack_label": "Phản hồi ban đầu",
+      "ack_value": "Trong vòng 24 giờ",
+      "credit_label": "Ghi nhận",
+      "credit_value": "Ghi nhận công khai tùy chọn",
+      "description": "Hãy dùng một kênh riêng tư cho báo cáo ban đầu để chúng tôi có thể phân loại nhanh và bảo vệ người dùng khi vấn đề chưa được xử lý.",
+      "email_label": "Hộp thư riêng tư",
+      "eyebrow": "Kênh báo cáo",
+      "title": "Gửi báo cáo lỗ hổng riêng tư"
+    },
+    "response": {
+      "badge": "Phản hồi",
+      "description": "Chúng tôi ưu tiên tác động đã xác nhận, trao đổi bước tiếp theo và giữ ghi nhận công khai khớp với phạm vi đã xác minh.",
+      "items": {
+        "ack": {
+          "description": "Chúng tôi xác nhận báo cáo mới trong vòng 24 giờ khi có đủ thông tin liên hệ.",
+          "title": "Xác nhận"
+        },
+        "credit": {
+          "description": "Nhà nghiên cứu đã xác minh có thể được nêu trên Bảng vinh danh bằng tên hoặc handle họ chọn.",
+          "title": "Ghi nhận"
+        },
+        "triage": {
+          "description": "Chúng tôi tái hiện hoặc kiểm chứng hành vi, phân loại tác động và phối hợp khắc phục.",
+          "title": "Phân loại"
+        }
+      },
+      "title": "Điều xảy ra sau khi bạn báo cáo"
+    },
+    "rules": {
+      "badge": "Kiểm thử an toàn",
+      "description": "Vui lòng dùng bằng chứng nhỏ nhất cần thiết để thể hiện tác động và tránh hành động có thể gây hại cho khách hàng, workspace, dữ liệu hoặc độ sẵn sàng của dịch vụ.",
+      "include": {
+        "items": {
+          "contact": "Cách liên hệ ưu tiên và tên ghi nhận công khai, nếu bạn muốn được ghi nhận.",
+          "impact": "Tác động bảo mật thực tế và người dùng, workspace hoặc tài sản bị ảnh hưởng.",
+          "steps": "Các bước tái hiện rõ ràng, ảnh chụp màn hình, nhật ký request hoặc proof of concept tối thiểu.",
+          "summary": "Tóm tắt ngắn về lỗ hổng và bề mặt Tuturuuu bị ảnh hưởng."
+        },
+        "title": "Nên gửi kèm"
+      },
+      "items": {
+        "minimum": "Dùng kiểm thử tối thiểu, không phá hoại và dừng lại khi tác động đã được chứng minh.",
+        "no_data_access": "Không truy cập, chỉnh sửa, xoá hoặc trích xuất dữ liệu không thuộc về bạn.",
+        "no_persistence": "Không thiết lập quyền truy cập lâu dài, backdoor, mã độc hoặc cơ chế duy trì truy cập.",
+        "no_service_disruption": "Không chạy kiểm thử DoS, spam, làm cạn tài nguyên hoặc ảnh hưởng đến độ sẵn sàng.",
+        "private": "Báo cáo riêng tư tới security@tuturuuu.com trước khi công bố công khai."
+      },
+      "title": "Quy tắc phối hợp"
+    },
+    "scope": {
+      "badge": "Phạm vi",
+      "description": "Tập trung vào lỗ hổng ảnh hưởng đến sản phẩm do Tuturuuu quản lý, dữ liệu người dùng, xác thực, phân quyền hoặc tính toàn vẹn của dịch vụ production.",
+      "in_scope": {
+        "items": {
+          "auth": "Xác thực, phân quyền, quản lý phiên và kiểm soát truy cập giữa các workspace.",
+          "core": "Sản phẩm web, route ứng dụng công khai, API và tính năng workspace của Tuturuuu.",
+          "data": "Vấn đề làm lộ, chỉnh sửa hoặc phá huỷ dữ liệu người dùng, workspace, thanh toán hoặc nội dung riêng tư.",
+          "public_apps": "Tên miền và tích hợp công khai do Tuturuuu kiểm soát khi có thể chứng minh tác động người dùng một cách an toàn."
+        },
+        "title": "Trong phạm vi"
+      },
+      "out_of_scope": {
+        "items": {
+          "dos": "DoS, kiểm thử tải, spam, quét tự động quy mô lớn hoặc làm cạn tài nguyên.",
+          "physical": "Tấn công vật lý, chiếm thiết bị nhân viên hoặc vấn đề cần thông tin đăng nhập bị đánh cắp.",
+          "social": "Kỹ thuật xã hội, phishing, quấy rối hoặc cố gắng nhắm vào nhân viên hay người dùng Tuturuuu.",
+          "upstream": "Hành vi gốc của nhà cung cấp bên thứ ba khi chưa chứng minh được tác động tới sản phẩm Tuturuuu."
+        },
+        "title": "Ngoài phạm vi"
+      },
+      "title": "Phạm vi và ranh giới"
+    },
+    "workflow": {
+      "badge": "Quy trình",
+      "description": "Công bố có trách nhiệm hiệu quả nhất khi báo cáo được giữ riêng tư, quá trình tái hiện an toàn và phạm vi đã xác minh được viết chính xác.",
+      "steps": {
+        "credit": {
+          "description": "Khi vấn đề đã được xử lý và nhà nghiên cứu muốn được ghi nhận, chúng tôi có thể công bố ghi nhận đã xác minh trong Bảng vinh danh.",
+          "title": "Ghi nhận công việc đã xác minh"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com với đủ chi tiết để tái hiện vấn đề mà không công bố trước.",
+          "title": "Báo cáo riêng tư"
+        },
+        "safe": {
+          "description": "Giữ phạm vi kiểm thử hẹp, tránh dữ liệu khách hàng và dừng lại khi có bằng chứng tác động rõ ràng.",
+          "title": "Kiểm thử an toàn"
+        }
+      },
+      "title": "Luồng công bố có trách nhiệm"
+    }
+  },
   "sessions-card": {
     "active_sessions": "Phiên hoạt động",
     "current_session": "Phiên hiện tại",

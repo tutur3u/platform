@@ -9289,6 +9289,118 @@
     "name": "Name",
     "value": "Value"
   },
+  "security-policy": {
+    "cta": {
+      "description": "Send the report privately first. We will acknowledge it, validate impact, coordinate a fix, and discuss public credit when the issue is resolved.",
+      "hall_cta": "View Hall of Fame",
+      "report_cta": "Email security team",
+      "title": "Ready to report?"
+    },
+    "hero": {
+      "badge": "Security policy",
+      "description": "How to report vulnerabilities safely, what is in scope, and how we coordinate fixes and public credit.",
+      "hall_cta": "View Hall of Fame",
+      "report_cta": "Report privately",
+      "title_highlight": "responsible disclosure",
+      "title_prefix": "Tuturuuu security policy for"
+    },
+    "meta": {
+      "description": "Read the Tuturuuu security policy for responsible disclosure, scope, safe testing rules, and response expectations.",
+      "title": "Security Policy"
+    },
+    "reporting": {
+      "ack_label": "Initial response",
+      "ack_value": "Within 24 hours",
+      "credit_label": "Recognition",
+      "credit_value": "Optional public credit",
+      "description": "Use one private channel for initial reports so we can triage quickly and protect users while the issue is unresolved.",
+      "email_label": "Private inbox",
+      "eyebrow": "Report channel",
+      "title": "Send vulnerability reports privately"
+    },
+    "response": {
+      "badge": "Response",
+      "description": "We prioritize confirmed impact, communicate next steps, and keep public credit aligned with the verified scope.",
+      "items": {
+        "ack": {
+          "description": "We acknowledge new reports within 24 hours when enough contact information is provided.",
+          "title": "Acknowledge"
+        },
+        "credit": {
+          "description": "Verified researchers can be listed on the Hall of Fame with the name or handle they choose.",
+          "title": "Credit"
+        },
+        "triage": {
+          "description": "We reproduce or validate the behavior, classify impact, and coordinate remediation.",
+          "title": "Triage"
+        }
+      },
+      "title": "What happens after you report"
+    },
+    "rules": {
+      "badge": "Safe testing",
+      "description": "Please use the smallest proof needed to show impact and avoid actions that could harm customers, workspaces, data, or service availability.",
+      "include": {
+        "items": {
+          "contact": "Your preferred contact method and public credit name, if you want recognition.",
+          "impact": "The practical security impact and affected users, workspaces, or assets.",
+          "steps": "Clear reproduction steps, screenshots, request logs, or a minimal proof of concept.",
+          "summary": "A short summary of the vulnerability and the affected Tuturuuu surface."
+        },
+        "title": "What to include"
+      },
+      "items": {
+        "minimum": "Use minimal, non-destructive testing and stop once impact is demonstrated.",
+        "no_data_access": "Do not access, modify, delete, or exfiltrate data that is not yours.",
+        "no_persistence": "Do not establish persistence, backdoors, malware, or ongoing access.",
+        "no_service_disruption": "Do not run denial-of-service, spam, resource exhaustion, or availability-impacting tests.",
+        "private": "Report privately to security@tuturuuu.com before public disclosure."
+      },
+      "title": "Rules of engagement"
+    },
+    "scope": {
+      "badge": "Scope",
+      "description": "Focus on vulnerabilities that affect Tuturuuu-managed products, user data, authentication, authorization, or production service integrity.",
+      "in_scope": {
+        "items": {
+          "auth": "Authentication, authorization, session handling, and cross-workspace access controls.",
+          "core": "Tuturuuu web products, public app routes, APIs, and workspace features.",
+          "data": "Issues that expose, modify, or destroy user, workspace, billing, or private content.",
+          "public_apps": "Public Tuturuuu-controlled domains and integrations where user impact can be shown safely."
+        },
+        "title": "In scope"
+      },
+      "out_of_scope": {
+        "items": {
+          "dos": "Denial-of-service, load testing, spam, automated scanning at scale, or resource exhaustion.",
+          "physical": "Physical attacks, employee device compromise, or issues requiring stolen credentials.",
+          "social": "Social engineering, phishing, harassment, or attempts to target Tuturuuu staff or users.",
+          "upstream": "Provider-native behavior without a demonstrated Tuturuuu product impact."
+        },
+        "title": "Out of scope"
+      },
+      "title": "Scope and boundaries"
+    },
+    "workflow": {
+      "badge": "Process",
+      "description": "Responsible disclosure works best when reports stay private, reproduction is safe, and verified scope is written precisely.",
+      "steps": {
+        "credit": {
+          "description": "When the issue is resolved and the researcher wants recognition, we can publish verified credit in the Hall of Fame.",
+          "title": "Credit verified work"
+        },
+        "private": {
+          "description": "Email security@tuturuuu.com with enough detail to reproduce the issue without publishing it first.",
+          "title": "Report privately"
+        },
+        "safe": {
+          "description": "Keep testing narrow, avoid customer data, and stop when you have a clear proof of impact.",
+          "title": "Test safely"
+        }
+      },
+      "title": "Responsible disclosure flow"
+    }
+  },
   "sessions-card": {
     "active_sessions": "Active Sessions",
     "current_session": "Current Session",

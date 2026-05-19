@@ -38,15 +38,24 @@ const hallOfFameAccentClasses = {
 } as const;
 
 export function LedgerMetric({
+  className,
   label,
   value,
 }: {
+  className?: string;
   label: string;
   value: string;
 }) {
   return (
-    <div className="rounded-lg border border-dynamic-blue/20 bg-background/70 p-4">
-      <div className="font-semibold text-2xl">{value}</div>
+    <div
+      className={cn(
+        'min-w-0 rounded-lg border border-dynamic-blue/20 bg-background/70 p-4',
+        className
+      )}
+    >
+      <div className="break-words font-semibold text-xl sm:text-2xl">
+        {value}
+      </div>
       <div className="mt-1 text-foreground/60 text-sm leading-snug">
         {label}
       </div>
