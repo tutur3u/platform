@@ -86,7 +86,7 @@ Args: {
 
 The script is integrated into the Supabase workflow:
 
-1. **Generation**: `bun supabase gen types typescript --local --schema public`
+1. **Generation**: `bun supabase gen types typescript --local --schema public,private,storage`
 2. **Sorting**: `node ./scripts/sort-types.js` (ensures consistent key ordering)
 3. **Formatting**: `biome format --write` (applies consistent formatting)
 

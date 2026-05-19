@@ -739,4 +739,6 @@ Generated types are exported from `@tuturuuu/types`:
 import type { Database } from '@tuturuuu/types';
 
 type Task = Database['public']['Tables']['workspace_tasks']['Row'];
+type PrivateConfig = Database['private']['Tables']['notification_email_config']['Row'];
+type StorageObject = Database['storage']['Tables']['objects']['Row'];
 ```

@@ -146,6 +146,11 @@ After schema changes, regenerate the TypeScript types to keep your code in sync 
 bun sb:typegen
 ```
 
+The generator includes the `public`, `private`, and `storage` schemas. Keep
+server-owned/private tables out of Supabase REST exposure, but still regenerate
+types after migrations so server-only helpers and storage paths can import
+accurate generated row shapes.
+
 Alternatively, you can use the shorthand:
 
 ```bash

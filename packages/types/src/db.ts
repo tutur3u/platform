@@ -474,12 +474,10 @@ export type WorkspaceCronJob = Tables<'workspace_cron_jobs'> & {
 export type WorkspaceCronExecution = Tables<'workspace_cron_executions'> & {
   href?: string;
 };
-export interface AIWhitelistDomain {
-  created_at: string;
-  description: string | null;
-  domain: string;
-  enabled: boolean;
-}
+export type AIWhitelistDomain = Tables<
+  { schema: 'private' },
+  'ai_whitelisted_domains'
+>;
 export type CanonicalExternalProject = Tables<'canonical_external_projects'>;
 export type ExternalProjectCollection =
   Tables<'workspace_external_project_collections'>;
