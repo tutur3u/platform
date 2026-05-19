@@ -1,7 +1,7 @@
 ---
 title: "Authorization & Permissions"
 description: "How apps/web evaluates workspace-scoped permissions and where those checks are enforced"
-updatedAt: "2026-05-16"
+updatedAt: "2026-05-19"
 ---
 
 `apps/web` uses workspace-scoped permissions, not a single coarse role string, to decide what a signed-in user can see or mutate.
@@ -156,6 +156,13 @@ Course consumption routes are the exception that combine both models: `MEMBER` w
 Privileged routes call `getPermissions()` after normalization and reject when `containsPermission(...)` fails.
 
 This is the pattern to use for settings, finance, roles, infrastructure, and any other restricted mutation surface.
+
+If a route writes workspace membership, invitations, roles, or other authorization
+data with `createAdminClient()` / service-role privileges, enforce the relevant
+permission before the admin write. A `workspace_members` row alone is never
+enough for those flows: invite creation and membership-type changes require
+`manage_workspace_members`, and `workspace_members.type` is protected at the
+database layer so non-managers cannot self-promote from `GUEST` to `MEMBER`.
 
 ## API Keys Reuse The Same Permission IDs
 

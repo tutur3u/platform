@@ -3,7 +3,10 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { nanoid } from 'nanoid';
 import { NextResponse } from 'next/server';
 import * as z from 'zod';
@@ -54,13 +57,27 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
+    const permissions = await getPermissions({ wsId, request: req });
+
+    if (
+      !permissions ||
+      permissions.membershipType !== 'MEMBER' ||
+      permissions.withoutPermission('manage_workspace_members')
+    ) {
+      return NextResponse.json(
+        { error: 'You do not have permission to manage invite links' },
+        { status: 403 }
+      );
+    }
+
     // Block invite link creation for personal workspaces
     const sbAdmin = await createAdminClient();
+    const resolvedWsId = permissions.wsId;
 
     const { data: wsData } = await sbAdmin
       .from('workspaces')
       .select('personal')
-      .eq('id', wsId)
+      .eq('id', resolvedWsId)
       .single();
 
     if (wsData?.personal) {
@@ -74,7 +91,7 @@ export async function POST(req: Request, { params }: Params) {
     const { data: disableInvite } = await sbAdmin
       .from('workspace_secrets')
       .select('value')
-      .eq('ws_id', wsId)
+      .eq('ws_id', resolvedWsId)
       .eq('name', 'DISABLE_INVITE')
       .single();
 
@@ -86,7 +103,7 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Check if seat limit allows creating invitations
-    const inviteCheck = await canCreateInvitation(sbAdmin, wsId);
+    const inviteCheck = await canCreateInvitation(sbAdmin, resolvedWsId);
     if (!inviteCheck.allowed) {
       return NextResponse.json(
         {
@@ -123,7 +140,7 @@ export async function POST(req: Request, { params }: Params) {
       const { data, error: insertError } = await sbAdmin
         .from('workspace_invite_links')
         .insert({
-          ws_id: wsId,
+          ws_id: resolvedWsId,
           code,
           creator_id: user.id,
           max_uses: maxUses,
