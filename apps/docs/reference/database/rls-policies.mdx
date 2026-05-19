@@ -285,6 +285,10 @@ Required controls:
 - Verify workspace membership and the workspace permission in the function
   before reading sensitive rows. Do not rely on permission helpers alone when a
   default permission could be enabled workspace-wide.
+- For identity-linking flows, resolve candidate identity inside the function
+  from the current verified `auth.users` row. Gate privileged lookups with the
+  workspace feature config before returning candidate IDs, and do not accept
+  caller-supplied emails or user-editable profile fields as proof of identity.
 - Revoke direct execution from `public` and `anon`.
 - Avoid exposing lower-level privileged helper functions to `authenticated` when
   they do not perform their own permission check.
