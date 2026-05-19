@@ -260,17 +260,22 @@ async function handleGET(req: NextRequest) {
         if (timeUntilDue >= windowStart && timeUntilDue <= windowEnd) {
           // Send reminder to each watcher
           for (const watcher of watchers) {
-            // Check if already sent
-            // Note: task_reminder_sent types will be available after running bun sb:typegen
-            const { data: existingReminder } = await (sbAdmin as any)
-              .from('task_reminder_sent')
-              .select('id')
-              .eq('task_id', task.id)
-              .eq('user_id', watcher.user_id)
-              .eq('reminder_interval', interval)
-              .maybeSingle();
+            const { data: reminderAlreadySent, error: reminderCheckError } =
+              await sbAdmin.rpc('task_reminder_already_sent', {
+                p_task_id: task.id,
+                p_user_id: watcher.user_id,
+                p_reminder_interval: interval,
+              });
 
-            if (existingReminder) continue; // Already sent
+            if (reminderCheckError) {
+              serverLogger.error(
+                `Error checking reminder tracking for task ${task.id}:`,
+                reminderCheckError
+              );
+              continue;
+            }
+
+            if (reminderAlreadySent) continue;
 
             // Check notification preferences
             const { data: shouldSend } = await sbAdmin.rpc(
@@ -322,15 +327,15 @@ async function handleGET(req: NextRequest) {
               continue;
             }
 
-            // Record that we sent this reminder
-            const { error: trackError } = await (sbAdmin as any)
-              .from('task_reminder_sent')
-              .insert({
-                task_id: task.id,
-                user_id: watcher.user_id,
-                reminder_interval: interval,
-                notification_id: notificationId,
-              });
+            const { error: trackError } = await sbAdmin.rpc(
+              'record_task_reminder_sent',
+              {
+                p_task_id: task.id,
+                p_user_id: watcher.user_id,
+                p_reminder_interval: interval,
+                p_notification_id: notificationId,
+              }
+            );
 
             if (trackError) {
               serverLogger.error(

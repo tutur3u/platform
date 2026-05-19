@@ -122,14 +122,27 @@ describe('send-immediate route', () => {
     const recentWindow = createRecentNotificationWindow();
     blockedEmails = new Set<string>();
     mocks.rpcMock.mockImplementation(
-      async (_name: string, args: { p_emails: string[] }) => ({
-        data: args.p_emails.map((email) => ({
-          email,
-          is_blocked: blockedEmails.has(email),
-          reason: null,
-        })),
-        error: null,
-      })
+      async (
+        name: string,
+        args: { p_emails?: string[]; p_notification_types?: string[] }
+      ) => {
+        if (name === 'list_immediate_notification_email_configs') {
+          return { data: [], error: null };
+        }
+
+        if (name === 'get_email_block_statuses') {
+          return {
+            data: (args.p_emails ?? []).map((email) => ({
+              email,
+              is_blocked: blockedEmails.has(email),
+              reason: null,
+            })),
+            error: null,
+          };
+        }
+
+        throw new Error(`Unexpected RPC ${name}`);
+      }
     );
     mocks.sendPushNotificationBatchMock.mockResolvedValue({
       deliveredCount: 1,
@@ -219,10 +232,6 @@ describe('send-immediate route', () => {
                 error: null,
               })
             ),
-          };
-        case 'notification_email_config':
-          return {
-            select: vi.fn(() => createResolvedChain({ data: [], error: null })),
           };
         case 'notification_push_devices':
           return {
@@ -385,10 +394,6 @@ describe('send-immediate route', () => {
                 error: null,
               })
             ),
-          };
-        case 'notification_email_config':
-          return {
-            select: vi.fn(() => createResolvedChain({ data: [], error: null })),
           };
         case 'notification_push_devices':
           return {

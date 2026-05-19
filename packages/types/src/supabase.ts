@@ -8546,51 +8546,6 @@ export type Database = {
           },
         ];
       };
-      notification_email_config: {
-        Row: {
-          batch_window_minutes: number | null;
-          created_at: string;
-          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
-          email_subject_template: string | null;
-          email_template: string | null;
-          enabled: boolean;
-          id: string;
-          notification_type: string;
-          priority_override:
-            | Database['public']['Enums']['notification_priority']
-            | null;
-          updated_at: string;
-        };
-        Insert: {
-          batch_window_minutes?: number | null;
-          created_at?: string;
-          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
-          email_subject_template?: string | null;
-          email_template?: string | null;
-          enabled?: boolean;
-          id?: string;
-          notification_type: string;
-          priority_override?:
-            | Database['public']['Enums']['notification_priority']
-            | null;
-          updated_at?: string;
-        };
-        Update: {
-          batch_window_minutes?: number | null;
-          created_at?: string;
-          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
-          email_subject_template?: string | null;
-          email_template?: string | null;
-          enabled?: boolean;
-          id?: string;
-          notification_type?: string;
-          priority_override?:
-            | Database['public']['Enums']['notification_priority']
-            | null;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
       notification_preferences: {
         Row: {
           channel: string;
@@ -13254,83 +13209,6 @@ export type Database = {
             columns: ['target_task_id'];
             isOneToOne: false;
             referencedRelation: 'tasks';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      task_reminder_sent: {
-        Row: {
-          id: string;
-          notification_id: string | null;
-          reminder_interval: string;
-          sent_at: string;
-          task_id: string;
-          user_id: string;
-        };
-        Insert: {
-          id?: string;
-          notification_id?: string | null;
-          reminder_interval: string;
-          sent_at?: string;
-          task_id: string;
-          user_id: string;
-        };
-        Update: {
-          id?: string;
-          notification_id?: string | null;
-          reminder_interval?: string;
-          sent_at?: string;
-          task_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'task_reminder_sent_notification_id_fkey';
-            columns: ['notification_id'];
-            isOneToOne: false;
-            referencedRelation: 'notifications';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_task_id_fkey';
-            columns: ['task_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__tasks';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_task_id_fkey';
-            columns: ['task_id'];
-            isOneToOne: false;
-            referencedRelation: 'tasks';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'task_reminder_sent_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -31647,6 +31525,14 @@ export type Database = {
           isSetofReturn: true;
         };
       };
+      list_immediate_notification_email_configs: {
+        Args: { p_notification_types: string[] };
+        Returns: {
+          email_subject_template: string;
+          email_template: string;
+          notification_type: string;
+        }[];
+      };
       list_workspace_user_audit_bucket_counts: {
         Args: {
           p_actor_query?: string;
@@ -32018,6 +31904,15 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      record_task_reminder_sent: {
+        Args: {
+          p_notification_id: string;
+          p_reminder_interval: string;
+          p_task_id: string;
+          p_user_id: string;
+        };
+        Returns: string;
+      };
       refresh_posts_dashboard_view: { Args: never; Returns: undefined };
       release_fixed_ai_credit_reservation: {
         Args: { p_metadata?: Json; p_reservation_id: string };
@@ -32235,6 +32130,14 @@ export type Database = {
         Returns: {
           updated_count: number;
         }[];
+      };
+      task_reminder_already_sent: {
+        Args: {
+          p_reminder_interval: string;
+          p_task_id: string;
+          p_user_id: string;
+        };
+        Returns: boolean;
       };
       topic_announcement_contact_has_linked_verified_email: {
         Args: { p_contact_id: string };

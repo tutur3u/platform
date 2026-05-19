@@ -529,21 +529,25 @@ async function fetchImmediateEmailConfigs(
     return emailConfigsMap;
   }
 
-  const rows = await fetchAllChunkedPaginatedRows<EmailConfigData, string>(
-    notificationTypes,
-    (notificationTypeChunk, from, to) =>
-      sbAdmin
-        .from('notification_email_config')
-        .select('notification_type, email_template, email_subject_template')
-        .in('notification_type', notificationTypeChunk)
-        .eq('delivery_mode', 'immediate')
-        .eq('enabled', true)
-        .order('notification_type', { ascending: true })
-        .range(from, to),
-    {
-      chunkSize: 500,
+  const rows: EmailConfigData[] = [];
+
+  for (const notificationTypeChunk of chunkValues(
+    [...new Set(notificationTypes)],
+    500
+  )) {
+    const { data, error } = await sbAdmin.rpc(
+      'list_immediate_notification_email_configs',
+      {
+        p_notification_types: notificationTypeChunk,
+      }
+    );
+
+    if (error) {
+      throw error;
     }
-  );
+
+    rows.push(...((data ?? []) as EmailConfigData[]));
+  }
 
   for (const config of rows) {
     emailConfigsMap.set(config.notification_type, config);

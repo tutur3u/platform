@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2026-05-18'
+updatedAt: '2026-05-19'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -332,7 +332,7 @@ revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from a
 revoke execute on function public.authorize_workspace_sensitive_rpc(uuid) from authenticated;
 ```
 
-### Pattern 9: API-Only Workspace Tables
+### Pattern 10: API-Only Workspace Tables
 
 **Use Case:** The `apps/web` API performs stricter permission checks than a
 plain workspace membership policy can express safely, then reads or writes with
@@ -369,6 +369,55 @@ create policy "Allow service role to manage sensitive workspace table"
   to service_role
   using (true)
   with check (true);
+```
+
+### Pattern 11: Private Schema Server-Owned Tables
+
+**Use Case:** A table is only needed by cron jobs, service-role routes, or
+database internals and should not be exposed through Supabase's generated REST
+API at all.
+
+Use the existing `private` schema for these tables. Do not add `private` to the
+Supabase Data API exposed schemas or extra search path. If an app route needs
+to operate on a private table, expose a narrow `public` RPC that is executable
+only by `service_role`, then call it from the centralized `apps/web` API route
+with `createAdminClient()`.
+
+Required controls:
+
+- Keep `anon` and `authenticated` without `USAGE` on `private`.
+- Revoke direct table privileges from `public`, `anon`, and `authenticated`.
+- Keep RLS enabled with service-role-only policies for reviewability.
+- Revoke direct `EXECUTE` on bridging RPCs from `public`, `anon`, and
+  `authenticated`; grant only to `service_role`.
+- Cover private placement, table privileges, schema usage, and RPC grants with
+  pgTAP tests.
+
+```sql
+create schema if not exists private;
+
+revoke all on schema private from public, anon, authenticated;
+grant usage on schema private to service_role;
+
+alter table if exists public.server_owned_table
+  set schema private;
+
+revoke all on table private.server_owned_table
+from public, anon, authenticated;
+
+create or replace function public.server_owned_table_action(...)
+returns ...
+language sql
+security definer
+set search_path = private, public
+as $$
+  ...
+$$;
+
+revoke execute on function public.server_owned_table_action(...)
+from public, anon, authenticated;
+grant execute on function public.server_owned_table_action(...)
+to service_role;
 ```
 
 ## Common RLS Helpers
