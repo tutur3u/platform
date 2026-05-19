@@ -1,12 +1,7 @@
 import {
-  AlertTriangle,
   ArrowRight,
-  BadgeCheck,
   Bug,
-  CheckCircle2,
-  FileText,
   GithubIcon,
-  Globe2,
   Mail,
   ScanSearch,
   Shield,
@@ -24,7 +19,6 @@ import { getTranslations } from 'next-intl/server';
 import { GITHUB_OWNER, GITHUB_REPO } from '@/constants/common';
 import {
   badgeAccentClasses,
-  DisclosureNote,
   LedgerMetric,
   type ProgramStep,
   ProgramStepCard,
@@ -48,43 +42,23 @@ export default async function BugBountyPage() {
     {
       accent: 'green',
       cwe: t('researchers.rana.cwe'),
-      cweLabel: t('labels.cwe'),
       date: t('researchers.rana.date'),
-      dateLabel: t('labels.report_date'),
-      description: t('researchers.rana.description'),
-      descriptionLabel: t('labels.report_summary'),
       icon: ScanSearch,
       impact: t('researchers.rana.impact'),
-      impactLabel: t('labels.verified_impact'),
       name: t('researchers.rana.name'),
-      remediation: t('researchers.rana.remediation'),
-      remediationLabel: t('labels.remediation'),
+      note: t('researchers.rana.note'),
       report: t('researchers.rana.report'),
-      severity: t('researchers.rana.severity'),
-      severityLabel: t('labels.severity'),
-      scope: t('researchers.rana.scope'),
-      scopeLabel: t('labels.scope'),
       status: t('researchers.rana.status'),
     },
     {
       accent: 'orange',
       cwe: t('researchers.vapour.cwe'),
-      cweLabel: t('labels.cwe'),
       date: t('researchers.vapour.date'),
-      dateLabel: t('labels.report_date'),
-      description: t('researchers.vapour.description'),
-      descriptionLabel: t('labels.report_summary'),
       icon: Bug,
       impact: t('researchers.vapour.impact'),
-      impactLabel: t('labels.verified_impact'),
       name: t('researchers.vapour.name'),
-      remediation: t('researchers.vapour.remediation'),
-      remediationLabel: t('labels.remediation'),
+      note: t('researchers.vapour.note'),
       report: t('researchers.vapour.report'),
-      severity: t('researchers.vapour.severity'),
-      severityLabel: t('labels.severity'),
-      scope: t('researchers.vapour.scope'),
-      scopeLabel: t('labels.scope'),
       status: t('researchers.vapour.status'),
     },
   ];
@@ -102,36 +76,13 @@ export default async function BugBountyPage() {
     },
     {
       description: t('program.steps.scope.description'),
-      icon: BadgeCheck,
+      icon: Shield,
       title: t('program.steps.scope.title'),
     },
     {
       description: t('program.steps.credit.description'),
       icon: Trophy,
       title: t('program.steps.credit.title'),
-    },
-  ];
-
-  const assessmentItems = [
-    {
-      description: t('assessment.accepted.description'),
-      icon: CheckCircle2,
-      title: t('assessment.accepted.title'),
-    },
-    {
-      description: t('assessment.scope.description'),
-      icon: AlertTriangle,
-      title: t('assessment.scope.title'),
-    },
-    {
-      description: t('assessment.upstream.description'),
-      icon: Globe2,
-      title: t('assessment.upstream.title'),
-    },
-    {
-      description: t('assessment.remediation.description'),
-      icon: Shield,
-      title: t('assessment.remediation.title'),
     },
   ];
 
@@ -186,35 +137,25 @@ export default async function BugBountyPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="font-medium text-dynamic-blue text-sm uppercase tracking-wider">
-                  {t('ledger.eyebrow')}
+                  {t('community.eyebrow')}
                 </p>
                 <h2 className="mt-3 font-semibold text-2xl">
-                  {t('ledger.title')}
+                  {t('community.title')}
                 </h2>
                 <p className="mt-3 text-foreground/60 text-sm leading-relaxed">
-                  {t('ledger.description')}
+                  {t('community.description')}
                 </p>
               </div>
               <Trophy className="h-10 w-10 shrink-0 text-dynamic-yellow" />
             </div>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              <LedgerMetric label={t('community.metrics.reports')} value="2" />
               <LedgerMetric
-                detail={t('ledger.details.verified_reports')}
-                label={t('ledger.metrics.verified_reports')}
-                value="2"
+                label={t('community.metrics.credit')}
+                value={t('community.public_credit')}
               />
               <LedgerMetric
-                detail={t('ledger.details.direct_product_cases')}
-                label={t('ledger.metrics.direct_product_cases')}
-                value="1"
-              />
-              <LedgerMetric
-                detail={t('ledger.details.upstream_platform_cases')}
-                label={t('ledger.metrics.upstream_platform_cases')}
-                value="1"
-              />
-              <LedgerMetric
-                label={t('ledger.metrics.channel')}
+                label={t('community.metrics.channel')}
                 value="security@tuturuuu.com"
               />
             </div>
@@ -250,47 +191,10 @@ export default async function BugBountyPage() {
         </div>
       </section>
 
-      <section className="px-4 py-14 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          <Card className="border-dynamic-purple/30 bg-linear-to-br from-dynamic-purple/10 via-background to-dynamic-blue/10 p-6 sm:p-8 lg:p-10">
-            <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
-              <div>
-                <Badge
-                  variant="secondary"
-                  className={cn('mb-4', badgeAccentClasses.purple)}
-                >
-                  <FileText className="mr-1.5 h-3.5 w-3.5" />
-                  {t('assessment.badge')}
-                </Badge>
-                <h2 className="font-semibold text-3xl">
-                  {t('assessment.title')}
-                </h2>
-                <p className="mt-4 text-foreground/70 leading-relaxed">
-                  {t('assessment.description')}
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                {assessmentItems.map((item) => (
-                  <DisclosureNote key={item.title} item={item} />
-                ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-      </section>
-
       <section className="px-4 py-14 pb-24 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
             <div>
-              <Badge
-                variant="secondary"
-                className={cn('mb-4', badgeAccentClasses.blue)}
-              >
-                <Globe2 className="mr-1.5 h-3.5 w-3.5" />
-                {t('program.badge')}
-              </Badge>
               <h2 className="font-semibold text-3xl sm:text-4xl">
                 {t('program.title')}
               </h2>

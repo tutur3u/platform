@@ -2615,18 +2615,29 @@
         "title": "Upstream storage scope"
       }
     },
+    "community": {
+      "description": "Every name here reflects careful private reporting and confirmed security value.",
+      "eyebrow": "Community",
+      "metrics": {
+        "channel": "Private reporting",
+        "credit": "Recognition",
+        "reports": "Verified reports"
+      },
+      "public_credit": "Public credit",
+      "title": "Security improves when researchers can work with us"
+    },
     "hall": {
       "badge": "Hall of Fame",
-      "description": "Both current reports are verified. Each card separates the researcher's report, Tuturuuu's confirmed impact, and whether the issue is direct product scope or upstream platform behavior.",
-      "title": "Verified researchers we credit publicly"
+      "description": "Verified research, public credit, and a short note on what each report helped improve.",
+      "title": "Researchers helping make Tuturuuu safer"
     },
     "hero": {
-      "badge": "Responsible disclosure",
-      "description": "A transparent Hall of Fame for verified research reports, with public credit and precise impact notes for what affects Tuturuuu directly versus third-party platform behavior.",
+      "badge": "Security Hall of Fame",
+      "description": "Meet the researchers who report issues responsibly and help keep Tuturuuu trustworthy for teams, schools, and communities.",
       "policy_cta": "Read security policy",
       "report_cta": "Report a vulnerability",
-      "title_highlight": "Security Hall of Fame",
-      "title_prefix": "Tuturuuu"
+      "title_highlight": "people who make Tuturuuu safer",
+      "title_prefix": "Thank you to the"
     },
     "labels": {
       "cwe": "CWE",
@@ -2655,43 +2666,44 @@
       "title": "Verified reports, precise scope"
     },
     "meta": {
-      "description": "See the Tuturuuu responsible disclosure Hall of Fame and the verified scope of credited security reports.",
+      "description": "Meet the researchers recognized in the Tuturuuu Security Hall of Fame.",
       "title": "Security Hall of Fame"
     },
     "program": {
-      "badge": "Program rules",
+      "badge": "Report",
       "contact_cta": "Email security team",
-      "description": "We do not currently operate a paid bug bounty program. We still welcome responsible reports and can recognize verified researchers here when they want public credit.",
+      "description": "If you find something, send it privately. We will validate it, fix what matters, and credit verified reports when researchers want to be listed.",
       "security_cta": "Security page",
       "steps": {
         "credit": {
-          "description": "After validation, we can list the researcher name or handle they provide for the Hall of Fame.",
-          "title": "Public credit by consent"
+          "description": "Verified researchers can be listed here with the name or handle they choose.",
+          "title": "Get credited"
         },
         "private": {
-          "description": "Send vulnerability details privately to security@tuturuuu.com before sharing them anywhere public.",
+          "description": "Email security@tuturuuu.com before sharing details publicly.",
           "title": "Report privately"
         },
         "scope": {
-          "description": "Avoid broad scraping, destructive testing, persistence, or accessing more records than needed to prove impact.",
-          "title": "Minimize access"
+          "description": "Use the smallest proof needed and avoid destructive testing.",
+          "title": "Keep it safe"
         },
         "triage": {
-          "description": "We reproduce, evaluate severity from our own evidence, and clarify what data was actually exposed.",
-          "title": "Evidence-led triage"
+          "description": "We review the report, confirm impact, and prioritize the right fix.",
+          "title": "We validate"
         }
       },
-      "title": "How to report responsibly"
+      "title": "Found something?"
     },
     "researchers": {
       "rana": {
         "cwe": "CWE-200 / CWE-284",
         "date": "May 18, 2026",
         "description": "Rana reported that authenticated Supabase REST access to user profile rows could enumerate records more broadly than intended.",
-        "impact": "Tuturuuu verified a workspace-scoping issue for public profile data. Confirmed visible fields were display names and profile pictures intended for social features, not user emails.",
+        "impact": "Rana helped us tighten profile visibility around workspace boundaries.",
         "name": "Rana Zeeshan (nova cyber force)",
+        "note": "Verified as a Tuturuuu-managed workspace privacy issue.",
         "remediation": "Restrict profile reads to the signed-in user or users sharing a workspace, and keep private account details behind narrower access paths.",
-        "report": "Over-broad Supabase REST profile visibility",
+        "report": "Profile visibility scope",
         "scope": "Direct Tuturuuu workspace privacy scope",
         "severity": "Workspace privacy scope",
         "status": "Verified"
@@ -2700,10 +2712,11 @@
         "cwe": "CWE-79 / CWE-434",
         "date": "2025-03-30",
         "description": "Nguyen Nghia Hiep reported a stored XSS behavior caused by SVG delivery through Supabase Storage public URLs.",
-        "impact": "Tuturuuu verified the storage behavior and credits the report. The exploitable path is direct Supabase Storage file access, not normal Tuturuuu product rendering, and it does not directly affect Tuturuuu infrastructure or products.",
+        "impact": "Hiep helped surface unsafe SVG behavior in direct Supabase Storage file delivery.",
         "name": "Nguyen Nghia Hiep (vapour)",
+        "note": "Verified and credited; this does not directly affect Tuturuuu products or infrastructure.",
         "remediation": "Keep blocking or sanitizing risky SVG avatar uploads in Tuturuuu flows and track provider-level handling for Supabase Storage SVG delivery.",
-        "report": "Stored SVG avatar upload XSS risk",
+        "report": "SVG storage delivery behavior",
         "scope": "Native Supabase Storage offering",
         "severity": "Upstream storage behavior",
         "status": "Verified"

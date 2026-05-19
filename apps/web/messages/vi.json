@@ -2615,18 +2615,29 @@
         "title": "Phạm vi storage bên thứ ba"
       }
     },
+    "community": {
+      "description": "Mỗi cái tên ở đây đại diện cho cách báo cáo riêng tư cẩn trọng và giá trị bảo mật đã được xác nhận.",
+      "eyebrow": "Cộng đồng",
+      "metrics": {
+        "channel": "Báo cáo riêng tư",
+        "credit": "Ghi nhận",
+        "reports": "Báo cáo đã xác minh"
+      },
+      "public_credit": "Ghi nhận công khai",
+      "title": "Bảo mật tốt hơn khi nhà nghiên cứu có thể làm việc cùng chúng tôi"
+    },
     "hall": {
       "badge": "Bảng vinh danh",
-      "description": "Cả hai báo cáo hiện tại đều đã được xác minh. Mỗi thẻ tách rõ báo cáo của nhà nghiên cứu, tác động Tuturuuu đã xác nhận và việc vấn đề thuộc phạm vi sản phẩm trực tiếp hay hành vi của nền tảng bên thứ ba.",
-      "title": "Những nhà nghiên cứu đã xác minh được ghi nhận công khai"
+      "description": "Nghiên cứu đã xác minh, ghi nhận công khai và ghi chú ngắn về điều mỗi báo cáo giúp cải thiện.",
+      "title": "Những nhà nghiên cứu giúp Tuturuuu an toàn hơn"
     },
     "hero": {
-      "badge": "Công bố có trách nhiệm",
-      "description": "Bảng vinh danh minh bạch cho các báo cáo nghiên cứu đã xác minh, với ghi nhận công khai và ghi chú tác động chính xác cho phần ảnh hưởng trực tiếp tới Tuturuuu so với hành vi của nền tảng bên thứ ba.",
+      "badge": "Bảng vinh danh bảo mật",
+      "description": "Gặp những nhà nghiên cứu báo cáo có trách nhiệm và giúp Tuturuuu đáng tin cậy hơn cho đội nhóm, trường học và cộng đồng.",
       "policy_cta": "Đọc chính sách bảo mật",
       "report_cta": "Báo cáo lỗ hổng",
-      "title_highlight": "Bảng vinh danh bảo mật",
-      "title_prefix": "Tuturuuu"
+      "title_highlight": "những người giúp Tuturuuu an toàn hơn",
+      "title_prefix": "Cảm ơn"
     },
     "labels": {
       "cwe": "CWE",
@@ -2655,43 +2666,44 @@
       "title": "Báo cáo đã xác minh, phạm vi chính xác"
     },
     "meta": {
-      "description": "Xem Bảng vinh danh công bố có trách nhiệm của Tuturuuu và phạm vi đã xác minh của các báo cáo bảo mật được ghi nhận.",
+      "description": "Gặp những nhà nghiên cứu được ghi nhận trong Bảng vinh danh bảo mật của Tuturuuu.",
       "title": "Bảng vinh danh bảo mật"
     },
     "program": {
-      "badge": "Quy tắc chương trình",
+      "badge": "Báo cáo",
       "contact_cta": "Email đội bảo mật",
-      "description": "Hiện chúng tôi chưa vận hành chương trình bug bounty có trả thưởng. Chúng tôi vẫn hoan nghênh các báo cáo có trách nhiệm và có thể ghi nhận công khai nhà nghiên cứu đã được xác minh tại đây khi họ muốn được nêu tên.",
+      "description": "Nếu bạn phát hiện vấn đề, hãy gửi riêng tư. Chúng tôi sẽ xác minh, sửa điều quan trọng và ghi nhận báo cáo đã xác minh khi nhà nghiên cứu muốn được nêu tên.",
       "security_cta": "Trang bảo mật",
       "steps": {
         "credit": {
-          "description": "Sau khi xác minh, chúng tôi có thể liệt kê tên hoặc handle mà nhà nghiên cứu cung cấp cho Bảng vinh danh.",
-          "title": "Ghi nhận công khai theo đồng ý"
+          "description": "Nhà nghiên cứu đã xác minh có thể được ghi tên ở đây bằng tên hoặc handle họ chọn.",
+          "title": "Được ghi nhận"
         },
         "private": {
-          "description": "Gửi chi tiết lỗ hổng riêng tư tới security@tuturuuu.com trước khi chia sẻ ở bất kỳ nơi công khai nào.",
+          "description": "Email security@tuturuuu.com trước khi chia sẻ chi tiết công khai.",
           "title": "Báo cáo riêng tư"
         },
         "scope": {
-          "description": "Tránh thu thập dữ liệu diện rộng, kiểm thử phá hoại, duy trì quyền truy cập hoặc xem nhiều bản ghi hơn mức cần thiết để chứng minh tác động.",
-          "title": "Giảm thiểu truy cập"
+          "description": "Dùng bằng chứng nhỏ nhất cần thiết và tránh kiểm thử phá hoại.",
+          "title": "Giữ an toàn"
         },
         "triage": {
-          "description": "Chúng tôi tái hiện, đánh giá mức độ nghiêm trọng dựa trên bằng chứng của chính mình và làm rõ dữ liệu nào thực sự bị lộ.",
-          "title": "Phân loại dựa trên bằng chứng"
+          "description": "Chúng tôi xem xét báo cáo, xác nhận tác động và ưu tiên bản sửa phù hợp.",
+          "title": "Chúng tôi xác minh"
         }
       },
-      "title": "Cách báo cáo có trách nhiệm"
+      "title": "Bạn phát hiện vấn đề?"
     },
     "researchers": {
       "rana": {
         "cwe": "CWE-200 / CWE-284",
         "date": "Ngày 18 tháng 5 năm 2026",
         "description": "Rana báo cáo rằng quyền truy cập Supabase REST đã đăng nhập vào các hàng hồ sơ người dùng có thể liệt kê bản ghi rộng hơn phạm vi dự định.",
-        "impact": "Tuturuuu đã xác minh một vấn đề giới hạn theo không gian làm việc đối với dữ liệu hồ sơ công khai. Các trường nhìn thấy đã xác nhận là tên hiển thị và ảnh đại diện phục vụ tính năng xã hội, không phải email người dùng.",
+        "impact": "Rana giúp chúng tôi siết chặt phạm vi hiển thị hồ sơ quanh ranh giới workspace.",
         "name": "Rana Zeeshan (nova cyber force)",
+        "note": "Đã xác minh là vấn đề riêng tư workspace do Tuturuuu quản lý.",
         "remediation": "Giới hạn quyền đọc hồ sơ cho người dùng đang đăng nhập hoặc người dùng có chung không gian làm việc, đồng thời giữ chi tiết tài khoản riêng tư sau các đường truy cập chặt chẽ hơn.",
-        "report": "Phạm vi hiển thị hồ sơ Supabase REST quá rộng",
+        "report": "Phạm vi hiển thị hồ sơ",
         "scope": "Phạm vi riêng tư workspace trực tiếp của Tuturuuu",
         "severity": "Phạm vi riêng tư theo workspace",
         "status": "Đã xác minh"
@@ -2700,10 +2712,11 @@
         "cwe": "CWE-79 / CWE-434",
         "date": "2025-03-30",
         "description": "Nguyễn Nghĩa Hiệp báo cáo hành vi stored XSS phát sinh từ việc Supabase Storage phân phối SVG qua URL công khai.",
-        "impact": "Tuturuuu đã xác minh hành vi storage này và ghi nhận báo cáo. Đường khai thác là truy cập trực tiếp tệp qua Supabase Storage, không phải luồng render thông thường trong sản phẩm Tuturuuu, và không ảnh hưởng trực tiếp tới hạ tầng hoặc sản phẩm của Tuturuuu.",
+        "impact": "Hiệp giúp phát hiện hành vi SVG không an toàn trong luồng phân phối tệp trực tiếp của Supabase Storage.",
         "name": "Nguyễn Nghĩa Hiệp (vapour)",
+        "note": "Đã xác minh và ghi nhận; vấn đề này không ảnh hưởng trực tiếp tới sản phẩm hoặc hạ tầng của Tuturuuu.",
         "remediation": "Tiếp tục chặn hoặc làm sạch các lượt tải lên SVG rủi ro trong luồng Tuturuuu và theo dõi cách xử lý ở cấp nhà cung cấp cho việc Supabase Storage phân phối SVG.",
-        "report": "Rủi ro stored XSS từ SVG ảnh đại diện",
+        "report": "Hành vi phân phối SVG trong storage",
         "scope": "Tính năng gốc của Supabase Storage",
         "severity": "Hành vi storage bên thứ ba",
         "status": "Đã xác minh"
