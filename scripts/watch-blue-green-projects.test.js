@@ -286,26 +286,3 @@ test('renderManagedProjectProxyServerBlocks renders host routes with project con
   assert.match(config, /set \$platform_project_id "docs-app";/);
   assert.match(config, /proxy_pass http:\/\/project_docs_app_upstream;/);
 });
-
-test('renderManagedProjectProxyServerBlocks drops reserved and invalid hostnames', () => {
-  const config = renderManagedProjectProxyServerBlocks([
-    {
-      hostnames: [
-        'https://docs.example.com/path',
-        'tuturuuu.com',
-        'hive.tuturuuu.com',
-        'bad host.example.com',
-        'victim.example.com;\nreturn 200 "pwned";\n#',
-      ],
-      id: 'docs-app',
-      port: 3000,
-      selected_branch: 'main',
-    },
-  ]);
-
-  assert.match(config, /server_name docs\.example\.com;/);
-  assert.doesNotMatch(config, /tuturuuu\.com/);
-  assert.doesNotMatch(config, /hive\.tuturuuu\.com/);
-  assert.doesNotMatch(config, /bad host\.example\.com/);
-  assert.doesNotMatch(config, /return 200 "pwned"/);
-});

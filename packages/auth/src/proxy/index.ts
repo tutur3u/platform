@@ -169,11 +169,26 @@ function asRecord(value: unknown): Record<string, unknown> {
   return {};
 }
 
+function clearMfaMobileApprovalCookie(response: NextResponse) {
+  response.cookies.set(MFA_MOBILE_APPROVAL_COOKIE_NAME, '', {
+    maxAge: 0,
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+}
+
+function sessionIdFromClaims(claims: unknown) {
+  const sessionId = asRecord(claims).session_id;
+  return typeof sessionId === 'string' && sessionId ? sessionId : null;
+}
+
 async function hasValidMobileMfaApproval(
   req: NextRequest,
-  userId: string | null | undefined
+  userId: string | null | undefined,
+  sessionId: string | null | undefined
 ): Promise<boolean> {
-  if (!userId) {
+  if (!userId || !sessionId) {
     return false;
   }
 
@@ -206,6 +221,10 @@ async function hasValidMobileMfaApproval(
     }
 
     const approvalMetadata = asRecord(data.approval_metadata);
+    if (approvalMetadata.approverSessionId !== sessionId) {
+      return false;
+    }
+
     const validUntil = approvalMetadata.mobileMfaValidUntil;
 
     return (
@@ -225,6 +244,7 @@ async function handleMFACheck(
   req: NextRequest,
   aal: AuthenticatorAssuranceLevels | null,
   userId: string | null | undefined,
+  sessionId: string | null | undefined,
   webAppUrl: string,
   protectedPaths: string[],
   excludedPaths: string[],
@@ -260,7 +280,7 @@ async function handleMFACheck(
     const requiresMFAVerification = hasVerifiedMFA && aal === 'aal1';
 
     if (requiresMFAVerification) {
-      if (await hasValidMobileMfaApproval(req, userId)) {
+      if (await hasValidMobileMfaApproval(req, userId, sessionId)) {
         return null;
       }
 
@@ -284,7 +304,9 @@ async function handleMFACheck(
         loginUrl.searchParams.set('nextUrl', nextUrl);
         loginUrl.searchParams.set('mfa', 'required');
 
-        return NextResponse.redirect(loginUrl);
+        const redirectResponse = NextResponse.redirect(loginUrl);
+        clearMfaMobileApprovalCookie(redirectResponse);
+        return redirectResponse;
       } else {
         // All other apps redirect to central web app for MFA verification
         // Route through /verify-token so cross-app tokens are properly consumed
@@ -316,7 +338,9 @@ async function handleMFACheck(
         );
         loginUrl.searchParams.set('mfa', 'required');
 
-        return NextResponse.redirect(loginUrl);
+        const redirectResponse = NextResponse.redirect(loginUrl);
+        clearMfaMobileApprovalCookie(redirectResponse);
+        return redirectResponse;
       }
     }
 
@@ -486,6 +510,7 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           req,
           claims.aal,
           claims.sub,
+          sessionIdFromClaims(claims),
           webAppUrl,
           mfaProtectedPaths,
           mfaExcludedPaths,

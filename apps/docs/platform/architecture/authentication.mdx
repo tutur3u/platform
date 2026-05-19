@@ -381,6 +381,21 @@ export async function verifyMFACode(
 }
 ```
 
+### Mobile MFA Approval Cookies
+
+Mobile approval for web MFA is scoped to the Supabase login session that created
+and consumed the approval challenge. When the web browser polls an approved
+mobile MFA challenge, store the current JWT `session_id` in the challenge
+approval metadata. The auth proxy must compare that stored session id with the
+current request claims before using `ttr_mfa_mobile_approval` to bypass the MFA
+redirect.
+
+Do not treat the approval cookie as a user-scoped remember-me token. A valid
+cookie only proves that one challenge secret was approved; it must also match
+the current Supabase session. Central logout responses should expire the
+approval cookie, and MFA redirects should clear stale approval cookies that do
+not satisfy the current-session binding.
+
 ## Session Management
 
 ### Get Current Session

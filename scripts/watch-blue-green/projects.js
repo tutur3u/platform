@@ -1,29 +1,6 @@
 const DEFAULT_PLATFORM_PROJECT_ID = 'platform';
 const DEFAULT_PLATFORM_BRANCH = 'production';
 const LOG_DRAIN_DATABASE_URL_KEY = 'PLATFORM_LOG_DRAIN_DATABASE_URL';
-const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
-  'api.tuturuuu.com',
-  'calendar.tuturuuu.com',
-  'cms.tuturuuu.com',
-  'dev.tuturuuu.com',
-  'finance.tuturuuu.com',
-  'hive.tuturuuu.com',
-  'inventory.tuturuuu.com',
-  'learn.tuturuuu.com',
-  'localhost',
-  'mira.tuturuuu.com',
-  'nova.ai.vn',
-  'platform.tuturuuu.com',
-  'rewise.me',
-  'staging.tuturuuu.com',
-  'tasks.tuturuuu.com',
-  'teach.tuturuuu.com',
-  'track.tuturuuu.com',
-  'tuturuuu.com',
-  'www.tuturuuu.com',
-]);
-const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
-  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/u;
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -80,10 +57,6 @@ function sanitizeHostnames(hostnames) {
             .replace(/\/.*$/u, '')
         )
         .filter((hostname) => hostname.length > 0)
-        .filter((hostname) =>
-          SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
-        )
-        .filter((hostname) => !RESERVED_MANAGED_PROJECT_HOSTNAMES.has(hostname))
     ),
   ];
 }

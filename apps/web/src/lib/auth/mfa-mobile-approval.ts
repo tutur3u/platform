@@ -113,9 +113,16 @@ function isExpired(row: Pick<MfaMobileApprovalRow, 'expires_at'>) {
 }
 
 function approvalValidUntil(
-  row: Pick<MfaMobileApprovalRow, 'approval_metadata'>
+  row: Pick<MfaMobileApprovalRow, 'approval_metadata'>,
+  approverSessionId: string
 ) {
-  const validUntil = asRecord(row.approval_metadata).mobileMfaValidUntil;
+  const approvalMetadata = asRecord(row.approval_metadata);
+
+  if (approvalMetadata.approverSessionId !== approverSessionId) {
+    return null;
+  }
+
+  const validUntil = approvalMetadata.mobileMfaValidUntil;
 
   if (typeof validUntil !== 'string') {
     return null;
@@ -138,6 +145,21 @@ function isMobileMfaApprovalRow(
   row: Pick<MfaMobileApprovalRow, 'request_metadata'>
 ) {
   return asRecord(row.request_metadata).kind === MFA_MOBILE_APPROVAL_KIND;
+}
+
+async function getCurrentSupabaseSessionId(
+  supabase: Awaited<ReturnType<typeof createClient<Database>>>
+) {
+  const { data, error } = await supabase.auth.getClaims();
+
+  if (error) {
+    return null;
+  }
+
+  const claims = asRecord(data?.claims);
+  const sessionId = claims.session_id;
+
+  return typeof sessionId === 'string' && sessionId ? sessionId : null;
 }
 
 async function enforceRateLimit(
@@ -393,6 +415,17 @@ export async function pollMfaMobileApprovalChallenge(
   }
 
   if (challengeStatus(row.status) === 'approved') {
+    const approverSessionId = await getCurrentSupabaseSessionId(
+      authContext.supabase
+    );
+
+    if (!approverSessionId) {
+      return {
+        body: { error: MFA_MOBILE_APPROVAL_GENERIC_ERROR },
+        status: 400,
+      };
+    }
+
     const consumedAt = new Date().toISOString();
     const mobileMfaValidUntil = new Date(
       Date.now() + MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS * 1000
@@ -403,6 +436,7 @@ export async function pollMfaMobileApprovalChallenge(
       .update({
         approval_metadata: asJson({
           ...asRecord(row.approval_metadata),
+          approverSessionId,
           mobileMfaSessionTtlSeconds: MFA_MOBILE_APPROVAL_SESSION_TTL_SECONDS,
           mobileMfaValidUntil,
         }),
@@ -446,7 +480,12 @@ export async function pollMfaMobileApprovalChallenge(
   }
 
   if (challengeStatus(row.status) === 'consumed') {
-    const validUntil = approvalValidUntil(row);
+    const approverSessionId = await getCurrentSupabaseSessionId(
+      authContext.supabase
+    );
+    const validUntil = approverSessionId
+      ? approvalValidUntil(row, approverSessionId)
+      : null;
 
     return {
       body: {

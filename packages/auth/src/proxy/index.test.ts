@@ -105,7 +105,10 @@ describe('auth proxy redirect helpers', () => {
       eq: vi.fn(() => builder),
       maybeSingle: vi.fn().mockResolvedValue({
         data: {
-          approval_metadata: { mobileMfaValidUntil: validUntil },
+          approval_metadata: {
+            approverSessionId: 'session-1',
+            mobileMfaValidUntil: validUntil,
+          },
           approver_user_id: 'user-1',
           request_metadata: { kind: MFA_MOBILE_APPROVAL_KIND },
           status: 'consumed',
@@ -119,7 +122,7 @@ describe('auth proxy redirect helpers', () => {
     };
 
     mocks.updateSession.mockResolvedValue({
-      claims: { aal: 'aal1', sub: 'user-1' },
+      claims: { aal: 'aal1', session_id: 'session-1', sub: 'user-1' },
       res: NextResponse.next(),
     });
     mocks.createClient.mockResolvedValue({
@@ -147,6 +150,62 @@ describe('auth proxy redirect helpers', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(adminClient.from).toHaveBeenCalledWith('qr_login_challenges');
+  });
+
+  it('redirects aal1 sessions when a mobile MFA approval cookie belongs to a different login session', async () => {
+    const validUntil = new Date(Date.now() + 60_000).toISOString();
+    const builder = {
+      eq: vi.fn(() => builder),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          approval_metadata: {
+            approverSessionId: 'session-1',
+            mobileMfaValidUntil: validUntil,
+          },
+          approver_user_id: 'user-1',
+          request_metadata: { kind: MFA_MOBILE_APPROVAL_KIND },
+          status: 'consumed',
+        },
+        error: null,
+      }),
+      select: vi.fn(() => builder),
+    };
+
+    mocks.updateSession.mockResolvedValue({
+      claims: { aal: 'aal1', session_id: 'session-2', sub: 'user-1' },
+      res: NextResponse.next(),
+    });
+    mocks.createClient.mockResolvedValue({
+      auth: {
+        mfa: {
+          listFactors: vi.fn().mockResolvedValue({
+            data: { totp: [{ status: 'verified' }] },
+          }),
+        },
+      },
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => builder),
+    });
+
+    const authProxy = createCentralizedAuthProxy({
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://tuturuuu.com/mail', {
+      headers: {
+        cookie: `${MFA_MOBILE_APPROVAL_COOKIE_NAME}=challenge-1.secret-1`,
+      },
+    });
+
+    const response = await authProxy(request);
+    const location = response.headers.get('location') ?? '';
+    const setCookie = response.headers.get('set-cookie') ?? '';
+
+    expect(location).toContain('https://tuturuuu.com/login?');
+    expect(location).toContain('mfa=required');
+    expect(setCookie).toContain(`${MFA_MOBILE_APPROVAL_COOKIE_NAME}=;`);
+    expect(setCookie).toContain('Max-Age=0');
   });
 
   it('lets registered apps through with a valid app-session cookie without refreshing Supabase auth', async () => {
