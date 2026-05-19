@@ -5,11 +5,12 @@ import {
 import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
-import { isLocalE2EAuthBypassEnabled } from '@/lib/auth/local-e2e';
+import { isLocalE2EAuthRequestAllowed } from '@/lib/auth/local-e2e';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
-  if (!DEV_MODE && !isLocalE2EAuthBypassEnabled()) {
+  if (!DEV_MODE && !isLocalE2EAuthRequestAllowed(request)) {
     return NextResponse.json(
       { error: 'This endpoint is only available in development mode' },
       { status: 403 }
@@ -45,7 +46,10 @@ export async function POST(request: NextRequest) {
       );
 
       if (updateError) {
-        console.error('[auth/dev-session] Failed to update user:', updateError);
+        serverLogger.error(
+          '[auth/dev-session] Failed to update user:',
+          updateError
+        );
         return NextResponse.json(
           { error: 'Failed to update user' },
           { status: 500 }
@@ -59,7 +63,10 @@ export async function POST(request: NextRequest) {
       });
 
       if (createError) {
-        console.error('[auth/dev-session] Failed to create user:', createError);
+        serverLogger.error(
+          '[auth/dev-session] Failed to create user:',
+          createError
+        );
         return NextResponse.json(
           { error: 'Failed to create user' },
           { status: 500 }
@@ -75,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     const tokenHash = linkData?.properties?.hashed_token;
     if (linkError || !tokenHash) {
-      console.error(
+      serverLogger.error(
         '[auth/dev-session] Failed to generate magic link:',
         linkError
       );
@@ -93,7 +100,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (verifyError || !verifyData.session) {
-      console.error(
+      serverLogger.error(
         '[auth/dev-session] Failed to verify magic link:',
         verifyError
       );
@@ -105,7 +112,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('[auth/dev-session] Unexpected error:', error);
+    serverLogger.error('[auth/dev-session] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
