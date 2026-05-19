@@ -93,6 +93,30 @@ interface QueuedPlatformProjectRow {
   updated_at: Date | string | null;
 }
 
+const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
+  'api.tuturuuu.com',
+  'calendar.tuturuuu.com',
+  'cms.tuturuuu.com',
+  'dev.tuturuuu.com',
+  'finance.tuturuuu.com',
+  'hive.tuturuuu.com',
+  'inventory.tuturuuu.com',
+  'learn.tuturuuu.com',
+  'localhost',
+  'mira.tuturuuu.com',
+  'nova.ai.vn',
+  'platform.tuturuuu.com',
+  'rewise.me',
+  'staging.tuturuuu.com',
+  'tasks.tuturuuu.com',
+  'teach.tuturuuu.com',
+  'track.tuturuuu.com',
+  'tuturuuu.com',
+  'www.tuturuuu.com',
+]);
+const SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN =
+  /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
 export interface CreateInfrastructureProjectInput {
   appRoot?: string | null;
   hostnames?: string[] | null;
@@ -159,14 +183,38 @@ function normalizeHostname(hostname: string) {
     .replace(/\/.*$/, '');
 }
 
-function normalizeHostnames(hostnames: string[] | null | undefined) {
-  return [
+export function normalizeInfrastructureProjectHostnames(
+  hostnames: string[] | null | undefined
+) {
+  const normalizedHostnames = [
     ...new Set(
       (hostnames ?? [])
         .map(normalizeHostname)
         .filter((hostname) => hostname.length > 0)
     ),
   ];
+
+  if (
+    normalizedHostnames.some(
+      (hostname) => !SAFE_MANAGED_PROJECT_HOSTNAME_PATTERN.test(hostname)
+    )
+  ) {
+    throw new Error(
+      'Enter managed project hostnames as DNS names without ports, wildcards, whitespace, or nginx syntax.'
+    );
+  }
+
+  if (
+    normalizedHostnames.some((hostname) =>
+      RESERVED_MANAGED_PROJECT_HOSTNAMES.has(hostname)
+    )
+  ) {
+    throw new Error(
+      'Managed project hostnames cannot use reserved Tuturuuu platform hostnames.'
+    );
+  }
+
+  return normalizedHostnames;
 }
 
 function normalizeAppRoot(value: string | null | undefined) {
@@ -572,7 +620,7 @@ export async function createInfrastructureProject(
       'production',
       'nextjs',
       3000,
-      ${normalizeHostnames(input.hostnames)},
+      ${normalizeInfrastructureProjectHostnames(input.hostnames)},
       true,
       true,
       true,
@@ -613,7 +661,7 @@ export async function updateInfrastructureProject(
       name = ${input.name?.trim() || project.name},
       selected_branch = ${selectedBranch},
       app_root = ${input.appRoot == null ? project.appRoot : normalizeAppRoot(input.appRoot)},
-      hostnames = ${input.hostnames == null ? project.hostnames : normalizeHostnames(input.hostnames)},
+      hostnames = ${input.hostnames == null ? project.hostnames : normalizeInfrastructureProjectHostnames(input.hostnames)},
       auto_deploy_enabled = ${input.autoDeployEnabled ?? project.autoDeployEnabled},
       nginx_enabled = true,
       log_drain_enabled = ${input.logDrainEnabled ?? project.addons.logDrain},
