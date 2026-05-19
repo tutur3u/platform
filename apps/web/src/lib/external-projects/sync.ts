@@ -756,39 +756,6 @@ export async function getWorkspaceExternalProjectSyncSnapshot(
   });
 }
 
-async function updateCanonicalSchema({
-  actorId,
-  binding,
-  db,
-  schema,
-}: {
-  actorId: string;
-  binding: WorkspaceExternalProjectBinding;
-  db: AdminDb;
-  schema: ExternalProjectSyncSchema;
-}) {
-  if (!binding.canonical_id) {
-    return;
-  }
-
-  const deliveryProfile = {
-    ...asRecord(binding.canonical_project?.delivery_profile),
-    schema,
-  };
-
-  const { error } = await db
-    .from('canonical_external_projects')
-    .update({
-      delivery_profile: deliveryProfile as Json,
-      updated_by: actorId,
-    })
-    .eq('id', binding.canonical_id);
-
-  if (error) {
-    throw new Error(error.message);
-  }
-}
-
 async function upsertCollections({
   actorId,
   collections,
@@ -1231,13 +1198,6 @@ export async function applyWorkspaceExternalProjectSyncManifest(
       'External project sync contains destructive operations. Re-run with force to apply.'
     );
   }
-
-  await updateCanonicalSchema({
-    actorId,
-    binding,
-    db: admin,
-    schema: manifest.schema,
-  });
 
   const collectionBySlug = await upsertCollections({
     actorId,

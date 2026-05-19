@@ -1,11 +1,31 @@
 import type { ExternalProjectSyncSnapshot } from '@tuturuuu/types';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const storeMocks = vi.hoisted(() => ({
+  getWorkspaceExternalProjectStudioData: vi.fn(),
+  upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: vi.fn(),
+}));
 
 vi.mock('../workspace-storage-provider', () => ({
   deleteWorkspaceStorageObjectByPath: vi.fn(),
 }));
 
+vi.mock('./store', () => ({
+  getWorkspaceExternalProjectStudioData: (
+    ...args: Parameters<typeof storeMocks.getWorkspaceExternalProjectStudioData>
+  ) => storeMocks.getWorkspaceExternalProjectStudioData(...args),
+  upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: (
+    ...args: Parameters<
+      typeof storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema
+    >
+  ) =>
+    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema(
+      ...args
+    ),
+}));
+
 import {
+  applyWorkspaceExternalProjectSyncManifest,
   buildExternalProjectSyncDiff,
   buildExternalProjectSyncSnapshot,
   normalizeExternalProjectSyncManifest,
@@ -468,6 +488,114 @@ describe('external project sync diff', () => {
           reason: 'Schema removes 1 field definition',
         }),
       ])
+    );
+  });
+});
+
+describe('external project sync apply', () => {
+  beforeEach(() => {
+    storeMocks.getWorkspaceExternalProjectStudioData.mockReset();
+    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema.mockReset();
+    storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema.mockResolvedValue(
+      undefined
+    );
+  });
+
+  it('keeps workspace sync apply from updating the canonical registry schema', async () => {
+    const emptyStudio = {
+      assets: [],
+      binding: null,
+      blocks: [],
+      collections: [],
+      entries: [],
+      fieldDefinitions: [],
+      importJobs: [],
+      loadingData: null,
+      publishEvents: [],
+    };
+    storeMocks.getWorkspaceExternalProjectStudioData.mockResolvedValue(
+      emptyStudio
+    );
+    const collectionEq = vi.fn().mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    const collectionSelect = vi.fn(() => ({
+      eq: collectionEq,
+    }));
+    const from = vi.fn((table: string) => {
+      if (table === 'canonical_external_projects') {
+        throw new Error(
+          'workspace sync apply must not update canonical schema'
+        );
+      }
+
+      if (table === 'workspace_external_project_collections') {
+        return {
+          select: collectionSelect,
+        };
+      }
+
+      throw new Error(`Unexpected table ${table}`);
+    });
+    const db = { from };
+    const manifest = normalizeExternalProjectSyncManifest({
+      adapter: 'yoola',
+      canonicalProjectId: 'shared-canonical',
+      content: {
+        entries: [],
+      },
+      schema: {
+        collections: [],
+        metadataFields: [
+          {
+            key: 'tenant-local-field',
+            type: 'string',
+          },
+        ],
+      },
+      version: 1,
+    });
+
+    await expect(
+      applyWorkspaceExternalProjectSyncManifest(
+        {
+          actorId: 'user-1',
+          binding: {
+            adapter: 'yoola',
+            canonical_id: 'shared-canonical',
+            canonical_project: {
+              delivery_profile: {
+                schema: {
+                  collections: [],
+                },
+              },
+            },
+            enabled: true,
+            workspace_id: 'ws-1',
+          } as never,
+          manifest,
+          workspaceId: 'ws-1',
+        },
+        db as never
+      )
+    ).resolves.toMatchObject({
+      applied: true,
+    });
+
+    expect(from).not.toHaveBeenCalledWith('canonical_external_projects');
+    expect(collectionSelect).toHaveBeenCalled();
+    expect(
+      storeMocks.upsertWorkspaceExternalProjectFieldDefinitionsFromSchema
+    ).toHaveBeenCalledWith(
+      {
+        actorId: 'user-1',
+        collectionBySlug: expect.any(Map),
+        deleteMissing: false,
+        schema: manifest.schema,
+        workspaceId: 'ws-1',
+      },
+      db
     );
   });
 });
