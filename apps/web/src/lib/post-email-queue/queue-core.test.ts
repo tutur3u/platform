@@ -11,6 +11,7 @@ const GROUP_ID = 'group-1';
 const POST_ID = 'post-1';
 const PLATFORM_USER_ID = 'platform-1';
 const WS_ID = 'ws-1';
+const RECENT_POST_CREATED_AT = new Date().toISOString();
 
 type MockState = {
   allCheckChunks: number[];
@@ -131,7 +132,7 @@ function createMockQueryBuilder(
         data: {
           id: POST_ID,
           group_id: GROUP_ID,
-          created_at: '2026-03-20T00:00:00.000Z',
+          created_at: RECENT_POST_CREATED_AT,
           workspace_user_groups: {
             ws_id: WS_ID,
           },
