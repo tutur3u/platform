@@ -33,6 +33,81 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
+test('education Vercel workflows scope deploy secrets to deploy jobs', () => {
+  const educationWorkflows = {
+    'vercel-preview-learn.yaml': {
+      environment: 'vercel-preview-learn',
+      jobName: 'Deploy-Preview',
+      projectSecret: 'VERCEL_LEARN_PROJECT_ID',
+      refGuard: /github\.ref != 'refs\/heads\/production'/,
+    },
+    'vercel-production-learn.yaml': {
+      environment: 'vercel-production-learn',
+      jobName: 'Deploy-Production',
+      projectSecret: 'VERCEL_LEARN_PROJECT_ID',
+      refGuard: /github\.ref == 'refs\/heads\/production'/,
+    },
+    'vercel-preview-teach.yaml': {
+      environment: 'vercel-preview-teach',
+      jobName: 'Deploy-Preview',
+      projectSecret: 'VERCEL_TEACH_PROJECT_ID',
+      refGuard: /github\.ref != 'refs\/heads\/production'/,
+    },
+    'vercel-production-teach.yaml': {
+      environment: 'vercel-production-teach',
+      jobName: 'Deploy-Production',
+      projectSecret: 'VERCEL_TEACH_PROJECT_ID',
+      refGuard: /github\.ref == 'refs\/heads\/production'/,
+    },
+  };
+
+  for (const [workflowName, expected] of Object.entries(educationWorkflows)) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const header = workflow.slice(0, workflow.indexOf('\njobs:'));
+    const deployJob = readWorkflowJobBlock(workflowName, expected.jobName);
+    const installIndex = workflow.indexOf('run: bun install\n');
+    const firstSecretIndex = workflow.indexOf('secrets.');
+
+    assert.doesNotMatch(
+      header,
+      /\bsecrets\./,
+      `${workflowName} must not expose GitHub secrets at workflow scope`
+    );
+    assert.match(header, /\npermissions:\n {2}contents: read\n/);
+    assert.match(deployJob, expected.refGuard);
+    assert.match(deployJob, new RegExp(`environment: ${expected.environment}`));
+    assert.ok(
+      installIndex > -1 && installIndex < firstSecretIndex,
+      `${workflowName} must install dependencies before deployment secrets are introduced`
+    );
+    assert.match(
+      deployJob,
+      /VERCEL_ORG_ID: \$\{\{ secrets\.VERCEL_ORG_ID \}\}/
+    );
+    assert.match(
+      deployJob,
+      new RegExp(
+        `VERCEL_PROJECT_ID: \\$\\{\\{ secrets\\.${expected.projectSecret} \\}\\}`
+      )
+    );
+    assert.doesNotMatch(
+      workflow,
+      /TURBO_TOKEN:\s*\$\{\{ secrets\.TURBO_TOKEN \}\}/
+    );
+    assert.doesNotMatch(
+      workflow,
+      /TURBO_TEAM:\s*\$\{\{ secrets\.TURBO_TEAM \}\}/
+    );
+    assert.doesNotMatch(
+      workflow,
+      /SUPABASE_SECRET_KEY:\s*\$\{\{ secrets\.PRODUCTION_SUPABASE_SECRET_KEY \}\}/
+    );
+  }
+});
+
 test('SDK trusted publishing keeps OIDC isolated to artifact publish job', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'release-sdk-package.yaml'),
