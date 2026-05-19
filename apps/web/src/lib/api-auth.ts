@@ -556,7 +556,7 @@ export function withSessionAuth<T = unknown>(
     }
 
     // 4. Authenticate — use Redis temp auth or app-session JWTs when present,
-    // otherwise resolve identity with `getClaims()` and fall back to `getUser()`.
+    // otherwise revalidate the Supabase session with `getUser()`.
     const tempAuth = options?.allowAiTempAuth
       ? await validateAiTempAuthRequest(request)
       : { status: 'missing' as const };

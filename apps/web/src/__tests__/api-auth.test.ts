@@ -193,7 +193,7 @@ describe('withSessionAuth', () => {
       })
     );
     expect(mockGetClaims).toHaveBeenCalledTimes(1);
-    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(response.status).toBe(200);
   });
 
@@ -500,7 +500,7 @@ describe('withSessionAuth', () => {
     expect(response.status).toBe(200);
     expect(mockValidateAiTempAuthRequest).not.toHaveBeenCalled();
     expect(mockGetClaims).toHaveBeenCalledTimes(1);
-    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -546,7 +546,7 @@ describe('withSessionAuth', () => {
     expect(handler).not.toHaveBeenCalled();
   });
 
-  it('should fall back to Supabase auth claims when AI temp auth is unavailable', async () => {
+  it('should fall back to revalidated Supabase auth when AI temp auth is unavailable', async () => {
     mockValidateAiTempAuthRequest.mockResolvedValue({ status: 'unavailable' });
     const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
 
@@ -555,7 +555,7 @@ describe('withSessionAuth', () => {
 
     expect(response.status).toBe(200);
     expect(mockGetClaims).toHaveBeenCalledTimes(1);
-    expect(mockGetUser).not.toHaveBeenCalled();
+    expect(mockGetUser).toHaveBeenCalledTimes(1);
     expect(handler).toHaveBeenCalled();
   });
 

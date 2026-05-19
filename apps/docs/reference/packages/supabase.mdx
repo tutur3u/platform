@@ -112,6 +112,21 @@ export async function proxy(request: NextRequest) {
 
 ### Authentication
 
+#### Revalidated Session User
+
+Use `resolveAuthenticatedSessionUser()` from
+`@tuturuuu/supabase/next/auth-session-user` when shared server code needs the
+current Supabase session user. The helper may probe `auth.getClaims()` for
+compatibility or timing context, but it must revalidate the session with
+`auth.getUser()` before returning a user.
+
+Treat JWT claims as verified token contents, not current account state. Do not
+authorize privileged routes, staff-only checks, or `createAdminClient()` flows
+from claim-derived `email`, `role`, or metadata alone. For those paths, make the
+authorization decision from the Auth-server user returned by `getUser()` so
+revoked, deleted, or offboarded sessions are rejected before any service-role
+operation runs.
+
 #### Get Current User
 
 ```typescript
