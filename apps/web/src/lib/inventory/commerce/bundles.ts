@@ -25,7 +25,14 @@ function normalizeSearch(q?: string) {
   return value ? `%${value}%` : null;
 }
 
-async function listBundleComponents(bundleIds: string[]) {
+export class InvalidInventoryBundleComponentTargetError extends Error {
+  constructor() {
+    super('Invalid inventory bundle component target');
+    this.name = 'InvalidInventoryBundleComponentTargetError';
+  }
+}
+
+async function listBundleComponents(wsId: string, bundleIds: string[]) {
   if (bundleIds.length === 0) {
     return new Map<string, InventoryBundleComponent[]>();
   }
@@ -45,10 +52,17 @@ async function listBundleComponents(bundleIds: string[]) {
     from private.inventory_bundle_components component
     join public.workspace_products product
       on product.id = component.product_id
-    left join public.inventory_units unit
+      and product.ws_id = ${wsId}
+    join public.inventory_units unit
       on unit.id = component.unit_id
-    left join public.inventory_warehouses warehouse
+      and unit.ws_id = ${wsId}
+    join public.inventory_warehouses warehouse
       on warehouse.id = component.warehouse_id
+      and warehouse.ws_id = ${wsId}
+    join public.inventory_products stock
+      on stock.product_id = product.id
+      and stock.unit_id = unit.id
+      and stock.warehouse_id = warehouse.id
     where component.bundle_id = any(${bundleIds}::uuid[])
     order by product.name asc, component.created_at asc
   `;
@@ -87,24 +101,38 @@ export async function listBundles(
       bundle.updated_at::text as updated_at,
       min(
         floor(
-          (
-            coalesce(stock.amount, 0)
-            - public._inventory_reserved_quantity(
-              component.product_id,
-              component.unit_id,
-              component.warehouse_id,
-              now()
+          greatest(
+            case
+              when stock.product_id is null then 0
+              else coalesce(stock.amount, 0)
+                - public._inventory_reserved_quantity(
+                  component.product_id,
+                  component.unit_id,
+                  component.warehouse_id,
+                  now()
+                )
+            end,
+            0
             )
-          ) / nullif(component.quantity, 0)
+            / nullif(component.quantity, 0)
         )
       )::int as available_quantity
     from private.inventory_bundles bundle
     left join private.inventory_bundle_components component
       on component.bundle_id = bundle.id
+    left join public.workspace_products product
+      on product.id = component.product_id
+      and product.ws_id = bundle.ws_id
+    left join public.inventory_units unit
+      on unit.id = component.unit_id
+      and unit.ws_id = bundle.ws_id
+    left join public.inventory_warehouses warehouse
+      on warehouse.id = component.warehouse_id
+      and warehouse.ws_id = bundle.ws_id
     left join public.inventory_products stock
-      on stock.product_id = component.product_id
-      and stock.unit_id = component.unit_id
-      and stock.warehouse_id = component.warehouse_id
+      on stock.product_id = product.id
+      and stock.unit_id = unit.id
+      and stock.warehouse_id = warehouse.id
     where bundle.ws_id = ${wsId}
       and (${status}::text is null or bundle.status = ${status})
       and (
@@ -130,14 +158,53 @@ export async function listBundles(
       )
   `;
 
-  const components = await listBundleComponents(rows.map((row) => row.id));
+  const components = await listBundleComponents(
+    wsId,
+    rows.map((row) => row.id)
+  );
   return {
     count: countRow?.count ?? 0,
     data: rows.map((row) => mapBundle(row, components)),
   };
 }
 
+async function assertComponentTargets(
+  wsId: string,
+  components: InventoryBundlePayload['components']
+) {
+  if (!components?.length) {
+    return;
+  }
+
+  const sql = getPlatformSql();
+
+  for (const component of components) {
+    const [row] = await sql<{ product_id: string }[]>`
+      select stock.product_id
+      from public.inventory_products stock
+      join public.workspace_products product
+        on product.id = stock.product_id
+      join public.inventory_units unit
+        on unit.id = stock.unit_id
+      join public.inventory_warehouses warehouse
+        on warehouse.id = stock.warehouse_id
+      where product.ws_id = ${wsId}
+        and unit.ws_id = ${wsId}
+        and warehouse.ws_id = ${wsId}
+        and stock.product_id = ${component.productId}
+        and stock.unit_id = ${component.unitId}
+        and stock.warehouse_id = ${component.warehouseId}
+      limit 1
+    `;
+
+    if (!row) {
+      throw new InvalidInventoryBundleComponentTargetError();
+    }
+  }
+}
+
 async function replaceComponents(
+  wsId: string,
   bundleId: string,
   components: InventoryBundlePayload['components']
 ) {
@@ -146,6 +213,8 @@ async function replaceComponents(
   }
 
   const sql = getPlatformSql();
+  await assertComponentTargets(wsId, components);
+
   await sql`
     delete from private.inventory_bundle_components
     where bundle_id = ${bundleId}
@@ -223,8 +292,8 @@ export async function createBundle(
     throw new Error('Failed to create inventory bundle');
   }
 
-  await replaceComponents(row.id, payload.components);
-  const components = await listBundleComponents([row.id]);
+  await replaceComponents(wsId, row.id, payload.components);
+  const components = await listBundleComponents(wsId, [row.id]);
   return mapBundle(row, components);
 }
 
@@ -267,7 +336,7 @@ export async function updateBundle(
     return null;
   }
 
-  await replaceComponents(row.id, payload.components);
-  const components = await listBundleComponents([row.id]);
+  await replaceComponents(wsId, row.id, payload.components);
+  const components = await listBundleComponents(wsId, [row.id]);
   return mapBundle(row, components);
 }

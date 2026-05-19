@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
-import { createBundle, listBundles } from '@/lib/inventory/commerce/bundles';
+import {
+  createBundle,
+  InvalidInventoryBundleComponentTargetError,
+  listBundles,
+} from '@/lib/inventory/commerce/bundles';
 import {
   BundleStatusSchema,
   bundlePayloadSchema,
@@ -57,6 +61,13 @@ export async function POST(request: Request, { params }: Params) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(
         { message: 'Invalid inventory bundle payload', errors: error.issues },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof InvalidInventoryBundleComponentTargetError) {
+      return NextResponse.json(
+        { message: 'Invalid inventory bundle component target' },
         { status: 400 }
       );
     }

@@ -28821,6 +28821,7 @@ export type Database = {
           p_unit_id: string;
           p_unit_price: number;
           p_warehouse_id: string;
+          p_ws_id: string;
         };
         Returns: number;
       };

@@ -74,6 +74,13 @@ the workspace with the request-scoped client before any private-table read or
 write, then use server-only database access or service-role RPCs behind
 `apps/web`.
 
+Bundle components are a workspace-scoped stock contract. When creating or
+updating a bundle, every component's product, unit, warehouse, and stock row
+must belong to the same workspace as the bundle. The database trigger on
+`private.inventory_bundle_components` enforces that invariant for direct writes,
+and the checkout reservation RPC re-checks the same workspace before locking
+stock. Do not trust stored bundle component UUIDs as already authorized input.
+
 Do not hardcode Stripe fee schedules as durable truth. The checkout estimator is
 for quoting and operator review; production reconciliation should persist the
 estimate shown to the seller and then reconcile it against actual Stripe balance

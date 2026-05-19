@@ -13,7 +13,7 @@ import {
   type StorefrontRow,
 } from './mappers';
 
-async function listPublicBundleComponents(bundleIds: string[]) {
+async function listPublicBundleComponents(wsId: string, bundleIds: string[]) {
   if (bundleIds.length === 0) {
     return new Map<string, InventoryBundleComponent[]>();
   }
@@ -33,10 +33,17 @@ async function listPublicBundleComponents(bundleIds: string[]) {
     from private.inventory_bundle_components component
     join public.workspace_products product
       on product.id = component.product_id
-    left join public.inventory_units unit
+      and product.ws_id = ${wsId}
+    join public.inventory_units unit
       on unit.id = component.unit_id
-    left join public.inventory_warehouses warehouse
+      and unit.ws_id = ${wsId}
+    join public.inventory_warehouses warehouse
       on warehouse.id = component.warehouse_id
+      and warehouse.ws_id = ${wsId}
+    join public.inventory_products stock
+      on stock.product_id = product.id
+      and stock.unit_id = unit.id
+      and stock.warehouse_id = warehouse.id
     where component.bundle_id = any(${bundleIds}::uuid[])
     order by product.name asc, component.created_at asc
   `;
@@ -162,6 +169,7 @@ export async function getPublicStorefront(slug: string) {
   `;
 
   const components = await listPublicBundleComponents(
+    storefront.ws_id,
     bundles.map((bundle) => bundle.id)
   );
 
