@@ -616,6 +616,9 @@ abstract final class CrmEndpoints {
 
 /// Education endpoint paths.
 abstract final class EducationEndpoints {
+  static String access(String wsId) =>
+      '/api/v1/workspaces/$wsId/education/access';
+
   static String courses(
     String wsId, {
     String? query,

@@ -1,11 +1,7 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireEducationWorkspaceAccess } from '@/lib/education/access';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -19,35 +15,6 @@ const FlashcardCreateSchema = z.object({
   front: z.string().trim().min(1).max(4000),
   back: z.string().trim().min(1).max(4000),
 });
-
-async function validateWorkspaceAccess(
-  wsId: string,
-  userId: string,
-  supabase: TypedSupabaseClient
-) {
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: normalizedWsId,
-    userId,
-    supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
-
-  return { normalizedWsId };
-}
 
 export const GET = withSessionAuth(
   async (
@@ -63,11 +30,10 @@ export const GET = withSessionAuth(
       );
     }
 
-    const access = await validateWorkspaceAccess(
-      parsedParams.data.wsId,
-      context.user.id,
-      context.supabase
-    );
+    const access = await requireEducationWorkspaceAccess({
+      context,
+      wsId: parsedParams.data.wsId,
+    });
     if (access instanceof NextResponse) return access;
 
     const q = request.nextUrl.searchParams.get('q')?.trim();
@@ -133,11 +99,10 @@ export const POST = withSessionAuth(
       );
     }
 
-    const access = await validateWorkspaceAccess(
-      parsedParams.data.wsId,
-      context.user.id,
-      context.supabase
-    );
+    const access = await requireEducationWorkspaceAccess({
+      context,
+      wsId: parsedParams.data.wsId,
+    });
     if (access instanceof NextResponse) return access;
 
     let body: unknown;

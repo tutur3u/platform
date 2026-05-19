@@ -7,6 +7,7 @@ import 'package:mobile/features/cms/view/cms_page.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
 import 'package:mobile/features/drive/view/drive_page.dart';
+import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/education/view/education_page.dart';
 import 'package:mobile/features/finance/view/finance_page.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
@@ -439,8 +440,22 @@ class AppRegistry {
   static bool _showCmsModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'cms');
 
-  static bool _showEducationModule(BuildContext context) =>
-      _isExperimentalModuleAvailable(context, 'education');
+  static bool _showEducationModule(BuildContext context) {
+    if (!_isExperimentalModuleAvailable(context, 'education')) {
+      return false;
+    }
+
+    final accessState = context
+        .select<EducationAccessCubit?, EducationAccessState?>(
+          (cubit) => cubit?.state,
+        );
+    if (accessState == null) {
+      return false;
+    }
+
+    return accessState.status == EducationAccessStatus.loaded &&
+        accessState.enabled;
+  }
 
   static bool _showCrmModule(BuildContext context) =>
       _isExperimentalModuleAvailable(context, 'crm');

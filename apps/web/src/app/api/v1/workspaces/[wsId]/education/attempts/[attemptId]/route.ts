@@ -1,10 +1,6 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireEducationWorkspaceAccess } from '@/lib/education/access';
 
 interface RouteParams {
   wsId: string;
@@ -14,29 +10,10 @@ interface RouteParams {
 export const GET = withSessionAuth(
   async (_request, context, params: RouteParams | Promise<RouteParams>) => {
     const { wsId, attemptId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
+    const access = await requireEducationWorkspaceAccess({ context, wsId });
+    if (access instanceof NextResponse) return access;
+    const { normalizedWsId, sbAdmin } = access;
 
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWsId,
-      userId: context.user.id,
-      supabase: context.supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json(
-        { message: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    const sbAdmin = await createAdminClient();
     const { data: attempt, error: attemptError } = await sbAdmin
       .from('workspace_quiz_attempts')
       .select(

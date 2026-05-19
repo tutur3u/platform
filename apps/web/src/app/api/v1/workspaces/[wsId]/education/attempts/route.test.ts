@@ -1,10 +1,9 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const membershipMaybeSingle = vi.fn();
-  const normalizeWorkspaceId = vi.fn();
   const learnersIn = vi.fn();
+  const requireEducationWorkspaceAccess = vi.fn();
   const setsOrder = vi.fn();
 
   const attemptsBuilder: Record<string, any> = Promise.resolve({
@@ -37,17 +36,7 @@ const mocks = vi.hoisted(() => {
   attemptsBuilder.order = vi.fn(() => attemptsBuilder);
   attemptsBuilder.range = vi.fn(() => attemptsBuilder);
 
-  const sessionSupabase = {
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            maybeSingle: membershipMaybeSingle,
-          })),
-        })),
-      })),
-    })),
-  };
+  const sessionSupabase = {};
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
@@ -82,8 +71,7 @@ const mocks = vi.hoisted(() => {
   return {
     adminSupabase,
     learnersIn,
-    membershipMaybeSingle,
-    normalizeWorkspaceId,
+    requireEducationWorkspaceAccess,
     sessionSupabase,
     setsOrder,
   };
@@ -112,28 +100,21 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
-vi.mock('@tuturuuu/utils/workspace-helper', async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import('@tuturuuu/utils/workspace-helper')>();
-  return {
-    ...actual,
-    normalizeWorkspaceId: (
-      ...args: Parameters<typeof mocks.normalizeWorkspaceId>
-    ) => mocks.normalizeWorkspaceId(...args),
-  };
-});
-
-vi.mock('@tuturuuu/supabase/next/server', () => ({
-  createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
+vi.mock('@/lib/education/access', () => ({
+  requireEducationWorkspaceAccess: (
+    ...args: Parameters<typeof mocks.requireEducationWorkspaceAccess>
+  ) => mocks.requireEducationWorkspaceAccess(...args),
 }));
 
 describe('education attempts list route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.normalizeWorkspaceId.mockResolvedValue(
-      '00000000-0000-0000-0000-000000000001'
-    );
+    mocks.requireEducationWorkspaceAccess.mockResolvedValue({
+      normalizedWsId: '00000000-0000-0000-0000-000000000001',
+      ok: true,
+      sbAdmin: mocks.adminSupabase,
+    });
     mocks.learnersIn.mockResolvedValue({
       data: [
         { user_id: 'user-2', full_name: 'Learner', email: 'l@example.com' },
@@ -146,8 +127,13 @@ describe('education attempts list route', () => {
     });
   });
 
-  it('returns 403 when requester is not a workspace member', async () => {
-    mocks.membershipMaybeSingle.mockResolvedValue({ data: null, error: null });
+  it('returns 403 when requester lacks education access', async () => {
+    mocks.requireEducationWorkspaceAccess.mockResolvedValue(
+      NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      )
+    );
 
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/education/attempts/route'
@@ -162,16 +148,14 @@ describe('education attempts list route', () => {
 
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-      message: "You don't have access to this workspace",
+      message: 'Insufficient permissions',
     });
+    expect(mocks.adminSupabase.from).not.toHaveBeenCalledWith(
+      'workspace_quiz_attempts'
+    );
   });
 
   it('returns attempts payload for authorized members', async () => {
-    mocks.membershipMaybeSingle.mockResolvedValue({
-      data: { type: 'MEMBER' as const },
-      error: null,
-    });
-
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/education/attempts/route'
     );

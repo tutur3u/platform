@@ -1,12 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireEducationWorkspaceAccess } from '@/lib/education/access';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -19,35 +14,6 @@ const QuizSetCreateSchema = z.object({
   moduleId: z.guid().optional(),
   name: z.string().trim().min(1).max(255),
 });
-
-async function validateWorkspaceAccess(
-  wsId: string,
-  userId: string,
-  supabase: TypedSupabaseClient
-) {
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: normalizedWsId,
-    userId,
-    supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json(
-      { message: "You don't have access to this workspace" },
-      { status: 403 }
-    );
-  }
-
-  return { normalizedWsId };
-}
 
 export const GET = withSessionAuth(
   async (
@@ -63,12 +29,12 @@ export const GET = withSessionAuth(
       );
     }
 
-    const access = await validateWorkspaceAccess(
-      parsedParams.data.wsId,
-      context.user.id,
-      context.supabase
-    );
+    const access = await requireEducationWorkspaceAccess({
+      context,
+      wsId: parsedParams.data.wsId,
+    });
     if (access instanceof NextResponse) return access;
+    const { normalizedWsId, sbAdmin } = access;
 
     const q = request.nextUrl.searchParams.get('q')?.trim();
     const page = Math.max(
@@ -87,14 +53,12 @@ export const GET = withSessionAuth(
       MAX_PAGE_SIZE
     );
 
-    const sbAdmin = await createAdminClient();
-
     const queryBuilder = sbAdmin
       .from('workspace_quiz_sets')
       .select('id, name, created_at, course_module_quiz_sets(module_id)', {
         count: 'exact',
       })
-      .eq('ws_id', access.normalizedWsId)
+      .eq('ws_id', normalizedWsId)
       .order('created_at', { ascending: false });
 
     if ((q?.length ?? 0) > 0) {
@@ -149,11 +113,10 @@ export const POST = withSessionAuth(
       );
     }
 
-    const access = await validateWorkspaceAccess(
-      parsedParams.data.wsId,
-      context.user.id,
-      context.supabase
-    );
+    const access = await requireEducationWorkspaceAccess({
+      context,
+      wsId: parsedParams.data.wsId,
+    });
     if (access instanceof NextResponse) return access;
 
     let body: unknown;

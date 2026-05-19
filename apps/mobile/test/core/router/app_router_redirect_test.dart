@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mobile/core/router/app_router.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
+import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_state.dart';
 
@@ -84,6 +85,60 @@ void main() {
       );
 
       expect(shouldRedirectDisabledHabitsRoutes(Routes.timer, state), isFalse);
+    });
+  });
+
+  group('shouldRedirectDisabledEducationRoutes', () {
+    test(
+      'returns true for education route when education access is disabled',
+      () {
+        const state = EducationAccessState(
+          status: EducationAccessStatus.loaded,
+          wsId: 'team-1',
+        );
+
+        expect(
+          shouldRedirectDisabledEducationRoutes(Routes.education, state),
+          isTrue,
+        );
+      },
+    );
+
+    test('returns true for education route while access is loading', () {
+      const state = EducationAccessState(
+        status: EducationAccessStatus.loading,
+        wsId: 'team-1',
+      );
+
+      expect(
+        shouldRedirectDisabledEducationRoutes(Routes.education, state),
+        isTrue,
+      );
+    });
+
+    test('returns false for education route when access is enabled', () {
+      const state = EducationAccessState(
+        status: EducationAccessStatus.loaded,
+        enabled: true,
+        wsId: 'team-1',
+      );
+
+      expect(
+        shouldRedirectDisabledEducationRoutes(Routes.education, state),
+        isFalse,
+      );
+    });
+
+    test('returns false for non-education routes', () {
+      const state = EducationAccessState(
+        status: EducationAccessStatus.loaded,
+        wsId: 'team-1',
+      );
+
+      expect(
+        shouldRedirectDisabledEducationRoutes(Routes.timer, state),
+        isFalse,
+      );
     });
   });
 

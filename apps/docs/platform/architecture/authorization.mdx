@@ -164,6 +164,14 @@ enough for those flows: invite creation and membership-type changes require
 `manage_workspace_members`, and `workspace_members.type` is protected at the
 database layer so non-managers cannot self-promote from `GUEST` to `MEMBER`.
 
+Education authoring and review APIs are also feature-gated. Routes that expose
+quiz answer keys, learner attempt metadata, flashcards, quiz sets, or other
+Education admin surfaces must use
+`apps/web/src/lib/education/access.ts` so `ENABLE_EDUCATION` and `ai_lab` are
+enforced server-side before any workspace-scoped read or mutation. Mobile and
+other clients may hide Education affordances, but API routes remain the source
+of truth for this gate.
+
 ## API Keys Reuse The Same Permission IDs
 
 External SDK routes use `withApiAuth(...)` in `apps/web/src/lib/api-middleware.ts`.

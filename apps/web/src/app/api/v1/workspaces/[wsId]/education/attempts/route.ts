@@ -1,10 +1,6 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { requireEducationWorkspaceAccess } from '@/lib/education/access';
 
 interface RouteParams {
   wsId: string;
@@ -16,27 +12,9 @@ const MAX_PAGE_SIZE = 100;
 export const GET = withSessionAuth(
   async (request, context, params: RouteParams | Promise<RouteParams>) => {
     const { wsId } = await params;
-    const normalizedWsId = await normalizeWorkspaceId(wsId, context.supabase);
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: normalizedWsId,
-      userId: context.user.id,
-      supabase: context.supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json(
-        { message: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
+    const access = await requireEducationWorkspaceAccess({ context, wsId });
+    if (access instanceof NextResponse) return access;
+    const { normalizedWsId, sbAdmin } = access;
 
     const page = Math.max(
       Number.parseInt(request.nextUrl.searchParams.get('page') ?? '1', 10) || 1,
@@ -64,7 +42,6 @@ export const GET = withSessionAuth(
       .get('sortDirection')
       ?.trim();
 
-    const sbAdmin = await createAdminClient();
     const queryBuilder = sbAdmin
       .from('workspace_quiz_attempts')
       .select(

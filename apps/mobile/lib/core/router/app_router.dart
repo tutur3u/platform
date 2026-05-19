@@ -18,6 +18,7 @@ import 'package:mobile/features/auth/view/signup_page.dart';
 import 'package:mobile/features/dashboard/view/dashboard_page.dart';
 import 'package:mobile/features/documents/view/document_detail_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
+import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/finance/view/transaction_categories_page.dart';
 import 'package:mobile/features/finance/view/transaction_list_page.dart';
 import 'package:mobile/features/finance/view/wallet_detail_page.dart';
@@ -71,6 +72,15 @@ bool shouldRedirectDisabledHabitsRoutes(
   return Routes.miniAppRootForLocation(matchedLocation) == Routes.habits &&
       (habitsAccessState.status != HabitsAccessStatus.loaded ||
           !habitsAccessState.enabled);
+}
+
+bool shouldRedirectDisabledEducationRoutes(
+  String matchedLocation,
+  EducationAccessState educationAccessState,
+) {
+  return Routes.miniAppRootForLocation(matchedLocation) == Routes.education &&
+      (educationAccessState.status != EducationAccessStatus.loaded ||
+          !educationAccessState.enabled);
 }
 
 String? resolveUnauthenticatedRedirect({
@@ -166,6 +176,7 @@ GoRouter createAppRouter(
   AuthCubit authCubit,
   WorkspaceCubit workspaceCubit,
   HabitsAccessCubit habitsAccessCubit,
+  EducationAccessCubit educationAccessCubit,
   InventoryAccessCubit inventoryAccessCubit,
   AppTabCubit appTabCubit, {
   String? initialLocation,
@@ -178,12 +189,14 @@ GoRouter createAppRouter(
       authCubit,
       workspaceCubit,
       habitsAccessCubit,
+      educationAccessCubit,
       inventoryAccessCubit,
     ),
     redirect: (context, state) {
       final authState = authCubit.state;
       final wsState = workspaceCubit.state;
       final habitsAccessState = habitsAccessCubit.state;
+      final educationAccessState = educationAccessCubit.state;
       final inventoryAccessState = inventoryAccessCubit.state;
 
       if (kDebugMode) {
@@ -263,6 +276,13 @@ GoRouter createAppRouter(
       if (shouldRedirectDisabledHabitsRoutes(
         state.matchedLocation,
         habitsAccessState,
+      )) {
+        return Routes.apps;
+      }
+
+      if (shouldRedirectDisabledEducationRoutes(
+        state.matchedLocation,
+        educationAccessState,
       )) {
         return Routes.apps;
       }
@@ -578,6 +598,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     AuthCubit authCubit,
     WorkspaceCubit workspaceCubit,
     HabitsAccessCubit habitsAccessCubit,
+    EducationAccessCubit educationAccessCubit,
     InventoryAccessCubit inventoryAccessCubit,
   ) {
     _authSub = authCubit.stream.listen((state) {
@@ -599,6 +620,9 @@ class _AppRefreshNotifier extends ChangeNotifier {
     _habitsAccessSub = habitsAccessCubit.stream.listen((_) {
       notifyListeners();
     });
+    _educationAccessSub = educationAccessCubit.stream.listen((_) {
+      notifyListeners();
+    });
     _inventoryAccessSub = inventoryAccessCubit.stream.listen((_) {
       notifyListeners();
     });
@@ -607,6 +631,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
   late final StreamSubscription<AuthState> _authSub;
   late final StreamSubscription<WorkspaceState> _wsSub;
   late final StreamSubscription<HabitsAccessState> _habitsAccessSub;
+  late final StreamSubscription<EducationAccessState> _educationAccessSub;
   late final StreamSubscription<InventoryAccessState> _inventoryAccessSub;
 
   @override
@@ -614,6 +639,7 @@ class _AppRefreshNotifier extends ChangeNotifier {
     await _authSub.cancel();
     await _wsSub.cancel();
     await _habitsAccessSub.cancel();
+    await _educationAccessSub.cancel();
     await _inventoryAccessSub.cancel();
     super.dispose();
   }

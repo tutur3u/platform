@@ -6,6 +6,7 @@ import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/data/models/workspace.dart';
 import 'package:mobile/data/repositories/settings_repository.dart';
 import 'package:mobile/features/apps/registry/app_registry.dart';
+import 'package:mobile/features/education/cubit/education_access_cubit.dart';
 import 'package:mobile/features/habits/cubit/habits_access_cubit.dart';
 import 'package:mobile/features/settings/cubit/experimental_apps_cubit.dart';
 import 'package:mobile/features/workspace/cubit/workspace_cubit.dart';
@@ -19,6 +20,9 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _MockHabitsAccessCubit extends MockCubit<HabitsAccessState>
     implements HabitsAccessCubit {}
+
+class _MockEducationAccessCubit extends MockCubit<EducationAccessState>
+    implements EducationAccessCubit {}
 
 void main() {
   setUp(() {
@@ -221,11 +225,106 @@ void main() {
     });
   });
 
+  group('AppRegistry education module visibility', () {
+    testWidgets(
+      'shows education module when experiment and access are enabled',
+      (
+        tester,
+      ) async {
+        final educationAccessCubit = _MockEducationAccessCubit();
+        final experimentalAppsCubit = ExperimentalAppsCubit(
+          settingsRepository: SettingsRepository(),
+        );
+        await experimentalAppsCubit.setModuleEnabled(
+          moduleId: 'education',
+          enabled: true,
+        );
+        whenListen(
+          educationAccessCubit,
+          const Stream<EducationAccessState>.empty(),
+          initialState: const EducationAccessState(
+            status: EducationAccessStatus.loaded,
+            enabled: true,
+            wsId: 'team-1',
+          ),
+        );
+        addTearDown(educationAccessCubit.close);
+        addTearDown(experimentalAppsCubit.close);
+
+        late bool isVisible;
+        await tester.pumpApp(
+          MultiBlocProvider(
+            providers: [
+              BlocProvider<EducationAccessCubit>.value(
+                value: educationAccessCubit,
+              ),
+              BlocProvider.value(value: experimentalAppsCubit),
+            ],
+            child: Builder(
+              builder: (context) {
+                final module = AppRegistry.moduleById('education')!;
+                isVisible = module.visibleIn(context);
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        );
+
+        expect(isVisible, isTrue);
+      },
+    );
+
+    testWidgets('hides education module without backend access', (
+      tester,
+    ) async {
+      final educationAccessCubit = _MockEducationAccessCubit();
+      final experimentalAppsCubit = ExperimentalAppsCubit(
+        settingsRepository: SettingsRepository(),
+      );
+      await experimentalAppsCubit.setModuleEnabled(
+        moduleId: 'education',
+        enabled: true,
+      );
+      whenListen(
+        educationAccessCubit,
+        const Stream<EducationAccessState>.empty(),
+        initialState: const EducationAccessState(
+          status: EducationAccessStatus.loaded,
+          wsId: 'team-1',
+        ),
+      );
+      addTearDown(educationAccessCubit.close);
+      addTearDown(experimentalAppsCubit.close);
+
+      late bool isVisible;
+      await tester.pumpApp(
+        MultiBlocProvider(
+          providers: [
+            BlocProvider<EducationAccessCubit>.value(
+              value: educationAccessCubit,
+            ),
+            BlocProvider.value(value: experimentalAppsCubit),
+          ],
+          child: Builder(
+            builder: (context) {
+              final module = AppRegistry.moduleById('education')!;
+              isVisible = module.visibleIn(context);
+              return const SizedBox.shrink();
+            },
+          ),
+        ),
+      );
+
+      expect(isVisible, isFalse);
+    });
+  });
+
   group('AppRegistry workspace-secret module visibility', () {
     testWidgets('hides experimental modules listed by workspace flags', (
       tester,
     ) async {
       final workspaceCubit = _MockWorkspaceCubit();
+      final educationAccessCubit = _MockEducationAccessCubit();
       final experimentalAppsCubit = ExperimentalAppsCubit(
         settingsRepository: SettingsRepository(),
       );
@@ -244,7 +343,17 @@ void main() {
           hiddenModuleIds: ['cms', 'drive', 'meet'],
         ),
       );
+      whenListen(
+        educationAccessCubit,
+        const Stream<EducationAccessState>.empty(),
+        initialState: const EducationAccessState(
+          status: EducationAccessStatus.loaded,
+          enabled: true,
+          wsId: 'team-1',
+        ),
+      );
       addTearDown(workspaceCubit.close);
+      addTearDown(educationAccessCubit.close);
       addTearDown(experimentalAppsCubit.close);
 
       late List<String> visibleModuleIds;
@@ -252,6 +361,9 @@ void main() {
         MultiBlocProvider(
           providers: [
             BlocProvider<WorkspaceCubit>.value(value: workspaceCubit),
+            BlocProvider<EducationAccessCubit>.value(
+              value: educationAccessCubit,
+            ),
             BlocProvider.value(value: experimentalAppsCubit),
           ],
           child: Builder(
