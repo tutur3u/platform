@@ -1136,6 +1136,13 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   assert.match(config, /proxy_buffer_size 128k;/);
   assert.match(config, /proxy_buffers 8 128k;/);
   assert.match(config, /proxy_busy_buffers_size 256k;/);
+  assert.match(config, /location = \/__platform\/drain-status \{/);
+  assert.match(config, /allow 127\.0\.0\.1;/);
+  assert.match(config, /deny all;/);
+  assert.match(
+    config,
+    /proxy_set_header X-Platform-Internal-Drain-Status "1";/
+  );
   assert.match(
     config,
     /proxy_next_upstream error timeout invalid_header http_502 http_503 http_504;/

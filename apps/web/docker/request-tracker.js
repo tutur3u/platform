@@ -4,17 +4,79 @@ const https = require('node:https');
 const DRAIN_STATUS_PATH =
   process.env.DOCKER_WEB_DRAIN_STATUS_PATH ?? '/__platform/drain-status';
 const HEALTH_PATH = '/api/health';
+const INTERNAL_DRAIN_STATUS_HEADER = 'x-platform-internal-drain-status';
+const INTERNAL_DRAIN_STATUS_HEADER_VALUE = '1';
 const DEPLOYMENT_STAMP = process.env.PLATFORM_DEPLOYMENT_STAMP?.trim() || null;
 const DEPLOYMENT_COLOR = process.env.PLATFORM_BLUE_GREEN_COLOR?.trim() || null;
 
 let inflightRequests = 0;
 let shuttingDown = false;
 
+function normalizeAddress(address) {
+  if (typeof address !== 'string') {
+    return '';
+  }
+
+  return address.startsWith('::ffff:')
+    ? address.slice('::ffff:'.length)
+    : address;
+}
+
 function isLocalAddress(address) {
+  const normalizedAddress = normalizeAddress(address);
+
   return (
-    address === '127.0.0.1' ||
-    address === '::1' ||
-    address === '::ffff:127.0.0.1'
+    normalizedAddress === '127.0.0.1' ||
+    normalizedAddress === '::1' ||
+    normalizedAddress === 'localhost'
+  );
+}
+
+function isPrivateNetworkAddress(address) {
+  const normalizedAddress = normalizeAddress(address);
+  const ipv4Parts = normalizedAddress.split('.').map((part) => Number(part));
+
+  if (
+    ipv4Parts.length === 4 &&
+    ipv4Parts.every(
+      (part) => Number.isInteger(part) && part >= 0 && part <= 255
+    )
+  ) {
+    const [first, second] = ipv4Parts;
+
+    return (
+      first === 10 ||
+      (first === 172 && second >= 16 && second <= 31) ||
+      (first === 192 && second === 168)
+    );
+  }
+
+  const lowerAddress = normalizedAddress.toLowerCase();
+
+  return (
+    lowerAddress.startsWith('fc') ||
+    lowerAddress.startsWith('fd') ||
+    lowerAddress.startsWith('fe80:')
+  );
+}
+
+function getHeaderValue(request, name) {
+  const value = request.headers?.[name];
+
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function isInternalDrainStatusRequestAllowed(request) {
+  const remoteAddress = request.socket?.remoteAddress;
+
+  if (isLocalAddress(remoteAddress)) {
+    return true;
+  }
+
+  return (
+    getHeaderValue(request, INTERNAL_DRAIN_STATUS_HEADER) ===
+      INTERNAL_DRAIN_STATUS_HEADER_VALUE &&
+    isPrivateNetworkAddress(remoteAddress)
   );
 }
 
@@ -72,7 +134,7 @@ function patchServerModule(serverModule) {
 
     if (
       pathname === DRAIN_STATUS_PATH &&
-      isLocalAddress(request.socket?.remoteAddress)
+      isInternalDrainStatusRequestAllowed(request)
     ) {
       respondWithDrainStatus(response);
       return true;
@@ -115,3 +177,11 @@ for (const signal of ['SIGINT', 'SIGTERM']) {
     shuttingDown = true;
   });
 }
+
+module.exports = {
+  INTERNAL_DRAIN_STATUS_HEADER,
+  INTERNAL_DRAIN_STATUS_HEADER_VALUE,
+  isInternalDrainStatusRequestAllowed,
+  isLocalAddress,
+  isPrivateNetworkAddress,
+};

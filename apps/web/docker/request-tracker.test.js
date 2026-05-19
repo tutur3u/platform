@@ -1,7 +1,13 @@
 import http from 'node:http';
+import { createRequire } from 'node:module';
 import { expect, test } from 'vitest';
 
-import './request-tracker.js';
+const require = createRequire(import.meta.url);
+const {
+  INTERNAL_DRAIN_STATUS_HEADER,
+  isInternalDrainStatusRequestAllowed,
+  isPrivateNetworkAddress,
+} = require('./request-tracker.js');
 
 function wait(ms) {
   return new Promise((resolve) => {
@@ -92,4 +98,35 @@ test('request tracker reports in-flight requests and excludes health probes', as
   } finally {
     await server.close();
   }
+});
+
+test('request tracker accepts only explicit internal proxy drain-status probes', () => {
+  expect(isPrivateNetworkAddress('172.18.0.5')).toBe(true);
+  expect(isPrivateNetworkAddress('::ffff:172.18.0.5')).toBe(true);
+  expect(isPrivateNetworkAddress('8.8.8.8')).toBe(false);
+
+  expect(
+    isInternalDrainStatusRequestAllowed({
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+    })
+  ).toBe(true);
+  expect(
+    isInternalDrainStatusRequestAllowed({
+      headers: { [INTERNAL_DRAIN_STATUS_HEADER]: '1' },
+      socket: { remoteAddress: '172.18.0.5' },
+    })
+  ).toBe(true);
+  expect(
+    isInternalDrainStatusRequestAllowed({
+      headers: {},
+      socket: { remoteAddress: '172.18.0.5' },
+    })
+  ).toBe(false);
+  expect(
+    isInternalDrainStatusRequestAllowed({
+      headers: { [INTERNAL_DRAIN_STATUS_HEADER]: '1' },
+      socket: { remoteAddress: '8.8.8.8' },
+    })
+  ).toBe(false);
 });

@@ -323,7 +323,11 @@ for the blue/green upstream block at reload time.
 Both the production web image healthcheck and the `web-proxy` compose
 healthcheck now use the internal `/__platform/drain-status` endpoint too, so
 raw `bun serve:web:docker:bg` waits on the same non-rate-limited readiness path
-as the blue/green promotion gate.
+as the blue/green promotion gate. The proxy exposes that path as an exact
+loopback-only nginx location and forwards a private internal probe header to
+the active web lane, because the web request tracker intentionally answers the
+drain-status endpoint only for local or explicitly trusted Docker-network
+requests.
 
 Every blue/green deployment also stamps the runtime with
 `PLATFORM_DEPLOYMENT_STAMP` and `PLATFORM_BLUE_GREEN_COLOR`. Those values are
