@@ -42,7 +42,6 @@ import {
   type ObservabilityDeployment,
   type ObservabilityLogEvent,
   type ObservabilityRequest,
-  type ObservabilityResourceBucket,
   queueCronRun,
   queueInfrastructureProjectDeploy,
   requestBlueGreenWatcherRecovery,
@@ -71,7 +70,6 @@ import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
 import { type ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   Area,
-  AreaChart,
   Bar,
   CartesianGrid,
   Cell,
@@ -83,14 +81,12 @@ import {
 } from 'recharts';
 import { BlueGreenMonitoringRecoverySettings } from './blue-green-monitoring-recovery-settings';
 import {
-  formatBytes,
   formatCompactNumber,
   formatDateTime,
   formatLatencyMs,
 } from './formatters';
-import { ObservabilityBuildResources } from './observability-build-resources';
 import { ObservabilityDeploymentsPanel } from './observability-deployments-panel';
-import { ObservabilityResourceClusters } from './observability-resource-clusters';
+import { ObservabilityResourcesPanel } from './observability-resources-panel';
 
 export type ObservabilityDashboardMode =
   | 'analytics'
@@ -315,24 +311,6 @@ function statusClass(status: number | null | undefined) {
   }
 
   return 'text-dynamic-green';
-}
-
-function getCpuTone(value: number | null | undefined): Tone {
-  if (value == null || !Number.isFinite(value)) return 'muted';
-  if (value < 5) return 'green';
-  if (value <= 20) return 'amber';
-  if (value <= 40) return 'orange';
-  return 'red';
-}
-
-function getMemoryTone(value: number | null | undefined): Tone {
-  if (value == null || !Number.isFinite(value)) return 'muted';
-
-  const mb = value / 1024 / 1024;
-  if (mb < 200) return 'green';
-  if (mb <= 500) return 'amber';
-  if (mb <= 1024) return 'orange';
-  return 'red';
 }
 
 function getStatusFamilyTone(label: string): Tone {
@@ -599,168 +577,6 @@ function TrendChart({
               )
             )}
           </ComposedChart>
-        </ChartContainer>
-      ) : (
-        <EmptyChart label={emptyLabel} />
-      )}
-    </section>
-  );
-}
-
-function ResourceTrendChart({
-  buckets,
-  emptyLabel,
-  formatter,
-  series,
-  title,
-}: {
-  buckets: ObservabilityResourceBucket[];
-  emptyLabel: string;
-  formatter: (value: number | null | undefined) => string;
-  series: Array<{
-    getValue: (bucket: ObservabilityResourceBucket) => number | null;
-    label: string;
-    tone: Tone;
-  }>;
-  title: string;
-}) {
-  const chartData = buckets.map((bucket) => {
-    const point: Record<string, number | string | null> = {
-      time: formatTime(bucket.bucketStart),
-      timestamp: bucket.bucketStart,
-    };
-
-    series.forEach((item, index) => {
-      point[`series${index}`] = item.getValue(bucket);
-    });
-
-    return point;
-  });
-  const chartConfig = Object.fromEntries(
-    series.map((item, index) => [
-      `series${index}`,
-      {
-        color: `var(--chart-${(index % 5) + 1})`,
-        label: item.label,
-      },
-    ])
-  );
-  const gradientId = `resource-${title.replace(/\W+/gu, '-').toLowerCase()}`;
-
-  return (
-    <section className="rounded-lg border border-border bg-background">
-      <div className="flex items-center justify-between gap-3 border-border border-b px-4 py-3">
-        <p className="font-medium text-sm">{title}</p>
-        <div className="flex flex-wrap items-center justify-end gap-3 text-muted-foreground text-xs">
-          {series.map((item) => {
-            const latest = [...buckets]
-              .reverse()
-              .map((bucket) => item.getValue(bucket))
-              .find((value) => value != null);
-
-            return (
-              <span className="inline-flex items-center gap-1" key={item.label}>
-                <span
-                  className={cn(
-                    'h-2 w-2 rounded-full',
-                    toneClasses[item.tone].dot
-                  )}
-                />
-                {item.label}
-                <span className="font-mono text-foreground">
-                  {formatter(latest)}
-                </span>
-              </span>
-            );
-          })}
-        </div>
-      </div>
-      {buckets.length > 0 ? (
-        <ChartContainer className="h-64 w-full px-3 py-4" config={chartConfig}>
-          {series.length > 1 ? (
-            <ComposedChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="time"
-                minTickGap={24}
-                tickLine={false}
-              />
-              <YAxis
-                axisLine={false}
-                tickFormatter={(value) => formatter(Number(value))}
-                tickLine={false}
-                width={58}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, name) => [
-                      formatter(Number(value)),
-                      name,
-                    ]}
-                  />
-                }
-              />
-              {series.map((item, index) => (
-                <Bar
-                  dataKey={`series${index}`}
-                  fill={`var(--color-series${index})`}
-                  key={item.label}
-                  name={item.label}
-                  radius={[2, 2, 0, 0]}
-                />
-              ))}
-            </ComposedChart>
-          ) : (
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-                  <stop
-                    offset="5%"
-                    stopColor="var(--color-series0)"
-                    stopOpacity={0.35}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--color-series0)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis
-                axisLine={false}
-                dataKey="time"
-                minTickGap={24}
-                tickLine={false}
-              />
-              <YAxis
-                axisLine={false}
-                tickFormatter={(value) => formatter(Number(value))}
-                tickLine={false}
-                width={58}
-              />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value, name) => [
-                      formatter(Number(value)),
-                      name,
-                    ]}
-                  />
-                }
-              />
-              <Area
-                dataKey="series0"
-                fill={`url(#${gradientId})`}
-                name={series[0]?.label}
-                stroke="var(--color-series0)"
-                strokeWidth={2}
-                type="monotone"
-              />
-            </AreaChart>
-          )}
         </ChartContainer>
       ) : (
         <EmptyChart label={emptyLabel} />
@@ -1459,9 +1275,6 @@ export function ObservabilityDashboardClient({
   const deploymentsTotal = deploymentsQuery.data?.pages[0]?.total ?? 0;
   const cronExecutionsTotal = cronExecutionsQuery.data?.pages[0]?.total ?? 0;
   const newRequestCount = newRequestsQuery.data?.total ?? 0;
-  const buildResourceBuckets = resourcesQuery.data?.buildBuckets ?? [];
-  const buildResources = resourcesQuery.data?.buildResources;
-  const resourceBuckets = resourcesQuery.data?.buckets ?? [];
   const scopedContainers = useMemo(() => {
     const containers = resources?.allContainers ?? [];
     if (projectId === 'platform') {
@@ -2754,176 +2567,13 @@ export function ObservabilityDashboardClient({
       )}
 
       {mode === 'resources' && (
-        <div className="space-y-4">
-          <section className="flex flex-col gap-3 rounded-lg border border-border bg-background p-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <p className="font-medium text-sm">
-                {t('resources.resource_history')}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                {t('resources.resource_history_meta')}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-1">
-              {(
-                [
-                  [1, t('last_hour')],
-                  [6, t('last_6_hours')],
-                  [12, t('last_12_hours')],
-                  [24, t('last_24_hours')],
-                  [72, t('last_3_days')],
-                  [168, t('last_7_days')],
-                ] as const
-              ).map(([value, label]) => (
-                <button
-                  className={cn(
-                    'rounded-md border px-2.5 py-1.5 text-xs',
-                    timeframeHours === value
-                      ? 'border-dynamic-blue/60 bg-dynamic-blue/10 text-dynamic-blue'
-                      : 'border-border text-muted-foreground hover:text-foreground'
-                  )}
-                  key={value}
-                  onClick={() => void setTimeframeHours(value)}
-                  type="button"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {resourcesQuery.isLoading ? (
-            <div className="grid gap-4 xl:grid-cols-3">
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-            </div>
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-3">
-              <ResourceTrendChart
-                buckets={resourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={(value) => `${formatNumber(value)}%`}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.cpuPercent,
-                    label: t('resources.cpu'),
-                    tone: getCpuTone(resources?.totalCpuPercent),
-                  },
-                ]}
-                title={t('resources.cpu_trend')}
-              />
-              <ResourceTrendChart
-                buckets={resourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={formatBytes}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.memoryBytes,
-                    label: t('resources.memory'),
-                    tone: getMemoryTone(resources?.totalMemoryBytes),
-                  },
-                ]}
-                title={t('resources.memory_trend')}
-              />
-              <ResourceTrendChart
-                buckets={resourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={formatBytes}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.rxBytes,
-                    label: t('resources.rx'),
-                    tone: 'blue',
-                  },
-                  {
-                    getValue: (bucket) => bucket.txBytes,
-                    label: t('resources.tx'),
-                    tone: 'amber',
-                  },
-                ]}
-                title={t('resources.network_trend')}
-              />
-            </div>
-          )}
-
-          <ObservabilityBuildResources
-            buildResources={buildResources}
-            isLoading={resourcesQuery.isLoading}
-          />
-
-          {resourcesQuery.isLoading ? (
-            <div className="grid gap-4 xl:grid-cols-3">
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-              <section className="rounded-lg border border-border bg-background">
-                <ChartSkeleton />
-              </section>
-            </div>
-          ) : (
-            <div className="grid gap-4 xl:grid-cols-3">
-              <ResourceTrendChart
-                buckets={buildResourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={(value) => `${formatNumber(value)}%`}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.cpuPercent,
-                    label: t('resources.cpu'),
-                    tone: getCpuTone(buildResources?.totalCpuPercent),
-                  },
-                ]}
-                title={t('resources.build_cpu_trend')}
-              />
-              <ResourceTrendChart
-                buckets={buildResourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={formatBytes}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.memoryBytes,
-                    label: t('resources.memory'),
-                    tone: getMemoryTone(buildResources?.totalMemoryBytes),
-                  },
-                ]}
-                title={t('resources.build_memory_trend')}
-              />
-              <ResourceTrendChart
-                buckets={buildResourceBuckets}
-                emptyLabel={t('charts.no_data')}
-                formatter={formatBytes}
-                series={[
-                  {
-                    getValue: (bucket) => bucket.rxBytes,
-                    label: t('resources.rx'),
-                    tone: 'blue',
-                  },
-                  {
-                    getValue: (bucket) => bucket.txBytes,
-                    label: t('resources.tx'),
-                    tone: 'amber',
-                  },
-                ]}
-                title={t('resources.build_network_trend')}
-              />
-            </div>
-          )}
-
-          <ObservabilityResourceClusters
-            containers={scopedContainers}
-            isLoading={resourcesQuery.isLoading}
-          />
-        </div>
+        <ObservabilityResourcesPanel
+          data={resourcesQuery.data}
+          isLoading={resourcesQuery.isLoading}
+          onTimeframeHoursChange={(value) => void setTimeframeHours(value)}
+          scopedContainers={scopedContainers}
+          timeframeHours={timeframeHours}
+        />
       )}
 
       <Dialog

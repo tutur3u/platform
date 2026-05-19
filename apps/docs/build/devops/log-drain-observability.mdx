@@ -113,6 +113,8 @@ distinguish build pressure from runtime web, proxy, Redis, and sidecar pressure.
 
 The internal resource sampler writes the current Docker snapshot into the log drain `usage_events` table at most once per minute. The UI charts that history across the supported resource windows: 1 hour, 6 hours, 12 hours, 24 hours, 3 days, and 7 days. If the log drain is disabled or unavailable, the tab still shows the live Docker snapshot and falls back to a single current sample.
 
+Chart gaps on the Resources tab mean a retained sampler record is missing for that time bucket; they are not automatically downtime. The Resources tab now shows sampling continuity for runtime and build metrics, including sampled buckets, gap buckets, latest retained sample age, and a live-snapshot marker for the current bucket. If the live snapshot is healthy but historical charts have gaps, inspect the Cron tab and the `infrastructure-sample-resources` job before treating the gap as runtime unavailability.
+
 Resource pressure uses the same thresholds as the dashboard: memory under 200 MB is green, 200-500 MB is amber, 500-1024 MB is orange, and anything above 1024 MB is red. CPU under 5% is green, 5-20% is amber, 20-40% is orange, and anything above 40% is red.
 
 ## Troubleshooting

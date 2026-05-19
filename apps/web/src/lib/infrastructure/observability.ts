@@ -13,6 +13,7 @@ import type {
   ObservabilityPaginatedResult,
   ObservabilityRequest,
   ObservabilityResourceBucket,
+  ObservabilityResourceSampling,
   ObservabilityResources,
 } from '@tuturuuu/internal-api/infrastructure';
 import {
@@ -49,6 +50,7 @@ const DEFAULT_TIMEFRAME_HOURS = 24;
 const MAX_PAGE_SIZE = 200;
 const MAX_AGGREGATE_ROWS = 5_000;
 const RESOURCE_SAMPLE_MIN_INTERVAL_MS = 60_000;
+const RESOURCE_SAMPLE_STALE_AFTER_MS = RESOURCE_SAMPLE_MIN_INTERVAL_MS * 5;
 const DEFAULT_PROJECT_ID = 'platform';
 const RESOURCE_METRICS = {
   cpu: 'docker.cpu_percent',
@@ -1434,9 +1436,54 @@ function getCurrentResourceBucket(metrics: ResourceMetricItem) {
   return {
     bucketStart: Date.now(),
     cpuPercent: metrics.cpuPercent ?? null,
+    hasLiveSample: true,
     memoryBytes: metrics.memoryBytes ?? null,
     rxBytes: metrics.rxBytes ?? null,
+    sampleCount: 0,
     txBytes: metrics.txBytes ?? null,
+  };
+}
+
+type ResourceBucketReadResult = {
+  buckets: ObservabilityResourceBucket[];
+  sampling: ObservabilityResourceSampling;
+};
+
+export function createResourceSamplingSummary({
+  buckets,
+  latestSampleAt,
+  now = Date.now(),
+}: {
+  buckets: ObservabilityResourceBucket[];
+  latestSampleAt: number | null;
+  now?: number;
+}): ObservabilityResourceSampling {
+  const sampledBucketCount = buckets.filter(
+    (bucket) => (bucket.sampleCount ?? 0) > 0
+  ).length;
+  const gapBucketCount = buckets.filter(
+    (bucket) => (bucket.sampleCount ?? 0) === 0 && !bucket.hasLiveSample
+  ).length;
+  const latestSampleAgeMs =
+    latestSampleAt != null ? Math.max(0, now - latestSampleAt) : null;
+  const status =
+    sampledBucketCount === 0
+      ? 'live-only'
+      : latestSampleAgeMs != null &&
+          latestSampleAgeMs > RESOURCE_SAMPLE_STALE_AFTER_MS
+        ? 'stale'
+        : gapBucketCount > 0
+          ? 'gapped'
+          : 'healthy';
+
+  return {
+    bucketCount: buckets.length,
+    expectedIntervalMs: RESOURCE_SAMPLE_MIN_INTERVAL_MS,
+    gapBucketCount,
+    latestSampleAgeMs,
+    latestSampleAt,
+    sampledBucketCount,
+    status,
   };
 }
 
@@ -1445,10 +1492,17 @@ async function readResourceBuckets(
   timeframeHours: number,
   currentMetrics: ResourceMetricItem,
   metricNames: ResourceMetricNames = RESOURCE_METRICS
-): Promise<ObservabilityResourceBucket[]> {
+): Promise<ResourceBucketReadResult> {
   const sql = await getSql();
   if (!sql) {
-    return [getCurrentResourceBucket(currentMetrics)];
+    const buckets = [getCurrentResourceBucket(currentMetrics)];
+    return {
+      buckets,
+      sampling: createResourceSamplingSummary({
+        buckets,
+        latestSampleAt: null,
+      }),
+    };
   }
 
   const rows = await sql<
@@ -1464,7 +1518,14 @@ async function readResourceBuckets(
   `;
 
   if (rows.length === 0) {
-    return [getCurrentResourceBucket(currentMetrics)];
+    const buckets = [getCurrentResourceBucket(currentMetrics)];
+    return {
+      buckets,
+      sampling: createResourceSamplingSummary({
+        buckets,
+        latestSampleAt: null,
+      }),
+    };
   }
 
   const bucketCount = getResourceBucketCount(timeframeHours);
@@ -1495,6 +1556,18 @@ async function readResourceBuckets(
     else if (row.metric === metricNames.tx) bucket.tx.push(row.value);
   }
 
+  const average = (values: number[]) =>
+    values.length > 0
+      ? values.reduce((total, value) => total + value, 0) / values.length
+      : null;
+  const sampleCount = (bucket: (typeof buckets)[number]) =>
+    Math.max(
+      bucket.cpu.length,
+      bucket.memory.length,
+      bucket.rx.length,
+      bucket.tx.length
+    );
+  const persistedSampleCounts = buckets.map(sampleCount);
   const currentBucket = buckets.at(-1);
   if (currentBucket) {
     currentBucket.cpu.push(currentMetrics.cpuPercent ?? 0);
@@ -1502,19 +1575,30 @@ async function readResourceBuckets(
     currentBucket.rx.push(currentMetrics.rxBytes ?? 0);
     currentBucket.tx.push(currentMetrics.txBytes ?? 0);
   }
+  const latestSampleAt =
+    rows
+      .map((row) => toMs(row.created_at))
+      .filter((value): value is number => value != null)
+      .sort((left, right) => right - left)[0] ?? null;
 
-  const average = (values: number[]) =>
-    values.length > 0
-      ? values.reduce((total, value) => total + value, 0) / values.length
-      : null;
-
-  return buckets.map((bucket) => ({
+  const resourceBuckets = buckets.map((bucket, index) => ({
     bucketStart: bucket.bucketStart,
     cpuPercent: average(bucket.cpu),
+    hasLiveSample: index === buckets.length - 1,
     memoryBytes: average(bucket.memory),
     rxBytes: average(bucket.rx),
+    sampleCount: persistedSampleCounts[index] ?? 0,
     txBytes: average(bucket.tx),
   }));
+
+  return {
+    buckets: resourceBuckets,
+    sampling: createResourceSamplingSummary({
+      buckets: resourceBuckets,
+      latestSampleAt,
+      now,
+    }),
+  };
 }
 
 export async function readObservabilityResources(
@@ -1533,7 +1617,7 @@ export async function readObservabilityResources(
     snapshot.dockerResources,
     snapshot.deployments
   );
-  const [buckets, buildBuckets] = await Promise.all([
+  const [runtimeHistory, buildHistory] = await Promise.all([
     readResourceBuckets(
       normalized.projectId,
       normalized.timeframeHours,
@@ -1559,10 +1643,14 @@ export async function readObservabilityResources(
   ]);
 
   return {
-    buildBuckets,
+    buildBuckets: buildHistory.buckets,
     buildResources,
-    buckets,
+    buckets: runtimeHistory.buckets,
     dockerResources: scopedDockerResources,
+    sampling: {
+      build: buildHistory.sampling,
+      runtime: runtimeHistory.sampling,
+    },
   };
 }
 

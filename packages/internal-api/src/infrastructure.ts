@@ -1116,9 +1116,27 @@ export interface ObservabilityAnalytics {
 export interface ObservabilityResourceBucket {
   bucketStart: number;
   cpuPercent: number | null;
+  hasLiveSample?: boolean;
   memoryBytes: number | null;
   rxBytes: number | null;
+  sampleCount?: number;
   txBytes: number | null;
+}
+
+export type ObservabilityResourceSamplingStatus =
+  | 'gapped'
+  | 'healthy'
+  | 'live-only'
+  | 'stale';
+
+export interface ObservabilityResourceSampling {
+  bucketCount: number;
+  expectedIntervalMs: number;
+  gapBucketCount: number;
+  latestSampleAgeMs: number | null;
+  latestSampleAt: number | null;
+  sampledBucketCount: number;
+  status: ObservabilityResourceSamplingStatus;
 }
 
 export interface ObservabilityBuildProcess {
@@ -1146,6 +1164,10 @@ export interface ObservabilityResources {
   buildResources: ObservabilityBuildResources;
   buckets: ObservabilityResourceBucket[];
   dockerResources: BlueGreenMonitoringSnapshot['dockerResources'];
+  sampling: {
+    build: ObservabilityResourceSampling;
+    runtime: ObservabilityResourceSampling;
+  };
 }
 
 export interface ObservabilityPaginatedResult<T> {

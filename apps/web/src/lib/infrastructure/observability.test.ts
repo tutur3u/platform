@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
+  createResourceSamplingSummary,
   getBuildResources,
   parseObservabilityFilters,
   readObservabilityDeployments,
@@ -236,6 +237,100 @@ describe('getBuildResources', () => {
     expect(buildResources.totalMemoryBytes).toBe(350 * 1024 * 1024);
     expect(buildResources.totalRxBytes).toBe(840 * 1024 * 1024);
     expect(buildResources.totalTxBytes).toBe(626 * 1024 * 1024);
+  });
+});
+
+describe('createResourceSamplingSummary', () => {
+  const now = Date.parse('2026-05-19T12:00:00.000Z');
+
+  it('marks retained history gaps without counting the live bucket as persisted', () => {
+    const summary = createResourceSamplingSummary({
+      buckets: [
+        {
+          bucketStart: now - 180_000,
+          cpuPercent: 10,
+          memoryBytes: 128,
+          rxBytes: 1,
+          sampleCount: 1,
+          txBytes: 2,
+        },
+        {
+          bucketStart: now - 120_000,
+          cpuPercent: null,
+          memoryBytes: null,
+          rxBytes: null,
+          sampleCount: 0,
+          txBytes: null,
+        },
+        {
+          bucketStart: now - 60_000,
+          cpuPercent: 12,
+          hasLiveSample: true,
+          memoryBytes: 256,
+          rxBytes: 3,
+          sampleCount: 0,
+          txBytes: 4,
+        },
+      ],
+      latestSampleAt: now - 120_000,
+      now,
+    });
+
+    expect(summary.status).toBe('gapped');
+    expect(summary.sampledBucketCount).toBe(1);
+    expect(summary.gapBucketCount).toBe(1);
+    expect(summary.latestSampleAgeMs).toBe(120_000);
+  });
+
+  it('marks retained history as stale when the latest persisted sample is old', () => {
+    const summary = createResourceSamplingSummary({
+      buckets: [
+        {
+          bucketStart: now - 600_000,
+          cpuPercent: 10,
+          memoryBytes: 128,
+          rxBytes: 1,
+          sampleCount: 1,
+          txBytes: 2,
+        },
+        {
+          bucketStart: now - 60_000,
+          cpuPercent: 12,
+          hasLiveSample: true,
+          memoryBytes: 256,
+          rxBytes: 3,
+          sampleCount: 0,
+          txBytes: 4,
+        },
+      ],
+      latestSampleAt: now - 600_000,
+      now,
+    });
+
+    expect(summary.status).toBe('stale');
+    expect(summary.latestSampleAgeMs).toBe(600_000);
+  });
+
+  it('marks live-only data when no retained samples exist', () => {
+    const summary = createResourceSamplingSummary({
+      buckets: [
+        {
+          bucketStart: now,
+          cpuPercent: 12,
+          hasLiveSample: true,
+          memoryBytes: 256,
+          rxBytes: 3,
+          sampleCount: 0,
+          txBytes: 4,
+        },
+      ],
+      latestSampleAt: null,
+      now,
+    });
+
+    expect(summary.status).toBe('live-only');
+    expect(summary.sampledBucketCount).toBe(0);
+    expect(summary.gapBucketCount).toBe(0);
   });
 });
 
