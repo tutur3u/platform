@@ -21,6 +21,10 @@ export function canManageAllNovaChallenges(role?: NovaPlatformRole | null) {
   );
 }
 
+export function canManageNovaRoles(role?: NovaPlatformRole | null) {
+  return Boolean(role?.enabled && role.allow_role_management);
+}
+
 export async function canManageNovaChallengesGlobally(
   user: Pick<SupabaseUser, 'id'>,
   sbAdmin?: TypedSupabaseClient
@@ -29,6 +33,16 @@ export async function canManageNovaChallengesGlobally(
   const role = await getNovaPlatformRole(user.id, client);
 
   return canManageAllNovaChallenges(role);
+}
+
+export async function canManageNovaRolesGlobally(
+  user: Pick<SupabaseUser, 'id'>,
+  sbAdmin?: TypedSupabaseClient
+) {
+  const client = sbAdmin ?? (await createAdminClient({ noCookie: true }));
+  const role = await getNovaPlatformRole(user.id, client);
+
+  return canManageNovaRoles(role);
 }
 
 export async function canManageNovaChallenge(

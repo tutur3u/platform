@@ -1,12 +1,22 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
+import { canManageNovaRolesGlobally } from '@/lib/challenge-management-auth';
 
 export async function PUT(req: NextRequest) {
   const user = getNovaAppSessionUserFromRequest(req);
 
   if (!user?.id) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
+    return NextResponse.json(
+      { message: 'User does not have permission to manage roles' },
+      { status: 403 }
+    );
   }
 
   const { email, enabled } = (await req.json()) as {
@@ -18,14 +28,12 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ message: 'Email is required' }, { status: 400 });
   }
 
-  const supabase = await createAdminClient({ noCookie: true });
-
   const updateData = {
     email,
     enabled: enabled ?? false,
   };
 
-  const { error } = await supabase
+  const { error } = await sbAdmin
     .from('platform_email_roles')
     .update(updateData)
     .eq('email', email);
@@ -59,28 +67,7 @@ export async function DELETE(
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const { data: roleData, error: roleError } = await sbAdmin
-    .from('platform_user_roles')
-    .select('*')
-    .eq('user_id', user.id)
-    .single();
-
-  if (roleError) {
-    console.log(roleError);
-    return NextResponse.json(
-      { message: 'Error fetching user role' },
-      { status: 500 }
-    );
-  }
-
-  if (!roleData) {
-    return NextResponse.json(
-      { message: 'User role not found' },
-      { status: 404 }
-    );
-  }
-
-  if (!roleData.allow_role_management) {
+  if (!(await canManageNovaRolesGlobally(user, sbAdmin))) {
     return NextResponse.json(
       { message: 'User does not have permission to manage roles' },
       { status: 403 }

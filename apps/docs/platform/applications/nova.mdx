@@ -613,14 +613,25 @@ export async function hasNovaRole(
    { weight: 2.0 } // Critical test cases worth more
    ```
 
-4. **Track evaluation performance**
+4. **Authorize service-role API writes explicitly**
+
+   Nova API routes may authenticate callers with
+   `getNovaAppSessionUserFromRequest()`, but that only proves a valid Nova
+   app-session. Any route that mutates Nova management data through
+   `createAdminClient({ noCookie: true })` must also check the relevant
+   `platform_user_roles` permission before the write. Use the shared helpers in
+   `apps/nova/src/lib/challenge-management-auth.ts` such as
+   `canManageNovaChallenge()`, `canManageNovaChallengesGlobally()`, or
+   `canManageNovaRolesGlobally()`.
+
+5. **Track evaluation performance**
    ```typescript
    const startTime = Date.now();
    // ... execution
    const executionTime = Date.now() - startTime;
    ```
 
-5. **Provide detailed feedback**
+6. **Provide detailed feedback**
    ```typescript
    feedback: `Passed ${passedCount}/${total} test cases. Areas for improvement: ...`
    ```

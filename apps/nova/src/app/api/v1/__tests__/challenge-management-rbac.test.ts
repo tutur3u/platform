@@ -1,4 +1,5 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getNovaAppSessionUserFromRequest } from '@/lib/app-session';
 
@@ -176,6 +177,28 @@ describe('Nova challenge-management API RBAC', () => {
     );
   });
 
+  it('rejects non-role-manager infrastructure whitelist writes before updating whitelist rows', async () => {
+    const { client, operations } = createMockAdminClient();
+    vi.mocked(createAdminClient).mockResolvedValue(client as never);
+
+    const { PUT } = await import('../infrastructure/whitelist/[email]/route');
+    const response = await PUT(
+      new Request(
+        'https://nova.test/api/v1/infrastructure/whitelist/user@example.com',
+        {
+          body: JSON.stringify({
+            email: 'candidate@example.com',
+            enabled: true,
+          }),
+          method: 'PUT',
+        }
+      ) as NextRequest
+    );
+
+    expect(response.status).toBe(403);
+    expect(operations).not.toContain('platform_email_roles.update');
+  });
+
   it('allows a challenge-specific manager to update their managed challenge', async () => {
     const { client, operations } = createMockAdminClient({
       manageableChallenges: ['challenge-1'],
@@ -199,5 +222,34 @@ describe('Nova challenge-management API RBAC', () => {
 
     expect(response.status).toBe(200);
     expect(operations).toContain('nova_challenges.update');
+  });
+
+  it('allows an enabled role manager to update infrastructure whitelist rows', async () => {
+    const { client, operations } = createMockAdminClient({
+      role: {
+        allow_challenge_management: false,
+        allow_manage_all_challenges: false,
+        allow_role_management: true,
+        enabled: true,
+      },
+    });
+    vi.mocked(createAdminClient).mockResolvedValue(client as never);
+
+    const { PUT } = await import('../infrastructure/whitelist/[email]/route');
+    const response = await PUT(
+      new Request(
+        'https://nova.test/api/v1/infrastructure/whitelist/user@example.com',
+        {
+          body: JSON.stringify({
+            email: 'candidate@example.com',
+            enabled: true,
+          }),
+          method: 'PUT',
+        }
+      ) as NextRequest
+    );
+
+    expect(response.status).toBe(200);
+    expect(operations).toContain('platform_email_roles.update');
   });
 });
