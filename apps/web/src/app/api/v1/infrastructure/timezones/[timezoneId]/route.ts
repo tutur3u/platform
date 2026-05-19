@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { deleteTimezone, updateTimezone } from '@/lib/infrastructure/timezones';
+import { authorizeInfrastructureOperator } from '../../monitoring/blue-green/authorization';
 
 interface Params {
   params: Promise<{
@@ -9,37 +10,38 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { timezoneId: id } = await params;
+  try {
+    const authorization = await authorizeInfrastructureOperator(req);
+    if (!authorization.ok) return authorization.response;
 
-  const data = await req.json();
+    const { timezoneId: id } = await params;
+    const data = await req.json();
 
-  const { error } = await supabase.from('timezones').upsert(data).eq('id', id);
-
-  if (error) {
+    await updateTimezone(id, data);
+    return NextResponse.json({ message: 'success' });
+  } catch (error) {
     serverLogger.info(error);
     return NextResponse.json(
       { message: 'Error updating timezone' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
-  const { timezoneId: id } = await params;
+export async function DELETE(request: Request, { params }: Params) {
+  try {
+    const authorization = await authorizeInfrastructureOperator(request);
+    if (!authorization.ok) return authorization.response;
 
-  const { error } = await supabase.from('timezones').delete().eq('id', id);
+    const { timezoneId: id } = await params;
 
-  if (error) {
+    await deleteTimezone(id);
+    return NextResponse.json({ message: 'success' });
+  } catch (error) {
     serverLogger.info(error);
     return NextResponse.json(
       { message: 'Error deleting timezone' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }

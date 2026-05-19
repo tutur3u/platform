@@ -220,6 +220,27 @@ Server-owned email whitelist for AI feature access. This table is kept outside
 the Supabase REST-exposed `public` schema; apps should check or manage access
 through centralized `apps/web` APIs.
 
+### Private Reference Tables
+
+#### `private.currencies`
+Finance reference data retained for foreign-key compatibility with
+`workspace_wallets` and `currency_exchange_rates`. Runtime consumers should use
+centralized app APIs or package currency constants instead of Supabase REST.
+
+#### `private.field_types`
+Workspace user-field reference data retained for historical foreign keys.
+Management should go through centralized app APIs instead of direct public table
+access.
+
+#### `private.team_members`
+Legacy team membership data retained for historical foreign-key compatibility.
+Active membership flows should use workspace or Nova team tables.
+
+#### `private.timezones`
+Timezone synchronization records for infrastructure management. The dashboard
+continues to source canonical timezone data from package constants and reaches
+stored records only through `apps/web` APIs.
+
 ### Calendar System
 
 #### `workspace_calendar_events`

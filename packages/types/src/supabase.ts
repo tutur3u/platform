@@ -98,6 +98,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      currencies: {
+        Row: {
+          code: string;
+          name: string;
+        };
+        Insert: {
+          code: string;
+          name: string;
+        };
+        Update: {
+          code?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
+      field_types: {
+        Row: {
+          enabled: boolean;
+          id: string;
+        };
+        Insert: {
+          enabled?: boolean;
+          id: string;
+        };
+        Update: {
+          enabled?: boolean;
+          id?: string;
+        };
+        Relationships: [];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -221,6 +251,54 @@ export type Database = {
           sent_at?: string;
           task_id?: string;
           user_id?: string;
+        };
+        Relationships: [];
+      };
+      team_members: {
+        Row: {
+          team_id: string;
+          user_id: string;
+        };
+        Insert: {
+          team_id: string;
+          user_id: string;
+        };
+        Update: {
+          team_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      timezones: {
+        Row: {
+          abbr: string;
+          created_at: string | null;
+          id: string;
+          isdst: boolean;
+          offset: number;
+          text: string;
+          utc: string[];
+          value: string;
+        };
+        Insert: {
+          abbr: string;
+          created_at?: string | null;
+          id?: string;
+          isdst: boolean;
+          offset: number;
+          text: string;
+          utc: string[];
+          value: string;
+        };
+        Update: {
+          abbr?: string;
+          created_at?: string | null;
+          id?: string;
+          isdst?: boolean;
+          offset?: number;
+          text?: string;
+          utc?: string[];
+          value?: string;
         };
         Relationships: [];
       };
@@ -3268,21 +3346,6 @@ export type Database = {
           },
         ];
       };
-      currencies: {
-        Row: {
-          code: string;
-          name: string;
-        };
-        Insert: {
-          code: string;
-          name: string;
-        };
-        Update: {
-          code?: string;
-          name?: string;
-        };
-        Relationships: [];
-      };
       currency_exchange_rates: {
         Row: {
           base_currency: string;
@@ -3311,22 +3374,7 @@ export type Database = {
           rate?: number;
           target_currency?: string;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'currency_exchange_rates_base_currency_fkey';
-            columns: ['base_currency'];
-            isOneToOne: false;
-            referencedRelation: 'currencies';
-            referencedColumns: ['code'];
-          },
-          {
-            foreignKeyName: 'currency_exchange_rates_target_currency_fkey';
-            columns: ['target_currency'];
-            isOneToOne: false;
-            referencedRelation: 'currencies';
-            referencedColumns: ['code'];
-          },
-        ];
+        Relationships: [];
       };
       discord_guild_members: {
         Row: {
@@ -4116,21 +4164,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      field_types: {
-        Row: {
-          enabled: boolean;
-          id: string;
-        };
-        Insert: {
-          enabled?: boolean;
-          id: string;
-        };
-        Update: {
-          enabled?: boolean;
-          id?: string;
-        };
-        Relationships: [];
       };
       finance_budgets: {
         Row: {
@@ -14137,57 +14170,6 @@ export type Database = {
           },
         ];
       };
-      team_members: {
-        Row: {
-          team_id: string;
-          user_id: string;
-        };
-        Insert: {
-          team_id: string;
-          user_id: string;
-        };
-        Update: {
-          team_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'project_members_project_id_fkey';
-            columns: ['team_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_teams';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'project_members_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'project_members_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'project_members_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'project_members_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       time_tracking_breaks: {
         Row: {
           break_duration_seconds: number | null;
@@ -14990,39 +14972,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      timezones: {
-        Row: {
-          abbr: string;
-          created_at: string | null;
-          id: string;
-          isdst: boolean;
-          offset: number;
-          text: string;
-          utc: string[];
-          value: string;
-        };
-        Insert: {
-          abbr: string;
-          created_at?: string | null;
-          id?: string;
-          isdst: boolean;
-          offset: number;
-          text: string;
-          utc: string[];
-          value: string;
-        };
-        Update: {
-          abbr?: string;
-          created_at?: string | null;
-          id?: string;
-          isdst?: boolean;
-          offset?: number;
-          text?: string;
-          utc?: string[];
-          value?: string;
-        };
-        Relationships: [];
       };
       topic_announcement_batches: {
         Row: {
@@ -25443,13 +25392,6 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'public_workspace_user_fields_type_fkey';
-            columns: ['type'];
-            isOneToOne: false;
-            referencedRelation: 'field_types';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'public_workspace_user_fields_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -26404,13 +26346,6 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [
-          {
-            foreignKeyName: 'workspace_wallets_currency_fkey';
-            columns: ['currency'];
-            isOneToOne: false;
-            referencedRelation: 'currencies';
-            referencedColumns: ['code'];
-          },
           {
             foreignKeyName: 'workspace_wallets_type_fkey';
             columns: ['type'];

@@ -1,37 +1,37 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { createTimezone, listTimezones } from '@/lib/infrastructure/timezones';
+import { authorizeInfrastructureOperator } from '../monitoring/blue-green/authorization';
 
-export async function GET(_: Request) {
-  const supabase = await createClient();
+export async function GET(request: Request) {
+  try {
+    const authorization = await authorizeInfrastructureOperator(request);
+    if (!authorization.ok) return authorization.response;
 
-  const { data, error } = await supabase.from('timezones').select('*');
-
-  if (error) {
+    const data = await listTimezones();
+    return NextResponse.json(data);
+  } catch (error) {
     serverLogger.info(error);
     return NextResponse.json(
       { message: 'Error fetching timezones' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json(data);
 }
 
-export async function POST(req: Request) {
-  const supabase = await createClient();
+export async function POST(request: Request) {
+  try {
+    const authorization = await authorizeInfrastructureOperator(request);
+    if (!authorization.ok) return authorization.response;
 
-  const data = await req.json();
-
-  const { error } = await supabase.from('timezones').insert(data);
-
-  if (error) {
+    const data = await request.json();
+    await createTimezone(data);
+    return NextResponse.json({ message: 'success' });
+  } catch (error) {
     serverLogger.info(error);
     return NextResponse.json(
       { message: 'Error creating timezone' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ message: 'success' });
 }

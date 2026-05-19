@@ -1,10 +1,9 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Timezone } from '@tuturuuu/types/primitives/Timezone';
 import timezones from '@tuturuuu/utils/timezones';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { CustomDataTable } from '@/components/custom-data-table';
 import { timezoneColumns } from '@/data/columns/timezones';
+import { listTimezonesByValues } from '@/lib/infrastructure/timezones';
 
 export const metadata: Metadata = {
   title: 'Timezones',
@@ -49,9 +48,6 @@ async function getData({
   pageSize?: string;
   retry?: boolean;
 } = {}) {
-  const supabaseAdmin = await createAdminClient();
-  if (!supabaseAdmin) notFound();
-
   let filteredTimezones = timezones;
 
   if (q) {
@@ -72,16 +68,9 @@ async function getData({
     const end = parsedPage * parsedSize;
 
     const localData = filteredTimezones.slice(start, end);
-    const { data: serverData } = (await supabaseAdmin
-      .from('timezones')
-      .select('*')
-      .in(
-        'value',
-        localData.map((row) => row.value)
-      )
-      .limit(parsedSize)) as { data: Timezone[] };
-
-    if (!serverData) notFound();
+    const serverData = await listTimezonesByValues(
+      localData.map((row) => row.value)
+    );
 
     // If server data matches local data, include status = 'synced'
     // If server data partially matches local data, include status = 'outdated'

@@ -28,7 +28,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'time_tracking_request_activity',
   'time_tracking_request_comments',
   'time_tracking_requests',
-  'timezones',
   'user_group_post_checks',
   'user_group_post_logs',
   'user_group_posts',
