@@ -232,6 +232,16 @@ Workspace user-field reference data retained for historical foreign keys.
 Management should go through centralized app APIs instead of direct public table
 access.
 
+#### `private.healthcare_diagnoses`
+Legacy healthcare diagnosis records retained for historical checkup foreign keys.
+Server-side helpers own access; the public count RPC is restricted to
+`service_role` and reads from the private schema.
+
+#### `private.personal_notes`
+Legacy per-user notes retained for historical compatibility. Active personal
+task-note behavior should stay behind centralized app flows instead of Supabase
+REST table access.
+
 #### `private.team_members`
 Legacy team membership data retained for historical foreign-key compatibility.
 Active membership flows should use workspace or Nova team tables.

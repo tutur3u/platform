@@ -128,6 +128,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      healthcare_diagnoses: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          name: string | null;
+          note: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string | null;
+          note?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string | null;
+          note?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -170,6 +197,27 @@ export type Database = {
             | Database['public']['Enums']['notification_priority']
             | null;
           updated_at?: string;
+        };
+        Relationships: [];
+      };
+      personal_notes: {
+        Row: {
+          content: string | null;
+          created_at: string | null;
+          owner_id: string;
+          user_id: string;
+        };
+        Insert: {
+          content?: string | null;
+          created_at?: string | null;
+          owner_id: string;
+          user_id: string;
+        };
+        Update: {
+          content?: string | null;
+          created_at?: string | null;
+          owner_id?: string;
+          user_id?: string;
         };
         Relationships: [];
       };
@@ -5766,13 +5814,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'healthcare_checkups_diagnosis_id_fkey';
-            columns: ['diagnosis_id'];
-            isOneToOne: false;
-            referencedRelation: 'healthcare_diagnoses';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'healthcare_checkups_patient_id_fkey';
             columns: ['patient_id'];
             isOneToOne: false;
@@ -5830,62 +5871,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'healthcare_checkups_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      healthcare_diagnoses: {
-        Row: {
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string | null;
-          note: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string | null;
-          note?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string | null;
-          note?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'healthcare_diagnoses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_diagnoses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'healthcare_diagnoses_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_diagnoses_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -10123,84 +10108,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      personal_notes: {
-        Row: {
-          content: string | null;
-          created_at: string | null;
-          owner_id: string;
-          user_id: string;
-        };
-        Insert: {
-          content?: string | null;
-          created_at?: string | null;
-          owner_id: string;
-          user_id: string;
-        };
-        Update: {
-          content?: string | null;
-          created_at?: string | null;
-          owner_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'personal_notes_owner_id_fkey';
-            columns: ['owner_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_owner_id_fkey';
-            columns: ['owner_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_owner_id_fkey';
-            columns: ['owner_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_owner_id_fkey';
-            columns: ['owner_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'personal_notes_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
             referencedColumns: ['id'];
           },
         ];
@@ -29750,7 +29657,7 @@ export type Database = {
         Returns: number;
       };
       get_healthcare_diagnoses_count: {
-        Args: { ws_id: string };
+        Args: { p_ws_id: string };
         Returns: number;
       };
       get_hourly_prompt_completion_tokens: {

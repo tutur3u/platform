@@ -1069,7 +1069,7 @@ values
 
 -- Populate diagnoses
 insert into
-    public.healthcare_diagnoses (id, ws_id, name, description)
+    private.healthcare_diagnoses (id, ws_id, name, description)
 values
     (
         '00000000-0000-0000-0000-000000000001',
