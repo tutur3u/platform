@@ -183,29 +183,35 @@ to the callback route. Do not default to bespoke HMAC-signed state blobs when th
 server only needs to confirm that the callback matches the browser session that
 initiated the flow.
 
-### Web QR Sign In
+### Web QR Session Handoff
 
-The platform web login page can create short-lived QR challenges for mobile
-approval:
+QR-based session handoff must never be a public login bootstrap. An
+unauthenticated browser cannot prove that it belongs to the account scanning the
+QR code, so public challenge creation would allow QR phishing where an attacker
+polls a victim-approved challenge and receives the victim's session.
 
-1. The browser first completes Cloudflare Turnstile. The QR card must not create
-   or display a challenge until the client has a Turnstile token, and
-   `POST /api/v1/auth/qr-login/challenges` verifies that token server-side
-   before inserting a `qr_login_challenges` row with a hashed secret, request
-   metadata, and a two-minute expiry.
-2. The browser renders a `tuturuuu://auth/qr-login` payload that contains the
+The QR challenge endpoints are therefore constrained to authenticated,
+same-account handoff:
+
+1. `POST /api/v1/auth/qr-login/challenges` validates the request origin and the
+   request-scoped Supabase session before inserting a `qr_login_challenges` row.
+   The row stores a hashed secret, request metadata, `creatorUserId`, and a
+   two-minute expiry.
+2. The client renders a `tuturuuu://auth/qr-login` payload that contains the
    challenge id, one-time secret, and web origin.
 3. The signed-in mobile app scans the code from Settings > Session. Mobile must
    have app lock enabled, then performs local authentication before approving.
 4. `POST /api/v1/auth/qr-login/challenges/:id/approve` validates the mobile
-   Bearer session and challenge secret, then marks the challenge `approved`.
-5. The browser polls `GET /api/v1/auth/qr-login/challenges/:id?secret=...`.
+   Bearer session, challenge secret, and `creatorUserId`. The approver must be
+   the same user that created the challenge.
+5. The creator polls `GET /api/v1/auth/qr-login/challenges/:id?secret=...`.
    Once approved, the server consumes the challenge and creates a fresh detached
    Supabase session via admin `generateLink` plus detached `verifyOtp`.
 
 QR challenge rows never store access or refresh tokens. The table is RLS-enabled
 without anon/authenticated grants; API routes use the service role for challenge
-state and the request-scoped client only to validate the mobile approver.
+state and the request-scoped client to validate both the challenge creator and
+the mobile approver.
 
 ## Sign Out
 

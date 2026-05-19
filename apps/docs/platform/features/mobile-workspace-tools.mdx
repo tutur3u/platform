@@ -29,18 +29,20 @@ setting is stored in secure storage and uses the OS local authentication prompt
 with device PIN/passcode fallback allowed. When enabled, the app locks on an
 authenticated cold launch and after at least 30 seconds in the background.
 
-Web QR sign-in approval is gated by this setting:
+QR session handoff approval is gated by this setting:
 
 - The scanner lives at `Routes.settingsQrLoginScan`.
 - The scanner only accepts `tuturuuu://auth/qr-login` payloads from trusted
   Tuturuuu or local development origins.
-- The active mobile account is the account that approves the web login.
+- The QR challenge must have been created by the same account that is active in
+  the mobile app. Public unauthenticated QR sign-in is not supported because it
+  would let an attacker poll a victim-approved challenge.
 - Before approval, mobile runs local authentication and then calls
   `/api/v1/auth/qr-login/challenges/:id/approve` with the current Bearer
   session.
 
-If a user wants to approve QR login for a different account, they must switch to
-that account in the mobile app before scanning.
+If a user wants to approve QR session handoff for a different account, both the
+creator session and the mobile app must be using that account before scanning.
 
 The mobile app can approve web MFA challenges when the active mobile Supabase
 session is already at `aal2`:

@@ -131,6 +131,17 @@ function asJson(value: Record<string, unknown>) {
   return value as Json;
 }
 
+function getCreatorUserId(metadata: Json | null | undefined) {
+  if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+    return null;
+  }
+
+  const creatorUserId = metadata.creatorUserId;
+  return typeof creatorUserId === 'string' && creatorUserId.length > 0
+    ? creatorUserId
+    : null;
+}
+
 function createTurnstileRequestLike(
   context: QrLoginRequestContext
 ): TurnstileRequestLike {
@@ -281,6 +292,17 @@ export async function createQrLoginChallenge(
     };
   }
 
+  const supabase = await createClient<Database>(context.request);
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+  const user = userData.user;
+
+  if (userError || !user) {
+    return {
+      body: { error: 'Authentication required' },
+      status: 401,
+    };
+  }
+
   try {
     await verifyTurnstileToken(
       createTurnstileRequestLike(context),
@@ -309,6 +331,7 @@ export async function createQrLoginChallenge(
       expires_at: expiresAt,
       request_metadata: asJson({
         endpoint: context.endpoint,
+        creatorUserId: user.id,
         ipAddress,
         locale: input.locale || 'en',
         origin,
@@ -480,6 +503,11 @@ export async function approveQrLoginChallenge(
       body: { error: 'Authentication required' },
       status: 401,
     };
+  }
+
+  const creatorUserId = getCreatorUserId(row.request_metadata);
+  if (!creatorUserId || creatorUserId !== user.id) {
+    return createInvalidChallengeResult(403);
   }
 
   const ipAddress = extractIPFromHeaders(context.headers);
