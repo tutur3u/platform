@@ -53,10 +53,31 @@ test('assertSafeE2EEnvironment rejects non-local web targets', () => {
   );
 });
 
+test('assertSafeE2EEnvironment rejects non-local app URL targets', () => {
+  assert.throws(
+    () =>
+      assertSafeE2EEnvironment({
+        BASE_URL: LOCAL_E2E_BASE_URL,
+        NEXT_PUBLIC_APP_URL: 'https://tuturuuu.com',
+        NEXT_PUBLIC_SUPABASE_URL: LOCAL_E2E_SUPABASE_URL,
+      }),
+    /non-local NEXT_PUBLIC_APP_URL/
+  );
+});
+
 test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => {
   const content = createLocalE2EEnvFileContent();
 
   assert.match(content, new RegExp(`BASE_URL=${LOCAL_E2E_BASE_URL}`));
+  assert.match(
+    content,
+    new RegExp(`NEXT_PUBLIC_APP_URL=${LOCAL_E2E_BASE_URL}`)
+  );
+  assert.match(
+    content,
+    new RegExp(`NEXT_PUBLIC_WEB_APP_URL=${LOCAL_E2E_BASE_URL}`)
+  );
+  assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));
   assert.match(
     content,
     new RegExp(`NEXT_PUBLIC_SUPABASE_URL=${LOCAL_E2E_SUPABASE_URL}`)
@@ -86,13 +107,18 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   const env = createLocalE2EProcessEnv(
     {
       BASE_URL: 'https://tuturuuu.com',
+      NEXT_PUBLIC_APP_URL: 'https://tuturuuu.com',
+      NEXT_PUBLIC_WEB_APP_URL: 'https://tuturuuu.com',
       NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
       SUPABASE_SERVER_URL: 'https://project.supabase.co',
+      WEB_APP_URL: 'https://tuturuuu.com',
     },
     { envFilePath, rootDir }
   );
 
   assert.equal(env.BASE_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(env.NEXT_PUBLIC_APP_URL, LOCAL_E2E_BASE_URL);
+  assert.equal(env.NEXT_PUBLIC_WEB_APP_URL, LOCAL_E2E_BASE_URL);
   assert.equal(env.NEXT_PUBLIC_SUPABASE_URL, LOCAL_E2E_SUPABASE_URL);
   assert.equal(
     env.NEXT_PUBLIC_TUTURUUU_LOCAL_E2E_AUTH_BYPASS,
@@ -106,6 +132,7 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
   assert.equal(env.DOCKER_WEB_ENV_FILE, 'tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_ENV_FILE, '../tmp/e2e/web.env');
   assert.equal(env.DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE, '../tmp/e2e/web.env');
+  assert.equal(env.WEB_APP_URL, LOCAL_E2E_BASE_URL);
 });
 
 test('path helpers produce root and compose-fragment relative env paths', () => {

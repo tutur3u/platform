@@ -97,8 +97,9 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 `bun test:e2e` from the repo root and `bun test:e2e` in `apps/web` run through
 `scripts/run-web-e2e-docker.js` instead of starting `next dev`. The runner:
 
-1. writes `tmp/e2e/web.env` with local-only Supabase, app-session JWT values,
-   and a local-only E2E auth bypass for Turnstile/dev-session,
+1. writes `tmp/e2e/web.env` with local-only Supabase, local app-origin
+   variables, app-session JWT values, and a local-only E2E auth bypass for
+   Turnstile/dev-session,
 2. starts and resets the Dockerized local Supabase stack,
 3. boots `apps/web` through the production blue/green Docker flow,
 4. runs Playwright against `http://localhost:7803`, and
@@ -108,10 +109,15 @@ The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
 `8001`. CI shards E2E with `--shard=x/4`; each shard gets its own Compose
 project name, but all shards still use ephemeral local Supabase rather than any
-cloud Supabase project. The auth bypass is guarded by the local E2E web origin,
-the incoming request `Host` / forwarded host / `Origin` headers, and both the
-public and server-side Supabase origins before server-side auth code honors it,
-so it must not be used as a general production configuration.
+cloud Supabase project. Because the Docker web app runs with
+`NODE_ENV=production`, the generated env file and Playwright process env also
+pin `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, and `NEXT_PUBLIC_APP_URL` to
+`http://localhost:7803`; otherwise central-auth redirects can escape to the
+real `tuturuuu.com` origin during setup. The auth bypass is guarded by the
+local E2E web origin, the incoming request `Host` / forwarded host / `Origin`
+headers, and both the public and server-side Supabase origins before
+server-side auth code honors it, so it must not be used as a general production
+configuration.
 
 ## Coolify
 
