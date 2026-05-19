@@ -22,6 +22,7 @@ import {
   useRef,
 } from 'react';
 import MiraChatPanel from '../../../(dashboard)/components/mira-chat-panel';
+import type { MiraTaskBoardContext } from '../../../(dashboard)/components/use-mira-chat-config';
 import type {
   TaskBoardAiChatBarList,
   TaskBoardAiChatBarUser,
@@ -81,8 +82,11 @@ export function TaskBoardMiraChatPopup({
   boardId,
   chatPanelResetKey,
   currentUser,
+  maximized,
   open,
   onResetPanelState,
+  onToggleMaximized,
+  taskBoardContext,
   userName,
   wsId,
 }: {
@@ -91,16 +95,22 @@ export function TaskBoardMiraChatPopup({
   boardId: string;
   chatPanelResetKey: number;
   currentUser: TaskBoardAiChatBarUser;
+  maximized: boolean;
   open: boolean;
   onResetPanelState: () => void;
+  onToggleMaximized: () => void;
+  taskBoardContext?: MiraTaskBoardContext;
   userName?: string;
   wsId: string;
 }) {
   return (
     <div
       className={cn(
-        'mb-2 flex h-[min(62vh,34rem)] min-h-72 origin-bottom flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl backdrop-blur-xl',
+        'flex origin-bottom flex-col overflow-hidden rounded-2xl border border-border/70 bg-background/95 p-1 shadow-xl backdrop-blur-xl',
         'transition-[opacity,transform] duration-200 ease-out',
+        maximized
+          ? 'fixed inset-3 z-50 h-[calc(100dvh-1.5rem)] sm:inset-6 sm:h-[calc(100dvh-3rem)]'
+          : 'mb-2 h-[min(62vh,34rem)] min-h-72',
         open
           ? 'translate-y-0 scale-100 opacity-100'
           : 'pointer-events-none translate-y-3 scale-[0.98] opacity-0'
@@ -112,6 +122,9 @@ export function TaskBoardMiraChatPopup({
         taskBoardId={boardId}
         autoFocusSignal={autoFocusSignal}
         assistantName={assistantName}
+        isFullscreen={maximized}
+        onToggleFullscreen={onToggleMaximized}
+        taskBoardContext={taskBoardContext}
         userName={userName}
         userAvatarUrl={currentUser.avatar_url}
         onResetPanelState={onResetPanelState}

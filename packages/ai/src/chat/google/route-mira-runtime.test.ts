@@ -163,4 +163,73 @@ describe('prepareMiraRuntime', () => {
       })
     );
   });
+
+  it('adds current task board and list context to the Mira system prompt', async () => {
+    const sessionSupabase = {
+      client: 'session',
+    } as unknown as TypedSupabaseClient;
+    const toolSupabase = { client: 'admin' } as unknown as TypedSupabaseClient;
+
+    mocks.resolveWorkspaceContextState.mockResolvedValue({
+      workspaceContextId: 'workspace-2',
+      wsId: 'workspace-2',
+      name: 'Workspace Two',
+      personal: false,
+      memberCount: 4,
+    });
+    mocks.getPermissions.mockResolvedValue({ withoutPermission: vi.fn() });
+    mocks.buildMiraContext.mockResolvedValue({
+      contextString: 'ctx',
+      soul: null,
+      isFirstInteraction: false,
+    });
+    mocks.buildMiraSystemInstruction.mockReturnValue('instruction');
+    mocks.createMiraStreamTools.mockReturnValue({});
+
+    const { prepareMiraRuntime } = await import('./route-mira-runtime');
+    const result = await prepareMiraRuntime({
+      isMiraMode: true,
+      wsId: 'workspace-2',
+      workspaceContextId: 'workspace-2',
+      request: new NextRequest('http://localhost/api/ai/chat'),
+      userId: 'user-1',
+      chatId: 'chat-1',
+      supabase: sessionSupabase,
+      toolSupabase,
+      timezone: 'UTC',
+      taskBoardContext: {
+        boardId: 'board-1',
+        boardName: 'Launch board',
+        lists: [
+          {
+            id: 'list-1',
+            name: 'To Do',
+            status: 'not_started',
+            position: 0,
+          },
+          {
+            id: 'list-2',
+            name: 'Doing',
+            status: 'active',
+            position: 1,
+          },
+        ],
+        workspaceId: 'workspace-2',
+        workspaceName: 'Workspace Two',
+      },
+    });
+
+    expect(result.miraSystemPrompt).toContain('## Current Task Board');
+    expect(result.miraSystemPrompt).toContain(
+      'The user is currently viewing workspace Workspace Two'
+    );
+    expect(result.miraSystemPrompt).toContain(
+      'task board Launch board (board-1)'
+    );
+    expect(result.miraSystemPrompt).toContain('To Do [not_started]');
+    expect(result.miraSystemPrompt).toContain('Doing [active]');
+    expect(result.miraSystemPrompt).toContain(
+      'Do not call workspace context tools just to rediscover this board context.'
+    );
+  });
 });

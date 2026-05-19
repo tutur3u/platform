@@ -162,6 +162,7 @@ export function useTaskBoardAiChatBarTaskFlow({
         allow_zero_estimates: boardPayload.board.allow_zero_estimates,
       }
     : null;
+  const boardName = boardPayload?.board?.name ?? null;
 
   const publishCreatedTasks = useCallback(
     (tasks: TaskBoardAiChatBarTask[]) => {
@@ -318,6 +319,7 @@ export function useTaskBoardAiChatBarTaskFlow({
     activeLists,
     aiTaskMode,
     boardConfig,
+    boardName,
     canCreateTask,
     clientTimezone: getClientTimeContext().clientTimezone,
     currentPreviewIndex,

@@ -5,7 +5,7 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { TaskPreviewDialog } from '@tuturuuu/ui/tu-do/my-tasks/task-preview-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ModeButton,
   TaskBoardMiraChatPopup,
@@ -15,6 +15,7 @@ import type {
   TaskBoardAiChatBarMode,
   TaskBoardAiChatBarUser,
 } from './task-board-ai-chat-bar-types';
+import { buildTaskBoardMiraContext } from './task-board-ai-chat-bar-utils';
 import { useTaskBoardAiChatBarTaskFlow } from './use-task-board-ai-chat-bar-task-flow';
 
 const CHAT_POPUP_EXIT_MS = 220;
@@ -47,6 +48,7 @@ export function TaskBoardAiChatBar({
   const [chatPanelResetKey, setChatPanelResetKey] = useState(0);
   const [renderChatPopup, setRenderChatPopup] = useState(false);
   const [chatPopupExiting, setChatPopupExiting] = useState(false);
+  const [chatMaximized, setChatMaximized] = useState(false);
   const [taskFocusSignal, setTaskFocusSignal] = useState(0);
   const [assistantFocusSignal, setAssistantFocusSignal] = useState(0);
   const islandExpanded = expanded || hoverPreview;
@@ -99,6 +101,16 @@ export function TaskBoardAiChatBar({
     hoverPreview && mode === 'task' && !chatPopupOpen && !taskComposerOpen;
   const islandWide = taskComposerOpen || showTaskSummary;
   const showSwitcherLabels = islandExpanded && mode === 'task';
+  const taskBoardContext = useMemo(
+    () =>
+      buildTaskBoardMiraContext({
+        activeLists: taskFlow.activeLists,
+        boardId,
+        boardName: taskFlow.boardName,
+        wsId,
+      }),
+    [boardId, taskFlow.activeLists, taskFlow.boardName, wsId]
+  );
 
   useEffect(() => {
     if (chatPopupOpen) {
@@ -205,7 +217,8 @@ export function TaskBoardAiChatBar({
           className={cn(
             'pointer-events-auto flex w-full flex-col items-stretch transition-[max-width,opacity,transform] duration-300 ease-out',
             islandWide ? 'max-w-2xl' : 'max-w-[6rem]',
-            renderChatPopup && 'max-w-3xl'
+            renderChatPopup &&
+              (chatMaximized ? 'max-w-[min(96vw,80rem)]' : 'max-w-3xl')
           )}
         >
           {renderChatPopup && (
@@ -215,10 +228,13 @@ export function TaskBoardAiChatBar({
               boardId={boardId}
               chatPanelResetKey={chatPanelResetKey}
               currentUser={currentUser}
+              maximized={chatMaximized}
               open={chatPopupOpen && !chatPopupExiting}
               onResetPanelState={() =>
                 setChatPanelResetKey((current) => current + 1)
               }
+              onToggleMaximized={() => setChatMaximized((value) => !value)}
+              taskBoardContext={taskBoardContext}
               userName={userName ?? undefined}
               wsId={wsId}
             />

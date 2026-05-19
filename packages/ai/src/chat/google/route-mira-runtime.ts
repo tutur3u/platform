@@ -9,6 +9,7 @@ import {
 import type { MiraWorkspaceContextState } from '../../tools/workspace-context';
 import { resolveWorkspaceContextState } from '../../tools/workspace-context';
 import { buildMiraSystemInstruction } from '../mira-system-instruction';
+import type { ChatRequestTaskBoardContext } from './chat-request-schema';
 
 type PermissionResultLike = {
   withoutPermission?: (permission: unknown) => boolean;
@@ -27,9 +28,52 @@ type PrepareMiraRuntimeParams = {
   supabase: SupabaseClientLike;
   toolSupabase?: SupabaseClientLike;
   timezone?: string;
+  taskBoardContext?: ChatRequestTaskBoardContext;
   /** Optional callback for render_ui context-aware fallback. */
   getSteps?: () => unknown[];
 };
+
+function formatTaskBoardReference({
+  boardId,
+  boardName,
+}: ChatRequestTaskBoardContext) {
+  return boardName ? `${boardName} (${boardId})` : boardId;
+}
+
+function buildTaskBoardContextInstruction({
+  resolvedWorkspaceContext,
+  taskBoardContext,
+}: {
+  resolvedWorkspaceContext: MiraWorkspaceContextState;
+  taskBoardContext?: ChatRequestTaskBoardContext;
+}) {
+  if (!taskBoardContext) return null;
+
+  const workspaceName =
+    taskBoardContext.workspaceName?.trim() || resolvedWorkspaceContext.name;
+  const workspaceKind = resolvedWorkspaceContext.personal
+    ? 'personal workspace'
+    : 'shared workspace';
+  const listLines =
+    taskBoardContext.lists.length > 0
+      ? taskBoardContext.lists
+          .map((list) => {
+            const listName = list.name?.trim() || 'Untitled list';
+            const status = list.status?.trim() || 'unknown';
+            return `- ${listName} [${status}] (list id: ${list.id})`;
+          })
+          .join('\n')
+      : '- No task lists are currently loaded in the client.';
+
+  return `## Current Task Board
+
+The user is currently viewing workspace ${workspaceName} (${workspaceKind}) and task board ${formatTaskBoardReference(taskBoardContext)}.
+
+Visible task lists on this board:
+${listLines}
+
+Use these list names and statuses when the user refers to "this board", "this task board", or asks to create or move board tasks. Prefer these known board/list ids over rediscovering the same context. Do not call workspace context tools just to rediscover this board context.`;
+}
 
 export async function prepareMiraRuntime({
   isMiraMode,
@@ -42,6 +86,7 @@ export async function prepareMiraRuntime({
   supabase,
   toolSupabase,
   timezone,
+  taskBoardContext,
   getSteps,
 }: PrepareMiraRuntimeParams): Promise<{
   miraSystemPrompt?: string;
@@ -115,7 +160,18 @@ export async function prepareMiraRuntime({
       withoutPermission,
     });
     const workspaceContextInstruction = `## Workspace Context\n\nCurrent task/calendar/finance workspace context: ${resolvedWorkspaceContext.name} (${resolvedWorkspaceContext.personal ? 'personal' : 'shared'} workspace).\nUse this workspace for "my tasks", "my calendar", and "my finance" requests. Only switch to another workspace when the user explicitly names a different workspace.`;
-    miraSystemPrompt = `${contextString}\n\n${workspaceContextInstruction}\n\n${dynamicInstruction}`;
+    const taskBoardContextInstruction = buildTaskBoardContextInstruction({
+      resolvedWorkspaceContext,
+      taskBoardContext,
+    });
+    miraSystemPrompt = [
+      contextString,
+      workspaceContextInstruction,
+      taskBoardContextInstruction,
+      dynamicInstruction,
+    ]
+      .filter(Boolean)
+      .join('\n\n');
   } catch (ctxErr) {
     console.error(
       'Failed to build Mira context (continuing with default instruction):',

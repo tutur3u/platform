@@ -6,6 +6,7 @@ import {
   hasRenderableRenderUiInSteps,
   hasSuccessfulWorkspaceContextResolutionInSteps,
   hasToolCallInSteps,
+  removeWorkspaceDiscoveryTools,
   wasToolEverSelectedInSteps,
 } from '../mira-render-ui-policy';
 
@@ -75,6 +76,8 @@ export function prepareMiraToolStep({
   }
 
   const selectedTools = extractSelectedToolsFromSteps(steps);
+  const workspaceContextResolved =
+    hasSuccessfulWorkspaceContextResolutionInSteps(steps);
   const MAX_RENDER_UI_ATTEMPTS = 2;
   const renderUiAttempts = countRenderUiAttemptsInSteps(steps);
   const renderUiExhausted = renderUiAttempts >= MAX_RENDER_UI_ATTEMPTS;
@@ -87,14 +90,14 @@ export function prepareMiraToolStep({
       !(filterRenderUiForMarkdownTables && toolName === 'render_ui') &&
       !(filterSearchForMarkdownTables && toolName === 'google_search')
   );
-  const toolsForBuild = renderUiExhausted
-    ? normalizedSelectedTools.filter((t) => t !== 'render_ui')
+  const toolsAfterResolution = workspaceContextResolved
+    ? removeWorkspaceDiscoveryTools(normalizedSelectedTools)
     : normalizedSelectedTools;
+  const toolsForBuild = renderUiExhausted
+    ? toolsAfterResolution.filter((t) => t !== 'render_ui')
+    : toolsAfterResolution;
 
-  if (
-    needsWorkspaceContextResolution &&
-    !hasSuccessfulWorkspaceContextResolutionInSteps(steps)
-  ) {
+  if (needsWorkspaceContextResolution && !workspaceContextResolved) {
     const hasListedAccessibleWorkspaces = hasToolCallInSteps(
       steps,
       'list_accessible_workspaces'

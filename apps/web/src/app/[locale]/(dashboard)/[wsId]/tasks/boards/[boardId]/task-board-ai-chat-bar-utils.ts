@@ -3,7 +3,40 @@ import type {
   BoardBroadcastFn,
   BoardRefreshFn,
 } from '@tuturuuu/ui/tu-do/shared/board-broadcast-context';
-import type { TaskBoardAiChatBarTask } from './task-board-ai-chat-bar-types';
+import type { MiraTaskBoardContext } from '../../../(dashboard)/components/use-mira-chat-config';
+import type {
+  TaskBoardAiChatBarList,
+  TaskBoardAiChatBarTask,
+} from './task-board-ai-chat-bar-types';
+
+export function buildTaskBoardMiraContext({
+  activeLists,
+  boardId,
+  boardName,
+  wsId,
+  workspaceName,
+}: {
+  activeLists: TaskBoardAiChatBarList[];
+  boardId: string;
+  boardName?: string | null;
+  wsId: string;
+  workspaceName?: string | null;
+}): MiraTaskBoardContext {
+  return {
+    boardId,
+    ...(boardName?.trim() ? { boardName: boardName.trim() } : {}),
+    lists: [...activeLists]
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      .map((list) => ({
+        id: list.id,
+        name: list.name,
+        position: list.position ?? null,
+        status: list.status,
+      })),
+    workspaceId: wsId,
+    ...(workspaceName?.trim() ? { workspaceName: workspaceName.trim() } : {}),
+  };
+}
 
 export function mergeCreatedTasks(
   current: TaskBoardAiChatBarTask[] | undefined,

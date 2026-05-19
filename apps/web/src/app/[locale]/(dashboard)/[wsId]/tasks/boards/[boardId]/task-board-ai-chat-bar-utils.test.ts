@@ -1,7 +1,11 @@
 import { QueryClient } from '@tanstack/react-query';
 import { describe, expect, it, vi } from 'vitest';
-import type { TaskBoardAiChatBarTask } from './task-board-ai-chat-bar-types';
+import type {
+  TaskBoardAiChatBarList,
+  TaskBoardAiChatBarTask,
+} from './task-board-ai-chat-bar-types';
 import {
+  buildTaskBoardMiraContext,
   mergeCreatedTasks,
   publishTaskBoardAiCreatedTasks,
 } from './task-board-ai-chat-bar-utils';
@@ -22,6 +26,25 @@ function makeTask(
     sort_key: 1000,
     ...rest,
   } as TaskBoardAiChatBarTask;
+}
+
+function makeList(
+  overrides: Partial<TaskBoardAiChatBarList> & { id: string }
+): TaskBoardAiChatBarList {
+  const { id, ...rest } = overrides;
+
+  return {
+    archived: false,
+    board_id: 'board-1',
+    created_at: '2026-05-19T00:00:00.000Z',
+    deleted: false,
+    id,
+    name: 'List',
+    position: 0,
+    status: 'active',
+    task_board_id: 'board-1',
+    ...rest,
+  } as TaskBoardAiChatBarList;
 }
 
 describe('task board AI chat bar cache utilities', () => {
@@ -90,5 +113,47 @@ describe('task board AI chat bar cache utilities', () => {
     });
     expect(refreshActiveBoard).toHaveBeenCalledWith({ invalidateTasks: false });
     expect(invalidateSpy).not.toHaveBeenCalled();
+  });
+
+  it('builds compact board context with visible task list names and statuses', () => {
+    const context = buildTaskBoardMiraContext({
+      activeLists: [
+        makeList({
+          id: 'list-2',
+          name: 'Doing',
+          position: 2,
+          status: 'active',
+        }),
+        makeList({
+          id: 'list-1',
+          name: 'To Do',
+          position: 1,
+          status: 'not_started',
+        }),
+      ],
+      boardId: 'board-1',
+      boardName: 'Launch Board',
+      wsId: 'workspace-1',
+    });
+
+    expect(context).toEqual({
+      boardId: 'board-1',
+      boardName: 'Launch Board',
+      lists: [
+        {
+          id: 'list-1',
+          name: 'To Do',
+          position: 1,
+          status: 'not_started',
+        },
+        {
+          id: 'list-2',
+          name: 'Doing',
+          position: 2,
+          status: 'active',
+        },
+      ],
+      workspaceId: 'workspace-1',
+    });
   });
 });

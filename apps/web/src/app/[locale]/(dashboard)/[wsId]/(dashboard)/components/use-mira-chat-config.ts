@@ -27,6 +27,20 @@ import { getMiraTempAuthHeaders } from './mira-temp-auth-client';
 
 interface UseMiraChatConfigParams {
   wsId: string;
+  taskBoardContext?: MiraTaskBoardContext;
+}
+
+export interface MiraTaskBoardContext {
+  workspaceId?: string;
+  workspaceName?: string;
+  boardId: string;
+  boardName?: string;
+  lists: Array<{
+    id: string;
+    name?: string | null;
+    status?: string | null;
+    position?: number | null;
+  }>;
 }
 
 function toModelUi(modelId: string): AIModelUI {
@@ -51,7 +65,10 @@ export function resolveInitialThinkingMode(
   return 'fast';
 }
 
-export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
+export function useMiraChatConfig({
+  wsId,
+  taskBoardContext,
+}: UseMiraChatConfigParams) {
   const [selectedModel, setSelectedModel] = useState<AIModelUI>(INITIAL_MODEL);
   const [thinkingMode, setThinkingMode] = useState<ThinkingMode>('fast');
   const [creditSource, setCreditSource] = useState<CreditSource>('workspace');
@@ -160,11 +177,13 @@ export function useMiraChatConfig({ wsId }: UseMiraChatConfigParams) {
       thinkingMode,
       creditSource: activeCreditSource,
       ...(creditWsId ? { creditWsId } : {}),
+      ...(taskBoardContext ? { taskBoardContext } : {}),
     }),
     [
       activeCreditSource,
       creditWsId,
       gatewayModelId,
+      taskBoardContext,
       thinkingMode,
       timezoneForChat,
       workspaceContextId,

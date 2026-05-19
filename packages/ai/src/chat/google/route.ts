@@ -85,6 +85,7 @@ export function createPOST(
         thinkingMode: rawThinkingMode,
         creditSource: requestedCreditSourceRaw,
         creditWsId: rawCreditWsId,
+        taskBoardContext,
       } = parsedBody.data;
       const thinkingMode: ThinkingMode =
         rawThinkingMode === 'thinking' ? 'thinking' : 'fast';
@@ -375,6 +376,7 @@ export function createPOST(
         supabase,
         toolSupabase: sbAdmin as typeof supabase,
         timezone,
+        taskBoardContext,
         getSteps: () => stepsRef.current,
       });
 

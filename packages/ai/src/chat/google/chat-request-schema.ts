@@ -26,6 +26,21 @@ const UIMessageSchema = z
   })
   .passthrough();
 
+const TaskBoardContextListSchema = z.object({
+  id: z.string().trim().min(1).max(MAX_ID_LENGTH),
+  name: z.string().trim().min(1).max(120).nullable().optional(),
+  status: z.string().trim().min(1).max(80).nullable().optional(),
+  position: z.number().nullable().optional(),
+});
+
+const TaskBoardContextSchema = z.object({
+  workspaceId: z.string().trim().min(1).max(MAX_ID_LENGTH).optional(),
+  workspaceName: z.string().trim().min(1).max(160).optional(),
+  boardId: z.string().trim().min(1).max(MAX_ID_LENGTH),
+  boardName: z.string().trim().min(1).max(160).optional(),
+  lists: z.array(TaskBoardContextListSchema).max(80).default([]),
+});
+
 export const ChatRequestBodySchema = z.object({
   id: z.string().optional(),
   model: z.string().optional(),
@@ -37,9 +52,13 @@ export const ChatRequestBodySchema = z.object({
   thinkingMode: z.enum(['thinking', 'fast']).optional(),
   creditSource: z.enum(['personal', 'workspace']).optional(),
   creditWsId: z.string().trim().min(1).max(MAX_ID_LENGTH).optional(),
+  taskBoardContext: TaskBoardContextSchema.optional(),
 });
 
 export type ChatRequestBody = z.infer<typeof ChatRequestBodySchema>;
+export type ChatRequestTaskBoardContext = z.infer<
+  typeof TaskBoardContextSchema
+>;
 
 function isValidHttpUrl(value: string): boolean {
   try {

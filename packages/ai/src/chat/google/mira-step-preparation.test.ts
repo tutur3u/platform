@@ -160,6 +160,98 @@ describe('prepareMiraToolStep', () => {
     expect(result.activeTools).toContain('get_my_tasks');
   });
 
+  it('treats a successful workspace context read as resolved to avoid repeat context calls', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: { tools: ['create_task'] },
+            },
+          ],
+        },
+        {
+          toolCalls: [
+            {
+              toolName: 'get_workspace_context',
+              args: {},
+            },
+          ],
+          toolResults: [
+            {
+              toolName: 'get_workspace_context',
+              output: {
+                currentWorkspaceContext: {
+                  workspaceContextId: 'personal',
+                  wsId: 'workspace-personal',
+                  name: 'Personal',
+                  personal: true,
+                },
+              },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: true,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBeUndefined();
+    expect(result.activeTools).toEqual(['create_task', 'select_tools']);
+  });
+
+  it('drops workspace discovery tools from selected tools after context resolution succeeds', () => {
+    const result = prepareMiraToolStep({
+      steps: [
+        {
+          toolCalls: [
+            {
+              toolName: 'select_tools',
+              args: {
+                tools: [
+                  'get_workspace_context',
+                  'set_workspace_context',
+                  'create_task',
+                ],
+              },
+            },
+          ],
+        },
+        {
+          toolCalls: [
+            {
+              toolName: 'set_workspace_context',
+              args: { workspaceId: 'personal' },
+            },
+          ],
+          toolResults: [
+            {
+              toolName: 'set_workspace_context',
+              output: {
+                success: true,
+                workspaceContextId: 'personal',
+              },
+            },
+          ],
+        },
+      ],
+      forceGoogleSearch: false,
+      forceRenderUi: false,
+      needsParallelChecks: false,
+      needsWorkspaceContextResolution: true,
+      needsWorkspaceMembersTool: false,
+      preferMarkdownTables: false,
+    });
+
+    expect(result.toolChoice).toBeUndefined();
+    expect(result.activeTools).toEqual(['create_task', 'select_tools']);
+  });
+
   it('keeps forcing workspace resolution until set_workspace_context succeeds', () => {
     const result = prepareMiraToolStep({
       steps: [

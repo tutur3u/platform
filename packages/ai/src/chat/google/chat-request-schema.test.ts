@@ -28,4 +28,42 @@ describe('ChatRequestBodySchema', () => {
       );
     }
   });
+
+  it('accepts sanitized task board context for Mira board chats', () => {
+    const parsed = ChatRequestBodySchema.safeParse({
+      messages: [],
+      taskBoardContext: {
+        workspaceId: ' workspace-1 ',
+        workspaceName: ' Workspace One ',
+        boardId: ' board-1 ',
+        boardName: ' Launch Board ',
+        lists: [
+          {
+            id: ' list-1 ',
+            name: ' To Do ',
+            status: ' not_started ',
+            position: 0,
+          },
+        ],
+      },
+    });
+
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.taskBoardContext).toEqual({
+        workspaceId: 'workspace-1',
+        workspaceName: 'Workspace One',
+        boardId: 'board-1',
+        boardName: 'Launch Board',
+        lists: [
+          {
+            id: 'list-1',
+            name: 'To Do',
+            status: 'not_started',
+            position: 0,
+          },
+        ],
+      });
+    }
+  });
 });

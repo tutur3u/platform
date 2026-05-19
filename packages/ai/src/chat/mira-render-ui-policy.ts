@@ -12,6 +12,12 @@ type ToolStepLike = {
   }>;
 };
 
+const WORKSPACE_DISCOVERY_TOOL_NAMES = new Set([
+  'list_accessible_workspaces',
+  'get_workspace_context',
+  'set_workspace_context',
+]);
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
@@ -454,12 +460,24 @@ export function hasSuccessfulWorkspaceContextResolutionInSteps(
 ): boolean {
   return steps.some((step) => {
     const typedStep = step as ToolStepLike | undefined;
-    return (typedStep?.toolResults ?? []).some(
-      (toolResult) =>
-        toolResult.toolName === 'set_workspace_context' &&
-        isRecord(toolResult.output) &&
-        toolResult.output.success === true
-    );
+    return (typedStep?.toolResults ?? []).some((toolResult) => {
+      if (!isRecord(toolResult.output)) return false;
+
+      if (toolResult.toolName === 'set_workspace_context') {
+        return toolResult.output.success === true;
+      }
+
+      if (toolResult.toolName !== 'get_workspace_context') {
+        return false;
+      }
+
+      const currentContext = toolResult.output.currentWorkspaceContext;
+      if (!isRecord(currentContext)) return false;
+      return (
+        typeof currentContext.workspaceContextId === 'string' ||
+        typeof currentContext.wsId === 'string'
+      );
+    });
   });
 }
 
@@ -513,4 +531,10 @@ export function buildActiveToolsFromSelected(
   ];
 
   return Array.from(new Set(active));
+}
+
+export function removeWorkspaceDiscoveryTools(selectedTools: string[]) {
+  return selectedTools.filter(
+    (toolName) => !WORKSPACE_DISCOVERY_TOOL_NAMES.has(toolName)
+  );
 }

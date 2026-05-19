@@ -25,6 +25,7 @@ import { MiraChatHeader } from './mira-chat-header';
 import { useMiraBottomBarVisibility } from './use-mira-bottom-bar-visibility';
 import { useMiraChatActions } from './use-mira-chat-actions';
 import { useMiraChatAttachments } from './use-mira-chat-attachments';
+import type { MiraTaskBoardContext } from './use-mira-chat-config';
 import { useMiraChatConfig } from './use-mira-chat-config';
 import { useMiraChatEffects } from './use-mira-chat-effects';
 import { useMiraChatHotkeys } from './use-mira-chat-hotkeys';
@@ -40,6 +41,7 @@ interface MiraChatPanelProps {
   userAvatarUrl?: string | null;
   insightsDock?: ReactNode;
   workspaceContextBadge?: ReactNode;
+  taskBoardContext?: MiraTaskBoardContext;
   onVoiceToggle?: () => void;
   isFullscreen?: boolean;
   onToggleFullscreen?: () => void;
@@ -55,6 +57,7 @@ export default function MiraChatPanel({
   userAvatarUrl,
   insightsDock,
   workspaceContextBadge,
+  taskBoardContext,
   onVoiceToggle,
   isFullscreen,
   onToggleFullscreen,
@@ -138,7 +141,7 @@ export default function MiraChatPanel({
     setWorkspaceContextId,
     transport,
     workspaceCreditLocked,
-  } = useMiraChatConfig({ wsId });
+  } = useMiraChatConfig({ wsId, taskBoardContext });
 
   const {
     attachedFiles,
