@@ -391,4 +391,3 @@ function AnnouncementFormHeader({
     </div>
   );
 }
-
