@@ -67,20 +67,7 @@ const getMessages = async (
     return [];
   }
 
-  let isMember = false;
-
-  if (user.email) {
-    const { data: membership } = await sbAdmin
-      .from('ai_chat_members')
-      .select('chat_id')
-      .eq('chat_id', chatId)
-      .eq('email', user.email)
-      .maybeSingle();
-
-    isMember = Boolean(membership);
-  }
-
-  const canRead = chat.creator_id === user.id || chat.is_public || isMember;
+  const canRead = chat.creator_id === user.id || chat.is_public;
 
   if (!canRead) {
     return [];
@@ -159,19 +146,6 @@ const getChat = async (
 
   if (chat.creator_id === user.id || chat.is_public) {
     return chat as AIChat;
-  }
-
-  if (user.email) {
-    const { data: membership } = await sbAdmin
-      .from('ai_chat_members')
-      .select('chat_id')
-      .eq('chat_id', chatId)
-      .eq('email', user.email)
-      .maybeSingle();
-
-    if (membership) {
-      return chat as AIChat;
-    }
   }
 
   // If neither condition is met, the user doesn't have access
