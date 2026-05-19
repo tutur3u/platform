@@ -166,9 +166,10 @@ Manual NPC runs and manual NPC-to-NPC interactions send `creditSource`,
 `creditWsId`, and `model` through the Hive internal API. The web route verifies
 that the signed-in Hive user can access the selected workspace, resolves the
 requested model against the workspace plan, preflights AI credits, runs the LLM,
-and deducts credits only after successful model usage. If model access is not
-configured, the route can still persist a deterministic NPC decision for
-inspectable simulation history.
+and deducts credits only after successful model usage. A failed post-generation
+credit deduction is a request failure: the provider output is not persisted or
+returned to the caller. If model access is not configured, the route can still
+persist a deterministic NPC decision for inspectable simulation history.
 
 Autonomous NPC interactions use server settings instead of the current browser
 selection. `defaultCreditSource`, `defaultCreditWsId`, and `defaultModel` define

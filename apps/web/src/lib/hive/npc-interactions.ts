@@ -408,12 +408,13 @@ async function generateConversation(input: {
 
     if (deduction.success) {
       creditsDeducted = deduction.creditsDeducted;
-    } else if (deduction.errorCode) {
+    } else {
       serverLogger.warn('Hive AI credit deduction failed', {
-        errorCode: deduction.errorCode,
+        errorCode: deduction.errorCode ?? 'UNKNOWN',
         modelId,
         wsId: creditContext.creditWsId,
       });
+      throw new HiveAiAccessError('AI credits unavailable', 402);
     }
 
     return {
@@ -427,6 +428,10 @@ async function generateConversation(input: {
       usage,
     };
   } catch (error) {
+    if (error instanceof HiveAiAccessError) {
+      throw error;
+    }
+
     serverLogger.warn('Hive NPC AI interaction generation failed', {
       error: error instanceof Error ? error.message : String(error),
       modelId,
