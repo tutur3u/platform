@@ -5,6 +5,7 @@ import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { AIChat } from '@tuturuuu/types';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import Chat from '../../chat';
 import { getChats } from '../../helper';
 
@@ -30,14 +31,7 @@ export default async function AIPage({ params, searchParams }: Props) {
   );
   if (!user?.email) redirect('/login');
 
-  const adminSb = await createAdminClient();
-  const { data: whitelisted, error } = await adminSb
-    .from('ai_whitelisted_emails')
-    .select('enabled')
-    .eq('email', user?.email)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enabled) redirect('/not-whitelisted');
+  if (!(await isCurrentUserAIWhitelisted())) redirect('/not-whitelisted');
 
   // Get chat data
   const chat = await getChat(chatId, user);

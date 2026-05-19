@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createAIWhitelistDomain,
+  createAIWhitelistEmail,
   deleteAIWhitelistDomain,
+  deleteAIWhitelistEmail,
   listAIWhitelistDomains,
+  listAIWhitelistEmails,
   updateAIWhitelistDomain,
+  updateAIWhitelistEmail,
 } from './infrastructure';
 
 function createJsonResponse(data: unknown) {
@@ -102,6 +106,98 @@ describe('AI whitelist domain internal API helpers', () => {
     expect(fetchMock).toHaveBeenNthCalledWith(
       2,
       'https://internal.example.com/api/v1/infrastructure/ai/whitelist/domain/example.com',
+      expect.objectContaining({
+        method: 'DELETE',
+      })
+    );
+  });
+});
+
+describe('AI whitelist email internal API helpers', () => {
+  it('lists emails through the apps/web API with pagination filters', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ count: 0, data: [] }));
+
+    await listAIWhitelistEmails(
+      { page: 2, pageSize: 20, q: 'person@example.com' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/whitelist/emails?page=2&pageSize=20&q=person%40example.com',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('creates emails through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: {
+          created_at: '2026-05-19T00:00:00Z',
+          email: 'person@example.com',
+          enabled: true,
+        },
+      })
+    );
+
+    await createAIWhitelistEmail(
+      {
+        email: 'person@example.com',
+        enabled: true,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/whitelist/emails',
+      expect.objectContaining({
+        body: JSON.stringify({
+          email: 'person@example.com',
+          enabled: true,
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('updates and deletes emails through encoded apps/web API routes', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ success: true }));
+
+    await updateAIWhitelistEmail(
+      'person@example.com',
+      { enabled: false },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+    await deleteAIWhitelistEmail('person@example.com', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/ai/whitelist/person%40example.com',
+      expect.objectContaining({
+        body: JSON.stringify({ enabled: false }),
+        method: 'PUT',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/ai/whitelist/person%40example.com',
       expect.objectContaining({
         method: 'DELETE',
       })

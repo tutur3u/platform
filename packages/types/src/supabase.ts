@@ -30,6 +30,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_whitelisted_emails: {
+        Row: {
+          created_at: string;
+          email: string;
+          enabled: boolean;
+        };
+        Insert: {
+          created_at?: string;
+          email: string;
+          enabled?: boolean;
+        };
+        Update: {
+          created_at?: string;
+          email?: string;
+          enabled?: boolean;
+        };
+        Relationships: [];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -1401,24 +1419,6 @@ export type Database = {
           created_at?: string;
           id?: string;
           name?: string;
-        };
-        Relationships: [];
-      };
-      ai_whitelisted_emails: {
-        Row: {
-          created_at: string;
-          email: string;
-          enabled: boolean;
-        };
-        Insert: {
-          created_at?: string;
-          email: string;
-          enabled?: boolean;
-        };
-        Update: {
-          created_at?: string;
-          email?: string;
-          enabled?: boolean;
         };
         Relationships: [];
       };

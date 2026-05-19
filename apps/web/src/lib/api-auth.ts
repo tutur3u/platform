@@ -166,6 +166,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   pattern: RegExp;
   targetApp: AppSessionTargetApp | readonly AppSessionTargetApp[];
 }[] = [
+  {
+    pattern: /^\/api\/v1\/ai\/whitelist(?:\/|$)/u,
+    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
+  },
   { pattern: /^\/api\/v1\/ai\/chats(?:\/|$)/u, targetApp: 'rewise' },
   { pattern: /^\/api\/v1\/cms(?:\/|$)/u, targetApp: 'cms' },
   { pattern: /^\/api\/v1\/nova(?:\/|$)/u, targetApp: 'nova' },

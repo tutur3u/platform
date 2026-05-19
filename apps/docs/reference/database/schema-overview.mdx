@@ -214,8 +214,10 @@ Token usage tracking for billing.
 - `output_tokens` (integer)
 - `total_cost` (numeric)
 
-#### `ai_whitelisted_emails`
-Email whitelist for AI feature access.
+#### `private.ai_whitelisted_emails`
+Server-owned email whitelist for AI feature access. This table is kept outside
+the Supabase REST-exposed `public` schema; apps should check or manage access
+through centralized `apps/web` APIs.
 
 ### Calendar System
 

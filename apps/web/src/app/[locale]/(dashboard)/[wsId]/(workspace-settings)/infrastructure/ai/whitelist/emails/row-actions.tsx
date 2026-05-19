@@ -2,6 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteAIWhitelistEmail as deleteAIWhitelistEmailWithInternalApi } from '@tuturuuu/internal-api/infrastructure';
 import type { AIWhitelistEmail } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -26,16 +27,8 @@ export function AIWhitelistEmailRowActions({
   const data = row.original;
 
   const deleteAIWhitelistEmail = async () => {
-    const res = await fetch(
-      `/api/v1/infrastructure/ai/whitelist/${data.email}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      router.refresh();
-    }
+    await deleteAIWhitelistEmailWithInternalApi(data.email);
+    router.refresh();
   };
 
   return (

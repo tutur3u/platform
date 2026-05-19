@@ -1,80 +1,81 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
+import { hasAIWhitelistAccess } from '@/lib/ai-whitelist/authorization';
+import {
+  deleteAIWhitelistEmail,
+  updateAIWhitelistEmailEnabled,
+} from '@/lib/ai-whitelist/email-repository';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
-export async function PUT(req: NextRequest) {
-  const { email, enabled } = await req.json();
+function forbiddenResponse() {
+  return NextResponse.json(
+    { message: 'You are not allowed to perform this action' },
+    { status: 403 }
+  );
+}
 
-  if (!email) {
-    return NextResponse.json({ message: 'Email is required' }, { status: 400 });
-  }
+function normalizeEmailParam(email: string) {
+  return decodeURIComponent(email);
+}
 
-  const supabase = await createClient();
+export async function PUT(
+  request: NextRequest,
+  { params }: { params: Promise<{ email: string }> }
+) {
+  try {
+    if (!(await hasAIWhitelistAccess(request))) {
+      return forbiddenResponse();
+    }
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+    const { email: rawEmail } = await params;
+    const email = normalizeEmailParam(rawEmail);
+    const { enabled } = await request.json();
 
-  if (!user?.email?.endsWith('@tuturuuu.com'))
+    if (!email) {
+      return NextResponse.json(
+        { message: 'Email is required' },
+        { status: 400 }
+      );
+    }
+
+    await updateAIWhitelistEmailEnabled(email, Boolean(enabled));
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    serverLogger.error('Error updating AI whitelist email:', error);
     return NextResponse.json(
-      { message: 'You are not allowed to perform this action' },
-      { status: 403 }
-    );
-
-  const sbAdmin = await createAdminClient();
-
-  const { error } = await sbAdmin
-    .from('ai_whitelisted_emails')
-    .update({ email, enabled })
-    .eq('email', email);
-
-  if (error) {
-    serverLogger.info(error);
-    return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error updating AI whitelist email' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true }, { status: 200 });
 }
 
 export async function DELETE(
-  _: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ email: string }> }
 ) {
-  const { email } = await params;
+  try {
+    if (!(await hasAIWhitelistAccess(request))) {
+      return forbiddenResponse();
+    }
 
-  if (!email) {
-    return NextResponse.json({ message: 'Email is required' }, { status: 400 });
-  }
+    const { email: rawEmail } = await params;
+    const email = normalizeEmailParam(rawEmail);
 
-  const supabase = await createClient();
+    if (!email) {
+      return NextResponse.json(
+        { message: 'Email is required' },
+        { status: 400 }
+      );
+    }
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
+    await deleteAIWhitelistEmail(email);
 
-  if (!user?.email?.endsWith('@tuturuuu.com'))
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    serverLogger.error('Error deleting AI whitelist email:', error);
     return NextResponse.json(
-      { message: 'You are not allowed to perform this action' },
-      { status: 403 }
-    );
-
-  const sbAdmin = await createAdminClient();
-
-  const { error } = await sbAdmin
-    .from('ai_whitelisted_emails')
-    .delete()
-    .eq('email', email);
-
-  if (error) {
-    serverLogger.info(error);
-    return NextResponse.json(
-      { message: 'Error fetching AI Models' },
+      { message: 'Error deleting AI whitelist email' },
       { status: 500 }
     );
   }
-
-  return NextResponse.json({ success: true }, { status: 200 });
 }

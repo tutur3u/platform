@@ -1,6 +1,5 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
@@ -11,6 +10,7 @@ import {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
 import { SidebarProvider } from '@/context/sidebar-context';
+import { isCurrentUserAIWhitelisted } from '@/lib/ai-whitelist';
 import NavbarActions from '../../navbar-actions';
 import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
@@ -34,14 +34,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   // Whitelist check — preserve AI access gating
   if (user.email) {
-    const adminSb = await createAdminClient({ noCookie: true });
-    const { data: whitelisted, error } = await adminSb
-      .from('ai_whitelisted_emails')
-      .select('enabled')
-      .eq('email', user.email)
-      .maybeSingle();
-
-    if (error || !whitelisted?.enabled) {
+    if (!(await isCurrentUserAIWhitelisted())) {
       redirect('/not-whitelisted');
     }
   }

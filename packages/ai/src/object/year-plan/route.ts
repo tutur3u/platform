@@ -1,8 +1,9 @@
 import { vertex } from '@ai-sdk/google-vertex/edge';
 import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+  getCurrentUserAIWhitelistStatus,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
+import { createClient } from '@tuturuuu/supabase/next/server';
 import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import { yearPlanSchema } from '../types';
@@ -86,15 +87,11 @@ export async function POST(req: Request) {
     } = await supabase.auth.getUser();
     if (!user?.email) return new Response('Unauthorized', { status: 401 });
 
-    const adminSb = await createAdminClient();
+    const whitelisted = await getCurrentUserAIWhitelistStatus(
+      withForwardedInternalApiAuth(req.headers)
+    );
 
-    const { data: whitelisted, error } = await adminSb
-      .from('ai_whitelisted_emails')
-      .select('enabled')
-      .eq('email', user?.email)
-      .maybeSingle();
-
-    if (error || !whitelisted?.enabled)
+    if (!whitelisted.enabled)
       return new Response('Unauthorized', { status: 401 });
 
     // Format goals and additional context

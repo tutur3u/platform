@@ -1,8 +1,8 @@
 'use client';
 
+import { createAIWhitelistEmail } from '@tuturuuu/internal-api/infrastructure';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
-import { addWhitelistEmail } from './actions';
 import WhitelistEmailForm from './form';
 
 interface Props {
@@ -16,7 +16,7 @@ export default function WhitelistEmailClient({ wsId, onFinish }: Props) {
 
   const handleSubmit = async (values: { email: string }) => {
     try {
-      await addWhitelistEmail(wsId, values.email, true);
+      await createAIWhitelistEmail({ email: values.email, enabled: true });
       toast({
         title: t('common.success'),
         description: t('common.email_added'),

@@ -1255,7 +1255,7 @@ values
 
 
 insert into
-    public.ai_whitelisted_emails (email, enabled)
+    private.ai_whitelisted_emails (email, enabled)
 values
     ('local@tuturuuu.com', true);
 

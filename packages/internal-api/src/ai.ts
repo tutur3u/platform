@@ -14,6 +14,11 @@ export interface InternalAiChatSummary {
   model?: string | null;
 }
 
+export interface CurrentUserAIWhitelistStatus {
+  email: string | null;
+  enabled: boolean;
+}
+
 export interface GenerateWorkspaceCourseModulesFromStoragePayload {
   fileName?: string;
   groupId: string;
@@ -119,6 +124,15 @@ export async function listCurrentUserAiChats(
 ) {
   const client = getInternalApiClient(options);
   return client.json<InternalAiChatSummary[]>('/api/v1/ai/chats', {
+    cache: 'no-store',
+  });
+}
+
+export async function getCurrentUserAIWhitelistStatus(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserAIWhitelistStatus>('/api/v1/ai/whitelist/me', {
     cache: 'no-store',
   });
 }

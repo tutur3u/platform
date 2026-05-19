@@ -1,10 +1,10 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { GradientHeadline } from '@tuturuuu/ui/custom/gradient-headline';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { isAIWhitelistEmailEnabled } from '@/lib/ai-whitelist/email-repository';
 import SparkClientPage from './client-page';
 
 export const metadata: Metadata = {
@@ -21,15 +21,9 @@ export default async function SparkPage({
   const user = await getCurrentUser();
 
   if (!user?.email) redirect('/login');
-  const adminSb = await createAdminClient();
+  const whitelisted = await isAIWhitelistEmailEnabled(user.email);
 
-  const { data: whitelisted, error } = await adminSb
-    .from('ai_whitelisted_emails')
-    .select('enabled')
-    .eq('email', user?.email)
-    .maybeSingle();
-
-  if (error || !whitelisted?.enabled)
+  if (!whitelisted)
     return (
       <div className="flex h-screen w-full items-center justify-center font-bold text-2xl lg:text-4xl xl:text-5xl">
         <GradientHeadline>{t('not_whitelisted')}.</GradientHeadline>

@@ -1,4 +1,3 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -7,6 +6,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
+import { hasAIWhitelistAccess } from '@/lib/ai-whitelist/authorization';
+import { listAIWhitelistEmails } from '@/lib/ai-whitelist/email-repository';
 import WhitelistEmailClient from './client-page';
 import { getAIWhitelistEmailColumns } from './columns';
 
@@ -33,10 +34,11 @@ export default async function WhitelistPage({ params, searchParams }: Props) {
   const t = await getTranslations();
   const { wsId } = await params;
 
-  const { emailData, emailCount } = await getEmailData(
-    wsId,
-    await searchParams
-  );
+  if (!(await hasAIWhitelistAccess())) {
+    notFound();
+  }
+
+  const { emailData, emailCount } = await getEmailData(await searchParams);
 
   return (
     <Tabs defaultValue="emails">
@@ -77,40 +79,16 @@ export default async function WhitelistPage({ params, searchParams }: Props) {
   );
 }
 
-async function getEmailData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-    retry = true,
-  }: { q?: string; page?: string; pageSize?: string; retry?: boolean } = {}
-) {
-  const sbAdmin = await createAdminClient();
-  if (!sbAdmin) notFound();
-
-  const queryBuilder = sbAdmin
-    .from('ai_whitelisted_emails')
-    .select('*', {
-      count: 'exact',
-    })
-    .order('created_at', { ascending: false });
-
-  if (q) queryBuilder.ilike('email', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) {
-    if (!retry) throw error;
-    return getEmailData(wsId, { q, pageSize, retry: false });
-  }
+async function getEmailData({
+  q,
+  page = '1',
+  pageSize = '10',
+}: {
+  q?: string;
+  page?: string;
+  pageSize?: string;
+} = {}) {
+  const { data, count } = await listAIWhitelistEmails({ page, pageSize, q });
 
   return {
     emailData: data,

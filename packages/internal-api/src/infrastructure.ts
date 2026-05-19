@@ -1,4 +1,4 @@
-import type { AIWhitelistDomain } from '@tuturuuu/types';
+import type { AIWhitelistDomain, AIWhitelistEmail } from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -45,7 +45,22 @@ export interface AIWhitelistDomainResponse {
   data: AIWhitelistDomain;
 }
 
+export interface AIWhitelistEmailsResponse {
+  count: number;
+  data: AIWhitelistEmail[];
+}
+
+export interface AIWhitelistEmailResponse {
+  data: AIWhitelistEmail;
+}
+
 export interface ListAIWhitelistDomainsParams {
+  page?: number | string;
+  pageSize?: number | string;
+  q?: string;
+}
+
+export interface ListAIWhitelistEmailsParams {
   page?: number | string;
   pageSize?: number | string;
   q?: string;
@@ -58,6 +73,11 @@ export type CreateAIWhitelistDomainPayload = Pick<
   Partial<Pick<AIWhitelistDomain, 'enabled'>>;
 
 export type UpdateAIWhitelistDomainPayload = Pick<AIWhitelistDomain, 'enabled'>;
+
+export type CreateAIWhitelistEmailPayload = Pick<AIWhitelistEmail, 'email'> &
+  Partial<Pick<AIWhitelistEmail, 'enabled'>>;
+
+export type UpdateAIWhitelistEmailPayload = Pick<AIWhitelistEmail, 'enabled'>;
 
 export interface SaveExternalAppPayload {
   allowedScopes?: string[];
@@ -1256,6 +1276,75 @@ export async function deleteAIWhitelistDomain(
   const client = getInternalApiClient(options);
   return client.json<{ success: true }>(
     `/api/v1/infrastructure/ai/whitelist/domain/${encodePathSegment(domain)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
+export async function listAIWhitelistEmails(
+  params?: ListAIWhitelistEmailsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AIWhitelistEmailsResponse>(
+    '/api/v1/infrastructure/ai/whitelist/emails',
+    {
+      cache: 'no-store',
+      query: {
+        page: params?.page,
+        pageSize: params?.pageSize,
+        q: params?.q,
+      },
+    }
+  );
+}
+
+export async function createAIWhitelistEmail(
+  payload: CreateAIWhitelistEmailPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AIWhitelistEmailResponse>(
+    '/api/v1/infrastructure/ai/whitelist/emails',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateAIWhitelistEmail(
+  email: string,
+  payload: UpdateAIWhitelistEmailPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/infrastructure/ai/whitelist/${encodePathSegment(email)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function deleteAIWhitelistEmail(
+  email: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/infrastructure/ai/whitelist/${encodePathSegment(email)}`,
     {
       cache: 'no-store',
       method: 'DELETE',
