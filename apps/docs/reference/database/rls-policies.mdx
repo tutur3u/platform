@@ -240,7 +240,35 @@ USING (
 );
 ```
 
-### Pattern 8: Workspace-Scoped Security Definer RPCs
+### Pattern 8: Client-Facing Public Views
+
+**Use Case:** A view in the exposed `public` schema is granted to `anon` or
+`authenticated`.
+
+Postgres views are security definer by default when created by privileged
+owners. In Supabase, that means a public view can bypass RLS on the underlying
+tables even when every base table has RLS enabled. Any public-schema view that
+is directly selectable by `anon` or `authenticated` must be created or altered
+with `security_invoker = true`.
+
+Do not use a public view as a shortcut around table policies. If a view needs
+privileged data such as audit records or private profile details, revoke direct
+client-role `SELECT` and expose the data through a permission-checked API route
+or RPC instead.
+
+```sql
+CREATE OR REPLACE VIEW public.workspace_safe_summary
+WITH (security_invoker = true) AS
+SELECT ...
+FROM public.workspace_scoped_table;
+
+REVOKE SELECT ON public.audit_logs FROM anon, authenticated;
+```
+
+New public views should be covered by `public-view-security.sql`, which fails
+when a Data API-exposed view is missing `security_invoker`.
+
+### Pattern 9: Workspace-Scoped Security Definer RPCs
 
 **Use Case:** An RPC must run with elevated database privileges to read audit,
 private, or RLS-protected tables.
