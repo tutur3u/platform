@@ -5,6 +5,7 @@ import {
   getTaskDonePayload,
   getTaskUpdatePayload,
   listTasksForCli,
+  normalizeLabelColor,
   runCli,
 } from './commands';
 
@@ -22,6 +23,22 @@ describe('CLI commands', () => {
     await runCli([flag]);
 
     expect(write).toHaveBeenCalledWith(`${packageJson.version}\n`);
+  });
+
+  it('prints version even when update checks are disabled', async () => {
+    const write = vi
+      .spyOn(process.stdout, 'write')
+      .mockImplementation(() => true);
+
+    await runCli(['--version', '--no-update-check']);
+
+    expect(write).toHaveBeenCalledWith(`${packageJson.version}\n`);
+  });
+
+  it('normalizes task label color names to backend hex values', () => {
+    expect(normalizeLabelColor()).toBe('#6B7280');
+    expect(normalizeLabelColor('red')).toBe('#DC2626');
+    expect(normalizeLabelColor('#0D9488')).toBe('#0D9488');
   });
 
   it.each([

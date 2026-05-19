@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   createInternalApiClient,
+  InternalApiError,
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
@@ -74,6 +75,43 @@ describe('createInternalApiClient', () => {
     const [, init] = fetchMock.mock.calls[0];
     expect((init.headers as Headers).get('authorization')).toBe('Bearer token');
     expect((init.headers as Headers).get('accept')).toBe('application/json');
+  });
+
+  it('surfaces browser verification challenges with CLI-specific guidance', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json(
+        {
+          code: 'ABUSE_CHALLENGE_REQUIRED',
+          message: 'Additional verification is required before retrying.',
+        },
+        {
+          headers: { 'X-Abuse-Challenge': 'turnstile' },
+          status: 403,
+        }
+      )
+    );
+
+    const client = createInternalApiClient({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    let captured: unknown;
+
+    try {
+      await client.json('/api/v1/workspaces/ws/tasks');
+    } catch (error) {
+      captured = error;
+    }
+
+    expect(captured).toBeInstanceOf(InternalApiError);
+    expect((captured as InternalApiError).message).toContain(
+      'browser verification challenge'
+    );
+    expect((captured as InternalApiError).code).toBe(
+      'ABUSE_CHALLENGE_REQUIRED'
+    );
+    expect((captured as InternalApiError).status).toBe(403);
   });
 });
 

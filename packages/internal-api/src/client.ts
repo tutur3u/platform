@@ -26,7 +26,8 @@ const SUPABASE_AUTH_COOKIE_PATTERN = /^sb-[a-z0-9-]+-auth-token(?:\.\d+)?$/i;
 export class InternalApiError extends Error {
   constructor(
     message: string,
-    public readonly status: number
+    public readonly status: number,
+    public readonly code?: string
   ) {
     super(message);
     this.name = 'InternalApiError';
@@ -215,19 +216,33 @@ export function createInternalApiClient(
 
       if (!response.ok) {
         const fallbackMessage = `Internal API request failed: ${response.status}`;
+        let code: string | undefined;
         let message: string;
 
         try {
           const data = (await response.json()) as {
+            code?: string;
             error?: string;
             message?: string;
           };
-          message = data.message || data.error || fallbackMessage;
+          code = data.code;
+          const challenge = response.headers?.get?.('x-abuse-challenge');
+
+          if (data.code === 'ABUSE_CHALLENGE_REQUIRED' || challenge) {
+            message = [
+              data.message ||
+                'Additional verification is required before retrying.',
+              'This API request needs a browser verification challenge that the CLI cannot complete automatically.',
+              'Open Tuturuuu in a browser to complete verification, then retry the CLI command.',
+            ].join(' ');
+          } else {
+            message = data.message || data.error || fallbackMessage;
+          }
         } catch {
           message = fallbackMessage;
         }
 
-        throw new InternalApiError(message, response.status);
+        throw new InternalApiError(message, response.status, code);
       }
 
       if (response.status === 204) {

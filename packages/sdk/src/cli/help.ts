@@ -77,10 +77,11 @@ const helpTopics: Record<string, HelpTopic> = {
       'ttr labels',
       'ttr labels use',
       'ttr labels create --name Bug --color red',
+      'ttr labels create --name Urgent --color "#DC2626"',
     ],
     options: [
       '--name <name>                label name for create',
-      '--color <color>              label color for create',
+      '--color <color>              label color name or hex code for create',
       '--workspace, --ws <id>        override the selected workspace',
       '--json                       print machine-readable JSON',
     ],

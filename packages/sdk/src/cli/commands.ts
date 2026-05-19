@@ -61,6 +61,23 @@ const DOCUMENT_TASK_LIST_STATUSES = ['documents'] as const;
 const REVIEW_TASK_LIST_STATUSES = ['review'] as const;
 const DONE_TASK_LIST_STATUSES = ['review', 'done'] as const;
 const CLOSED_TASK_LIST_STATUSES = ['closed'] as const;
+const LABEL_COLOR_ALIASES: Record<string, string> = {
+  amber: '#D97706',
+  blue: '#2563EB',
+  cyan: '#0891B2',
+  emerald: '#059669',
+  gray: '#6B7280',
+  green: '#16A34A',
+  indigo: '#4F46E5',
+  orange: '#EA580C',
+  pink: '#DB2777',
+  purple: '#7C3AED',
+  red: '#DC2626',
+  slate: '#475569',
+  teal: '#0D9488',
+  violet: '#7C3AED',
+  yellow: '#CA8A04',
+};
 
 type ListedWorkspace = Awaited<
   ReturnType<TuturuuuUserClient['workspaces']['list']>
@@ -766,8 +783,18 @@ function withTaskDisplayKey(data: unknown, displayKey?: string) {
   };
 }
 
+export function normalizeLabelColor(value?: string) {
+  const color = (value || 'gray').trim();
+
+  if (/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/u.test(color)) {
+    return color;
+  }
+
+  return LABEL_COLOR_ALIASES[color.toLowerCase()] ?? color;
+}
+
 export async function runCli(argv = process.argv.slice(2)) {
-  if (argv.length === 1 && (argv[0] === '-v' || argv[0] === '--version')) {
+  if (argv.includes('-v') || argv.includes('--version')) {
     process.stdout.write(`${packageJson.version}\n`);
     return;
   }
@@ -1319,7 +1346,7 @@ export async function runCli(argv = process.argv.slice(2)) {
     if (action === 'create') {
       render(
         await client.tasks.createLabel(workspaceId, {
-          color: getFlag(flags, 'color') || 'gray',
+          color: normalizeLabelColor(getFlag(flags, 'color')),
           name: getFlag(flags, 'name') || 'Untitled Label',
         }),
         { group, json }

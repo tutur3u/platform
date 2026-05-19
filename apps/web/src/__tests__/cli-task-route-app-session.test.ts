@@ -119,6 +119,29 @@ describe('workspace task API route app-session bridge', () => {
     );
   });
 
+  it('allows platform CLI and Tasks app-session auth on task label routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/labels/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
   it('passes app-session auth context into the shared task GET handler', async () => {
     mocks.getAppSessionTokenFromRequest.mockReturnValue('ttr_app_access');
 
