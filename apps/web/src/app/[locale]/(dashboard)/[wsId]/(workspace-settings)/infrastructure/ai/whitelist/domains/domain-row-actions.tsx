@@ -1,5 +1,6 @@
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteAIWhitelistDomain as deleteAIWhitelistDomainWithInternalApi } from '@tuturuuu/internal-api/infrastructure';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -24,16 +25,8 @@ export function AIWhitelistDomainRowActions({
   const data = row.original;
 
   const deleteAIWhitelistDomain = async () => {
-    const res = await fetch(
-      `/api/v1/infrastructure/ai/whitelist/domain/${data.domain}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
-      router.refresh();
-    }
+    await deleteAIWhitelistDomainWithInternalApi(data.domain);
+    router.refresh();
   };
 
   return (

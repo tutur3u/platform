@@ -378,20 +378,24 @@ database internals and should not be exposed through Supabase's generated REST
 API at all.
 
 Use the existing `private` schema for these tables. Do not add `private` to the
-Supabase Data API exposed schemas or extra search path. If an app route needs
-to operate on a private table, expose a narrow `public` RPC that is executable
-only by `service_role`, then call it from the centralized `apps/web` API route
-with `createAdminClient()`.
+Supabase Data API exposed schemas or extra search path. New migrations should
+prefer direct server-side Postgres access from `apps/web` through
+`getPlatformSql()` when an app route or server component needs private table
+access. This keeps browser and mobile consumers on centralized `apps/web` API
+routes while avoiding new Supabase REST endpoints for private data.
+
+Legacy `public` bridging RPCs may exist while older code is migrated, but do
+not add new public RPCs for tables that can be reached through the server-side
+database connection.
 
 Required controls:
 
 - Keep `anon` and `authenticated` without `USAGE` on `private`.
 - Revoke direct table privileges from `public`, `anon`, and `authenticated`.
 - Keep RLS enabled with service-role-only policies for reviewability.
-- Revoke direct `EXECUTE` on bridging RPCs from `public`, `anon`, and
-  `authenticated`; grant only to `service_role`.
-- Cover private placement, table privileges, schema usage, and RPC grants with
-  pgTAP tests.
+- Keep private table reads and writes inside server-only modules used by
+  `apps/web` routes, server actions, or server components.
+- Cover private placement, table privileges, and schema usage with pgTAP tests.
 
 ```sql
 create schema if not exists private;
@@ -405,19 +409,14 @@ alter table if exists public.server_owned_table
 revoke all on table private.server_owned_table
 from public, anon, authenticated;
 
-create or replace function public.server_owned_table_action(...)
-returns ...
-language sql
-security definer
-set search_path = private, public
-as $$
-  ...
-$$;
+alter table private.server_owned_table enable row level security;
 
-revoke execute on function public.server_owned_table_action(...)
-from public, anon, authenticated;
-grant execute on function public.server_owned_table_action(...)
-to service_role;
+create policy "Service role can manage server-owned table"
+  on private.server_owned_table
+  for all
+  to service_role
+  using (true)
+  with check (true);
 ```
 
 ## Common RLS Helpers

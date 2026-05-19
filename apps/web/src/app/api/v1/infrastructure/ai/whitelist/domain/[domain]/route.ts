@@ -1,37 +1,31 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { hasAIWhitelistAccess } from '@/lib/ai-whitelist/authorization';
+import {
+  deleteAIWhitelistDomain,
+  updateAIWhitelistDomainEnabled,
+} from '@/lib/ai-whitelist/domain-repository';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+function forbiddenResponse() {
+  return NextResponse.json(
+    { message: 'You are not allowed to perform this action' },
+    { status: 403 }
+  );
+}
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ domain: string }> }
 ) {
   try {
-    const supabase = await createClient();
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.email?.endsWith('@tuturuuu.com'))
-      return NextResponse.json(
-        { message: 'You are not allowed to perform this action' },
-        { status: 403 }
-      );
-
-    const sbAdmin = await createAdminClient();
+    if (!(await hasAIWhitelistAccess(request))) {
+      return forbiddenResponse();
+    }
 
     const { domain } = await params;
     const { enabled } = await request.json();
 
-    const { error } = await sbAdmin
-      .from('ai_whitelisted_domains')
-      .update({ enabled })
-      .eq('domain', domain);
-
-    if (error) throw error;
+    await updateAIWhitelistDomainEnabled(domain, Boolean(enabled));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -41,30 +35,17 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ domain: string }> }
 ) {
   try {
-    const supabase = await createClient();
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user?.email?.endsWith('@tuturuuu.com'))
-      return NextResponse.json(
-        { message: 'You are not allowed to perform this action' },
-        { status: 403 }
-      );
-
-    const sbAdmin = await createAdminClient();
+    if (!(await hasAIWhitelistAccess(request))) {
+      return forbiddenResponse();
+    }
 
     const { domain } = await params;
 
-    const { error } = await sbAdmin
-      .from('ai_whitelisted_domains')
-      .delete()
-      .eq('domain', domain);
-
-    if (error) throw error;
+    await deleteAIWhitelistDomain(domain);
 
     return NextResponse.json({ success: true });
   } catch (error) {

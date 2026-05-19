@@ -1,6 +1,5 @@
 export const PROXY_ONLY_PUBLIC_TABLES = [
   'ai_gateway_models',
-  'ai_whitelisted_domains',
   'external_user_monthly_report_logs',
   'external_user_monthly_reports',
   'form_questions',

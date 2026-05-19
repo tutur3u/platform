@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Loader2 } from '@tuturuuu/icons';
+import { updateAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure';
 import type { AIWhitelistDomain } from '@tuturuuu/types';
 import type { ColumnGeneratorOptions } from '@tuturuuu/ui/custom/tables/data-table';
 import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-column-header';
@@ -31,19 +32,7 @@ export const getAIWhitelistDomainColumns = ({
       domain: string;
       enabled: boolean;
     }) => {
-      const res = await fetch(
-        `/api/v1/infrastructure/ai/whitelist/domain/${domain}`,
-        {
-          method: 'PUT',
-          body: JSON.stringify({ domain, enabled }),
-        }
-      );
-
-      if (!res.ok) {
-        throw new Error('Failed to toggle whitelist status');
-      }
-
-      return res.json();
+      return updateAIWhitelistDomain(domain, { enabled });
     },
     onMutate: async ({ domain, enabled }) => {
       await queryClient.cancelQueries({ queryKey: ['ai-whitelist-domains'] });

@@ -1,8 +1,8 @@
 'use client';
 
+import { createAIWhitelistDomain } from '@tuturuuu/internal-api/infrastructure';
 import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { useTranslations } from 'next-intl';
-import { addWhitelistDomain } from '../emails/actions';
 import WhitelistDomainForm from './domain-form';
 
 interface Props {
@@ -19,12 +19,11 @@ export default function WhitelistDomainClient({ wsId, onFinish }: Props) {
     description?: string;
   }) => {
     try {
-      await addWhitelistDomain(
-        wsId,
-        values.domain,
-        values.description ?? null,
-        true
-      );
+      await createAIWhitelistDomain({
+        description: values.description ?? null,
+        domain: values.domain,
+        enabled: true,
+      });
       toast({
         title: t('common.success'),
         description: t('common.domain_added'),

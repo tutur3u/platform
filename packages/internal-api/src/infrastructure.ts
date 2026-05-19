@@ -1,4 +1,9 @@
-import { getInternalApiClient, type InternalApiClientOptions } from './client';
+import type { AIWhitelistDomain } from '@tuturuuu/types';
+import {
+  encodePathSegment,
+  getInternalApiClient,
+  type InternalApiClientOptions,
+} from './client';
 
 export interface MobilePlatformVersionPolicyPayload {
   effectiveVersion: string | null;
@@ -30,6 +35,29 @@ export interface ExternalAppRegistration {
 export interface ExternalAppsResponse {
   apps: ExternalAppRegistration[];
 }
+
+export interface AIWhitelistDomainsResponse {
+  count: number;
+  data: AIWhitelistDomain[];
+}
+
+export interface AIWhitelistDomainResponse {
+  data: AIWhitelistDomain;
+}
+
+export interface ListAIWhitelistDomainsParams {
+  page?: number | string;
+  pageSize?: number | string;
+  q?: string;
+}
+
+export type CreateAIWhitelistDomainPayload = Pick<
+  AIWhitelistDomain,
+  'description' | 'domain'
+> &
+  Partial<Pick<AIWhitelistDomain, 'enabled'>>;
+
+export type UpdateAIWhitelistDomainPayload = Pick<AIWhitelistDomain, 'enabled'>;
 
 export interface SaveExternalAppPayload {
   allowedScopes?: string[];
@@ -1164,6 +1192,75 @@ export async function updateMobileVersionPolicies(
     },
     method: 'PUT',
   });
+}
+
+export async function listAIWhitelistDomains(
+  params?: ListAIWhitelistDomainsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AIWhitelistDomainsResponse>(
+    '/api/v1/infrastructure/ai/whitelist/domains',
+    {
+      cache: 'no-store',
+      query: {
+        page: params?.page,
+        pageSize: params?.pageSize,
+        q: params?.q,
+      },
+    }
+  );
+}
+
+export async function createAIWhitelistDomain(
+  payload: CreateAIWhitelistDomainPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AIWhitelistDomainResponse>(
+    '/api/v1/infrastructure/ai/whitelist/domains',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateAIWhitelistDomain(
+  domain: string,
+  payload: UpdateAIWhitelistDomainPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/infrastructure/ai/whitelist/domain/${encodePathSegment(domain)}`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
+    }
+  );
+}
+
+export async function deleteAIWhitelistDomain(
+  domain: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: true }>(
+    `/api/v1/infrastructure/ai/whitelist/domain/${encodePathSegment(domain)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
 }
 
 export async function listExternalApps(options?: InternalApiClientOptions) {
