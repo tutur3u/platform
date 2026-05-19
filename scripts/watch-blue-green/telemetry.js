@@ -3,6 +3,8 @@ const path = require('node:path');
 
 const MAX_RECENT_REQUESTS = 120;
 const MAX_REQUEST_CONSOLE_LOGS = 20;
+const MAX_REQUEST_LOG_BYTES = 256 * 1024 * 1024;
+const MAX_REQUEST_LOG_BYTES_ENV = 'DOCKER_WEB_WATCHER_MAX_REQUEST_LOG_BYTES';
 const MAX_REQUEST_LOG_RECORDS = 100_000_000;
 const PERIOD_RETENTION = {
   daily: 35,
@@ -41,6 +43,7 @@ function createEmptyTelemetryState() {
     currentChunkCount: 0,
     currentChunkFile: null,
     cursor: null,
+    totalBytes: 0,
     totalRecords: 0,
   };
 }
@@ -74,12 +77,15 @@ function readTelemetryState(paths, fsImpl = fs) {
     fsImpl
   );
 
-  return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-    ? {
-        ...createEmptyTelemetryState(),
-        ...parsed,
-      }
-    : createEmptyTelemetryState();
+  const state =
+    parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      ? {
+          ...createEmptyTelemetryState(),
+          ...parsed,
+        }
+      : createEmptyTelemetryState();
+
+  return normalizeTelemetryState(state, paths, fsImpl);
 }
 
 function readTelemetrySummary(paths, fsImpl = fs) {
@@ -103,6 +109,68 @@ function writeTelemetryState(paths, state, fsImpl = fs) {
 
 function writeTelemetrySummary(paths, summary, fsImpl = fs) {
   writeJsonFile(paths.requestSummaryFile, summary, fsImpl);
+}
+
+function parsePositiveInteger(value) {
+  if (value == null || String(value).trim().length === 0) {
+    return null;
+  }
+
+  const parsed = Number(String(value).trim());
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function getMaxRequestLogBytes(env = process.env) {
+  return (
+    parsePositiveInteger(env?.[MAX_REQUEST_LOG_BYTES_ENV]) ??
+    MAX_REQUEST_LOG_BYTES
+  );
+}
+
+function getExistingFileSize(filePath, fsImpl = fs) {
+  try {
+    return fsImpl.existsSync(filePath) ? fsImpl.statSync(filePath).size : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function normalizeTelemetryState(state, paths, fsImpl = fs) {
+  const chunks = (Array.isArray(state.chunks) ? state.chunks : [])
+    .filter(
+      (chunk) =>
+        chunk &&
+        typeof chunk === 'object' &&
+        !Array.isArray(chunk) &&
+        typeof chunk.file === 'string' &&
+        chunk.file.length > 0
+    )
+    .map((chunk) => {
+      const chunkPath = path.join(paths.requestLogDir, chunk.file);
+      return {
+        ...chunk,
+        bytes:
+          Number.isFinite(chunk.bytes) && chunk.bytes >= 0
+            ? chunk.bytes
+            : getExistingFileSize(chunkPath, fsImpl),
+        count:
+          Number.isFinite(chunk.count) && chunk.count >= 0 ? chunk.count : 0,
+      };
+    });
+
+  const currentChunk = chunks.find(
+    (chunk) => chunk.file === state.currentChunkFile
+  );
+
+  return {
+    ...createEmptyTelemetryState(),
+    ...state,
+    chunks,
+    currentChunkCount: currentChunk?.count ?? 0,
+    currentChunkFile: currentChunk?.file ?? null,
+    totalBytes: chunks.reduce((sum, chunk) => sum + chunk.bytes, 0),
+    totalRecords: chunks.reduce((sum, chunk) => sum + chunk.count, 0),
+  };
 }
 
 function normalizePath(value) {
@@ -797,23 +865,32 @@ function getInitialSinceTime(deployments, summary, now = Date.now()) {
   );
 }
 
-function ensureCurrentChunk(state, paths, fsImpl = fs) {
+function getCurrentChunkMetadata(state) {
+  return Array.isArray(state.chunks)
+    ? state.chunks.find((chunk) => chunk.file === state.currentChunkFile)
+    : null;
+}
+
+function createRequestLogChunk(state, paths, fsImpl = fs) {
   fsImpl.mkdirSync(paths.requestLogDir, { recursive: true });
 
-  if (
-    state.currentChunkFile &&
-    state.currentChunkCount < REQUEST_LOG_CHUNK_SIZE &&
-    fsImpl.existsSync(path.join(paths.requestLogDir, state.currentChunkFile))
+  const baseName = `requests-${Date.now()}`;
+  let chunkName = `${baseName}.jsonl`;
+  let suffix = 1;
+  while (
+    state.chunks.some((chunk) => chunk.file === chunkName) ||
+    fsImpl.existsSync(path.join(paths.requestLogDir, chunkName))
   ) {
-    return state.currentChunkFile;
+    chunkName = `${baseName}-${suffix}.jsonl`;
+    suffix += 1;
   }
 
-  const chunkName = `requests-${Date.now()}.jsonl`;
   state.currentChunkFile = chunkName;
   state.currentChunkCount = 0;
   state.chunks = [
     ...(Array.isArray(state.chunks) ? state.chunks : []),
     {
+      bytes: 0,
       count: 0,
       file: chunkName,
       firstRequestAt: null,
@@ -824,24 +901,126 @@ function ensureCurrentChunk(state, paths, fsImpl = fs) {
   return chunkName;
 }
 
-function appendEntriesToLogStore(entries, paths, state, fsImpl = fs) {
+function ensureCurrentChunk(state, paths, fsImpl = fs) {
+  fsImpl.mkdirSync(paths.requestLogDir, { recursive: true });
+
+  const currentChunk = getCurrentChunkMetadata(state);
+  if (
+    state.currentChunkFile &&
+    currentChunk &&
+    state.currentChunkCount < REQUEST_LOG_CHUNK_SIZE &&
+    (currentChunk.count === 0 ||
+      fsImpl.existsSync(path.join(paths.requestLogDir, state.currentChunkFile)))
+  ) {
+    return state.currentChunkFile;
+  }
+
+  return createRequestLogChunk(state, paths, fsImpl);
+}
+
+function removeOldestRequestLogChunk(state, paths, fsImpl = fs) {
+  const oldestChunk = state.chunks.shift();
+
+  if (!oldestChunk) {
+    return false;
+  }
+
+  const oldestChunkPath = path.join(paths.requestLogDir, oldestChunk.file);
+  const removedChunkBytes = Number.isFinite(oldestChunk.bytes)
+    ? oldestChunk.bytes
+    : getExistingFileSize(oldestChunkPath, fsImpl);
+
+  fsImpl.rmSync(oldestChunkPath, {
+    force: true,
+  });
+
+  state.totalRecords = Math.max(0, state.totalRecords - oldestChunk.count);
+  state.totalBytes = Math.max(0, state.totalBytes - removedChunkBytes);
+
+  if (state.currentChunkFile === oldestChunk.file) {
+    state.currentChunkFile = null;
+    state.currentChunkCount = 0;
+  }
+
+  return true;
+}
+
+function pruneLogStoreForIncomingEntry(
+  state,
+  paths,
+  incomingBytes,
+  { fsImpl = fs, maxRequestLogBytes = MAX_REQUEST_LOG_BYTES } = {}
+) {
+  if (incomingBytes > maxRequestLogBytes) {
+    return false;
+  }
+
+  if (
+    state.totalRecords + 1 <= MAX_REQUEST_LOG_RECORDS &&
+    state.totalBytes + incomingBytes <= maxRequestLogBytes
+  ) {
+    return true;
+  }
+
+  const currentChunk = getCurrentChunkMetadata(state);
+  if (
+    state.chunks.length > 0 &&
+    (!currentChunk || currentChunk.count > 0 || currentChunk.bytes > 0)
+  ) {
+    createRequestLogChunk(state, paths, fsImpl);
+  }
+
+  while (
+    (state.totalRecords + 1 > MAX_REQUEST_LOG_RECORDS ||
+      state.totalBytes + incomingBytes > maxRequestLogBytes) &&
+    state.chunks.length > 1
+  ) {
+    removeOldestRequestLogChunk(state, paths, fsImpl);
+  }
+
+  return (
+    state.totalRecords + 1 <= MAX_REQUEST_LOG_RECORDS &&
+    state.totalBytes + incomingBytes <= maxRequestLogBytes
+  );
+}
+
+function appendEntriesToLogStore(
+  entries,
+  paths,
+  state,
+  fsImpl = fs,
+  { maxRequestLogBytes = MAX_REQUEST_LOG_BYTES } = {}
+) {
   if (entries.length === 0) {
     return;
   }
 
   for (const entry of entries) {
+    const serializedEntry = `${JSON.stringify(toCompactRequestEntry(entry, entry.deploymentKey ?? null))}\n`;
+    const serializedEntryBytes = Buffer.byteLength(serializedEntry, 'utf8');
+
+    if (
+      !pruneLogStoreForIncomingEntry(state, paths, serializedEntryBytes, {
+        fsImpl,
+        maxRequestLogBytes,
+      })
+    ) {
+      continue;
+    }
+
     const chunkFile = ensureCurrentChunk(state, paths, fsImpl);
     const chunkPath = path.join(paths.requestLogDir, chunkFile);
-    fsImpl.appendFileSync(
-      chunkPath,
-      `${JSON.stringify(toCompactRequestEntry(entry, entry.deploymentKey ?? null))}\n`,
-      'utf8'
-    );
+    fsImpl.appendFileSync(chunkPath, serializedEntry, 'utf8');
 
     state.currentChunkCount += 1;
     state.totalRecords += 1;
-    const chunkMetadata = state.chunks[state.chunks.length - 1];
+    state.totalBytes += serializedEntryBytes;
+    const chunkMetadata = getCurrentChunkMetadata(state);
+    if (!chunkMetadata) {
+      continue;
+    }
     chunkMetadata.count += 1;
+    chunkMetadata.bytes += serializedEntryBytes;
     chunkMetadata.firstRequestAt =
       chunkMetadata.firstRequestAt == null
         ? entry.time
@@ -852,21 +1031,8 @@ function appendEntriesToLogStore(entries, paths, state, fsImpl = fs) {
         : Math.max(chunkMetadata.lastRequestAt, entry.time);
   }
 
-  while (
-    state.totalRecords > MAX_REQUEST_LOG_RECORDS &&
-    state.chunks.length > 1
-  ) {
-    const oldestChunk = state.chunks.shift();
-
-    if (!oldestChunk) {
-      break;
-    }
-
-    fsImpl.rmSync(path.join(paths.requestLogDir, oldestChunk.file), {
-      force: true,
-    });
-    state.totalRecords = Math.max(0, state.totalRecords - oldestChunk.count);
-  }
+  const currentChunk = getCurrentChunkMetadata(state);
+  state.currentChunkCount = currentChunk?.count ?? 0;
 }
 
 function applyEntriesToTelemetrySummary(summary, entries, deployments, now) {
@@ -1014,7 +1180,9 @@ async function syncProxyTrafficStore(
     };
   });
 
-  appendEntriesToLogStore(enrichedEntries, paths, state, fsImpl);
+  appendEntriesToLogStore(enrichedEntries, paths, state, fsImpl, {
+    maxRequestLogBytes: getMaxRequestLogBytes(env),
+  });
   applyEntriesToTelemetrySummary(summary, enrichedEntries, deployments, now);
 
   const lastTimestamp = enrichedEntries[enrichedEntries.length - 1].time;
@@ -1142,10 +1310,13 @@ function enrichDeploymentsWithTelemetry(
 module.exports = {
   INTERNAL_PROXY_METRIC_EXCLUDE_PATHS,
   MAX_REQUEST_CONSOLE_LOGS,
+  MAX_REQUEST_LOG_BYTES,
+  MAX_REQUEST_LOG_BYTES_ENV,
   MAX_REQUEST_LOG_RECORDS,
   PERIOD_RETENTION,
   createEmptyTelemetrySummary,
   enrichDeploymentsWithTelemetry,
+  getMaxRequestLogBytes,
   getDeploymentStorageKey,
   parseContainerConsoleLogEntries,
   parseProxyLogEntries,

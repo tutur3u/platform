@@ -468,6 +468,9 @@ Useful host-supervisor knobs:
   commands to run after Docker is reachable again and before Tuturuuu recreates
   its watcher container. Each entry is an object with `command`, `args`, and an
   optional `cwd`.
+- `DOCKER_WEB_WATCHER_MAX_REQUEST_LOG_BYTES`: maximum durable proxy
+  request-log ledger size before the watcher rotates and prunes older JSONL
+  chunks before appending new entries; default 268435456 bytes.
 
 Timing, disable, and email alert values can be updated from Infrastructure
 Monitoring in the web dashboard. The dashboard writes
@@ -1221,9 +1224,13 @@ Dashboard details:
   can show request-scoped server console output after the live Docker logs have
   moved on.
 - The watcher retains up to 10,000 deployment history entries and up to
-  100,000,000 recent drained request-log records on disk, with rolling
-  daily/weekly/monthly/yearly metric buckets plus a recent-request excerpt for
-  the monitoring dashboard.
+  100,000,000 recent drained request-log records on disk, bounded by a 256 MiB
+  durable request-log byte cap by default. When the next request record would
+  exceed the byte cap, the watcher rotates the current JSONL chunk if needed
+  and prunes older chunks before appending, so public request URIs cannot grow
+  the host-backed ledger without an aggregate limit. Rolling
+  daily/weekly/monthly/yearly metric buckets plus a recent-request excerpt still
+  feed the monitoring dashboard.
 - The watcher also persists a separate latest-log ledger under
   `tmp/docker-web/watch/blue-green-auto-deploy.logs.json`, which captures the
   high-level poll/pull/build/deploy watcher messages with deployment stamps and
