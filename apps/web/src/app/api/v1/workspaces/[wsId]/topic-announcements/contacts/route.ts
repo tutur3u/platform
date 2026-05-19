@@ -1,40 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getContactVerificationStatuses } from '../email';
 import {
   normalizeEmail,
   resolveTopicAnnouncementsAccess,
+  serializeTopicAnnouncementContacts,
   TopicAnnouncementContactSchema,
   validateTopicAnnouncementWorkspaceUserId,
 } from '../shared';
 
 interface Params {
   params: Promise<{ wsId: string }>;
-}
-
-function serializeContact(
-  contact: {
-    archived: boolean;
-    created_at: string;
-    email: string;
-    id: string;
-    metadata: unknown;
-    name: string;
-    tags: string[];
-    workspace_user_id: string | null;
-  },
-  verificationStatus: string
-) {
-  return {
-    archived: contact.archived,
-    createdAt: contact.created_at,
-    email: contact.email,
-    id: contact.id,
-    metadata: contact.metadata,
-    name: contact.name,
-    tags: contact.tags,
-    verificationStatus,
-    workspaceUserId: contact.workspace_user_id,
-  };
 }
 
 export async function GET(request: Request, { params }: Params) {
@@ -61,18 +35,8 @@ export async function GET(request: Request, { params }: Params) {
   const { data, error } = await query.limit(500);
   if (error) throw error;
 
-  const statuses = await getContactVerificationStatuses(
-    sbAdmin,
-    (data ?? []).map((contact: any) => contact.id)
-  );
-
   return NextResponse.json({
-    data: (data ?? []).map((contact: any) =>
-      serializeContact(
-        contact,
-        statuses.get(contact.id) ?? 'needs_verification'
-      )
-    ),
+    data: await serializeTopicAnnouncementContacts(sbAdmin, data ?? []),
   });
 }
 
@@ -140,8 +104,9 @@ export async function POST(request: Request, { params }: Params) {
     .single();
   if (error) throw error;
 
-  return NextResponse.json(
-    { data: serializeContact(data, 'needs_verification') },
-    { status: 201 }
-  );
+  const [serialized] = await serializeTopicAnnouncementContacts(sbAdmin, [
+    data,
+  ]);
+
+  return NextResponse.json({ data: serialized }, { status: 201 });
 }

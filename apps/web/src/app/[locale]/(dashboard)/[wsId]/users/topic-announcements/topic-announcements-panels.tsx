@@ -4,6 +4,8 @@ import type {
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
   TopicAnnouncementRecord,
+  TopicAnnouncementTemplateRecord,
+  WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
@@ -18,12 +20,14 @@ import {
 import { useTranslations } from 'next-intl';
 import { AnnouncementForm } from './announcement-form';
 import { AnnouncementTable } from './announcement-table';
+import type { TemplateFormValues } from './template-form-dialog';
 
 const STATUS_LABEL_KEYS = {
   all: 'status_all',
   cancelled: 'status_cancelled',
   draft: 'status_draft',
   failed: 'status_failed',
+  queued: 'status_queued',
   sent: 'status_sent',
   skipped: 'status_skipped',
 } as const;
@@ -38,16 +42,25 @@ interface Props {
   groups: UserGroup[];
   isCreating: boolean;
   isLoading: boolean;
+  isSavingTemplate: boolean;
+  isScheduling: boolean;
   isSending: boolean;
+  onCancelSchedule: (announcementId: string) => void;
   onCreate: (payload: TopicAnnouncementPayload) => void;
   onPageChange: (page: number) => void;
   onQueryChange: (query: string) => void;
+  onSaveTemplate: (values: TemplateFormValues) => void;
+  onSchedule: (announcementId: string, scheduledSendAt: string) => void;
   onSend: (announcementId: string) => void;
   onStatusChange: (status: string) => void;
+  onTimezoneRequired: () => void;
   page: number;
   query: string;
+  schedulingTimezone: string | null;
   status: string;
+  templates: TopicAnnouncementTemplateRecord[];
   totalPages: number;
+  workspaceUsers: WorkspaceBasicUserRecord[];
 }
 
 export function AnnouncementsPanel({
@@ -57,16 +70,25 @@ export function AnnouncementsPanel({
   groups,
   isCreating,
   isLoading,
+  isSavingTemplate,
+  isScheduling,
   isSending,
+  onCancelSchedule,
   onCreate,
   onPageChange,
   onQueryChange,
+  onSaveTemplate,
+  onSchedule,
   onSend,
   onStatusChange,
+  onTimezoneRequired,
   page,
   query,
+  schedulingTimezone,
   status,
+  templates,
   totalPages,
+  workspaceUsers,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
 
@@ -76,17 +98,21 @@ export function AnnouncementsPanel({
         contacts={contacts}
         groups={groups}
         isCreating={isCreating}
+        isSavingTemplate={isSavingTemplate}
         onCreate={onCreate}
+        onSaveTemplate={onSaveTemplate}
+        templates={templates}
+        workspaceUsers={workspaceUsers}
       />
 
       <div className="flex flex-wrap items-center gap-3">
         <Input
           className="max-w-sm"
+          onChange={(event) => onQueryChange(event.target.value)}
           placeholder={t('search')}
           value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
         />
-        <Select value={status} onValueChange={onStatusChange}>
+        <Select onValueChange={onStatusChange} value={status}>
           <SelectTrigger className="w-48">
             <SelectValue />
           </SelectTrigger>
@@ -104,8 +130,13 @@ export function AnnouncementsPanel({
         announcements={announcements}
         canSend={canSend}
         isLoading={isLoading}
+        isScheduling={isScheduling}
         isSending={isSending}
+        onCancelSchedule={onCancelSchedule}
+        onSchedule={onSchedule}
         onSend={onSend}
+        onTimezoneRequired={onTimezoneRequired}
+        schedulingTimezone={schedulingTimezone}
       />
 
       <div className="flex items-center justify-end gap-2">

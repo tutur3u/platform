@@ -29,6 +29,13 @@
       "schedule": "*/30 * * * *"
     },
     {
+      "description": "Send scheduled topic announcements that are due.",
+      "enabled": true,
+      "id": "process-topic-announcement-queue",
+      "path": "/api/cron/process-topic-announcement-queue",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "description": "Synchronize calendar provider data.",
       "enabled": true,
       "id": "calendar-provider-sync",

@@ -1,11 +1,20 @@
 'use client';
 
-import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
+import type {
+  TopicAnnouncementContact,
+  WorkspaceBasicUserRecord,
+} from '@tuturuuu/internal-api';
+import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
+import {
+  getWorkspaceUserDisplayName,
+  getWorkspaceUserInitials,
+} from './workspace-user-display';
 
 function canReceiveAnnouncement(contact: TopicAnnouncementContact) {
   return ['verified', 'linked_confirmed_account'].includes(
@@ -15,24 +24,30 @@ function canReceiveAnnouncement(contact: TopicAnnouncementContact) {
 
 interface Props {
   contacts: TopicAnnouncementContact[];
-  selectedIds: string[];
   onChange: (contactIds: string[]) => void;
+  selectedIds: string[];
+  workspaceUsers: WorkspaceBasicUserRecord[];
 }
 
 function RecipientRow({
   contact,
   disabled,
   isSelected,
+  linkedUser,
   onToggle,
   t,
 }: {
   contact: TopicAnnouncementContact;
   disabled?: boolean;
   isSelected: boolean;
+  linkedUser?: WorkspaceBasicUserRecord;
   onToggle: (checked: boolean) => void;
   t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
 }) {
   const isReady = canReceiveAnnouncement(contact);
+  const linkedLabel = linkedUser
+    ? getWorkspaceUserDisplayName(linkedUser)
+    : null;
 
   return (
     <label className="flex items-start gap-3 rounded-md border border-transparent px-2 py-2 hover:bg-foreground/5">
@@ -42,6 +57,19 @@ function RecipientRow({
         disabled={disabled || !isReady}
         onCheckedChange={(checked) => onToggle(checked === true)}
       />
+      {linkedUser ? (
+        <Avatar className="mt-0.5 h-8 w-8 shrink-0">
+          {linkedUser.avatar_url ? (
+            <AvatarImage
+              alt={linkedLabel ?? contact.name}
+              src={linkedUser.avatar_url}
+            />
+          ) : null}
+          <AvatarFallback className="bg-dynamic-green/10 text-[10px] text-dynamic-green">
+            {getWorkspaceUserInitials(linkedUser)}
+          </AvatarFallback>
+        </Avatar>
+      ) : null}
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="font-medium text-sm">{contact.name}</span>
@@ -64,6 +92,7 @@ function RecipientSection({
   t,
   title,
   toggleContact,
+  workspaceUsersById,
 }: {
   contacts: TopicAnnouncementContact[];
   disabled?: boolean;
@@ -71,6 +100,7 @@ function RecipientSection({
   t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
   title: string;
   toggleContact: (contactId: string, checked: boolean) => void;
+  workspaceUsersById: Map<string, WorkspaceBasicUserRecord>;
 }) {
   if (contacts.length === 0) return null;
 
@@ -85,6 +115,11 @@ function RecipientSection({
           disabled={disabled}
           isSelected={selectedIds.includes(contact.id)}
           key={contact.id}
+          linkedUser={
+            contact.workspaceUserId
+              ? workspaceUsersById.get(contact.workspaceUserId)
+              : undefined
+          }
           onToggle={(checked) => toggleContact(contact.id, checked)}
           t={t}
         />
@@ -97,8 +132,13 @@ export function AnnouncementRecipientsPicker({
   contacts,
   onChange,
   selectedIds,
+  workspaceUsers,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const workspaceUsersById = useMemo(
+    () => new Map(workspaceUsers.map((user) => [user.id, user])),
+    [workspaceUsers]
+  );
   const readyContacts = contacts.filter(canReceiveAnnouncement);
   const pendingContacts = contacts.filter(
     (contact) => !canReceiveAnnouncement(contact)
@@ -141,6 +181,7 @@ export function AnnouncementRecipientsPicker({
               t={t}
               title={t('ready_recipients')}
               toggleContact={toggleContact}
+              workspaceUsersById={workspaceUsersById}
             />
             <RecipientSection
               contacts={pendingContacts}
@@ -149,6 +190,7 @@ export function AnnouncementRecipientsPicker({
               t={t}
               title={t('pending_recipients')}
               toggleContact={toggleContact}
+              workspaceUsersById={workspaceUsersById}
             />
           </div>
         </ScrollArea>

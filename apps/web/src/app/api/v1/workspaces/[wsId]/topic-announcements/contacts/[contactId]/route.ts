@@ -3,6 +3,7 @@ import { getContactVerificationStatuses } from '../../email';
 import {
   normalizeEmail,
   resolveTopicAnnouncementsAccess,
+  serializeTopicAnnouncementContact,
   TopicAnnouncementContactSchema,
 } from '../../shared';
 
@@ -69,17 +70,10 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const statuses = await getContactVerificationStatuses(sbAdmin, [contactId]);
   return NextResponse.json({
-    data: {
-      archived: data.archived,
-      createdAt: data.created_at,
-      email: data.email,
-      id: data.id,
-      metadata: data.metadata,
-      name: data.name,
-      tags: data.tags,
-      verificationStatus: statuses.get(contactId) ?? 'needs_verification',
-      workspaceUserId: data.workspace_user_id,
-    },
+    data: serializeTopicAnnouncementContact(
+      data,
+      statuses.get(contactId) ?? 'needs_verification'
+    ),
   });
 }
 

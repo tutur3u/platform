@@ -2,8 +2,8 @@
 
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
-  listWorkspaceBasicUsers,
   type ListWorkspaceBasicUsersResponse,
+  listWorkspaceBasicUsers,
   type WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';

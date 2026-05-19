@@ -15748,6 +15748,200 @@ export type Database = {
           },
         ];
       };
+      topic_announcement_templates: {
+        Row: {
+          class_label: string | null;
+          created_at: string;
+          created_by: string | null;
+          day_label: string | null;
+          default_contact_ids: string[];
+          group_id: string | null;
+          id: string;
+          name: string;
+          place: string | null;
+          room: string | null;
+          session_date: string | null;
+          start_time: string | null;
+          title: string;
+          topic: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          default_contact_ids?: string[];
+          group_id?: string | null;
+          id?: string;
+          name: string;
+          place?: string | null;
+          room?: string | null;
+          session_date?: string | null;
+          start_time?: string | null;
+          title: string;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          default_contact_ids?: string[];
+          group_id?: string | null;
+          id?: string;
+          name?: string;
+          place?: string | null;
+          room?: string | null;
+          session_date?: string | null;
+          start_time?: string | null;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_users_with_post_checks';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'group_with_attendance';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts_dashboard_view';
+            referencedColumns: ['group_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_groups_with_tags';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_amount';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_user_groups_with_guest';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
+            columns: ['updated_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       topic_announcements: {
         Row: {
           batch_id: string | null;
@@ -15761,6 +15955,7 @@ export type Database = {
           last_error: string | null;
           place: string | null;
           room: string | null;
+          scheduled_send_at: string | null;
           sent_at: string | null;
           sent_email_audit_id: string | null;
           session_date: string | null;
@@ -15786,6 +15981,7 @@ export type Database = {
           last_error?: string | null;
           place?: string | null;
           room?: string | null;
+          scheduled_send_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;
@@ -15811,6 +16007,7 @@ export type Database = {
           last_error?: string | null;
           place?: string | null;
           room?: string | null;
+          scheduled_send_at?: string | null;
           sent_at?: string | null;
           sent_email_audit_id?: string | null;
           session_date?: string | null;

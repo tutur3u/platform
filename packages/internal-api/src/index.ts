@@ -602,12 +602,17 @@ export {
   updateWorkspaceBreakType,
 } from './time-tracking';
 export {
+  cancelTopicAnnouncementSchedule,
   createTopicAnnouncement,
   createTopicAnnouncementContact,
+  createTopicAnnouncementTemplate,
+  deleteTopicAnnouncementTemplate,
   importTopicAnnouncements,
   listTopicAnnouncementContacts,
   listTopicAnnouncements,
+  listTopicAnnouncementTemplates,
   requestTopicAnnouncementContactVerification,
+  scheduleTopicAnnouncement,
   sendTopicAnnouncement,
   sendTopicAnnouncementsBulk,
   type TopicAnnouncementContact,
@@ -617,9 +622,12 @@ export {
   type TopicAnnouncementPayload,
   type TopicAnnouncementRecord,
   type TopicAnnouncementStatus,
+  type TopicAnnouncementTemplatePayload,
+  type TopicAnnouncementTemplateRecord,
   type TopicAnnouncementVerificationStatus,
   updateTopicAnnouncement,
   updateTopicAnnouncementContact,
+  updateTopicAnnouncementTemplate,
 } from './topic-announcements';
 export {
   type CompleteTulearnAssignmentPayload,

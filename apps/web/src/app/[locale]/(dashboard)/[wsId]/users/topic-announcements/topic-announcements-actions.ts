@@ -2,13 +2,19 @@
 
 import { useMutation } from '@tanstack/react-query';
 import {
+  cancelTopicAnnouncementSchedule,
   createTopicAnnouncement,
   createTopicAnnouncementContact,
+  createTopicAnnouncementTemplate,
+  deleteTopicAnnouncementTemplate,
   importTopicAnnouncements,
   requestTopicAnnouncementContactVerification,
+  scheduleTopicAnnouncement,
   sendTopicAnnouncement,
   type TopicAnnouncementContactPayload,
   type TopicAnnouncementPayload,
+  type TopicAnnouncementTemplatePayload,
+  updateTopicAnnouncementTemplate,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
@@ -63,6 +69,81 @@ export function useTopicAnnouncementActions({ invalidate, wsId }: Options) {
       invalidate();
     },
   });
+  const scheduleMutation = useMutation({
+    mutationFn: ({
+      announcementId,
+      scheduledSendAt,
+    }: {
+      announcementId: string;
+      scheduledSendAt: string;
+    }) => scheduleTopicAnnouncement(wsId, announcementId, { scheduledSendAt }),
+    onError: (error) => {
+      const message =
+        error instanceof Error ? error.message : t('schedule_send_failed');
+      if (message.includes('WORKSPACE_TIMEZONE_REQUIRED')) {
+        toast.error(t('workspace_timezone_required'));
+        return;
+      }
+      toast.error(message);
+    },
+    onSuccess: () => {
+      toast.success(t('schedule_send_success'));
+      invalidate();
+    },
+  });
+  const cancelScheduleMutation = useMutation({
+    mutationFn: (announcementId: string) =>
+      cancelTopicAnnouncementSchedule(wsId, announcementId),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('cancel_schedule_failed')
+      ),
+    onSuccess: () => {
+      toast.success(t('cancel_schedule_success'));
+      invalidate();
+    },
+  });
+  const createTemplateMutation = useMutation({
+    mutationFn: (payload: TopicAnnouncementTemplatePayload) =>
+      createTopicAnnouncementTemplate(wsId, payload),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('template_save_failed')
+      ),
+    onSuccess: () => {
+      toast.success(t('template_saved'));
+      invalidate();
+    },
+  });
+  const updateTemplateMutation = useMutation({
+    mutationFn: ({
+      payload,
+      templateId,
+    }: {
+      payload: Partial<TopicAnnouncementTemplatePayload>;
+      templateId: string;
+    }) => updateTopicAnnouncementTemplate(wsId, templateId, payload),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('template_save_failed')
+      ),
+    onSuccess: () => {
+      toast.success(t('template_saved'));
+      invalidate();
+    },
+  });
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (templateId: string) =>
+      deleteTopicAnnouncementTemplate(wsId, templateId),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('template_delete_failed')
+      ),
+    onSuccess: () => {
+      toast.success(t('template_deleted'));
+      invalidate();
+    },
+  });
   const importMutation = useMutation({
     mutationFn: (rows: Parameters<typeof importTopicAnnouncements>[1]) =>
       importTopicAnnouncements(wsId, rows),
@@ -77,10 +158,15 @@ export function useTopicAnnouncementActions({ invalidate, wsId }: Options) {
   });
 
   return {
+    cancelScheduleMutation,
     createAnnouncementMutation,
     createContactMutation,
+    createTemplateMutation,
+    deleteTemplateMutation,
     importMutation,
+    scheduleMutation,
     sendMutation,
+    updateTemplateMutation,
     verifyMutation,
   };
 }

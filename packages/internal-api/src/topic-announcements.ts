@@ -49,6 +49,7 @@ export interface TopicAnnouncementRecord {
   last_error: string | null;
   place: string | null;
   room: string | null;
+  scheduled_send_at: string | null;
   sent_at: string | null;
   session_date: string | null;
   source_type: string;
@@ -56,6 +57,38 @@ export interface TopicAnnouncementRecord {
   status: TopicAnnouncementStatus;
   title: string;
   topic: string;
+}
+
+export interface TopicAnnouncementTemplateRecord {
+  class_label: string | null;
+  created_at: string;
+  day_label: string | null;
+  default_contact_ids: string[];
+  group: TopicAnnouncementGroupSummary | null;
+  group_id: string | null;
+  id: string;
+  name: string;
+  place: string | null;
+  room: string | null;
+  session_date: string | null;
+  start_time: string | null;
+  title: string;
+  topic: string;
+  updated_at: string;
+}
+
+export interface TopicAnnouncementTemplatePayload {
+  classLabel?: string | null;
+  dayLabel?: string | null;
+  defaultContactIds?: string[];
+  groupId?: string | null;
+  name: string;
+  place?: string | null;
+  room?: string | null;
+  sessionDate?: string | null;
+  startTime?: string | null;
+  title: string;
+  topic?: string;
 }
 
 export interface TopicAnnouncementPayload {
@@ -240,6 +273,98 @@ export async function sendTopicAnnouncement(
       headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     }
+  );
+}
+
+export async function listTopicAnnouncementTemplates(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAnnouncementTemplateRecord[] }>(
+    `${basePath(workspaceId)}/templates`,
+    { cache: 'no-store' }
+  );
+}
+
+export async function createTopicAnnouncementTemplate(
+  workspaceId: string,
+  payload: TopicAnnouncementTemplatePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAnnouncementTemplateRecord }>(
+    `${basePath(workspaceId)}/templates`,
+    {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function updateTopicAnnouncementTemplate(
+  workspaceId: string,
+  templateId: string,
+  payload: Partial<TopicAnnouncementTemplatePayload>,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAnnouncementTemplateRecord }>(
+    `${basePath(workspaceId)}/templates/${encodePathSegment(templateId)}`,
+    {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function deleteTopicAnnouncementTemplate(
+  workspaceId: string,
+  templateId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>(
+    `${basePath(workspaceId)}/templates/${encodePathSegment(templateId)}`,
+    { method: 'DELETE' }
+  );
+}
+
+export async function scheduleTopicAnnouncement(
+  workspaceId: string,
+  announcementId: string,
+  payload: { scheduledSendAt: string },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{
+    data: {
+      id: string;
+      scheduledSendAt: string;
+      status: TopicAnnouncementStatus;
+    };
+    timezone: string;
+  }>(
+    `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}/schedule`,
+    {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function cancelTopicAnnouncementSchedule(
+  workspaceId: string,
+  announcementId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: { id: string; status: TopicAnnouncementStatus } }>(
+    `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}/cancel-schedule`,
+    { method: 'POST' }
   );
 }
 

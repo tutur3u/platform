@@ -9,6 +9,7 @@ interface Props {
   announcementCount: number;
   contactCount: number;
   pendingContactCount: number;
+  queuedAnnouncementCount: number;
   readyContactCount: number;
 }
 
@@ -58,6 +59,7 @@ export function TopicAnnouncementsHeader({
   announcementCount,
   contactCount,
   pendingContactCount,
+  queuedAnnouncementCount,
   readyContactCount,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
@@ -82,7 +84,7 @@ export function TopicAnnouncementsHeader({
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <Metric
           description={t('metric_contacts_description')}
           icon={MailCheck}
@@ -105,10 +107,17 @@ export function TopicAnnouncementsHeader({
           value={pendingContactCount}
         />
         <Metric
+          description={t('metric_queued_description')}
+          icon={TimerReset}
+          label={t('metric_queued')}
+          tone="purple"
+          value={queuedAnnouncementCount}
+        />
+        <Metric
           description={t('metric_announcements_description')}
           icon={Megaphone}
           label={t('metric_announcements')}
-          tone="purple"
+          tone="blue"
           value={announcementCount}
         />
       </div>

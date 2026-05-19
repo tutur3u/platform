@@ -14,6 +14,7 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
+import { getContactVerificationStatuses } from './email';
 
 const EMAIL_SCHEMA = z.string().trim().email().transform(normalizeEmail);
 const OPTIONAL_TEXT_SCHEMA = z
@@ -109,6 +110,91 @@ export const TopicAnnouncementBulkSendSchema = z.object({
   resend: z.boolean().default(false),
 });
 
+export const TopicAnnouncementScheduleSchema = z.object({
+  scheduledSendAt: z.string().datetime(),
+});
+
+export const TopicAnnouncementTemplateSchema = z.object({
+  classLabel: OPTIONAL_TEXT_SCHEMA,
+  dayLabel: OPTIONAL_TEXT_SCHEMA,
+  defaultContactIds: z.array(z.string().uuid()).max(50).default([]),
+  groupId: z.string().uuid().nullable().optional(),
+  name: z.string().trim().min(1).max(120),
+  place: OPTIONAL_TEXT_SCHEMA,
+  room: OPTIONAL_TEXT_SCHEMA,
+  sessionDate: z.string().date().nullable().optional(),
+  startTime: z
+    .string()
+    .trim()
+    .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+    .nullable()
+    .optional(),
+  title: z.string().trim().min(1).max(300),
+  topic: z.string().trim().max(20_000).default(''),
+});
+
+export function mapTopicAnnouncementTemplateRow(template: {
+  group?: { id: string; name: string } | { id: string; name: string }[] | null;
+  [key: string]: unknown;
+}) {
+  const { group: rawGroup, default_contact_ids, ...rest } = template;
+  const group = Array.isArray(rawGroup) ? (rawGroup[0] ?? null) : rawGroup;
+
+  return {
+    ...rest,
+    default_contact_ids: default_contact_ids ?? [],
+    group:
+      group && typeof group === 'object' && 'id' in group
+        ? { id: group.id, name: group.name }
+        : null,
+  };
+}
+
+export async function getWorkspaceSchedulingTimezone(
+  sbAdmin: TopicAnnouncementsSupabaseClient,
+  normalizedWsId: string
+) {
+  const { data, error } = await sbAdmin
+    .from('workspaces')
+    .select('timezone')
+    .eq('id', normalizedWsId)
+    .maybeSingle();
+  if (error) throw error;
+  const timezone = data?.timezone?.trim();
+  if (!timezone || timezone === 'auto') {
+    return null;
+  }
+  return timezone;
+}
+
+export async function validateTopicAnnouncementTemplateContactIds({
+  contactIds,
+  normalizedWsId,
+  sbAdmin,
+}: {
+  contactIds: string[];
+  normalizedWsId: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}) {
+  const uniqueIds = [...new Set(contactIds)];
+  if (uniqueIds.length === 0) return null;
+
+  const { data, error } = await sbAdmin
+    .from('topic_announcement_contacts')
+    .select('id')
+    .eq('ws_id', normalizedWsId)
+    .eq('archived', false)
+    .in('id', uniqueIds);
+  if (error) throw error;
+  if ((data ?? []).length !== uniqueIds.length) {
+    return NextResponse.json(
+      { message: 'One or more template contacts are invalid' },
+      { status: 400 }
+    );
+  }
+  return null;
+}
+
 export interface TopicAnnouncementsAccessContext {
   actorUserId: string;
   normalizedWsId: string;
@@ -188,15 +274,80 @@ export async function validateTopicAnnouncementWorkspaceUserId({
   return null;
 }
 
+export type TopicAnnouncementContactRow = {
+  archived: boolean;
+  created_at: string;
+  email: string;
+  id: string;
+  metadata: unknown;
+  name: string;
+  tags: string[];
+  workspace_user_id: string | null;
+};
+
+export type SerializedTopicAnnouncementContact = {
+  archived: boolean;
+  createdAt: string;
+  email: string;
+  id: string;
+  metadata: unknown;
+  name: string;
+  tags: string[];
+  verificationStatus:
+    | 'linked_confirmed_account'
+    | 'needs_verification'
+    | 'pending'
+    | 'verified';
+  workspaceUserId: string | null;
+};
+
+export function serializeTopicAnnouncementContact(
+  contact: TopicAnnouncementContactRow,
+  verificationStatus: SerializedTopicAnnouncementContact['verificationStatus']
+): SerializedTopicAnnouncementContact {
+  return {
+    archived: contact.archived,
+    createdAt: contact.created_at,
+    email: contact.email,
+    id: contact.id,
+    metadata: contact.metadata,
+    name: contact.name,
+    tags: contact.tags,
+    verificationStatus,
+    workspaceUserId: contact.workspace_user_id,
+  };
+}
+
+export async function serializeTopicAnnouncementContacts(
+  sbAdmin: TopicAnnouncementsSupabaseClient,
+  contacts: TopicAnnouncementContactRow[]
+): Promise<SerializedTopicAnnouncementContact[]> {
+  if (contacts.length === 0) return [];
+
+  const statuses = await getContactVerificationStatuses(
+    sbAdmin,
+    contacts.map((contact) => contact.id)
+  );
+
+  return contacts.map((contact) =>
+    serializeTopicAnnouncementContact(
+      contact,
+      statuses.get(contact.id) ?? 'needs_verification'
+    )
+  );
+}
+
 export function mapTopicAnnouncementRow(announcement: {
+  contacts?: SerializedTopicAnnouncementContact[];
   group?: { id: string; name: string } | { id: string; name: string }[] | null;
   [key: string]: unknown;
 }) {
-  const { group: rawGroup, ...rest } = announcement;
+  const { contacts, group: rawGroup, ...rest } = announcement;
   const group = Array.isArray(rawGroup) ? (rawGroup[0] ?? null) : rawGroup;
 
   return {
     ...rest,
+    ...(contacts ? { contacts } : {}),
     group:
       group && typeof group === 'object' && 'id' in group
         ? { id: group.id, name: group.name }

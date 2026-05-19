@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import {
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
+  serializeTopicAnnouncementContacts,
+  type TopicAnnouncementContactRow,
   TopicAnnouncementListQuerySchema,
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
@@ -97,19 +99,34 @@ export async function GET(request: Request, { params }: Params) {
     : { data: [], error: null };
   if (recipientsError) throw recipientsError;
 
-  const recipientsByAnnouncement = new Map<string, unknown[]>();
+  const recipientsByAnnouncement = new Map<
+    string,
+    TopicAnnouncementContactRow[]
+  >();
+  const allContacts: TopicAnnouncementContactRow[] = [];
   for (const row of recipients ?? []) {
+    if (!row.contact) continue;
+    const contact = row.contact as TopicAnnouncementContactRow;
     const list = recipientsByAnnouncement.get(row.announcement_id) ?? [];
-    list.push(row.contact);
+    list.push(contact);
     recipientsByAnnouncement.set(row.announcement_id, list);
+    allContacts.push(contact);
   }
+
+  const serializedById = new Map(
+    (await serializeTopicAnnouncementContacts(sbAdmin, allContacts)).map(
+      (contact) => [contact.id, contact]
+    )
+  );
 
   return NextResponse.json({
     count: count ?? 0,
     data: (data ?? []).map((announcement: any) =>
       mapTopicAnnouncementRow({
         ...announcement,
-        contacts: recipientsByAnnouncement.get(announcement.id) ?? [],
+        contacts: (recipientsByAnnouncement.get(announcement.id) ?? []).map(
+          (contact) => serializedById.get(contact.id) ?? contact
+        ),
       })
     ),
     page,
@@ -193,6 +210,20 @@ export async function POST(request: Request, { params }: Params) {
     sbAdmin,
   });
 
+  const { data: recipientRows, error: recipientsError } = await sbAdmin
+    .from('topic_announcement_recipients')
+    .select('contact:topic_announcement_contacts(*)')
+    .eq('announcement_id', announcement.id);
+  if (recipientsError) throw recipientsError;
+
+  const recipientContacts = (recipientRows ?? [])
+    .map((row: { contact: TopicAnnouncementContactRow | null }) => row.contact)
+    .filter(
+      (
+        contact: TopicAnnouncementContactRow | null
+      ): contact is TopicAnnouncementContactRow => Boolean(contact)
+    );
+
   const { data: enrichedAnnouncement, error: enrichedError } = await sbAdmin
     .from('topic_announcements')
     .select('*, group:workspace_user_groups(id, name)')
@@ -204,7 +235,10 @@ export async function POST(request: Request, { params }: Params) {
     {
       data: mapTopicAnnouncementRow({
         ...(enrichedAnnouncement ?? announcement),
-        contacts: [],
+        contacts: await serializeTopicAnnouncementContacts(
+          sbAdmin,
+          recipientContacts
+        ),
       }),
     },
     { status: 201 }

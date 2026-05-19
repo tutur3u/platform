@@ -75,6 +75,10 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Verification sends enforce a short pending-link cooldown before creating another token, and email delivery applies workspace, user, IP, and recipient limits. The recipient limit is global across workspaces, so one workspace or many workspaces cannot repeatedly send verification links to the same inbox.
 - Actual announcements are sent by the enabled workspace sender and are written to `email_audit`.
 - The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields.
+- Workspace-shared **announcement templates** store reusable title, topic starter text, class metadata, optional default group, and default recipient ids. Operators apply a template in the composer, then edit the topic field before sending.
+- **Scheduled send** sets `status = queued` and `scheduled_send_at` using the workspace's fixed IANA timezone from calendar settings. Scheduling is blocked while the workspace timezone is still `auto` or unset; use the same calendar timezone gate as the main calendar product.
+- The `process-topic-announcement-queue` cron job (every 15 minutes) loads due queued rows and reuses the same `sendTopicAnnouncement` path as manual send. Failed sends keep the existing `failed` / `last_error` handling without infinite retries.
+- Announcement list APIs enrich recipient rows with the same `verificationStatus` contract as the contacts list so the table does not treat missing status as unverified.
 
 ### Implementation Notes
 
