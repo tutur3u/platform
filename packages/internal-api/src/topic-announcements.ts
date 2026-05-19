@@ -31,6 +31,11 @@ export interface TopicAnnouncementContact {
   workspaceUserId: string | null;
 }
 
+export interface TopicAnnouncementGroupSummary {
+  id: string;
+  name: string;
+}
+
 export interface TopicAnnouncementRecord {
   batch_id: string | null;
   body: string;
@@ -38,6 +43,7 @@ export interface TopicAnnouncementRecord {
   contacts: TopicAnnouncementContact[];
   created_at: string;
   day_label: string | null;
+  group: TopicAnnouncementGroupSummary | null;
   group_id: string | null;
   id: string;
   last_error: string | null;

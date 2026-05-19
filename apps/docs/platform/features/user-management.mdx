@@ -67,7 +67,8 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 ### Behavior
 
-- Contacts are workspace-scoped and may be raw email contacts or linked to an existing workspace user profile.
+- Contacts are workspace-scoped and may be raw email contacts or linked to an existing workspace virtual user profile. The linker UI searches workspace users with avatar and email affordances.
+- Announcements may optionally reference a real `workspace_user_groups` row through `group_id` for scheduling and reporting context.
 - A contact cannot receive announcements until its email is verified through the Tuturuuu internal SES verification flow or through a linked Tuturuuu platform account with a confirmed matching email.
 - Verification emails are sent by the root Tuturuuu sender with normal protected delivery checks, not the rate-limit-bypassing system path.
 - Verification links resolve to the public platform origin by default (`https://tuturuuu.com`) so listener hosts such as `0.0.0.0:7803` never leak into recipient inboxes. Set `TOPIC_ANNOUNCEMENT_VERIFICATION_ORIGIN` only when an explicit alternate public origin is required.

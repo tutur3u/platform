@@ -1,7 +1,10 @@
 'use client';
 
 import { MailCheck, ShieldCheck, TimerReset } from '@tuturuuu/icons';
-import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
+import type {
+  TopicAnnouncementContact,
+  WorkspaceBasicUserRecord,
+} from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -13,6 +16,7 @@ import {
   TableRow,
 } from '@tuturuuu/ui/table';
 import { useTranslations } from 'next-intl';
+import { LinkedWorkspaceUserChip } from './linked-workspace-user-chip';
 
 function verificationVariant(
   status: TopicAnnouncementContact['verificationStatus']
@@ -49,6 +53,7 @@ interface Props {
   isLoading: boolean;
   isVerifying: boolean;
   onVerify: (contactId: string) => void;
+  workspaceUsersById: Map<string, WorkspaceBasicUserRecord>;
 }
 
 export function ContactTable({
@@ -56,6 +61,7 @@ export function ContactTable({
   isLoading,
   isVerifying,
   onVerify,
+  workspaceUsersById,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
 
@@ -88,10 +94,16 @@ export function ContactTable({
               <TableCell>
                 <div>{contact.email}</div>
                 {contact.workspaceUserId ? (
-                  <div className="mt-1 flex items-center gap-1 text-dynamic-green text-xs">
-                    <ShieldCheck className="h-3 w-3" />
-                    {t('linked_user')}
-                  </div>
+                  workspaceUsersById.get(contact.workspaceUserId) ? (
+                    <LinkedWorkspaceUserChip
+                      user={workspaceUsersById.get(contact.workspaceUserId)!}
+                    />
+                  ) : (
+                    <div className="mt-1 flex items-center gap-1 text-dynamic-green text-xs">
+                      <ShieldCheck className="h-3 w-3" />
+                      {t('linked_user')}
+                    </div>
+                  )
                 ) : null}
               </TableCell>
               <TableCell>

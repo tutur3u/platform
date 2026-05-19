@@ -5,6 +5,7 @@ import type {
   TopicAnnouncementPayload,
   TopicAnnouncementRecord,
 } from '@tuturuuu/internal-api';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import {
@@ -34,6 +35,7 @@ interface Props {
   announcements: TopicAnnouncementRecord[];
   canSend: boolean;
   contacts: TopicAnnouncementContact[];
+  groups: UserGroup[];
   isCreating: boolean;
   isLoading: boolean;
   isSending: boolean;
@@ -52,6 +54,7 @@ export function AnnouncementsPanel({
   announcements,
   canSend,
   contacts,
+  groups,
   isCreating,
   isLoading,
   isSending,
@@ -71,6 +74,7 @@ export function AnnouncementsPanel({
     <div className="space-y-4">
       <AnnouncementForm
         contacts={contacts}
+        groups={groups}
         isCreating={isCreating}
         onCreate={onCreate}
       />

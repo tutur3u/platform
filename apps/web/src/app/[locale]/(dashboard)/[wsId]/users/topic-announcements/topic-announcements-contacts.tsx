@@ -7,6 +7,7 @@ import type {
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { ContactForm } from './contact-form';
 import { ContactTable } from './contact-table';
 
@@ -18,6 +19,7 @@ interface Props {
   onCreate: (payload: TopicAnnouncementContactPayload) => void;
   onVerify: (contactId: string) => void;
   workspaceUsers: WorkspaceBasicUserRecord[];
+  wsId: string;
 }
 
 export function ContactsPanel({
@@ -28,8 +30,13 @@ export function ContactsPanel({
   onCreate,
   onVerify,
   workspaceUsers,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const workspaceUsersById = useMemo(
+    () => new Map(workspaceUsers.map((user) => [user.id, user])),
+    [workspaceUsers]
+  );
 
   return (
     <div className="space-y-4">
@@ -43,12 +50,14 @@ export function ContactsPanel({
         isCreating={isCreating}
         onCreate={onCreate}
         workspaceUsers={workspaceUsers}
+        wsId={wsId}
       />
       <ContactTable
         contacts={contacts}
         isLoading={isLoading}
         isVerifying={isVerifying}
         onVerify={onVerify}
+        workspaceUsersById={workspaceUsersById}
       />
     </div>
   );

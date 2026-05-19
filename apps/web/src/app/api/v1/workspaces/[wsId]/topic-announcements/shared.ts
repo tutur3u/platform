@@ -130,6 +130,80 @@ export function generateVerificationToken() {
   return randomBytes(32).toString('base64url');
 }
 
+export async function validateTopicAnnouncementGroupId({
+  groupId,
+  normalizedWsId,
+  sbAdmin,
+}: {
+  groupId: string | null | undefined;
+  normalizedWsId: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+}) {
+  if (!groupId) return null;
+
+  const { data, error } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('ws_id', normalizedWsId)
+    .eq('id', groupId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Invalid user group' },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
+export async function validateTopicAnnouncementWorkspaceUserId({
+  normalizedWsId,
+  sbAdmin,
+  workspaceUserId,
+}: {
+  normalizedWsId: string;
+  sbAdmin: TopicAnnouncementsSupabaseClient;
+  workspaceUserId: string | null | undefined;
+}) {
+  if (!workspaceUserId) return null;
+
+  const { data, error } = await sbAdmin
+    .from('workspace_users')
+    .select('id')
+    .eq('ws_id', normalizedWsId)
+    .eq('id', workspaceUserId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Invalid workspace user' },
+      { status: 400 }
+    );
+  }
+
+  return null;
+}
+
+export function mapTopicAnnouncementRow(announcement: {
+  group?: { id: string; name: string } | { id: string; name: string }[] | null;
+  [key: string]: unknown;
+}) {
+  const { group: rawGroup, ...rest } = announcement;
+  const group = Array.isArray(rawGroup) ? (rawGroup[0] ?? null) : rawGroup;
+
+  return {
+    ...rest,
+    group:
+      group && typeof group === 'object' && 'id' in group
+        ? { id: group.id, name: group.name }
+        : null,
+  };
+}
+
 const TOPIC_ANNOUNCEMENT_VERIFICATION_FALLBACK_ORIGIN = 'https://tuturuuu.com';
 
 function isLocalVerificationOrigin(value: string) {

@@ -3,6 +3,7 @@ import {
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
+  validateTopicAnnouncementGroupId,
 } from '../../shared';
 
 interface Params {
@@ -57,6 +58,15 @@ export async function PATCH(request: Request, { params }: Params) {
 
   const { actorUserId, normalizedWsId, sbAdmin } = access.context;
   const payload = parsed.data;
+
+  if (payload.groupId !== undefined) {
+    const invalidGroup = await validateTopicAnnouncementGroupId({
+      groupId: payload.groupId,
+      normalizedWsId,
+      sbAdmin,
+    });
+    if (invalidGroup) return invalidGroup;
+  }
 
   if (payload.contactIds) {
     const { data: contacts, error: contactsError } = await sbAdmin

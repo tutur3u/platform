@@ -5,32 +5,36 @@ import type {
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
 } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
+import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
-import { Checkbox } from '@tuturuuu/ui/checkbox';
+import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { AnnouncementRecipientsPicker } from './announcement-recipients-picker';
+
+const NO_GROUP = '__none__';
 
 interface Props {
   contacts: TopicAnnouncementContact[];
+  groups: UserGroup[];
   isCreating: boolean;
   onCreate: (payload: TopicAnnouncementPayload) => void;
 }
 
-function canReceiveAnnouncement(contact: TopicAnnouncementContact) {
-  return ['verified', 'linked_confirmed_account'].includes(
-    contact.verificationStatus
-  );
-}
-
-export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
+export function AnnouncementForm({
+  contacts,
+  groups,
+  isCreating,
+  onCreate,
+}: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [form, setForm] = useState({
     classLabel: '',
     contactIds: [] as string[],
+    groupId: NO_GROUP,
     place: '',
     room: '',
     startTime: '',
@@ -38,10 +42,22 @@ export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
     topic: '',
   });
 
+  const groupOptions = useMemo<ComboboxOption[]>(
+    () => [
+      { label: t('none'), muted: true, value: NO_GROUP },
+      ...groups.map((group) => ({
+        label: group.name || group.id,
+        value: group.id,
+      })),
+    ],
+    [groups, t]
+  );
+
   const submit = () => {
     onCreate({
       classLabel: form.classLabel || null,
       contactIds: form.contactIds,
+      groupId: form.groupId === NO_GROUP ? null : form.groupId,
       place: form.place || null,
       room: form.room || null,
       sourceType: 'manual',
@@ -52,6 +68,7 @@ export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
     setForm({
       classLabel: '',
       contactIds: [],
+      groupId: NO_GROUP,
       place: '',
       room: '',
       startTime: '',
@@ -61,88 +78,77 @@ export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
   };
 
   return (
-    <div className="grid gap-3 rounded-md border p-4 lg:grid-cols-6">
-      <div className="space-y-2 lg:col-span-2">
-        <Label htmlFor="topic-title">{t('announcement_title')}</Label>
-        <Input
-          id="topic-title"
-          value={form.title}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, title: event.target.value }))
-          }
-        />
-      </div>
-      <div className="space-y-2 lg:col-span-4">
-        <Label htmlFor="topic-body">{t('topic')}</Label>
-        <Textarea
-          id="topic-body"
-          value={form.topic}
-          onChange={(event) =>
-            setForm((current) => ({ ...current, topic: event.target.value }))
-          }
-        />
-      </div>
-      {(['classLabel', 'room', 'startTime', 'place'] as const).map((key) => (
-        <div className="space-y-2" key={key}>
-          <Label htmlFor={`topic-${key}`}>{t(key)}</Label>
+    <div className="space-y-4 rounded-md border p-4">
+      <AnnouncementFormHeader t={t} />
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="topic-title">{t('announcement_title')}</Label>
           <Input
-            id={`topic-${key}`}
-            value={form[key]}
+            id="topic-title"
+            value={form.title}
             onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                [key]: event.target.value,
-              }))
+              setForm((current) => ({ ...current, title: event.target.value }))
             }
           />
         </div>
-      ))}
-      <div className="space-y-2 lg:col-span-2">
-        <Label>{t('recipients')}</Label>
-        <div className="max-h-32 space-y-2 overflow-auto rounded-md border p-2">
-          {contacts.map((contact) => {
-            const isReady = canReceiveAnnouncement(contact);
-
-            return (
-              <label
-                className="flex items-center gap-2 text-sm"
-                key={contact.id}
-              >
-                <Checkbox
-                  checked={form.contactIds.includes(contact.id)}
-                  disabled={!isReady}
-                  onCheckedChange={(checked) =>
-                    setForm((current) => ({
-                      ...current,
-                      contactIds: checked
-                        ? [...current.contactIds, contact.id]
-                        : current.contactIds.filter((id) => id !== contact.id),
-                    }))
-                  }
-                />
-                <span className="min-w-0 flex-1 truncate">{contact.name}</span>
-                {!isReady ? (
-                  <Badge variant="warning">{t('verification_pending')}</Badge>
-                ) : null}
-              </label>
-            );
-          })}
-          {contacts.length === 0 ? (
-            <p className="text-muted-foreground text-sm">
-              {t('no_ready_contacts')}
-            </p>
-          ) : null}
-          {contacts.length > 0 &&
-          contacts.every((contact) => !canReceiveAnnouncement(contact)) ? (
-            <p className="text-muted-foreground text-sm">
-              {t('no_ready_contacts')}
-            </p>
-          ) : null}
+        <div className="space-y-2">
+          <Label>{t('linked_group')}</Label>
+          <Combobox
+            disabled={isCreating}
+            emptyText={t('no_user_groups')}
+            onChange={(value) => {
+              const resolved = Array.isArray(value) ? value[0] : value;
+              setForm((current) => ({
+                ...current,
+                groupId: resolved || NO_GROUP,
+              }));
+            }}
+            options={groupOptions}
+            placeholder={t('linked_group_placeholder')}
+            searchPlaceholder={t('search_user_groups')}
+            selected={form.groupId}
+          />
+          <p className="text-muted-foreground text-xs">
+            {t('linked_group_helper')}
+          </p>
+        </div>
+        <div className="space-y-2 lg:col-span-2">
+          <Label htmlFor="topic-body">{t('topic')}</Label>
+          <Textarea
+            className="min-h-28"
+            id="topic-body"
+            value={form.topic}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, topic: event.target.value }))
+            }
+          />
         </div>
       </div>
-      <div className="flex items-end">
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {(['classLabel', 'room', 'startTime', 'place'] as const).map((key) => (
+          <ScheduleField
+            fieldKey={key}
+            form={form}
+            key={key}
+            setForm={setForm}
+            t={t}
+          />
+        ))}
+      </div>
+
+      <AnnouncementRecipientsPicker
+        contacts={contacts}
+        onChange={(contactIds) =>
+          setForm((current) => ({ ...current, contactIds }))
+        }
+        selectedIds={form.contactIds}
+      />
+
+      <div className="flex justify-end">
         <Button
-          className="w-full gap-2"
+          className="gap-2"
           disabled={
             isCreating ||
             !form.title ||
@@ -155,6 +161,60 @@ export function AnnouncementForm({ contacts, isCreating, onCreate }: Props) {
           {t('create_announcement')}
         </Button>
       </div>
+    </div>
+  );
+}
+
+function AnnouncementFormHeader({
+  t,
+}: {
+  t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
+}) {
+  return (
+    <div>
+      <h2 className="font-medium text-base">{t('create_announcement')}</h2>
+      <p className="text-muted-foreground text-sm">
+        {t('create_announcement_helper')}
+      </p>
+    </div>
+  );
+}
+
+function ScheduleField({
+  fieldKey,
+  form,
+  setForm,
+  t,
+}: {
+  fieldKey: 'classLabel' | 'place' | 'room' | 'startTime';
+  form: Record<'classLabel' | 'place' | 'room' | 'startTime', string>;
+  setForm: React.Dispatch<
+    React.SetStateAction<{
+      classLabel: string;
+      contactIds: string[];
+      groupId: string;
+      place: string;
+      room: string;
+      startTime: string;
+      title: string;
+      topic: string;
+    }>
+  >;
+  t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`topic-${fieldKey}`}>{t(fieldKey)}</Label>
+      <Input
+        id={`topic-${fieldKey}`}
+        value={form[fieldKey]}
+        onChange={(event) =>
+          setForm((current) => ({
+            ...current,
+            [fieldKey]: event.target.value,
+          }))
+        }
+      />
     </div>
   );
 }

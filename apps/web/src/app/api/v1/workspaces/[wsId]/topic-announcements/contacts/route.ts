@@ -4,6 +4,7 @@ import {
   normalizeEmail,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementContactSchema,
+  validateTopicAnnouncementWorkspaceUserId,
 } from '../shared';
 
 interface Params {
@@ -114,6 +115,13 @@ export async function POST(request: Request, { params }: Params) {
       { status: 409 }
     );
   }
+
+  const invalidWorkspaceUser = await validateTopicAnnouncementWorkspaceUserId({
+    normalizedWsId,
+    sbAdmin,
+    workspaceUserId: payload.workspaceUserId,
+  });
+  if (invalidWorkspaceUser) return invalidWorkspaceUser;
 
   const { data, error } = await sbAdmin
     .from('topic_announcement_contacts')

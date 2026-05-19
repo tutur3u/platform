@@ -5,6 +5,7 @@ import {
   listTopicAnnouncementContacts,
   listTopicAnnouncements,
   listWorkspaceBasicUsers,
+  listWorkspaceUserGroups,
 } from '@tuturuuu/internal-api';
 import { Tabs, TabsContent } from '@tuturuuu/ui/tabs';
 import { parseAsInteger, parseAsString, useQueryState } from 'nuqs';
@@ -61,6 +62,15 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
     queryFn: () => listWorkspaceBasicUsers(wsId, { from: 0, limit: 200 }),
     queryKey: ['topic-announcement-workspace-users', wsId],
   });
+  const groupsQuery = useQuery({
+    queryFn: () =>
+      listWorkspaceUserGroups(wsId, {
+        page: 1,
+        pageSize: 200,
+        status: 'active',
+      }),
+    queryKey: ['topic-announcement-user-groups', wsId],
+  });
 
   const invalidate = () => {
     void queryClient.invalidateQueries({
@@ -80,6 +90,7 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
 
   const contacts = contactsQuery.data?.data ?? [];
   const workspaceUsers = usersQuery.data?.data ?? [];
+  const groups = groupsQuery.data?.data ?? [];
   const announcementCount =
     announcementsQuery.data?.count ?? announcementsQuery.data?.data.length ?? 0;
   const contactStats = useMemo(
@@ -114,6 +125,7 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
           announcements={announcementsQuery.data?.data ?? []}
           canSend={canSend}
           contacts={contacts}
+          groups={groups}
           isCreating={createAnnouncementMutation.isPending}
           isLoading={announcementsQuery.isLoading}
           isSending={sendMutation.isPending}
@@ -137,6 +149,7 @@ export function TopicAnnouncementsClient({ canSend, wsId }: Props) {
           onCreate={(payload) => createContactMutation.mutate(payload)}
           onVerify={(id) => verifyMutation.mutate(id)}
           workspaceUsers={workspaceUsers}
+          wsId={wsId}
         />
       </TabsContent>
       <TabsContent value="import">

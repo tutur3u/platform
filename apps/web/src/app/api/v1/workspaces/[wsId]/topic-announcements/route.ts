@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import {
+  mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementListQuerySchema,
   TopicAnnouncementPayloadSchema,
   type TopicAnnouncementsSupabaseClient,
+  validateTopicAnnouncementGroupId,
 } from './shared';
 
 interface Params {
@@ -60,7 +62,7 @@ export async function GET(request: Request, { params }: Params) {
 
   let query = sbAdmin
     .from('topic_announcements')
-    .select('*', { count: 'exact' })
+    .select('*, group:workspace_user_groups(id, name)', { count: 'exact' })
     .eq('ws_id', normalizedWsId);
 
   if (status !== 'all') query = query.eq('status', status);
@@ -104,10 +106,12 @@ export async function GET(request: Request, { params }: Params) {
 
   return NextResponse.json({
     count: count ?? 0,
-    data: (data ?? []).map((announcement: any) => ({
-      ...announcement,
-      contacts: recipientsByAnnouncement.get(announcement.id) ?? [],
-    })),
+    data: (data ?? []).map((announcement: any) =>
+      mapTopicAnnouncementRow({
+        ...announcement,
+        contacts: recipientsByAnnouncement.get(announcement.id) ?? [],
+      })
+    ),
     page,
     pageSize,
     totalPages: Math.max(1, Math.ceil((count ?? 0) / pageSize)),
@@ -152,6 +156,13 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
+  const invalidGroup = await validateTopicAnnouncementGroupId({
+    groupId: payload.groupId,
+    normalizedWsId,
+    sbAdmin,
+  });
+  if (invalidGroup) return invalidGroup;
+
   const { data: announcement, error } = await sbAdmin
     .from('topic_announcements')
     .insert({
@@ -182,5 +193,20 @@ export async function POST(request: Request, { params }: Params) {
     sbAdmin,
   });
 
-  return NextResponse.json({ data: announcement }, { status: 201 });
+  const { data: enrichedAnnouncement, error: enrichedError } = await sbAdmin
+    .from('topic_announcements')
+    .select('*, group:workspace_user_groups(id, name)')
+    .eq('id', announcement.id)
+    .maybeSingle();
+  if (enrichedError) throw enrichedError;
+
+  return NextResponse.json(
+    {
+      data: mapTopicAnnouncementRow({
+        ...(enrichedAnnouncement ?? announcement),
+        contacts: [],
+      }),
+    },
+    { status: 201 }
+  );
 }

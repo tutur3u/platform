@@ -63,6 +63,7 @@ export function AnnouncementTable({
         <TableHeader>
           <TableRow>
             <TableHead>{t('announcement_title')}</TableHead>
+            <TableHead>{t('linked_group')}</TableHead>
             <TableHead>{t('recipients')}</TableHead>
             <TableHead>{t('schedule')}</TableHead>
             <TableHead>{t('status')}</TableHead>
@@ -78,6 +79,7 @@ export function AnnouncementTable({
                   {announcement.topic}
                 </div>
               </TableCell>
+              <TableCell>{announcement.group?.name ?? t('none')}</TableCell>
               <TableCell>
                 <div>
                   {announcement.contacts
@@ -132,7 +134,7 @@ export function AnnouncementTable({
             <TableRow>
               <TableCell
                 className="text-center text-muted-foreground"
-                colSpan={5}
+                colSpan={6}
               >
                 {t('no_announcements')}
               </TableCell>
