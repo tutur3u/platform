@@ -9,6 +9,56 @@ export type Json =
 export type Database = {
   private: {
     Tables: {
+      ai_models: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          name: string | null;
+          provider: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          id: string;
+          name?: string | null;
+          provider?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          name?: string | null;
+          provider?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'public_ai_models_provider_fkey';
+            columns: ['provider'];
+            isOneToOne: false;
+            referencedRelation: 'ai_providers';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_providers: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+        };
+        Insert: {
+          created_at?: string;
+          id: string;
+          name: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+        };
+        Relationships: [];
+      };
       ai_whitelisted_domains: {
         Row: {
           created_at: string;
@@ -1371,56 +1421,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      ai_models: {
-        Row: {
-          created_at: string;
-          enabled: boolean;
-          id: string;
-          name: string | null;
-          provider: string | null;
-        };
-        Insert: {
-          created_at?: string;
-          enabled?: boolean;
-          id: string;
-          name?: string | null;
-          provider?: string | null;
-        };
-        Update: {
-          created_at?: string;
-          enabled?: boolean;
-          id?: string;
-          name?: string | null;
-          provider?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'public_ai_models_provider_fkey';
-            columns: ['provider'];
-            isOneToOne: false;
-            referencedRelation: 'ai_providers';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      ai_providers: {
-        Row: {
-          created_at: string;
-          id: string;
-          name: string;
-        };
-        Insert: {
-          created_at?: string;
-          id: string;
-          name: string;
-        };
-        Update: {
-          created_at?: string;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [];
       };
       audio_chunks: {
         Row: {
@@ -18747,13 +18747,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
           {
-            foreignKeyName: 'workspace_ai_executions_model_id_fkey';
-            columns: ['model_id'];
-            isOneToOne: false;
-            referencedRelation: 'ai_models';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_ai_executions_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -18900,13 +18893,6 @@ export type Database = {
             columns: ['creator_id'];
             isOneToOne: false;
             referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'public_workspace_ai_prompts_model_fkey';
-            columns: ['model'];
-            isOneToOne: false;
-            referencedRelation: 'ai_models';
             referencedColumns: ['id'];
           },
           {

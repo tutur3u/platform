@@ -164,33 +164,34 @@ Individual work items.
 
 ### AI Features
 
-#### `ai_providers`
-Supported AI providers (OpenAI, Anthropic, Google Vertex AI, Gemini, etc.).
+#### `private.ai_providers`
+Legacy supported AI providers retained for historical foreign-key compatibility.
+Active model catalog APIs should use `ai_gateway_models` through centralized
+`apps/web` routes instead of Supabase REST/PostgREST.
 
 **Key Fields:**
 - `id` (text, PK)
 - `name` (text)
-- `value` (text) - provider identifier
+- `created_at` (timestamptz)
 
-#### `ai_models`
-Available AI models per provider.
+#### `private.ai_models`
+Legacy AI models per provider retained for historical foreign-key compatibility.
+Active model catalog APIs should use `ai_gateway_models` through centralized
+`apps/web` routes instead of Supabase REST/PostgREST.
 
 **Key Fields:**
 - `id` (text, PK)
-- `provider` (text, FK → ai_providers)
+- `provider` (text, FK → private.ai_providers)
 - `name` (text)
-- `model` (text) - model identifier
-- `input_price` (numeric) - per million tokens
-- `output_price` (numeric) - per million tokens
+- `enabled` (boolean)
 
 #### `ai_chats`
 Persistent chat sessions.
 
 **Key Fields:**
 - `id` (uuid, PK)
-- `ws_id` (text, FK → workspaces)
 - `title` (text)
-- `model` (text, FK → ai_models)
+- `model` (text) - legacy model identifier
 - `creator_id` (uuid, FK → workspace_users)
 
 #### `ai_chat_messages`
@@ -209,10 +210,10 @@ Token usage tracking for billing.
 **Key Fields:**
 - `id` (uuid, PK)
 - `ws_id` (text, FK → workspaces)
-- `model` (text, FK → ai_models)
+- `model_id` (text, FK → private.ai_models)
 - `input_tokens` (integer)
 - `output_tokens` (integer)
-- `total_cost` (numeric)
+- `total_tokens` (integer)
 
 #### `private.ai_whitelisted_emails`
 Server-owned email whitelist for AI feature access. This table is kept outside
