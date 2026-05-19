@@ -857,14 +857,14 @@ async function runDockerWebWorkflow(parsed, options = {}) {
           DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
             composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
           DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '0',
+            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
         }
       : {
           ...composeEnv,
           DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
             composeEnv.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
           DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
-            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '0',
+            composeEnv.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
         };
     const changedFiles = await getBlueGreenDeploymentChangedFiles({
       env,

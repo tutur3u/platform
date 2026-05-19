@@ -665,6 +665,8 @@ Equivalent environment variables:
 - `DOCKER_WEB_BUILDKIT_PORT=7914`
 - `DOCKER_WEB_BUILDKIT_ENDPOINT=tcp://127.0.0.1:7914`
 - `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` for blue/green watcher handoffs
+- `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` to keep the `buildkit` container
+  warm after a build
 - `DOCKER_WEB_DOCKER_MEMORY_LIMIT=<bytes from docker info>`
 - `DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT=180`
 - `DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY=auto`
@@ -690,11 +692,13 @@ How it works:
   `DOCKER_WEB_BUILDKIT_ENDPOINT` (default
   `tcp://127.0.0.1:${DOCKER_WEB_BUILDKIT_PORT:-7914}`). The watcher container
   uses `tcp://buildkit:1234` on the Compose network.
-- Blue/green watcher handoffs preserve the Compose-owned BuildKit cache by
-  default (`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0` and
-  `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0`) so the next staged retry can reuse
-  layers instead of rebuilding already successful targets. Set either variable
-  to `1` only when an operator intentionally wants a post-handoff cleanup.
+- Blue/green watcher handoffs preserve the Compose-owned BuildKit cache volume
+  by default (`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=0`), but stop and remove
+  the `buildkit` container after the build/deploy phase
+  (`DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=1`). This frees idle CPU and memory
+  while keeping layer state for the next deployment. Set
+  `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when an operator intentionally
+  wants BuildKit to stay warm after a handoff.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
   workflow builds each Bake target group separately so image export and web

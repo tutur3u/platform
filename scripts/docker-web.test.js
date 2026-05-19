@@ -2204,6 +2204,7 @@ test('runDockerWebWorkflow performs an initial blue-green deployment', async () 
 });
 
 test('runDockerWebWorkflow does not recursively start watcher from watcher deploys', async () => {
+  const calls = [];
   const watcherStarts = [];
   let webProxyPsCalls = 0;
   const tempDir = fs.mkdtempSync(
@@ -2217,9 +2218,15 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (_command, args) => {
+  const runCommand = async (command, args) => {
+    calls.push([command, args]);
+
     if (args.includes('ps') && args.at(-1) === 'web') {
       return { code: 0, signal: null, stderr: '', stdout: '' };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'buildkit') {
+      return { code: 0, signal: null, stderr: '', stdout: 'buildkit-id\n' };
     }
 
     if (args.includes('ps') && args.at(-1) === BLUE_GREEN_PROXY_SERVICE) {
@@ -2266,7 +2273,19 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
 
   try {
     await runDockerWebWorkflow(
-      parseArgs(['up', '--mode', 'prod', '--strategy', 'blue-green']),
+      parseArgs([
+        'up',
+        '--mode',
+        'prod',
+        '--strategy',
+        'blue-green',
+        '--build-memory',
+        '12g',
+        '--build-cpus',
+        '4',
+        '--build-max-parallelism',
+        '1',
+      ]),
       {
         env: { PATH: 'test-path', [WATCHER_CONTAINER_ENV]: '1' },
         envFilePath,
@@ -2280,6 +2299,15 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
     );
 
     assert.deepEqual(watcherStarts, []);
+    assert.ok(
+      calls.some(
+        ([command, args]) =>
+          command === 'docker' &&
+          args[0] === 'compose' &&
+          args.includes('rm') &&
+          args.at(-1) === 'buildkit'
+      )
+    );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }

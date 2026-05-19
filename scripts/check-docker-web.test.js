@@ -565,6 +565,23 @@ test('validateDockerProdCompose reports missing watcher container wiring', () =>
   assert.match(errors.join('\n'), /\/var\/run\/docker\.sock/);
 });
 
+test('production watcher service does not keep BuildKit running while idle', () => {
+  const opsComposeContent = fs.readFileSync(
+    path.join(ROOT_DIR, 'docker-compose', 'compose.web.prod.ops.yml'),
+    'utf8'
+  );
+  const watcherServiceBlock =
+    opsComposeContent.match(
+      /^ {2}web-blue-green-watcher:\n(?:(?: {4,}.+\n)|(?:\s*\n))*/mu
+    )?.[0] ?? '';
+
+  assert.match(
+    watcherServiceBlock,
+    /DOCKER_WEB_BUILDKIT_ENDPOINT=tcp:\/\/buildkit:1234/u
+  );
+  assert.doesNotMatch(watcherServiceBlock, /^\s+buildkit:\s*$/mu);
+});
+
 test('validateDockerProdCompose reports missing cron runner wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
     '  web-cron-runner:\n',

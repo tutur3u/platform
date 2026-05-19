@@ -1795,7 +1795,7 @@ async function pruneBlueGreenBuildkitCacheAfterWorkflow({
         DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
           env.DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD ?? '0',
         DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD:
-          env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '0',
+          env.DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD ?? '1',
       },
       fsImpl,
       runCommand: run,

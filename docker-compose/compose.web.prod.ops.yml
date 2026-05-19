@@ -27,8 +27,6 @@ services:
       - UPSTASH_REDIS_REST_TOKEN
       - UPSTASH_REDIS_REST_URL
     depends_on:
-      buildkit:
-        condition: service_healthy
       log-drain-postgres:
         condition: service_healthy
     healthcheck:
