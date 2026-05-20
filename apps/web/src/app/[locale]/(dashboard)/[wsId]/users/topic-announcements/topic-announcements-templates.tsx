@@ -7,6 +7,7 @@ import type {
 } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -74,6 +75,27 @@ export function TopicAnnouncementsTemplates({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {isLoading
+              ? Array.from({ length: 4 }, (_, index) => (
+                  <TableRow key={`template-loading-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-56" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-2">
+                        <Skeleton className="h-8 w-8" />
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : null}
             {templates.map((template) => (
               <TableRow key={template.id}>
                 <TableCell className="font-medium">{template.name}</TableCell>

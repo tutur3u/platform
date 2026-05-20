@@ -11,6 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Skeleton } from '@tuturuuu/ui/skeleton';
 import {
   Table,
   TableBody,
@@ -93,6 +94,38 @@ export function AnnouncementTable({
             </TableRow>
           </TableHeader>
           <TableBody>
+            {isLoading
+              ? Array.from({ length: 4 }, (_, index) => (
+                  <TableRow key={`announcement-loading-${index}`}>
+                    <TableCell>
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-72" />
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-28" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-36" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-40" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-5 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex justify-end">
+                        <Skeleton className="h-8 w-8" />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : null}
             {announcements.map((announcement) => {
               const unverifiedCount = countUnverifiedRecipients(announcement);
               const sendReady = canSendAnnouncement(announcement);

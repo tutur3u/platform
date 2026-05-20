@@ -52,7 +52,15 @@ export function ContactForm({
   };
 
   return (
-    <div className="grid gap-4 rounded-md border p-4 lg:grid-cols-2">
+    <form
+      className="grid gap-4 rounded-md border p-4 lg:grid-cols-2"
+      id="topic-contact-form"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (isCreating || !form.name || !form.email) return;
+        submit();
+      }}
+    >
       <div className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="topic-contact-name">{t('contact_name')}</Label>
@@ -99,13 +107,13 @@ export function ContactForm({
         <Button
           className="mt-auto w-full gap-2"
           disabled={isCreating || !form.name || !form.email}
-          onClick={submit}
+          type="submit"
         >
           <Plus className="h-4 w-4" />
           {t('add_contact')}
         </Button>
       </div>
-    </div>
+    </form>
   );
 }
 

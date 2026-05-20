@@ -21,10 +21,20 @@ import { useTranslations } from 'next-intl';
 
 interface Options {
   invalidate: () => void;
+  onImportSuccess?: (result: {
+    batchId?: string;
+    createdAnnouncements: number;
+    createdContacts: number;
+    rowErrors: { message: string; rowNumber: number }[];
+  }) => void;
   wsId: string;
 }
 
-export function useTopicAnnouncementActions({ invalidate, wsId }: Options) {
+export function useTopicAnnouncementActions({
+  invalidate,
+  onImportSuccess,
+  wsId,
+}: Options) {
   const t = useTranslations('ws-topic-announcements');
 
   const createContactMutation = useMutation({
@@ -153,6 +163,7 @@ export function useTopicAnnouncementActions({ invalidate, wsId }: Options) {
       toast.success(
         t('imported', { count: result.createdAnnouncements.toString() })
       );
+      onImportSuccess?.(result);
       invalidate();
     },
   });

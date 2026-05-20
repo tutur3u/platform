@@ -28,15 +28,23 @@ import {
   TemplateFormDialog,
   type TemplateFormValues,
 } from './template-form-dialog';
+import {
+  NO_GROUP,
+  NO_TEMPLATE,
+  TIME_INTERVALS,
+} from './topic-announcements-form-constants';
 
-const NO_GROUP = '__none__';
-const NO_TEMPLATE = '__none__';
-
-const TIME_INTERVALS = Array.from({ length: 96 }, (_, i) => {
-  const hours = Math.floor(i / 4);
-  const minutes = (i % 4) * 15;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-});
+const INITIAL_FORM = {
+  contactIds: [] as string[],
+  endTime: '',
+  groupId: NO_GROUP,
+  place: '',
+  room: '',
+  selectedTemplateId: NO_TEMPLATE,
+  startTime: '',
+  title: '',
+  topic: '',
+};
 
 interface Props {
   contacts: TopicAnnouncementContact[];
@@ -62,17 +70,7 @@ export function AnnouncementForm({
   const t = useTranslations('ws-topic-announcements');
   const topicRef = useRef<HTMLTextAreaElement>(null);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [form, setForm] = useState({
-    contactIds: [] as string[],
-    endTime: '',
-    groupId: NO_GROUP,
-    place: '',
-    room: '',
-    selectedTemplateId: NO_TEMPLATE,
-    startTime: '',
-    title: '',
-    topic: '',
-  });
+  const [form, setForm] = useState(INITIAL_FORM);
 
   const groupOptions = useMemo<ComboboxOption[]>(
     () => [
@@ -127,26 +125,32 @@ export function AnnouncementForm({
       title: form.title,
       topic: form.topic,
     });
-    setForm({
-      contactIds: [],
-      endTime: '',
-      groupId: NO_GROUP,
-      place: '',
-      room: '',
-      selectedTemplateId: NO_TEMPLATE,
-      startTime: '',
-      title: '',
-      topic: '',
-    });
+    setForm(INITIAL_FORM);
   };
 
   return (
     <Card>
       <CardContent className="space-y-6 p-6">
-        <AnnouncementFormHeader t={t} />
+        <div>
+          <h2 className="font-semibold text-xl tracking-tight">
+            {t('create_announcement')}
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            {t('create_announcement_helper')}
+          </p>
+        </div>
 
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div className="space-y-4">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+          <div className="space-y-4 rounded-md border p-4">
+            <div>
+              <h3 className="font-medium text-base">
+                {t('announcement_metadata')}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t('announcement_metadata_helper')}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label>{t('template_apply_label')}</Label>
               <Combobox
@@ -280,7 +284,16 @@ export function AnnouncementForm({
             </div>
           </div>
 
-          <div className="space-y-4">
+          <div className="space-y-4 rounded-md border p-4">
+            <div>
+              <h3 className="font-medium text-base">
+                {t('announcement_message')}
+              </h3>
+              <p className="text-muted-foreground text-sm">
+                {t('announcement_message_helper')}
+              </p>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="topic-body">{t('topic_primary_label')}</Label>
               <Textarea
@@ -300,8 +313,13 @@ export function AnnouncementForm({
           </div>
         </div>
 
-        <div className="space-y-4">
-          <Label className="text-base">{t('recipients')}</Label>
+        <div className="space-y-3">
+          <div>
+            <h3 className="font-medium text-base">{t('recipients')}</h3>
+            <p className="text-muted-foreground text-sm">
+              {t('recipients_section_helper')}
+            </p>
+          </div>
           <AnnouncementRecipientsPicker
             contacts={contacts}
             onChange={(contactIds) =>
@@ -372,22 +390,5 @@ export function AnnouncementForm({
         titleKey="template_save_from_form_title"
       />
     </Card>
-  );
-}
-
-function AnnouncementFormHeader({
-  t,
-}: {
-  t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>;
-}) {
-  return (
-    <div>
-      <h2 className="font-semibold text-xl tracking-tight">
-        {t('create_announcement')}
-      </h2>
-      <p className="text-muted-foreground text-sm">
-        {t('create_announcement_helper')}
-      </p>
-    </div>
   );
 }

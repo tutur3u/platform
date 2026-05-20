@@ -26,14 +26,7 @@ import {
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
-
-const NO_GROUP = '__none__';
-
-const TIME_INTERVALS = Array.from({ length: 96 }, (_, i) => {
-  const hours = Math.floor(i / 4);
-  const minutes = (i % 4) * 15;
-  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-});
+import { NO_GROUP, TIME_INTERVALS } from './topic-announcements-form-constants';
 
 export interface TemplateFormValues {
   defaultContactIds: string[];

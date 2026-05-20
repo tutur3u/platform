@@ -40,6 +40,13 @@ describe('workspace route permission mapping', () => {
     expect(
       getWorkspaceRoutePermissionRequirements(['users', 'topic-announcements'])
     ).toEqual(['manage_users', 'send_user_group_post_emails']);
+    expect(
+      getWorkspaceRoutePermissionRequirements([
+        'users',
+        'topic-announcements',
+        'import',
+      ])
+    ).toEqual(['manage_users', 'send_user_group_post_emails']);
   });
 
   it('allows guest admin to satisfy mapped route permissions only', () => {
