@@ -181,6 +181,36 @@ describe('dev-session route', () => {
     expect(mocks.createClient).toHaveBeenCalledWith(request);
   });
 
+  it('allows production-mode Docker E2E requests with a forwarded local host', async () => {
+    mocks.devMode = false;
+    stubLocalE2EEnv();
+    mockSuccessfulSession();
+
+    const request = new NextRequest(
+      'http://web-blue:7803/api/auth/dev-session',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          host: 'web-blue:7803',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+        },
+        body: JSON.stringify({
+          email: 'local@tuturuuu.com',
+          locale: 'en',
+        }),
+      }
+    );
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.createAdminClient).toHaveBeenCalledTimes(1);
+    expect(mocks.createClient).toHaveBeenCalledWith(request);
+  });
+
   it('rejects production remote requests before admin user mutation even when E2E env values look local', async () => {
     mocks.devMode = false;
     stubLocalE2EEnv();

@@ -86,6 +86,42 @@ describe('isLocalE2EAuthRequestAllowed', () => {
     ).toBe(true);
   });
 
+  it('allows production Docker requests when the public local origin is forwarded', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'web-blue:7803',
+          'x-forwarded-host': 'localhost:7803',
+          'x-forwarded-proto': 'http',
+        }),
+        localE2EEnv
+      )
+    ).toBe(true);
+  });
+
+  it('allows portless localhost request origins produced by standalone proxies', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://localhost/api/auth/dev-session', {
+          host: 'localhost',
+          'x-forwarded-proto': 'http',
+        }),
+        localE2EEnv
+      )
+    ).toBe(true);
+  });
+
+  it('rejects internal Docker origins without a public local forwarded origin', () => {
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'web-blue:7803',
+        }),
+        localE2EEnv
+      )
+    ).toBe(false);
+  });
+
   it('rejects remote request origins even with local-looking E2E env values', () => {
     expect(
       isLocalE2EAuthRequestAllowed(
@@ -113,6 +149,16 @@ describe('isLocalE2EAuthRequestAllowed', () => {
         createRequest('http://localhost:7803/api/auth/dev-session', {
           host: 'localhost:7803',
           'x-forwarded-host': 'prod.example.com',
+        }),
+        localE2EEnv
+      )
+    ).toBe(false);
+
+    expect(
+      isLocalE2EAuthRequestAllowed(
+        createRequest('http://web-blue:7803/api/auth/dev-session', {
+          host: 'prod.example.com',
+          'x-forwarded-host': 'localhost:7803',
         }),
         localE2EEnv
       )

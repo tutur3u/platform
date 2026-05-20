@@ -6,6 +6,19 @@ const LOCAL_WEB_ORIGINS = new Set([
   'https://tuturuuu.localhost',
 ]);
 
+const LOCAL_REQUEST_WEB_ORIGINS = new Set([
+  ...LOCAL_WEB_ORIGINS,
+  'http://127.0.0.1',
+  'http://localhost',
+]);
+
+const LOCAL_INTERNAL_WEB_ORIGINS = new Set([
+  'http://0.0.0.0:7803',
+  'http://web:7803',
+  'http://web-blue:7803',
+  'http://web-green:7803',
+]);
+
 const LOCAL_SUPABASE_ORIGINS = new Set([
   'http://127.0.0.1:8001',
   'http://host.docker.internal:8001',
@@ -58,7 +71,7 @@ function getProtocol(value: string | null) {
 function getHostOrigin(
   host: string | null,
   protocol: string | null,
-  fallbackOrigin: string
+  fallbackOrigin: string | null
 ) {
   const normalizedHost = getFirstHeaderValue(host);
 
@@ -67,13 +80,28 @@ function getHostOrigin(
   }
 
   const normalizedProtocol =
-    getProtocol(protocol) ?? new URL(fallbackOrigin).protocol.replace(':', '');
+    getProtocol(protocol) ??
+    (fallbackOrigin
+      ? new URL(fallbackOrigin).protocol.replace(':', '')
+      : 'http');
 
   return getOrigin(`${normalizedProtocol}://${normalizedHost}`);
 }
 
 function isLocalWebOrigin(origin: string | null): origin is string {
   return origin !== null && LOCAL_WEB_ORIGINS.has(origin);
+}
+
+function isLocalRequestWebOrigin(origin: string | null): origin is string {
+  return origin !== null && LOCAL_REQUEST_WEB_ORIGINS.has(origin);
+}
+
+function isLocalInternalWebOrigin(origin: string | null): origin is string {
+  return origin !== null && LOCAL_INTERNAL_WEB_ORIGINS.has(origin);
+}
+
+function isAllowedRequestOrigin(origin: string | null): origin is string {
+  return isLocalRequestWebOrigin(origin) || isLocalInternalWebOrigin(origin);
 }
 
 function isLocalSupabaseOrigin(origin: string | null): origin is string {
@@ -90,7 +118,7 @@ function isOptionalLocalUrlHeader(
     return true;
   }
 
-  return isLocalWebOrigin(getOrigin(value));
+  return isLocalRequestWebOrigin(getOrigin(value));
 }
 
 export function isLocalE2EAuthBypassEnabled(
@@ -123,10 +151,6 @@ export function isLocalE2EAuthRequestAllowed(
 
   const requestOrigin = getOrigin(request.url);
 
-  if (!isLocalWebOrigin(requestOrigin)) {
-    return false;
-  }
-
   const forwardedProto = request.headers.get('x-forwarded-proto');
   const hostOrigin = getHostOrigin(
     request.headers.get('host'),
@@ -139,9 +163,18 @@ export function isLocalE2EAuthRequestAllowed(
     requestOrigin
   );
 
+  const hasLocalPublicOrigin = [
+    requestOrigin,
+    hostOrigin,
+    forwardedHostOrigin,
+  ].some(isLocalRequestWebOrigin);
+
   return (
-    (hostOrigin === null || isLocalWebOrigin(hostOrigin)) &&
-    (forwardedHostOrigin === null || isLocalWebOrigin(forwardedHostOrigin)) &&
+    hasLocalPublicOrigin &&
+    (requestOrigin === null || isAllowedRequestOrigin(requestOrigin)) &&
+    (hostOrigin === null || isAllowedRequestOrigin(hostOrigin)) &&
+    (forwardedHostOrigin === null ||
+      isAllowedRequestOrigin(forwardedHostOrigin)) &&
     isOptionalLocalUrlHeader(request, 'origin') &&
     isOptionalLocalUrlHeader(request, 'referer')
   );

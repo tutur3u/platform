@@ -1149,6 +1149,16 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   );
   assert.match(config, /proxy_next_upstream_tries 2;/);
   assert.match(config, /proxy_pass http:\/\/web_upstream;/);
+  assert.equal(
+    (config.match(/proxy_set_header Host \$http_host;/gu) ?? []).length,
+    4
+  );
+  assert.equal(
+    (config.match(/proxy_set_header X-Forwarded-Host \$http_host;/gu) ?? [])
+      .length,
+    4
+  );
+  assert.doesNotMatch(config, /proxy_set_header Host \$host;/u);
 });
 
 test('writeBlueGreenActiveColor persists the selected color', () => {
