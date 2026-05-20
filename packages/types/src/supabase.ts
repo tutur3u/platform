@@ -971,6 +971,33 @@ export type Database = {
         }[];
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      list_task_source_filter_ids: {
+        Args: {
+          p_actor_id: string;
+          p_assigned_to_me?: boolean;
+          p_board_id?: string;
+          p_closed_mode?: string;
+          p_completed_mode?: string;
+          p_display_number?: number;
+          p_include_archived_boards?: boolean;
+          p_include_deleted?: string;
+          p_limit?: number;
+          p_list_id?: string;
+          p_list_statuses?: string[];
+          p_offset?: number;
+          p_search?: string;
+          p_sort_by?: string;
+          p_source_board_ids?: string[];
+          p_source_scope?: string;
+          p_source_workspace_ids?: string[];
+          p_ticket_prefix?: string;
+          p_workspace_id: string;
+        };
+        Returns: {
+          task_id: string;
+          total_count: number;
+        }[];
+      };
       list_workspace_user_groups_for_table: {
         Args: {
           p_accessible_group_ids?: string[];

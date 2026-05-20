@@ -83,6 +83,9 @@ export function TaskProjectDetail({
     estimationRange: null,
     includeMyTasks: false,
     includeUnassigned: false,
+    sourceBoardIds: [],
+    sourceScope: 'all_visible',
+    sourceWorkspaceIds: [],
   });
   const [listStatusFilter, setListStatusFilter] =
     useState<ListStatusFilter>('all');

@@ -219,6 +219,31 @@ export function TimelineBoard({
     (date: Date) => dayjs(date).format('MMMM YYYY'),
     []
   );
+  const resolveTaskWorkspaceId = useCallback(
+    (task: Task) => task.source_workspace_id ?? wsId ?? null,
+    [wsId]
+  );
+
+  const openTimelineTask = useCallback(
+    (task: Task) => {
+      const targetBoardId = task.source_board_id ?? boardId;
+      const targetWorkspaceId = task.source_workspace_id ?? wsId;
+
+      if (!targetBoardId) return;
+
+      openTask(
+        task,
+        targetBoardId,
+        task.source_board_id ? undefined : lists,
+        false,
+        {
+          taskWsId: targetWorkspaceId,
+          taskWorkspacePersonal: Boolean(wsId) && !task.source_workspace_id,
+        }
+      );
+    },
+    [boardId, lists, openTask, wsId]
+  );
 
   const clearDraft = useCallback((taskId: string) => {
     setLocalChanges((current) => {
@@ -244,16 +269,22 @@ export function TimelineBoard({
 
   const commitTaskChanges = useCallback(
     async (task: Task, payload: TimelineTaskUpdate) => {
-      if (!wsId) throw new Error('Workspace ID is required');
+      const targetWorkspaceId = resolveTaskWorkspaceId(task);
+      if (!targetWorkspaceId) throw new Error('Workspace ID is required');
       onTaskPartialUpdate?.(task.id, payload as Partial<Task>);
       await updateTaskMutation.mutateAsync({
-        workspaceId: wsId,
+        workspaceId: targetWorkspaceId,
         taskId: task.id,
         payload,
       });
       clearDraft(task.id);
     },
-    [clearDraft, onTaskPartialUpdate, updateTaskMutation, wsId]
+    [
+      clearDraft,
+      onTaskPartialUpdate,
+      resolveTaskWorkspaceId,
+      updateTaskMutation,
+    ]
   );
 
   const openEditor = useCallback((task: Task) => {
@@ -478,9 +509,10 @@ export function TimelineBoard({
         deleted_at: new Date().toISOString(),
       } as Partial<Task>);
       try {
-        if (!wsId) throw new Error('Workspace ID is required');
+        const targetWorkspaceId = resolveTaskWorkspaceId(task);
+        if (!targetWorkspaceId) throw new Error('Workspace ID is required');
         await deleteTaskMutation.mutateAsync({
-          workspaceId: wsId,
+          workspaceId: targetWorkspaceId,
           taskId: task.id,
         });
         clearDraft(task.id);
@@ -491,7 +523,12 @@ export function TimelineBoard({
         setDeleteCandidate(null);
       }
     },
-    [clearDraft, deleteTaskMutation, onTaskPartialUpdate, wsId]
+    [
+      clearDraft,
+      deleteTaskMutation,
+      onTaskPartialUpdate,
+      resolveTaskWorkspaceId,
+    ]
   );
 
   const scrollToToday = useCallback(() => {
@@ -627,6 +664,7 @@ export function TimelineBoard({
     >
       <TimelineToolbar
         boardId={boardId}
+        wsId={wsId}
         dayWidth={dayWidth}
         density={density}
         formatLongDate={formatLongDate}
@@ -637,6 +675,7 @@ export function TimelineBoard({
         onCreateTask={() => handleCreateTask(primaryCreateListId)}
         onFitTimeline={fitTimeline}
         onOpenEditor={openEditor}
+        onActionsUpdate={() => undefined}
         onScrollToToday={scrollToToday}
         onUnscheduledDragEnd={handleUnscheduledDragEnd}
         onUnscheduledDragStart={handleUnscheduledDragStart}
@@ -654,6 +693,7 @@ export function TimelineBoard({
         <TimelineGrid
           barHeight={densityConfig.barHeight}
           boardId={boardId}
+          wsId={wsId}
           dayWidth={dayWidth}
           draggedUnscheduledTaskId={draggedUnscheduledTaskId}
           dropPreview={dropPreview}
@@ -669,10 +709,11 @@ export function TimelineBoard({
           onLaneDrop={handleLaneDrop}
           onMoveTaskToList={handleMoveTaskToList}
           onOpenEditor={openEditor}
-          onOpenTask={(task) => boardId && openTask(task, boardId, lists)}
+          onOpenTask={openTimelineTask}
           onSelectTask={setSelectedTaskId}
           onStartInteraction={handleStartInteraction}
           onUnscheduleTask={handleUnscheduleTask}
+          onActionsUpdate={() => undefined}
           onUpdateDropPreview={updateDropPreview}
           rowHeight={densityConfig.rowHeight}
           selectedTaskId={selectedTaskId}

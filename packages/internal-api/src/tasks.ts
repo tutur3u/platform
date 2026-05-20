@@ -106,6 +106,9 @@ export interface ListWorkspaceTasksOptions {
   boardId?: string;
   listId?: string;
   listStatuses?: string[];
+  sourceScope?: TaskSourceScope;
+  sourceWorkspaceIds?: string[];
+  sourceBoardIds?: string[];
   q?: string;
   identifier?: string;
   limit?: number;
@@ -130,6 +133,12 @@ export type ExternalTaskSortBy =
   | 'name-asc'
   | 'source-asc';
 
+export type TaskSourceScope =
+  | 'all_visible'
+  | 'current_board'
+  | 'external_current_workspace'
+  | 'external_specific';
+
 export interface WorkspaceTasksResponse {
   tasks: WorkspaceTaskApiTask[];
   count?: number;
@@ -142,6 +151,10 @@ export interface WorkspaceTasksResponse {
     pageSize: number;
     total: number;
   };
+}
+
+function joinQueryList(values?: string[]) {
+  return values && values.length > 0 ? values.join(',') : undefined;
 }
 
 export type WorkspaceTaskBoardListItem = Pick<
@@ -757,7 +770,10 @@ export async function listWorkspaceTasks(
       query: {
         boardId: options?.boardId,
         listId: options?.listId,
-        listStatuses: options?.listStatuses?.join(','),
+        listStatuses: joinQueryList(options?.listStatuses),
+        sourceScope: options?.sourceScope,
+        sourceWorkspaceIds: joinQueryList(options?.sourceWorkspaceIds),
+        sourceBoardIds: joinQueryList(options?.sourceBoardIds),
         q: options?.q,
         identifier: options?.identifier,
         limit: options?.limit,

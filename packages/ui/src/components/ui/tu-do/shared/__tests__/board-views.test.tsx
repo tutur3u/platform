@@ -254,6 +254,9 @@ describe('BoardViews', () => {
         labels: [],
         priorities: [],
         projects: [],
+        sourceBoardIds: [],
+        sourceScope: 'all_visible',
+        sourceWorkspaceIds: [],
       }
     );
   });
@@ -385,6 +388,9 @@ describe('BoardViews', () => {
         labels: [],
         priorities: [],
         projects: [],
+        sourceBoardIds: [],
+        sourceScope: 'all_visible',
+        sourceWorkspaceIds: [],
       }
     );
   });
@@ -459,6 +465,39 @@ describe('BoardViews', () => {
     });
   });
 
+  it('passes persisted source filters into the full task query', async () => {
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        sourceBoardIds: ['board-2'],
+        sourceScope: 'external_specific',
+        sourceWorkspaceIds: ['ws-2'],
+      });
+    });
+
+    await waitFor(() => {
+      expect(boardHeaderProps?.filters.sourceScope).toBe('external_specific');
+    });
+
+    await act(async () => {
+      boardHeaderProps?.onViewChange('list');
+    });
+
+    await waitFor(() => {
+      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
+        'ws-1',
+        expect.objectContaining({
+          boardId: 'board-1',
+          sourceBoardIds: ['board-2'],
+          sourceScope: 'external_specific',
+          sourceWorkspaceIds: ['ws-2'],
+        })
+      );
+    });
+  });
+
   it('preserves board-level sorted task order when rendering list view', async () => {
     renderBoardViews();
 
@@ -503,6 +542,9 @@ describe('BoardViews', () => {
           labels: [],
           priorities: [],
           projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
         },
         listStatusFilter: 'all',
       })

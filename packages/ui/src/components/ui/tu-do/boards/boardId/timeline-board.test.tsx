@@ -169,4 +169,49 @@ describe('TimelineBoard', () => {
       );
     });
   });
+
+  it('uses source workspace metadata when scheduling an external timeline task', async () => {
+    renderTimeline([
+      task({
+        id: 'external-unscheduled-1',
+        name: 'Schedule external task',
+        source_board_id: 'source-board-1',
+        source_workspace_id: 'source-ws-1',
+      } as Partial<Task> & Pick<Task, 'id' | 'name'>),
+    ]);
+
+    const dropTarget = screen.getAllByTestId('timeline-drop-target-todo')[0]!;
+    vi.spyOn(dropTarget, 'getBoundingClientRect').mockReturnValue({
+      bottom: 48,
+      height: 48,
+      left: 0,
+      right: 800,
+      top: 0,
+      width: 800,
+      x: 0,
+      y: 0,
+      toJSON: () => ({}),
+    });
+    const dataTransfer = {
+      dropEffect: '',
+      effectAllowed: 'move',
+      getData: vi.fn(() => 'external-unscheduled-1'),
+      setData: vi.fn(),
+    };
+
+    fireEvent.dragOver(dropTarget, { clientX: 112, dataTransfer });
+    fireEvent.drop(dropTarget, { dataTransfer });
+
+    await waitFor(() => {
+      expect(updateWorkspaceTaskMock).toHaveBeenCalledWith(
+        'source-ws-1',
+        'external-unscheduled-1',
+        expect.objectContaining({
+          end_date: expect.any(String),
+          list_id: 'todo',
+          start_date: expect.any(String),
+        })
+      );
+    });
+  });
 });

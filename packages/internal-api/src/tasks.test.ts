@@ -310,6 +310,33 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('serializes task source filter controls', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [] }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        boardId: 'board-1',
+        sourceBoardIds: ['board-2', 'board-3'],
+        sourceScope: 'external_specific',
+        sourceWorkspaceIds: ['ws-2', 'ws-3'],
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?boardId=board-1&sourceScope=external_specific&sourceWorkspaceIds=ws-2%2Cws-3&sourceBoardIds=board-2%2Cboard-3',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('lists workspace tasks with external lane controls', async () => {
     const fetchMock = vi
       .fn()

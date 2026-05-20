@@ -374,6 +374,23 @@ resolved through `get_personal_task_board_external_counts` so placed external
 tasks, default external-lane tasks, source-workspace access, and external-lane
 filters stay aligned with the records the board can actually show.
 
+Board source filters use `TaskFilters.sourceScope` to decide which task source
+set is visible. `all_visible` preserves the existing board behavior,
+`current_board` returns only tasks from the active board, and the two external
+scopes return assigned-to-me tasks whose source board is not the active board.
+`external_current_workspace` stays inside the current workspace, while
+`external_specific` requires selected source workspace ids or source board ids;
+when nothing is selected, the client should show an empty prompt instead of
+running an unbounded external query.
+
+Source-filtered list and timeline reads must go through the tasks API route,
+which normalizes the route workspace, verifies request-scoped membership, then
+uses the server-only `private.list_task_source_filter_ids` RPC with the service
+role path. The RPC rechecks target workspace membership and source workspace
+access before returning paginated task ids plus `total_count` for API-side
+hydration. Client UI must not call the private RPC directly or trust
+client-provided source ids as authorization.
+
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.
 - `personal_list_id` points to the real personal list that owns the planning

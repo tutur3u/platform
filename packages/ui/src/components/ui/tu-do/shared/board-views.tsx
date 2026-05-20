@@ -55,6 +55,9 @@ const DEFAULT_TASK_FILTERS: TaskFilters = {
   estimationRange: null,
   includeMyTasks: false,
   includeUnassigned: false,
+  sourceScope: 'all_visible',
+  sourceWorkspaceIds: [],
+  sourceBoardIds: [],
 };
 
 function hasAssignedExternalTasks(tasks: Task[], boardId: string) {
@@ -104,6 +107,26 @@ export function BoardViews({
   const [isMultiSelectMode, setIsMultiSelectMode] = useState(false);
   const { createTask } = useTaskDialog();
   const { pagination, loadListPage } = useProgressiveLoader();
+  const sourceScope = filters.sourceScope ?? 'all_visible';
+  const sourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
+  const sourceBoardIds = filters.sourceBoardIds ?? [];
+  const isExternalSourceScope =
+    sourceScope === 'external_current_workspace' ||
+    sourceScope === 'external_specific';
+  const listStatusesForQuery = useMemo(
+    () => (listStatusFilter === 'all' ? undefined : [listStatusFilter]),
+    [listStatusFilter]
+  );
+  const sourceFilterKey = useMemo(
+    () =>
+      JSON.stringify({
+        listStatusFilter,
+        scope: sourceScope,
+        sourceBoardIds: [...sourceBoardIds].sort(),
+        sourceWorkspaceIds: [...sourceWorkspaceIds].sort(),
+      }),
+    [listStatusFilter, sourceBoardIds, sourceScope, sourceWorkspaceIds]
+  );
   const viewHotkeyLabels = useMemo(
     () => ({
       kanban: formatHotkeySequence(HOTKEY_GO_TO_KANBAN),
@@ -113,25 +136,38 @@ export function BoardViews({
     []
   );
   const shouldEagerLoadTasks =
-    currentView === 'list' || currentView === 'timeline';
+    currentView === 'list' ||
+    currentView === 'timeline' ||
+    sourceScope !== 'all_visible';
   const fetchBoardTasks = useCallback(async () => {
     const result = await listWorkspaceTasks(effectiveWorkspaceId, {
       boardId: board.id,
+      listStatuses: listStatusesForQuery,
+      sourceBoardIds,
+      sourceScope: sourceScope === 'all_visible' ? undefined : sourceScope,
+      sourceWorkspaceIds,
     });
     return result.tasks;
-  }, [board.id, effectiveWorkspaceId]);
+  }, [
+    board.id,
+    effectiveWorkspaceId,
+    listStatusesForQuery,
+    sourceBoardIds,
+    sourceScope,
+    sourceWorkspaceIds,
+  ]);
 
   const primeFullTaskCache = useCallback(
     (nextView: ViewType) => {
       if (nextView !== 'list' && nextView !== 'timeline') return;
 
       void queryClient.prefetchQuery({
-        queryKey: ['tasks-full', board.id],
+        queryKey: ['tasks-full', board.id, sourceFilterKey],
         queryFn: fetchBoardTasks,
         staleTime: 0,
       });
     },
-    [board.id, fetchBoardTasks, queryClient]
+    [board.id, fetchBoardTasks, queryClient, sourceFilterKey]
   );
 
   const handleViewChange = useCallback(
@@ -143,7 +179,7 @@ export function BoardViews({
   );
 
   const { data: fullTasks = [] } = useQuery({
-    queryKey: ['tasks-full', board.id],
+    queryKey: ['tasks-full', board.id, sourceFilterKey],
     enabled: shouldEagerLoadTasks,
     queryFn: fetchBoardTasks,
     refetchOnMount: 'always',
@@ -182,8 +218,7 @@ export function BoardViews({
       ...savedConfig.filters,
     });
     setListStatusFilter(savedConfig.listStatusFilter);
-    primeFullTaskCache(savedConfig.currentView);
-  }, [board.id, primeFullTaskCache]);
+  }, [board.id]);
 
   useEffect(() => {
     if (!workspace.personal || typeof window === 'undefined') {
@@ -227,8 +262,11 @@ export function BoardViews({
       !!filters.searchQuery?.trim() ||
       filters.includeMyTasks ||
       filters.includeUnassigned ||
+      sourceScope !== 'all_visible' ||
+      sourceWorkspaceIds.length > 0 ||
+      sourceBoardIds.length > 0 ||
       !!filters.sortBy,
-    [filters]
+    [filters, sourceBoardIds.length, sourceScope, sourceWorkspaceIds.length]
   );
 
   const externalStagingList = useMemo<TaskList | null>(() => {
@@ -380,7 +418,13 @@ export function BoardViews({
   const sourceTasks = useMemo(() => {
     if (!shouldEagerLoadTasks) return tasks;
 
-    if (fullTasks.length === 0) return tasks;
+    if (fullTasks.length === 0) {
+      return sourceScope === 'all_visible' ? tasks : [];
+    }
+
+    if (sourceScope !== 'all_visible') {
+      return fullTasks;
+    }
 
     const progressiveById = new Map(
       tasks.map((task) => [task.id, task] as const)
@@ -396,13 +440,15 @@ export function BoardViews({
     }
 
     return merged;
-  }, [fullTasks, shouldEagerLoadTasks, tasks]);
+  }, [fullTasks, shouldEagerLoadTasks, sourceScope, tasks]);
 
   // Filter tasks based on filters AND filtered lists
   const filteredTasks = useMemo(() => {
     // First, filter by list status
     const listIds = new Set(filteredLists.map((list) => list.id));
-    let result = sourceTasks.filter((task) => listIds.has(task.list_id));
+    let result = isExternalSourceScope
+      ? sourceTasks
+      : sourceTasks.filter((task) => listIds.has(task.list_id));
 
     // If there's a search query, use semantic search results
     if (filters.searchQuery && filters.searchQuery.trim().length > 0) {
@@ -428,6 +474,7 @@ export function BoardViews({
     sourceTasks,
     filters,
     filteredLists,
+    isExternalSourceScope,
     semanticSearchResults,
     applyNonSearchFilters,
   ]);

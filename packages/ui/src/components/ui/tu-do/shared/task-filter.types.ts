@@ -35,6 +35,12 @@ export type SortOption =
   | 'estimation-high'
   | 'estimation-low';
 
+export type TaskSourceScope =
+  | 'all_visible'
+  | 'current_board'
+  | 'external_current_workspace'
+  | 'external_specific';
+
 export interface TaskFilters {
   labels: TaskLabel[];
   assignees: TaskAssignee[];
@@ -44,6 +50,9 @@ export interface TaskFilters {
   estimationRange: { min?: number; max?: number } | null;
   includeMyTasks: boolean;
   includeUnassigned: boolean;
+  sourceScope: TaskSourceScope;
+  sourceWorkspaceIds: string[];
+  sourceBoardIds: string[];
   searchQuery?: string;
   sortBy?: SortOption;
 }

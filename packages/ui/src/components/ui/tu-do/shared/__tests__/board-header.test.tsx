@@ -117,6 +117,9 @@ function renderBoardHeader(
           labels: [],
           priorities: [],
           projects: [],
+          sourceBoardIds: [],
+          sourceScope: 'all_visible',
+          sourceWorkspaceIds: [],
         }}
         isMultiSelectMode={false}
         isPersonalWorkspace={false}

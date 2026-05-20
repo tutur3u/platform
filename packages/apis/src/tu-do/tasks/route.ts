@@ -161,6 +161,11 @@ type ExternalTaskSortBy =
   | 'due-asc'
   | 'name-asc'
   | 'source-asc';
+type TaskSourceScope =
+  | 'all_visible'
+  | 'current_board'
+  | 'external_current_workspace'
+  | 'external_specific';
 type ExternalSourceStatus =
   | 'not_started'
   | 'active'
@@ -191,6 +196,11 @@ type PersonalTaskBoardExternalCountRow = {
   task_count: number | null;
 };
 
+type TaskSourceFilterIdRow = {
+  task_id: string | null;
+  total_count: number | null;
+};
+
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
   switch (value) {
     case 'created-asc':
@@ -201,6 +211,37 @@ function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
     default:
       return DEFAULT_EXTERNAL_TASK_SORT_BY;
   }
+}
+
+function parseTaskSourceScope(value: string | null): TaskSourceScope {
+  switch (value) {
+    case 'current_board':
+    case 'external_current_workspace':
+    case 'external_specific':
+      return value;
+    default:
+      return 'all_visible';
+  }
+}
+
+function parseUuidList(value: string | null) {
+  if (!value) return [];
+
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((entry) => entry.trim())
+        .filter((entry) => z.guid().safeParse(entry).success)
+    )
+  );
+}
+
+function isExternalSourceScope(sourceScope: TaskSourceScope) {
+  return (
+    sourceScope === 'external_current_workspace' ||
+    sourceScope === 'external_specific'
+  );
 }
 
 function parseTaskListStatuses(value: string | null): ExternalSourceStatus[] {
@@ -395,6 +436,27 @@ function applyPersonalExternalTask(
   } as unknown as NormalizedRouteTask;
 }
 
+function applyExternalSourceTask(task: TaskRecord) {
+  const normalized = normalizeTask(task) as ReturnType<typeof normalizeTask> & {
+    sort_key?: number | null;
+  };
+  const taskWithList = task as TaskRecord & { list_id?: string | null };
+  const source = getTaskSourceLocation(task);
+
+  return {
+    ...normalized,
+    source_workspace_id: source.board?.ws_id ?? null,
+    source_workspace_name: source.workspace?.name ?? null,
+    source_board_id: source.board?.id ?? null,
+    source_board_name: source.board?.name ?? null,
+    source_list_id: source.list?.id ?? taskWithList.list_id ?? null,
+    source_list_name: source.list?.name ?? null,
+    source_list_status: source.list?.status ?? null,
+    is_personal_external: false,
+    is_personal_external_default: false,
+  } as unknown as NormalizedRouteTask;
+}
+
 function applyPersonalPlacement(
   task: TaskRecord,
   placement: PersonalTaskPlacementRow
@@ -404,6 +466,86 @@ function applyPersonalPlacement(
     placement.personal_board_id,
     placement
   );
+}
+
+async function loadTaskSourceFilterIds({
+  sbAdmin,
+  userId,
+  workspaceId,
+  boardId,
+  listId,
+  sourceScope,
+  sourceWorkspaceIds,
+  sourceBoardIds,
+  listStatuses,
+  searchQuery,
+  parsedIdentifier,
+  assignedToMe,
+  completedMode,
+  closedMode,
+  includeArchivedBoards,
+  includeDeletedMode,
+  externalSortBy,
+  limit,
+  offset,
+}: {
+  sbAdmin: TypedSupabaseClient;
+  userId: string;
+  workspaceId: string;
+  boardId: string | null;
+  listId: string | null;
+  sourceScope: TaskSourceScope;
+  sourceWorkspaceIds: string[];
+  sourceBoardIds: string[];
+  listStatuses: ExternalSourceStatus[];
+  searchQuery?: string;
+  parsedIdentifier: ReturnType<typeof parseTaskIdentifierQuery> | null;
+  assignedToMe: boolean;
+  completedMode: string | null;
+  closedMode: string | null;
+  includeArchivedBoards: boolean;
+  includeDeletedMode: 'all' | 'none' | 'only';
+  externalSortBy: ExternalTaskSortBy;
+  limit: number;
+  offset: number;
+}) {
+  const rpcClient = (sbAdmin as any).schema
+    ? (sbAdmin as any).schema('private')
+    : (sbAdmin as any);
+  const { data, error } = await rpcClient.rpc('list_task_source_filter_ids', {
+    p_actor_id: userId,
+    p_workspace_id: workspaceId,
+    p_board_id: boardId,
+    p_list_id: listId,
+    p_source_scope: sourceScope,
+    p_source_workspace_ids: sourceWorkspaceIds,
+    p_source_board_ids: sourceBoardIds,
+    p_list_statuses: listStatuses,
+    p_search: searchQuery ?? null,
+    p_display_number: parsedIdentifier?.displayNumber ?? null,
+    p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? null,
+    p_assigned_to_me: assignedToMe,
+    p_completed_mode: completedMode,
+    p_closed_mode: closedMode,
+    p_include_archived_boards: includeArchivedBoards,
+    p_include_deleted: includeDeletedMode,
+    p_sort_by: externalSortBy,
+    p_limit: limit,
+    p_offset: offset,
+  });
+
+  if (error) {
+    throw new Error('TASK_SOURCE_FILTER_RPC_FAILED');
+  }
+
+  const rows = ((data ?? []) as TaskSourceFilterIdRow[]).filter(
+    (row): row is TaskSourceFilterIdRow & { task_id: string } =>
+      Boolean(row.task_id)
+  );
+  const taskIds = rows.map((row) => row.task_id);
+  const count = rows[0]?.total_count ?? 0;
+
+  return { count, taskIds };
 }
 
 export type TaskRouteAuthContext = {
@@ -548,6 +690,15 @@ export async function handleTaskRouteGET(
     const listStatuses = parseTaskListStatuses(
       url.searchParams.get('listStatuses')
     );
+    const sourceScope = parseTaskSourceScope(
+      url.searchParams.get('sourceScope')
+    );
+    const sourceWorkspaceIds = parseUuidList(
+      url.searchParams.get('sourceWorkspaceIds')
+    );
+    const sourceBoardIds = parseUuidList(
+      url.searchParams.get('sourceBoardIds')
+    );
     const includeArchivedBoards =
       url.searchParams.get('includeArchivedBoards') === 'true';
     const externalIncludeDocuments =
@@ -559,6 +710,13 @@ export async function handleTaskRouteGET(
     const externalSortBy = parseExternalTaskSortBy(
       url.searchParams.get('externalSortBy')
     );
+    const parsedIdentifier = identifierQuery
+      ? parseTaskIdentifierQuery(identifierQuery)
+      : null;
+    const sourceFilterHasEmptySelection =
+      sourceScope === 'external_specific' &&
+      sourceWorkspaceIds.length === 0 &&
+      sourceBoardIds.length === 0;
     const virtualStagingBoardId = listId
       ? getPersonalExternalStagingBoardId(listId)
       : null;
@@ -799,96 +957,165 @@ export async function handleTaskRouteGET(
         ? fullSelectAssignedToMe
         : fullSelect;
 
-    let query = sbAdmin
-      .from('tasks')
-      .select(selectedColumns, includeCount ? { count: 'exact' } : undefined)
-      .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
+    let sourceTasks: NormalizedRouteTask[] = [];
+    let sourceTaskCount = 0;
+    let loadedViaSourceFilterRpc = false;
 
-    if (includeDeletedMode === 'none') {
-      query = query.is('deleted_at', null).eq('task_lists.deleted', false);
-    } else if (includeDeletedMode === 'only') {
-      query = query.not('deleted_at', 'is', null) as typeof query;
-    }
+    if (sourceFilterHasEmptySelection) {
+      loadedViaSourceFilterRpc = true;
+    } else if (sourceScope !== 'all_visible' && !forTimeTracking) {
+      try {
+        const { taskIds, count: rpcCount } = await loadTaskSourceFilterIds({
+          sbAdmin,
+          userId: user.id,
+          workspaceId: normalizedWorkspaceId,
+          boardId,
+          listId,
+          sourceScope,
+          sourceWorkspaceIds,
+          sourceBoardIds,
+          listStatuses,
+          searchQuery,
+          parsedIdentifier,
+          assignedToMe,
+          completedMode,
+          closedMode,
+          includeArchivedBoards,
+          includeDeletedMode,
+          externalSortBy,
+          limit,
+          offset,
+        });
 
-    if (!includeArchivedBoards) {
-      query = query.is('task_lists.workspace_boards.archived_at', null);
-    }
+        sourceTaskCount = rpcCount;
 
-    if (forTimeTracking) {
-      query = query
-        .is('closed_at', null)
-        .in('task_lists.status', ['not_started', 'active']);
-    } else if (listStatuses.length > 0) {
-      query = query.in('task_lists.status', listStatuses);
-    }
+        if (taskIds.length > 0) {
+          const { data: rpcTaskRows, error: rpcTaskError } = await sbAdmin
+            .from('tasks')
+            .select(selectedColumns)
+            .in('id', taskIds);
 
-    if (completedMode === 'exclude') {
-      query = query.is('completed_at', null);
-    } else if (completedMode === 'only') {
-      query = query.not('completed_at', 'is', null) as typeof query;
-    }
+          if (rpcTaskError) {
+            throw new Error('TASK_SOURCE_FILTER_HYDRATION_FAILED');
+          }
 
-    if (closedMode === 'exclude') {
-      query = query.is('closed_at', null);
-    } else if (closedMode === 'only') {
-      query = query.not('closed_at', 'is', null) as typeof query;
-    }
+          const rpcTaskRecords = ((rpcTaskRows as unknown as
+            | TaskRecord[]
+            | null) ?? []) as TaskRecord[];
+          const taskById = new Map(
+            rpcTaskRecords.map((task) => [task.id, task] as const)
+          );
 
-    if (assignedToMe) {
-      query = query.eq('_currentUserAssignment.user_id', user.id);
-    }
+          sourceTasks = taskIds.flatMap((taskId) => {
+            const task = taskById.get(taskId);
+            if (!task) return [];
+            return [
+              isExternalSourceScope(sourceScope)
+                ? applyExternalSourceTask(task)
+                : (normalizeTask(task) as unknown as NormalizedRouteTask),
+            ];
+          });
+        }
 
-    if (sourceTasksDisabled) {
-      query = query.eq('id', '00000000-0000-0000-0000-000000000000');
-    } else if (listId) {
-      query = query.eq('list_id', listId);
-    } else if (boardId) {
-      query = query.eq('task_lists.board_id', boardId);
-    }
-
-    if (searchQuery) {
-      query = query.ilike('name', `%${searchQuery}%`);
-    }
-
-    const parsedIdentifier = identifierQuery
-      ? parseTaskIdentifierQuery(identifierQuery)
-      : null;
-
-    if (parsedIdentifier) {
-      query = query.eq('display_number', parsedIdentifier.displayNumber);
-
-      if (parsedIdentifier.ticketPrefix) {
-        query = query.eq(
-          'task_lists.workspace_boards.ticket_prefix',
-          parsedIdentifier.ticketPrefix
+        loadedViaSourceFilterRpc = true;
+      } catch {
+        return NextResponse.json(
+          { error: 'Failed to load task source filters' },
+          { status: 500 }
         );
       }
     }
 
-    const queryResult = await query
-      .order('sort_key', { ascending: true, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    if (!loadedViaSourceFilterRpc) {
+      let query = sbAdmin
+        .from('tasks')
+        .select(selectedColumns, includeCount ? { count: 'exact' } : undefined)
+        .eq('task_lists.workspace_boards.ws_id', normalizedWorkspaceId);
 
-    const { data, error, count } = queryResult as unknown as {
-      data: TaskRecord[] | null;
-      error: unknown;
-      count: number | null;
-    };
+      if (includeDeletedMode === 'none') {
+        query = query.is('deleted_at', null).eq('task_lists.deleted', false);
+      } else if (includeDeletedMode === 'only') {
+        query = query.not('deleted_at', 'is', null) as typeof query;
+      }
 
-    if (error) {
-      console.error('Database error in tasks query:', error);
-      throw new Error('TASKS_QUERY_FAILED');
+      if (!includeArchivedBoards) {
+        query = query.is('task_lists.workspace_boards.archived_at', null);
+      }
+
+      if (forTimeTracking) {
+        query = query
+          .is('closed_at', null)
+          .in('task_lists.status', ['not_started', 'active']);
+      } else if (listStatuses.length > 0) {
+        query = query.in('task_lists.status', listStatuses);
+      }
+
+      if (completedMode === 'exclude') {
+        query = query.is('completed_at', null);
+      } else if (completedMode === 'only') {
+        query = query.not('completed_at', 'is', null) as typeof query;
+      }
+
+      if (closedMode === 'exclude') {
+        query = query.is('closed_at', null);
+      } else if (closedMode === 'only') {
+        query = query.not('closed_at', 'is', null) as typeof query;
+      }
+
+      if (assignedToMe) {
+        query = query.eq('_currentUserAssignment.user_id', user.id);
+      }
+
+      if (sourceTasksDisabled) {
+        query = query.eq('id', '00000000-0000-0000-0000-000000000000');
+      } else if (listId) {
+        query = query.eq('list_id', listId);
+      } else if (boardId) {
+        query = query.eq('task_lists.board_id', boardId);
+      }
+
+      if (searchQuery) {
+        query = query.ilike('name', `%${searchQuery}%`);
+      }
+
+      if (parsedIdentifier) {
+        query = query.eq('display_number', parsedIdentifier.displayNumber);
+
+        if (parsedIdentifier.ticketPrefix) {
+          query = query.eq(
+            'task_lists.workspace_boards.ticket_prefix',
+            parsedIdentifier.ticketPrefix
+          );
+        }
+      }
+
+      const queryResult = await query
+        .order('sort_key', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      const { data, error, count } = queryResult as unknown as {
+        data: TaskRecord[] | null;
+        error: unknown;
+        count: number | null;
+      };
+
+      if (error) {
+        console.error('Database error in tasks query:', error);
+        throw new Error('TASKS_QUERY_FAILED');
+      }
+
+      sourceTasks = (data?.map(normalizeTask) ??
+        []) as unknown as NormalizedRouteTask[];
+      sourceTaskCount = count ?? sourceTasks.length;
     }
-
-    const sourceTasks = (data?.map(normalizeTask) ??
-      []) as unknown as NormalizedRouteTask[];
     let externalTasks: NormalizedRouteTask[] = [];
     let externalTaskCount = 0;
 
     if (
       isPersonalWorkspace &&
       !forTimeTracking &&
+      sourceScope === 'all_visible' &&
       (boardId || listId || virtualStagingBoardId)
     ) {
       const targetPersonalBoardId = virtualStagingBoardId ?? boardId;
@@ -1302,7 +1529,7 @@ export async function handleTaskRouteGET(
 
     return NextResponse.json({
       tasks: tasksWithRelationshipSummary,
-      ...(includeCount ? { count: (count ?? 0) + externalTaskCount } : {}),
+      ...(includeCount ? { count: sourceTaskCount + externalTaskCount } : {}),
     });
   } catch (error) {
     console.error('Error fetching tasks:', error);

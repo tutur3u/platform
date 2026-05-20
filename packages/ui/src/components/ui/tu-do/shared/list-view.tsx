@@ -8,6 +8,7 @@ import {
   Calendar,
   CheckCircle2,
   ChevronDown,
+  ExternalLink,
   horseHead,
   Icon,
   MoreHorizontal,
@@ -68,6 +69,7 @@ import {
   type ListViewSortOrder,
   sortListViewTasks,
 } from './list-view-sorting';
+import { TaskRowActionsMenu } from './task-row-actions-menu';
 
 interface Props {
   workspaceId: string;
@@ -111,6 +113,7 @@ export function ListView({
   const [sortField, setSortField] = useState<ListViewSortField>('created_at');
   const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
+  const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
   const { openTask } = useTaskDialog();
@@ -258,6 +261,24 @@ export function ListView({
       newSelected.delete(taskId);
     }
     setSelectedTasks(newSelected);
+  }
+
+  function openTaskFromRow(task: Task) {
+    const targetBoardId = task.source_board_id ?? boardId;
+    const targetWorkspaceId = task.source_workspace_id ?? workspaceId;
+
+    openTask(
+      task,
+      targetBoardId,
+      task.source_board_id ? undefined : lists,
+      false,
+      {
+        taskWsId: targetWorkspaceId,
+        taskWorkspacePersonal: task.source_workspace_id
+          ? false
+          : isPersonalWorkspace,
+      }
+    );
   }
 
   // Infinite scroll handler
@@ -458,6 +479,13 @@ export function ListView({
                       !task.completed_at &&
                       !taskIsInResolvedList
                   );
+                  const isExternalSource = Boolean(
+                    task.source_board_id && task.source_board_id !== boardId
+                  );
+                  const sourceLabel =
+                    task.source_board_name ??
+                    task.source_workspace_name ??
+                    t('ws-tasks.external_task');
 
                   return (
                     <TableRow
@@ -479,7 +507,26 @@ export function ListView({
                         ) {
                           return;
                         }
-                        openTask(task, boardId, lists);
+                        openTaskFromRow(task);
+                      }}
+                      onContextMenu={(e) => {
+                        if (
+                          e.shiftKey &&
+                          !e.metaKey &&
+                          !e.ctrlKey &&
+                          !e.altKey
+                        ) {
+                          e.preventDefault();
+                          handleSelectTask(
+                            task.id,
+                            !selectedTasks.has(task.id)
+                          );
+                          return;
+                        }
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setOpenTaskMenuId(task.id);
                       }}
                     >
                       <TableCell className="px-2.5 py-0">
@@ -509,6 +556,22 @@ export function ListView({
                             >
                               {task.name}
                             </span>
+                            {isExternalSource && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 max-w-45 gap-1 border border-dynamic-cyan/30 bg-dynamic-cyan/10 px-1.5 text-[10px] text-dynamic-cyan"
+                                title={[
+                                  task.source_workspace_name,
+                                  task.source_board_name,
+                                  task.source_list_name,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' / ')}
+                              >
+                                <ExternalLink className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{sourceLabel}</span>
+                              </Badge>
+                            )}
                             {task.labels && task.labels.length > 0 && (
                               <div className="flex items-center gap-1">
                                 {task.labels.slice(0, 2).map((label) => (
@@ -652,14 +715,38 @@ export function ListView({
                       )}
                       {columnVisibility.actions && (
                         <TableCell className="px-2 py-0">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                            onClick={() => openTask(task, boardId, lists)}
-                          >
-                            <MoreHorizontal className="h-3 w-3" />
-                          </Button>
+                          <TaskRowActionsMenu
+                            task={task}
+                            boardId={boardId}
+                            workspaceId={workspaceId}
+                            lists={lists}
+                            isPersonalWorkspace={isPersonalWorkspace}
+                            onUpdate={() => {
+                              void queryClient.invalidateQueries({
+                                queryKey: ['tasks', boardId],
+                              });
+                              void queryClient.invalidateQueries({
+                                queryKey: ['tasks-full', boardId],
+                              });
+                            }}
+                            open={openTaskMenuId === task.id}
+                            onOpenChange={(open) =>
+                              setOpenTaskMenuId(open ? task.id : null)
+                            }
+                            trigger={
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+                                onClick={(event) => event.stopPropagation()}
+                              >
+                                <MoreHorizontal className="h-3 w-3" />
+                                <span className="sr-only">
+                                  {tc('open_menu')}
+                                </span>
+                              </Button>
+                            }
+                          />
                         </TableCell>
                       )}
                     </TableRow>

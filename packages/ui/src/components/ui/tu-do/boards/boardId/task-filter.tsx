@@ -2,11 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  Building2,
   Calendar as CalendarIcon,
   Check,
   Filter,
   Flag,
+  Globe2,
   Hash,
+  LayoutDashboard,
+  ListFilter,
   Tag,
   User,
   UserStar,
@@ -14,7 +18,14 @@ import {
   UserX,
   X,
 } from '@tuturuuu/icons';
-import { listWorkspaceTaskProjects } from '@tuturuuu/internal-api/tasks';
+import {
+  listWorkspaceLabels,
+  listWorkspaceTaskBoards,
+  listWorkspaceTaskProjects,
+  type WorkspaceTaskBoardListItem,
+} from '@tuturuuu/internal-api/tasks';
+import { listWorkspaces } from '@tuturuuu/internal-api/workspaces';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -37,144 +48,37 @@ import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   SortOption,
   TaskAssignee,
   TaskFilters,
   TaskLabel,
   TaskProject,
+  TaskSourceScope,
 } from '../../shared/task-filter.types';
 
 // Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
-// Re-export types for backward compatibility
 export type { SortOption, TaskAssignee, TaskFilters, TaskLabel, TaskProject };
+
+type SourceBoardOption = WorkspaceTaskBoardListItem & {
+  workspaceId: string;
+  workspaceName: string;
+};
+
+const SOURCE_SCOPE_ICONS = {
+  all_visible: Globe2,
+  current_board: LayoutDashboard,
+  external_current_workspace: Building2,
+  external_specific: ListFilter,
+} satisfies Record<TaskSourceScope, typeof Globe2>;
+
+const SOURCE_SCOPE_OPTIONS: TaskSourceScope[] = [
+  'all_visible',
+  'current_board',
+  'external_current_workspace',
+  'external_specific',
+];
 
 interface Props {
   wsId: string;
@@ -296,17 +200,14 @@ export function TaskFilter({
 }: Props) {
   const t = useTranslations();
   const [open, setOpen] = useState(false);
+  const sourceScope = filters.sourceScope ?? 'all_visible';
+  const selectedSourceWorkspaceIds = filters.sourceWorkspaceIds ?? [];
+  const selectedSourceBoardIds = filters.sourceBoardIds ?? [];
 
   // Fetch available labels
   const { data: availableLabels = [] } = useQuery({
     queryKey: ['workspace-labels', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/labels`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) throw new Error('Failed to fetch labels');
-      return response.json() as Promise<TaskLabel[]>;
-    },
+    queryFn: () => listWorkspaceLabels(wsId) as Promise<TaskLabel[]>,
     enabled: !!wsId,
   });
 
@@ -342,6 +243,81 @@ export function TaskFilter({
         })) as TaskProject[];
     },
     enabled: !!wsId,
+  });
+
+  const { data: availableWorkspaces = [] } = useQuery({
+    queryKey: ['task-source-workspaces'],
+    queryFn: () => listWorkspaces(),
+    enabled: open && sourceScope === 'external_specific',
+    staleTime: 60_000,
+  });
+
+  const sourceWorkspaces = useMemo(
+    () =>
+      [...(availableWorkspaces as InternalApiWorkspaceSummary[])]
+        .filter((workspace) => workspace.id)
+        .sort((a, b) => {
+          if (a.id === wsId) return -1;
+          if (b.id === wsId) return 1;
+          return (a.name ?? '').localeCompare(b.name ?? '');
+        }),
+    [availableWorkspaces, wsId]
+  );
+
+  const sourceWorkspaceKey = useMemo(
+    () => [...selectedSourceWorkspaceIds].sort().join(','),
+    [selectedSourceWorkspaceIds]
+  );
+  const sourceWorkspaceNameKey = useMemo(
+    () =>
+      sourceWorkspaces
+        .map((workspace) => `${workspace.id}:${workspace.name ?? ''}`)
+        .sort()
+        .join('|'),
+    [sourceWorkspaces]
+  );
+
+  const { data: sourceBoards = [], isLoading: sourceBoardsLoading } = useQuery({
+    queryKey: [
+      'task-source-boards',
+      sourceWorkspaceKey,
+      sourceWorkspaceNameKey,
+    ],
+    queryFn: async () => {
+      if (selectedSourceWorkspaceIds.length === 0) return [];
+
+      const boardsByWorkspace = await Promise.all(
+        selectedSourceWorkspaceIds.map(async (workspaceId) => {
+          const workspace = sourceWorkspaces.find(
+            (item) => item.id === workspaceId
+          );
+          const response = await listWorkspaceTaskBoards(workspaceId, {
+            pageSize: 100,
+            status: 'active',
+          });
+
+          return response.boards.map(
+            (board): SourceBoardOption => ({
+              ...board,
+              workspaceId: board.ws_id ?? workspaceId,
+              workspaceName: workspace?.name ?? workspaceId,
+            })
+          );
+        })
+      );
+
+      return boardsByWorkspace.flat().sort((a, b) => {
+        const workspaceCompare = a.workspaceName.localeCompare(b.workspaceName);
+        if (workspaceCompare !== 0) return workspaceCompare;
+        return (a.name ?? '').localeCompare(b.name ?? '');
+      });
+    },
+    enabled:
+      open &&
+      sourceScope === 'external_specific' &&
+      selectedSourceWorkspaceIds.length > 0 &&
+      sourceWorkspaces.length > 0,
+    staleTime: 60_000,
   });
 
   const toggleLabel = (label: TaskLabel) => {
@@ -400,6 +376,54 @@ export function TaskFilter({
     });
   };
 
+  const setSourceScope = (nextSourceScope: TaskSourceScope) => {
+    onFiltersChange({
+      ...filters,
+      sourceScope: nextSourceScope,
+      sourceBoardIds:
+        nextSourceScope === 'external_specific' ? selectedSourceBoardIds : [],
+      sourceWorkspaceIds:
+        nextSourceScope === 'external_specific'
+          ? selectedSourceWorkspaceIds
+          : [],
+    });
+  };
+
+  const toggleSourceWorkspace = (workspace: InternalApiWorkspaceSummary) => {
+    const isSelected = selectedSourceWorkspaceIds.includes(workspace.id);
+    const nextWorkspaceIds = isSelected
+      ? selectedSourceWorkspaceIds.filter((id) => id !== workspace.id)
+      : [...selectedSourceWorkspaceIds, workspace.id];
+    const deselectedBoardIds = new Set(
+      sourceBoards
+        .filter((board) => board.workspaceId === workspace.id)
+        .map((board) => board.id)
+    );
+
+    onFiltersChange({
+      ...filters,
+      sourceScope: 'external_specific',
+      sourceWorkspaceIds: nextWorkspaceIds,
+      sourceBoardIds: isSelected
+        ? selectedSourceBoardIds.filter((id) => !deselectedBoardIds.has(id))
+        : selectedSourceBoardIds,
+    });
+  };
+
+  const toggleSourceBoard = (board: SourceBoardOption) => {
+    const isSelected = selectedSourceBoardIds.includes(board.id);
+    onFiltersChange({
+      ...filters,
+      sourceScope: 'external_specific',
+      sourceBoardIds: isSelected
+        ? selectedSourceBoardIds.filter((id) => id !== board.id)
+        : [...selectedSourceBoardIds, board.id],
+      sourceWorkspaceIds: selectedSourceWorkspaceIds.includes(board.workspaceId)
+        ? selectedSourceWorkspaceIds
+        : [...selectedSourceWorkspaceIds, board.workspaceId],
+    });
+  };
+
   const clearAllFilters = () => {
     onFiltersChange({
       labels: [],
@@ -410,10 +434,14 @@ export function TaskFilter({
       estimationRange: null,
       includeMyTasks: false,
       includeUnassigned: false,
+      sourceScope: 'all_visible',
+      sourceWorkspaceIds: [],
+      sourceBoardIds: [],
       sortBy: undefined,
     });
   };
 
+  const isSourceFilterActive = sourceScope !== 'all_visible';
   const hasFilters =
     filters.labels.length > 0 ||
     filters.assignees.length > 0 ||
@@ -422,7 +450,8 @@ export function TaskFilter({
     filters.dueDateRange !== null ||
     filters.estimationRange !== null ||
     filters.includeMyTasks ||
-    filters.includeUnassigned;
+    filters.includeUnassigned ||
+    isSourceFilterActive;
 
   // Calculate filter count, avoiding double-counting when "Assigned to me" is checked
   // and the current user is also in the assignees list
@@ -441,7 +470,13 @@ export function TaskFilter({
     (filters.dueDateRange ? 1 : 0) +
     (filters.estimationRange ? 1 : 0) +
     (filters.includeMyTasks ? 1 : 0) +
-    (filters.includeUnassigned ? 1 : 0);
+    (filters.includeUnassigned ? 1 : 0) +
+    (isSourceFilterActive
+      ? Math.max(
+          1,
+          selectedSourceWorkspaceIds.length + selectedSourceBoardIds.length
+        )
+      : 0);
 
   return (
     <div className="flex flex-wrap items-center gap-1 sm:gap-1.5">
@@ -523,6 +558,142 @@ export function TaskFilter({
                 <DropdownMenuSeparator />
               </>
             )}
+
+            {/* Source Scope */}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger className="gap-2 py-2.5">
+                <ListFilter className="h-4 w-4 text-muted-foreground" />
+                <span className="flex-1">
+                  {t('ws-tasks.filter_source_scope')}
+                </span>
+                {isSourceFilterActive && (
+                  <Badge
+                    variant="secondary"
+                    className="h-4 min-w-5 justify-center px-1 text-[10px]"
+                  >
+                    {sourceScope === 'external_specific'
+                      ? Math.max(
+                          1,
+                          selectedSourceWorkspaceIds.length +
+                            selectedSourceBoardIds.length
+                        )
+                      : 1}
+                  </Badge>
+                )}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-76 p-0">
+                <div className="p-1">
+                  {SOURCE_SCOPE_OPTIONS.map((scope) => {
+                    const Icon = SOURCE_SCOPE_ICONS[scope];
+                    return (
+                      <DropdownMenuItem
+                        key={scope}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setSourceScope(scope);
+                        }}
+                        className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-2"
+                      >
+                        <Checkbox
+                          checked={sourceScope === scope}
+                          className="pointer-events-none"
+                        />
+                        <Icon className="h-4 w-4 text-muted-foreground" />
+                        <span className="flex-1 truncate font-medium text-sm">
+                          {t(`ws-tasks.filter_source_scope_${scope}` as any)}
+                        </span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </div>
+
+                {sourceScope === 'external_specific' && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                      <Building2 className="h-3.5 w-3.5" />
+                      {t('ws-tasks.filter_workspaces')}
+                    </DropdownMenuLabel>
+                    <div className="max-h-48 overflow-y-auto px-1 pb-1">
+                      {sourceWorkspaces.length === 0 ? (
+                        <div className="px-3 py-2 text-muted-foreground text-xs">
+                          {t('ws-tasks.filter_no_workspaces_available')}
+                        </div>
+                      ) : (
+                        sourceWorkspaces.map((workspace) => (
+                          <DropdownMenuItem
+                            key={workspace.id}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              toggleSourceWorkspace(workspace);
+                            }}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
+                          >
+                            <Checkbox
+                              checked={selectedSourceWorkspaceIds.includes(
+                                workspace.id
+                              )}
+                              className="pointer-events-none"
+                            />
+                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                            <span className="truncate font-medium text-sm">
+                              {workspace.name}
+                            </span>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </div>
+
+                    <DropdownMenuLabel className="flex items-center gap-2 py-2 font-semibold text-muted-foreground text-xs uppercase tracking-wide">
+                      <LayoutDashboard className="h-3.5 w-3.5" />
+                      {t('ws-tasks.filter_boards')}
+                    </DropdownMenuLabel>
+                    <div className="max-h-56 overflow-y-auto px-1 pb-1">
+                      {selectedSourceWorkspaceIds.length === 0 ? (
+                        <div className="px-3 py-2 text-muted-foreground text-xs">
+                          {t('ws-tasks.filter_select_source_prompt')}
+                        </div>
+                      ) : sourceBoardsLoading ? (
+                        <div className="px-3 py-2 text-muted-foreground text-xs">
+                          {t('common.loading')}
+                        </div>
+                      ) : sourceBoards.length === 0 ? (
+                        <div className="px-3 py-2 text-muted-foreground text-xs">
+                          {t('ws-tasks.filter_no_boards_for_workspaces')}
+                        </div>
+                      ) : (
+                        sourceBoards.map((board) => (
+                          <DropdownMenuItem
+                            key={board.id}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              toggleSourceBoard(board);
+                            }}
+                            className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2"
+                          >
+                            <Checkbox
+                              checked={selectedSourceBoardIds.includes(
+                                board.id
+                              )}
+                              className="pointer-events-none"
+                            />
+                            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                            <div className="min-w-0 flex-1">
+                              <div className="truncate font-medium text-sm">
+                                {board.name}
+                              </div>
+                              <div className="truncate text-muted-foreground text-xs">
+                                {board.workspaceName}
+                              </div>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </div>
+                  </>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
 
             {/* Assignees */}
             <DropdownMenuSub>

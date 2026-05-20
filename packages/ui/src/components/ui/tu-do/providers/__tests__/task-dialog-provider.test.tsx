@@ -389,6 +389,9 @@ describe('TaskDialogProvider', () => {
       priorities: ['high'],
       projects: [],
       searchQuery: 'launch',
+      sourceBoardIds: [],
+      sourceScope: 'all_visible',
+      sourceWorkspaceIds: [],
       sortBy: 'priority-high' as const,
     };
 

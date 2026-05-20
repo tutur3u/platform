@@ -3,6 +3,7 @@ import {
   Crosshair,
   Expand,
   GripHorizontal,
+  MoreHorizontal,
   Plus,
   ZoomIn,
 } from '@tuturuuu/icons';
@@ -15,6 +16,8 @@ import { Slider } from '@tuturuuu/ui/slider';
 import { cn } from '@tuturuuu/utils/format';
 import type { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
+import { useState } from 'react';
+import { TaskRowActionsMenu } from '../../../shared/task-row-actions-menu';
 import {
   COLLAPSED_UNSCHEDULED_PREVIEW_COUNT,
   DEFAULT_DAY_WIDTH,
@@ -30,6 +33,7 @@ interface TimelineToolbarProps {
   unscheduledTasks: Task[];
   lists: TaskList[];
   boardId?: string;
+  wsId?: string;
   primaryCreateListId: string | null;
   dayWidth: number;
   setDayWidth: (value: number) => void;
@@ -45,6 +49,7 @@ interface TimelineToolbarProps {
   onScrollToToday: () => void;
   onFitTimeline: () => void;
   onOpenEditor: (task: Task) => void;
+  onActionsUpdate?: () => void;
   onUnscheduledDragStart: (taskId: string) => void;
   onUnscheduledDragEnd: () => void;
   t: ReturnType<typeof useTranslations>;
@@ -55,6 +60,7 @@ export function TimelineToolbar({
   unscheduledTasks,
   lists,
   boardId,
+  wsId,
   primaryCreateListId,
   dayWidth,
   setDayWidth,
@@ -70,6 +76,7 @@ export function TimelineToolbar({
   onScrollToToday,
   onFitTimeline,
   onOpenEditor,
+  onActionsUpdate,
   onUnscheduledDragStart,
   onUnscheduledDragEnd,
   t,
@@ -85,6 +92,7 @@ export function TimelineToolbar({
     0,
     unscheduledTasks.length - visibleUnscheduledTasks.length
   );
+  const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
 
   return (
     <div className="border-border/70 border-b px-3 py-2.5 md:px-4">
@@ -156,9 +164,8 @@ export function TimelineToolbar({
                   )}
                 >
                   {visibleUnscheduledTasks.map((task) => (
-                    <button
+                    <div
                       key={task.id}
-                      type="button"
                       draggable
                       className={cn(
                         'group flex items-start gap-2 rounded-xl border border-border/60 bg-background/95 text-left shadow-xs transition-all hover:border-dynamic-blue/35 hover:bg-background',
@@ -173,25 +180,59 @@ export function TimelineToolbar({
                         onUnscheduledDragStart(task.id);
                       }}
                       onDragEnd={onUnscheduledDragEnd}
-                      onClick={() => onOpenEditor(task)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        setOpenTaskMenuId(task.id);
+                      }}
                     >
                       <div className="mt-0.5 rounded-full border border-border/60 bg-muted/40 p-1 text-muted-foreground transition-colors group-hover:text-foreground">
                         <GripHorizontal className="h-3 w-3" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex items-start justify-between gap-2">
-                          <span className="line-clamp-2 font-medium text-xs leading-4">
-                            {task.name}
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="shrink-0 rounded-full px-1.5 text-[9px]"
+                          <button
+                            type="button"
+                            className="line-clamp-2 min-w-0 flex-1 text-left font-medium text-xs leading-4"
+                            onClick={() => onOpenEditor(task)}
                           >
-                            {getListName(task, lists, t)}
-                          </Badge>
+                            {task.name}
+                          </button>
+                          <div className="flex shrink-0 items-center gap-1">
+                            <Badge
+                              variant="outline"
+                              className="rounded-full px-1.5 text-[9px]"
+                            >
+                              {getListName(task, lists, t)}
+                            </Badge>
+                            {boardId && wsId && (
+                              <TaskRowActionsMenu
+                                task={task}
+                                boardId={boardId}
+                                workspaceId={wsId}
+                                lists={lists}
+                                onUpdate={onActionsUpdate ?? (() => undefined)}
+                                open={openTaskMenuId === task.id}
+                                onOpenChange={(open) =>
+                                  setOpenTaskMenuId(open ? task.id : null)
+                                }
+                                trigger={
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-full opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+                                    onClick={(event) => event.stopPropagation()}
+                                  >
+                                    <MoreHorizontal className="h-3 w-3" />
+                                    <span className="sr-only">{t('open')}</span>
+                                  </Button>
+                                }
+                              />
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                   {!showExpandedUnscheduled && hiddenUnscheduledCount > 0 && (
                     <div className="flex min-w-[72px] shrink-0 items-center justify-center rounded-xl border border-border/70 border-dashed bg-background/70 px-2 py-1.5 text-center text-[10px] text-muted-foreground">

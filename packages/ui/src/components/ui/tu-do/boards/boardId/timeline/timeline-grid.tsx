@@ -24,6 +24,7 @@ interface TimelineGridProps {
   timeline: TimelineModel;
   localTasks: Task[];
   boardId?: string;
+  wsId?: string;
   dayWidth: number;
   sidebarWidth: number;
   timelineWidth: number;
@@ -45,6 +46,7 @@ interface TimelineGridProps {
   onUnscheduleTask: (task: Task) => void;
   onMoveTaskToList: (task: Task, listId: string) => void;
   onDeleteTask: (task: Task) => void;
+  onActionsUpdate?: () => void;
   onStartInteraction: (
     item: TimelineLaneItem,
     mode: TimelineInteractionMode,
@@ -65,6 +67,7 @@ export function TimelineGrid({
   timeline,
   localTasks,
   boardId,
+  wsId,
   dayWidth,
   sidebarWidth,
   timelineWidth,
@@ -86,6 +89,7 @@ export function TimelineGrid({
   onUnscheduleTask,
   onMoveTaskToList,
   onDeleteTask,
+  onActionsUpdate,
   onStartInteraction,
   onUpdateDropPreview,
   onClearDropPreview,
@@ -216,6 +220,7 @@ export function TimelineGrid({
                     candidate.list ? [candidate.list] : []
                   )}
                   boardId={boardId}
+                  wsId={wsId}
                   dayWidth={dayWidth}
                   timelineWidth={timelineWidth}
                   sidebarWidth={sidebarWidth}
@@ -232,6 +237,7 @@ export function TimelineGrid({
                   onUnscheduleTask={onUnscheduleTask}
                   onMoveTaskToList={onMoveTaskToList}
                   onDeleteTask={onDeleteTask}
+                  onActionsUpdate={onActionsUpdate}
                   onStartInteraction={onStartInteraction}
                   t={t}
                 />
