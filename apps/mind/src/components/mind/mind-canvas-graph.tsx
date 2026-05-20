@@ -1,0 +1,981 @@
+'use client';
+
+import { cn } from '@tuturuuu/utils/format';
+import {
+  Background,
+  BaseEdge,
+  type ColorMode,
+  Controls,
+  type EdgeChange,
+  EdgeLabelRenderer,
+  type EdgeProps,
+  getSmoothStepPath,
+  type NodeChange,
+  Position,
+  ReactFlow,
+  ViewportPortal,
+} from '@xyflow/react';
+import { useTranslations } from 'next-intl';
+import { useTheme } from 'next-themes';
+import { useMemo } from 'react';
+import type {
+  MindEdgeObstacle,
+  MindFlowEdge,
+  MindFlowNode,
+  MindGroupFrame,
+} from './mind-flow';
+import { MindNodeCard } from './mind-node-card';
+
+const nodeTypes = { mindNode: MindNodeCard };
+const edgeTypes = { mindRelationship: MindRelationshipEdge };
+const AXIS_ALIGN_TOLERANCE = 8;
+const DETOUR_GAPS = [72, 128, 196];
+const FRAME_BORDER_LABEL_GAP = 18;
+const FRAME_BORDER_LABEL_THICKNESS = 20;
+const LABEL_ESTIMATED_CHAR_WIDTH = 7.6;
+const LABEL_HEIGHT_COMPACT = 24;
+const LABEL_HEIGHT_WRAPPED = 42;
+const LABEL_OBSTACLE_PADDING = 12;
+const LABEL_OFFSETS = [34, 50, 68] as const;
+const LABEL_PADDING_X = 30;
+const OBSTACLE_PADDING = 28;
+const PORT_GAP = 36;
+const RELATIONSHIP_LINE_LABEL_GAP = 28;
+const VERTICAL_LABEL_GAPS = [12, 20, 32] as const;
+
+type Props = {
+  edges: MindFlowEdge[];
+  groupFrames: MindGroupFrame[];
+  nodes: MindFlowNode[];
+  onConnect: (source?: string | null, target?: string | null) => void;
+  onCanvasClick?: () => void;
+  onEdgesChange: (changes: EdgeChange<MindFlowEdge>[]) => void;
+  onEdgesDelete: (edges: MindFlowEdge[]) => void;
+  onNodesChange: (changes: NodeChange<MindFlowNode>[]) => void;
+  onNodesDelete: (nodes: MindFlowNode[]) => void;
+  onSelectionChange: (selection: {
+    edges: MindFlowEdge[];
+    nodes: MindFlowNode[];
+  }) => void;
+};
+
+export function MindCanvasGraph({
+  edges,
+  groupFrames,
+  nodes,
+  onConnect,
+  onCanvasClick,
+  onEdgesChange,
+  onEdgesDelete,
+  onNodesChange,
+  onNodesDelete,
+  onSelectionChange,
+}: Props) {
+  const { resolvedTheme } = useTheme();
+  const colorMode: ColorMode = resolvedTheme === 'light' ? 'light' : 'dark';
+  const edgesWithFrameLabelObstacles = useMemo<MindFlowEdge[]>(() => {
+    const frameLabelObstacles = groupFrames.flatMap(toFrameLabelObstacles);
+    const relationshipLineObstacles = getRelationshipLineObstacles(
+      edges,
+      nodes
+    );
+    if (
+      frameLabelObstacles.length === 0 &&
+      relationshipLineObstacles.length === 0
+    ) {
+      return edges;
+    }
+
+    return edges.map((edge) => {
+      if (!edge.data) return edge;
+      const otherRelationshipLineObstacles = relationshipLineObstacles.filter(
+        (obstacle) => !obstacle.id.startsWith(`${edge.id}:`)
+      );
+
+      return {
+        ...edge,
+        data: {
+          ...edge.data,
+          labelObstacles: [
+            ...(edge.data.labelObstacles ?? []),
+            ...frameLabelObstacles,
+            ...otherRelationshipLineObstacles,
+          ],
+        },
+      };
+    });
+  }, [edges, groupFrames, nodes]);
+
+  return (
+    <ReactFlow<MindFlowNode, MindFlowEdge>
+      className="bg-root-background"
+      colorMode={colorMode}
+      defaultEdgeOptions={{ type: 'smoothstep' }}
+      edges={edgesWithFrameLabelObstacles}
+      fitView
+      nodes={nodes}
+      edgeTypes={edgeTypes}
+      nodeTypes={nodeTypes}
+      onConnect={(connection) =>
+        onConnect(connection.source, connection.target)
+      }
+      onPaneClick={onCanvasClick}
+      onEdgesChange={onEdgesChange}
+      onEdgesDelete={onEdgesDelete}
+      onNodesChange={onNodesChange}
+      onNodesDelete={onNodesDelete}
+      onSelectionChange={onSelectionChange}
+    >
+      <MindGroupFrames frames={groupFrames} />
+      <Background className="bg-root-background" />
+      <Controls className="overflow-hidden rounded-md border border-border bg-background/95 shadow-lg [&_.react-flow__controls-button:hover]:bg-muted [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button]:bg-background [&_.react-flow__controls-button]:text-foreground [&_.react-flow__controls-button_svg]:fill-current" />
+    </ReactFlow>
+  );
+}
+
+function MindGroupFrames({ frames }: { frames: MindGroupFrame[] }) {
+  const t = useTranslations('mind');
+
+  return (
+    <ViewportPortal>
+      {frames.map((frame) => (
+        <div
+          className="pointer-events-none absolute rounded-2xl border"
+          key={frame.id}
+          style={{
+            borderColor: frame.color,
+            borderStyle: frame.kind === 'children' ? 'solid' : 'dashed',
+            borderWidth: frame.kind === 'children' ? 1.5 : 1,
+            boxShadow:
+              frame.kind === 'children'
+                ? `0 0 0 1px color-mix(in oklab, ${frame.color} 24%, transparent)`
+                : undefined,
+            height: frame.height,
+            left: frame.x,
+            top: frame.y,
+            width: frame.width,
+          }}
+        >
+          <div
+            className="absolute -top-3 left-5 flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 font-medium text-[10px] uppercase tracking-[0.12em] shadow-lg"
+            style={{ borderColor: frame.color, color: frame.color }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+            {frame.kind === 'children'
+              ? t('groups.childrenOf', {
+                  count: frame.childCount,
+                  parent: frame.parentTitle,
+                })
+              : t('groups.cluster', {
+                  count: frame.childCount,
+                  title: frame.title,
+                })}
+          </div>
+        </div>
+      ))}
+    </ViewportPortal>
+  );
+}
+
+function MindRelationshipEdge({
+  data,
+  id,
+  interactionWidth,
+  label,
+  markerEnd,
+  selected,
+  sourcePosition,
+  sourceX,
+  sourceY,
+  style,
+  targetPosition,
+  targetX,
+  targetY,
+}: EdgeProps<MindFlowEdge>) {
+  const sourceSide = sourcePosition ?? Position.Right;
+  const targetSide = targetPosition ?? Position.Left;
+  const relationshipLabel =
+    typeof label === 'string' && label.trim()
+      ? label.trim()
+      : data?.edge.edgeType.replaceAll('_', ' ');
+  const route = buildRelationshipRoute({
+    fallbackPositions: {
+      source: sourceSide,
+      target: targetSide,
+    },
+    labelObstacles: data?.labelObstacles ?? [],
+    labelText: relationshipLabel,
+    obstacles: data?.obstacles ?? [],
+    source: { x: sourceX, y: sourceY },
+    target: { x: targetX, y: targetY },
+  });
+
+  return (
+    <>
+      <BaseEdge
+        id={id}
+        interactionWidth={interactionWidth ?? 28}
+        markerEnd={markerEnd}
+        path={route.path}
+        style={{
+          ...style,
+          strokeWidth: selected ? 3 : style?.strokeWidth,
+        }}
+      />
+      {label && route.label.visible !== false ? (
+        <EdgeLabelRenderer>
+          <div
+            className={cn(
+              'nodrag nopan pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-dynamic-blue/45 bg-background/95 px-2 py-0.5 font-medium text-[11px] shadow-sm backdrop-blur',
+              route.label.oneLine ? 'whitespace-nowrap' : 'break-words'
+            )}
+            style={{
+              left: route.label.x,
+              maxWidth: route.label.maxWidth,
+              top: route.label.y,
+              zIndex: selected ? 50 : 30,
+            }}
+          >
+            <span
+              className={cn(
+                'min-w-0 overflow-visible leading-4',
+                route.label.oneLine ? 'whitespace-nowrap' : 'whitespace-normal'
+              )}
+            >
+              {relationshipLabel}
+            </span>
+          </div>
+        </EdgeLabelRenderer>
+      ) : null}
+    </>
+  );
+}
+
+type Point = { x: number; y: number };
+type LabelPlacement = {
+  maxWidth: number;
+  oneLine: boolean;
+  visible?: boolean;
+  x: number;
+  y: number;
+};
+type LabelCandidate = LabelPlacement & {
+  horizontal: boolean;
+  lineGap: number;
+  segmentLength: number;
+};
+type Rect = { height: number; width: number; x: number; y: number };
+
+export function buildRelationshipRoute({
+  fallbackPositions,
+  labelObstacles = [],
+  labelText,
+  obstacles,
+  source,
+  target,
+}: {
+  fallbackPositions: { source: Position; target: Position };
+  labelObstacles?: MindEdgeObstacle[];
+  labelText?: string;
+  obstacles: MindEdgeObstacle[];
+  source: Point;
+  target: Point;
+}) {
+  const safeObstacles = obstacles.map((obstacle) => expandObstacle(obstacle));
+  const safeLabelObstacles = (
+    labelObstacles.length > 0 ? labelObstacles : obstacles
+  ).map((obstacle) => expandLabelObstacle(obstacle));
+  const candidates: Point[][] = [];
+  const direct = [source, target];
+
+  if (isAxisAligned(source, target) && isPathClear(direct, safeObstacles)) {
+    return createRoute(direct, {
+      labelObstacles: safeLabelObstacles,
+      labelText,
+    });
+  }
+
+  const sourceOut = getPortPoint(source, fallbackPositions.source);
+  const targetOut = getPortPoint(target, fallbackPositions.target);
+  const midX = (sourceOut.x + targetOut.x) / 2;
+  const midY = (sourceOut.y + targetOut.y) / 2;
+
+  candidates.push(
+    [source, { x: target.x, y: source.y }, target],
+    [source, { x: source.x, y: target.y }, target],
+    [source, sourceOut, { x: targetOut.x, y: sourceOut.y }, targetOut, target],
+    [source, sourceOut, { x: sourceOut.x, y: targetOut.y }, targetOut, target],
+    [
+      source,
+      sourceOut,
+      { x: midX, y: sourceOut.y },
+      { x: midX, y: targetOut.y },
+      targetOut,
+      target,
+    ],
+    [
+      source,
+      sourceOut,
+      { x: sourceOut.x, y: midY },
+      { x: targetOut.x, y: midY },
+      targetOut,
+      target,
+    ]
+  );
+
+  const bounds = getRouteBounds(source, target, safeObstacles);
+  for (const gap of DETOUR_GAPS) {
+    const topY = bounds.minY - gap;
+    const bottomY = bounds.maxY + gap;
+    const leftX = bounds.minX - gap;
+    const rightX = bounds.maxX + gap;
+
+    candidates.push(
+      [
+        source,
+        sourceOut,
+        { x: sourceOut.x, y: topY },
+        { x: targetOut.x, y: topY },
+        targetOut,
+        target,
+      ],
+      [
+        source,
+        sourceOut,
+        { x: sourceOut.x, y: bottomY },
+        { x: targetOut.x, y: bottomY },
+        targetOut,
+        target,
+      ],
+      [
+        source,
+        sourceOut,
+        { x: leftX, y: sourceOut.y },
+        { x: leftX, y: targetOut.y },
+        targetOut,
+        target,
+      ],
+      [
+        source,
+        sourceOut,
+        { x: rightX, y: sourceOut.y },
+        { x: rightX, y: targetOut.y },
+        targetOut,
+        target,
+      ]
+    );
+  }
+
+  const clearRoute = candidates
+    .map(compactPoints)
+    .filter((candidate) => isPathClear(candidate, safeObstacles))
+    .sort((a, b) => getRouteScore(a) - getRouteScore(b))[0];
+
+  if (clearRoute) {
+    return createRoute(clearRoute, {
+      labelObstacles: safeLabelObstacles,
+      labelText,
+    });
+  }
+
+  const [fallbackPath, labelX, labelY] = getSmoothStepPath({
+    borderRadius: 0,
+    offset: 32,
+    sourcePosition: fallbackPositions.source,
+    sourceX: source.x,
+    sourceY: source.y,
+    targetPosition: fallbackPositions.target,
+    targetX: target.x,
+    targetY: target.y,
+  });
+
+  return {
+    label: pickBestLabelCandidate(
+      [
+        {
+          horizontal: false,
+          lineGap: 0,
+          maxWidth: 220,
+          oneLine: false,
+          segmentLength: 0,
+          x: labelX,
+          y: labelY,
+        },
+      ],
+      {
+        labelObstacles: safeLabelObstacles,
+        labelText,
+        routeMidpoint: { x: labelX, y: labelY },
+      }
+    ),
+    path: fallbackPath,
+    points: [source, target],
+  };
+}
+
+function createRoute(
+  points: Point[],
+  options?: { labelObstacles?: MindEdgeObstacle[]; labelText?: string }
+) {
+  const compacted = compactPoints(points);
+  const path = compacted
+    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+    .join(' ');
+  const midpoint = getPathLabel(compacted, options);
+
+  return { label: midpoint, path, points: compacted };
+}
+
+function compactPoints(points: Point[]) {
+  return points
+    .filter((point, index) => {
+      const previous = points[index - 1];
+      return !previous || previous.x !== point.x || previous.y !== point.y;
+    })
+    .filter((point, index, compacted) => {
+      const previous = compacted[index - 1];
+      const next = compacted[index + 1];
+      if (!previous || !next) return true;
+      const sameHorizontal = previous.y === point.y && point.y === next.y;
+      const sameVertical = previous.x === point.x && point.x === next.x;
+      return !(sameHorizontal || sameVertical);
+    });
+}
+
+function getPathLabel(
+  points: Point[],
+  {
+    labelObstacles = [],
+    labelText,
+  }: { labelObstacles?: MindEdgeObstacle[]; labelText?: string } = {}
+) {
+  const total = getPathLength(points);
+  const routeMidpoint = getPointAtPathLength(points, total / 2);
+  const candidates = getSegments(points).flatMap((segment) =>
+    getSegmentLabelCandidates(segment, labelText)
+  );
+
+  if (candidates.length > 0) {
+    return pickBestLabelCandidate(candidates, {
+      labelObstacles,
+      labelText,
+      routeMidpoint,
+    });
+  }
+
+  const fallback = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
+  return { maxWidth: 180, oneLine: false, ...fallback };
+}
+
+function getSegmentLabelCandidates(
+  segment: { end: Point; length: number; start: Point },
+  labelText?: string
+): LabelCandidate[] {
+  if (segment.length < 48) return [];
+
+  const horizontal = segment.start.y === segment.end.y;
+  const desiredWidth = getDesiredLabelWidth(labelText);
+  const maxWidth = horizontal
+    ? Math.min(320, Math.max(112, segment.length - 32))
+    : Math.min(280, Math.max(160, desiredWidth));
+  const oneLine =
+    (horizontal ? segment.length >= 150 : true) && desiredWidth <= maxWidth;
+  const base = { horizontal, maxWidth, oneLine, segmentLength: segment.length };
+  const ratios = segment.length >= 180 ? [0.22, 0.36, 0.5, 0.64, 0.78] : [0.5];
+
+  if (horizontal) {
+    return ratios.flatMap((ratio) => {
+      const x = segment.start.x + (segment.end.x - segment.start.x) * ratio;
+      return [
+        { ...base, lineGap: 0, x, y: segment.start.y },
+        ...LABEL_OFFSETS.flatMap((offset) => [
+          {
+            ...base,
+            lineGap: offset - LABEL_HEIGHT_COMPACT / 2,
+            x,
+            y: segment.start.y - offset,
+          },
+          {
+            ...base,
+            lineGap: offset - LABEL_HEIGHT_COMPACT / 2,
+            x,
+            y: segment.start.y + offset,
+          },
+        ]),
+      ];
+    });
+  }
+
+  return ratios.flatMap((ratio) => {
+    const y = segment.start.y + (segment.end.y - segment.start.y) * ratio;
+    const labelWidth = estimateLabelWidth(labelText, maxWidth);
+    return [
+      { ...base, lineGap: 0, x: segment.start.x, y },
+      ...VERTICAL_LABEL_GAPS.flatMap((gap) => [
+        { ...base, lineGap: gap, x: segment.start.x + labelWidth / 2 + gap, y },
+        { ...base, lineGap: gap, x: segment.start.x - labelWidth / 2 - gap, y },
+      ]),
+    ];
+  });
+}
+
+function pickBestLabelCandidate(
+  candidates: LabelCandidate[],
+  {
+    labelObstacles,
+    labelText,
+    routeMidpoint,
+  }: {
+    labelObstacles: MindEdgeObstacle[];
+    labelText?: string;
+    routeMidpoint: Point;
+  }
+): LabelPlacement {
+  const best = [...candidates].sort(
+    (a, b) =>
+      getLabelScore(a, labelText, labelObstacles, routeMidpoint) -
+      getLabelScore(b, labelText, labelObstacles, routeMidpoint)
+  )[0];
+
+  if (!best) {
+    return {
+      maxWidth: 180,
+      oneLine: false,
+      visible: false,
+      x: routeMidpoint.x,
+      y: routeMidpoint.y,
+    };
+  }
+
+  const {
+    horizontal: _horizontal,
+    lineGap: _lineGap,
+    segmentLength: _segmentLength,
+    ...label
+  } = best;
+  return { ...label, visible: true };
+}
+
+function getLabelScore(
+  candidate: LabelCandidate,
+  labelText: string | undefined,
+  obstacles: MindEdgeObstacle[],
+  routeMidpoint: Point
+) {
+  const rect = getLabelRect(candidate, labelText);
+  const collisionPenalty = getLabelCollisionArea(rect, obstacles);
+  const distanceFromMidpoint =
+    Math.abs(candidate.x - routeMidpoint.x) +
+    Math.abs(candidate.y - routeMidpoint.y);
+  const estimatedWidth = estimateLabelWidth(labelText, candidate.maxWidth);
+  const fitPenalty = estimatedWidth > candidate.maxWidth ? 300 : 0;
+
+  return (
+    collisionPenalty +
+    fitPenalty +
+    distanceFromMidpoint * 0.75 +
+    candidate.lineGap * 1.8 +
+    (candidate.horizontal ? 0 : 70) +
+    (candidate.oneLine ? -60 : 20) -
+    candidate.segmentLength * 0.05
+  );
+}
+
+function getLabelRect(label: LabelPlacement, labelText?: string): Rect {
+  const width = estimateLabelWidth(labelText, label.maxWidth);
+  const height = label.oneLine ? LABEL_HEIGHT_COMPACT : LABEL_HEIGHT_WRAPPED;
+
+  return {
+    height,
+    width,
+    x: label.x - width / 2,
+    y: label.y - height / 2,
+  };
+}
+
+function estimateLabelWidth(labelText: string | undefined, maxWidth: number) {
+  return Math.min(maxWidth, Math.max(72, getDesiredLabelWidth(labelText)));
+}
+
+function getDesiredLabelWidth(labelText: string | undefined) {
+  return (
+    (labelText?.length ?? 12) * LABEL_ESTIMATED_CHAR_WIDTH + LABEL_PADDING_X
+  );
+}
+
+function getPointAtPathLength(points: Point[], targetLength: number) {
+  let cursor = 0;
+
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    if (!start || !end) continue;
+
+    const segmentLength = Math.abs(end.x - start.x) + Math.abs(end.y - start.y);
+    if (cursor + segmentLength >= targetLength) {
+      const ratio =
+        segmentLength === 0 ? 0 : (targetLength - cursor) / segmentLength;
+      return {
+        x: start.x + (end.x - start.x) * ratio,
+        y: start.y + (end.y - start.y) * ratio,
+      };
+    }
+
+    cursor += segmentLength;
+  }
+
+  return points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
+}
+
+function isPathClear(points: Point[], obstacles: MindEdgeObstacle[]) {
+  for (let index = 1; index < points.length; index += 1) {
+    const start = points[index - 1];
+    const end = points[index];
+    if (!start || !end) continue;
+    if (
+      obstacles.some((obstacle) => segmentIntersectsRect(start, end, obstacle))
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function getPathLength(points: Point[]) {
+  return points.reduce((sum, point, index) => {
+    const previous = points[index - 1];
+    if (!previous) return sum;
+    return (
+      sum + Math.abs(point.x - previous.x) + Math.abs(point.y - previous.y)
+    );
+  }, 0);
+}
+
+function getRouteScore(points: Point[]) {
+  return getPathLength(points) + getBendCount(points) * 36;
+}
+
+function getBendCount(points: Point[]) {
+  let bends = 0;
+  for (let index = 2; index < points.length; index += 1) {
+    const previous = points[index - 2];
+    const current = points[index - 1];
+    const next = points[index];
+    if (!previous || !current || !next) continue;
+    const previousHorizontal = previous.y === current.y;
+    const nextHorizontal = current.y === next.y;
+    if (previousHorizontal !== nextHorizontal) bends += 1;
+  }
+  return bends;
+}
+
+function getSegments(points: Point[]) {
+  return points.flatMap((point, index) => {
+    const previous = points[index - 1];
+    if (!previous) return [];
+    return [
+      {
+        end: point,
+        length: Math.abs(point.x - previous.x) + Math.abs(point.y - previous.y),
+        start: previous,
+      },
+    ];
+  });
+}
+
+function isAxisAligned(source: Point, target: Point) {
+  return (
+    Math.abs(source.x - target.x) <= AXIS_ALIGN_TOLERANCE ||
+    Math.abs(source.y - target.y) <= AXIS_ALIGN_TOLERANCE
+  );
+}
+
+function getPortPoint(point: Point, side: Position) {
+  if (side === Position.Top) return { x: point.x, y: point.y - PORT_GAP };
+  if (side === Position.Bottom) return { x: point.x, y: point.y + PORT_GAP };
+  if (side === Position.Left) return { x: point.x - PORT_GAP, y: point.y };
+  return { x: point.x + PORT_GAP, y: point.y };
+}
+
+function expandObstacle(obstacle: MindEdgeObstacle): MindEdgeObstacle {
+  return {
+    ...obstacle,
+    height: obstacle.height + OBSTACLE_PADDING * 2,
+    width: obstacle.width + OBSTACLE_PADDING * 2,
+    x: obstacle.x - OBSTACLE_PADDING,
+    y: obstacle.y - OBSTACLE_PADDING,
+  };
+}
+
+function expandLabelObstacle(obstacle: MindEdgeObstacle): MindEdgeObstacle {
+  return {
+    ...obstacle,
+    height: obstacle.height + LABEL_OBSTACLE_PADDING * 2,
+    width: obstacle.width + LABEL_OBSTACLE_PADDING * 2,
+    x: obstacle.x - LABEL_OBSTACLE_PADDING,
+    y: obstacle.y - LABEL_OBSTACLE_PADDING,
+  };
+}
+
+function toFrameLabelObstacles(frame: MindGroupFrame): MindEdgeObstacle[] {
+  const strip = FRAME_BORDER_LABEL_THICKNESS;
+  const halfStrip = strip / 2;
+
+  return [
+    {
+      height: strip,
+      id: `${frame.id}:top-border`,
+      width: frame.width,
+      x: frame.x,
+      y: frame.y - halfStrip,
+    },
+    {
+      height: strip,
+      id: `${frame.id}:bottom-border`,
+      width: frame.width,
+      x: frame.x,
+      y: frame.y + frame.height - halfStrip,
+    },
+    {
+      height: frame.height,
+      id: `${frame.id}:left-border`,
+      width: strip,
+      x: frame.x - halfStrip,
+      y: frame.y,
+    },
+    {
+      height: frame.height,
+      id: `${frame.id}:right-border`,
+      width: strip,
+      x: frame.x + frame.width - halfStrip,
+      y: frame.y,
+    },
+    {
+      height: 36,
+      id: `${frame.id}:title`,
+      width: Math.min(frame.width - FRAME_BORDER_LABEL_GAP * 2, 380),
+      x: frame.x + FRAME_BORDER_LABEL_GAP,
+      y: frame.y - 24,
+    },
+  ];
+}
+
+function getRelationshipLineObstacles(
+  edges: MindFlowEdge[],
+  nodes: MindFlowNode[]
+): MindEdgeObstacle[] {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const nodeObstacles = nodes.map(toFlowNodeObstacle);
+
+  return edges.flatMap((edge) => {
+    const sourceNode = nodeById.get(edge.source);
+    const targetNode = nodeById.get(edge.target);
+    if (!sourceNode || !targetNode) return [];
+
+    const sourcePosition = getPositionFromHandle(
+      edge.sourceHandle,
+      Position.Right
+    );
+    const targetPosition = getPositionFromHandle(
+      edge.targetHandle,
+      Position.Left
+    );
+    const route = buildRelationshipRoute({
+      fallbackPositions: {
+        source: sourcePosition,
+        target: targetPosition,
+      },
+      obstacles: nodeObstacles.filter(
+        (obstacle) => obstacle.id !== edge.source && obstacle.id !== edge.target
+      ),
+      source: getFlowNodeSidePoint(sourceNode, sourcePosition),
+      target: getFlowNodeSidePoint(targetNode, targetPosition),
+    });
+
+    return getSegments(route.points).flatMap((segment, index) =>
+      toRelationshipLineObstacle(edge.id, index, segment)
+    );
+  });
+}
+
+function getPositionFromHandle(
+  handle: string | null | undefined,
+  fallback: Position
+) {
+  if (handle?.endsWith('top')) return Position.Top;
+  if (handle?.endsWith('bottom')) return Position.Bottom;
+  if (handle?.endsWith('left')) return Position.Left;
+  if (handle?.endsWith('right')) return Position.Right;
+  return fallback;
+}
+
+function getFlowNodeSidePoint(node: MindFlowNode, side: Position): Point {
+  const obstacle = toFlowNodeObstacle(node);
+  if (side === Position.Top) {
+    return { x: obstacle.x + obstacle.width / 2, y: obstacle.y };
+  }
+  if (side === Position.Bottom) {
+    return {
+      x: obstacle.x + obstacle.width / 2,
+      y: obstacle.y + obstacle.height,
+    };
+  }
+  if (side === Position.Left) {
+    return { x: obstacle.x, y: obstacle.y + obstacle.height / 2 };
+  }
+  return {
+    x: obstacle.x + obstacle.width,
+    y: obstacle.y + obstacle.height / 2,
+  };
+}
+
+function toFlowNodeObstacle(node: MindFlowNode): MindEdgeObstacle {
+  const mindNode = node.data.node;
+  return {
+    height: Math.max(mindNode.height || 0, node.height || 0, 168),
+    id: node.id,
+    width: Math.max(mindNode.width || 0, node.width || 0, 280),
+    x: node.position.x,
+    y: node.position.y,
+  };
+}
+
+function toRelationshipLineObstacle(
+  edgeId: string,
+  index: number,
+  segment: { end: Point; length: number; start: Point }
+): MindEdgeObstacle[] {
+  if (segment.length < 8) return [];
+
+  const padding = RELATIONSHIP_LINE_LABEL_GAP / 2;
+  if (segment.start.y === segment.end.y) {
+    return [
+      {
+        height: RELATIONSHIP_LINE_LABEL_GAP,
+        id: `${edgeId}:line-${index}`,
+        width: Math.abs(segment.end.x - segment.start.x),
+        x: Math.min(segment.start.x, segment.end.x),
+        y: segment.start.y - padding,
+      },
+    ];
+  }
+
+  if (segment.start.x === segment.end.x) {
+    return [
+      {
+        height: Math.abs(segment.end.y - segment.start.y),
+        id: `${edgeId}:line-${index}`,
+        width: RELATIONSHIP_LINE_LABEL_GAP,
+        x: segment.start.x - padding,
+        y: Math.min(segment.start.y, segment.end.y),
+      },
+    ];
+  }
+
+  return [
+    {
+      height:
+        Math.abs(segment.end.y - segment.start.y) + RELATIONSHIP_LINE_LABEL_GAP,
+      id: `${edgeId}:line-${index}`,
+      width:
+        Math.abs(segment.end.x - segment.start.x) + RELATIONSHIP_LINE_LABEL_GAP,
+      x: Math.min(segment.start.x, segment.end.x) - padding,
+      y: Math.min(segment.start.y, segment.end.y) - padding,
+    },
+  ];
+}
+
+function getRouteBounds(
+  source: Point,
+  target: Point,
+  obstacles: MindEdgeObstacle[]
+) {
+  return {
+    maxX: Math.max(
+      target.x,
+      source.x,
+      ...obstacles.map((item) => item.x + item.width)
+    ),
+    maxY: Math.max(
+      target.y,
+      source.y,
+      ...obstacles.map((item) => item.y + item.height)
+    ),
+    minX: Math.min(target.x, source.x, ...obstacles.map((item) => item.x)),
+    minY: Math.min(target.y, source.y, ...obstacles.map((item) => item.y)),
+  };
+}
+
+function segmentIntersectsRect(
+  start: Point,
+  end: Point,
+  rect: MindEdgeObstacle
+) {
+  if (pointInRect(start, rect) || pointInRect(end, rect)) return true;
+  if (
+    Math.max(start.x, end.x) < rect.x ||
+    Math.min(start.x, end.x) > rect.x + rect.width ||
+    Math.max(start.y, end.y) < rect.y ||
+    Math.min(start.y, end.y) > rect.y + rect.height
+  ) {
+    return false;
+  }
+
+  const topLeft = { x: rect.x, y: rect.y };
+  const topRight = { x: rect.x + rect.width, y: rect.y };
+  const bottomRight = { x: rect.x + rect.width, y: rect.y + rect.height };
+  const bottomLeft = { x: rect.x, y: rect.y + rect.height };
+
+  return (
+    segmentsIntersect(start, end, topLeft, topRight) ||
+    segmentsIntersect(start, end, topRight, bottomRight) ||
+    segmentsIntersect(start, end, bottomRight, bottomLeft) ||
+    segmentsIntersect(start, end, bottomLeft, topLeft)
+  );
+}
+
+function pointInRect(point: Point, rect: MindEdgeObstacle) {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  );
+}
+
+function getRectIntersectionArea(a: Rect, b: Rect) {
+  const xOverlap = Math.max(
+    0,
+    Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)
+  );
+  const yOverlap = Math.max(
+    0,
+    Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y)
+  );
+
+  return xOverlap * yOverlap;
+}
+
+function getLabelCollisionArea(rect: Rect, obstacles: MindEdgeObstacle[]) {
+  return obstacles.reduce(
+    (sum, obstacle) =>
+      sum +
+      getRectIntersectionArea(rect, obstacle) *
+        (obstacle.id.includes(':line-') ? 160 : 1000),
+    0
+  );
+}
+
+function segmentsIntersect(a: Point, b: Point, c: Point, d: Point) {
+  const orientationA = orientation(a, b, c);
+  const orientationB = orientation(a, b, d);
+  const orientationC = orientation(c, d, a);
+  const orientationD = orientation(c, d, b);
+
+  return orientationA * orientationB <= 0 && orientationC * orientationD <= 0;
+}
+
+function orientation(a: Point, b: Point, c: Point) {
+  return Math.sign((b.y - a.y) * (c.x - b.x) - (b.x - a.x) * (c.y - b.y));
+}
