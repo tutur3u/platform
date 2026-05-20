@@ -81,33 +81,28 @@ async fn handle_socket_echo(socket: WebSocket) {
 
     // Echo messages back to the client
     while let Some(Ok(msg)) = receiver.next().await {
-        match msg {
+        let send_failed = match msg {
             Message::Text(text) => {
                 // Echo text messages back
-                if sender
+                sender
                     .send(Message::Text(format!("Echo: {}", text).into()))
                     .await
                     .is_err()
-                {
-                    break;
-                }
             }
             Message::Binary(data) => {
                 // Echo binary messages back
-                if sender.send(Message::Binary(data)).await.is_err() {
-                    break;
-                }
+                sender.send(Message::Binary(data)).await.is_err()
             }
             Message::Ping(data) => {
                 // Respond to ping with pong
-                if sender.send(Message::Pong(data)).await.is_err() {
-                    break;
-                }
+                sender.send(Message::Pong(data)).await.is_err()
             }
-            Message::Close(_) => {
-                break;
-            }
-            _ => {}
+            Message::Close(_) => true,
+            _ => false,
+        };
+
+        if send_failed {
+            break;
         }
     }
 }
