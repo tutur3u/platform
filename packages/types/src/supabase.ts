@@ -15584,6 +15584,7 @@ export type Database = {
           created_by: string | null;
           day_label: string | null;
           default_contact_ids: string[];
+          end_time: string | null;
           group_id: string | null;
           id: string;
           name: string;
@@ -15603,6 +15604,7 @@ export type Database = {
           created_by?: string | null;
           day_label?: string | null;
           default_contact_ids?: string[];
+          end_time?: string | null;
           group_id?: string | null;
           id?: string;
           name: string;
@@ -15622,6 +15624,7 @@ export type Database = {
           created_by?: string | null;
           day_label?: string | null;
           default_contact_ids?: string[];
+          end_time?: string | null;
           group_id?: string | null;
           id?: string;
           name?: string;
@@ -15779,6 +15782,7 @@ export type Database = {
           created_at: string;
           created_by: string | null;
           day_label: string | null;
+          end_time: string | null;
           group_id: string | null;
           id: string;
           last_error: string | null;
@@ -15805,6 +15809,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
+          end_time?: string | null;
           group_id?: string | null;
           id?: string;
           last_error?: string | null;
@@ -15831,6 +15836,7 @@ export type Database = {
           created_at?: string;
           created_by?: string | null;
           day_label?: string | null;
+          end_time?: string | null;
           group_id?: string | null;
           id?: string;
           last_error?: string | null;
