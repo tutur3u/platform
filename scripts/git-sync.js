@@ -11,7 +11,8 @@ const {
 
 const DEFAULT_REMOTE = 'origin';
 const MAIN_BRANCH = 'main';
-const TARGET_BRANCHES = ['staging', 'production'];
+const RETIRED_BRANCHES = new Set(['staging']);
+const TARGET_BRANCHES = ['production'];
 const SYNC_BRANCHES = [MAIN_BRANCH, ...TARGET_BRANCHES];
 const SYNC_BRANCH_SET = new Set(SYNC_BRANCHES);
 const USAGE = `Usage: bun git-sync [options]
@@ -19,7 +20,7 @@ const USAGE = `Usage: bun git-sync [options]
 Fast-forward release branches to the current main commit through a temporary worktree.
 
 Options:
-  --only-branch <branch>  Sync only main, staging, or production. Can be repeated or comma-separated.
+  --only-branch <branch>  Sync only main or production. Can be repeated or comma-separated.
   --no-push               Update local branches only and skip all pushes.
   -h, --help              Show this help message.
 `;
@@ -33,6 +34,12 @@ function normalizeBranchSelection(branches) {
   const normalized = [];
 
   for (const branch of selectedBranches) {
+    if (RETIRED_BRANCHES.has(branch)) {
+      throw new Error(
+        `Branch "${branch}" is retired. Use main for staging-environment CI and production for release sync.`
+      );
+    }
+
     if (!SYNC_BRANCH_SET.has(branch)) {
       throw new Error(
         `Unsupported branch "${branch}". Expected one of: ${SYNC_BRANCHES.join(', ')}.`

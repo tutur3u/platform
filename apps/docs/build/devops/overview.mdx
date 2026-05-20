@@ -1,7 +1,7 @@
 ---
 title: 'DevOps & Deployment'
 description: 'The operational map for how Tuturuuu is built, deployed, migrated, and validated.'
-updatedAt: '2026-04-18'
+updatedAt: '2026-05-20'
 ---
 
 This section is the runbook for shipping and operating Tuturuuu. It documents the
@@ -31,7 +31,7 @@ released, or recovered.
 
 - GitHub Actions is the canonical automation layer for hosted deployments and database migrations.
 - `tuturuuu.ts` can disable individual workflows; `ci-check.yml` enforces that toggle before a job does real work.
-- Vercel handles hosted web deployments. Supabase migrations run as separate workflows with explicit staging and production gates.
+- Vercel handles hosted web deployments. Supabase migrations run as separate workflows; `main` drives staging schema promotion and `production` drives production schema promotion.
 - Self-hosted web deployment is Docker-based, and blue/green rollout is the supported rebuild-before-restart path.
 - Secrets live in GitHub Actions secrets/variables or local env files such as `apps/web/.env.local`. They do not belong in the repo.
 

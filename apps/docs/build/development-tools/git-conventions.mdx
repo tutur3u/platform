@@ -1,6 +1,7 @@
 ---
 title: 'Git Conventions'
 description: 'Learn how Tuturuuu uses Conventional Commits and Branch naming to improve development workflow.'
+updatedAt: '2026-05-20'
 ---
 
 <Info>
@@ -48,7 +49,7 @@ Tuturuuu uses the following commit types:
 | `perf`     | Performance improvements                        | `perf: optimize database queries`                |
 | `test`     | Add or fix tests                                | `test: add unit tests for auth middleware`       |
 | `build`    | Changes affecting build system or dependencies  | `build: update dependency to fix security issue` |
-| `ci`       | Changes to CI configuration files and scripts   | `ci: add workflow for staging deployments`       |
+| `ci`       | Changes to CI configuration files and scripts   | `ci: simplify workflow branch filters`           |
 | `chore`    | Routine tasks, maintenance                      | `chore: update package.json metadata`            |
 
 ### Scopes
@@ -287,46 +288,48 @@ Closes #123
 
 ### Synchronizing Release Branches
 
-Use the root command below when `staging` and `production` should point at the
-same commit as `main`:
+Use the root command below when `production` should point at the same commit as
+`main`:
 
 ```bash
 bun git-sync
 ```
 
 The command fetches `origin`, creates a temporary detached worktree, refreshes
-`main`, and fast-forwards `staging` and `production` to the current `main`
-commit from that temporary worktree before pushing those branches. It finishes
-by fetching again and verifying that local and remote `main`, `staging`, and
-`production` all resolve to the same commit. The checkout you started from is
-left untouched, so uncommitted work on another branch can keep running while the
-release refs are synchronized.
+`main`, and fast-forwards `production` to the current `main` commit from that
+temporary worktree before pushing those branches. It finishes by fetching again
+and verifying that local and remote `main` and `production` both resolve to the
+same commit. The checkout you started from is left untouched, so uncommitted
+work on another branch can keep running while the release refs are synchronized.
 
 If a branch that needs to move is already checked out in another worktree, Git
 will refuse to force-update that branch. Switch that worktree away from the
 branch or update it manually, then rerun `bun git-sync`.
 
 `bun git-sync` does not create commits for you. Commit all intended changes on
-`main` first; if `staging` or `production` contain commits that are not already
-in `main`, reconcile those branches manually before rerunning the command.
+`main` first; if `production` contains commits that are not already in `main`,
+reconcile the branch manually before rerunning the command.
 
-Use `--only-branch` to update one branch while leaving the other release branch
+Use `--only-branch` to update one active sync branch while leaving the other
 untouched:
 
 ```bash
-bun git-sync --only-branch staging
 bun git-sync --only-branch production
 ```
 
-`main` is still refreshed locally as the source commit, but only the selected
-branch is fast-forwarded and pushed. Use `--only-branch main` when you only want
-to pull and push `main`.
+`main` is still refreshed locally as the source commit, but only `production` is
+fast-forwarded and pushed. Use `--only-branch main` when you only want to pull
+and push `main`.
+
+The retired `staging` branch is no longer a supported `--only-branch` target.
+The Supabase staging environment still exists, but its workflow is driven from
+`main`.
 
 Use `--no-push` for local-only synchronization:
 
 ```bash
 bun git-sync --no-push
-bun git-sync --only-branch staging --no-push
+bun git-sync --only-branch production --no-push
 ```
 
 With `--no-push`, the command fetches, pulls with `--ff-only`, and fast-forwards

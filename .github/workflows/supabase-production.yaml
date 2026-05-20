@@ -9,7 +9,7 @@ on:
       - completed
     branches:
       - production
-      - staging
+      - main
   workflow_dispatch:
 
 jobs:
@@ -59,7 +59,7 @@ jobs:
             else
               echo "Checking staging migration status..."
               STAGING_RUN=$(gh api \
-                "repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs?branch=staging&per_page=1" \
+                "repos/${{ github.repository }}/actions/workflows/supabase-staging.yaml/runs?branch=main&per_page=1" \
                 --jq '.workflow_runs[0] // {} | {conclusion: .conclusion, status: .status, created_at: .created_at}')
 
               STAGING_CONCLUSION=$(echo "$STAGING_RUN" | jq -r '.conclusion // "missing"')

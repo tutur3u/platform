@@ -19,7 +19,7 @@ on:
       - "scripts/docker-web.test.js"
       - "turbo.json"
   push:
-    branches: ["main", "staging", "production"]
+    branches: ["main", "production"]
     paths:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"

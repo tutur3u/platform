@@ -1,7 +1,7 @@
 ---
 title: 'CI/CD Pipelines'
 description: 'High-level CI/CD overview, with current operational runbooks linked from one place.'
-updatedAt: '2026-05-04'
+updatedAt: '2026-05-20'
 ---
 
 This page is the entry point for CI/CD. The day-to-day operational detail now lives
@@ -23,7 +23,7 @@ Tuturuuu currently automates:
 - Vercel production deployments from the `production` branch
 - Independent Vercel preview and production deployments for satellite apps such as `apps/cms`
 - Affected-app gating for Vercel deployments before dependency install, build, or deploy work
-- Supabase staging and production migrations through separate gated workflows
+- Supabase staging migrations driven from `main` and production migrations driven from `production`
 - Docker parity and image validation for the self-hosted web runtime
 - Modal deployment for `apps/discord`
 - Mobile build artifact generation
@@ -37,7 +37,7 @@ Tuturuuu currently automates:
 - `bun.lock` changes run all Vercel app deploys because lockfile ownership is ambiguous without a source or manifest path.
 - Manual `workflow_dispatch` runs enabled workflows even when changed paths would otherwise be unaffected.
 - Several deploy workflows intentionally skip if a newer commit already exists on the target branch.
-- Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic.
+- Database migrations are not treated the same as app deploys; staging and production each have explicit prerequisite logic, with staging now sourced from `main`.
 - Docker changes are guarded by `docker-setup-check.yaml`, including dev and production image builds.
 
 ## When To Use This Page

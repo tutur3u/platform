@@ -33,6 +33,50 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
+test('CI workflows use main instead of retired staging branch filters', () => {
+  const workflowsWithoutStagingBranchFilters = [
+    'branch-name-check.yaml',
+    'codeql.yml',
+    'docker-setup-check.yaml',
+    'supabase-production.yaml',
+    'supabase-staging.yaml',
+  ];
+
+  for (const workflowName of workflowsWithoutStagingBranchFilters) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+
+    assert.doesNotMatch(
+      workflow,
+      /^\s*-\s*staging\s*$/m,
+      `${workflowName} must not list staging as a Git branch`
+    );
+    assert.doesNotMatch(
+      workflow,
+      /branches:\s*\[[^\]]*\bstaging\b[^\]]*\]/,
+      `${workflowName} must not include staging in inline branch filters`
+    );
+  }
+
+  const supabaseStagingWorkflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'supabase-staging.yaml'),
+    'utf8'
+  );
+  const supabaseProductionWorkflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
+    'utf8'
+  );
+
+  assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
+  assert.match(
+    supabaseProductionWorkflow,
+    /supabase-staging\.yaml\/runs\?branch=main&per_page=1/
+  );
+  assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
+});
+
 test('education Vercel workflows scope deploy secrets to deploy jobs', () => {
   const educationWorkflows = {
     'vercel-preview-learn.yaml': {
