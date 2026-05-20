@@ -109,6 +109,7 @@
                   "platform/applications/learn",
                   "platform/applications/teach",
                   "platform/applications/hive",
+                  "platform/applications/mind",
                   "platform/applications/hive-world-event-troubleshooting"
                 ]
               }

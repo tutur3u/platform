@@ -1,0 +1,134 @@
+---
+title: Mind
+description: Internal mindboard satellite app for long-horizon planning, knowledge graphs, and AI-aided graph patches.
+---
+
+Mind lives in `apps/mind`, runs locally on port `7816`, and is served in
+production from `https://mind.tuturuuu.com`. Local development should use
+Portless at `https://mind.tuturuuu.localhost`; the legacy direct fallback is
+`http://localhost:7816`.
+
+Mind is internal-only for v1. The satellite app accepts the Tuturuuu cross-app
+login handoff through `/verify-token`, stores a host-local
+`tuturuuu_app_session` cookie for the `mind` app target, and rejects users whose
+email is not exactly under `@tuturuuu.com`. Mind must not create a local
+Supabase Auth session.
+
+## API Ownership
+
+Protected Mind data stays behind `apps/web` APIs:
+
+- `/api/v1/workspaces/:wsId/mind/boards`
+- `/api/v1/workspaces/:wsId/mind/boards/:boardId`
+- `/api/v1/workspaces/:wsId/mind/boards/:boardId/graph`
+- `/api/v1/workspaces/:wsId/mind/search`
+- `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
+- `/api/ai/mind`
+
+The Mind app forwards `/api/v1/*` and `/api/ai/*` to `apps/web` and consumes
+them through `@tuturuuu/internal-api`. Do not add direct client Supabase reads
+or client-local raw `fetch('/api/...')` calls for protected Mind data.
+
+Workspace routes must normalize aliases such as `personal`, verify workspace
+membership with the request-scoped auth context, require exact internal email
+access, and then perform private-schema reads or writes through the centralized
+server repository.
+
+Mind repositories must not use ad-hoc raw SQL from application code. Keep data
+operations in private-schema Postgres RPCs and call them through a
+service-role Supabase admin client with `.schema('private').rpc(...)`.
+`apps/database/supabase/config.toml` exposes the `private` schema to PostgREST
+so these RPCs are callable, but table/function grants stay service-role-only.
+Changing that config requires a local Supabase restart or `bun sb:up` before the
+Mind APIs stop returning `Invalid schema: private`.
+
+## Data Model
+
+Mind product tables live in the `private` schema. User access goes through the
+central web API; direct table access is service-role only.
+
+- `private.mind_boards`
+- `private.mind_nodes`
+- `private.mind_edges`
+- `private.mind_tags`
+- `private.mind_node_tags`
+- `private.mind_groups`
+- `private.mind_group_nodes`
+- `private.mind_node_links`
+- `private.mind_ai_threads`
+- `private.mind_ai_messages`
+- `private.mind_ai_patches`
+
+`mind_node_links` is the first integration seam for Tasks, Calendar, documents,
+projects, and external URLs. Live pickers can attach to this link contract later
+without changing the core graph schema.
+
+Nodes carry a first-class workflow status: `backlog`, `planned`,
+`in_progress`, `in_review`, `blocked`, `completed`, `deferred`, and
+`cancelled`. The canvas and AI tools should treat status as a planning signal,
+not just decoration: blocked nodes need dependencies, in-review nodes need
+validation criteria, and completed nodes should remain available for historical
+context and dependency tracing.
+
+## AI Patch Safety
+
+Mind AI chats default to review mode. In review mode, tools can inspect
+mindboards, load graph chunks, search nodes, and store proposed patches, but the
+user applies the patch explicitly from the Mind UI.
+
+Direct-write mode is scoped to the current chat. In direct-write mode, the
+`apply_mind_patch` tool can write the structured patch transactionally and the
+repository records the patch status, `applied_at`, and applying user for audit.
+
+Structured patches should stay small enough to review. Prefer multiple focused
+patches over a single broad rewrite when consolidating large graphs.
+
+For large boards, the assistant should inspect structure first, then search or
+load neighborhoods/chunks instead of requesting a full graph by default. Keep
+responses action-oriented: suggest follow-up passes, propose draft patches when
+they are useful, and only implement graph writes when the chat is explicitly in
+Implement mode.
+
+After a draft patch is applied from the Mind UI, the client reloads the board,
+runs the smart canvas organizer, saves the resulting positions, and refreshes
+board queries. The organizer should keep true same-level sequence nodes in a
+compact horizontal lane, place explicit children under their parent, and anchor
+supporting or dependency nodes near the higher-level node they affect.
+
+Generated plans and patch drafts should be treated as artifacts. The newest
+artifact can open in the proposal island, while every plan or draft also remains
+available under the assistant tool-call collapsible for the message that
+generated it. When a draft is applied, the applied patch should render as
+`Applied` in those artifact views instead of staying visually draft-only.
+
+The canvas toolbar can copy the current board as Markdown or JSON. This export
+uses the local in-canvas graph state, including unsaved position edits, so it is
+useful for sharing a planning snapshot or debugging AI patch output.
+
+## Deployment
+
+Mind has dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-mind.yaml`
+- `.github/workflows/vercel-production-mind.yaml`
+
+Store `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_MIND_PROJECT_ID` in the
+workflow environments `vercel-preview-mind` and `vercel-production-mind`.
+Deployment should rely on Vercel project environment variables pulled by
+`vercel pull`; do not add provider AI keys, production Supabase service keys,
+`TURBO_TOKEN`, or `TURBO_TEAM` at workflow scope.
+
+## Verification
+
+After changing Mind schema, API, or UI code, run the most relevant focused
+checks first, then the repo-required checks:
+
+```bash
+bunx vitest run packages/internal-api/src/mind.test.ts packages/ai/src/mind/patch.test.ts
+bun i18n:sort
+bun type-check:mind
+bun check
+```
+
+After applying the local Supabase migration, run `bun sb:typegen` and consume
+database shapes through `@tuturuuu/types/db`.
