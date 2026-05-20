@@ -509,30 +509,29 @@ async function loadTaskSourceFilterIds({
   limit: number;
   offset: number;
 }) {
-  const rpcClient = (sbAdmin as any).schema
-    ? (sbAdmin as any).schema('private')
-    : (sbAdmin as any);
-  const { data, error } = await rpcClient.rpc('list_task_source_filter_ids', {
-    p_actor_id: userId,
-    p_workspace_id: workspaceId,
-    p_board_id: boardId,
-    p_list_id: listId,
-    p_source_scope: sourceScope,
-    p_source_workspace_ids: sourceWorkspaceIds,
-    p_source_board_ids: sourceBoardIds,
-    p_list_statuses: listStatuses,
-    p_search: searchQuery ?? null,
-    p_display_number: parsedIdentifier?.displayNumber ?? null,
-    p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? null,
-    p_assigned_to_me: assignedToMe,
-    p_completed_mode: completedMode,
-    p_closed_mode: closedMode,
-    p_include_archived_boards: includeArchivedBoards,
-    p_include_deleted: includeDeletedMode,
-    p_sort_by: externalSortBy,
-    p_limit: limit,
-    p_offset: offset,
-  });
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('list_task_source_filter_ids', {
+      p_actor_id: userId,
+      p_workspace_id: workspaceId,
+      p_board_id: boardId ?? undefined,
+      p_list_id: listId ?? undefined,
+      p_source_scope: sourceScope,
+      p_source_workspace_ids: sourceWorkspaceIds,
+      p_source_board_ids: sourceBoardIds,
+      p_list_statuses: listStatuses,
+      p_search: searchQuery ?? undefined,
+      p_display_number: parsedIdentifier?.displayNumber ?? undefined,
+      p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? undefined,
+      p_assigned_to_me: assignedToMe,
+      p_completed_mode: completedMode ?? undefined,
+      p_closed_mode: closedMode ?? undefined,
+      p_include_archived_boards: includeArchivedBoards,
+      p_include_deleted: includeDeletedMode,
+      p_sort_by: externalSortBy,
+      p_limit: limit,
+      p_offset: offset,
+    });
 
   if (error) {
     throw new Error('TASK_SOURCE_FILTER_RPC_FAILED');
@@ -1130,7 +1129,7 @@ export async function handleTaskRouteGET(
       let placements: PersonalTaskPlacementRow[] = [];
 
       let placementQuery = targetPersonalBoardId
-        ? (sbAdmin as any)
+        ? sbAdmin
             .from('task_user_overrides')
             .select(
               'task_id, personal_board_id, personal_list_id, personal_sort_key, personal_added_at, personal_placed_at',
@@ -1183,7 +1182,7 @@ export async function handleTaskRouteGET(
 
       if (virtualStagingBoardId && targetPersonalBoardId) {
         const { data: placedPlacementRows, error: placedPlacementsError } =
-          await (sbAdmin as any)
+          await sbAdmin
             .from('task_user_overrides')
             .select('task_id')
             .eq('user_id', user.id)
