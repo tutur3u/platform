@@ -105,6 +105,14 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 4. runs Playwright against `http://localhost:7803`, and
 5. tears down Docker web plus local Supabase unless `E2E_KEEP_DOCKER_STACK=1`.
 
+Normal teardown passes `--volumes --rmi local` to Docker Compose and then removes
+custom image tags for the current `ttr-e2e-*` project, so per-run containers,
+Compose volumes, and baked blue/green images do not accumulate. E2E also sets
+`DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` by default because the per-run
+BuildKit cache/state is disposable; set
+`E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD=0` only when debugging a local E2E build
+and you intentionally want to keep BuildKit cache.
+
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
 `8001`. CI shards E2E with `--shard=x/4`; each shard gets its own Compose
@@ -118,6 +126,14 @@ local E2E web origin, the incoming request `Host` / forwarded host / `Origin`
 headers, and both the public and server-side Supabase origins before
 server-side auth code honors it, so it must not be used as a general production
 configuration.
+
+The blue/green nginx proxy must forward the original `Host` header with its
+port intact via `$http_host`. Local E2E auth setup posts to
+`http://localhost:7803/api/auth/dev-session`, and the production-mode app
+accepts the setup route only when the public request origin stays local. The
+guard also tolerates production standalone/proxy normalization where `request.url`
+or `Host` becomes an internal Docker web upstream, but only when the forwarded
+public host is still the local E2E origin.
 
 ## Coolify
 
@@ -714,6 +730,9 @@ How it works:
   while keeping layer state for the next deployment. Set
   `DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD=0` only when an operator intentionally
   wants BuildKit to stay warm after a handoff.
+- Dockerized E2E is the exception: its per-run BuildKit state is disposable and
+  `scripts/run-web-e2e-docker.js` sets
+  `DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD=1` unless explicitly overridden.
 - The same max-parallelism value is also forwarded as `COMPOSE_PARALLEL_LIMIT`
   when that variable is not already set. When the limit is `1`, the blue/green
   workflow builds each Bake target group separately so image export and web
