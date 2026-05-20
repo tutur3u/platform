@@ -20,6 +20,7 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://localhost:7803/login';
+const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
 
 function getDockerWebUpArgs(envFilePath) {
   return [
@@ -49,6 +50,9 @@ function getDockerWebDownArgs(envFilePath) {
     'blue-green',
     '--env-file',
     envFilePath,
+    '--volumes',
+    '--rmi',
+    'local',
   ];
 }
 
@@ -70,6 +74,43 @@ function runCommand(command, args, options = {}) {
       reject(
         new Error(
           `${command} ${args.join(' ')} exited with ${signal ?? code ?? 'error'}`
+        )
+      );
+    });
+  });
+}
+
+function runCommandForOutput(command, args, options = {}) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: options.cwd ?? ROOT_DIR,
+      env: options.env ?? process.env,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk;
+    });
+
+    child.on('error', reject);
+    child.on('exit', (code, signal) => {
+      if (code === 0) {
+        resolve({ stderr, stdout });
+        return;
+      }
+
+      const detail = stderr.trim() || stdout.trim();
+      reject(
+        new Error(
+          detail
+            ? `${command} ${args.join(' ')} exited with ${signal ?? code ?? 'error'}\n${detail}`
+            : `${command} ${args.join(' ')} exited with ${signal ?? code ?? 'error'}`
         )
       );
     });
@@ -117,6 +158,74 @@ function shouldKeepStack(env = process.env) {
   return /^(1|true|yes)$/iu.test(String(env.E2E_KEEP_DOCKER_STACK ?? ''));
 }
 
+function isE2EComposeProjectName(projectName) {
+  return (
+    typeof projectName === 'string' &&
+    projectName.startsWith(E2E_COMPOSE_PROJECT_PREFIX)
+  );
+}
+
+function getE2EComposeProjectName(env = process.env) {
+  const projectName = env.DOCKER_WEB_COMPOSE_PROJECT_NAME;
+  return isE2EComposeProjectName(projectName) ? projectName : null;
+}
+
+function parseE2EProjectImageTags(imageListOutput, projectName) {
+  if (!isE2EComposeProjectName(projectName)) {
+    return [];
+  }
+
+  const repositoryPrefix = `${projectName}-`;
+  const tags = new Set();
+
+  for (const line of imageListOutput.split(/\r?\n/u)) {
+    const imageRef = line.trim();
+
+    if (!imageRef || imageRef.includes('<none>')) {
+      continue;
+    }
+
+    const tagSeparatorIndex = imageRef.lastIndexOf(':');
+
+    if (tagSeparatorIndex <= 0) {
+      continue;
+    }
+
+    const repository = imageRef.slice(0, tagSeparatorIndex);
+
+    if (repository.startsWith(repositoryPrefix)) {
+      tags.add(imageRef);
+    }
+  }
+
+  return [...tags].sort();
+}
+
+async function removeE2EProjectImages({
+  env,
+  projectName = getE2EComposeProjectName(env),
+  runCommand: run = runCommand,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+} = {}) {
+  if (!isE2EComposeProjectName(projectName)) {
+    return [];
+  }
+
+  const imageList = await runForOutput(
+    'docker',
+    ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}'],
+    { env }
+  );
+  const imageTags = parseE2EProjectImageTags(imageList.stdout, projectName);
+
+  if (imageTags.length === 0) {
+    return [];
+  }
+
+  await run('docker', ['image', 'rm', ...imageTags], { env });
+  return imageTags;
+}
+
 async function stopDockerizedE2E({ env, envFilePath }) {
   await runDockerWebWorkflow(
     parseDockerWebArgs(getDockerWebDownArgs(envFilePath)),
@@ -126,6 +235,7 @@ async function stopDockerizedE2E({ env, envFilePath }) {
       rootDir: ROOT_DIR,
     }
   );
+  await removeE2EProjectImages({ env });
   await runCommand('bun', ['sb:stop'], { env, cwd: ROOT_DIR });
 }
 
@@ -140,6 +250,8 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     }),
     [SKIP_WATCH_HISTORY_ENV]: '1',
     [WATCHER_CONTAINER_ENV]: '1',
+    DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
+      process.env.E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD ?? '1',
   };
 
   assertSafeE2EEnvironment(env);
@@ -201,10 +313,16 @@ if (require.main === module) {
 module.exports = {
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
+  E2E_COMPOSE_PROJECT_PREFIX,
   ensureLocalE2EEnvFile,
+  getE2EComposeProjectName,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  isE2EComposeProjectName,
+  parseE2EProjectImageTags,
+  removeE2EProjectImages,
   runCommand,
+  runCommandForOutput,
   runWebE2E,
   shouldKeepStack,
   stopDockerizedE2E,

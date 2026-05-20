@@ -11,8 +11,12 @@ const {
 } = require('./e2e-local-environment.js');
 const {
   ensureLocalE2EEnvFile,
+  getE2EComposeProjectName,
   getDockerWebDownArgs,
   getDockerWebUpArgs,
+  isE2EComposeProjectName,
+  parseE2EProjectImageTags,
+  removeE2EProjectImages,
   shouldKeepStack,
 } = require('./run-web-e2e-docker.js');
 
@@ -44,6 +48,9 @@ test('getDockerWebDownArgs stops the same production blue-green Docker stack', (
     'blue-green',
     '--env-file',
     'tmp/e2e/web.env',
+    '--volumes',
+    '--rmi',
+    'local',
   ]);
 });
 
@@ -83,4 +90,83 @@ test('shouldKeepStack supports explicit local debugging opt-in', () => {
   assert.equal(shouldKeepStack({}), false);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: '1' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'true' }), true);
+});
+
+test('getE2EComposeProjectName only accepts E2E-scoped projects', () => {
+  assert.equal(isE2EComposeProjectName('ttr-e2e-local-123'), true);
+  assert.equal(isE2EComposeProjectName('tuturuuu'), false);
+  assert.equal(
+    getE2EComposeProjectName({
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123',
+    }),
+    'ttr-e2e-local-123'
+  );
+  assert.equal(
+    getE2EComposeProjectName({
+      DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu',
+    }),
+    null
+  );
+});
+
+test('parseE2EProjectImageTags selects only current E2E project images', () => {
+  assert.deepEqual(
+    parseE2EProjectImageTags(
+      [
+        'ttr-e2e-local-123-web-blue:latest',
+        'ttr-e2e-local-123-web-green:latest',
+        'ttr-e2e-local-123-web-cache:abc123',
+        'ttr-e2e-local-456-web-blue:latest',
+        'postgres:16-alpine',
+        '<none>:<none>',
+      ].join('\n'),
+      'ttr-e2e-local-123'
+    ),
+    [
+      'ttr-e2e-local-123-web-blue:latest',
+      'ttr-e2e-local-123-web-cache:abc123',
+      'ttr-e2e-local-123-web-green:latest',
+    ]
+  );
+});
+
+test('removeE2EProjectImages removes current project image tags', async () => {
+  const calls = [];
+
+  const removed = await removeE2EProjectImages({
+    env: { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'ttr-e2e-local-123' },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+    },
+    runCommandForOutput: async (command, args) => {
+      calls.push([command, args]);
+      return {
+        stderr: '',
+        stdout: [
+          'ttr-e2e-local-123-web-blue:latest',
+          'ttr-e2e-local-456-web-blue:latest',
+        ].join('\n'),
+      };
+    },
+  });
+
+  assert.deepEqual(removed, ['ttr-e2e-local-123-web-blue:latest']);
+  assert.deepEqual(calls, [
+    ['docker', ['image', 'ls', '--format', '{{.Repository}}:{{.Tag}}']],
+    ['docker', ['image', 'rm', 'ttr-e2e-local-123-web-blue:latest']],
+  ]);
+});
+
+test('removeE2EProjectImages skips non-E2E project names', async () => {
+  const removed = await removeE2EProjectImages({
+    env: { DOCKER_WEB_COMPOSE_PROJECT_NAME: 'tuturuuu' },
+    runCommand: async () => {
+      throw new Error('should not remove images');
+    },
+    runCommandForOutput: async () => {
+      throw new Error('should not list images');
+    },
+  });
+
+  assert.deepEqual(removed, []);
 });
