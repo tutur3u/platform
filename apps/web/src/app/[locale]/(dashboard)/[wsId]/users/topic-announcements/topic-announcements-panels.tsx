@@ -46,7 +46,12 @@ interface Props {
   isScheduling: boolean;
   isSending: boolean;
   onCancelSchedule: (announcementId: string) => void;
-  onCreate: (payload: TopicAnnouncementPayload) => void;
+  onCreate: (payload: TopicAnnouncementPayload) => Promise<void>;
+  onCreateAndSchedule: (
+    payload: TopicAnnouncementPayload,
+    scheduledSendAt: string
+  ) => Promise<void>;
+  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
   onPageChange: (page: number) => void;
   onQueryChange: (query: string) => void;
   onSaveTemplate: (values: TemplateFormValues) => void;
@@ -75,6 +80,8 @@ export function AnnouncementsPanel({
   isSending,
   onCancelSchedule,
   onCreate,
+  onCreateAndSchedule,
+  onCreateAndSend,
   onPageChange,
   onQueryChange,
   onSaveTemplate,
@@ -95,12 +102,19 @@ export function AnnouncementsPanel({
   return (
     <div className="space-y-4">
       <AnnouncementForm
+        canSend={canSend}
         contacts={contacts}
         groups={groups}
         isCreating={isCreating}
         isSavingTemplate={isSavingTemplate}
+        isScheduling={isScheduling}
+        isSending={isSending}
         onCreate={onCreate}
+        onCreateAndSchedule={onCreateAndSchedule}
+        onCreateAndSend={onCreateAndSend}
         onSaveTemplate={onSaveTemplate}
+        onTimezoneRequired={onTimezoneRequired}
+        schedulingTimezone={schedulingTimezone}
         templates={templates}
         workspaceUsers={workspaceUsers}
       />

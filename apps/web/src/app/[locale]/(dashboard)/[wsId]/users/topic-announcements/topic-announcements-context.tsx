@@ -54,7 +54,12 @@ interface TopicAnnouncementPendingState {
 
 interface TopicAnnouncementActions {
   cancelSchedule: (announcementId: string) => void;
-  createAnnouncement: (payload: TopicAnnouncementPayload) => void;
+  createAndSchedule: (
+    payload: TopicAnnouncementPayload,
+    scheduledSendAt: string
+  ) => Promise<void>;
+  createAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
+  createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<void>;
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
   deleteTemplate: (templateId: string) => void;
@@ -367,8 +372,22 @@ function createActions({
   return {
     cancelSchedule: (announcementId) =>
       mutations.cancelScheduleMutation.mutate(announcementId),
-    createAnnouncement: (payload) =>
-      mutations.createAnnouncementMutation.mutate(payload),
+    createAndSchedule: async (payload, scheduledSendAt) => {
+      const result =
+        await mutations.createAnnouncementMutation.mutateAsync(payload);
+      await mutations.scheduleMutation.mutateAsync({
+        announcementId: result.data.id,
+        scheduledSendAt,
+      });
+    },
+    createAndSend: async (payload) => {
+      const result =
+        await mutations.createAnnouncementMutation.mutateAsync(payload);
+      await mutations.sendMutation.mutateAsync(result.data.id);
+    },
+    createAnnouncement: async (payload) => {
+      await mutations.createAnnouncementMutation.mutateAsync(payload);
+    },
     createContact: (payload) => mutations.createContactMutation.mutate(payload),
     createTemplate: (payload) =>
       mutations.createTemplateMutation.mutate(payload),

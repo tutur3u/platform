@@ -149,7 +149,7 @@ export function ImportPanel({ importResult, isImporting, onImport }: Props) {
   return (
     <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.4fr)]">
       <div className="space-y-4">
-        <div className="rounded-md border p-4">
+        <div className="rounded-md border bg-background p-4">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="topic-import-source">{t('source_name')}</Label>
@@ -307,7 +307,7 @@ function ImportSummary({
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-md border p-3">
+    <div className="rounded-md border bg-background p-3">
       <p className="text-muted-foreground text-sm">{label}</p>
       <p className="mt-1 font-semibold text-2xl">{value}</p>
     </div>
@@ -322,7 +322,7 @@ function ImportPreviewTable({
   const t = useTranslations('ws-topic-announcements');
 
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="overflow-hidden rounded-md border bg-background">
       <Table>
         <TableHeader>
           <TableRow>

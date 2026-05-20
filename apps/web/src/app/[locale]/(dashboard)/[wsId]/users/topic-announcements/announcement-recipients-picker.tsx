@@ -153,7 +153,7 @@ export function AnnouncementRecipientsPicker({
   };
 
   return (
-    <div className="space-y-3 rounded-md border p-3">
+    <div className="space-y-3 rounded-md border bg-background p-3">
       <RecipientsPickerHeader
         onClear={() => onChange([])}
         onSelectAllReady={() =>

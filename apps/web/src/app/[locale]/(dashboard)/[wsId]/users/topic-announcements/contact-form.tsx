@@ -53,7 +53,7 @@ export function ContactForm({
 
   return (
     <form
-      className="grid gap-4 rounded-md border p-4 lg:grid-cols-2"
+      className="grid gap-4 rounded-md border bg-background p-4 lg:grid-cols-2"
       id="topic-contact-form"
       onSubmit={(event) => {
         event.preventDefault();

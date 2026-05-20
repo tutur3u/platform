@@ -67,7 +67,7 @@ export function ContactTable({
   const t = useTranslations('ws-topic-announcements');
 
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="overflow-hidden rounded-md border bg-background">
       <Table>
         <TableHeader>
           <TableRow>

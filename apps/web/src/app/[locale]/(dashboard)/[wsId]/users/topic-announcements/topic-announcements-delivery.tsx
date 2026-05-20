@@ -31,7 +31,7 @@ export function DeliveryPanel({
   );
 
   return (
-    <div className="overflow-hidden rounded-md border">
+    <div className="overflow-hidden rounded-md border bg-background">
       <Table>
         <TableHeader>
           <TableRow>

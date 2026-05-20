@@ -16,7 +16,6 @@ export function TopicAnnouncementsContactsPageClient() {
     <div className="space-y-4">
       <TopicAnnouncementsPageHeader
         description={t('contacts_page_description')}
-        eyebrow={t('nav_group_setup')}
         title={t('nav_contacts')}
         actions={
           <Button className="gap-2" form="topic-contact-form" type="submit">

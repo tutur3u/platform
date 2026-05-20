@@ -1,12 +1,10 @@
 'use client';
 
-import { ShieldCheck } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   TopicAnnouncementContactPayload,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
-import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
 import { ContactForm } from './contact-form';
 import { ContactTable } from './contact-table';
@@ -32,7 +30,6 @@ export function ContactsPanel({
   workspaceUsers,
   wsId,
 }: Props) {
-  const t = useTranslations('ws-topic-announcements');
   const workspaceUsersById = useMemo(
     () => new Map(workspaceUsers.map((user) => [user.id, user])),
     [workspaceUsers]
@@ -40,12 +37,6 @@ export function ContactsPanel({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-md border border-dynamic-green/20 bg-dynamic-green/10 px-3 py-2 text-dynamic-green text-sm">
-        <div className="flex items-start gap-2">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
-          <p>{t('contacts_panel_note')}</p>
-        </div>
-      </div>
       <ContactForm
         isCreating={isCreating}
         onCreate={onCreate}

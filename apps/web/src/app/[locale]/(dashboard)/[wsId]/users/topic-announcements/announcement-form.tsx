@@ -1,6 +1,6 @@
 'use client';
 
-import { BookmarkPlus, Plus } from '@tuturuuu/icons';
+import { BookmarkPlus } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
@@ -10,330 +10,131 @@ import type {
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
-import { Combobox, type ComboboxOption } from '@tuturuuu/ui/custom/combobox';
-import { Input } from '@tuturuuu/ui/input';
-import { Label } from '@tuturuuu/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
-import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { AnnouncementFormDetailsStep } from './announcement-form-details-step';
+import { AnnouncementFormMessageStep } from './announcement-form-message-step';
+import { AnnouncementFormReviewStep } from './announcement-form-review-step';
+import {
+  ANNOUNCEMENT_STEPS,
+  type AnnouncementDeliveryMode,
+  type AnnouncementStep,
+  buildTopicAnnouncementPayload,
+  createDefaultScheduledDate,
+  getAnnouncementStepValidity,
+  INITIAL_ANNOUNCEMENT_FORM,
+} from './announcement-form-state';
+import {
+  AnnouncementStepIndicator,
+  AnnouncementWizardFooter,
+} from './announcement-form-stepper';
 import { AnnouncementRecipientsPicker } from './announcement-recipients-picker';
-import {
-  TemplateFormDialog,
-  type TemplateFormValues,
-} from './template-form-dialog';
-import {
-  NO_GROUP,
-  NO_TEMPLATE,
-  TIME_INTERVALS,
-} from './topic-announcements-form-constants';
-
-const INITIAL_FORM = {
-  contactIds: [] as string[],
-  endTime: '',
-  groupId: NO_GROUP,
-  place: '',
-  room: '',
-  selectedTemplateId: NO_TEMPLATE,
-  startTime: '',
-  title: '',
-  topic: '',
-};
+import { AnnouncementSaveTemplateDialog } from './announcement-save-template-dialog';
+import type { TemplateFormValues } from './template-form-dialog';
 
 interface Props {
+  canSend: boolean;
   contacts: TopicAnnouncementContact[];
   groups: UserGroup[];
   isCreating: boolean;
   isSavingTemplate: boolean;
-  onCreate: (payload: TopicAnnouncementPayload) => void;
+  isScheduling: boolean;
+  isSending: boolean;
+  onCreate: (payload: TopicAnnouncementPayload) => Promise<void>;
+  onCreateAndSchedule: (
+    payload: TopicAnnouncementPayload,
+    scheduledSendAt: string
+  ) => Promise<void>;
+  onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
   onSaveTemplate: (values: TemplateFormValues) => void;
+  onTimezoneRequired: () => void;
+  schedulingTimezone: string | null;
   templates: TopicAnnouncementTemplateRecord[];
   workspaceUsers: WorkspaceBasicUserRecord[];
 }
 
 export function AnnouncementForm({
+  canSend,
   contacts,
   groups,
   isCreating,
   isSavingTemplate,
+  isScheduling,
+  isSending,
   onCreate,
+  onCreateAndSchedule,
+  onCreateAndSend,
   onSaveTemplate,
+  onTimezoneRequired,
+  schedulingTimezone,
   templates,
   workspaceUsers,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
-  const topicRef = useRef<HTMLTextAreaElement>(null);
+  const [deliveryMode, setDeliveryMode] =
+    useState<AnnouncementDeliveryMode>('draft');
+  const [form, setForm] = useState(INITIAL_ANNOUNCEMENT_FORM);
   const [saveTemplateOpen, setSaveTemplateOpen] = useState(false);
-  const [form, setForm] = useState(INITIAL_FORM);
-
-  const groupOptions = useMemo<ComboboxOption[]>(
-    () => [
-      { label: t('none'), muted: true, value: NO_GROUP },
-      ...groups.map((group) => ({
-        label: group.name || group.id,
-        value: group.id,
-      })),
-    ],
-    [groups, t]
+  const [scheduledAt, setScheduledAt] = useState<Date | undefined>(
+    createDefaultScheduledDate
   );
+  const [step, setStep] = useState<AnnouncementStep>('details');
+  const validSteps = useMemo(() => getAnnouncementStepValidity(form), [form]);
+  const currentStepIndex = ANNOUNCEMENT_STEPS.indexOf(step);
+  const isSubmitting = isCreating || isSending || isScheduling;
+  const isLastStep = step === 'review';
+  const canUseDeliveryMode = deliveryMode === 'draft' || canSend;
+  const canSubmit =
+    validSteps.review &&
+    canUseDeliveryMode &&
+    (deliveryMode !== 'schedule' || Boolean(scheduledAt && schedulingTimezone));
+  const submitLabel = getSubmitLabel(deliveryMode, t);
 
-  const templateOptions = useMemo<ComboboxOption[]>(
-    () => [
-      { label: t('template_none'), muted: true, value: NO_TEMPLATE },
-      ...templates.map((template) => ({
-        label: template.name,
-        value: template.id,
-      })),
-    ],
-    [templates, t]
-  );
-
-  const applyTemplate = (templateId: string) => {
-    const template = templates.find((item) => item.id === templateId);
-    if (!template) return;
-
-    setForm((current) => ({
-      ...current,
-      contactIds: template.default_contact_ids ?? [],
-      endTime: template.end_time ?? '',
-      groupId: template.group_id ?? NO_GROUP,
-      place: template.place ?? '',
-      room: template.room ?? '',
-      selectedTemplateId: templateId,
-      startTime: template.start_time ?? '',
-      title: template.title,
-      topic: template.topic ?? '',
-    }));
-    topicRef.current?.focus();
+  const resetForm = () => {
+    setDeliveryMode('draft');
+    setForm(INITIAL_ANNOUNCEMENT_FORM);
+    setScheduledAt(createDefaultScheduledDate());
+    setStep('details');
   };
 
-  const submit = () => {
-    onCreate({
-      contactIds: form.contactIds,
-      endTime: form.endTime || null,
-      groupId: form.groupId === NO_GROUP ? null : form.groupId,
-      place: form.place || null,
-      room: form.room || null,
-      sourceType: 'manual',
-      startTime: form.startTime || null,
-      title: form.title,
-      topic: form.topic,
-    });
-    setForm(INITIAL_FORM);
+  const submit = async () => {
+    if (!canSubmit || isSubmitting) return;
+    if (deliveryMode === 'schedule' && !schedulingTimezone) {
+      onTimezoneRequired();
+      return;
+    }
+
+    const payload = buildTopicAnnouncementPayload(form);
+
+    try {
+      if (deliveryMode === 'send') {
+        await onCreateAndSend(payload);
+      } else if (deliveryMode === 'schedule' && scheduledAt) {
+        await onCreateAndSchedule(payload, scheduledAt.toISOString());
+      } else {
+        await onCreate(payload);
+      }
+      resetForm();
+    } catch {
+      // Mutation handlers already surface errors through toasts; keep the draft.
+    }
   };
 
   return (
-    <Card>
+    <Card className="bg-background">
       <CardContent className="space-y-6 p-6">
-        <div>
-          <h2 className="font-semibold text-xl tracking-tight">
-            {t('create_announcement')}
-          </h2>
-          <p className="text-muted-foreground text-sm">
-            {t('create_announcement_helper')}
-          </p>
-        </div>
-
-        <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <div className="space-y-4 rounded-md border p-4">
-            <div>
-              <h3 className="font-medium text-base">
-                {t('announcement_metadata')}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {t('announcement_metadata_helper')}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t('template_apply_label')}</Label>
-              <Combobox
-                disabled={isCreating}
-                emptyText={t('templates_empty')}
-                onChange={(value) => {
-                  const resolved = Array.isArray(value) ? value[0] : value;
-                  if (!resolved || resolved === NO_TEMPLATE) {
-                    setForm((current) => ({
-                      ...current,
-                      selectedTemplateId: NO_TEMPLATE,
-                    }));
-                    return;
-                  }
-                  applyTemplate(resolved);
-                }}
-                options={templateOptions}
-                placeholder={t('template_apply_placeholder')}
-                searchPlaceholder={t('template_search')}
-                selected={form.selectedTemplateId}
-              />
-              <p className="text-muted-foreground text-xs">
-                {t('template_apply_helper')}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="topic-title">{t('announcement_title')}</Label>
-              <Input
-                id="topic-title"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    title: event.target.value,
-                  }))
-                }
-                placeholder={t('announcement_title_placeholder')}
-                value={form.title}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>{t('classLabel')}</Label>
-              <Combobox
-                disabled={isCreating}
-                emptyText={t('no_user_groups')}
-                onChange={(value) => {
-                  const resolved = Array.isArray(value) ? value[0] : value;
-                  setForm((current) => ({
-                    ...current,
-                    groupId: resolved || NO_GROUP,
-                  }));
-                }}
-                options={groupOptions}
-                placeholder={t('linked_group_placeholder')}
-                searchPlaceholder={t('search_user_groups')}
-                selected={form.groupId}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>{t('startTime')}</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setForm((prev) => ({ ...prev, startTime: value }))
-                  }
-                  value={form.startTime}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="--:--" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIME_INTERVALS.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>{t('endTime')}</Label>
-                <Select
-                  onValueChange={(value) =>
-                    setForm((prev) => ({ ...prev, endTime: value }))
-                  }
-                  value={form.endTime}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="--:--" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TIME_INTERVALS.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="topic-room">{t('room')}</Label>
-                <Input
-                  id="topic-room"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      room: event.target.value,
-                    }))
-                  }
-                  value={form.room}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="topic-place">{t('place')}</Label>
-                <Input
-                  id="topic-place"
-                  onChange={(event) =>
-                    setForm((current) => ({
-                      ...current,
-                      place: event.target.value,
-                    }))
-                  }
-                  value={form.place}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-4 rounded-md border p-4">
-            <div>
-              <h3 className="font-medium text-base">
-                {t('announcement_message')}
-              </h3>
-              <p className="text-muted-foreground text-sm">
-                {t('announcement_message_helper')}
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="topic-body">{t('topic_primary_label')}</Label>
-              <Textarea
-                className="min-h-[280px]"
-                id="topic-body"
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    topic: event.target.value,
-                  }))
-                }
-                placeholder={t('topic_primary_placeholder')}
-                ref={topicRef}
-                value={form.topic}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h3 className="font-medium text-base">{t('recipients')}</h3>
+            <h2 className="font-semibold text-xl tracking-tight">
+              {t('create_announcement')}
+            </h2>
             <p className="text-muted-foreground text-sm">
-              {t('recipients_section_helper')}
+              {t('create_announcement_helper')}
             </p>
           </div>
-          <AnnouncementRecipientsPicker
-            contacts={contacts}
-            onChange={(contactIds) =>
-              setForm((current) => ({ ...current, contactIds }))
-            }
-            selectedIds={form.contactIds}
-            workspaceUsers={workspaceUsers}
-          />
-        </div>
-
-        <div className="flex flex-wrap justify-end gap-3 border-t pt-6">
           <Button
             className="gap-2"
-            disabled={isCreating || !form.title.trim()}
+            disabled={isSubmitting || !form.title.trim()}
             onClick={() => setSaveTemplateOpen(true)}
             type="button"
             variant="outline"
@@ -341,54 +142,103 @@ export function AnnouncementForm({
             <BookmarkPlus className="h-4 w-4" />
             {t('save_as_template')}
           </Button>
-          <Button
-            className="gap-2"
-            disabled={
-              isCreating ||
-              !form.title ||
-              !form.topic ||
-              form.contactIds.length === 0
-            }
-            onClick={submit}
-          >
-            <Plus className="h-4 w-4" />
-            {t('create_announcement')}
-          </Button>
         </div>
+
+        <AnnouncementStepIndicator
+          currentStep={step}
+          onSelectStep={setStep}
+          steps={ANNOUNCEMENT_STEPS}
+          validSteps={validSteps}
+        />
+
+        {step === 'details' ? (
+          <AnnouncementFormDetailsStep
+            form={form}
+            groups={groups}
+            isDisabled={isSubmitting}
+            setForm={setForm}
+            templates={templates}
+          />
+        ) : null}
+
+        {step === 'message' ? (
+          <AnnouncementFormMessageStep form={form} setForm={setForm} />
+        ) : null}
+
+        {step === 'recipients' ? (
+          <div className="space-y-3 rounded-md border bg-background p-4">
+            <div>
+              <h3 className="font-medium text-base">{t('recipients')}</h3>
+              <p className="text-muted-foreground text-sm">
+                {t('recipients_section_helper')}
+              </p>
+            </div>
+            <AnnouncementRecipientsPicker
+              contacts={contacts}
+              onChange={(contactIds) =>
+                setForm((current) => ({ ...current, contactIds }))
+              }
+              selectedIds={form.contactIds}
+              workspaceUsers={workspaceUsers}
+            />
+          </div>
+        ) : null}
+
+        {step === 'review' ? (
+          <AnnouncementFormReviewStep
+            canSend={canSend}
+            contacts={contacts}
+            deliveryMode={deliveryMode}
+            form={form}
+            groups={groups}
+            onTimezoneRequired={onTimezoneRequired}
+            scheduledAt={scheduledAt}
+            schedulingTimezone={schedulingTimezone}
+            setDeliveryMode={setDeliveryMode}
+            setScheduledAt={setScheduledAt}
+          />
+        ) : null}
+
+        <AnnouncementWizardFooter
+          canContinue={validSteps[step]}
+          canSubmit={canSubmit}
+          isFirstStep={step === 'details'}
+          isLastStep={isLastStep}
+          isSubmitting={isSubmitting}
+          onBack={() =>
+            setStep(
+              ANNOUNCEMENT_STEPS[Math.max(0, currentStepIndex - 1)] ?? 'details'
+            )
+          }
+          onNext={() =>
+            setStep(
+              ANNOUNCEMENT_STEPS[
+                Math.min(ANNOUNCEMENT_STEPS.length - 1, currentStepIndex + 1)
+              ] ?? 'review'
+            )
+          }
+          onSubmit={submit}
+          submitLabel={submitLabel}
+        />
       </CardContent>
 
-      <TemplateFormDialog
+      <AnnouncementSaveTemplateDialog
+        form={form}
         groups={groups}
-        initial={{
-          defaultContactIds: form.contactIds,
-          endTime: form.endTime,
-          groupId: form.groupId,
-          name: '',
-          place: form.place,
-          room: form.room,
-          startTime: form.startTime,
-          title: form.title,
-          topic: form.topic,
-        }}
         isOpen={saveTemplateOpen}
         isSaving={isSavingTemplate}
         onClose={() => setSaveTemplateOpen(false)}
-        onSave={(payload) => {
-          onSaveTemplate({
-            defaultContactIds: payload.defaultContactIds ?? [],
-            endTime: payload.endTime ?? '',
-            groupId: payload.groupId ?? NO_GROUP,
-            name: payload.name,
-            place: payload.place ?? '',
-            room: payload.room ?? '',
-            startTime: payload.startTime ?? '',
-            title: payload.title,
-            topic: payload.topic ?? '',
-          });
-          setSaveTemplateOpen(false);
-        }}
-        titleKey="template_save_from_form_title"
+        onSaveTemplate={onSaveTemplate}
       />
     </Card>
   );
+}
+
+function getSubmitLabel(
+  deliveryMode: AnnouncementDeliveryMode,
+  t: ReturnType<typeof useTranslations<'ws-topic-announcements'>>
+) {
+  if (deliveryMode === 'send') return t('announcement_submit_send');
+  if (deliveryMode === 'schedule') return t('announcement_submit_schedule');
+  return t('announcement_submit_draft');
 }

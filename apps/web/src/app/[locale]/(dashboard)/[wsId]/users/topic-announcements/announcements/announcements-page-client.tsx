@@ -1,6 +1,5 @@
 'use client';
 
-import { Megaphone } from '@tuturuuu/icons';
 import { useTranslations } from 'next-intl';
 import { TopicAnnouncementsPageHeader } from '../topic-announcements-page-header';
 import { AnnouncementsPanel } from '../topic-announcements-panels';
@@ -26,14 +25,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
     <div className="space-y-4">
       <TopicAnnouncementsPageHeader
         description={t('announcements_page_description')}
-        eyebrow={t('nav_group_send')}
         title={t('nav_announcements')}
-        actions={
-          <div className="inline-flex items-center gap-2 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/10 px-3 py-2 text-dynamic-blue text-sm">
-            <Megaphone className="h-4 w-4" />
-            {t('announcements_page_action')}
-          </div>
-        }
       />
 
       <AnnouncementsPanel
@@ -48,6 +40,8 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         isSending={pending.send}
         onCancelSchedule={actions.cancelSchedule}
         onCreate={actions.createAnnouncement}
+        onCreateAndSchedule={actions.createAndSchedule}
+        onCreateAndSend={actions.createAndSend}
         onPageChange={filters.setPage}
         onQueryChange={filters.setQuery}
         onSaveTemplate={actions.saveTemplateFromForm}
