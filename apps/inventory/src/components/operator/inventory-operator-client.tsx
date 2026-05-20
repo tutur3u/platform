@@ -1,6 +1,5 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import {
   Boxes,
   CircleDollarSign,
@@ -10,124 +9,37 @@ import {
   Store,
   TriangleAlert,
 } from '@tuturuuu/icons';
-import {
-  getInventoryOverview,
-  listInventoryAuditLogs,
-  listInventoryBundles,
-  listInventoryCheckouts,
-  listInventoryProducts,
-  listInventorySales,
-  listInventoryStorefronts,
-} from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
-import { parseAsString, useQueryStates } from 'nuqs';
 import { useMemo } from 'react';
+import { CheckoutFeeCalculator } from '@/components/checkout-fee-calculator';
+import { BundleForm, StorefrontForm } from './inventory-forms';
 import {
-  BundleForm,
-  OverviewPanel,
-  ProductsTable,
+  LoadingRows,
   SectionShell,
-  SimpleRows,
-  StorefrontForm,
+  StatePanel,
   Toolbar,
-} from './inventory-operator-panels';
+} from './operator-shell';
+import type {
+  InventoryOperatorView,
+  InventoryStatusOption,
+} from './operator-types';
+import { OverviewPanel } from './overview-panel';
+import { ProductsTable } from './products-table';
+import { SimpleRows } from './simple-rows';
+import { useInventoryData } from './use-inventory-data';
 
-export type InventoryOperatorView =
-  | 'audits'
-  | 'bundles'
-  | 'catalog'
-  | 'checkouts'
-  | 'overview'
-  | 'sales'
-  | 'setup'
-  | 'stock'
-  | 'storefront';
+export type { InventoryOperatorView } from './operator-types';
 
 type InventoryOperatorClientProps = {
   view: InventoryOperatorView;
   wsId: string;
 };
 
-function useInventoryData(wsId: string, view: InventoryOperatorView) {
-  const [filters, setFilters] = useQueryStates({
-    q: parseAsString.withDefault(''),
-    status: parseAsString.withDefault('all'),
-  });
-  const status = filters.status === 'all' ? undefined : filters.status;
-
-  const overview = useQuery({
-    enabled: view === 'overview',
-    queryFn: () => getInventoryOverview(wsId),
-    queryKey: ['inventory', wsId, 'overview'],
-  });
-  const products = useQuery({
-    enabled: ['catalog', 'stock', 'setup', 'overview'].includes(view),
-    queryFn: () =>
-      listInventoryProducts(wsId, {
-        pageSize: 50,
-        q: filters.q,
-        status:
-          status === 'active' || status === 'archived' ? status : undefined,
-      }),
-    queryKey: ['inventory', wsId, 'products', filters.q, filters.status],
-  });
-  const storefronts = useQuery({
-    enabled: ['storefront', 'overview'].includes(view),
-    queryFn: () =>
-      listInventoryStorefronts(wsId, {
-        pageSize: 50,
-        q: filters.q,
-        status:
-          status === 'draft' || status === 'published' || status === 'paused'
-            ? status
-            : undefined,
-      }),
-    queryKey: ['inventory', wsId, 'storefronts', filters.q, filters.status],
-  });
-  const bundles = useQuery({
-    enabled: ['bundles', 'storefront', 'overview'].includes(view),
-    queryFn: () =>
-      listInventoryBundles(wsId, {
-        pageSize: 50,
-        q: filters.q,
-        status: status === 'draft' || status === 'active' ? status : undefined,
-      }),
-    queryKey: ['inventory', wsId, 'bundles', filters.q, filters.status],
-  });
-  const checkouts = useQuery({
-    enabled: view === 'checkouts',
-    queryFn: () =>
-      listInventoryCheckouts(wsId, {
-        pageSize: 50,
-        q: filters.q,
-        status:
-          status === 'reserved' || status === 'completed' ? status : undefined,
-      }),
-    queryKey: ['inventory', wsId, 'checkouts', filters.q, filters.status],
-  });
-  const sales = useQuery({
-    enabled: view === 'sales',
-    queryFn: () => listInventorySales(wsId, { limit: 50 }),
-    queryKey: ['inventory', wsId, 'sales'],
-  });
-  const audits = useQuery({
-    enabled: view === 'audits',
-    queryFn: () => listInventoryAuditLogs(wsId, { limit: 50 }),
-    queryKey: ['inventory', wsId, 'audits'],
-  });
-
-  return {
-    audits,
-    bundles,
-    checkouts,
-    filters,
-    overview,
-    products,
-    sales,
-    setFilters,
-    storefronts,
-  };
-}
+type InventoryQueryState = {
+  isError: boolean;
+  isPending: boolean;
+  refetch: () => unknown;
+};
 
 export function InventoryOperatorClient({
   view,
@@ -139,6 +51,40 @@ export function InventoryOperatorClient({
   const storefronts = data.storefronts.data?.data ?? [];
   const bundles = data.bundles.data?.data ?? [];
   const lowStock = data.overview.data?.low_stock_products ?? [];
+  const statusOptions = useMemo<InventoryStatusOption[]>(() => {
+    const all = { label: t('statuses.all'), value: 'all' };
+
+    if (view === 'storefront') {
+      return [
+        all,
+        { label: t('statuses.draft'), value: 'draft' },
+        { label: t('statuses.published'), value: 'published' },
+        { label: t('statuses.paused'), value: 'paused' },
+      ];
+    }
+
+    if (view === 'bundles') {
+      return [
+        all,
+        { label: t('statuses.draft'), value: 'draft' },
+        { label: t('statuses.active'), value: 'active' },
+      ];
+    }
+
+    if (view === 'checkouts') {
+      return [
+        all,
+        { label: t('statuses.reserved'), value: 'reserved' },
+        { label: t('statuses.completed'), value: 'completed' },
+      ];
+    }
+
+    return [
+      all,
+      { label: t('statuses.active'), value: 'active' },
+      { label: t('statuses.archived'), value: 'archived' },
+    ];
+  }, [t, view]);
   const section = useMemo(
     () =>
       ({
@@ -187,6 +133,29 @@ export function InventoryOperatorClient({
     [t, view]
   );
   const Icon = section[0] as typeof Boxes;
+  const activeQueries = [
+    view === 'overview' ? data.overview : null,
+    ['catalog', 'stock', 'setup', 'overview'].includes(view)
+      ? data.products
+      : null,
+    ['storefront', 'overview'].includes(view) ? data.storefronts : null,
+    ['bundles', 'overview'].includes(view) ? data.bundles : null,
+    view === 'checkouts' ? data.checkouts : null,
+    view === 'sales' ? data.sales : null,
+    view === 'audits' ? data.audits : null,
+  ].flatMap((query) =>
+    query
+      ? [
+          {
+            isError: query.isError,
+            isPending: query.isPending,
+            refetch: query.refetch,
+          } satisfies InventoryQueryState,
+        ]
+      : []
+  );
+  const isLoading = activeQueries.some((query) => query.isPending);
+  const isError = activeQueries.some((query) => query.isError);
 
   return (
     <SectionShell
@@ -194,8 +163,24 @@ export function InventoryOperatorClient({
       icon={<Icon className="h-5 w-5" />}
       title={section[1] as string}
     >
-      <Toolbar filters={data.filters} setFilters={data.setFilters} />
-      {view === 'overview' ? (
+      <Toolbar
+        filters={data.filters}
+        setFilters={data.setFilters}
+        statusOptions={statusOptions}
+      />
+      {isLoading ? <LoadingRows /> : null}
+      {isError ? (
+        <StatePanel
+          actionLabel={t('states.retry')}
+          description={t('states.errorDescription')}
+          onAction={() => {
+            for (const query of activeQueries) query.refetch();
+          }}
+          title={t('states.errorTitle')}
+          tone="danger"
+        />
+      ) : null}
+      {!isLoading && !isError && view === 'overview' ? (
         <OverviewPanel
           bundles={bundles}
           lowStock={lowStock}
@@ -203,28 +188,35 @@ export function InventoryOperatorClient({
           storefronts={storefronts}
         />
       ) : null}
-      {view === 'catalog' || view === 'stock' || view === 'setup' ? (
+      {!isLoading &&
+      !isError &&
+      (view === 'catalog' || view === 'stock' || view === 'setup') ? (
         <ProductsTable rows={products} view={view} />
       ) : null}
-      {view === 'storefront' ? (
+      {!isLoading && !isError && view === 'storefront' ? (
         <>
           <SimpleRows rows={storefronts} type="storefronts" />
           <StorefrontForm wsId={wsId} />
         </>
       ) : null}
-      {view === 'bundles' ? (
+      {!isLoading && !isError && view === 'bundles' ? (
         <>
           <SimpleRows rows={bundles} type="bundles" />
           <BundleForm wsId={wsId} />
         </>
       ) : null}
-      {view === 'checkouts' ? (
-        <SimpleRows rows={data.checkouts.data?.data ?? []} type="checkouts" />
+      {!isLoading && !isError && view === 'checkouts' ? (
+        <>
+          <div className="border-border border-b p-4">
+            <CheckoutFeeCalculator />
+          </div>
+          <SimpleRows rows={data.checkouts.data?.data ?? []} type="checkouts" />
+        </>
       ) : null}
-      {view === 'sales' ? (
+      {!isLoading && !isError && view === 'sales' ? (
         <SimpleRows rows={data.sales.data?.data ?? []} type="sales" />
       ) : null}
-      {view === 'audits' ? (
+      {!isLoading && !isError && view === 'audits' ? (
         <SimpleRows rows={data.audits.data?.data ?? []} type="audits" />
       ) : null}
     </SectionShell>

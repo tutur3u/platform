@@ -9,77 +9,57 @@ import {
   ShieldCheck,
   Store,
 } from '@tuturuuu/icons';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
 import { getTranslations } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import {
+  getInventoryNavigationItems,
+  type InventoryNavigationItem,
+} from './navigation-data';
 
-export type InventoryNavLink = {
-  description: string;
-  href: string;
-  icon: ReactNode;
-  title: string;
-};
+export type { NavLink } from '@tuturuuu/ui/custom/navigation';
+
+function getNavigationIcon(icon: InventoryNavigationItem['icon']) {
+  const className = 'h-4 w-4';
+
+  switch (icon) {
+    case 'audits':
+      return <ClipboardList className={className} />;
+    case 'bundles':
+      return <Layers3 className={className} />;
+    case 'catalog':
+      return <PackageSearch className={className} />;
+    case 'checkouts':
+      return <CreditCard className={className} />;
+    case 'overview':
+      return <LayoutDashboard className={className} />;
+    case 'sales':
+      return <ShieldCheck className={className} />;
+    case 'setup':
+      return <Settings2 className={className} />;
+    case 'stock':
+      return <Boxes className={className} />;
+    case 'storefront':
+      return <Store className={className} />;
+  }
+}
 
 export async function getNavigationLinks({
   workspaceSlug,
 }: {
   workspaceSlug: string;
-}): Promise<InventoryNavLink[]> {
+}): Promise<(NavLink | null)[]> {
   const t = await getTranslations('inventory.nav');
 
-  return [
-    {
-      title: t('overview.title'),
-      description: t('overview.description'),
-      href: `/${workspaceSlug}`,
-      icon: <LayoutDashboard className="h-4 w-4" />,
-    },
-    {
-      title: t('catalog.title'),
-      description: t('catalog.description'),
-      href: `/${workspaceSlug}/catalog`,
-      icon: <PackageSearch className="h-4 w-4" />,
-    },
-    {
-      title: t('stock.title'),
-      description: t('stock.description'),
-      href: `/${workspaceSlug}/stock`,
-      icon: <Boxes className="h-4 w-4" />,
-    },
-    {
-      title: t('bundles.title'),
-      description: t('bundles.description'),
-      href: `/${workspaceSlug}/bundles`,
-      icon: <Layers3 className="h-4 w-4" />,
-    },
-    {
-      title: t('checkouts.title'),
-      description: t('checkouts.description'),
-      href: `/${workspaceSlug}/checkouts`,
-      icon: <CreditCard className="h-4 w-4" />,
-    },
-    {
-      title: t('sales.title'),
-      description: t('sales.description'),
-      href: `/${workspaceSlug}/sales`,
-      icon: <ShieldCheck className="h-4 w-4" />,
-    },
-    {
-      title: t('setup.title'),
-      description: t('setup.description'),
-      href: `/${workspaceSlug}/setup`,
-      icon: <Settings2 className="h-4 w-4" />,
-    },
-    {
-      title: t('audits.title'),
-      description: t('audits.description'),
-      href: `/${workspaceSlug}/audits`,
-      icon: <ClipboardList className="h-4 w-4" />,
-    },
-    {
-      title: t('storefront.title'),
-      description: t('storefront.description'),
-      href: `/${workspaceSlug}/storefront`,
-      icon: <Store className="h-4 w-4" />,
-    },
-  ];
+  return getInventoryNavigationItems({ workspaceSlug }).map((item) => {
+    if (!item) return null;
+
+    return {
+      title: t(item.titleKey),
+      href: item.href,
+      aliases: item.aliases,
+      icon: getNavigationIcon(item.icon),
+      matchExact: item.matchExact,
+      sectionLabel: item.sectionKey ? t(item.sectionKey) : undefined,
+    };
+  });
 }

@@ -1,0 +1,42 @@
+import { describe, expect, it } from 'vitest';
+
+import { getInventoryNavigationItems } from './navigation-data';
+
+describe('Inventory navigation', () => {
+  it('keeps legacy route aliases and grouped sidebar sections', () => {
+    const links = getInventoryNavigationItems({ workspaceSlug: 'acme' });
+    const visibleLinks = links.filter((link) => link !== null);
+
+    expect(links.filter((link) => link === null)).toHaveLength(3);
+    expect(visibleLinks[0]).toMatchObject({
+      href: '/acme',
+      matchExact: true,
+      titleKey: 'overview.title',
+    });
+    expect(visibleLinks.map((link) => link.href)).toEqual([
+      '/acme',
+      '/acme/catalog',
+      '/acme/stock',
+      '/acme/bundles',
+      '/acme/checkouts',
+      '/acme/sales',
+      '/acme/storefront',
+      '/acme/setup',
+      '/acme/audits',
+    ]);
+    expect(visibleLinks[1]).toMatchObject({
+      aliases: ['/acme/items'],
+      sectionKey: 'sections.operations',
+    });
+    expect(visibleLinks[4]).toMatchObject({
+      aliases: ['/acme/checkout'],
+      sectionKey: 'sections.commerce',
+    });
+    expect(visibleLinks[6]).toMatchObject({
+      aliases: ['/acme/stripe'],
+    });
+    expect(visibleLinks[7]).toMatchObject({
+      sectionKey: 'sections.controls',
+    });
+  });
+});

@@ -7,6 +7,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -99,7 +100,7 @@ export async function GET(req: Request, { params }: Params) {
     invoicesResult.error ||
     salesLinesResult.error
   ) {
-    console.error('Error fetching inventory overview', {
+    serverLogger.error('Error fetching inventory overview', {
       walletsError: walletsResult.error,
       transactionsError: transactionsResult.error,
       lowStockError: lowStockResult.error,

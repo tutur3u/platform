@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -116,7 +117,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
-      console.error('Invalid query parameters:', parsed.error);
+      serverLogger.error('Invalid query parameters:', parsed.error);
       return NextResponse.json(
         { message: 'Invalid query parameters' },
         { status: 400 }
@@ -289,7 +290,7 @@ export async function GET(request: Request, { params }: Params) {
       count: count ?? 0,
     });
   } catch (error) {
-    console.error('Error in workspace products API:', error);
+    serverLogger.error('Error in workspace products API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

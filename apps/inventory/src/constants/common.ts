@@ -5,7 +5,10 @@ export {
   DEV_MODE,
   LOCALE_COOKIE_NAME,
   PROD_MODE,
+  PUBLIC_PATHS,
   SHOW_TAILWIND_INDICATOR,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
   THEME_COOKIE_NAME,
 } from '@tuturuuu/satellite/constants';
 
@@ -45,3 +48,5 @@ export const WEB_APP_URL = resolveInternalAppUrl({
   ],
   fallback: DEFAULT_WEB_APP_URL,
 });
+
+export const TTR_URL = WEB_APP_URL;

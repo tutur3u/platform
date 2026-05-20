@@ -1,11 +1,15 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import type { ReactNode } from 'react';
-import { InventoryAppShell } from '@/components/inventory-app-shell';
+import { type ReactNode, Suspense } from 'react';
+import { SIDEBAR_BEHAVIOR_COOKIE_NAME } from '@/constants/common';
+import { SidebarProvider } from '@/context/sidebar-context';
+import NavbarActions from '../../navbar-actions';
+import { UserNav } from '../../user-nav';
 import { getNavigationLinks } from './navigation';
+import { Structure } from './structure';
 
 interface LayoutProps {
   params: Promise<{
@@ -33,12 +37,45 @@ export default async function Layout({ children, params }: LayoutProps) {
     personal: !!workspace.personal,
   });
 
+  const cookieStore = await cookies();
+  const rawBehavior = cookieStore.get(SIDEBAR_BEHAVIOR_COOKIE_NAME)?.value;
+  const sidebarBehavior =
+    rawBehavior === 'collapsed' || rawBehavior === 'hover'
+      ? rawBehavior
+      : 'expanded';
+  const defaultCollapsed =
+    sidebarBehavior === 'collapsed' || sidebarBehavior === 'hover';
+
   return (
-    <InventoryAppShell
-      links={await getNavigationLinks({ workspaceSlug })}
-      workspaceName={workspace.name ?? workspaceSlug}
-    >
-      {children}
-    </InventoryAppShell>
+    <SidebarProvider initialBehavior={sidebarBehavior}>
+      <Structure
+        wsId={workspace.id}
+        workspace={workspace}
+        defaultCollapsed={defaultCollapsed}
+        links={await getNavigationLinks({ workspaceSlug })}
+        actions={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <NavbarActions />
+          </Suspense>
+        }
+        userPopover={
+          <Suspense
+            key={user.id}
+            fallback={
+              <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
+            }
+          >
+            <UserNav hideMetadata />
+          </Suspense>
+        }
+      >
+        {children}
+      </Structure>
+    </SidebarProvider>
   );
 }

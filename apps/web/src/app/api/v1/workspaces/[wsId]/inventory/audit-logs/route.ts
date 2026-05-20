@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -135,7 +136,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error, count } = await query;
 
   if (error) {
-    console.error('Error fetching inventory audit logs', error);
+    serverLogger.error('Error fetching inventory audit logs', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory audit logs' },
       { status: 500 }
@@ -156,7 +157,7 @@ export async function GET(req: Request, { params }: Params) {
       .in('id', actorIds);
 
     if (actorError) {
-      console.error('Error fetching inventory audit actors', actorError);
+      serverLogger.error('Error fetching inventory audit actors', actorError);
     } else {
       for (const actor of actorRows ?? []) {
         actorNameById.set(

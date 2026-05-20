@@ -1,17 +1,19 @@
 'use client';
 
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { ShoppingCart } from '@tuturuuu/icons';
+import { RefreshCw, ShoppingCart } from '@tuturuuu/icons';
 import {
   createInventoryCheckoutSession,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
 } from '@tuturuuu/internal-api/inventory';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useMemo } from 'react';
 import {
   CheckoutPanel,
+  getListingLimit,
   StorefrontListingGrid,
   useCart,
 } from './public-storefront-cart';
@@ -56,8 +58,12 @@ export function PublicStorefrontClient({
       }),
     [cart.cart, listings]
   );
-  const total = cartListings.reduce(
-    (sum, entry) => sum + (entry.listing?.price ?? 0) * entry.line.quantity,
+  const checkoutListings = cartListings.filter(
+    ({ line, listing }) => Math.min(line.quantity, getListingLimit(listing)) > 0
+  );
+  const total = checkoutListings.reduce(
+    (sum, { line, listing }) =>
+      sum + listing.price * Math.min(line.quantity, getListingLimit(listing)),
     0
   );
   const checkoutMutation = useMutation({
@@ -66,9 +72,15 @@ export function PublicStorefrontClient({
         customerEmail: String(formData.get('email') ?? ''),
         customerName: String(formData.get('name') ?? ''),
         customerPhone: String(formData.get('phone') ?? '') || null,
-        lines: cart.cart,
+        lines: checkoutListings
+          .map(({ line, listing }) => ({
+            listingId: line.listingId,
+            quantity: Math.min(line.quantity, getListingLimit(listing)),
+          }))
+          .filter((line) => line.quantity > 0),
         note: String(formData.get('note') ?? '') || null,
       }),
+    onError: () => toast.error(t('checkoutError')),
     onSuccess: ({ checkout }) => {
       cart.clear();
       router.push(`/store/${storeSlug}/orders/${checkout.publicToken}`);
@@ -82,10 +94,40 @@ export function PublicStorefrontClient({
         <section className="w-full rounded-lg border border-border bg-card p-6">
           <p className="text-muted-foreground text-sm">{t('order')}</p>
           <h1 className="mt-2 font-semibold text-3xl">{publicToken}</h1>
-          <p className="mt-4 text-muted-foreground">
-            {order ? t('orderStatus', { status: order.status }) : t('loading')}
-          </p>
+          {orderQuery.isError ? (
+            <RetryPanel
+              description={t('orderErrorDescription')}
+              onRetry={() => orderQuery.refetch()}
+              title={t('orderErrorTitle')}
+            />
+          ) : (
+            <p className="mt-4 text-muted-foreground">
+              {order
+                ? t('orderStatus', { status: order.status })
+                : t('loading')}
+            </p>
+          )}
         </section>
+      </main>
+    );
+  }
+
+  if (storefrontQuery.isLoading) {
+    return (
+      <main className="grid min-h-dvh place-items-center px-4 text-muted-foreground">
+        {t('loading')}
+      </main>
+    );
+  }
+
+  if (storefrontQuery.isError) {
+    return (
+      <main className="grid min-h-dvh place-items-center px-4">
+        <RetryPanel
+          description={t('storefrontErrorDescription')}
+          onRetry={() => storefrontQuery.refetch()}
+          title={t('storefrontErrorTitle')}
+        />
       </main>
     );
   }
@@ -93,7 +135,7 @@ export function PublicStorefrontClient({
   if (!storefront) {
     return (
       <main className="grid min-h-dvh place-items-center px-4 text-muted-foreground">
-        {storefrontQuery.isLoading ? t('loading') : t('notFound')}
+        {t('notFound')}
       </main>
     );
   }
@@ -124,13 +166,21 @@ export function PublicStorefrontClient({
           cartListings={cartListings}
           currencyCode={currencyCode}
           onDecrement={cart.decrement}
-          onIncrement={cart.increment}
+          onIncrement={(selectedListingId) => {
+            const listing = listings.find(
+              (item) => item.id === selectedListingId
+            );
+            cart.increment(
+              selectedListingId,
+              listing ? getListingLimit(listing) : 1
+            );
+          }}
           showCart={mode === 'cart' || mode === 'checkout'}
           visibleListings={visibleListings}
         />
 
         <CheckoutPanel
-          cartCount={cart.cart.length}
+          cartCount={checkoutListings.length}
           currencyCode={currencyCode}
           isCheckout={mode === 'checkout'}
           isSubmitting={checkoutMutation.isPending}
@@ -143,5 +193,32 @@ export function PublicStorefrontClient({
         />
       </div>
     </main>
+  );
+}
+
+function RetryPanel({
+  description,
+  onRetry,
+  title,
+}: {
+  description: string;
+  onRetry: () => void;
+  title: string;
+}) {
+  const t = useTranslations('inventory.storefront');
+
+  return (
+    <section className="w-full max-w-md rounded-lg border border-dynamic-red/25 bg-dynamic-red/10 p-5 text-dynamic-red">
+      <p className="font-semibold">{title}</p>
+      <p className="mt-1 text-sm leading-6 opacity-80">{description}</p>
+      <button
+        className="mt-4 inline-flex h-9 items-center gap-2 rounded-md border border-current/25 px-3 font-medium text-sm"
+        onClick={onRetry}
+        type="button"
+      >
+        <RefreshCw className="h-4 w-4" />
+        {t('retry')}
+      </button>
+    </section>
   );
 }

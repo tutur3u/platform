@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -69,7 +70,7 @@ export async function GET(req: Request, { params }: Params) {
   ]);
 
   if (invoicesResult.error) {
-    console.error('Error fetching inventory sales', invoicesResult.error);
+    serverLogger.error('Error fetching inventory sales', invoicesResult.error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sales' },
       { status: 500 }

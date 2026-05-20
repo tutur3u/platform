@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -532,7 +533,7 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error } = await loadSale(sbAdmin, wsId, saleId);
 
   if (error) {
-    console.error('Error fetching inventory sale detail', error);
+    serverLogger.error('Error fetching inventory sale detail', error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sale detail' },
       { status: 500 }
@@ -580,7 +581,7 @@ export async function PUT(req: Request, { params }: Params) {
   );
 
   if (loadError) {
-    console.error('Error loading inventory sale detail', loadError);
+    serverLogger.error('Error loading inventory sale detail', loadError);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sale detail' },
       { status: 500 }
@@ -637,7 +638,10 @@ export async function PUT(req: Request, { params }: Params) {
         saleId
       );
     } catch (error) {
-      console.error('Error validating updated inventory sale products', error);
+      serverLogger.error(
+        'Error validating updated inventory sale products',
+        error
+      );
       return NextResponse.json(
         {
           message:
@@ -744,7 +748,10 @@ export async function PUT(req: Request, { params }: Params) {
         );
 
       if (stockError) {
-        console.error('Error reconciling product stock changes', stockError);
+        serverLogger.error(
+          'Error reconciling product stock changes',
+          stockError
+        );
         return NextResponse.json(
           { message: 'Failed to reconcile inventory stock' },
           { status: 500 }
@@ -758,7 +765,7 @@ export async function PUT(req: Request, { params }: Params) {
       .eq('invoice_id', saleId);
 
     if (lineDeleteError) {
-      console.error('Error deleting sale line items', lineDeleteError);
+      serverLogger.error('Error deleting sale line items', lineDeleteError);
       return NextResponse.json(
         { message: 'Failed to update sale line items' },
         { status: 500 }
@@ -770,7 +777,7 @@ export async function PUT(req: Request, { params }: Params) {
       .insert(builtProducts.invoiceProducts);
 
     if (lineInsertError) {
-      console.error('Error inserting sale line items', lineInsertError);
+      serverLogger.error('Error inserting sale line items', lineInsertError);
       return NextResponse.json(
         { message: 'Failed to update sale line items' },
         { status: 500 }
@@ -811,7 +818,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (updateError) {
-    console.error('Error updating inventory sale', updateError);
+    serverLogger.error('Error updating inventory sale', updateError);
     return NextResponse.json(
       { message: 'Failed to update inventory sale' },
       { status: 500 }
@@ -829,7 +836,7 @@ export async function PUT(req: Request, { params }: Params) {
       actor,
     });
   } catch (error) {
-    console.error('Error syncing linked finance transaction', error);
+    serverLogger.error('Error syncing linked finance transaction', error);
     return NextResponse.json(
       {
         message:
@@ -848,7 +855,7 @@ export async function PUT(req: Request, { params }: Params) {
   );
 
   if (reloadError) {
-    console.error('Error reloading inventory sale detail', reloadError);
+    serverLogger.error('Error reloading inventory sale detail', reloadError);
     return NextResponse.json(
       { message: 'Failed to reload inventory sale detail' },
       { status: 500 }
@@ -905,7 +912,7 @@ export async function DELETE(req: Request, { params }: Params) {
   );
 
   if (loadError) {
-    console.error('Error loading inventory sale detail', loadError);
+    serverLogger.error('Error loading inventory sale detail', loadError);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sale detail' },
       { status: 500 }
@@ -942,7 +949,7 @@ export async function DELETE(req: Request, { params }: Params) {
       .insert(stockRestores);
 
     if (stockError) {
-      console.error(
+      serverLogger.error(
         'Error restoring stock for deleted inventory sale',
         stockError
       );
@@ -959,7 +966,10 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('invoice_id', saleId);
 
   if (promotionsError) {
-    console.error('Error deleting inventory sale promotions', promotionsError);
+    serverLogger.error(
+      'Error deleting inventory sale promotions',
+      promotionsError
+    );
     return NextResponse.json(
       { message: 'Failed to delete inventory sale' },
       { status: 500 }
@@ -972,7 +982,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('invoice_id', saleId);
 
   if (productsError) {
-    console.error('Error deleting inventory sale lines', productsError);
+    serverLogger.error('Error deleting inventory sale lines', productsError);
     return NextResponse.json(
       { message: 'Failed to delete inventory sale' },
       { status: 500 }
@@ -986,7 +996,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (invoiceError) {
-    console.error('Error deleting inventory sale invoice', invoiceError);
+    serverLogger.error('Error deleting inventory sale invoice', invoiceError);
     return NextResponse.json(
       { message: 'Failed to delete inventory sale' },
       { status: 500 }

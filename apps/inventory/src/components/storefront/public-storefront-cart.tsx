@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowRight, Minus, Plus } from '@tuturuuu/icons';
+import { ArrowRight, Minus, Plus, TriangleAlert } from '@tuturuuu/icons';
 import type { InventoryStorefrontListing } from '@tuturuuu/internal-api/inventory';
 import { useTranslations } from 'next-intl';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -55,29 +55,44 @@ export function useCart(storeSlug: string) {
           )
           .filter((line) => line.quantity > 0)
       ),
-    increment: (listingId: string) =>
+    increment: (listingId: string, maxQuantity = Number.POSITIVE_INFINITY) =>
       setCart((current) => {
         const existing = current.find((line) => line.listingId === listingId);
         if (!existing) return [...current, { listingId, quantity: 1 }];
         return current.map((line) =>
           line.listingId === listingId
-            ? { ...line, quantity: line.quantity + 1 }
+            ? {
+                ...line,
+                quantity: Math.min(line.quantity + 1, maxQuantity),
+              }
             : line
         );
       }),
   };
 }
 
+export function getListingLimit(listing: InventoryStorefrontListing) {
+  const available =
+    typeof listing.availableQuantity === 'number'
+      ? listing.availableQuantity
+      : Number.POSITIVE_INFINITY;
+  return Math.max(0, Math.min(listing.maxPerOrder, available));
+}
+
 export function ProductCard({
   currencyCode,
   listing,
   onAdd,
+  quantity,
 }: {
   currencyCode: string;
   listing: InventoryStorefrontListing;
   onAdd: () => void;
+  quantity: number;
 }) {
   const t = useTranslations('inventory.storefront');
+  const limit = getListingLimit(listing);
+  const disabled = limit === 0 || quantity >= limit;
 
   return (
     <article className="grid min-h-[180px] gap-3 rounded-lg border border-border bg-card p-4">
@@ -96,7 +111,7 @@ export function ProductCard({
         </div>
         <button
           className="inline-flex h-9 items-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm disabled:opacity-50"
-          disabled={listing.availableQuantity === 0}
+          disabled={disabled}
           onClick={onAdd}
           type="button"
         >
@@ -132,6 +147,10 @@ export function StorefrontListingGrid({
             key={listing.id}
             listing={listing}
             onAdd={() => onIncrement(listing.id)}
+            quantity={
+              cartListings.find((entry) => entry.listing.id === listing.id)
+                ?.line.quantity ?? 0
+            }
           />
         ))}
       </section>
@@ -160,6 +179,7 @@ export function StorefrontListingGrid({
             <span className="w-8 text-center">{line.quantity}</span>
             <button
               className="flex h-8 w-8 items-center justify-center rounded-md border border-border"
+              disabled={line.quantity >= getListingLimit(listing)}
               onClick={() => onIncrement(line.listingId)}
               type="button"
             >
@@ -199,6 +219,12 @@ export function CheckoutPanel({
         <span className="text-muted-foreground text-sm">{t('total')}</span>
         <span className="font-semibold">{price(total, currencyCode)}</span>
       </div>
+      {cartCount === 0 ? (
+        <p className="mt-4 flex items-center gap-2 rounded-md border border-dynamic-amber/25 bg-dynamic-amber/10 px-3 py-2 text-dynamic-amber text-sm">
+          <TriangleAlert className="h-4 w-4" />
+          {t('emptyCart')}
+        </p>
+      ) : null}
       {isCheckout ? (
         <form className="mt-4 grid gap-2" onSubmit={onSubmit}>
           <input
@@ -229,13 +255,14 @@ export function CheckoutPanel({
             disabled={cartCount === 0 || isSubmitting}
             type="submit"
           >
-            {t('reserve')}
+            {isSubmitting ? t('reserving') : t('reserve')}
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
       ) : (
         <a
-          className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm"
+          aria-disabled={cartCount === 0}
+          className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md bg-dynamic-blue px-3 font-medium text-dynamic-blue-foreground text-sm aria-disabled:pointer-events-none aria-disabled:opacity-50"
           href={`/store/${storeSlug}/checkout`}
         >
           {t('checkout')}

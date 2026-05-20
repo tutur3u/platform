@@ -310,6 +310,7 @@ export function listInventoryStorefronts(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryStorefront>
   >(workspaceInventoryPath(wsId, '/storefronts'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -319,7 +320,8 @@ export function getInventoryOverview(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<InventoryOverviewResponse>(
-    workspaceInventoryPath(wsId, '/overview')
+    workspaceInventoryPath(wsId, '/overview'),
+    { cache: 'no-store' }
   );
 }
 
@@ -331,6 +333,7 @@ export function listInventoryProducts(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryProductSummary>
   >(workspaceInventoryPath(wsId, '/products'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -343,6 +346,7 @@ export function listInventorySales(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventorySaleSummary>
   >(workspaceInventoryPath(wsId, '/sales'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -355,6 +359,7 @@ export function listInventoryAuditLogs(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryAuditLogSummary>
   >(workspaceInventoryPath(wsId, '/audit-logs'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -407,6 +412,7 @@ export function listInventoryStorefrontListings(
       `/storefronts/${encodePathSegment(storefrontId)}/listings`
     ),
     {
+      cache: 'no-store',
       query: asQuery(query),
     }
   );
@@ -441,6 +447,7 @@ export function listInventoryBundles(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryBundle>
   >(workspaceInventoryPath(wsId, '/bundles'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -484,6 +491,7 @@ export function listInventoryCheckouts(
   return getInternalApiClient(options).json<
     InventoryListResponse<InventoryCheckoutSession>
   >(workspaceInventoryPath(wsId, '/checkouts'), {
+    cache: 'no-store',
     query: asQuery(query),
   });
 }
@@ -493,7 +501,8 @@ export function getInventoryPublicStorefront(
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<InventoryPublicStorefrontResponse>(
-    publicStorefrontPath(slug)
+    publicStorefrontPath(slug),
+    { cache: 'no-store' }
   );
 }
 
@@ -518,5 +527,7 @@ export function getInventoryPublicOrder(
 ) {
   return getInternalApiClient(options).json<{
     order: InventoryCheckoutSession;
-  }>(`/api/v1/inventory/orders/${encodePathSegment(publicToken)}`);
+  }>(`/api/v1/inventory/orders/${encodePathSegment(publicToken)}`, {
+    cache: 'no-store',
+  });
 }

@@ -8,6 +8,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -97,7 +98,7 @@ export async function PATCH(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.error('Error updating inventory owner', error);
+    serverLogger.error('Error updating inventory owner', error);
     return NextResponse.json(
       { message: 'Failed to update inventory owner' },
       { status: 500 }
@@ -168,7 +169,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    console.error('Error deleting inventory owner', error);
+    serverLogger.error('Error deleting inventory owner', error);
     return NextResponse.json(
       { message: 'Failed to delete inventory owner' },
       { status: 500 }
