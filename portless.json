@@ -36,6 +36,10 @@
       "name": "meet.tuturuuu",
       "script": "dev:app"
     },
+    "apps/mind": {
+      "name": "mind.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/nova": {
       "name": "nova.tuturuuu",
       "script": "dev:app"

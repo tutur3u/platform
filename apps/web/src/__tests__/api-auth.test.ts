@@ -706,6 +706,7 @@ describe('withSessionAuth', () => {
         'hive',
         'inventory',
         'learn',
+        'mind',
         'mira',
         'nova',
         'rewise',

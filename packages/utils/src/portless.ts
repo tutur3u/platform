@@ -15,6 +15,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   inventory: `https://inventory.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   learn: `https://learn.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   meet: `https://meet.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  mind: `https://mind.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   nova: `https://nova.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   platform: TUTURUUU_PORTLESS_ROOT_ORIGIN,
   playground: `https://playground.${TUTURUUU_PORTLESS_ROOT_HOST}`,

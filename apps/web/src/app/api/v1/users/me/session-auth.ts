@@ -7,6 +7,7 @@ const CURRENT_USER_APP_SESSION_TARGETS = [
   'hive',
   'inventory',
   'learn',
+  'mind',
   'mira',
   'nova',
   'rewise',

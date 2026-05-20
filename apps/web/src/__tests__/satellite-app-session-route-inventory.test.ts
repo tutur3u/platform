@@ -19,6 +19,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours',
   'apps/web/src/app/api/v1/workspaces/[wsId]/encryption',
   'apps/web/src/app/api/v1/workspaces/[wsId]/inventory',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/mind',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
@@ -31,6 +32,7 @@ const satelliteAppApiRoots = [
   'apps/learn/src/app/api',
   'apps/teach/src/app/api',
   'apps/inventory/src/app/api',
+  'apps/mind/src/app/api',
 ];
 
 const allowedSatelliteLocalApiRoutes = new Set([
@@ -40,6 +42,8 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/teach/src/app/api/auth/verify-app-token/route.ts',
   'apps/inventory/src/app/api/auth/logout/route.ts',
   'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
+  'apps/mind/src/app/api/auth/logout/route.ts',
+  'apps/mind/src/app/api/auth/verify-app-token/route.ts',
 ]);
 
 function walkRouteFiles(relativePath: string): string[] {
@@ -140,6 +144,7 @@ describe('satellite app-session route inventory', () => {
       'apps/learn/src/app/api/auth/logout/route.ts',
       'apps/teach/src/app/api/auth/logout/route.ts',
       'apps/inventory/src/app/api/auth/logout/route.ts',
+      'apps/mind/src/app/api/auth/logout/route.ts',
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 
@@ -153,6 +158,7 @@ describe('satellite app-session route inventory', () => {
       'apps/learn/src/app/api/auth/verify-app-token/route.ts',
       'apps/teach/src/app/api/auth/verify-app-token/route.ts',
       'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
+      'apps/mind/src/app/api/auth/verify-app-token/route.ts',
     ]) {
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 

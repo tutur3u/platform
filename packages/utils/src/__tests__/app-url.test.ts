@@ -126,6 +126,7 @@ describe('getLocalInternalAppUrl', () => {
     ['learn', 'https://learn.tuturuuu.localhost'],
     ['teach', 'https://teach.tuturuuu.localhost'],
     ['hive', 'https://hive.tuturuuu.localhost'],
+    ['mind', 'https://mind.tuturuuu.localhost'],
   ] as const)('returns the %s Portless URL', (appName, expectedUrl) => {
     expect(getPortlessInternalAppUrl(appName)).toBe(expectedUrl);
     expect(getLocalInternalAppUrl(appName, 'http://localhost:9999')).toBe(
@@ -150,6 +151,7 @@ describe('Portless app origin registry', () => {
       'https://inventory.tuturuuu.localhost',
       'https://learn.tuturuuu.localhost',
       'https://meet.tuturuuu.localhost',
+      'https://mind.tuturuuu.localhost',
       'https://nova.tuturuuu.localhost',
       'https://tuturuuu.localhost',
       'https://playground.tuturuuu.localhost',

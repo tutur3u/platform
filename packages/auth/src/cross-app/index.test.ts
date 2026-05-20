@@ -105,6 +105,7 @@ describe('mapUrlToApp', () => {
     ['learn', 'https://learn.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['teach', 'https://teach.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['hive', 'https://hive.tuturuuu.localhost/verify-token?nextUrl=%2F'],
+    ['mind', 'https://mind.tuturuuu.localhost/verify-token?nextUrl=%2F'],
   ])('maps %s Portless return URLs', (expectedApp, returnUrl) => {
     expect(mapUrlToApp(returnUrl)).toBe(expectedApp);
   });

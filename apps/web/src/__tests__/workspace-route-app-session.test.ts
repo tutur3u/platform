@@ -52,6 +52,7 @@ describe('workspace API route app-session bridge', () => {
           'hive',
           'inventory',
           'learn',
+          'mind',
           'mira',
           'nova',
           'rewise',

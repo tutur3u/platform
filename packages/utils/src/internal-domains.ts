@@ -53,6 +53,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     name: 'hive',
     url: 'https://hive.tuturuuu.com',
   },
+  {
+    name: 'mind',
+    url: 'https://mind.tuturuuu.com',
+  },
 ] as const;
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
@@ -104,6 +108,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     name: 'hive',
     url: getTuturuuuPortlessAppOrigin('hive'),
   },
+  {
+    name: 'mind',
+    url: getTuturuuuPortlessAppOrigin('mind'),
+  },
 ] as const;
 
 export const LOCALHOST_INTERNAL_APP_DOMAINS = [
@@ -154,6 +162,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'hive',
     url: 'http://localhost:7814',
+  },
+  {
+    name: 'mind',
+    url: 'http://localhost:7816',
   },
 ] as const;
 
