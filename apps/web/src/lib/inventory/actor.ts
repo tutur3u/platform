@@ -1,16 +1,13 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 export async function getInventoryActorContext(req: Request, wsId: string) {
-  const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const auth = await resolveSessionAuthContext(req, {
+    allowAppSessionAuth: { targetApp: 'inventory' },
+  });
 
-  if (!user) {
+  if (!auth.ok) {
     return {
       authUserId: null,
       workspaceUserId: null,
@@ -20,12 +17,12 @@ export async function getInventoryActorContext(req: Request, wsId: string) {
   const { data } = await sbAdmin
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
-    .eq('platform_user_id', user.id)
+    .eq('platform_user_id', auth.user.id)
     .eq('ws_id', wsId)
     .single();
 
   return {
-    authUserId: user.id,
+    authUserId: auth.user.id,
     workspaceUserId: data?.virtual_user_id ?? null,
   };
 }

@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -9,6 +8,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -20,27 +20,72 @@ export type InventoryWorkspaceAuthorization = {
   wsId: string;
 };
 
+type AuthorizeInventoryWorkspaceOptions = {
+  requireInventoryEnabled?: boolean;
+};
+
+const PERSONAL_WORKSPACE_ALIAS = 'personal';
+
+async function normalizeInventoryWorkspaceId({
+  rawWsId,
+  supabase,
+  userId,
+}: {
+  rawWsId: string;
+  supabase: Parameters<typeof normalizeWorkspaceId>[1];
+  userId: string;
+}) {
+  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
+    return normalizeWorkspaceId(rawWsId, supabase);
+  }
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: workspace, error } = await sbAdmin
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id, type)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', userId)
+    .eq('workspace_members.type', 'MEMBER')
+    .maybeSingle();
+
+  if (error || !workspace?.id) {
+    throw new Error('Personal workspace not found');
+  }
+
+  return workspace.id;
+}
+
 export async function authorizeInventoryWorkspace(
   request: Request,
-  rawWsId: string
+  rawWsId: string,
+  options: AuthorizeInventoryWorkspaceOptions = {}
 ): Promise<
   | { ok: true; value: InventoryWorkspaceAuthorization }
   | { ok: false; response: NextResponse }
 > {
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'inventory' },
+  });
 
-  if (authError || !user) {
+  if (!auth.ok) return { ok: false, response: auth.response };
+
+  let wsId: string;
+  try {
+    wsId = await normalizeInventoryWorkspaceId({
+      rawWsId,
+      supabase: auth.supabase,
+      userId: auth.user.id,
+    });
+  } catch {
     return {
       ok: false,
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+      response: NextResponse.json({ error: 'Not found' }, { status: 404 }),
     };
   }
 
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
   const membership = await verifyWorkspaceMembershipType({
-    supabase,
-    userId: user.id,
+    supabase: auth.supabase,
+    userId: auth.user.id,
     wsId,
   });
 
@@ -61,11 +106,14 @@ export async function authorizeInventoryWorkspace(
     };
   }
 
-  if (!(await isInventoryEnabled(wsId))) {
+  if (
+    options.requireInventoryEnabled !== false &&
+    !(await isInventoryEnabled(wsId))
+  ) {
     return { ok: false, response: inventoryNotFoundResponse() };
   }
 
-  const permissions = await getPermissions({ request, wsId });
+  const permissions = await getPermissions({ user: auth.user, wsId });
   if (!permissions) {
     return {
       ok: false,
@@ -77,7 +125,7 @@ export async function authorizeInventoryWorkspace(
     ok: true,
     value: {
       permissions,
-      userId: user.id,
+      userId: auth.user.id,
       wsId,
     },
   };

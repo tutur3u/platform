@@ -14,6 +14,13 @@ auth for `targetApp: 'inventory'`, exposes local `/verify-token` and
 traffic to centralized `apps/web` APIs. Keep protected inventory, payment,
 Stripe Connect, checkout, and audit mutations behind `apps/web` so provider
 secrets, bot protection, request logging, and Observability stay centralized.
+Workspace-scoped Inventory APIs in `apps/web` must authorize through
+`authorizeInventoryWorkspace`, which accepts the Inventory app-session cookie
+and then performs membership, inventory enablement, and permission checks. Do
+not use `resolveAuthenticatedSessionUser`, `supabase.auth.getUser()`, or
+request-scoped Supabase clients as the primary auth gate for these routes,
+because the satellite clears local Supabase cookies and forwards app-session
+cookies instead.
 The operator console uses the same collapsible Tuturuuu satellite workspace
 structure as the Tasks, Finance, Calendar, and CMS apps: dashboard layouts should
 keep server work to auth/workspace gating, then render client-side views backed

@@ -1,13 +1,5 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { canViewInventoryDashboard } from '@/lib/inventory/permissions';
 import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
 
@@ -19,20 +11,13 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId, request: req });
+  const authorization = await authorizeInventoryWorkspace(req, wsId);
+  if (!authorization.ok) return authorization.response;
 
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const { permissions, wsId: normalizedWsId } = authorization.value;
 
   if (!canViewInventoryDashboard(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
-
-  const supabase = await createClient(req);
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  if (!(await isInventoryEnabled(normalizedWsId))) {
-    return inventoryNotFoundResponse();
   }
 
   const enabled = await isInventoryRealtimeEnabled(normalizedWsId);

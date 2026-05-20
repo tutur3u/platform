@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   InventoryProduct,
   RawInventoryProduct,
@@ -11,18 +7,10 @@ import {
   MAX_MEDIUM_TEXT_LENGTH,
   MAX_SEARCH_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   canViewInventoryCatalog,
   canViewInventoryStock,
@@ -61,45 +49,12 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
     const { wsId: id } = await params;
+    const authorization = await authorizeInventoryWorkspace(request, id);
+    if (!authorization.ok) return authorization.response;
 
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Resolve workspace ID after authentication
-    const wsId = await normalizeWorkspaceId(id, supabase);
-
-    const membership = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
-
-    if (membership.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        { message: 'Failed to verify workspace access' },
-        { status: 500 }
-      );
-    }
-
-    if (!membership.ok) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    if (!(await isInventoryEnabled(wsId))) {
-      return inventoryNotFoundResponse();
-    }
-
-    // Check permissions
-    const permissions = await getPermissions({ wsId, request });
-    if (!permissions) {
-      return Response.json({ error: 'Not found' }, { status: 404 });
-    }
+    const { permissions, wsId } = authorization.value;
     const canViewInventory = canViewInventoryCatalog(permissions);
     const canViewStockQuantity = canViewInventoryStock(permissions);
 

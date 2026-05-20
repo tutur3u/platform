@@ -1,18 +1,8 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { canViewInventoryAuditLogs } from '@/lib/inventory/permissions';
 
 const SearchParamsSchema = z.object({
@@ -92,17 +82,11 @@ function buildSummary(row: {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
 
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
 
   if (!canViewInventoryAuditLogs(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

@@ -192,6 +192,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
     targetApp: ['calendar', 'track'],
   },
   {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/inventory(?:\/|$)/u,
+    targetApp: 'inventory',
+  },
+  {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/tulearn(?:\/|$)/u,
     targetApp: LEARN_TEACH_APP_SESSION_TARGETS,
   },

@@ -1,24 +1,14 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
 } from '@/lib/inventory/audit';
+import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
   canDeleteInventorySales,
   canUpdateInventorySales,
@@ -514,17 +504,11 @@ async function syncInvoiceTransaction(
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id, saleId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
 
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
 
   if (!canViewInventorySales(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -549,17 +533,11 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: id, saleId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
 
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
 
   if (!canUpdateInventorySales(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -889,17 +867,11 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId: id, saleId } = await params;
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
-  const permissions = await getPermissions({ wsId: id, request: req });
+  const authorization = await authorizeInventoryWorkspace(req, id);
+  if (!authorization.ok) return authorization.response;
 
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  const sbAdmin = await createAdminClient();
+  const { permissions, wsId } = authorization.value;
 
   if (!canDeleteInventorySales(permissions)) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });

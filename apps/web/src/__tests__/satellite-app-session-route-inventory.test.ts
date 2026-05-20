@@ -18,6 +18,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings',
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours',
   'apps/web/src/app/api/v1/workspaces/[wsId]/encryption',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/inventory',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/modules',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-order',
   'apps/web/src/app/api/v1/workspaces/[wsId]/user-groups/[groupId]/module-groups',
@@ -113,6 +114,16 @@ describe('satellite app-session route inventory', () => {
 
     expect(source).toContain('getAppSessionTokenFromRequest');
     expect(source).toContain('verifyAppSessionRequest');
+  });
+
+  it('keeps Inventory workspace APIs on the inventory app-session target', () => {
+    const source = readFileSync(
+      resolve(repoRoot, 'apps/web/src/lib/inventory/commerce/auth.ts'),
+      'utf8'
+    );
+
+    expect(source).toContain('resolveSessionAuthContext');
+    expect(source).toContain("targetApp: 'inventory'");
   });
 
   it('keeps satellite local APIs limited to auth cookie handoff routes', () => {
