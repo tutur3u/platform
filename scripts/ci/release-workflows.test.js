@@ -72,9 +72,66 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.match(supabaseStagingWorkflow, /\n {4}branches:\n {6}- main\n/);
   assert.match(
     supabaseProductionWorkflow,
-    /supabase-staging\.yaml\/runs\?branch=main&per_page=1/
+    /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
+});
+
+test('Supabase production migration is bound to production deployment and staged SHA', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
+    'utf8'
+  );
+  const evaluateJob = readWorkflowJobBlock(
+    'supabase-production.yaml',
+    'evaluate-prerequisites'
+  );
+  const deployJob = readWorkflowJobBlock('supabase-production.yaml', 'deploy');
+
+  assert.match(
+    workflow,
+    /workflows:\n {6}- "Vercel Platform Production Deployment"\n/
+  );
+  assert.doesNotMatch(
+    workflow,
+    /workflow_run:[\s\S]*Supabase Staging Migration/,
+    'production migration must not be triggered by main staging migration runs'
+  );
+  assert.match(workflow, /\n {4}branches:\n {6}- production\n/);
+  assert.doesNotMatch(
+    workflow,
+    /\n {6}- main\n/,
+    'production workflow_run branch filters must not include main'
+  );
+
+  assert.match(
+    evaluateJob,
+    /manual dispatches must run from the production branch/
+  );
+  assert.match(
+    evaluateJob,
+    /TRIGGER_WORKFLOW" != "Vercel Platform Production Deployment"/
+  );
+  assert.match(evaluateJob, /TRIGGER_BRANCH" != "production"/);
+  assert.match(
+    evaluateJob,
+    /vercel-production-platform\.yaml\/runs\?branch=production&head_sha=\$TARGET_SHA&per_page=1/
+  );
+  assert.match(evaluateJob, /VERCEL_SHA" != "\$TARGET_SHA"/);
+  assert.match(
+    evaluateJob,
+    /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
+  );
+  assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
+  assert.match(
+    evaluateJob,
+    /Production deployment and staging migration are bound to \$TARGET_SHA/
+  );
+
+  assert.match(
+    deployJob,
+    /ref: \$\{\{ needs\.evaluate-prerequisites\.outputs\.target_sha \}\}/
+  );
 });
 
 test('education Vercel workflows scope deploy secrets to deploy jobs', () => {
