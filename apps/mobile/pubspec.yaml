@@ -35,7 +35,7 @@ dependencies:
   flutter_markdown: ^0.7.7+1
   flutter_native_splash: ^2.4.7
   flutter_pcm_sound: ^3.3.3
-  flutter_quill: ^11.5.0
+  flutter_quill: ^11.5.1
   flutter_secure_storage: ^10.0.0
   flutter_svg: ^2.2.4
   flutter_timezone: ^5.0.2
