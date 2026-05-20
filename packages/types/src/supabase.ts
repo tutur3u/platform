@@ -722,6 +722,601 @@ export type Database = {
         };
         Relationships: [];
       };
+      mind_ai_messages: {
+        Row: {
+          board_id: string | null;
+          content: string;
+          created_at: string;
+          creator_id: string | null;
+          id: string;
+          metadata: Json;
+          model: string | null;
+          role: string;
+          thread_id: string;
+          tool_calls: Json;
+          tool_results: Json;
+          usage: Json;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          model?: string | null;
+          role: string;
+          thread_id: string;
+          tool_calls?: Json;
+          tool_results?: Json;
+          usage?: Json;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          content?: string;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          model?: string | null;
+          role?: string;
+          thread_id?: string;
+          tool_calls?: Json;
+          tool_results?: Json;
+          usage?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_ai_messages_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_ai_patches: {
+        Row: {
+          applied_at: string | null;
+          board_id: string;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          metadata: Json;
+          patch: Json;
+          status: string;
+          summary: string;
+          thread_id: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          applied_at?: string | null;
+          board_id: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          patch: Json;
+          status?: string;
+          summary: string;
+          thread_id?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          applied_at?: string | null;
+          board_id?: string;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          metadata?: Json;
+          patch?: Json;
+          status?: string;
+          summary?: string;
+          thread_id?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_ai_patches_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_ai_patches_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_ai_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_ai_threads: {
+        Row: {
+          board_id: string | null;
+          created_at: string;
+          creator_id: string | null;
+          id: string;
+          metadata: Json;
+          model: string | null;
+          title: string;
+          updated_at: string;
+          write_mode: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          model?: string | null;
+          title?: string;
+          updated_at?: string;
+          write_mode?: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string | null;
+          created_at?: string;
+          creator_id?: string | null;
+          id?: string;
+          metadata?: Json;
+          model?: string | null;
+          title?: string;
+          updated_at?: string;
+          write_mode?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_ai_threads_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_boards: {
+        Row: {
+          canvas_view: Json | null;
+          created_at: string;
+          creator_id: string | null;
+          default_horizon: string;
+          description: string | null;
+          id: string;
+          settings: Json;
+          status: string;
+          title: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          canvas_view?: Json | null;
+          created_at?: string;
+          creator_id?: string | null;
+          default_horizon?: string;
+          description?: string | null;
+          id?: string;
+          settings?: Json;
+          status?: string;
+          title: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          canvas_view?: Json | null;
+          created_at?: string;
+          creator_id?: string | null;
+          default_horizon?: string;
+          description?: string | null;
+          id?: string;
+          settings?: Json;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      mind_edges: {
+        Row: {
+          board_id: string;
+          color: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          edge_type: string;
+          id: string;
+          label: string | null;
+          metadata: Json;
+          source_node_id: string;
+          target_node_id: string;
+          updated_at: string;
+          weight: number;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          color?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          edge_type?: string;
+          id?: string;
+          label?: string | null;
+          metadata?: Json;
+          source_node_id: string;
+          target_node_id: string;
+          updated_at?: string;
+          weight?: number;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          color?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          edge_type?: string;
+          id?: string;
+          label?: string | null;
+          metadata?: Json;
+          source_node_id?: string;
+          target_node_id?: string;
+          updated_at?: string;
+          weight?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_edges_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_source_node_id_fkey';
+            columns: ['source_node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_edges_target_node_id_fkey';
+            columns: ['target_node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_group_nodes: {
+        Row: {
+          board_id: string;
+          created_at: string;
+          group_id: string;
+          node_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          created_at?: string;
+          group_id: string;
+          node_id: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          created_at?: string;
+          group_id?: string;
+          node_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_group_nodes_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_group_nodes_group_id_fkey';
+            columns: ['group_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_groups';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_group_nodes_node_id_fkey';
+            columns: ['node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_groups: {
+        Row: {
+          board_id: string;
+          color: string | null;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_groups_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_node_links: {
+        Row: {
+          board_id: string;
+          created_at: string;
+          entity_id: string | null;
+          entity_type: string;
+          id: string;
+          label: string | null;
+          metadata: Json;
+          node_id: string;
+          url: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type: string;
+          id?: string;
+          label?: string | null;
+          metadata?: Json;
+          node_id: string;
+          url?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          created_at?: string;
+          entity_id?: string | null;
+          entity_type?: string;
+          id?: string;
+          label?: string | null;
+          metadata?: Json;
+          node_id?: string;
+          url?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_node_links_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_node_links_node_id_fkey';
+            columns: ['node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_node_tags: {
+        Row: {
+          board_id: string;
+          created_at: string;
+          node_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          created_at?: string;
+          node_id: string;
+          tag_id: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          created_at?: string;
+          node_id?: string;
+          tag_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_node_tags_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_node_tags_node_id_fkey';
+            columns: ['node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_node_tags_tag_id_fkey';
+            columns: ['tag_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_tags';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_nodes: {
+        Row: {
+          board_id: string;
+          body: string | null;
+          color: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          height: number;
+          horizon: string;
+          id: string;
+          merged_into_node_id: string | null;
+          metadata: Json;
+          node_type: string;
+          parent_node_id: string | null;
+          position_x: number;
+          position_y: number;
+          sort_order: number;
+          status: string;
+          title: string;
+          updated_at: string;
+          width: number;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          body?: string | null;
+          color?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          height?: number;
+          horizon?: string;
+          id?: string;
+          merged_into_node_id?: string | null;
+          metadata?: Json;
+          node_type?: string;
+          parent_node_id?: string | null;
+          position_x?: number;
+          position_y?: number;
+          sort_order?: number;
+          status?: string;
+          title: string;
+          updated_at?: string;
+          width?: number;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          body?: string | null;
+          color?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          height?: number;
+          horizon?: string;
+          id?: string;
+          merged_into_node_id?: string | null;
+          metadata?: Json;
+          node_type?: string;
+          parent_node_id?: string | null;
+          position_x?: number;
+          position_y?: number;
+          sort_order?: number;
+          status?: string;
+          title?: string;
+          updated_at?: string;
+          width?: number;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_nodes_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_merged_into_node_id_fkey';
+            columns: ['merged_into_node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mind_nodes_parent_node_id_fkey';
+            columns: ['parent_node_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_nodes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mind_tags: {
+        Row: {
+          board_id: string;
+          color: string | null;
+          created_at: string;
+          id: string;
+          name: string;
+          ws_id: string;
+        };
+        Insert: {
+          board_id: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name: string;
+          ws_id: string;
+        };
+        Update: {
+          board_id?: string;
+          color?: string | null;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mind_tags_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'mind_boards';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -1022,6 +1617,83 @@ export type Database = {
           starting_date: string;
           ws_id: string;
         }[];
+      };
+      mind_apply_ai_patch: {
+        Args: { p_patch_id: string; p_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_board_json: { Args: { p_board_id: string }; Returns: Json };
+      mind_create_ai_patch: {
+        Args: {
+          p_board_id: string;
+          p_patch: Json;
+          p_summary: string;
+          p_thread_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      mind_create_board: {
+        Args: { p_input: Json; p_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_edge_json: {
+        Args: { e: Database['private']['Tables']['mind_edges']['Row'] };
+        Returns: Json;
+      };
+      mind_ensure_ai_thread: {
+        Args: {
+          p_board_id: string;
+          p_model: string;
+          p_thread_id: string;
+          p_user_id: string;
+          p_write_mode: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      mind_get_board: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_get_board_snapshot: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_list_boards: { Args: { p_ws_id: string }; Returns: Json };
+      mind_node_json: {
+        Args: { n: Database['private']['Tables']['mind_nodes']['Row'] };
+        Returns: Json;
+      };
+      mind_patch_json: { Args: { p_patch_id: string }; Returns: Json };
+      mind_persist_ai_message: {
+        Args: {
+          p_board_id: string;
+          p_content: string;
+          p_metadata: Json;
+          p_model: string;
+          p_role: string;
+          p_thread_id: string;
+          p_tool_calls: Json;
+          p_tool_results: Json;
+          p_usage: Json;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: boolean;
+      };
+      mind_save_graph: {
+        Args: { p_board_id: string; p_input: Json; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_search_nodes: {
+        Args: { p_board_id?: string; p_q?: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_update_board: {
+        Args: { p_board_id: string; p_input: Json; p_ws_id: string };
+        Returns: Json;
       };
       normalize_user_group_search_text: {
         Args: { input: string };

@@ -109,6 +109,9 @@ function addFilesToContent(
   const contentParts: Array<TextPart | ImagePart | FilePart> = [];
   const supportedFileMediaTypes = new Set([
     'application/pdf',
+    'video/mp4',
+    'video/quicktime',
+    'video/webm',
     'text/plain',
     'text/csv',
     'application/json',

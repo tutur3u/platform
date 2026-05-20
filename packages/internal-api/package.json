@@ -72,6 +72,11 @@
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
     },
+    "./mind": {
+      "types": "./dist/mind.d.ts",
+      "import": "./dist/mind.js",
+      "require": "./dist/mind.js"
+    },
     "./promotions": {
       "types": "./dist/promotions.d.ts",
       "import": "./dist/promotions.js",

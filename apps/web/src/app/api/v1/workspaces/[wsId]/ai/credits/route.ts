@@ -1,8 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { writeAiCreditSnapshot } from '@tuturuuu/utils/ai-temp-auth';
+import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 type ProductTier = 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE';
@@ -26,14 +29,47 @@ function getFallbackDefaultModels(tier: ProductTier) {
   };
 }
 
-const TASKS_APP_SESSION_AUTH = {
-  targetApp: 'tasks',
+const AI_CREDITS_APP_SESSION_AUTH = {
+  targetApp: ['tasks', 'mind'],
 } as const;
+
+async function resolveAiCreditsWorkspaceId({
+  supabase,
+  userId,
+  wsId,
+}: {
+  supabase: TypedSupabaseClient;
+  userId: string;
+  wsId: string;
+}) {
+  if (wsId.toLowerCase() !== PERSONAL_WORKSPACE_SLUG) {
+    return normalizeWorkspaceId(wsId, supabase);
+  }
+
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id, type)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', userId)
+    .eq('workspace_members.type', 'MEMBER')
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data?.id) {
+    throw new Error('Personal workspace not found');
+  }
+
+  return data.id;
+}
 
 export const GET = withSessionAuth<{ wsId: string }>(
   async (_req, { user, supabase }, { wsId }) => {
     try {
-      const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+      const normalizedWsId = await resolveAiCreditsWorkspaceId({
+        supabase,
+        userId: user.id,
+        wsId,
+      });
 
       // Workspace membership check
       const memberCheck = await verifyWorkspaceMembershipType({
@@ -92,7 +128,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
       );
 
       if (balanceError) {
-        console.error('Error getting credit balance:', balanceError);
+        serverLogger.error('Error getting credit balance:', balanceError);
         return NextResponse.json(
           { error: 'Failed to get credit balance' },
           { status: 500 }
@@ -120,7 +156,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         .gt('expires_at', new Date().toISOString());
 
       if (paygError) {
-        console.error('Error fetching payg credit packs:', paygError);
+        serverLogger.error('Error fetching payg credit packs:', paygError);
         return NextResponse.json(
           { error: 'Failed to get pay-as-you-go balances' },
           { status: 500 }
@@ -247,7 +283,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
         seatCount,
       });
     } catch (error) {
-      console.error('Error in AI credits route:', error);
+      serverLogger.error('Error in AI credits route:', error);
       return NextResponse.json(
         { error: 'Failed to get AI credit status' },
         { status: 500 }
@@ -255,7 +291,7 @@ export const GET = withSessionAuth<{ wsId: string }>(
     }
   },
   {
-    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
+    allowAppSessionAuth: AI_CREDITS_APP_SESSION_AUTH,
     cache: { maxAge: 30, swr: 30 },
   }
 );

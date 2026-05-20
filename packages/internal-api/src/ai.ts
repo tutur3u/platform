@@ -43,6 +43,28 @@ export interface GenerateWorkspaceCourseModulesFromStorageResponse {
   };
 }
 
+export interface CreateAiChatUploadUrlPayload {
+  chatId?: string;
+  filename: string;
+  wsId: string;
+}
+
+export interface CreateAiChatUploadUrlResponse {
+  path: string;
+  signedUrl: string;
+  token: string;
+}
+
+export interface DeleteAiChatFilePayload {
+  path: string;
+  wsId: string;
+}
+
+export interface AiChatFileMutationResponse {
+  error: string | null;
+  path: string | null;
+}
+
 type GatewayModelRow = {
   context_window?: number | null;
   description?: string | null;
@@ -83,6 +105,62 @@ export async function listAiGatewayModels(
   );
 
   return rows.map(mapGatewayModelToUi);
+}
+
+export async function createAiChatUploadUrl(
+  payload: CreateAiChatUploadUrlPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CreateAiChatUploadUrlResponse>('/api/ai/chat/upload-url', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+}
+
+export async function deleteAiChatFile(
+  payload: DeleteAiChatFilePayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiChatFileMutationResponse>('/api/ai/chat/delete-file', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+  });
+}
+
+export async function uploadToAiChatSignedUrl({
+  contentType,
+  file,
+  forceBinaryBlob = false,
+  signedUrl,
+  token,
+}: {
+  contentType: string;
+  file: File;
+  forceBinaryBlob?: boolean;
+  signedUrl: string;
+  token: string;
+}) {
+  const shouldUseBlob =
+    forceBinaryBlob || contentType === 'application/octet-stream';
+
+  return fetch(signedUrl, {
+    body: shouldUseBlob ? file.slice(0, file.size, contentType) : file,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': contentType,
+    },
+    method: 'PUT',
+  });
 }
 
 export async function listWorkspaceAiModelFavorites(

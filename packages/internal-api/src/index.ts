@@ -1,5 +1,11 @@
 export {
+  type AiChatFileMutationResponse,
+  type CreateAiChatUploadUrlPayload,
+  type CreateAiChatUploadUrlResponse,
   type CurrentUserAIWhitelistStatus,
+  createAiChatUploadUrl,
+  type DeleteAiChatFilePayload,
+  deleteAiChatFile,
   type GeneratedWorkspaceCourseModule,
   type GenerateWorkspaceCourseModulesFromStoragePayload,
   type GenerateWorkspaceCourseModulesFromStorageResponse,
@@ -9,6 +15,7 @@ export {
   listWorkspaceAiModelFavorites,
   toggleWorkspaceAiModelFavorite,
   updateAiChat,
+  uploadToAiChatSignedUrl,
 } from './ai';
 export {
   type ApproveMfaMobileApprovalPayload,
@@ -371,11 +378,15 @@ export {
   type InfrastructurePushPlatform,
   type ListAIWhitelistDomainsParams,
   type ListAIWhitelistEmailsParams,
+  type ListAiGatewayModelsParams,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
+  listAiGatewayModels,
   type MobilePlatformVersionPolicyPayload,
   type MobileVersionPoliciesPayload,
+  type ResolveInfrastructureWorkspaceIdResponse,
   type RevokeAbuseTrustOverridePayload,
+  resolveInfrastructureWorkspaceId,
   revokeAbuseTrustOverride,
   type SendInfrastructurePushTestPayload,
   type SendInfrastructurePushTestResponse,
@@ -442,6 +453,24 @@ export {
   updateInventoryStorefront,
 } from './inventory';
 export { listWorkspaceEmails } from './mail';
+export {
+  applyMindAiPatch,
+  archiveMindBoard,
+  type CreateMindBoardPayload,
+  createMindBoard,
+  getMindBoardSnapshot,
+  listMindBoards,
+  type MindBoardListResponse,
+  type MindBoardResponse,
+  type MindBoardSnapshotResponse,
+  type MindNodeSearchParams,
+  type MindNodeSearchResponse,
+  type SaveMindGraphPayload,
+  saveMindGraph,
+  searchMindNodes,
+  type UpdateMindBoardPayload,
+  updateMindBoard,
+} from './mind';
 export { getCurrentUserNovaTeam } from './nova';
 export {
   forceSendWorkspacePostEmail,

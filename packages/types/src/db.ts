@@ -21,6 +21,220 @@ export type TaskActorRpcArgs<T extends TaskActorRpcName> = Omit<
 
 export type AIChat = Tables<'ai_chats'>;
 export type AIGatewayModel = Tables<'ai_gateway_models'>;
+export type MindBoardStatus = 'active' | 'archived';
+export type MindHorizon =
+  | 'day'
+  | 'week'
+  | 'month'
+  | 'quarter'
+  | 'year'
+  | 'five_year'
+  | 'ten_year'
+  | 'fifty_year'
+  | 'long_arc';
+export type MindNodeType =
+  | 'decision'
+  | 'goal'
+  | 'idea'
+  | 'milestone'
+  | 'plan'
+  | 'question'
+  | 'resource'
+  | 'risk'
+  | 'system';
+export type MindNodeStatus =
+  | 'backlog'
+  | 'planned'
+  | 'in_progress'
+  | 'in_review'
+  | 'blocked'
+  | 'completed'
+  | 'deferred'
+  | 'cancelled';
+export type MindEdgeType =
+  | 'blocks'
+  | 'contains'
+  | 'contradicts'
+  | 'custom'
+  | 'depends_on'
+  | 'reference'
+  | 'relates_to'
+  | 'sequence'
+  | 'supports';
+export type MindEntityLinkType =
+  | 'calendar_event'
+  | 'custom'
+  | 'document'
+  | 'external_url'
+  | 'project'
+  | 'task'
+  | 'workspace';
+
+export type MindJsonObject = { [key: string]: Json | undefined };
+
+export interface MindBoard {
+  canvasView: MindJsonObject | null;
+  createdAt: string;
+  defaultHorizon: MindHorizon;
+  description: string | null;
+  id: string;
+  settings: MindJsonObject;
+  status: MindBoardStatus;
+  title: string;
+  updatedAt: string;
+  wsId: string;
+}
+
+export interface MindNode {
+  body: string | null;
+  color: string | null;
+  createdAt: string;
+  height: number;
+  horizon: MindHorizon;
+  id: string;
+  metadata: MindJsonObject;
+  nodeType: MindNodeType;
+  parentNodeId: string | null;
+  positionX: number;
+  positionY: number;
+  status: MindNodeStatus;
+  title: string;
+  updatedAt: string;
+  width: number;
+}
+
+export interface MindEdge {
+  color: string | null;
+  createdAt: string;
+  edgeType: MindEdgeType;
+  id: string;
+  label: string | null;
+  metadata: MindJsonObject;
+  sourceNodeId: string;
+  targetNodeId: string;
+  updatedAt: string;
+  weight: number;
+}
+
+export interface MindTag {
+  color: string | null;
+  createdAt: string;
+  id: string;
+  name: string;
+  nodeIds: string[];
+}
+
+export interface MindGroup {
+  color: string | null;
+  createdAt: string;
+  id: string;
+  name: string;
+  nodeIds: string[];
+}
+
+export interface MindNodeLink {
+  createdAt: string;
+  entityId: string | null;
+  entityType: MindEntityLinkType;
+  id: string;
+  label: string | null;
+  metadata: MindJsonObject;
+  nodeId: string;
+  url: string | null;
+}
+
+export interface MindBoardSummary extends MindBoard {
+  edgeCount: number;
+  nodeCount: number;
+  tagCount: number;
+}
+
+export interface MindBoardSnapshot {
+  board: MindBoardSummary;
+  edges: MindEdge[];
+  groups: MindGroup[];
+  links: MindNodeLink[];
+  nodes: MindNode[];
+  tags: MindTag[];
+}
+
+export type MindPatchOperation =
+  | {
+      id: string;
+      kind: 'create_node';
+      node: Partial<MindNode> &
+        Pick<MindNode, 'id' | 'positionX' | 'positionY' | 'title'>;
+    }
+  | ({
+      id: string;
+      kind: 'update_node';
+      nodeId: string;
+    } & Partial<
+      Pick<
+        MindNode,
+        | 'body'
+        | 'color'
+        | 'height'
+        | 'horizon'
+        | 'metadata'
+        | 'nodeType'
+        | 'parentNodeId'
+        | 'positionX'
+        | 'positionY'
+        | 'status'
+        | 'title'
+        | 'width'
+      >
+    >)
+  | {
+      id: string;
+      kind: 'delete_node';
+      nodeId: string;
+    }
+  | {
+      edge: Partial<MindEdge> &
+        Pick<MindEdge, 'id' | 'sourceNodeId' | 'targetNodeId'>;
+      id: string;
+      kind: 'create_edge';
+    }
+  | ({
+      edgeId: string;
+      id: string;
+      kind: 'update_edge';
+    } & Partial<
+      Pick<
+        MindEdge,
+        | 'color'
+        | 'edgeType'
+        | 'label'
+        | 'metadata'
+        | 'sourceNodeId'
+        | 'targetNodeId'
+        | 'weight'
+      >
+    >)
+  | {
+      edgeId: string;
+      id: string;
+      kind: 'delete_edge';
+    };
+
+export interface MindAiPatch {
+  operations: MindPatchOperation[];
+  summary: string;
+}
+
+export interface MindAiPatchRecord {
+  appliedAt: string | null;
+  boardId: string;
+  createdAt: string;
+  createdBy: string;
+  id: string;
+  patch: MindAiPatch;
+  status: 'applied' | 'draft' | 'rejected';
+  summary: string;
+  threadId: string | null;
+}
 
 /**
  * UI-facing model representation derived from `ai_gateway_models`.

@@ -1,4 +1,8 @@
-import type { AIWhitelistDomain, AIWhitelistEmail } from '@tuturuuu/types';
+import type {
+  AIModelUI,
+  AIWhitelistDomain,
+  AIWhitelistEmail,
+} from '@tuturuuu/types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -54,6 +58,26 @@ export interface AIWhitelistEmailResponse {
   data: AIWhitelistEmail;
 }
 
+type GatewayModelRow = {
+  context_window: number | null;
+  description: string | null;
+  id: string;
+  is_enabled: boolean | null;
+  name: string;
+  provider: string;
+  tags: string[] | null;
+};
+
+export interface ListAiGatewayModelsParams {
+  enabled?: boolean;
+  q?: string;
+  type?: 'all' | 'embedding' | 'image' | 'language';
+}
+
+export interface ResolveInfrastructureWorkspaceIdResponse {
+  workspaceId: string | null;
+}
+
 export interface ListAIWhitelistDomainsParams {
   page?: number | string;
   pageSize?: number | string;
@@ -91,6 +115,18 @@ export interface SaveExternalAppPayload {
 export interface SaveExternalAppResponse {
   app: ExternalAppRegistration;
   secret: string | null;
+}
+
+function mapGatewayModel(model: GatewayModelRow): AIModelUI {
+  return {
+    context: model.context_window ?? undefined,
+    description: model.description ?? undefined,
+    disabled: !model.is_enabled,
+    label: model.name,
+    provider: model.provider,
+    tags: model.tags ?? undefined,
+    value: model.id,
+  };
 }
 
 export type AbuseRiskTier =
@@ -1234,6 +1270,47 @@ export async function updateMobileVersionPolicies(
     },
     method: 'PUT',
   });
+}
+
+export async function listAiGatewayModels(
+  params?: ListAiGatewayModelsParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const rows = await client.json<GatewayModelRow[]>(
+    '/api/v1/infrastructure/ai/models',
+    {
+      cache: 'no-store',
+      query: {
+        enabled:
+          typeof params?.enabled === 'boolean'
+            ? String(params.enabled)
+            : undefined,
+        q: params?.q,
+        type: params?.type ?? 'language',
+      },
+    }
+  );
+
+  return rows.map((row) => mapGatewayModel(row));
+}
+
+export async function resolveInfrastructureWorkspaceId(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<ResolveInfrastructureWorkspaceIdResponse>(
+    '/api/v1/infrastructure/resolve-workspace-id',
+    {
+      body: JSON.stringify({ wsId }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
 }
 
 export async function listAIWhitelistDomains(
