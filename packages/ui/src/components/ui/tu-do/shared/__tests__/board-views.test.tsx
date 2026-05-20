@@ -19,6 +19,7 @@ import { BoardViews } from '../board-views';
 const listWorkspaceTasksMock = vi.hoisted(() => vi.fn());
 const createTaskMock = vi.fn();
 const loadListPageMock = vi.fn();
+let progressivePagination: Record<string, unknown> = {};
 let boardHeaderProps:
   | React.ComponentProps<typeof import('../board-header')['BoardHeader']>
   | undefined;
@@ -57,7 +58,7 @@ vi.mock('../progressive-loader-context', () => ({
   useProgressiveLoader: () => ({
     loadListPage: loadListPageMock,
     revalidateLoadedLists: vi.fn().mockResolvedValue(undefined),
-    pagination: {},
+    pagination: progressivePagination,
   }),
 }));
 
@@ -193,6 +194,7 @@ describe('BoardViews', () => {
     listViewProps = undefined;
     createTaskMock.mockReset();
     loadListPageMock.mockReset();
+    progressivePagination = {};
     listWorkspaceTasksMock.mockReset();
     listWorkspaceTasksMock.mockResolvedValue({ tasks: mockTasks });
     window.localStorage.clear();
@@ -496,6 +498,38 @@ describe('BoardViews', () => {
         })
       );
     });
+  });
+
+  it('does not auto-load progressive list pages for server-backed source scopes', async () => {
+    progressivePagination = {
+      'list-1': {
+        hasMore: true,
+        isInitialLoad: false,
+        isLoading: false,
+        page: 0,
+        totalCount: 100,
+      },
+    };
+    renderBoardViews();
+
+    act(() => {
+      boardHeaderProps?.onFiltersChange({
+        ...boardHeaderProps.filters,
+        sourceScope: 'external_current_workspace',
+      });
+    });
+
+    await waitFor(() => {
+      expect(listWorkspaceTasksMock).toHaveBeenCalledWith(
+        'ws-1',
+        expect.objectContaining({
+          boardId: 'board-1',
+          sourceScope: 'external_current_workspace',
+        })
+      );
+    });
+
+    expect(loadListPageMock).not.toHaveBeenCalled();
   });
 
   it('preserves board-level sorted task order when rendering list view', async () => {

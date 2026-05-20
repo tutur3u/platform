@@ -43,8 +43,10 @@ vi.mock('./task-row-actions-menu', () => ({
   TaskRowActionsMenu: ({
     onOpenChange,
     open,
+    contextMenuPoint,
     task,
   }: {
+    contextMenuPoint?: { x: number; y: number } | null;
     onOpenChange?: (open: boolean) => void;
     open?: boolean;
     task: Task;
@@ -60,7 +62,13 @@ vi.mock('./task-row-actions-menu', () => ({
       >
         more
       </button>
-      {open && <div data-testid={`mock-task-menu-${task.id}`}>menu</div>}
+      {open && (
+        <div data-testid={`mock-task-menu-${task.id}`}>
+          {contextMenuPoint
+            ? `${contextMenuPoint.x}:${contextMenuPoint.y}`
+            : 'menu'}
+        </div>
+      )}
     </div>
   ),
 }));
@@ -123,8 +131,13 @@ describe('ListView task context menu', () => {
   it('opens the shared task menu from row right-click and the compact menu button', () => {
     renderListView();
 
-    fireEvent.contextMenu(screen.getByText('Openable task'));
-    expect(screen.getByTestId('mock-task-menu-task-1')).toBeInTheDocument();
+    fireEvent.contextMenu(screen.getByText('Openable task'), {
+      clientX: 120,
+      clientY: 80,
+    });
+    expect(screen.getByTestId('mock-task-menu-task-1')).toHaveTextContent(
+      '120:80'
+    );
 
     fireEvent.click(screen.getByTestId('mock-task-menu-trigger-task-1'));
     expect(

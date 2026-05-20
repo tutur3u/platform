@@ -23,6 +23,7 @@ const mocks = vi.hoisted(() => {
   const memberQueues = new Map<string, QueryResult[]>();
   const memberRpcQueues = new Map<string, QueryResult[]>();
   const adminQueries: { table: string; calls: [string, unknown[]][] }[] = [];
+  const platformSqlRows: unknown[][] = [];
 
   function createQuery(table: string, result: QueryResult) {
     const query = {
@@ -100,6 +101,12 @@ const mocks = vi.hoisted(() => {
       Promise.resolve(dequeue(memberRpcQueues, name))
     ),
   };
+  const platformSql = Object.assign(
+    vi.fn(async () => platformSqlRows.shift() ?? []),
+    {
+      array: vi.fn((values: unknown[]) => ({ values })),
+    }
+  );
 
   return {
     adminClient,
@@ -111,10 +118,16 @@ const mocks = vi.hoisted(() => {
     memberQueues,
     memberRpcQueues,
     normalizeWorkspaceId: vi.fn(),
+    platformSql,
+    platformSqlRows,
     resolveAuthenticatedSessionUser: vi.fn(),
     verifyWorkspaceMembershipType: vi.fn(),
   };
 });
+
+vi.mock('../../database/platform-sql', () => ({
+  getPlatformSql: vi.fn(() => mocks.platformSql),
+}));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
   resolveAuthenticatedSessionUser: mocks.resolveAuthenticatedSessionUser,
@@ -146,8 +159,8 @@ function queueRpcResult(name: string, result: QueryResult) {
   queueResult(mocks.memberRpcQueues, name, result);
 }
 
-function queueAdminRpcResult(name: string, result: QueryResult) {
-  queueResult(mocks.adminRpcQueues, name, result);
+function queuePrivateTaskSourceRows(rows: unknown[]) {
+  mocks.platformSqlRows.push(rows);
 }
 
 function externalTask(id: string) {
@@ -232,6 +245,9 @@ describe('workspace task route personal external loading', () => {
     mocks.adminSchemaClient.rpc.mockClear();
     mocks.memberClient.from.mockClear();
     mocks.memberClient.rpc.mockClear();
+    mocks.platformSql.mockClear();
+    mocks.platformSql.array.mockClear();
+    mocks.platformSqlRows.length = 0;
     mocks.normalizeWorkspaceId.mockClear();
     mocks.normalizeWorkspaceId.mockResolvedValue(PERSONAL_WS_ID);
     mocks.resolveAuthenticatedSessionUser.mockClear();
@@ -310,10 +326,7 @@ describe('workspace task route personal external loading', () => {
       data: { personal: false },
       error: null,
     });
-    queueAdminRpcResult('list_task_source_filter_ids', {
-      data: [{ task_id: PLACED_TASK_ID, total_count: 1 }],
-      error: null,
-    });
+    queuePrivateTaskSourceRows([{ task_id: PLACED_TASK_ID, total_count: 1 }]);
     queueResult(mocks.adminQueues, 'tasks', {
       data: [externalTask(PLACED_TASK_ID)],
       error: null,
@@ -332,15 +345,16 @@ describe('workspace task route personal external loading', () => {
       count: 1,
       tasks: [expect.objectContaining({ id: PLACED_TASK_ID })],
     });
-    expect(mocks.adminClient.schema).toHaveBeenCalledWith('private');
-    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
-      'list_task_source_filter_ids',
-      expect.objectContaining({
-        p_actor_id: USER_ID,
-        p_board_id: PERSONAL_BOARD_ID,
-        p_source_scope: 'current_board',
-        p_workspace_id: PERSONAL_WS_ID,
-      })
+    expect(mocks.adminClient.schema).not.toHaveBeenCalled();
+    expect(mocks.platformSql).toHaveBeenCalledTimes(1);
+    expect(mocks.platformSql.mock.calls[0]?.slice(1)).toEqual(
+      expect.arrayContaining([
+        USER_ID,
+        PERSONAL_WS_ID,
+        PERSONAL_BOARD_ID,
+        null,
+        'current_board',
+      ])
     );
     expect(
       mocks.adminQueries.some((query) =>
@@ -374,7 +388,7 @@ describe('workspace task route personal external loading', () => {
       count: 0,
       tasks: [],
     });
-    expect(mocks.adminSchemaClient.rpc).not.toHaveBeenCalled();
+    expect(mocks.platformSql).not.toHaveBeenCalled();
   });
 
   it('passes specific source workspace and board filters to the private RPC', async () => {
@@ -382,10 +396,7 @@ describe('workspace task route personal external loading', () => {
       data: { personal: false },
       error: null,
     });
-    queueAdminRpcResult('list_task_source_filter_ids', {
-      data: [{ task_id: PLACED_TASK_ID, total_count: 1 }],
-      error: null,
-    });
+    queuePrivateTaskSourceRows([{ task_id: PLACED_TASK_ID, total_count: 1 }]);
     queueResult(mocks.adminQueues, 'tasks', {
       data: [externalTask(PLACED_TASK_ID)],
       error: null,
@@ -410,13 +421,11 @@ describe('workspace task route personal external loading', () => {
         source_workspace_id: SOURCE_WS_ID,
       })
     );
-    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
-      'list_task_source_filter_ids',
-      expect.objectContaining({
-        p_source_board_ids: [SOURCE_BOARD_ID],
-        p_source_scope: 'external_specific',
-        p_source_workspace_ids: [SOURCE_WS_ID],
-      })
+    expect(mocks.adminClient.schema).not.toHaveBeenCalled();
+    expect(mocks.platformSql.array).toHaveBeenCalledWith([SOURCE_WS_ID]);
+    expect(mocks.platformSql.array).toHaveBeenCalledWith([SOURCE_BOARD_ID]);
+    expect(mocks.platformSql.mock.calls[0]?.slice(1)).toContain(
+      'external_specific'
     );
   });
 
@@ -425,10 +434,7 @@ describe('workspace task route personal external loading', () => {
       data: { personal: false },
       error: null,
     });
-    queueAdminRpcResult('list_task_source_filter_ids', {
-      data: [],
-      error: null,
-    });
+    queuePrivateTaskSourceRows([]);
 
     const { GET } = await import('./route.js');
     const response = await GET(
@@ -443,15 +449,15 @@ describe('workspace task route personal external loading', () => {
       count: 0,
       tasks: [],
     });
-    expect(mocks.adminSchemaClient.rpc).toHaveBeenCalledWith(
-      'list_task_source_filter_ids',
-      expect.objectContaining({
-        p_board_id: PERSONAL_BOARD_ID,
-        p_limit: 25,
-        p_list_statuses: ['active', 'review'],
-        p_offset: 50,
-        p_source_scope: 'external_current_workspace',
-      })
+    expect(mocks.adminClient.schema).not.toHaveBeenCalled();
+    expect(mocks.platformSql.array).toHaveBeenCalledWith(['active', 'review']);
+    expect(mocks.platformSql.mock.calls[0]?.slice(1)).toEqual(
+      expect.arrayContaining([
+        PERSONAL_BOARD_ID,
+        'external_current_workspace',
+        25,
+        50,
+      ])
     );
   });
 

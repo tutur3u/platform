@@ -55,6 +55,11 @@ interface TimelineToolbarProps {
   t: ReturnType<typeof useTranslations>;
 }
 
+type ToolbarTaskMenuState = {
+  taskId: string;
+  point?: { x: number; y: number } | null;
+};
+
 export function TimelineToolbar({
   timeline,
   unscheduledTasks,
@@ -92,7 +97,9 @@ export function TimelineToolbar({
     0,
     unscheduledTasks.length - visibleUnscheduledTasks.length
   );
-  const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
+  const [openTaskMenu, setOpenTaskMenu] = useState<ToolbarTaskMenuState | null>(
+    null
+  );
 
   return (
     <div className="border-border/70 border-b px-3 py-2.5 md:px-4">
@@ -183,7 +190,10 @@ export function TimelineToolbar({
                       onContextMenu={(event) => {
                         event.preventDefault();
                         event.stopPropagation();
-                        setOpenTaskMenuId(task.id);
+                        setOpenTaskMenu({
+                          taskId: task.id,
+                          point: { x: event.clientX, y: event.clientY },
+                        });
                       }}
                     >
                       <div className="mt-0.5 rounded-full border border-border/60 bg-muted/40 p-1 text-muted-foreground transition-colors group-hover:text-foreground">
@@ -212,9 +222,16 @@ export function TimelineToolbar({
                                 workspaceId={wsId}
                                 lists={lists}
                                 onUpdate={onActionsUpdate ?? (() => undefined)}
-                                open={openTaskMenuId === task.id}
+                                open={openTaskMenu?.taskId === task.id}
                                 onOpenChange={(open) =>
-                                  setOpenTaskMenuId(open ? task.id : null)
+                                  setOpenTaskMenu(
+                                    open ? { taskId: task.id } : null
+                                  )
+                                }
+                                contextMenuPoint={
+                                  openTaskMenu?.taskId === task.id
+                                    ? openTaskMenu.point
+                                    : null
                                 }
                                 trigger={
                                   <Button

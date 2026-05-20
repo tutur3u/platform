@@ -305,8 +305,14 @@ export function BoardViews({
   // client-side filtering/sorting operates on complete data.
   const autoLoadingRef = useRef(false);
   useEffect(() => {
-    if (currentView !== 'kanban' || !hasActiveFilters || autoLoadingRef.current)
+    if (
+      currentView !== 'kanban' ||
+      !hasActiveFilters ||
+      sourceScope !== 'all_visible' ||
+      autoLoadingRef.current
+    ) {
       return;
+    }
 
     // Find the first list that still has more pages and isn't loading
     for (const list of activeLists) {
@@ -319,7 +325,14 @@ export function BoardViews({
         return; // Process one at a time; the next run picks up the next list
       }
     }
-  }, [currentView, hasActiveFilters, pagination, activeLists, loadListPage]);
+  }, [
+    currentView,
+    hasActiveFilters,
+    pagination,
+    activeLists,
+    loadListPage,
+    sourceScope,
+  ]);
 
   // Semantic search hook
   const {

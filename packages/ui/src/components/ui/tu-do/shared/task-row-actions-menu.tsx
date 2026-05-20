@@ -53,6 +53,7 @@ interface TaskRowActionsMenuProps {
   onOpenChange?: (open: boolean) => void;
   trigger?: ReactNode;
   extraTopItems?: ReactNode;
+  contextMenuPoint?: { x: number; y: number } | null;
   align?: 'center' | 'end' | 'start';
 }
 
@@ -81,6 +82,7 @@ export function TaskRowActionsMenu({
   onOpenChange,
   trigger,
   extraTopItems,
+  contextMenuPoint,
   align = 'end',
 }: TaskRowActionsMenuProps) {
   const t = useTranslations('common');
@@ -105,6 +107,31 @@ export function TaskRowActionsMenu({
     task.source_workspace_id && task.source_board_id
       ? `/${task.source_workspace_id}${tasksHref(`/boards/${task.source_board_id}`)}`
       : null;
+  const isContextAnchored = menuOpen && Boolean(contextMenuPoint);
+  const menuTrigger =
+    isContextAnchored && contextMenuPoint ? (
+      <button
+        type="button"
+        aria-hidden="true"
+        tabIndex={-1}
+        className="fixed z-50 h-px w-px opacity-0"
+        style={{
+          left: contextMenuPoint.x,
+          top: contextMenuPoint.y,
+        }}
+      />
+    ) : (
+      (trigger ?? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+        >
+          <MoreHorizontal className="h-3 w-3" />
+          <span className="sr-only">{t('open')}</span>
+        </Button>
+      ))
+    );
 
   const {
     handleMoveToCompletion,
@@ -150,20 +177,11 @@ export function TaskRowActionsMenu({
   return (
     <>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen} modal={false}>
-        <DropdownMenuTrigger asChild>
-          {trigger ?? (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
-            >
-              <MoreHorizontal className="h-3 w-3" />
-              <span className="sr-only">{t('open')}</span>
-            </Button>
-          )}
-        </DropdownMenuTrigger>
+        <DropdownMenuTrigger asChild>{menuTrigger}</DropdownMenuTrigger>
         <DropdownMenuContent
-          align={align}
+          align={isContextAnchored ? 'start' : align}
+          side={isContextAnchored ? 'right' : 'bottom'}
+          sideOffset={isContextAnchored ? 2 : 4}
           className="w-58"
           onClick={(event) => event.stopPropagation()}
         >

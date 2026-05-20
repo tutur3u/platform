@@ -92,6 +92,11 @@ interface ColumnVisibility {
   actions: boolean;
 }
 
+type TaskMenuState = {
+  taskId: string;
+  point?: { x: number; y: number } | null;
+};
+
 export function ListView({
   workspaceId,
   boardId,
@@ -113,7 +118,7 @@ export function ListView({
   const [sortField, setSortField] = useState<ListViewSortField>('created_at');
   const [sortOrder, setSortOrder] = useState<ListViewSortOrder>('desc');
   const [selectedTasks, setSelectedTasks] = useState<Set<string>>(new Set());
-  const [openTaskMenuId, setOpenTaskMenuId] = useState<string | null>(null);
+  const [openTaskMenu, setOpenTaskMenu] = useState<TaskMenuState | null>(null);
   const previousWorkspaceIdRef = useRef(workspaceId);
   const previousBoardIdRef = useRef(boardId);
   const { openTask } = useTaskDialog();
@@ -526,7 +531,10 @@ export function ListView({
 
                         e.preventDefault();
                         e.stopPropagation();
-                        setOpenTaskMenuId(task.id);
+                        setOpenTaskMenu({
+                          taskId: task.id,
+                          point: { x: e.clientX, y: e.clientY },
+                        });
                       }}
                     >
                       <TableCell className="px-2.5 py-0">
@@ -729,9 +737,14 @@ export function ListView({
                                 queryKey: ['tasks-full', boardId],
                               });
                             }}
-                            open={openTaskMenuId === task.id}
+                            open={openTaskMenu?.taskId === task.id}
                             onOpenChange={(open) =>
-                              setOpenTaskMenuId(open ? task.id : null)
+                              setOpenTaskMenu(open ? { taskId: task.id } : null)
+                            }
+                            contextMenuPoint={
+                              openTaskMenu?.taskId === task.id
+                                ? openTaskMenu.point
+                                : null
                             }
                             trigger={
                               <Button

@@ -31,6 +31,7 @@ import {
 import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getPlatformSql } from '../../database/platform-sql';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
@@ -198,7 +199,7 @@ type PersonalTaskBoardExternalCountRow = {
 
 type TaskSourceFilterIdRow = {
   task_id: string | null;
-  total_count: number | null;
+  total_count: number | string | null;
 };
 
 function parseExternalTaskSortBy(value: string | null): ExternalTaskSortBy {
@@ -469,7 +470,6 @@ function applyPersonalPlacement(
 }
 
 async function loadTaskSourceFilterIds({
-  sbAdmin,
   userId,
   workspaceId,
   boardId,
@@ -489,7 +489,6 @@ async function loadTaskSourceFilterIds({
   limit,
   offset,
 }: {
-  sbAdmin: TypedSupabaseClient;
   userId: string;
   workspaceId: string;
   boardId: string | null;
@@ -509,43 +508,42 @@ async function loadTaskSourceFilterIds({
   limit: number;
   offset: number;
 }) {
-  const rpcClient = (sbAdmin as any).schema
-    ? (sbAdmin as any).schema('private')
-    : (sbAdmin as any);
-  const { data, error } = await rpcClient.rpc('list_task_source_filter_ids', {
-    p_actor_id: userId,
-    p_workspace_id: workspaceId,
-    p_board_id: boardId,
-    p_list_id: listId,
-    p_source_scope: sourceScope,
-    p_source_workspace_ids: sourceWorkspaceIds,
-    p_source_board_ids: sourceBoardIds,
-    p_list_statuses: listStatuses,
-    p_search: searchQuery ?? null,
-    p_display_number: parsedIdentifier?.displayNumber ?? null,
-    p_ticket_prefix: parsedIdentifier?.ticketPrefix ?? null,
-    p_assigned_to_me: assignedToMe,
-    p_completed_mode: completedMode,
-    p_closed_mode: closedMode,
-    p_include_archived_boards: includeArchivedBoards,
-    p_include_deleted: includeDeletedMode,
-    p_sort_by: externalSortBy,
-    p_limit: limit,
-    p_offset: offset,
-  });
-
-  if (error) {
-    throw new Error('TASK_SOURCE_FILTER_RPC_FAILED');
-  }
+  const sql = getPlatformSql();
+  const data = await sql<TaskSourceFilterIdRow[]>`
+    select
+      task_id::text as task_id,
+      total_count::int as total_count
+    from private.list_task_source_filter_ids(
+      ${userId}::uuid,
+      ${workspaceId}::uuid,
+      ${boardId}::uuid,
+      ${listId}::uuid,
+      ${sourceScope},
+      ${sql.array(sourceWorkspaceIds)}::uuid[],
+      ${sql.array(sourceBoardIds)}::uuid[],
+      ${sql.array(listStatuses)}::text[],
+      ${searchQuery ?? null},
+      ${parsedIdentifier?.displayNumber ?? null}::integer,
+      ${parsedIdentifier?.ticketPrefix ?? null},
+      ${assignedToMe},
+      ${completedMode},
+      ${closedMode},
+      ${includeArchivedBoards},
+      ${includeDeletedMode},
+      ${externalSortBy},
+      ${limit},
+      ${offset}
+    )
+  `;
 
   const rows = ((data ?? []) as TaskSourceFilterIdRow[]).filter(
     (row): row is TaskSourceFilterIdRow & { task_id: string } =>
       Boolean(row.task_id)
   );
   const taskIds = rows.map((row) => row.task_id);
-  const count = rows[0]?.total_count ?? 0;
+  const count = Number(rows[0]?.total_count ?? 0);
 
-  return { count, taskIds };
+  return { count: Number.isFinite(count) ? count : 0, taskIds };
 }
 
 export type TaskRouteAuthContext = {
@@ -966,7 +964,6 @@ export async function handleTaskRouteGET(
     } else if (sourceScope !== 'all_visible' && !forTimeTracking) {
       try {
         const { taskIds, count: rpcCount } = await loadTaskSourceFilterIds({
-          sbAdmin,
           userId: user.id,
           workspaceId: normalizedWorkspaceId,
           boardId,

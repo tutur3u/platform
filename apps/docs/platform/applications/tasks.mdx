@@ -385,11 +385,12 @@ running an unbounded external query.
 
 Source-filtered list and timeline reads must go through the tasks API route,
 which normalizes the route workspace, verifies request-scoped membership, then
-uses the server-only `private.list_task_source_filter_ids` RPC with the service
-role path. The RPC rechecks target workspace membership and source workspace
-access before returning paginated task ids plus `total_count` for API-side
-hydration. Client UI must not call the private RPC directly or trust
-client-provided source ids as authorization.
+uses the server-only `private.list_task_source_filter_ids` RPC through a direct
+server database connection, not client-facing PostgREST schema exposure. The RPC
+rechecks target workspace membership and source workspace access before
+returning paginated task ids plus `total_count` for API-side hydration. Client UI
+must not call the private RPC directly or trust client-provided source ids as
+authorization.
 
 - `personal_board_id` points to the destination personal board after an
   external task is planned there.

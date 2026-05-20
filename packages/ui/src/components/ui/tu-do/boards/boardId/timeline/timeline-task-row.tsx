@@ -64,6 +64,11 @@ interface TimelineTaskRowProps {
   t: ReturnType<typeof useTranslations>;
 }
 
+type TimelineTaskMenuState = {
+  open: boolean;
+  point?: { x: number; y: number } | null;
+};
+
 export function TimelineTaskRow({
   item,
   groupId,
@@ -100,7 +105,10 @@ export function TimelineTaskRow({
   const rangeLabel = isOneDay
     ? formatShortDate(item.start)
     : `${dateLabel} · ${item.durationDays}d`;
-  const [actionsOpen, setActionsOpen] = useState(false);
+  const [actionsMenu, setActionsMenu] = useState<TimelineTaskMenuState>({
+    open: false,
+    point: null,
+  });
   const isCrossWorkspaceExternal = Boolean(
     item.task.source_workspace_id && item.task.source_workspace_id !== wsId
   );
@@ -167,7 +175,10 @@ export function TimelineTaskRow({
       onContextMenu={(event) => {
         event.preventDefault();
         event.stopPropagation();
-        setActionsOpen(true);
+        setActionsMenu({
+          open: true,
+          point: { x: event.clientX, y: event.clientY },
+        });
       }}
     >
       <div
@@ -225,8 +236,11 @@ export function TimelineTaskRow({
               workspaceId={wsId}
               lists={lists}
               onUpdate={onActionsUpdate ?? (() => undefined)}
-              open={actionsOpen}
-              onOpenChange={setActionsOpen}
+              open={actionsMenu.open}
+              onOpenChange={(open) =>
+                setActionsMenu(open ? { open, point: null } : { open })
+              }
+              contextMenuPoint={actionsMenu.point}
               trigger={
                 <Button
                   variant="ghost"
