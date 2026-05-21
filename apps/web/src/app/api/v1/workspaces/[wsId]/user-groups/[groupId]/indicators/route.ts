@@ -1,8 +1,13 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import type { MetricCategory } from '@/app/[locale]/(dashboard)/[wsId]/users/groups/[groupId]/indicators/types';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  hasUserGroupInWorkspace,
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -24,32 +29,9 @@ function mapMetricCategories(
     .filter((category): category is MetricCategory => Boolean(category));
 }
 
-async function getValidMetricCategoryIds(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  categoryIds: string[]
-) {
-  if (!categoryIds.length) return [];
-
-  const uniqueCategoryIds = [...new Set(categoryIds)];
-  const { data, error } = await sbAdmin
-    .from('user_group_metric_categories')
-    .select('id')
-    .eq('ws_id', wsId)
-    .in('id', uniqueCategoryIds);
-
-  if (error) throw error;
-
-  const validCategoryIds = (data ?? []).map((category) => category.id);
-  if (validCategoryIds.length !== uniqueCategoryIds.length) {
-    throw new Error('Invalid metric category');
-  }
-
-  return validCategoryIds;
-}
-
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -65,6 +47,19 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+
+  if (
+    !(await hasUserGroupInWorkspace({
+      sbAdmin,
+      wsId: normalizedWsId,
+      groupId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
 
   // Fetch group indicators
   const { data: groupIndicators, error: indicatorsError } = await sbAdmin
@@ -83,7 +78,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: true });
 
   if (indicatorsError) {
-    console.error(indicatorsError);
+    serverLogger.error('Error fetching group indicators:', indicatorsError);
     return NextResponse.json(
       { message: 'Error fetching group indicators' },
       { status: 500 }
@@ -93,11 +88,14 @@ export async function GET(req: Request, { params }: Params) {
   const { data: metricCategories, error: metricCategoriesError } = await sbAdmin
     .from('user_group_metric_categories')
     .select('id, name, description')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .order('name', { ascending: true });
 
   if (metricCategoriesError) {
-    console.error(metricCategoriesError);
+    serverLogger.error(
+      'Error fetching group metric categories:',
+      metricCategoriesError
+    );
     return NextResponse.json(
       { message: 'Error fetching metric categories' },
       { status: 500 }
@@ -116,7 +114,10 @@ export async function GET(req: Request, { params }: Params) {
     .eq('user_group_metrics.group_id', groupId);
 
   if (userIndicatorsError) {
-    console.error(userIndicatorsError);
+    serverLogger.error(
+      'Error fetching group user indicators:',
+      userIndicatorsError
+    );
     return NextResponse.json(
       { message: 'Error fetching user indicators' },
       { status: 500 }
@@ -131,7 +132,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('role', 'TEACHER');
 
   if (managersError) {
-    console.error(managersError);
+    serverLogger.error('Error fetching group managers:', managersError);
     return NextResponse.json(
       { message: 'Error fetching group managers' },
       { status: 500 }
@@ -161,6 +162,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -188,67 +190,43 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-
-  let validCategoryIds: string[];
-  try {
-    validCategoryIds = await getValidMetricCategoryIds(
-      sbAdmin,
-      wsId,
-      Array.isArray(categoryIds) ? categoryIds : []
-    );
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { message: 'Invalid metric category' },
-      { status: 400 }
-    );
-  }
-
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
   const { data, error } = await sbAdmin
-    .from('user_group_metrics')
-    .insert({
-      name,
-      unit: unit?.trim() || '',
-      factor: factor || 1,
-      is_weighted: isWeighted !== false,
-      ws_id: wsId,
-      group_id: groupId,
-    })
-    .select()
-    .single();
+    .schema('private')
+    .rpc('admin_create_user_group_metric_with_audit_actor', {
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_category_ids: Array.isArray(categoryIds) ? categoryIds : [],
+      p_group_id: groupId,
+      p_payload: {
+        factor: factor || 1,
+        is_weighted: isWeighted !== false,
+        name,
+        unit: unit?.trim() || '',
+      },
+      p_ws_id: normalizedWsId,
+    });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error creating group indicator:', error);
     return NextResponse.json(
       { message: 'Error creating indicator' },
       { status: 500 }
     );
   }
 
-  if (validCategoryIds.length) {
-    const { error: categoryLinkError } = await sbAdmin
-      .from('user_group_metric_category_links')
-      .insert(
-        validCategoryIds.map((categoryId) => ({
-          category_id: categoryId,
-          metric_id: data.id,
-        }))
-      );
-
-    if (categoryLinkError) {
-      console.error(categoryLinkError);
-      return NextResponse.json(
-        { message: 'Error assigning metric categories' },
-        { status: 500 }
-      );
-    }
+  if (!data) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
   }
 
   return NextResponse.json(data);
 }
 
 export async function PATCH(req: Request, { params }: Params) {
-  const { wsId } = await params;
+  const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -267,17 +245,19 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
-  const { error } = await sbAdmin.from('user_indicators').upsert(
-    values.map(({ user_id, indicator_id, value }) => ({
-      user_id,
-      indicator_id,
-      value,
-    }))
-  );
+  const { error } = await sbAdmin
+    .schema('private')
+    .rpc('admin_upsert_user_indicator_values_with_audit_actor', {
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_group_id: groupId,
+      p_values: values,
+      p_ws_id: normalizedWsId,
+    });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error updating group indicator values:', error);
     return NextResponse.json(
       { message: 'Error updating indicator values' },
       { status: 500 }

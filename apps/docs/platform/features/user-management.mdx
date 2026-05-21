@@ -77,7 +77,7 @@ User group activity is exposed from the dashboard at `/users/groups?tab=audit-lo
 
 ### Actor Attribution
 
-- Core group and member mutations should use the private actor-aware RPCs so service-role writes set `audit.override_auth_uid` before changing rows.
+- Core group, member, metric, student metric value, and attendance mutations should use the private actor-aware RPCs so service-role writes set `audit.override_auth_uid` before changing rows.
 - Other tracked tables still appear when raw audit rows exist. If a route writes with a service-role client and the table does not preserve actor intent in columns such as `creator_id` or `updated_by`, add a focused actor-aware private RPC or route-level activity insert before expanding the UI around that resource.
 - Bulk reorder operations are normalized as `reordered` events when the persisted `sort_key` changes.
 

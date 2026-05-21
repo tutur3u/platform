@@ -1,7 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -11,32 +15,9 @@ interface Params {
   }>;
 }
 
-async function getValidMetricCategoryIds(
-  sbAdmin: TypedSupabaseClient,
-  wsId: string,
-  categoryIds: string[]
-) {
-  if (!categoryIds.length) return [];
-
-  const uniqueCategoryIds = [...new Set(categoryIds)];
-  const { data, error } = await sbAdmin
-    .from('user_group_metric_categories')
-    .select('id')
-    .eq('ws_id', wsId)
-    .in('id', uniqueCategoryIds);
-
-  if (error) throw error;
-
-  const validCategoryIds = (data ?? []).map((category) => category.id);
-  if (validCategoryIds.length !== uniqueCategoryIds.length) {
-    throw new Error('Invalid metric category');
-  }
-
-  return validCategoryIds;
-}
-
 export async function PUT(req: Request, { params }: Params) {
   const { wsId, indicatorId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -61,33 +42,24 @@ export async function PUT(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
 
-  let validCategoryIds: string[] | null = null;
-  if (Array.isArray(categoryIds)) {
-    try {
-      validCategoryIds = await getValidMetricCategoryIds(
-        sbAdmin,
-        wsId,
-        categoryIds
-      );
-    } catch (error) {
-      console.error(error);
-      return NextResponse.json(
-        { message: 'Invalid metric category' },
-        { status: 400 }
-      );
-    }
-  }
-
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
   const { data, error } = await sbAdmin
-    .from('user_group_metrics')
-    .update({ name, factor, unit, is_weighted: isWeighted !== false })
-    .eq('id', indicatorId)
-    .eq('ws_id', wsId)
-    .select('id')
-    .maybeSingle();
+    .schema('private')
+    .rpc('admin_update_user_group_metric_with_audit_actor', {
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_category_ids: Array.isArray(categoryIds) ? categoryIds : undefined,
+      p_metric_id: indicatorId,
+      p_payload: {
+        factor,
+        is_weighted: isWeighted !== false,
+        name,
+        unit,
+      },
+      p_ws_id: normalizedWsId,
+    });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error updating group indicator:', error);
     return NextResponse.json(
       { message: 'Error updating indicator' },
       { status: 500 }
@@ -101,45 +73,12 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  if (validCategoryIds) {
-    const { error: deleteError } = await sbAdmin
-      .from('user_group_metric_category_links')
-      .delete()
-      .eq('metric_id', indicatorId);
-
-    if (deleteError) {
-      console.error(deleteError);
-      return NextResponse.json(
-        { message: 'Error updating metric categories' },
-        { status: 500 }
-      );
-    }
-
-    if (validCategoryIds.length) {
-      const { error: insertError } = await sbAdmin
-        .from('user_group_metric_category_links')
-        .insert(
-          validCategoryIds.map((categoryId) => ({
-            category_id: categoryId,
-            metric_id: indicatorId,
-          }))
-        );
-
-      if (insertError) {
-        console.error(insertError);
-        return NextResponse.json(
-          { message: 'Error updating metric categories' },
-          { status: 500 }
-        );
-      }
-    }
-  }
-
   return NextResponse.json({ message: 'success' });
 }
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId, indicatorId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -155,19 +94,33 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
   // Instead of deleting, we set group_id to null as per original logic
-  const { error } = await sbAdmin
-    .from('user_group_metrics')
-    .update({ group_id: null })
-    .eq('id', indicatorId)
-    .eq('ws_id', wsId);
+  const { data, error } = await sbAdmin
+    .schema('private')
+    .rpc('admin_update_user_group_metric_with_audit_actor', {
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_category_ids: undefined,
+      p_metric_id: indicatorId,
+      p_payload: {
+        group_id: null,
+      },
+      p_ws_id: normalizedWsId,
+    });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error deleting group indicator:', error);
     return NextResponse.json(
       { message: 'Error deleting indicator' },
       { status: 500 }
+    );
+  }
+
+  if (!data) {
+    return NextResponse.json(
+      { message: 'Indicator not found' },
+      { status: 404 }
     );
   }
 

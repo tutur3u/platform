@@ -2,6 +2,12 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  hasUserGroupInWorkspace,
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -21,6 +27,7 @@ const BatchAttendanceSchema = z.array(AttendanceSchema);
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   if (!z.guid().safeParse(groupId).success) {
     return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
@@ -47,6 +54,19 @@ export async function GET(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
 
+  if (
+    !(await hasUserGroupInWorkspace({
+      sbAdmin,
+      wsId: normalizedWsId,
+      groupId,
+    }))
+  ) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
+
   const { data, error } = await sbAdmin
     .from('user_group_attendance')
     .select('user_id, status, notes')
@@ -54,7 +74,7 @@ export async function GET(req: Request, { params }: Params) {
     .eq('date', date);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching group attendance:', error);
     return NextResponse.json(
       { message: 'Error fetching attendance' },
       { status: 500 }
@@ -66,6 +86,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   if (!z.guid().safeParse(groupId).success) {
     return NextResponse.json({ message: 'Invalid groupId' }, { status: 400 });
@@ -102,47 +123,24 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
-  const toDelete = payload
-    .filter((p) => p.status === 'NONE')
-    .map((p) => p.user_id);
-  const toUpsert = payload
-    .filter((p) => p.status !== 'NONE')
-    .map((p) => ({
-      group_id: groupId,
-      date: p.date,
-      user_id: p.user_id,
-      status: p.status,
-      notes: p.notes ?? '',
-    }));
+  const { error } = await sbAdmin
+    .schema('private')
+    .rpc('admin_save_user_group_attendance_with_audit_actor', {
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+      p_date: date,
+      p_group_id: groupId,
+      p_payload: payload,
+      p_ws_id: normalizedWsId,
+    });
 
-  if (toDelete.length > 0) {
-    const { error: delError } = await sbAdmin
-      .from('user_group_attendance')
-      .delete()
-      .eq('group_id', groupId)
-      .eq('date', date)
-      .in('user_id', toDelete);
-    if (delError) {
-      console.error(delError);
-      return NextResponse.json(
-        { message: 'Error deleting attendance' },
-        { status: 500 }
-      );
-    }
-  }
-
-  if (toUpsert.length > 0) {
-    const { error: upsertError } = await sbAdmin
-      .from('user_group_attendance')
-      .upsert(toUpsert);
-    if (upsertError) {
-      console.error(upsertError);
-      return NextResponse.json(
-        { message: 'Error upserting attendance' },
-        { status: 500 }
-      );
-    }
+  if (error) {
+    serverLogger.error('Error saving group attendance:', error);
+    return NextResponse.json(
+      { message: 'Error saving attendance' },
+      { status: 500 }
+    );
   }
 
   return NextResponse.json({ message: 'success' });

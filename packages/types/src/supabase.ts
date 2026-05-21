@@ -1539,6 +1539,22 @@ export type Database = {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
       };
+      admin_create_user_group_metric_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_category_ids?: string[];
+          p_group_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['user_group_metrics']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'user_group_metrics';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       admin_create_workspace_user_group_with_audit_actor: {
         Args: { p_actor_auth_uid?: string; p_payload: Json; p_ws_id: string };
         Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
@@ -1578,6 +1594,32 @@ export type Database = {
           isSetofReturn: false;
         };
       };
+      admin_save_user_group_attendance_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_date: string;
+          p_group_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
+      admin_update_user_group_metric_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_category_ids?: string[];
+          p_metric_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['user_group_metrics']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'user_group_metrics';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
       admin_update_workspace_user_group_with_audit_actor: {
         Args: {
           p_actor_auth_uid?: string;
@@ -1591,6 +1633,21 @@ export type Database = {
           to: 'workspace_user_groups';
           isOneToOne: true;
           isSetofReturn: false;
+        };
+      };
+      admin_upsert_user_indicator_values_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_group_id: string;
+          p_values: Json;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['user_indicators']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'user_indicators';
+          isOneToOne: false;
+          isSetofReturn: true;
         };
       };
       admin_upsert_workspace_user_group_members_with_audit_actor: {
@@ -1625,6 +1682,10 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: number;
+      };
+      ensure_user_group_metric_category_ids: {
+        Args: { p_category_ids?: string[]; p_ws_id: string };
+        Returns: string[];
       };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
@@ -1840,6 +1901,10 @@ export type Database = {
           p_table_name: string;
           previous_record: Json;
         };
+        Returns: string;
+      };
+      user_group_activity_actor_workspace_user_id: {
+        Args: { p_after: Json; p_before: Json };
         Returns: string;
       };
       user_group_activity_feed: {
