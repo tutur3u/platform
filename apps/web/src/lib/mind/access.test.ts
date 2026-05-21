@@ -18,17 +18,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.verifyWorkspaceMembershipType(...args),
 }));
 
-function createQuery(result: { data: unknown; error: unknown }) {
-  const query = {
-    eq: vi.fn(() => query),
-    limit: vi.fn(() => query),
-    maybeSingle: vi.fn(() => Promise.resolve(result)),
-    select: vi.fn(() => query),
-  };
-
-  return query;
-}
-
 describe('requireMindAccess', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -38,24 +27,9 @@ describe('requireMindAccess', () => {
     });
   });
 
-  it('resolves personal workspace from the verified app-session user', async () => {
-    const workspaceQuery = createQuery({
-      data: { id: 'personal-ws-id' },
-      error: null,
-    });
-    const supabase = {
-      from: vi.fn((table: string) => {
-        if (table !== 'workspaces') {
-          throw new Error(`Unexpected table ${table}`);
-        }
-
-        return workspaceQuery;
-      }),
-    };
-
-    mocks.normalizeWorkspaceId.mockRejectedValue(
-      new Error('admin app-session client has no auth user')
-    );
+  it('keeps personal workspace normalization on the shared helper', async () => {
+    const supabase = { from: vi.fn() };
+    mocks.normalizeWorkspaceId.mockResolvedValue('personal-ws-id');
 
     const access = await requireMindAccess({
       context: {
@@ -72,15 +46,10 @@ describe('requireMindAccess', () => {
     });
 
     expect(access).toEqual({ normalizedWsId: 'personal-ws-id', ok: true });
-    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
-    expect(workspaceQuery.eq).toHaveBeenCalledWith('personal', true);
-    expect(workspaceQuery.eq).toHaveBeenCalledWith(
-      'workspace_members.user_id',
-      'user-1'
-    );
-    expect(workspaceQuery.eq).toHaveBeenCalledWith(
-      'workspace_members.type',
-      'MEMBER'
+    expect(mocks.normalizeWorkspaceId).toHaveBeenCalledWith(
+      'personal',
+      supabase,
+      undefined
     );
     expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
       requiredType: 'MEMBER',

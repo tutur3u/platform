@@ -1,7 +1,6 @@
 import 'server-only';
 
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { PERSONAL_WORKSPACE_SLUG } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   normalizeWorkspaceId,
@@ -23,37 +22,6 @@ async function resolveInternalEmail({ supabase, user }: SessionAuthContext) {
     .maybeSingle();
 
   return typeof data?.email === 'string' ? data.email : null;
-}
-
-async function resolveMindWorkspaceId({
-  context,
-  request,
-  wsId,
-}: {
-  context: SessionAuthContext;
-  request: Request;
-  wsId: string;
-}) {
-  if (wsId.toLowerCase() !== PERSONAL_WORKSPACE_SLUG) {
-    const nextRequest =
-      'nextUrl' in request ? (request as NextRequest) : undefined;
-    return normalizeWorkspaceId(wsId, context.supabase, nextRequest);
-  }
-
-  const { data, error } = await (context.supabase as TypedSupabaseClient)
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', context.user.id)
-    .eq('workspace_members.type', 'MEMBER')
-    .limit(1)
-    .maybeSingle();
-
-  if (error || !data?.id) {
-    throw new Error('Personal workspace not found');
-  }
-
-  return data.id;
 }
 
 export async function requireMindAccess({
@@ -88,7 +56,13 @@ export async function requireMindAccess({
 
   let normalizedWsId: string;
   try {
-    normalizedWsId = await resolveMindWorkspaceId({ context, request, wsId });
+    const nextRequest =
+      'nextUrl' in request ? (request as NextRequest) : undefined;
+    normalizedWsId = await normalizeWorkspaceId(
+      wsId,
+      context.supabase,
+      nextRequest
+    );
   } catch {
     return {
       ok: false,

@@ -12,7 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockGetUser = vi.fn();
 const mockGetClaims = vi.fn();
-const mockAdminClient = { from: vi.fn() };
+const mockAdminClient = { from: vi.fn() } as { auth?: unknown; from: unknown };
 const mockCreateClient = vi.fn((..._args: unknown[]) => ({
   auth: { getClaims: mockGetClaims, getUser: mockGetUser },
 }));
@@ -103,6 +103,7 @@ import { CURRENT_USER_APP_SESSION_AUTH } from '../app/api/v1/users/me/session-au
 import {
   getDefaultAppSessionVerificationOptions,
   resolveSessionAuthContext,
+  type SessionAuthContext,
   withSessionAuth,
 } from '../lib/api-auth';
 
@@ -135,6 +136,7 @@ const fakeClaims = {
 describe('withSessionAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    delete mockAdminClient.auth;
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mockGetClaims.mockResolvedValue({
       data: { claims: fakeClaims },
@@ -571,12 +573,30 @@ describe('withSessionAuth', () => {
       },
       method: 'GET',
     }) as unknown as NextRequest;
-    const handler = vi.fn().mockReturnValue(NextResponse.json({ ok: true }));
+    const handler = vi.fn(
+      async (_request: NextRequest, context: SessionAuthContext) => {
+        const userResult = await context.supabase.auth.getUser();
+        const claimsResult = await context.supabase.auth.getClaims();
+        const claims = claimsResult.data?.claims as
+          | { sub: string }
+          | null
+          | undefined;
+
+        return NextResponse.json({
+          claimsSub: claims?.sub,
+          userId: userResult.data.user?.id,
+        });
+      }
+    );
 
     const wrapped = withSessionAuth(handler, { allowAppSessionAuth: true });
     const response = await wrapped(request);
 
     expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      claimsSub: 'app-user-1',
+      userId: 'app-user-1',
+    });
     expect(mockGetUser).not.toHaveBeenCalled();
     expect(mockCreateClient).not.toHaveBeenCalled();
     expect(mockCreateAdminClient).toHaveBeenCalledWith({ noCookie: true });
@@ -739,6 +759,10 @@ describe('withSessionAuth', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
+      await expect(result.supabase.auth.getUser()).resolves.toEqual({
+        data: { user: expect.objectContaining({ id: 'inventory-user-1' }) },
+        error: null,
+      });
       expect(result.user.id).toBe('inventory-user-1');
       expect(result.user.email).toBe('inventory@example.com');
       expect(result.supabase).toBe(mockAdminClient);

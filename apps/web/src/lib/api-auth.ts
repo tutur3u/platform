@@ -262,6 +262,48 @@ async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
   return resolveAuthenticatedSessionUser(supabase);
 }
 
+function getAppSessionUserClaims(user: SupabaseUser) {
+  const sessionUser = user as SupabaseUser & {
+    app_metadata?: Record<string, unknown>;
+    aud?: string | null;
+    role?: string | null;
+    user_metadata?: Record<string, unknown>;
+  };
+
+  return {
+    app_metadata: sessionUser.app_metadata ?? {},
+    aud: sessionUser.aud ?? 'authenticated',
+    email: user.email ?? null,
+    role: sessionUser.role ?? 'authenticated',
+    sub: user.id,
+    user_metadata: sessionUser.user_metadata ?? {},
+  };
+}
+
+function withAppSessionUser(supabase: TypedSupabaseClient, user: SupabaseUser) {
+  const existingAuth =
+    'auth' in supabase && supabase.auth
+      ? (supabase.auth as unknown as Record<string, unknown>)
+      : {};
+  const auth = {
+    ...existingAuth,
+    getClaims: async () => ({
+      data: { claims: getAppSessionUserClaims(user) },
+      error: null,
+    }),
+    getUser: async () => ({ data: { user }, error: null }),
+  };
+
+  Object.defineProperty(supabase, 'auth', {
+    configurable: true,
+    enumerable: true,
+    value: auth,
+    writable: true,
+  });
+
+  return supabase;
+}
+
 export type SessionAuthResolution =
   | (SessionAuthContext & {
       ok: true;
@@ -294,12 +336,19 @@ export async function resolveSessionAuthContext(
         };
       }
 
+      const appSessionUser = createAppSessionUser(
+        appSessionVerification.claims
+      );
+
       return {
         ok: true,
-        supabase: (await createAdminClient({
-          noCookie: true,
-        })) as TypedSupabaseClient,
-        user: createAppSessionUser(appSessionVerification.claims),
+        supabase: withAppSessionUser(
+          (await createAdminClient({
+            noCookie: true,
+          })) as TypedSupabaseClient,
+          appSessionUser
+        ),
+        user: appSessionUser,
       };
     }
   }
@@ -682,6 +731,10 @@ export function withSessionAuth<T = unknown>(
         const adminSupabase = (await createAdminClient({
           noCookie: true,
         })) as TypedSupabaseClient;
+        const appSessionSupabase = withAppSessionUser(
+          adminSupabase,
+          appSessionUser
+        );
         const params = routeContext?.params
           ? await Promise.resolve(routeContext.params)
           : ({} as T);
@@ -700,7 +753,7 @@ export function withSessionAuth<T = unknown>(
 
         const response = await handler(
           request,
-          { user: appSessionUser, supabase: adminSupabase },
+          { user: appSessionUser, supabase: appSessionSupabase },
           params
         );
 
