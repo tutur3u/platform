@@ -147,6 +147,11 @@ API routes cannot depend on `WorkspaceWrapper`, so they use `normalizeWorkspaceI
 - returns the canonical workspace UUID
 - throws when `personal` is requested but no authenticated personal workspace exists
 
+App-session and CLI routes that call `normalizeWorkspaceId()` with an admin
+Supabase client should first attach the verified actor with
+`attachSupabaseAuthUser()` from `@tuturuuu/auth/app-session`. Do not duplicate
+manual `personal` workspace fallback lookups inside each route.
+
 Use it whenever a route param may contain `personal` or `internal` but the query must operate on concrete workspace IDs.
 
 ## Effective Permission Evaluation

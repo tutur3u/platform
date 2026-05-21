@@ -99,6 +99,13 @@ requests carrying `tuturuuu_app_session` or `Authorization: Bearer ttr_app_...`
 as app-session requests and avoid constructing cookie-backed Supabase clients for
 those requests.
 
+When an app-session or CLI route needs an admin-backed Supabase client for
+shared helpers such as `normalizeWorkspaceId()`, wrap that admin client with
+`attachSupabaseAuthUser()` from `@tuturuuu/auth/app-session` using the verified
+actor first. This keeps `personal` workspace resolution, permission checks, and
+shared route helpers on the same authenticated path without duplicating
+per-route personal-workspace fallback queries.
+
 ## CLI app-session flow
 
 The native `ttr` CLI uses the same gateway JWT model without a browser cookie:
