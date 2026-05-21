@@ -45,6 +45,7 @@ interface TopicAnnouncementPendingState {
   createContact: boolean;
   createTemplate: boolean;
   deleteAnnouncement: boolean;
+  deleteContact: boolean;
   deleteTemplate: boolean;
   importRows: boolean;
   schedule: boolean;
@@ -64,6 +65,7 @@ interface TopicAnnouncementActions {
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
   deleteAnnouncement: (announcementId: string) => void;
+  deleteContact: (contactId: string) => void;
   deleteTemplate: (templateId: string) => void;
   importRows: (payload: TopicAnnouncementImportPayload) => void;
   requestTimezone: () => void;
@@ -312,6 +314,7 @@ export function TopicAnnouncementsProvider({
         createContact: mutations.createContactMutation.isPending,
         createTemplate: mutations.createTemplateMutation.isPending,
         deleteAnnouncement: mutations.deleteAnnouncementMutation.isPending,
+        deleteContact: mutations.deleteContactMutation.isPending,
         deleteTemplate: mutations.deleteTemplateMutation.isPending,
         importRows: mutations.importMutation.isPending,
         schedule: mutations.scheduleMutation.isPending,
@@ -402,6 +405,8 @@ function createActions({
       mutations.createTemplateMutation.mutate(payload),
     deleteAnnouncement: (announcementId) =>
       mutations.deleteAnnouncementMutation.mutate(announcementId),
+    deleteContact: (contactId) =>
+      mutations.deleteContactMutation.mutate(contactId),
     deleteTemplate: (templateId) =>
       mutations.deleteTemplateMutation.mutate(templateId),
     importRows: (payload) => mutations.importMutation.mutate(payload),

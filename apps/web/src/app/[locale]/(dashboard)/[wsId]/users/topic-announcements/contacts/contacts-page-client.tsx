@@ -28,9 +28,11 @@ export function TopicAnnouncementsContactsPageClient() {
       <ContactsPanel
         contacts={contacts}
         isCreating={pending.createContact}
+        isDeleting={pending.deleteContact}
         isLoading={isLoading.contacts}
         isVerifying={pending.verify}
         onCreate={actions.createContact}
+        onDelete={actions.deleteContact}
         onVerify={actions.verify}
         workspaceUsers={workspaceUsers}
         wsId={wsId}

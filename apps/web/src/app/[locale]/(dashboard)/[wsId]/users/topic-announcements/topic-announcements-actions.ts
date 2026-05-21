@@ -7,6 +7,7 @@ import {
   createTopicAnnouncementContact,
   createTopicAnnouncementTemplate,
   deleteTopicAnnouncement,
+  deleteTopicAnnouncementContact,
   deleteTopicAnnouncementTemplate,
   importTopicAnnouncements,
   requestTopicAnnouncementContactVerification,
@@ -45,6 +46,18 @@ export function useTopicAnnouncementActions({
       toast.error(error instanceof Error ? error.message : t('contact_failed')),
     onSuccess: () => {
       toast.success(t('contact_created'));
+      invalidate();
+    },
+  });
+  const deleteContactMutation = useMutation({
+    mutationFn: (contactId: string) =>
+      deleteTopicAnnouncementContact(wsId, contactId),
+    onError: (error) =>
+      toast.error(
+        error instanceof Error ? error.message : t('contact_remove_failed')
+      ),
+    onSuccess: () => {
+      toast.success(t('contact_removed'));
       invalidate();
     },
   });
@@ -184,6 +197,7 @@ export function useTopicAnnouncementActions({
     createAnnouncementMutation,
     createContactMutation,
     createTemplateMutation,
+    deleteContactMutation,
     deleteAnnouncementMutation,
     deleteTemplateMutation,
     importMutation,

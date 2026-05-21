@@ -189,6 +189,18 @@ export async function updateTopicAnnouncementContact(
   );
 }
 
+export async function deleteTopicAnnouncementContact(
+  workspaceId: string,
+  contactId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>(
+    `${basePath(workspaceId)}/contacts/${encodePathSegment(contactId)}`,
+    { method: 'DELETE' }
+  );
+}
+
 export async function requestTopicAnnouncementContactVerification(
   workspaceId: string,
   contactId: string,
