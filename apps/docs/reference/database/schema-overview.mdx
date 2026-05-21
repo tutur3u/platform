@@ -1,7 +1,7 @@
 ---
 title: 'Database Schema Overview'
 description: 'Complete reference for the Tuturuuu platform database schema'
-updatedAt: '2026-01-22'
+updatedAt: '2026-05-21'
 ---
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
@@ -293,16 +293,20 @@ OAuth tokens for Google Calendar integration.
 - `refresh_token` (text, encrypted)
 - `expires_at` (timestamptz)
 
-#### `workspace_calendar_sync_log`
-Audit trail for sync operations.
+#### `private.workspace_calendar_sync_log`
+Private operational audit trail for calendar sync jobs. Access this table
+through service-role infrastructure routes instead of Supabase REST table
+access.
 
 **Key Fields:**
 - `id` (uuid, PK)
-- `ws_id` (text, FK → workspaces)
-- `sync_type` (text) - full, incremental, batched
-- `started_at` (timestamptz)
-- `completed_at` (timestamptz)
-- `error` (text)
+- `ws_id` (uuid, FK → workspaces)
+- `google_account_email` (text)
+- `sync_started_at` (timestamptz)
+- `sync_ended_at` (timestamptz)
+- `status` (text) - success, failed, in_progress, cancelled, partial_success
+- `error_message` (text)
+- `event_snapshot_before` (jsonb)
 
 ### Finance Management
 
@@ -587,6 +591,18 @@ Available subscription tiers.
 - `price` (numeric)
 - `currency` (text)
 - `features` (jsonb)
+
+#### `private.workspace_subscription_errors`
+Private subscription failure state used by billing overview RPCs and
+service-role repair helpers.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (uuid, FK → workspaces)
+- `error_message` (text)
+- `error_source` (text)
+- `created_at` (timestamptz)
+- `resolved_at` (timestamptz)
 
 ### Additional Features
 

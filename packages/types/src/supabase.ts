@@ -1530,6 +1530,78 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_calendar_sync_log: {
+        Row: {
+          created_at: string;
+          deleted_events: Json | null;
+          error_message: string | null;
+          event_snapshot_before: Json;
+          google_account_email: string | null;
+          id: string;
+          status: string;
+          sync_ended_at: string | null;
+          sync_started_at: string;
+          triggered_by: string;
+          upserted_events: Json | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          deleted_events?: Json | null;
+          error_message?: string | null;
+          event_snapshot_before: Json;
+          google_account_email?: string | null;
+          id?: string;
+          status: string;
+          sync_ended_at?: string | null;
+          sync_started_at: string;
+          triggered_by: string;
+          upserted_events?: Json | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          deleted_events?: Json | null;
+          error_message?: string | null;
+          event_snapshot_before?: Json;
+          google_account_email?: string | null;
+          id?: string;
+          status?: string;
+          sync_ended_at?: string | null;
+          sync_started_at?: string;
+          triggered_by?: string;
+          upserted_events?: Json | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      workspace_subscription_errors: {
+        Row: {
+          created_at: string;
+          error_message: string;
+          error_source: string;
+          id: string;
+          resolved_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          error_message: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          error_message?: string;
+          error_source?: string;
+          id?: string;
+          resolved_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -20838,80 +20910,6 @@ export type Database = {
           },
         ];
       };
-      workspace_calendar_sync_log: {
-        Row: {
-          created_at: string;
-          deleted_events: Json | null;
-          error_message: string | null;
-          event_snapshot_before: Json;
-          google_account_email: string | null;
-          id: string;
-          status: string;
-          sync_ended_at: string | null;
-          sync_started_at: string;
-          triggered_by: string;
-          upserted_events: Json | null;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          deleted_events?: Json | null;
-          error_message?: string | null;
-          event_snapshot_before: Json;
-          google_account_email?: string | null;
-          id?: string;
-          status: string;
-          sync_ended_at?: string | null;
-          sync_started_at: string;
-          triggered_by: string;
-          upserted_events?: Json | null;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          deleted_events?: Json | null;
-          error_message?: string | null;
-          event_snapshot_before?: Json;
-          google_account_email?: string | null;
-          id?: string;
-          status?: string;
-          sync_ended_at?: string | null;
-          sync_started_at?: string;
-          triggered_by?: string;
-          upserted_events?: Json | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendar_sync_log_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_calendars: {
         Row: {
           calendar_type: Database['public']['Enums']['workspace_calendar_type'];
@@ -26059,62 +26057,6 @@ export type Database = {
             foreignKeyName: 'workspace_settings_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: true;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_subscription_errors: {
-        Row: {
-          created_at: string;
-          error_message: string;
-          error_source: string;
-          id: string;
-          resolved_at: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          error_message: string;
-          error_source?: string;
-          id?: string;
-          resolved_at?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          error_message?: string;
-          error_source?: string;
-          id?: string;
-          resolved_at?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_subscription_errors_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },
