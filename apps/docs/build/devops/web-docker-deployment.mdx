@@ -113,6 +113,12 @@ BuildKit cache/state is disposable; set
 `E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD=0` only when debugging a local E2E build
 and you intentionally want to keep BuildKit cache.
 
+On GitHub-hosted runners, the E2E workflow frees disk before restoring or
+loading cached Supabase Docker images. Keep that cleanup ahead of the cache load:
+running `docker system prune -af --volumes` after cached images are loaded would
+remove the images the shard is about to use, while skipping the cleanup can leave
+too little space for the web Docker image dependency layer.
+
 The Playwright global setup refuses non-local web origins and refuses Supabase
 origins outside `localhost`, `127.0.0.1`, or `host.docker.internal` on port
 `8001`. CI shards E2E with `--shard=x/4`; each shard gets its own Compose

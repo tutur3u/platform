@@ -34,6 +34,13 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v6
 
+      - name: Free runner disk for Dockerized E2E
+        run: |
+          df -h /
+          docker system prune -af --volumes || true
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
       # --- Supabase local stack ---
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v2

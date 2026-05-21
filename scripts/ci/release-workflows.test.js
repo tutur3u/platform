@@ -77,6 +77,29 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
+test('E2E workflow frees runner disk before loading cached Docker images', () => {
+  const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
+  const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
+  const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
+  const loadIndex = e2eJob.indexOf('Load cached Docker images');
+
+  assert.notEqual(cleanupIndex, -1);
+  assert.notEqual(restoreIndex, -1);
+  assert.notEqual(loadIndex, -1);
+  assert.ok(
+    cleanupIndex < restoreIndex,
+    'runner disk cleanup must happen before restoring Supabase Docker images'
+  );
+  assert.ok(
+    cleanupIndex < loadIndex,
+    'runner disk cleanup must happen before loading Supabase Docker images'
+  );
+  assert.match(e2eJob, /docker system prune -af --volumes/u);
+  assert.match(e2eJob, /\/usr\/share\/dotnet/u);
+  assert.match(e2eJob, /\/usr\/local\/lib\/android/u);
+  assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
+});
+
 test('Supabase production migration is bound to production deployment and staged SHA', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
