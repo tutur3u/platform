@@ -104,7 +104,7 @@ describe('workspace task API route app-session bridge', () => {
       expect.any(Function),
       {
         allowAppSessionAuth: {
-          targetApp: ['platform', 'tasks'],
+          targetApp: ['platform', 'calendar', 'tasks'],
         },
       }
     );
@@ -113,7 +113,7 @@ describe('workspace task API route app-session bridge', () => {
       expect.any(Function),
       {
         allowAppSessionAuth: {
-          targetApp: ['platform', 'tasks'],
+          targetApp: ['platform', 'calendar', 'tasks'],
         },
       }
     );

@@ -167,7 +167,7 @@ describe('task board list access', () => {
     expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
     expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
       expect.any(NextRequest),
-      { targetApp: 'tasks' }
+      { targetApp: ['calendar', 'tasks'] }
     );
   });
 });

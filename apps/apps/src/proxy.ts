@@ -1,3 +1,4 @@
+import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import createIntlMiddleware from 'next-intl/middleware';
@@ -37,7 +38,15 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
   return response;
 }
 
-export function proxy(request: NextRequest): NextResponse {
+export async function proxy(request: NextRequest): Promise<NextResponse> {
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const guardResponse = await guardApiProxyRequest(request, {
+      prefixBase: 'proxy:apps:api',
+    });
+
+    return guardResponse ?? NextResponse.next();
+  }
+
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
 
   if (canonicalLocaleRedirect) {

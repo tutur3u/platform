@@ -4,6 +4,7 @@
   "apps/tasks": ["certificates"],
   "apps/calendar": ["certificates", "ws-board-templates"],
   "apps/cms": ["certificates"],
+  "apps/drive": ["certificates"],
   "apps/finance": ["certificates", "ws-board-templates"],
   "apps/meet": [
     "certificates",
@@ -59,6 +60,7 @@
       "ws-tasks.*"
     ],
     "apps/cms": ["settings.calendar.*", "ws-polls.*"],
+    "apps/drive": ["ws-polls.*"],
     "apps/finance": [
       "calendar.*",
       "settings.*",

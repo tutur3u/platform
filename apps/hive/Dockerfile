@@ -9,9 +9,11 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
+COPY apps/apps/package.json ./apps/apps/package.json
 COPY apps/calendar/package.json ./apps/calendar/package.json
 COPY apps/cms/package.json ./apps/cms/package.json
 COPY apps/database/package.json ./apps/database/package.json
+COPY apps/drive/package.json ./apps/drive/package.json
 COPY apps/external/package.json ./apps/external/package.json
 COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
@@ -22,6 +24,7 @@ COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json
 COPY apps/nova/package.json ./apps/nova/package.json
 COPY apps/playground/package.json ./apps/playground/package.json
+COPY apps/qr/package.json ./apps/qr/package.json
 COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json

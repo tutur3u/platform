@@ -299,7 +299,7 @@ describe('task boards route GET', () => {
     expect(verifyCliAccessTokenMock).not.toHaveBeenCalled();
     expect(verifyAppSessionRequestMock).toHaveBeenCalledWith(
       expect.any(NextRequest),
-      { targetApp: 'tasks' }
+      { targetApp: ['calendar', 'tasks'] }
     );
   });
 });
