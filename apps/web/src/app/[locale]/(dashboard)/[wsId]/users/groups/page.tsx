@@ -1,8 +1,8 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
+import { Button } from '@tuturuuu/ui/button';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
-import { Button } from '@tuturuuu/ui/button';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import Link from 'next/link';
@@ -14,8 +14,8 @@ import {
   listUserGroupsForTable,
 } from '@/lib/user-groups/table-repository';
 import {
-  UserGroupActivityLogTable,
   type UserGroupActivityLogSearchParams,
+  UserGroupActivityLogTable,
 } from './activity-log-table';
 import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';

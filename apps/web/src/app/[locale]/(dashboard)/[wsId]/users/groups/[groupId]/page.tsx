@@ -8,8 +8,8 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
-  UserGroupActivityLogTable,
   type UserGroupActivityLogSearchParams,
+  UserGroupActivityLogTable,
 } from '../activity-log-table';
 import GroupMembers from './group-members';
 import GroupStorage from './group-storage';
