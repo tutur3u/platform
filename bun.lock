@@ -23,6 +23,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",
@@ -614,6 +615,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@tanstack/react-query": "^5.100.11",
+        "@tuturuuu/satellite": "workspace:*",
         "@tuturuuu/ui": "workspace:*",
         "@tuturuuu/utils": "workspace:*",
         "@tuturuuu/vercel": "workspace:*",

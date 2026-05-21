@@ -1,76 +1,59 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { CURRENT_USER_APP_SESSION_AUTH } from '@/app/api/v1/users/me/session-auth';
+import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
-interface Params {
-  params: Promise<{
-    wsId: string;
-  }>;
-}
-
-export async function POST(request: Request, { params }: Params) {
-  const supabase = await createClient(request);
-  const { wsId } = await params;
-
-  // Get authenticated user
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json(
-      { error: 'Unauthorized', errorCode: 'UNAUTHORIZED' },
-      { status: 401 }
-    );
-  }
-
-  // Delete workspace_invites for this user
-  const { error: workspaceInvitesError } = await supabase
-    .from('workspace_invites')
-    .delete()
-    .eq('ws_id', wsId)
-    .eq('user_id', user.id);
-
-  // Delete workspace_email_invites for this user's email
-  // Get email from auth (more reliable)
-  let userEmail = user.email;
-
-  // Fallback: try from user_private_details
-  if (!userEmail) {
-    const { data: userData } = await supabase
-      .from('users')
-      .select('email:user_private_details(email)')
-      .eq('id', user.id)
-      .single();
-
-    userEmail = (userData?.email as any)?.[0]?.email;
-  }
-
-  let workspaceEmailInvitesError = null;
-
-  if (userEmail) {
-    const { error } = await supabase
-      .from('workspace_email_invites')
+export const POST = withSessionAuth<{ wsId: string }>(
+  async (_request, { supabase, user }, { wsId }) => {
+    const { error: workspaceInvitesError } = await supabase
+      .from('workspace_invites')
       .delete()
       .eq('ws_id', wsId)
-      .eq('email', userEmail);
-    workspaceEmailInvitesError = error;
-  }
+      .eq('user_id', user.id);
 
-  if (workspaceInvitesError || workspaceEmailInvitesError) {
-    console.error(
-      'Error declining invite:',
-      workspaceInvitesError || workspaceEmailInvitesError
-    );
-    return NextResponse.json(
-      {
-        error:
-          workspaceInvitesError?.message || workspaceEmailInvitesError?.message,
-        errorCode: 'DECLINE_INVITE_FAILED',
-      },
-      { status: 500 }
-    );
-  }
+    let userEmail = user.email;
 
-  return NextResponse.json({
-    message: 'Invites declined successfully',
-  });
-}
+    if (!userEmail) {
+      const { data: userData } = await supabase
+        .from('users')
+        .select('email:user_private_details(email)')
+        .eq('id', user.id)
+        .single();
+
+      userEmail = (userData?.email as { email?: string }[] | undefined)?.[0]
+        ?.email;
+    }
+
+    let workspaceEmailInvitesError = null;
+
+    if (userEmail) {
+      const { error } = await supabase
+        .from('workspace_email_invites')
+        .delete()
+        .eq('ws_id', wsId)
+        .eq('email', userEmail);
+      workspaceEmailInvitesError = error;
+    }
+
+    if (workspaceInvitesError || workspaceEmailInvitesError) {
+      serverLogger.error('Error declining invite:', {
+        workspaceInvitesError,
+        workspaceEmailInvitesError,
+      });
+      return NextResponse.json(
+        {
+          error:
+            workspaceInvitesError?.message ||
+            workspaceEmailInvitesError?.message,
+          errorCode: 'DECLINE_INVITE_FAILED',
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      message: 'Invites declined successfully',
+    });
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+);

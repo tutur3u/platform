@@ -7,10 +7,10 @@ import { cn } from '@tuturuuu/utils/format';
 import { VercelAnalytics, VercelInsights } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
+import { Providers } from '@/components/providers';
 import { BASE_URL } from '@/constants/common';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 
@@ -57,7 +57,7 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelAnalytics />
         <VercelInsights />
         <Suspense>
-          <NextIntlClientProvider>{children}</NextIntlClientProvider>
+          <Providers>{children}</Providers>
         </Suspense>
         <TailwindIndicator />
         <Toaster />

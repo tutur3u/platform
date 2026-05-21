@@ -1,7 +1,7 @@
 'use server';
 
-import { fetchWorkspaces as _fetchWorkspaces } from '@tuturuuu/ui/lib/workspace-actions';
+import { fetchSatelliteWorkspaces } from '@tuturuuu/satellite/workspace-actions';
 
 export async function fetchWorkspaces() {
-  return _fetchWorkspaces();
+  return fetchSatelliteWorkspaces();
 }

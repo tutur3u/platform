@@ -14,6 +14,10 @@ The app is public and does not own workspace auth, app-session cookies, or
 protected APIs. Existing `apps/web` QR generator routes are compatibility
 redirects to the QR app root.
 
+The root layout uses `@tuturuuu/satellite/providers` so the public QR surface
+still supports `system`, `light`, and `dark` theme switching through the shared
+`next-themes` shell.
+
 ## Routing Contract
 
 - `/`: canonical QR generator.

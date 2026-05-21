@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@tuturuuu/icons": "workspace:*",
+    "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@tuturuuu/vercel": "workspace:*",

@@ -31,6 +31,10 @@ It intentionally excludes infrastructure-only or non-web app directories such as
 exchange, or app-session cookies. Those flows remain owned by the canonical app
 or by `apps/web` for central login.
 
+The gateway layout uses `@tuturuuu/satellite/providers` so the public launcher
+supports `system`, `light`, and `dark` theme switching through the shared
+`next-themes` shell.
+
 ## Local Development
 
 - `bun dev:apps` starts the gateway through Portless.

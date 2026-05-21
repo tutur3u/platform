@@ -216,3 +216,26 @@ Shared satellite UI must not assume every app publishes the full `apps/web`
 `public/media` tree. Shared brand images such as `TuturuuLogo` should use the
 canonical hosted Tuturuuu asset URL so apps without local `/media/logos/*`
 files do not produce repeated 404s.
+
+## Satellite shell patterns
+
+Workspace-scoped satellite apps (`drive`, `calendar`, `tasks`, `finance`, and
+similar) should reuse the shared satellite provider shell from
+`@tuturuuu/satellite/providers`. That shell mounts `next-themes` with
+`system`, `light`, and `dark`, wraps `NextIntlClientProvider`, and wires the
+shared TanStack Query client. Public or gateway-only apps such as `apps/qr` and
+`apps/apps` should use the same provider re-export so theme toggles and shared
+UI chrome behave consistently even when the app does not own workspace auth.
+
+For server-side workspace picker data, do not call
+`@tuturuuu/ui/lib/workspace-actions` from satellite apps. That helper expects
+Supabase Auth cookies on the app host and returns empty lists when only
+`tuturuuu_app_session` is present. Instead, use
+`fetchSatelliteWorkspaces()` from `@tuturuuu/satellite/workspace-actions`, which
+forwards the incoming request auth to `GET /api/v1/workspaces` on `apps/web`.
+
+When the workspace picker resolves a selected workspace, client code may call
+the legacy detail route `GET /api/workspaces/:wsId`. That route must also opt
+into app-session auth through `withSessionAuth(..., {
+allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH })` so satellite sessions do
+not receive `401 Unauthorized` on `personal` or other workspace aliases.

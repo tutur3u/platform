@@ -27,7 +27,8 @@
     "./i18n": "./src/i18n/routing.ts",
     "./constants": "./src/constants/common.ts",
     "./sidebar-context": "./src/context/sidebar-context.tsx",
-    "./workspace-layout-helpers": "./src/utils/workspace-layout-helpers.ts"
+    "./workspace-layout-helpers": "./src/utils/workspace-layout-helpers.ts",
+    "./workspace-actions": "./src/utils/workspace-actions.ts"
   },
   "license": "MIT",
   "scripts": {
