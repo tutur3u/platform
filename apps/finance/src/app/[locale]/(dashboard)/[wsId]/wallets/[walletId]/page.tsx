@@ -1,6 +1,8 @@
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
 import WalletDetailsPage from '@tuturuuu/ui/finance/wallets/walletId/wallet-details-page';
+import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getFinanceWorkspace } from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -19,15 +21,20 @@ export default async function WorkspaceWalletDetailsPage({
   searchParams,
 }: Props) {
   const { wsId: id, walletId } = await params;
-  const workspace = await getFinanceWorkspace(id);
-  if (!workspace) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context) notFound();
   const sp = await searchParams;
+  const internalApiOptions = withForwardedInternalApiAuth(await headers());
 
   return (
     <WalletDetailsPage
-      wsId={workspace.id}
+      wsId={context.wsId}
       walletId={walletId}
       searchParams={sp}
+      defaultCurrency={context.currency}
+      internalApiOptions={internalApiOptions}
+      permissions={context.permissions}
+      workspace={context.workspace}
     />
   );
 }

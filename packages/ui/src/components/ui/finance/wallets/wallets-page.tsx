@@ -1,4 +1,5 @@
 import {
+  type InternalApiClientOptions,
   listWallets,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
@@ -11,6 +12,7 @@ import {
   getPermissions,
   getWorkspace,
   getWorkspaceConfig,
+  type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
@@ -25,7 +27,13 @@ interface Props {
   };
   page?: string;
   pageSize?: string;
+  currency?: string;
   financePrefix?: string;
+  internalApiOptions?: InternalApiClientOptions;
+  permissions?: PermissionsResult;
+  workspace?: {
+    personal?: boolean | null;
+  };
 }
 
 export default async function WalletsPage({
@@ -33,26 +41,33 @@ export default async function WalletsPage({
   searchParams,
   page,
   pageSize,
+  currency,
   financePrefix = '/finance',
+  internalApiOptions,
+  permissions,
+  workspace,
 }: Props) {
-  const [t, permissions, currency, workspace] = await Promise.all([
-    getTranslations(),
-    getPermissions({ wsId }),
-    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-    getWorkspace(wsId),
-  ]);
-  if (!permissions || !workspace) notFound();
-  const { containsPermission } = permissions;
+  const [t, resolvedPermissions, resolvedCurrency, resolvedWorkspace] =
+    await Promise.all([
+      getTranslations(),
+      permissions ? Promise.resolve(permissions) : getPermissions({ wsId }),
+      currency
+        ? Promise.resolve(currency)
+        : getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+      workspace ? Promise.resolve(workspace) : getWorkspace(wsId),
+    ]);
+  if (!resolvedPermissions || !resolvedWorkspace) notFound();
+  const { containsPermission } = resolvedPermissions;
 
   const canCreateWallets = containsPermission('create_wallets');
   const canUpdateWallets = containsPermission('update_wallets');
   const canDeleteWallets = containsPermission('delete_wallets');
-  const requestHeaders = await headers();
-  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+  const resolvedInternalApiOptions =
+    internalApiOptions ?? withForwardedInternalApiAuth(await headers());
   const { data: rawData, count } = await getData(
     wsId,
     searchParams,
-    internalApiOptions
+    resolvedInternalApiOptions
   );
 
   const data = rawData.map((d) => ({
@@ -78,8 +93,8 @@ export default async function WalletsPage({
         count={count}
         canUpdateWallets={canUpdateWallets}
         canDeleteWallets={canDeleteWallets}
-        currency={currency ?? 'USD'}
-        isPersonalWorkspace={workspace?.personal}
+        currency={resolvedCurrency ?? 'USD'}
+        isPersonalWorkspace={!!resolvedWorkspace?.personal}
         page={page}
         pageSize={pageSize}
       />

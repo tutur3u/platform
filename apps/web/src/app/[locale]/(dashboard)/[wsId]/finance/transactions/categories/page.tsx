@@ -1,7 +1,5 @@
-import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import CategoriesTagsTabs from './categories-tags-tabs';
+import { redirectToFinanceApp } from '../../redirect';
 
 export const metadata: Metadata = {
   title: 'Categories & Tags',
@@ -13,17 +11,16 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function WorkspaceTransactionCategoriesPage({
   params,
+  searchParams,
 }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const currency = await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
-        return <CategoriesTagsTabs wsId={wsId} currency={currency ?? 'USD'} />;
-      }}
-    </WorkspaceWrapper>
-  );
+  return redirectToFinanceApp({
+    params,
+    path: 'categories',
+    searchParams,
+  });
 }

@@ -1,10 +1,7 @@
 import InvoiceDetailsPage from '@tuturuuu/ui/finance/invoices/invoiceId/invoice-details-page';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import {
-  getFinanceWorkspace,
-  getFinanceWorkspacePermissions,
-} from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -16,22 +13,24 @@ interface Props {
 
 export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
   const { wsId: id, invoiceId, locale } = await params;
-  const [workspace, permissions] = await Promise.all([
-    getFinanceWorkspace(id),
-    getFinanceWorkspacePermissions(id),
-  ]);
-  if (!workspace || !permissions) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context || context.permissions.withoutPermission('view_invoices')) {
+    notFound();
+  }
 
   return (
     <Suspense>
       <InvoiceDetailsPage
-        wsId={workspace.id}
+        wsId={context.wsId}
         invoiceId={invoiceId}
         locale={locale}
-        canUpdateInvoices={permissions.containsPermission('update_invoices')}
-        canChangeFinanceWallets={permissions.containsPermission(
+        canUpdateInvoices={context.permissions.containsPermission(
+          'update_invoices'
+        )}
+        canChangeFinanceWallets={context.permissions.containsPermission(
           'change_finance_wallets'
         )}
+        currency={context.currency}
       />
     </Suspense>
   );

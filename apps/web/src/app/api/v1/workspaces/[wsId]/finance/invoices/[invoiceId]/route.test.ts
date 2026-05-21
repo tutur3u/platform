@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
   existingInvoiceMaybeSingle: vi.fn(),
+  getFinanceRouteContext: vi.fn(),
   getPermissions: vi.fn(),
   adminSupabase: {
     from: vi.fn((table: string) => {
@@ -26,6 +27,12 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
 }));
 
+vi.mock('@tuturuuu/apis/finance/request-access', () => ({
+  getFinanceRouteContext: (
+    ...args: Parameters<typeof mocks.getFinanceRouteContext>
+  ) => mocks.getFinanceRouteContext(...args),
+}));
+
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   getPermissions: (...args: Parameters<typeof mocks.getPermissions>) =>
     mocks.getPermissions(...args),
@@ -46,6 +53,18 @@ describe('invoice detail route', () => {
     mocks.getPermissions.mockResolvedValue(
       withPermissions(['update_invoices'])
     );
+    mocks.getFinanceRouteContext.mockImplementation(async () => ({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: await mocks.getPermissions(),
+        sbAdmin: mocks.adminSupabase,
+        supabase: mocks.adminSupabase,
+        user: {
+          email: 'agent@example.com',
+          id: 'user-1',
+        },
+      },
+    }));
     mocks.existingInvoiceMaybeSingle.mockResolvedValue({
       data: {
         id: 'invoice-1',

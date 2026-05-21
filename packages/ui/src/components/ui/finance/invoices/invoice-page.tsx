@@ -5,7 +5,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import { transformInvoiceSearchResults } from '@tuturuuu/utils/finance/transform-invoice-results';
-import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  getWorkspace,
+  type PermissionsResult,
+} from '@tuturuuu/utils/workspace-helper';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -31,13 +35,19 @@ type DeleteInvoiceAction = (
  * Fetches the first day of week preference for a user/workspace
  * Returns: 0 (Sunday), 1 (Monday), or 6 (Saturday)
  */
-async function getWeekStartsOn(wsId: string): Promise<0 | 1 | 6> {
-  const supabase = await createClient();
+async function getWeekStartsOn(
+  wsId: string,
+  userId?: string
+): Promise<0 | 1 | 6> {
+  const supabase = userId
+    ? await createAdminClient({ noCookie: true })
+    : await createClient();
 
   // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user =
+    userId === undefined
+      ? (await supabase.auth.getUser()).data.user
+      : { id: userId };
 
   // Try user preference first
   if (user) {
@@ -97,6 +107,11 @@ interface Props {
   deleteInvoiceAction?: DeleteInvoiceAction;
   currency?: string;
   financePrefix?: string;
+  permissions?: PermissionsResult;
+  userId?: string;
+  workspace?: {
+    id: string;
+  };
 }
 
 export default async function InvoicesPage({
@@ -107,23 +122,28 @@ export default async function InvoicesPage({
   deleteInvoiceAction,
   currency = 'USD',
   financePrefix = '/finance',
+  permissions,
+  userId,
+  workspace,
 }: Props) {
   const t = await getTranslations();
   const { wsId: id } = await params;
   const resolvedSearchParams = await searchParams;
 
-  const workspace = await getWorkspace(id);
-  if (!workspace) notFound();
-  const wsId = workspace.id;
-  const permissions = await getPermissions({
-    wsId,
-  });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
+  const resolvedWorkspace = workspace ?? (await getWorkspace(id));
+  if (!resolvedWorkspace) notFound();
+  const wsId = resolvedWorkspace.id;
+  const resolvedPermissions =
+    permissions ??
+    (await getPermissions({
+      wsId,
+    }));
+  if (!resolvedPermissions) notFound();
+  const { containsPermission } = resolvedPermissions;
 
   const [initialData, weekStartsOn] = await Promise.all([
     getInitialData(wsId, resolvedSearchParams),
-    getWeekStartsOn(wsId),
+    getWeekStartsOn(wsId, userId),
   ]);
 
   const canExportFinanceData = containsPermission('export_finance_data');

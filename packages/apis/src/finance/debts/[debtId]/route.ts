@@ -1,8 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { Database } from '@tuturuuu/types';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -11,22 +12,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId, debtId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -39,7 +38,7 @@ export async function GET(_: Request, { params }: Params) {
     .from('workspace_debt_loans')
     .select('*')
     .eq('id', debtId)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .single();
 
   if (error) {
@@ -70,22 +69,20 @@ export async function GET(_: Request, { params }: Params) {
   });
 }
 
-export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId, debtId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -145,7 +142,7 @@ export async function PUT(req: Request, { params }: Params) {
     .from('workspace_debt_loans')
     .update(updateData)
     .eq('id', debtId)
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .select()
     .single();
 
@@ -166,22 +163,20 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId, debtId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -194,7 +189,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .from('workspace_debt_loans')
     .delete()
     .eq('id', debtId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
     console.error('Error deleting debt/loan:', error);

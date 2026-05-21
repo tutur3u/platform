@@ -1,14 +1,8 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -17,33 +11,19 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const { wsId, userId } = await params;
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+export async function GET(req: Request, { params }: Params) {
+  const { wsId: rawWsId, userId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
 
   const { data, error } = await sbAdmin
     .from('user_linked_promotions')
@@ -54,7 +34,7 @@ export async function GET(_: Request, { params }: Params) {
     .eq('workspace_promotions.ws_id', wsId);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching linked promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching linked promotions' },
       { status: 500 }
@@ -65,13 +45,18 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId, userId } = await params;
-  const sbAdmin = await createAdminClient();
+  const { wsId: rawWsId, userId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
   if (!permissions.containsPermission('update_users')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -113,7 +98,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error linking promotion:', error);
     return NextResponse.json(
       { message: 'Error linking promotion' },
       { status: 500 }
@@ -124,13 +109,18 @@ export async function POST(req: Request, { params }: Params) {
 }
 
 export async function DELETE(req: Request, { params }: Params) {
-  const { wsId, userId } = await params;
-  const sbAdmin = await createAdminClient();
+  const { wsId: rawWsId, userId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { permissions, sbAdmin } = access.context;
 
   if (!permissions.containsPermission('update_users')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -153,7 +143,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('promo_id', promoId);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error unlinking promotion:', error);
     return NextResponse.json(
       { message: 'Error unlinking promotion' },
       { status: 500 }

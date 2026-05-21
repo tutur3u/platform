@@ -1,12 +1,5 @@
-import InvoicesPage from '@tuturuuu/ui/finance/invoices/invoice-page';
-import {
-  getPermissions,
-  getWorkspaceConfig,
-} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import { deleteInvoice } from './actions';
+import { redirectToFinanceApp } from '../redirect';
 
 export const metadata: Metadata = {
   title: 'Invoices',
@@ -18,48 +11,16 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-    start: string;
-    end: string;
-    userIds: string | string[];
-    walletIds: string | string[];
-    walletId: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function WorkspaceInvoicesPage({
   params,
   searchParams,
 }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const permissions = await getPermissions({
-          wsId,
-        });
-        if (!permissions) notFound();
-        const { withoutPermission, containsPermission } = permissions;
-        if (withoutPermission('view_invoices')) notFound();
-
-        const canCreateInvoices = containsPermission('create_invoices');
-        const canDeleteInvoices = containsPermission('delete_invoices');
-        const currency =
-          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
-
-        return (
-          <InvoicesPage
-            params={params}
-            searchParams={searchParams}
-            canCreateInvoices={canCreateInvoices}
-            canDeleteInvoices={canDeleteInvoices}
-            deleteInvoiceAction={deleteInvoice}
-            currency={currency}
-          />
-        );
-      }}
-    </WorkspaceWrapper>
-  );
+  return redirectToFinanceApp({
+    params,
+    path: 'invoices',
+    searchParams,
+  });
 }

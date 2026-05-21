@@ -2,7 +2,10 @@ import { FolderTree } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  type PermissionsResult,
+} from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -11,17 +14,21 @@ const enabled = true;
 export default async function TransactionCategoriesStatistics({
   wsId,
   financePrefix = '/finance',
+  permissions,
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
   financePrefix?: string;
+  permissions?: PermissionsResult;
 }) {
   const t = await getTranslations();
-  const permissions = await getPermissions({
-    wsId,
-  });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
+  const resolvedPermissions =
+    permissions ??
+    (await getPermissions({
+      wsId,
+    }));
+  if (!resolvedPermissions) notFound();
+  const { containsPermission } = resolvedPermissions;
 
   if (!enabled || !containsPermission('manage_finance')) return null;
 
@@ -41,7 +48,11 @@ export default async function TransactionCategoriesStatistics({
     <StatisticCard
       title={t('workspace-finance-tabs.categories')}
       value={categoriesCount}
-      href={`/${wsId}${financePrefix}/transactions/categories`}
+      href={
+        financePrefix
+          ? `/${wsId}${financePrefix}/transactions/categories`
+          : `/${wsId}/categories`
+      }
       icon={<FolderTree className="h-5 w-5" />}
     />
   );

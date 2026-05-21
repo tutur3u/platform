@@ -1,8 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { DebtLoanSummary } from '@tuturuuu/types/primitives/DebtLoan';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -10,22 +11,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -36,7 +35,7 @@ export async function GET(_: Request, { params }: Params) {
 
   // Use the RPC function to get summary
   const { data, error } = await supabase.rpc('get_debt_loan_summary', {
-    p_ws_id: wsId,
+    p_ws_id: normalizedWsId,
   });
 
   if (error) {

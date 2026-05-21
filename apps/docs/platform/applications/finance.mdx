@@ -1,0 +1,49 @@
+---
+title: 'Finance'
+description: 'Standalone Finance app with centralized protected product APIs.'
+updatedAt: '2026-05-21'
+---
+
+## Overview
+
+`apps/finance` is the canonical Tuturuuu Finance application. Production Finance
+traffic should use `https://finance.tuturuuu.com/{wsId}` and omit the old
+`/finance` path segment.
+
+Canonical workspace routes include:
+
+- `/{wsId}`
+- `/{wsId}/transactions`
+- `/{wsId}/wallets`
+- `/{wsId}/invoices`
+- `/{wsId}/categories`
+- `/{wsId}/tags`
+- `/{wsId}/recurring`
+- `/{wsId}/budgets`
+- `/{wsId}/analytics`
+- `/{wsId}/debts`
+
+`apps/web /{wsId}/finance/*` routes remain compatibility redirects. They
+preserve query strings and map old nested paths, such as
+`/{wsId}/finance/transactions/categories`, to the standalone Finance app.
+
+## API Ownership
+
+Protected Finance APIs stay centralized in `apps/web`.
+
+- `apps/finance` owns the workspace shell, Finance UI routes, local
+  `/verify-token` handoff, and local app-session logout.
+- `apps/finance` should keep only host-local auth/session routes under its
+  local `api` tree.
+- Product CRUD, reporting, invoice, wallet, transaction, tag, promotion,
+  inventory product, settings, and invoice helper APIs should be added in
+  `apps/web` and consumed through forwarded `/api/*` requests or
+  `@tuturuuu/internal-api`.
+- Finance app-session cookies are accepted by central Finance API routes and
+  invoice-adjacent helper routes, then route-level permissions are enforced by
+  `apps/web`.
+
+When adding new Finance behavior, add or extend the protected route in
+`apps/web`, expose a helper in `packages/internal-api` when shared UI needs it,
+and consume it from `apps/finance` through TanStack Query or shared server
+components.

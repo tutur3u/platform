@@ -2,6 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
+import { deleteInvoice } from '@tuturuuu/internal-api/finance';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import {
   AlertDialog,
@@ -52,7 +53,7 @@ export function InvoiceRowActions({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDeleteInvoice = async () => {
-    if (!canDeleteInvoices || !deleteInvoiceAction) {
+    if (!canDeleteInvoices) {
       toast.error(t('common.insufficient_permissions'));
       return;
     }
@@ -64,7 +65,9 @@ export function InvoiceRowActions({
 
     setIsDeleting(true);
     try {
-      const result = await deleteInvoiceAction(data.ws_id, data.id);
+      const result = deleteInvoiceAction
+        ? await deleteInvoiceAction(data.ws_id, data.id)
+        : { success: true, ...(await deleteInvoice(data.ws_id, data.id)) };
 
       if (result.success) {
         toast.success(t('ws-invoices.invoice_deleted'));

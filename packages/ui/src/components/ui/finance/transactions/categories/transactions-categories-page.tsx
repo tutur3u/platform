@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
@@ -14,15 +14,19 @@ import { getTranslations } from 'next-intl/server';
 interface Props {
   wsId: string;
   currency?: string;
+  workspace?: {
+    id: string;
+  } | null;
 }
 
 export default async function TransactionsCategoriesPage({
   wsId: id,
   currency = 'USD',
+  workspace,
 }: Props) {
-  const workspace = await getWorkspace(id);
-  if (!workspace) notFound();
-  const wsId = workspace.id;
+  const resolvedWorkspace = workspace ?? (await getWorkspace(id));
+  if (!resolvedWorkspace) notFound();
+  const wsId = resolvedWorkspace.id;
 
   // Fetch initial data for SSR hydration (first page with default params)
   const initialData = await getInitialData(wsId);
@@ -67,7 +71,7 @@ export default async function TransactionsCategoriesPage({
  * Returns the first page of categories with default page size (10).
  */
 async function getInitialData(wsId: string) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data: categories, error } = await supabase.rpc(
     'get_transaction_categories_with_amount_by_workspace',

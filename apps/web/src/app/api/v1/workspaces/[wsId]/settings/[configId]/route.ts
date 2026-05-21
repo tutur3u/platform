@@ -1,15 +1,8 @@
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   listWorkspaceDefaultIncludedGroupIds,
   replaceWorkspaceDefaultIncludedGroupIds,
@@ -25,41 +18,17 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
-  const supabase = await createClient(req);
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { message: 'Failed to verify workspace access' },
-      { status: 500 }
-    );
-  }
-
-  if (!memberCheck.ok) {
-    return NextResponse.json(
-      { message: 'Workspace access denied' },
-      { status: 403 }
-    );
-  }
-
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
   const { withoutPermission } = permissions;
   if (withoutPermission('manage_workspace_settings')) {
@@ -87,8 +56,6 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
-
   if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
     const { errorMessage } = await replaceWorkspaceDefaultIncludedGroupIds(
       sbAdmin,
@@ -115,7 +82,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', id);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error upserting workspace config:', error);
     return NextResponse.json(
       {
         message:
@@ -130,32 +97,17 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
-  const supabase = await createClient(req);
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({}, { status: 401 });
+  if (access.response) {
+    return NextResponse.json({}, { status: access.response.status });
   }
 
-  // Normalize workspace ID to UUID (handles 'personal', 'internal', etc.)
-  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
-
-  const memberCheck = await verifyWorkspaceMembershipType({
-    wsId,
-    userId: user.id,
-    supabase,
-  });
-
-  if (memberCheck.error === 'membership_lookup_failed') {
-    return NextResponse.json({}, { status: 500 });
-  }
-
-  if (!memberCheck.ok) {
-    return NextResponse.json({}, { status: 403 });
-  }
-
-  const sbAdmin = await createAdminClient();
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
 
   if (id === DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID) {
     const { data, errorMessage } = await listWorkspaceDefaultIncludedGroupIds(

@@ -1,8 +1,9 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PendingInvoicesParamsSchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -39,14 +40,19 @@ interface Params {
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createClient(request);
-    const { wsId } = await params;
+    const { wsId: rawWsId } = await params;
+    const access = await getFinanceRouteContext(
+      request,
+      rawWsId,
+      await resolveFinanceRouteAuthContext(request)
+    );
 
-    // Check permissions
-    const permissions = await getPermissions({ wsId });
-    if (!permissions) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (access.response) {
+      return access.response;
     }
+
+    const { normalizedWsId: wsId, permissions, supabase } = access.context;
+
     const { containsPermission } = permissions;
     if (!containsPermission('view_invoices')) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -154,7 +160,7 @@ export async function GET(request: Request, { params }: Params) {
       count: totalCount || 0,
     });
   } catch (error) {
-    console.error('Error in pending invoices API:', error);
+    serverLogger.error('Error in pending invoices API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -1,27 +1,29 @@
-import TransactionDetailsPage from '@tuturuuu/ui/finance/transactions/transactionId/transaction-details-page';
 import type { Metadata } from 'next';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirectToFinanceApp } from '../../redirect';
 
 export const metadata: Metadata = {
   title: 'Transaction Details',
   description:
-    'Manage Transaction Details in the Transactions area of your Tuturuuu workspace.',
+    'View transaction details in the Finance area of your Tuturuuu workspace.',
 };
 
 interface Props {
   params: Promise<{
-    wsId: string;
     transactionId: string;
-    locale: string;
+    wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function WorkspaceTransactionDetailsPage({
   params,
+  searchParams,
 }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {() => <TransactionDetailsPage params={params} />}
-    </WorkspaceWrapper>
-  );
+  const { transactionId, wsId } = await params;
+
+  return redirectToFinanceApp({
+    params: Promise.resolve({ wsId }),
+    path: `transactions/${transactionId}`,
+    searchParams,
+  });
 }

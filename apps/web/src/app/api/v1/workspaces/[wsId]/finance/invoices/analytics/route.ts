@@ -1,8 +1,7 @@
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 import { parseAnalyticsQuery } from './analytics-query';
 import {
@@ -24,13 +23,18 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id);
+  const access = await getFinanceRouteContext(
+    req,
+    id,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, permissions } = access.context;
+
   const { withoutPermission } = permissions;
   if (withoutPermission('view_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -150,7 +154,7 @@ export async function GET(req: Request, { params }: Params) {
       hasDateRange: false,
     });
   } catch (error) {
-    console.error('Error fetching invoice analytics:', error);
+    serverLogger.error('Error fetching invoice analytics:', error);
     return NextResponse.json(
       { message: 'Error fetching invoice analytics' },
       { status: 500 }

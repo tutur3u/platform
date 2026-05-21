@@ -1,6 +1,8 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../../../request-access';
 
 interface Params {
   params: Promise<{
@@ -9,17 +11,19 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { transactionId, wsId } = await params;
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('view_transactions')) {
@@ -29,7 +33,24 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const { data: transaction, error: transactionError } = await sbAdmin
+    .from('wallet_transactions')
+    .select(`
+      id,
+      workspace_wallets!wallet_id!inner (
+        ws_id
+      )
+    `)
+    .eq('id', transactionId)
+    .eq('workspace_wallets.ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (transactionError || !transaction) {
+    return NextResponse.json(
+      { message: 'Transaction not found' },
+      { status: 404 }
+    );
+  }
 
   const { data, error } = await sbAdmin
     .from('wallet_transaction_tags')
@@ -37,7 +58,6 @@ export async function GET(req: Request, { params }: Params) {
     .eq('transaction_id', transactionId);
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error fetching transaction tags' },
       { status: 500 }

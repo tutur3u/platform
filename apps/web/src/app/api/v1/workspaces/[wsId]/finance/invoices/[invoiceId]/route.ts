@@ -1,8 +1,8 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { canReassignFinanceWallet } from '@tuturuuu/utils/finance';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
 interface Params {
   params: Promise<{
@@ -18,17 +18,18 @@ const UpdateInvoiceSchema = z.object({
 });
 
 export async function PUT(req: Request, { params }: Params) {
-  const sbAdmin = await createAdminClient();
-  const { invoiceId, wsId } = await params;
+  const { invoiceId, wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('update_invoices')) {
     return NextResponse.json(
@@ -118,6 +119,85 @@ export async function PUT(req: Request, { params }: Params) {
   if (error) {
     return NextResponse.json(
       { message: 'Error updating invoice' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ message: 'success' });
+}
+
+export async function DELETE(req: Request, { params }: Params) {
+  const { invoiceId, wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+
+  if (permissions.withoutPermission('delete_invoices')) {
+    return NextResponse.json(
+      { message: 'Insufficient permissions' },
+      { status: 403 }
+    );
+  }
+
+  const { data: existingInvoice, error: existingInvoiceError } = await sbAdmin
+    .from('finance_invoices')
+    .select('id')
+    .eq('id', invoiceId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (existingInvoiceError) {
+    return NextResponse.json(
+      { message: 'Error loading invoice' },
+      { status: 500 }
+    );
+  }
+
+  if (!existingInvoice) {
+    return NextResponse.json({ message: 'Invoice not found' }, { status: 404 });
+  }
+
+  const { error: productsError } = await sbAdmin
+    .from('finance_invoice_products')
+    .delete()
+    .eq('invoice_id', invoiceId);
+
+  if (productsError) {
+    return NextResponse.json(
+      { message: 'Error deleting invoice products' },
+      { status: 500 }
+    );
+  }
+
+  const { error: promotionsError } = await sbAdmin
+    .from('finance_invoice_promotions')
+    .delete()
+    .eq('invoice_id', invoiceId);
+
+  if (promotionsError) {
+    return NextResponse.json(
+      { message: 'Error deleting invoice promotions' },
+      { status: 500 }
+    );
+  }
+
+  const { error } = await sbAdmin
+    .from('finance_invoices')
+    .delete()
+    .eq('id', invoiceId)
+    .eq('ws_id', wsId);
+
+  if (error) {
+    return NextResponse.json(
+      { message: 'Error deleting invoice' },
       { status: 500 }
     );
   }

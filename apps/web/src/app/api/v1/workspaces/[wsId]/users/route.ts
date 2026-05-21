@@ -1,3 +1,4 @@
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -13,6 +14,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -126,7 +129,7 @@ async function getDataWithApiKey(
   const { data, count, error } = response;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace users with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -138,18 +141,19 @@ async function getDataWithApiKey(
 
 async function getDataFromSession(
   req: NextRequest,
-  { wsId }: { wsId: string }
+  { wsId: rawWsId }: { wsId: string }
 ) {
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
   const searchParams = new URLSearchParams(req.nextUrl.search);
   const query = searchParams.get('q') || searchParams.get('query');
   const from = parseInt(searchParams.get('from') || '0', 10);
@@ -161,7 +165,7 @@ async function getDataFromSession(
   const { data, count, error } = await mainQuery;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace users:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -222,7 +226,7 @@ export async function POST(req: Request, { params }: Params) {
   );
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating workspace user:', error);
     return NextResponse.json(
       { message: 'Error creating workspace user' },
       { status: 500 }
@@ -252,7 +256,7 @@ export async function POST(req: Request, { params }: Params) {
         );
 
       if (linkError) {
-        console.log(linkError);
+        serverLogger.error('Error linking guest workspace user:', linkError);
         warning = 'User created, but failed to link to guest group.';
       }
     } else {

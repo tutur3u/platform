@@ -1,3 +1,4 @@
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -15,6 +16,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 const userUpdateSchema = z.object({
@@ -125,7 +128,7 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (fetchError || !currentUser) {
-    console.error(fetchError);
+    serverLogger.error('Error fetching workspace user:', fetchError);
     return NextResponse.json(
       { message: 'Error fetching workspace user' },
       { status: 500 }
@@ -144,7 +147,7 @@ export async function PUT(req: Request, { params }: Params) {
   );
 
   if (error || !updatedUser) {
-    console.log(error);
+    serverLogger.error('Error updating workspace user:', error);
     return NextResponse.json(
       { message: 'Error updating workspace user' },
       { status: 500 }
@@ -178,7 +181,7 @@ export async function PUT(req: Request, { params }: Params) {
       });
 
     if (logError) {
-      console.log('Failed to log status change:', logError);
+      serverLogger.error('Failed to log status change:', logError);
       // Don't fail the request if logging fails, just log it
     }
   }
@@ -194,7 +197,7 @@ export async function PUT(req: Request, { params }: Params) {
       .maybeSingle();
 
     if (groupError) {
-      console.log(groupError);
+      serverLogger.error('Error resolving guest group:', groupError);
       warning = 'Failed to resolve guest group for this workspace.';
     } else if (!guestGroup?.id) {
       warning = 'No guest group found in this workspace.';
@@ -207,7 +210,7 @@ export async function PUT(req: Request, { params }: Params) {
             { onConflict: 'group_id,user_id' }
           );
         if (linkError) {
-          console.log(linkError);
+          serverLogger.error('Error linking guest workspace user:', linkError);
           warning = 'Failed to link user to guest group.';
         }
       } else {
@@ -217,7 +220,10 @@ export async function PUT(req: Request, { params }: Params) {
           .eq('group_id', guestGroup.id)
           .eq('user_id', userId);
         if (unlinkError) {
-          console.log(unlinkError);
+          serverLogger.error(
+            'Error unlinking guest workspace user:',
+            unlinkError
+          );
           warning = 'Failed to unlink user from guest group.';
         }
       }
@@ -255,7 +261,7 @@ export async function DELETE(_: Request, { params }: Params) {
   );
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error deleting workspace user:', error);
     return NextResponse.json(
       { message: 'Error deleting workspace user' },
       { status: 500 }
@@ -293,7 +299,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace user with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -305,23 +311,24 @@ async function getDataWithApiKey({
 
 async function getDataFromSession({
   req,
-  wsId,
+  wsId: rawWsId,
   userId,
 }: {
   req: Request;
   wsId: string;
   userId: string;
 }) {
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const sbAdmin = await createAdminClient();
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
 
   const { data, error } = await sbAdmin
     .from('workspace_users')
@@ -330,7 +337,7 @@ async function getDataFromSession({
     .eq('id', userId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace user:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

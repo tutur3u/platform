@@ -1,11 +1,8 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_COLOR_LENGTH } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { requireFinanceStatsAccess } from '../access';
 
 const querySchema = z.object({
   date: z.string().max(MAX_COLOR_LENGTH),
@@ -28,7 +25,6 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
     const { searchParams } = new URL(req.url);
 
     // Validate query parameters
@@ -46,20 +42,9 @@ export async function GET(
 
     const { date, includeConfidential } = parsed.data;
 
-    // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-
-    const permissions = await getPermissions({
-      wsId: normalizedWsId,
-    });
-    if (!permissions) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-    const { withoutPermission } = permissions;
-
-    if (withoutPermission('view_finance_stats')) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    const access = await requireFinanceStatsAccess(req, wsId);
+    if (access.response) return access.response;
+    const { normalizedWsId, supabase } = access.context;
 
     // Get balance at the specified date
     const { data, error } = await supabase.rpc('get_wallet_balance_at_date', {
@@ -75,7 +60,7 @@ export async function GET(
       date,
     });
   } catch (error) {
-    console.error('Error fetching balance at date:', error);
+    serverLogger.error('Error fetching balance at date', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching balance' },
       { status: 500 }

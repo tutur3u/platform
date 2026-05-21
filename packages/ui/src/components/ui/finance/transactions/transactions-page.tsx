@@ -7,27 +7,40 @@ import {
   getPermissions,
   getWorkspace,
   getWorkspaceConfig,
+  type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
 interface Props {
+  currency?: string;
+  permissions?: PermissionsResult;
   wsId: string;
+  workspace?: {
+    personal?: boolean | null;
+    timezone?: string | null;
+  };
   showTransactionTypeFilter?: boolean;
 }
 
 export default async function TransactionsPage({
+  currency,
+  permissions,
   wsId,
+  workspace,
   showTransactionTypeFilter = false,
 }: Props) {
-  const [t, workspace, permissions, currency] = await Promise.all([
-    getTranslations(),
-    getWorkspace(wsId),
-    getPermissions({ wsId }),
-    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-  ]);
-  if (!workspace || !permissions) return notFound();
-  const { containsPermission } = permissions;
+  const [t, resolvedWorkspace, resolvedPermissions, resolvedCurrency] =
+    await Promise.all([
+      getTranslations(),
+      workspace ? Promise.resolve(workspace) : getWorkspace(wsId),
+      permissions ? Promise.resolve(permissions) : getPermissions({ wsId }),
+      currency
+        ? Promise.resolve(currency)
+        : getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+    ]);
+  if (!resolvedWorkspace || !resolvedPermissions) return notFound();
+  const { containsPermission } = resolvedPermissions;
 
   const canViewTransactions = containsPermission('view_transactions');
   const canExportFinanceData = containsPermission('export_finance_data');
@@ -84,8 +97,8 @@ export default async function TransactionsPage({
       <Separator className="my-4" />
       <TransactionsInfinitePage
         wsId={wsId}
-        currency={currency ?? 'USD'}
-        timezone={workspace.timezone}
+        currency={resolvedCurrency ?? 'USD'}
+        timezone={resolvedWorkspace.timezone}
         canExport={canExportFinanceData}
         exportContent={
           <ExportDialogContent wsId={wsId} exportType="transactions" />
@@ -101,7 +114,7 @@ export default async function TransactionsPage({
         canViewConfidentialAmount={canViewConfidentialAmount}
         canViewConfidentialDescription={canViewConfidentialDescription}
         canViewConfidentialCategory={canViewConfidentialCategory}
-        isPersonalWorkspace={workspace.personal}
+        isPersonalWorkspace={!!resolvedWorkspace.personal}
         showTransactionTypeFilter={showTransactionTypeFilter}
       />
     </>

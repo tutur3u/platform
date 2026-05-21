@@ -1,8 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   MAX_COLOR_LENGTH,
@@ -15,13 +12,11 @@ import {
   transformInvoiceData,
   transformInvoiceSearchResults,
 } from '@tuturuuu/utils/finance/transform-invoice-results';
-import {
-  getPermissions,
-  getWorkspaceConfig,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -233,21 +228,24 @@ export async function calculateInvoiceValues(
 
 export async function GET(request: Request, { params }: Params) {
   try {
-    const supabase = await createAdminClient();
     const { wsId: id } = await params;
+    const access = await getFinanceRouteContext(
+      request,
+      id,
+      await resolveFinanceRouteAuthContext(request)
+    );
 
-    // Resolve workspace ID
-    const wsId = await normalizeWorkspaceId(id);
+    if (access.response) {
+      return access.response;
+    }
+
+    const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+    const supabase = sbAdmin;
 
     if (!(await isInventoryEnabled(wsId))) {
       return inventoryNotFoundResponse();
     }
 
-    // Check permissions
-    const permissions = await getPermissions({ wsId });
-    if (!permissions) {
-      return Response.json({ error: 'Not found' }, { status: 404 });
-    }
     const { containsPermission } = permissions;
     const canViewInvoices = containsPermission('view_invoices');
 
@@ -274,7 +272,7 @@ export async function GET(request: Request, { params }: Params) {
 
     const parsed = SearchParamsSchema.safeParse(params_obj);
     if (!parsed.success) {
-      console.error('Invalid query parameters:', parsed.error);
+      serverLogger.error('Invalid invoice query parameters:', parsed.error);
       return NextResponse.json(
         { message: 'Invalid query parameters' },
         { status: 400 }
@@ -300,7 +298,7 @@ export async function GET(request: Request, { params }: Params) {
       );
 
       if (rpcError) {
-        console.error('Error searching invoices:', rpcError);
+        serverLogger.error('Error searching invoices:', rpcError);
         return NextResponse.json(
           { message: 'Error searching invoices' },
           { status: 500 }
@@ -391,7 +389,7 @@ export async function GET(request: Request, { params }: Params) {
     } = await queryBuilder.returns<FullInvoiceData[]>();
 
     if (error) {
-      console.error('Error fetching invoices:', error);
+      serverLogger.error('Error fetching invoices:', error);
       return NextResponse.json(
         { message: 'Error fetching invoices' },
         { status: 500 }
@@ -406,7 +404,7 @@ export async function GET(request: Request, { params }: Params) {
       count: count ?? 0,
     });
   } catch (error) {
-    console.error('Error in workspace invoices API:', error);
+    serverLogger.error('Error in workspace invoices API:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -415,21 +413,23 @@ export async function GET(request: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
-  const sbAdmin = await createAdminClient();
   const { wsId: id } = await params;
-  const wsId = await normalizeWorkspaceId(id, supabase);
+  const access = await getFinanceRouteContext(
+    req,
+    id,
+    await resolveFinanceRouteAuthContext(req)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
+
   if (!(await isInventoryEnabled(wsId))) {
     return inventoryNotFoundResponse();
   }
 
-  const permissions = await getPermissions({
-    wsId: id,
-    request: req,
-  });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   if (!canCreateInventorySales(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
@@ -474,13 +474,6 @@ export async function POST(req: Request, { params }: Params) {
         },
         { status: 403 }
       );
-    }
-
-    // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     // Get user workspace ID
@@ -640,7 +633,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (invoiceError) {
-      console.error('Error creating invoice:', invoiceError);
+      serverLogger.error('Error creating invoice:', invoiceError);
       return NextResponse.json(
         { message: 'Error creating invoice', details: invoiceError.message },
         { status: 500 }
@@ -679,7 +672,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (productsError) {
-      console.error('Error getting products information:', productsError);
+      serverLogger.error('Error getting products information:', productsError);
       return NextResponse.json(
         {
           message: 'Error getting products information',
@@ -699,7 +692,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (unitsError) {
-      console.error('Error getting units information:', unitsError);
+      serverLogger.error('Error getting units information:', unitsError);
       return NextResponse.json(
         {
           message: 'Error getting units information',
@@ -746,7 +739,10 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      console.error('Error creating invoice products:', invoiceProductsError);
+      serverLogger.error(
+        'Error creating invoice products:',
+        invoiceProductsError
+      );
       // Rollback: delete the created invoice and transaction
       await Promise.all([
         sbAdmin.from('finance_invoices').delete().eq('id', invoiceId),
@@ -801,7 +797,7 @@ export async function POST(req: Request, { params }: Params) {
           );
         }
 
-        console.error('Error creating invoice promotion:', promotionError);
+        serverLogger.error('Error creating invoice promotion:', promotionError);
         return NextResponse.json(
           {
             message: 'Error applying promotion to invoice',
@@ -827,7 +823,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(stockChanges);
 
     if (stockError) {
-      console.error('Error creating stock changes:', stockError);
+      serverLogger.error('Error creating stock changes:', stockError);
       // Rollback: delete all created records
       await Promise.all([
         sbAdmin
@@ -908,7 +904,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error('Unexpected error creating invoice:', error);
+    serverLogger.error('Unexpected error creating invoice:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -1,6 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -10,11 +11,17 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    wsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('create_invoices')) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
@@ -39,16 +46,16 @@ export async function GET(req: Request, { params }: Params) {
   const nextMonth = new Date(startOfMonth);
   nextMonth.setMonth(nextMonth.getMonth() + 1);
 
-  const sbAdmin = await createAdminClient();
   const { data: validGroups, error: validGroupsError } = await sbAdmin
     .from('workspace_user_groups_users')
-    .select('group_id')
+    .select('group_id, workspace_user_groups!inner(ws_id)')
     .eq('user_id', userId)
     .eq('role', 'STUDENT')
+    .eq('workspace_user_groups.ws_id', normalizedWsId)
     .in('group_id', groupIds);
 
   if (validGroupsError) {
-    console.error(
+    serverLogger.error(
       'Error fetching valid groups for subscription invoice context:',
       validGroupsError
     );
@@ -90,7 +97,7 @@ export async function GET(req: Request, { params }: Params) {
   ]);
 
   if (attendanceResponse.error) {
-    console.error(
+    serverLogger.error(
       'Error fetching subscription attendance context:',
       attendanceResponse.error
     );
@@ -101,7 +108,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   if (latestInvoicesResponse.error) {
-    console.error(
+    serverLogger.error(
       'Error fetching subscription invoice history context:',
       latestInvoicesResponse.error
     );

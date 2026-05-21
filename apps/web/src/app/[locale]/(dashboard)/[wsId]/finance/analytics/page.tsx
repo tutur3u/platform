@@ -1,37 +1,25 @@
-import AnalyticsPage from '@tuturuuu/ui/finance/analytics/analytics-page';
-import {
-  getPermissions,
-  getWorkspaceConfig,
-} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirectToFinanceApp } from '../redirect';
 
 export const metadata: Metadata = {
-  title: 'Analytics',
-  description: 'View analytics in the Finance area of your Tuturuuu workspace.',
+  title: 'Finance Analytics',
+  description: 'Review Finance analytics in your Tuturuuu workspace.',
 };
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceAnalyticsPage({ params }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const [permissions, currency] = await Promise.all([
-          getPermissions({ wsId }),
-          getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-        ]);
-        if (!permissions) notFound();
-        const { withoutPermission } = permissions;
-        if (withoutPermission('view_finance_stats')) notFound();
-
-        return <AnalyticsPage wsId={wsId} currency={currency ?? 'USD'} />;
-      }}
-    </WorkspaceWrapper>
-  );
+export default async function WorkspaceAnalyticsPage({
+  params,
+  searchParams,
+}: Props) {
+  return redirectToFinanceApp({
+    params,
+    path: 'analytics',
+    searchParams,
+  });
 }

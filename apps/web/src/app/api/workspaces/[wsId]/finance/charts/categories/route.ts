@@ -1,14 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_COLOR_LENGTH,
   MAX_SHORT_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { requireFinanceStatsAccess } from '../access';
 
 const querySchema = z.object({
   startDate: z.string().max(MAX_COLOR_LENGTH).optional().nullable(),
@@ -46,7 +43,6 @@ export async function GET(
 ): Promise<NextResponse> {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
     const { searchParams } = new URL(req.url);
 
     // Validate query parameters
@@ -77,20 +73,9 @@ export async function GET(
       timezone,
     } = parsed.data;
 
-    // Normalize workspace ID (resolve special tokens like 'personal' to UUID)
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
-
-    const permissions = await getPermissions({
-      wsId: normalizedWsId,
-    });
-    if (!permissions) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 });
-    }
-    const { withoutPermission } = permissions;
-
-    if (withoutPermission('view_finance_stats')) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
+    const access = await requireFinanceStatsAccess(req, wsId);
+    if (access.response) return access.response;
+    const { normalizedWsId, supabase } = access.context;
 
     // Use the category breakdown RPC with interval support
     const { data, error } = await supabase.rpc('get_category_breakdown', {
@@ -110,7 +95,7 @@ export async function GET(
       data: data || [],
     });
   } catch (error) {
-    console.error('Error fetching category breakdown:', error);
+    serverLogger.error('Error fetching category breakdown', { error });
     return NextResponse.json(
       { message: 'Internal server error while fetching category breakdown' },
       { status: 500 }

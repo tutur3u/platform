@@ -117,6 +117,7 @@ import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
+import { getFinanceAppOrigin } from '@/lib/finance-app-url';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
@@ -153,6 +154,7 @@ export async function WorkspaceNavigationLinks({
     'true'
   );
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
+  const financeAppHref = `${getFinanceAppOrigin()}/${personalOrWsId}`;
   const qrAppHref = getQrAppOrigin();
 
   // Parallelize user-dependent queries
@@ -337,9 +339,10 @@ export async function WorkspaceNavigationLinks({
     },
     {
       title: t('sidebar_tabs.finance'),
-      href: `/${personalOrWsId}/finance`,
+      href: financeAppHref,
       icon: <BadgeDollarSign className="h-5 w-5" />,
       experimental: 'beta',
+      external: true,
       aliases: [
         `/${personalOrWsId}/finance`,
         `/${personalOrWsId}/finance/transactions`,
@@ -347,6 +350,7 @@ export async function WorkspaceNavigationLinks({
         `/${personalOrWsId}/finance/wallets`,
         `/${personalOrWsId}/finance/budgets`,
         `/${personalOrWsId}/finance/analytics`,
+        `/${personalOrWsId}/finance/categories`,
         `/${personalOrWsId}/finance/transactions/categories`,
         `/${personalOrWsId}/finance/tags`,
         `/${personalOrWsId}/finance/invoices`,
@@ -357,65 +361,81 @@ export async function WorkspaceNavigationLinks({
         // ── Finance: Core ──
         {
           title: t('workspace-finance-tabs.overview'),
-          href: `/${personalOrWsId}/finance`,
+          href: financeAppHref,
           icon: <LayoutDashboard className="h-5 w-5" />,
           matchExact: true,
           disabled: withoutPermission('manage_finance'),
+          external: true,
         },
         {
           title: t('workspace-finance-tabs.transactions'),
-          href: `/${personalOrWsId}/finance/transactions`,
+          href: `${financeAppHref}/transactions`,
           matchExact: true,
           icon: <Banknote className="h-5 w-5" />,
           disabled: withoutPermission('view_transactions'),
+          external: true,
         },
-        // {
-        //   title: t('workspace-finance-tabs.recurring'),
-        //   href: `/${personalOrWsId}/finance/recurring`,
-        //   icon: <Repeat className="h-5 w-5" />,
-        //   disabled: withoutPermission('view_transactions'),
-        // },
+        {
+          title: t('workspace-finance-tabs.recurring'),
+          href: `${financeAppHref}/recurring`,
+          icon: <Repeat className="h-5 w-5" />,
+          disabled: withoutPermission('view_transactions'),
+          external: true,
+        },
         {
           title: t('workspace-finance-tabs.wallets'),
-          href: `/${personalOrWsId}/finance/wallets`,
+          href: `${financeAppHref}/wallets`,
           icon: <Wallet className="h-5 w-5" />,
           disabled: withoutPermission('view_transactions'),
+          external: true,
         },
-        // {
-        //   title: t('workspace-finance-tabs.budgets'),
-        //   href: `/${personalOrWsId}/finance/budgets`,
-        //   icon: <PiggyBank className="h-5 w-5" />,
-        //   disabled: withoutPermission('manage_finance'),
-        // },
+        {
+          title: t('workspace-finance-tabs.budgets'),
+          href: `${financeAppHref}/budgets`,
+          icon: <ChartColumn className="h-5 w-5" />,
+          disabled: withoutPermission('manage_finance'),
+          external: true,
+        },
         null,
         // ── Finance: Insights ──
-        // {
-        //   title: t('workspace-finance-tabs.analytics'),
-        //   href: `/${personalOrWsId}/finance/analytics`,
-        //   icon: <TrendingUp className="h-5 w-5" />,
-        //   disabled: withoutPermission('manage_finance'),
-        // },
+        {
+          title: t('workspace-finance-tabs.analytics'),
+          href: `${financeAppHref}/analytics`,
+          icon: <ChartArea className="h-5 w-5" />,
+          disabled: withoutPermission('manage_finance'),
+          external: true,
+        },
         null,
         // ── Finance: Records ──
         {
           title: t('workspace-finance-tabs.invoices'),
-          href: `/${personalOrWsId}/finance/invoices`,
+          href: `${financeAppHref}/invoices`,
           icon: <ReceiptText className="h-5 w-5" />,
           disabled: !showInvoices || withoutPermission('view_invoices'),
+          external: true,
         },
-        // {
-        //   title: t('workspace-finance-tabs.debts'),
-        //   href: `/${personalOrWsId}/finance/debts`,
-        //   icon: <ArrowLeftRight className="h-5 w-5" />,
-        //   disabled: withoutPermission('view_transactions'),
-        // },
+        {
+          title: t('workspace-finance-tabs.debts'),
+          href: `${financeAppHref}/debts`,
+          icon: <HandCoins className="h-5 w-5" />,
+          disabled: withoutPermission('view_transactions'),
+          external: true,
+        },
         null,
         // ── Finance: Configuration ──
         {
           title: t('workspace-finance-tabs.categories'),
-          href: `/${personalOrWsId}/finance/transactions/categories`,
+          href: `${financeAppHref}/categories`,
           icon: <Group className="h-5 w-5" />,
           disabled: withoutPermission('manage_finance'),
+          external: true,
+        },
+        {
+          title: t('workspace-finance-tabs.tags'),
+          href: `${financeAppHref}/tags`,
+          icon: <Tags className="h-5 w-5" />,
+          disabled: withoutPermission('manage_finance'),
+          external: true,
         },
       ],
       disabled: ENABLE_AI_ONLY,

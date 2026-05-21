@@ -1,34 +1,26 @@
-import RecurringTransactionsPage from '@tuturuuu/ui/finance/recurring/recurring-transactions-page';
-import {
-  getWorkspace,
-  getWorkspaceConfig,
-} from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { redirectToFinanceApp } from '../redirect';
 
 export const metadata: Metadata = {
   title: 'Recurring Transactions',
   description:
-    'Manage Recurring Transactions in the Finance area of your Tuturuuu workspace.',
+    'Manage recurring Finance transactions in your Tuturuuu workspace.',
 };
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceRecurringTransactionsPage({
+export default async function WorkspaceRecurringPage({
   params,
+  searchParams,
 }: Props) {
-  const { wsId: id } = await params;
-
-  const [workspace, currency] = await Promise.all([
-    getWorkspace(id),
-    getWorkspaceConfig(id, 'DEFAULT_CURRENCY'),
-  ]);
-  if (!workspace) notFound();
-  const wsId = workspace.id;
-
-  return <RecurringTransactionsPage wsId={wsId} currency={currency ?? 'USD'} />;
+  return redirectToFinanceApp({
+    params,
+    path: 'recurring',
+    searchParams,
+  });
 }

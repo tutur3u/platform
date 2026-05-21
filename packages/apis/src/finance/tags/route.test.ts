@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
+  const getFinanceRouteContext = vi.fn();
   const normalizeWorkspaceId = vi.fn();
   const tagOrder = vi.fn();
 
@@ -24,6 +25,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    getFinanceRouteContext,
     getPermissions,
     normalizeWorkspaceId,
     sessionSupabase,
@@ -34,6 +36,12 @@ const mocks = vi.hoisted(() => {
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve(mocks.adminSupabase)),
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
+}));
+
+vi.mock('../request-access', () => ({
+  getFinanceRouteContext: (
+    ...args: Parameters<typeof mocks.getFinanceRouteContext>
+  ) => mocks.getFinanceRouteContext(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -52,6 +60,18 @@ describe('finance tags route', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
     });
+    mocks.getFinanceRouteContext.mockImplementation(async () => ({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: await mocks.getPermissions(),
+        sbAdmin: mocks.adminSupabase,
+        supabase: mocks.adminSupabase,
+        user: {
+          email: 'agent@example.com',
+          id: 'user-1',
+        },
+      },
+    }));
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
     mocks.tagOrder.mockResolvedValue({
       data: [

@@ -131,7 +131,7 @@ describe('satellite app-session route inventory', () => {
     );
 
     expect(source).toContain('resolveSessionAuthContext');
-    expect(source).toContain("targetApp: 'inventory'");
+    expect(source).toContain("targetApp: ['inventory', 'finance']");
   });
 
   it('keeps satellite local APIs limited to auth cookie handoff routes', () => {

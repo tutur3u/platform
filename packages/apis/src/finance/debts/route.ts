@@ -1,12 +1,13 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type {
   DebtLoanStatus,
   DebtLoanType,
   DebtLoanWithBalance,
 } from '@tuturuuu/types/primitives/DebtLoan';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../request-access';
 
 interface Params {
   params: Promise<{
@@ -14,22 +15,20 @@ interface Params {
   }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -45,7 +44,7 @@ export async function GET(req: Request, { params }: Params) {
 
   // Use the RPC function to get debts/loans with calculated fields
   const { data, error } = await supabase.rpc('get_debt_loans_with_balance', {
-    p_ws_id: wsId,
+    p_ws_id: normalizedWsId,
     p_type: typeParam ?? undefined,
     p_status: statusParam ?? undefined,
   });
@@ -61,22 +60,20 @@ export async function GET(req: Request, { params }: Params) {
   return NextResponse.json(data as DebtLoanWithBalance[]);
 }
 
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const permissions = await getPermissions({ wsId });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, supabase, user } = access.context;
   const { withoutPermission } = permissions;
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   if (withoutPermission('manage_finance')) {
     return NextResponse.json(
@@ -115,7 +112,7 @@ export async function POST(req: Request, { params }: Params) {
   const { data, error } = await supabase
     .from('workspace_debt_loans')
     .insert({
-      ws_id: wsId,
+      ws_id: normalizedWsId,
       name: body.name as string,
       type: body.type as 'debt' | 'loan',
       principal_amount: body.principal_amount as number,

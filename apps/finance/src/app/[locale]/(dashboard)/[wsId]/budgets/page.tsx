@@ -1,6 +1,6 @@
 import BudgetsPage from '@tuturuuu/ui/finance/budgets/budgets-page';
 import { notFound } from 'next/navigation';
-import { getFinanceWorkspace } from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -18,9 +18,15 @@ export default async function WorkspaceBudgetsPage({
   searchParams,
 }: Props) {
   const { wsId: id } = await params;
-  const workspace = await getFinanceWorkspace(id);
-  if (!workspace) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context) notFound();
   const sp = await searchParams;
 
-  return <BudgetsPage wsId={workspace.id} searchParams={sp} />;
+  return (
+    <BudgetsPage
+      wsId={context.wsId}
+      currency={context.currency}
+      searchParams={sp}
+    />
+  );
 }

@@ -1,11 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -30,7 +28,7 @@ export async function GET(_: Request, { params }: Params) {
   const apiKey = (await headers()).get('API_KEY');
   return apiKey
     ? getDataWithApiKey({ wsId, userId, apiKey })
-    : getDataFromSession({ wsId, userId });
+    : getDataFromSession({ req: _, wsId, userId });
 }
 
 async function getDataWithApiKey({
@@ -61,7 +59,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching user groups with API key:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -72,46 +70,34 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({
+  req,
   wsId,
   userId,
 }: {
+  req: Request;
   wsId: string;
   userId: string;
 }) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
+  const access = await getFinanceRouteContext(
+    req,
+    wsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId, sbAdmin } = access.context;
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
     .select('*, workspace_user_groups!inner(*)')
-    .eq('workspace_user_groups.ws_id', wsId)
+    .eq('workspace_user_groups.ws_id', normalizedWsId)
     .eq('user_id', userId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching user groups:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

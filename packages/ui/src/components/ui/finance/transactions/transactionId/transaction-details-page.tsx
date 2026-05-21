@@ -1,4 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import type { InternalApiClientOptions } from '@tuturuuu/internal-api/client';
+import { getTransaction } from '@tuturuuu/internal-api/finance';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TransactionTag } from '@tuturuuu/types/primitives/Transaction';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { joinPath } from '@tuturuuu/utils/path-helper';
@@ -13,13 +16,27 @@ interface Props {
     transactionId: string;
     locale: string;
   }>;
+  internalApiOptions?: InternalApiClientOptions;
 }
 
-export default async function TransactionDetailsPage({ params }: Props) {
+type TransactionDetailsData = {
+  category?: string | null;
+  description?: string | null;
+  tags?: TransactionTag[];
+} & Record<string, unknown>;
+
+export default async function TransactionDetailsPage({
+  params,
+  internalApiOptions,
+}: Props) {
   const { wsId, transactionId } = await params;
 
   const t = await getTranslations();
-  const { objects, transaction, tags } = await getData(wsId, transactionId);
+  const { objects, transaction, tags } = await getData(
+    wsId,
+    transactionId,
+    internalApiOptions
+  );
 
   if (!transaction) notFound();
 
@@ -46,35 +63,18 @@ export default async function TransactionDetailsPage({ params }: Props) {
   );
 }
 
-async function getData(wsId: string, transactionId: string) {
-  const supabase = await createClient();
-
-  const { data: rawTransaction, error: transactionError } = await supabase
-    .from('wallet_transactions')
-    .select(
-      '*, transaction_categories(category:name), workspace_wallets(wallet_name:name), workspace_users!wallet_transactions_creator_id_fkey(id, full_name, avatar_url, email)'
-    )
-    .eq('id', transactionId)
-    .single();
-
-  if (transactionError) throw transactionError;
-
-  // Flatten the nested data for easier access
-  const transaction = {
-    ...rawTransaction,
-    category: (rawTransaction as any).transaction_categories?.category,
-    wallet_name: (rawTransaction as any).workspace_wallets?.wallet_name,
-  };
-
-  // Fetch tags for this transaction
-  const { data: transactionTags } = await supabase
-    .from('wallet_transaction_tags')
-    .select('tag_id, transaction_tags(id, name, color)')
-    .eq('transaction_id', transactionId);
-
-  const tags =
-    transactionTags?.map((tt: any) => tt.transaction_tags).filter(Boolean) ||
-    [];
+async function getData(
+  wsId: string,
+  transactionId: string,
+  internalApiOptions?: InternalApiClientOptions
+) {
+  const transaction = (await getTransaction(
+    wsId,
+    transactionId,
+    internalApiOptions
+  )) as TransactionDetailsData;
+  const tags = transaction.tags ?? [];
+  const supabase = await createAdminClient({ noCookie: true });
 
   const { data: objects, error: objectError } = await supabase.storage
     .from('workspaces')

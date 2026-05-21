@@ -1,14 +1,9 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { canUseRequestedFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
-import {
-  getPermissions,
-  getWorkspaceConfig,
-} from '@tuturuuu/utils/workspace-helper';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
 import { type CalculatedValues, calculateInvoiceValues } from '../route';
 
@@ -44,19 +39,21 @@ interface CreateSubscriptionInvoiceRequest {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient();
-  const sbAdmin = await createAdminClient();
-  const { wsId } = await params;
+  const { wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
 
   let createdInvoiceId: string | null = null;
 
-  const permissions = await getPermissions({
-    wsId,
-    request: req,
-  });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   const { withoutPermission } = permissions;
 
   if (withoutPermission('create_invoices')) {
@@ -169,13 +166,6 @@ export async function POST(req: Request, { params }: Params) {
       rounding_applied,
     } = calculatedValues;
 
-    // Get current user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-    if (userError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     // Map platform user to workspace virtual user
     let workspaceUserId: string | null = null;
     if (user) {
@@ -225,7 +215,7 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (invoiceError) {
-      console.error('Error creating subscription invoice:', invoiceError);
+      serverLogger.error('Error creating subscription invoice:', invoiceError);
       return NextResponse.json(
         {
           message: 'Error creating subscription invoice',
@@ -273,7 +263,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceGroupRows);
 
     if (invoiceGroupsError) {
-      console.error('Error creating invoice groups:', invoiceGroupsError);
+      serverLogger.error('Error creating invoice groups:', invoiceGroupsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -310,7 +300,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (productsError) {
-      console.error('Error getting products information:', productsError);
+      serverLogger.error('Error getting products information:', productsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -329,7 +319,7 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (unitsError) {
-      console.error('Error getting units information:', unitsError);
+      serverLogger.error('Error getting units information:', unitsError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -358,7 +348,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(invoiceProducts);
 
     if (invoiceProductsError) {
-      console.error(
+      serverLogger.error(
         'Error creating subscription invoice products:',
         invoiceProductsError
       );
@@ -394,7 +384,10 @@ export async function POST(req: Request, { params }: Params) {
           });
 
         if (promotionError) {
-          console.error('Error creating invoice promotion:', promotionError);
+          serverLogger.error(
+            'Error creating invoice promotion:',
+            promotionError
+          );
           await cleanupInvoice();
           return NextResponse.json(
             {
@@ -422,7 +415,7 @@ export async function POST(req: Request, { params }: Params) {
       .insert(stockChanges);
 
     if (stockError) {
-      console.error('Error creating stock changes:', stockError);
+      serverLogger.error('Error creating stock changes:', stockError);
       await cleanupInvoice();
       return NextResponse.json(
         {
@@ -467,10 +460,13 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error('Unexpected error creating subscription invoice:', error);
+    serverLogger.error(
+      'Unexpected error creating subscription invoice:',
+      error
+    );
     if (createdInvoiceId) {
       await Promise.allSettled([
-        supabase
+        sbAdmin
           .from('finance_invoice_promotions')
           .delete()
           .eq('invoice_id', createdInvoiceId),

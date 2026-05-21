@@ -1,7 +1,7 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -12,8 +12,21 @@ interface Params {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(req);
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    const access = await getFinanceRouteContext(
+      req,
+      wsId,
+      await resolveFinanceRouteAuthContext(req)
+    );
+
+    if (access.response) {
+      return access.response;
+    }
+
+    const { normalizedWsId, permissions, supabase, user } = access.context;
+    if (permissions.withoutPermission('view_transactions')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
 
     const cursor = searchParams.get('cursor');
@@ -59,13 +72,6 @@ export async function GET(req: Request, { params }: Params) {
     // Combine wallet filters
     const finalWalletIds =
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
-
-    // Get current user to pass to RPC
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
 
     // Use optimized RPC function with all filters at database level
     const { data, error } = await supabase.rpc(
@@ -218,7 +224,7 @@ export async function GET(req: Request, { params }: Params) {
       hasMore,
     });
   } catch (error) {
-    console.error('Error fetching transactions:', error);
+    serverLogger.error('Error fetching transactions', { error });
     return NextResponse.json(
       {
         message:

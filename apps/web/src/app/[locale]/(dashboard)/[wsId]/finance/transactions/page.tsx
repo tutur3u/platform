@@ -1,6 +1,5 @@
-import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
 import type { Metadata } from 'next';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirectToFinanceApp } from '../redirect';
 
 export const metadata: Metadata = {
   title: 'Transactions',
@@ -12,14 +11,16 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceTransactionsPage({ params }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => (
-        <TransactionsPage wsId={wsId} showTransactionTypeFilter />
-      )}
-    </WorkspaceWrapper>
-  );
+export default async function WorkspaceTransactionsPage({
+  params,
+  searchParams,
+}: Props) {
+  return redirectToFinanceApp({
+    params,
+    path: 'transactions',
+    searchParams,
+  });
 }

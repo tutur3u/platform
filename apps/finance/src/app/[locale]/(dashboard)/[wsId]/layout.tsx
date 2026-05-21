@@ -2,7 +2,7 @@ import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { type ReactNode, Suspense } from 'react';
@@ -41,6 +41,7 @@ export default async function Layout({ children, params }: LayoutProps) {
   const workspaceSlug = toWorkspaceSlug(wsId, {
     personal: !!workspace.personal,
   });
+  const permissions = await getPermissions({ user, wsId });
 
   const collapsed = (await cookies()).get(SIDEBAR_COLLAPSED_COOKIE_NAME);
   const behaviorCookie = (await cookies()).get(SIDEBAR_BEHAVIOR_COOKIE_NAME);
@@ -76,6 +77,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         defaultCollapsed={defaultCollapsed}
         links={
           await getNavigationLinks({
+            permissions: permissions ?? undefined,
             personalOrWsId: workspaceSlug,
           })
         }

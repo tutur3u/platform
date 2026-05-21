@@ -1,6 +1,6 @@
-import TransactionCategoriesPage from '@tuturuuu/ui/finance/transactions/categories/transactions-categories-page';
 import { notFound } from 'next/navigation';
-import { getFinanceWorkspace } from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
+import CategoriesTagsTabs from './categories-tags-tabs';
 
 interface Props {
   params: Promise<{
@@ -12,7 +12,7 @@ export default async function WorkspaceTransactionCategoriesPage({
   params,
 }: Props) {
   const { wsId: id } = await params;
-  const workspace = await getFinanceWorkspace(id);
-  if (!workspace) notFound();
-  return <TransactionCategoriesPage wsId={workspace.id} />;
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  return <CategoriesTagsTabs wsId={context.wsId} currency={context.currency} />;
 }

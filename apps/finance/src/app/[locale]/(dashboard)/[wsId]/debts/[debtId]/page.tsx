@@ -1,6 +1,6 @@
 import { DebtLoanDetailPage } from '@tuturuuu/ui/finance/debts';
 import { notFound } from 'next/navigation';
-import { getFinanceWorkspace } from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -11,8 +11,8 @@ interface Props {
 
 export default async function WorkspaceDebtDetailPage({ params }: Props) {
   const { wsId: id, debtId } = await params;
-  const workspace = await getFinanceWorkspace(id);
-  if (!workspace) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context) notFound();
 
-  return <DebtLoanDetailPage wsId={workspace.id} debtId={debtId} />;
+  return <DebtLoanDetailPage wsId={context.wsId} debtId={debtId} />;
 }

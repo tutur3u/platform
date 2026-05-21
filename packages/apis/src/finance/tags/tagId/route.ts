@@ -1,14 +1,10 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  type FinanceRouteAuthContext,
+  type FinanceRouteContext,
+  getFinanceRouteContext,
+} from '../../request-access';
 
 interface Params {
   params: Promise<{
@@ -30,36 +26,21 @@ const TagIdSchema = z.guid();
 
 type AuthorizedTagRequest = {
   normalizedWsId: string;
-  supabase: TypedSupabaseClient;
-  sbAdmin: TypedSupabaseClient;
+  sbAdmin: FinanceRouteContext['sbAdmin'];
 };
 
 async function authorizeTagRequest(
   req: Request,
-  wsId: string
+  wsId: string,
+  authContext?: FinanceRouteAuthContext
 ): Promise<AuthorizedTagRequest | { response: NextResponse }> {
-  const supabase = await createClient(req);
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  let normalizedWsId: string;
-
-  try {
-    normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  } catch {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
+  if (access.response) {
+    return { response: access.response };
   }
 
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
-
-  if (!permissions) {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('manage_finance')) {
     return {
@@ -70,12 +51,14 @@ async function authorizeTagRequest(
     };
   }
 
-  const sbAdmin = await createAdminClient();
-
-  return { normalizedWsId, supabase, sbAdmin };
+  return { normalizedWsId, sbAdmin };
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PUT(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { tagId, wsId } = await params;
 
   if (!TagIdSchema.safeParse(tagId).success) {
@@ -102,7 +85,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const authorization = await authorizeTagRequest(req, wsId);
+  const authorization = await authorizeTagRequest(req, wsId, authContext);
 
   if ('response' in authorization) {
     return authorization.response;
@@ -119,7 +102,6 @@ export async function PUT(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error updating tag' },
       { status: 500 }
@@ -133,7 +115,11 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json(data);
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function DELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { tagId, wsId } = await params;
 
   if (!TagIdSchema.safeParse(tagId).success) {
@@ -143,7 +129,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const authorization = await authorizeTagRequest(req, wsId);
+  const authorization = await authorizeTagRequest(req, wsId, authContext);
 
   if ('response' in authorization) {
     return authorization.response;
@@ -160,7 +146,6 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error deleting tag' },
       { status: 500 }

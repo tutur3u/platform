@@ -1,6 +1,5 @@
-import WalletsPage from '@tuturuuu/ui/finance/wallets/wallets-page';
 import type { Metadata } from 'next';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirectToFinanceApp } from '../redirect';
 
 export const metadata: Metadata = {
   title: 'Wallets',
@@ -11,30 +10,16 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function WorkspaceWalletsPage({
   params,
   searchParams,
 }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const sp = await searchParams;
-        return (
-          <WalletsPage
-            wsId={wsId}
-            searchParams={sp}
-            page={sp.page}
-            pageSize={sp.pageSize}
-          />
-        );
-      }}
-    </WorkspaceWrapper>
-  );
+  return redirectToFinanceApp({
+    params,
+    path: 'wallets',
+    searchParams,
+  });
 }

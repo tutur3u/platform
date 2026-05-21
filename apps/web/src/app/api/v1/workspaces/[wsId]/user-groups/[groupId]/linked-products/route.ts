@@ -1,6 +1,7 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -10,12 +11,18 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const { wsId, groupId } = await params;
+  const { wsId: rawWsId, groupId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('view_user_groups')) {
     return NextResponse.json(
@@ -24,7 +31,20 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const { data: group } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (!group) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
+
   const { data, error, count } = await sbAdmin
     .from('user_group_linked_products')
     .select(
@@ -35,7 +55,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching linked products:', error);
+    serverLogger.error('Error fetching linked products:', error);
     return NextResponse.json(
       { message: 'Error fetching linked products' },
       { status: 500 }
@@ -55,12 +75,18 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId, groupId } = await params;
+  const { wsId: rawWsId, groupId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
   if (permissions.withoutPermission('update_user_groups')) {
     return NextResponse.json(
@@ -82,7 +108,20 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const { data: group } = await sbAdmin
+    .from('workspace_user_groups')
+    .select('id')
+    .eq('id', groupId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (!group) {
+    return NextResponse.json(
+      { message: 'User group not found' },
+      { status: 404 }
+    );
+  }
+
   const { error } = await sbAdmin.from('user_group_linked_products').insert({
     group_id: groupId,
     product_id: body.productId,
@@ -91,7 +130,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error('Error creating linked product:', error);
+    serverLogger.error('Error creating linked product:', error);
     return NextResponse.json(
       { message: 'Error creating linked product' },
       { status: 500 }

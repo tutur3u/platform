@@ -1,10 +1,7 @@
 import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import {
-  getFinanceWorkspace,
-  getFinanceWorkspacePermissions,
-} from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -15,20 +12,19 @@ interface Props {
 
 export default async function WorkspaceNewInvoicePage({ params }: Props) {
   const { wsId: id } = await params;
-  const [workspace, permissions] = await Promise.all([
-    getFinanceWorkspace(id),
-    getFinanceWorkspacePermissions(id),
-  ]);
-  if (!workspace || !permissions) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context || context.permissions.withoutPermission('create_invoices')) {
+    notFound();
+  }
 
   return (
     <Suspense>
       <NewInvoicePage
-        wsId={workspace.id}
-        canChangeFinanceWallets={permissions.containsPermission(
+        wsId={context.wsId}
+        canChangeFinanceWallets={context.permissions.containsPermission(
           'change_finance_wallets'
         )}
-        canSetFinanceWalletsOnCreate={permissions.containsPermission(
+        canSetFinanceWalletsOnCreate={context.permissions.containsPermission(
           'set_finance_wallets_on_create'
         )}
       />

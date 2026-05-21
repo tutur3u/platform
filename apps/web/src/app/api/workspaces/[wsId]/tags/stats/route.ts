@@ -1,3 +1,12 @@
-import { GET } from '@tuturuuu/apis/finance/tags/stats/route';
+import { GET as handleTagStatsGET } from '@tuturuuu/apis/finance/tags/stats/route';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 
-export { GET };
+type Params = { params: Promise<{ wsId: string }> };
+
+export async function GET(request: Request, context: Params) {
+  return handleTagStatsGET(
+    request,
+    context,
+    await resolveFinanceRouteAuthContext(request)
+  );
+}

@@ -1,11 +1,12 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import type {
   Transaction,
   TransactionPeriod,
   TransactionViewMode,
 } from '@tuturuuu/types/primitives';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -50,7 +51,21 @@ interface RawPeriodResult {
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient();
+    const access = await getFinanceRouteContext(
+      req,
+      wsId,
+      await resolveFinanceRouteAuthContext(req)
+    );
+
+    if (access.response) {
+      return access.response;
+    }
+
+    const { normalizedWsId, permissions, supabase, user } = access.context;
+    if (permissions.withoutPermission('view_transactions')) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+    }
+
     const { searchParams } = new URL(req.url);
 
     const viewMode = (searchParams.get('viewMode') ||
@@ -72,16 +87,9 @@ export async function GET(req: Request, { params }: Params) {
     const finalWalletIds =
       walletIds.length > 0 ? walletIds : walletId ? [walletId] : undefined;
 
-    // Get current user
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
     // Call the RPC function
     const { data, error } = await supabase.rpc('get_transactions_by_period', {
-      p_ws_id: wsId,
+      p_ws_id: normalizedWsId,
       p_interval: viewMode,
       p_user_id: user.id,
       p_wallet_ids: finalWalletIds,
@@ -120,7 +128,7 @@ export async function GET(req: Request, { params }: Params) {
     const { data: enrichmentRows, error: enrichmentError } =
       allTransactionIds.length > 0
         ? await supabase.rpc('get_transaction_list_enrichment', {
-            p_ws_id: wsId,
+            p_ws_id: normalizedWsId,
             p_transaction_ids: allTransactionIds,
             p_user_id: user.id,
           })
@@ -282,7 +290,7 @@ export async function GET(req: Request, { params }: Params) {
       hasMore,
     });
   } catch (error) {
-    console.error('Error fetching transaction periods:', error);
+    serverLogger.error('Error fetching transaction periods', { error });
     return NextResponse.json(
       {
         message:

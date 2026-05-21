@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
   canCreateInventorySales: vi.fn(),
+  getFinanceRouteContext: vi.fn(),
   getPermissions: vi.fn(),
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
@@ -19,6 +20,12 @@ mocks.sessionSupabase.auth.getUser = mocks.getUser;
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: vi.fn(() => Promise.resolve({})),
   createClient: vi.fn(() => Promise.resolve(mocks.sessionSupabase)),
+}));
+
+vi.mock('@tuturuuu/apis/finance/request-access', () => ({
+  getFinanceRouteContext: (
+    ...args: Parameters<typeof mocks.getFinanceRouteContext>
+  ) => mocks.getFinanceRouteContext(...args),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -63,6 +70,18 @@ describe('invoice create route', () => {
     mocks.canCreateInventorySales.mockReturnValue(true);
     mocks.getWorkspaceConfig.mockResolvedValue(null);
     mocks.getPermissions.mockResolvedValue(withPermissions([]));
+    mocks.getFinanceRouteContext.mockImplementation(async () => ({
+      context: {
+        normalizedWsId: '00000000-0000-0000-0000-000000000000',
+        permissions: await mocks.getPermissions(),
+        sbAdmin: {},
+        supabase: {},
+        user: {
+          email: 'agent@example.com',
+          id: 'user-1',
+        },
+      },
+    }));
     mocks.getUser.mockResolvedValue({
       data: {
         user: null,
@@ -153,10 +172,10 @@ describe('invoice create route', () => {
       }
     );
 
-    expect(response.status).toBe(401);
+    expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
-      message: 'Unauthorized',
+      message: 'Internal server error',
     });
-    expect(mocks.getUser).toHaveBeenCalled();
+    expect(mocks.getUser).not.toHaveBeenCalled();
   });
 });

@@ -32,7 +32,7 @@ export async function authorizeInventoryWorkspace(
   | { ok: false; response: NextResponse }
 > {
   const auth = await resolveSessionAuthContext(request, {
-    allowAppSessionAuth: { targetApp: 'inventory' },
+    allowAppSessionAuth: { targetApp: ['inventory', 'finance'] },
   });
 
   if (!auth.ok) return { ok: false, response: auth.response };

@@ -1,9 +1,10 @@
 import { Calendar, CreditCard, DollarSign, Globe } from '@tuturuuu/icons';
 import {
   getWallet,
+  type InternalApiClientOptions,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { Wallet } from '@tuturuuu/types';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { InfiniteTransactionsList } from '@tuturuuu/ui/finance/transactions/infinite-transactions-list';
@@ -16,6 +17,7 @@ import {
   getPermissions,
   getWorkspace,
   getWorkspaceConfig,
+  type PermissionsResult,
 } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import 'dayjs/locale/vi';
@@ -38,17 +40,33 @@ interface Props {
     page: string;
     pageSize: string;
   };
+  defaultCurrency?: string;
+  internalApiOptions?: InternalApiClientOptions;
+  permissions?: PermissionsResult;
+  workspace?: {
+    personal?: boolean | null;
+  };
 }
 
-export default async function WalletDetailsPage({ wsId, walletId }: Props) {
-  const [t, workspace, permissions, defaultCurrency] = await Promise.all([
-    getTranslations(),
-    getWorkspace(wsId),
-    getPermissions({ wsId }),
-    getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
-  ]);
-  if (!workspace || !permissions) notFound();
-  const { withoutPermission, containsPermission } = permissions;
+export default async function WalletDetailsPage({
+  wsId,
+  walletId,
+  defaultCurrency,
+  internalApiOptions,
+  permissions,
+  workspace,
+}: Props) {
+  const [t, resolvedWorkspace, resolvedPermissions, resolvedDefaultCurrency] =
+    await Promise.all([
+      getTranslations(),
+      workspace ? Promise.resolve(workspace) : getWorkspace(wsId),
+      permissions ? Promise.resolve(permissions) : getPermissions({ wsId }),
+      defaultCurrency
+        ? Promise.resolve(defaultCurrency)
+        : getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
+    ]);
+  if (!resolvedWorkspace || !resolvedPermissions) notFound();
+  const { withoutPermission, containsPermission } = resolvedPermissions;
   const canManageRoles = !withoutPermission('manage_workspace_roles');
 
   // Transaction permissions
@@ -79,18 +97,18 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
     'create_confidential_transactions'
   );
   const canDeleteWallets = containsPermission('delete_wallets');
-  const requestHeaders = await headers();
-  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+  const resolvedInternalApiOptions =
+    internalApiOptions ?? withForwardedInternalApiAuth(await headers());
 
   let wallet: Wallet;
   try {
-    wallet = await getWallet(wsId, walletId, internalApiOptions);
+    wallet = await getWallet(wsId, walletId, resolvedInternalApiOptions);
   } catch {
     notFound();
   }
 
-  const currency = wallet.currency || defaultCurrency || 'USD';
-  const workspaceCurrency = defaultCurrency || 'USD';
+  const currency = wallet.currency || resolvedDefaultCurrency || 'USD';
+  const workspaceCurrency = resolvedDefaultCurrency || 'USD';
 
   // Fetch exchange rates for conversion display
   const exchangeRates = await getExchangeRates();
@@ -144,7 +162,7 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           canChangeFinanceWallets={canChangeFinanceWallets}
           canSetFinanceWalletsOnCreate={canSetFinanceWalletsOnCreate}
           canDeleteWallets={canDeleteWallets}
-          isPersonalWorkspace={workspace.personal}
+          isPersonalWorkspace={!!resolvedWorkspace.personal}
         />
       </div>
       <Separator className="my-4" />
@@ -261,7 +279,7 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
         </Card>
       </div>
       <Separator className="my-4" />
-      {canManageRoles && !workspace.personal && (
+      {canManageRoles && !resolvedWorkspace.personal && (
         <>
           <WalletRoleAccessDialog wsId={wsId} walletId={walletId} />
           <Separator className="my-4" />
@@ -297,7 +315,7 @@ export default async function WalletDetailsPage({ wsId, walletId }: Props) {
           canViewConfidentialAmount={canViewConfidentialAmount}
           canViewConfidentialDescription={canViewConfidentialDescription}
           canViewConfidentialCategory={canViewConfidentialCategory}
-          isPersonalWorkspace={workspace.personal}
+          isPersonalWorkspace={!!resolvedWorkspace.personal}
         />
       </Suspense>
     </div>
@@ -324,7 +342,7 @@ function DetailItem({
 
 async function getExchangeRates(): Promise<ExchangeRate[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient({ noCookie: true });
     const { data } = await supabase
       .from('currency_exchange_rates')
       .select('base_currency, target_currency, rate, date')

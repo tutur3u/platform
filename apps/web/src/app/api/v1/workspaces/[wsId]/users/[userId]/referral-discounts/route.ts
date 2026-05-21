@@ -1,10 +1,7 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -14,32 +11,18 @@ interface Params {
 }
 
 export async function GET(request: Request, { params }: Params) {
-  const { wsId, userId } = await params;
-  const supabase = await createClient(request);
-  const sbAdmin = await createAdminClient();
+  const { wsId: rawWsId, userId } = await params;
+  const access = await getFinanceRouteContext(
+    request,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(request)
+  );
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: wsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-
-  if (membership.error === 'membership_lookup_failed') {
-    return NextResponse.json(
-      { error: 'Failed to verify workspace membership' },
-      { status: 500 }
-    );
-  }
-
-  if (!membership.ok) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
 
   const { data, error } = await sbAdmin
     .from('v_user_referral_discounts')
@@ -48,7 +31,7 @@ export async function GET(request: Request, { params }: Params) {
     .eq('user_id', userId);
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching referral discounts:', error);
     return NextResponse.json(
       { message: 'Error fetching referral discounts' },
       { status: 500 }

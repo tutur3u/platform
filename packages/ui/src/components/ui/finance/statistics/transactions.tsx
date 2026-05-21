@@ -2,7 +2,10 @@ import { ArrowRightLeft } from '@tuturuuu/icons';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
 import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  type PermissionsResult,
+} from '@tuturuuu/utils/workspace-helper';
 import dayjs, { type OpUnitType } from 'dayjs';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
@@ -13,17 +16,21 @@ export default async function TransactionsStatistics({
   wsId,
   searchParams: { view, startDate, endDate } = {},
   financePrefix = '/finance',
+  permissions,
 }: {
   wsId: string;
   searchParams?: FinanceDashboardSearchParams;
   financePrefix?: string;
+  permissions?: PermissionsResult;
 }) {
   const t = await getTranslations();
-  const permissions = await getPermissions({
-    wsId,
-  });
-  if (!permissions) notFound();
-  const { containsPermission } = permissions;
+  const resolvedPermissions =
+    permissions ??
+    (await getPermissions({
+      wsId,
+    }));
+  if (!resolvedPermissions) notFound();
+  const { containsPermission } = resolvedPermissions;
 
   if (!enabled || !containsPermission('manage_finance')) return null;
 

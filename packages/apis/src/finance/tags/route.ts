@@ -1,31 +1,27 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  type FinanceRouteAuthContext,
+  getFinanceRouteContext,
+} from '../request-access';
 
 interface Params {
   params: Promise<{ wsId: string }>;
 }
 
-export async function GET(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
+export async function GET(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
@@ -35,8 +31,6 @@ export async function GET(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-
-  const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
     .from('transaction_tags')
@@ -57,7 +51,6 @@ export async function GET(req: Request, { params }: Params) {
     .order('name');
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error fetching tags' },
       { status: 500 }
@@ -109,19 +102,19 @@ const TagSchema = z.object({
   description: z.string().nullable().optional(),
 });
 
-export async function POST(req: Request, { params }: Params) {
-  const supabase = await createClient(req);
+export async function POST(
+  req: Request,
+  { params }: Params,
+  authContext?: FinanceRouteAuthContext
+) {
   const { wsId } = await params;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request: req,
-  });
+  const access = await getFinanceRouteContext(req, wsId, authContext);
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { normalizedWsId, permissions, sbAdmin } = access.context;
   const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
@@ -143,8 +136,6 @@ export async function POST(req: Request, { params }: Params) {
 
   const { name, color, description } = parsed.data;
 
-  const sbAdmin = await createAdminClient();
-
   const { data, error } = await sbAdmin
     .from('transaction_tags')
     .insert({
@@ -157,7 +148,6 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error creating tag' },
       { status: 500 }

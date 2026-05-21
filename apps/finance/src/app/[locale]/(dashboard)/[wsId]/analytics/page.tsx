@@ -1,6 +1,6 @@
 import AnalyticsPage from '@tuturuuu/ui/finance/analytics/analytics-page';
 import { notFound } from 'next/navigation';
-import { getFinanceWorkspace } from '@/lib/workspace';
+import { getFinanceWorkspaceContext } from '@/lib/workspace';
 
 interface Props {
   params: Promise<{
@@ -10,8 +10,8 @@ interface Props {
 
 export default async function WorkspaceAnalyticsPage({ params }: Props) {
   const { wsId: id } = await params;
-  const workspace = await getFinanceWorkspace(id);
-  if (!workspace) notFound();
+  const context = await getFinanceWorkspaceContext(id);
+  if (!context) notFound();
 
-  return <AnalyticsPage wsId={workspace.id} />;
+  return <AnalyticsPage wsId={context.wsId} currency={context.currency} />;
 }

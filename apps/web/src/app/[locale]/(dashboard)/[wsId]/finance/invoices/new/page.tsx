@@ -1,46 +1,26 @@
-import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { redirectToFinanceApp } from '../../redirect';
 
 export const metadata: Metadata = {
-  title: 'New',
-  description: 'Manage New in the Invoices area of your Tuturuuu workspace.',
+  title: 'Create Invoice',
+  description:
+    'Create an invoice in the Finance area of your Tuturuuu workspace.',
 };
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceInvoicesPage({ params }: Props) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ wsId }) => {
-        const permissions = await getPermissions({
-          wsId,
-        });
-        if (!permissions) notFound();
-        const { withoutPermission } = permissions;
-        if (withoutPermission('create_invoices')) notFound();
-
-        return (
-          <Suspense fallback={<div className="p-8">Loading...</div>}>
-            <NewInvoicePage
-              wsId={wsId}
-              canChangeFinanceWallets={permissions.containsPermission(
-                'change_finance_wallets'
-              )}
-              canSetFinanceWalletsOnCreate={permissions.containsPermission(
-                'set_finance_wallets_on_create'
-              )}
-            />
-          </Suspense>
-        );
-      }}
-    </WorkspaceWrapper>
-  );
+export default async function WorkspaceNewInvoicePage({
+  params,
+  searchParams,
+}: Props) {
+  return redirectToFinanceApp({
+    params,
+    path: 'invoices/new',
+    searchParams,
+  });
 }

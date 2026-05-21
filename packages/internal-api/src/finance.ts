@@ -316,6 +316,21 @@ export async function deleteBudget(
   );
 }
 
+export async function deleteInvoice(
+  workspaceId: string,
+  invoiceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ message: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/invoices/${encodePathSegment(invoiceId)}`,
+    {
+      method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
 export async function listTransactionCategories(
   workspaceId: string,
   options?: InternalApiClientOptions

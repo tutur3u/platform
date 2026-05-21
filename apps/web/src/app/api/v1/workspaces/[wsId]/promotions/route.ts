@@ -1,15 +1,12 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PromotionSchema = z
   .object({
@@ -38,13 +35,18 @@ interface Params {
 }
 
 export async function GET(req: Request, { params }: Params) {
-  const { wsId } = await params;
-  const sbAdmin = await createAdminClient();
+  const { wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
 
-  const permissions = await getPermissions({ wsId, request: req });
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
+
+  const { normalizedWsId: wsId, sbAdmin } = access.context;
 
   const { data, error } = await sbAdmin
     .from('workspace_promotions')
@@ -55,7 +57,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('code', { ascending: true });
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error fetching promotions:', error);
     return NextResponse.json(
       { message: 'Error fetching promotions' },
       { status: 500 }
@@ -66,8 +68,18 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function POST(req: Request, { params }: Params) {
-  const { wsId } = await params;
-  const sbAdmin = await createAdminClient();
+  const { wsId: rawWsId } = await params;
+  const access = await getFinanceRouteContext(
+    req,
+    rawWsId,
+    await resolveFinanceRouteAuthContext(req)
+  );
+
+  if (access.response) {
+    return access.response;
+  }
+
+  const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
 
   // Validate request body
   const parsed = PromotionSchema.safeParse(await req.json());
@@ -79,11 +91,6 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  // Check permissions
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) {
-    return Response.json({ error: 'Not found' }, { status: 404 });
-  }
   const { withoutPermission } = permissions;
   if (withoutPermission('create_inventory')) {
     return NextResponse.json(
@@ -92,17 +99,8 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
-
-  // Get authenticated user
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   // Get the virtual_user_id for this workspace
-  const { data: wsUser } = await supabase
+  const { data: wsUser } = await sbAdmin
     .from('workspace_user_linked_users')
     .select('virtual_user_id')
     .eq('platform_user_id', user.id)
@@ -134,8 +132,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    // TODO: logging
-    console.error(error);
+    serverLogger.error('Error creating promotion:', error);
     return NextResponse.json(
       { message: 'Error creating promotion' },
       { status: 500 }

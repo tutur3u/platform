@@ -1,11 +1,8 @@
 import {
-  listWallets,
+  type InternalApiClientOptions,
+  listTransactions,
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
@@ -23,7 +20,10 @@ import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions
 import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Separator } from '@tuturuuu/ui/separator';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import {
+  getPermissions,
+  type PermissionsResult,
+} from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
@@ -34,6 +34,8 @@ interface Props {
   currency?: string;
   isPersonalWorkspace?: boolean;
   financePrefix?: string;
+  internalApiOptions?: InternalApiClientOptions;
+  permissions?: PermissionsResult;
 }
 
 export default async function FinancePage({
@@ -42,12 +44,14 @@ export default async function FinancePage({
   currency = 'USD',
   isPersonalWorkspace = false,
   financePrefix = '/finance',
+  internalApiOptions,
+  permissions,
 }: Props) {
   const sp = searchParams;
 
-  const permissions = await getPermissions({ wsId });
-  if (!permissions) return notFound();
-  const { containsPermission } = permissions;
+  const resolvedPermissions = permissions ?? (await getPermissions({ wsId }));
+  if (!resolvedPermissions) return notFound();
+  const { containsPermission } = resolvedPermissions;
 
   if (!containsPermission('view_finance_stats')) return notFound();
 
@@ -59,15 +63,15 @@ export default async function FinancePage({
   // Parse includeConfidential from URL param (defaults to true if not set)
   const includeConfidentialBool = sp.includeConfidential !== 'false';
 
-  const requestHeaders = await headers();
-  const internalApiOptions = withForwardedInternalApiAuth(requestHeaders);
+  const resolvedInternalApiOptions =
+    internalApiOptions ?? withForwardedInternalApiAuth(await headers());
   const { data: recentTransactions } = await getRecentTransactions(
     wsId,
-    internalApiOptions
+    resolvedInternalApiOptions
   );
 
   // Map recent transactions to match the data structure expected by CustomDataTable
-  const transactionsData = recentTransactions.map((d) => ({
+  const transactionsData = (recentTransactions as Transaction[]).map((d) => ({
     ...d,
     href: `/${wsId}${financePrefix}/transactions/${d.id}`,
     ws_id: wsId,
@@ -123,19 +127,39 @@ export default async function FinancePage({
         </Suspense>*/}
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <WalletsStatistics wsId={wsId} searchParams={sp} />
+          <WalletsStatistics
+            wsId={wsId}
+            financePrefix={financePrefix}
+            permissions={resolvedPermissions}
+            searchParams={sp}
+          />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionCategoriesStatistics wsId={wsId} searchParams={sp} />
+          <TransactionCategoriesStatistics
+            wsId={wsId}
+            financePrefix={financePrefix}
+            permissions={resolvedPermissions}
+            searchParams={sp}
+          />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionsStatistics wsId={wsId} searchParams={sp} />
+          <TransactionsStatistics
+            wsId={wsId}
+            financePrefix={financePrefix}
+            permissions={resolvedPermissions}
+            searchParams={sp}
+          />
         </Suspense>
 
         <Suspense fallback={<LoadingStatisticCard />}>
-          <InvoicesStatistics wsId={wsId} searchParams={sp} />
+          <InvoicesStatistics
+            wsId={wsId}
+            financePrefix={financePrefix}
+            permissions={resolvedPermissions}
+            searchParams={sp}
+          />
         </Suspense>
 
         <Separator className="col-span-full my-3 sm:my-4" />
@@ -188,83 +212,16 @@ export default async function FinancePage({
 
 async function getRecentTransactions(
   wsId: string,
-  internalApiOptions: Parameters<typeof listWallets>[1]
+  internalApiOptions: InternalApiClientOptions
 ) {
-  const supabase = await createClient();
-
-  // Use RPC function to get redacted transactions with confidential filtering
-  const { data: transactions, error } = await supabase.rpc(
-    'get_wallet_transactions_with_permissions',
+  const data = await listTransactions(
+    wsId,
     {
-      p_ws_id: wsId,
-      p_order_by: 'taken_at',
-      p_order_direction: 'DESC',
-      p_limit: 10,
-    }
+      itemsPerPage: 10,
+      page: 1,
+    },
+    internalApiOptions
   );
-
-  if (error) throw error;
-
-  const filteredTransactions = transactions || [];
-
-  if (filteredTransactions.length === 0) {
-    return { data: [] };
-  }
-
-  // Get unique wallet IDs and category IDs
-  const walletIds = [
-    ...new Set(
-      filteredTransactions.map((t: any) => t.wallet_id).filter(Boolean)
-    ),
-  ];
-  const categoryIds = [
-    ...new Set(
-      filteredTransactions.map((t: any) => t.category_id).filter(Boolean)
-    ),
-  ];
-
-  // Fetch wallet names
-  const walletMap = new Map<string, string>();
-  let wallets: Awaited<ReturnType<typeof listWallets>> = [];
-
-  if (walletIds.length > 0) {
-    try {
-      wallets = await listWallets(wsId, internalApiOptions);
-    } catch (error) {
-      console.error('Failed to load wallets for recent transactions:', error);
-    }
-  }
-
-  wallets.forEach((wallet) => {
-    if (wallet.id && wallet.name) {
-      walletMap.set(wallet.id, wallet.name);
-    }
-  });
-
-  // Fetch category names
-  const categoryMap = new Map<string, string>();
-  const sbAdmin = await createAdminClient();
-  if (categoryIds.length > 0) {
-    const { data: categories, error: categoryError } = await sbAdmin
-      .from('transaction_categories')
-      .select('id, name')
-      .in('id', categoryIds);
-
-    if (!categoryError && categories) {
-      categories.forEach((c) => {
-        if (c.id && c.name) categoryMap.set(c.id, c.name);
-      });
-    }
-  }
-
-  // Combine transaction data with wallet/category names
-  const data = filteredTransactions.map((transaction: any) => ({
-    ...transaction,
-    wallet: transaction.wallet_id ? walletMap.get(transaction.wallet_id) : null,
-    category: transaction.category_id
-      ? categoryMap.get(transaction.category_id)
-      : null,
-  }));
 
   return { data };
 }
