@@ -1,7 +1,7 @@
 ---
 title: 'Drive'
 description: 'Standalone Drive app with centralized workspace storage APIs.'
-updatedAt: '2026-05-21'
+updatedAt: '2026-05-22'
 ---
 
 ## Overview
@@ -31,3 +31,33 @@ Protected storage APIs remain centralized in `apps/web`:
 
 When adding new Drive behavior, add the protected route in `apps/web`, expose it
 from `packages/internal-api`, and consume it from `apps/drive`.
+
+## CI/CD
+
+Preview and production deployments use dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-drive.yaml`
+- `.github/workflows/vercel-production-drive.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared
+`ci-check.yml` switchboard with affected-path gating. They require
+environment-scoped Vercel credentials:
+
+- preview environment: `vercel-preview-drive`
+- production environment: `vercel-production-drive`
+- project secret: `VERCEL_DRIVE_PROJECT_ID`
+- shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
+
+The app-specific project secret should live in those GitHub Environments, not in
+workflow-level `env`.
+
+## Validation
+
+Use these focused checks when changing Drive deployment wiring:
+
+```bash
+node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
+```
+
+Because Drive CI changes touch root TypeScript workflow config, finish with
+`bun check` when the shared worktree state allows it.
