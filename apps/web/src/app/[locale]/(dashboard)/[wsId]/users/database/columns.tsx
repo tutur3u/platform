@@ -53,6 +53,7 @@ export const getUserColumns = ({
     'national_id',
     'address',
     'note',
+    'archival_note',
   ] as const;
 
   const publicColumns = [
@@ -460,6 +461,21 @@ export const getUserColumns = ({
       ),
       cell: ({ row }) => (
         <div className="line-clamp-1 w-32">{row.getValue('note') || '-'}</div>
+      ),
+    },
+    {
+      accessorKey: 'archival_note',
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          t={t}
+          column={column}
+          title={t(`${namespace}.archival_note`)}
+        />
+      ),
+      cell: ({ row }) => (
+        <div className="line-clamp-2 w-48">
+          {row.getValue('archival_note') || '-'}
+        </div>
       ),
     },
     {

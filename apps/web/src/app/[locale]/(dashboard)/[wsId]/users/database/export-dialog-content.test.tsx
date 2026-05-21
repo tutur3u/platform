@@ -4,6 +4,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ExportDialogContent from './export-dialog-content';
 
 const toastSuccessMock = vi.fn();
+const { xlsxJsonToSheetMock } = vi.hoisted(() => ({
+  xlsxJsonToSheetMock: vi.fn(() => ({})),
+}));
 
 function createDeferredResponse(body: unknown) {
   let resolve!: (value: Response) => void;
@@ -55,7 +58,7 @@ vi.mock('@tuturuuu/ui/dialog', () => ({
 vi.mock('@tuturuuu/ui/xlsx', () => ({
   XLSX: {
     utils: {
-      json_to_sheet: vi.fn(() => ({})),
+      json_to_sheet: xlsxJsonToSheetMock,
       book_append_sheet: vi.fn(),
       book_new: vi.fn(() => ({})),
     },
@@ -95,6 +98,7 @@ describe('ExportDialogContent', () => {
               {
                 id: 'user-1',
                 full_name: 'Alice',
+                archival_note: 'Moved to another class',
               },
             ],
             count: 2,
@@ -160,5 +164,14 @@ describe('ExportDialogContent', () => {
     await waitFor(() => {
       expect(toastSuccessMock).toHaveBeenCalledWith('common.export-success');
     });
+    expect(xlsxJsonToSheetMock).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'user-1',
+          full_name: 'Alice',
+          'ws-users.archival_note': 'Moved to another class',
+        }),
+      ])
+    );
   });
 });

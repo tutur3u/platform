@@ -225,6 +225,7 @@ export default async function WorkspaceUsersPage({
         pageSize={clampPageSize(sp.logPageSize, 10)}
         canExport={canExportUsers}
         canRepairStatusHistory={canViewAuditLog}
+        canViewPrivateInfo={hasPrivateInfo}
       />
     ) : undefined;
 

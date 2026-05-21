@@ -1,8 +1,17 @@
 'use client';
 
+import { Users } from '@tuturuuu/icons';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { useTranslations } from 'next-intl';
 import {
   parseAsArrayOf,
@@ -109,38 +118,57 @@ export function QuickGroupFilters({
     setPage(1);
   };
 
+  const activeFeaturedCount = featuredGroups.filter((group) =>
+    includedGroups.includes(group.id)
+  ).length;
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="text-[11px] text-muted-foreground uppercase tracking-[0.08em]">
-        {t('quick_filters')}:
-      </span>
-      {featuredGroups.map((group) => {
-        const isActive = includedGroups.includes(group.id);
-        const count = groupCounts?.[group.id];
-        return (
-          <Button
-            key={group.id}
-            variant={isActive ? 'secondary' : 'outline'}
-            size="sm"
-            className={
-              isActive
-                ? 'h-8 rounded-xl px-3 text-xs'
-                : 'h-8 rounded-xl border-dashed px-3 text-xs'
-            }
-            onClick={() => toggleGroup(group.id)}
-          >
-            {group.name}
-            {showCounts && count != null && (
-              <Badge
-                variant="secondary"
-                className="ml-1 h-4 min-w-4 justify-center rounded-full px-1 text-[10px] leading-none"
-              >
-                {count}
-              </Badge>
-            )}
-          </Button>
-        );
-      })}
-    </div>
+    <DropdownMenu modal={false}>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant={activeFeaturedCount > 0 ? 'secondary' : 'outline'}
+          size="sm"
+          className="h-9 gap-2 rounded-md px-3"
+        >
+          <Users className="h-4 w-4" />
+          <span>{t('quick_filters')}</span>
+          {activeFeaturedCount > 0 ? (
+            <Badge variant="secondary" className="h-5 rounded-full px-1.5">
+              {activeFeaturedCount}
+            </Badge>
+          ) : null}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-72">
+        <DropdownMenuLabel className="text-muted-foreground text-xs uppercase">
+          {t('quick_filters')}
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {featuredGroups.map((group) => {
+          const isActive = includedGroups.includes(group.id);
+          const count = groupCounts?.[group.id];
+
+          return (
+            <DropdownMenuCheckboxItem
+              key={group.id}
+              checked={isActive}
+              onSelect={(event) => event.preventDefault()}
+              onCheckedChange={() => toggleGroup(group.id)}
+              className="gap-3"
+            >
+              <span className="min-w-0 flex-1 truncate">{group.name}</span>
+              {showCounts && count != null ? (
+                <Badge
+                  variant="secondary"
+                  className="h-5 min-w-5 justify-center rounded-full px-1.5 text-[10px]"
+                >
+                  {count}
+                </Badge>
+              ) : null}
+            </DropdownMenuCheckboxItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

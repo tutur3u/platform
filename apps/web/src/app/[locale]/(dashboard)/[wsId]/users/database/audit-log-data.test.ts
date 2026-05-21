@@ -11,6 +11,7 @@ import {
   buildLegacyStatusEvents,
   getAuditLogView,
   type LegacyStatusChangeRow,
+  listAuditLogEventsForRange,
 } from './audit-log-data';
 
 describe('buildLegacyStatusEvents', () => {
@@ -159,5 +160,121 @@ describe('buildLegacyStatusEvents', () => {
     expect(view.summary.totalEvents).toBe(3);
     expect(view.summary.peakBucketCount).toBe(2);
     expect(view.chartStats).toHaveLength(31);
+  });
+
+  it('attaches archival notes to private audit exports from the current user note fallback', async () => {
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          audit_record_id: 30,
+          event_kind: 'archived',
+          occurred_at: '2026-03-10T10:00:00.000Z',
+          source: 'live',
+          affected_user_id: 'user-1',
+          affected_user_name: 'Alice Example',
+          affected_user_email: 'alice@example.com',
+          actor_auth_uid: 'actor-1',
+          actor_workspace_user_id: 'workspace-actor-1',
+          actor_id: 'actor-1',
+          actor_name: 'Manager Example',
+          actor_email: 'manager@example.com',
+          changed_fields: ['archived'],
+          before: { archived: false },
+          after: { archived: true },
+          total_count: 1,
+        },
+      ],
+      error: null,
+    });
+    const fromMock = vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          in: vi.fn().mockResolvedValue({
+            data: [
+              {
+                id: 'user-1',
+                note: 'Family requested a break',
+              },
+            ],
+            error: null,
+          }),
+        })),
+      })),
+    }));
+
+    createAdminClientMock.mockResolvedValue({
+      rpc: rpcMock,
+      from: fromMock,
+    });
+
+    const result = await listAuditLogEventsForRange({
+      wsId: 'ws-1',
+      start: '2026-03-01T00:00:00.000Z',
+      end: '2026-04-01T00:00:00.000Z',
+      eventKind: 'archived',
+      source: 'all',
+      canViewPrivateInfo: true,
+    });
+
+    expect(result.data[0]?.archivalNote).toBe('Family requested a break');
+    expect(fromMock).toHaveBeenCalledWith('workspace_users');
+  });
+
+  it('strips archival notes from audit rows without private user info permission', async () => {
+    const rpcMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          audit_record_id: 30,
+          event_kind: 'archived',
+          occurred_at: '2026-03-10T10:00:00.000Z',
+          source: 'live',
+          affected_user_id: 'user-1',
+          affected_user_name: 'Alice Example',
+          affected_user_email: 'alice@example.com',
+          actor_auth_uid: 'actor-1',
+          actor_workspace_user_id: 'workspace-actor-1',
+          actor_id: 'actor-1',
+          actor_name: 'Manager Example',
+          actor_email: 'manager@example.com',
+          changed_fields: ['archived', 'note'],
+          before: { archived: false, note: null },
+          after: { archived: true, note: 'Family requested a break' },
+          total_count: 1,
+        },
+      ],
+      error: null,
+    });
+    const fromMock = vi.fn(() => {
+      throw new Error('Unexpected archival note fallback lookup');
+    });
+
+    createAdminClientMock.mockResolvedValue({
+      rpc: rpcMock,
+      from: fromMock,
+    });
+
+    const result = await listAuditLogEventsForRange({
+      wsId: 'ws-1',
+      start: '2026-03-01T00:00:00.000Z',
+      end: '2026-04-01T00:00:00.000Z',
+      eventKind: 'archived',
+      source: 'all',
+      canViewPrivateInfo: false,
+    });
+
+    expect(result.data[0]).toMatchObject({
+      archivalNote: null,
+      changedFields: ['archived'],
+      before: { archived: 'false' },
+      after: { archived: 'true' },
+    });
+    expect(result.data[0]?.fieldChanges).toEqual([
+      expect.objectContaining({
+        field: 'archived',
+      }),
+    ]);
+    expect(result.data[0]?.before).not.toHaveProperty('note');
+    expect(result.data[0]?.after).not.toHaveProperty('note');
+    expect(fromMock).not.toHaveBeenCalled();
   });
 });

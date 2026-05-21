@@ -74,6 +74,7 @@ describe('AuditLogDataTable', () => {
             },
             occurredAt: '2026-03-10T10:00:00.000Z',
             source: 'backfilled',
+            archivalNote: 'Family requested a break',
           },
         ]}
         count={1}
@@ -92,6 +93,7 @@ describe('AuditLogDataTable', () => {
       screen.getByText('audit-log-table.field_changes_title')
     ).toBeInTheDocument();
     expect(screen.getByText('Archived Until')).toBeInTheDocument();
+    expect(screen.getByText('Family requested a break')).toBeInTheDocument();
     expect(screen.getByText('false')).toBeInTheDocument();
     expect(screen.getByText('2026-03-20T00:00:00.000Z')).toBeInTheDocument();
   });

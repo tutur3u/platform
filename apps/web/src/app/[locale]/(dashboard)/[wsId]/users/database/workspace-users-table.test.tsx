@@ -180,4 +180,53 @@ describe('WorkspaceUsersTable', () => {
       excludedGroups: ['excluded-group'],
     });
   });
+
+  it('passes compact filter values through to the users query and filter panel', async () => {
+    queryState.status = 'archived_until';
+    queryState.linkStatus = 'virtual';
+    queryState.requireAttention = 'true';
+    queryState.groupMembership = 'none';
+    queryState.includedGroups = ['included-group'];
+    queryState.excludedGroups = ['excluded-group'];
+
+    renderWithQueryClient(
+      <WorkspaceUsersTable
+        wsId="ws-123"
+        locale="en"
+        permissions={{
+          hasPrivateInfo: true,
+          hasPublicInfo: true,
+          canCreateUsers: true,
+          canUpdateUsers: true,
+          canDeleteUsers: true,
+          canCheckUserAttendance: true,
+        }}
+      />
+    );
+
+    await waitFor(() => {
+      expect(useWorkspaceUsersMock).toHaveBeenCalled();
+    });
+
+    expect(useWorkspaceUsersMock.mock.calls[0]?.[1]).toMatchObject({
+      status: 'archived_until',
+      linkStatus: 'virtual',
+      requireAttention: 'true',
+      groupMembership: 'none',
+      includedGroups: ['included-group'],
+      excludedGroups: ['excluded-group'],
+    });
+
+    const dataTableProps = dataTableMock.mock.calls.at(-1)?.[0] as {
+      filters?: React.ReactElement<Record<string, unknown>>;
+    };
+
+    expect(dataTableProps.filters?.props).toMatchObject({
+      status: 'archived_until',
+      linkStatus: 'virtual',
+      requireAttention: 'true',
+      groupMembership: 'none',
+      effectiveExcludedGroups: ['excluded-group'],
+    });
+  });
 });

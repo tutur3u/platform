@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   buildWorkspaceUserAuditSummary,
   humanizeAuditField,
+  isWorkspaceUserArchiveAuditEvent,
   normalizeAuditFieldValue,
   type WorkspaceUserAuditChartStat,
   type WorkspaceUserAuditEvent,
@@ -118,6 +119,38 @@ function asRecord(value: unknown): Record<string, unknown> {
   return value as Record<string, unknown>;
 }
 
+function normalizeArchivalNote(value: unknown) {
+  return typeof value === 'string' && value.trim().length > 0
+    ? value.trim()
+    : null;
+}
+
+function omitRecordKeys(
+  record: Record<string, string | null>,
+  keys: ReadonlySet<string>
+) {
+  return Object.fromEntries(
+    Object.entries(record).filter(([key]) => !keys.has(key))
+  );
+}
+
+const PRIVATE_AUDIT_FIELDS = new Set(['note']);
+
+function stripPrivateAuditFields(event: WorkspaceUserAuditEvent) {
+  return {
+    ...event,
+    archivalNote: null,
+    changedFields: event.changedFields.filter(
+      (field) => !PRIVATE_AUDIT_FIELDS.has(field)
+    ),
+    fieldChanges: event.fieldChanges.filter(
+      (fieldChange) => !PRIVATE_AUDIT_FIELDS.has(fieldChange.field)
+    ),
+    before: omitRecordKeys(event.before, PRIVATE_AUDIT_FIELDS),
+    after: omitRecordKeys(event.after, PRIVATE_AUDIT_FIELDS),
+  };
+}
+
 function buildFieldChangesFromSnapshots(
   changedFields: string[],
   beforeRecord: Record<string, unknown>,
@@ -135,6 +168,9 @@ function mapFeedRowToEvent(row: AuditFeedRow): WorkspaceUserAuditEvent {
   const changedFields = row.changed_fields ?? [];
   const beforeRecord = asRecord(row.before);
   const afterRecord = asRecord(row.after);
+  const archivalNote = isWorkspaceUserArchiveAuditEvent(row.event_kind)
+    ? normalizeArchivalNote(afterRecord.note)
+    : null;
 
   return {
     auditRecordId: row.audit_record_id,
@@ -176,7 +212,75 @@ function mapFeedRowToEvent(row: AuditFeedRow): WorkspaceUserAuditEvent {
     },
     occurredAt: row.occurred_at,
     source: row.source,
+    archivalNote,
   };
+}
+
+async function attachArchivalNotes(
+  sbAdmin: TypedSupabaseClient,
+  {
+    wsId,
+    events,
+    canViewPrivateInfo,
+  }: {
+    wsId: string;
+    events: WorkspaceUserAuditEvent[];
+    canViewPrivateInfo?: boolean;
+  }
+) {
+  if (!canViewPrivateInfo) {
+    return events.map(stripPrivateAuditFields);
+  }
+
+  const missingNoteUserIds = [
+    ...new Set(
+      events
+        .filter(
+          (event) =>
+            isWorkspaceUserArchiveAuditEvent(event.eventKind) &&
+            !normalizeArchivalNote(event.archivalNote)
+        )
+        .map((event) => event.affectedUser.id)
+    ),
+  ];
+
+  if (missingNoteUserIds.length === 0) {
+    return events;
+  }
+
+  const { data, error } = await sbAdmin
+    .from('workspace_users')
+    .select('id, note')
+    .eq('ws_id', wsId)
+    .in('id', missingNoteUserIds);
+
+  if (error) {
+    throw error;
+  }
+
+  const noteByUserId = new Map(
+    ((data ?? []) as Array<{ id: string; note: string | null }>).map((row) => [
+      row.id,
+      normalizeArchivalNote(row.note),
+    ])
+  );
+
+  return events.map((event) => {
+    if (!isWorkspaceUserArchiveAuditEvent(event.eventKind)) {
+      return {
+        ...event,
+        archivalNote: null,
+      };
+    }
+
+    return {
+      ...event,
+      archivalNote:
+        normalizeArchivalNote(event.archivalNote) ??
+        noteByUserId.get(event.affectedUser.id) ??
+        null,
+    };
+  });
 }
 
 function buildChartStatsFromBuckets({
@@ -282,6 +386,7 @@ async function fetchAuditFeedPage(
     actorQuery,
     limit,
     offset,
+    canViewPrivateInfo,
   }: {
     wsId: string;
     start: Date;
@@ -292,6 +397,7 @@ async function fetchAuditFeedPage(
     actorQuery?: string;
     limit: number;
     offset: number;
+    canViewPrivateInfo?: boolean;
   }
 ) {
   const { data, error } = await sbAdmin.rpc('list_workspace_user_audit_feed', {
@@ -311,10 +417,15 @@ async function fetchAuditFeedPage(
   }
 
   const rows = (data ?? []) as AuditFeedRow[];
+  const events = rows.map(mapFeedRowToEvent);
 
   return {
     count: toCount(rows[0]?.total_count),
-    data: rows.map(mapFeedRowToEvent),
+    data: await attachArchivalNotes(sbAdmin, {
+      wsId,
+      events,
+      canViewPrivateInfo,
+    }),
   };
 }
 
@@ -331,6 +442,7 @@ async function fetchAuditView(
     actorQuery,
     limit,
     offset,
+    canViewPrivateInfo,
   }: {
     wsId: string;
     start: Date;
@@ -342,6 +454,7 @@ async function fetchAuditView(
     actorQuery?: string;
     limit: number;
     offset: number;
+    canViewPrivateInfo?: boolean;
   }
 ) {
   const { data, error } = await sbAdmin.rpc('get_workspace_user_audit_view', {
@@ -365,10 +478,15 @@ async function fetchAuditView(
   const rows = Array.isArray(payload.rows) ? payload.rows : [];
   const bucketRows = Array.isArray(payload.buckets) ? payload.buckets : [];
   const summaryRow = payload.summary ?? null;
+  const events = rows.map(mapFeedRowToEvent);
 
   return {
     count: toCount(payload.count),
-    data: rows.map(mapFeedRowToEvent),
+    data: await attachArchivalNotes(sbAdmin, {
+      wsId,
+      events,
+      canViewPrivateInfo,
+    }),
     summary: {
       totalEvents: toCount(summaryRow?.total_events),
       archivedEvents: toCount(summaryRow?.archived_events),
@@ -565,6 +683,7 @@ export async function getAuditLogView({
   actorQuery,
   page,
   pageSize,
+  canViewPrivateInfo = false,
 }: {
   wsId: string;
   locale: string;
@@ -577,6 +696,7 @@ export async function getAuditLogView({
   actorQuery?: string;
   page?: number;
   pageSize?: number;
+  canViewPrivateInfo?: boolean;
 }) {
   const resolvedPeriod = resolveAuditLogPeriod(period);
   const resolvedEventKind = resolveEventKindFilter(eventKind);
@@ -610,6 +730,7 @@ export async function getAuditLogView({
       actorQuery,
       limit: validatedPageSize,
       offset,
+      canViewPrivateInfo,
     });
     const chartStats = buildChartStatsFromBuckets({
       locale,
@@ -690,6 +811,7 @@ export async function listAuditLogEventsForRange({
   actorQuery,
   offset = 0,
   limit = 500,
+  canViewPrivateInfo = false,
 }: {
   wsId: string;
   start: string;
@@ -700,6 +822,7 @@ export async function listAuditLogEventsForRange({
   actorQuery?: string;
   offset?: number;
   limit?: number;
+  canViewPrivateInfo?: boolean;
 }) {
   const sbAdmin = await createAdminClient();
   const resolvedEventKind = resolveEventKindFilter(eventKind);
@@ -714,6 +837,7 @@ export async function listAuditLogEventsForRange({
     actorQuery,
     limit,
     offset,
+    canViewPrivateInfo,
   });
 
   return {

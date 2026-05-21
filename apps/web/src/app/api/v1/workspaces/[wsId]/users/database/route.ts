@@ -78,6 +78,23 @@ const SearchParamsSchema = z.object({
     .transform((val) => val === 'true'),
 });
 
+function isArchivedUser(
+  user: Pick<WorkspaceUser, 'archived' | 'archived_until'>
+) {
+  return user.archived === true || Boolean(user.archived_until);
+}
+
+function resolveArchivalNote(
+  user: Pick<WorkspaceUser, 'archived' | 'archived_until' | 'note'>
+) {
+  if (!isArchivedUser(user)) {
+    return null;
+  }
+
+  const note = user.note?.trim();
+  return note ? note : null;
+}
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -303,6 +320,10 @@ export async function GET(request: Request, { params }: Params) {
         is_guest: guestUserIds.has(u.id),
       };
 
+      if (hasPrivateInfo) {
+        sanitized.archival_note = resolveArchivalNote(u);
+      }
+
       if (sp.withPromotions) {
         const promos = promotionsMap.get(u.id) || [];
         sanitized.linked_promotions = promos;
@@ -332,6 +353,7 @@ export async function GET(request: Request, { params }: Params) {
         delete sanitized.national_id;
         delete sanitized.address;
         delete sanitized.note;
+        delete sanitized.archival_note;
       }
 
       // Remove public fields if user doesn't have permission

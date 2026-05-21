@@ -28,6 +28,7 @@ interface Props {
   pageSize?: number;
   canExport?: boolean;
   canRepairStatusHistory?: boolean;
+  canViewPrivateInfo?: boolean;
 }
 
 export async function AuditLogTable({
@@ -44,6 +45,7 @@ export async function AuditLogTable({
   pageSize = 10,
   canExport = false,
   canRepairStatusHistory = false,
+  canViewPrivateInfo = false,
 }: Props) {
   const t = await getTranslations('audit-log-insights');
   const view = await getAuditLogView({
@@ -58,6 +60,7 @@ export async function AuditLogTable({
     actorQuery,
     page,
     pageSize,
+    canViewPrivateInfo,
   });
 
   const resolvedPeriod = resolveAuditLogPeriod(period);

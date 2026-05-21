@@ -38,6 +38,7 @@ export interface WorkspaceUserAuditEventResponse {
   };
   occurredAt: string;
   source: 'live' | 'backfilled';
+  archivalNote?: string | null;
 }
 
 export interface WorkspaceUserAuditLogsResponse {

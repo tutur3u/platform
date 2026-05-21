@@ -304,6 +304,17 @@ export function AuditLogDataTable({
                   </div>
                 </section>
 
+                {selectedEvent.archivalNote ? (
+                  <section className="rounded-lg border border-border/60 bg-muted/20 p-4">
+                    <p className="text-muted-foreground text-xs uppercase">
+                      {t('audit-log-table.archival_note')}
+                    </p>
+                    <p className="mt-2 whitespace-pre-wrap break-words text-sm">
+                      {selectedEvent.archivalNote}
+                    </p>
+                  </section>
+                ) : null}
+
                 <section className="space-y-3">
                   <div>
                     <h3 className="font-semibold">

@@ -177,14 +177,16 @@ export default function ExportDialogContent({
 
       setProgress(100);
 
+      const exportRows = buildExportRows(allData, t);
+
       if (exportFileType === 'csv') {
         downloadCSV(
-          allData,
+          exportRows,
           `${(filename || defaultFilename).replace(/\.csv/g, '')}.csv`
         );
       } else if (exportFileType === 'excel') {
         downloadExcel(
-          allData,
+          exportRows,
           `${(filename || defaultFilename).replace(/\.xlsx/g, '')}.xlsx`
         );
       }
@@ -413,6 +415,22 @@ export default function ExportDialogContent({
   );
 }
 
+function buildExportRows(
+  data: ExportWorkspaceUser[],
+  t: ReturnType<typeof useTranslations>
+) {
+  const archivalNoteLabel = t('ws-users.archival_note');
+
+  return data.map((row) => {
+    const { archival_note, ...rest } = row;
+
+    return {
+      ...rest,
+      [archivalNoteLabel]: archival_note ?? '',
+    };
+  });
+}
+
 async function getData(
   wsId: string,
   {
@@ -522,7 +540,7 @@ async function fetchWorkspaceUsersPage(
   return (await response.json()) as WorkspaceUsersApiResponse;
 }
 
-function downloadCSV(data: ExportWorkspaceUser[], filename: string) {
+function downloadCSV(data: Record<string, unknown>[], filename: string) {
   const csv = jsonToCSV(data);
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
@@ -533,7 +551,7 @@ function downloadCSV(data: ExportWorkspaceUser[], filename: string) {
   document.body.removeChild(link);
 }
 
-function downloadExcel(data: ExportWorkspaceUser[], filename: string) {
+function downloadExcel(data: Record<string, unknown>[], filename: string) {
   const worksheet = XLSX.utils.json_to_sheet(data);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');

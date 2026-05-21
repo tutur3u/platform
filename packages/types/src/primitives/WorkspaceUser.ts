@@ -18,6 +18,7 @@ export interface WorkspaceUser {
   address?: string | null;
   warehouse_id?: string | null;
   note?: string | null;
+  archival_note?: string | null;
   ws_id?: string | null;
   default_workspace_id?: string | null;
   archived?: boolean | null;

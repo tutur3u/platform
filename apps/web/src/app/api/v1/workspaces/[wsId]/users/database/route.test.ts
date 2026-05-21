@@ -5,8 +5,6 @@ const createAdminClientMock = vi.fn();
 const getPermissionsMock = vi.fn();
 const normalizeWorkspaceIdMock = vi.fn();
 const adminRpcMock = vi.fn();
-const rpcSelectMock = vi.fn();
-const rpcOrderMock = vi.fn();
 const rpcRangeMock = vi.fn();
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
@@ -29,6 +27,27 @@ vi.mock('@/lib/require-attention-users', () => ({
 
 import { GET } from './route';
 
+function createUsersDatabaseTableLookup() {
+  return vi.fn((table: string) => {
+    if (table !== 'workspace_user_groups_users') {
+      throw new Error(`Unexpected table lookup: ${table}`);
+    }
+
+    return {
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            in: vi.fn().mockResolvedValue({
+              data: [],
+              error: null,
+            }),
+          })),
+        })),
+      })),
+    };
+  });
+}
+
 describe('workspace users database route query parsing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,15 +64,15 @@ describe('workspace users database route query parsing', () => {
       error: null,
       count: 0,
     });
-    rpcOrderMock.mockReturnValue({
+    const queryBuilderMock = {
+      select: vi.fn(() => queryBuilderMock),
+      order: vi.fn(() => queryBuilderMock),
+      eq: vi.fn(() => queryBuilderMock),
+      is: vi.fn(() => queryBuilderMock),
+      gt: vi.fn(() => queryBuilderMock),
       range: rpcRangeMock,
-    });
-    rpcSelectMock.mockReturnValue({
-      order: rpcOrderMock,
-    });
-    adminRpcMock.mockReturnValue({
-      select: rpcSelectMock,
-    });
+    };
+    adminRpcMock.mockReturnValue(queryBuilderMock);
 
     createAdminClientMock.mockResolvedValue({
       rpc: adminRpcMock,
@@ -93,5 +112,89 @@ describe('workspace users database route query parsing', () => {
       data: [],
       count: 0,
     });
+  });
+
+  it('derives archival_note from note for archived private rows', async () => {
+    rpcRangeMock.mockResolvedValue({
+      data: [
+        {
+          id: 'user-1',
+          full_name: 'Alice',
+          note: 'Moved to another class',
+          archived: true,
+          archived_until: null,
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    createAdminClientMock.mockResolvedValue({
+      rpc: adminRpcMock,
+      from: createUsersDatabaseTableLookup(),
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database?page=1&pageSize=10&status=archived'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      data: [
+        {
+          id: 'user-1',
+          note: 'Moved to another class',
+          archival_note: 'Moved to another class',
+        },
+      ],
+      count: 1,
+    });
+  });
+
+  it('omits archival_note for callers without private user info permission', async () => {
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'view_users_public_info',
+    });
+    rpcRangeMock.mockResolvedValue({
+      data: [
+        {
+          id: 'user-1',
+          full_name: 'Alice',
+          note: 'Moved to another class',
+          archived: true,
+          archived_until: null,
+        },
+      ],
+      error: null,
+      count: 1,
+    });
+    createAdminClientMock.mockResolvedValue({
+      rpc: adminRpcMock,
+      from: createUsersDatabaseTableLookup(),
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/database?page=1&pageSize=10&status=archived'
+      ),
+      {
+        params: Promise.resolve({ wsId: 'ws-1' }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    const body = await response.json();
+
+    expect(body.data[0]).toMatchObject({
+      id: 'user-1',
+      full_name: 'Alice',
+    });
+    expect(body.data[0]).not.toHaveProperty('note');
+    expect(body.data[0]).not.toHaveProperty('archival_note');
   });
 });

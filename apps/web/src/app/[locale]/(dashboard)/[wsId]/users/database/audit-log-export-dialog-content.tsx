@@ -153,6 +153,7 @@ export function AuditLogExportDialogContent({
         [tableT('actor')]:
           entry.actor.name || entry.actor.email || tableT('system'),
         [tableT('changed_fields')]: entry.changedFields.join(', '),
+        [tableT('archival_note')]: entry.archivalNote ?? '',
         [tableT('source')]: tableT(`source_label.${entry.source}`),
         [tableT('occurred_at')]: formatDateTime(entry.occurredAt, locale),
       }));

@@ -43,9 +43,13 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   try {
+    const canViewPrivateInfo = permissions.containsPermission(
+      'view_users_private_info'
+    );
     const data = await listAuditLogEventsForRange({
       wsId,
       ...parsedParams.data,
+      canViewPrivateInfo,
     });
 
     return NextResponse.json(data);

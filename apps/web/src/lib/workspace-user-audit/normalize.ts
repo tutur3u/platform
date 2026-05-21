@@ -72,6 +72,7 @@ export interface WorkspaceUserAuditEvent {
   };
   occurredAt: string;
   source: WorkspaceUserAuditSource;
+  archivalNote?: string | null;
 }
 
 export interface WorkspaceUserAuditChartStat {
@@ -126,6 +127,11 @@ function readString(record: WorkspaceUserAuditRawRecord, key: string) {
   return typeof value === 'string' ? value : null;
 }
 
+function readNonEmptyString(record: WorkspaceUserAuditRawRecord, key: string) {
+  const value = readString(record, key)?.trim();
+  return value ? value : null;
+}
+
 function readBoolean(record: WorkspaceUserAuditRawRecord, key: string) {
   const value = record[key];
 
@@ -177,6 +183,12 @@ export function normalizeAuditFieldValue(value: unknown): string | null {
   } catch {
     return String(value);
   }
+}
+
+export function isWorkspaceUserArchiveAuditEvent(
+  eventKind: WorkspaceUserAuditEventKind
+) {
+  return eventKind === 'archived' || eventKind === 'archive_until_changed';
 }
 
 export function classifyWorkspaceUserAuditEvent(
@@ -343,6 +355,9 @@ export function normalizeWorkspaceUserAuditEvent({
     readString(record, 'email') ||
     readString(previousRecord, 'email');
   const fieldData = buildWorkspaceUserAuditFieldChanges(row);
+  const archivalNote = isWorkspaceUserArchiveAuditEvent(eventKind)
+    ? readNonEmptyString(record, 'note')
+    : null;
 
   return {
     auditRecordId: row.audit_record_id,
@@ -370,6 +385,7 @@ export function normalizeWorkspaceUserAuditEvent({
     },
     occurredAt: row.ts,
     source: source ?? 'live',
+    archivalNote,
   };
 }
 

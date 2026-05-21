@@ -390,10 +390,12 @@ export function WorkspaceUsersTable({
         filters={
           <UsersFilterPanel
             wsId={wsId}
-            status={status as 'active' | 'archived' | 'archived_until' | 'all'}
+            status={resolvedFilters.status}
             linkStatus={effectiveLinkStatus}
-            requireAttention={requireAttention as 'all' | 'true' | 'false'}
+            requireAttention={resolvedFilters.requireAttention}
             groupMembership={effectiveGroupMembership}
+            defaultLinkStatus={defaultLinkStatus}
+            defaultGroupMembership={defaultGroupMembership}
             effectiveExcludedGroups={resolvedFilters.excludedGroups}
             initialFeaturedGroupIds={initialFeaturedGroupIds}
             onStatusChange={(val) => {
@@ -455,6 +457,7 @@ export function WorkspaceUsersTable({
           address: false,
           national_id: false,
           note: false,
+          archival_note: false,
           linked_users: false,
           group_count: false,
           created_at: false,

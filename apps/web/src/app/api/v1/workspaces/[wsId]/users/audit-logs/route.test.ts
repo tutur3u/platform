@@ -109,6 +109,33 @@ describe('workspace user audit logs route', () => {
       actorQuery: 'bob',
       offset: 0,
       limit: 50,
+      canViewPrivateInfo: false,
     });
+  });
+
+  it('passes private user info permission to archival note enrichment', async () => {
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: (permission: string) =>
+        permission === 'manage_workspace_audit_logs' ||
+        permission === 'view_users_private_info',
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/users/audit-logs?start=2026-03-01T00:00:00.000Z&end=2026-04-01T00:00:00.000Z'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(listAuditLogEventsForRangeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canViewPrivateInfo: true,
+      })
+    );
   });
 });
