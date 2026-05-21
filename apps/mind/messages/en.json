@@ -74,6 +74,7 @@
       "organize": "Organize",
       "relationships": "Relationships",
       "restoreAi": "Restore assistant",
+      "retry": "Retry",
       "save": "Save",
       "saving": "Saving",
       "searchBoards": "Search boards"
@@ -189,6 +190,9 @@
       "writeModeDescription": "Draft proposals or implement graph changes"
     },
     "appName": "Mind",
+    "boardLoadError": "Could not load boards.",
+    "boardLoadErrorDescription": "Mind could not reach the board API. Retry, or check the API logs if it keeps failing.",
+    "boardLoadErrorTitle": "Could not load boards",
     "boards": {
       "title": "Boards"
     },
@@ -261,6 +265,7 @@
     },
     "internalOnly": "Internal planning canvas",
     "loadingBoard": "Loading board",
+    "loadingBoards": "Loading boards",
     "nodeStatuses": {
       "backlog": "Backlog",
       "blocked": "Blocked",
@@ -315,6 +320,8 @@
       "rewireEdge": "Find a better placement for relationship {edgeId}. Current source: \"{source}\" ({sourceId}); target: \"{target}\" ({targetId}); type: {edgeType}; label: {label}. Inspect nearby graph context and propose an applyable draft to rewire or relabel it if that improves the plan.",
       "risks": "Analyze node \"{title}\" ({id}) for blockers, weak assumptions, missing dependencies, review needs, and decision points. Propose an applyable draft that adds risk, question, dependency, and action nodes with appropriate statuses. Status: {status}. Horizon: {horizon}. Body: {body}"
     },
+    "snapshotLoadErrorDescription": "The board list loaded, but the selected board snapshot failed.",
+    "snapshotLoadErrorTitle": "Could not load this board",
     "tags": {
       "clear": "Clear selected tags",
       "empty": "No tags found.",

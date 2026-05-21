@@ -13,6 +13,7 @@ import { useMindAiPreferences } from './use-mind-ai-preferences';
 
 type Params = {
   boardId?: string | null;
+  enabled?: boolean;
   threadId: string;
   wsId: string;
 };
@@ -40,7 +41,12 @@ function modelFromId(modelId: string) {
   };
 }
 
-export function useMindAiPanelState({ boardId, threadId, wsId }: Params) {
+export function useMindAiPanelState({
+  boardId,
+  enabled = true,
+  threadId,
+  wsId,
+}: Params) {
   const t = useTranslations('mind');
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
@@ -63,6 +69,7 @@ export function useMindAiPanelState({ boardId, threadId, wsId }: Params) {
     thinkingMode,
   } = preferences;
   const personalWorkspaceQuery = useQuery({
+    enabled,
     queryFn: () =>
       resolveInfrastructureWorkspaceId('personal').then(
         (response) => response.workspaceId
@@ -70,7 +77,7 @@ export function useMindAiPanelState({ boardId, threadId, wsId }: Params) {
     queryKey: ['mind', 'personal-workspace-id'],
     staleTime: 5 * 60 * 1000,
   });
-  const { data: workspaceCredits } = useAiCredits(wsId);
+  const { data: workspaceCredits } = useAiCredits(enabled ? wsId : undefined);
   const workspaceCreditLocked =
     workspaceCredits?.tier === 'FREE' ||
     (!!personalWorkspaceQuery.data && personalWorkspaceQuery.data === wsId);
@@ -79,7 +86,9 @@ export function useMindAiPanelState({ boardId, threadId, wsId }: Params) {
     activeCreditSource === 'personal'
       ? (personalWorkspaceQuery.data ?? 'personal')
       : wsId;
-  const { data: creditCredits } = useAiCredits(creditWsId);
+  const { data: creditCredits } = useAiCredits(
+    enabled ? creditWsId : undefined
+  );
 
   const transport = useMemo(
     () =>

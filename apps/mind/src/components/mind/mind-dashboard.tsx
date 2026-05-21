@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bot } from '@tuturuuu/icons';
+import { Bot, CircleAlert, RefreshCw } from '@tuturuuu/icons';
 import {
   getMindBoardSnapshot,
   listMindBoards,
@@ -40,8 +40,13 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
     queryKey: ['mind', 'boards', wsId],
   });
   const boards = boardsQuery.data?.boards ?? [];
-  const hasNoBoards = !boardsQuery.isLoading && boards.length === 0;
+  const boardLoadFailed = boardsQuery.isError;
+  const hasNoBoards =
+    !boardLoadFailed && !boardsQuery.isLoading && boards.length === 0;
   const activeBoardId = selectedBoardId ?? boards[0]?.id ?? null;
+  const activeBoard = activeBoardId
+    ? boards.find((board) => board.id === activeBoardId)
+    : null;
   const snapshotQuery = useQuery({
     enabled: !!activeBoardId,
     queryFn: () => getMindBoardSnapshot(wsId, activeBoardId ?? ''),
@@ -58,6 +63,7 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
     },
   });
   const snapshot = snapshotQuery.data;
+  const snapshotLoadFailed = snapshotQuery.isError;
   const tags = useMemo(() => {
     const values = new Set<string>();
     for (const node of snapshot?.nodes ?? []) {
@@ -70,9 +76,15 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
     <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-root-background text-foreground md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
       <MindDashboardHeader
         boardTitle={
-          hasNoBoards
-            ? t('emptyState.headerTitle')
-            : (snapshot?.board.title ?? t('loadingBoard'))
+          boardLoadFailed
+            ? t('boardLoadErrorTitle')
+            : hasNoBoards
+              ? t('emptyState.headerTitle')
+              : snapshotLoadFailed
+                ? (activeBoard?.title ?? t('snapshotLoadErrorTitle'))
+                : (snapshot?.board.title ??
+                  activeBoard?.title ??
+                  t('loadingBoard'))
         }
         edgeCount={snapshot?.board.edgeCount ?? 0}
         nodeCount={snapshot?.board.nodeCount ?? 0}
@@ -99,8 +111,22 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
           </Button>
         </div>
       </div>
-      {hasNoBoards ? (
+      {boardLoadFailed ? (
+        <CanvasErrorState
+          description={t('boardLoadErrorDescription')}
+          onRetry={() => void boardsQuery.refetch()}
+          retryLabel={t('actions.retry')}
+          title={t('boardLoadErrorTitle')}
+        />
+      ) : hasNoBoards ? (
         <MindEmptyState />
+      ) : snapshotLoadFailed ? (
+        <CanvasErrorState
+          description={t('snapshotLoadErrorDescription')}
+          onRetry={() => void snapshotQuery.refetch()}
+          retryLabel={t('actions.retry')}
+          title={t('snapshotLoadErrorTitle')}
+        />
       ) : snapshot ? (
         <MindCanvas
           key={snapshot.board.id}
@@ -136,6 +162,38 @@ function CanvasLoadingState() {
     <div className="min-h-0 flex-1 space-y-4 p-6">
       <Skeleton className="h-16 w-80 max-w-full" />
       <Skeleton className="h-[calc(100dvh-12rem)] w-full" />
+    </div>
+  );
+}
+
+function CanvasErrorState({
+  description,
+  onRetry,
+  retryLabel,
+  title,
+}: {
+  description: string;
+  onRetry: () => void;
+  retryLabel: string;
+  title: string;
+}) {
+  return (
+    <div className="flex min-h-0 flex-1 items-center justify-center p-6">
+      <div className="max-w-md rounded-lg border border-dynamic-red/30 bg-dynamic-red/5 p-5 text-center">
+        <CircleAlert className="mx-auto h-6 w-6 text-dynamic-red" />
+        <h2 className="mt-3 font-semibold text-base">{title}</h2>
+        <p className="mt-2 text-muted-foreground text-sm">{description}</p>
+        <Button
+          className="mt-4 gap-2"
+          onClick={onRetry}
+          size="sm"
+          type="button"
+          variant="outline"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+          <span>{retryLabel}</span>
+        </Button>
+      </div>
     </div>
   );
 }

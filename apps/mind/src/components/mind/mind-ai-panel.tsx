@@ -55,7 +55,12 @@ export function MindAiPanel({
     null
   );
   const previousProposalIdRef = useRef<string | null>(null);
-  const state = useMindAiPanelState({ boardId, threadId, wsId });
+  const state = useMindAiPanelState({
+    boardId,
+    enabled: !collapsed,
+    threadId,
+    wsId,
+  });
   const {
     activeCreditSource,
     addFiles,

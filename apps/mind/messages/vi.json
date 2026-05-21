@@ -74,6 +74,7 @@
       "organize": "Sắp xếp",
       "relationships": "Quan hệ",
       "restoreAi": "Thu trợ lý về cửa sổ nổi",
+      "retry": "Thử lại",
       "save": "Lưu",
       "saving": "Đang lưu",
       "searchBoards": "Tìm bảng"
@@ -189,6 +190,9 @@
       "writeModeDescription": "Soạn bản nháp hoặc triển khai thay đổi đồ thị"
     },
     "appName": "Mind",
+    "boardLoadError": "Không thể tải danh sách bảng.",
+    "boardLoadErrorDescription": "Mind không thể kết nối API bảng. Hãy thử lại; nếu vẫn lỗi, kiểm tra log API.",
+    "boardLoadErrorTitle": "Không thể tải danh sách bảng",
     "boards": {
       "title": "Bảng"
     },
@@ -261,6 +265,7 @@
     },
     "internalOnly": "Canvas lập kế hoạch nội bộ",
     "loadingBoard": "Đang tải bảng",
+    "loadingBoards": "Đang tải danh sách bảng",
     "nodeStatuses": {
       "backlog": "Tồn đọng",
       "blocked": "Bị chặn",
@@ -315,6 +320,8 @@
       "rewireEdge": "Tìm vị trí tốt hơn cho quan hệ {edgeId}. Nguồn hiện tại: \"{source}\" ({sourceId}); đích: \"{target}\" ({targetId}); loại: {edgeType}; nhãn: {label}. Kiểm tra ngữ cảnh đồ thị lân cận và đề xuất một bản nháp có thể áp dụng để nối lại hoặc gắn nhãn lại nếu điều đó giúp kế hoạch rõ hơn.",
       "risks": "Phân tích nút \"{title}\" ({id}) để tìm điểm chặn, giả định yếu, phụ thuộc còn thiếu, nhu cầu xem xét và điểm cần quyết định. Đề xuất một bản vá nháp có thể áp dụng để thêm các nút rủi ro, câu hỏi, phụ thuộc và hành động với trạng thái phù hợp. Trạng thái: {status}. Tầm nhìn: {horizon}. Nội dung: {body}"
     },
+    "snapshotLoadErrorDescription": "Danh sách bảng đã tải, nhưng snapshot của bảng được chọn bị lỗi.",
+    "snapshotLoadErrorTitle": "Không thể tải bảng này",
     "tags": {
       "clear": "Xóa các thẻ đã chọn",
       "empty": "Không tìm thấy thẻ.",

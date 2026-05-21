@@ -37,7 +37,10 @@ export function MindSidebarBoards({ workspaceSlug, wsId }: Props) {
     <BoardLibrary
       boards={boardsQuery.data?.boards ?? []}
       creating={createBoardMutation.isPending}
+      error={boardsQuery.isError}
+      loading={boardsQuery.isLoading}
       onCreateBoard={(title) => createBoardMutation.mutate(title)}
+      onRetry={() => void boardsQuery.refetch()}
       onSelectBoard={(boardId) =>
         router.push(`/${workspaceSlug}/boards/${boardId}`)
       }
