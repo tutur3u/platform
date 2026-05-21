@@ -719,12 +719,35 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'teach' });
     expect(
       getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/storage/list'
+      )
+    ).toEqual({
+      targetApp: [
+        'calendar',
+        'cms',
+        'drive',
+        'finance',
+        'hive',
+        'inventory',
+        'learn',
+        'mind',
+        'mira',
+        'nova',
+        'rewise',
+        'tasks',
+        'teach',
+        'track',
+      ],
+    });
+    expect(
+      getDefaultAppSessionVerificationOptions(
         'http://localhost:3000/api/v1/users/me/profile'
       )
     ).toEqual({
       targetApp: [
         'calendar',
         'cms',
+        'drive',
         'finance',
         'hive',
         'inventory',

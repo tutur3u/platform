@@ -24,8 +24,8 @@ sessions. Apps coordinate through web-owned auth routes:
 
 Registered internal apps are the apps listed in
 `packages/utils/src/internal-domains.ts`, such as `cms`, `calendar`, `nova`,
-`rewise`, `tasks`, `finance`, `inventory`, `track`, `learn`, `teach`, and
-`hive`.
+`rewise`, `tasks`, `drive`, `finance`, `inventory`, `track`, `learn`, `teach`,
+and `hive`.
 
 1. The app redirects unauthenticated users to `apps/web` login with a
    `returnUrl` pointing back to the app's `/verify-token?nextUrl=...` route.
@@ -73,6 +73,13 @@ Every central `apps/web` API consumed by a registered internal app must accept
 use `resolveSessionAuthContext(request, { allowAppSessionAuth: true })` so
 local satellite apps do not loop between `/login` and product pages or
 accumulate `api_auth_failed` IP blocks.
+
+`apps/drive` follows the centralized-API satellite model: the standalone Drive
+app owns the workspace shell and Drive explorer UI, while storage list,
+analytics, upload, delete, share, export, and migration APIs remain in
+`apps/web /api/v1/workspaces/:wsId/storage/*`. Those routes authenticate
+Drive's app-session cookie through the shared storage route auth helper before
+checking `manage_drive`.
 
 Use route-specific app-session constraints instead of accepting any registered
 internal app token. The legacy `allowAppSessionAuth: true` shorthand is

@@ -18,6 +18,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://calendar.tuturuuu.com',
   },
   {
+    name: 'drive',
+    url: 'https://drive.tuturuuu.com',
+  },
+  {
     name: 'qr',
     url: 'https://qr.tuturuuu.com',
   },
@@ -85,6 +89,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('calendar'),
   },
   {
+    name: 'drive',
+    url: getTuturuuuPortlessAppOrigin('drive'),
+  },
+  {
     name: 'qr',
     url: getTuturuuuPortlessAppOrigin('qr'),
   },
@@ -142,6 +150,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'calendar',
     url: 'http://localhost:7806',
+  },
+  {
+    name: 'drive',
+    url: 'http://localhost:7817',
   },
   {
     name: 'qr',

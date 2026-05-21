@@ -3,6 +3,7 @@ import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resolveWorkspaceStorageAutoExtractConfig } from '@/lib/workspace-storage-auto-extract';
 import {
   createWorkspaceStorageFolderObject,
@@ -148,7 +149,7 @@ export async function POST(
       );
     }
 
-    console.error('Auto extract callback error:', error);
+    serverLogger.error('Auto extract callback error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   resolveWorkspaceStorageExportAssetPath,
   verifyWorkspaceStorageExportToken,
@@ -51,7 +52,10 @@ export async function GET(
       );
     }
 
-    console.error('Unexpected error resolving rotating export URL:', error);
+    serverLogger.error(
+      'Unexpected error resolving rotating export URL:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

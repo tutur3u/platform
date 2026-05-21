@@ -1,10 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
@@ -12,6 +6,10 @@ import {
   deleteWorkspaceStorageObjectByPath,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 const deleteObjectSchema = z.object({
   path: z.string().min(1),
@@ -22,19 +20,11 @@ export async function DELETE(
   { params }: { params: Promise<{ wsId: string }> }
 ) {
   const { wsId } = await params;
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+  if (!auth.ok) {
+    return auth.response;
   }
-
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId: normalizedWsId, request });
-
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
+  const { normalizedWsId, permissions, userId } = auth.context;
 
   let body: unknown;
   try {
@@ -75,7 +65,7 @@ export async function DELETE(
       normalizedWsId,
       path: sanitizedPath,
       permissions,
-      userId: user.id,
+      userId,
     }));
 
   if (!canDeleteStorageObject) {
@@ -96,7 +86,7 @@ export async function DELETE(
       );
     }
 
-    console.error('Failed to delete storage object:', error);
+    logWorkspaceStorageRouteError('Failed to delete storage object:', error);
     return NextResponse.json(
       { message: 'Failed to delete storage object' },
       { status: 500 }

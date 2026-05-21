@@ -1,11 +1,5 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import {
@@ -17,6 +11,10 @@ import {
   resolveWorkspaceStorageProvider,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 const exportLinksSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
@@ -28,23 +26,11 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    if (!auth.ok) {
+      return auth.response;
     }
-
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-    const permissions = await getPermissions({
-      wsId: normalizedWsId,
-      request,
-    });
-
-    if (!permissions) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const { normalizedWsId, permissions } = auth.context;
 
     if (permissions.withoutPermission('manage_drive')) {
       return NextResponse.json(
@@ -188,7 +174,10 @@ export async function POST(
       );
     }
 
-    console.error('Unexpected error exporting drive links:', error);
+    logWorkspaceStorageRouteError(
+      'Unexpected error exporting drive links:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

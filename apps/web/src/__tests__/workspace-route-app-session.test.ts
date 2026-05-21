@@ -48,6 +48,7 @@ describe('workspace API route app-session bridge', () => {
         targetApp: [
           'calendar',
           'cms',
+          'drive',
           'finance',
           'hive',
           'inventory',

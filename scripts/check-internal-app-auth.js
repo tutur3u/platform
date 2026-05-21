@@ -7,6 +7,7 @@ const ROOT = path.resolve(__dirname, '..');
 const REGISTERED_APPS = [
   'calendar',
   'cms',
+  'drive',
   'finance',
   'hive',
   'inventory',
@@ -21,6 +22,7 @@ const REGISTERED_APPS = [
 const REGISTERED_APP_TARGETS = {
   calendar: 'calendar',
   cms: 'cms',
+  drive: 'drive',
   finance: 'finance',
   hive: 'hive',
   inventory: 'inventory',
@@ -208,6 +210,7 @@ if (
 const registeredProxyPaths = [
   'apps/calendar/src/proxy.ts',
   'apps/cms/src/proxy.ts',
+  'apps/drive/src/proxy.ts',
   'apps/finance/src/proxy.ts',
   'apps/hive/src/proxy.ts',
   'apps/inventory/src/proxy.ts',
@@ -232,6 +235,7 @@ for (const proxyPath of registeredProxyPaths) {
 const registeredAppConstantPaths = [
   ['apps/calendar/src/constants/common.ts', REGISTERED_APP_TARGETS.calendar],
   ['apps/cms/src/constants/common.ts', REGISTERED_APP_TARGETS.cms],
+  ['apps/drive/src/constants/common.ts', REGISTERED_APP_TARGETS.drive],
   ['apps/finance/src/constants/common.ts', REGISTERED_APP_TARGETS.finance],
   ['apps/hive/src/constants/common.ts', REGISTERED_APP_TARGETS.hive],
   ['apps/inventory/src/constants/common.ts', REGISTERED_APP_TARGETS.inventory],

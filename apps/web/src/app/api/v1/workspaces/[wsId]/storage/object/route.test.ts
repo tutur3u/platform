@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
@@ -6,8 +6,10 @@ const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   deleteWorkspaceStorageObjectByPath: vi.fn(),
   getPermissions: vi.fn(),
+  logWorkspaceStorageRouteError: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   resolveAuthenticatedSessionUser: vi.fn(),
+  resolveWorkspaceStorageRouteAuth: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
@@ -49,6 +51,15 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
   ) => mocks.deleteWorkspaceStorageObjectByPath(...args),
 }));
 
+vi.mock('../route-auth', () => ({
+  logWorkspaceStorageRouteError: (
+    ...args: Parameters<typeof mocks.logWorkspaceStorageRouteError>
+  ) => mocks.logWorkspaceStorageRouteError(...args),
+  resolveWorkspaceStorageRouteAuth: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceStorageRouteAuth>
+  ) => mocks.resolveWorkspaceStorageRouteAuth(...args),
+}));
+
 function createRequest(path: string) {
   return new NextRequest(
     'http://localhost/api/v1/workspaces/ws-1/storage/object',
@@ -75,6 +86,34 @@ describe('workspace storage object route', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
     });
+    mocks.resolveWorkspaceStorageRouteAuth.mockImplementation(
+      async (_request: Request, wsId: string) => {
+        const normalizedWsId = await mocks.normalizeWorkspaceId(wsId);
+        const permissions = await mocks.getPermissions();
+
+        if (!permissions) {
+          return {
+            ok: false,
+            response: NextResponse.json(
+              { message: 'Unauthorized' },
+              { status: 401 }
+            ),
+          };
+        }
+
+        return {
+          ok: true,
+          context: {
+            normalizedWsId,
+            permissions,
+            user: {
+              id: 'user-1',
+            },
+            userId: 'user-1',
+          },
+        };
+      }
+    );
     mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
     mocks.deleteWorkspaceStorageObjectByPath.mockResolvedValue({
       provider: 'supabase',

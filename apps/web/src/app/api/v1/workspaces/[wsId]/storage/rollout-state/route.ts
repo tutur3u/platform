@@ -1,12 +1,11 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { getWorkspaceStorageRolloutState } from '@/lib/workspace-storage-migration';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 function canManageSecretsForWorkspace(
   workspacePermissions: Awaited<ReturnType<typeof getPermissions>>,
@@ -25,17 +24,14 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    if (!auth.ok) {
+      return auth.response;
     }
-
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    const { normalizedWsId, user } = auth.context;
     const [workspacePermissions, rootPermissions] = await Promise.all([
-      getPermissions({ wsId: normalizedWsId, request }),
-      getPermissions({ wsId: ROOT_WORKSPACE_ID, request }),
+      getPermissions({ user, wsId: normalizedWsId }),
+      getPermissions({ user, wsId: ROOT_WORKSPACE_ID }),
     ]);
 
     if (!canManageSecretsForWorkspace(workspacePermissions, rootPermissions)) {
@@ -49,7 +45,10 @@ export async function GET(
 
     return NextResponse.json({ data });
   } catch (error) {
-    console.error('Workspace storage rollout state error:', error);
+    logWorkspaceStorageRouteError(
+      'Workspace storage rollout state error:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -12,6 +12,10 @@
       "name": "cms.tuturuuu",
       "script": "dev:app"
     },
+    "apps/drive": {
+      "name": "drive.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/external": {
       "name": "external.tuturuuu",
       "script": "dev:app"

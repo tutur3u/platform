@@ -1,11 +1,13 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createClient: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspaceStorageOverview: vi.fn(),
+  logWorkspaceStorageRouteError: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
+  resolveWorkspaceStorageRouteAuth: vi.fn(),
 }));
 
 vi.mock('@/lib/server-supabase-client', () => ({
@@ -35,15 +37,54 @@ vi.mock('@/lib/workspace-storage-provider', () => ({
   ) => mocks.getWorkspaceStorageOverview(...args),
 }));
 
+vi.mock('../route-auth', () => ({
+  logWorkspaceStorageRouteError: (
+    ...args: Parameters<typeof mocks.logWorkspaceStorageRouteError>
+  ) => mocks.logWorkspaceStorageRouteError(...args),
+  resolveWorkspaceStorageRouteAuth: (
+    ...args: Parameters<typeof mocks.resolveWorkspaceStorageRouteAuth>
+  ) => mocks.resolveWorkspaceStorageRouteAuth(...args),
+}));
+
 describe('workspace storage analytics route', () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.createClient.mockReset();
     mocks.getPermissions.mockReset();
     mocks.getWorkspaceStorageOverview.mockReset();
+    mocks.logWorkspaceStorageRouteError.mockReset();
     mocks.normalizeWorkspaceId.mockReset();
+    mocks.resolveWorkspaceStorageRouteAuth.mockReset();
     mocks.createClient.mockResolvedValue({});
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-123');
+    mocks.resolveWorkspaceStorageRouteAuth.mockImplementation(
+      async (_request: Request, wsId: string) => {
+        const normalizedWsId = await mocks.normalizeWorkspaceId(wsId);
+        const permissions = await mocks.getPermissions();
+
+        if (!permissions) {
+          return {
+            ok: false,
+            response: NextResponse.json(
+              { message: 'Unauthorized' },
+              { status: 401 }
+            ),
+          };
+        }
+
+        return {
+          ok: true,
+          context: {
+            normalizedWsId,
+            permissions,
+            user: {
+              id: 'user-1',
+            },
+            userId: 'user-1',
+          },
+        };
+      }
+    );
   });
 
   it('returns 401 when permissions cannot be resolved', async () => {

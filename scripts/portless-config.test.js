@@ -86,6 +86,7 @@ test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
 
   assert.equal(config.apps['apps/apps']?.name, 'apps.tuturuuu');
   assert.equal(config.apps['apps/web']?.name, 'tuturuuu');
+  assert.equal(config.apps['apps/drive']?.name, 'drive.tuturuuu');
   assert.equal(config.apps['apps/qr']?.name, 'qr.tuturuuu');
   assert.equal(config.apps['apps/tasks']?.name, 'tasks.tuturuuu');
   assert.equal(
@@ -98,6 +99,7 @@ test('satellite runtime defaults keep Portless origins in local redirects', () =
   const appConstantFiles = [
     'apps/calendar/src/constants/common.ts',
     'apps/cms/src/constants/common.ts',
+    'apps/drive/src/constants/common.ts',
     'apps/finance/src/constants/common.ts',
     'apps/rewise/src/constants/common.ts',
     'apps/tasks/src/constants/common.ts',
@@ -106,6 +108,7 @@ test('satellite runtime defaults keep Portless origins in local redirects', () =
   const centralAuthProxyFiles = [
     'apps/calendar/src/proxy.ts',
     'apps/cms/src/proxy.ts',
+    'apps/drive/src/proxy.ts',
     'apps/finance/src/proxy.ts',
     'apps/meet/src/proxy.ts',
     'apps/nova/src/proxy.ts',

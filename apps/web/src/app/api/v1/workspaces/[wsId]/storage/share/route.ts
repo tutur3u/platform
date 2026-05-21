@@ -1,12 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { imageTransformOptionsSchema } from '@tuturuuu/types';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
@@ -14,6 +8,10 @@ import {
   createWorkspaceStorageSignedReadUrl,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 const shareSchema = z.object({
   path: z.string().max(MAX_MEDIUM_TEXT_LENGTH).min(1),
@@ -58,19 +56,11 @@ async function resolveSignedUrl(
   }
 ) {
   const { wsId } = await params;
-  const supabase = await createClient(request);
-
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+  if (!auth.ok) {
+    return auth.response;
   }
-
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({
-    wsId: normalizedWsId,
-    request,
-  });
+  const { normalizedWsId, permissions, userId } = auth.context;
 
   const sanitizedPath = sanitizePath(input.path);
   if (!sanitizedPath) {
@@ -80,17 +70,13 @@ async function resolveSignedUrl(
   const isTaskImagesPath =
     sanitizedPath === 'task-images' || sanitizedPath.startsWith('task-images/');
 
-  if (!permissions) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
-
   const canReadFinanceTransactionFile =
     await canAccessFinanceTransactionStoragePath({
       access: 'read',
       normalizedWsId,
       path: sanitizedPath,
       permissions,
-      userId: user.id,
+      userId,
     });
 
   const canViewDrive = !permissions.withoutPermission('view_drive');
@@ -158,7 +144,10 @@ export async function POST(
 
     return NextResponse.json({ signedUrl });
   } catch (error) {
-    console.error('Unexpected error generating signed URL:', error);
+    logWorkspaceStorageRouteError(
+      'Unexpected error generating signed URL:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -211,7 +200,10 @@ export async function GET(
 
     return NextResponse.redirect(signedUrl, { status: 307 });
   } catch (error) {
-    console.error('Unexpected error generating share redirect:', error);
+    logWorkspaceStorageRouteError(
+      'Unexpected error generating share redirect:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

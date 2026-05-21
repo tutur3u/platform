@@ -1,13 +1,12 @@
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/server-supabase-client';
 import {
   getWorkspaceStorageOverview,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 export async function GET(
   request: Request,
@@ -15,13 +14,11 @@ export async function GET(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-    const permissions = await getPermissions({ wsId: normalizedWsId, request });
-
-    if (!permissions) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    if (!auth.ok) {
+      return auth.response;
     }
+    const { normalizedWsId, permissions } = auth.context;
 
     if (permissions.withoutPermission('manage_drive')) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -58,7 +55,10 @@ export async function GET(
       );
     }
 
-    console.error('Unexpected workspace storage analytics error:', error);
+    logWorkspaceStorageRouteError(
+      'Unexpected workspace storage analytics error:',
+      error
+    );
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

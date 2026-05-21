@@ -37,6 +37,7 @@ const APPS = [
   { name: 'apps/tasks', dir: 'apps/tasks' },
   { name: 'apps/calendar', dir: 'apps/calendar' },
   { name: 'apps/cms', dir: 'apps/cms' },
+  { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
   { name: 'apps/meet', dir: 'apps/meet' },
   { name: 'apps/track', dir: 'apps/track' },

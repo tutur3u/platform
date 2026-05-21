@@ -96,6 +96,7 @@ describe('mapUrlToApp', () => {
       'calendar',
       'https://calendar.tuturuuu.localhost/verify-token?nextUrl=%2Fcalendar',
     ],
+    ['drive', 'https://drive.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['nova', 'https://nova.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     ['rewise', 'https://rewise.tuturuuu.localhost/verify-token?nextUrl=%2F'],
     [

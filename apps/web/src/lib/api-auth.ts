@@ -151,6 +151,7 @@ const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
 const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'calendar',
   'cms',
+  'drive',
   'finance',
   'hive',
   'inventory',
@@ -188,6 +189,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
     pattern:
       /^\/api\/v1\/workspaces\/[^/]+\/(?:calendar|calendar-hours|calendar-settings|encryption)(?:\/|$)/u,
     targetApp: 'calendar',
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/storage(?:\/|$)/u,
+    targetApp: ALL_SATELLITE_APP_SESSION_TARGETS,
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/time-tracking(?:\/|$)/u,

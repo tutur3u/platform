@@ -1,0 +1,33 @@
+---
+title: 'Drive'
+description: 'Standalone Drive app with centralized workspace storage APIs.'
+updatedAt: '2026-05-21'
+---
+
+## Overview
+
+`apps/drive` is the canonical Tuturuuu Drive application. Production Drive
+traffic should use `https://drive.tuturuuu.com/{wsId}` instead of rendering the
+Drive explorer inside `apps/web`.
+
+- `apps/drive` owns the workspace shell, Drive explorer UI, local
+  `/verify-token` handoff, and local app-session logout.
+- `apps/web /{wsId}/drive` remains a compatibility route. It checks
+  `manage_drive`, preserves the query string, and redirects to the Drive app.
+- Drive uses local port `7817` and Portless host `drive.tuturuuu.localhost`.
+
+## API Ownership
+
+Protected storage APIs remain centralized in `apps/web`:
+
+- `apps/drive` forwards `/api/*` traffic to `apps/web`.
+- Client Drive data flows must use `@tuturuuu/internal-api` helpers with
+  TanStack Query.
+- Do not create direct Supabase browser reads or storage mutations in
+  `apps/drive`.
+- `apps/web` storage routes authenticate normal web sessions and Drive
+  app-session cookies through the shared storage route auth helper, then enforce
+  `manage_drive` or the route-specific permission fallback.
+
+When adding new Drive behavior, add the protected route in `apps/web`, expose it
+from `packages/internal-api`, and consume it from `apps/drive`.

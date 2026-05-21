@@ -1,17 +1,15 @@
 import { posix } from 'node:path';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
 import {
   uploadWorkspaceStorageFileDirect,
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 const ALLOWED_MIME_TYPES = new Set([
   'image/png',
@@ -67,23 +65,11 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    if (!auth.ok) {
+      return auth.response;
     }
-
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-    const permissions = await getPermissions({
-      wsId: normalizedWsId,
-      request,
-    });
-
-    if (!permissions) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const { normalizedWsId, permissions } = auth.context;
 
     if (permissions.withoutPermission('manage_drive')) {
       return NextResponse.json(
@@ -196,7 +182,7 @@ export async function POST(
       );
     }
 
-    console.error('Upload error:', error);
+    logWorkspaceStorageRouteError('Upload error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

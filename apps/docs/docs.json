@@ -104,6 +104,7 @@
                   "platform/applications/apps",
                   "platform/applications/calendar",
                   "platform/applications/cms",
+                  "platform/applications/drive",
                   "platform/applications/inventory",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",

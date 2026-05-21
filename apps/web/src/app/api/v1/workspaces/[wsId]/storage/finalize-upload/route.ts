@@ -1,14 +1,13 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename, sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import { triggerWorkspaceStorageAutoExtract } from '@/lib/workspace-storage-auto-extract';
+import type { WorkspaceStorageRouteAuthContext } from '../route-auth';
+import {
+  logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth,
+} from '../route-auth';
 
 const finalizeUploadSchema = z.object({
   path: z.string().min(1).max(1024),
@@ -17,7 +16,7 @@ const finalizeUploadSchema = z.object({
 });
 
 function canFinalizeUploadForPath(
-  permissions: Awaited<ReturnType<typeof getPermissions>>,
+  permissions: WorkspaceStorageRouteAuthContext['permissions'],
   path: string
 ) {
   if (!permissions) {
@@ -47,19 +46,11 @@ export async function POST(
 ) {
   try {
     const { wsId } = await params;
-    const supabase = await createClient(request);
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (authError || !user) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
+    if (!auth.ok) {
+      return auth.response;
     }
-
-    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-    const permissions = await getPermissions({ wsId: normalizedWsId, request });
-
-    if (!permissions) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
+    const { normalizedWsId, permissions, userId } = auth.context;
 
     let payload: unknown;
     try {
@@ -91,7 +82,7 @@ export async function POST(
         normalizedWsId,
         path: sanitizedPath,
         permissions,
-        userId: user.id,
+        userId,
       }));
 
     if (!canFinalizeUpload) {
@@ -120,7 +111,7 @@ export async function POST(
       autoExtract,
     });
   } catch (error) {
-    console.error('Finalize upload error:', error);
+    logWorkspaceStorageRouteError('Finalize upload error:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
