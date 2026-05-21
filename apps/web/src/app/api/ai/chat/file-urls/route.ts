@@ -146,7 +146,11 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { allowAiTempAuth: true, rateLimitKind: 'read' }
+  {
+    allowAiTempAuth: true,
+    allowAppSessionAuth: { targetApp: 'mind' },
+    rateLimitKind: 'read',
+  }
 );
 
 /** Strip the leading `{timestamp}_` prefix from a storage filename. */

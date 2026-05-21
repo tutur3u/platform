@@ -72,8 +72,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
     unlocalizedPath.startsWith('/login') ||
-    unlocalizedPath.startsWith('/verify-token') ||
-    unlocalizedPath.startsWith('/not-authorized');
+    unlocalizedPath.startsWith('/verify-token');
 
   if (!isPublicPath) {
     const appSession = getAppSessionClaimsFromRequest(request, {

@@ -1,9 +1,4 @@
 {
-  "auth": {
-    "blockedDescription": "Mind is currently available only to exact @tuturuuu.com accounts. Switch to an internal account to continue.",
-    "blockedTitle": "Internal access required",
-    "switchAccount": "Switch account"
-  },
   "common": {
     "affected-product-required": "Affected product *",
     "cancel": "Cancel",

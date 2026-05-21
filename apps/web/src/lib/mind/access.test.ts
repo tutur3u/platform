@@ -84,4 +84,63 @@ describe('requireMindAccess', () => {
       undefined
     );
   });
+
+  it('allows non-internal accounts when workspace membership is valid', async () => {
+    const supabase = { from: vi.fn() };
+    mocks.normalizeWorkspaceId.mockResolvedValue('workspace-id');
+
+    const access = await requireMindAccess({
+      context: {
+        supabase: supabase as never,
+        user: {
+          email: 'customer@example.com',
+          id: 'user-1',
+        } as SupabaseUser,
+      },
+      request: new Request(
+        'https://mind.tuturuuu.com/api/v1/workspaces/workspace-handle/mind/boards'
+      ),
+      wsId: 'workspace-handle',
+    });
+
+    expect(access).toEqual({ normalizedWsId: 'workspace-id', ok: true });
+    expect(supabase.from).not.toHaveBeenCalled();
+    expect(mocks.verifyWorkspaceMembershipType).toHaveBeenCalledWith({
+      requiredType: 'MEMBER',
+      supabase,
+      userId: 'user-1',
+      wsId: 'workspace-id',
+    });
+  });
+
+  it('still denies accounts without workspace membership', async () => {
+    const supabase = { from: vi.fn() };
+    mocks.normalizeWorkspaceId.mockResolvedValue('workspace-id');
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({
+      membershipType: null,
+      ok: false,
+    });
+
+    const access = await requireMindAccess({
+      context: {
+        supabase: supabase as never,
+        user: {
+          email: 'customer@example.com',
+          id: 'user-1',
+        } as SupabaseUser,
+      },
+      request: new Request(
+        'https://mind.tuturuuu.com/api/v1/workspaces/workspace-handle/mind/boards'
+      ),
+      wsId: 'workspace-handle',
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(403);
+      await expect(access.response.json()).resolves.toEqual({
+        error: 'Workspace access denied',
+      });
+    }
+  });
 });

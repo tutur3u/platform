@@ -153,6 +153,7 @@ export const POST = withSessionAuth(
   // Rate limit: 60 signed URLs per minute per IP (2x previous)
   {
     allowAiTempAuth: true,
+    allowAppSessionAuth: { targetApp: 'mind' },
     rateLimit: { windowMs: 60000, maxRequests: 60 },
   }
 );

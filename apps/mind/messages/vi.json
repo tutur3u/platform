@@ -1,9 +1,4 @@
 {
-  "auth": {
-    "blockedDescription": "Mind hiện chỉ dành cho tài khoản đúng miền @tuturuuu.com. Hãy chuyển sang tài khoản nội bộ để tiếp tục.",
-    "blockedTitle": "Cần quyền truy cập nội bộ",
-    "switchAccount": "Đổi tài khoản"
-  },
   "common": {
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "cancel": "Hủy",

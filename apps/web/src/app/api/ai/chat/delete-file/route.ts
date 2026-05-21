@@ -91,6 +91,7 @@ export const POST = withSessionAuth(
   },
   {
     allowAiTempAuth: true,
+    allowAppSessionAuth: { targetApp: 'mind' },
     rateLimit: { windowMs: 60000, maxRequests: 120 },
   }
 );

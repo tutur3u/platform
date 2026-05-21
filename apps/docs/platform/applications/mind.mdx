@@ -1,6 +1,6 @@
 ---
 title: Mind
-description: Internal mindboard satellite app for long-horizon planning, knowledge graphs, and AI-aided graph patches.
+description: Mindboard satellite app for long-horizon planning, knowledge graphs, and AI-aided graph patches.
 ---
 
 Mind lives in `apps/mind`, runs locally on port `7816`, and is served in
@@ -8,11 +8,11 @@ production from `https://mind.tuturuuu.com`. Local development should use
 Portless at `https://mind.tuturuuu.localhost`; the legacy direct fallback is
 `http://localhost:7816`.
 
-Mind is internal-only for v1. The satellite app accepts the Tuturuuu cross-app
-login handoff through `/verify-token`, stores a host-local
-`tuturuuu_app_session` cookie for the `mind` app target, and rejects users whose
-email is not exactly under `@tuturuuu.com`. Mind must not create a local
-Supabase Auth session.
+Mind is available to signed-in Tuturuuu users, not only internal
+`@tuturuuu.com` accounts. The satellite app accepts the Tuturuuu cross-app login
+handoff through `/verify-token`, stores a host-local `tuturuuu_app_session`
+cookie for the `mind` app target, and keeps workspace data behind membership
+checks. Mind must not create a local Supabase Auth session.
 
 ## API Ownership
 
@@ -24,15 +24,16 @@ Protected Mind data stays behind `apps/web` APIs:
 - `/api/v1/workspaces/:wsId/mind/search`
 - `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
 - `/api/ai/mind`
+- `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
+  `/api/ai/chat/file-urls` for Mind chat attachments
 
 The Mind app forwards `/api/v1/*` and `/api/ai/*` to `apps/web` and consumes
 them through `@tuturuuu/internal-api`. Do not add direct client Supabase reads
 or client-local raw `fetch('/api/...')` calls for protected Mind data.
 
 Workspace routes must normalize aliases such as `personal`, verify workspace
-membership with the request-scoped auth context, require exact internal email
-access, and then perform private-schema reads or writes through the centralized
-server repository.
+membership with the request-scoped auth context, and then perform private-schema
+reads or writes through the centralized server repository.
 
 Mind repositories must not use ad-hoc raw SQL from application code. Keep data
 operations in private-schema Postgres RPCs and call them through a

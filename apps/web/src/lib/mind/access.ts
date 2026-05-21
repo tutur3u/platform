@@ -1,7 +1,5 @@
 import 'server-only';
 
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -9,20 +7,6 @@ import {
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import type { SessionAuthContext } from '@/lib/api-auth';
-
-async function resolveInternalEmail({ supabase, user }: SessionAuthContext) {
-  if (isExactTuturuuuDotComEmail(user.email)) {
-    return user.email ?? null;
-  }
-
-  const { data } = await (supabase as TypedSupabaseClient)
-    .from('user_private_details')
-    .select('email')
-    .eq('user_id', user.id)
-    .maybeSingle();
-
-  return typeof data?.email === 'string' ? data.email : null;
-}
 
 export async function requireMindAccess({
   context,
@@ -42,18 +26,6 @@ export async function requireMindAccess({
       response: NextResponse;
     }
 > {
-  const email = await resolveInternalEmail(context);
-
-  if (!isExactTuturuuuDotComEmail(email)) {
-    return {
-      ok: false,
-      response: NextResponse.json(
-        { error: 'Mind is limited to @tuturuuu.com accounts' },
-        { status: 403 }
-      ),
-    };
-  }
-
   let normalizedWsId: string;
   try {
     const nextRequest =
