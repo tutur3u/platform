@@ -1,8 +1,9 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const getGoogleAuthClient = (tokens: {
   access_token: string;
@@ -21,23 +22,21 @@ const getGoogleAuthClient = (tokens: {
 export async function POST(request: Request) {
   console.log('🔵 [API] POST /api/v1/calendar/auth/sync-to-google called');
 
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  console.log('🔵 [API] Auth check:', {
-    hasUser: !!user,
-    userId: user?.id,
-    error: userError?.message,
+  const authContext = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
   });
 
-  if (userError || !user) {
+  console.log('🔵 [API] Auth check:', {
+    hasUser: authContext.ok,
+    userId: authContext.ok ? authContext.user.id : undefined,
+  });
+
+  if (!authContext.ok) {
     console.log('❌ [API] User not authenticated');
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
+    return authContext.response;
   }
+
+  const { supabase, user } = authContext;
 
   try {
     const { wsId, startDate, endDate } = await request.json();
@@ -52,13 +51,31 @@ export async function POST(request: Request) {
       );
     }
 
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
+
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     // Get Google auth tokens
     console.log('🔵 [API] Fetching Google auth tokens...');
     const { data: googleTokens, error: tokensError } = await supabase
       .from('calendar_auth_tokens')
       .select('access_token, refresh_token')
       .eq('user_id', user.id)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .maybeSingle();
 
     console.log('🔵 [API] Google tokens result:', {
@@ -82,7 +99,7 @@ export async function POST(request: Request) {
       await supabase
         .from('calendar_connections')
         .select('calendar_id, is_enabled')
-        .eq('ws_id', wsId)
+        .eq('ws_id', normalizedWsId)
         .eq('is_enabled', true);
 
     console.log('🔵 [API] Calendar connections result:', {
@@ -118,7 +135,7 @@ export async function POST(request: Request) {
     const { data: tuturuuuEvents, error: eventsError } = await supabase
       .from('workspace_calendar_events')
       .select('*')
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .lt('start_at', end.add(1, 'day').toISOString())
       .gt('end_at', start.toISOString())
       .order('start_at', { ascending: true });

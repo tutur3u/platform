@@ -35,37 +35,31 @@ export default async function CalendarLabPage({ params }: PageProps) {
 
   const permissions = await getPermissions({ user, wsId });
   if (!permissions) notFound();
-
   const { withoutPermission } = permissions;
 
-  const supabase = await createAdminClient({ noCookie: true });
-
-  // Security Check: Only Tuturuuu employees
-  const isEmployee = user?.email?.endsWith('@tuturuuu.com');
-
-  if (!isEmployee) {
-    redirect(`/${wsId}`);
-  }
+  const isEmployee = user.email?.endsWith('@tuturuuu.com');
+  if (!isEmployee) redirect(`/${wsId}`);
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
 
-  // Fetch Google auth token and calendar connections for "Real Data Import" feature
-  const [{ data: googleToken }, { data: calendarConnections }] = user?.id
-    ? await Promise.all([
-        supabase
-          .from('calendar_auth_tokens')
-          .select('*')
-          .eq('ws_id', workspace.id)
-          .maybeSingle(),
-        supabase
-          .from('calendar_connections')
-          .select('*')
-          .eq('ws_id', workspace.id)
-          .order('created_at', { ascending: true }),
-      ])
-    : [{ data: null }, { data: null }];
+  const supabase = await createAdminClient({ noCookie: true });
 
-  const isPersonalWorkspace = workspace.id === user?.id;
+  // Fetch Google auth token and calendar connections for "Real Data Import" feature
+  const [{ data: googleToken }, { data: calendarConnections }] =
+    await Promise.all([
+      supabase
+        .from('calendar_auth_tokens')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .maybeSingle(),
+      supabase
+        .from('calendar_connections')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: true }),
+    ]);
+
+  const isPersonalWorkspace = workspace.id === user.id;
 
   return (
     <TaskDialogWrapper

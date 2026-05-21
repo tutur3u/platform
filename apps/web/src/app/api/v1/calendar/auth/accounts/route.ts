@@ -6,17 +6,15 @@
  * DELETE - Disconnect an account
  */
 
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const accountsQuerySchema = z.object({
@@ -29,17 +27,12 @@ const disconnectQuerySchema = z.object({
 });
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const supabase = await createClient(request);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (!auth.ok) return auth.response;
+  const { supabase, user } = auth;
 
   const url = new URL(request.url);
   const queryParams = Object.fromEntries(url.searchParams.entries());
@@ -53,7 +46,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   }
 
   const { wsId } = result.data;
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   try {
     const { data: accounts, error } = await supabase
@@ -67,7 +60,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching accounts:', error);
+      serverLogger.error('Error fetching accounts:', error);
       return NextResponse.json(
         { error: 'Failed to fetch accounts' },
         { status: 500 }
@@ -89,7 +82,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in GET /api/v1/calendar/auth/accounts:', error);
+    serverLogger.error('Error in GET /api/v1/calendar/auth/accounts:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -98,17 +91,12 @@ export async function GET(request: Request): Promise<NextResponse> {
 }
 
 export async function DELETE(request: Request): Promise<NextResponse> {
-  const supabase = await createClient(request);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (!auth.ok) return auth.response;
+  const { supabase, user } = auth;
 
   const url = new URL(request.url);
   const queryParams = Object.fromEntries(url.searchParams.entries());
@@ -122,7 +110,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
   }
 
   const { accountId, wsId } = result.data;
-  const normalizedWsId = await normalizeWorkspaceId(wsId);
+  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
 
   try {
     const sbAdmin = await createAdminClient();
@@ -155,7 +143,7 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       .eq('ws_id', normalizedWsId);
 
     if (updateError) {
-      console.error('Error disconnecting account:', updateError);
+      serverLogger.error('Error disconnecting account:', updateError);
       return NextResponse.json(
         { error: 'Failed to disconnect account' },
         { status: 500 }
@@ -170,7 +158,10 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       .eq('ws_id', normalizedWsId);
 
     if (connectionsError) {
-      console.error('Error disabling calendar connections:', connectionsError);
+      serverLogger.error(
+        'Error disabling calendar connections:',
+        connectionsError
+      );
       // We don't return error here because the main account is already disconnected
     }
 
@@ -182,7 +173,10 @@ export async function DELETE(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error) {
-    console.error('Error in DELETE /api/v1/calendar/auth/accounts:', error);
+    serverLogger.error(
+      'Error in DELETE /api/v1/calendar/auth/accounts:',
+      error
+    );
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

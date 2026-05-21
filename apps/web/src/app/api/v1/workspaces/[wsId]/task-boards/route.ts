@@ -20,6 +20,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
 const createBoardSchema = z.object({
@@ -66,7 +67,7 @@ async function resolveTaskBoardRequestAuth(
   req: Request
 ): Promise<TaskBoardRequestAuth> {
   const taskAppSessionVerification = verifyAppSessionRequest(req, {
-    targetApp: 'tasks',
+    targetApp: ['calendar', 'tasks'],
   });
 
   if (taskAppSessionVerification.ok) {
@@ -166,7 +167,10 @@ export async function GET(req: Request, { params }: Params) {
         wsId,
       });
     } catch (error) {
-      console.error('Failed to ensure default personal task board:', error);
+      serverLogger.error(
+        'Failed to ensure default personal task board:',
+        error
+      );
     }
 
     const boardsQuery = sbAdmin
@@ -299,17 +303,12 @@ export async function GET(req: Request, { params }: Params) {
 export async function POST(req: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
-    const supabase = await createClient(req);
-    const wsId = await normalizeWorkspaceId(id, supabase);
+    const auth = await resolveTaskBoardRequestAuth(req);
+    if ('error' in auth) return auth.error;
 
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
+    const wsId = await normalizeWorkspaceId(id, auth.supabase);
 
-    if (userError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const permissions = await getPermissions({ wsId, request: req });
+    const permissions = await getPermissions({ wsId, user: auth.user });
     if (!permissions?.containsPermission('manage_projects')) {
       return NextResponse.json(
         { error: "You don't have permission to perform this operation" },
@@ -320,8 +319,8 @@ export async function POST(req: Request, { params }: Params) {
     // Verify membership
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId,
-      userId: user.id,
-      supabase,
+      userId: auth.user.id,
+      supabase: auth.supabase,
     });
 
     if (memberCheck.error === 'membership_lookup_failed') {
@@ -350,10 +349,15 @@ export async function POST(req: Request, { params }: Params) {
             | null
             | undefined) ?? null,
         template_id: parsedBody.template_id,
-        creator_id: user.id,
+        creator_id: auth.user.id,
       };
 
-    const sbAdmin = await createAdminClient();
+    const sbAdmin =
+      'sbAdmin' in auth
+        ? auth.sbAdmin
+        : ((await createAdminClient({
+            noCookie: true,
+          })) as TypedSupabaseClient);
 
     const { data, error } = await sbAdmin
       .from('workspace_boards')

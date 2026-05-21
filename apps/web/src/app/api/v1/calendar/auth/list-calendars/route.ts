@@ -1,12 +1,13 @@
 import { google, OAuth2Client } from '@tuturuuu/google';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_NAME_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const listCalendarsQuerySchema = z.object({
@@ -37,16 +38,12 @@ interface CalendarToken {
 }
 
 export async function GET(request: Request): Promise<NextResponse> {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (!auth.ok) return auth.response;
+  const { supabase, user } = auth;
 
   try {
     const url = new URL(request.url);
@@ -61,7 +58,24 @@ export async function GET(request: Request): Promise<NextResponse> {
     }
 
     const { wsId, accountId } = result.data;
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
+
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
+
+    if (memberCheck.error === 'membership_lookup_failed') {
+      return NextResponse.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!memberCheck.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     // Build query based on whether accountId is provided
     let query = supabase
@@ -79,7 +93,7 @@ export async function GET(request: Request): Promise<NextResponse> {
     const { data: tokens, error: tokensError } = await query;
 
     if (tokensError) {
-      console.error('Error fetching calendar tokens:', tokensError);
+      serverLogger.error('Error fetching calendar tokens:', tokensError);
       return NextResponse.json(
         { error: 'Failed to fetch calendar accounts' },
         { status: 500 }
@@ -136,7 +150,7 @@ export async function GET(request: Request): Promise<NextResponse> {
           });
         }
       } catch (error) {
-        console.error(
+        serverLogger.error(
           `Error fetching calendars for account ${token.id}:`,
           error
         );
@@ -166,7 +180,7 @@ export async function GET(request: Request): Promise<NextResponse> {
       { status: 200 }
     );
   } catch (error: unknown) {
-    console.error('Error fetching Google Calendar list:', error);
+    serverLogger.error('Error fetching Google Calendar list:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'Unknown error';
 

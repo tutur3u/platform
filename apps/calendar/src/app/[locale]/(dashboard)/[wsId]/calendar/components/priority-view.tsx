@@ -1,0 +1,883 @@
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
+import type { LucideIcon } from '@tuturuuu/icons';
+import {
+  Briefcase,
+  Calendar,
+  CheckCircle,
+  CheckIcon,
+  ChevronDown,
+  Clock,
+  horseHead,
+  Icon,
+  Loader2,
+  Rabbit,
+  Scissors,
+  Search,
+  Sparkles,
+  Turtle,
+  User,
+  unicornHead,
+} from '@tuturuuu/icons';
+import {
+  listWorkspaceTaskLists,
+  updateWorkspaceTask,
+} from '@tuturuuu/internal-api/tasks';
+import type { TaskPriority } from '@tuturuuu/types/primitives/Priority';
+import { useCalendar } from '@tuturuuu/ui/hooks/use-calendar';
+import { Progress } from '@tuturuuu/ui/progress';
+import { toast } from '@tuturuuu/ui/sonner';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { useTaskDialog } from '@tuturuuu/ui/tu-do/hooks/useTaskDialog';
+import { cn } from '@tuturuuu/utils/format';
+import { useRouter } from 'next/navigation';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
+import ActionsDropdown from './actions-dropdown';
+import PriorityDropdown from './priority-dropdown';
+import { SchedulingDialog } from './scheduling-dialog';
+import { getAssignedTasks } from './task-fetcher';
+
+// Priority labels (matching task-properties-section.tsx)
+const PRIORITY_LABELS: Record<TaskPriority, string> = {
+  critical: 'Urgent',
+  high: 'High',
+  normal: 'Medium',
+  low: 'Low',
+};
+
+// Priority icons (matching taskPriorityUtils.tsx)
+const PRIORITY_ICONS: Record<TaskPriority, React.ReactElement> = {
+  critical: <Icon iconNode={unicornHead} />,
+  high: <Icon iconNode={horseHead} />,
+  normal: <Rabbit />,
+  low: <Turtle />,
+};
+
+function getPriorityIcon(
+  priority: TaskPriority | null | undefined,
+  className?: string
+): React.ReactNode {
+  if (!priority) return null;
+  const icon = PRIORITY_ICONS[priority];
+  return icon ? React.cloneElement(icon, { className } as any) : null;
+}
+
+// Priority order for grouping (highest to lowest)
+const PRIORITY_ORDER = ['critical', 'high', 'normal', 'low'] as const;
+
+// Calendar hours type icons
+const CALENDAR_HOURS_ICONS: Record<
+  string,
+  { icon: LucideIcon; label: string }
+> = {
+  work_hours: { icon: Briefcase, label: 'Work Hours' },
+  meeting_hours: { icon: Calendar, label: 'Meeting Hours' },
+  personal_hours: { icon: User, label: 'Personal Hours' },
+};
+
+// Format duration helper
+function formatDuration(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = Math.round(totalMinutes % 60);
+  if (hours === 0) return `${minutes}m`;
+  if (minutes === 0) return `${hours}h`;
+  return `${hours}h ${minutes}m`;
+}
+
+type TaskScheduleSettings = {
+  total_duration: number | null;
+  is_splittable: boolean | null;
+  min_split_duration_minutes: number | null;
+  max_split_duration_minutes: number | null;
+  calendar_hours: string | null;
+  auto_schedule: boolean | null;
+};
+
+export default function PriorityView({
+  wsId,
+  allTasks,
+  assigneeId,
+  isPersonalWorkspace = false,
+}: {
+  wsId: string;
+  allTasks: ExtendedWorkspaceTask[];
+  assigneeId: string;
+  /** If true, skip auto-assignment (personal workspace) */
+  isPersonalWorkspace?: boolean;
+}) {
+  const router = useRouter();
+  const { openTaskById, onUpdate } = useTaskDialog();
+  const { setOnTaskScheduled } = useCalendar();
+
+  // Register callback to refresh data when a task is scheduled via drag-drop
+  useEffect(() => {
+    setOnTaskScheduled(() => {
+      router.refresh();
+    });
+    return () => setOnTaskScheduled(undefined);
+  }, [setOnTaskScheduled, router]);
+
+  const [search, setSearch] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState<ExtendedWorkspaceTask[]>(
+    []
+  );
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  // Use search results when searching, otherwise use all tasks
+  const combinedTasks = search.trim() ? searchResults : allTasks;
+
+  // Group tasks by priority
+  const grouped = useMemo(() => {
+    const groups: { [key: string]: ExtendedWorkspaceTask[] } = {
+      critical: [],
+      high: [],
+      normal: [],
+      low: [],
+    };
+
+    combinedTasks.forEach((task) => {
+      const priority = task.priority || 'normal';
+      if (groups[priority]) {
+        groups[priority].push(task);
+      } else {
+        groups.normal?.push(task);
+      }
+    });
+
+    return groups;
+  }, [combinedTasks]);
+
+  // Initialize collapsed state - collapse empty groups by default
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(() => {
+    const emptyGroups = new Set<string>();
+    PRIORITY_ORDER.forEach((key) => {
+      const taskCount = allTasks.filter(
+        (t) => (t.priority || 'normal') === key
+      ).length;
+      if (taskCount === 0) {
+        emptyGroups.add(key);
+      }
+    });
+    return emptyGroups;
+  });
+
+  // Track manually collapsed groups (to not auto-expand them)
+  const [manuallyCollapsed, setManuallyCollapsed] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Track previous task counts to detect changes
+  const prevGroupedRef = React.useRef<{ [key: string]: number }>({});
+
+  // Auto-collapse empty groups and auto-expand non-empty groups
+  React.useEffect(() => {
+    const prevCounts = prevGroupedRef.current;
+    const newCollapsed = new Set(collapsedGroups);
+    let changed = false;
+
+    PRIORITY_ORDER.forEach((key) => {
+      const currentCount = grouped[key]?.length || 0;
+      const prevCount = prevCounts[key] ?? currentCount;
+
+      // If section became empty, auto-collapse it
+      if (currentCount === 0 && prevCount > 0) {
+        newCollapsed.add(key);
+        changed = true;
+      }
+      // If section got tasks and wasn't manually collapsed, auto-expand it
+      else if (
+        currentCount > 0 &&
+        prevCount === 0 &&
+        !manuallyCollapsed.has(key)
+      ) {
+        newCollapsed.delete(key);
+        changed = true;
+      }
+    });
+
+    if (changed) {
+      setCollapsedGroups(newCollapsed);
+    }
+
+    // Update prev counts for next comparison
+    const newCounts: { [key: string]: number } = {};
+    PRIORITY_ORDER.forEach((key) => {
+      newCounts[key] = grouped[key]?.length || 0;
+    });
+    prevGroupedRef.current = newCounts;
+  }, [grouped, collapsedGroups, manuallyCollapsed]);
+
+  // Scheduling dialog state
+  const [schedulingDialogOpen, setSchedulingDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] =
+    useState<ExtendedWorkspaceTask | null>(null);
+
+  // Fetch task schedule settings + scheduled minutes in one batched query.
+  // Important: schedule settings are stored per-user, so `allTasks` may not include them.
+  const tasksToFetchSchedule = useMemo(
+    () => combinedTasks.filter((t) => !t.closed_at),
+    [combinedTasks]
+  );
+
+  const {
+    data: scheduleBatch,
+    isLoading: isLoadingScheduleBatch,
+    isFetching: isFetchingScheduleBatch,
+  } = useQuery({
+    queryKey: [
+      'task-schedule-batch',
+      wsId,
+      tasksToFetchSchedule
+        .map((task) => task.id)
+        .sort()
+        .join(','),
+      isPersonalWorkspace ? 'personal' : 'workspace',
+    ],
+    queryFn: async () => {
+      if (tasksToFetchSchedule.length === 0) {
+        return {
+          minutesByTaskId: {} as Record<string, number>,
+          settingsByTaskId: {} as Record<string, TaskScheduleSettings | null>,
+        };
+      }
+
+      const results = await Promise.allSettled(
+        tasksToFetchSchedule.map(async (task) => {
+          const response = await fetch(
+            isPersonalWorkspace
+              ? `/api/v1/users/me/tasks/${task.id}/schedule`
+              : `/api/v1/workspaces/${wsId}/tasks/${task.id}/schedule`,
+            { cache: 'no-store' }
+          );
+          if (!response.ok) {
+            return {
+              taskId: task.id,
+              minutes: 0,
+              settings: null as TaskScheduleSettings | null,
+            };
+          }
+
+          const data = (await response.json()) as {
+            task?: TaskScheduleSettings | null;
+            events?: Array<{ scheduled_minutes?: number }>;
+          };
+
+          const totalScheduled = (data.events || []).reduce(
+            (sum: number, e: { scheduled_minutes?: number }) =>
+              sum + (e.scheduled_minutes || 0),
+            0
+          );
+
+          return {
+            taskId: task.id,
+            minutes: totalScheduled,
+            settings: (data.task ?? null) as TaskScheduleSettings | null,
+          };
+        })
+      );
+
+      const minutesByTaskId: Record<string, number> = {};
+      const settingsByTaskId: Record<string, TaskScheduleSettings | null> = {};
+
+      for (const result of results) {
+        if (result.status !== 'fulfilled') continue;
+        minutesByTaskId[result.value.taskId] = result.value.minutes;
+        settingsByTaskId[result.value.taskId] = result.value.settings;
+      }
+
+      return { minutesByTaskId, settingsByTaskId };
+    },
+    staleTime: 30000, // Cache for 30 seconds
+    refetchOnWindowFocus: false,
+    enabled: tasksToFetchSchedule.length > 0,
+  });
+
+  const scheduledMinutesMap = scheduleBatch?.minutesByTaskId ?? {};
+  const scheduleSettingsByTaskId = scheduleBatch?.settingsByTaskId ?? {};
+
+  const toggleGroup = (priorityKey: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(priorityKey)) {
+        // User is expanding - remove from manually collapsed
+        next.delete(priorityKey);
+        setManuallyCollapsed((prevManual) => {
+          const newManual = new Set(prevManual);
+          newManual.delete(priorityKey);
+          return newManual;
+        });
+      } else {
+        // User is collapsing - mark as manually collapsed
+        next.add(priorityKey);
+        setManuallyCollapsed((prevManual) => {
+          const newManual = new Set(prevManual);
+          newManual.add(priorityKey);
+          return newManual;
+        });
+      }
+      return next;
+    });
+  };
+
+  // Register update callback to refresh data when task is updated
+  onUpdate(() => {
+    router.refresh();
+  });
+
+  // Debounced search function
+  const debouncedSearch = useDebouncedCallback(async (searchQuery: string) => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    setIsSearching(true);
+    setSearchError(null);
+
+    try {
+      const results = await getAssignedTasks(assigneeId, searchQuery.trim());
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Error searching tasks:', error);
+      setSearchError('Failed to search tasks');
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, 500);
+
+  const handlePriorityChange = async (taskId: string, newPriority: string) => {
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
+
+    try {
+      await updateWorkspaceTask(taskWsId, taskId, {
+        priority: newPriority as TaskPriority,
+      });
+      toast.success('Task priority updated');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to update task priority:', error);
+      toast.error('Failed to update task priority');
+    }
+  };
+
+  const handleEdit = async (taskId: string) => {
+    await openTaskById(taskId);
+  };
+
+  const handleTaskClick = (taskId: string) => {
+    // Open scheduling dialog when clicking on a task
+    const task = combinedTasks.find((t) => t.id === taskId);
+    if (task) {
+      setSelectedTask(task);
+      setSchedulingDialogOpen(true);
+    }
+  };
+
+  const handleScheduling = (taskId: string) => {
+    // Open scheduling dialog to configure scheduling settings
+    const task = combinedTasks.find((t) => t.id === taskId);
+    if (task) {
+      setSelectedTask(task);
+      setSchedulingDialogOpen(true);
+    }
+  };
+
+  // Date handlers with optimistic updates
+  const handleStartDateChange = async (taskId: string, date: Date | null) => {
+    const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
+
+    try {
+      await updateWorkspaceTask(taskWsId, taskId, {
+        start_date: dateString,
+      });
+      toast.success(date ? 'Start date set' : 'Start date cleared');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to update start date:', error);
+      toast.error('Failed to update start date');
+    }
+  };
+
+  const handleDueDateChange = async (taskId: string, date: Date | null) => {
+    const dateString = date?.toISOString() || null;
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
+
+    try {
+      await updateWorkspaceTask(taskWsId, taskId, {
+        end_date: dateString,
+      });
+      toast.success(date ? 'Due date set' : 'Due date cleared');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to update due date:', error);
+      toast.error('Failed to update due date');
+    }
+  };
+
+  const handleMarkDone = async (taskId: string) => {
+    const task = combinedTasks.find((t) => t.id === taskId);
+    if (!task) {
+      toast.error('Task not found');
+      return;
+    }
+
+    const taskWsId = task.ws_id ?? wsId;
+    const completionTimestamp = new Date().toISOString();
+
+    try {
+      // If task has no list_id, just update closed_at directly
+      if (!task.list_id) {
+        await updateWorkspaceTask(taskWsId, taskId, {
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
+        });
+        toast.success('Task marked as done');
+        router.refresh();
+        return;
+      }
+
+      if (!task.board_id) {
+        throw new Error('Task board not found');
+      }
+
+      const { lists: boardLists } = await listWorkspaceTaskLists(
+        taskWsId,
+        task.board_id
+      );
+
+      // Find the first done or closed list (like task.tsx does)
+      const doneList = boardLists?.find((list) => list.status === 'done');
+      const closedList = boardLists?.find((list) => list.status === 'closed');
+      const targetList = doneList || closedList;
+
+      if (targetList && targetList.id !== task.list_id) {
+        // Move to the done list (this also sets closed_at via the moveTask helper)
+        const taskHelper = await import('@tuturuuu/utils/task-helper');
+        await taskHelper.moveTask(taskWsId, taskId, targetList.id);
+        await updateWorkspaceTask(taskWsId, taskId, {
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
+        });
+        toast.success('Task completed', {
+          description: `Moved to ${targetList.name}`,
+        });
+      } else {
+        // No done list or already in done list, just set closed_at
+        await updateWorkspaceTask(taskWsId, taskId, {
+          completed: true,
+          completed_at: completionTimestamp,
+          closed_at: completionTimestamp,
+        });
+        toast.success('Task marked as done');
+      }
+
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to mark task as done:', error);
+      toast.error('Failed to mark task as done');
+    }
+  };
+
+  const handleDelete = async (taskId: string) => {
+    const task = combinedTasks.find((candidate) => candidate.id === taskId);
+    const taskWsId = task?.ws_id ?? wsId;
+
+    try {
+      await updateWorkspaceTask(taskWsId, taskId, {
+        deleted: true,
+      });
+      toast.success('Task moved to trash');
+      router.refresh();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      toast.error('Failed to delete task');
+    }
+  };
+
+  // Drag-and-drop handlers for calendar integration
+  const handleDragStart = (
+    e: React.DragEvent<HTMLDivElement>,
+    task: ExtendedWorkspaceTask
+  ) => {
+    const scheduleSettings = scheduleSettingsByTaskId[task.id];
+    const dragData = {
+      type: 'task',
+      taskId: task.id,
+      taskName: task.name || 'Untitled Task',
+      totalDuration:
+        scheduleSettings?.total_duration ?? task.total_duration ?? 0,
+      priority: task.priority,
+      listId: task.list_id,
+    };
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.effectAllowed = 'copy';
+    e.currentTarget.style.opacity = '0.5';
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = '1';
+  };
+
+  return (
+    <div className="w-full space-y-1.5 overflow-hidden">
+      {/* Search */}
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-md border transition-colors',
+          isSearchFocused
+            ? 'border-primary/40 bg-background'
+            : 'border-border/50 bg-muted/30 hover:bg-muted/50'
+        )}
+      >
+        <div className="flex items-center">
+          {isSearching ? (
+            <Loader2 className="ml-2 h-3.5 w-3.5 animate-spin text-primary" />
+          ) : (
+            <Search
+              className={cn(
+                'ml-2 h-3.5 w-3.5 transition-colors',
+                isSearchFocused ? 'text-primary' : 'text-muted-foreground/60'
+              )}
+            />
+          )}
+          <input
+            className="w-full bg-transparent px-2 py-1.5 text-sm placeholder-muted-foreground/60 outline-none"
+            placeholder="Search tasks..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              debouncedSearch(e.target.value);
+            }}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
+          />
+        </div>
+        {searchError && (
+          <div className="px-2 pb-1.5 text-dynamic-red text-xs">
+            {searchError}
+          </div>
+        )}
+      </div>
+      {/* Priority Groups */}
+      <div className="w-full space-y-1 overflow-hidden">
+        {PRIORITY_ORDER.map((priorityKey) => {
+          const tasks = grouped[priorityKey] || [];
+          const label = PRIORITY_LABELS[priorityKey];
+          const isCollapsed = collapsedGroups.has(priorityKey);
+
+          return (
+            <div key={priorityKey} className="w-full overflow-hidden">
+              {/* Collapsible Header */}
+              <button
+                type="button"
+                onClick={() => toggleGroup(priorityKey)}
+                className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted/50"
+              >
+                <ChevronDown
+                  className={cn(
+                    'h-3 w-3 shrink-0 text-muted-foreground/60 transition-transform duration-150',
+                    isCollapsed && '-rotate-90'
+                  )}
+                />
+                {getPriorityIcon(priorityKey, 'h-3.5 w-3.5 shrink-0')}
+                <span className="font-medium text-foreground/80 text-xs">
+                  {label}
+                </span>
+                <span className="text-[10px] text-muted-foreground/50">
+                  {tasks.length}
+                </span>
+              </button>
+
+              {/* Collapsible Content */}
+              {!isCollapsed && tasks.length > 0 && (
+                <div className="mt-0.5 w-full space-y-1 overflow-hidden pl-1">
+                  {tasks.map((task) => {
+                    // Calculate total and scheduled minutes for progress display
+                    const hasLoadedScheduleSettings = Object.hasOwn(
+                      scheduleSettingsByTaskId,
+                      task.id
+                    );
+
+                    const scheduleSettings = hasLoadedScheduleSettings
+                      ? scheduleSettingsByTaskId[task.id]
+                      : null;
+
+                    const totalMinutes =
+                      ((scheduleSettings?.total_duration ??
+                        task.total_duration ??
+                        0) ||
+                        0) * 60;
+                    // Get scheduled minutes from the fetched data
+                    const scheduledMinutes = scheduledMinutesMap[task.id] ?? 0;
+                    const progress =
+                      totalMinutes > 0
+                        ? Math.min(100, (scheduledMinutes / totalMinutes) * 100)
+                        : 0;
+                    const isFullyScheduled =
+                      scheduledMinutes >= totalMinutes && totalMinutes > 0;
+                    const calendarHours =
+                      scheduleSettings?.calendar_hours ?? task.calendar_hours;
+                    const hasScheduleSettings =
+                      totalMinutes > 0 && !!calendarHours;
+                    const CalendarHoursIcon = calendarHours
+                      ? CALENDAR_HOURS_ICONS[calendarHours]?.icon
+                      : null;
+                    const isSplittable =
+                      scheduleSettings?.is_splittable ?? task.is_splittable;
+                    const minSplitDurationMinutes =
+                      scheduleSettings?.min_split_duration_minutes ??
+                      task.min_split_duration_minutes;
+                    const maxSplitDurationMinutes =
+                      scheduleSettings?.max_split_duration_minutes ??
+                      task.max_split_duration_minutes;
+                    const autoSchedule =
+                      scheduleSettings?.auto_schedule ?? task.auto_schedule;
+                    const isScheduleInfoLoading =
+                      (isLoadingScheduleBatch || isFetchingScheduleBatch) &&
+                      !hasLoadedScheduleSettings;
+                    // Use task completion status for visual styling
+                    const isCompleted = !!task.closed_at;
+
+                    return (
+                      <div
+                        key={task.id}
+                        draggable={!isCompleted}
+                        onDragStart={(e) => handleDragStart(e, task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={() => handleTaskClick(task.id)}
+                        className={cn(
+                          'group/task relative w-full overflow-hidden rounded-md border p-2 transition-colors',
+                          isCompleted
+                            ? 'border-dynamic-green/20 bg-dynamic-green/5'
+                            : 'cursor-grab border-border/40 bg-background/50 hover:border-border/60 hover:bg-background/80 active:cursor-grabbing'
+                        )}
+                      >
+                        <div className="flex w-full items-start gap-2 overflow-hidden">
+                          <div className="min-w-0 flex-1 overflow-hidden">
+                            {/* Task Name */}
+                            <div
+                              className={cn(
+                                'wrap-break-word line-clamp-2 cursor-pointer font-medium text-sm transition-colors hover:text-primary',
+                                isCompleted && 'text-muted-foreground'
+                              )}
+                            >
+                              {task.name || (
+                                <span className="text-muted-foreground italic">
+                                  Untitled task
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Task Metadata Badges */}
+                            <div className="mt-1 flex flex-wrap items-center gap-1">
+                              {/* Due Date */}
+                              {task.due_date && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-red/10 px-1 py-0.5 text-[10px] text-dynamic-red">
+                                      <Calendar className="h-2.5 w-2.5" />
+                                      {formatDueDate(task.due_date)}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Due date</TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Duration */}
+                              {isScheduleInfoLoading && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-muted/40 px-1 py-0.5 text-[10px] text-muted-foreground">
+                                      <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                                      Loading
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Loading scheduling settings
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {hasScheduleSettings && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-blue/10 px-1 py-0.5 text-[10px] text-dynamic-blue">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      {formatDuration(totalMinutes)}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Allocated duration
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Calendar Hours Type */}
+                              {CalendarHoursIcon && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center rounded bg-dynamic-purple/10 px-1 py-0.5 text-[10px] text-dynamic-purple">
+                                      <CalendarHoursIcon className="h-2.5 w-2.5" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    {CALENDAR_HOURS_ICONS[calendarHours!]
+                                      ?.label ?? 'Schedule type'}
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Splittable Indicator */}
+                              {isSplittable && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center rounded bg-dynamic-orange/10 px-1 py-0.5 text-[10px] text-dynamic-orange">
+                                      <Scissors className="h-2.5 w-2.5" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Splittable (
+                                    {formatDuration(
+                                      minSplitDurationMinutes ?? 30
+                                    )}{' '}
+                                    -{' '}
+                                    {formatDuration(
+                                      maxSplitDurationMinutes ?? 120
+                                    )}
+                                    )
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Auto-schedule Indicator */}
+                              {autoSchedule && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center rounded bg-dynamic-sky/10 px-1 py-0.5 text-[10px] text-dynamic-sky">
+                                      <Sparkles className="h-2.5 w-2.5" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Auto-schedule enabled
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+
+                              {/* Completed Indicator */}
+                              {isCompleted && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-flex shrink-0 items-center gap-0.5 rounded bg-dynamic-green/10 px-1 py-0.5 text-[10px] text-dynamic-green">
+                                      <CheckCircle className="h-2.5 w-2.5" />
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Task completed
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
+
+                            {/* Progress/Duration Display */}
+                            {hasScheduleSettings && (
+                              <div className="mt-1.5 w-full space-y-0.5">
+                                <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+                                  <span>
+                                    {formatDuration(scheduledMinutes)} /{' '}
+                                    {formatDuration(totalMinutes)}
+                                  </span>
+                                  {isFullyScheduled && (
+                                    <span className="flex items-center gap-0.5 text-dynamic-green">
+                                      <CheckIcon className="h-2.5 w-2.5" />
+                                      Scheduled
+                                    </span>
+                                  )}
+                                </div>
+                                <Progress
+                                  value={progress}
+                                  className={cn(
+                                    'h-1',
+                                    isFullyScheduled
+                                      ? '[&>div]:bg-dynamic-green'
+                                      : '[&>div]:bg-dynamic-blue'
+                                  )}
+                                />
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Actions - Stop propagation to prevent task click */}
+                          <div
+                            className="flex shrink-0 items-center gap-0.5"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {/* Three-dots menu - hidden by default, appears on hover (opacity only, no width change) */}
+                            <div className="opacity-0 transition-opacity duration-150 focus-within:opacity-100 group-hover/task:opacity-100">
+                              <ActionsDropdown
+                                taskId={task.id}
+                                taskName={task.name || 'Untitled'}
+                                startDate={task.start_date}
+                                endDate={task.end_date}
+                                onEdit={handleEdit}
+                                onScheduling={handleScheduling}
+                                onStartDateChange={handleStartDateChange}
+                                onDueDateChange={handleDueDateChange}
+                                onMarkDone={handleMarkDone}
+                                onDelete={handleDelete}
+                              />
+                            </div>
+                            <PriorityDropdown
+                              taskId={task.id}
+                              currentPriority={task.priority || 'normal'}
+                              onPriorityChange={handlePriorityChange}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Empty state when expanded but no tasks */}
+              {!isCollapsed && tasks.length === 0 && (
+                <div className="ml-1 rounded-md border border-border/30 border-dashed px-2 py-1.5 text-center">
+                  <span className="text-[11px] text-muted-foreground/50">
+                    No tasks
+                  </span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <SchedulingDialog
+        wsId={wsId}
+        task={selectedTask}
+        open={schedulingDialogOpen}
+        onOpenChange={setSchedulingDialogOpen}
+        isPersonalWorkspace={isPersonalWorkspace}
+      />
+    </div>
+  );
+}
+
+function formatDueDate(date: string | Date) {
+  // expects date as string or Date, returns MM/DD or DD/MM as you prefer
+  const d = new Date(date);
+  return `${d.getMonth() + 1}/${d.getDate()}`;
+}

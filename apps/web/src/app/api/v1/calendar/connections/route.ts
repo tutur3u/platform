@@ -1,12 +1,13 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
   MAX_COLOR_LENGTH,
   MAX_LONG_TEXT_LENGTH,
 } from '@tuturuuu/utils/constants';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const createConnectionSchema = z.object({
   wsId: z.guid(),
@@ -31,18 +32,68 @@ const updateConnectionSchema = z
     message: 'Either id or both calendarId and wsId are required',
   });
 
-// GET - List calendar connections for a workspace
-export async function GET(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
+async function resolveCalendarConnectionAuth(request: Request) {
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  if (userError || !user) {
+  if (!auth.ok) {
+    return { auth: null, response: auth.response };
+  }
+
+  return { auth, response: null };
+}
+
+async function requireWorkspaceAccess({
+  supabase,
+  userId,
+  wsId,
+}: {
+  supabase: any;
+  userId: string;
+  wsId: string;
+}) {
+  const memberCheck = await verifyWorkspaceMembershipType({
+    wsId,
+    userId,
+    supabase,
+  });
+
+  if (memberCheck.error === 'membership_lookup_failed') {
+    serverLogger.error('Calendar connection membership lookup failed:', {
+      wsId,
+      error: memberCheck.error,
+    });
     return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
+      { error: 'Failed to verify workspace access' },
+      { status: 500 }
     );
   }
+
+  if (!memberCheck.ok) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
+  return null;
+}
+
+async function getConnectionWorkspaceId(supabase: any, id: string) {
+  const { data, error } = await supabase
+    .from('calendar_connections')
+    .select('ws_id')
+    .eq('id', id)
+    .maybeSingle();
+
+  if (error) throw error;
+  return (data as { ws_id?: string } | null)?.ws_id ?? null;
+}
+
+// GET - List calendar connections for a workspace
+export async function GET(request: Request) {
+  const resolvedAuth = await resolveCalendarConnectionAuth(request);
+
+  if (resolvedAuth.response) return resolvedAuth.response;
+  const { supabase, user } = resolvedAuth.auth;
 
   try {
     const url = new URL(request.url);
@@ -55,6 +106,13 @@ export async function GET(request: Request) {
       );
     }
 
+    const accessError = await requireWorkspaceAccess({
+      supabase,
+      userId: user.id,
+      wsId,
+    });
+    if (accessError) return accessError;
+
     // Fetch calendar connections for the workspace
     const { data: connections, error: connectionsError } = await supabase
       .from('calendar_connections')
@@ -63,7 +121,10 @@ export async function GET(request: Request) {
       .order('created_at', { ascending: true });
 
     if (connectionsError) {
-      console.error('Error fetching calendar connections:', connectionsError);
+      serverLogger.error(
+        'Error fetching calendar connections:',
+        connectionsError
+      );
       return NextResponse.json(
         { error: 'Failed to fetch calendar connections' },
         { status: 500 }
@@ -80,7 +141,7 @@ export async function GET(request: Request) {
       }
     );
   } catch (error: any) {
-    console.error('Error in GET calendar connections:', error);
+    serverLogger.error('Error in GET calendar connections:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -90,16 +151,10 @@ export async function GET(request: Request) {
 
 // POST - Create a new calendar connection
 export async function POST(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
+  const resolvedAuth = await resolveCalendarConnectionAuth(request);
 
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (resolvedAuth.response) return resolvedAuth.response;
+  const { supabase, user } = resolvedAuth.auth;
 
   try {
     const body = await request.json();
@@ -114,6 +169,12 @@ export async function POST(request: Request) {
 
     const { wsId, calendarId, calendarName, color, isEnabled, authTokenId } =
       validation.data;
+    const accessError = await requireWorkspaceAccess({
+      supabase,
+      userId: user.id,
+      wsId,
+    });
+    if (accessError) return accessError;
     let provider: 'google' | 'microsoft' = 'google';
 
     if (authTokenId) {
@@ -152,7 +213,7 @@ export async function POST(request: Request) {
       .single();
 
     if (insertError) {
-      console.error('Error creating calendar connection:', insertError);
+      serverLogger.error('Error creating calendar connection:', insertError);
 
       // Check for unique constraint violation
       if (insertError.code === '23505') {
@@ -170,7 +231,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ connection }, { status: 201 });
   } catch (error: any) {
-    console.error('Error in POST calendar connection:', error);
+    serverLogger.error('Error in POST calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -180,16 +241,10 @@ export async function POST(request: Request) {
 
 // PATCH - Update a calendar connection
 export async function PATCH(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
+  const resolvedAuth = await resolveCalendarConnectionAuth(request);
 
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (resolvedAuth.response) return resolvedAuth.response;
+  const { supabase, user } = resolvedAuth.auth;
 
   try {
     const body = await request.json();
@@ -203,6 +258,22 @@ export async function PATCH(request: Request) {
     }
 
     const { id, calendarId, wsId, ...updates } = validation.data;
+    const targetWsId =
+      wsId ?? (id ? await getConnectionWorkspaceId(supabase, id) : null);
+
+    if (!targetWsId) {
+      return NextResponse.json(
+        { error: 'Calendar connection not found' },
+        { status: 404 }
+      );
+    }
+
+    const accessError = await requireWorkspaceAccess({
+      supabase,
+      userId: user.id,
+      wsId: targetWsId,
+    });
+    if (accessError) return accessError;
 
     // Build the update object dynamically
     const updateData: TablesUpdate<'calendar_connections'> = {};
@@ -227,7 +298,7 @@ export async function PATCH(request: Request) {
       .single();
 
     if (updateError) {
-      console.error('Error updating calendar connection:', updateError);
+      serverLogger.error('Error updating calendar connection:', updateError);
       return NextResponse.json(
         { error: 'Failed to update calendar connection' },
         { status: 500 }
@@ -236,7 +307,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json({ connection }, { status: 200 });
   } catch (error: any) {
-    console.error('Error in PATCH calendar connection:', error);
+    serverLogger.error('Error in PATCH calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -246,16 +317,10 @@ export async function PATCH(request: Request) {
 
 // DELETE - Delete a calendar connection
 export async function DELETE(request: Request) {
-  const supabase = await createClient(request);
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
+  const resolvedAuth = await resolveCalendarConnectionAuth(request);
 
-  if (userError || !user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (resolvedAuth.response) return resolvedAuth.response;
+  const { supabase, user } = resolvedAuth.auth;
 
   try {
     const url = new URL(request.url);
@@ -268,6 +333,21 @@ export async function DELETE(request: Request) {
       );
     }
 
+    const wsId = await getConnectionWorkspaceId(supabase, id);
+    if (!wsId) {
+      return NextResponse.json(
+        { error: 'Calendar connection not found' },
+        { status: 404 }
+      );
+    }
+
+    const accessError = await requireWorkspaceAccess({
+      supabase,
+      userId: user.id,
+      wsId,
+    });
+    if (accessError) return accessError;
+
     // Delete the calendar connection
     const { error: deleteError } = await supabase
       .from('calendar_connections')
@@ -275,7 +355,7 @@ export async function DELETE(request: Request) {
       .eq('id', id);
 
     if (deleteError) {
-      console.error('Error deleting calendar connection:', deleteError);
+      serverLogger.error('Error deleting calendar connection:', deleteError);
       return NextResponse.json(
         { error: 'Failed to delete calendar connection' },
         { status: 500 }
@@ -284,7 +364,7 @@ export async function DELETE(request: Request) {
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error: any) {
-    console.error('Error in DELETE calendar connection:', error);
+    serverLogger.error('Error in DELETE calendar connection:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

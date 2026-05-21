@@ -9,7 +9,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 type Params = { wsId: string };
 
 const TASKS_ROUTE_APP_SESSION_AUTH = {
-  targetApp: [CLI_APP_TARGET_APP, 'tasks'],
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
 } as const;
 
 function createTaskRouteContext(params: Params) {

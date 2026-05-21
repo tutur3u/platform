@@ -1,12 +1,12 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import TasksSidebar from '@tuturuuu/ui/calendar-app/components/tasks-sidebar';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
+import TasksSidebar from './calendar/components/tasks-sidebar';
 import CalendarClientPage from './client';
 
 export const metadata: Metadata = {
@@ -84,12 +84,15 @@ export default async function CalendarPage({ params }: PageProps) {
         <div className="flex h-[calc(100vh-2rem)]">
           <CalendarClientPage
             experimentalGoogleToken={googleToken}
-            calendarConnections={calendarConnections || []}
             workspace={workspace}
             enableSmartScheduling={enableSmartScheduling}
           />
           {enableSmartScheduling && (
-            <TasksSidebar wsId={wsId} locale={locale} />
+            <TasksSidebar
+              resolvedWsId={workspace.id}
+              locale={locale}
+              userId={user.id}
+            />
           )}
         </div>
       </CalendarSyncProvider>

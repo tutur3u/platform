@@ -2,23 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
   createAdminClientMock,
-  createClientMock,
   normalizeWorkspaceIdMock,
-  resolveAuthenticatedSessionUserMock,
+  resolveSessionAuthContextMock,
 } = vi.hoisted(() => ({
   createAdminClientMock: vi.fn(),
-  createClientMock: vi.fn(),
   normalizeWorkspaceIdMock: vi.fn(),
-  resolveAuthenticatedSessionUserMock: vi.fn(),
+  resolveSessionAuthContextMock: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: createAdminClientMock,
-  createClient: createClientMock,
 }));
 
-vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
-  resolveAuthenticatedSessionUser: resolveAuthenticatedSessionUserMock,
+vi.mock('@/lib/api-auth', () => ({
+  resolveSessionAuthContext: resolveSessionAuthContextMock,
 }));
 
 vi.mock('@/lib/workspace-helper', () => ({
@@ -91,11 +88,11 @@ describe('calendar auth accounts route', () => {
     normalizeWorkspaceIdMock.mockResolvedValue(
       '071e0fc7-9aa8-42d8-92e5-cc9b3aeec2f1'
     );
-    resolveAuthenticatedSessionUserMock.mockResolvedValue({
-      authError: null,
+    resolveSessionAuthContextMock.mockResolvedValue({
+      ok: true,
+      supabase: createAccountLookupClient(),
       user: { id: 'user-id' },
     });
-    createClientMock.mockResolvedValue(createAccountLookupClient());
   });
 
   it('disconnects with the admin client and clears stored OAuth secrets', async () => {
@@ -112,6 +109,12 @@ describe('calendar auth accounts route', () => {
 
     expect(response.status).toBe(200);
     expect(body.success).toBe(true);
+    expect(resolveSessionAuthContextMock).toHaveBeenCalledWith(
+      expect.any(Request),
+      {
+        allowAppSessionAuth: { targetApp: 'calendar' },
+      }
+    );
     expect(tokenUpdate).toHaveBeenCalledWith({
       access_token: '',
       expires_at: null,

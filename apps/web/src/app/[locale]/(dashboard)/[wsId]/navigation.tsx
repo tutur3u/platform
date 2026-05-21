@@ -115,6 +115,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
@@ -150,6 +151,7 @@ export async function WorkspaceNavigationLinks({
     TOPIC_ANNOUNCEMENTS_SECRET,
     'true'
   );
+  const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
@@ -319,7 +321,8 @@ export async function WorkspaceNavigationLinks({
     {
       title: t('sidebar_tabs.calendar'),
       icon: <Calendar className="h-5 w-5" />,
-      href: `/${personalOrWsId}/calendar`,
+      href: calendarAppHref,
+      aliases: [`/${personalOrWsId}/calendar`],
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
     },
     {

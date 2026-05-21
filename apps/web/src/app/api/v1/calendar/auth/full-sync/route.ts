@@ -1,10 +1,10 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger/google-calendar-full-sync';
 import { MAX_NAME_LENGTH } from '@tuturuuu/utils/constants';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
+import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 const fullSyncSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH),
@@ -23,35 +23,27 @@ export async function POST(request: Request) {
     }
 
     const { wsId: id } = result.data;
+    const authContext = await resolveSessionAuthContext(request, {
+      allowAppSessionAuth: { targetApp: 'calendar' },
+    });
 
-    // Fetch workspace using the standardized utility
-    // This resolves special IDs like 'personal' and ensures existence
-    const workspace = await getWorkspace(id);
-    if (!workspace) {
-      return Response.json({ error: 'Workspace not found' }, { status: 404 });
-    }
+    if (!authContext.ok) return authContext.response;
+    const { supabase, user } = authContext;
+    const wsId = await normalizeWorkspaceId(id, supabase);
 
-    if (!workspace) {
+    const memberCheck = await verifyWorkspaceMembershipType({
+      wsId,
+      userId: user.id,
+      supabase,
+    });
+    if (memberCheck.error === 'membership_lookup_failed') {
       return NextResponse.json(
-        { error: 'Workspace not found' },
-        { status: 404 }
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
       );
     }
-
-    const wsId = workspace.id;
-
-    // Initialize Supabase client
-    const supabase = await createClient(request);
-
-    // Get the current authenticated user
-    const { user, authError: userError } =
-      await resolveAuthenticatedSessionUser(supabase);
-
-    if (userError || !user) {
-      return NextResponse.json(
-        { error: 'User not authenticated' },
-        { status: 401 }
-      );
+    if (!memberCheck.ok) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Get the Google tokens for this workspace

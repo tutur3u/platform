@@ -1,28 +1,22 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type {
-  CalendarConnection,
-  Workspace,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types';
-import { CalendarHeaderActions } from '@tuturuuu/ui/calendar-app/components/calendar-header-actions';
-import { useCalendarSettings, useE2EE } from '@tuturuuu/ui/calendar-app/hooks';
+import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { CalendarHeaderActions } from './calendar/components/calendar-header-actions';
 import { RequireWorkspaceTimezoneDialog } from './calendar/components/require-workspace-timezone-dialog';
+import { useCalendarSettings } from './calendar/hooks';
 
 interface CalendarClientPageProps {
   experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  calendarConnections: CalendarConnection[];
   workspace: Workspace;
   enableSmartScheduling: boolean;
 }
 
 export default function CalendarClientPage({
   experimentalGoogleToken,
-  calendarConnections,
   workspace,
   enableSmartScheduling,
 }: CalendarClientPageProps) {
@@ -31,8 +25,6 @@ export default function CalendarClientPage({
 
   const [calendarGateCompleted, setCalendarGateCompleted] = useState(false);
 
-  // Custom hooks for E2EE and calendar settings
-  const e2ee = useE2EE(workspace.id);
   const { initialSettings, needsCalendarGate: settingsNeedGate } =
     useCalendarSettings(workspace, locale);
 
@@ -41,25 +33,12 @@ export default function CalendarClientPage({
   const extras = (
     <CalendarHeaderActions
       workspaceId={workspace.id}
-      e2eeStatus={e2ee.status}
-      e2eeLoading={e2ee.isLoading}
-      isVerifying={e2ee.isVerifying}
-      isFixing={e2ee.isFixing}
-      isMigrating={e2ee.isMigrating}
-      isEnabling={e2ee.isEnabling}
-      fixProgress={e2ee.fixProgress}
-      hasUnencryptedEvents={e2ee.hasUnencryptedEvents ?? false}
-      onVerify={e2ee.verify}
-      onMigrate={e2ee.migrate}
-      onEnable={e2ee.enable}
       enableSmartScheduling={enableSmartScheduling}
-      experimentalGoogleToken={experimentalGoogleToken}
-      calendarConnections={calendarConnections}
     />
   );
 
   return (
-    <>
+    <div className="w-full min-w-0 overflow-hidden">
       {needsCalendarGate && (
         <RequireWorkspaceTimezoneDialog
           wsId={workspace.id}
@@ -80,6 +59,6 @@ export default function CalendarClientPage({
         extras={extras}
         initialSettings={initialSettings}
       />
-    </>
+    </div>
   );
 }

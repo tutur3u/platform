@@ -1,10 +1,9 @@
 import type { CalendarEvent as BaseCalendarEvent } from '@tuturuuu/ai/calendar/events';
 import { google, OAuth2Client } from '@tuturuuu/google';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
 import dayjs from 'dayjs';
 import { NextResponse } from 'next/server';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
 
 interface CalendarEvent extends BaseCalendarEvent {
   id?: string; // Add the optional 'id' property
@@ -44,16 +43,12 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { event }: { event: CalendarEvent } = body;
 
-  const supabase = await createClient(request);
+  const authContext = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
 
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (!user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  if (!authContext.ok) return authContext.response;
+  const { supabase, user } = authContext;
 
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
@@ -186,14 +181,11 @@ export async function PUT(request: Request) {
     );
   }
 
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  const authContext = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
+  if (!authContext.ok) return authContext.response;
+  const { supabase, user } = authContext;
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
     .select('*')
@@ -334,14 +326,11 @@ export async function DELETE(request: Request) {
     );
   }
 
-  const supabase = await createClient(request);
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return NextResponse.json(
-      { error: 'User not authenticated' },
-      { status: 401 }
-    );
-  }
+  const authContext = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: { targetApp: 'calendar' },
+  });
+  if (!authContext.ok) return authContext.response;
+  const { supabase, user } = authContext;
   const { data: googleTokens, error: googleTokensError } = await supabase
     .from('calendar_auth_tokens')
     .select('*')

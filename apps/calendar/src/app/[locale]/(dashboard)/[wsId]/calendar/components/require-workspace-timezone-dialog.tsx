@@ -42,8 +42,8 @@ function getSupportedTimezones(): string[] {
   }
 }
 
-// Import E2EEStatus type from shared hooks
-import type { E2EEStatus } from '@tuturuuu/ui/calendar-app/hooks';
+// Import E2EEStatus type from hooks
+import type { E2EEStatus } from '../hooks/use-e2ee';
 
 export interface RequireWorkspaceTimezoneDialogProps {
   wsId: string;

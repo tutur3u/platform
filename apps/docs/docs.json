@@ -101,6 +101,7 @@
               {
                 "group": "Applications",
                 "pages": [
+                  "platform/applications/calendar",
                   "platform/applications/cms",
                   "platform/applications/inventory",
                   "platform/applications/shiraoki",

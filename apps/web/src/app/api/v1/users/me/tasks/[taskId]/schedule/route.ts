@@ -4,8 +4,25 @@ import type { TaskWithScheduling } from '@tuturuuu/types';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import { scheduleTask } from '@/lib/calendar/task-scheduler';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+
+const USER_TASK_SCHEDULE_APP_SESSION_AUTH = {
+  targetApp: ['calendar', 'tasks'],
+} as const;
+
+const schedulingSettingsSchema = z.object({
+  total_duration: z.number().positive(),
+  is_splittable: z.boolean(),
+  min_split_duration_minutes: z.number().int().nonnegative(),
+  max_split_duration_minutes: z.number().int().nonnegative(),
+  calendar_hours: z
+    .enum(['work_hours', 'personal_hours', 'meeting_hours'])
+    .nullable(),
+  auto_schedule: z.boolean(),
+});
 
 type TaskCalendarEventRow = {
   task_id: string;
@@ -268,14 +285,90 @@ export const GET = withSessionAuth<{ taskId: string }>(
           })) ?? [],
       });
     } catch (error) {
-      console.error('Error fetching personal task schedule:', error);
+      serverLogger.error('Error fetching personal task schedule:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
       );
     }
   },
-  { cache: { maxAge: 5, swr: 10 } }
+  {
+    allowAppSessionAuth: USER_TASK_SCHEDULE_APP_SESSION_AUTH,
+    cache: { maxAge: 5, swr: 10 },
+  }
+);
+
+export const PATCH = withSessionAuth<{ taskId: string }>(
+  async (req, { user, supabase }, { taskId }) => {
+    try {
+      if (!validate(taskId)) {
+        return NextResponse.json({ error: 'Invalid task ID' }, { status: 400 });
+      }
+
+      const taskWsId = await getTaskWorkspaceId(taskId);
+      if (!taskWsId) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: taskWsId,
+        userId: user.id,
+        supabase,
+      });
+
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      if (!memberCheck.ok) {
+        return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+      }
+
+      const body = schedulingSettingsSchema.parse(await req.json());
+      const { error } = await (supabase as any)
+        .from('task_user_scheduling_settings')
+        .upsert(
+          {
+            task_id: taskId,
+            user_id: user.id,
+            total_duration: body.total_duration,
+            is_splittable: body.is_splittable,
+            min_split_duration_minutes: body.min_split_duration_minutes,
+            max_split_duration_minutes: body.max_split_duration_minutes,
+            calendar_hours: body.calendar_hours,
+            auto_schedule: body.auto_schedule,
+          },
+          { onConflict: 'task_id,user_id' }
+        );
+
+      if (error) {
+        serverLogger.error('Error updating task scheduling settings:', error);
+        return NextResponse.json(
+          { error: 'Failed to update scheduling settings' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ ok: true, task_ws_id: taskWsId });
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return NextResponse.json(
+          { error: 'Invalid request data', details: error.issues },
+          { status: 400 }
+        );
+      }
+
+      serverLogger.error('Error patching personal task schedule:', error);
+      return NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
+  },
+  { allowAppSessionAuth: USER_TASK_SCHEDULE_APP_SESSION_AUTH }
 );
 
 export const POST = withSessionAuth<{ taskId: string }>(
@@ -410,11 +503,12 @@ export const POST = withSessionAuth<{ taskId: string }>(
         task_ws_id: taskWsId,
       });
     } catch (error) {
-      console.error('Error scheduling task in personal workspace:', error);
+      serverLogger.error('Error scheduling task in personal workspace:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
       );
     }
-  }
+  },
+  { allowAppSessionAuth: USER_TASK_SCHEDULE_APP_SESSION_AUTH }
 );

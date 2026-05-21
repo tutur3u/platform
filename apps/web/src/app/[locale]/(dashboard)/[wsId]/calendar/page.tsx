@@ -1,13 +1,6 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
-import WorkspaceWrapper from '@/components/workspace-wrapper';
-import CalendarClientPage from './client';
-import TasksSidebar from './components/tasks-sidebar';
+import { redirect } from 'next/navigation';
+import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -19,75 +12,36 @@ interface PageProps {
     wsId: string;
     locale: string;
   }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function CalendarPage({ params }: PageProps) {
-  return (
-    <WorkspaceWrapper params={params}>
-      {async ({ workspace, wsId, locale }) => {
-        const permissions = await getPermissions({ wsId });
-        if (!permissions) notFound();
-        const { withoutPermission } = permissions;
+function appendSearchParams(
+  url: URL,
+  searchParams: Record<string, string | string[] | undefined>
+) {
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (item !== undefined) url.searchParams.append(key, item);
+      }
+      continue;
+    }
 
-        const supabase = await createClient();
+    if (value !== undefined) url.searchParams.set(key, value);
+  }
+}
 
-        // Get current user
-        const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-        // Fetch Google auth token, calendar connections, and user email in parallel for better performance
-        const [{ data: googleToken }, { data: calendarConnections }] = user?.id
-          ? await Promise.all([
-              supabase
-                .from('calendar_auth_tokens')
-                .select('*')
-                .eq('ws_id', wsId)
-                .maybeSingle(),
-              supabase
-                .from('calendar_connections')
-                .select('*')
-                .eq('ws_id', wsId)
-                .order('created_at', { ascending: true }),
-            ])
-          : [
-              {
-                data: null,
-              },
-              {
-                data: null,
-              },
-              [],
-            ];
-
-        if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
-
-        const enableSmartScheduling = true;
-        const isPersonalWorkspace = workspace.id === user?.id;
-
-        return (
-          <TaskDialogWrapper
-            isPersonalWorkspace={isPersonalWorkspace}
-            wsId={workspace.id}
-          >
-            <CalendarSyncProvider
-              wsId={workspace.id}
-              experimentalGoogleToken={googleToken}
-              initialCalendarConnections={calendarConnections || []}
-            >
-              {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
-              <div className="flex h-[calc(100vh-2rem)]">
-                <CalendarClientPage
-                  experimentalGoogleToken={googleToken}
-                  workspace={workspace}
-                  enableSmartScheduling={enableSmartScheduling}
-                />
-                {enableSmartScheduling && (
-                  <TasksSidebar wsId={wsId} locale={locale} />
-                )}
-              </div>
-            </CalendarSyncProvider>
-          </TaskDialogWrapper>
-        );
-      }}
-    </WorkspaceWrapper>
+export default async function CalendarPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const { wsId } = await params;
+  const query = await searchParams;
+  const calendarUrl = new URL(
+    `/${encodeURIComponent(wsId)}`,
+    getCalendarAppOrigin()
   );
+  appendSearchParams(calendarUrl, query);
+
+  redirect(calendarUrl.toString());
 }

@@ -1,76 +1,60 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validate } from 'uuid';
+import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface WorkspaceParams {
   wsId: string;
 }
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<WorkspaceParams> }
-) {
-  try {
-    const { wsId: rawWsId } = await params;
-    const supabase = await createClient(request);
+export const GET = withSessionAuth<WorkspaceParams>(
+  async (_request: NextRequest, { supabase, user }, { wsId: rawWsId }) => {
+    try {
+      const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
-    // Get authenticated user
-    const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-    if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Please sign in to view boards' },
-        { status: 401 }
-      );
-    }
+      if (!validate(wsId)) {
+        return NextResponse.json(
+          { error: 'Invalid workspace ID' },
+          { status: 400 }
+        );
+      }
 
-    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      // Verify workspace access
+      const memberCheck = await verifyWorkspaceMembershipType({
+        wsId: wsId,
+        userId: user.id,
+        supabase: supabase,
+      });
 
-    if (!validate(wsId)) {
-      return NextResponse.json(
-        { error: 'Invalid workspace ID' },
-        { status: 400 }
-      );
-    }
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          {
+            error: 'Failed to verify workspace access',
+            details: memberCheck.error,
+          },
+          { status: 500 }
+        );
+      }
 
-    // Verify workspace access
-    const memberCheck = await verifyWorkspaceMembershipType({
-      wsId: wsId,
-      userId: user.id,
-      supabase: supabase,
-    });
+      if (!memberCheck.ok) {
+        return NextResponse.json(
+          { error: "You don't have access to this workspace" },
+          { status: 403 }
+        );
+      }
 
-    if (memberCheck.error === 'membership_lookup_failed') {
-      return NextResponse.json(
-        {
-          error: 'Failed to verify workspace access',
-          details: memberCheck.error,
-        },
-        { status: 500 }
-      );
-    }
+      const sbAdmin = await createAdminClient({ noCookie: true });
 
-    if (!memberCheck.ok) {
-      return NextResponse.json(
-        { error: "You don't have access to this workspace" },
-        { status: 403 }
-      );
-    }
-
-    const sbAdmin = await createAdminClient();
-
-    // Fetch boards with their lists
-    const { data, error } = await sbAdmin
-      .from('workspace_boards')
-      .select(
-        `
+      // Fetch boards with their lists
+      const { data, error } = await sbAdmin
+        .from('workspace_boards')
+        .select(
+          `
         id,
         name,
         created_at,
@@ -83,25 +67,27 @@ export async function GET(
           deleted
         )
       `
-      )
-      .eq('ws_id', wsId)
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false });
+        )
+        .eq('ws_id', wsId)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
 
-    if (error) {
-      console.error('Supabase error:', error);
+      if (error) {
+        serverLogger.error('Supabase error:', error);
+        return NextResponse.json(
+          { error: 'Failed to fetch boards' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ boards: data });
+    } catch (error) {
+      serverLogger.error('Error fetching boards with lists:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch boards' },
+        { error: 'Internal server error' },
         { status: 500 }
       );
     }
-
-    return NextResponse.json({ boards: data });
-  } catch (error) {
-    console.error('Error fetching boards with lists:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  },
+  { allowAppSessionAuth: { targetApp: ['calendar', 'tasks'] } }
+);

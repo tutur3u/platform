@@ -1,8 +1,4 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   WorkspaceCalendar,
   WorkspaceCalendarType,
@@ -15,6 +11,8 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { resolveSessionAuthContext } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
 
 interface Params {
@@ -50,6 +48,10 @@ const updateCalendarSchema = z.object({
   position: z.number().int().optional(),
 });
 
+const CALENDAR_APP_SESSION_AUTH = {
+  targetApp: 'calendar',
+} as const;
+
 async function authorizeWorkspaceRequest(
   request: Request,
   rawWsId: string
@@ -57,23 +59,25 @@ async function authorizeWorkspaceRequest(
   | { context: AuthorizedWorkspaceContext; response: null }
   | { context: null; response: NextResponse }
 > {
-  const supabase = await createClient(request);
-  const sbAdmin = await createAdminClient();
+  const auth = await resolveSessionAuthContext(request, {
+    allowAppSessionAuth: CALENDAR_APP_SESSION_AUTH,
+  });
 
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-
-  if (authError || !user) {
+  if (!auth.ok) {
     return {
       context: null,
-      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+      response: auth.response,
     };
   }
 
+  const { supabase, user } = auth;
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
   let normalizedWsId: string;
   try {
-    normalizedWsId = await normalizeWorkspaceId(rawWsId);
+    normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
   } catch (error) {
-    console.error('Workspace ID normalization failed:', error);
+    serverLogger.error('Workspace ID normalization failed:', error);
     return {
       context: null,
       response: NextResponse.json(
@@ -90,7 +94,7 @@ async function authorizeWorkspaceRequest(
   });
 
   if (membership.error === 'membership_lookup_failed') {
-    console.error('Workspace membership lookup failed:', membership.error);
+    serverLogger.error('Workspace membership lookup failed:', membership.error);
     return {
       context: null,
       response: NextResponse.json(
@@ -152,7 +156,7 @@ export async function GET(request: Request, { params }: Params) {
       total: typedCalendars.length,
     });
   } catch (error) {
-    console.error('Calendars GET error:', error);
+    serverLogger.error('Calendars GET error:', error);
     return NextResponse.json(
       { error: 'Failed to fetch calendars' },
       { status: 500 }
@@ -231,7 +235,7 @@ export async function POST(request: Request, { params }: Params) {
       );
     }
 
-    console.error('Calendars POST error:', error);
+    serverLogger.error('Calendars POST error:', error);
     return NextResponse.json(
       { error: 'Failed to create calendar' },
       { status: 500 }
@@ -329,7 +333,7 @@ export async function PATCH(request: Request, { params }: Params) {
       );
     }
 
-    console.error('Calendars PATCH error:', error);
+    serverLogger.error('Calendars PATCH error:', error);
     return NextResponse.json(
       { error: 'Failed to update calendar' },
       { status: 500 }
@@ -425,7 +429,7 @@ export async function DELETE(request: Request, { params }: Params) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Calendars DELETE error:', error);
+    serverLogger.error('Calendars DELETE error:', error);
     return NextResponse.json(
       { error: 'Failed to delete calendar' },
       { status: 500 }

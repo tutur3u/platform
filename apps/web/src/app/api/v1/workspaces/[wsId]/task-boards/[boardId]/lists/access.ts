@@ -18,6 +18,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const paramsSchema = z.object({
   wsId: z.string().min(1),
@@ -60,7 +61,7 @@ async function resolveBoardRequestAuth(
   request: Request
 ): Promise<BoardRequestAuth> {
   const taskAppSessionVerification = verifyAppSessionRequest(request, {
-    targetApp: 'tasks',
+    targetApp: ['calendar', 'tasks'],
   });
 
   if (taskAppSessionVerification.ok) {
@@ -148,7 +149,7 @@ export async function requireBoardAccess(
   }
 
   if (normalizedWsId !== board.ws_id) {
-    console.warn('Board workspace did not match route workspace', {
+    serverLogger.warn('Board workspace did not match route workspace', {
       boardId,
       boardWsId: board.ws_id,
       routeWsId: normalizedWsId,
