@@ -22,7 +22,7 @@ export const GET = withSessionAuth(
         .from('users')
         .select('id, display_name, avatar_url, created_at')
         .eq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (userError) {
         serverLogger.error('Error fetching user profile:', userError);
@@ -51,13 +51,13 @@ export const GET = withSessionAuth(
       }
 
       return NextResponse.json({
-        id: userData.id,
+        id: userData?.id ?? user.id,
         email: privateData?.email ?? null,
-        display_name: userData.display_name,
-        avatar_url: userData.avatar_url,
+        display_name: userData?.display_name ?? null,
+        avatar_url: userData?.avatar_url ?? null,
         full_name: privateData?.full_name ?? null,
         new_email: privateData?.new_email ?? null,
-        created_at: userData.created_at,
+        created_at: userData?.created_at ?? user.created_at ?? null,
         default_workspace_id: privateData?.default_workspace_id ?? null,
       });
     } catch (error) {

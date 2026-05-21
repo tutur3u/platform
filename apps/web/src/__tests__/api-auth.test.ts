@@ -577,6 +577,7 @@ describe('withSessionAuth', () => {
       async (_request: NextRequest, context: SessionAuthContext) => {
         const userResult = await context.supabase.auth.getUser();
         const claimsResult = await context.supabase.auth.getClaims();
+        const sessionResult = await context.supabase.auth.getSession();
         const claims = claimsResult.data?.claims as
           | { sub: string }
           | null
@@ -584,6 +585,7 @@ describe('withSessionAuth', () => {
 
         return NextResponse.json({
           claimsSub: claims?.sub,
+          session: sessionResult.data.session,
           userId: userResult.data.user?.id,
         });
       }
@@ -595,6 +597,7 @@ describe('withSessionAuth', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       claimsSub: 'app-user-1',
+      session: null,
       userId: 'app-user-1',
     });
     expect(mockGetUser).not.toHaveBeenCalled();

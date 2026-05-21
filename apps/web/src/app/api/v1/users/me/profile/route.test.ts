@@ -38,7 +38,7 @@ function createProfileSupabase({
       select: vi.fn(() => ({
         eq: vi.fn(() =>
           table === 'users'
-            ? { single: vi.fn().mockResolvedValue(userResult) }
+            ? { maybeSingle: vi.fn().mockResolvedValue(userResult) }
             : { maybeSingle: vi.fn().mockResolvedValue(privateResult) }
         ),
       })),
@@ -130,6 +130,48 @@ describe('current user profile route', () => {
       id: 'user-1',
       email: null,
       display_name: 'Public Name',
+    });
+  });
+
+  it('returns current app-session identity when the public profile row is absent', async () => {
+    const route = await import('@/app/api/v1/users/me/profile/route');
+    const supabase = createProfileSupabase({
+      userResult: {
+        data: null,
+        error: null,
+      },
+      privateResult: {
+        data: {
+          email: 'private@example.com',
+          full_name: 'Private Full Name',
+          new_email: null,
+          default_workspace_id: 'workspace-1',
+        },
+        error: null,
+      },
+    });
+
+    const response = await (route.GET as any)(
+      new NextRequest('http://localhost/api/v1/users/me/profile'),
+      {
+        user: {
+          id: 'app-session-user-1',
+          email: 'auth@example.com',
+          created_at: '2026-05-13T00:00:00.000Z',
+        },
+        supabase,
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      id: 'app-session-user-1',
+      email: 'private@example.com',
+      display_name: null,
+      avatar_url: null,
+      full_name: 'Private Full Name',
+      created_at: '2026-05-13T00:00:00.000Z',
+      default_workspace_id: 'workspace-1',
     });
   });
 });

@@ -410,6 +410,7 @@ export function attachSupabaseAuthUser<T extends TypedSupabaseClient>(
       data: { claims: getSupabaseAuthClaimsForUser(user) },
       error: null,
     }),
+    getSession: async () => ({ data: { session: null }, error: null }),
     getUser: async () => ({ data: { user }, error: null }),
   };
 

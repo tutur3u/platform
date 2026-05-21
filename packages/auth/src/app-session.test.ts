@@ -216,6 +216,10 @@ describe('app-session JWTs', () => {
       },
       error: null,
     });
+    await expect(authSupabase.auth.getSession()).resolves.toEqual({
+      data: { session: null },
+      error: null,
+    });
     expect(authSupabase.auth.signOut).toBe(supabase.auth.signOut);
   });
 
