@@ -2,7 +2,10 @@
 
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import {
+  mapUrlToApp,
+  normalizeClientRedirectPath,
+} from '@tuturuuu/auth/cross-app';
 import {
   ArrowLeft,
   Eye,
@@ -602,7 +605,7 @@ export default function LoginForm() {
     const nextUrl = searchParams.get('nextUrl');
 
     if (nextUrl) {
-      router.push(nextUrl);
+      router.push(normalizeClientRedirectPath(nextUrl));
     } else {
       router.push('/');
     }

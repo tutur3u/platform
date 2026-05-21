@@ -1,13 +1,15 @@
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 let mapUrlToApp: typeof import('./index').mapUrlToApp;
+let normalizeClientRedirectPath: typeof import('./index').normalizeClientRedirectPath;
 let verifyRouteToken: typeof import('./index').verifyRouteToken;
 
 beforeAll(async () => {
   process.env.NEXT_PUBLIC_SUPABASE_URL ??= 'http://localhost:54321';
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??= 'test-publishable-key';
 
-  ({ mapUrlToApp, verifyRouteToken } = await import('./index.js'));
+  ({ mapUrlToApp, normalizeClientRedirectPath, verifyRouteToken } =
+    await import('./index.js'));
 });
 
 beforeEach(() => {
@@ -35,6 +37,10 @@ function createDeferredResponse() {
     promise,
     resolve: resolveResponse!,
   };
+}
+
+function searchParamsWithNextUrl(nextUrl: string) {
+  return new URLSearchParams({ nextUrl });
 }
 
 describe('mapUrlToApp', () => {
@@ -128,7 +134,94 @@ describe('mapUrlToApp', () => {
   });
 });
 
+describe('normalizeClientRedirectPath', () => {
+  it('allows single-slash relative paths', () => {
+    expect(
+      normalizeClientRedirectPath('/personal/dashboard?tab=overview')
+    ).toBe('/personal/dashboard?tab=overview');
+  });
+
+  it.each([
+    'javascript:globalThis.__xss_marker=1',
+    'https://evil.test/dashboard',
+    '//evil.test/dashboard',
+    '/\\evil.test/dashboard',
+  ])('falls back for unsafe redirect path %s', (nextUrl) => {
+    expect(normalizeClientRedirectPath(nextUrl, '/onboarding')).toBe(
+      '/onboarding'
+    );
+  });
+});
+
 describe('verifyRouteToken', () => {
+  it.each([
+    'javascript:globalThis.__xss_marker=1',
+    'https://evil.test/dashboard',
+    '//evil.test/dashboard',
+  ])('falls back when no token is supplied with unsafe nextUrl %s', async (nextUrl) => {
+    const router = createMockRouter();
+
+    await verifyRouteToken({
+      router,
+      searchParams: searchParamsWithNextUrl(nextUrl),
+      token: null,
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('falls back after successful verification with an unsafe nextUrl', async () => {
+    const router = createMockRouter();
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        Response.json({
+          appSessionCreated: true,
+          userId: 'user-1',
+          valid: true,
+        })
+      )
+    );
+
+    await verifyRouteToken({
+      router,
+      searchParams: searchParamsWithNextUrl('javascript:globalThis.__xss=1'),
+      token: 'token-unsafe-next-url',
+    });
+
+    expect(router.push).toHaveBeenCalledWith('/');
+    expect(router.refresh).toHaveBeenCalled();
+  });
+
+  it('falls back for unsafe nextUrl values when a token was recently completed', async () => {
+    const router = createMockRouter();
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        appSessionCreated: true,
+        userId: 'user-1',
+        valid: true,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await verifyRouteToken({
+      router,
+      searchParams: searchParamsWithNextUrl('/dashboard'),
+      token: 'token-completed-unsafe-next-url',
+    });
+    await verifyRouteToken({
+      router,
+      searchParams: searchParamsWithNextUrl('//evil.test/dashboard'),
+      token: 'token-completed-unsafe-next-url',
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenNthCalledWith(1, '/dashboard');
+    expect(router.push).toHaveBeenNthCalledWith(2, '/');
+    expect(router.refresh).toHaveBeenCalledTimes(2);
+  });
+
   it('redirects instead of hanging when token verification returns a non-JSON error', async () => {
     const router = createMockRouter();
     vi.stubGlobal(

@@ -254,6 +254,21 @@ function hasRecentCompletedRouteTokenVerification(token: string) {
   return true;
 }
 
+export function normalizeClientRedirectPath(
+  nextUrl: string | null | undefined,
+  fallbackPath = '/'
+) {
+  if (
+    !nextUrl?.startsWith('/') ||
+    nextUrl.startsWith('//') ||
+    nextUrl.startsWith('/\\')
+  ) {
+    return fallbackPath;
+  }
+
+  return nextUrl;
+}
+
 export const verifyRouteToken = async ({
   searchParams,
   token,
@@ -264,9 +279,12 @@ export const verifyRouteToken = async ({
   router: ReturnType<typeof useRouter>;
 }) => {
   try {
+    const safeNextUrl = normalizeClientRedirectPath(
+      searchParams.get('nextUrl')
+    );
+
     if (!token) {
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl || '/');
+      router.push(safeNextUrl);
       router.refresh();
       return;
     }
@@ -275,8 +293,7 @@ export const verifyRouteToken = async ({
       hasRecentCompletedRouteTokenVerification(token);
 
     if (completedVerification) {
-      const nextUrl = searchParams.get('nextUrl');
-      router.push(nextUrl || '/');
+      router.push(safeNextUrl);
       router.refresh();
       return;
     }
@@ -344,8 +361,7 @@ async function verifyRouteTokenOnce({
 
     rememberCompletedRouteTokenVerification(token);
 
-    const nextUrl = searchParams.get('nextUrl');
-    router.push(nextUrl || '/');
+    router.push(normalizeClientRedirectPath(searchParams.get('nextUrl')));
     router.refresh();
   } finally {
     activeRouteTokenVerifications.delete(token);

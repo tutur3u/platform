@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizeClientRedirectPath } from '@tuturuuu/auth/cross-app';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -10,9 +11,9 @@ export function BasicTokenVerifier() {
 
   useEffect(() => {
     const handleUser = async () => {
-      const nextUrl = searchParams.get('nextUrl');
-
-      router.push(nextUrl || '/onboarding');
+      router.push(
+        normalizeClientRedirectPath(searchParams.get('nextUrl'), '/onboarding')
+      );
       return;
     };
     handleUser();

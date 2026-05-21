@@ -1,6 +1,10 @@
 'use client';
 
-import { generateCrossAppToken, mapUrlToApp } from '@tuturuuu/auth/cross-app';
+import {
+  generateCrossAppToken,
+  mapUrlToApp,
+  normalizeClientRedirectPath,
+} from '@tuturuuu/auth/cross-app';
 import { createClient } from '@tuturuuu/supabase/next/client';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { LoadingIndicator } from '@tuturuuu/ui/custom/loading-indicator';
@@ -494,15 +498,17 @@ export default function OnboardingFlow({
         }
       }
 
+      const redirectId = teamWorkspaceId || personalWorkspaceId || 'personal';
+      const fallbackRedirectPath = `/${redirectId}`;
+
       // Handle internal nextUrl redirect
       if (nextUrl) {
-        router.push(nextUrl);
+        router.push(normalizeClientRedirectPath(nextUrl, fallbackRedirectPath));
         return;
       }
 
       // Default: redirect to team workspace if created, otherwise personal workspace
-      const redirectId = teamWorkspaceId || personalWorkspaceId || 'personal';
-      router.push(`/${redirectId}`);
+      router.push(fallbackRedirectPath);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       router.push('/personal');
