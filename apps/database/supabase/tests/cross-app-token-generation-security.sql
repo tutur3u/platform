@@ -62,10 +62,10 @@ select set_config(
 select lives_ok(
   $$
     select public.generate_cross_app_token(
-      '00000000-0000-0000-0000-00000000ca11',
-      'web',
-      'tulearn',
-      300
+      '00000000-0000-0000-0000-00000000ca11'::uuid,
+      'web'::text,
+      'tulearn'::text,
+      300::integer
     )
   $$,
   'authenticated callers can mint legacy cross-app tokens for themselves'
@@ -87,10 +87,10 @@ select lives_ok(
 select throws_ok(
   $$
     select public.generate_cross_app_token(
-      '00000000-0000-0000-0000-00000000b0b0',
-      'web',
-      'tulearn',
-      300
+      '00000000-0000-0000-0000-00000000b0b0'::uuid,
+      'web'::text,
+      'tulearn'::text,
+      300::integer
     )
   $$,
   '42501',
@@ -129,7 +129,7 @@ reset role;
 select is(
   (
     select count(*)::integer
-    from public.cross_app_tokens
+    from private.cross_app_tokens
     where user_id = '00000000-0000-0000-0000-00000000b0b0'
       and target_app = 'tulearn'
   ),

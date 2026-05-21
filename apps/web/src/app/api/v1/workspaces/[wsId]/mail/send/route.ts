@@ -99,10 +99,9 @@ export async function POST(
   }
 
   const { data: apiKey, error: apiKeyError } = await sbAdmin
+    .schema('private')
     .from('internal_email_api_keys')
-    .select(
-      'user:users!user_id(id, display_name, ...user_private_details(email)), allowed_emails'
-    )
+    .select('user_id, allowed_emails')
     .eq('id', data.config.accessKeyId)
     .eq('value', data.config.accessKeySecret)
     .single();
@@ -117,7 +116,18 @@ export async function POST(
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
 
-  const userEmail = apiKey?.user?.email;
+  const { data: apiKeyUser, error: apiKeyUserError } = await sbAdmin
+    .from('users')
+    .select('id, display_name, ...user_private_details(email)')
+    .eq('id', apiKey.user_id)
+    .single();
+
+  if (apiKeyUserError || !apiKeyUser) {
+    console.error('Error fetching API key user:', apiKeyUserError);
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
+
+  const userEmail = apiKeyUser.email;
   if (!userEmail || !isValidTuturuuuEmail(userEmail)) {
     console.error('User is not using a valid Tuturuuu email');
     return NextResponse.json(
@@ -158,12 +168,12 @@ export async function POST(
         html: data.mail.content,
       },
       source: {
-        name: apiKey.user.display_name || 'Tuturuuu',
+        name: apiKeyUser.display_name || 'Tuturuuu',
         email: userEmail,
       },
       metadata: {
         wsId,
-        userId: apiKey.user.id,
+        userId: apiKeyUser.id,
         templateType: 'internal-email',
         ipAddress,
       },
@@ -201,8 +211,8 @@ export async function POST(
       .from('internal_emails')
       .insert({
         ws_id: wsId,
-        user_id: apiKey.user.id,
-        source_email: `${apiKey.user.display_name || 'Tuturuuu'} <${userEmail}>`,
+        user_id: apiKeyUser.id,
+        source_email: `${apiKeyUser.display_name || 'Tuturuuu'} <${userEmail}>`,
         subject: data.mail.subject,
         to_addresses: data.mail.to,
         cc_addresses: data.mail.cc || [],

@@ -75,6 +75,37 @@ Granular permission system for workspace roles.
 - Inventory: `manage_inventory`
 - Disabled Users: `view_disabled_users`, `disable_user`
 
+### Authentication & Credential Handoffs
+
+#### `private.cross_app_tokens`
+Private short-lived tokens for cross-app authentication handoffs. Client and
+satellite apps should use the existing public RPC helpers or central
+`apps/web` verification route; do not read or write the table through public
+Supabase REST access.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `user_id` (uuid, FK → users)
+- `token` (text, unique)
+- `origin_app` (text)
+- `target_app` (text)
+- `expires_at` (timestamptz)
+- `used_at` (timestamptz)
+- `session_data` (jsonb)
+
+#### `private.internal_email_api_keys`
+Private API credentials for the internal mail send route. The
+`apps/web` route reads these keys with the server-side admin client and keeps
+credential validation behind the application proxy.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `creator_id` (uuid, FK → users)
+- `user_id` (uuid, FK → users)
+- `value` (text)
+- `allowed_emails` (text[])
+- `created_at` (timestamptz)
+
 ### Task Management Hierarchy
 
 The platform implements a 6-level hierarchical task management system:

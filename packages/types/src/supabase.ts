@@ -149,6 +149,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      cross_app_tokens: {
+        Row: {
+          created_at: string;
+          expires_at: string;
+          id: string;
+          is_revoked: boolean;
+          origin_app: string;
+          session_data: Json | null;
+          target_app: string;
+          token: string;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app: string;
+          session_data?: Json | null;
+          target_app: string;
+          token: string;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          is_revoked?: boolean;
+          origin_app?: string;
+          session_data?: Json | null;
+          target_app?: string;
+          token?: string;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       currencies: {
         Row: {
           code: string;
@@ -242,6 +281,33 @@ export type Database = {
           name?: string | null;
           note?: string | null;
           ws_id?: string;
+        };
+        Relationships: [];
+      };
+      internal_email_api_keys: {
+        Row: {
+          allowed_emails: string[] | null;
+          created_at: string;
+          creator_id: string;
+          id: string;
+          user_id: string;
+          value: string;
+        };
+        Insert: {
+          allowed_emails?: string[] | null;
+          created_at?: string;
+          creator_id: string;
+          id?: string;
+          user_id: string;
+          value: string;
+        };
+        Update: {
+          allowed_emails?: string[] | null;
+          created_at?: string;
+          creator_id?: string;
+          id?: string;
+          user_id?: string;
+          value?: string;
         };
         Relationships: [];
       };
@@ -4795,74 +4861,6 @@ export type Database = {
           },
         ];
       };
-      cross_app_tokens: {
-        Row: {
-          created_at: string;
-          expires_at: string;
-          id: string;
-          is_revoked: boolean;
-          origin_app: string;
-          session_data: Json | null;
-          target_app: string;
-          token: string;
-          used_at: string | null;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          expires_at: string;
-          id?: string;
-          is_revoked?: boolean;
-          origin_app: string;
-          session_data?: Json | null;
-          target_app: string;
-          token: string;
-          used_at?: string | null;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          expires_at?: string;
-          id?: string;
-          is_revoked?: boolean;
-          origin_app?: string;
-          session_data?: Json | null;
-          target_app?: string;
-          token?: string;
-          used_at?: string | null;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'cross_app_tokens_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'cross_app_tokens_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'cross_app_tokens_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'cross_app_tokens_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       currency_exchange_rates: {
         Row: {
           base_currency: string;
@@ -8268,90 +8266,6 @@ export type Database = {
             foreignKeyName: 'hive_world_states_updated_by_fkey';
             columns: ['updated_by'];
             isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      internal_email_api_keys: {
-        Row: {
-          allowed_emails: string[] | null;
-          created_at: string;
-          creator_id: string;
-          id: string;
-          user_id: string;
-          value: string;
-        };
-        Insert: {
-          allowed_emails?: string[] | null;
-          created_at?: string;
-          creator_id: string;
-          id?: string;
-          user_id: string;
-          value: string;
-        };
-        Update: {
-          allowed_emails?: string[] | null;
-          created_at?: string;
-          creator_id?: string;
-          id?: string;
-          user_id?: string;
-          value?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: true;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: true;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: true;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'internal_email_api_keys_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: true;
             referencedRelation: 'users';
             referencedColumns: ['id'];
           },
@@ -30417,9 +30331,9 @@ export type Database = {
           }
         | {
             Args: {
-              p_expiry_seconds?: number;
+              p_expiry_seconds: number;
               p_origin_app: string;
-              p_session_data?: Json;
+              p_session_data: Json;
               p_target_app: string;
               p_user_id: string;
             };
