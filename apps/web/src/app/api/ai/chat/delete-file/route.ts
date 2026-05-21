@@ -21,7 +21,7 @@ export const POST = withSessionAuth(
     try {
       const body = await req.json();
       const { wsId: wsIdRaw, path } = DeleteFileRequestSchema.parse(body);
-      const wsId = await normalizeWorkspaceId(wsIdRaw);
+      const wsId = await normalizeWorkspaceId(wsIdRaw, supabase, req);
 
       if (!wsId) {
         return NextResponse.json(

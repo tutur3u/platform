@@ -52,7 +52,7 @@ export const POST = withSessionAuth(
         wsId: wsIdRaw,
         chatId,
       } = UploadUrlRequestSchema.parse(body);
-      const wsId = await normalizeWorkspaceId(wsIdRaw);
+      const wsId = await normalizeWorkspaceId(wsIdRaw, supabase, req);
 
       if (!wsId) {
         return NextResponse.json(
