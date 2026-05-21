@@ -10,6 +10,7 @@ const verifyCliAccessTokenMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  attachSupabaseAuthUser: (supabase: unknown) => supabase,
   createAppSessionUser: (claims: { email?: string | null; sub: string }) => ({
     aud: 'authenticated',
     email: claims.email ?? undefined,
@@ -66,6 +67,9 @@ describe('task board list access', () => {
       ok: true,
     });
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
+    normalizeWorkspaceIdMock.mockResolvedValue(
+      '00000000-0000-4000-8000-000000000123'
+    );
 
     const personalWorkspaceQuery = {
       eq: vi.fn(),

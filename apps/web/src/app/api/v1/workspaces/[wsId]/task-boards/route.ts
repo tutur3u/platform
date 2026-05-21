@@ -1,4 +1,5 @@
 import {
+  attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
@@ -38,7 +39,6 @@ const listBoardsSearchSchema = z.object({
 });
 
 const BOARD_IDS_BATCH_SIZE = 500;
-const PERSONAL_WORKSPACE_ALIAS = 'personal';
 
 type TaskBoardRequestAuth =
   | {
@@ -73,12 +73,14 @@ async function resolveTaskBoardRequestAuth(
     const sbAdmin = (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient;
+    const user = createAppSessionUser(taskAppSessionVerification.claims);
+    const supabase = attachSupabaseAuthUser(sbAdmin, user);
 
     return {
       appSession: true,
       sbAdmin,
-      supabase: sbAdmin as TypedSupabaseClient,
-      user: createAppSessionUser(taskAppSessionVerification.claims),
+      supabase,
+      user,
     };
   }
 
@@ -91,12 +93,14 @@ async function resolveTaskBoardRequestAuth(
       const sbAdmin = (await createAdminClient({
         noCookie: true,
       })) as TypedSupabaseClient;
+      const user = createAppSessionUser(verification.claims);
+      const supabase = attachSupabaseAuthUser(sbAdmin, user);
 
       return {
         appSession: true,
         sbAdmin,
-        supabase: sbAdmin as TypedSupabaseClient,
-        user: createAppSessionUser(verification.claims),
+        supabase,
+        user,
       };
     }
   }
@@ -113,34 +117,6 @@ async function resolveTaskBoardRequestAuth(
   return { appSession: false, supabase, user };
 }
 
-async function normalizeWorkspaceIdForCliSession({
-  rawWsId,
-  sbAdmin,
-  userId,
-}: {
-  rawWsId: string;
-  sbAdmin: TypedSupabaseClient;
-  userId: string;
-}) {
-  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
-    return normalizeWorkspaceId(rawWsId, sbAdmin);
-  }
-
-  const { data: workspace, error } = await sbAdmin
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', userId)
-    .eq('workspace_members.type', 'MEMBER')
-    .maybeSingle();
-
-  if (error || !workspace?.id) {
-    throw new Error('Personal workspace not found');
-  }
-
-  return workspace.id;
-}
-
 export async function GET(req: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
@@ -151,13 +127,7 @@ export async function GET(req: Request, { params }: Params) {
       'sbAdmin' in auth
         ? auth.sbAdmin
         : ((await createAdminClient()) as TypedSupabaseClient);
-    const wsId = auth.appSession
-      ? await normalizeWorkspaceIdForCliSession({
-          rawWsId: id,
-          sbAdmin,
-          userId: auth.user.id,
-        })
-      : await normalizeWorkspaceId(id, auth.supabase);
+    const wsId = await normalizeWorkspaceId(id, auth.supabase);
 
     // Read access is membership-gated so board viewers can still enumerate
     // boards for navigation and selection even without manage_projects.

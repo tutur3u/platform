@@ -32,7 +32,6 @@ import {
 } from './schema';
 
 const FIFTEEN_MINUTES_MS = 15 * 60 * 1000;
-const PERSONAL_WORKSPACE_ALIAS = 'personal';
 
 export type TaskDetailRouteAuthContext = {
   appSession?: boolean;
@@ -88,34 +87,6 @@ async function resolveTaskRequestAuth(
   return { auth: { appSession: false, supabase, user } };
 }
 
-async function normalizeWorkspaceIdForCliSession({
-  rawWsId,
-  supabase,
-  userId,
-}: {
-  rawWsId: string;
-  supabase: TypedSupabaseClient;
-  userId: string;
-}) {
-  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
-    return normalizeWorkspaceId(rawWsId, supabase);
-  }
-
-  const { data: workspace, error } = await supabase
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', userId)
-    .eq('workspace_members.type', 'MEMBER')
-    .maybeSingle();
-
-  if (error || !workspace?.id) {
-    throw new Error('Personal workspace not found');
-  }
-
-  return workspace.id;
-}
-
 async function requireWorkspaceAccess(
   request: NextRequest,
   rawParams: unknown,
@@ -127,13 +98,7 @@ async function requireWorkspaceAccess(
 
   const auth = resolvedAuth.auth;
   const { supabase, user } = auth;
-  const wsId = auth.appSession
-    ? await normalizeWorkspaceIdForCliSession({
-        rawWsId,
-        supabase,
-        userId: user.id,
-      })
-    : await normalizeWorkspaceId(rawWsId, supabase);
+  const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const memberCheck = await verifyWorkspaceMembershipType({
     wsId: wsId,

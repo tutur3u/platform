@@ -1,7 +1,10 @@
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_SESSION_COOKIE_NAME,
+  attachSupabaseAuthUser,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
   createAppSessionLogoutResponse,
@@ -184,6 +187,36 @@ describe('app-session JWTs', () => {
     expect(
       getAppSessionUserFromRequest(cookieRequest, { targetApp: 'learn' })?.id
     ).toBe('user-1');
+  });
+
+  it('attaches app-session users to admin Supabase auth helpers', async () => {
+    const supabase = { auth: { signOut: vi.fn() }, from: vi.fn() };
+    const user = {
+      aud: 'authenticated',
+      email: 'agent@example.com',
+      id: 'user-1',
+      role: 'authenticated',
+    };
+
+    const authSupabase = attachSupabaseAuthUser(
+      supabase as unknown as TypedSupabaseClient,
+      user as SupabaseUser
+    );
+
+    await expect(authSupabase.auth.getUser()).resolves.toEqual({
+      data: { user },
+      error: null,
+    });
+    await expect(authSupabase.auth.getClaims()).resolves.toEqual({
+      data: {
+        claims: expect.objectContaining({
+          email: 'agent@example.com',
+          sub: 'user-1',
+        }),
+      },
+      error: null,
+    });
+    expect(authSupabase.auth.signOut).toBe(supabase.auth.signOut);
   });
 
   it('detects the Web-issued app-session cookie separately from the local app-session cookie', () => {

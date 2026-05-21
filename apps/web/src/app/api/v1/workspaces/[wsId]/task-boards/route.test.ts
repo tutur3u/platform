@@ -28,6 +28,7 @@ const workspacesEqMock = vi.fn();
 const workspacesSelectMock = vi.fn();
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
+  attachSupabaseAuthUser: (supabase: unknown) => supabase,
   createAppSessionUser: (claims: { email?: string | null; sub: string }) => ({
     aud: 'authenticated',
     email: claims.email ?? undefined,
@@ -257,8 +258,9 @@ describe('task boards route GET', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
     expect(createClientMock).not.toHaveBeenCalled();
-    expect(workspacesSelectMock).toHaveBeenCalledWith(
-      'id, workspace_members!inner(user_id, type)'
+    expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
+      'personal',
+      expect.objectContaining({ from: fromMock })
     );
   });
 

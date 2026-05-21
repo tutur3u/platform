@@ -39,16 +39,8 @@ describe('task detail route CLI app-session auth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
 
+    normalizeWorkspaceIdMock.mockResolvedValue(workspaceId);
     verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: true });
-
-    const personalWorkspaceQuery = {
-      eq: vi.fn(),
-      maybeSingle: vi.fn().mockResolvedValue({
-        data: { id: workspaceId },
-        error: null,
-      }),
-    };
-    personalWorkspaceQuery.eq.mockReturnValue(personalWorkspaceQuery);
 
     const taskQuery = {
       eq: vi.fn(),
@@ -90,12 +82,6 @@ describe('task detail route CLI app-session auth', () => {
     taskQuery.eq.mockReturnValue(taskQuery);
 
     const fromMock = vi.fn((table: string) => {
-      if (table === 'workspaces') {
-        return {
-          select: vi.fn(() => personalWorkspaceQuery),
-        };
-      }
-
       if (table === 'tasks') {
         return {
           select: vi.fn(() => taskQuery),
@@ -150,6 +136,10 @@ describe('task detail route CLI app-session auth', () => {
       },
     });
     expect(createClientMock).not.toHaveBeenCalled();
+    expect(normalizeWorkspaceIdMock).toHaveBeenCalledWith(
+      'personal',
+      adminSupabase
+    );
     expect(verifyWorkspaceMembershipTypeMock).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: '00000000-0000-4000-8000-000000000999',

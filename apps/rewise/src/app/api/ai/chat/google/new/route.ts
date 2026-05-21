@@ -1,5 +1,6 @@
 import { createPOST } from '@tuturuuu/ai/chat/google/new/route';
 import {
+  attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
@@ -28,12 +29,17 @@ const POST = createPOST({
       };
     }
 
+    const user = createAppSessionUser(verification.claims);
+
     return {
       auth: {
-        supabase: (await createAdminClient({
-          noCookie: true,
-        })) as TypedSupabaseClient,
-        user: createAppSessionUser(verification.claims),
+        supabase: attachSupabaseAuthUser(
+          (await createAdminClient({
+            noCookie: true,
+          })) as TypedSupabaseClient,
+          user
+        ),
+        user,
       },
       ok: true,
     };

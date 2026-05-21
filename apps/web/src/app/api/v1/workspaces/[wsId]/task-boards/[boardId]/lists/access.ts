@@ -1,4 +1,5 @@
 import {
+  attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
@@ -23,7 +24,6 @@ const paramsSchema = z.object({
   boardId: z.guid(),
   listId: z.guid().optional(),
 });
-const PERSONAL_WORKSPACE_ALIAS = 'personal';
 
 type BoardRequestAuth =
   | {
@@ -67,12 +67,14 @@ async function resolveBoardRequestAuth(
     const sbAdmin = (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient;
+    const user = createAppSessionUser(taskAppSessionVerification.claims);
+    const supabase = attachSupabaseAuthUser(sbAdmin, user);
 
     return {
       appSession: true,
       sbAdmin,
-      supabase: sbAdmin as TypedSupabaseClient,
-      user: createAppSessionUser(taskAppSessionVerification.claims),
+      supabase,
+      user,
     };
   }
 
@@ -85,12 +87,14 @@ async function resolveBoardRequestAuth(
       const sbAdmin = (await createAdminClient({
         noCookie: true,
       })) as TypedSupabaseClient;
+      const user = createAppSessionUser(verification.claims);
+      const supabase = attachSupabaseAuthUser(sbAdmin, user);
 
       return {
         appSession: true,
         sbAdmin,
-        supabase: sbAdmin as TypedSupabaseClient,
-        user: createAppSessionUser(verification.claims),
+        supabase,
+        user,
       };
     }
   }
@@ -107,34 +111,6 @@ async function resolveBoardRequestAuth(
   return { appSession: false, supabase, user };
 }
 
-async function normalizeWorkspaceIdForCliSession({
-  rawWsId,
-  sbAdmin,
-  userId,
-}: {
-  rawWsId: string;
-  sbAdmin: TypedSupabaseClient;
-  userId: string;
-}) {
-  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
-    return normalizeWorkspaceId(rawWsId, sbAdmin);
-  }
-
-  const { data: workspace, error } = await sbAdmin
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', userId)
-    .eq('workspace_members.type', 'MEMBER')
-    .maybeSingle();
-
-  if (error || !workspace?.id) {
-    throw new Error('Personal workspace not found');
-  }
-
-  return workspace.id;
-}
-
 export async function requireBoardAccess(
   request: Request,
   rawParams: unknown
@@ -148,13 +124,7 @@ export async function requireBoardAccess(
     'sbAdmin' in auth
       ? auth.sbAdmin
       : ((await createAdminClient()) as TypedSupabaseClient);
-  const normalizedWsId = auth.appSession
-    ? await normalizeWorkspaceIdForCliSession({
-        rawWsId,
-        sbAdmin,
-        userId: user.id,
-      })
-    : await normalizeWorkspaceId(rawWsId, supabase);
+  const normalizedWsId = await normalizeWorkspaceId(rawWsId, supabase);
 
   const { data: board, error: boardError } = await sbAdmin
     .from('workspace_boards')

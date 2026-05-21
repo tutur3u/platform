@@ -4,7 +4,10 @@ import {
   handleTaskDetailRoutePATCH,
   handleTaskDetailRoutePUT,
 } from '@tuturuuu/apis/tu-do/tasks/taskId/route';
-import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  attachSupabaseAuthUser,
+  getAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { verifyCliAccessToken } from '@tuturuuu/auth/cli-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -38,11 +41,12 @@ async function resolveCliTaskDetailAuth(request: Request) {
   const sbAdmin = (await createAdminClient({
     noCookie: true,
   })) as TypedSupabaseClient;
+  const user = createCliSessionUser(verification.claims);
 
   return {
     appSession: true,
-    supabase: sbAdmin,
-    user: createCliSessionUser(verification.claims),
+    supabase: attachSupabaseAuthUser(sbAdmin, user),
+    user,
   };
 }
 

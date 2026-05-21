@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -24,37 +23,6 @@ type AuthorizeInventoryWorkspaceOptions = {
   requireInventoryEnabled?: boolean;
 };
 
-const PERSONAL_WORKSPACE_ALIAS = 'personal';
-
-async function normalizeInventoryWorkspaceId({
-  rawWsId,
-  supabase,
-  userId,
-}: {
-  rawWsId: string;
-  supabase: Parameters<typeof normalizeWorkspaceId>[1];
-  userId: string;
-}) {
-  if (rawWsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_ALIAS) {
-    return normalizeWorkspaceId(rawWsId, supabase);
-  }
-
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data: workspace, error } = await sbAdmin
-    .from('workspaces')
-    .select('id, workspace_members!inner(user_id, type)')
-    .eq('personal', true)
-    .eq('workspace_members.user_id', userId)
-    .eq('workspace_members.type', 'MEMBER')
-    .maybeSingle();
-
-  if (error || !workspace?.id) {
-    throw new Error('Personal workspace not found');
-  }
-
-  return workspace.id;
-}
-
 export async function authorizeInventoryWorkspace(
   request: Request,
   rawWsId: string,
@@ -71,11 +39,7 @@ export async function authorizeInventoryWorkspace(
 
   let wsId: string;
   try {
-    wsId = await normalizeInventoryWorkspaceId({
-      rawWsId,
-      supabase: auth.supabase,
-      userId: auth.user.id,
-    });
+    wsId = await normalizeWorkspaceId(rawWsId, auth.supabase);
   } catch {
     return {
       ok: false,

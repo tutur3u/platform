@@ -1,5 +1,6 @@
 import {
   type AppSessionTargetApp,
+  attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
   verifyAppSessionRequest,
@@ -262,48 +263,6 @@ async function resolveAuthenticatedUser(supabase: TypedSupabaseClient) {
   return resolveAuthenticatedSessionUser(supabase);
 }
 
-function getAppSessionUserClaims(user: SupabaseUser) {
-  const sessionUser = user as SupabaseUser & {
-    app_metadata?: Record<string, unknown>;
-    aud?: string | null;
-    role?: string | null;
-    user_metadata?: Record<string, unknown>;
-  };
-
-  return {
-    app_metadata: sessionUser.app_metadata ?? {},
-    aud: sessionUser.aud ?? 'authenticated',
-    email: user.email ?? null,
-    role: sessionUser.role ?? 'authenticated',
-    sub: user.id,
-    user_metadata: sessionUser.user_metadata ?? {},
-  };
-}
-
-function withAppSessionUser(supabase: TypedSupabaseClient, user: SupabaseUser) {
-  const existingAuth =
-    'auth' in supabase && supabase.auth
-      ? (supabase.auth as unknown as Record<string, unknown>)
-      : {};
-  const auth = {
-    ...existingAuth,
-    getClaims: async () => ({
-      data: { claims: getAppSessionUserClaims(user) },
-      error: null,
-    }),
-    getUser: async () => ({ data: { user }, error: null }),
-  };
-
-  Object.defineProperty(supabase, 'auth', {
-    configurable: true,
-    enumerable: true,
-    value: auth,
-    writable: true,
-  });
-
-  return supabase;
-}
-
 export type SessionAuthResolution =
   | (SessionAuthContext & {
       ok: true;
@@ -342,7 +301,7 @@ export async function resolveSessionAuthContext(
 
       return {
         ok: true,
-        supabase: withAppSessionUser(
+        supabase: attachSupabaseAuthUser(
           (await createAdminClient({
             noCookie: true,
           })) as TypedSupabaseClient,
@@ -731,7 +690,7 @@ export function withSessionAuth<T = unknown>(
         const adminSupabase = (await createAdminClient({
           noCookie: true,
         })) as TypedSupabaseClient;
-        const appSessionSupabase = withAppSessionUser(
+        const appSessionSupabase = attachSupabaseAuthUser(
           adminSupabase,
           appSessionUser
         );

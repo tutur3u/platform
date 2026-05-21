@@ -1,4 +1,5 @@
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import type { ResponseCookie } from 'next/dist/compiled/@edge-runtime/cookies';
 import { NextResponse } from 'next/server';
@@ -375,4 +376,49 @@ export function createAppSessionUser(
       target_app: claims.target_app,
     },
   } as SupabaseUser;
+}
+
+function getSupabaseAuthClaimsForUser(user: SupabaseUser) {
+  const sessionUser = user as SupabaseUser & {
+    app_metadata?: Record<string, unknown>;
+    aud?: string | null;
+    role?: string | null;
+    user_metadata?: Record<string, unknown>;
+  };
+
+  return {
+    app_metadata: sessionUser.app_metadata ?? {},
+    aud: sessionUser.aud ?? 'authenticated',
+    email: user.email ?? null,
+    role: sessionUser.role ?? 'authenticated',
+    sub: user.id,
+    user_metadata: sessionUser.user_metadata ?? {},
+  };
+}
+
+export function attachSupabaseAuthUser<T extends TypedSupabaseClient>(
+  supabase: T,
+  user: SupabaseUser
+): T {
+  const existingAuth =
+    'auth' in supabase && supabase.auth
+      ? (supabase.auth as unknown as Record<string, unknown>)
+      : {};
+  const auth = {
+    ...existingAuth,
+    getClaims: async () => ({
+      data: { claims: getSupabaseAuthClaimsForUser(user) },
+      error: null,
+    }),
+    getUser: async () => ({ data: { user }, error: null }),
+  };
+
+  Object.defineProperty(supabase, 'auth', {
+    configurable: true,
+    enumerable: true,
+    value: auth,
+    writable: true,
+  });
+
+  return supabase;
 }
