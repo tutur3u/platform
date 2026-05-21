@@ -18,18 +18,18 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.1048.0",
+    "@aws-sdk/client-ses": "^3.1050.0",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "@upstash/redis": "^1.38.0",
-    "isomorphic-dompurify": "^3.13.0",
+    "isomorphic-dompurify": "^3.14.0",
     "juice": "^11.1.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tuturuuu/typescript-config": "workspace:*",
-    "@types/node": "^25.9.0",
+    "@types/node": "^25.9.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.6"
   }

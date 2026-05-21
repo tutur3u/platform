@@ -4,7 +4,7 @@
     "@biomejs/biome": "^2.4.15",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260518.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260519.1",
     "@vitest/coverage-v8": "^4.1.6",
     "lucide-static": "^1.16.0",
     "portless": "^0.13.0",
@@ -15,6 +15,10 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "overrides": {
+    "google-auth-library": "10.6.2",
+    "@polar-sh/sdk": "0.47.1"
   },
   "packageManager": "bun@1.3.14",
   "private": true,
@@ -192,9 +196,5 @@
     "supabase",
     "unrs-resolver"
   ],
-  "workspaces": ["apps/*", "packages/*"],
-  "overrides": {
-    "google-auth-library": "10.6.2",
-    "@polar-sh/sdk": "0.47.1"
-  }
+  "workspaces": ["apps/*", "packages/*"]
 }
