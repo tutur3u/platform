@@ -178,12 +178,12 @@ function getAppSessionTokenCandidatesFromRequest(request: RequestLike) {
   const cookieToken = getCookieValue(request, APP_SESSION_COOKIE_NAME);
   const webCookieToken = getCookieValue(request, WEB_APP_SESSION_COOKIE_NAME);
 
-  if (cookieToken && isAppCoordinationToken(cookieToken)) {
-    tokens.add(cookieToken);
-  }
-
   if (webCookieToken && isAppCoordinationToken(webCookieToken)) {
     tokens.add(webCookieToken);
+  }
+
+  if (cookieToken && isAppCoordinationToken(cookieToken)) {
+    tokens.add(cookieToken);
   }
 
   return [...tokens];

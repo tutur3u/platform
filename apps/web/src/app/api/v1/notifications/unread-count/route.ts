@@ -3,14 +3,11 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { CURRENT_USER_APP_SESSION_AUTH } from '../../users/me/session-auth';
 import {
   buildNotificationAccessFilter,
   getNotificationAccessContext,
 } from '../access';
-
-const TASKS_APP_SESSION_AUTH = {
-  targetApp: 'tasks',
-} as const;
 
 const querySchema = z.object({
   wsId: z
@@ -106,7 +103,7 @@ export const GET = withSessionAuth(
     }
   },
   {
-    allowAppSessionAuth: TASKS_APP_SESSION_AUTH,
+    allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH,
     cache: { maxAge: 15, swr: 15 },
   }
 );

@@ -90,6 +90,10 @@ stale `sb-*-auth-token` Supabase cookies whenever `tuturuuu_app_session` is
 present. Registered app proxies should also call the shared
 `clearSupabaseAuthCookies()` helper on API, redirect, and normal middleware
 responses so stale Supabase session cookies are expired on the satellite host.
+If both `tuturuuu_app_session` and `tuturuuu_web_app_session` are forwarded, the
+Web-issued cookie is the preferred actor for central `apps/web` API auth; the
+local app cookie remains the fallback for routes that cannot verify the Web
+cookie.
 
 Gateway API routes for registered apps should resolve the app-session actor
 before any central-web Supabase Auth fallback, and admin-backed checks must use

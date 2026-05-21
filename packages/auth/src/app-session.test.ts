@@ -237,12 +237,43 @@ describe('app-session JWTs', () => {
       },
     });
 
-    expect(getAppSessionTokenFromRequest(request)).toBe(localToken);
+    expect(getAppSessionTokenFromRequest(request)).toBe(webToken);
     expect(getWebAppSessionTokenFromRequest(request)).toBe(webToken);
     expect(hasWebAppSessionTokenFromRequest(request)).toBe(true);
   });
 
-  it('tries the local app cookie before falling back to the Web-issued app cookie', () => {
+  it('prefers the Web-issued app cookie when both app-session cookies are valid', () => {
+    const { token: localToken } = createAppSessionToken({
+      email: 'local@example.com',
+      targetApp: 'learn',
+      userId: 'local-user',
+    });
+    const { token: webToken } = createAppSessionToken({
+      email: 'web@example.com',
+      targetApp: 'learn',
+      userId: 'web-user',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.localhost/api', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${localToken}`,
+          `${WEB_APP_SESSION_COOKIE_NAME}=${webToken}`,
+        ].join('; '),
+      },
+    });
+
+    const verification = verifyAppSessionRequest(request, {
+      targetApp: 'learn',
+    });
+
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.email).toBe('web@example.com');
+      expect(verification.claims.sub).toBe('web-user');
+    }
+  });
+
+  it('falls back to the local app cookie when the Web-issued app cookie is not verifiable', () => {
     const { token: localToken } = createAppSessionToken(
       {
         targetApp: 'learn',
