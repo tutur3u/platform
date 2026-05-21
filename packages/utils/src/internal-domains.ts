@@ -2,6 +2,10 @@ import { getTuturuuuPortlessAppOrigin } from './portless';
 
 export const PRODUCTION_INTERNAL_APP_DOMAINS = [
   {
+    name: 'apps',
+    url: 'https://apps.tuturuuu.com',
+  },
+  {
     name: 'platform',
     url: 'https://tuturuuu.com',
   },
@@ -61,6 +65,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
 
 export const PORTLESS_INTERNAL_APP_DOMAINS = [
   {
+    name: 'apps',
+    url: getTuturuuuPortlessAppOrigin('apps'),
+  },
+  {
     name: 'platform',
     url: getTuturuuuPortlessAppOrigin('platform'),
   },
@@ -115,6 +123,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
 ] as const;
 
 export const LOCALHOST_INTERNAL_APP_DOMAINS = [
+  {
+    name: 'apps',
+    url: 'http://localhost:7818',
+  },
   {
     name: 'cms',
     url: 'http://localhost:7811',

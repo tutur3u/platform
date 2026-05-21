@@ -95,6 +95,7 @@ interface QueuedPlatformProjectRow {
 
 const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
   'api.tuturuuu.com',
+  'apps.tuturuuu.com',
   'calendar.tuturuuu.com',
   'cms.tuturuuu.com',
   'dev.tuturuuu.com',

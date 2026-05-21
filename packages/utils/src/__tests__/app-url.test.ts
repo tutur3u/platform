@@ -114,6 +114,7 @@ describe('getLocalInternalAppUrl', () => {
   });
 
   it.each([
+    ['apps', 'https://apps.tuturuuu.localhost'],
     ['platform', 'https://tuturuuu.localhost'],
     ['cms', 'https://cms.tuturuuu.localhost'],
     ['calendar', 'https://calendar.tuturuuu.localhost'],
@@ -142,6 +143,7 @@ describe('Portless app origin registry', () => {
       '*.tuturuuu.localhost',
     ]);
     expect(Object.values(TUTURUUU_PORTLESS_APP_ORIGINS)).toEqual([
+      'https://apps.tuturuuu.localhost',
       'https://calendar.tuturuuu.localhost',
       'https://cms.tuturuuu.localhost',
       'https://external.tuturuuu.localhost',

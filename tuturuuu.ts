@@ -27,6 +27,7 @@ export const ci = {
   'supabase-types.yaml': true,
   'turbo-unit-tests.yaml': true,
   'type-check.yaml': true,
+  'vercel-preview-apps.yaml': true,
   'vercel-preview-calendar.yaml': true,
   'vercel-preview-cms.yaml': true,
   'vercel-preview-finance.yaml': true,
@@ -34,6 +35,7 @@ export const ci = {
   'vercel-preview-mind.yaml': true,
   'vercel-preview-nova.yaml': true,
   'vercel-preview-platform.yaml': true,
+  'vercel-preview-qr.yaml': true,
   'vercel-preview-rewise.yaml': true,
   'vercel-preview-shortener.yaml': true,
   'vercel-preview-tasks.yaml': true,
@@ -41,6 +43,7 @@ export const ci = {
   'vercel-preview-learn.yaml': true,
   'vercel-preview-teach.yaml': true,
   'vercel-preview-track.yaml': true,
+  'vercel-production-apps.yaml': true,
   'vercel-production-calendar.yaml': true,
   'vercel-production-cms.yaml': true,
   'vercel-production-finance.yaml': true,
@@ -48,6 +51,7 @@ export const ci = {
   'vercel-production-mind.yaml': true,
   'vercel-production-nova.yaml': true,
   'vercel-production-platform.yaml': true,
+  'vercel-production-qr.yaml': true,
   'vercel-production-rewise.yaml': true,
   'vercel-production-shortener.yaml': true,
   'vercel-production-tasks.yaml': true,
@@ -90,6 +94,13 @@ export type VercelWorkflowTarget = {
 };
 
 export const vercelWorkflowTargets = [
+  {
+    app: 'apps',
+    appPath: 'apps/apps',
+    packageName: '@tuturuuu/apps',
+    previewWorkflow: 'vercel-preview-apps.yaml',
+    productionWorkflow: 'vercel-production-apps.yaml',
+  },
   {
     app: 'calendar',
     appPath: 'apps/calendar',
@@ -145,6 +156,13 @@ export const vercelWorkflowTargets = [
     packageName: '@tuturuuu/web',
     previewWorkflow: 'vercel-preview-platform.yaml',
     productionWorkflow: 'vercel-production-platform.yaml',
+  },
+  {
+    app: 'qr',
+    appPath: 'apps/qr',
+    packageName: '@tuturuuu/qr',
+    previewWorkflow: 'vercel-preview-qr.yaml',
+    productionWorkflow: 'vercel-production-qr.yaml',
   },
   {
     app: 'rewise',

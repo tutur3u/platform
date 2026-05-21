@@ -1,0 +1,89 @@
+{
+  "appsGateway": {
+    "apps": {
+      "calendar": {
+        "description": "Calendar, scheduling, and workspace planning."
+      },
+      "cms": {
+        "description": "Content operations, schemas, previews, and publishing."
+      },
+      "drive": {
+        "description": "Workspace files, folders, sharing, and storage operations."
+      },
+      "external": {
+        "description": "Developer demos and integration surfaces for Tuturuuu packages."
+      },
+      "finance": {
+        "description": "Wallets, invoices, transactions, and financial reporting."
+      },
+      "hive": {
+        "description": "AI collaboration experiments and Hive product surfaces."
+      },
+      "inventory": {
+        "description": "Products, stock, warehouses, and inventory workflows."
+      },
+      "learn": {
+        "description": "Learner dashboards, courses, and education experiences."
+      },
+      "meet": {
+        "description": "Meeting coordination and shared availability."
+      },
+      "mind": {
+        "description": "Mindboards, knowledge graphs, and AI-assisted planning."
+      },
+      "nova": {
+        "description": "AI-native product experiences and creative tools."
+      },
+      "platform": {
+        "description": "The main Tuturuuu workspace platform and central login."
+      },
+      "playground": {
+        "description": "Internal experiments for AI, SDKs, and prototype flows."
+      },
+      "qr": {
+        "description": "Public QR generator for branded codes and downloads."
+      },
+      "rewise": {
+        "description": "Learning, review, and revision workflows."
+      },
+      "shortener": {
+        "description": "Short links, redirects, and link verification."
+      },
+      "tasks": {
+        "description": "Task boards, projects, cycles, labels, and work planning."
+      },
+      "teach": {
+        "description": "Educator dashboards, teaching tools, and classroom workflows."
+      },
+      "track": {
+        "description": "Time tracking, habits, activity, and daily work records."
+      }
+    },
+    "categories": {
+      "ai": "AI",
+      "content": "Content",
+      "core": "Core",
+      "developer": "Developer",
+      "learning": "Learning",
+      "operations": "Operations",
+      "productivity": "Productivity"
+    },
+    "categoryCount": "{count, plural, one {# app} other {# apps}}",
+    "categoryDescriptions": {
+      "ai": "AI-first tools and planning surfaces.",
+      "content": "Authoring and publishing workspaces.",
+      "core": "The central product and workspace base.",
+      "developer": "Tools for integration, testing, and package demos.",
+      "learning": "Education apps for learners and teachers.",
+      "operations": "Business operations and resource management.",
+      "productivity": "Daily coordination, planning, and execution."
+    },
+    "eyebrow": "Tuturuuu Apps",
+    "metadata": {
+      "description": "Open every routable Tuturuuu web app from one central gateway.",
+      "title": "Tuturuuu Apps"
+    },
+    "subtitle": "A central entrypoint for the routable apps in this monorepo. Choose an app here, then continue on its canonical domain.",
+    "title": "One gateway for every Tuturuuu app."
+  }
+}

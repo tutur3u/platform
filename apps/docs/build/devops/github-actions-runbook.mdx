@@ -55,6 +55,7 @@ is ambiguous without a manifest or source path.
 ### Hosted web deployments
 
 - `vercel-preview-platform.yaml`
+- `vercel-preview-apps.yaml`
 - `vercel-preview-calendar.yaml`
 - `vercel-preview-cms.yaml`
 - `vercel-preview-finance.yaml`
@@ -74,6 +75,13 @@ CMS uses the same Vercel pattern as the other satellite apps:
 - preview workflow: `vercel-preview-cms.yaml`
 - production workflow: `vercel-production-cms.yaml`
 - project secret: `VERCEL_CMS_PROJECT_ID`
+
+The Apps gateway uses the same pattern:
+
+- preview workflow: `vercel-preview-apps.yaml`
+- production workflow: `vercel-production-apps.yaml`
+- project secret: `VERCEL_APPS_PROJECT_ID`
+- environments: `vercel-preview-apps` and `vercel-production-apps`
 
 These workflows:
 

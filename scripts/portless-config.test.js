@@ -84,6 +84,7 @@ test('app package portless entries mirror the root portless app map', () => {
 test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
   const config = readJson(portlessConfigPath);
 
+  assert.equal(config.apps['apps/apps']?.name, 'apps.tuturuuu');
   assert.equal(config.apps['apps/web']?.name, 'tuturuuu');
   assert.equal(config.apps['apps/tasks']?.name, 'tasks.tuturuuu');
   assert.equal(

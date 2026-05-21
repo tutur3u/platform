@@ -16,6 +16,7 @@ const path = require('node:path');
 // Translation directories to process
 const TRANSLATION_DIRS = [
   'apps/web/messages',
+  'apps/apps/messages',
   'apps/calendar/messages',
   'apps/cms/messages',
   'apps/finance/messages',

@@ -1,5 +1,9 @@
 {
   "apps": {
+    "apps/apps": {
+      "name": "apps.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/calendar": {
       "name": "calendar.tuturuuu",
       "script": "dev:app"

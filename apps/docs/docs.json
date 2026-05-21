@@ -101,6 +101,7 @@
               {
                 "group": "Applications",
                 "pages": [
+                  "platform/applications/apps",
                   "platform/applications/calendar",
                   "platform/applications/cms",
                   "platform/applications/inventory",

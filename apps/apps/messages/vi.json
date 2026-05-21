@@ -1,0 +1,89 @@
+{
+  "appsGateway": {
+    "apps": {
+      "calendar": {
+        "description": "Lịch, lên lịch và lập kế hoạch trong workspace."
+      },
+      "cms": {
+        "description": "Vận hành nội dung, schema, xem trước và xuất bản."
+      },
+      "drive": {
+        "description": "Tệp, thư mục, chia sẻ và vận hành lưu trữ trong workspace."
+      },
+      "external": {
+        "description": "Demo dành cho lập trình viên và bề mặt tích hợp cho các package Tuturuuu."
+      },
+      "finance": {
+        "description": "Ví, hóa đơn, giao dịch và báo cáo tài chính."
+      },
+      "hive": {
+        "description": "Thử nghiệm cộng tác AI và các bề mặt sản phẩm Hive."
+      },
+      "inventory": {
+        "description": "Sản phẩm, tồn kho, kho hàng và quy trình inventory."
+      },
+      "learn": {
+        "description": "Dashboard học viên, khóa học và trải nghiệm giáo dục."
+      },
+      "meet": {
+        "description": "Điều phối cuộc họp và thời gian rảnh chung."
+      },
+      "mind": {
+        "description": "Mindboard, đồ thị tri thức và lập kế hoạch có AI hỗ trợ."
+      },
+      "nova": {
+        "description": "Trải nghiệm sản phẩm AI-native và công cụ sáng tạo."
+      },
+      "platform": {
+        "description": "Nền tảng workspace chính của Tuturuuu và đăng nhập trung tâm."
+      },
+      "playground": {
+        "description": "Thử nghiệm nội bộ cho AI, SDK và các luồng nguyên mẫu."
+      },
+      "qr": {
+        "description": "Trình tạo QR công khai cho mã có thương hiệu và tải xuống."
+      },
+      "rewise": {
+        "description": "Quy trình học, ôn tập và củng cố kiến thức."
+      },
+      "shortener": {
+        "description": "Liên kết rút gọn, chuyển hướng và xác minh liên kết."
+      },
+      "tasks": {
+        "description": "Task board, dự án, chu kỳ, nhãn và lập kế hoạch công việc."
+      },
+      "teach": {
+        "description": "Dashboard giáo viên, công cụ giảng dạy và quy trình lớp học."
+      },
+      "track": {
+        "description": "Theo dõi thời gian, thói quen, hoạt động và nhật ký công việc."
+      }
+    },
+    "categories": {
+      "ai": "AI",
+      "content": "Nội dung",
+      "core": "Cốt lõi",
+      "developer": "Lập trình",
+      "learning": "Học tập",
+      "operations": "Vận hành",
+      "productivity": "Năng suất"
+    },
+    "categoryCount": "{count, plural, one {# app} other {# app}}",
+    "categoryDescriptions": {
+      "ai": "Công cụ AI-first và bề mặt lập kế hoạch.",
+      "content": "Workspace biên tập và xuất bản.",
+      "core": "Nền tảng sản phẩm và workspace trung tâm.",
+      "developer": "Công cụ tích hợp, kiểm thử và demo package.",
+      "learning": "Ứng dụng giáo dục cho học viên và giáo viên.",
+      "operations": "Vận hành kinh doanh và quản lý tài nguyên.",
+      "productivity": "Điều phối, lập kế hoạch và thực thi hằng ngày."
+    },
+    "eyebrow": "Tuturuuu Apps",
+    "metadata": {
+      "description": "Mở mọi ứng dụng web có route của Tuturuuu từ một gateway trung tâm.",
+      "title": "Tuturuuu Apps"
+    },
+    "subtitle": "Điểm vào trung tâm cho các ứng dụng có route trong monorepo này. Chọn một app tại đây, rồi tiếp tục trên domain canonical của app đó.",
+    "title": "Một gateway cho mọi app Tuturuuu."
+  }
+}

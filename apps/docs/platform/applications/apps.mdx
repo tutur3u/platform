@@ -1,0 +1,74 @@
+---
+title: 'Apps Gateway'
+description: 'Central launcher and redirect gateway for routable Tuturuuu web apps.'
+updatedAt: '2026-05-21'
+---
+
+## Overview
+
+`apps/apps` serves `apps.tuturuuu.com`, the central public gateway for routable
+Tuturuuu web apps. It is a launcher and redirect layer, not a reverse proxy.
+
+The gateway exposes app cards for the routable web apps in `apps/` and redirects
+users to each app's canonical domain:
+
+- `/calendar` redirects to `calendar.tuturuuu.com`
+- `/tasks/personal/tasks` redirects to `tasks.tuturuuu.com/personal/tasks`
+- query strings are preserved during redirects
+
+It intentionally excludes infrastructure-only or non-web app directories such as
+`apps/database`, `apps/mobile`, `apps/redis`, `apps/discord`,
+`apps/storage-unzip-proxy`, and `apps/hive-realtime`.
+
+## Routing Contract
+
+- `/`: public app directory.
+- `/{appSlug}`: redirect to the target app root.
+- `/{appSlug}/{path...}`: redirect to the same path on the target app.
+
+`apps.tuturuuu.com` must not own auth callbacks, protected APIs, cross-app token
+exchange, or app-session cookies. Those flows remain owned by the canonical app
+or by `apps/web` for central login.
+
+## Local Development
+
+- `bun dev:apps` starts the gateway through Portless.
+- Local app origin: `https://apps.tuturuuu.localhost`.
+- Direct fallback port: `7818`.
+
+The gateway uses hidden locale routing, so old locale-prefixed paths such as
+`/vi/calendar` should canonicalize to `/calendar` while storing `NEXT_LOCALE`.
+
+## CI/CD
+
+Preview and production deployments use dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-apps.yaml`
+- `.github/workflows/vercel-production-apps.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared
+`ci-check.yml` switchboard with affected-path gating. They require
+environment-scoped Vercel credentials:
+
+- preview environment: `vercel-preview-apps`
+- production environment: `vercel-production-apps`
+- project secret: `VERCEL_APPS_PROJECT_ID`
+- shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
+
+The app-specific project secret should live in those GitHub Environments, not in
+workflow-level `env`.
+
+## Validation
+
+Use these focused checks when changing the gateway:
+
+```bash
+bun type-check:apps
+bun --cwd packages/utils test src/__tests__/app-url.test.ts
+node --test scripts/portless-config.test.js
+node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
+```
+
+Because the gateway touches TypeScript, workflow config, docs navigation, and
+translations, finish gateway changes with `bun check` when the shared worktree
+state allows it.

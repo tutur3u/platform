@@ -18,6 +18,30 @@
         "vitest": "^4.1.6",
       },
     },
+    "apps/apps": {
+      "name": "@tuturuuu/apps",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tuturuuu/icons": "workspace:*",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.2.6",
+        "next-intl": "^4.11.2",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.0",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.9.1",
+        "@types/react": "^19.2.15",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.14",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/calendar": {
       "name": "@tuturuuu/calendar",
       "version": "0.1.0",
@@ -2966,6 +2990,8 @@
     "@tuturuuu/ai": ["@tuturuuu/ai@workspace:packages/ai"],
 
     "@tuturuuu/apis": ["@tuturuuu/apis@workspace:packages/apis"],
+
+    "@tuturuuu/apps": ["@tuturuuu/apps@workspace:apps/apps"],
 
     "@tuturuuu/auth": ["@tuturuuu/auth@workspace:packages/auth"],
 

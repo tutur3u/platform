@@ -134,8 +134,20 @@ test('Supabase production migration is bound to production deployment and staged
   );
 });
 
-test('education Vercel workflows scope deploy secrets to deploy jobs', () => {
-  const educationWorkflows = {
+test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', () => {
+  const environmentScopedWorkflows = {
+    'vercel-preview-apps.yaml': {
+      environment: 'vercel-preview-apps',
+      jobName: 'Deploy-Preview',
+      projectSecret: 'VERCEL_APPS_PROJECT_ID',
+      refGuard: /github\.ref != 'refs\/heads\/production'/,
+    },
+    'vercel-production-apps.yaml': {
+      environment: 'vercel-production-apps',
+      jobName: 'Deploy-Production',
+      projectSecret: 'VERCEL_APPS_PROJECT_ID',
+      refGuard: /github\.ref == 'refs\/heads\/production'/,
+    },
     'vercel-preview-learn.yaml': {
       environment: 'vercel-preview-learn',
       jobName: 'Deploy-Preview',
@@ -162,7 +174,9 @@ test('education Vercel workflows scope deploy secrets to deploy jobs', () => {
     },
   };
 
-  for (const [workflowName, expected] of Object.entries(educationWorkflows)) {
+  for (const [workflowName, expected] of Object.entries(
+    environmentScopedWorkflows
+  )) {
     const workflow = fs.readFileSync(
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
