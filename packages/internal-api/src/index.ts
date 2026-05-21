@@ -712,6 +712,12 @@ export {
   updateTutoringSession,
 } from './tutoring';
 export {
+  listUserGroupActivityLogs,
+  type UserGroupActivityEventResponse,
+  type UserGroupActivityLogQuery,
+  type UserGroupActivityLogsResponse,
+} from './user-group-activity';
+export {
   getNextWorkspaceUserGroupsPageParam,
   listAllWorkspaceUserGroups,
   listWorkspaceUserGroups,

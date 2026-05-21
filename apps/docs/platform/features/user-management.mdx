@@ -61,6 +61,32 @@ Workspace attendance settings include a default-on `ATTENDANCE_COUNT_MANAGERS` f
 - When disabled, attendance totals on the user-group list subtract group managers from the group member count.
 - This is separate from `ATTENDANCE_SHOW_MANAGERS`, which controls whether managers appear in detailed attendance-taking views.
 
+## User Group Activity Audit Logs
+
+User group activity is exposed from the dashboard at `/users/groups?tab=audit-log` and on each group detail page. The feed is normalized from `audit.record_version` through private service-role RPCs so UI code receives one event shape with action, resource type, group, affected user, actor, timestamp, and before/after snapshots.
+
+### Tracked Resources
+
+- Group metadata and status: `workspace_user_groups`.
+- Membership and manager role changes: `workspace_user_groups_users`.
+- Group tags and default included groups: `workspace_user_group_tag_groups`, `workspace_default_included_user_groups`.
+- Posts, post logs, and post checks: `user_group_posts`, `user_group_post_logs`, `user_group_post_checks`.
+- Attendance, linked products, metrics, categories, category links, and student metric values: `user_group_attendance`, `user_group_linked_products`, `user_group_metrics`, `user_group_metric_categories`, `user_group_metric_category_links`, `user_indicators`.
+- Reports and feedback: `external_user_monthly_reports`, `external_user_monthly_report_logs`, `user_feedbacks`.
+- Course content: `workspace_course_modules`, `workspace_course_module_groups`.
+
+### Actor Attribution
+
+- Core group and member mutations should use the private actor-aware RPCs so service-role writes set `audit.override_auth_uid` before changing rows.
+- Other tracked tables still appear when raw audit rows exist. If a route writes with a service-role client and the table does not preserve actor intent in columns such as `creator_id` or `updated_by`, add a focused actor-aware private RPC or route-level activity insert before expanding the UI around that resource.
+- Bulk reorder operations are normalized as `reordered` events when the persisted `sort_key` changes.
+
+### Workspace Validation
+
+- Before any admin write, normalize the route `wsId` and verify the target group belongs to that workspace.
+- Member writes must also verify every affected `workspace_users.id` belongs to the same normalized workspace before inserting, updating, or deleting membership rows.
+- Child resource writes should validate their parent group or parent module group before the admin mutation. Do not rely on a raw `group_id` from the URL without checking ownership.
+
 ## Topic Announcements
 
 Topic Announcements live under Users and are gated by the workspace secret `ENABLE_TOPIC_ANNOUNCEMENTS=true`.

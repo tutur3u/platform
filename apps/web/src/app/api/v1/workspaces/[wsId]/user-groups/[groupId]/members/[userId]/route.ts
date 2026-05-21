@@ -1,6 +1,11 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -12,6 +17,7 @@ interface Params {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { groupId, userId, wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -27,18 +33,29 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
-  const { error } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .delete()
-    .eq('group_id', groupId)
-    .eq('user_id', userId);
+  const { data: deletedMember, error } = await sbAdmin
+    .schema('private')
+    .rpc('admin_delete_workspace_user_group_member_with_audit_actor', {
+      p_ws_id: normalizedWsId,
+      p_group_id: groupId,
+      p_user_id: userId,
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+    });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error removing group member:', error);
     return NextResponse.json(
       { message: 'Error removing group member' },
       { status: 500 }
+    );
+  }
+
+  if (!deletedMember) {
+    return NextResponse.json(
+      { message: 'Group member not found' },
+      { status: 404 }
     );
   }
 

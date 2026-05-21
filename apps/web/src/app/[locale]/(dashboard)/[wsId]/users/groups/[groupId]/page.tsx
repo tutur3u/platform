@@ -7,6 +7,10 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  UserGroupActivityLogTable,
+  type UserGroupActivityLogSearchParams,
+} from '../activity-log-table';
 import GroupMembers from './group-members';
 import GroupStorage from './group-storage';
 import LinkedProductsClient from './linked-products-client';
@@ -19,7 +23,7 @@ export const metadata: Metadata = {
     'Manage Group Details in the Groups area of your Tuturuuu workspace.',
 };
 
-interface SearchParams {
+interface SearchParams extends UserGroupActivityLogSearchParams {
   q?: string;
   page?: string;
   pageSize?: string;
@@ -37,12 +41,13 @@ interface Props {
 
 export default async function UserGroupDetailsPage({
   params,
-  // searchParams,
+  searchParams,
 }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId, groupId }) => {
         const t = await getTranslations();
+        const sp = await searchParams;
         const permissions = await getPermissions({ wsId });
         if (!permissions) notFound();
         const { containsPermission } = permissions;
@@ -57,6 +62,9 @@ export default async function UserGroupDetailsPage({
         );
         const canViewPublicInfo = containsPermission('view_users_public_info');
         const canUpdateUserGroups = containsPermission('update_user_groups');
+        const canViewAuditLogs = containsPermission(
+          'manage_workspace_audit_logs'
+        );
 
         const canViewUserGroupsPosts = containsPermission(
           'view_user_groups_posts'
@@ -129,6 +137,34 @@ export default async function UserGroupDetailsPage({
                   canUpdateGroup={canUpdateUserGroups}
                 />
               </div>
+
+              {canViewAuditLogs && (
+                <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-background p-5 shadow-sm lg:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-semibold text-lg">
+                        {t('ws-user-group-activity.title')}
+                      </div>
+                      <div className="text-muted-foreground text-sm">
+                        {t('ws-user-group-activity.group_panel_description')}
+                      </div>
+                    </div>
+                    <Button asChild variant="outline" size="sm">
+                      <Link
+                        href={`/${wsId}/users/groups?tab=audit-log&logGroupId=${groupId}`}
+                      >
+                        {t('ws-user-group-activity.open_full_log')}
+                      </Link>
+                    </Button>
+                  </div>
+                  <UserGroupActivityLogTable
+                    wsId={wsId}
+                    groupId={groupId}
+                    searchParams={sp}
+                    compact
+                  />
+                </div>
+              )}
             </div>
             <Separator className="my-5" />
           </>

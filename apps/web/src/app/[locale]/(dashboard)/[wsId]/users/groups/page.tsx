@@ -2,8 +2,10 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
+import { Button } from '@tuturuuu/ui/button';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
@@ -11,6 +13,10 @@ import {
   countUserGroupsForTable,
   listUserGroupsForTable,
 } from '@/lib/user-groups/table-repository';
+import {
+  UserGroupActivityLogTable,
+  type UserGroupActivityLogSearchParams,
+} from './activity-log-table';
 import UserGroupForm from './form';
 import { UserGroupsTable } from './user-groups-table';
 import {
@@ -31,6 +37,7 @@ interface SearchParams {
   page?: string;
   pageSize?: string;
   status?: string;
+  tab?: string;
   includedTags?: string | string[];
   excludedTags?: string | string[];
 }
@@ -83,21 +90,31 @@ export default async function WorkspaceUserGroupsPage({
           );
         }
 
-        const initialData = await getInitialData(
-          wsId,
-          {
-            page: sp.page,
-            pageSize: sp.pageSize,
-            q: sp.q,
-            status: parseUserGroupStatusFilter(sp.status, sp.includeArchived),
-          },
-          containsPermission('manage_users')
-        );
-
         // Check permissions for the form and actions
         const canCreate = containsPermission('create_user_groups');
         const canUpdate = containsPermission('update_user_groups');
         const canDelete = containsPermission('delete_user_groups');
+        const canViewAuditLogs = containsPermission(
+          'manage_workspace_audit_logs'
+        );
+        const selectedTab =
+          sp.tab === 'audit-log' && canViewAuditLogs ? 'audit-log' : 'groups';
+        const initialData =
+          selectedTab === 'groups'
+            ? await getInitialData(
+                wsId,
+                {
+                  page: sp.page,
+                  pageSize: sp.pageSize,
+                  q: sp.q,
+                  status: parseUserGroupStatusFilter(
+                    sp.status,
+                    sp.includeArchived
+                  ),
+                },
+                containsPermission('manage_users')
+              )
+            : { data: [], count: 0 };
 
         const permissions = {
           canCreate,
@@ -114,7 +131,7 @@ export default async function WorkspaceUserGroupsPage({
               createTitle={t('ws-user-groups.create')}
               createDescription={t('ws-user-groups.create_description')}
               form={
-                canCreate ? (
+                canCreate && selectedTab === 'groups' ? (
                   <UserGroupForm
                     wsId={wsId}
                     canCreate={canCreate}
@@ -124,11 +141,40 @@ export default async function WorkspaceUserGroupsPage({
               }
             />
             <Separator className="my-4" />
-            <UserGroupsTable
-              wsId={wsId}
-              initialData={initialData}
-              permissions={permissions}
-            />
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Button
+                asChild
+                variant={selectedTab === 'groups' ? 'default' : 'outline'}
+                size="sm"
+              >
+                <Link href={`/${wsId}/users/groups`}>
+                  {t('ws-user-groups.plural')}
+                </Link>
+              </Button>
+              {canViewAuditLogs && (
+                <Button
+                  asChild
+                  variant={selectedTab === 'audit-log' ? 'default' : 'outline'}
+                  size="sm"
+                >
+                  <Link href={`/${wsId}/users/groups?tab=audit-log`}>
+                    {t('ws-user-group-activity.title')}
+                  </Link>
+                </Button>
+              )}
+            </div>
+            {selectedTab === 'audit-log' && canViewAuditLogs ? (
+              <UserGroupActivityLogTable
+                wsId={wsId}
+                searchParams={sp as UserGroupActivityLogSearchParams}
+              />
+            ) : (
+              <UserGroupsTable
+                wsId={wsId}
+                initialData={initialData}
+                permissions={permissions}
+              />
+            )}
           </>
         );
       }}

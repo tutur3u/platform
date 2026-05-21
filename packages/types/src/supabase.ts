@@ -1539,6 +1539,76 @@ export type Database = {
         Args: { p_tier: Database['public']['Enums']['abuse_risk_tier'] };
         Returns: number;
       };
+      admin_create_workspace_user_group_with_audit_actor: {
+        Args: { p_actor_auth_uid?: string; p_payload: Json; p_ws_id: string };
+        Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_user_groups';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_delete_workspace_user_group_member_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_group_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_user_groups_users']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_user_groups_users';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_delete_workspace_user_group_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_group_id: string;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_user_groups';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_update_workspace_user_group_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_group_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_user_groups']['Row'];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_user_groups';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
+      };
+      admin_upsert_workspace_user_group_members_with_audit_actor: {
+        Args: {
+          p_actor_auth_uid?: string;
+          p_group_id: string;
+          p_role?: string;
+          p_user_ids: string[];
+          p_ws_id: string;
+        };
+        Returns: Database['public']['Tables']['workspace_user_groups_users']['Row'][];
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_user_groups_users';
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
@@ -1590,6 +1660,44 @@ export type Database = {
         };
         Returns: {
           task_id: string;
+          total_count: number;
+        }[];
+      };
+      list_user_group_activity_logs: {
+        Args: {
+          p_action?: string;
+          p_actor_query?: string;
+          p_affected_user_query?: string;
+          p_end: string;
+          p_group_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+          p_resource_type?: string;
+          p_start: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          action: string;
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          group_id: string;
+          group_name: string;
+          occurred_at: string;
+          resource_id: string;
+          resource_label: string;
+          resource_type: string;
+          table_name: string;
           total_count: number;
         }[];
       };
@@ -1724,6 +1832,44 @@ export type Database = {
           allowed: boolean;
           retry_after: number;
         }[];
+      };
+      user_group_activity_action: {
+        Args: {
+          next_record: Json;
+          p_op: 'INSERT' | 'UPDATE' | 'DELETE' | 'TRUNCATE';
+          p_table_name: string;
+          previous_record: Json;
+        };
+        Returns: string;
+      };
+      user_group_activity_feed: {
+        Args: { p_end: string; p_start: string; p_ws_id: string };
+        Returns: {
+          action: string;
+          actor_auth_uid: string;
+          actor_email: string;
+          actor_id: string;
+          actor_name: string;
+          actor_workspace_user_id: string;
+          affected_user_email: string;
+          affected_user_id: string;
+          affected_user_name: string;
+          after: Json;
+          audit_record_id: number;
+          before: Json;
+          changed_fields: string[];
+          group_id: string;
+          group_name: string;
+          occurred_at: string;
+          resource_id: string;
+          resource_label: string;
+          resource_type: string;
+          table_name: string;
+        }[];
+      };
+      user_group_activity_resource_type: {
+        Args: { p_table_name: string };
+        Returns: string;
       };
     };
     Enums: {

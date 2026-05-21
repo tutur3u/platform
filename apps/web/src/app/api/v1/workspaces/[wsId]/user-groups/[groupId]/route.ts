@@ -1,6 +1,41 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import {
+  MAX_MEDIUM_TEXT_LENGTH,
+  MAX_NAME_LENGTH,
+} from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
+
+const UpdateUserGroupSchema = z
+  .object({
+    name: z.string().max(MAX_NAME_LENGTH).min(1).optional(),
+    is_guest: z.boolean().nullable().optional(),
+    starting_date: z.string().datetime().nullable().optional(),
+    ending_date: z.string().datetime().nullable().optional(),
+    notes: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
+    description: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable().optional(),
+    archived: z.boolean().optional(),
+    is_course_published: z.boolean().optional(),
+    sessions: z.array(z.string()).nullable().optional(),
+  })
+  .refine(
+    (data) => {
+      if (data.starting_date && data.ending_date) {
+        return new Date(data.ending_date) >= new Date(data.starting_date);
+      }
+      return true;
+    },
+    {
+      message: 'End date must be after or equal to start date',
+      path: ['ending_date'],
+    }
+  );
 
 interface Params {
   params: Promise<{
@@ -11,6 +46,7 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -28,12 +64,12 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('id, name, sessions, starting_date, ending_date')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .eq('id', groupId)
     .maybeSingle();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace user group:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user group' },
       { status: 500 }
@@ -51,8 +87,8 @@ export async function GET(req: Request, { params }: Params) {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const data = await req.json();
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -67,18 +103,29 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
+  const data = UpdateUserGroupSchema.safeParse(await req.json());
+
+  if (!data.success) {
+    return NextResponse.json(
+      { message: 'Invalid data', errors: data.error.issues },
+      { status: 400 }
+    );
+  }
+
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
   const { data: updatedGroup, error } = await sbAdmin
-    .from('workspace_user_groups')
-    .update(data)
-    .eq('ws_id', wsId)
-    .eq('id', groupId)
-    .select('id')
-    .maybeSingle();
+    .schema('private')
+    .rpc('admin_update_workspace_user_group_with_audit_actor', {
+      p_ws_id: normalizedWsId,
+      p_group_id: groupId,
+      p_payload: data.data,
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+    });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error updating workspace user group:', error);
     return NextResponse.json(
       { message: 'Error updating workspace user group' },
       { status: 500 }
@@ -97,6 +144,7 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { wsId, groupId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -112,17 +160,28 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
-  const { error } = await sbAdmin
-    .from('workspace_user_groups')
-    .delete()
-    .eq('id', groupId);
+  const { data: deletedGroup, error } = await sbAdmin
+    .schema('private')
+    .rpc('admin_delete_workspace_user_group_with_audit_actor', {
+      p_ws_id: normalizedWsId,
+      p_group_id: groupId,
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+    });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error deleting workspace user group:', error);
     return NextResponse.json(
       { message: 'Error deleting workspace user group' },
       { status: 500 }
+    );
+  }
+
+  if (!deletedGroup) {
+    return NextResponse.json(
+      { message: 'Workspace user group not found' },
+      { status: 404 }
     );
   }
 

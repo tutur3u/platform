@@ -7,6 +7,11 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
 import { appendWorkspaceDefaultIncludedGroupId } from '@/lib/workspace-default-included-groups';
 
 const CreateUserGroupSchema = z
@@ -39,6 +44,7 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -58,10 +64,10 @@ export async function GET(req: Request, { params }: Params) {
   const { data, error } = await sbAdmin
     .from('workspace_user_groups')
     .select('*')
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace user groups:', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user groups' },
       { status: 500 }
@@ -73,6 +79,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -97,22 +104,24 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
   const { data: createdGroup, error } = await sbAdmin
-    .from('workspace_user_groups')
-    .insert({
-      name: data.data.name,
-      is_guest: data.data.is_guest,
-      starting_date: data.data.starting_date ?? null,
-      ending_date: data.data.ending_date ?? null,
-      notes: data.data.notes ?? null,
-      ws_id: wsId,
-    })
-    .select('id')
-    .single();
+    .schema('private')
+    .rpc('admin_create_workspace_user_group_with_audit_actor', {
+      p_ws_id: normalizedWsId,
+      p_payload: {
+        name: data.data.name,
+        is_guest: data.data.is_guest,
+        starting_date: data.data.starting_date ?? null,
+        ending_date: data.data.ending_date ?? null,
+        notes: data.data.notes ?? null,
+      },
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+    });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating workspace user group:', error);
     return NextResponse.json(
       { message: 'Error creating workspace user group' },
       { status: 500 }
@@ -122,14 +131,14 @@ export async function POST(req: Request, { params }: Params) {
   const { data: configRows, error: configError } = await sbAdmin
     .from('workspace_configs')
     .select('id, value')
-    .eq('ws_id', wsId)
+    .eq('ws_id', normalizedWsId)
     .eq(
       'id',
       DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID
     );
 
   if (configError) {
-    console.error(
+    serverLogger.error(
       'Error fetching default-included-group configs:',
       configError
     );
@@ -148,12 +157,12 @@ export async function POST(req: Request, { params }: Params) {
   if (autoAddNewGroupsToDefaultIncludedGroups && createdGroup?.id) {
     const { errorMessage } = await appendWorkspaceDefaultIncludedGroupId(
       sbAdmin,
-      wsId,
+      normalizedWsId,
       createdGroup.id
     );
 
     if (errorMessage) {
-      console.error(
+      serverLogger.error(
         'Error updating default included user groups after group creation:',
         errorMessage
       );

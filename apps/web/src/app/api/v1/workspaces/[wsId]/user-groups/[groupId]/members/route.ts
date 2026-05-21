@@ -1,10 +1,22 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   fetchRequireAttentionUserIds,
   withRequireAttentionFlag,
 } from '@/lib/require-attention-users';
+import {
+  hasUserGroupInWorkspace,
+  resolveRequestActorAuthUid,
+  resolveUserGroupRouteWorkspaceId,
+} from '@/lib/user-groups/route-helpers';
+
+const UpsertGroupMembersSchema = z.object({
+  memberIds: z.array(z.string().uuid()).min(1),
+  role: z.enum(['STUDENT', 'TEACHER']).default('STUDENT'),
+});
 
 interface Params {
   params: Promise<{
@@ -15,6 +27,7 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { groupId, wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
   const { searchParams } = new URL(req.url);
   const offset = Number.parseInt(searchParams.get('offset') ?? '0', 10);
   const limit = Number.parseInt(searchParams.get('limit') ?? '10', 10);
@@ -39,11 +52,24 @@ export async function GET(req: Request, { params }: Params) {
   );
 
   const sbAdmin = await createAdminClient();
+  const groupExists = await hasUserGroupInWorkspace({
+    sbAdmin,
+    wsId: normalizedWsId,
+    groupId,
+  });
+
+  if (!groupExists) {
+    return NextResponse.json(
+      { message: 'Workspace user group not found' },
+      { status: 404 }
+    );
+  }
+
   const baseFields =
     'id, display_name, full_name, avatar_url, archived, archived_until, note';
   const publicFields = canViewPublicInfo ? ', birthday, gender' : '';
   const personalFields = canViewPersonalInfo ? ', email, phone' : '';
-  const selectQuery = `workspace_users(${baseFields}${publicFields}${personalFields}), role`;
+  const selectQuery = `workspace_users!inner(${baseFields}${publicFields}${personalFields}), role`;
 
   const { data, error } = await sbAdmin
     .from('workspace_user_groups_users')
@@ -51,10 +77,11 @@ export async function GET(req: Request, { params }: Params) {
       count: 'exact',
     })
     .eq('group_id', groupId)
+    .eq('workspace_users.ws_id', normalizedWsId)
     .range(offset, offset + limit - 1);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching group members:', error);
     return NextResponse.json(
       { message: 'Error fetching group members' },
       { status: 500 }
@@ -80,7 +107,7 @@ export async function GET(req: Request, { params }: Params) {
   );
 
   const requireAttentionUserIds = await fetchRequireAttentionUserIds(sbAdmin, {
-    wsId,
+    wsId: normalizedWsId,
     userIds: members.map((member) => member.id),
     groupId,
   });
@@ -94,6 +121,7 @@ export async function GET(req: Request, { params }: Params) {
 
 export async function POST(req: Request, { params }: Params) {
   const { groupId, wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -108,29 +136,30 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const data = (await req.json()) as {
-    memberIds: string[];
-    role?: 'STUDENT' | 'TEACHER';
-  };
+  const data = UpsertGroupMembersSchema.safeParse(await req.json());
 
-  if (!data?.memberIds)
-    return NextResponse.json({ message: 'Invalid request' }, { status: 400 });
+  if (!data.success) {
+    return NextResponse.json(
+      { message: 'Invalid request', errors: data.error.issues },
+      { status: 400 }
+    );
+  }
 
   const sbAdmin = await createAdminClient();
+  const actorAuthUid = await resolveRequestActorAuthUid(req);
 
   const { error: groupError } = await sbAdmin
-    .from('workspace_user_groups_users')
-    .upsert(
-      data.memberIds.map((memberId) => ({
-        user_id: memberId,
-        group_id: groupId,
-        role: data.role ?? 'STUDENT',
-      })),
-      { onConflict: 'group_id,user_id' }
-    );
+    .schema('private')
+    .rpc('admin_upsert_workspace_user_group_members_with_audit_actor', {
+      p_ws_id: normalizedWsId,
+      p_group_id: groupId,
+      p_user_ids: data.data.memberIds,
+      p_role: data.data.role,
+      p_actor_auth_uid: actorAuthUid ?? undefined,
+    });
 
   if (groupError) {
-    console.log(groupError);
+    serverLogger.error('Error adding new members to group:', groupError);
     return NextResponse.json(
       { message: 'Error adding new members to group' },
       { status: 500 }
