@@ -44,6 +44,7 @@ interface TopicAnnouncementPendingState {
   createAnnouncement: boolean;
   createContact: boolean;
   createTemplate: boolean;
+  deleteAnnouncement: boolean;
   deleteTemplate: boolean;
   importRows: boolean;
   schedule: boolean;
@@ -62,6 +63,7 @@ interface TopicAnnouncementActions {
   createAnnouncement: (payload: TopicAnnouncementPayload) => Promise<void>;
   createContact: (payload: TopicAnnouncementContactPayload) => void;
   createTemplate: (payload: TopicAnnouncementTemplatePayload) => void;
+  deleteAnnouncement: (announcementId: string) => void;
   deleteTemplate: (templateId: string) => void;
   importRows: (payload: TopicAnnouncementImportPayload) => void;
   requestTimezone: () => void;
@@ -77,6 +79,7 @@ interface TopicAnnouncementActions {
 
 interface TopicAnnouncementFilters {
   page: number;
+  pageSize: number;
   query: string;
   setPage: (page: number) => void;
   setQuery: (query: string) => void;
@@ -123,6 +126,8 @@ interface TopicAnnouncementsContextValue {
 const TopicAnnouncementsContext =
   createContext<TopicAnnouncementsContextValue | null>(null);
 
+const TOPIC_ANNOUNCEMENTS_PAGE_SIZE = 20;
+
 export function useTopicAnnouncements() {
   const context = useContext(TopicAnnouncementsContext);
   if (!context) {
@@ -145,7 +150,7 @@ export function TopicAnnouncementsProvider({
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [status, setStatusQuery] = useQueryState(
     'status',
-    parseAsString.withDefault('all').withOptions({ shallow: true })
+    parseAsString.withDefault('active').withOptions({ shallow: true })
   );
   const [query, setQueryState] = useQueryState(
     'q',
@@ -174,7 +179,7 @@ export function TopicAnnouncementsProvider({
     queryFn: () =>
       listTopicAnnouncements(wsId, {
         page,
-        pageSize: 20,
+        pageSize: TOPIC_ANNOUNCEMENTS_PAGE_SIZE,
         q: query,
         status,
       }),
@@ -275,6 +280,8 @@ export function TopicAnnouncementsProvider({
       deliveredAnnouncements,
       filters: {
         page: announcementsQuery.data?.page ?? page,
+        pageSize:
+          announcementsQuery.data?.pageSize ?? TOPIC_ANNOUNCEMENTS_PAGE_SIZE,
         query,
         setPage: (nextPage) => void setPageState(nextPage),
         setQuery: (nextQuery) => {
@@ -304,6 +311,7 @@ export function TopicAnnouncementsProvider({
         createAnnouncement: mutations.createAnnouncementMutation.isPending,
         createContact: mutations.createContactMutation.isPending,
         createTemplate: mutations.createTemplateMutation.isPending,
+        deleteAnnouncement: mutations.deleteAnnouncementMutation.isPending,
         deleteTemplate: mutations.deleteTemplateMutation.isPending,
         importRows: mutations.importMutation.isPending,
         schedule: mutations.scheduleMutation.isPending,
@@ -319,6 +327,7 @@ export function TopicAnnouncementsProvider({
     [
       announcements,
       announcementsQuery.data?.page,
+      announcementsQuery.data?.pageSize,
       announcementsQuery.data?.totalPages,
       announcementsQuery.isLoading,
       canSend,
@@ -391,6 +400,8 @@ function createActions({
     createContact: (payload) => mutations.createContactMutation.mutate(payload),
     createTemplate: (payload) =>
       mutations.createTemplateMutation.mutate(payload),
+    deleteAnnouncement: (announcementId) =>
+      mutations.deleteAnnouncementMutation.mutate(announcementId),
     deleteTemplate: (templateId) =>
       mutations.deleteTemplateMutation.mutate(templateId),
     importRows: (payload) => mutations.importMutation.mutate(payload),

@@ -141,9 +141,45 @@ export async function DELETE(request: Request, { params }: Params) {
   if (access.response) return access.response;
 
   const { actorUserId, normalizedWsId, sbAdmin } = access.context;
+  const { data: existingAnnouncement, error: existingError } = await sbAdmin
+    .from('topic_announcements')
+    .select('id, status')
+    .eq('id', announcementId)
+    .eq('ws_id', normalizedWsId)
+    .maybeSingle();
+
+  if (existingError) throw existingError;
+  if (!existingAnnouncement) {
+    return NextResponse.json({ message: 'Not found' }, { status: 404 });
+  }
+  if (existingAnnouncement.status === 'sent') {
+    return NextResponse.json(
+      { message: 'Sent announcements cannot be removed' },
+      { status: 409 }
+    );
+  }
+  if (existingAnnouncement.status === 'cancelled') {
+    return new NextResponse(null, { status: 204 });
+  }
+  if (
+    !['draft', 'queued', 'failed', 'skipped'].includes(
+      existingAnnouncement.status
+    )
+  ) {
+    return NextResponse.json(
+      { message: 'Announcement cannot be removed' },
+      { status: 409 }
+    );
+  }
+
   const { data, error } = await sbAdmin
     .from('topic_announcements')
-    .update({ status: 'cancelled', updated_by: actorUserId })
+    .update({
+      last_error: null,
+      scheduled_send_at: null,
+      status: 'cancelled',
+      updated_by: actorUserId,
+    })
     .eq('id', announcementId)
     .eq('ws_id', normalizedWsId)
     .select('id')

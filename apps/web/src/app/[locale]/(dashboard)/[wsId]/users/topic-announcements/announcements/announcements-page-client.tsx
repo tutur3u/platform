@@ -34,6 +34,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         contacts={contacts}
         groups={groups}
         isCreating={pending.createAnnouncement}
+        isDeleting={pending.deleteAnnouncement}
         isLoading={isLoading.announcements}
         isSavingTemplate={pending.createTemplate}
         isScheduling={pending.schedule || pending.cancelSchedule}
@@ -42,6 +43,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         onCreate={actions.createAnnouncement}
         onCreateAndSchedule={actions.createAndSchedule}
         onCreateAndSend={actions.createAndSend}
+        onDelete={actions.deleteAnnouncement}
         onPageChange={filters.setPage}
         onQueryChange={filters.setQuery}
         onSaveTemplate={actions.saveTemplateFromForm}
@@ -50,6 +52,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         onStatusChange={filters.setStatus}
         onTimezoneRequired={actions.requestTimezone}
         page={filters.page}
+        pageSize={filters.pageSize}
         query={filters.query}
         schedulingTimezone={schedulingTimezone}
         status={filters.status}

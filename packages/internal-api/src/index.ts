@@ -635,6 +635,7 @@ export {
   createTopicAnnouncement,
   createTopicAnnouncementContact,
   createTopicAnnouncementTemplate,
+  deleteTopicAnnouncement,
   deleteTopicAnnouncementTemplate,
   importTopicAnnouncements,
   listTopicAnnouncementContacts,

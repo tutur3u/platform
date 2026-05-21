@@ -67,7 +67,11 @@ export async function GET(request: Request, { params }: Params) {
     .select('*, group:workspace_user_groups(id, name)', { count: 'exact' })
     .eq('ws_id', normalizedWsId);
 
-  if (status !== 'all') query = query.eq('status', status);
+  if (status === 'active') {
+    query = query.neq('status', 'cancelled');
+  } else if (status !== 'all') {
+    query = query.eq('status', status);
+  }
   if (q) {
     query = query.or(
       `title.ilike.%${q}%,topic.ilike.%${q}%,class_label.ilike.%${q}%`

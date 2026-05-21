@@ -40,8 +40,12 @@ export const TopicAnnouncementListQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
   q: z.string().trim().max(200).default(''),
   status: z
-    .union([TopicAnnouncementStatusSchema, z.literal('all')])
-    .default('all'),
+    .union([
+      TopicAnnouncementStatusSchema,
+      z.literal('active'),
+      z.literal('all'),
+    ])
+    .default('active'),
 });
 
 export const TopicAnnouncementContactSchema = z.object({

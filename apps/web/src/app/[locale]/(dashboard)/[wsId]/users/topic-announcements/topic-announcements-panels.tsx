@@ -23,6 +23,7 @@ import { AnnouncementTable } from './announcement-table';
 import type { TemplateFormValues } from './template-form-dialog';
 
 const STATUS_LABEL_KEYS = {
+  active: 'status_active',
   all: 'status_all',
   cancelled: 'status_cancelled',
   draft: 'status_draft',
@@ -41,6 +42,7 @@ interface Props {
   contacts: TopicAnnouncementContact[];
   groups: UserGroup[];
   isCreating: boolean;
+  isDeleting: boolean;
   isLoading: boolean;
   isSavingTemplate: boolean;
   isScheduling: boolean;
@@ -52,6 +54,7 @@ interface Props {
     scheduledSendAt: string
   ) => Promise<void>;
   onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
+  onDelete: (announcementId: string) => void;
   onPageChange: (page: number) => void;
   onQueryChange: (query: string) => void;
   onSaveTemplate: (values: TemplateFormValues) => void;
@@ -60,6 +63,7 @@ interface Props {
   onStatusChange: (status: string) => void;
   onTimezoneRequired: () => void;
   page: number;
+  pageSize: number;
   query: string;
   schedulingTimezone: string | null;
   status: string;
@@ -74,6 +78,7 @@ export function AnnouncementsPanel({
   contacts,
   groups,
   isCreating,
+  isDeleting,
   isLoading,
   isSavingTemplate,
   isScheduling,
@@ -82,6 +87,7 @@ export function AnnouncementsPanel({
   onCreate,
   onCreateAndSchedule,
   onCreateAndSend,
+  onDelete,
   onPageChange,
   onQueryChange,
   onSaveTemplate,
@@ -90,6 +96,7 @@ export function AnnouncementsPanel({
   onStatusChange,
   onTimezoneRequired,
   page,
+  pageSize,
   query,
   schedulingTimezone,
   status,
@@ -144,9 +151,12 @@ export function AnnouncementsPanel({
         announcements={announcements}
         canSend={canSend}
         isLoading={isLoading}
+        isDeleting={isDeleting}
         isScheduling={isScheduling}
         isSending={isSending}
+        firstRowNumber={(page - 1) * pageSize + 1}
         onCancelSchedule={onCancelSchedule}
+        onDelete={onDelete}
         onSchedule={onSchedule}
         onSend={onSend}
         onTimezoneRequired={onTimezoneRequired}

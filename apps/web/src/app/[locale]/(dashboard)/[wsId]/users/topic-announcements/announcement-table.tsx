@@ -1,7 +1,16 @@
 'use client';
 
-import { CalendarClock, MoreHorizontal, Send } from '@tuturuuu/icons';
+import { CalendarClock, MoreHorizontal, Send, Trash2 } from '@tuturuuu/icons';
 import type { TopicAnnouncementRecord } from '@tuturuuu/internal-api';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -20,9 +29,9 @@ import {
   TableHeader,
   TableRow,
 } from '@tuturuuu/ui/table';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import { AnnouncementRecipientChip } from './announcement-recipient-chip';
 import { AnnouncementScheduleDialog } from './announcement-schedule-dialog';
 import { formatTopicAnnouncementInstant } from './topic-announcements-scheduling';
 
@@ -40,6 +49,64 @@ function countUnverifiedRecipients(announcement: TopicAnnouncementRecord) {
   ).length;
 }
 
+function canRemoveAnnouncement(announcement: TopicAnnouncementRecord) {
+  return ['draft', 'queued', 'failed', 'skipped'].includes(announcement.status);
+}
+
+function formatTimeValue(value: string | null) {
+  if (!value) return null;
+
+  const [hours, minutes] = value.split(':');
+  if (!hours || !minutes) return value;
+
+  return `${hours.padStart(2, '0')}:${minutes}`;
+}
+
+function formatTimeRange(announcement: TopicAnnouncementRecord) {
+  const startTime = formatTimeValue(announcement.start_time);
+  const endTime = formatTimeValue(announcement.end_time);
+
+  if (startTime && endTime) return `${startTime} - ${endTime}`;
+  return startTime ?? endTime;
+}
+
+function formatSessionDate(value: string | null) {
+  if (!value) return null;
+
+  const date = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return new Intl.DateTimeFormat(undefined, {
+    day: '2-digit',
+    month: 'short',
+    weekday: 'short',
+  }).format(date);
+}
+
+function getDayLabel(announcement: TopicAnnouncementRecord) {
+  return announcement.day_label || formatSessionDate(announcement.session_date);
+}
+
+function getClassLabel(announcement: TopicAnnouncementRecord) {
+  return announcement.class_label || announcement.group?.name || null;
+}
+
+function getTeacherLabel(announcement: TopicAnnouncementRecord) {
+  return announcement.contacts
+    .map((contact) => contact.name.trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
+function getRowClassName(status: TopicAnnouncementRecord['status']) {
+  if (status === 'queued') return 'bg-dynamic-blue/5';
+  if (status === 'sent') return 'bg-dynamic-green/5';
+  if (status === 'failed') return 'bg-dynamic-red/5';
+  if (status === 'skipped') return 'bg-dynamic-orange/5';
+  if (status === 'cancelled') return 'bg-muted/60 text-muted-foreground';
+  return 'bg-background';
+}
+
 const STATUS_LABEL_KEYS = {
   cancelled: 'status_cancelled',
   draft: 'status_draft',
@@ -52,110 +119,151 @@ const STATUS_LABEL_KEYS = {
 interface Props {
   announcements: TopicAnnouncementRecord[];
   canSend: boolean;
+  firstRowNumber: number;
+  isDeleting: boolean;
   isLoading: boolean;
   isScheduling: boolean;
   isSending: boolean;
   onCancelSchedule: (announcementId: string) => void;
+  onDelete: (announcementId: string) => void;
   onSchedule: (announcementId: string, scheduledSendAt: string) => void;
   onSend: (announcementId: string) => void;
   schedulingTimezone: string | null;
   onTimezoneRequired: () => void;
 }
 
+const tableHeadClassName =
+  'h-9 border-border/80 border-r bg-dynamic-blue/15 px-2 font-semibold text-foreground text-xs uppercase';
+const tableCellClassName = 'border-border/70 border-r px-2 py-1.5 align-top';
+
 export function AnnouncementTable({
   announcements,
   canSend,
+  firstRowNumber,
+  isDeleting,
   isLoading,
   isScheduling,
   isSending,
   onCancelSchedule,
+  onDelete,
   onSchedule,
   onSend,
   schedulingTimezone,
   onTimezoneRequired,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const [removeTarget, setRemoveTarget] =
+    useState<TopicAnnouncementRecord | null>(null);
   const [scheduleTarget, setScheduleTarget] =
     useState<TopicAnnouncementRecord | null>(null);
 
   return (
     <>
-      <div className="overflow-hidden rounded-md border bg-background">
-        <Table>
+      <div className="overflow-x-auto rounded-md border bg-background">
+        <Table className="min-w-[78rem] text-sm">
           <TableHeader>
-            <TableRow>
-              <TableHead>{t('announcement_title')}</TableHead>
-              <TableHead>{t('classLabel')}</TableHead>
-              <TableHead>{t('recipients')}</TableHead>
-              <TableHead>{t('class_schedule')}</TableHead>
-              <TableHead>{t('send_at')}</TableHead>
-              <TableHead>{t('status')}</TableHead>
-              <TableHead className="text-right">{t('actions')}</TableHead>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={cn(tableHeadClassName, 'w-14 text-right')}>
+                {t('legacy_ord')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-32')}>
+                {t('legacy_day')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-52')}>
+                {t('legacy_class')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-20')}>
+                {t('room')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-36')}>
+                {t('startTime')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-44')}>
+                {t('legacy_teacher')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-36')}>
+                {t('place')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'min-w-72')}>
+                {t('topic')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-28')}>
+                {t('status')}
+              </TableHead>
+              <TableHead className={cn(tableHeadClassName, 'w-20 text-right')}>
+                {t('actions')}
+              </TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading
-              ? Array.from({ length: 4 }, (_, index) => (
+              ? Array.from({ length: 6 }, (_, index) => (
                   <TableRow key={`announcement-loading-${index}`}>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-48" />
-                        <Skeleton className="h-3 w-72" />
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-28" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-6 w-36" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-40" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-4 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-16" />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex justify-end">
-                        <Skeleton className="h-8 w-8" />
-                      </div>
-                    </TableCell>
+                    {Array.from({ length: 10 }, (_, cellIndex) => (
+                      <TableCell
+                        className={tableCellClassName}
+                        key={`announcement-loading-${index}-${cellIndex}`}
+                      >
+                        <Skeleton className="h-4 w-full" />
+                      </TableCell>
+                    ))}
                   </TableRow>
                 ))
               : null}
-            {announcements.map((announcement) => {
+            {announcements.map((announcement, index) => {
               const unverifiedCount = countUnverifiedRecipients(announcement);
               const sendReady = canSendAnnouncement(announcement);
               const scheduledLabel = formatTopicAnnouncementInstant(
                 announcement.scheduled_send_at,
                 schedulingTimezone ?? 'UTC'
               );
-
-              const timeRange =
-                announcement.start_time && announcement.end_time
-                  ? `${announcement.start_time} - ${announcement.end_time}`
-                  : announcement.start_time || announcement.end_time || null;
+              const removable = canRemoveAnnouncement(announcement);
+              const teacherLabel = getTeacherLabel(announcement);
 
               return (
-                <TableRow key={announcement.id}>
-                  <TableCell>
-                    <div className="font-medium">{announcement.title}</div>
-                    <div className="line-clamp-2 text-muted-foreground text-sm">
-                      {announcement.topic}
-                    </div>
+                <TableRow
+                  className={cn(
+                    'border-border/70 hover:bg-muted/50',
+                    getRowClassName(announcement.status)
+                  )}
+                  key={announcement.id}
+                >
+                  <TableCell
+                    className={cn(
+                      tableCellClassName,
+                      'text-right font-mono text-muted-foreground text-xs'
+                    )}
+                  >
+                    {firstRowNumber + index}
                   </TableCell>
-                  <TableCell>{announcement.group?.name ?? t('none')}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1.5">
-                      {announcement.contacts.map((contact) => (
-                        <AnnouncementRecipientChip
-                          contact={contact}
-                          key={contact.id}
-                        />
-                      ))}
+                  <TableCell className={tableCellClassName}>
+                    {getDayLabel(announcement) ?? t('none')}
+                  </TableCell>
+                  <TableCell className={cn(tableCellClassName, 'font-medium')}>
+                    {getClassLabel(announcement) ?? t('none')}
+                  </TableCell>
+                  <TableCell className={tableCellClassName}>
+                    {announcement.room || t('none')}
+                  </TableCell>
+                  <TableCell className={tableCellClassName}>
+                    <div>{formatTimeRange(announcement) ?? t('none')}</div>
+                    {announcement.status === 'queued' && scheduledLabel ? (
+                      <div className="mt-1 flex items-center gap-1 text-dynamic-blue text-xs">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        <span>{scheduledLabel}</span>
+                      </div>
+                    ) : announcement.sent_at ? (
+                      <div className="mt-1 text-muted-foreground text-xs">
+                        {formatTopicAnnouncementInstant(
+                          announcement.sent_at,
+                          schedulingTimezone ?? 'UTC'
+                        )}
+                      </div>
+                    ) : null}
+                  </TableCell>
+                  <TableCell className={tableCellClassName}>
+                    <div className="line-clamp-2">
+                      {teacherLabel || t('none')}
                     </div>
                     {unverifiedCount > 0 ? (
                       <p className="mt-1 text-dynamic-orange text-xs">
@@ -165,27 +273,16 @@ export function AnnouncementTable({
                       </p>
                     ) : null}
                   </TableCell>
-                  <TableCell>
-                    {[announcement.group?.name, timeRange, announcement.place]
-                      .filter(Boolean)
-                      .join(' / ') || t('none')}
+                  <TableCell className={tableCellClassName}>
+                    {announcement.place || t('none')}
                   </TableCell>
-                  <TableCell>
-                    {announcement.status === 'queued' && scheduledLabel ? (
-                      <div className="flex items-center gap-1.5 text-sm">
-                        <CalendarClock className="h-4 w-4 text-dynamic-blue" />
-                        <span>{scheduledLabel}</span>
-                      </div>
-                    ) : announcement.sent_at ? (
-                      formatTopicAnnouncementInstant(
-                        announcement.sent_at,
-                        schedulingTimezone ?? 'UTC'
-                      )
-                    ) : (
-                      t('not_sent')
-                    )}
+                  <TableCell className={tableCellClassName}>
+                    <div className="font-medium">{announcement.title}</div>
+                    <div className="line-clamp-2 text-muted-foreground text-xs">
+                      {announcement.topic}
+                    </div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className={tableCellClassName}>
                     <Badge
                       variant={
                         announcement.status === 'sent' ? 'success' : 'outline'
@@ -194,10 +291,14 @@ export function AnnouncementTable({
                       {t(STATUS_LABEL_KEYS[announcement.status])}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
+                  <TableCell className={cn(tableCellClassName, 'text-right')}>
+                    <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
-                        <Button size="icon" variant="outline">
+                        <Button
+                          aria-label={t('announcement_actions')}
+                          size="icon"
+                          variant="outline"
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -242,6 +343,18 @@ export function AnnouncementTable({
                             </DropdownMenuItem>
                           </>
                         ) : null}
+                        {removable ? (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              disabled={isDeleting}
+                              onClick={() => setRemoveTarget(announcement)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t('remove_announcement')}
+                            </DropdownMenuItem>
+                          </>
+                        ) : null}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -252,7 +365,7 @@ export function AnnouncementTable({
               <TableRow>
                 <TableCell
                   className="text-center text-muted-foreground"
-                  colSpan={7}
+                  colSpan={10}
                 >
                   {t('no_announcements')}
                 </TableCell>
@@ -275,6 +388,44 @@ export function AnnouncementTable({
           timezone={schedulingTimezone}
         />
       ) : null}
+
+      <AlertDialog
+        open={Boolean(removeTarget)}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setRemoveTarget(null);
+        }}
+      >
+        <AlertDialogContent
+          onEscapeKeyDown={(event) => isDeleting && event.preventDefault()}
+        >
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('remove_announcement_title')}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('remove_announcement_description', {
+                title: removeTarget?.title ?? '',
+              })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              {t('cancel')}
+            </AlertDialogCancel>
+            <Button
+              disabled={isDeleting || !removeTarget}
+              onClick={() => {
+                if (!removeTarget) return;
+                onDelete(removeTarget.id);
+                setRemoveTarget(null);
+              }}
+              variant="destructive"
+            >
+              {t('remove_announcement')}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

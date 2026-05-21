@@ -246,6 +246,18 @@ export async function updateTopicAnnouncement(
   );
 }
 
+export async function deleteTopicAnnouncement(
+  workspaceId: string,
+  announcementId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>(
+    `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}`,
+    { method: 'DELETE' }
+  );
+}
+
 export async function importTopicAnnouncements(
   workspaceId: string,
   payload: TopicAnnouncementImportPayload,
