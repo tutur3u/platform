@@ -122,6 +122,8 @@ const BLUE_GREEN_PROXY_DRAIN_MS = 20_000;
 const BLUE_GREEN_PROXY_RESPONSE_BUFFER_SIZE = '128k';
 const BLUE_GREEN_PROXY_RESPONSE_BUFFERS = '8 128k';
 const BLUE_GREEN_PROXY_BUSY_BUFFER_SIZE = '256k';
+const BLUE_GREEN_PROXY_ROUTE_CHECK_ATTEMPTS = 6;
+const BLUE_GREEN_PROXY_ROUTE_CHECK_DELAY_MS = 2_000;
 const BLUE_GREEN_BROWSER_STATE_RECOVERY_PATH = '/~recover-browser-state';
 const BLUE_GREEN_CLEAR_SITE_DATA_VALUE =
   '"cache", "cookies", "storage", "executionContexts"';
@@ -1969,54 +1971,80 @@ async function testBlueGreenProxyRouting({
   composeFile,
   composeGlobalArgs = [],
   env,
+  routeCheckAttempts,
+  routeCheckDelayMs,
   runCommand: run,
 }) {
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      composeGlobalArgs,
-      'exec',
-      '-T',
-      BLUE_GREEN_PROXY_SERVICE,
-      'wget',
-      '-q',
-      '-O',
-      '/dev/null',
-      `http://127.0.0.1:7803${BLUE_GREEN_DRAIN_STATUS_PATH}`
-    ),
-    {
-      env,
-      runCommand: run,
-    }
-  );
+  await testBlueGreenProxyRoute({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    routeCheckAttempts,
+    routeCheckDelayMs,
+    runCommand: run,
+    url: `http://127.0.0.1:7803${BLUE_GREEN_DRAIN_STATUS_PATH}`,
+  });
 }
 
 async function testBlueGreenHiveProxyRouting({
   composeFile,
   composeGlobalArgs = [],
   env,
+  routeCheckAttempts,
+  routeCheckDelayMs,
   runCommand: run,
 }) {
-  await runChecked(
-    'docker',
-    getComposeCommandArgs(
-      composeFile,
-      composeGlobalArgs,
-      'exec',
-      '-T',
-      BLUE_GREEN_PROXY_SERVICE,
-      'wget',
-      '-q',
-      '-O',
-      '/dev/null',
-      'http://127.0.0.1:7814/login'
-    ),
-    {
-      env,
-      runCommand: run,
-    }
+  await testBlueGreenProxyRoute({
+    composeFile,
+    composeGlobalArgs,
+    env,
+    routeCheckAttempts,
+    routeCheckDelayMs,
+    runCommand: run,
+    url: 'http://127.0.0.1:7814/login',
+  });
+}
+
+async function testBlueGreenProxyRoute({
+  composeFile,
+  composeGlobalArgs = [],
+  env,
+  routeCheckAttempts = BLUE_GREEN_PROXY_ROUTE_CHECK_ATTEMPTS,
+  routeCheckDelayMs = BLUE_GREEN_PROXY_ROUTE_CHECK_DELAY_MS,
+  runCommand: run,
+  url,
+}) {
+  const args = getComposeCommandArgs(
+    composeFile,
+    composeGlobalArgs,
+    'exec',
+    '-T',
+    BLUE_GREEN_PROXY_SERVICE,
+    'wget',
+    '-q',
+    '-O',
+    '/dev/null',
+    url
   );
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= routeCheckAttempts; attempt += 1) {
+    try {
+      await runChecked('docker', args, {
+        env,
+        runCommand: run,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+
+      if (attempt < routeCheckAttempts) {
+        await sleep(routeCheckDelayMs);
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 async function removeLegacyHiveContainerIfPresent({

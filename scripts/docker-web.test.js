@@ -53,6 +53,7 @@ const {
   hasBlueGreenProxyHostPortBindings,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
+  testBlueGreenHiveProxyRouting,
 } = require('./docker-web/blue-green.js');
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const { writeDeploymentHistory } = require('./watch-blue-green/history.js');
@@ -110,6 +111,58 @@ test('renderBlueGreenProxyConfig can route web and Hive to different active colo
   assert.match(
     config,
     /server hive-green:7814 backup resolve max_fails=1 fail_timeout=5s;/u
+  );
+});
+
+test('testBlueGreenHiveProxyRouting retries transient proxy failures', async () => {
+  const calls = [];
+
+  await testBlueGreenHiveProxyRouting({
+    composeFile: '/tmp/docker-compose.yml',
+    routeCheckDelayMs: 0,
+    runCommand: async (command, args) => {
+      calls.push({ args, command });
+
+      if (calls.length < 3) {
+        return {
+          code: 1,
+          stderr: 'wget: server returned error: HTTP/1.1 502 Bad Gateway',
+          stdout: '',
+        };
+      }
+
+      return { code: 0, stderr: '', stdout: '' };
+    },
+  });
+
+  assert.equal(calls.length, 3);
+  assert.equal(calls[0]?.command, 'docker');
+  assert.deepEqual(calls[0]?.args.slice(-8), [
+    'exec',
+    '-T',
+    BLUE_GREEN_PROXY_SERVICE,
+    'wget',
+    '-q',
+    '-O',
+    '/dev/null',
+    'http://127.0.0.1:7814/login',
+  ]);
+});
+
+test('testBlueGreenHiveProxyRouting keeps the final proxy failure detail', async () => {
+  await assert.rejects(
+    () =>
+      testBlueGreenHiveProxyRouting({
+        composeFile: '/tmp/docker-compose.yml',
+        routeCheckAttempts: 2,
+        routeCheckDelayMs: 0,
+        runCommand: async () => ({
+          code: 1,
+          stderr: 'wget: server returned error: HTTP/1.1 502 Bad Gateway',
+          stdout: '',
+        }),
+      }),
+    /502 Bad Gateway/u
   );
 });
 
