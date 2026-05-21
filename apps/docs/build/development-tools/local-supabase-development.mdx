@@ -91,7 +91,7 @@ If you're keeping your Next.js server running but need to reset your database to
 bun sb:reset
 ```
 
-This command will reset your local database to use the latest schema definitions and automatically regenerate TypeScript types.
+This command will reset your local database to use the latest schema definitions and automatically regenerate TypeScript types. After the reset, the database package also runs the local AI credits bootstrap, which syncs gateway models through the local Supabase REST API and retries the short PostgREST schema-cache warmup window that can happen immediately after containers restart.
 
 ## Database Schema Management
 

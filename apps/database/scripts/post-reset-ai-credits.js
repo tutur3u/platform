@@ -14,12 +14,15 @@
  */
 
 import { execFileSync } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
 const GATEWAY_MODELS_URL = 'https://ai-gateway.vercel.sh/v1/models';
 const ONE_MILLION_CREDITS = 1_000_000;
 const MIN_MAX_OUTPUT_TOKENS = 8_192;
 const UPSERT_BATCH_SIZE = 100;
 const DEFAULT_FETCH_TIMEOUT_MS = 10_000;
+const DEFAULT_ADMIN_FETCH_MAX_ATTEMPTS = 6;
+const DEFAULT_ADMIN_FETCH_RETRY_DELAY_MS = 1_000;
 
 function parseHttpsBaseUrl(value) {
   try {
@@ -142,35 +145,97 @@ async function fetchWithTimeout(
   }
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function createSupabaseRequestError(response, path, body) {
+  return new Error(
+    `Supabase request failed (${response.status} ${response.statusText}) on ${path}: ${body}`
+  );
+}
+
+function isRetryableSupabaseRestError(response, body) {
+  if (![502, 503, 504].includes(response.status)) {
+    return false;
+  }
+
+  return (
+    body.includes('"code":"PGRST002"') ||
+    body.includes('PGRST002') ||
+    body.toLowerCase().includes('schema cache')
+  );
+}
+
+function isRetryableFetchError(error) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return (
+    error.name === 'AbortError' ||
+    /fetch failed|connection refused|econnrefused|econnreset|socket|terminated/iu.test(
+      error.message
+    )
+  );
+}
+
 async function adminFetch(
   baseUrl,
   serviceRoleKey,
   path,
   init = {},
-  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS
+  timeoutMs = DEFAULT_FETCH_TIMEOUT_MS,
+  options = {}
 ) {
-  const response = await fetchWithTimeout(
-    `${baseUrl}${path}`,
-    {
-      ...init,
-      headers: {
-        apikey: serviceRoleKey,
-        Authorization: `Bearer ${serviceRoleKey}`,
-        'Content-Type': 'application/json',
-        ...(init.headers ?? {}),
-      },
-    },
-    timeoutMs
-  );
+  const maxAttempts = options.maxAttempts ?? DEFAULT_ADMIN_FETCH_MAX_ATTEMPTS;
+  const retryDelayMs =
+    options.retryDelayMs ?? DEFAULT_ADMIN_FETCH_RETRY_DELAY_MS;
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(
-      `Supabase request failed (${response.status} ${response.statusText}) on ${path}: ${body}`
-    );
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      const response = await fetchWithTimeout(
+        `${baseUrl}${path}`,
+        {
+          ...init,
+          headers: {
+            apikey: serviceRoleKey,
+            Authorization: `Bearer ${serviceRoleKey}`,
+            'Content-Type': 'application/json',
+            ...(init.headers ?? {}),
+          },
+        },
+        timeoutMs
+      );
+
+      if (response.ok) {
+        return response;
+      }
+
+      const body = await response.text().catch(() => '');
+      const retryable = isRetryableSupabaseRestError(response, body);
+
+      if (!retryable || attempt === maxAttempts) {
+        throw createSupabaseRequestError(response, path, body);
+      }
+
+      console.warn(
+        `Supabase REST schema cache not ready for ${path}; retrying (${attempt}/${maxAttempts})...`
+      );
+      await sleep(retryDelayMs * attempt);
+    } catch (error) {
+      if (!isRetryableFetchError(error) || attempt === maxAttempts) {
+        throw error;
+      }
+
+      console.warn(
+        `Supabase REST request failed for ${path}; retrying (${attempt}/${maxAttempts})...`
+      );
+      await sleep(retryDelayMs * attempt);
+    }
   }
 
-  return response;
+  throw new Error(`Supabase request retry loop exhausted for ${path}.`);
 }
 
 async function fetchGatewayModels(timeoutMs = DEFAULT_FETCH_TIMEOUT_MS) {
@@ -391,10 +456,19 @@ async function main() {
   console.log('\n✅ Post-reset AI credits bootstrap complete.\n');
 }
 
-main().catch((error) => {
-  console.error('\n❌ Post-reset AI credits bootstrap failed');
-  console.error(
-    `   ${error instanceof Error ? error.message : String(error)}\n`
-  );
-  process.exit(1);
-});
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  main().catch((error) => {
+    console.error('\n❌ Post-reset AI credits bootstrap failed');
+    console.error(
+      `   ${error instanceof Error ? error.message : String(error)}\n`
+    );
+    process.exit(1);
+  });
+}
+
+export {
+  adminFetch,
+  createSupabaseRequestError,
+  isRetryableFetchError,
+  isRetryableSupabaseRestError,
+};
