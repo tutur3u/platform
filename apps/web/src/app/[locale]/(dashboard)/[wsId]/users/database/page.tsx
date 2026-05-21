@@ -20,6 +20,7 @@ import { DuplicateUsersDialog } from './components/duplicate-users-dialog';
 import { DatabaseTabs } from './database-tabs';
 import UserForm from './form';
 import ImportDialogContent from './import-dialog-content';
+import { PlatformLinkRepairDialog } from './platform-link-repair-dialog';
 import { UsersAttentionSupportPanel } from './users-attention-support-panel';
 import { WorkspaceUsersTable } from './workspace-users-table';
 
@@ -182,8 +183,7 @@ export default async function WorkspaceUsersPage({
         initialDefaultExcludedGroups={initialDefaultExcludedGroups}
         initialFeaturedGroupIds={initialFeaturedGroupIds}
         toolbarActions={
-          canViewFeedbacks ||
-          (canDeleteUsers && canUpdateUsers && hasPrivateInfo) ? (
+          canViewFeedbacks || (canUpdateUsers && hasPrivateInfo) ? (
             <>
               {canViewFeedbacks ? (
                 <Button asChild variant="outline" size="sm">
@@ -192,6 +192,9 @@ export default async function WorkspaceUsersPage({
                     {t('ws-users.feedback_center_open')}
                   </Link>
                 </Button>
+              ) : null}
+              {canUpdateUsers && hasPrivateInfo ? (
+                <PlatformLinkRepairDialog wsId={wsId} />
               ) : null}
               {canDeleteUsers && canUpdateUsers && hasPrivateInfo ? (
                 <DuplicateUsersDialog wsId={wsId} />

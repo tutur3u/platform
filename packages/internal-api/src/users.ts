@@ -178,6 +178,43 @@ export interface ListWorkspaceBasicUsersResponse {
   data: WorkspaceBasicUserRecord[];
 }
 
+export type WorkspaceUserPlatformLinkRepairSkipReason =
+  | 'missing_email'
+  | 'no_member_match'
+  | 'ambiguous_workspace_profile'
+  | 'ambiguous_platform_match'
+  | 'already_linked'
+  | 'platform_already_linked';
+
+export interface WorkspaceUserPlatformLinkRepairPayload {
+  workspaceUserId?: string;
+}
+
+export interface WorkspaceUserPlatformLinkRepairLinkedUser {
+  email: string;
+  platformUserId: string;
+  workspaceUserId: string;
+  workspaceUserName: string | null;
+}
+
+export interface WorkspaceUserPlatformLinkRepairSkippedUser {
+  detail?: string;
+  email: string | null;
+  reason: WorkspaceUserPlatformLinkRepairSkipReason;
+  workspaceUserId: string;
+  workspaceUserName: string | null;
+}
+
+export interface WorkspaceUserPlatformLinkRepairResponse {
+  linked: WorkspaceUserPlatformLinkRepairLinkedUser[];
+  skipped: WorkspaceUserPlatformLinkRepairSkippedUser[];
+  summary: {
+    linked: number;
+    scanned: number;
+    skipped: number;
+  };
+}
+
 export type UpdateCurrentUserDefaultWorkspaceResponse = {
   success: boolean;
 };
@@ -516,6 +553,25 @@ export async function listWorkspaceBasicUsers(
         limit,
         q,
       },
+    }
+  );
+}
+
+export async function repairWorkspaceUserPlatformLinks(
+  workspaceId: string,
+  payload: WorkspaceUserPlatformLinkRepairPayload = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceUserPlatformLinkRepairResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/users/links/repair`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
     }
   );
 }

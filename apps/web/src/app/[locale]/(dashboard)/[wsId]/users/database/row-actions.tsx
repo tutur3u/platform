@@ -1,8 +1,12 @@
 'use client';
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
-import { Ellipsis, Eye, Loader2 } from '@tuturuuu/icons';
+import { Ellipsis, Eye, Link2, Loader2 } from '@tuturuuu/icons';
+import {
+  repairWorkspaceUserPlatformLinks,
+  type WorkspaceUserPlatformLinkRepairSkipReason,
+} from '@tuturuuu/internal-api/users';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import {
   AlertDialog,
@@ -34,6 +38,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import UserForm from './form';
+import { canShowPlatformLinkRepairAction } from './platform-link-repair-visibility';
 import { UserFeedbackDialog } from './user-feedback-dialog';
 
 interface UserRowActionsProps {
@@ -42,12 +47,33 @@ interface UserRowActionsProps {
   extraData?: Record<string, unknown>;
 }
 
+function getRepairReasonKey(reason: WorkspaceUserPlatformLinkRepairSkipReason) {
+  switch (reason) {
+    case 'already_linked':
+      return 'ws-users.platform_link_repair_reason_already_linked';
+    case 'ambiguous_platform_match':
+      return 'ws-users.platform_link_repair_reason_ambiguous_platform_match';
+    case 'ambiguous_workspace_profile':
+      return 'ws-users.platform_link_repair_reason_ambiguous_workspace_profile';
+    case 'missing_email':
+      return 'ws-users.platform_link_repair_reason_missing_email';
+    case 'no_member_match':
+      return 'ws-users.platform_link_repair_reason_no_member_match';
+    case 'platform_already_linked':
+      return 'ws-users.platform_link_repair_reason_platform_already_linked';
+  }
+}
+
 export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
   const t = useTranslations();
   const queryClient = useQueryClient();
   const pathname = usePathname();
 
   const user = row.original;
+  const showPlatformLinkRepair = canShowPlatformLinkRepairAction(
+    user,
+    extraData
+  );
   const showTrailingActions =
     (pathname.includes('/users/database') && !!extraData?.canDeleteUsers) ||
     !!(extraData?.wsId && extraData?.groupId);
@@ -73,6 +99,43 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
       description: error,
     });
   };
+
+  const repairPlatformLinkMutation = useMutation({
+    mutationFn: () =>
+      repairWorkspaceUserPlatformLinks(user.ws_id!, {
+        workspaceUserId: user.id,
+      }),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({
+        queryKey: ['workspace-users', user.ws_id],
+      });
+
+      if (result.linked.length > 0) {
+        toast.success(t('ws-users.platform_link_repair_success_single'), {
+          description: t('ws-users.platform_link_repair_result_summary', {
+            linked: result.summary.linked,
+            skipped: result.summary.skipped,
+          }),
+        });
+        return;
+      }
+
+      const skipped = result.skipped[0];
+      toast.warning(t('ws-users.platform_link_repair_skipped_single'), {
+        description: skipped
+          ? t(getRepairReasonKey(skipped.reason))
+          : t('ws-users.platform_link_repair_no_links'),
+      });
+    },
+    onError: (error) => {
+      toast.error(t('ws-users.platform_link_repair_failed'), {
+        description:
+          error instanceof Error
+            ? error.message
+            : t('ws-users.platform_link_repair_failed_description'),
+      });
+    },
+  });
 
   const deleteUser = async () => {
     setIsDeleting(true);
@@ -201,6 +264,20 @@ export function UserRowActions({ row, href, extraData }: UserRowActionsProps) {
                 {t('ws-users.feedback_support_action')}
               </DropdownMenuItem>
             )}
+
+            {showPlatformLinkRepair ? (
+              <DropdownMenuItem
+                onClick={() => repairPlatformLinkMutation.mutate()}
+                disabled={repairPlatformLinkMutation.isPending}
+              >
+                {repairPlatformLinkMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Link2 className="mr-2 h-4 w-4" />
+                )}
+                {t('ws-users.platform_link_repair_row_action')}
+              </DropdownMenuItem>
+            ) : null}
 
             {showTrailingActions ? <DropdownMenuSeparator /> : null}
             {pathname.includes('/users/database') &&

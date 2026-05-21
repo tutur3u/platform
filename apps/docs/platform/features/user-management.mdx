@@ -46,12 +46,15 @@ Workspace members can have workspace-specific display names, similar to server p
 - Pending email invites may create a `workspace_users` row before the invited platform user joins.
 - When the invited user later joins, `workspace_user_linked_users` should reuse exactly one unlinked `workspace_users` row with a matching email in the same workspace.
 - If multiple matching workspace profiles exist for an email, runtime linking must not guess. Admin edit APIs should report the ambiguity so duplicate profiles can be resolved explicitly.
+- The users database page includes a platform-link repair action for administrators with user-update and private-info permissions. It links only matching platform users who are already workspace members; it never creates workspace membership or merges duplicate workspace profiles.
 
 ### Implementation Notes
 
 - Keep members-page writes narrow: update the workspace profile display name only.
 - Always verify `manage_workspace_members` before writing member profiles from the members settings UI.
 - Enhanced member listing should display the workspace profile name when available and fall back to the platform user display name.
+- Auto-linking runs on `workspace_members` insert. If a virtual profile is created or its email is corrected after membership already exists, use the database-page repair action to reconcile the link.
+- Repair is conservative: a link is inserted only when one unlinked workspace profile and one existing member platform account share the same normalized email. Missing emails, no member match, duplicate workspace profiles, duplicate platform matches, and platform accounts already linked elsewhere are reported as skipped cases.
 
 ## Attendance Manager Counting
 

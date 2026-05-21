@@ -748,6 +748,7 @@ export {
   type RootNavigationConfig,
   type RootNavigationTarget,
   removeCurrentUserAvatar,
+  repairWorkspaceUserPlatformLinks,
   type UpdatePlatformUserRolesPayload,
   updateCurrentUserDefaultWorkspace,
   updateCurrentUserProfile,
@@ -756,6 +757,11 @@ export {
   updateUserWorkspaceConfig,
   uploadCurrentUserAvatar,
   type WorkspaceBasicUserRecord,
+  type WorkspaceUserPlatformLinkRepairLinkedUser,
+  type WorkspaceUserPlatformLinkRepairPayload,
+  type WorkspaceUserPlatformLinkRepairResponse,
+  type WorkspaceUserPlatformLinkRepairSkippedUser,
+  type WorkspaceUserPlatformLinkRepairSkipReason,
 } from './users';
 export {
   createWorkspaceUserFeedback,
