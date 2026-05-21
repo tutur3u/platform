@@ -66,6 +66,22 @@ test('app-only changes run only that app', () => {
     },
     false
   );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/qr/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-qr.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/qr/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-apps.yaml',
+    },
+    false
+  );
 });
 
 test('shared package changes fan out through transitive workspace dependencies', () => {

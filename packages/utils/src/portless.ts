@@ -20,6 +20,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   nova: `https://nova.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   platform: TUTURUUU_PORTLESS_ROOT_ORIGIN,
   playground: `https://playground.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  qr: `https://qr.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   rewise: `https://rewise.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   shortener: `https://shortener.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   tasks: `https://tasks.${TUTURUUU_PORTLESS_ROOT_HOST}`,

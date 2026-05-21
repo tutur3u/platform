@@ -107,6 +107,7 @@
                   "platform/applications/inventory",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",
+                  "platform/applications/qr",
                   "platform/applications/tasks",
                   "platform/applications/learn",
                   "platform/applications/teach",

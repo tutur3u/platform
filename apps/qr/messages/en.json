@@ -1,0 +1,48 @@
+{
+  "common": {
+    "background": "Background",
+    "characters": "characters",
+    "download": "Download",
+    "foreground": "Foreground",
+    "formats": "Formats",
+    "optional": "optional",
+    "or": "or",
+    "qr_generator": "QR Generator",
+    "remove": "Remove",
+    "reset": "Reset",
+    "scan_me": "Scan me",
+    "styles": "Styles",
+    "title": "Title"
+  },
+  "qr": {
+    "image_upload": {
+      "browse": "browse files",
+      "dimensions": "Dimensions",
+      "dimensions_too_large": "Image dimensions are too large. Maximum size is 512x512px.",
+      "dimensions_too_small": "Image dimensions are too small. Minimum size is 32x32px.",
+      "drop_files": "Drop files here",
+      "file_too_large": "File is too large. Maximum size is {size}.",
+      "image_uploaded": "Image uploaded",
+      "invalid_image": "Invalid image file.",
+      "invalid_type": "Invalid file type. Please upload JPG, PNG, WebP, or SVG files.",
+      "max_size": "Max size",
+      "processing": "Processing",
+      "recommended": "Recommended",
+      "rounded_logo": "Rounded logo",
+      "signed_url_failed": "Failed to generate signed URL.",
+      "supported_formats": "Supported formats",
+      "title": "Logo/Image Upload",
+      "upload_failed": "Upload failed. Please try again."
+    }
+  },
+  "qrPage": {
+    "eyebrow": "Tuturuuu QR",
+    "metadata": {
+      "description": "Create branded QR codes instantly with the Tuturuuu generator.",
+      "title": "QR Generator"
+    }
+  },
+  "ws-user-fields": {
+    "value": "Value"
+  }
+}

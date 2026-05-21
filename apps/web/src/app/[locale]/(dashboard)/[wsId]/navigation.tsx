@@ -118,6 +118,7 @@ import { DEV_MODE } from '@/constants/common';
 import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
+import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 
 export async function WorkspaceNavigationLinks({
@@ -152,6 +153,7 @@ export async function WorkspaceNavigationLinks({
     'true'
   );
   const calendarAppHref = `${getCalendarAppOrigin()}/${personalOrWsId}`;
+  const qrAppHref = getQrAppOrigin();
 
   // Parallelize user-dependent queries
   const [
@@ -548,8 +550,10 @@ export async function WorkspaceNavigationLinks({
         },
         {
           title: t('sidebar_tabs.qr_generator'),
-          href: `/${personalOrWsId}/qr-generator`,
+          href: qrAppHref,
           icon: <QrCodeIcon className="h-5 w-5" />,
+          aliases: [`/${personalOrWsId}/qr-generator`],
+          external: true,
         },
         null,
         {

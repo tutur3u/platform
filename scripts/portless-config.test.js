@@ -86,6 +86,7 @@ test('portless keeps the canonical Tuturuuu app hostnames stable', () => {
 
   assert.equal(config.apps['apps/apps']?.name, 'apps.tuturuuu');
   assert.equal(config.apps['apps/web']?.name, 'tuturuuu');
+  assert.equal(config.apps['apps/qr']?.name, 'qr.tuturuuu');
   assert.equal(config.apps['apps/tasks']?.name, 'tasks.tuturuuu');
   assert.equal(
     config.apps['apps/hive-realtime']?.name,

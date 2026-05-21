@@ -18,6 +18,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://calendar.tuturuuu.com',
   },
   {
+    name: 'qr',
+    url: 'https://qr.tuturuuu.com',
+  },
+  {
     name: 'nova',
     url: 'https://nova.ai.vn',
   },
@@ -81,6 +85,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('calendar'),
   },
   {
+    name: 'qr',
+    url: getTuturuuuPortlessAppOrigin('qr'),
+  },
+  {
     name: 'nova',
     url: getTuturuuuPortlessAppOrigin('nova'),
   },
@@ -134,6 +142,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'calendar',
     url: 'http://localhost:7806',
+  },
+  {
+    name: 'qr',
+    url: 'http://localhost:7819',
   },
   {
     name: 'platform',

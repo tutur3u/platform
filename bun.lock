@@ -560,6 +560,30 @@
         "typescript": "^6.0.3",
       },
     },
+    "apps/qr": {
+      "name": "@tuturuuu/qr",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tanstack/react-query": "^5.100.11",
+        "@tuturuuu/ui": "workspace:*",
+        "@tuturuuu/utils": "workspace:*",
+        "@tuturuuu/vercel": "workspace:*",
+        "next": "^16.2.6",
+        "next-intl": "^4.11.2",
+        "react": "^19.2.6",
+        "react-dom": "^19.2.6",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.3.0",
+        "@tuturuuu/typescript-config": "workspace:*",
+        "@types/node": "^25.9.1",
+        "@types/react": "^19.2.15",
+        "@types/react-dom": "^19.2.3",
+        "babel-plugin-react-compiler": "^1.0.0",
+        "postcss": "^8.5.14",
+        "typescript": "^6.0.3",
+      },
+    },
     "apps/redis": {
       "name": "@tuturuuu/redis",
       "version": "1.0.0",
@@ -3042,6 +3066,8 @@
     "@tuturuuu/payment": ["@tuturuuu/payment@workspace:packages/payment"],
 
     "@tuturuuu/playground": ["@tuturuuu/playground@workspace:apps/playground"],
+
+    "@tuturuuu/qr": ["@tuturuuu/qr@workspace:apps/qr"],
 
     "@tuturuuu/realtime": ["@tuturuuu/realtime@workspace:packages/realtime"],
 

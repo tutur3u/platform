@@ -1,23 +1,16 @@
-import QR from '@tuturuuu/ui/custom/qr/qr';
-import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
+import { redirect } from 'next/navigation';
+import { buildQrAppUrl } from '@/lib/qr-app-url';
 
 export const metadata: Metadata = {
   title: 'QR Generator',
   description: 'Manage QR Generator in your Tuturuuu workspace.',
 };
 
-export default async function QRGeneratorPage() {
-  const t = await getTranslations();
+interface Props {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}
 
-  return (
-    <div className="@lg:mx-64 @md:mx-32 mx-4 flex min-h-full flex-col gap-8 pt-24">
-      <div className="mb-4 md:mb-8">
-        <h1 className="font-semibold text-4xl">{t('common.qr_generator')}</h1>
-        <Separator className="my-4" />
-        <QR />
-      </div>
-    </div>
-  );
+export default async function QRGeneratorPage({ searchParams }: Props) {
+  redirect(buildQrAppUrl(await searchParams).toString());
 }

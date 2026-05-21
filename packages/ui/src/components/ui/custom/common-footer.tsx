@@ -7,6 +7,9 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
   const TUTURUUU_URL = devMode
     ? getLocalInternalAppUrl('platform', 'http://localhost:7803')
     : 'https://tuturuuu.com';
+  const QR_URL = devMode
+    ? getLocalInternalAppUrl('qr', 'http://localhost:7819')
+    : 'https://qr.tuturuuu.com';
 
   return (
     <div className="w-full text-center">
@@ -146,7 +149,7 @@ export function CommonFooter({ t, devMode }: { t: any; devMode: boolean }) {
               {t('common.meet-together')}
             </Link>
             <Link
-              href={`${TUTURUUU_URL}/qr-generator`}
+              href={QR_URL}
               className="text-foreground/80 text-sm hover:text-foreground hover:underline md:w-fit"
             >
               {t('common.qr_generator')}

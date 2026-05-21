@@ -52,6 +52,10 @@
       "name": "playground.tuturuuu",
       "script": "dev:app"
     },
+    "apps/qr": {
+      "name": "qr.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/rewise": {
       "name": "rewise.tuturuuu",
       "script": "dev:app"

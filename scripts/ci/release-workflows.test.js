@@ -160,6 +160,18 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
       projectSecret: 'VERCEL_LEARN_PROJECT_ID',
       refGuard: /github\.ref == 'refs\/heads\/production'/,
     },
+    'vercel-preview-qr.yaml': {
+      environment: 'vercel-preview-qr',
+      jobName: 'Deploy-Preview',
+      projectSecret: 'VERCEL_QR_PROJECT_ID',
+      refGuard: /github\.ref != 'refs\/heads\/production'/,
+    },
+    'vercel-production-qr.yaml': {
+      environment: 'vercel-production-qr',
+      jobName: 'Deploy-Production',
+      projectSecret: 'VERCEL_QR_PROJECT_ID',
+      refGuard: /github\.ref == 'refs\/heads\/production'/,
+    },
     'vercel-preview-teach.yaml': {
       environment: 'vercel-preview-teach',
       jobName: 'Deploy-Preview',

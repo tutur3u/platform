@@ -1,0 +1,67 @@
+---
+title: 'QR'
+description: 'Public QR generator app hosted at qr.tuturuuu.com.'
+updatedAt: '2026-05-21'
+---
+
+## Overview
+
+`apps/qr` serves the public Tuturuuu QR generator at
+`https://qr.tuturuuu.com`. It owns the QR generator UI and reuses the shared
+`@tuturuuu/ui/custom/qr/qr` component.
+
+The app is public and does not own workspace auth, app-session cookies, or
+protected APIs. Existing `apps/web` QR generator routes are compatibility
+redirects to the QR app root.
+
+## Routing Contract
+
+- `/`: canonical QR generator.
+- `/en` and `/vi`: canonicalize back to `/` while storing `NEXT_LOCALE`.
+- `apps/web /qr-generator`: redirects to `qr.tuturuuu.com/`.
+- `apps/web /{wsId}/qr-generator`: redirects to `qr.tuturuuu.com/` without
+  forwarding the workspace ID.
+
+Query strings are preserved during compatibility redirects.
+
+## Local Development
+
+- `bun dev:qr` starts the app through Portless.
+- Local app origin: `https://qr.tuturuuu.localhost`.
+- Direct fallback port: `7819`.
+- App URL overrides: `QR_APP_URL` or `NEXT_PUBLIC_QR_APP_URL`.
+
+## CI/CD
+
+Preview and production deployments use dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-qr.yaml`
+- `.github/workflows/vercel-production-qr.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared
+`ci-check.yml` switchboard with affected-path gating. They require
+environment-scoped Vercel credentials:
+
+- preview environment: `vercel-preview-qr`
+- production environment: `vercel-production-qr`
+- project secret: `VERCEL_QR_PROJECT_ID`
+- shared secrets: `VERCEL_TOKEN` and `VERCEL_ORG_ID`
+
+The app-specific project secret should live in those GitHub Environments, not in
+workflow-level `env`.
+
+## Validation
+
+Use these focused checks when changing QR app routing or deployment wiring:
+
+```bash
+bun type-check:qr
+bun --cwd apps/web vitest run src/lib/qr-app-url.test.ts 'src/app/[locale]/(dashboard)/[wsId]/qr-generator/page.test.ts' 'src/app/[locale]/(marketing)/qr-generator/page.test.ts'
+bun --cwd packages/utils test src/__tests__/app-url.test.ts
+node --test scripts/portless-config.test.js
+node --test scripts/ci/check-workflow-config.test.js scripts/ci/release-workflows.test.js
+```
+
+Because QR touches TypeScript, workflow config, docs navigation, and
+translations, finish QR changes with `bun check` when the shared worktree state
+allows it.
