@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
+  deductAiCredits: vi.fn(),
   gateway: vi.fn(),
   google: vi.fn(),
   performCreditPreflight: vi.fn(),
@@ -47,6 +48,11 @@ vi.mock('../chat/google/route-message-preparation', () => ({
   ) => mocks.prepareProcessedMessages(...args),
 }));
 
+vi.mock('../credits/check-credits', () => ({
+  deductAiCredits: (...args: Parameters<typeof mocks.deductAiCredits>) =>
+    mocks.deductAiCredits(...args),
+}));
+
 vi.mock('../credits/resolve-plan-model', async (importOriginal) => {
   const actual =
     await importOriginal<typeof import('../credits/resolve-plan-model')>();
@@ -88,7 +94,11 @@ function createAuthRejectedCallbacks(): MindRouteCallbacks {
   };
 }
 
-function createAcceptedCallbacks(): MindRouteCallbacks {
+function createAcceptedCallbacks({
+  email = 'dev@tuturuuu.com',
+}: {
+  email?: string;
+} = {}): MindRouteCallbacks {
   return {
     ...createAuthRejectedCallbacks(),
     ensureThread: async () => '00000000-0000-4000-8000-000000000001',
@@ -98,7 +108,7 @@ function createAcceptedCallbacks(): MindRouteCallbacks {
     resolveAuth: async () => ({
       ok: true,
       supabase: {} as never,
-      user: { email: 'dev@tuturuuu.com', id: 'user-1' } as never,
+      user: { email, id: 'user-1' } as never,
     }),
   };
 }
@@ -107,6 +117,11 @@ describe('mind route payload validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.createAdminClient.mockResolvedValue({});
+    mocks.deductAiCredits.mockResolvedValue({
+      creditsDeducted: 1,
+      error: null,
+      remainingCredits: 999,
+    });
     mocks.google.mockImplementation((modelId: string) => ({
       modelId,
       provider: 'google',
@@ -191,5 +206,77 @@ describe('mind route payload validation', () => {
     });
     expect(streamOptions?.providerOptions).not.toHaveProperty('gateway');
     expect(streamOptions?.providerOptions).not.toHaveProperty('vertex');
+  });
+
+  it('allows non-internal users and deducts from personal credits', async () => {
+    const personalWorkspaceQuery = {
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({
+        data: {
+          id: 'personal-workspace-1',
+        },
+        error: null,
+      }),
+      select: vi.fn().mockReturnThis(),
+    };
+    const sbAdmin = {
+      from: vi.fn(() => personalWorkspaceQuery),
+    };
+    mocks.createAdminClient.mockResolvedValue(sbAdmin);
+
+    const route = createPOST(
+      createAcceptedCallbacks({ email: 'member@example.com' })
+    );
+
+    const response = await route(
+      createRequest({
+        boardId: null,
+        creditSource: 'personal',
+        messages: [
+          { parts: [{ text: 'plan this', type: 'text' }], role: 'user' },
+        ],
+        model: 'google/gemini-2.5-flash',
+        threadId: '00000000-0000-4000-8000-000000000001',
+        wsId: 'workspace-1',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('stream ok');
+    expect(mocks.resolvePlanModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        wsId: 'personal-workspace-1',
+      })
+    );
+    expect(mocks.performCreditPreflight).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: 'user-1',
+        wsId: 'personal-workspace-1',
+      })
+    );
+
+    const streamOptions = mocks.streamText.mock.calls[0]?.[0];
+    await streamOptions?.onFinish?.({
+      finishReason: 'stop',
+      steps: [],
+      text: 'Done',
+      totalUsage: {
+        inputTokens: 10,
+        outputTokens: 20,
+        reasoningTokens: 3,
+        totalTokens: 33,
+      },
+      usage: undefined,
+    } as never);
+
+    expect(mocks.deductAiCredits).toHaveBeenCalledWith({
+      feature: 'chat',
+      inputTokens: 10,
+      modelId: 'google/gemini-2.5-flash',
+      outputTokens: 20,
+      reasoningTokens: 3,
+      userId: 'user-1',
+      wsId: 'personal-workspace-1',
+    });
   });
 });

@@ -14,6 +14,12 @@ handoff through `/verify-token`, stores a host-local `tuturuuu_app_session`
 cookie for the `mind` app target, and keeps workspace data behind membership
 checks. Mind must not create a local Supabase Auth session.
 
+Mind AI also follows the shared AI credit contract instead of an employee-only
+allowlist. The `/api/ai/mind` route resolves the selected personal or workspace
+credit source, checks the caller's membership for workspace credits, preflights
+model availability and remaining credits, and deducts usage from that same
+billing workspace after a successful stream.
+
 ## API Ownership
 
 Protected Mind data stays behind `apps/web` APIs:

@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return generateCommonMetadata({
     config: {
       description: {
-        en: 'Mind is an internal Tuturuuu planning canvas for mindboards, knowledge graphs, nested ideas, and AI-aided long-range planning.',
-        vi: 'Mind là không gian nội bộ của Tuturuuu để lập kế hoạch bằng mindboard, đồ thị tri thức, ý tưởng lồng nhau và AI hỗ trợ hoạch định dài hạn.',
+        en: 'Mind is a Tuturuuu planning canvas for mindboards, knowledge graphs, nested ideas, and AI-aided long-range planning.',
+        vi: 'Mind là không gian Tuturuuu để lập kế hoạch bằng mindboard, đồ thị tri thức, ý tưởng lồng nhau và AI hỗ trợ hoạch định dài hạn.',
       },
       name: 'Mind',
       ogImage: '/media/og.png',

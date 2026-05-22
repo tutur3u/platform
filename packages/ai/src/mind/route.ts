@@ -11,7 +11,6 @@ import type { CreditSource as SharedCreditSource } from '../chat/credit-source';
 import { mapToUIMessages } from '../chat/google/chat-request-schema';
 import {
   type AiRouteAuthResult,
-  isInternalTuturuuuAiUser,
   resolveAiRouteAuth,
 } from '../chat/google/route-auth';
 import { performCreditPreflight } from '../chat/google/route-credits';
@@ -267,13 +266,6 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         ? await callbacks.resolveAuth(request)
         : await resolveAiRouteAuth(request);
       if (!auth.ok) return auth.response;
-
-      if (!(await isInternalTuturuuuAiUser(auth))) {
-        return NextResponse.json(
-          { error: 'Mind AI is limited to @tuturuuu.com accounts' },
-          { status: 403 }
-        );
-      }
 
       const access = await callbacks.resolveAccess({
         auth,
