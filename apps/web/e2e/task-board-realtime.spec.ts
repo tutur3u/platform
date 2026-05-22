@@ -239,6 +239,11 @@ test.describe('Task board realtime and task mutations', () => {
       await firstEditor.click();
       await page.keyboard.type(firstLine, { delay: 10 });
       await page.keyboard.press('Enter');
+      await expect(firstEditor.locator('p')).toHaveCount(2, {
+        timeout: 30_000,
+      });
+      await expect(firstEditor.locator('p').nth(0)).toContainText(firstLine);
+      await expect(firstEditor.locator('p').nth(1)).toHaveText('');
       await page.keyboard.type(secondLine, { delay: 10 });
 
       await expect(firstEditor.locator('p')).toHaveCount(2, {

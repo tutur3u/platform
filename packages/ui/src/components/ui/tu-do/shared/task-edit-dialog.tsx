@@ -10,7 +10,6 @@ import {
 } from '@tuturuuu/internal-api';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import type { User } from '@tuturuuu/types/primitives/User';
 import { Dialog, DialogContent, DialogTitle } from '@tuturuuu/ui/dialog';
 import { useYjsCollaboration } from '@tuturuuu/ui/hooks/use-yjs-collaboration';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -80,6 +79,12 @@ import type {
 } from './task-edit-dialog/types/pending-relationship';
 import { getSeededPendingTaskRelationships } from './task-edit-dialog/types/pending-relationship';
 import {
+  getTaskDialogUserDisplayName,
+  normalizeTaskDialogCurrentUser,
+  type TaskDialogCurrentUser,
+  type TaskDialogUserIdentity,
+} from './task-edit-dialog/user-display';
+import {
   broadcastTaskDescriptionUpsert,
   clearDraft,
   getDraftStorageKey,
@@ -120,12 +125,7 @@ export interface TaskEditDialogProps {
   parentTaskId?: string;
   parentTaskName?: string;
   pendingRelationship?: PendingRelationship;
-  currentUser?: {
-    id: string;
-    display_name?: string;
-    email?: string;
-    avatar_url?: string;
-  };
+  currentUser?: TaskDialogCurrentUser;
   /** Pre-loaded data for shared task context - bypasses internal fetches when provided */
   sharedContext?: SharedTaskContext;
   /** Whether draft mode is enabled from user settings */
@@ -248,15 +248,8 @@ export function TaskEditDialog({
   }, [formState.description]);
 
   // User state
-  const [user, setUser] = useState<User | null>(
-    propsCurrentUser
-      ? {
-          id: propsCurrentUser.id,
-          display_name: propsCurrentUser.display_name || null,
-          avatar_url: propsCurrentUser.avatar_url || null,
-          email: propsCurrentUser.email || null,
-        }
-      : null
+  const [user, setUser] = useState<TaskDialogUserIdentity | null>(
+    propsCurrentUser ? normalizeTaskDialogCurrentUser(propsCurrentUser) : null
   );
 
   const userColor = useMemo(() => {
@@ -284,9 +277,7 @@ export function TaskEditDialog({
   // Memoize the user object for Yjs collaboration to prevent unstable references
   // from causing the SupabaseProvider to be destroyed and recreated every render
   const userId = user?.id;
-  const userEmail = user?.email;
-  const userDisplayName =
-    user?.display_name || userEmail?.split('@')[0] || 'Unknown User';
+  const userDisplayName = getTaskDialogUserDisplayName(user);
 
   const yjsUser = useMemo(
     () =>
@@ -427,12 +418,7 @@ export function TaskEditDialog({
   // Update user when props change
   useEffect(() => {
     if (propsCurrentUser) {
-      setUser({
-        id: propsCurrentUser.id,
-        display_name: propsCurrentUser.display_name || null,
-        avatar_url: propsCurrentUser.avatar_url || null,
-        email: propsCurrentUser.email || null,
-      });
+      setUser(normalizeTaskDialogCurrentUser(propsCurrentUser));
     }
   }, [propsCurrentUser]);
 
@@ -1874,6 +1860,7 @@ export function TaskEditDialog({
                   collaborationUser={
                     user
                       ? {
+                          id: user.id || '',
                           name: userDisplayName,
                           color: userColor || '',
                         }

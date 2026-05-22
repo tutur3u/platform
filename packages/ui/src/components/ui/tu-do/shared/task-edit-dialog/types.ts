@@ -24,9 +24,10 @@ export interface TaskEditDialogProps {
   isPersonalWorkspace?: boolean;
   currentUser?: {
     id: string;
-    display_name?: string;
-    email?: string;
-    avatar_url?: string;
+    display_name?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
   };
   onClose: () => void;
   onUpdate: () => void;

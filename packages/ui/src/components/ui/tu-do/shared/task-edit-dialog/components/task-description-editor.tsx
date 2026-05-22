@@ -47,7 +47,7 @@ export interface TaskDescriptionEditorProps {
   yjsDoc: Y.Doc | null;
   yjsProvider: HocuspocusProvider;
   /** User info for collaboration cursor labels. */
-  collaborationUser: { name: string; color: string } | null;
+  collaborationUser: { id?: string; name: string; color: string } | null;
 
   // Callbacks
   onImageUpload?: (file: File) => Promise<string>;

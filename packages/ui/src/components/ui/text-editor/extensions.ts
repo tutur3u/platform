@@ -35,7 +35,7 @@ interface EditorExtensionsOptions {
   doc?: Y.Doc;
   provider?: SupabaseProvider;
   /** User info for CollaborationCaret labels (name shown on remote cursors). */
-  collaborationUser?: { name: string; color: string };
+  collaborationUser?: { id?: string; name: string; color: string };
   onImageUpload?: (file: File) => Promise<string>;
   onVideoUpload?: (file: File) => Promise<string>;
   getOnImageUpload?: () => ((file: File) => Promise<string>) | undefined;
@@ -86,7 +86,7 @@ export function getEditorExtensions({
           }),
         ]
       : []),
-    ...(provider
+    ...(provider && collaborationUser
       ? [
           CollaborationCaret.configure({
             provider,

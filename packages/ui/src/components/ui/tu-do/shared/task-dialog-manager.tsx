@@ -119,9 +119,10 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
   // Fetch current user immediately on mount (persists across dialog open/close)
   const [currentUser, setCurrentUser] = useState<{
     id: string;
-    display_name?: string;
-    email?: string;
-    avatar_url?: string;
+    display_name?: string | null;
+    full_name?: string | null;
+    email?: string | null;
+    avatar_url?: string | null;
   } | null>(null);
 
   useEffect(() => {
@@ -131,9 +132,10 @@ export function TaskDialogManager({ wsId }: { wsId: string }) {
       if (profile?.id) {
         setCurrentUser({
           id: profile.id,
-          display_name: profile.display_name || undefined,
-          email: profile.email ?? undefined,
-          avatar_url: profile.avatar_url || undefined,
+          display_name: profile.display_name,
+          full_name: profile.full_name,
+          email: profile.email,
+          avatar_url: profile.avatar_url,
         });
       }
     };

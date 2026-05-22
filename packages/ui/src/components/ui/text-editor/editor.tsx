@@ -16,7 +16,6 @@ import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
 import { getEditorExtensions } from './extensions';
-import { handlePlainEnterFallback } from './keyboard';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
@@ -63,7 +62,7 @@ interface RichTextEditorProps {
   yjsDoc?: Y.Doc;
   yjsProvider?: SupabaseProvider;
   /** User info for collaboration cursor labels. */
-  collaborationUser?: { name: string; color: string };
+  collaborationUser?: { id?: string; name: string; color: string };
   boardId?: string;
   availableLists?: TaskList[];
   queryClient?: QueryClient;
@@ -310,10 +309,6 @@ export function RichTextEditor({
           return true;
         }
 
-        if (handlePlainEnterFallback(view, event)) {
-          return true;
-        }
-
         const { state, dispatch } = view;
         const { selection } = state;
         const { $from } = selection;
@@ -540,6 +535,19 @@ export function RichTextEditor({
     readOnly,
     getDelegatedImageUpload,
   ]);
+
+  useEffect(() => {
+    if (!editor || !allowCollaboration || !yjsProvider || !collaborationUser) {
+      return;
+    }
+
+    yjsProvider.awareness.setLocalStateField('user', collaborationUser);
+    (
+      editor.commands as {
+        updateUser?: (attributes: typeof collaborationUser) => boolean;
+      }
+    ).updateUser?.(collaborationUser);
+  }, [editor, allowCollaboration, yjsProvider, collaborationUser]);
 
   // Update editor's editable state when props change
   useEffect(() => {
