@@ -274,3 +274,9 @@ the legacy detail route `GET /api/workspaces/:wsId`. That route must also opt
 into app-session auth through `withSessionAuth(..., {
 allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH })` so satellite sessions do
 not receive `401 Unauthorized` on `personal` or other workspace aliases.
+
+When a workspace-scoped satellite page already has an app-session user, shared
+permission checks must resolve `personal` from that explicit user context rather
+than falling back to cookie-bound Supabase Auth on the app host. App-session
+cookies are Tuturuuu-managed, so the app host may not have a local Supabase Auth
+user even though the user is authenticated.

@@ -308,6 +308,117 @@ describe('getPermissions membership type gate', () => {
     vi.clearAllMocks();
   });
 
+  it('resolves personal slug with an explicit app-session user', async () => {
+    const personalWorkspaceId = '11111111-1111-4111-8111-111111111111';
+    const adminAuthGetUser = vi.fn();
+
+    const personalWorkspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    personalWorkspaceQuery.select.mockReturnValue(personalWorkspaceQuery);
+    personalWorkspaceQuery.eq.mockReturnValue(personalWorkspaceQuery);
+    personalWorkspaceQuery.maybeSingle.mockResolvedValue({
+      data: { id: personalWorkspaceId },
+      error: null,
+    });
+
+    const membershipQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      maybeSingle: vi.fn(),
+    };
+    membershipQuery.select.mockReturnValue(membershipQuery);
+    membershipQuery.eq.mockReturnValue(membershipQuery);
+    membershipQuery.maybeSingle.mockResolvedValue({
+      data: { type: 'MEMBER' },
+      error: null,
+    });
+
+    const roleMembersQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+    };
+    roleMembersQuery.select.mockReturnValue(roleMembersQuery);
+    roleMembersQuery.eq.mockImplementation((field) => {
+      if (field === 'workspace_roles.workspace_role_permissions.enabled') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return roleMembersQuery;
+    });
+
+    const workspaceQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+      single: vi.fn(),
+    };
+    workspaceQuery.select.mockReturnValue(workspaceQuery);
+    workspaceQuery.eq.mockReturnValue(workspaceQuery);
+    workspaceQuery.single.mockResolvedValue({
+      data: { creator_id: 'user-1' },
+      error: null,
+    });
+
+    const defaultPermissionsQuery = {
+      select: vi.fn(),
+      eq: vi.fn(),
+    };
+    defaultPermissionsQuery.select.mockReturnValue(defaultPermissionsQuery);
+    defaultPermissionsQuery.eq.mockImplementation((field) => {
+      if (field === 'enabled') {
+        return Promise.resolve({ data: [], error: null });
+      }
+      return defaultPermissionsQuery;
+    });
+
+    const workspacesFrom = vi
+      .fn()
+      .mockReturnValueOnce(personalWorkspaceQuery)
+      .mockReturnValueOnce(workspaceQuery);
+
+    mockCreateAdminClient.mockResolvedValue({
+      auth: { getUser: adminAuthGetUser },
+      from: vi.fn((table: string) => {
+        if (table === 'workspaces') return workspacesFrom();
+        if (table === 'workspace_members') return membershipQuery;
+        if (table === 'workspace_role_members') return roleMembersQuery;
+        if (table === 'workspace_default_permissions') {
+          return defaultPermissionsQuery;
+        }
+        throw new Error(`Unexpected admin table lookup: ${table}`);
+      }),
+    });
+
+    const permissions = await getPermissions({
+      user: { id: 'user-1', email: 'user@example.com' },
+      wsId: 'personal',
+    });
+
+    expect(permissions?.wsId).toBe(personalWorkspaceId);
+    expect(permissions?.membershipType).toBe('MEMBER');
+    expect(permissions?.containsPermission('manage_calendar')).toBe(true);
+    expect(adminAuthGetUser).not.toHaveBeenCalled();
+    expect(personalWorkspaceQuery.eq).toHaveBeenCalledWith('personal', true);
+    expect(personalWorkspaceQuery.eq).toHaveBeenCalledWith(
+      'workspace_members.user_id',
+      'user-1'
+    );
+    expect(membershipQuery.eq).toHaveBeenCalledWith(
+      'ws_id',
+      personalWorkspaceId
+    );
+    expect(roleMembersQuery.eq).toHaveBeenCalledWith(
+      'workspace_roles.ws_id',
+      personalWorkspaceId
+    );
+    expect(workspaceQuery.eq).toHaveBeenCalledWith('id', personalWorkspaceId);
+    expect(defaultPermissionsQuery.eq).toHaveBeenCalledWith(
+      'ws_id',
+      personalWorkspaceId
+    );
+  });
+
   it('returns null when caller membership is GUEST without enabled guest defaults', async () => {
     const membershipQuery = {
       select: vi.fn(),

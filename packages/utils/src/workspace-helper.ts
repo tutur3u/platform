@@ -619,6 +619,34 @@ export interface PermissionsResult {
   withoutPermission(permission: PermissionId): boolean;
 }
 
+async function resolveWorkspaceIdForPermissions({
+  authorizationClient,
+  principal,
+  wsId,
+}: {
+  authorizationClient: TypedSupabaseClient;
+  principal: { email: string | null; id: string };
+  wsId: string;
+}) {
+  if (wsId.trim().toLowerCase() !== PERSONAL_WORKSPACE_SLUG) {
+    return normalizeWorkspaceId(wsId, authorizationClient);
+  }
+
+  const { data: workspace, error } = await authorizationClient
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id, type)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', principal.id)
+    .eq('workspace_members.type', 'MEMBER')
+    .maybeSingle();
+
+  if (error || !workspace?.id) {
+    throw new Error('Personal workspace not found');
+  }
+
+  return workspace.id;
+}
+
 export async function getPermissions({
   user,
   wsId,
@@ -649,10 +677,11 @@ export async function getPermissions({
   // Handle "personal" workspace slug by looking up the user's personal workspace
   let resolvedWorkspaceId: string;
   try {
-    resolvedWorkspaceId = await normalizeWorkspaceId(
+    resolvedWorkspaceId = await resolveWorkspaceIdForPermissions({
+      authorizationClient: authorizationClient as TypedSupabaseClient,
+      principal,
       wsId,
-      authorizationClient as TypedSupabaseClient
-    );
+    });
   } catch {
     return null;
   }
