@@ -1,4 +1,4 @@
-import { MindDashboard } from '@/components/mind/mind-dashboard';
+import { MindDashboard } from '@tuturuuu/mind-ui/dashboard';
 import { requireMindUser } from '@/lib/access';
 
 export default async function MindWorkspacePage({

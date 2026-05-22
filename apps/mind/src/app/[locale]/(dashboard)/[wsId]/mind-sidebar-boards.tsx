@@ -2,24 +2,24 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createMindBoard, listMindBoards } from '@tuturuuu/internal-api/mind';
+import { BoardLibrary } from '@tuturuuu/mind-ui';
+import {
+  buildMindBoardHref,
+  getSelectedMindBoardId,
+} from '@tuturuuu/mind-ui/routes';
 import { usePathname, useRouter } from 'next/navigation';
-import { BoardLibrary } from '@/components/mind/board-library';
 
 type Props = {
+  mindPrefix?: string;
   workspaceSlug: string;
   wsId: string;
 };
 
-function getSelectedBoardId(pathname: string) {
-  const match = pathname.match(/\/boards\/([^/]+)/);
-  return match?.[1] ?? null;
-}
-
-export function MindSidebarBoards({ workspaceSlug, wsId }: Props) {
+export function MindSidebarBoards({ mindPrefix, workspaceSlug, wsId }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const selectedBoardId = getSelectedBoardId(pathname);
+  const selectedBoardId = getSelectedMindBoardId(pathname);
   const boardsQuery = useQuery({
     queryFn: () => listMindBoards({ workspaceId: wsId }),
     queryKey: ['mind', 'boards', wsId],
@@ -29,7 +29,13 @@ export function MindSidebarBoards({ workspaceSlug, wsId }: Props) {
       createMindBoard({ defaultHorizon: 'year', title }, { workspaceId: wsId }),
     onSuccess: (response) => {
       queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
-      router.push(`/${workspaceSlug}/boards/${response.board.id}`);
+      router.push(
+        buildMindBoardHref({
+          boardId: response.board.id,
+          mindPrefix,
+          workspaceSlug,
+        })
+      );
     },
   });
 
@@ -42,7 +48,7 @@ export function MindSidebarBoards({ workspaceSlug, wsId }: Props) {
       onCreateBoard={(title) => createBoardMutation.mutate(title)}
       onRetry={() => void boardsQuery.refetch()}
       onSelectBoard={(boardId) =>
-        router.push(`/${workspaceSlug}/boards/${boardId}`)
+        router.push(buildMindBoardHref({ boardId, mindPrefix, workspaceSlug }))
       }
       selectedBoardId={selectedBoardId}
     />

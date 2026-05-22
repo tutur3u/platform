@@ -5,8 +5,8 @@
  *
  * Verifies that:
  * 1. All translation namespaces used by shared packages
- *    (packages/ui, packages/satellite) are present in every consuming app's
- *    messages/en.json.
+ *    (packages/ui, packages/satellite, and product UI packages) are present in
+ *    every consuming app's messages/en.json.
  * 2. All individual translation keys (e.g. t('feedback')) used by shared
  *    packages exist under their namespace in every consuming app's en.json.
  *
@@ -29,6 +29,8 @@ const ROOT_DIR = process.cwd();
 const SHARED_PACKAGES = [
   { name: 'packages/ui', dir: 'packages/ui/src' },
   { name: 'packages/satellite', dir: 'packages/satellite/src' },
+  { name: 'packages/mind-ui', dir: 'packages/mind-ui/src' },
+  { name: 'packages/hive-ui', dir: 'packages/hive-ui/src' },
 ];
 
 // Apps with translation files to check
@@ -39,11 +41,21 @@ const APPS = [
   { name: 'apps/cms', dir: 'apps/cms' },
   { name: 'apps/drive', dir: 'apps/drive' },
   { name: 'apps/finance', dir: 'apps/finance' },
+  { name: 'apps/hive', dir: 'apps/hive' },
   { name: 'apps/meet', dir: 'apps/meet' },
+  { name: 'apps/mind', dir: 'apps/mind' },
   { name: 'apps/track', dir: 'apps/track' },
   { name: 'apps/nova', dir: 'apps/nova' },
   { name: 'apps/rewise', dir: 'apps/rewise' },
 ];
+
+// Some satellite apps consume broad shared UI packages directly but only ship a
+// narrow product namespace bundle. Keep their parity checks scoped to the
+// shared product UI package that must render in both the satellite and apps/web.
+const APP_SHARED_PACKAGE_SCOPES = new Map([
+  ['apps/hive', new Set(['packages/hive-ui'])],
+  ['apps/mind', new Set(['packages/mind-ui'])],
+]);
 
 // Regex to match useTranslations('namespace') and getTranslations('namespace')
 const NAMESPACE_REGEX =
@@ -221,6 +233,14 @@ function getAppDependencies(appDir) {
   const deps = new Set();
   if (allDeps['@tuturuuu/ui']) deps.add('packages/ui');
   if (allDeps['@tuturuuu/satellite']) deps.add('packages/satellite');
+  if (allDeps['@tuturuuu/mind-ui']) deps.add('packages/mind-ui');
+  if (allDeps['@tuturuuu/hive-ui']) deps.add('packages/hive-ui');
+
+  const scopedPackages = APP_SHARED_PACKAGE_SCOPES.get(appDir);
+  if (scopedPackages) {
+    return new Set([...deps].filter((dep) => scopedPackages.has(dep)));
+  }
+
   return deps;
 }
 

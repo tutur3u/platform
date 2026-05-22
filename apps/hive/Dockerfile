@@ -40,11 +40,13 @@ COPY packages/auth/package.json ./packages/auth/package.json
 COPY packages/email-service/package.json ./packages/email-service/package.json
 COPY packages/games/package.json ./packages/games/package.json
 COPY packages/google/package.json ./packages/google/package.json
+COPY packages/hive-ui/package.json ./packages/hive-ui/package.json
 COPY packages/hooks/package.json ./packages/hooks/package.json
 COPY packages/icons/package.json ./packages/icons/package.json
 COPY packages/internal-api/package.json ./packages/internal-api/package.json
 COPY packages/masonry/package.json ./packages/masonry/package.json
 COPY packages/microsoft/package.json ./packages/microsoft/package.json
+COPY packages/mind-ui/package.json ./packages/mind-ui/package.json
 COPY packages/offline/package.json ./packages/offline/package.json
 COPY packages/payment/package.json ./packages/payment/package.json
 COPY packages/realtime/package.json ./packages/realtime/package.json

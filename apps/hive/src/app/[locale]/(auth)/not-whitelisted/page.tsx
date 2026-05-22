@@ -1,7 +1,7 @@
 import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import { HiveAccessRequestCard } from '@tuturuuu/hive-ui/access';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AccessRequestCard } from './access-request-card';
 
 export default async function NotWhitelistedPage() {
   const appSession = getAppSessionClaimsFromRequest(
@@ -15,7 +15,7 @@ export default async function NotWhitelistedPage() {
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-dynamic-background p-6 text-dynamic-foreground">
-      <AccessRequestCard email={appSession.email ?? null} />
+      <HiveAccessRequestCard email={appSession.email ?? null} />
     </main>
   );
 }

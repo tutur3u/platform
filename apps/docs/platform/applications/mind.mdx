@@ -20,6 +20,19 @@ credit source, checks the caller's membership for workspace credits, preflights
 model availability and remaining credits, and deducts usage from that same
 billing workspace after a successful stream.
 
+## Dual-Host Parity
+
+Mind is available through both the standalone satellite host and the main web
+dashboard. The standalone route shape stays `/{wsId}` and
+`/{wsId}/boards/{boardId}`. Inside `apps/web`, the route shape is
+`/{wsId}/mind` and `/{wsId}/mind/boards/{boardId}`.
+
+Both hosts must render the same shared UI and use the same client logic from
+`@tuturuuu/mind-ui`. Keep `apps/mind` and the `apps/web` Mind routes as thin
+host wrappers for auth, workspace resolution, and route prefixing only. Future
+Mind feature work belongs in `packages/mind-ui` or the centralized Mind APIs so
+the standalone app and web-hosted app stay 1:1.
+
 ## API Ownership
 
 Protected Mind data stays behind `apps/web` APIs:

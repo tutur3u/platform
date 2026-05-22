@@ -56,7 +56,11 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  transpilePackages: ['@tuturuuu/internal-api', '@tuturuuu/realtime'],
+  transpilePackages: [
+    '@tuturuuu/hive-ui',
+    '@tuturuuu/internal-api',
+    '@tuturuuu/realtime',
+  ],
   async rewrites() {
     return {
       beforeFiles: [

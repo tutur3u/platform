@@ -538,6 +538,11 @@ When a new satellite app participates in centralized login, wire both sides in t
   Use `@tuturuuu/auth/app-session` server helpers and `@tuturuuu/internal-api`
   profile/default-workspace helpers instead; `bun check` runs the static guard
   across all registered app `src` directories.
+- App-session auth is read/update oriented for satellite apps. Destructive
+  workspace operations such as `DELETE /api/workspaces/[wsId]` require a full
+  Supabase session (cookie or bearer) and `manage_workspace_settings`; they do
+  not opt into `allowAppSessionAuth` because the app-session path uses an
+  admin-backed client that would bypass workspace delete RLS.
 
 If either piece is missing, centralized login can stall on the web login spinner or land on `/verify-token` with no token-verification endpoint to finish the handoff.
 

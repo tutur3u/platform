@@ -1,5 +1,5 @@
+import { MIND_HORIZONS } from '@tuturuuu/mind-ui/model';
 import { describe, expect, it } from 'vitest';
-import { MIND_HORIZONS } from '../components/mind/model';
 
 describe('Mind app constants', () => {
   it('keeps long-range horizons available for planning filters', () => {

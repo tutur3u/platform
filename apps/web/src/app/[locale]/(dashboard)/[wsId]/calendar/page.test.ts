@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   CalendarPageShell: vi.fn(() => null),
   createAdminClient: vi.fn(),
+  fetchUserWorkspaceCalendarGoogleTokenForClient: vi.fn(),
   getPermissions: vi.fn(),
   getWorkspace: vi.fn(),
   headers: vi.fn(),
@@ -24,6 +25,11 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 
 vi.mock('@tuturuuu/ui/calendar-app/calendar-page-shell', () => ({
   CalendarPageShell: mocks.CalendarPageShell,
+}));
+
+vi.mock('@tuturuuu/utils/calendar-auth-token', () => ({
+  fetchUserWorkspaceCalendarGoogleTokenForClient:
+    mocks.fetchUserWorkspaceCalendarGoogleTokenForClient,
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -60,6 +66,9 @@ describe('web Calendar page parity', () => {
     mocks.getPermissions.mockResolvedValue({
       withoutPermission: vi.fn(() => false),
     });
+    mocks.fetchUserWorkspaceCalendarGoogleTokenForClient.mockResolvedValue(
+      null
+    );
     mocks.createAdminClient.mockResolvedValue({
       from: vi.fn(() => ({
         select: vi.fn(() => ({

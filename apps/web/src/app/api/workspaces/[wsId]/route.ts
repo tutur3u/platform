@@ -155,8 +155,7 @@ export const PUT = withSessionAuth<{ wsId: string }>(
         { status: 500 }
       );
     }
-  },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  }
 );
 
 export const DELETE = withSessionAuth<{ wsId: string }>(

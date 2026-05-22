@@ -83,6 +83,8 @@ services:
       - platform-web-games-dist:/workspace/packages/games/dist
       - platform-web-google-node_modules:/workspace/packages/google/node_modules
       - platform-web-google-dist:/workspace/packages/google/dist
+      - platform-web-hive-ui-node_modules:/workspace/packages/hive-ui/node_modules
+      - platform-web-hive-ui-dist:/workspace/packages/hive-ui/dist
       - platform-web-hooks-node_modules:/workspace/packages/hooks/node_modules
       - platform-web-hooks-dist:/workspace/packages/hooks/dist
       - platform-web-icons-node_modules:/workspace/packages/icons/node_modules
@@ -93,6 +95,8 @@ services:
       - platform-web-masonry-dist:/workspace/packages/masonry/dist
       - platform-web-microsoft-node_modules:/workspace/packages/microsoft/node_modules
       - platform-web-microsoft-dist:/workspace/packages/microsoft/dist
+      - platform-web-mind-ui-node_modules:/workspace/packages/mind-ui/node_modules
+      - platform-web-mind-ui-dist:/workspace/packages/mind-ui/dist
       - platform-web-offline-node_modules:/workspace/packages/offline/node_modules
       - platform-web-offline-dist:/workspace/packages/offline/dist
       - platform-web-payment-node_modules:/workspace/packages/payment/node_modules
@@ -373,6 +377,8 @@ volumes:
   platform-web-games-dist:
   platform-web-google-node_modules:
   platform-web-google-dist:
+  platform-web-hive-ui-node_modules:
+  platform-web-hive-ui-dist:
   platform-web-hooks-node_modules:
   platform-web-hooks-dist:
   platform-web-icons-node_modules:
@@ -388,6 +394,8 @@ volumes:
   platform-web-masonry-dist:
   platform-web-microsoft-node_modules:
   platform-web-microsoft-dist:
+  platform-web-mind-ui-node_modules:
+  platform-web-mind-ui-dist:
   platform-web-next:
   platform-web-node_modules:
   platform-web-log-drain-postgres:

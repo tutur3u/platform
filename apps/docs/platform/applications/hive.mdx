@@ -17,6 +17,22 @@ redirects browser form submissions back to `/login`. Keep that route outside the
 generic API proxy guard path so logout does not wait on product API rate-limit
 checks.
 
+## Dual-Host Parity
+
+Hive is available through both the standalone satellite host and the main web
+dashboard. The standalone route shape stays `/` and `/not-whitelisted`. Inside
+`apps/web`, the route shape is `/{wsId}/hive` and
+`/{wsId}/hive/not-whitelisted`; the `wsId` segment is only the surrounding web
+dashboard context and must not filter Hive servers, snapshots, realtime
+membership, or world data.
+
+Both hosts must render the same shared Studio UI, engine, realtime client, data
+hooks, and access-request card from `@tuturuuu/hive-ui`. Keep `apps/hive` and
+the `apps/web` Hive routes as thin host wrappers for auth, access resolution,
+build metadata, and forwarded API context only. Future Hive feature work belongs
+in `packages/hive-ui`, `@tuturuuu/realtime/hive`, or the centralized Hive APIs
+so the standalone app and web-hosted app stay 1:1.
+
 ## Access Model
 
 - Production access requires a row in the Hive Postgres `hive_members` table
