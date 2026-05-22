@@ -16,6 +16,7 @@ import { flushSync } from 'react-dom';
 import type * as Y from 'yjs';
 import { migrateInlineImagesToBlock } from './content-migration';
 import { getEditorExtensions } from './extensions';
+import { handlePlainEnterFallback } from './keyboard';
 import { FixedToolbar, ToolBar } from './tool-bar';
 
 const hasContent = (node: JSONContent): boolean => {
@@ -306,6 +307,10 @@ export function RichTextEditor({
         // Let the parent component handle the save action
         if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
           event.preventDefault();
+          return true;
+        }
+
+        if (handlePlainEnterFallback(view, event)) {
           return true;
         }
 

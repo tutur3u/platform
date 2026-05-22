@@ -186,6 +186,75 @@ describe('SupabaseProvider', () => {
     }
   });
 
+  it('coalesces debounced ProseMirror paragraph updates so peers receive new lines', async () => {
+    vi.useFakeTimers();
+
+    const doc = new Y.Doc();
+    const peerDoc = new Y.Doc();
+    const channel = createRealtimeChannel();
+    const saveState = vi.fn().mockResolvedValue(undefined);
+    const loadState = vi.fn().mockResolvedValue(null);
+    const supabase = {
+      channel: vi.fn(() => channel),
+      removeChannel: vi.fn(),
+    } as any;
+
+    const provider = new SupabaseProvider(doc, supabase, {
+      channel: 'task-editor-debounced-paragraphs',
+      tableName: 'tasks',
+      columnName: 'description_yjs_state',
+      id: 'task-debounced-paragraphs',
+      loadState,
+      saveState,
+      saveDebounceMs: 1000,
+      broadcastDebounceMs: 200,
+      resyncInterval: false,
+    });
+
+    try {
+      channel.trigger('SUBSCRIBED');
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(provider.connected).toBe(true);
+
+      const sendsBefore = channel.send.mock.calls.length;
+      const fragment = doc.getXmlFragment('prosemirror');
+      const firstParagraph = new Y.XmlElement('paragraph');
+      const firstText = new Y.XmlText();
+      const secondParagraph = new Y.XmlElement('paragraph');
+      const secondText = new Y.XmlText();
+
+      firstParagraph.insert(0, [firstText]);
+      fragment.insert(0, [firstParagraph]);
+      firstText.insert(0, 'First line');
+      secondParagraph.insert(0, [secondText]);
+      fragment.insert(1, [secondParagraph]);
+      secondText.insert(0, 'Second line');
+
+      const pendingMessageSends = channel.send.mock.calls
+        .slice(sendsBefore)
+        .filter((call) => call?.[0]?.event === 'message');
+      expect(pendingMessageSends).toHaveLength(0);
+
+      await vi.advanceTimersByTimeAsync(200);
+
+      const messageSends = channel.send.mock.calls
+        .slice(sendsBefore)
+        .filter((call) => call?.[0]?.event === 'message');
+      expect(messageSends).toHaveLength(1);
+
+      const payload = messageSends[0]?.[0]?.payload as number[];
+      Y.applyUpdate(peerDoc, Uint8Array.from(payload));
+      expect(peerDoc.getXmlFragment('prosemirror').toString()).toBe(
+        '<paragraph>First line</paragraph><paragraph>Second line</paragraph>'
+      );
+    } finally {
+      provider.destroy();
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps the document unsynced when a custom save callback reports failure', async () => {
     const doc = new Y.Doc();
     const channel = createRealtimeChannel();

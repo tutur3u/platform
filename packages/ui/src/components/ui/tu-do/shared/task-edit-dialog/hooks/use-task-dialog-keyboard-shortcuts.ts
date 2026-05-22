@@ -284,11 +284,14 @@ export function useTaskDialogKeyboardShortcuts({
           return;
         }
 
-        if (event.key === 'Enter') {
+        if (
+          event.key === 'Enter' &&
+          filteredSlashCommands[slashHighlightIndex]
+        ) {
           event.preventDefault();
           event.stopPropagation();
           const command = filteredSlashCommands[slashHighlightIndex];
-          if (command) executeSlashCommand(command);
+          executeSlashCommand(command);
           return;
         }
       }
@@ -323,11 +326,14 @@ export function useTaskDialogKeyboardShortcuts({
           return;
         }
 
-        if (event.key === 'Enter') {
+        if (
+          event.key === 'Enter' &&
+          filteredMentionOptions[mentionHighlightIndex]
+        ) {
           event.preventDefault();
           event.stopPropagation();
           const option = filteredMentionOptions[mentionHighlightIndex];
-          if (option) insertMentionOption(option);
+          insertMentionOption(option);
           return;
         }
       }

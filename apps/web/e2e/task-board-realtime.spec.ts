@@ -208,7 +208,8 @@ test.describe('Task board realtime and task mutations', () => {
     const taskId = await createPersonalTask(request, list.id, taskName);
     const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
     const secondPage = await context.newPage();
-    const insertedText = `Inserted realtime text ${Date.now()}`;
+    const firstLine = `Inserted realtime line one ${Date.now()}`;
+    const secondLine = `Inserted realtime line two ${Date.now()}`;
 
     try {
       await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
@@ -236,16 +237,33 @@ test.describe('Task board realtime and task mutations', () => {
       });
 
       await firstEditor.click();
-      await page.keyboard.type(insertedText, { delay: 10 });
+      await page.keyboard.type(firstLine, { delay: 10 });
+      await page.keyboard.press('Enter');
+      await page.keyboard.type(secondLine, { delay: 10 });
 
-      await expect(secondEditor).toContainText(insertedText, {
+      await expect(firstEditor.locator('p')).toHaveCount(2, {
+        timeout: 30_000,
+      });
+      await expect(firstEditor.locator('p').nth(0)).toContainText(firstLine);
+      await expect(firstEditor.locator('p').nth(1)).toContainText(secondLine);
+
+      await expect(secondEditor.locator('p')).toHaveCount(2, {
+        timeout: 30_000,
+      });
+      await expect(secondEditor.locator('p').nth(0)).toContainText(firstLine, {
+        timeout: 30_000,
+      });
+      await expect(secondEditor.locator('p').nth(1)).toContainText(secondLine, {
         timeout: 30_000,
       });
 
       await page.keyboard.press('ControlOrMeta+A');
       await page.keyboard.press('Backspace');
 
-      await expect(secondEditor).not.toContainText(insertedText, {
+      await expect(secondEditor).not.toContainText(firstLine, {
+        timeout: 30_000,
+      });
+      await expect(secondEditor).not.toContainText(secondLine, {
         timeout: 30_000,
       });
     } finally {
