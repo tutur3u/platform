@@ -1,4 +1,10 @@
-import { type APIRequestContext, expect, test } from '@playwright/test';
+import {
+  type APIRequestContext,
+  expect,
+  type Locator,
+  type Page,
+  test,
+} from '@playwright/test';
 import { DEFAULT_LOCALE } from './helpers/constants';
 
 type TaskBoard = {
@@ -88,6 +94,53 @@ async function createPersonalTask(
   expect(body.task?.id, 'expected created task id').toBeTruthy();
 
   return body.task!.id!;
+}
+
+async function waitForTaskDescriptionEditor(
+  targetPage: Page,
+  taskName: string
+) {
+  await expect(targetPage.locator('[data-task-name-input]')).toHaveValue(
+    taskName,
+    { timeout: 30_000 }
+  );
+
+  const editor = targetPage.locator('.ProseMirror').first();
+  await expect(editor).toBeVisible({ timeout: 30_000 });
+  await expect(editor).toHaveAttribute('contenteditable', 'true', {
+    timeout: 30_000,
+  });
+  await expect(
+    targetPage.getByText('Syncing collaboration state...')
+  ).toBeHidden({
+    timeout: 30_000,
+  });
+
+  return editor;
+}
+
+async function typeTwoParagraphDescription(
+  editor: Locator,
+  firstLine: string,
+  secondLine: string
+) {
+  await editor.click();
+  await editor.pressSequentially(firstLine, { delay: 10 });
+  await expect(editor).toContainText(firstLine, { timeout: 10_000 });
+
+  await editor.press('Enter');
+  await expect(editor.locator('p')).toHaveCount(2, {
+    timeout: 30_000,
+  });
+  await expect(editor.locator('p').nth(0)).toContainText(firstLine);
+  await expect(editor.locator('p').nth(1)).toHaveText('');
+
+  await editor.pressSequentially(secondLine, { delay: 10 });
+  await expect(editor.locator('p')).toHaveCount(2, {
+    timeout: 30_000,
+  });
+  await expect(editor.locator('p').nth(0)).toContainText(firstLine);
+  await expect(editor.locator('p').nth(1)).toContainText(secondLine);
 }
 
 test.describe('Task board realtime and task mutations', () => {
@@ -213,44 +266,22 @@ test.describe('Task board realtime and task mutations', () => {
 
     try {
       await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
-      await expect(page.locator('[data-task-name-input]')).toHaveValue(
-        taskName,
-        { timeout: 30_000 }
-      );
-
-      const firstEditor = page.locator('.ProseMirror').first();
-      await expect(firstEditor).toBeVisible({ timeout: 30_000 });
-      await expect(firstEditor).toHaveAttribute('contenteditable', 'true', {
-        timeout: 30_000,
-      });
+      const firstEditor = await waitForTaskDescriptionEditor(page, taskName);
 
       await secondPage.goto(taskPath, { waitUntil: 'domcontentloaded' });
-      await expect(secondPage.locator('[data-task-name-input]')).toHaveValue(
-        taskName,
-        { timeout: 30_000 }
+      const secondEditor = await waitForTaskDescriptionEditor(
+        secondPage,
+        taskName
       );
 
-      const secondEditor = secondPage.locator('.ProseMirror').first();
-      await expect(secondEditor).toBeVisible({ timeout: 30_000 });
-      await expect(secondEditor).toHaveAttribute('contenteditable', 'true', {
-        timeout: 30_000,
-      });
+      // Opening the second client can briefly re-sync Yjs on the first editor.
+      await expect(page.getByText('Syncing collaboration state...')).toBeHidden(
+        {
+          timeout: 30_000,
+        }
+      );
 
-      await firstEditor.click();
-      await page.keyboard.type(firstLine, { delay: 10 });
-      await page.keyboard.press('Enter');
-      await expect(firstEditor.locator('p')).toHaveCount(2, {
-        timeout: 30_000,
-      });
-      await expect(firstEditor.locator('p').nth(0)).toContainText(firstLine);
-      await expect(firstEditor.locator('p').nth(1)).toHaveText('');
-      await page.keyboard.type(secondLine, { delay: 10 });
-
-      await expect(firstEditor.locator('p')).toHaveCount(2, {
-        timeout: 30_000,
-      });
-      await expect(firstEditor.locator('p').nth(0)).toContainText(firstLine);
-      await expect(firstEditor.locator('p').nth(1)).toContainText(secondLine);
+      await typeTwoParagraphDescription(firstEditor, firstLine, secondLine);
 
       await expect(secondEditor.locator('p')).toHaveCount(2, {
         timeout: 30_000,
@@ -262,8 +293,9 @@ test.describe('Task board realtime and task mutations', () => {
         timeout: 30_000,
       });
 
-      await page.keyboard.press('ControlOrMeta+A');
-      await page.keyboard.press('Backspace');
+      await firstEditor.click();
+      await firstEditor.press('ControlOrMeta+A');
+      await firstEditor.press('Backspace');
 
       await expect(secondEditor).not.toContainText(firstLine, {
         timeout: 30_000,
