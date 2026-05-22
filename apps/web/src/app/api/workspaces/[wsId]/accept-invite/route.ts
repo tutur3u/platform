@@ -24,6 +24,15 @@ const guestJoinReasonToErrorCodeMap: Record<string, string> = {
     'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
 };
 
+function getSupabaseErrorMessage(
+  error: { message?: unknown } | null | undefined,
+  fallback: string
+) {
+  return typeof error?.message === 'string' && error.message.length > 0
+    ? error.message
+    : fallback;
+}
+
 function normalizeGuestJoinErrorCode(
   reason: string | null | undefined
 ): string {
@@ -41,16 +50,20 @@ function normalizeGuestJoinErrorCode(
 export const POST = withSessionAuth<{ wsId: string }>(
   async (_request, { supabase, user }, { wsId: rawWsId }) => {
     let wsId: string;
-    try {
-      wsId = await normalizeWorkspaceId(rawWsId, supabase);
-    } catch {
-      return NextResponse.json(
-        {
-          error: 'Workspace not found',
-          errorCode: 'WORKSPACE_NOT_FOUND',
-        },
-        { status: 404 }
-      );
+    if (validateUUID(rawWsId)) {
+      wsId = rawWsId;
+    } else {
+      try {
+        wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      } catch {
+        return NextResponse.json(
+          {
+            error: 'Workspace not found',
+            errorCode: 'WORKSPACE_NOT_FOUND',
+          },
+          { status: 404 }
+        );
+      }
     }
 
     if (!validateUUID(wsId)) {
@@ -91,20 +104,55 @@ export const POST = withSessionAuth<{ wsId: string }>(
     );
 
     // Validate that user has a pending direct or email invite; read type for membership row.
-    const { data: pendingInvite } = await supabase
+    // This route already authenticated the actor and constrains every lookup to
+    // the current user's id/email, so use the admin path to avoid browser RLS or
+    // app-session differences making valid invites look missing.
+    const { data: pendingInvite, error: pendingInviteError } = await sbAdmin
       .from('workspace_invites')
       .select('ws_id, type')
       .eq('ws_id', wsId)
       .eq('user_id', user.id)
       .maybeSingle();
 
-    const { data: pendingEmailInviteRows } = candidateEmails.length
-      ? await supabase
-          .from('workspace_email_invites')
-          .select('ws_id, type, email')
-          .eq('ws_id', wsId)
-          .in('email', candidateEmails)
-      : { data: null };
+    if (pendingInviteError) {
+      serverLogger.error('Failed to read pending workspace invite:', {
+        error: pendingInviteError,
+        userId: user.id,
+        wsId,
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to read pending invite',
+          errorCode: 'PENDING_INVITE_LOOKUP_FAILED',
+        },
+        { status: 500 }
+      );
+    }
+
+    const { data: pendingEmailInviteRows, error: pendingEmailInviteError } =
+      candidateEmails.length
+        ? await sbAdmin
+            .from('workspace_email_invites')
+            .select('ws_id, type, email')
+            .eq('ws_id', wsId)
+            .in('email', candidateEmails)
+        : { data: null, error: null };
+
+    if (pendingEmailInviteError) {
+      serverLogger.error('Failed to read pending workspace email invite:', {
+        candidateEmails,
+        error: pendingEmailInviteError,
+        userId: user.id,
+        wsId,
+      });
+      return NextResponse.json(
+        {
+          error: 'Failed to read pending invite',
+          errorCode: 'PENDING_INVITE_LOOKUP_FAILED',
+        },
+        { status: 500 }
+      );
+    }
 
     const pendingEmailInvite = Array.isArray(pendingEmailInviteRows)
       ? (pendingEmailInviteRows.find(
@@ -308,7 +356,13 @@ export const POST = withSessionAuth<{ wsId: string }>(
       }
 
       serverLogger.error('Error accepting invite:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(
+        {
+          error: getSupabaseErrorMessage(error, 'Failed to accept invite'),
+          errorCode: 'ACCEPT_INVITE_FAILED',
+        },
+        { status: 500 }
+      );
     }
 
     // Delete the invite after accepting

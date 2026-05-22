@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => {
 
   const adminWorkspaceSingle = vi.fn();
   const adminPrivateEmailMaybeSingle = vi.fn();
+  const adminInviteMaybeSingle = vi.fn();
+  const adminEmailInviteIn = vi.fn();
   const adminMembershipInsert = vi.fn();
   const adminLinkedUsersUpsert = vi.fn();
   const adminInviteDeleteEq = vi.fn();
@@ -84,6 +86,13 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'workspace_invites') {
         return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                maybeSingle: adminInviteMaybeSingle,
+              })),
+            })),
+          })),
           delete: vi.fn(() => ({
             eq: adminInviteDeleteEq,
           })),
@@ -92,6 +101,11 @@ const mocks = vi.hoisted(() => {
 
       if (table === 'workspace_email_invites') {
         return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              in: adminEmailInviteIn,
+            })),
+          })),
           delete: vi.fn(() => ({
             eq: vi.fn(() => ({
               in: adminEmailInviteDeleteIn,
@@ -106,7 +120,9 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminEmailInviteDeleteIn,
+    adminEmailInviteIn,
     adminInviteDeleteEq,
+    adminInviteMaybeSingle,
     adminLinkedUsersUpsert,
     adminMembershipInsert,
     adminPrivateEmailMaybeSingle,
@@ -181,6 +197,16 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
     });
 
     mocks.sessionEmailInviteIn.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+
+    mocks.adminInviteMaybeSingle.mockResolvedValue({
+      data: null,
+      error: null,
+    });
+
+    mocks.adminEmailInviteIn.mockResolvedValue({
       data: [],
       error: null,
     });
@@ -339,5 +365,79 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       errorCode: 'WORKSPACE_USER_LINKED_TO_OTHER_PLATFORM_USER',
     });
     expect(mocks.adminMembershipInsert).not.toHaveBeenCalled();
+  });
+
+  it('accepts pending email invites through the server-owned lookup path', async () => {
+    const { resolveGuestSelfJoinCandidate } = await import(
+      '@tuturuuu/utils/workspace-helper'
+    );
+    mocks.sessionEmailInviteIn.mockResolvedValueOnce({
+      data: null,
+      error: { message: 'permission denied for table workspace_email_invites' },
+    });
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'private@example.com',
+          type: 'GUEST',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: NORMALIZED_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
+    expect(mocks.sessionEmailInviteIn).not.toHaveBeenCalled();
+    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ws_id: NORMALIZED_WS_ID,
+        user_id: 'user-1',
+        type: 'GUEST',
+      })
+    );
+    expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
+      'auth@example.com',
+      'private@example.com',
+    ]);
+  });
+
+  it('returns a stable error payload when member insertion fails without a message', async () => {
+    mocks.adminEmailInviteIn.mockResolvedValueOnce({
+      data: [
+        {
+          email: 'auth@example.com',
+          type: 'MEMBER',
+          ws_id: NORMALIZED_WS_ID,
+        },
+      ],
+      error: null,
+    });
+    mocks.adminMembershipInsert.mockResolvedValueOnce({
+      error: {},
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: 'ws-1' }),
+    });
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toMatchObject({
+      error: 'Failed to accept invite',
+      errorCode: 'ACCEPT_INVITE_FAILED',
+    });
   });
 });

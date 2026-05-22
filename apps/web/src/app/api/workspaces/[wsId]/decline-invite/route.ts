@@ -1,37 +1,75 @@
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { validate as validateUUID } from 'uuid';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/app/api/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const POST = withSessionAuth<{ wsId: string }>(
-  async (_request, { supabase, user }, { wsId }) => {
-    const { error: workspaceInvitesError } = await supabase
+  async (_request, { supabase, user }, { wsId: rawWsId }) => {
+    let wsId: string;
+    if (validateUUID(rawWsId)) {
+      wsId = rawWsId;
+    } else {
+      try {
+        wsId = await normalizeWorkspaceId(rawWsId, supabase);
+      } catch {
+        return NextResponse.json(
+          {
+            error: 'Workspace not found',
+            errorCode: 'WORKSPACE_NOT_FOUND',
+          },
+          { status: 404 }
+        );
+      }
+    }
+
+    if (!validateUUID(wsId)) {
+      return NextResponse.json(
+        {
+          error: 'Workspace not found',
+          errorCode: 'WORKSPACE_NOT_FOUND',
+        },
+        { status: 404 }
+      );
+    }
+
+    const sbAdmin = await createAdminClient();
+    const authEmail = user.email?.trim().toLowerCase() || null;
+    const { data: privateDetails, error: privateDetailsError } = await sbAdmin
+      .from('user_private_details')
+      .select('email')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (privateDetailsError) {
+      serverLogger.error('Failed to read invite recipient private email:', {
+        error: privateDetailsError,
+        userId: user.id,
+        wsId,
+      });
+    }
+
+    const privateEmail = privateDetails?.email?.trim().toLowerCase() || null;
+    const candidateEmails = [...new Set([authEmail, privateEmail])].filter(
+      (email): email is string => typeof email === 'string' && email.length > 0
+    );
+
+    const { error: workspaceInvitesError } = await sbAdmin
       .from('workspace_invites')
       .delete()
       .eq('ws_id', wsId)
       .eq('user_id', user.id);
 
-    let userEmail = user.email;
-
-    if (!userEmail) {
-      const { data: userData } = await supabase
-        .from('users')
-        .select('email:user_private_details(email)')
-        .eq('id', user.id)
-        .single();
-
-      userEmail = (userData?.email as { email?: string }[] | undefined)?.[0]
-        ?.email;
-    }
-
     let workspaceEmailInvitesError = null;
 
-    if (userEmail) {
-      const { error } = await supabase
+    if (candidateEmails.length) {
+      const { error } = await sbAdmin
         .from('workspace_email_invites')
         .delete()
         .eq('ws_id', wsId)
-        .eq('email', userEmail);
+        .in('email', candidateEmails);
       workspaceEmailInvitesError = error;
     }
 
@@ -44,7 +82,8 @@ export const POST = withSessionAuth<{ wsId: string }>(
         {
           error:
             workspaceInvitesError?.message ||
-            workspaceEmailInvitesError?.message,
+            workspaceEmailInvitesError?.message ||
+            'Failed to decline invite',
           errorCode: 'DECLINE_INVITE_FAILED',
         },
         { status: 500 }
