@@ -226,5 +226,6 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
     }
 
     return NextResponse.json({ message: 'success' });
-  }
+  },
+  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
 );
