@@ -5314,7 +5314,9 @@ async function runDeployWatchLoop(
       ? getGitFailureBackoffMs(consecutiveGitFailures)
       : intervalMs;
     const queuePollSleepMs =
-      Number.isFinite(projectPollIntervalMs) && projectPollIntervalMs > 0
+      !isGitFailure &&
+      Number.isFinite(projectPollIntervalMs) &&
+      projectPollIntervalMs > 0
         ? projectPollIntervalMs
         : baseSleepMs;
     const sleepMs = Math.min(baseSleepMs, queuePollSleepMs);

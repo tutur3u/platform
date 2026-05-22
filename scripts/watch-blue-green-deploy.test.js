@@ -4550,53 +4550,60 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
 });
 
 test('runDeployWatchLoop backs off for git failures instead of exiting immediately', async () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-git-backoff-'));
+  const paths = getWatchPaths(tempDir);
   const sleepCalls = [];
   const iterationResults = [];
   const sentinel = new Error('stop-after-first-retry');
 
-  await assert.rejects(
-    () =>
-      runDeployWatchLoop(
-        {
-          branch: 'main',
-          remote: 'origin',
-          upstreamBranch: 'main',
-          upstreamRef: 'origin/main',
-        },
-        {
-          log: { error() {}, info() {}, warn() {} },
-          onIterationResult: (value) => {
-            iterationResults.push(value);
+  try {
+    await assert.rejects(
+      () =>
+        runDeployWatchLoop(
+          {
+            branch: 'main',
+            remote: 'origin',
+            upstreamBranch: 'main',
+            upstreamRef: 'origin/main',
           },
-          onIterationStart() {},
-          runCommand: createRunCommandMock(
-            new Map([
-              ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
-              ['git status --porcelain', createResult('')],
-              [
-                'git fetch origin main',
-                createResult('', {
-                  code: 1,
-                  stderr: 'fatal: unable to access origin/main',
-                }),
-              ],
-              [
-                'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
-                createResult(
-                  'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
-                ),
-              ],
-              [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
-            ])
-          ),
-          sleepImpl: async (ms) => {
-            sleepCalls.push(ms);
-            throw sentinel;
-          },
-        }
-      ),
-    sentinel
-  );
+          {
+            log: { error() {}, info() {}, warn() {} },
+            onIterationResult: (value) => {
+              iterationResults.push(value);
+            },
+            onIterationStart() {},
+            paths,
+            runCommand: createRunCommandMock(
+              new Map([
+                ['git rev-parse --abbrev-ref HEAD', createResult('main\n')],
+                ['git status --porcelain', createResult('')],
+                [
+                  'git fetch origin main',
+                  createResult('', {
+                    code: 1,
+                    stderr: 'fatal: unable to access origin/main',
+                  }),
+                ],
+                [
+                  'git log -1 --format=%H%n%h%n%s%n%cI HEAD',
+                  createResult(
+                    'aaa111111111111111111\naaa111\nKeep branch current\n2026-04-18T10:58:00.000Z\n'
+                  ),
+                ],
+                [prodComposePsKey(BLUE_GREEN_PROXY_SERVICE), createResult('')],
+              ])
+            ),
+            sleepImpl: async (ms) => {
+              sleepCalls.push(ms);
+              throw sentinel;
+            },
+          }
+        ),
+      sentinel
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 
   assert.deepEqual(sleepCalls, [DEFAULT_GIT_FAILURE_BACKOFF_MS]);
   assert.equal(iterationResults.length, 1);
@@ -4784,26 +4791,34 @@ test('runPendingDeployAfterRestart refreshes the live proxy before running blue/
 });
 
 test('runDeployWatchIteration stops when the locked branch changes', async () => {
-  await assert.rejects(
-    () =>
-      runDeployWatchIteration(
-        {
-          branch: 'main',
-          remote: 'origin',
-          upstreamBranch: 'main',
-          upstreamRef: 'origin/main',
-        },
-        {
-          log: { error() {}, info() {}, warn() {} },
-          runCommand: createRunCommandMock(
-            new Map([
-              ['git rev-parse --abbrev-ref HEAD', createResult('release\n')],
-            ])
-          ),
-        }
-      ),
-    /Current branch changed from main to release/
-  );
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-branch-lock-'));
+  const paths = getWatchPaths(tempDir);
+
+  try {
+    await assert.rejects(
+      () =>
+        runDeployWatchIteration(
+          {
+            branch: 'main',
+            remote: 'origin',
+            upstreamBranch: 'main',
+            upstreamRef: 'origin/main',
+          },
+          {
+            log: { error() {}, info() {}, warn() {} },
+            paths,
+            runCommand: createRunCommandMock(
+              new Map([
+                ['git rev-parse --abbrev-ref HEAD', createResult('release\n')],
+              ])
+            ),
+          }
+        ),
+      /Current branch changed from main to release/
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('runDeployWatchLoop honors once mode without sleeping', async () => {
