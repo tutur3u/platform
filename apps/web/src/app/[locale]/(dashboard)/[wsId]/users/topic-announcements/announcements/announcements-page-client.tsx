@@ -19,6 +19,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
     schedulingTimezone,
     templates,
     workspaceUsers,
+    wsId,
   } = useTopicAnnouncements();
 
   return (
@@ -59,6 +60,7 @@ export function TopicAnnouncementsAnnouncementsPageClient() {
         templates={templates}
         totalPages={filters.totalPages}
         workspaceUsers={workspaceUsers}
+        wsId={wsId}
       />
     </div>
   );

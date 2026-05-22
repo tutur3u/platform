@@ -34,6 +34,7 @@ function createAnnouncement(
   overrides: Partial<TopicAnnouncementRecord> = {}
 ): TopicAnnouncementRecord {
   return {
+    attachments: [],
     batch_id: null,
     body: '',
     class_label: 'HUONG-EGET1',
@@ -48,6 +49,7 @@ function createAnnouncement(
     place: 'CENTER 1',
     room: '6',
     scheduled_send_at: null,
+    sent_email_audit_id: null,
     sent_at: null,
     session_date: null,
     source_type: 'manual',
@@ -73,6 +75,8 @@ function renderTable(
     isSending: false,
     onCancelSchedule: vi.fn(),
     onDelete: vi.fn(),
+    onFork: vi.fn(),
+    onPreview: vi.fn(),
     onSchedule: vi.fn(),
     onSend: vi.fn(),
     onTimezoneRequired: vi.fn(),
@@ -135,5 +139,37 @@ describe('AnnouncementTable', () => {
     );
 
     expect(screen.queryByText('remove_announcement')).not.toBeInTheDocument();
+  });
+
+  it('opens full email preview for sent announcements', async () => {
+    const sentAnnouncement = createAnnouncement({
+      id: 'sent-1',
+      sent_at: '2026-05-20T10:00:00.000Z',
+      status: 'sent',
+    });
+    const props = renderTable([sentAnnouncement]);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'announcement_actions' })
+    );
+    fireEvent.click(await screen.findByText('preview_announcement'));
+
+    expect(props.onPreview).toHaveBeenCalledWith(sentAnnouncement);
+  });
+
+  it('forks sent announcements as a reusable draft', async () => {
+    const sentAnnouncement = createAnnouncement({
+      id: 'sent-1',
+      sent_at: '2026-05-20T10:00:00.000Z',
+      status: 'sent',
+    });
+    const props = renderTable([sentAnnouncement]);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'announcement_actions' })
+    );
+    fireEvent.click(await screen.findByText('fork_announcement'));
+
+    expect(props.onFork).toHaveBeenCalledWith(sentAnnouncement);
   });
 });

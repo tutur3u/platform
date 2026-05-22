@@ -16082,6 +16082,112 @@ export type Database = {
           },
         ];
       };
+      topic_announcement_attachments: {
+        Row: {
+          announcement_id: string;
+          content_type: string;
+          created_at: string;
+          created_by: string | null;
+          file_name: string;
+          id: string;
+          metadata: Json;
+          size_bytes: number;
+          storage_path: string;
+          storage_provider: string;
+          ws_id: string;
+        };
+        Insert: {
+          announcement_id: string;
+          content_type: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_name: string;
+          id?: string;
+          metadata?: Json;
+          size_bytes: number;
+          storage_path: string;
+          storage_provider?: string;
+          ws_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          content_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_name?: string;
+          id?: string;
+          metadata?: Json;
+          size_bytes?: number;
+          storage_path?: string;
+          storage_provider?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_attachments_announcement_id_fkey';
+            columns: ['announcement_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
+            columns: ['created_by'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       topic_announcement_batches: {
         Row: {
           created_at: string;
@@ -36279,6 +36385,7 @@ export type Database = {
           id: string;
           in_progress_size: number;
           key: string;
+          metadata: Json | null;
           owner_id: string | null;
           upload_signature: string;
           user_metadata: Json | null;
@@ -36290,6 +36397,7 @@ export type Database = {
           id: string;
           in_progress_size?: number;
           key: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature: string;
           user_metadata?: Json | null;
@@ -36301,6 +36409,7 @@ export type Database = {
           id?: string;
           in_progress_size?: number;
           key?: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature?: string;
           user_metadata?: Json | null;
@@ -36419,6 +36528,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      allow_any_operation: {
+        Args: { expected_operations: string[] };
+        Returns: boolean;
+      };
+      allow_only_operation: {
+        Args: { expected_operation: string };
+        Returns: boolean;
+      };
       can_insert_object: {
         Args: { bucketid: string; metadata: Json; name: string; owner: string };
         Returns: undefined;

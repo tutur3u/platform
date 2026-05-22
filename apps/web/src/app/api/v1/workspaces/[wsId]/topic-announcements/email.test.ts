@@ -4,6 +4,9 @@ const emailServiceMocks = vi.hoisted(() => ({
   fromWorkspace: vi.fn(),
   sendWorkspaceEmail: vi.fn(),
 }));
+const storageMocks = vi.hoisted(() => ({
+  downloadWorkspaceStorageObjectForProvider: vi.fn(),
+}));
 
 vi.mock('@tuturuuu/email-service', () => ({
   EmailService: {
@@ -12,14 +15,36 @@ vi.mock('@tuturuuu/email-service', () => ({
   sendWorkspaceEmail: emailServiceMocks.sendWorkspaceEmail,
 }));
 
-import {
-  getContactVerificationStatuses,
-  sendTopicVerificationEmail,
-} from './email';
+vi.mock('@/lib/workspace-storage-provider', () => ({
+  downloadWorkspaceStorageObjectForProvider:
+    storageMocks.downloadWorkspaceStorageObjectForProvider,
+}));
+
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+  createClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: vi.fn(),
+  getSecret: vi.fn(),
+  getSecrets: vi.fn(),
+  normalizeWorkspaceId: vi.fn(),
+}));
+
 import {
   buildTopicAnnouncementVerificationUrl,
-  hashVerificationToken,
-} from './shared';
+  hashTopicAnnouncementVerificationToken,
+} from '@/lib/topic-announcements-verification';
+import {
+  getContactVerificationStatuses,
+  sendTopicAnnouncement,
+  sendTopicVerificationEmail,
+} from './email';
 
 function verificationQuery(data: unknown[]) {
   return {
@@ -37,6 +62,7 @@ describe('topic announcement email helpers', () => {
     vi.setSystemTime(new Date('2026-05-19T00:00:00.000Z'));
     emailServiceMocks.fromWorkspace.mockReset();
     emailServiceMocks.sendWorkspaceEmail.mockReset();
+    storageMocks.downloadWorkspaceStorageObjectForProvider.mockReset();
   });
 
   afterEach(() => {
@@ -45,10 +71,12 @@ describe('topic announcement email helpers', () => {
   });
 
   it('hashes verification tokens deterministically without leaking raw tokens', () => {
-    expect(hashVerificationToken('token-a')).toBe(
-      hashVerificationToken('token-a')
+    expect(hashTopicAnnouncementVerificationToken('token-a')).toBe(
+      hashTopicAnnouncementVerificationToken('token-a')
     );
-    expect(hashVerificationToken('token-a')).not.toBe('token-a');
+    expect(hashTopicAnnouncementVerificationToken('token-a')).not.toBe(
+      'token-a'
+    );
   });
 
   it('prefers linked confirmed accounts over pending internal verification', async () => {
@@ -208,6 +236,137 @@ describe('topic announcement email helpers', () => {
           ipAddress: '203.0.113.10',
           isInvite: true,
           wsId: 'workspace-1',
+        }),
+      })
+    );
+  });
+
+  it('downloads image and PDF attachments before sending an announcement email', async () => {
+    const announcement = {
+      body: 'Please review the attachment.',
+      class_label: 'EGET1',
+      day_label: 'Saturday',
+      id: 'announcement-1',
+      place: 'Center 1',
+      room: '6',
+      session_date: '2026-06-01',
+      start_time: '16:30:00',
+      status: 'draft',
+      title: 'Unit 3 speaking practice',
+      topic: 'Practice speaking about weekend plans.',
+    };
+    const contact = {
+      email: 'teacher@example.com',
+      id: 'contact-1',
+    };
+    const updateQuery = {
+      eq: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
+    };
+    const sbAdmin = {
+      from: vi.fn((table: string) => {
+        if (table === 'topic_announcements') {
+          return {
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn(async () => ({
+              data: announcement,
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+            update: updateQuery.update,
+          };
+        }
+        if (table === 'topic_announcement_recipients') {
+          return {
+            eq: vi.fn(async () => ({
+              data: [{ contact, contact_id: contact.id }],
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+          };
+        }
+        if (table === 'topic_announcement_contact_verifications') {
+          return verificationQuery([]);
+        }
+        if (table === 'topic_announcement_attachments') {
+          return {
+            eq: vi.fn().mockReturnThis(),
+            order: vi.fn(async () => ({
+              data: [
+                {
+                  content_type: 'application/pdf',
+                  file_name: 'lesson-plan.pdf',
+                  size_bytes: 4,
+                  storage_path: 'topic-announcements/a/lesson-plan.pdf',
+                  storage_provider: 'supabase',
+                },
+              ],
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+          };
+        }
+        if (table === 'workspaces') {
+          return {
+            eq: vi.fn().mockReturnThis(),
+            maybeSingle: vi.fn(async () => ({
+              data: { name: 'Workspace One' },
+              error: null,
+            })),
+            select: vi.fn().mockReturnThis(),
+          };
+        }
+        throw new Error(`Unexpected table ${table}`);
+      }),
+      rpc: vi.fn(async () => ({ data: true, error: null })),
+    };
+    storageMocks.downloadWorkspaceStorageObjectForProvider.mockResolvedValue({
+      buffer: new Uint8Array([37, 80, 68, 70]),
+      contentType: 'application/pdf',
+    });
+    emailServiceMocks.sendWorkspaceEmail.mockResolvedValue({
+      auditId: 'audit-1',
+      messageId: 'message-1',
+      success: true,
+    });
+
+    const result = await sendTopicAnnouncement({
+      actorUserId: 'user-1',
+      announcementId: announcement.id,
+      normalizedWsId: 'workspace-1',
+      request: new Request('https://tuturuuu.com/api'),
+      resend: false,
+      sbAdmin,
+    });
+
+    expect(result).toEqual({ auditId: 'audit-1', messageId: 'message-1' });
+    expect(
+      storageMocks.downloadWorkspaceStorageObjectForProvider
+    ).toHaveBeenCalledWith(
+      'workspace-1',
+      'supabase',
+      'topic-announcements/a/lesson-plan.pdf'
+    );
+    expect(emailServiceMocks.sendWorkspaceEmail).toHaveBeenCalledWith(
+      'workspace-1',
+      expect.objectContaining({
+        content: expect.objectContaining({
+          attachments: [
+            {
+              contentType: 'application/pdf',
+              data: new Uint8Array([37, 80, 68, 70]),
+              filename: 'lesson-plan.pdf',
+            },
+          ],
+        }),
+        metadata: expect.objectContaining({
+          attachments: [
+            {
+              contentType: 'application/pdf',
+              fileName: 'lesson-plan.pdf',
+              sizeBytes: 4,
+            },
+          ],
         }),
       })
     );

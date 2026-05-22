@@ -1,22 +1,46 @@
-import { createHash, randomBytes } from 'node:crypto';
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import { resolveInternalAppUrl } from '@tuturuuu/utils/app-url';
-import {
-  getPermissions,
-  getSecret,
-  getSecrets,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
-import { getContactVerificationStatuses } from './email';
+
+export {
+  buildTopicAnnouncementVerificationUrl,
+  generateTopicAnnouncementVerificationToken as generateVerificationToken,
+  getTopicAnnouncementVerificationOrigin,
+  hashTopicAnnouncementVerificationToken as hashVerificationToken,
+} from '@/lib/topic-announcements-verification';
+export type {
+  SerializedTopicAnnouncementAttachment,
+  SerializedTopicAnnouncementContact,
+  TopicAnnouncementAttachmentRow,
+  TopicAnnouncementContactRow,
+  TopicAnnouncementsAccessContext,
+  TopicAnnouncementsSupabaseClient,
+} from './server-helpers';
+export {
+  insertTopicAnnouncementAttachmentDrafts,
+  mapTopicAnnouncementRow,
+  resolveTopicAnnouncementsAccess,
+  serializeTopicAnnouncementAttachment,
+  serializeTopicAnnouncementContact,
+  serializeTopicAnnouncementContacts,
+} from './server-helpers';
+
+import type { TopicAnnouncementsSupabaseClient } from './server-helpers';
 
 const EMAIL_SCHEMA = z.string().trim().email().transform(normalizeEmail);
+export const TOPIC_ANNOUNCEMENT_MAX_ATTACHMENTS = 5;
+export const TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES = [
+  'application/pdf',
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+export const TOPIC_ANNOUNCEMENT_ATTACHMENT_STORAGE_PROVIDERS = [
+  'r2',
+  'supabase',
+] as const;
+
 const OPTIONAL_TEXT_SCHEMA = z
   .string()
   .trim()
@@ -57,32 +81,68 @@ export const TopicAnnouncementContactSchema = z.object({
   workspaceUserId: z.string().uuid().nullable().optional(),
 });
 
-export const TopicAnnouncementPayloadSchema = z.object({
-  body: z.string().trim().max(20_000).default(''),
-  classLabel: OPTIONAL_TEXT_SCHEMA,
-  contactIds: z.array(z.string().uuid()).min(1).max(50),
-  dayLabel: OPTIONAL_TEXT_SCHEMA,
-  endTime: z
+export const TopicAnnouncementAttachmentDraftSchema = z.object({
+  contentType: z.enum(TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES),
+  fileName: z.string().trim().min(1).max(255),
+  sizeBytes: z
+    .number()
+    .int()
+    .positive()
+    .max(TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES),
+  storagePath: z
     .string()
     .trim()
-    .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
-    .nullable()
-    .optional(),
-  groupId: z.string().uuid().nullable().optional(),
-  place: OPTIONAL_TEXT_SCHEMA,
-  room: OPTIONAL_TEXT_SCHEMA,
-  sessionDate: z.string().date().nullable().optional(),
-  sourceType: z.string().trim().min(1).max(80).default('manual'),
-  startTime: z
-    .string()
-    .trim()
-    .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
-    .nullable()
-    .optional(),
-  status: TopicAnnouncementStatusSchema.optional(),
-  title: z.string().trim().min(1).max(300),
-  topic: z.string().trim().min(1).max(20_000),
+    .min(1)
+    .max(1024)
+    .refine(
+      (value) => !value.startsWith('/') && !/(^|\/)\.\.(\/|$)/u.test(value),
+      'Invalid storage path'
+    ),
+  storageProvider: z.enum(TOPIC_ANNOUNCEMENT_ATTACHMENT_STORAGE_PROVIDERS),
 });
+
+export const TopicAnnouncementPayloadSchema = z
+  .object({
+    attachmentDrafts: z
+      .array(TopicAnnouncementAttachmentDraftSchema)
+      .max(TOPIC_ANNOUNCEMENT_MAX_ATTACHMENTS)
+      .default([]),
+    body: z.string().trim().max(20_000).default(''),
+    classLabel: OPTIONAL_TEXT_SCHEMA,
+    contactIds: z.array(z.string().uuid()).min(1).max(50),
+    dayLabel: OPTIONAL_TEXT_SCHEMA,
+    endTime: z
+      .string()
+      .trim()
+      .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+      .nullable()
+      .optional(),
+    groupId: z.string().uuid().nullable().optional(),
+    place: OPTIONAL_TEXT_SCHEMA,
+    room: OPTIONAL_TEXT_SCHEMA,
+    sessionDate: z.string().date().nullable().optional(),
+    sourceType: z.string().trim().min(1).max(80).default('manual'),
+    startTime: z
+      .string()
+      .trim()
+      .regex(/^\d{1,2}:\d{2}(?::\d{2})?$/u)
+      .nullable()
+      .optional(),
+    status: TopicAnnouncementStatusSchema.optional(),
+    title: z.string().trim().min(1).max(300),
+    topic: z.string().trim().min(1).max(20_000),
+  })
+  .refine(
+    (payload) =>
+      payload.attachmentDrafts.reduce(
+        (total, attachment) => total + attachment.sizeBytes,
+        0
+      ) <= TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES,
+    {
+      message: 'Attachments cannot exceed 10 MB total',
+      path: ['attachmentDrafts'],
+    }
+  );
 
 export const TopicAnnouncementImportSchema = z.object({
   rows: z
@@ -212,25 +272,8 @@ export async function validateTopicAnnouncementTemplateContactIds({
   return null;
 }
 
-export interface TopicAnnouncementsAccessContext {
-  actorUserId: string;
-  normalizedWsId: string;
-  sbAdmin: TopicAnnouncementsSupabaseClient;
-  supabase: TopicAnnouncementsSupabaseClient;
-}
-
-export type TopicAnnouncementsSupabaseClient = any;
-
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
-}
-
-export function hashVerificationToken(token: string) {
-  return createHash('sha256').update(token).digest('hex');
-}
-
-export function generateVerificationToken() {
-  return randomBytes(32).toString('base64url');
 }
 
 export async function validateTopicAnnouncementGroupId({
@@ -289,230 +332,4 @@ export async function validateTopicAnnouncementWorkspaceUserId({
   }
 
   return null;
-}
-
-export type TopicAnnouncementContactRow = {
-  archived: boolean;
-  created_at: string;
-  email: string;
-  id: string;
-  metadata: unknown;
-  name: string;
-  tags: string[];
-  workspace_user_id: string | null;
-};
-
-export type SerializedTopicAnnouncementContact = {
-  archived: boolean;
-  createdAt: string;
-  email: string;
-  id: string;
-  metadata: unknown;
-  name: string;
-  tags: string[];
-  verificationStatus:
-    | 'linked_confirmed_account'
-    | 'needs_verification'
-    | 'pending'
-    | 'verified';
-  workspaceUserId: string | null;
-};
-
-export function serializeTopicAnnouncementContact(
-  contact: TopicAnnouncementContactRow,
-  verificationStatus: SerializedTopicAnnouncementContact['verificationStatus']
-): SerializedTopicAnnouncementContact {
-  return {
-    archived: contact.archived,
-    createdAt: contact.created_at,
-    email: contact.email,
-    id: contact.id,
-    metadata: contact.metadata,
-    name: contact.name,
-    tags: contact.tags,
-    verificationStatus,
-    workspaceUserId: contact.workspace_user_id,
-  };
-}
-
-export async function serializeTopicAnnouncementContacts(
-  sbAdmin: TopicAnnouncementsSupabaseClient,
-  contacts: TopicAnnouncementContactRow[]
-): Promise<SerializedTopicAnnouncementContact[]> {
-  if (contacts.length === 0) return [];
-
-  const statuses = await getContactVerificationStatuses(
-    sbAdmin,
-    contacts.map((contact) => contact.id)
-  );
-
-  return contacts.map((contact) =>
-    serializeTopicAnnouncementContact(
-      contact,
-      statuses.get(contact.id) ?? 'needs_verification'
-    )
-  );
-}
-
-export function mapTopicAnnouncementRow(announcement: {
-  contacts?: SerializedTopicAnnouncementContact[];
-  group?: { id: string; name: string } | { id: string; name: string }[] | null;
-  [key: string]: unknown;
-}) {
-  const { contacts, group: rawGroup, ...rest } = announcement;
-  const group = Array.isArray(rawGroup) ? (rawGroup[0] ?? null) : rawGroup;
-
-  return {
-    ...rest,
-    ...(contacts ? { contacts } : {}),
-    group:
-      group && typeof group === 'object' && 'id' in group
-        ? { id: group.id, name: group.name }
-        : null,
-  };
-}
-
-const TOPIC_ANNOUNCEMENT_VERIFICATION_FALLBACK_ORIGIN = 'https://tuturuuu.com';
-
-function isLocalVerificationOrigin(value: string) {
-  try {
-    const { hostname } = new URL(value);
-    return (
-      hostname === 'localhost' ||
-      hostname.endsWith('.localhost') ||
-      hostname === '0.0.0.0' ||
-      hostname === '127.0.0.1' ||
-      hostname === '::1' ||
-      hostname === '[::1]'
-    );
-  } catch {
-    return true;
-  }
-}
-
-function resolveVerificationOriginCandidate(value?: string | null) {
-  if (!value?.trim()) return null;
-
-  const resolved = resolveInternalAppUrl({
-    appName: 'platform',
-    candidates: [value],
-    fallback: '',
-  });
-
-  return resolved || null;
-}
-
-export function getTopicAnnouncementVerificationOrigin() {
-  const explicitOrigin = resolveVerificationOriginCandidate(
-    process.env.TOPIC_ANNOUNCEMENT_VERIFICATION_ORIGIN
-  );
-
-  if (explicitOrigin) {
-    return explicitOrigin;
-  }
-
-  for (const candidate of [
-    process.env.NEXT_PUBLIC_APP_URL,
-    process.env.NEXT_PUBLIC_WEB_APP_URL,
-    process.env.WEB_APP_URL,
-  ]) {
-    const resolved = resolveVerificationOriginCandidate(candidate);
-
-    if (resolved && !isLocalVerificationOrigin(resolved)) {
-      return resolved;
-    }
-  }
-
-  return TOPIC_ANNOUNCEMENT_VERIFICATION_FALLBACK_ORIGIN;
-}
-
-export function buildTopicAnnouncementVerificationUrl(token: string) {
-  return `${getTopicAnnouncementVerificationOrigin()}/api/v1/topic-announcement-verifications/${encodeURIComponent(token)}`;
-}
-
-export async function resolveTopicAnnouncementsAccess(
-  request: Request,
-  wsId: string,
-  {
-    requireManage = false,
-    requireSend = false,
-  }: {
-    requireManage?: boolean;
-    requireSend?: boolean;
-  } = {}
-): Promise<
-  | { context: TopicAnnouncementsAccessContext; response?: never }
-  | { context?: never; response: NextResponse }
-> {
-  const supabase = (await createClient(
-    request
-  )) as TopicAnnouncementsSupabaseClient;
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ request, wsId: normalizedWsId });
-
-  if (!permissions) {
-    return {
-      response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
-    };
-  }
-
-  const secrets = await getSecrets({ forceAdmin: true, wsId: normalizedWsId });
-  const enabled =
-    getSecret(TOPIC_ANNOUNCEMENTS_SECRET, secrets ?? [])?.value === 'true';
-  if (!enabled) {
-    return {
-      response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
-    };
-  }
-
-  const sbAdmin =
-    (await createAdminClient()) as TopicAnnouncementsSupabaseClient;
-  const { data: workspace, error: workspaceError } = await sbAdmin
-    .from('workspaces')
-    .select('personal')
-    .eq('id', normalizedWsId)
-    .maybeSingle();
-  if (workspaceError || !workspace || workspace.personal) {
-    return {
-      response: NextResponse.json({ message: 'Not found' }, { status: 404 }),
-    };
-  }
-
-  if (requireManage && permissions.withoutPermission('manage_users')) {
-    return {
-      response: NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  if (
-    requireSend &&
-    (permissions.withoutPermission('manage_users') ||
-      permissions.withoutPermission('send_user_group_post_emails'))
-  ) {
-    return {
-      response: NextResponse.json(
-        { message: 'Insufficient permissions' },
-        { status: 403 }
-      ),
-    };
-  }
-
-  const { user } = await resolveAuthenticatedSessionUser(supabase);
-  if (!user) {
-    return {
-      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-
-  return {
-    context: {
-      actorUserId: user.id,
-      normalizedWsId,
-      sbAdmin,
-      supabase,
-    },
-  };
 }

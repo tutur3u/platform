@@ -1,8 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import { htmlEscape } from '../../workspaces/[wsId]/topic-announcements/email';
-import { hashVerificationToken } from '../../workspaces/[wsId]/topic-announcements/shared';
+import { htmlEscape } from '@/lib/topic-announcements-email';
+import { hashTopicAnnouncementVerificationToken } from '@/lib/topic-announcements-verification';
 
 interface Params {
   params: Promise<{ token: string }>;
@@ -49,7 +49,7 @@ export async function GET(_request: Request, { params }: Params) {
   }
 
   const sbAdmin = (await createAdminClient()) as any;
-  const tokenHash = hashVerificationToken(token);
+  const tokenHash = hashTopicAnnouncementVerificationToken(token);
   const { data, error } = await sbAdmin
     .from('topic_announcement_contact_verifications')
     .select('id,expires_at,status')

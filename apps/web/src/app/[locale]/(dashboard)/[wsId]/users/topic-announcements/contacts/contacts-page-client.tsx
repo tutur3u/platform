@@ -1,7 +1,5 @@
 'use client';
 
-import { Plus } from '@tuturuuu/icons';
-import { Button } from '@tuturuuu/ui/button';
 import { useTranslations } from 'next-intl';
 import { ContactsPanel } from '../topic-announcements-contacts';
 import { TopicAnnouncementsPageHeader } from '../topic-announcements-page-header';
@@ -17,12 +15,6 @@ export function TopicAnnouncementsContactsPageClient() {
       <TopicAnnouncementsPageHeader
         description={t('contacts_page_description')}
         title={t('nav_contacts')}
-        actions={
-          <Button className="gap-2" form="topic-contact-form" type="submit">
-            <Plus className="h-4 w-4" />
-            {t('add_contact')}
-          </Button>
-        }
       />
 
       <ContactsPanel

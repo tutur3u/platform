@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   emailAddressSchema,
   emailArraySchema,
+  emailAttachmentSchema,
   emailContentSchema,
   emailMetadataSchema,
   emailRecipientsSchema,
@@ -316,6 +317,60 @@ describe('Email Validation', () => {
         },
       });
       expect(result.success).toBe(true);
+    });
+  });
+
+  describe('emailAttachmentSchema', () => {
+    it('accepts email-safe images and PDFs', () => {
+      const result = emailAttachmentSchema.safeParse({
+        contentType: 'application/pdf',
+        data: new Uint8Array([1, 2, 3]),
+        filename: 'lesson-plan.pdf',
+      });
+
+      expect(result.success).toBe(true);
+    });
+
+    it('rejects unsupported attachment types', () => {
+      const result = emailAttachmentSchema.safeParse({
+        contentType: 'application/zip',
+        data: new Uint8Array([1, 2, 3]),
+        filename: 'archive.zip',
+      });
+
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('emailContentSchema attachments', () => {
+    it('rejects more than five attachments', () => {
+      const result = emailContentSchema.safeParse({
+        subject: 'Test Subject',
+        html: '<p>Hello</p>',
+        attachments: Array.from({ length: 6 }, (_, index) => ({
+          contentType: 'image/png',
+          data: new Uint8Array([index]),
+          filename: `image-${index}.png`,
+        })),
+      });
+
+      expect(result.success).toBe(false);
+    });
+
+    it('rejects attachments above the 10 MB total limit', () => {
+      const result = emailContentSchema.safeParse({
+        subject: 'Test Subject',
+        html: '<p>Hello</p>',
+        attachments: [
+          {
+            contentType: 'application/pdf',
+            data: new Uint8Array(10 * 1024 * 1024 + 1),
+            filename: 'large.pdf',
+          },
+        ],
+      });
+
+      expect(result.success).toBe(false);
     });
   });
 

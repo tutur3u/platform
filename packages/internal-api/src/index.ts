@@ -636,6 +636,7 @@ export {
   createTopicAnnouncementContact,
   createTopicAnnouncementTemplate,
   deleteTopicAnnouncement,
+  deleteTopicAnnouncementAttachment,
   deleteTopicAnnouncementContact,
   deleteTopicAnnouncementTemplate,
   importTopicAnnouncements,
@@ -646,6 +647,10 @@ export {
   scheduleTopicAnnouncement,
   sendTopicAnnouncement,
   sendTopicAnnouncementsBulk,
+  type TopicAnnouncementAttachment,
+  type TopicAnnouncementAttachmentContentType,
+  type TopicAnnouncementAttachmentDraft,
+  type TopicAnnouncementAttachmentStorageProvider,
   type TopicAnnouncementContact,
   type TopicAnnouncementContactPayload,
   type TopicAnnouncementImportPayload,
@@ -659,6 +664,7 @@ export {
   updateTopicAnnouncement,
   updateTopicAnnouncementContact,
   updateTopicAnnouncementTemplate,
+  uploadTopicAnnouncementAttachment,
 } from './topic-announcements';
 export {
   type CompleteTulearnAssignmentPayload,

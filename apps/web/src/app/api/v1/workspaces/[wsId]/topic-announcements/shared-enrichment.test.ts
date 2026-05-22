@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { serializeTopicAnnouncementContacts } from './shared';
 
+vi.mock('server-only', () => ({}));
+
 function verificationQuery(data: unknown[]) {
   return {
     in: vi.fn().mockReturnThis(),

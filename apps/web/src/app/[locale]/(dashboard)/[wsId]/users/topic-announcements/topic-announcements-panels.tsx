@@ -7,6 +7,7 @@ import type {
   TopicAnnouncementTemplateRecord,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
+import { uploadTopicAnnouncementAttachment } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
@@ -18,9 +19,11 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { AnnouncementForm } from './announcement-form';
 import { AnnouncementTable } from './announcement-table';
 import type { TemplateFormValues } from './template-form-dialog';
+import { TopicAnnouncementEmailPreviewDialog } from './topic-announcement-email-preview-dialog';
 
 const STATUS_LABEL_KEYS = {
   active: 'status_active',
@@ -70,6 +73,7 @@ interface Props {
   templates: TopicAnnouncementTemplateRecord[];
   totalPages: number;
   workspaceUsers: WorkspaceBasicUserRecord[];
+  wsId: string;
 }
 
 export function AnnouncementsPanel({
@@ -103,28 +107,44 @@ export function AnnouncementsPanel({
   templates,
   totalPages,
   workspaceUsers,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
+  const [previewTarget, setPreviewTarget] =
+    useState<TopicAnnouncementRecord | null>(null);
+  const [forkSeed, setForkSeed] = useState<{
+    announcement: TopicAnnouncementRecord;
+    seedId: number;
+  } | null>(null);
 
   return (
     <div className="space-y-4">
-      <AnnouncementForm
-        canSend={canSend}
-        contacts={contacts}
-        groups={groups}
-        isCreating={isCreating}
-        isSavingTemplate={isSavingTemplate}
-        isScheduling={isScheduling}
-        isSending={isSending}
-        onCreate={onCreate}
-        onCreateAndSchedule={onCreateAndSchedule}
-        onCreateAndSend={onCreateAndSend}
-        onSaveTemplate={onSaveTemplate}
-        onTimezoneRequired={onTimezoneRequired}
-        schedulingTimezone={schedulingTimezone}
-        templates={templates}
-        workspaceUsers={workspaceUsers}
-      />
+      <div id="topic-announcement-composer">
+        <AnnouncementForm
+          canSend={canSend}
+          contacts={contacts}
+          forkSeedId={forkSeed?.seedId ?? null}
+          forkSource={forkSeed?.announcement ?? null}
+          groups={groups}
+          isCreating={isCreating}
+          isSavingTemplate={isSavingTemplate}
+          isScheduling={isScheduling}
+          isSending={isSending}
+          onCreate={onCreate}
+          onCreateAndSchedule={onCreateAndSchedule}
+          onCreateAndSend={onCreateAndSend}
+          onSaveTemplate={onSaveTemplate}
+          onTimezoneRequired={onTimezoneRequired}
+          onUploadAttachment={(file) =>
+            uploadTopicAnnouncementAttachment(wsId, file).then(
+              (response) => response.data
+            )
+          }
+          schedulingTimezone={schedulingTimezone}
+          templates={templates}
+          workspaceUsers={workspaceUsers}
+        />
+      </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <Input
@@ -157,6 +177,13 @@ export function AnnouncementsPanel({
         firstRowNumber={(page - 1) * pageSize + 1}
         onCancelSchedule={onCancelSchedule}
         onDelete={onDelete}
+        onFork={(announcement) => {
+          setForkSeed({ announcement, seedId: Date.now() });
+          document
+            .getElementById('topic-announcement-composer')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }}
+        onPreview={setPreviewTarget}
         onSchedule={onSchedule}
         onSend={onSend}
         onTimezoneRequired={onTimezoneRequired}
@@ -185,6 +212,14 @@ export function AnnouncementsPanel({
           {t('next')}
         </Button>
       </div>
+
+      <TopicAnnouncementEmailPreviewDialog
+        announcement={previewTarget}
+        onOpenChange={(open) => {
+          if (!open) setPreviewTarget(null);
+        }}
+        open={Boolean(previewTarget)}
+      />
     </div>
   );
 }

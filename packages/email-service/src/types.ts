@@ -19,6 +19,26 @@ export interface EmailContent {
   html: string;
   text?: string;
   replyTo?: string[];
+  attachments?: EmailAttachment[];
+}
+
+export interface EmailAttachment {
+  filename: string;
+  contentType: EmailAttachmentContentType;
+  data: Uint8Array;
+}
+
+export type EmailAttachmentContentType =
+  | 'application/pdf'
+  | 'image/gif'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/webp';
+
+export interface EmailAttachmentAuditMetadata {
+  contentType: EmailAttachmentContentType;
+  fileName: string;
+  sizeBytes: number;
 }
 
 // =============================================================================
@@ -44,6 +64,8 @@ export interface EmailMetadata {
   priority?: 'high' | 'normal' | 'low';
   /** Whether this is an invite email (stricter rate limits apply) */
   isInvite?: boolean;
+  /** Non-binary attachment metadata persisted in email_audit.metadata */
+  attachments?: EmailAttachmentAuditMetadata[];
 }
 
 // =============================================================================

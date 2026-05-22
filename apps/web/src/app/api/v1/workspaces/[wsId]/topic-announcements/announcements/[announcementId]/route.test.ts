@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { DELETE } from './route';
 
+vi.mock('server-only', () => ({}));
+
 const mocks = vi.hoisted(() => ({
   resolveTopicAnnouncementsAccess: vi.fn(),
 }));
