@@ -4,14 +4,14 @@
     "@biomejs/biome": "^2.4.15",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260519.1",
-    "@vitest/coverage-v8": "^4.1.6",
+    "@typescript/native-preview": "^7.0.0-dev.20260521.1",
+    "@vitest/coverage-v8": "^4.1.7",
     "lucide-static": "^1.16.0",
     "portless": "^0.13.0",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3",
-    "vite": "^8.0.13",
-    "vitest": "^4.1.6"
+    "vite": "^8.0.14",
+    "vitest": "^4.1.7"
   },
   "engines": {
     "node": ">=22"

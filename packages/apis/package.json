@@ -14,7 +14,7 @@
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "ai": "^6.0.185",
+    "ai": "^6.0.190",
     "dayjs": "^1.11.20",
     "next": "^16.2.6",
     "react": "^19.2.6",
