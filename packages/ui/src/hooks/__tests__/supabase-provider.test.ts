@@ -128,6 +128,64 @@ describe('SupabaseProvider', () => {
     provider.destroy();
   });
 
+  it('coalesces debounced text insertion updates so peers receive additions', async () => {
+    vi.useFakeTimers();
+
+    const doc = new Y.Doc();
+    const peerDoc = new Y.Doc();
+    const channel = createRealtimeChannel();
+    const saveState = vi.fn().mockResolvedValue(undefined);
+    const loadState = vi.fn().mockResolvedValue(null);
+    const supabase = {
+      channel: vi.fn(() => channel),
+      removeChannel: vi.fn(),
+    } as any;
+
+    const provider = new SupabaseProvider(doc, supabase, {
+      channel: 'task-editor-debounced-insertions',
+      tableName: 'tasks',
+      columnName: 'description_yjs_state',
+      id: 'task-debounced-insertions',
+      loadState,
+      saveState,
+      saveDebounceMs: 1000,
+      broadcastDebounceMs: 200,
+      resyncInterval: false,
+    });
+
+    try {
+      channel.trigger('SUBSCRIBED');
+
+      await Promise.resolve();
+      await Promise.resolve();
+      expect(provider.connected).toBe(true);
+
+      const sendsBefore = channel.send.mock.calls.length;
+      const text = doc.getText('description');
+      text.insert(0, 'a');
+      text.insert(1, 'b');
+
+      const pendingMessageSends = channel.send.mock.calls
+        .slice(sendsBefore)
+        .filter((call) => call?.[0]?.event === 'message');
+      expect(pendingMessageSends).toHaveLength(0);
+
+      await vi.advanceTimersByTimeAsync(200);
+
+      const messageSends = channel.send.mock.calls
+        .slice(sendsBefore)
+        .filter((call) => call?.[0]?.event === 'message');
+      expect(messageSends).toHaveLength(1);
+
+      const payload = messageSends[0]?.[0]?.payload as number[];
+      Y.applyUpdate(peerDoc, Uint8Array.from(payload));
+      expect(peerDoc.getText('description').toString()).toBe('ab');
+    } finally {
+      provider.destroy();
+      vi.useRealTimers();
+    }
+  });
+
   it('keeps the document unsynced when a custom save callback reports failure', async () => {
     const doc = new Y.Doc();
     const channel = createRealtimeChannel();

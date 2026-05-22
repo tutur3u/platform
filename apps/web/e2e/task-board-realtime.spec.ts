@@ -71,6 +71,25 @@ async function getOrCreatePersonalBoardList(
   return { created: true, list: createBody.list };
 }
 
+async function createPersonalTask(
+  request: APIRequestContext,
+  listId: string,
+  name: string
+) {
+  const response = await request.post('/api/v1/workspaces/personal/tasks', {
+    data: {
+      listId,
+      name,
+    },
+  });
+
+  expect(response.status()).toBe(201);
+  const body = (await response.json()) as { task?: { id?: string } };
+  expect(body.task?.id, 'expected created task id').toBeTruthy();
+
+  return body.task!.id!;
+}
+
 test.describe('Task board realtime and task mutations', () => {
   test('created task appears in another open board tab without losing board state', async ({
     context,
@@ -162,6 +181,79 @@ test.describe('Task board realtime and task mutations', () => {
           failOnStatusCode: false,
         });
       }
+
+      if (createdList) {
+        await request.patch(
+          `/api/v1/workspaces/personal/task-boards/${board.id}/lists/${list.id}`,
+          {
+            data: { deleted: true },
+            failOnStatusCode: false,
+          }
+        );
+      }
+    }
+  });
+
+  test('task description insertions and deletions sync between open clients', async ({
+    context,
+    page,
+    request,
+  }) => {
+    const board = await getPersonalBoard(request);
+    const { created: createdList, list } = await getOrCreatePersonalBoardList(
+      request,
+      board.id
+    );
+    const taskName = `E2E realtime description ${Date.now()}`;
+    const taskId = await createPersonalTask(request, list.id, taskName);
+    const taskPath = `/${DEFAULT_LOCALE}/personal/tasks/${taskId}`;
+    const secondPage = await context.newPage();
+    const insertedText = `Inserted realtime text ${Date.now()}`;
+
+    try {
+      await page.goto(taskPath, { waitUntil: 'domcontentloaded' });
+      await expect(page.locator('[data-task-name-input]')).toHaveValue(
+        taskName,
+        { timeout: 30_000 }
+      );
+
+      const firstEditor = page.locator('.ProseMirror').first();
+      await expect(firstEditor).toBeVisible({ timeout: 30_000 });
+      await expect(firstEditor).toHaveAttribute('contenteditable', 'true', {
+        timeout: 30_000,
+      });
+
+      await secondPage.goto(taskPath, { waitUntil: 'domcontentloaded' });
+      await expect(secondPage.locator('[data-task-name-input]')).toHaveValue(
+        taskName,
+        { timeout: 30_000 }
+      );
+
+      const secondEditor = secondPage.locator('.ProseMirror').first();
+      await expect(secondEditor).toBeVisible({ timeout: 30_000 });
+      await expect(secondEditor).toHaveAttribute('contenteditable', 'true', {
+        timeout: 30_000,
+      });
+
+      await firstEditor.click();
+      await page.keyboard.type(insertedText, { delay: 10 });
+
+      await expect(secondEditor).toContainText(insertedText, {
+        timeout: 30_000,
+      });
+
+      await page.keyboard.press('ControlOrMeta+A');
+      await page.keyboard.press('Backspace');
+
+      await expect(secondEditor).not.toContainText(insertedText, {
+        timeout: 30_000,
+      });
+    } finally {
+      await secondPage.close();
+
+      await request.delete(`/api/v1/workspaces/personal/tasks/${taskId}`, {
+        failOnStatusCode: false,
+      });
 
       if (createdList) {
         await request.patch(

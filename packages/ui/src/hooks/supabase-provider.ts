@@ -44,6 +44,7 @@ export default class SupabaseProvider extends EventEmitter {
   private readonly saveDebounceMs: number = 1000; // Default debounce time
   private readonly broadcastDebounceMs: number = 0; // Default: immediate
   private broadcastDebounceTimeout: NodeJS.Timeout | undefined;
+  private pendingBroadcastUpdate: Uint8Array | undefined;
   public destroyed: boolean = false;
   private _dirty: boolean = false; // Set on local edits, cleared after resync
   private awarenessDebounceTimeout: NodeJS.Timeout | undefined;
@@ -90,12 +91,23 @@ export default class SupabaseProvider extends EventEmitter {
     );
 
     if (this.broadcastDebounceMs > 0) {
-      // Debounced broadcast for free tier — coalesce rapid edits
+      // Debounced broadcast for free tier — merge rapid incremental edits so
+      // peers do not miss insertion structs that later updates depend on.
+      this.pendingBroadcastUpdate = this.pendingBroadcastUpdate
+        ? Y.mergeUpdates([this.pendingBroadcastUpdate, update])
+        : update;
+
       if (this.broadcastDebounceTimeout) {
         clearTimeout(this.broadcastDebounceTimeout);
       }
       this.broadcastDebounceTimeout = setTimeout(() => {
-        this.emit('message', update);
+        const pendingUpdate = this.pendingBroadcastUpdate;
+        this.pendingBroadcastUpdate = undefined;
+        this.broadcastDebounceTimeout = undefined;
+
+        if (pendingUpdate && pendingUpdate.length > 0) {
+          this.emit('message', pendingUpdate);
+        }
       }, this.broadcastDebounceMs);
     } else {
       // Immediate broadcast for paid tier
@@ -128,6 +140,7 @@ export default class SupabaseProvider extends EventEmitter {
     if (this.broadcastDebounceTimeout) {
       clearTimeout(this.broadcastDebounceTimeout);
       this.broadcastDebounceTimeout = undefined;
+      this.pendingBroadcastUpdate = undefined;
 
       const update = Y.encodeStateAsUpdate(this.doc);
       if (update && update.length > 0) {
@@ -681,6 +694,7 @@ export default class SupabaseProvider extends EventEmitter {
     if (this.broadcastDebounceTimeout) {
       clearTimeout(this.broadcastDebounceTimeout);
     }
+    this.pendingBroadcastUpdate = undefined;
 
     // Save any pending changes before destroying
     this.flushSave();
