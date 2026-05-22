@@ -1,29 +1,18 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Debt Details',
-  description:
-    'View debt and loan details in the Finance area of your Tuturuuu workspace.',
-};
+import { DebtLoanDetailPage } from '@tuturuuu/ui/finance/debts';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
-    debtId: string;
     wsId: string;
+    debtId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceDebtDetailPage({
-  params,
-  searchParams,
-}: Props) {
-  const { debtId, wsId } = await params;
+export default async function WorkspaceDebtDetailPage({ params }: Props) {
+  const { wsId: id, debtId } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
 
-  return redirectToFinanceApp({
-    params: Promise.resolve({ wsId }),
-    path: `debts/${debtId}`,
-    searchParams,
-  });
+  return <DebtLoanDetailPage wsId={context.wsId} debtId={debtId} />;
 }

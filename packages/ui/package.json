@@ -162,6 +162,10 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
+    "./form": {
+      "types": "./src/components/ui/form.tsx",
+      "import": "./src/components/ui/form.tsx"
+    },
     "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
@@ -226,6 +230,10 @@
     "./finance/transactions/categories/hooks": {
       "types": "./src/components/ui/finance/transactions/categories/hooks.ts",
       "import": "./src/components/ui/finance/transactions/categories/hooks.ts"
+    },
+    "./finance/categories-tags-tabs": {
+      "types": "./src/components/ui/finance/categories-tags-tabs.tsx",
+      "import": "./src/components/ui/finance/categories-tags-tabs.tsx"
     },
     "./tu-do/boards/*": "./src/components/ui/tu-do/boards/*.tsx",
     "./tu-do/drafts/*": "./src/components/ui/tu-do/drafts/*.tsx",
@@ -353,6 +361,14 @@
     "./calendar-app/hooks": {
       "types": "./src/components/ui/calendar-app/hooks/index.ts",
       "import": "./src/components/ui/calendar-app/hooks/index.ts"
+    },
+    "./calendar-app/calendar-client-page": {
+      "types": "./src/components/ui/calendar-app/calendar-client-page.tsx",
+      "import": "./src/components/ui/calendar-app/calendar-client-page.tsx"
+    },
+    "./calendar-app/calendar-page-shell": {
+      "types": "./src/components/ui/calendar-app/calendar-page-shell.tsx",
+      "import": "./src/components/ui/calendar-app/calendar-page-shell.tsx"
     },
     "./calendar-app/hooks/*": "./src/components/ui/calendar-app/hooks/*.ts",
     "./calendar-app/components/*": "./src/components/ui/calendar-app/components/*.tsx",

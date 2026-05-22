@@ -1,36 +1,96 @@
-import { describe, expect, it, vi } from 'vitest';
+import { isValidElement } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  getCalendarAppOrigin: vi.fn(() => 'https://calendar.tuturuuu.com'),
+  CalendarPageShell: vi.fn(() => null),
+  createAdminClient: vi.fn(),
+  getPermissions: vi.fn(),
+  getWorkspace: vi.fn(),
+  headers: vi.fn(),
+  resolveAuthenticatedSessionUser: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`redirect:${url}`);
   }),
 }));
 
-vi.mock('@/lib/calendar-app-url', () => ({
-  getCalendarAppOrigin: mocks.getCalendarAppOrigin,
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: mocks.resolveAuthenticatedSessionUser,
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: mocks.createAdminClient,
+  createClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/ui/calendar-app/calendar-page-shell', () => ({
+  CalendarPageShell: mocks.CalendarPageShell,
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: mocks.getPermissions,
+  getWorkspace: mocks.getWorkspace,
+}));
+
+vi.mock('next/headers', () => ({
+  headers: mocks.headers,
 }));
 
 vi.mock('next/navigation', () => ({
+  notFound: vi.fn(() => {
+    throw new Error('not-found');
+  }),
   redirect: mocks.redirect,
 }));
 
-describe('web Calendar canonical redirect', () => {
-  it('redirects to the Calendar app origin with the workspace and query string', async () => {
+describe('web Calendar page parity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mocks.headers.mockResolvedValue(new Headers());
+    mocks.resolveAuthenticatedSessionUser.mockResolvedValue({
+      user: {
+        email: 'user@example.com',
+        id: 'user-1',
+      },
+    });
+    mocks.getWorkspace.mockResolvedValue({
+      id: 'workspace-1',
+      personal: false,
+    });
+    mocks.getPermissions.mockResolvedValue({
+      withoutPermission: vi.fn(() => false),
+    });
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(async () => ({ data: null })),
+            order: vi.fn(async () => ({ data: [] })),
+          })),
+        })),
+      })),
+    });
+  });
+
+  it('renders the shared Calendar shell inside apps/web instead of redirecting to the standalone host', async () => {
     const CalendarPage = (await import('./page')).default;
 
-    await expect(
-      CalendarPage({
-        params: Promise.resolve({ locale: 'en', wsId: 'personal' }),
-        searchParams: Promise.resolve({
-          filter: ['mine', 'team'],
-          view: 'week',
-        }),
-      })
-    ).rejects.toThrow(
-      'redirect:https://calendar.tuturuuu.com/personal?filter=mine&filter=team&view=week'
-    );
+    const result = await CalendarPage({
+      params: Promise.resolve({ locale: 'en', wsId: 'personal' }),
+      searchParams: Promise.resolve({}),
+    });
 
-    expect(mocks.getCalendarAppOrigin).toHaveBeenCalled();
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(isValidElement(result)).toBe(true);
+    expect(result.type).toBe(mocks.CalendarPageShell);
+    expect(result.props).toMatchObject({
+      enableSmartScheduling: true,
+      isPersonalWorkspace: false,
+      locale: 'en',
+      userId: 'user-1',
+      workspace: {
+        id: 'workspace-1',
+      },
+    });
   });
 });

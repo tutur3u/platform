@@ -1,34 +1,22 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { getCurrentUser } from '@tuturuuu/utils/user-helper';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ExtendedWorkspaceTask } from '../../time-tracker/types';
 import { CalendarSidebar } from './sidebar';
 
 interface TasksSidebarProps {
-  wsId: string;
+  resolvedWsId: string;
   locale: string;
+  userId: string;
 }
 
 export default async function TasksSidebar({
-  wsId,
+  resolvedWsId,
   locale,
+  userId,
 }: TasksSidebarProps) {
-  const user = await getCurrentUser();
-
-  if (!user?.id) {
-    return <div>Error: User not found</div>;
-  }
-
-  // Resolve workspace ID (handles "personal", "internal", etc.)
-  const workspace = await getWorkspace(wsId);
-  if (!workspace) notFound();
-  const resolvedWsId = workspace.id;
-
   // Use the same RPC as the tasks page to get accessible tasks
-  const supabase = await createClient();
+  const supabase = await createAdminClient({ noCookie: true });
   const { data: rpcTasks } = await supabase.rpc('get_user_accessible_tasks', {
-    p_user_id: user.id,
+    p_user_id: userId,
     p_ws_id: resolvedWsId,
     p_include_deleted: false,
     p_list_statuses: ['not_started', 'active'],
@@ -115,7 +103,7 @@ export default async function TasksSidebar({
         auto_schedule
       `
       )
-      .eq('user_id', user.id)
+      .eq('user_id', userId)
       .in('task_id', taskIds);
 
     (schedulingRows as any[] | null)?.forEach((r) => {
@@ -139,14 +127,14 @@ export default async function TasksSidebar({
   });
 
   // Personal workspace = workspace ID matches user ID (no need for auto-assignment)
-  const isPersonalWorkspace = resolvedWsId === user.id;
+  const isPersonalWorkspace = resolvedWsId === userId;
 
   return (
     <CalendarSidebar
       // IMPORTANT: child components (task scheduler, schedule endpoints) expect a UUID.
       // Always pass the resolved workspace UUID, not the route slug (e.g. "personal").
       wsId={resolvedWsId}
-      assigneeId={user.id}
+      assigneeId={userId}
       tasks={tasksWithScheduling}
       locale={locale}
       isPersonalWorkspace={isPersonalWorkspace}

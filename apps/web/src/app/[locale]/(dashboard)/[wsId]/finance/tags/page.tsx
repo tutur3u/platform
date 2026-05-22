@@ -1,25 +1,23 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Tags',
-  description: 'Manage Finance tags in your Tuturuuu workspace.',
-};
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
+import CategoriesTagsTabs from '../categories/categories-tags-tabs';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceFinanceTagsPage({
-  params,
-  searchParams,
-}: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'tags',
-    searchParams,
-  });
+export default async function WorkspaceTagsPage({ params }: Props) {
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+
+  return (
+    <CategoriesTagsTabs
+      wsId={context.wsId}
+      currency={context.currency}
+      defaultTab="tags"
+    />
+  );
 }

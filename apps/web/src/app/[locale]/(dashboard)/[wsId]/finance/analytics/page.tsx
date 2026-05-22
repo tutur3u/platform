@@ -1,25 +1,17 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Analytics',
-  description: 'Review Finance analytics in your Tuturuuu workspace.',
-};
+import AnalyticsPage from '@tuturuuu/ui/finance/analytics/analytics-page';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceAnalyticsPage({
-  params,
-  searchParams,
-}: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'analytics',
-    searchParams,
-  });
+export default async function WorkspaceAnalyticsPage({ params }: Props) {
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+
+  return <AnalyticsPage wsId={context.wsId} currency={context.currency} />;
 }

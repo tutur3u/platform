@@ -1,26 +1,33 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../../redirect';
-
-export const metadata: Metadata = {
-  title: 'Create Invoice',
-  description:
-    'Create an invoice in the Finance area of your Tuturuuu workspace.',
-};
+import NewInvoicePage from '@tuturuuu/ui/finance/invoices/new-invoice-page';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
+    locale: string;
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceNewInvoicePage({
-  params,
-  searchParams,
-}: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'invoices/new',
-    searchParams,
-  });
+export default async function WorkspaceNewInvoicePage({ params }: Props) {
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context || context.permissions.withoutPermission('create_invoices')) {
+    notFound();
+  }
+
+  return (
+    <Suspense>
+      <NewInvoicePage
+        wsId={context.wsId}
+        canChangeFinanceWallets={context.permissions.containsPermission(
+          'change_finance_wallets'
+        )}
+        canSetFinanceWalletsOnCreate={context.permissions.containsPermission(
+          'set_finance_wallets_on_create'
+        )}
+      />
+    </Suspense>
+  );
 }

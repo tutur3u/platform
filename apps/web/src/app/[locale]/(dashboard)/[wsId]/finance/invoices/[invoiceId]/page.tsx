@@ -1,29 +1,37 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../../redirect';
-
-export const metadata: Metadata = {
-  title: 'Invoice Details',
-  description:
-    'View invoice details in the Finance area of your Tuturuuu workspace.',
-};
+import InvoiceDetailsPage from '@tuturuuu/ui/finance/invoices/invoiceId/invoice-details-page';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
-    invoiceId: string;
     wsId: string;
+    invoiceId: string;
+    locale: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceInvoiceDetailsPage({
-  params,
-  searchParams,
-}: Props) {
-  const { invoiceId, wsId } = await params;
+export default async function WorkspaceInvoiceDetailsPage({ params }: Props) {
+  const { wsId: id, invoiceId, locale } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context || context.permissions.withoutPermission('view_invoices')) {
+    notFound();
+  }
 
-  return redirectToFinanceApp({
-    params: Promise.resolve({ wsId }),
-    path: `invoices/${invoiceId}`,
-    searchParams,
-  });
+  return (
+    <Suspense>
+      <InvoiceDetailsPage
+        wsId={context.wsId}
+        invoiceId={invoiceId}
+        locale={locale}
+        canUpdateInvoices={context.permissions.containsPermission(
+          'update_invoices'
+        )}
+        canChangeFinanceWallets={context.permissions.containsPermission(
+          'change_finance_wallets'
+        )}
+        currency={context.currency}
+      />
+    </Suspense>
+  );
 }

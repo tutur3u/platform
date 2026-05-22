@@ -1,25 +1,24 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Debts',
-  description: 'Manage Finance debts and loans in your Tuturuuu workspace.',
-};
+import { DebtsPage } from '@tuturuuu/ui/finance/debts';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<{
+    type?: string;
+  }>;
 }
 
 export default async function WorkspaceDebtsPage({
   params,
   searchParams,
 }: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'debts',
-    searchParams,
-  });
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  const sp = await searchParams;
+
+  return <DebtsPage wsId={context.wsId} searchParams={sp} />;
 }

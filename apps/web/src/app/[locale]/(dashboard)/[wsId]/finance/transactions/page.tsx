@@ -1,26 +1,25 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Transactions',
-  description:
-    'Manage Transactions in the Finance area of your Tuturuuu workspace.',
-};
+import TransactionsPage from '@tuturuuu/ui/finance/transactions/transactions-page';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceTransactionsPage({
-  params,
-  searchParams,
-}: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'transactions',
-    searchParams,
-  });
+export default async function WorkspaceTransactionsPage({ params }: Props) {
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+
+  return (
+    <TransactionsPage
+      wsId={context.wsId}
+      currency={context.currency}
+      permissions={context.permissions}
+      showTransactionTypeFilter
+      workspace={context.workspace}
+    />
+  );
 }

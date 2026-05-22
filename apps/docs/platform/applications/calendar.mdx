@@ -1,21 +1,24 @@
 ---
 title: 'Calendar'
-description: 'Canonical standalone Calendar app, auth handoff, and central API ownership.'
-updatedAt: '2026-05-21'
+description: 'Shared Calendar product surface across apps/web and apps/calendar.'
+updatedAt: '2026-05-23'
 ---
 
 ## Overview
 
-`apps/calendar` is the canonical Tuturuuu Calendar application. Production
-Calendar traffic should use `https://calendar.tuturuuu.com/{wsId}` instead of
-the dashboard route in `apps/web`.
+`apps/calendar` and the Calendar experience inside `apps/web` are paired
+Calendar hosts. They must stay 1:1 for product features, data behavior,
+mutations, permissions, and user-facing workflow updates.
 
-- `apps/calendar` owns the Calendar UI, workspace shell, local `/login`, and
+- Calendar UI and logic should live in shared packages, primarily
+  `@tuturuuu/ui/calendar-app/*`, with app route files acting as thin auth and
+  workspace-context wrappers.
+- `apps/calendar` owns its standalone workspace shell, local `/login`, and
   local `/verify-token` completion route.
-- `apps/web /{wsId}/calendar` is a compatibility route that redirects to the
-  Calendar app origin with the same workspace slug and query string.
-- Dashboard navigation in `apps/web` should link directly to the standalone
-  Calendar app.
+- `apps/web /{wsId}/calendar` renders the same shared Calendar product surface
+  inside the normal platform dashboard shell.
+- Dashboard navigation in `apps/web` should link to the local
+  `/{wsId}/calendar` route, not to the standalone Calendar origin.
 
 ## Auth Model
 
@@ -37,8 +40,9 @@ Supabase browser session.
 ## API Ownership
 
 Protected Calendar data APIs remain in `apps/web`. `apps/calendar` rewrites
-fallback `/api/*` requests to the central Web app, and Web routes consumed by
-Calendar must opt into app-session auth explicitly.
+fallback `/api/*` requests to the central Web app, and routes consumed by
+Calendar must opt into app-session auth explicitly when used by the standalone
+host.
 
 - Calendar-only routes use `targetApp: 'calendar'`.
 - Task and board helper routes that Calendar legitimately calls for quick task
@@ -48,6 +52,7 @@ Calendar must opt into app-session auth explicitly.
 - Keep workspace membership checks and Calendar/task permissions on the central
   route before admin-backed reads or writes.
 
-When adding new Calendar UI that needs protected data, prefer a central
-`apps/web` API route and a `packages/internal-api` helper instead of direct
-Supabase client reads from `apps/calendar`.
+When adding new Calendar UI that needs protected data, update the shared
+Calendar component or helper first, then wire both host wrappers in the same
+change. Prefer a central `apps/web` API route and a `packages/internal-api`
+helper instead of host-local product API forks or direct client Supabase reads.

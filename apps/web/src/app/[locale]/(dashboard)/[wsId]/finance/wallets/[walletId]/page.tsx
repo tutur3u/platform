@@ -1,29 +1,40 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../../redirect';
-
-export const metadata: Metadata = {
-  title: 'Wallet Details',
-  description:
-    'View wallet details in the Finance area of your Tuturuuu workspace.',
-};
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
+import WalletDetailsPage from '@tuturuuu/ui/finance/wallets/walletId/wallet-details-page';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
-    walletId: string;
     wsId: string;
+    walletId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<{
+    q: string;
+    page: string;
+    pageSize: string;
+  }>;
 }
 
 export default async function WorkspaceWalletDetailsPage({
   params,
   searchParams,
 }: Props) {
-  const { walletId, wsId } = await params;
+  const { wsId: id, walletId } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  const sp = await searchParams;
+  const internalApiOptions = withForwardedInternalApiAuth(await headers());
 
-  return redirectToFinanceApp({
-    params: Promise.resolve({ wsId }),
-    path: `wallets/${walletId}`,
-    searchParams,
-  });
+  return (
+    <WalletDetailsPage
+      wsId={context.wsId}
+      walletId={walletId}
+      searchParams={sp}
+      defaultCurrency={context.currency}
+      internalApiOptions={internalApiOptions}
+      permissions={context.permissions}
+      workspace={context.workspace}
+    />
+  );
 }

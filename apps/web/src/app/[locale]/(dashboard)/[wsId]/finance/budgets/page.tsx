@@ -1,25 +1,32 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Budgets',
-  description: 'Manage Finance budgets in your Tuturuuu workspace.',
-};
+import BudgetsPage from '@tuturuuu/ui/finance/budgets/budgets-page';
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<{
+    q?: string;
+    page?: string;
+    pageSize?: string;
+  }>;
 }
 
 export default async function WorkspaceBudgetsPage({
   params,
   searchParams,
 }: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'budgets',
-    searchParams,
-  });
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  const sp = await searchParams;
+
+  return (
+    <BudgetsPage
+      wsId={context.wsId}
+      currency={context.currency}
+      searchParams={sp}
+    />
+  );
 }

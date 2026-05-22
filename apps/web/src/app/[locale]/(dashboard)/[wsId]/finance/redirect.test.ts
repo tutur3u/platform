@@ -1,48 +1,84 @@
-import { describe, expect, it } from 'vitest';
-import { buildFinanceAppRedirectUrl } from './redirect';
+import { isValidElement } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('buildFinanceAppRedirectUrl', () => {
-  it('preserves query params when redirecting old Finance routes', () => {
-    expect(
-      buildFinanceAppRedirectUrl({
-        origin: 'https://finance.tuturuuu.com',
-        path: '/transactions',
-        searchParams: {
-          page: 2,
-          q: 'tuition invoice',
-          userIds: ['user-1', 'user-2'],
-        },
-        workspaceSlug: 'personal',
-      })
-    ).toBe(
-      'https://finance.tuturuuu.com/personal/transactions?page=2&q=tuition+invoice&userIds=user-1&userIds=user-2'
-    );
+const mocks = vi.hoisted(() => ({
+  FinancePage: vi.fn(() => null),
+  getWebFinanceWorkspaceContext: vi.fn(),
+  headers: vi.fn(),
+  withForwardedInternalApiAuth: vi.fn(() => ({ auth: 'forwarded' })),
+  redirect: vi.fn((url: string) => {
+    throw new Error(`redirect:${url}`);
+  }),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  withForwardedInternalApiAuth: mocks.withForwardedInternalApiAuth,
+}));
+
+vi.mock('@tuturuuu/ui/finance/finance-page', () => ({
+  default: mocks.FinancePage,
+}));
+
+vi.mock('@/lib/finance-workspace-context', () => ({
+  getWebFinanceWorkspaceContext: mocks.getWebFinanceWorkspaceContext,
+}));
+
+vi.mock('next/headers', () => ({
+  headers: mocks.headers,
+}));
+
+vi.mock('next/navigation', () => ({
+  notFound: vi.fn(() => {
+    throw new Error('not-found');
+  }),
+  redirect: mocks.redirect,
+}));
+
+describe('web Finance page parity', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    mocks.headers.mockResolvedValue(new Headers());
+    mocks.getWebFinanceWorkspaceContext.mockResolvedValue({
+      currency: 'USD',
+      permissions: {
+        containsPermission: vi.fn(() => true),
+        withoutPermission: vi.fn(() => false),
+      },
+      user: {
+        email: 'user@example.com',
+        id: 'user-1',
+      },
+      workspace: {
+        id: 'workspace-1',
+        personal: false,
+      },
+      wsId: 'workspace-1',
+    });
   });
 
-  it('maps legacy nested category routes to standalone category URLs', () => {
-    expect(
-      buildFinanceAppRedirectUrl({
-        origin: 'https://finance.tuturuuu.com',
-        path: 'categories',
-        searchParams: {
-          type: 'expense',
-        },
-        workspaceSlug: 'internal',
-      })
-    ).toBe('https://finance.tuturuuu.com/internal/categories?type=expense');
-  });
+  it('renders the shared Finance overview inside apps/web with the web finance route prefix', async () => {
+    const WorkspaceFinancePage = (await import('./(dashboard)/page')).default;
 
-  it('keeps canonical workspace slugs without adding the old finance segment', () => {
-    expect(
-      buildFinanceAppRedirectUrl({
-        origin: 'https://finance.tuturuuu.com',
-        path: '',
-        searchParams: {
-          filter: null,
-          view: 'summary',
-        },
-        workspaceSlug: 'workspace-123',
-      })
-    ).toBe('https://finance.tuturuuu.com/workspace-123?view=summary');
+    const result = await WorkspaceFinancePage({
+      params: Promise.resolve({ wsId: 'personal' }),
+      searchParams: Promise.resolve({
+        view: 'summary',
+      }),
+    });
+
+    expect(mocks.redirect).not.toHaveBeenCalled();
+    expect(isValidElement(result)).toBe(true);
+    expect(result.type).toBe(mocks.FinancePage);
+    expect(result.props).toMatchObject({
+      currency: 'USD',
+      financePrefix: '/finance',
+      internalApiOptions: { auth: 'forwarded' },
+      isPersonalWorkspace: false,
+      searchParams: {
+        view: 'summary',
+      },
+      wsId: 'workspace-1',
+    });
   });
 });

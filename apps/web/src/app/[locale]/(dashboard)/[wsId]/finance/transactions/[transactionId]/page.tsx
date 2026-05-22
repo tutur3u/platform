@@ -1,29 +1,36 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../../redirect';
-
-export const metadata: Metadata = {
-  title: 'Transaction Details',
-  description:
-    'View transaction details in the Finance area of your Tuturuuu workspace.',
-};
+import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
+import TransactionDetailsPage from '@tuturuuu/ui/finance/transactions/transactionId/transaction-details-page';
+import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
 
 interface Props {
   params: Promise<{
-    transactionId: string;
     wsId: string;
+    transactionId: string;
+    locale: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
 export default async function WorkspaceTransactionDetailsPage({
   params,
-  searchParams,
 }: Props) {
-  const { transactionId, wsId } = await params;
+  const { locale, transactionId, wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  const internalApiOptions = withForwardedInternalApiAuth(await headers());
 
-  return redirectToFinanceApp({
-    params: Promise.resolve({ wsId }),
-    path: `transactions/${transactionId}`,
-    searchParams,
-  });
+  return (
+    <Suspense>
+      <TransactionDetailsPage
+        params={Promise.resolve({
+          locale,
+          transactionId,
+          wsId: context.wsId,
+        })}
+        internalApiOptions={internalApiOptions}
+      />
+    </Suspense>
+  );
 }

@@ -1,13 +1,10 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
-import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
-import TasksSidebar from './calendar/components/tasks-sidebar';
-import CalendarClientPage from './client';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -71,31 +68,14 @@ export default async function CalendarPage({ params }: PageProps) {
   const isPersonalWorkspace = workspace.id === user?.id;
 
   return (
-    <TaskDialogWrapper
+    <CalendarPageShell
+      calendarConnections={calendarConnections || []}
+      enableSmartScheduling={enableSmartScheduling}
+      experimentalGoogleToken={googleToken}
       isPersonalWorkspace={isPersonalWorkspace}
-      wsId={workspace.id}
-    >
-      <CalendarSyncProvider
-        wsId={workspace.id}
-        experimentalGoogleToken={googleToken}
-        initialCalendarConnections={calendarConnections || []}
-      >
-        {/* {DEV_MODE && <CalendarActiveSyncDebugger />} */}
-        <div className="flex h-[calc(100vh-2rem)]">
-          <CalendarClientPage
-            experimentalGoogleToken={googleToken}
-            workspace={workspace}
-            enableSmartScheduling={enableSmartScheduling}
-          />
-          {enableSmartScheduling && (
-            <TasksSidebar
-              resolvedWsId={workspace.id}
-              locale={locale}
-              userId={user.id}
-            />
-          )}
-        </div>
-      </CalendarSyncProvider>
-    </TaskDialogWrapper>
+      locale={locale}
+      userId={user.id}
+      workspace={workspace}
+    />
   );
 }

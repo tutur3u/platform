@@ -1,70 +1,67 @@
 'use client';
 
-import type {
-  CalendarConnection,
-  WorkspaceCalendarGoogleToken,
-} from '@tuturuuu/types';
+import { CheckSquare, ChevronDown, PlusIcon, Repeat } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
+import HabitFormDialog from '@tuturuuu/ui/tu-do/habits/habit-form-dialog';
 import { useTranslations } from 'next-intl';
-import { CreateEventButton } from '../../legacy/calendar/create-event-button';
-import type { E2EEStatus, FixProgress } from '../hooks/use-e2ee';
-import CalendarConnectionsUnified from './calendar-connections-unified';
-import { E2EEStatusBadge } from './e2ee-status-badge';
+import { useState } from 'react';
+import { QuickTaskDialog } from './quick-task-dialog';
+import { SmartScheduleButton } from './smart-schedule-button';
 
 interface CalendarHeaderActionsProps {
   workspaceId: string;
-  // E2EE props
-  e2eeStatus: E2EEStatus | undefined;
-  e2eeLoading: boolean;
-  isVerifying: boolean;
-  isFixing: boolean;
-  isMigrating: boolean;
-  isEnabling: boolean;
-  fixProgress: FixProgress | null;
-  hasUnencryptedEvents: boolean;
-  onVerify: () => void;
-  onMigrate: () => void;
-  onEnable: () => void;
-  // Feature flags
   enableSmartScheduling: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
-  calendarConnections: CalendarConnection[];
 }
 
 export function CalendarHeaderActions({
   workspaceId,
-  e2eeStatus,
-  e2eeLoading,
-  isVerifying,
-  isFixing,
-  isMigrating,
-  isEnabling,
-  fixProgress,
-  hasUnencryptedEvents,
-  onVerify,
-  onMigrate,
-  onEnable,
 }: CalendarHeaderActionsProps) {
   const t = useTranslations('calendar');
+  const [quickTaskOpen, setQuickTaskOpen] = useState(false);
+  const [habitFormOpen, setHabitFormOpen] = useState(false);
 
   return (
     <div className="grid w-full items-center gap-2 md:flex md:w-auto">
-      <E2EEStatusBadge
-        status={e2eeStatus}
-        isLoading={e2eeLoading}
-        isVerifying={isVerifying}
-        isFixing={isFixing}
-        isMigrating={isMigrating}
-        isEnabling={isEnabling}
-        fixProgress={fixProgress}
-        hasUnencryptedEvents={hasUnencryptedEvents}
-        onVerify={onVerify}
-        onMigrate={onMigrate}
-        onEnable={onEnable}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="default" size="xs" className="gap-1.5">
+            <PlusIcon className="h-4 w-4" />
+            <span className="hidden sm:inline">{t('create')}</span>
+            <ChevronDown className="h-3 w-3 opacity-60" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => setQuickTaskOpen(true)}>
+            <CheckSquare className="h-4 w-4" />
+            {t('new-task')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setHabitFormOpen(true)}>
+            <Repeat className="h-4 w-4" />
+            {t('new-habit')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <SmartScheduleButton wsId={workspaceId} />
+
+      <QuickTaskDialog
+        wsId={workspaceId}
+        open={quickTaskOpen}
+        onOpenChange={setQuickTaskOpen}
       />
 
-      <CreateEventButton variant="header" label={t('new-event')} />
-
-      <CalendarConnectionsUnified wsId={workspaceId} />
+      <HabitFormDialog
+        wsId={workspaceId}
+        open={habitFormOpen}
+        onOpenChange={setHabitFormOpen}
+        onSuccess={() => setHabitFormOpen(false)}
+      />
     </div>
   );
 }

@@ -1,14 +1,14 @@
 ---
 title: 'Finance'
-description: 'Standalone Finance app with centralized protected product APIs.'
-updatedAt: '2026-05-21'
+description: 'Shared Finance product surface across apps/web and apps/finance.'
+updatedAt: '2026-05-23'
 ---
 
 ## Overview
 
-`apps/finance` is the canonical Tuturuuu Finance application. Production Finance
-traffic should use `https://finance.tuturuuu.com/{wsId}` and omit the old
-`/finance` path segment.
+`apps/finance` and the Finance experience inside `apps/web` are paired Finance
+hosts. They must stay 1:1 for product features, data behavior, mutations,
+permissions, route behavior, and user-facing workflow updates.
 
 Canonical workspace routes include:
 
@@ -23,16 +23,28 @@ Canonical workspace routes include:
 - `/{wsId}/analytics`
 - `/{wsId}/debts`
 
-`apps/web /{wsId}/finance/*` routes remain compatibility redirects. They
-preserve query strings and map old nested paths, such as
-`/{wsId}/finance/transactions/categories`, to the standalone Finance app.
+`apps/web /{wsId}/finance/*` routes render the same shared Finance product
+surface inside the normal platform dashboard shell. `apps/finance` keeps the
+shorter standalone route shape without the `/finance` segment.
+
+Use route prefixes instead of forks:
+
+- `apps/web`: `financePrefix="/finance"` and
+  `FinanceRouteProvider prefix="/finance"`.
+- `apps/finance`: `financePrefix=""` and `FinanceRouteProvider prefix=""`.
+
+Legacy nested category paths, such as
+`/{wsId}/finance/transactions/categories`, should redirect inside `apps/web` to
+`/{wsId}/finance/categories` while preserving query strings.
 
 ## API Ownership
 
 Protected Finance APIs stay centralized in `apps/web`.
 
-- `apps/finance` owns the workspace shell, Finance UI routes, local
-  `/verify-token` handoff, and local app-session logout.
+- `apps/finance` owns the standalone workspace shell, Finance UI route wrappers,
+  local `/verify-token` handoff, and local app-session logout.
+- `apps/web` owns platform-shell Finance route wrappers under
+  `/{wsId}/finance/*`.
 - `apps/finance` should keep only host-local auth/session routes under its
   local `api` tree.
 - Product CRUD, reporting, invoice, wallet, transaction, tag, promotion,
@@ -43,7 +55,8 @@ Protected Finance APIs stay centralized in `apps/web`.
   invoice-adjacent helper routes, then route-level permissions are enforced by
   `apps/web`.
 
-When adding new Finance behavior, add or extend the protected route in
-`apps/web`, expose a helper in `packages/internal-api` when shared UI needs it,
-and consume it from `apps/finance` through TanStack Query or shared server
+When adding new Finance behavior, update the shared Finance UI/helper first,
+then wire both host wrappers in the same change. Add or extend the protected
+route in `apps/web`, expose a helper in `packages/internal-api` when shared UI
+needs it, and consume it from both hosts through TanStack Query or shared server
 components.

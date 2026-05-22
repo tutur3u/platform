@@ -1,6 +1,12 @@
+import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
+import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import { getCalendarAppOrigin } from '@/lib/calendar-app-url';
+import { notFound, redirect } from 'next/navigation';
 
 export const metadata: Metadata = {
   title: 'Calendar',
@@ -15,33 +21,48 @@ interface PageProps {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-function appendSearchParams(
-  url: URL,
-  searchParams: Record<string, string | string[] | undefined>
-) {
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (Array.isArray(value)) {
-      for (const item of value) {
-        if (item !== undefined) url.searchParams.append(key, item);
-      }
-      continue;
-    }
+export default async function CalendarPage({ params }: PageProps) {
+  const { wsId, locale } = await params;
+  const supabase = await createClient();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
 
-    if (value !== undefined) url.searchParams.set(key, value);
+  if (!user?.id) redirect('/login');
+
+  const workspace = await getWorkspace(wsId);
+  if (!workspace) notFound();
+
+  const permissions = await getPermissions({ wsId: workspace.id });
+  if (!permissions) notFound();
+
+  if (permissions.withoutPermission('manage_calendar')) {
+    redirect(`/${wsId}`);
   }
-}
 
-export default async function CalendarPage({
-  params,
-  searchParams,
-}: PageProps) {
-  const { wsId } = await params;
-  const query = await searchParams;
-  const calendarUrl = new URL(
-    `/${encodeURIComponent(wsId)}`,
-    getCalendarAppOrigin()
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  const [{ data: googleToken }, { data: calendarConnections }] =
+    await Promise.all([
+      sbAdmin
+        .from('calendar_auth_tokens')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .maybeSingle(),
+      sbAdmin
+        .from('calendar_connections')
+        .select('*')
+        .eq('ws_id', workspace.id)
+        .order('created_at', { ascending: true }),
+    ]);
+
+  return (
+    <CalendarPageShell
+      calendarConnections={calendarConnections || []}
+      enableSmartScheduling
+      experimentalGoogleToken={googleToken}
+      isPersonalWorkspace={workspace.id === user.id}
+      locale={locale}
+      userId={user.id}
+      workspace={workspace}
+    />
   );
-  appendSearchParams(calendarUrl, query);
-
-  redirect(calendarUrl.toString());
 }

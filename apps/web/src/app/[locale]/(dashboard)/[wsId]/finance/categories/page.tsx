@@ -1,26 +1,18 @@
-import type { Metadata } from 'next';
-import { redirectToFinanceApp } from '../redirect';
-
-export const metadata: Metadata = {
-  title: 'Finance Categories',
-  description:
-    'Manage Finance categories in the Finance area of your Tuturuuu workspace.',
-};
+import { notFound } from 'next/navigation';
+import { getWebFinanceWorkspaceContext } from '@/lib/finance-workspace-context';
+import CategoriesTagsTabs from './categories-tags-tabs';
 
 interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function WorkspaceFinanceCategoriesPage({
+export default async function WorkspaceTransactionCategoriesPage({
   params,
-  searchParams,
 }: Props) {
-  return redirectToFinanceApp({
-    params,
-    path: 'categories',
-    searchParams,
-  });
+  const { wsId: id } = await params;
+  const context = await getWebFinanceWorkspaceContext(id);
+  if (!context) notFound();
+  return <CategoriesTagsTabs wsId={context.wsId} currency={context.currency} />;
 }
