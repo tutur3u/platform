@@ -46,19 +46,19 @@ export function BoardLibrary({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="space-y-2 border-border border-b p-2">
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center gap-1">
           <CreateBoardDialog
             creating={creating}
             onCreateBoard={onCreateBoard}
             trigger={
               <Button
                 aria-label={t('actions.createBoard')}
-                className="h-8 w-8"
-                size="icon"
+                className="h-8 min-w-0 flex-1 px-2"
+                size="sm"
                 type="button"
-                variant="ghost"
               >
                 <Plus className="h-4 w-4" />
+                <span className="truncate">{t('actions.createBoard')}</span>
               </Button>
             }
           />

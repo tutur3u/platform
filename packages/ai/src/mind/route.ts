@@ -26,7 +26,7 @@ import { createMindStreamTools, type MindToolCallbacks } from './tools';
 type AuthOk = Extract<AiRouteAuthResult, { ok: true }>;
 
 const MindChatBodySchema = z.object({
-  boardId: z.guid().optional(),
+  boardId: z.guid().nullable().optional(),
   clientRunId: z.string().trim().min(1).max(120).optional(),
   creditSource: z.enum(['personal', 'workspace']).optional(),
   creditWsId: z.string().optional(),

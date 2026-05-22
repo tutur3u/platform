@@ -23,6 +23,17 @@ type MindAiRunDebug = {
   startedAt: string;
 };
 
+type MindAiTransportState = {
+  boardId?: string | null;
+  creditSource: 'personal' | 'workspace';
+  creditWsId: string;
+  directWrite: boolean;
+  modelId: string;
+  thinkingMode: 'fast' | 'thinking';
+  threadId: string;
+  wsId: string;
+};
+
 function getClientErrorMessage(error: unknown) {
   if (error instanceof Error && error.message.trim()) return error.message;
   if (typeof error === 'string' && error.trim()) return error;
@@ -89,34 +100,49 @@ export function useMindAiPanelState({
   const { data: creditCredits } = useAiCredits(
     enabled ? creditWsId : undefined
   );
+  const transportStateRef = useRef<MindAiTransportState>({
+    boardId,
+    creditSource: activeCreditSource,
+    creditWsId,
+    directWrite,
+    modelId: model.value,
+    thinkingMode,
+    threadId,
+    wsId,
+  });
+  transportStateRef.current = {
+    boardId,
+    creditSource: activeCreditSource,
+    creditWsId,
+    directWrite,
+    modelId: model.value,
+    thinkingMode,
+    threadId,
+    wsId,
+  };
 
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/ai/mind',
-        body: () => ({
-          boardId,
-          clientRunId: runDebugRef.current?.id,
-          creditSource: activeCreditSource,
-          creditWsId,
-          model: model.value,
-          thinkingMode,
-          threadId,
-          wsId,
-          writeMode: directWrite ? 'direct' : 'review',
-        }),
+        body: () => {
+          const state = transportStateRef.current;
+
+          return {
+            ...(state.boardId ? { boardId: state.boardId } : {}),
+            clientRunId: runDebugRef.current?.id,
+            creditSource: state.creditSource,
+            creditWsId: state.creditWsId,
+            model: state.modelId,
+            thinkingMode: state.thinkingMode,
+            threadId: state.threadId,
+            wsId: state.wsId,
+            writeMode: state.directWrite ? 'direct' : 'review',
+          };
+        },
         credentials: 'include',
       }),
-    [
-      activeCreditSource,
-      boardId,
-      creditWsId,
-      directWrite,
-      model.value,
-      thinkingMode,
-      threadId,
-      wsId,
-    ]
+    []
   );
   const { error, messages, sendMessage, setMessages, status, stop } = useChat({
     id: `mind-${threadId}`,
