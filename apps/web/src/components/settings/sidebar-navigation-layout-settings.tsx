@@ -1,6 +1,8 @@
 'use client';
 
+import { useQuery } from '@tanstack/react-query';
 import { Save, Undo2 } from '@tuturuuu/icons';
+import { getCurrentUserHiveAccess } from '@tuturuuu/internal-api';
 import { Button } from '@tuturuuu/ui/button';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -21,9 +23,16 @@ export function SidebarNavigationLayoutSettings({ wsId }: { wsId?: string }) {
   const [scope, setScope] = useState<LayoutScope>(
     wsId ? 'workspace' : 'account'
   );
+  const { data: hiveAccess } = useQuery({
+    queryKey: ['current-user', 'hive-access'],
+    queryFn: () => getCurrentUserHiveAccess(),
+  });
   const items = useMemo(
-    () => createSidebarNavigationItemDefinitions(t, tSections),
-    [t, tSections]
+    () =>
+      createSidebarNavigationItemDefinitions(t, tSections, {
+        includeHive: hiveAccess?.hasAccess === true,
+      }),
+    [hiveAccess?.hasAccess, t, tSections]
   );
   const {
     value: recentNavigationEnabled,

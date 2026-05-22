@@ -102,7 +102,10 @@ import {
   DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
 } from '@tuturuuu/internal-api';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
@@ -119,6 +122,7 @@ import type { NavLink } from '@/components/navigation';
 import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
+import { resolveWebHiveAccess } from '@/lib/hive-page-context';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 
@@ -162,6 +166,7 @@ export async function WorkspaceNavigationLinks({
     platformUserRole,
     userInvoiceVisibilityConfig,
     workspaceInvoiceVisibilityConfig,
+    hiveAccessResult,
   ] = await Promise.all([
     user
       ? verifyWorkspaceMembershipType({
@@ -194,8 +199,18 @@ export async function WorkspaceNavigationLinks({
       .eq('ws_id', resolvedWorkspaceId)
       .eq('id', 'finance_show_invoices')
       .maybeSingle(),
+    user
+      ? Promise.resolve(createAdminClient({ noCookie: true })).then((sbAdmin) =>
+          resolveWebHiveAccess({ userId: user.id, sbAdmin })
+        )
+      : Promise.resolve(null),
   ]);
   if (!workspacePermissions) notFound();
+
+  const hasHiveAccess =
+    hiveAccessResult !== null &&
+    !('error' in hiveAccessResult) &&
+    hiveAccessResult.hasAccess;
 
   const { withoutPermission } = workspacePermissions;
 
@@ -343,27 +358,6 @@ export async function WorkspaceNavigationLinks({
       href: `/${personalOrWsId}/calendar`,
       aliases: [`/${personalOrWsId}/calendar`],
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
-      preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
-    },
-    {
-      id: 'mind',
-      title: t('sidebar_tabs.mind'),
-      icon: <BrainCircuit className="h-5 w-5" />,
-      href: `/${personalOrWsId}/mind`,
-      aliases: [`/${personalOrWsId}/mind`, `/${personalOrWsId}/mind/boards`],
-      preferencePlacement: 'root',
-      preferenceSectionLabel: sidebarSections.core,
-    },
-    {
-      id: 'hive',
-      title: t('sidebar_tabs.hive'),
-      icon: <Blocks className="h-5 w-5" />,
-      href: `/${personalOrWsId}/hive`,
-      aliases: [
-        `/${personalOrWsId}/hive`,
-        `/${personalOrWsId}/hive/not-whitelisted`,
-      ],
       preferencePlacement: 'root',
       preferenceSectionLabel: sidebarSections.core,
     },
@@ -598,6 +592,32 @@ export async function WorkspaceNavigationLinks({
           experimental: 'beta',
           preferenceSectionLabel: sidebarSections.workTools,
         },
+        {
+          id: 'mind',
+          title: t('sidebar_tabs.mind'),
+          icon: <BrainCircuit className="h-5 w-5" />,
+          href: `/${personalOrWsId}/mind`,
+          aliases: [
+            `/${personalOrWsId}/mind`,
+            `/${personalOrWsId}/mind/boards`,
+          ],
+          preferenceSectionLabel: sidebarSections.ai,
+        },
+        ...(hasHiveAccess
+          ? [
+              {
+                id: 'hive',
+                title: t('sidebar_tabs.hive'),
+                icon: <Blocks className="h-5 w-5" />,
+                href: `/${personalOrWsId}/hive`,
+                aliases: [
+                  `/${personalOrWsId}/hive`,
+                  `/${personalOrWsId}/hive/not-whitelisted`,
+                ],
+                preferenceSectionLabel: sidebarSections.ai,
+              } satisfies NavLink,
+            ]
+          : []),
         {
           id: 'chat',
           title: t('sidebar_tabs.chat'),

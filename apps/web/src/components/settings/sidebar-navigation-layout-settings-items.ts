@@ -1,7 +1,9 @@
 import {
   Archive,
   BadgeDollarSign,
+  Blocks,
   Bot,
+  BrainCircuit,
   BriefcaseBusiness,
   Calendar,
   ChartArea,
@@ -37,10 +39,12 @@ type SidebarLayoutItemKey =
   | 'items.forms'
   | 'items.google_workspace'
   | 'items.habits'
+  | 'items.hive'
   | 'items.inventory'
   | 'items.link_shortener'
   | 'items.mail'
   | 'items.meet'
+  | 'items.mind'
   | 'items.polls'
   | 'items.qr_generator'
   | 'items.settings'
@@ -60,8 +64,10 @@ type SidebarSectionTranslate = (key: SidebarSectionKey) => string;
 
 export function createSidebarNavigationItemDefinitions(
   t: SidebarLayoutTranslate,
-  tSections: SidebarSectionTranslate
+  tSections: SidebarSectionTranslate,
+  options?: { includeHive?: boolean }
 ): NavigationItemDefinition[] {
+  const includeHive = options?.includeHive ?? false;
   const sections = {
     ai: tSections('ai'),
     core: tSections('core'),
@@ -142,6 +148,24 @@ export function createSidebarNavigationItemDefinitions(
       defaultPlacement: 'more',
       sectionLabel: sections.workTools,
     },
+    {
+      id: 'mind',
+      title: t('items.mind'),
+      icon: BrainCircuit,
+      defaultPlacement: 'more',
+      sectionLabel: sections.ai,
+    },
+    ...(includeHive
+      ? [
+          {
+            id: 'hive',
+            title: t('items.hive'),
+            icon: Blocks,
+            defaultPlacement: 'more',
+            sectionLabel: sections.ai,
+          } satisfies NavigationItemDefinition,
+        ]
+      : []),
     {
       id: 'chat',
       title: t('items.chat'),

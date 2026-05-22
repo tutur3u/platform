@@ -145,6 +145,12 @@ export type CurrentUserDefaultWorkspaceResponse = {
   personal?: boolean | null;
 } | null;
 
+export type CurrentUserHiveAccessResponse = {
+  hasAccess: boolean;
+  isAdmin: boolean;
+  isMember: boolean;
+};
+
 export interface WorkspaceAttendanceExportRecord {
   date: string;
   groupId: string;
@@ -345,6 +351,18 @@ export async function getCurrentUserDefaultWorkspace(
   const client = getInternalApiClient(options);
   return client.json<CurrentUserDefaultWorkspaceResponse>(
     '/api/v1/users/me/default-workspace',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getCurrentUserHiveAccess(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<CurrentUserHiveAccessResponse>(
+    '/api/v1/users/me/hive-access',
     {
       cache: 'no-store',
     }

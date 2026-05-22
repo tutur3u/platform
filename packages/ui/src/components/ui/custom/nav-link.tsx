@@ -115,7 +115,7 @@ export function NavLink({
 
       {!isCollapsed && (
         <div className="ml-auto flex h-6 shrink-0 items-center gap-0.5">
-          {preferenceArchiveAction && !isDisabled && (
+          {preferenceArchiveAction && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button
@@ -143,7 +143,7 @@ export function NavLink({
             </Tooltip>
           )}
 
-          {preferenceQuickAction && !isDisabled && (
+          {preferenceQuickAction && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <button

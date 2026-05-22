@@ -738,9 +738,11 @@ export {
   type WorkspaceUserGroupsResponse,
 } from './user-groups';
 export {
+  type CurrentUserHiveAccessResponse,
   createCurrentUserAvatarUploadUrl,
   createSupportInquiry,
   getCurrentUserDefaultWorkspace,
+  getCurrentUserHiveAccess,
   getCurrentUserProfile,
   getUserCalendarSettings,
   getUserConfig,

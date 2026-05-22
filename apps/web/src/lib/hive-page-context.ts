@@ -3,6 +3,7 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
 
 export type WebHiveWorkspace = NonNullable<
@@ -28,6 +29,53 @@ export interface WebHivePageContext {
   wsId: string;
 }
 
+export type WebHiveAccessResolution =
+  | {
+      error: true;
+    }
+  | {
+      hasAccess: boolean;
+      isAdmin: boolean;
+      isMember: boolean;
+    };
+
+export async function resolveWebHiveAccess({
+  userId,
+  sbAdmin,
+}: {
+  userId: string;
+  sbAdmin: TypedSupabaseClient;
+}): Promise<WebHiveAccessResolution> {
+  const [
+    { data: member, error: memberError },
+    { data: role, error: roleError },
+  ] = await Promise.all([
+    sbAdmin
+      .from('hive_members')
+      .select('enabled')
+      .eq('user_id', userId)
+      .maybeSingle(),
+    sbAdmin
+      .from('platform_user_roles')
+      .select('enabled, allow_role_management')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ]);
+
+  if (memberError || roleError) {
+    return { error: true };
+  }
+
+  const isAdmin = !!role?.enabled && !!role.allow_role_management;
+  const isMember = !!member?.enabled;
+
+  return {
+    isAdmin,
+    isMember,
+    hasAccess: isAdmin || isMember,
+  };
+}
+
 export async function getWebHivePageContext(
   id: string
 ): Promise<WebHivePageContext | null> {
@@ -44,35 +92,24 @@ export async function getWebHivePageContext(
     return null;
   }
 
-  const admin = await createAdminClient({ noCookie: true });
-  const [
-    { data: member, error: memberError },
-    { data: role, error: roleError },
-  ] = await Promise.all([
-    admin
-      .from('hive_members')
-      .select('enabled')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-    admin
-      .from('platform_user_roles')
-      .select('enabled, allow_role_management')
-      .eq('user_id', user.id)
-      .maybeSingle(),
-  ]);
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const accessResult = await resolveWebHiveAccess({
+    userId: user.id,
+    sbAdmin,
+  });
 
-  if (memberError || roleError) {
+  if ('error' in accessResult) {
     return null;
   }
 
   const access = {
-    isAdmin: !!role?.enabled && !!role.allow_role_management,
-    isMember: !!member?.enabled,
+    isAdmin: accessResult.isAdmin,
+    isMember: accessResult.isMember,
     user,
   };
 
   return {
-    access: access.isAdmin || access.isMember ? access : null,
+    access: accessResult.hasAccess ? access : null,
     user,
     workspace,
     wsId: workspace.id,
