@@ -135,7 +135,9 @@ scripts change.
 
 The test workflows (`turbo-unit-tests.yaml` and `codecov.yaml`) run `bun setup`
 before executing tests so dependency installation and workspace package builds
-match the local setup path.
+match the local setup path. Vercel workflows should invoke Turborepo through
+`bun turbo:local ...` after `bun install` so CI uses the pinned repo dependency
+instead of resolving a global or downloaded Turbo binary.
 
 ### Other delivery surfaces
 

@@ -671,7 +671,7 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.equal(
     packageJson.scripts['build:web:docker'],
-    'turbo run build:docker -F @tuturuuu/web'
+    'bun turbo:local run build:docker -F @tuturuuu/web'
   );
   assert.equal(
     webPackageJson.scripts['build:docker'],

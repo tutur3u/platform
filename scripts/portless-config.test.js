@@ -176,7 +176,7 @@ test('root setup runs Portless setup before build tasks', () => {
   );
   assert.match(
     pkg.scripts.setup,
-    /^bun i && bun portless:setup && bun run build/u
+    /^bun i && bun portless:setup && bun turbo:local run build/u
   );
 });
 
@@ -185,7 +185,7 @@ test('root education dev script starts Learn, Teach, and Web together', () => {
   const devEduScript = pkg.scripts['dev:edu'];
 
   assert.equal(typeof devEduScript, 'string');
-  assert.match(devEduScript, /^turbo run dev /u);
+  assert.match(devEduScript, /^bun turbo:local run dev /u);
   assert.match(devEduScript, /-F @tuturuuu\/learn\b/u);
   assert.match(devEduScript, /-F @tuturuuu\/teach\b/u);
   assert.match(devEduScript, /-F @tuturuuu\/web\b/u);

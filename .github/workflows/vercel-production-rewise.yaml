@@ -77,7 +77,7 @@ jobs:
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
-        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'

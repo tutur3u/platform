@@ -101,9 +101,9 @@ test('runCheck prints buffered output when a check fails', async () => {
   assert.deepEqual(stderrWrites, ['analysis failed\nstacktrace\n']);
 });
 
-test('mobile checks invoke turbo through bun', () => {
+test('mobile checks invoke local turbo through bun', () => {
   assert.equal(checks[0].command, 'bun');
-  assert.deepEqual(checks[0].args.slice(0, 2), ['x', 'turbo']);
+  assert.deepEqual(checks[0].args.slice(0, 1), ['turbo:local']);
 });
 
 test('resolvePubCache prefers explicit PUB_CACHE', () => {

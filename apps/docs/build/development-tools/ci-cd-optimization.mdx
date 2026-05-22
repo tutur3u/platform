@@ -110,7 +110,7 @@ Semantic content analysis using Turborepo's content-based hashing:
   if: steps.quick_check.outputs.skip_quick != 'true'
   run: |
     # Run Turborepo dry-run to check cache status
-    bunx turbo build --filter=@tuturuuu/web --dry-run=json > "$RUNNER_TEMP/turbo-plan-raw.json" 2>&1 || {
+    bun turbo:local run build --filter=@tuturuuu/web --dry-run=json > "$RUNNER_TEMP/turbo-plan-raw.json" 2>&1 || {
       echo "::warning::Turborepo dry-run failed, proceeding with build for safety"
       echo "skip_turbo=false" >> $GITHUB_OUTPUT
       exit 0
@@ -221,7 +221,7 @@ Production workflows use conservative optimization with safety fallbacks:
 - name: Check Turborepo cache (conservative)
   run: |
     # Multiple safety fallbacks
-    bunx turbo ... || {
+    bun turbo:local ... || {
       echo "::warning::Turborepo dry-run failed, proceeding with build for safety"
       echo "skip_turbo=false" >> $GITHUB_OUTPUT
       exit 0
@@ -475,7 +475,7 @@ git diff --name-only HEAD~ HEAD
 git diff --name-only HEAD~ HEAD | grep -E 'apps/web/|packages/'
 
 # Check Turborepo cache
-bunx turbo build --filter=@tuturuuu/web --dry-run=json
+bun turbo:local run build --filter=@tuturuuu/web --dry-run=json
 ```
 
 #### Issue: Builds Never Run
@@ -572,7 +572,7 @@ When a workflow behaves unexpectedly:
 
 3. **Check Turborepo cache**
    ```bash
-   bunx turbo build --filter=@tuturuuu/web --dry-run=json
+   bun turbo:local run build --filter=@tuturuuu/web --dry-run=json
    ```
 
 4. **Validate path filters**

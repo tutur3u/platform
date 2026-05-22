@@ -169,9 +169,10 @@ bun portless:setup
 The helper starts the Portless HTTPS proxy on port `443` before Turbo launches
 package `dev` scripts. It no-ops when the proxy is already responding and skips
 in non-interactive shells or CI. `bun setup` runs this helper after dependency
-installation so fresh local checkouts are ready before the build step. To
-install Portless as an OS startup service instead of only starting the current
-proxy daemon, run:
+installation so fresh local checkouts are ready before the build step, then
+invokes Turborepo through the repo-local `turbo:local` helper instead of any
+globally installed Turbo binary. To install Portless as an OS startup service
+instead of only starting the current proxy daemon, run:
 
 ```bash
 bun portless:setup -- --service

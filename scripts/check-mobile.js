@@ -21,7 +21,7 @@ const path = require('node:path');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
 const TURBO_COMMAND = 'bun';
-const TURBO_ARGS = ['x', 'turbo'];
+const TURBO_ARGS = ['turbo:local'];
 const useTable = process.argv.includes('--table');
 const showTiming = process.argv.includes('--timing');
 const showDetails = process.argv.includes('--details');

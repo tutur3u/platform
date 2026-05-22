@@ -54,7 +54,7 @@ jobs:
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
-        run: bunx turbo run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
+        run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
 
       - name: Build Project Artifacts
         env:
