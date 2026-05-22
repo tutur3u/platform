@@ -59,7 +59,7 @@
     "@tiptap/extension-link": "3.23.5",
     "@tiptap/extension-list": "3.23.5",
     "@tiptap/extension-placeholder": "3.23.5",
-    "@tiptap/extension-strike": "3.23.5",
+    "@tiptap/extension-strike": "3.23.6",
     "@tiptap/extension-subscript": "3.23.5",
     "@tiptap/extension-superscript": "3.23.5",
     "@tiptap/extension-table": "3.23.5",
