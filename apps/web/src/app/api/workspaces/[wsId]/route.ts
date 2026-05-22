@@ -6,6 +6,7 @@ import {
 import {
   getPermissions,
   normalizeWorkspaceId,
+  verifyHasSecrets,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -159,7 +160,7 @@ export const PUT = withSessionAuth<{ wsId: string }>(
 );
 
 export const DELETE = withSessionAuth<{ wsId: string }>(
-  async (_request, { supabase, user }, { wsId: id }) => {
+  async (request, { supabase }, { wsId: id }) => {
     const wsId = await normalizeWorkspaceId(id, supabase);
 
     const { data: wsData } = await supabase
@@ -175,23 +176,22 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
       );
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('user_id')
-      .eq('ws_id', wsId)
-      .eq('user_id', user.id)
-      .maybeSingle();
+    const permissions = await getPermissions({ wsId, request });
 
-    if (membershipError) {
+    if (!permissions?.containsPermission('manage_workspace_settings')) {
       return NextResponse.json(
-        { message: 'Error verifying workspace access' },
-        { status: 500 }
+        { message: 'Insufficient permissions to delete workspace' },
+        { status: 403 }
       );
     }
 
-    if (!membership) {
+    const preventDeletion = await verifyHasSecrets(wsId, [
+      'PREVENT_WORKSPACE_DELETION',
+    ]);
+
+    if (preventDeletion) {
       return NextResponse.json(
-        { message: 'Workspace access denied' },
+        { message: 'Workspace deletion is disabled for this workspace.' },
         { status: 403 }
       );
     }
@@ -226,6 +226,5 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
     }
 
     return NextResponse.json({ message: 'success' });
-  },
-  { allowAppSessionAuth: CURRENT_USER_APP_SESSION_AUTH }
+  }
 );
