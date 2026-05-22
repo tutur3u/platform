@@ -44,6 +44,14 @@ export function matchesAllowedModel(
   });
 }
 
+export function isGoogleModelId(modelId: string): boolean {
+  const slashIndex = modelId.indexOf('/');
+  if (slashIndex === -1) return true;
+
+  const provider = modelId.slice(0, slashIndex);
+  return provider === 'google' || provider === 'google-vertex';
+}
+
 /**
  * Extract the bare model name from a gateway model ID.
  * e.g., 'google/gemini-2.5-flash' → 'gemini-2.5-flash'

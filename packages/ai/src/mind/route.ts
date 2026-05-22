@@ -1,3 +1,4 @@
+import { google } from '@ai-sdk/google';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -16,6 +17,7 @@ import {
 import { performCreditPreflight } from '../chat/google/route-credits';
 import { prepareProcessedMessages } from '../chat/google/route-message-preparation';
 import { deductAiCredits } from '../credits/check-credits';
+import { isGoogleModelId, toBareModelName } from '../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -495,16 +497,13 @@ export function createPOST(callbacks: MindRouteCallbacks) {
           ],
         };
       };
+      const useGoogleNativeModel = isGoogleModelId(resolvedModelId);
       const preparedMessages = await prepareProcessedMessages(
         messages,
         access.wsId,
         threadId,
         request,
-        {
-          attachYoutubeVideoInput:
-            resolvedModelId.toLowerCase().startsWith('google/') ||
-            resolvedModelId.toLowerCase().startsWith('google-vertex/'),
-        }
+        { attachYoutubeVideoInput: useGoogleNativeModel }
       );
       if ('error' in preparedMessages) return preparedMessages.error;
 
@@ -528,15 +527,12 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         maxRetries: 0,
         maxOutputTokens: creditPreflight.cappedMaxOutput ?? undefined,
         messages: preparedMessages.processedMessages,
-        model: gateway(resolvedModelId),
-        providerOptions: {
-          google: thinkingConfig,
-          vertex: thinkingConfig,
-          gateway: {
-            caching: 'auto',
-            order: ['vertex', 'google'],
-          },
-        },
+        model: useGoogleNativeModel
+          ? google(toBareModelName(resolvedModelId))
+          : gateway(resolvedModelId),
+        ...(useGoogleNativeModel
+          ? { providerOptions: { google: thinkingConfig } }
+          : {}),
         stopWhen: stepCountIs(8),
         system: buildMindSystemPrompt({
           boardId: parsedBody.boardId,

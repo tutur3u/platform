@@ -1,3 +1,5 @@
+import { google } from '@ai-sdk/google';
+import { isGoogleModelId, toBareModelName } from '../../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -107,8 +109,11 @@ export async function executeGenerateImage(
   const storagePath = `${ctx.wsId}/mira/images/${imageId}.png`;
 
   try {
+    const model = isGoogleModelId(selectedModel)
+      ? google.image(toBareModelName(selectedModel))
+      : gateway.image(selectedModel);
     const { image } = await generateImage({
-      model: gateway.image(selectedModel),
+      model,
       prompt,
       aspectRatio: aspectRatio as `${number}:${number}`,
     });

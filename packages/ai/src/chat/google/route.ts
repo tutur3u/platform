@@ -501,10 +501,6 @@ export function createPOST(
               },
             ],
           },
-          gateway: {
-            order: ['vertex', 'google'],
-            caching: 'auto',
-          },
         },
         onFinish: async (response) =>
           persistAssistantResponse({

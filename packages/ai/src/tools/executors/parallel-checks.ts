@@ -89,10 +89,6 @@ async function runCheck({
           includeThoughts: false,
         },
       },
-      gateway: {
-        order: ['vertex', 'google'],
-        caching: 'auto',
-      },
     },
   });
 
