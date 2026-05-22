@@ -38,6 +38,15 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     Promise.resolve({
       from: mocks.fromMock,
       rpc: mocks.rpcMock,
+      schema: vi.fn((schemaName: string) => {
+        if (schemaName !== 'private') {
+          throw new Error(`Unexpected schema ${schemaName}`);
+        }
+
+        return {
+          from: mocks.fromMock,
+        };
+      }),
     })
   ),
 }));
@@ -215,6 +224,15 @@ describe('send-immediate route', () => {
               createResolvedChain({ data: null, error: null })
             ),
           };
+        case 'notifications':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: deliveryLogs.map((log) => log.notifications),
+                error: null,
+              })
+            ),
+          };
         case 'users':
           return {
             select: vi.fn(() =>
@@ -375,6 +393,15 @@ describe('send-immediate route', () => {
             ),
             update: vi.fn(() =>
               createResolvedChain({ data: null, error: null })
+            ),
+          };
+        case 'notifications':
+          return {
+            select: vi.fn(() =>
+              createResolvedChain({
+                data: deliveryLogs.map((log) => log.notifications),
+                error: null,
+              })
             ),
           };
         case 'users':

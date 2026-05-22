@@ -11,6 +11,7 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getFirebaseMessagingConfigurationStatus } from '@/lib/notifications/firebase-admin';
 import { enforceInfrastructureRootWorkspace } from '../enforce-infrastructure-root';
 import { PushTestForm } from './push-test-form';
@@ -92,16 +93,22 @@ function configBadgeVariant(
 async function countRows(
   sbAdmin: any,
   table: string,
-  configure?: (query: any) => any
+  configure?: (query: any) => any,
+  schema: 'public' | 'private' = 'public'
 ) {
-  let query = sbAdmin.from(table).select('*', { count: 'exact', head: true });
+  const client = schema === 'private' ? sbAdmin.schema('private') : sbAdmin;
+  let query = client.from(table).select('*', { count: 'exact', head: true });
   if (configure) {
     query = configure(query);
   }
 
   const { count, error } = await query;
   if (error) {
-    console.error('[PushNotificationsInfra] Count query failed:', table, error);
+    serverLogger.error(
+      '[PushNotificationsInfra] Count query failed:',
+      table,
+      error
+    );
     return 0;
   }
 
@@ -178,17 +185,29 @@ async function getPushDashboardData() {
     countRows(sbAdmin, 'notification_push_devices', (query) =>
       query.eq('platform', 'android')
     ),
-    countRows(sbAdmin, 'notification_batches', (query) =>
-      query.eq('channel', 'push').eq('status', 'pending')
+    countRows(
+      sbAdmin,
+      'notification_batches',
+      (query) => query.eq('channel', 'push').eq('status', 'pending'),
+      'private'
     ),
-    countRows(sbAdmin, 'notification_batches', (query) =>
-      query.eq('channel', 'push').eq('status', 'processing')
+    countRows(
+      sbAdmin,
+      'notification_batches',
+      (query) => query.eq('channel', 'push').eq('status', 'processing'),
+      'private'
     ),
-    countRows(sbAdmin, 'notification_batches', (query) =>
-      query.eq('channel', 'push').eq('status', 'sent')
+    countRows(
+      sbAdmin,
+      'notification_batches',
+      (query) => query.eq('channel', 'push').eq('status', 'sent'),
+      'private'
     ),
-    countRows(sbAdmin, 'notification_batches', (query) =>
-      query.eq('channel', 'push').eq('status', 'failed')
+    countRows(
+      sbAdmin,
+      'notification_batches',
+      (query) => query.eq('channel', 'push').eq('status', 'failed'),
+      'private'
     ),
     sbAdmin
       .from('notification_push_devices')
@@ -198,6 +217,7 @@ async function getPushDashboardData() {
       .order('last_seen_at', { ascending: false })
       .limit(20),
     sbAdmin
+      .schema('private')
       .from('notification_batches')
       .select(
         'id, status, delivery_mode, notification_count, created_at, updated_at, sent_at, error_message'
@@ -208,14 +228,14 @@ async function getPushDashboardData() {
   ]);
 
   if (recentDevicesResult.error) {
-    console.error(
+    serverLogger.error(
       '[PushNotificationsInfra] Failed to load recent devices:',
       recentDevicesResult.error
     );
   }
 
   if (recentBatchesResult.error) {
-    console.error(
+    serverLogger.error(
       '[PushNotificationsInfra] Failed to load recent push batches:',
       recentBatchesResult.error
     );
@@ -240,14 +260,14 @@ async function getPushDashboardData() {
         ]);
 
   if (usersResult.error) {
-    console.error(
+    serverLogger.error(
       '[PushNotificationsInfra] Failed to load user display names:',
       usersResult.error
     );
   }
 
   if (privateDetailsResult.error) {
-    console.error(
+    serverLogger.error(
       '[PushNotificationsInfra] Failed to load user private details:',
       privateDetailsResult.error
     );

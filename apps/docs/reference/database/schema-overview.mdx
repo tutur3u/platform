@@ -1,7 +1,7 @@
 ---
 title: 'Database Schema Overview'
 description: 'Complete reference for the Tuturuuu platform database schema'
-updatedAt: '2026-05-21'
+updatedAt: '2026-05-23'
 ---
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
@@ -105,6 +105,38 @@ credential validation behind the application proxy.
 - `value` (text)
 - `allowed_emails` (text[])
 - `created_at` (timestamptz)
+
+### Notification Delivery Internals
+
+#### `private.notification_batches`
+Private operational queue rows for email and push notification delivery.
+Server-owned `apps/web` cron and immediate-send routes read and update these
+rows through the service-role client; browser, mobile, and satellite apps should
+not query them directly.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `ws_id` (uuid, FK → workspaces, nullable for pending-email flows)
+- `user_id` (uuid, FK → users, nullable for pending-email flows)
+- `email` (text)
+- `channel` (text)
+- `delivery_mode` (notification_delivery_mode)
+- `status` (text)
+- `window_start` / `window_end` (timestamptz)
+
+#### `private.notification_delivery_log`
+Private delivery-attempt records linked to persisted notifications and optional
+batches. The table is intentionally excluded from public Data API and Realtime
+access; inspect or mutate it through centralized notification APIs only.
+
+**Key Fields:**
+- `id` (uuid, PK)
+- `notification_id` (uuid, FK → notifications)
+- `batch_id` (uuid, FK → private.notification_batches)
+- `channel` (text)
+- `status` (text)
+- `retry_count` (integer)
+- `sent_at` (timestamptz)
 
 ### Task Management Hierarchy
 

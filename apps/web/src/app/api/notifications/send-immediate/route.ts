@@ -9,6 +9,7 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { preloadBlockedEmailCache } from '@/lib/email-blacklist';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   chunkValues,
   fetchAllChunkedPaginatedRows,
@@ -23,6 +24,10 @@ import {
 
 const PROCESSING_DEADLINE_MS = 165_000;
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
+
+function getPrivateNotificationClient(sbAdmin: any) {
+  return sbAdmin.schema('private');
+}
 
 const RequestBodySchema = z.object({
   batch_id: z.string().max(MAX_NAME_LENGTH).optional(),
@@ -89,13 +94,10 @@ interface DeliveryLogWithNotification {
   notifications: NotificationData | null;
 }
 
-interface NotificationWorkspaceCheckRow {
-  batch_id: string | null;
-  notifications: {
-    data: Record<string, unknown> | null;
-    entity_id: string | null;
-  } | null;
-}
+type RawDeliveryLogWithNotification = Omit<
+  DeliveryLogWithNotification,
+  'notifications'
+>;
 
 interface PendingDeliveryLogRetryRow {
   id: string;
@@ -133,6 +135,55 @@ function sortDeliveryLogsByCreatedAtDesc(
   });
 }
 
+async function fetchNotificationsByIds(
+  sbAdmin: any,
+  notificationIds: string[]
+): Promise<Map<string, NotificationData>> {
+  const notificationsById = new Map<string, NotificationData>();
+
+  if (notificationIds.length === 0) {
+    return notificationsById;
+  }
+
+  const notifications = await fetchAllChunkedPaginatedRows<
+    NotificationData,
+    string
+  >(
+    [...new Set(notificationIds)],
+    (notificationIdChunk, from, to) =>
+      sbAdmin
+        .from('notifications')
+        .select(
+          `
+          id,
+          type,
+          code,
+          title,
+          description,
+          data,
+          created_at,
+          ws_id,
+          user_id,
+          scope,
+          entity_type,
+          entity_id
+        `
+        )
+        .in('id', notificationIdChunk)
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  for (const notification of notifications) {
+    notificationsById.set(notification.id, notification);
+  }
+
+  return notificationsById;
+}
+
 async function markDeliveryLogsSent(sbAdmin: any, logIds: string[]) {
   if (logIds.length === 0) {
     return;
@@ -145,7 +196,7 @@ async function markDeliveryLogsSent(sbAdmin: any, logIds: string[]) {
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await sbAdmin
+    await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
@@ -171,7 +222,7 @@ async function markDeliveryLogsSkipped(
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await sbAdmin
+    await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
@@ -184,7 +235,7 @@ async function markBatchSent(
   batchId: string,
   notificationCount: number
 ) {
-  await sbAdmin
+  await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'sent',
@@ -200,7 +251,7 @@ async function fetchPendingDeliveryLogRetries(
   batchId: string
 ): Promise<PendingDeliveryLogRetryRow[]> {
   return fetchAllPaginatedRows<PendingDeliveryLogRetryRow>((from, to) =>
-    sbAdmin
+    getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .select('id, retry_count')
       .eq('batch_id', batchId)
@@ -211,7 +262,7 @@ async function fetchPendingDeliveryLogRetries(
 }
 
 async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
-  await sbAdmin
+  await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'failed',
@@ -223,7 +274,7 @@ async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
   const pendingLogs = await fetchPendingDeliveryLogRetries(sbAdmin, batchId);
 
   for (const log of pendingLogs) {
-    await sbAdmin
+    await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update({
         status: 'failed',
@@ -247,7 +298,7 @@ async function cleanupInvalidPushTokens(sbAdmin: any, tokens: string[]) {
       .in('token', tokenChunk);
 
     if (error) {
-      console.error('Failed to delete invalid push tokens:', error);
+      serverLogger.error('Failed to delete invalid push tokens:', error);
     }
   }
 }
@@ -324,7 +375,7 @@ async function fetchPendingImmediateBatches(
   batchIds: string[]
 ): Promise<NotificationBatchRow[]> {
   return fetchAllPaginatedRows<NotificationBatchRow>((from, to) => {
-    let query = sbAdmin
+    let query = getPrivateNotificationClient(sbAdmin)
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
@@ -360,22 +411,14 @@ async function filterRootScopedBatches(
   }
 
   const deliveryLogsForCheck = await fetchAllChunkedPaginatedRows<
-    NotificationWorkspaceCheckRow,
+    Pick<RawDeliveryLogWithNotification, 'batch_id' | 'notification_id'>,
     string
   >(
     batchesWithNullWsId.map((batch) => batch.id),
     (batchIdChunk, from, to) =>
-      sbAdmin
+      getPrivateNotificationClient(sbAdmin)
         .from('notification_delivery_log')
-        .select(
-          `
-          batch_id,
-          notifications (
-            entity_id,
-            data
-          )
-        `
-        )
+        .select('batch_id, notification_id')
         .in('batch_id', batchIdChunk)
         .order('batch_id', { ascending: true })
         .range(from, to),
@@ -383,10 +426,14 @@ async function filterRootScopedBatches(
       chunkSize: 500,
     }
   );
+  const notificationsById = await fetchNotificationsByIds(
+    sbAdmin,
+    deliveryLogsForCheck.map((log) => log.notification_id)
+  );
 
   const validBatchIds = new Set(validBatchesWithWsId.map((batch) => batch.id));
   for (const log of deliveryLogsForCheck) {
-    const notification = log.notifications;
+    const notification = notificationsById.get(log.notification_id);
     if (!log.batch_id || !notification) {
       continue;
     }
@@ -408,34 +455,14 @@ async function fetchDeliveryLogsForBatches(
   batchIds: string[]
 ): Promise<Map<string, DeliveryLogWithNotification[]>> {
   const deliveryLogs = await fetchAllChunkedPaginatedRows<
-    DeliveryLogWithNotification,
+    RawDeliveryLogWithNotification,
     string
   >(
     batchIds,
     (batchIdChunk, from, to) =>
-      sbAdmin
+      getPrivateNotificationClient(sbAdmin)
         .from('notification_delivery_log')
-        .select(
-          `
-          id,
-          batch_id,
-          notification_id,
-          notifications (
-            id,
-            type,
-            code,
-            title,
-            description,
-            data,
-            created_at,
-            ws_id,
-            user_id,
-            scope,
-            entity_type,
-            entity_id
-          )
-        `
-        )
+        .select('id, batch_id, notification_id')
         .in('batch_id', batchIdChunk)
         .eq('status', 'pending')
         .order('batch_id', { ascending: true })
@@ -445,11 +472,18 @@ async function fetchDeliveryLogsForBatches(
       chunkSize: 500,
     }
   );
+  const notificationsById = await fetchNotificationsByIds(
+    sbAdmin,
+    deliveryLogs.map((log) => log.notification_id)
+  );
 
   const deliveryLogsByBatch = new Map<string, DeliveryLogWithNotification[]>();
   for (const log of deliveryLogs) {
     const existingLogs = deliveryLogsByBatch.get(log.batch_id) || [];
-    existingLogs.push(log);
+    existingLogs.push({
+      ...log,
+      notifications: notificationsById.get(log.notification_id) ?? null,
+    });
     deliveryLogsByBatch.set(log.batch_id, existingLogs);
   }
 
@@ -717,14 +751,14 @@ export async function POST(req: NextRequest) {
 
     for (const batch of filteredBatches) {
       if (Date.now() > processingDeadline) {
-        console.warn(
+        serverLogger.warn(
           '[ImmediateNotificationProcessor] Processing deadline reached before all batches were handled'
         );
         break;
       }
 
       try {
-        await sbAdmin
+        await getPrivateNotificationClient(sbAdmin)
           .from('notification_batches')
           .update({
             status: 'processing',
@@ -1016,7 +1050,10 @@ export async function POST(req: NextRequest) {
 
         processedCount++;
       } catch (error) {
-        console.error(`Error processing immediate batch ${batch.id}:`, error);
+        serverLogger.error(
+          `Error processing immediate batch ${batch.id}:`,
+          error
+        );
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error';
 
@@ -1039,7 +1076,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (error) {
-    console.error('Error in immediate notification processor:', error);
+    serverLogger.error('Error in immediate notification processor:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',

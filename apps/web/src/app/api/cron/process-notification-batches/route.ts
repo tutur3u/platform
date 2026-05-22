@@ -22,6 +22,10 @@ import { sendPushNotificationBatch } from '@/lib/notifications/push-delivery';
 const PROCESSING_DEADLINE_MS = 165_000;
 const RESTRICT_TO_ROOT_WORKSPACE_ONLY = true;
 
+function getPrivateNotificationClient(sbAdmin: any) {
+  return sbAdmin.schema('private');
+}
+
 type NotificationBatchRow = {
   channel: string;
   email: string | null;
@@ -53,13 +57,7 @@ type DeliveryLogRow = {
   notifications: BatchNotificationRow | null;
 };
 
-type NotificationWorkspaceCheckRow = {
-  batch_id: string | null;
-  notifications: {
-    data: Record<string, unknown> | null;
-    entity_id: string | null;
-  } | null;
-};
+type RawDeliveryLogRow = Omit<DeliveryLogRow, 'notifications'>;
 
 type UserLookupRow = {
   display_name: string | null;
@@ -93,11 +91,59 @@ function sortDeliveryLogsByCreatedAtDesc<T extends DeliveryLogRow>(
   });
 }
 
+async function fetchNotificationsByIds(
+  sbAdmin: any,
+  notificationIds: string[]
+): Promise<Map<string, BatchNotificationRow>> {
+  const notificationsById = new Map<string, BatchNotificationRow>();
+
+  if (notificationIds.length === 0) {
+    return notificationsById;
+  }
+
+  const notifications = await fetchAllChunkedPaginatedRows<
+    BatchNotificationRow,
+    string
+  >(
+    [...new Set(notificationIds)],
+    (notificationIdChunk, from, to) =>
+      sbAdmin
+        .from('notifications')
+        .select(
+          `
+          id,
+          type,
+          title,
+          description,
+          data,
+          created_at,
+          ws_id,
+          user_id,
+          scope,
+          entity_type,
+          entity_id
+        `
+        )
+        .in('id', notificationIdChunk)
+        .order('id', { ascending: true })
+        .range(from, to),
+    {
+      chunkSize: 500,
+    }
+  );
+
+  for (const notification of notifications) {
+    notificationsById.set(notification.id, notification);
+  }
+
+  return notificationsById;
+}
+
 async function fetchPendingBatchedNotificationBatches(
   sbAdmin: any
 ): Promise<NotificationBatchRow[]> {
   return fetchAllPaginatedRows<NotificationBatchRow>((from, to) => {
-    let query = sbAdmin
+    let query = getPrivateNotificationClient(sbAdmin)
       .from('notification_batches')
       .select('*')
       .eq('status', 'pending')
@@ -132,22 +178,14 @@ async function filterRootScopedBatches(
 
   const nullWsIdBatchIds = batchesWithNullWsId.map((batch) => batch.id);
   const deliveryLogsForCheck = await fetchAllChunkedPaginatedRows<
-    NotificationWorkspaceCheckRow,
+    Pick<RawDeliveryLogRow, 'batch_id' | 'notification_id'>,
     string
   >(
     nullWsIdBatchIds,
     (batchIdChunk, from, to) =>
-      sbAdmin
+      getPrivateNotificationClient(sbAdmin)
         .from('notification_delivery_log')
-        .select(
-          `
-          batch_id,
-          notifications (
-            entity_id,
-            data
-          )
-        `
-        )
+        .select('batch_id, notification_id')
         .in('batch_id', batchIdChunk)
         .order('batch_id', { ascending: true })
         .range(from, to),
@@ -155,12 +193,16 @@ async function filterRootScopedBatches(
       chunkSize: 500,
     }
   );
+  const notificationsById = await fetchNotificationsByIds(
+    sbAdmin,
+    deliveryLogsForCheck.map((log) => log.notification_id)
+  );
 
   const validBatchIds = new Set<string>(
     batchesWithWsId.map((batch) => batch.id)
   );
   for (const log of deliveryLogsForCheck) {
-    const notification = log.notifications;
+    const notification = notificationsById.get(log.notification_id);
     if (!log.batch_id || !notification) {
       continue;
     }
@@ -182,37 +224,28 @@ async function fetchPendingBatchDeliveryLogs(
   batchId: string,
   channel: string
 ): Promise<DeliveryLogRow[]> {
-  const deliveryLogs = await fetchAllPaginatedRows<DeliveryLogRow>((from, to) =>
-    sbAdmin
-      .from('notification_delivery_log')
-      .select(
-        `
-        batch_id,
-        notification_id,
-        id,
-        notifications (
-          id,
-          type,
-          title,
-          description,
-          data,
-          created_at,
-          ws_id,
-          user_id,
-          scope,
-          entity_type,
-          entity_id
-        )
-      `
-      )
-      .eq('batch_id', batchId)
-      .eq('status', 'pending')
-      .eq('channel', channel)
-      .order('id', { ascending: true })
-      .range(from, to)
+  const deliveryLogs = await fetchAllPaginatedRows<RawDeliveryLogRow>(
+    (from, to) =>
+      getPrivateNotificationClient(sbAdmin)
+        .from('notification_delivery_log')
+        .select('batch_id, notification_id, id')
+        .eq('batch_id', batchId)
+        .eq('status', 'pending')
+        .eq('channel', channel)
+        .order('id', { ascending: true })
+        .range(from, to)
+  );
+  const notificationsById = await fetchNotificationsByIds(
+    sbAdmin,
+    deliveryLogs.map((log) => log.notification_id)
   );
 
-  return sortDeliveryLogsByCreatedAtDesc(deliveryLogs);
+  return sortDeliveryLogsByCreatedAtDesc(
+    deliveryLogs.map((log) => ({
+      ...log,
+      notifications: notificationsById.get(log.notification_id) ?? null,
+    }))
+  );
 }
 
 async function fetchPendingDeliveryLogRetries(
@@ -220,7 +253,7 @@ async function fetchPendingDeliveryLogRetries(
   batchId: string
 ): Promise<PendingDeliveryLogRetryRow[]> {
   return fetchAllPaginatedRows<PendingDeliveryLogRetryRow>((from, to) =>
-    sbAdmin
+    getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .select('id, retry_count')
       .eq('batch_id', batchId)
@@ -292,7 +325,7 @@ async function markDeliveryLogsSentByIds(
 
   if (logIds.length > 0) {
     for (const idChunk of chunkValues([...new Set(logIds)])) {
-      await sbAdmin
+      await getPrivateNotificationClient(sbAdmin)
         .from('notification_delivery_log')
         .update(patch)
         .in('id', idChunk)
@@ -305,7 +338,7 @@ async function markDeliveryLogsSentByIds(
     return;
   }
 
-  await sbAdmin
+  await getPrivateNotificationClient(sbAdmin)
     .from('notification_delivery_log')
     .update(patch)
     .eq('batch_id', batchId)
@@ -329,7 +362,7 @@ async function markDeliveryLogsSkipped(
   };
 
   for (const idChunk of chunkValues([...new Set(logIds)])) {
-    await sbAdmin
+    await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update(patch)
       .in('id', idChunk)
@@ -342,7 +375,7 @@ async function markBatchSent(
   batchId: string,
   notificationCount: number
 ) {
-  await sbAdmin
+  await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'sent',
@@ -354,7 +387,7 @@ async function markBatchSent(
 }
 
 async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
-  await sbAdmin
+  await getPrivateNotificationClient(sbAdmin)
     .from('notification_batches')
     .update({
       status: 'failed',
@@ -366,7 +399,7 @@ async function markBatchFailed(sbAdmin: any, batchId: string, message: string) {
   const failedLogs = await fetchPendingDeliveryLogRetries(sbAdmin, batchId);
 
   for (const log of failedLogs) {
-    await sbAdmin
+    await getPrivateNotificationClient(sbAdmin)
       .from('notification_delivery_log')
       .update({
         status: 'failed',
@@ -484,7 +517,7 @@ async function handleGET(req: NextRequest) {
       }
 
       try {
-        await sbAdmin
+        await getPrivateNotificationClient(sbAdmin)
           .from('notification_batches')
           .update({
             status: 'processing',

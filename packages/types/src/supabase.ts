@@ -1383,6 +1383,104 @@ export type Database = {
           },
         ];
       };
+      notification_batches: {
+        Row: {
+          channel: string;
+          created_at: string;
+          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
+          email: string | null;
+          error_message: string | null;
+          id: string;
+          notification_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id: string | null;
+        };
+        Insert: {
+          channel: string;
+          created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end: string;
+          window_start: string;
+          ws_id?: string | null;
+        };
+        Update: {
+          channel?: string;
+          created_at?: string;
+          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
+          email?: string | null;
+          error_message?: string | null;
+          id?: string;
+          notification_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          window_end?: string;
+          window_start?: string;
+          ws_id?: string | null;
+        };
+        Relationships: [];
+      };
+      notification_delivery_log: {
+        Row: {
+          batch_id: string | null;
+          channel: string;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          notification_id: string;
+          retry_count: number;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          batch_id?: string | null;
+          channel: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          batch_id?: string | null;
+          channel?: string;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          notification_id?: string;
+          retry_count?: number;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'notification_delivery_log_batch_id_fkey';
+            columns: ['batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'notification_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       notification_email_config: {
         Row: {
           batch_window_minutes: number | null;
@@ -9954,140 +10052,6 @@ export type Database = {
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      notification_batches: {
-        Row: {
-          channel: string;
-          created_at: string;
-          delivery_mode: Database['public']['Enums']['notification_delivery_mode'];
-          email: string | null;
-          error_message: string | null;
-          id: string;
-          notification_count: number;
-          sent_at: string | null;
-          status: string;
-          updated_at: string;
-          user_id: string | null;
-          window_end: string;
-          window_start: string;
-          ws_id: string | null;
-        };
-        Insert: {
-          channel: string;
-          created_at?: string;
-          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
-          email?: string | null;
-          error_message?: string | null;
-          id?: string;
-          notification_count?: number;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-          user_id?: string | null;
-          window_end: string;
-          window_start: string;
-          ws_id?: string | null;
-        };
-        Update: {
-          channel?: string;
-          created_at?: string;
-          delivery_mode?: Database['public']['Enums']['notification_delivery_mode'];
-          email?: string | null;
-          error_message?: string | null;
-          id?: string;
-          notification_count?: number;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-          user_id?: string | null;
-          window_end?: string;
-          window_start?: string;
-          ws_id?: string | null;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'notification_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      notification_delivery_log: {
-        Row: {
-          batch_id: string | null;
-          channel: string;
-          created_at: string;
-          error_message: string | null;
-          id: string;
-          notification_id: string;
-          retry_count: number;
-          sent_at: string | null;
-          status: string;
-          updated_at: string;
-        };
-        Insert: {
-          batch_id?: string | null;
-          channel: string;
-          created_at?: string;
-          error_message?: string | null;
-          id?: string;
-          notification_id: string;
-          retry_count?: number;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
-        Update: {
-          batch_id?: string | null;
-          channel?: string;
-          created_at?: string;
-          error_message?: string | null;
-          id?: string;
-          notification_id?: string;
-          retry_count?: number;
-          sent_at?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'notification_delivery_log_batch_id_fkey';
-            columns: ['batch_id'];
-            isOneToOne: false;
-            referencedRelation: 'notification_batches';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'notification_delivery_log_notification_id_fkey';
-            columns: ['notification_id'];
-            isOneToOne: false;
-            referencedRelation: 'notifications';
             referencedColumns: ['id'];
           },
         ];

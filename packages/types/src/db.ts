@@ -260,6 +260,14 @@ export type AIWhitelistEmail = Tables<
 export type WorkspaceAIExecution = Tables<'workspace_ai_executions'>;
 export type WorkspaceDocument = Tables<'workspace_documents'>;
 export type GroupPostCheck = Tables<'user_group_post_checks'>;
+export type NotificationBatch = Tables<
+  { schema: 'private' },
+  'notification_batches'
+>;
+export type NotificationDeliveryLog = Tables<
+  { schema: 'private' },
+  'notification_delivery_log'
+>;
 export type HiveMember = Tables<'hive_members'>;
 export type HiveNpc = Tables<'hive_npcs'>;
 export type HiveNpcMemory = Tables<'hive_npc_memories'>;

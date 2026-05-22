@@ -1,7 +1,7 @@
 ---
 title: 'Row-Level Security (RLS) Policies'
 description: 'Security model and RLS policy patterns in the Tuturuuu platform'
-updatedAt: '2026-05-19'
+updatedAt: '2026-05-23'
 ---
 
 The Tuturuuu platform implements comprehensive Row-Level Security (RLS) policies to enforce workspace-based multi-tenancy and granular permission controls.
@@ -406,6 +406,11 @@ reached through the server-side database connection.
 If a public table has no app/package consumers and is not part of an active
 database contract, prefer dropping it in a forward migration instead of moving
 dead schema surface into `private`.
+
+Notification delivery queue internals follow this pattern:
+`private.notification_batches` and `private.notification_delivery_log` are
+processed only by the server-owned batch cron, immediate-send route, and
+service-role notification helper functions.
 
 Required controls:
 

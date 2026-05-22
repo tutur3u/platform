@@ -21,8 +21,6 @@ values
   ('user_group_metric_categories'),
   ('mira_accessories'),
   ('mira_achievements'),
-  ('notification_batches'),
-  ('notification_delivery_log'),
   ('nova_challenge_criteria'),
   ('nova_challenges'),
   ('nova_problem_test_cases'),
