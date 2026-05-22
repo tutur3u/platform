@@ -2999,6 +2999,7 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
   const paths = getBlueGreenPaths(tempDir);
   const calls = [];
   let targetStarted = false;
+  let hiveStarted = false;
   let forcedProxyRefresh = false;
 
   fs.mkdirSync(path.dirname(envFilePath), { recursive: true });
@@ -3036,6 +3037,11 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
       }
       if (serviceName === 'buildkit') {
         return resultFor('buildkit-123\n');
+      }
+      if (serviceName === 'hive-db-migrate') {
+        return resultFor(
+          args.includes('-a') && hiveStarted ? 'hive-db-migrate-123\n' : ''
+        );
       }
       if (BLUE_GREEN_SUPPORT_SERVICES.includes(serviceName)) {
         return resultFor(targetStarted ? `${serviceName}-123\n` : '');
@@ -3078,6 +3084,7 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     }
 
     if (args.includes('up') && args.includes('hive-green')) {
+      hiveStarted = true;
       return resultFor('');
     }
 
@@ -3160,6 +3167,19 @@ test('runBlueGreenProdWorkflow recreates web-proxy when the Hive host port is mi
     assert.equal(
       calls.some((call) => call.includes(' buildx prune ')),
       false
+    );
+    const hiveUpIndex = calls.findIndex(
+      (call) =>
+        call.includes(' up --detach --no-build') && call.includes(' hive-green')
+    );
+    const hiveMigrationCleanupIndex = calls.indexOf(
+      `docker compose -f ${PROD_COMPOSE_FILE} rm --stop -f hive-db-migrate`
+    );
+
+    assert.ok(hiveUpIndex >= 0, 'expected Hive services to start');
+    assert.ok(
+      hiveMigrationCleanupIndex > hiveUpIndex,
+      'expected dependency-started Hive migration cleanup after Hive starts'
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });

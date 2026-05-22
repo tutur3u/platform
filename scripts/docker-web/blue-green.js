@@ -1751,12 +1751,33 @@ async function removeHiveDbMigrateContainerIfPresent({
   env,
   runCommand: run,
 }) {
-  await removeComposeServicesIfPresent([HIVE_DB_MIGRATE_SERVICE], {
-    composeFile,
-    composeGlobalArgs,
-    env,
-    runCommand: run,
-  });
+  if (
+    !(await hasComposeServiceContainer(HIVE_DB_MIGRATE_SERVICE, {
+      composeFile,
+      composeGlobalArgs,
+      env,
+      includeStopped: true,
+      runCommand: run,
+    }))
+  ) {
+    return;
+  }
+
+  await runChecked(
+    'docker',
+    getComposeCommandArgs(
+      composeFile,
+      composeGlobalArgs,
+      'rm',
+      '--stop',
+      '-f',
+      HIVE_DB_MIGRATE_SERVICE
+    ),
+    {
+      env,
+      runCommand: run,
+    }
+  );
 }
 
 async function runHiveDbForwardMigrationsAndCleanup({

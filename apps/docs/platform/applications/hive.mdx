@@ -79,6 +79,9 @@ The deployment watcher also runs that job explicitly with
 `docker compose run --rm --no-build hive-db-migrate` on every blue/green
 deployment so an already-completed migration container cannot silently satisfy a
 new deploy.
+After the explicit run and after Hive services start, the watcher removes the
+Compose service container with `docker compose rm --stop -f hive-db-migrate` so
+the one-shot migrator does not stay around consuming host resources.
 
 The migration runner records successful work in `hive_schema_migrations` with a
 timestamp version, filename, checksum, `applied_at`, and `applied_by`. The
