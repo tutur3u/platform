@@ -4,7 +4,11 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import { NEW_LABEL_COLOR } from '../../../utils/taskConstants';
-import { useBoardBroadcast } from '../../board-broadcast-context';
+import {
+  type BoardBroadcastFn,
+  getActiveBroadcast,
+  useBoardBroadcast,
+} from '../../board-broadcast-context';
 import type {
   WorkspaceTaskAssignee,
   WorkspaceTaskLabel,
@@ -53,6 +57,7 @@ export interface UseTaskRelationshipsProps {
   setNewProjectName: (value: string) => void;
   setShowNewLabelDialog: (value: boolean) => void;
   setShowNewProjectDialog: (value: boolean) => void;
+  fallbackBroadcast?: BoardBroadcastFn | null;
   onUpdate: () => void;
 }
 
@@ -140,10 +145,13 @@ export function useTaskRelationships({
   setNewProjectName,
   setShowNewLabelDialog,
   setShowNewProjectDialog,
+  fallbackBroadcast,
   onUpdate,
 }: UseTaskRelationshipsProps): UseTaskRelationshipsReturn {
   const queryClient = useQueryClient();
-  const broadcast = useBoardBroadcast();
+  const contextBroadcast = useBoardBroadcast();
+  const broadcast =
+    contextBroadcast ?? getActiveBroadcast() ?? fallbackBroadcast;
   const [creatingLabel, setCreatingLabel] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
 

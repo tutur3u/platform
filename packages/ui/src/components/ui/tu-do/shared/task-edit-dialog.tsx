@@ -34,7 +34,10 @@ import { TaskNewProjectDialog } from '../boards/boardId/task-dialogs/TaskNewProj
 import { useTaskDialogContext } from '../providers/task-dialog-provider';
 import { useOptionalWorkspacePresenceContext } from '../providers/workspace-presence-provider';
 import { NEW_LABEL_COLOR } from '../utils/taskConstants';
-import { getActiveBroadcast } from './board-broadcast-context';
+import {
+  type BoardBroadcastFn,
+  getActiveBroadcast,
+} from './board-broadcast-context';
 import { DescriptionOverflowWarningDialog } from './description-overflow-warning-dialog';
 import { createInitialSuggestionState } from './mention-system/types';
 import { SyncWarningDialog } from './sync-warning-dialog';
@@ -238,6 +241,7 @@ export function TaskEditDialog({
   const handleConvertToTaskRef = useRef<(() => Promise<void>) | null>(null);
   const descriptionRef = useRef<JSONContent | null>(formState.description);
   const persistedDescriptionRef = useRef<string | null>(null);
+  const taskRealtimeBroadcastRef = useRef<BoardBroadcastFn | null>(null);
 
   useEffect(() => {
     descriptionRef.current = formState.description;
@@ -361,7 +365,8 @@ export function TaskEditDialog({
 
       persistedDescriptionRef.current = serializedDescription;
 
-      const broadcast = getActiveBroadcast();
+      const broadcast =
+        getActiveBroadcast() ?? taskRealtimeBroadcastRef.current;
       broadcastTaskDescriptionUpsert({
         taskId: task.id,
         descriptionString: serializedDescription,
@@ -721,6 +726,36 @@ export function TaskEditDialog({
       null;
   }, [isOpen, isCreateMode, parseDescription, task?.description]);
 
+  // Realtime sync for task fields and relations. Description sync remains Yjs-only.
+  const { broadcast: taskRealtimeBroadcast } = useTaskRealtimeSync({
+    wsId: effectiveTaskWsId,
+    taskWorkspaceId: taskWsId,
+    taskId: task?.id,
+    boardId,
+    isCreateMode,
+    isOpen,
+    realtimeEnabled,
+    isPersonalWorkspace,
+    name: formState.name,
+    priority: formState.priority,
+    startDate: formState.startDate,
+    endDate: formState.endDate,
+    estimationPoints: formState.estimationPoints,
+    selectedListId: formState.selectedListId,
+    pendingNameRef,
+    setName: formState.setName,
+    setPriority: formState.setPriority,
+    setStartDate: formState.setStartDate,
+    setEndDate: formState.setEndDate,
+    setEstimationPoints: formState.setEstimationPoints,
+    setSelectedListId: formState.setSelectedListId,
+    setSelectedLabels: formState.setSelectedLabels,
+    setSelectedAssignees: formState.setSelectedAssignees,
+    setSelectedProjects: formState.setSelectedProjects,
+    disabled,
+  });
+  taskRealtimeBroadcastRef.current = taskRealtimeBroadcast;
+
   // Task mutations
   const {
     updateEstimation,
@@ -745,6 +780,7 @@ export function TaskEditDialog({
     setStartDate: formState.setStartDate,
     setEndDate: formState.setEndDate,
     setSelectedListId: formState.setSelectedListId,
+    fallbackBroadcast: taskRealtimeBroadcast,
     onUpdate,
   });
 
@@ -778,6 +814,7 @@ export function TaskEditDialog({
     setNewProjectName,
     setShowNewLabelDialog,
     setShowNewProjectDialog,
+    fallbackBroadcast: taskRealtimeBroadcast,
     onUpdate,
   });
 
@@ -817,36 +854,6 @@ export function TaskEditDialog({
     isCreateMode,
     initialPendingRelationships: seededPendingRelationships,
     onUpdate,
-  });
-
-  // Realtime sync
-  useTaskRealtimeSync({
-    wsId: effectiveTaskWsId,
-    taskWorkspaceId: taskWsId,
-    taskId: task?.id,
-    isCreateMode,
-    isOpen,
-    name: formState.name,
-    description: formState.description,
-    priority: formState.priority,
-    startDate: formState.startDate,
-    endDate: formState.endDate,
-    estimationPoints: formState.estimationPoints,
-    selectedListId: formState.selectedListId,
-    pendingNameRef,
-    setName: formState.setName,
-    setDescription: formState.setDescription,
-    setPriority: formState.setPriority,
-    setStartDate: formState.setStartDate,
-    collaborationMode,
-
-    setEndDate: formState.setEndDate,
-    setEstimationPoints: formState.setEstimationPoints,
-    setSelectedListId: formState.setSelectedListId,
-    setSelectedLabels: formState.setSelectedLabels,
-    setSelectedAssignees: formState.setSelectedAssignees,
-    setSelectedProjects: formState.setSelectedProjects,
-    disabled,
   });
 
   // Form reset

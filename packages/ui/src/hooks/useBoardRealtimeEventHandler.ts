@@ -27,6 +27,7 @@ type UseBoardRealtimeEventHandlerOptions = {
   onListChangeRef: CallbackRef<
     (list: TaskList, eventType: 'INSERT' | 'UPDATE' | 'DELETE') => void
   >;
+  onTaskRelationsChangeRef?: CallbackRef<(taskIds: string[]) => void>;
 };
 
 const isDefined = <T>(value: T | null | undefined): value is T =>
@@ -88,6 +89,7 @@ export function useBoardRealtimeEventHandler({
   rememberEventId,
   onTaskChangeRef,
   onListChangeRef,
+  onTaskRelationsChangeRef,
 }: UseBoardRealtimeEventHandlerOptions) {
   // Collects task IDs from task:relations-changed events over 150ms
   // and batch-fetches all relations in one query.
@@ -282,6 +284,10 @@ export function useBoardRealtimeEventHandler({
           pendingRelationIdsRef.current.add(id);
         }
 
+        if (ids.length > 0) {
+          onTaskRelationsChangeRef?.current?.(ids);
+        }
+
         if (relationFetchTimerRef.current) {
           clearTimeout(relationFetchTimerRef.current);
         }
@@ -305,6 +311,7 @@ export function useBoardRealtimeEventHandler({
       boardId,
       fetchBatchedRelations,
       onListChangeRef,
+      onTaskRelationsChangeRef,
       onTaskChangeRef,
       queryClient,
       rememberEventId,

@@ -945,6 +945,27 @@ describe('useBoardRealtime', () => {
       ]);
       expect(cachedTasks?.[0]?.assignees).toEqual([]);
     });
+
+    it('calls onTaskRelationsChange for Supabase relation broadcasts', async () => {
+      const onTaskRelationsChange = vi.fn();
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', {
+            enabled: true,
+            onTaskRelationsChange,
+          }),
+        { wrapper }
+      );
+
+      const listener = broadcastListeners.get('task:relations-changed')!;
+
+      await act(async () => {
+        listener({ payload: { taskIds: ['task-1', 'task-2'] } });
+      });
+
+      expect(onTaskRelationsChange).toHaveBeenCalledWith(['task-1', 'task-2']);
+    });
   });
 
   describe('returned broadcast function', () => {
@@ -1036,6 +1057,31 @@ describe('useBoardRealtime', () => {
       expect(queryClient.getQueryData<Task[]>(['tasks', 'board-1'])).toEqual([
         expect.objectContaining({ id: 'task-1' }),
       ]);
+    });
+
+    it('calls onTaskRelationsChange for local relation broadcasts when Supabase realtime is disabled', async () => {
+      const onTaskRelationsChange = vi.fn();
+
+      renderHook(
+        () =>
+          useBoardRealtime('board-1', {
+            enabled: false,
+            onTaskRelationsChange,
+          }),
+        { wrapper }
+      );
+
+      await act(async () => {
+        MockBroadcastChannel.instances[0]?.dispatch({
+          event: 'task:relations-changed',
+          payload: {
+            __tuturuuuBoardRealtimeEventId: 'local-relations-event-1',
+            taskIds: ['task-1'],
+          },
+        });
+      });
+
+      expect(onTaskRelationsChange).toHaveBeenCalledWith(['task-1']);
     });
 
     it('delivers outgoing broadcasts to another local tab when Supabase realtime is disabled', () => {

@@ -9,6 +9,7 @@ import { useToast } from '@tuturuuu/ui/hooks/use-toast';
 import { invalidateTaskCaches } from '@tuturuuu/utils/task-helper';
 import { useCallback, useState } from 'react';
 import {
+  type BoardBroadcastFn,
   getActiveBroadcast,
   useBoardBroadcast,
 } from '../../board-broadcast-context';
@@ -37,6 +38,7 @@ export interface UseTaskMutationsProps {
   setStartDate: (value: Date | undefined) => void;
   setEndDate: (value: Date | undefined) => void;
   setSelectedListId: (value: string) => void;
+  fallbackBroadcast?: BoardBroadcastFn | null;
   onUpdate: () => void;
 }
 
@@ -78,12 +80,14 @@ export function useTaskMutations({
   setStartDate,
   setEndDate,
   setSelectedListId,
+  fallbackBroadcast,
   onUpdate,
 }: UseTaskMutationsProps): UseTaskMutationsReturn {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const contextBroadcast = useBoardBroadcast();
-  const broadcast = contextBroadcast ?? getActiveBroadcast();
+  const broadcast =
+    contextBroadcast ?? getActiveBroadcast() ?? fallbackBroadcast;
   const [estimationSaving, setEstimationSaving] = useState(false);
   const [schedulingSaving, setSchedulingSaving] = useState(false);
 

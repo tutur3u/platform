@@ -29,9 +29,15 @@ export function useBoardRealtime(
       list: TaskList,
       eventType: 'INSERT' | 'UPDATE' | 'DELETE'
     ) => void;
+    onTaskRelationsChange?: (taskIds: string[]) => void;
   }
 ): { broadcast: BoardBroadcastFn } {
-  const { enabled = true, onTaskChange, onListChange } = options ?? {};
+  const {
+    enabled = true,
+    onTaskChange,
+    onListChange,
+    onTaskRelationsChange,
+  } = options ?? {};
   const queryClient = useQueryClient();
   const t = useTranslations('common');
 
@@ -53,6 +59,8 @@ export function useBoardRealtime(
   onTaskChangeRef.current = onTaskChange;
   const onListChangeRef = useRef(onListChange);
   onListChangeRef.current = onListChange;
+  const onTaskRelationsChangeRef = useRef(onTaskRelationsChange);
+  onTaskRelationsChangeRef.current = onTaskRelationsChange;
 
   // ── Sender-side broadcast batching ──────────────────────────────
   // Buffers rapid-fire broadcast calls (e.g. bulk operations) over a
@@ -114,6 +122,7 @@ export function useBoardRealtime(
     boardId,
     onListChangeRef,
     onTaskChangeRef,
+    onTaskRelationsChangeRef,
     queryClient,
     rememberEventId,
   });
