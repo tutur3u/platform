@@ -95,7 +95,8 @@
                 "group": "Personalization",
                 "pages": [
                   "platform/personalization/themes",
-                  "platform/personalization/language"
+                  "platform/personalization/language",
+                  "platform/personalization/sidebar-navigation"
                 ]
               },
               {

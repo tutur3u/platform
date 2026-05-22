@@ -61,4 +61,36 @@ describe('user config route payload protection', () => {
       message: 'Invalid request data',
     });
   });
+
+  it('deletes the current user config when the value is null', async () => {
+    const route = await import(
+      '@/app/api/v1/users/me/configs/[configId]/route'
+    );
+    const query = {
+      delete: vi.fn(() => query),
+      eq: vi.fn(() => query),
+      error: null,
+    };
+    const from = vi.fn(() => query);
+    const response = await (route.PUT as any)(
+      new NextRequest('http://localhost/api/v1/users/me/configs/test', {
+        method: 'PUT',
+        body: JSON.stringify({ value: null }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }),
+      {
+        user: { id: 'user-1' },
+        supabase: { from },
+      },
+      { configId: 'test' }
+    );
+
+    expect(response.status).toBe(200);
+    expect(from).toHaveBeenCalledWith('user_configs');
+    expect(query.delete).toHaveBeenCalled();
+    expect(query.eq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(query.eq).toHaveBeenCalledWith('id', 'test');
+  });
 });

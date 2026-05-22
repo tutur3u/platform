@@ -1,0 +1,61 @@
+---
+title: 'Sidebar Navigation'
+description: 'How dashboard sidebar layout preferences work in apps/web.'
+---
+
+## Default layout
+
+The dashboard sidebar always keeps **Dashboard** in the root navigation. By default, the root navigation then shows **Tasks**, **Calendar**, **Finance**, and **Settings**.
+
+All other eligible top-level tools are placed under **More tools**. More tools is grouped into durable sections:
+
+- **Work tools**: Habits, Whiteboards, Track, Drive, Forms, Documents
+- **AI**: Chat, AI Lab
+- **Operations**: Workforce, Users, Inventory
+- **Utilities**: QR Generator, Google Workspace, Meet, Polls, Mail, Education, Link Shortener
+
+Dashboard is separated from the main root tools. Settings is also separated from the main root tools and from More tools when More tools is present.
+
+## Managing layout
+
+Users manage start-page navigation, sidebar behavior, sidebar layout, and recent-history visibility from **Settings → Preferences → Navigation & Sidebar**.
+
+## Preference precedence
+
+Sidebar layout preferences use a hybrid model:
+
+1. Workspace override: `user_workspace_configs.SIDEBAR_NAVIGATION_LAYOUT`
+2. Account default: `user_configs.SIDEBAR_NAVIGATION_LAYOUT`
+3. Authored default layout
+
+The saved layout stores three ordered id lists:
+
+- `root`: first-level tools shown directly in the sidebar
+- `more`: first-level tools shown inside More tools
+- `hidden`: first-level tools archived from normal sidebar rendering
+
+Unknown or stale ids are ignored when the layout is applied and are dropped the next time the user saves preferences.
+
+## Quick actions
+
+First-level navigation items expose compact hover actions in the sidebar:
+
+- **Pin** moves an item from More tools to the root sidebar.
+- **Unpin** moves an item from the root sidebar to More tools.
+- **Archive** hides an item from normal sidebar rendering.
+
+Dashboard and Settings are locked and cannot be pinned, unpinned, or archived.
+
+Archived items appear in a compact **Archived** dropdown at the bottom of **More tools**. More tools remains visible when archived items exist, even if every normal More tools child is archived. Selecting an archived item from that dropdown restores it to its previous root or More tools placement.
+
+## Visibility rules
+
+Preferences never bypass authorization, feature flags, production gates, root-workspace restrictions, or tier visibility. If a tool is unavailable for the current user or workspace, placing it in root navigation does not make it appear.
+
+Hidden tools remain directly routable. When the current route matches a hidden tool or one of its descendants, the sidebar reveals that item only for the current route and marks it as an active hidden item. This contextual reveal is not saved back into the preference config.
+
+## Recent history
+
+Recent sidebar navigation history is controlled by `user_configs.SIDEBAR_RECENT_NAVIGATION_ENABLED`.
+
+The default is **off**. When disabled, the sidebar does not render recent navigation history and does not record recent visits.

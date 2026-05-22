@@ -13,6 +13,8 @@ import { usePathname } from 'next/navigation';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 
 export interface NavLink {
+  /** Stable id used by user-managed sidebar layout preferences. */
+  id?: string;
   title: string;
   trailing?: string;
   icon?: ReactNode;
@@ -38,6 +40,23 @@ export interface NavLink {
   requireRootWorkspace?: boolean;
   disableOnProduction?: boolean;
   experimental?: 'alpha' | 'beta' | 'new';
+  preferenceHiddenActive?: boolean;
+  preferenceArchivedItems?: NavLink[];
+  preferenceArchiveAction?: {
+    isArchived?: boolean;
+    label: string;
+    onClick: () => void;
+    pending?: boolean;
+  };
+  preferenceQuickAction?: {
+    isPinned: boolean;
+    label: string;
+    onClick: () => void;
+    pending?: boolean;
+  };
+  preferenceLocked?: boolean;
+  preferencePlacement?: 'root' | 'more';
+  preferenceSectionLabel?: string;
   deferredQueryParamsFromWorkspaceConfig?:
     | {
         configId: string;

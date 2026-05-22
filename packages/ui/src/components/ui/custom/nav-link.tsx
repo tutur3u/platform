@@ -1,7 +1,14 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { ChevronRight, Sparkles } from '@tuturuuu/icons';
+import {
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
+  Pin,
+  PinOff,
+  Sparkles,
+} from '@tuturuuu/icons';
 import { getWorkspaceConfigIdList } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
@@ -18,6 +25,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
 import type { NavLink as NavLinkType } from './navigation';
 
@@ -74,10 +87,23 @@ export function NavLink({
 
   const isDisabled = link.disabled || link.tempDisabled;
   const isTierRestricted = link.tempDisabled && link.requiredWorkspaceTier;
+  const preferenceQuickAction =
+    !isCollapsed && !link.preferenceLocked ? link.preferenceQuickAction : null;
+  const preferenceArchiveAction =
+    !isCollapsed && !link.preferenceLocked
+      ? link.preferenceArchiveAction
+      : null;
+  const archivedItems = link.preferenceArchivedItems ?? [];
 
   const content = (
     <>
-      <div key="nav-content" className="flex items-center gap-2">
+      <div
+        key="nav-content"
+        className={cn(
+          'flex min-w-0 items-center gap-2',
+          isCollapsed ? 'justify-center' : 'flex-1'
+        )}
+      >
         {icon && <span key="nav-icon">{icon}</span>}
         <span
           key="nav-title"
@@ -85,46 +111,76 @@ export function NavLink({
         >
           {title}
         </span>
-        {!isCollapsed &&
-          link.requiredWorkspaceTier &&
-          (() => {
-            // Get the minimum required tier for display (lowest barrier to entry)
-            const tiers = ['FREE', 'PLUS', 'PRO', 'ENTERPRISE'] as const;
-            const requiredTiers = Array.isArray(
-              link.requiredWorkspaceTier.requiredTier
-            )
-              ? link.requiredWorkspaceTier.requiredTier
-              : [link.requiredWorkspaceTier.requiredTier];
-            const badgeTier = requiredTiers.reduce(
-              (min, tier) =>
-                tiers.indexOf(tier) < tiers.indexOf(min) ? tier : min,
-              requiredTiers[0]!
-            );
-
-            return (
-              <Badge
-                variant="outline"
-                className={cn(
-                  'ml-auto h-4 shrink-0 px-1 py-0 font-medium text-[10px]',
-                  badgeTier === 'PLUS' &&
-                    'border-dynamic-blue/50 bg-dynamic-blue/10 text-dynamic-blue',
-                  badgeTier === 'PRO' &&
-                    'border-dynamic-purple/50 bg-dynamic-purple/10 text-dynamic-purple',
-                  badgeTier === 'ENTERPRISE' &&
-                    'border-dynamic-amber/50 bg-dynamic-amber/10 text-dynamic-amber'
-                )}
-              >
-                {badgeTier}
-              </Badge>
-            );
-          })()}
       </div>
 
-      {hasChildren && !isCollapsed && !isDisabled && (
-        <ChevronRight
-          key="nav-chevron"
-          className="ml-auto h-4 w-4 opacity-0 group-hover/navlink:opacity-100"
-        />
+      {!isCollapsed && (
+        <div className="ml-auto flex h-6 shrink-0 items-center gap-0.5">
+          {preferenceArchiveAction && !isDisabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={preferenceArchiveAction.label}
+                  className={cn(
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/navlink:opacity-100',
+                    preferenceArchiveAction.pending &&
+                      'pointer-events-none animate-pulse opacity-100'
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    preferenceArchiveAction.onClick();
+                  }}
+                >
+                  {preferenceArchiveAction.isArchived ? (
+                    <ArchiveRestore className="h-3.5 w-3.5" />
+                  ) : (
+                    <Archive className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{preferenceArchiveAction.label}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {preferenceQuickAction && !isDisabled && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={preferenceQuickAction.label}
+                  className={cn(
+                    'flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover/navlink:opacity-100',
+                    preferenceQuickAction.pending &&
+                      'pointer-events-none animate-pulse opacity-100'
+                  )}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    preferenceQuickAction.onClick();
+                  }}
+                >
+                  {preferenceQuickAction.isPinned ? (
+                    <PinOff className="h-3.5 w-3.5" />
+                  ) : (
+                    <Pin className="h-3.5 w-3.5" />
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{preferenceQuickAction.label}</TooltipContent>
+            </Tooltip>
+          )}
+
+          {(hasChildren || archivedItems.length > 0) &&
+            !preferenceArchiveAction &&
+            !preferenceQuickAction &&
+            !isDisabled && (
+              <ChevronRight
+                key="nav-chevron"
+                className="h-4 w-4 opacity-0 group-hover/navlink:opacity-100"
+              />
+            )}
+        </div>
       )}
     </>
   );
@@ -218,9 +274,11 @@ export function NavLink({
 
   const commonProps = {
     className: cn(
-      'group/navlink flex cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
+      'group/navlink flex w-full cursor-pointer items-center justify-between rounded-md p-2 font-medium text-sm',
       isCollapsed && 'justify-center',
       isActive && 'bg-accent text-accent-foreground',
+      link.preferenceHiddenActive &&
+        'bg-dynamic-amber/10 ring-1 ring-dynamic-amber/40',
       link.isBack && 'mb-2 cursor-pointer',
       isResolvingHref && 'pointer-events-none opacity-70',
       isDisabled
@@ -253,7 +311,38 @@ export function NavLink({
   };
 
   const linkElement =
-    effectiveHref && !isDisabled ? (
+    archivedItems.length > 0 ? (
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <button type="button" {...commonProps}>
+            {content}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" side="right" className="min-w-56">
+          {archivedItems.map((item) => {
+            const restoreAction = item.preferenceArchiveAction;
+
+            return (
+              <DropdownMenuItem
+                key={item.id ?? item.title}
+                className="cursor-pointer gap-2"
+                disabled={restoreAction?.pending}
+                onSelect={(event) => {
+                  event.preventDefault();
+                  restoreAction?.onClick();
+                }}
+              >
+                {item.icon && (
+                  <span className="text-muted-foreground">{item.icon}</span>
+                )}
+                <span className="min-w-0 flex-1 truncate">{item.title}</span>
+                <ArchiveRestore className="h-4 w-4 text-muted-foreground" />
+              </DropdownMenuItem>
+            );
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : effectiveHref && !isDisabled ? (
       <Link
         href={effectiveHref}
         {...commonProps}

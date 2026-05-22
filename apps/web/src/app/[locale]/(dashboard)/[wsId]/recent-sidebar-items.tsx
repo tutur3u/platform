@@ -68,6 +68,7 @@ const TASK_LIST_SEGMENT_BLOCKLIST = new Set([
 ]);
 
 interface RecentSidebarItemsProps {
+  enabled?: boolean;
   isCollapsed: boolean;
   links: (NavLink | null)[];
   onNavigate: () => void;
@@ -168,6 +169,7 @@ function getTaskIdFromRecentHref(href: string): string | null {
 }
 
 export function RecentSidebarItems({
+  enabled = true,
   wsId,
   links,
   isCollapsed,
@@ -196,6 +198,8 @@ export function RecentSidebarItems({
   const showLessLabel = t('sidebar_recent_items.show_less');
 
   const loadEntries = useCallback(() => {
+    if (!enabled) return;
+
     const storedEntries = readEntries(storageKey);
     const normalizedEntries = normalizeRecentSidebarEntries(storedEntries, {
       currentPathname: pathname,
@@ -209,7 +213,7 @@ export function RecentSidebarItems({
         broadcast: false,
       });
     }
-  }, [pathname, storageKey, wsId]);
+  }, [enabled, pathname, storageKey, wsId]);
 
   const resolveItem = useCallback(
     (href: string) =>
@@ -241,10 +245,14 @@ export function RecentSidebarItems({
   );
 
   useEffect(() => {
+    if (!enabled) return;
+
     loadEntries();
-  }, [loadEntries]);
+  }, [enabled, loadEntries]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const handleStorage = (event: StorageEvent) => {
       if (event.key !== storageKey) return;
       loadEntries();
@@ -309,9 +317,11 @@ export function RecentSidebarItems({
         handleRecentVisit as EventListener
       );
     };
-  }, [eventSourceId, loadEntries, pathname, storageKey, wsId]);
+  }, [enabled, eventSourceId, loadEntries, pathname, storageKey, wsId]);
 
   useEffect(() => {
+    if (!enabled) return;
+
     const resolvedItem = resolveItem(pathname);
     if (!resolvedItem) return;
 
@@ -337,7 +347,7 @@ export function RecentSidebarItems({
     writeEntries(storageKey, nextEntries, {
       sourceId: eventSourceId,
     });
-  }, [eventSourceId, pathname, resolveItem, storageKey, wsId]);
+  }, [enabled, eventSourceId, pathname, resolveItem, storageKey, wsId]);
 
   const resolvedItems = entries
     .map((entry) =>
@@ -378,7 +388,7 @@ export function RecentSidebarItems({
     }
   }, [hasOverflow, showAll]);
 
-  if (resolvedItems.length === 0) return null;
+  if (!enabled || resolvedItems.length === 0) return null;
 
   const clearAll = () => {
     setShowAll(false);

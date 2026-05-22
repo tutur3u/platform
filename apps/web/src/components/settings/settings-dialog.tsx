@@ -20,7 +20,6 @@ import {
   Laptop,
   LayoutGrid,
   Paintbrush,
-  PanelLeft,
   Shield,
   Sparkles,
   Star,
@@ -74,14 +73,13 @@ import { FormsAutosaveSettings } from './forms/forms-autosave-settings';
 import ReferralSettings from './inventory/referral-settings';
 import { MiraMemorySettings } from './mira/mira-memory-settings';
 import { MiraPersonalitySettings } from './mira/mira-personality-settings';
-import NavigationSettings from './navigation-settings';
 import { ReportDefaultTitleSettings } from './reports/report-default-title-settings';
 import UserAvatar from './settings-avatar';
 import DisplayNameInput from './settings-display-name-input';
 import EmailInput from './settings-email-input';
 import FullNameInput from './settings-full-name-input';
 import UserIdInput from './settings-user-id-input';
-import SidebarSettings from './sidebar-settings';
+import NavigationSidebarSettings from './sidebar-settings';
 import { TaskSettings } from './tasks/task-settings';
 import { TimeTrackerCategoriesSettings } from './time-tracker/time-tracker-categories-settings';
 import { TimeTrackerGeneralSettings } from './time-tracker/time-tracker-general-settings';
@@ -104,6 +102,10 @@ interface SettingsDialogProps {
   linkedProvider?: string;
 }
 
+function normalizeSettingsTab(tab: string) {
+  return tab === 'sidebar' ? 'navigation' : tab;
+}
+
 export function SettingsDialog({
   wsId,
   user,
@@ -112,7 +114,8 @@ export function SettingsDialog({
   linkedProvider,
 }: SettingsDialogProps) {
   const t = useTranslations();
-  const [activeTab, setActiveTab] = useState(defaultTab);
+  const normalizedDefaultTab = normalizeSettingsTab(defaultTab);
+  const [activeTab, setActiveTab] = useState(normalizedDefaultTab);
   const {
     data: workspaceCustomConfigs = {},
     isLoading: isLoadingWorkspaceCustomConfigs,
@@ -194,8 +197,8 @@ export function SettingsDialog({
   );
 
   useEffect(() => {
-    setActiveTab(defaultTab);
-  }, [defaultTab]);
+    setActiveTab(normalizedDefaultTab);
+  }, [normalizedDefaultTab]);
 
   // Reset activeTab if billing permission is revoked or not available
   useEffect(() => {
@@ -205,12 +208,17 @@ export function SettingsDialog({
       activeTab === 'workspace_billing'
     ) {
       const safeFallback =
-        defaultTab === 'workspace_billing'
+        normalizedDefaultTab === 'workspace_billing'
           ? 'profile'
-          : (defaultTab ?? 'profile');
+          : normalizedDefaultTab;
       setActiveTab(safeFallback);
     }
-  }, [hasBillingPermission, isBillingPermissionLoading, activeTab, defaultTab]);
+  }, [
+    hasBillingPermission,
+    isBillingPermissionLoading,
+    activeTab,
+    normalizedDefaultTab,
+  ]);
 
   // Fetch calendar token when workspace is available (using TanStack Query)
   const { data: calendarToken } = useQuery({
@@ -309,18 +317,18 @@ export function SettingsDialog({
           keywords: ['Notifications'],
         },
         {
-          name: 'sidebar',
-          label: t('settings.preferences.sidebar'),
-          icon: PanelLeft,
-          description: t('settings.preferences.sidebar_description'),
-          keywords: ['Sidebar', 'Navigation', 'Menu'],
-        },
-        {
           name: 'navigation',
           label: t('settings.preferences.navigation.menu_label'),
           icon: Compass,
           description: t('settings.preferences.navigation.menu_description'),
-          keywords: ['Navigation', 'Start page', 'Workspace', 'Redirect'],
+          keywords: [
+            'Navigation',
+            'Sidebar',
+            'Start page',
+            'Workspace',
+            'Redirect',
+            'Menu',
+          ],
         },
         {
           name: 'forms',
@@ -714,15 +722,9 @@ export function SettingsDialog({
           </div>
         )}
 
-        {activeTab === 'sidebar' && (
+        {activeTab === 'navigation' && (
           <div className="h-full">
-            <SidebarSettings />
-          </div>
-        )}
-
-        {activeTab === 'navigation' && user && (
-          <div className="h-full">
-            <NavigationSettings wsId={wsId} user={user} />
+            <NavigationSidebarSettings wsId={wsId} user={user} />
           </div>
         )}
 

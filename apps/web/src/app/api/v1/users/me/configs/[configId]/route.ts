@@ -31,9 +31,9 @@ export const GET = withSessionAuth<{ configId: string }>(
 export const PUT = withSessionAuth<{ configId: string }>(
   async (req, { user, supabase }, { configId: id }) => {
     const bodySchema = z.object({
-      value: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
+      value: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable(),
     });
-    const bodyResult = await safeParseBody<{ value?: string }>(req);
+    const bodyResult = await safeParseBody<{ value: string | null }>(req);
     if (bodyResult instanceof NextResponse) {
       return bodyResult;
     }
@@ -49,12 +49,30 @@ export const PUT = withSessionAuth<{ configId: string }>(
 
     const { value } = parsedBody.data;
 
+    if (value === null || value === '') {
+      const { error } = await supabase
+        .from('user_configs')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('id', id);
+
+      if (error) {
+        serverLogger.error('Error deleting user config:', error);
+        return NextResponse.json(
+          { message: 'Error deleting user config' },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ message: 'success' });
+    }
+
     const { error } = await supabase.from('user_configs').upsert(
       [
         {
           id,
           user_id: user.id,
-          value: value ?? '',
+          value,
           updated_at: new Date().toISOString(),
         },
       ],

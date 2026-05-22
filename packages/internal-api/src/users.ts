@@ -280,7 +280,7 @@ export async function getUserConfig(
 
 export async function updateUserConfig(
   configId: string,
-  value: string,
+  value: string | null,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
@@ -313,7 +313,7 @@ export async function getUserWorkspaceConfig(
 export async function updateUserWorkspaceConfig(
   workspaceId: string,
   configId: string,
-  value: string,
+  value: string | null,
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);

@@ -54,11 +54,18 @@ export function Nav({
             );
           }
 
+          const previousSectionLabel = links
+            .slice(0, index)
+            .reverse()
+            .find((previousLink) => previousLink)?.sectionLabel;
+          const shouldShowSectionLabel =
+            link.sectionLabel && link.sectionLabel !== previousSectionLabel;
+
           return (
             <div key={`nav-item-${link.href || link.title}-${index}`}>
-              {link.sectionLabel && !isCollapsed && (
-                <div className="px-2 pt-2 pb-1">
-                  <span className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+              {shouldShowSectionLabel && !isCollapsed && (
+                <div className="px-2 pt-3 pb-1 first:pt-0">
+                  <span className="font-semibold text-[11px] text-muted-foreground/80 uppercase tracking-wider">
                     {link.sectionLabel}
                   </span>
                 </div>

@@ -225,6 +225,13 @@ export async function WorkspaceNavigationLinks({
     userInvoiceValue === '__workspace_default__'
       ? workspaceShowInvoices
       : String(userInvoiceValue) === 'true';
+  const sidebarSections = {
+    ai: t('sidebar_sections.ai'),
+    core: t('sidebar_sections.core'),
+    operations: t('sidebar_sections.operations'),
+    utilities: t('sidebar_sections.utilities'),
+    workTools: t('sidebar_sections.work_tools'),
+  };
 
   const usersDatabaseDisabled =
     withoutPermission('manage_users') &&
@@ -233,19 +240,26 @@ export async function WorkspaceNavigationLinks({
 
   const navLinks: (NavLink | null)[] = [
     {
+      id: 'dashboard',
       title: t('common.dashboard'),
       href: `/${personalOrWsId}`,
       icon: <ChartArea className="h-5 w-5" />,
       matchExact: true,
+      preferenceLocked: true,
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
     },
     null,
     {
+      id: 'tasks',
       title: t('sidebar_tabs.tasks'),
       href: `/${personalOrWsId}/tasks`,
       aliases: [`/${personalOrWsId}/tasks`, `/${personalOrWsId}/tasks/drafts`],
       icon: <CheckCircle2 className="h-5 w-5" />,
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_projects'),
       experimental: 'beta',
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
       children: [
         {
           title: t('sidebar_tabs.tasks'),
@@ -313,32 +327,42 @@ export async function WorkspaceNavigationLinks({
       ],
     },
     {
+      id: 'habits',
       title: t('sidebar_tabs.habits'),
       href: `/${personalOrWsId}/habits`,
       aliases: [`/${personalOrWsId}/habits`, `/${personalOrWsId}/tasks/habits`],
       icon: <Repeat className="h-5 w-5" />,
       disabled: !ENABLE_HABITS,
+      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
+      id: 'calendar',
       title: t('sidebar_tabs.calendar'),
       icon: <Calendar className="h-5 w-5" />,
       href: `/${personalOrWsId}/calendar`,
       aliases: [`/${personalOrWsId}/calendar`],
       disabled: ENABLE_AI_ONLY || withoutPermission('manage_calendar'),
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
     },
     {
+      id: 'whiteboards',
       title: t('sidebar_tabs.whiteboards'),
       href: `/${personalOrWsId}/whiteboards`,
       icon: <PencilRuler className="h-5 w-5" />,
       requiredWorkspaceTier: createTierRequirement('whiteboards', {
         alwaysShow: true,
       }),
+      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
+      id: 'finance',
       title: t('sidebar_tabs.finance'),
       href: `/${personalOrWsId}/finance`,
       icon: <BadgeDollarSign className="h-5 w-5" />,
       experimental: 'beta',
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.core,
       aliases: [
         `/${personalOrWsId}/finance`,
         `/${personalOrWsId}/finance/transactions`,
@@ -427,6 +451,7 @@ export async function WorkspaceNavigationLinks({
       disabled: ENABLE_AI_ONLY,
     },
     {
+      id: 'time_tracker',
       title: t('sidebar_tabs.track'),
       href: `/${personalOrWsId}/time-tracker`,
       icon: <ClockFading className="h-5 w-5" />,
@@ -487,8 +512,10 @@ export async function WorkspaceNavigationLinks({
         },
       ],
       disabled: ENABLE_AI_ONLY,
+      preferenceSectionLabel: sidebarSections.workTools,
     },
     {
+      id: 'drive',
       title: t('sidebar_tabs.drive'),
       href: `/${personalOrWsId}/drive`,
       icon: <HardDrive className="h-5 w-5" />,
@@ -497,10 +524,12 @@ export async function WorkspaceNavigationLinks({
       }),
       disabled: withoutPermission('manage_drive'),
       experimental: 'beta',
+      preferenceSectionLabel: sidebarSections.workTools,
     },
     null,
     null,
     {
+      id: 'forms',
       title: t('sidebar_tabs.forms'),
       href: `/${personalOrWsId}/forms`,
       icon: <ClipboardList className="h-5 w-5" />,
@@ -508,6 +537,7 @@ export async function WorkspaceNavigationLinks({
       disabled:
         withoutPermission('manage_forms') &&
         withoutPermission('view_form_analytics'),
+      preferenceSectionLabel: sidebarSections.workTools,
       children: [
         {
           title: t('sidebar_tabs.forms'),
@@ -527,10 +557,12 @@ export async function WorkspaceNavigationLinks({
     null,
     // ── Vertical 5: More (collapsed features) ──
     {
+      id: 'more_tools',
       title: t('sidebar_tabs.more_tools'),
       icon: <SquareChevronRight className="h-5 w-5" />,
       children: [
         {
+          id: 'documents',
           title: t('sidebar_tabs.documents'),
           href: `/${personalOrWsId}/documents`,
           icon: <FileText className="h-5 w-5" />,
@@ -542,8 +574,10 @@ export async function WorkspaceNavigationLinks({
             alwaysShow: true,
           }),
           experimental: 'beta',
+          preferenceSectionLabel: sidebarSections.workTools,
         },
         {
+          id: 'chat',
           title: t('sidebar_tabs.chat'),
           href: `/${personalOrWsId}/chat`,
           icon: <MessageCircleIcon className="h-5 w-5" />,
@@ -553,16 +587,20 @@ export async function WorkspaceNavigationLinks({
           experimental: 'beta',
           requireRootMember: true,
           requireRootWorkspace: true,
+          preferenceSectionLabel: sidebarSections.ai,
         },
         {
+          id: 'qr_generator',
           title: t('sidebar_tabs.qr_generator'),
           href: qrAppHref,
           icon: <QrCodeIcon className="h-5 w-5" />,
           aliases: [`/${personalOrWsId}/qr-generator`],
           external: true,
+          preferenceSectionLabel: sidebarSections.utilities,
         },
         null,
         {
+          id: 'workforce',
           title: t('sidebar_tabs.workforce'),
           href: `/${personalOrWsId}/workforce`,
           icon: <BriefcaseBusiness className="h-5 w-5" />,
@@ -601,8 +639,10 @@ export async function WorkspaceNavigationLinks({
             `/${personalOrWsId}/workforce/payroll`,
           ],
           tempDisabled: true, // coming soon
+          preferenceSectionLabel: sidebarSections.operations,
         },
         {
+          id: 'users',
           title: t('sidebar_tabs.users'),
           aliases: [
             `/${personalOrWsId}/users`,
@@ -802,8 +842,10 @@ export async function WorkspaceNavigationLinks({
               withoutPermission('create_lead_generations') &&
               withoutPermission('approve_reports') &&
               withoutPermission('approve_posts')),
+          preferenceSectionLabel: sidebarSections.operations,
         },
         {
+          id: 'inventory',
           title: t('sidebar_tabs.inventory'),
           icon: <Archive className="h-5 w-5" />,
           requiredWorkspaceTier: createTierRequirement('inventory', {
@@ -863,10 +905,12 @@ export async function WorkspaceNavigationLinks({
             },
           ],
           disabled: ENABLE_AI_ONLY || withoutPermission('view_inventory'),
+          preferenceSectionLabel: sidebarSections.operations,
         },
         null,
-        // AI Lab, Google Workspace, and Productivity tools
+        // AI Lab, Google Workspace, and utility tools
         {
+          id: 'ai_lab',
           title: t('sidebar_tabs.ai_lab'),
           icon: <Box className="h-5 w-5" />,
           requiredWorkspaceTier: createTierRequirement('ai_lab', {
@@ -950,8 +994,10 @@ export async function WorkspaceNavigationLinks({
               experimental: 'alpha',
             },
           ],
+          preferenceSectionLabel: sidebarSections.ai,
         },
         {
+          id: 'google_workspace',
           title: t('sidebar_tabs.google_workspace'),
           icon: <ScreenShare className="h-5 w-5" />,
           requireRootWorkspace: true,
@@ -1003,150 +1049,159 @@ export async function WorkspaceNavigationLinks({
             //   requireRootMember: true,
             // },
           ],
+          preferenceSectionLabel: sidebarSections.utilities,
         },
         {
-          title: t('sidebar_tabs.productivity'),
-          icon: <BriefcaseBusiness className="h-5 w-5" />,
+          id: 'meet',
+          title: t('sidebar_tabs.meet'),
+          href: `/${personalOrWsId}/meet`,
+          icon: <SquaresIntersect className="h-5 w-5" />,
+          preferenceSectionLabel: sidebarSections.utilities,
           children: [
             {
-              title: t('sidebar_tabs.meet'),
-              href: `/${personalOrWsId}/meet`,
-              icon: <SquaresIntersect className="h-5 w-5" />,
-              children: [
-                {
-                  title: t('sidebar_tabs.plans'),
-                  href: `/${personalOrWsId}/meet/plans`,
-                  icon: <VectorSquare className="h-5 w-5" />,
-                },
-                {
-                  title: t('sidebar_tabs.meetings'),
-                  href: `/${personalOrWsId}/meet/meetings`,
-                  icon: <SquareUserRound className="h-5 w-5" />,
-                  requireRootWorkspace: true,
-                  requireRootMember: true,
-                },
-              ],
+              title: t('sidebar_tabs.plans'),
+              href: `/${personalOrWsId}/meet/plans`,
+              icon: <VectorSquare className="h-5 w-5" />,
             },
             {
-              title: t('sidebar_tabs.polls'),
-              href: `/${personalOrWsId}/polls`,
-              icon: <Vote className="h-5 w-5" />,
-              disabled: !DEV_MODE,
+              title: t('sidebar_tabs.meetings'),
+              href: `/${personalOrWsId}/meet/meetings`,
+              icon: <SquareUserRound className="h-5 w-5" />,
               requireRootWorkspace: true,
               requireRootMember: true,
             },
+          ],
+        },
+        {
+          id: 'polls',
+          title: t('sidebar_tabs.polls'),
+          href: `/${personalOrWsId}/polls`,
+          icon: <Vote className="h-5 w-5" />,
+          disabled: !DEV_MODE,
+          requireRootWorkspace: true,
+          requireRootMember: true,
+          preferenceSectionLabel: sidebarSections.utilities,
+        },
+        {
+          id: 'mail',
+          title: t('sidebar_tabs.mail'),
+          href: `/${personalOrWsId}/mail`,
+          icon: <Mail className="h-5 w-5" />,
+          requireRootMember: true,
+          disabled: !isPersonal,
+          experimental: 'beta',
+          preferenceSectionLabel: sidebarSections.utilities,
+          children: [
             {
-              title: t('sidebar_tabs.mail'),
-              href: `/${personalOrWsId}/mail`,
+              title: t('mail.inbox'),
               icon: <Mail className="h-5 w-5" />,
-              children: [
-                {
-                  title: t('mail.inbox'),
-                  icon: <Mail className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                  tempDisabled: true,
-                },
-                {
-                  title: t('mail.starred'),
-                  icon: <Star className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                  tempDisabled: true,
-                },
-                {
-                  title: t('mail.sent'),
-                  href: `/${personalOrWsId}/mail/sent`,
-                  icon: <Send className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                },
-                {
-                  title: t('mail.drafts'),
-                  icon: <TextSelect className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                  tempDisabled: true,
-                },
-                {
-                  title: t('mail.spam'),
-                  icon: <TriangleAlert className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                  tempDisabled: true,
-                },
-                {
-                  title: t('mail.trash'),
-                  icon: <Trash className="h-5 w-5" />,
-                  disabled: !isPersonal,
-                  tempDisabled: true,
-                },
-              ],
-              requireRootMember: true,
               disabled: !isPersonal,
-              experimental: 'beta',
+              tempDisabled: true,
             },
             {
-              title: t('sidebar_tabs.education'),
+              title: t('mail.starred'),
+              icon: <Star className="h-5 w-5" />,
+              disabled: !isPersonal,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.sent'),
+              href: `/${personalOrWsId}/mail/sent`,
+              icon: <Send className="h-5 w-5" />,
+              disabled: !isPersonal,
+            },
+            {
+              title: t('mail.drafts'),
+              icon: <TextSelect className="h-5 w-5" />,
+              disabled: !isPersonal,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.spam'),
+              icon: <TriangleAlert className="h-5 w-5" />,
+              disabled: !isPersonal,
+              tempDisabled: true,
+            },
+            {
+              title: t('mail.trash'),
+              icon: <Trash className="h-5 w-5" />,
+              disabled: !isPersonal,
+              tempDisabled: true,
+            },
+          ],
+        },
+        {
+          id: 'education',
+          title: t('sidebar_tabs.education'),
+          href: `/${personalOrWsId}/education`,
+          icon: <GraduationCap className="h-5 w-5" />,
+          aliases: [
+            `/${personalOrWsId}/education/library`,
+            `/${personalOrWsId}/education/library/quizzes`,
+            `/${personalOrWsId}/education/library/quiz-sets`,
+            `/${personalOrWsId}/education/library/flashcards`,
+            `/${personalOrWsId}/education/valsea`,
+          ],
+          disabled:
+            ENABLE_AI_ONLY ||
+            !hasSecret('ENABLE_EDUCATION', 'true') ||
+            withoutPermission('ai_lab'),
+          experimental: 'beta',
+          preferenceSectionLabel: sidebarSections.utilities,
+          children: [
+            {
+              title: t('workspace-education-tabs.overview'),
               href: `/${personalOrWsId}/education`,
-              icon: <GraduationCap className="h-5 w-5" />,
+              icon: <LayoutDashboard className="h-5 w-5" />,
+              matchExact: true,
+            },
+            {
+              title: t('workspace-education-tabs.courses'),
+              href: `/${personalOrWsId}/education/courses`,
+              icon: <BookText className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.library'),
+              href: `/${personalOrWsId}/education/library`,
+              icon: <LayoutList className="h-5 w-5" />,
               aliases: [
-                `/${personalOrWsId}/education/library`,
                 `/${personalOrWsId}/education/library/quizzes`,
                 `/${personalOrWsId}/education/library/quiz-sets`,
                 `/${personalOrWsId}/education/library/flashcards`,
-                `/${personalOrWsId}/education/valsea`,
               ],
-              children: [
-                {
-                  title: t('workspace-education-tabs.overview'),
-                  href: `/${personalOrWsId}/education`,
-                  icon: <LayoutDashboard className="h-5 w-5" />,
-                  matchExact: true,
-                },
-                {
-                  title: t('workspace-education-tabs.courses'),
-                  href: `/${personalOrWsId}/education/courses`,
-                  icon: <BookText className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.library'),
-                  href: `/${personalOrWsId}/education/library`,
-                  icon: <LayoutList className="h-5 w-5" />,
-                  aliases: [
-                    `/${personalOrWsId}/education/library/quizzes`,
-                    `/${personalOrWsId}/education/library/quiz-sets`,
-                    `/${personalOrWsId}/education/library/flashcards`,
-                  ],
-                },
-                {
-                  title: t('workspace-education-tabs.attempts'),
-                  href: `/${personalOrWsId}/education/attempts`,
-                  icon: <ClipboardList className="h-5 w-5" />,
-                },
-                {
-                  title: t('workspace-education-tabs.valsea.title'),
-                  href: `/${personalOrWsId}/education/valsea`,
-                  icon: <Languages className="h-5 w-5" />,
-                  experimental: 'beta',
-                },
-              ],
-              disabled:
-                ENABLE_AI_ONLY ||
-                !hasSecret('ENABLE_EDUCATION', 'true') ||
-                withoutPermission('ai_lab'),
-              experimental: 'beta',
             },
             {
-              title: t('sidebar_tabs.link_shortener'),
-              href: `/${personalOrWsId}/link-shortener`,
-              icon: <Link className="h-5 w-5" />,
-              disabled:
-                resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
-                !hasSecret('ENABLE_LINK_SHORTENER', 'true'),
+              title: t('workspace-education-tabs.attempts'),
+              href: `/${personalOrWsId}/education/attempts`,
+              icon: <ClipboardList className="h-5 w-5" />,
+            },
+            {
+              title: t('workspace-education-tabs.valsea.title'),
+              href: `/${personalOrWsId}/education/valsea`,
+              icon: <Languages className="h-5 w-5" />,
+              experimental: 'beta',
             },
           ],
+        },
+        {
+          id: 'link_shortener',
+          title: t('sidebar_tabs.link_shortener'),
+          href: `/${personalOrWsId}/link-shortener`,
+          icon: <Link className="h-5 w-5" />,
+          disabled:
+            resolvedWorkspaceId !== ROOT_WORKSPACE_ID &&
+            !hasSecret('ENABLE_LINK_SHORTENER', 'true'),
+          preferenceSectionLabel: sidebarSections.utilities,
         },
       ],
     },
     {
+      id: 'settings',
       title: t('common.settings'),
       icon: <Settings className="h-5 w-5" />,
+      preferenceLocked: true,
+      preferencePlacement: 'root',
+      preferenceSectionLabel: sidebarSections.utilities,
       aliases: [
         `/${personalOrWsId}/members`,
         `/${personalOrWsId}/teams`,

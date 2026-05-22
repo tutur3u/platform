@@ -1,5 +1,6 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -92,7 +93,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const bodySchema = z.object({
-    value: z.string().nullable(),
+    value: z.string().max(MAX_MEDIUM_TEXT_LENGTH).nullable(),
   });
   let body: unknown;
   try {

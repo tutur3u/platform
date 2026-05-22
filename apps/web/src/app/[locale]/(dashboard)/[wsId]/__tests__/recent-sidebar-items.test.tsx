@@ -98,6 +98,7 @@ const storageKey = `tuturuuu:sidebar-recent-items:${wsId}`;
 function renderSidebar(onNavigate = vi.fn()) {
   return render(
     <RecentSidebarItems
+      enabled
       isCollapsed={false}
       links={links}
       onNavigate={onNavigate}
@@ -170,6 +171,44 @@ describe('RecentSidebarItems', () => {
     });
 
     expect(sidebarUpdateEvents).toHaveLength(0);
+  });
+
+  it('does not render or record visits when recent navigation is disabled', async () => {
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify([
+        {
+          href: '/personal/tasks',
+          visitedAt: '2026-03-03T02:00:00.000Z',
+        },
+      ])
+    );
+
+    render(
+      <RecentSidebarItems
+        enabled={false}
+        isCollapsed={false}
+        links={links}
+        onNavigate={vi.fn()}
+        wsId={wsId}
+      />
+    );
+
+    expect(screen.queryByRole('link', { name: /tasks/i })).toBeNull();
+
+    dispatchRecentSidebarVisit({
+      href: '/personal/finance/wallets',
+      scopeWsId: wsId,
+    });
+
+    await waitFor(() => {
+      expect(readStoredEntries()).toEqual([
+        {
+          href: '/personal/tasks',
+          visitedAt: '2026-03-03T02:00:00.000Z',
+        },
+      ]);
+    });
   });
 
   it('syncs same-tab recent visits across sidebar instances without duplicates', async () => {
