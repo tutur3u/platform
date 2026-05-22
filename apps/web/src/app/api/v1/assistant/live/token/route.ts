@@ -10,6 +10,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   ensureAssistantLiveChat,
   loadAssistantLiveSeedHistory,
@@ -44,8 +45,8 @@ async function loadStoredSessionHandle({
     .maybeSingle();
 
   if (error != null) {
-    console.error(
-      'Failed to load assistant live session handle during token mint:',
+    serverLogger.error(
+      'Failed to load assistant live session handle during token mint',
       error
     );
     return null;
@@ -91,7 +92,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
       chatId,
       model: resolvedModel,
     }).catch((error) => {
-      console.error('Failed to prepare assistant live chat:', error);
+      serverLogger.error('Failed to prepare assistant live chat', error);
       return null;
     });
 
@@ -171,7 +172,7 @@ export async function POST(request: Request) {
         sessionHandlePromise,
       ]);
     } catch (error) {
-      console.error('Failed to provision assistant live token:', error);
+      serverLogger.error('Failed to provision assistant live token', error);
       return Response.json(
         { error: 'Failed to provision Gemini Live token' },
         { status: 502 }
@@ -185,8 +186,8 @@ export async function POST(request: Request) {
             chatId: chat.id,
             userId: user.id,
           }).catch((error) => {
-            console.error(
-              'Failed to restore assistant live seed history:',
+            serverLogger.error(
+              'Failed to restore assistant live seed history',
               error
             );
             return null;
@@ -209,7 +210,7 @@ export async function POST(request: Request) {
       seedHistory,
     });
   } catch (error) {
-    console.error('Error generating mobile assistant live token:', error);
+    serverLogger.error('Error generating mobile assistant live token', error);
     return Response.json(
       { error: 'Failed to generate assistant live token' },
       { status: 500 }

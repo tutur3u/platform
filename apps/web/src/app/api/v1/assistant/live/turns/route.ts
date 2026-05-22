@@ -11,6 +11,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { z } from 'zod';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const liveMessageSchema = z.object({
   role: z.enum(['user', 'assistant']),
@@ -58,7 +59,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
@@ -143,7 +144,10 @@ export async function POST(request: Request) {
 
     return Response.json({ success: true, inserted: payload.length });
   } catch (error) {
-    console.error('Unexpected assistant live turn persistence error:', error);
+    serverLogger.error(
+      'Unexpected assistant live turn persistence error',
+      error
+    );
     return Response.json(
       { error: 'Failed to persist assistant live turn' },
       { status: 500 }

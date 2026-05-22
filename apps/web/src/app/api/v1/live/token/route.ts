@@ -7,6 +7,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   ASSISTANT_LIVE_MODEL,
   ASSISTANT_LIVE_TOOL_CONFIG,
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const normalizedWsId = await normalizeWorkspaceId(wsId);
+    const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const membership = await verifyWorkspaceMembershipType({
       wsId: normalizedWsId,
       userId: user.id,
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
       model: ASSISTANT_LIVE_MODEL,
     });
   } catch (error) {
-    console.error('Error generating ephemeral token:', error);
+    serverLogger.error('Error generating ephemeral token', error);
     return Response.json(
       { error: 'Failed to generate token' },
       { status: 500 }

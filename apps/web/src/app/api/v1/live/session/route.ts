@@ -1,6 +1,7 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 /**
  * Normalizes workspace ID from slug to UUID for API routes
@@ -32,7 +33,7 @@ export async function GET(req: Request) {
 
     let normalizedWsId: string;
     try {
-      normalizedWsId = await normalizeWorkspaceId(wsId);
+      normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
     }
@@ -51,7 +52,7 @@ export async function GET(req: Request) {
       .maybeSingle();
 
     if (error) {
-      console.error('[Session API] Error fetching session:', error);
+      serverLogger.error('[Session API] Error fetching session', error);
       return Response.json({ sessionHandle: null });
     }
 
@@ -60,7 +61,7 @@ export async function GET(req: Request) {
       sessionHandle: sessionData?.session_handle || null,
     });
   } catch (error) {
-    console.error('[Session API] Unexpected error in GET:', error);
+    serverLogger.error('[Session API] Unexpected error in GET', error);
     return Response.json({ sessionHandle: null });
   }
 }
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
 
     let normalizedWsId: string;
     try {
-      normalizedWsId = await normalizeWorkspaceId(wsId);
+      normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
     }
@@ -121,7 +122,7 @@ export async function POST(req: Request) {
       );
 
     if (error) {
-      console.error('[Session API] Error storing session:', error);
+      serverLogger.error('[Session API] Error storing session', error);
       return Response.json(
         { error: 'Failed to store session handle' },
         { status: 500 }
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[Session API] Unexpected error in POST:', error);
+    serverLogger.error('[Session API] Unexpected error in POST', error);
     return Response.json(
       { error: 'Failed to store session handle' },
       { status: 500 }
@@ -164,7 +165,7 @@ export async function DELETE(req: Request) {
 
     let normalizedWsId: string;
     try {
-      normalizedWsId = await normalizeWorkspaceId(wsId);
+      normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     } catch {
       return Response.json({ error: 'Workspace not found' }, { status: 404 });
     }
@@ -181,7 +182,7 @@ export async function DELETE(req: Request) {
       .eq('scope_key', scopeKey);
 
     if (error) {
-      console.error('[Session API] Error deleting session:', error);
+      serverLogger.error('[Session API] Error deleting session', error);
       return Response.json(
         { error: 'Failed to delete session handle' },
         { status: 500 }
@@ -190,7 +191,7 @@ export async function DELETE(req: Request) {
 
     return Response.json({ success: true });
   } catch (error) {
-    console.error('[Session API] Unexpected error in DELETE:', error);
+    serverLogger.error('[Session API] Unexpected error in DELETE', error);
     return Response.json(
       { error: 'Failed to delete session handle' },
       { status: 500 }
