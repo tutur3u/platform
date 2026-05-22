@@ -89,6 +89,7 @@ describe('web Hive page parity', () => {
         email: 'user@example.com',
         id: 'user-1',
       },
+      embedInDashboard: true,
       initialServers: {
         servers: [{ id: 'server-1', name: 'Main server' }],
       },

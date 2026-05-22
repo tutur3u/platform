@@ -38,6 +38,7 @@ export default async function HivePage({ params }: PageProps) {
     <HiveStudio
       buildInfo={getHiveBuildInfo()}
       currentUser={context.access.user}
+      embedInDashboard
       initialServers={initialServers}
       isAdmin={context.access.isAdmin}
       realtimeUrl={HIVE_REALTIME_URL}

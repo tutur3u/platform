@@ -1,11 +1,14 @@
 'use client';
 
+import { cn } from '@tuturuuu/utils/format';
 import type { ReactNode } from 'react';
+import { DASHBOARD_EMBED_SHELL_CLASSNAME } from '../utils/dashboard-embed-shell';
 
 type SatelliteWorkspaceShellProps = {
   bottom?: ReactNode;
   bottomCollapsed?: boolean;
   center: ReactNode;
+  embedInDashboard?: boolean;
   left?: ReactNode;
   leftCollapsed?: boolean;
   right?: ReactNode;
@@ -18,6 +21,7 @@ export function SatelliteWorkspaceShell({
   bottom,
   bottomCollapsed = false,
   center,
+  embedInDashboard = false,
   left,
   leftCollapsed = false,
   right,
@@ -26,7 +30,12 @@ export function SatelliteWorkspaceShell({
   topCollapsed = false,
 }: SatelliteWorkspaceShellProps) {
   return (
-    <main className="relative h-dvh overflow-hidden bg-background text-foreground">
+    <main
+      className={cn(
+        'relative overflow-hidden bg-background text-foreground',
+        embedInDashboard ? DASHBOARD_EMBED_SHELL_CLASSNAME : 'h-dvh'
+      )}
+    >
       <section className="absolute inset-0 min-w-0 overflow-hidden">
         {center}
         {top ? (

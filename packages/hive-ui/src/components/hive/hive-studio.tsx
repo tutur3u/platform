@@ -24,6 +24,7 @@ import { useHiveStudioEngine } from './use-hive-studio-engine';
 type HiveStudioProps = {
   buildInfo: HiveBuildInfo;
   currentUser: HiveUser;
+  embedInDashboard?: boolean;
   initialServers: HiveServersResponse;
   isAdmin: boolean;
   realtimeUrl: string;
@@ -32,6 +33,7 @@ type HiveStudioProps = {
 export function HiveStudio({
   buildInfo,
   currentUser,
+  embedInDashboard = false,
   initialServers,
   isAdmin,
   realtimeUrl,
@@ -130,6 +132,7 @@ export function HiveStudio({
   return (
     <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
       <SatelliteWorkspaceShell
+        embedInDashboard={embedInDashboard}
         bottom={
           <HiveStudioToolDock
             engine={engine}

@@ -29,6 +29,7 @@ export {
   usePathname,
   useRouter,
 } from './i18n/routing';
+export { DASHBOARD_EMBED_SHELL_CLASSNAME } from './utils/dashboard-embed-shell';
 
 // Utility helpers
 // Utility helpers
