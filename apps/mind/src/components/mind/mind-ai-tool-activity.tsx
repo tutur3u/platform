@@ -280,6 +280,10 @@ function MindAiArtifactRow({
         >
           {t('ai.applyDraft')}
         </Button>
+      ) : artifact.type === 'patch' && artifact.patch.status === 'applied' ? (
+        <Badge className="shrink-0 text-[10px]" variant="outline">
+          {t('ai.applied')}
+        </Badge>
       ) : null}
     </div>
   );

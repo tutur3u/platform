@@ -1964,8 +1964,16 @@ export type Database = {
         Args: { p_board_id: string; p_ws_id: string };
         Returns: Json;
       };
+      mind_get_board_graph_snapshot: {
+        Args: { p_board_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       mind_get_board_snapshot: {
         Args: { p_board_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      mind_list_ai_patches: {
+        Args: { p_board_id: string; p_limit?: number; p_ws_id: string };
         Returns: Json;
       };
       mind_list_boards: { Args: { p_ws_id: string }; Returns: Json };

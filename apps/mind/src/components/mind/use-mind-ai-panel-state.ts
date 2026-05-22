@@ -8,6 +8,7 @@ import { resolveInfrastructureWorkspaceId } from '@tuturuuu/internal-api/infrast
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { getMindAiFinishInvalidationScopes } from './mind-ai-panel-actions';
 import { useMindAiAttachments } from './use-mind-ai-attachments';
 import { useMindAiPreferences } from './use-mind-ai-preferences';
 
@@ -150,9 +151,22 @@ export function useMindAiPanelState({
       setStreamError(getClientErrorMessage(nextError));
     },
     onFinish: () => {
-      queryClient.invalidateQueries({
-        queryKey: ['mind', 'snapshot', wsId, boardId],
+      const state = transportStateRef.current;
+      const scopes = getMindAiFinishInvalidationScopes({
+        directWrite: state.directWrite,
       });
+
+      if (state.boardId && scopes.includes('graph')) {
+        queryClient.invalidateQueries({
+          queryKey: ['mind', 'graph', state.wsId, state.boardId],
+        });
+      }
+
+      if (state.boardId && scopes.includes('patches')) {
+        queryClient.invalidateQueries({
+          queryKey: ['mind', 'patches', state.wsId, state.boardId],
+        });
+      }
     },
     transport,
   });

@@ -21,6 +21,7 @@ Protected Mind data stays behind `apps/web` APIs:
 - `/api/v1/workspaces/:wsId/mind/boards`
 - `/api/v1/workspaces/:wsId/mind/boards/:boardId`
 - `/api/v1/workspaces/:wsId/mind/boards/:boardId/graph`
+- `/api/v1/workspaces/:wsId/mind/boards/:boardId/patches`
 - `/api/v1/workspaces/:wsId/mind/search`
 - `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
 - `/api/ai/mind`
@@ -42,6 +43,13 @@ service-role Supabase admin client with `.schema('private').rpc(...)`.
 so these RPCs are callable, but table/function grants stay service-role-only.
 Changing that config requires a local Supabase restart or `bun sb:up` before the
 Mind APIs stop returning `Invalid schema: private`.
+
+The canvas should load from the graph-only snapshot path, while generated draft
+patch artifacts load from the patch-list path. Do not couple canvas rendering to
+recent AI patch serialization: a failed patch-artifact refresh should stay
+inside the assistant panel and must not replace the board canvas with a board
+load error. The legacy full snapshot can still return graph data plus patches
+for backward compatibility.
 
 ## Data Model
 
@@ -95,6 +103,10 @@ runs the smart canvas organizer, saves the resulting positions, and refreshes
 board queries. The organizer should keep true same-level sequence nodes in a
 compact horizontal lane, place explicit children under their parent, and anchor
 supporting or dependency nodes near the higher-level node they affect.
+Applying a draft and refreshing layout are separate phases: once the patch
+application RPC returns, patch artifacts should show `Applied` immediately. If
+the follow-up auto-layout save fails, keep the patch applied and show a retryable
+layout-refresh warning instead of treating the graph patch as failed.
 
 Generated plans and patch drafts should be treated as artifacts. The newest
 artifact can open in the proposal island, while every plan or draft also remains

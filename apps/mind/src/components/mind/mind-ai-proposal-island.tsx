@@ -125,7 +125,7 @@ export function getLatestMindAiProposal(
     latestPatchId = `patch-${patch.id}`;
   }
 
-  if (!latestPatch || latestPatch.status !== 'draft') return null;
+  if (!latestPatch) return null;
 
   return {
     id: [latestVisualId, latestPatchId].filter(Boolean).join(':'),

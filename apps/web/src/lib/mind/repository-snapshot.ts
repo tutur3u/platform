@@ -20,6 +20,37 @@ export async function getMindBoardSnapshot(
   );
 }
 
+export async function getMindBoardGraphSnapshot(
+  wsId: string,
+  boardId: string
+): Promise<MindBoardSnapshot | null> {
+  return callMindRpc<MindBoardSnapshot | null>(
+    'mind_get_board_graph_snapshot',
+    {
+      p_board_id: boardId,
+      p_ws_id: wsId,
+    }
+  );
+}
+
+export async function listMindAiPatches({
+  boardId,
+  limit = 20,
+  wsId,
+}: {
+  boardId: string;
+  limit?: number;
+  wsId: string;
+}) {
+  return (
+    (await callMindRpc<MindAiPatchRecord[]>('mind_list_ai_patches', {
+      p_board_id: boardId,
+      p_limit: limit,
+      p_ws_id: wsId,
+    })) ?? []
+  );
+}
+
 export async function searchMindNodes({
   boardId,
   q,

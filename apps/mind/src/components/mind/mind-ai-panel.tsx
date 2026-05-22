@@ -4,12 +4,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { UIMessage } from '@tuturuuu/ai/types';
 import {
   applyMindAiPatch,
-  getMindBoardSnapshot,
-  type MindBoardSnapshotResponse,
+  getMindBoardGraphSnapshot,
   saveMindGraph,
 } from '@tuturuuu/internal-api/mind';
+import type { MindAiPatchRecord, MindBoardSnapshot } from '@tuturuuu/types/db';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MindAiInput } from './mind-ai-input';
+import {
+  applyMindPatchWithLayoutRefresh,
+  mergeMindPatchRecord,
+} from './mind-ai-panel-actions';
 import { MindAiPanelContent } from './mind-ai-panel-content';
 import { MindAiPanelHeader } from './mind-ai-panel-header';
 import {
@@ -30,7 +35,8 @@ type Props = {
   boardId?: string | null;
   collapsed?: boolean;
   onToggleCollapsed: () => void;
-  patches?: MindBoardSnapshotResponse['patches'];
+  patches?: MindAiPatchRecord[];
+  patchesError?: string | null;
   queuedPrompt?: { id: string; prompt: string } | null;
   wsId: string;
 };
@@ -40,9 +46,11 @@ export function MindAiPanel({
   collapsed,
   onToggleCollapsed,
   patches = [],
+  patchesError,
   queuedPrompt,
   wsId,
 }: Props) {
+  const t = useTranslations('mind');
   const queryClient = useQueryClient();
   const scrollRef = useRef<HTMLDivElement>(null);
   const queuedPromptIdRef = useRef<string | null>(null);
@@ -54,6 +62,9 @@ export function MindAiPanel({
   const [openedArtifact, setOpenedArtifact] = useState<MindAiProposal | null>(
     null
   );
+  const [layoutRefreshBoardId, setLayoutRefreshBoardId] = useState<
+    string | null
+  >(null);
   const previousProposalIdRef = useRef<string | null>(null);
   const state = useMindAiPanelState({
     boardId,
@@ -88,24 +99,61 @@ export function MindAiPanel({
     stop,
   } = state;
   const applyPatchMutation = useMutation({
-    mutationFn: async (patchId: string) => {
-      const response = await applyMindAiPatch(wsId, patchId);
-      const targetBoardId = response.patch.boardId || boardId;
-
-      if (targetBoardId) {
-        await organizeAndSaveBoard(wsId, targetBoardId);
+    mutationFn: (patchId: string) => {
+      setLayoutRefreshBoardId(null);
+      return applyMindPatchWithLayoutRefresh({
+        applyPatch: (targetPatchId) => applyMindAiPatch(wsId, targetPatchId),
+        boardId,
+        onPatchApplied: (patch) => {
+          updateMindPatchCaches({
+            boardId,
+            patch,
+            queryClient,
+            wsId,
+          });
+          setOpenedArtifact((current) =>
+            current?.patch?.id === patch.id ? { ...current, patch } : current
+          );
+        },
+        organizeAndSaveBoard: (targetBoardId) =>
+          organizeAndSaveBoard(wsId, targetBoardId),
+        patchId,
+      });
+    },
+    onSuccess: (result) => {
+      if (result.snapshot) {
+        queryClient.setQueryData(
+          ['mind', 'graph', wsId, result.patch.boardId || boardId],
+          result.snapshot
+        );
       }
 
-      return response;
-    },
-    onSuccess: () => {
-      if (visibleProposal?.id) setDismissedProposalId(visibleProposal.id);
-      setOpenedArtifact(null);
+      if (result.layoutError) {
+        setLayoutRefreshBoardId(result.patch.boardId || boardId || null);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
-      queryClient.invalidateQueries({ queryKey: ['mind', 'snapshot', wsId] });
       queryClient.invalidateQueries({
-        queryKey: ['mind', 'snapshot', wsId, boardId],
+        queryKey: ['mind', 'graph', wsId, result.patch.boardId || boardId],
       });
+      queryClient.invalidateQueries({
+        queryKey: ['mind', 'patches', wsId, result.patch.boardId || boardId],
+      });
+    },
+  });
+  const layoutRetryMutation = useMutation({
+    mutationFn: async (targetBoardId: string) =>
+      organizeAndSaveBoard(wsId, targetBoardId),
+    onSuccess: (snapshot, targetBoardId) => {
+      queryClient.setQueryData(
+        ['mind', 'graph', wsId, targetBoardId],
+        snapshot
+      );
+      queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
+      queryClient.invalidateQueries({
+        queryKey: ['mind', 'graph', wsId, targetBoardId],
+      });
+      setLayoutRefreshBoardId(null);
     },
   });
   const handleModelChange = (nextModel: typeof model) => {
@@ -261,6 +309,16 @@ export function MindAiPanel({
             onOpenArtifact={handleOpenArtifact}
             onPickPrompt={submit}
             patches={patches}
+            patchesError={patchesError}
+            layoutRefreshError={
+              layoutRefreshBoardId ? t('ai.layoutRefreshError') : null
+            }
+            onRetryLayoutRefresh={
+              layoutRefreshBoardId
+                ? () => layoutRetryMutation.mutate(layoutRefreshBoardId)
+                : undefined
+            }
+            retryingLayoutRefresh={layoutRetryMutation.isPending}
             status={status}
             statusLabel={statusLabel}
             visibleError={visibleError}
@@ -290,15 +348,50 @@ export function MindAiPanel({
   );
 }
 
-async function organizeAndSaveBoard(wsId: string, boardId: string) {
-  const snapshot = await getMindBoardSnapshot(wsId, boardId);
+function updateMindPatchCaches({
+  boardId,
+  patch,
+  queryClient,
+  wsId,
+}: {
+  boardId?: string | null;
+  patch: MindAiPatchRecord;
+  queryClient: ReturnType<typeof useQueryClient>;
+  wsId: string;
+}) {
+  const targetBoardId = patch.boardId || boardId;
+  if (!targetBoardId) return;
+
+  queryClient.setQueryData<{ patches: MindAiPatchRecord[] }>(
+    ['mind', 'patches', wsId, targetBoardId],
+    (current) => ({
+      patches: mergeMindPatchRecord(current?.patches, patch),
+    })
+  );
+  queryClient.setQueryData<
+    MindBoardSnapshot & { patches?: MindAiPatchRecord[] }
+  >(['mind', 'snapshot', wsId, targetBoardId], (current) =>
+    current
+      ? {
+          ...current,
+          patches: mergeMindPatchRecord(current.patches, patch),
+        }
+      : current
+  );
+}
+
+async function organizeAndSaveBoard(
+  wsId: string,
+  boardId: string
+): Promise<MindBoardSnapshot> {
+  const snapshot = await getMindBoardGraphSnapshot(wsId, boardId);
   const edges = toFlowEdges(snapshot.edges);
   const nodes = organizeMindLayout({
     edges,
     nodes: toFlowNodes(snapshot.nodes),
   });
 
-  await saveMindGraph(
+  return saveMindGraph(
     wsId,
     boardId,
     toSaveMindGraphPayload({

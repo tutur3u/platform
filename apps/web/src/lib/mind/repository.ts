@@ -13,4 +13,9 @@ export {
   updateMindBoard,
 } from './repository-boards';
 export { saveMindGraph } from './repository-graph';
-export { getMindBoardSnapshot, searchMindNodes } from './repository-snapshot';
+export {
+  getMindBoardGraphSnapshot,
+  getMindBoardSnapshot,
+  listMindAiPatches,
+  searchMindNodes,
+} from './repository-snapshot';

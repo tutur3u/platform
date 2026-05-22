@@ -47,6 +47,12 @@ export type MindBoardSnapshotResponse = MindBoardSnapshot & {
   patches: MindAiPatchRecord[];
 };
 
+export type MindBoardGraphSnapshotResponse = MindBoardSnapshot;
+
+export type MindAiPatchListResponse = {
+  patches: MindAiPatchRecord[];
+};
+
 export type MindNodeSearchParams = {
   boardId?: string;
   q?: string;
@@ -105,6 +111,38 @@ export async function getMindBoardSnapshot(
   );
 }
 
+export async function getMindBoardGraphSnapshot(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<MindBoardGraphSnapshotResponse>(
+    workspaceMindPath(
+      workspaceId,
+      `/boards/${encodePathSegment(boardId)}/graph`
+    ),
+    { cache: 'no-store' }
+  );
+}
+
+export async function listMindAiPatches(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<MindAiPatchListResponse>(
+    workspaceMindPath(
+      workspaceId,
+      `/boards/${encodePathSegment(boardId)}/patches`
+    ),
+    { cache: 'no-store' }
+  );
+}
+
 export async function updateMindBoard(
   workspaceId: string,
   boardId: string,
@@ -148,7 +186,7 @@ export async function saveMindGraph(
 ) {
   const client = getInternalApiClient(options);
 
-  return client.json<MindBoardSnapshotResponse>(
+  return client.json<MindBoardGraphSnapshotResponse>(
     workspaceMindPath(
       workspaceId,
       `/boards/${encodePathSegment(boardId)}/graph`

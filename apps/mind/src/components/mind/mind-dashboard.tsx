@@ -3,7 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bot, CircleAlert, RefreshCw } from '@tuturuuu/icons';
 import {
-  getMindBoardSnapshot,
+  getMindBoardGraphSnapshot,
+  listMindAiPatches,
   listMindBoards,
   type SaveMindGraphPayload,
   saveMindGraph,
@@ -49,20 +50,30 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
     : null;
   const snapshotQuery = useQuery({
     enabled: !!activeBoardId,
-    queryFn: () => getMindBoardSnapshot(wsId, activeBoardId ?? ''),
-    queryKey: ['mind', 'snapshot', wsId, activeBoardId],
+    queryFn: () => getMindBoardGraphSnapshot(wsId, activeBoardId ?? ''),
+    queryKey: ['mind', 'graph', wsId, activeBoardId],
+  });
+  const patchesQuery = useQuery({
+    enabled: !!activeBoardId,
+    queryFn: () => listMindAiPatches(wsId, activeBoardId ?? ''),
+    queryKey: ['mind', 'patches', wsId, activeBoardId],
   });
   const saveGraphMutation = useMutation({
     mutationFn: (payload: SaveMindGraphPayload) =>
       saveMindGraph(wsId, activeBoardId ?? '', payload),
-    onSuccess: () => {
+    onSuccess: (nextSnapshot) => {
+      queryClient.setQueryData(
+        ['mind', 'graph', wsId, activeBoardId],
+        nextSnapshot
+      );
       queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
       queryClient.invalidateQueries({
-        queryKey: ['mind', 'snapshot', wsId, activeBoardId],
+        queryKey: ['mind', 'graph', wsId, activeBoardId],
       });
     },
   });
   const snapshot = snapshotQuery.data;
+  const patches = patchesQuery.data?.patches ?? [];
   const snapshotLoadFailed = snapshotQuery.isError;
   const tags = useMemo(() => {
     const values = new Set<string>();
@@ -149,7 +160,8 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
         boardId={activeBoardId}
         collapsed={!aiOpen}
         onToggleCollapsed={() => setAiOpen((value) => !value)}
-        patches={snapshot?.patches}
+        patches={patches}
+        patchesError={patchesQuery.isError ? t('ai.patchLoadError') : null}
         queuedPrompt={queuedAiPrompt}
         wsId={wsId}
       />

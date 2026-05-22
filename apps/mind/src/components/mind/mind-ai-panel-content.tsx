@@ -1,8 +1,9 @@
 'use client';
 
 import type { UIMessage } from '@tuturuuu/ai/types';
-import { LoaderCircle, TriangleAlert } from '@tuturuuu/icons';
+import { LoaderCircle, RefreshCw, TriangleAlert } from '@tuturuuu/icons';
 import type { MindBoardSnapshotResponse } from '@tuturuuu/internal-api/mind';
+import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import {
@@ -20,7 +21,11 @@ type Props = {
   messages: UIMessage[];
   onApplyPatch?: (patchId: string) => void;
   onOpenArtifact?: (artifact: MindAiArtifactItem) => void;
+  onRetryLayoutRefresh?: () => void;
+  patchesError?: string | null;
   patches: MindBoardSnapshotResponse['patches'];
+  layoutRefreshError?: string | null;
+  retryingLayoutRefresh?: boolean;
   status: string;
   statusLabel: string | null;
   visibleError: string | null;
@@ -33,13 +38,17 @@ export function MindAiPanelContent({
   fullscreen,
   latestMessage,
   messages,
+  layoutRefreshError,
   patches,
+  patchesError,
+  retryingLayoutRefresh,
   status,
   statusLabel,
   visibleError,
   onApplyPatch,
   onOpenArtifact,
   onPickPrompt,
+  onRetryLayoutRefresh,
 }: Props) {
   const t = useTranslations('mind');
   const isEmpty =
@@ -79,6 +88,50 @@ export function MindAiPanelContent({
         <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-muted-foreground text-xs">
           <LoaderCircle className="h-4 w-4 animate-spin" />
           {statusLabel}
+        </div>
+      ) : null}
+      {patchesError ? (
+        <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+          <div className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium">{t('ai.patchLoadErrorTitle')}</p>
+              <p className="mt-0.5 break-words text-dynamic-red/90">
+                {patchesError}
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+      {layoutRefreshError ? (
+        <div className="space-y-2 rounded-md border border-dynamic-yellow/30 bg-dynamic-yellow/10 px-3 py-2 text-xs">
+          <div className="flex items-start gap-2">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-yellow" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">{t('ai.layoutRefreshErrorTitle')}</p>
+              <p className="mt-0.5 break-words text-muted-foreground">
+                {layoutRefreshError}
+              </p>
+            </div>
+          </div>
+          {onRetryLayoutRefresh ? (
+            <Button
+              className="h-7 gap-1.5 px-2 text-xs"
+              disabled={retryingLayoutRefresh}
+              onClick={onRetryLayoutRefresh}
+              size="sm"
+              type="button"
+              variant="outline"
+            >
+              <RefreshCw
+                className={cn(
+                  'h-3.5 w-3.5',
+                  retryingLayoutRefresh && 'animate-spin'
+                )}
+              />
+              {t('ai.retryLayoutRefresh')}
+            </Button>
+          ) : null}
         </div>
       ) : null}
       {visibleError ? (

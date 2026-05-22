@@ -662,9 +662,150 @@ export function normalizeGeneratedPatchIds(
         };
       }
 
+      if (operation.kind === 'update_node') {
+        return {
+          ...operation,
+          parentNodeId: operation.parentNodeId
+            ? resolveId(operation.parentNodeId)
+            : operation.parentNodeId,
+        };
+      }
+
+      if (operation.kind === 'update_edge') {
+        return {
+          ...operation,
+          sourceNodeId: operation.sourceNodeId
+            ? resolveId(operation.sourceNodeId)
+            : operation.sourceNodeId,
+          targetNodeId: operation.targetNodeId
+            ? resolveId(operation.targetNodeId)
+            : operation.targetNodeId,
+        };
+      }
+
       return operation;
     }),
   } satisfies MindAiPatch;
+}
+
+function describePatchOperation(operation: MindPatchOperation) {
+  if (operation.kind === 'create_node') {
+    return operation.node.title || operation.id;
+  }
+  if (operation.kind === 'update_node') {
+    return operation.title || operation.nodeId;
+  }
+  if (operation.kind === 'create_edge') {
+    return operation.edge.label || operation.id;
+  }
+  if (operation.kind === 'update_edge') {
+    return operation.label || operation.edgeId;
+  }
+  if (operation.kind === 'delete_node') return operation.nodeId;
+  return operation.edgeId;
+}
+
+function validateMindPatchReferences({
+  patch,
+  snapshot,
+}: {
+  patch: MindAiPatch;
+  snapshot: MindBoardSnapshot;
+}) {
+  const existingNodeIds = new Set(snapshot.nodes.map((node) => node.id));
+  const existingEdgeIds = new Set(snapshot.edges.map((edge) => edge.id));
+  const createdNodeRefs = new Set<string>();
+  const issues: string[] = [];
+
+  for (const operation of patch.operations) {
+    if (operation.kind !== 'create_node') continue;
+    createdNodeRefs.add(operation.id);
+    if (operation.node.id) createdNodeRefs.add(operation.node.id);
+  }
+
+  const nodeRefExists = (nodeId: string) =>
+    existingNodeIds.has(nodeId) || createdNodeRefs.has(nodeId);
+  const existingNodeRefExists = (nodeId: string) => existingNodeIds.has(nodeId);
+
+  const pushMissingNode = (
+    operation: MindPatchOperation,
+    nodeId: string,
+    role: string
+  ) => {
+    issues.push(
+      `Missing node reference for ${role} in ${operation.kind} "${describePatchOperation(
+        operation
+      )}": ${nodeId}`
+    );
+  };
+
+  const pushMissingEdge = (
+    operation: MindPatchOperation,
+    edgeId: string,
+    role: string
+  ) => {
+    issues.push(
+      `Missing edge reference for ${role} in ${operation.kind} "${describePatchOperation(
+        operation
+      )}": ${edgeId}`
+    );
+  };
+
+  for (const operation of patch.operations) {
+    if (operation.kind === 'create_node') {
+      const parentNodeId = operation.node.parentNodeId;
+      if (parentNodeId && !nodeRefExists(parentNodeId)) {
+        pushMissingNode(operation, parentNodeId, 'parentNodeId');
+      }
+      continue;
+    }
+
+    if (operation.kind === 'update_node') {
+      if (!existingNodeRefExists(operation.nodeId)) {
+        pushMissingNode(operation, operation.nodeId, 'nodeId');
+      }
+      if (operation.parentNodeId && !nodeRefExists(operation.parentNodeId)) {
+        pushMissingNode(operation, operation.parentNodeId, 'parentNodeId');
+      }
+      continue;
+    }
+
+    if (operation.kind === 'delete_node') {
+      if (!existingNodeRefExists(operation.nodeId)) {
+        pushMissingNode(operation, operation.nodeId, 'nodeId');
+      }
+      continue;
+    }
+
+    if (operation.kind === 'create_edge') {
+      if (!nodeRefExists(operation.edge.sourceNodeId)) {
+        pushMissingNode(operation, operation.edge.sourceNodeId, 'sourceNodeId');
+      }
+      if (!nodeRefExists(operation.edge.targetNodeId)) {
+        pushMissingNode(operation, operation.edge.targetNodeId, 'targetNodeId');
+      }
+      continue;
+    }
+
+    if (operation.kind === 'update_edge') {
+      if (!existingEdgeIds.has(operation.edgeId)) {
+        pushMissingEdge(operation, operation.edgeId, 'edgeId');
+      }
+      if (operation.sourceNodeId && !nodeRefExists(operation.sourceNodeId)) {
+        pushMissingNode(operation, operation.sourceNodeId, 'sourceNodeId');
+      }
+      if (operation.targetNodeId && !nodeRefExists(operation.targetNodeId)) {
+        pushMissingNode(operation, operation.targetNodeId, 'targetNodeId');
+      }
+      continue;
+    }
+
+    if (!existingEdgeIds.has(operation.edgeId)) {
+      pushMissingEdge(operation, operation.edgeId, 'edgeId');
+    }
+  }
+
+  return issues;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1102,6 +1243,24 @@ export function createMindStreamTools(
           return {
             ok: false,
             reason: `Patch draft was not applyable: ${coercedPatch.issues
+              .slice(0, 6)
+              .join('; ')}`,
+          };
+        }
+
+        const snapshot = await callbacks.getSnapshot(ctx.wsId, resolvedBoardId);
+        if (!snapshot) {
+          return { ok: false, reason: 'Mind board was not found.' };
+        }
+
+        const referenceIssues = validateMindPatchReferences({
+          patch: coercedPatch,
+          snapshot,
+        });
+        if (referenceIssues.length > 0) {
+          return {
+            ok: false,
+            reason: `Patch draft referenced graph items that are not available: ${referenceIssues
               .slice(0, 6)
               .join('; ')}`,
           };
