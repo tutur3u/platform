@@ -49,7 +49,7 @@
     "@tanstack/react-query": "^5.100.11",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.13.24",
-    "@tiptap/core": "3.23.5",
+    "@tiptap/core": "3.23.6",
     "@tiptap/extension-collaboration": "3.23.5",
     "@tiptap/extension-collaboration-caret": "3.23.5",
     "@tiptap/extension-drag-handle-react": "3.23.5",
