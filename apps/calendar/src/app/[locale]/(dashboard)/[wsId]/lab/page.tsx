@@ -2,6 +2,7 @@ import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
+import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -42,22 +43,19 @@ export default async function CalendarLabPage({ params }: PageProps) {
 
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
 
-  const supabase = await createAdminClient({ noCookie: true });
+  const sbAdmin = await createAdminClient({ noCookie: true });
 
-  // Fetch Google auth token and calendar connections for "Real Data Import" feature
-  const [{ data: googleToken }, { data: calendarConnections }] =
-    await Promise.all([
-      supabase
-        .from('calendar_auth_tokens')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .maybeSingle(),
-      supabase
-        .from('calendar_connections')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .order('created_at', { ascending: true }),
-    ]);
+  const [googleToken, { data: calendarConnections }] = await Promise.all([
+    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+      wsId: workspace.id,
+      userId: user.id,
+    }),
+    sbAdmin
+      .from('calendar_connections')
+      .select('*')
+      .eq('ws_id', workspace.id)
+      .order('created_at', { ascending: true }),
+  ]);
 
   const isPersonalWorkspace = workspace.id === user.id;
 

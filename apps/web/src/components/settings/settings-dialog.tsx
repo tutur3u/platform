@@ -37,7 +37,7 @@ import {
 import type {
   CalendarConnection,
   Workspace,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
@@ -227,7 +227,7 @@ export function SettingsDialog({
       if (!workspace?.id) return null;
 
       const payload = await apiFetch<{
-        tokens?: WorkspaceCalendarGoogleToken | null;
+        tokens?: WorkspaceCalendarGoogleTokenClient | null;
       }>(`/api/v1/calendar/auth/tokens?wsId=${workspace.id}`, {
         cache: 'no-store',
       });

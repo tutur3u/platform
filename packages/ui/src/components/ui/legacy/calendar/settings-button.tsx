@@ -1,5 +1,5 @@
 import { Settings } from '@tuturuuu/icons';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type { WorkspaceCalendarGoogleTokenClient } from '@tuturuuu/types';
 import { useState } from 'react';
 import { Button } from '../../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
@@ -10,7 +10,7 @@ export const SettingsButton = ({
   experimentalGoogleToken,
 }: {
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
 }) => {
   const [open, setOpen] = useState(false);
 

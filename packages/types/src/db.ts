@@ -1319,6 +1319,18 @@ export type PostApprovalItem = PostApprovalQueryResult & {
 export type PostLogEntry = Tables<'user_group_post_logs'>;
 
 export type WorkspaceCalendarGoogleToken = Tables<'calendar_auth_tokens'>;
+export type WorkspaceCalendarGoogleTokenClient = Pick<
+  WorkspaceCalendarGoogleToken,
+  | 'account_email'
+  | 'account_name'
+  | 'created_at'
+  | 'expires_at'
+  | 'id'
+  | 'is_active'
+  | 'provider'
+  | 'user_id'
+  | 'ws_id'
+>;
 export type InternalEmail = Tables<'internal_emails'>;
 
 export type TimeTrackingCategory = Tables<'time_tracking_categories'>;

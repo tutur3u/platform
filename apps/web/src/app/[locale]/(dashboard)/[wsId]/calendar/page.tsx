@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
+import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
@@ -40,19 +41,17 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const sbAdmin = await createAdminClient({ noCookie: true });
 
-  const [{ data: googleToken }, { data: calendarConnections }] =
-    await Promise.all([
-      sbAdmin
-        .from('calendar_auth_tokens')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .maybeSingle(),
-      sbAdmin
-        .from('calendar_connections')
-        .select('*')
-        .eq('ws_id', workspace.id)
-        .order('created_at', { ascending: true }),
-    ]);
+  const [googleToken, { data: calendarConnections }] = await Promise.all([
+    fetchUserWorkspaceCalendarGoogleTokenForClient(supabase, {
+      wsId: workspace.id,
+      userId: user.id,
+    }),
+    sbAdmin
+      .from('calendar_connections')
+      .select('*')
+      .eq('ws_id', workspace.id)
+      .order('created_at', { ascending: true }),
+  ]);
 
   return (
     <CalendarPageShell

@@ -1,6 +1,9 @@
 'use client';
 
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleTokenClient,
+} from '@tuturuuu/types';
 import { CalendarProvider } from '@tuturuuu/ui/hooks/use-calendar';
 import type { CalendarView } from '../../../../hooks/use-view-transition';
 import { CalendarContent } from './calendar-content';
@@ -31,7 +34,7 @@ export const SmartCalendar = ({
   workspace?: Workspace;
   disabled?: boolean;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;

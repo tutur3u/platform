@@ -52,6 +52,25 @@ host.
 - Keep workspace membership checks and Calendar/task permissions on the central
   route before admin-backed reads or writes.
 
+## OAuth Token Safety
+
+Calendar OAuth credentials live in `calendar_auth_tokens`. RLS restricts
+selects to `user_id = auth.uid()`, but admin/service-role reads bypass RLS.
+
+Calendar server pages must therefore:
+
+- Check `manage_calendar` before loading calendar integration state.
+- Scope token reads to both `ws_id` and the authenticated `user_id`.
+- Never pass `access_token` or `refresh_token` into client components. SSR
+  props should use the shared
+  `fetchUserWorkspaceCalendarGoogleTokenForClient()` helper from
+  `@tuturuuu/utils/calendar-auth-token`, which projects only connection
+  metadata (`id`, account email/name, provider, active state, expiry).
+- Keep token refresh and Google API calls on central `apps/web` API routes.
+
+When adding a new Calendar host route, reuse the helper instead of
+`select('*')` on `calendar_auth_tokens`.
+
 When adding new Calendar UI that needs protected data, update the shared
 Calendar component or helper first, then wire both host wrappers in the same
 change. Prefer a central `apps/web` API route and a `packages/internal-api`

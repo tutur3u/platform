@@ -1,7 +1,10 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleTokenClient,
+} from '@tuturuuu/types';
 import { SmartCalendar } from '@tuturuuu/ui/legacy/calendar/smart-calendar';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -10,7 +13,7 @@ import { RequireWorkspaceTimezoneDialog } from './components/require-workspace-t
 import { useCalendarSettings } from './hooks';
 
 interface CalendarClientPageProps {
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   workspace: Workspace;
   enableSmartScheduling: boolean;
 }

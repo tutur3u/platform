@@ -3,7 +3,7 @@
 import type {
   CalendarConnection,
   Workspace,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { CalendarSettingsLayout } from './calendar-settings-layout';
 import { CategoryColorsSettings } from './category-color-settings';
@@ -15,7 +15,7 @@ interface CalendarSettingsContentProps {
   section: string;
   wsId: string;
   workspace?: Workspace | null;
-  calendarToken?: WorkspaceCalendarGoogleToken | null;
+  calendarToken?: WorkspaceCalendarGoogleTokenClient | null;
   calendarConnections?: CalendarConnection[];
 }
 

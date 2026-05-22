@@ -1,6 +1,7 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { CalendarPageShell } from '@tuturuuu/ui/calendar-app/calendar-page-shell';
+import { fetchUserWorkspaceCalendarGoogleTokenForClient } from '@tuturuuu/utils/calendar-auth-token';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
@@ -36,33 +37,21 @@ export default async function CalendarPage({ params }: PageProps) {
 
   const { withoutPermission } = permissions;
 
-  const supabase = await createAdminClient({ noCookie: true });
-
-  // Fetch Google auth token, calendar connections, and user email in parallel for better performance
-  const [{ data: googleToken }, { data: calendarConnections }] = user?.id
-    ? await Promise.all([
-        supabase
-          .from('calendar_auth_tokens')
-          .select('*')
-          .eq('ws_id', workspace.id)
-          .maybeSingle(),
-        supabase
-          .from('calendar_connections')
-          .select('*')
-          .eq('ws_id', workspace.id)
-          .order('created_at', { ascending: true }),
-      ])
-    : [
-        {
-          data: null,
-        },
-        {
-          data: null,
-        },
-        [],
-      ];
-
   if (withoutPermission('manage_calendar')) redirect(`/${wsId}`);
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+
+  const [googleToken, { data: calendarConnections }] = await Promise.all([
+    fetchUserWorkspaceCalendarGoogleTokenForClient(sbAdmin, {
+      wsId: workspace.id,
+      userId: user.id,
+    }),
+    sbAdmin
+      .from('calendar_connections')
+      .select('*')
+      .eq('ws_id', workspace.id)
+      .order('created_at', { ascending: true }),
+  ]);
 
   const enableSmartScheduling = true;
   const isPersonalWorkspace = workspace.id === user?.id;

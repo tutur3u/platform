@@ -1,7 +1,7 @@
 import type {
   CalendarConnection,
   Workspace,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { TaskDialogWrapper } from '@tuturuuu/ui/tu-do/shared/task-dialog-wrapper';
@@ -11,7 +11,7 @@ import TasksSidebar from './components/tasks-sidebar';
 interface CalendarPageShellProps {
   calendarConnections: CalendarConnection[] | null;
   enableSmartScheduling: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   isPersonalWorkspace: boolean;
   locale: string;
   userId: string;

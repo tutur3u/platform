@@ -1,4 +1,7 @@
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleTokenClient,
+} from '@tuturuuu/types';
 import { useCalendarSync } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import type { CalendarView } from '@tuturuuu/ui/hooks/use-view-transition';
 import { useViewTransition } from '@tuturuuu/ui/hooks/use-view-transition';
@@ -104,7 +107,7 @@ export const CalendarContent = ({
   disabled?: boolean;
   workspace?: Workspace;
   enableHeader?: boolean;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   externalState?: {
     date: Date;
     setDate: React.Dispatch<React.SetStateAction<Date>>;

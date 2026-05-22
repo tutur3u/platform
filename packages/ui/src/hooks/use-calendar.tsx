@@ -1,6 +1,9 @@
 import { createWorkspaceCalendarEvent } from '@tuturuuu/internal-api';
 import { createClient } from '@tuturuuu/supabase/next/client';
-import type { Workspace, WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type {
+  Workspace,
+  WorkspaceCalendarGoogleTokenClient,
+} from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import {
@@ -369,7 +372,7 @@ export const CalendarProvider = ({
   useQuery: any;
   useQueryClient: any;
   children: ReactNode;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   readOnly?: boolean;
 }) => {
   const queryClient = useQueryClient();

@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
   Workspace,
   WorkspaceCalendarEvent,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { isAllDayEvent } from '@tuturuuu/utils/calendar-utils';
@@ -166,7 +166,7 @@ export const CalendarSyncProvider = ({
 }: {
   children: React.ReactNode;
   wsId: Workspace['id'];
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   initialCalendarConnections?: CalendarConnection[];
 }) => {
   const [data, setData] = useState<WorkspaceCalendarEvent[] | null>(null);

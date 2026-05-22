@@ -12,7 +12,7 @@ import {
 } from '@tuturuuu/icons';
 import type {
   CalendarConnection,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import { Alert, AlertDescription } from '@tuturuuu/ui/alert';
 import { Button } from '@tuturuuu/ui/button';
@@ -65,7 +65,7 @@ export const defaultSmartSchedulingData: SmartSchedulingData = {
 type GoogleCalendarSettingsProps = {
   wsId: string;
   workspace?: { id: string } | null;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
   calendarConnections?: CalendarConnection[];
 };
 
@@ -388,7 +388,7 @@ export function GoogleCalendarSettings({
 
       queryClient.setQueryData(
         ['calendar-token', workspace.id],
-        null as WorkspaceCalendarGoogleToken | null
+        null as WorkspaceCalendarGoogleTokenClient | null
       );
       queryClient.setQueryData<CalendarConnection[]>(
         ['calendar-connections', workspace.id],

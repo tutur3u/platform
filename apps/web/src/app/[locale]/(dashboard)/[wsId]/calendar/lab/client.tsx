@@ -18,7 +18,7 @@ import {
 import type {
   CalendarConnection,
   Workspace,
-  WorkspaceCalendarGoogleToken,
+  WorkspaceCalendarGoogleTokenClient,
 } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import { Badge } from '@tuturuuu/ui/badge';
@@ -55,7 +55,7 @@ import type { CalendarScenario } from './types';
 
 interface CalendarLabClientPageProps {
   workspace: Workspace;
-  googleToken?: WorkspaceCalendarGoogleToken | null;
+  googleToken?: WorkspaceCalendarGoogleTokenClient | null;
   calendarConnections: CalendarConnection[];
 }
 

@@ -1,3 +1,4 @@
+import { WORKSPACE_CALENDAR_GOOGLE_TOKEN_CLIENT_SELECT } from '@tuturuuu/utils/calendar-auth-token';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
     // Fetch the user's tokens from the calendar_auth_tokens table
     let tokenQuery = supabase
       .from('calendar_auth_tokens')
-      .select('*')
+      .select(WORKSPACE_CALENDAR_GOOGLE_TOKEN_CLIENT_SELECT)
       .eq('user_id', user.id);
 
     if (wsId) {

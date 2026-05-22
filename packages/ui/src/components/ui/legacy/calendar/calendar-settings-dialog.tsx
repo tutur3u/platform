@@ -9,7 +9,7 @@ import {
   Palette,
   Sparkles,
 } from '@tuturuuu/icons';
-import type { WorkspaceCalendarGoogleToken } from '@tuturuuu/types';
+import type { WorkspaceCalendarGoogleTokenClient } from '@tuturuuu/types';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -117,7 +117,7 @@ const SettingsContent = ({
 }: {
   wsId: string;
   section: keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar';
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
 }) => {
   const { settings, updateSettings } = useCalendarSettings();
 
@@ -186,7 +186,7 @@ function SettingsDialogContent({
 }: {
   onClose: (save?: boolean) => void;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
 }) {
   const [activeSection, setActiveSection] = React.useState<
     keyof CalendarSettings | 'hours' | 'advanced' | 'googleCalendar'
@@ -316,7 +316,7 @@ export function CalendarSettingsDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   wsId: string;
-  experimentalGoogleToken?: WorkspaceCalendarGoogleToken | null;
+  experimentalGoogleToken?: WorkspaceCalendarGoogleTokenClient | null;
 }) {
   const handleClose = () => {
     onOpenChange(false);
