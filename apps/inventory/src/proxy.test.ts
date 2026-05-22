@@ -9,6 +9,8 @@ const mocks = vi.hoisted(() => ({
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
+  propagateAuthCookies: vi.fn(),
+  refreshAppSessionForRequest: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -27,6 +29,15 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+}));
+
+vi.mock('@tuturuuu/auth/proxy', () => ({
+  propagateAuthCookies: (
+    ...args: Parameters<typeof mocks.propagateAuthCookies>
+  ) => mocks.propagateAuthCookies(...args),
+  refreshAppSessionForRequest: (
+    ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
+  ) => mocks.refreshAppSessionForRequest(...args),
 }));
 
 vi.mock('next-intl/middleware', () => ({
@@ -70,6 +81,10 @@ describe('Inventory proxy storefront access', () => {
   it('still redirects unauthenticated operator routes to local login', async () => {
     mocks.getAppSessionClaimsFromRequest.mockReturnValue(null);
     mocks.hasWebAppSessionTokenFromRequest.mockReturnValue(false);
+    mocks.refreshAppSessionForRequest.mockResolvedValue({
+      error: 'Missing app session',
+      ok: false,
+    });
 
     const request = new NextRequest(
       'https://inventory.tuturuuu.com/personal/catalog'
@@ -81,6 +96,9 @@ describe('Inventory proxy storefront access', () => {
     expect(response.headers.get('location')).toBe(
       'https://inventory.tuturuuu.com/login?next=%2Fpersonal%2Fcatalog'
     );
+    expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      targetApp: 'inventory',
+    });
   });
 
   it('guards local auth API routes before route handling', async () => {
