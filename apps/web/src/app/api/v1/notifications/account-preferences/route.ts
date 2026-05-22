@@ -5,6 +5,8 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { saveNotificationPreferences } from '../notification-preferences-write';
 
 const updateSchema = z.object({
   preferences: z.array(
@@ -46,7 +48,7 @@ export async function GET(_: Request) {
       .eq('user_id', user.id);
 
     if (error) {
-      console.error('Error fetching account preferences:', error);
+      serverLogger.error('Error fetching account preferences:', error);
       return NextResponse.json(
         { error: 'Failed to fetch preferences' },
         { status: 500 }
@@ -55,7 +57,7 @@ export async function GET(_: Request) {
 
     return NextResponse.json({ preferences: preferences || [] });
   } catch (error) {
-    console.error('Error in account preferences API:', error);
+    serverLogger.error('Error in account preferences API:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -91,59 +93,18 @@ export async function PUT(request: Request) {
 
     const { preferences } = validatedData.data;
 
-    // If preferences array is not empty, update individual preferences
     if (preferences.length > 0) {
-      // Deduplicate preferences by (eventType, channel) to avoid duplicate inserts
-      const uniquePreferences = preferences.reduce((acc, pref) => {
-        const key = `${pref.eventType}-${pref.channel}`;
-        if (!acc.has(key)) {
-          acc.set(key, pref);
-        }
-        return acc;
-      }, new Map<string, (typeof preferences)[number]>());
-
-      const deduplicatedPreferences = Array.from(uniquePreferences.values());
-
-      // Use admin client for DELETE to bypass RLS
       const supabaseAdmin = await createAdminClient();
+      const saveError = await saveNotificationPreferences({
+        preferences,
+        scope: 'user',
+        supabaseAdmin,
+        userId: user.id,
+        wsId: null,
+      });
 
-      // Delete existing preferences for the exact (event_type, channel) combinations
-      // we're about to insert to avoid duplicates
-      for (const pref of deduplicatedPreferences) {
-        const { error: deleteError } = await supabaseAdmin
-          .from('notification_preferences')
-          .delete()
-          .is('ws_id', null)
-          .eq('user_id', user.id)
-          .eq('scope', 'user')
-          .eq('event_type', pref.eventType)
-          .eq('channel', pref.channel);
-
-        if (deleteError) {
-          console.error('Error deleting old preference:', deleteError);
-          return NextResponse.json(
-            { error: 'Failed to update preferences' },
-            { status: 500 }
-          );
-        }
-      }
-
-      // Insert new preferences
-      const preferencesToInsert = deduplicatedPreferences.map((pref) => ({
-        ws_id: null, // NULL for account-level preferences
-        user_id: user.id,
-        event_type: pref.eventType,
-        channel: pref.channel,
-        enabled: pref.enabled,
-        scope: 'user' as const,
-      }));
-
-      const { error: insertError } = await supabaseAdmin
-        .from('notification_preferences')
-        .insert(preferencesToInsert);
-
-      if (insertError) {
-        console.error('Error inserting account preferences:', insertError);
+      if (saveError) {
+        serverLogger.error('Error saving account preferences:', saveError);
         return NextResponse.json(
           { error: 'Failed to update preferences' },
           { status: 500 }
@@ -153,7 +114,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in account preferences update:', error);
+    serverLogger.error('Error in account preferences update:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
