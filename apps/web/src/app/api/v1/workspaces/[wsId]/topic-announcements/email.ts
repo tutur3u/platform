@@ -1,4 +1,6 @@
 import {
+  type EmailAttachment,
+  type EmailAttachmentAuditMetadata,
   EmailService,
   type RateLimitConfig,
   sendWorkspaceEmail,
@@ -7,11 +9,16 @@ import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
+  htmlEscape,
+  renderTopicAnnouncementEmail,
+} from '@/lib/topic-announcements-email';
+import {
   buildTopicAnnouncementVerificationUrl,
-  generateVerificationToken,
-  hashVerificationToken,
-  type TopicAnnouncementsSupabaseClient,
-} from './shared';
+  generateTopicAnnouncementVerificationToken,
+  hashTopicAnnouncementVerificationToken,
+} from '@/lib/topic-announcements-verification';
+import { downloadWorkspaceStorageObjectForProvider } from '@/lib/workspace-storage-provider';
+import type { TopicAnnouncementsSupabaseClient } from './shared';
 
 const VERIFICATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const VERIFICATION_RESEND_COOLDOWN_MS = 15 * 60 * 1000;
@@ -30,14 +37,13 @@ const TOPIC_VERIFICATION_RATE_LIMITS = {
   workspacePerMinute: 5,
 } satisfies Partial<RateLimitConfig>;
 
-export function htmlEscape(value: string) {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
-}
+type TopicAnnouncementAttachmentEmailRow = {
+  content_type: EmailAttachment['contentType'];
+  file_name: string;
+  size_bytes: number;
+  storage_path: string;
+  storage_provider: 'r2' | 'supabase';
+};
 
 export function renderVerificationEmail({
   contactName,
@@ -72,30 +78,7 @@ export function renderAnnouncementEmail({
   };
   workspaceName: string | null;
 }) {
-  const details = [
-    ['Class', announcement.class_label],
-    ['Date', announcement.session_date],
-    ['Day', announcement.day_label],
-    ['Time', announcement.start_time],
-    ['Room', announcement.room],
-    ['Place', announcement.place],
-  ].filter(([, value]) => Boolean(value));
-  const detailHtml = details
-    .map(
-      ([label, value]) =>
-        `<li><strong>${htmlEscape(label ?? '')}:</strong> ${htmlEscape(value ?? '')}</li>`
-    )
-    .join('');
-  const detailText = details
-    .map(([label, value]) => `${label}: ${value}`)
-    .join('\n');
-  const body = announcement.body || announcement.topic;
-
-  return {
-    html: `<p>Hello,</p><p>${htmlEscape(body).replaceAll('\n', '<br />')}</p>${detailHtml ? `<ul>${detailHtml}</ul>` : ''}<p>Sent by ${htmlEscape(workspaceName || 'Tuturuuu')}</p>`,
-    subject: announcement.title,
-    text: `Hello,\n\n${body}\n\n${detailText ? `${detailText}\n\n` : ''}Sent by ${workspaceName || 'Tuturuuu'}`,
-  };
+  return renderTopicAnnouncementEmail({ announcement, workspaceName });
 }
 
 export async function getContactVerificationStatuses(
@@ -208,17 +191,53 @@ export async function sendTopicAnnouncement({
     return { error: 'EMAIL_NOT_VERIFIED', status: 409 };
   }
 
+  const { data: attachmentRows, error: attachmentError } = await sbAdmin
+    .from('topic_announcement_attachments')
+    .select('content_type,file_name,size_bytes,storage_path,storage_provider')
+    .eq('announcement_id', announcementId)
+    .order('created_at', { ascending: true });
+  if (attachmentError) throw attachmentError;
+
+  const attachments: EmailAttachment[] = [];
+  const attachmentMetadata: EmailAttachmentAuditMetadata[] = [];
+
+  for (const attachment of (attachmentRows ??
+    []) as TopicAnnouncementAttachmentEmailRow[]) {
+    const downloaded = await downloadWorkspaceStorageObjectForProvider(
+      normalizedWsId,
+      attachment.storage_provider,
+      attachment.storage_path
+    );
+    attachments.push({
+      contentType: attachment.content_type,
+      data: downloaded.buffer,
+      filename: attachment.file_name,
+    });
+    attachmentMetadata.push({
+      contentType: attachment.content_type,
+      fileName: attachment.file_name,
+      sizeBytes: Number(attachment.size_bytes),
+    });
+  }
+
   const { data: workspace } = await sbAdmin
     .from('workspaces')
     .select('name')
     .eq('id', normalizedWsId)
     .maybeSingle();
+  const content = renderAnnouncementEmail({
+    announcement,
+    workspaceName: workspace?.name ?? null,
+  });
   const result = await sendWorkspaceEmail(normalizedWsId, {
-    content: renderAnnouncementEmail({
-      announcement,
-      workspaceName: workspace?.name ?? null,
-    }),
+    content: {
+      ...content,
+      ...(attachments.length > 0 ? { attachments } : {}),
+    },
     metadata: {
+      ...(attachmentMetadata.length > 0
+        ? { attachments: attachmentMetadata }
+        : {}),
       entityId: announcementId,
       entityType: 'topic_announcement',
       ipAddress: extractIPFromHeaders(request.headers),
@@ -302,8 +321,8 @@ export async function sendTopicVerificationEmail({
     }
   }
 
-  const token = generateVerificationToken();
-  const tokenHash = hashVerificationToken(token);
+  const token = generateTopicAnnouncementVerificationToken();
+  const tokenHash = hashTopicAnnouncementVerificationToken(token);
   const expiresAt = new Date(now + VERIFICATION_TOKEN_TTL_MS).toISOString();
 
   await sbAdmin

@@ -8,6 +8,16 @@ import { z } from 'zod';
 
 import { MAX_RECIPIENTS_PER_EMAIL, MAX_SUBJECT_LENGTH } from './constants';
 
+export const MAX_EMAIL_ATTACHMENTS = 5;
+export const MAX_EMAIL_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const EMAIL_ATTACHMENT_CONTENT_TYPES = [
+  'application/pdf',
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
+
 // =============================================================================
 // Email Address Validation
 // =============================================================================
@@ -76,25 +86,54 @@ export const emailRecipientsSchema = z
 // Email Content Schema
 // =============================================================================
 
-export const emailContentSchema = z.object({
-  subject: z
+export const emailAttachmentSchema = z.object({
+  filename: z
     .string()
-    .min(1, 'Subject cannot be empty')
-    .max(
-      MAX_SUBJECT_LENGTH,
-      `Subject cannot exceed ${MAX_SUBJECT_LENGTH} characters`
-    )
-    .transform((s) => s.trim()),
-  html: z
-    .string()
-    .min(1, 'HTML content cannot be empty')
-    .max(10 * 1024 * 1024, 'HTML content too large (max 10MB)'),
-  text: z
-    .string()
-    .max(10 * 1024 * 1024, 'Text content too large (max 10MB)')
-    .optional(),
-  replyTo: emailArraySchema.optional(),
+    .min(1, 'Attachment filename cannot be empty')
+    .max(255, 'Attachment filename too long')
+    .transform((filename) => filename.trim()),
+  contentType: z.enum(EMAIL_ATTACHMENT_CONTENT_TYPES),
+  data: z.instanceof(Uint8Array),
 });
+
+export const emailContentSchema = z
+  .object({
+    subject: z
+      .string()
+      .min(1, 'Subject cannot be empty')
+      .max(
+        MAX_SUBJECT_LENGTH,
+        `Subject cannot exceed ${MAX_SUBJECT_LENGTH} characters`
+      )
+      .transform((s) => s.trim()),
+    html: z
+      .string()
+      .min(1, 'HTML content cannot be empty')
+      .max(10 * 1024 * 1024, 'HTML content too large (max 10MB)'),
+    text: z
+      .string()
+      .max(10 * 1024 * 1024, 'Text content too large (max 10MB)')
+      .optional(),
+    replyTo: emailArraySchema.optional(),
+    attachments: z
+      .array(emailAttachmentSchema)
+      .max(
+        MAX_EMAIL_ATTACHMENTS,
+        `Maximum ${MAX_EMAIL_ATTACHMENTS} attachments allowed`
+      )
+      .optional(),
+  })
+  .refine(
+    (content) =>
+      (content.attachments ?? []).reduce(
+        (total, attachment) => total + attachment.data.byteLength,
+        0
+      ) <= MAX_EMAIL_ATTACHMENT_BYTES,
+    {
+      message: 'Attachments cannot exceed 10 MB total',
+      path: ['attachments'],
+    }
+  );
 
 // =============================================================================
 // Email Source Schema
@@ -123,6 +162,16 @@ export const emailMetadataSchema = z.object({
   userAgent: z.string().max(512).optional(),
   priority: z.enum(['high', 'normal', 'low']).optional(),
   isInvite: z.boolean().optional(),
+  attachments: z
+    .array(
+      z.object({
+        contentType: z.enum(EMAIL_ATTACHMENT_CONTENT_TYPES),
+        fileName: z.string().min(1).max(255),
+        sizeBytes: z.number().int().positive().max(MAX_EMAIL_ATTACHMENT_BYTES),
+      })
+    )
+    .max(MAX_EMAIL_ATTACHMENTS)
+    .optional(),
 });
 
 // =============================================================================

@@ -19,6 +19,29 @@ export type TopicAnnouncementStatus =
   | 'sent'
   | 'skipped';
 
+export type TopicAnnouncementAttachmentContentType =
+  | 'application/pdf'
+  | 'image/gif'
+  | 'image/jpeg'
+  | 'image/png'
+  | 'image/webp';
+
+export type TopicAnnouncementAttachmentStorageProvider = 'r2' | 'supabase';
+
+export interface TopicAnnouncementAttachmentDraft {
+  contentType: TopicAnnouncementAttachmentContentType;
+  fileName: string;
+  sizeBytes: number;
+  storagePath: string;
+  storageProvider: TopicAnnouncementAttachmentStorageProvider;
+}
+
+export interface TopicAnnouncementAttachment
+  extends TopicAnnouncementAttachmentDraft {
+  createdAt: string;
+  id: string;
+}
+
 export interface TopicAnnouncementContact {
   archived: boolean;
   createdAt: string;
@@ -37,6 +60,7 @@ export interface TopicAnnouncementGroupSummary {
 }
 
 export interface TopicAnnouncementRecord {
+  attachments: TopicAnnouncementAttachment[];
   batch_id: string | null;
   body: string;
   class_label: string | null;
@@ -51,6 +75,7 @@ export interface TopicAnnouncementRecord {
   place: string | null;
   room: string | null;
   scheduled_send_at: string | null;
+  sent_email_audit_id: string | null;
   sent_at: string | null;
   session_date: string | null;
   source_type: string;
@@ -95,6 +120,7 @@ export interface TopicAnnouncementTemplatePayload {
 }
 
 export interface TopicAnnouncementPayload {
+  attachmentDrafts?: TopicAnnouncementAttachmentDraft[];
   body?: string;
   classLabel?: string | null;
   contactIds: string[];
@@ -266,6 +292,39 @@ export async function deleteTopicAnnouncement(
   const client = getInternalApiClient(options);
   return client.json<void>(
     `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}`,
+    { method: 'DELETE' }
+  );
+}
+
+export async function uploadTopicAnnouncementAttachment(
+  workspaceId: string,
+  file: File,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const formData = new FormData();
+  formData.append('file', file);
+
+  return client.json<{ data: TopicAnnouncementAttachmentDraft }>(
+    `${basePath(workspaceId)}/attachments/upload`,
+    {
+      body: formData,
+      method: 'POST',
+    }
+  );
+}
+
+export async function deleteTopicAnnouncementAttachment(
+  workspaceId: string,
+  announcementId: string,
+  attachmentId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<void>(
+    `${basePath(workspaceId)}/announcements/${encodePathSegment(
+      announcementId
+    )}/attachments/${encodePathSegment(attachmentId)}`,
     { method: 'DELETE' }
   );
 }

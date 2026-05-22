@@ -66,12 +66,15 @@ export function AnnouncementFormDetailsStep({
 
     setForm((current) => ({
       ...current,
+      classLabel: template.class_label ?? '',
       contactIds: template.default_contact_ids ?? [],
+      dayLabel: template.day_label ?? '',
       endTime: template.end_time ?? '',
       groupId: template.group_id ?? NO_GROUP,
       place: template.place ?? '',
       room: template.room ?? '',
       selectedTemplateId: templateId,
+      sessionDate: template.session_date ?? '',
       startTime: template.start_time ?? '',
       title: template.title,
       topic: template.topic ?? '',
@@ -127,7 +130,21 @@ export function AnnouncementFormDetailsStep({
         </div>
 
         <div className="space-y-2">
-          <Label>{t('classLabel')}</Label>
+          <Label htmlFor="topic-class-label">{t('classLabel')}</Label>
+          <Input
+            id="topic-class-label"
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                classLabel: event.target.value,
+              }))
+            }
+            value={form.classLabel}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label>{t('linked_group')}</Label>
           <Combobox
             disabled={isDisabled}
             emptyText={t('no_user_groups')}
@@ -142,6 +159,34 @@ export function AnnouncementFormDetailsStep({
             placeholder={t('linked_group_placeholder')}
             searchPlaceholder={t('search_user_groups')}
             selected={form.groupId}
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="topic-day-label">{t('day_label')}</Label>
+          <Input
+            id="topic-day-label"
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                dayLabel: event.target.value,
+              }))
+            }
+            value={form.dayLabel}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="topic-session-date">{t('session_date')}</Label>
+          <Input
+            id="topic-session-date"
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                sessionDate: event.target.value,
+              }))
+            }
+            type="date"
+            value={form.sessionDate}
           />
         </div>
 

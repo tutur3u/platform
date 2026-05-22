@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AnnouncementForm } from './announcement-form';
@@ -45,13 +46,22 @@ function renderForm(
     onCreateAndSend: vi.fn().mockResolvedValue(undefined),
     onSaveTemplate: vi.fn(),
     onTimezoneRequired: vi.fn(),
+    onUploadAttachment: vi.fn(),
     schedulingTimezone: 'Asia/Ho_Chi_Minh',
     templates: [],
     workspaceUsers: [],
     ...overrides,
   };
 
-  render(<AnnouncementForm {...props} />);
+  const queryClient = new QueryClient({
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <AnnouncementForm {...props} />
+    </QueryClientProvider>
+  );
   return props;
 }
 
@@ -84,16 +94,75 @@ describe('AnnouncementForm', () => {
 
     await waitFor(() =>
       expect(props.onCreate).toHaveBeenCalledWith({
+        attachmentDrafts: [],
+        classLabel: null,
         contactIds: ['contact-1'],
+        dayLabel: null,
         endTime: null,
         groupId: null,
         place: null,
         room: null,
+        sessionDate: null,
         sourceType: 'manual',
         startTime: null,
         title: 'Unit 3 speaking practice',
         topic: 'Practice speaking about weekend plans.',
       })
+    );
+  });
+
+  it('uploads media attachments and includes them in the reviewed draft payload', async () => {
+    const onUploadAttachment = vi.fn().mockResolvedValue({
+      contentType: 'application/pdf',
+      fileName: 'lesson-plan.pdf',
+      sizeBytes: 1234,
+      storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
+      storageProvider: 'supabase',
+    });
+    const props = renderForm({ onUploadAttachment });
+
+    fireEvent.change(screen.getByLabelText('announcement_title'), {
+      target: { value: 'Unit 3 speaking practice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+
+    fireEvent.change(screen.getByLabelText('topic_primary_label'), {
+      target: { value: 'Practice speaking about weekend plans.' },
+    });
+    fireEvent.change(screen.getByLabelText('attachments_upload_label'), {
+      target: {
+        files: [
+          new File(['%PDF'], 'lesson-plan.pdf', {
+            type: 'application/pdf',
+          }),
+        ],
+      },
+    });
+
+    await waitFor(() =>
+      expect(screen.getByText('lesson-plan.pdf')).toBeInTheDocument()
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+    fireEvent.click(
+      screen.getByRole('button', { name: 'announcement_submit_draft' })
+    );
+
+    await waitFor(() =>
+      expect(props.onCreate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          attachmentDrafts: [
+            {
+              contentType: 'application/pdf',
+              fileName: 'lesson-plan.pdf',
+              sizeBytes: 1234,
+              storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
+              storageProvider: 'supabase',
+            },
+          ],
+        })
+      )
     );
   });
 

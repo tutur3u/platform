@@ -2,8 +2,10 @@
 
 import { BookmarkPlus } from '@tuturuuu/icons';
 import type {
+  TopicAnnouncementAttachmentDraft,
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
+  TopicAnnouncementRecord,
   TopicAnnouncementTemplateRecord,
   WorkspaceBasicUserRecord,
 } from '@tuturuuu/internal-api';
@@ -11,7 +13,7 @@ import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { AnnouncementFormDetailsStep } from './announcement-form-details-step';
 import { AnnouncementFormMessageStep } from './announcement-form-message-step';
 import { AnnouncementFormReviewStep } from './announcement-form-review-step';
@@ -20,6 +22,7 @@ import {
   type AnnouncementDeliveryMode,
   type AnnouncementStep,
   buildTopicAnnouncementPayload,
+  createAnnouncementFormFromRecord,
   createDefaultScheduledDate,
   getAnnouncementStepValidity,
   INITIAL_ANNOUNCEMENT_FORM,
@@ -36,6 +39,8 @@ interface Props {
   canSend: boolean;
   contacts: TopicAnnouncementContact[];
   groups: UserGroup[];
+  forkSeedId?: number | null;
+  forkSource?: TopicAnnouncementRecord | null;
   isCreating: boolean;
   isSavingTemplate: boolean;
   isScheduling: boolean;
@@ -48,6 +53,7 @@ interface Props {
   onCreateAndSend: (payload: TopicAnnouncementPayload) => Promise<void>;
   onSaveTemplate: (values: TemplateFormValues) => void;
   onTimezoneRequired: () => void;
+  onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
   schedulingTimezone: string | null;
   templates: TopicAnnouncementTemplateRecord[];
   workspaceUsers: WorkspaceBasicUserRecord[];
@@ -56,6 +62,8 @@ interface Props {
 export function AnnouncementForm({
   canSend,
   contacts,
+  forkSeedId = null,
+  forkSource = null,
   groups,
   isCreating,
   isSavingTemplate,
@@ -66,6 +74,7 @@ export function AnnouncementForm({
   onCreateAndSend,
   onSaveTemplate,
   onTimezoneRequired,
+  onUploadAttachment,
   schedulingTimezone,
   templates,
   workspaceUsers,
@@ -89,6 +98,15 @@ export function AnnouncementForm({
     canUseDeliveryMode &&
     (deliveryMode !== 'schedule' || Boolean(scheduledAt && schedulingTimezone));
   const submitLabel = getSubmitLabel(deliveryMode, t);
+
+  useEffect(() => {
+    if (!forkSeedId || !forkSource) return;
+
+    setDeliveryMode('draft');
+    setForm(createAnnouncementFormFromRecord(forkSource));
+    setScheduledAt(createDefaultScheduledDate());
+    setStep('details');
+  }, [forkSeedId, forkSource]);
 
   const resetForm = () => {
     setDeliveryMode('draft');
@@ -162,7 +180,12 @@ export function AnnouncementForm({
         ) : null}
 
         {step === 'message' ? (
-          <AnnouncementFormMessageStep form={form} setForm={setForm} />
+          <AnnouncementFormMessageStep
+            disabled={isSubmitting}
+            form={form}
+            onUploadAttachment={onUploadAttachment}
+            setForm={setForm}
+          />
         ) : null}
 
         {step === 'recipients' ? (

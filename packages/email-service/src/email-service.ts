@@ -138,6 +138,9 @@ export class EmailService {
       ipAddress: params.metadata.ipAddress,
       htmlContent: params.content.html,
       textContent: params.content.text,
+      metadata: params.metadata.attachments
+        ? { attachments: params.metadata.attachments }
+        : undefined,
     });
 
     // 0. Enforce IP blocks (shared across the platform)
@@ -521,6 +524,9 @@ export class EmailService {
       ipAddress: params.metadata.ipAddress,
       htmlContent: params.content.html,
       textContent: params.content.text,
+      metadata: params.metadata.attachments
+        ? { attachments: params.metadata.attachments }
+        : undefined,
     });
 
     // Check dev mode - skip actual sending but log as sent

@@ -1,4 +1,8 @@
-import { GetSendQuotaCommand, SendEmailCommand } from '@aws-sdk/client-ses';
+import {
+  GetSendQuotaCommand,
+  SendEmailCommand,
+  SendRawEmailCommand,
+} from '@aws-sdk/client-ses';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SESEmailProvider } from '../ses';
 
@@ -9,6 +13,7 @@ vi.mock('@aws-sdk/client-ses', () => {
       send = vi.fn();
     },
     SendEmailCommand: vi.fn(),
+    SendRawEmailCommand: vi.fn(),
     GetSendQuotaCommand: vi.fn(),
   };
 });
@@ -132,6 +137,58 @@ describe('SESEmailProvider', () => {
           },
         })
       );
+    });
+
+    it('uses raw MIME delivery only when attachments are present', async () => {
+      mockSend.mockResolvedValueOnce({
+        MessageId: 'raw-msg-id-123',
+        $metadata: { httpStatusCode: 200 },
+      });
+
+      const result = await provider.send({
+        ...defaultParams,
+        content: {
+          ...defaultParams.content,
+          attachments: [
+            {
+              contentType: 'application/pdf',
+              data: new Uint8Array([37, 80, 68, 70]),
+              filename: 'lesson-plan.pdf',
+            },
+          ],
+          text: 'Test Body',
+        },
+      });
+
+      expect(result.success).toBe(true);
+      expect(SendEmailCommand).not.toHaveBeenCalled();
+      expect(SendRawEmailCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          RawMessage: {
+            Data: expect.any(Uint8Array),
+          },
+          Source: defaultParams.source,
+        })
+      );
+
+      const sendRawEmailMock = SendRawEmailCommand as unknown as ReturnType<
+        typeof vi.fn
+      >;
+      const rawCommandInput = sendRawEmailMock.mock.calls[0]?.[0] as
+        | { RawMessage: { Data: Uint8Array } }
+        | undefined;
+      expect(rawCommandInput).toBeDefined();
+      if (!rawCommandInput) throw new Error('Raw SES command was not created');
+
+      const rawMessage = new TextDecoder().decode(
+        rawCommandInput.RawMessage.Data
+      );
+      expect(rawMessage).toContain('Content-Type: multipart/mixed;');
+      expect(rawMessage).toContain(
+        'Content-Disposition: attachment; filename="lesson-plan.pdf"'
+      );
+      expect(rawMessage).toContain('Content-Type: application/pdf');
+      expect(rawMessage).toContain('JVBERg==');
     });
   });
 

@@ -98,13 +98,15 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 - Contacts are workspace-scoped and may be raw email contacts or linked to an existing workspace virtual user profile. The linker UI searches workspace users with avatar and email affordances.
 - Announcements may optionally reference a real `workspace_user_groups` row through `group_id` for scheduling and reporting context.
-- A contact cannot receive announcements until its email is verified through the Tuturuuu internal SES verification flow or through a linked Tuturuuu platform account with a confirmed matching email.
+- A contact cannot receive announcements until its email is verified through the Tuturuuu internal SES verification flow or through a linked Tuturuuu platform account with a confirmed matching email **and membership in the same workspace**. Platform-wide confirmed accounts must not auto-confirm a contact for another workspace.
+- Announcements can include image and PDF attachments. The composer and API enforce the shared email limits: up to 5 files and 10 MB total per announcement.
 - Verification emails are sent by the root Tuturuuu sender with normal protected delivery checks, not the rate-limit-bypassing system path.
 - Verification links resolve to the public platform origin by default (`https://tuturuuu.com`) so listener hosts such as `0.0.0.0:7803` never leak into recipient inboxes. Set `TOPIC_ANNOUNCEMENT_VERIFICATION_ORIGIN` only when an explicit alternate public origin is required.
 - Verification sends enforce a short pending-link cooldown before creating another token, and email delivery applies workspace, user, IP, and recipient limits. The recipient limit is global across workspaces, so one workspace or many workspaces cannot repeatedly send verification links to the same inbox.
 - Actual announcements are sent by the enabled workspace sender and are written to `email_audit`.
 - The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields.
 - Workspace-shared **announcement templates** store reusable title, topic starter text, class metadata, optional default group, and default recipient ids. Operators apply a template in the composer, then edit the topic field before sending.
+- Operators can fork an existing sent or draft announcement into a new draft. The fork copies title, topic, class context, recipients, and attachment references, but never copies sent, queued, scheduled, or email audit state.
 - **Scheduled send** sets `status = queued` and `scheduled_send_at` using the workspace's fixed IANA timezone from calendar settings. Scheduling is blocked while the workspace timezone is still `auto` or unset; use the same calendar timezone gate as the main calendar product.
 - The `process-topic-announcement-queue` cron job (every 15 minutes) loads due queued rows and reuses the same `sendTopicAnnouncement` path as manual send. Failed sends keep the existing `failed` / `last_error` handling without infinite retries.
 - Announcement list APIs enrich recipient rows with the same `verificationStatus` contract as the contacts list so the table does not treat missing status as unverified.
@@ -114,3 +116,5 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Client UI must call `@tuturuuu/internal-api` Topic Announcements helpers; do not add direct client-side fetches.
 - Delivery APIs must check the workspace secret, `manage_users`, `send_user_group_post_emails`, recipient verification, and workspace ownership before sending.
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
+- Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.
+- Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.

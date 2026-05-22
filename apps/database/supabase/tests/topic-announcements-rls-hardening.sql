@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-select plan(28);
+select plan(33);
 
 select ok(
   not has_table_privilege(
@@ -150,6 +150,42 @@ select ok(
 
 select ok(
   not has_table_privilege(
+    'authenticated',
+    'public.topic_announcement_attachments',
+    'SELECT'
+  ),
+  'authenticated cannot select topic announcement attachments directly'
+);
+
+select ok(
+  not has_table_privilege(
+    'authenticated',
+    'public.topic_announcement_attachments',
+    'INSERT'
+  ),
+  'authenticated cannot insert topic announcement attachments directly'
+);
+
+select ok(
+  not has_table_privilege(
+    'authenticated',
+    'public.topic_announcement_attachments',
+    'UPDATE'
+  ),
+  'authenticated cannot update topic announcement attachments directly'
+);
+
+select ok(
+  not has_table_privilege(
+    'authenticated',
+    'public.topic_announcement_attachments',
+    'DELETE'
+  ),
+  'authenticated cannot delete topic announcement attachments directly'
+);
+
+select ok(
+  not has_table_privilege(
     'anon',
     'public.topic_announcement_contact_verifications',
     'SELECT'
@@ -229,6 +265,15 @@ select ok(
   'service_role can select topic announcement recipients'
 );
 
+select ok(
+  has_table_privilege(
+    'service_role',
+    'public.topic_announcement_attachments',
+    'SELECT'
+  ),
+  'service_role can select topic announcement attachments'
+);
+
 select is(
   (
     select count(*)::integer
@@ -239,7 +284,8 @@ select is(
         'topic_announcement_contact_verifications',
         'topic_announcement_batches',
         'topic_announcements',
-        'topic_announcement_recipients'
+        'topic_announcement_recipients',
+        'topic_announcement_attachments'
       )
       and 'authenticated' = any(roles)
   ),
@@ -257,11 +303,12 @@ select is(
         'topic_announcement_contact_verifications',
         'topic_announcement_batches',
         'topic_announcements',
-        'topic_announcement_recipients'
+        'topic_announcement_recipients',
+        'topic_announcement_attachments'
       )
       and 'service_role' = any(roles)
   ),
-  5,
+  6,
   'topic announcement tables keep service-role RLS policies'
 );
 
@@ -275,7 +322,8 @@ select is(
         'topic_announcement_contact_verifications',
         'topic_announcement_batches',
         'topic_announcements',
-        'topic_announcement_recipients'
+        'topic_announcement_recipients',
+        'topic_announcement_attachments'
       )
       and (
         policyname like 'Allow workspace members to view topic announcement%'

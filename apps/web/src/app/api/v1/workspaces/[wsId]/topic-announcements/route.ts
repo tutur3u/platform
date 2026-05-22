@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import {
+  insertTopicAnnouncementAttachmentDrafts,
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
   serializeTopicAnnouncementContacts,
+  type TopicAnnouncementAttachmentRow,
   type TopicAnnouncementContactRow,
   TopicAnnouncementListQuerySchema,
   TopicAnnouncementPayloadSchema,
@@ -103,9 +105,24 @@ export async function GET(request: Request, { params }: Params) {
     : { data: [], error: null };
   if (recipientsError) throw recipientsError;
 
+  const { data: attachments, error: attachmentsError } = announcementIds.length
+    ? await sbAdmin
+        .from('topic_announcement_attachments')
+        .select(
+          'id,content_type,created_at,file_name,size_bytes,storage_path,storage_provider,announcement_id'
+        )
+        .in('announcement_id', announcementIds)
+        .order('created_at', { ascending: true })
+    : { data: [], error: null };
+  if (attachmentsError) throw attachmentsError;
+
   const recipientsByAnnouncement = new Map<
     string,
     TopicAnnouncementContactRow[]
+  >();
+  const attachmentsByAnnouncement = new Map<
+    string,
+    TopicAnnouncementAttachmentRow[]
   >();
   const allContacts: TopicAnnouncementContactRow[] = [];
   for (const row of recipients ?? []) {
@@ -115,6 +132,11 @@ export async function GET(request: Request, { params }: Params) {
     list.push(contact);
     recipientsByAnnouncement.set(row.announcement_id, list);
     allContacts.push(contact);
+  }
+  for (const row of attachments ?? []) {
+    const list = attachmentsByAnnouncement.get(row.announcement_id) ?? [];
+    list.push(row as TopicAnnouncementAttachmentRow);
+    attachmentsByAnnouncement.set(row.announcement_id, list);
   }
 
   const serializedById = new Map(
@@ -128,6 +150,7 @@ export async function GET(request: Request, { params }: Params) {
     data: (data ?? []).map((announcement: any) =>
       mapTopicAnnouncementRow({
         ...announcement,
+        attachments: attachmentsByAnnouncement.get(announcement.id) ?? [],
         contacts: (recipientsByAnnouncement.get(announcement.id) ?? []).map(
           (contact) => serializedById.get(contact.id) ?? contact
         ),
@@ -214,6 +237,13 @@ export async function POST(request: Request, { params }: Params) {
     contactIds: payload.contactIds,
     sbAdmin,
   });
+  await insertTopicAnnouncementAttachmentDrafts({
+    actorUserId,
+    announcementId: announcement.id,
+    attachmentDrafts: payload.attachmentDrafts,
+    normalizedWsId,
+    sbAdmin,
+  });
 
   const { data: recipientRows, error: recipientsError } = await sbAdmin
     .from('topic_announcement_recipients')
@@ -236,10 +266,20 @@ export async function POST(request: Request, { params }: Params) {
     .maybeSingle();
   if (enrichedError) throw enrichedError;
 
+  const { data: attachments, error: attachmentsError } = await sbAdmin
+    .from('topic_announcement_attachments')
+    .select(
+      'id,content_type,created_at,file_name,size_bytes,storage_path,storage_provider'
+    )
+    .eq('announcement_id', announcement.id)
+    .order('created_at', { ascending: true });
+  if (attachmentsError) throw attachmentsError;
+
   return NextResponse.json(
     {
       data: mapTopicAnnouncementRow({
         ...(enrichedAnnouncement ?? announcement),
+        attachments: attachments ?? [],
         contacts: await serializeTopicAnnouncementContacts(
           sbAdmin,
           recipientContacts

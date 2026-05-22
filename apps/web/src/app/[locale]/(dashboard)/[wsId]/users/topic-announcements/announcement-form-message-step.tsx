@@ -1,17 +1,26 @@
 'use client';
 
+import type { TopicAnnouncementAttachmentDraft } from '@tuturuuu/internal-api';
 import { Label } from '@tuturuuu/ui/label';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
 import type { Dispatch, SetStateAction } from 'react';
+import { AnnouncementAttachmentsField } from './announcement-attachments-field';
 import type { AnnouncementFormValues } from './announcement-form-state';
 
 interface Props {
+  disabled: boolean;
   form: AnnouncementFormValues;
+  onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
   setForm: Dispatch<SetStateAction<AnnouncementFormValues>>;
 }
 
-export function AnnouncementFormMessageStep({ form, setForm }: Props) {
+export function AnnouncementFormMessageStep({
+  disabled,
+  form,
+  onUploadAttachment,
+  setForm,
+}: Props) {
   const t = useTranslations('ws-topic-announcements');
 
   return (
@@ -37,6 +46,14 @@ export function AnnouncementFormMessageStep({ form, setForm }: Props) {
           value={form.topic}
         />
       </div>
+      <AnnouncementAttachmentsField
+        attachments={form.attachmentDrafts}
+        disabled={disabled}
+        onChange={(attachmentDrafts) =>
+          setForm((current) => ({ ...current, attachmentDrafts }))
+        }
+        onUploadAttachment={onUploadAttachment}
+      />
     </div>
   );
 }

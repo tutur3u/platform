@@ -1,6 +1,14 @@
 'use client';
 
-import { CalendarClock, MoreHorizontal, Send, Trash2 } from '@tuturuuu/icons';
+import {
+  CalendarClock,
+  CopyPlus,
+  Eye,
+  MoreHorizontal,
+  Paperclip,
+  Send,
+  Trash2,
+} from '@tuturuuu/icons';
 import type { TopicAnnouncementRecord } from '@tuturuuu/internal-api';
 import {
   AlertDialog,
@@ -33,88 +41,20 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AnnouncementScheduleDialog } from './announcement-schedule-dialog';
+import {
+  ANNOUNCEMENT_STATUS_LABEL_KEYS,
+  canRemoveAnnouncement,
+  canSendAnnouncement,
+  countUnverifiedRecipients,
+  formatTimeRange,
+  getClassLabel,
+  getDayLabel,
+  getRowClassName,
+  getTeacherLabel,
+  tableCellClassName,
+  tableHeadClassName,
+} from './announcement-table-utils';
 import { formatTopicAnnouncementInstant } from './topic-announcements-scheduling';
-
-function canSendAnnouncement(announcement: TopicAnnouncementRecord) {
-  return announcement.contacts.every((contact) =>
-    ['verified', 'linked_confirmed_account'].includes(
-      contact.verificationStatus
-    )
-  );
-}
-
-function countUnverifiedRecipients(announcement: TopicAnnouncementRecord) {
-  return announcement.contacts.filter((contact) =>
-    ['needs_verification', 'pending'].includes(contact.verificationStatus)
-  ).length;
-}
-
-function canRemoveAnnouncement(announcement: TopicAnnouncementRecord) {
-  return ['draft', 'queued', 'failed', 'skipped'].includes(announcement.status);
-}
-
-function formatTimeValue(value: string | null) {
-  if (!value) return null;
-
-  const [hours, minutes] = value.split(':');
-  if (!hours || !minutes) return value;
-
-  return `${hours.padStart(2, '0')}:${minutes}`;
-}
-
-function formatTimeRange(announcement: TopicAnnouncementRecord) {
-  const startTime = formatTimeValue(announcement.start_time);
-  const endTime = formatTimeValue(announcement.end_time);
-
-  if (startTime && endTime) return `${startTime} - ${endTime}`;
-  return startTime ?? endTime;
-}
-
-function formatSessionDate(value: string | null) {
-  if (!value) return null;
-
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return value;
-
-  return new Intl.DateTimeFormat(undefined, {
-    day: '2-digit',
-    month: 'short',
-    weekday: 'short',
-  }).format(date);
-}
-
-function getDayLabel(announcement: TopicAnnouncementRecord) {
-  return announcement.day_label || formatSessionDate(announcement.session_date);
-}
-
-function getClassLabel(announcement: TopicAnnouncementRecord) {
-  return announcement.class_label || announcement.group?.name || null;
-}
-
-function getTeacherLabel(announcement: TopicAnnouncementRecord) {
-  return announcement.contacts
-    .map((contact) => contact.name.trim())
-    .filter(Boolean)
-    .join(', ');
-}
-
-function getRowClassName(status: TopicAnnouncementRecord['status']) {
-  if (status === 'queued') return 'bg-dynamic-blue/5';
-  if (status === 'sent') return 'bg-dynamic-green/5';
-  if (status === 'failed') return 'bg-dynamic-red/5';
-  if (status === 'skipped') return 'bg-dynamic-orange/5';
-  if (status === 'cancelled') return 'bg-muted/60 text-muted-foreground';
-  return 'bg-background';
-}
-
-const STATUS_LABEL_KEYS = {
-  cancelled: 'status_cancelled',
-  draft: 'status_draft',
-  failed: 'status_failed',
-  queued: 'status_queued',
-  sent: 'status_sent',
-  skipped: 'status_skipped',
-} as const;
 
 interface Props {
   announcements: TopicAnnouncementRecord[];
@@ -126,15 +66,13 @@ interface Props {
   isSending: boolean;
   onCancelSchedule: (announcementId: string) => void;
   onDelete: (announcementId: string) => void;
+  onFork: (announcement: TopicAnnouncementRecord) => void;
+  onPreview: (announcement: TopicAnnouncementRecord) => void;
   onSchedule: (announcementId: string, scheduledSendAt: string) => void;
   onSend: (announcementId: string) => void;
   schedulingTimezone: string | null;
   onTimezoneRequired: () => void;
 }
-
-const tableHeadClassName =
-  'h-9 border-border/80 border-r bg-dynamic-blue/15 px-2 font-semibold text-foreground text-xs uppercase';
-const tableCellClassName = 'border-border/70 border-r px-2 py-1.5 align-top';
 
 export function AnnouncementTable({
   announcements,
@@ -146,6 +84,8 @@ export function AnnouncementTable({
   isSending,
   onCancelSchedule,
   onDelete,
+  onFork,
+  onPreview,
   onSchedule,
   onSend,
   schedulingTimezone,
@@ -281,6 +221,16 @@ export function AnnouncementTable({
                     <div className="line-clamp-2 text-muted-foreground text-xs">
                       {announcement.topic}
                     </div>
+                    {announcement.attachments.length > 0 ? (
+                      <div className="mt-1 flex items-center gap-1 text-muted-foreground text-xs">
+                        <Paperclip className="h-3.5 w-3.5" />
+                        <span>
+                          {t('attachments_count', {
+                            count: announcement.attachments.length.toString(),
+                          })}
+                        </span>
+                      </div>
+                    ) : null}
                   </TableCell>
                   <TableCell className={tableCellClassName}>
                     <Badge
@@ -288,7 +238,7 @@ export function AnnouncementTable({
                         announcement.status === 'sent' ? 'success' : 'outline'
                       }
                     >
-                      {t(STATUS_LABEL_KEYS[announcement.status])}
+                      {t(ANNOUNCEMENT_STATUS_LABEL_KEYS[announcement.status])}
                     </Badge>
                   </TableCell>
                   <TableCell className={cn(tableCellClassName, 'text-right')}>
@@ -303,6 +253,17 @@ export function AnnouncementTable({
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => onPreview(announcement)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('preview_announcement')}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onFork(announcement)}>
+                          <CopyPlus className="mr-2 h-4 w-4" />
+                          {t('fork_announcement')}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem
                           disabled={
                             !canSend ||

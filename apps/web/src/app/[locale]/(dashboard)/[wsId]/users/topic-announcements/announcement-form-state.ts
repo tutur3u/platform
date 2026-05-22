@@ -1,5 +1,21 @@
-import type { TopicAnnouncementPayload } from '@tuturuuu/internal-api';
+import type {
+  TopicAnnouncementAttachmentDraft,
+  TopicAnnouncementPayload,
+  TopicAnnouncementRecord,
+} from '@tuturuuu/internal-api';
 import { NO_GROUP, NO_TEMPLATE } from './topic-announcements-form-constants';
+
+export const MAX_ANNOUNCEMENT_ATTACHMENTS = 5;
+export const MAX_ANNOUNCEMENT_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+export const ANNOUNCEMENT_ATTACHMENT_ACCEPT =
+  '.pdf,.png,.jpg,.jpeg,.gif,.webp,application/pdf,image/png,image/jpeg,image/gif,image/webp';
+export const ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES = [
+  'application/pdf',
+  'image/gif',
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+] as const;
 
 export const ANNOUNCEMENT_STEPS = [
   'details',
@@ -11,12 +27,16 @@ export const ANNOUNCEMENT_STEPS = [
 export const DELIVERY_MODES = ['draft', 'send', 'schedule'] as const;
 
 export const INITIAL_ANNOUNCEMENT_FORM = {
+  attachmentDrafts: [] as TopicAnnouncementAttachmentDraft[],
+  classLabel: '',
   contactIds: [] as string[],
+  dayLabel: '',
   endTime: '',
   groupId: NO_GROUP,
   place: '',
   room: '',
   selectedTemplateId: NO_TEMPLATE,
+  sessionDate: '',
   startTime: '',
   title: '',
   topic: '',
@@ -30,15 +50,54 @@ export function buildTopicAnnouncementPayload(
   form: AnnouncementFormValues
 ): TopicAnnouncementPayload {
   return {
+    attachmentDrafts: form.attachmentDrafts,
+    classLabel: form.classLabel || null,
     contactIds: form.contactIds,
+    dayLabel: form.dayLabel || null,
     endTime: form.endTime || null,
     groupId: form.groupId === NO_GROUP ? null : form.groupId,
     place: form.place || null,
     room: form.room || null,
+    sessionDate: form.sessionDate || null,
     sourceType: 'manual',
     startTime: form.startTime || null,
     title: form.title.trim(),
     topic: form.topic.trim(),
+  };
+}
+
+function normalizeTime(value: string | null) {
+  if (!value) return '';
+
+  const [hours, minutes] = value.split(':');
+  if (!hours || !minutes) return value;
+
+  return `${hours.padStart(2, '0')}:${minutes}`;
+}
+
+export function createAnnouncementFormFromRecord(
+  announcement: TopicAnnouncementRecord
+): AnnouncementFormValues {
+  return {
+    attachmentDrafts: announcement.attachments.map((attachment) => ({
+      contentType: attachment.contentType,
+      fileName: attachment.fileName,
+      sizeBytes: attachment.sizeBytes,
+      storagePath: attachment.storagePath,
+      storageProvider: attachment.storageProvider,
+    })),
+    classLabel: announcement.class_label ?? '',
+    contactIds: announcement.contacts.map((contact) => contact.id),
+    dayLabel: announcement.day_label ?? '',
+    endTime: normalizeTime(announcement.end_time),
+    groupId: announcement.group_id ?? NO_GROUP,
+    place: announcement.place ?? '',
+    room: announcement.room ?? '',
+    selectedTemplateId: NO_TEMPLATE,
+    sessionDate: announcement.session_date ?? '',
+    startTime: normalizeTime(announcement.start_time),
+    title: announcement.title,
+    topic: announcement.topic,
   };
 }
 
