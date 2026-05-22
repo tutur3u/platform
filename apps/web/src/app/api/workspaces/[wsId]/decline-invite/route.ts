@@ -1,7 +1,9 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import { normalizeWorkspaceId } from '@tuturuuu/utils/workspace-helper';
+import {
+  isWorkspaceUuidLiteral,
+  normalizeWorkspaceId,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
-import { validate as validateUUID } from 'uuid';
 import { CURRENT_USER_APP_SESSION_AUTH } from '@/app/api/v1/users/me/session-auth';
 import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -9,7 +11,7 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 export const POST = withSessionAuth<{ wsId: string }>(
   async (_request, { supabase, user }, { wsId: rawWsId }) => {
     let wsId: string;
-    if (validateUUID(rawWsId)) {
+    if (isWorkspaceUuidLiteral(rawWsId)) {
       wsId = rawWsId;
     } else {
       try {
@@ -25,7 +27,7 @@ export const POST = withSessionAuth<{ wsId: string }>(
       }
     }
 
-    if (!validateUUID(wsId)) {
+    if (!isWorkspaceUuidLiteral(wsId)) {
       return NextResponse.json(
         {
           error: 'Workspace not found',

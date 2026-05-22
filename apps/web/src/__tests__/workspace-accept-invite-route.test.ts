@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const NORMALIZED_WS_ID = '11111111-1111-4111-8111-111111111111';
+const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 
 const mocks = vi.hoisted(() => {
   const normalizeWorkspaceId = vi.fn(
@@ -142,6 +143,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  isWorkspaceUuidLiteral: (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value.trim()
+    ),
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
   resolveGuestSelfJoinCandidate: vi.fn(() =>
     Promise.resolve({
@@ -409,6 +414,38 @@ describe('POST /api/workspaces/[wsId]/accept-invite', () => {
       'auth@example.com',
       'private@example.com',
     ]);
+  });
+
+  it('accepts fixture-style Postgres UUID invite paths without workspace normalization', async () => {
+    const { resolveGuestSelfJoinCandidate } = await import(
+      '@tuturuuu/utils/workspace-helper'
+    );
+    mocks.adminInviteMaybeSingle.mockResolvedValueOnce({
+      data: {
+        type: 'MEMBER',
+        ws_id: POSTGRES_FIXTURE_WS_ID,
+      },
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/accept-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: POSTGRES_FIXTURE_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(resolveGuestSelfJoinCandidate).not.toHaveBeenCalled();
+    expect(mocks.adminMembershipInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ws_id: POSTGRES_FIXTURE_WS_ID,
+        user_id: 'user-1',
+        type: 'MEMBER',
+      })
+    );
   });
 
   it('returns a stable error payload when member insertion fails without a message', async () => {

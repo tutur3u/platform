@@ -429,6 +429,21 @@ interface NotificationCardProps {
   onActionComplete?: () => void;
 }
 
+function getWorkspaceInviteWorkspaceId(notification: Notification) {
+  const candidates = [
+    notification.data?.workspace_id,
+    notification.entity_id,
+    notification.ws_id,
+  ];
+
+  return (
+    candidates.find(
+      (candidate): candidate is string =>
+        typeof candidate === 'string' && candidate.length > 0
+    ) ?? null
+  );
+}
+
 function NotificationCard({
   notification,
   wsId,
@@ -453,6 +468,11 @@ function NotificationCard({
         case 'WORKSPACE_INVITE_DECLINE': {
           const accept = actionType === 'WORKSPACE_INVITE_ACCEPT';
           const targetWsId = payload.wsId;
+          if (!targetWsId) {
+            toast.error('Failed to process invite');
+            break;
+          }
+
           const url = `/api/workspaces/${targetWsId}/${
             accept ? 'accept-invite' : 'decline-invite'
           }`;
@@ -592,7 +612,7 @@ function NotificationCard({
                 size="sm"
                 onClick={() =>
                   handleAction('WORKSPACE_INVITE_DECLINE', {
-                    wsId: notification.data?.workspace_id,
+                    wsId: getWorkspaceInviteWorkspaceId(notification),
                   })
                 }
                 disabled={!!processingAction}
@@ -609,7 +629,7 @@ function NotificationCard({
                 size="sm"
                 onClick={() =>
                   handleAction('WORKSPACE_INVITE_ACCEPT', {
-                    wsId: notification.data?.workspace_id,
+                    wsId: getWorkspaceInviteWorkspaceId(notification),
                   })
                 }
                 disabled={!!processingAction}

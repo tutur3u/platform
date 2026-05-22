@@ -14,8 +14,21 @@ import {
   getPermissions,
   getWorkspace,
   getWorkspaces,
+  isWorkspaceUuidLiteral,
   normalizeWorkspaceId,
 } from '../workspace-helper';
+
+describe('isWorkspaceUuidLiteral', () => {
+  it('accepts Postgres UUID literals that are not RFC-versioned UUIDs', () => {
+    expect(isWorkspaceUuidLiteral('00000000-0000-0000-0000-000000000003')).toBe(
+      true
+    );
+    expect(isWorkspaceUuidLiteral('11111111-1111-4111-8111-111111111111')).toBe(
+      true
+    );
+    expect(isWorkspaceUuidLiteral('workspace-slug')).toBe(false);
+  });
+});
 
 describe('workspace-helper tier lookup', () => {
   const workspaceOneId = '11111111-1111-4111-8111-111111111111';
@@ -150,6 +163,36 @@ describe('workspace-helper tier lookup', () => {
     expect(workspaceQuery.eq).toHaveBeenCalledWith('handle', 'traffic-advice');
   });
 
+  it('looks up fixture-style Postgres UUIDs by workspace id', async () => {
+    const fixtureWorkspaceId = '00000000-0000-0000-0000-000000000003';
+    const workspaceQuery = createSingleWorkspaceQuery({
+      id: fixtureWorkspaceId,
+      name: 'Fixture Workspace',
+      personal: false,
+      workspace_members: [{ user_id: 'user-1' }],
+    });
+    const subscriptionQuery = createSubscriptionLookupQuery([]);
+
+    mockCreateClient.mockResolvedValue(
+      createUserClient({
+        userId: 'user-1',
+        workspaceQuery,
+      })
+    );
+    mockCreateAdminClient.mockResolvedValue(
+      createAdminClient({ subscriptionQuery })
+    );
+
+    const workspace = await getWorkspace(fixtureWorkspaceId);
+
+    expect(workspace?.id).toBe(fixtureWorkspaceId);
+    expect(workspaceQuery.eq).toHaveBeenCalledWith('id', fixtureWorkspaceId);
+    expect(workspaceQuery.eq).not.toHaveBeenCalledWith(
+      'handle',
+      fixtureWorkspaceId
+    );
+  });
+
   it('returns null without querying when the workspace id is malformed', async () => {
     const fromMock = vi.fn();
     const getUserMock = vi.fn();
@@ -185,6 +228,23 @@ describe('normalizeWorkspaceId', () => {
     const resolved = await normalizeWorkspaceId(rootWorkspaceId);
 
     expect(resolved).toBe(rootWorkspaceId);
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(fromMock).not.toHaveBeenCalled();
+  });
+
+  it('keeps fixture-style Postgres UUIDs unchanged without handle lookup', async () => {
+    const fixtureWorkspaceId = '00000000-0000-0000-0000-000000000003';
+    const fromMock = vi.fn();
+    const getUserMock = vi.fn();
+
+    mockCreateClient.mockResolvedValue({
+      auth: { getUser: getUserMock },
+      from: fromMock,
+    });
+
+    const resolved = await normalizeWorkspaceId(fixtureWorkspaceId);
+
+    expect(resolved).toBe(fixtureWorkspaceId);
     expect(getUserMock).not.toHaveBeenCalled();
     expect(fromMock).not.toHaveBeenCalled();
   });

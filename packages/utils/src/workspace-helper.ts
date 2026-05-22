@@ -12,7 +12,6 @@ import type {
 } from '@tuturuuu/types';
 import type { WorkspaceSecret } from '@tuturuuu/types/primitives/WorkspaceSecret';
 import type { NextRequest } from 'next/server';
-import { validate as validateUUID } from 'uuid';
 import {
   PERSONAL_WORKSPACE_SLUG,
   ROOT_WORKSPACE_ID,
@@ -81,6 +80,12 @@ const logWorkspaceError = (
   console.error(`[WorkspaceHelper] ${context}:`, logData);
 };
 
+export function isWorkspaceUuidLiteral(value: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value.trim()
+  );
+}
+
 function isDirectWorkspaceLookupIdentifier(id: string): boolean {
   const normalized = id.trim().toLowerCase();
   const workspaceHandlePattern = /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/;
@@ -89,7 +94,7 @@ function isDirectWorkspaceLookupIdentifier(id: string): boolean {
     normalized === PERSONAL_WORKSPACE_SLUG.toLowerCase() ||
     normalized === ROOT_WORKSPACE_ID.toLowerCase() ||
     normalized === 'internal' ||
-    validateUUID(normalized) ||
+    isWorkspaceUuidLiteral(normalized) ||
     workspaceHandlePattern.test(normalized)
   );
 }
@@ -328,7 +333,7 @@ export async function getWorkspace(
       .eq('personal', true)
       .eq('workspace_members.user_id', principal.id);
   } else {
-    if (validateUUID(resolvedWorkspaceId)) {
+    if (isWorkspaceUuidLiteral(resolvedWorkspaceId)) {
       queryBuilder.eq('id', resolvedWorkspaceId);
     } else {
       queryBuilder.eq('handle', id.trim().toLowerCase());
@@ -1020,7 +1025,7 @@ export async function normalizeWorkspaceId(
     return workspace.id;
   }
 
-  if (!validateUUID(resolvedWorkspaceId)) {
+  if (!isWorkspaceUuidLiteral(resolvedWorkspaceId)) {
     const handle = wsId.trim().toLowerCase();
     if (!isDirectWorkspaceLookupIdentifier(handle)) {
       return resolvedWorkspaceId;
@@ -1067,7 +1072,7 @@ async function fetchWorkspaceConfigValue(
   const sbAdmin = await createAdminClient();
 
   // Skip normalization if already a valid UUID (avoids auth check in admin context)
-  const resolvedWorkspaceId = validateUUID(wsId)
+  const resolvedWorkspaceId = isWorkspaceUuidLiteral(wsId)
     ? wsId
     : await normalizeWorkspaceId(wsId);
 

@@ -525,7 +525,14 @@ function getNotificationActions(
     case 'workspace_invite': {
       if (data?.action_taken) return [];
 
-      const workspaceId = data?.workspace_id;
+      const workspaceId = [
+        data?.workspace_id,
+        notification.entity_id,
+        notification.ws_id,
+      ].find(
+        (candidate): candidate is string =>
+          typeof candidate === 'string' && candidate.length > 0
+      );
       if (typeof workspaceId !== 'string' || workspaceId.length === 0) {
         return [];
       }

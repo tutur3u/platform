@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const NORMALIZED_WS_ID = '11111111-1111-4111-8111-111111111111';
+const POSTGRES_FIXTURE_WS_ID = '00000000-0000-0000-0000-000000000003';
 
 const mocks = vi.hoisted(() => {
   const normalizeWorkspaceId = vi.fn(async () => NORMALIZED_WS_ID);
@@ -70,6 +71,10 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  isWorkspaceUuidLiteral: (value: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      value.trim()
+    ),
   normalizeWorkspaceId: mocks.normalizeWorkspaceId,
 }));
 
@@ -134,6 +139,27 @@ describe('POST /api/workspaces/[wsId]/decline-invite', () => {
     expect(mocks.adminInviteDeleteEq).toHaveBeenCalledWith(
       'ws_id',
       NORMALIZED_WS_ID
+    );
+    expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
+      'auth@example.com',
+      'private@example.com',
+    ]);
+  });
+
+  it('declines fixture-style Postgres UUID invite paths without workspace normalization', async () => {
+    const { POST } = await import(
+      '@/app/api/workspaces/[wsId]/decline-invite/route'
+    );
+
+    const response = await POST(new NextRequest('http://localhost/test'), {
+      params: Promise.resolve({ wsId: POSTGRES_FIXTURE_WS_ID }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(mocks.normalizeWorkspaceId).not.toHaveBeenCalled();
+    expect(mocks.adminInviteDeleteEq).toHaveBeenCalledWith(
+      'ws_id',
+      POSTGRES_FIXTURE_WS_ID
     );
     expect(mocks.adminEmailInviteDeleteIn).toHaveBeenCalledWith('email', [
       'auth@example.com',

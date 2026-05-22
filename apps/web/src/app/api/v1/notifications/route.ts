@@ -198,21 +198,34 @@ export const GET = withSessionAuth(
       }
 
       // Transform notifications to include workspace_name and actor info
-      const transformedNotifications = (notifications || []).map((n: any) => ({
-        ...n,
-        data: {
-          ...n.data,
-          workspace_name: n.workspace?.name || n.data?.workspace_name,
-        },
-        actor: n.actor
-          ? {
-              id: n.actor.id,
-              display_name: n.actor.display_name,
-              avatar_url: n.actor.avatar_url,
-            }
-          : null,
-        workspace: undefined, // Remove the joined workspace object
-      }));
+      const transformedNotifications = (notifications || []).map((n: any) => {
+        const workspaceInviteWorkspaceId =
+          n.type === 'workspace_invite'
+            ? [n.data?.workspace_id, n.entity_id, n.ws_id].find(
+                (candidate): candidate is string =>
+                  typeof candidate === 'string' && candidate.length > 0
+              )
+            : null;
+
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            ...(workspaceInviteWorkspaceId
+              ? { workspace_id: workspaceInviteWorkspaceId }
+              : {}),
+            workspace_name: n.workspace?.name || n.data?.workspace_name,
+          },
+          actor: n.actor
+            ? {
+                id: n.actor.id,
+                display_name: n.actor.display_name,
+                avatar_url: n.actor.avatar_url,
+              }
+            : null,
+          workspace: undefined, // Remove the joined workspace object
+        };
+      });
 
       return NextResponse.json({
         notifications: transformedNotifications,
