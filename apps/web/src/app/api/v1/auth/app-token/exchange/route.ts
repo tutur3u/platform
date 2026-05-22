@@ -11,14 +11,12 @@ import {
   getAllowedAppTokenScopes,
   verifyExternalAppSecret,
 } from '@/lib/app-coordination/external-apps';
+import { getExternalAppBearerTtlSeconds } from '@/lib/app-coordination/session-policy';
 import { authorizeExternalProjectAppTokenExchange } from '@/lib/external-projects/access';
 import {
   serverLogger,
   withRequestLogDrain,
 } from '@/lib/infrastructure/log-drain';
-
-const DEFAULT_APP_TOKEN_TTL_SECONDS = 8 * 60 * 60;
-const MAX_APP_TOKEN_TTL_SECONDS = 24 * 60 * 60;
 
 const exchangeSchema = z.object({
   appId: z
@@ -56,19 +54,6 @@ function getValidationRow(value: unknown): CrossAppValidationRow | null {
   }
 
   return value as CrossAppValidationRow;
-}
-
-function getConfiguredTokenTtlSeconds() {
-  const configured = Number.parseInt(
-    process.env.TUTURUUU_APP_COORDINATION_TOKEN_TTL_SECONDS ?? '',
-    10
-  );
-
-  if (!Number.isFinite(configured) || configured <= 0) {
-    return DEFAULT_APP_TOKEN_TTL_SECONDS;
-  }
-
-  return Math.min(configured, MAX_APP_TOKEN_TTL_SECONDS);
 }
 
 function isConfiguredApp(targetApp: string) {
@@ -266,7 +251,7 @@ async function exchangeAppToken(request: NextRequest) {
     token: accessToken,
   } = createAppCoordinationToken({
     email,
-    expiresInSeconds: getConfiguredTokenTtlSeconds(),
+    expiresInSeconds: await getExternalAppBearerTtlSeconds(),
     originApp: 'web',
     scopes: resolvedTarget.scopes,
     targetApp: resolvedTarget.targetApp,

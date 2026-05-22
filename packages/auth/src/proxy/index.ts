@@ -12,8 +12,14 @@ import { MAX_PAYLOAD_SIZE } from '@tuturuuu/utils/constants';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import type { AppCoordinationTokenClaims } from '../app-coordination';
 import {
   clearSupabaseAuthCookies,
+  getAppSessionRefreshEarlySeconds,
+  getAppSessionRefreshTokenFromRequest,
+  getAppSessionTokenFromRequest,
+  getWebAppSessionRefreshTokenFromRequest,
+  getWebAppSessionTokenFromRequest,
   verifyAppSessionRequest,
 } from '../app-session';
 import {
@@ -159,6 +165,243 @@ export function propagateAuthCookies(
   for (const cookie of source.cookies.getAll()) {
     target.cookies.set(cookie);
   }
+}
+
+function getSetCookieHeaders(headers: Headers) {
+  const withGetSetCookie = headers as Headers & {
+    getSetCookie?: () => string[];
+  };
+  const setCookies = withGetSetCookie.getSetCookie?.();
+
+  if (setCookies?.length) {
+    return setCookies;
+  }
+
+  const singleHeader = headers.get('set-cookie');
+  return singleHeader ? [singleHeader] : [];
+}
+
+function parseCookieHeader(cookieHeader: string | null) {
+  const cookies = new Map<string, string>();
+
+  if (!cookieHeader) {
+    return cookies;
+  }
+
+  for (const part of cookieHeader.split(';')) {
+    const [rawName, ...rawValueParts] = part.trim().split('=');
+
+    if (rawName) {
+      cookies.set(rawName, rawValueParts.join('='));
+    }
+  }
+
+  return cookies;
+}
+
+function updateCookieHeaderFromSetCookies(
+  cookieHeader: string | null,
+  setCookieHeaders: string[]
+) {
+  const cookies = parseCookieHeader(cookieHeader);
+
+  for (const setCookie of setCookieHeaders) {
+    const [cookiePair, ...attributes] = setCookie.split(';');
+    const [rawName, ...rawValueParts] = cookiePair?.trim().split('=') ?? [];
+
+    if (!rawName) {
+      continue;
+    }
+
+    const maxAgeAttribute = attributes.find((attribute) =>
+      attribute.trim().toLowerCase().startsWith('max-age=')
+    );
+    const maxAge = maxAgeAttribute
+      ? Number.parseInt(maxAgeAttribute.split('=')[1] ?? '', 10)
+      : null;
+
+    if (maxAge === 0 || rawValueParts.length === 0) {
+      cookies.delete(rawName);
+      continue;
+    }
+
+    cookies.set(rawName, rawValueParts.join('='));
+  }
+
+  return [...cookies.entries()]
+    .map(([name, value]) => `${name}=${value}`)
+    .join('; ');
+}
+
+export function getRequestHeadersWithResponseCookies(
+  req: NextRequest,
+  response: NextResponse
+) {
+  const setCookieHeaders = getSetCookieHeaders(response.headers);
+
+  if (setCookieHeaders.length === 0) {
+    return req.headers;
+  }
+
+  const headers = new Headers(req.headers);
+  const nextCookieHeader = updateCookieHeaderFromSetCookies(
+    req.headers.get('cookie'),
+    setCookieHeaders
+  );
+
+  if (nextCookieHeader) {
+    headers.set('cookie', nextCookieHeader);
+  } else {
+    headers.delete('cookie');
+  }
+
+  return headers;
+}
+
+function copySetCookieHeaders(
+  setCookieHeaders: string[],
+  response: NextResponse
+) {
+  for (const setCookie of setCookieHeaders) {
+    response.headers.append('set-cookie', setCookie);
+  }
+}
+
+function createNextResponseWithRequestHeaders(headers?: Headers) {
+  return headers
+    ? NextResponse.next({
+        request: {
+          headers,
+        },
+      })
+    : NextResponse.next();
+}
+
+type AppSessionRefreshState =
+  | {
+      claims: AppCoordinationTokenClaims;
+      ok: true;
+      refreshed: boolean;
+      requestHeaders?: Headers;
+      response: NextResponse;
+    }
+  | {
+      error: string;
+      ok: false;
+    };
+
+export async function refreshAppSessionForRequest(
+  req: NextRequest,
+  options: {
+    now?: Date;
+    refreshPath?: string;
+    targetApp: AppName | string;
+  }
+): Promise<AppSessionRefreshState> {
+  const now = options.now ?? new Date();
+  const verification = verifyAppSessionRequest(req, {
+    now,
+    targetApp: options.targetApp,
+  });
+  const accessToken =
+    getWebAppSessionTokenFromRequest(req) ?? getAppSessionTokenFromRequest(req);
+  const refreshToken =
+    getWebAppSessionRefreshTokenFromRequest(req) ??
+    getAppSessionRefreshTokenFromRequest(req);
+
+  if (verification.ok) {
+    const earlySeconds = getAppSessionRefreshEarlySeconds(verification.claims);
+    const secondsUntilExpiry =
+      verification.claims.exp - Math.floor(now.getTime() / 1000);
+
+    if (!refreshToken || secondsUntilExpiry > earlySeconds) {
+      return {
+        claims: verification.claims,
+        ok: true,
+        refreshed: false,
+        response: clearSupabaseAuthCookies(
+          req,
+          createNextResponseWithRequestHeaders()
+        ),
+      };
+    }
+  } else if (!refreshToken) {
+    return verification;
+  }
+
+  const refreshUrl = new URL(
+    options.refreshPath ?? '/api/auth/refresh-app-session',
+    req.nextUrl.origin
+  );
+  const refreshResponse = await fetch(refreshUrl, {
+    body: JSON.stringify({ accessToken, refreshToken }),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie: req.headers.get('cookie') ?? '',
+    },
+    method: 'POST',
+  }).catch(() => null);
+
+  if (!refreshResponse?.ok) {
+    if (verification.ok) {
+      return {
+        claims: verification.claims,
+        ok: true,
+        refreshed: false,
+        response: clearSupabaseAuthCookies(
+          req,
+          createNextResponseWithRequestHeaders()
+        ),
+      };
+    }
+
+    return {
+      error: 'Invalid app session refresh credentials',
+      ok: false,
+    };
+  }
+
+  const setCookieHeaders = getSetCookieHeaders(refreshResponse.headers);
+  const requestHeaders = new Headers(req.headers);
+  const nextCookieHeader = updateCookieHeaderFromSetCookies(
+    req.headers.get('cookie'),
+    setCookieHeaders
+  );
+
+  if (nextCookieHeader) {
+    requestHeaders.set('cookie', nextCookieHeader);
+  } else {
+    requestHeaders.delete('cookie');
+  }
+
+  const refreshedVerification = verifyAppSessionRequest(
+    {
+      headers: requestHeaders,
+    },
+    {
+      now,
+      targetApp: options.targetApp,
+    }
+  );
+
+  if (!refreshedVerification.ok) {
+    return refreshedVerification;
+  }
+
+  const response = clearSupabaseAuthCookies(
+    req,
+    createNextResponseWithRequestHeaders(requestHeaders)
+  );
+  copySetCookieHeaders(setCookieHeaders, response);
+
+  return {
+    claims: refreshedVerification.claims,
+    ok: true,
+    refreshed: true,
+    requestHeaders,
+    response,
+  };
 }
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -451,22 +694,25 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
     }
 
     try {
-      if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
-        return NextResponse.next();
-      }
-
       const isPublic =
         (!excludeRootPath && req.nextUrl.pathname === '/') ||
         publicPaths.some((path) => req.nextUrl.pathname.startsWith(path)) ||
         isPublicPath?.(req.nextUrl.pathname);
 
       if (appSession) {
-        const appSessionVerification = verifyAppSessionRequest(req, {
+        const appSessionVerification = await refreshAppSessionForRequest(req, {
           now: appSession.now,
           targetApp: appSession.targetApp,
         });
 
         if (!appSessionVerification.ok && !isPublic) {
+          if (req.nextUrl.pathname.startsWith('/api')) {
+            return clearSupabaseAuthCookies(
+              req,
+              NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+            );
+          }
+
           const loginUrl = new URL('/login', webAppUrl);
           loginUrl.searchParams.set(
             'returnUrl',
@@ -476,7 +722,13 @@ export function createCentralizedAuthProxy(options: CentralizedAuthOptions) {
           return clearSupabaseAuthCookies(req, NextResponse.redirect(loginUrl));
         }
 
-        return clearSupabaseAuthCookies(req, NextResponse.next());
+        return appSessionVerification.ok
+          ? appSessionVerification.response
+          : clearSupabaseAuthCookies(req, NextResponse.next());
+      }
+
+      if (skipApiRoutes && req.nextUrl.pathname.startsWith('/api')) {
+        return NextResponse.next();
       }
 
       // Make sure user session is always refreshed

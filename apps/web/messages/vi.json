@@ -999,6 +999,71 @@
     "status_code": "Trạng thái",
     "user_agent": "User Agent"
   },
+  "app-coordination-settings": {
+    "actions": {
+      "add_override": "Thêm ghi đè",
+      "remove_override": "Xóa ghi đè",
+      "reset_all": "Đặt lại tất cả",
+      "reset_field": "Đặt lại trường",
+      "save": "Lưu chính sách"
+    },
+    "description": "Cấu hình thời hạn access token và refresh token của Tuturuuu cho ứng dụng nội bộ, bearer token của ứng dụng bên ngoài và phiên CLI.",
+    "duration_bounds": "Hiện tại {value}, cho phép từ {min} đến {max}",
+    "errors": {
+      "invalid_app_id": "Dùng app id chữ thường gồm chữ cái, số, dấu gạch dưới hoặc dấu gạch nối."
+    },
+    "fields": {
+      "browserRefreshReplayGraceSeconds": {
+        "description": "Khoảng gia hạn ngắn cho các lần gửi refresh trùng lặp trên trình duyệt trong lúc xoay vòng.",
+        "label": "Thời gian cho phép lặp refresh trình duyệt"
+      },
+      "cliAccessTtlSeconds": {
+        "description": "Thời hạn access token CLI được cấp qua đăng nhập cross-app.",
+        "label": "TTL access token CLI"
+      },
+      "cliRefreshTtlSeconds": {
+        "description": "Thời hạn refresh token CLI được cấp qua đăng nhập cross-app.",
+        "label": "TTL refresh token CLI"
+      },
+      "externalAppBearerTtlSeconds": {
+        "description": "Thời hạn bearer token cấp cho ứng dụng bên ngoài đã đăng ký.",
+        "label": "TTL bearer của ứng dụng bên ngoài"
+      },
+      "internalAppAccessTtlSeconds": {
+        "description": "Thời hạn cookie access dùng bởi các ứng dụng nội bộ đã đăng ký.",
+        "label": "TTL access của ứng dụng nội bộ"
+      },
+      "internalAppRefreshEarlySeconds": {
+        "description": "Khoảng thời gian proxy trình duyệt xoay vòng cookie access trước khi hết hạn.",
+        "label": "Cửa sổ refresh sớm của ứng dụng nội bộ"
+      },
+      "internalAppRefreshTtlSeconds": {
+        "description": "Thời hạn cookie refresh dùng bởi các ứng dụng nội bộ đã đăng ký.",
+        "label": "TTL refresh của ứng dụng nội bộ"
+      }
+    },
+    "messages": {
+      "save_failed": "Lưu chính sách thất bại",
+      "saved": "Đã lưu chính sách"
+    },
+    "override_fields": {
+      "internalAppAccessTtlSeconds": "TTL access",
+      "internalAppRefreshEarlySeconds": "Refresh sớm",
+      "internalAppRefreshTtlSeconds": "TTL refresh"
+    },
+    "overrides": {
+      "app_id": "App ID",
+      "description": "Ghi đè access TTL, refresh TTL và hành vi refresh sớm cho một ứng dụng nội bộ cụ thể.",
+      "empty": "Chưa cấu hình ghi đè theo ứng dụng.",
+      "title": "Ghi đè cho ứng dụng nội bộ"
+    },
+    "source": {
+      "default": "Đang dùng chính sách mặc định vì chưa lưu secret Hạ tầng.",
+      "environment": "Đang dùng fallback biến môi trường tương thích vì chưa có secret Hạ tầng hợp lệ.",
+      "secret": "Đang dùng chính sách Hạ tầng đã lưu trong workspace secrets."
+    },
+    "title": "Điều phối ứng dụng"
+  },
   "approvals": {
     "actions": {
       "allApproved": "Đã phê duyệt tất cả thành công.",
@@ -6583,6 +6648,7 @@
     "ai_credits_balances": "Số dư tín dụng",
     "ai_credits_models": "Mô hình Gateway",
     "ai_whitelisted_emails": "Email nằm trong danh sách trắng của AI",
+    "app_coordination": "Điều phối ứng dụng",
     "backups": "Sao lưu",
     "blocked_ips": "IP bị chặn",
     "changelog": "Nhật ký thay đổi",

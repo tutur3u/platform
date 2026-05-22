@@ -41,12 +41,13 @@ and `hive`.
    cross-app handoff token.
 3. The app `/verify-token` client posts only that handoff token to
    `/api/auth/verify-app-token`.
-4. The app-local verifier validates the handoff token and sets a host-only
-   `tuturuuu_app_session` cookie. Satellites that require rewritten `apps/web`
-   API access must call `createPOST('<app>', { verificationBaseUrl:
-   WEB_APP_URL })` so the central verifier also returns the Web-issued
-   app-session cookie. The cookies are `HttpOnly`, `SameSite=Lax`, `Path=/`,
-   and `Secure` in production.
+4. The app-local verifier validates the handoff token and sets host-only
+   `tuturuuu_app_session` and `tuturuuu_app_session_refresh` cookies.
+   Satellites that require rewritten `apps/web` API access must call
+   `createPOST('<app>', { verificationBaseUrl: WEB_APP_URL })` so the central
+   verifier also returns the Web-issued `tuturuuu_web_app_session` and
+   `tuturuuu_web_app_session_refresh` cookies. The cookies are `HttpOnly`,
+   `SameSite=Lax`, `Path=/`, and `Secure` in production.
 5. The verifier trusts the `Set-Cookie` response and redirects to `nextUrl`.
    It must not call `supabase.auth.setSession()` and must not receive Supabase
    access or refresh tokens.
@@ -55,8 +56,9 @@ The app-session JWT reuses the app-coordination claim shape: `sub`, `email`,
 `origin_app`, `target_app`, `scopes`, `iat`, `exp`, and `jti`. Verification
 rejects expired tokens. Target app and scope checks are enforced by the caller,
 so every API route that opts into app-session auth must bind the token to the
-audience and scope it expects. The default lifetime remains 8 hours through the
-existing app-coordination token behavior.
+audience and scope it expects. Access tokens carry `internal-app:session`.
+Refresh tokens carry only `internal-app:refresh`; they are rotation material and
+must not be accepted as API credentials or bearer access tokens.
 
 For internal API calls, apps forward the app-session cookie to `apps/web`.
 Routes that opt into app-session auth use the verified claims as the actor and
@@ -101,6 +103,15 @@ If both `tuturuuu_app_session` and `tuturuuu_web_app_session` are forwarded, the
 Web-issued cookie is the preferred actor for central `apps/web` API auth; the
 local app cookie remains the fallback for routes that cannot verify the Web
 cookie.
+
+Registered app proxies must run app-session refresh before page redirects and
+before API proxy guards. When access is close to expiry, or already expired but
+a refresh cookie is still valid, the proxy posts to the app-local
+`/api/auth/refresh-app-session` endpoint. The app-local endpoint asks
+`apps/web` to validate and rotate the Web-issued refresh token, then sets fresh
+local and Web-issued cookie pairs. The proxy must forward those refreshed cookie
+values into the current request headers before the API route or page handler
+runs.
 
 Gateway API routes for registered apps should resolve the app-session actor
 before any central-web Supabase Auth fallback, and admin-backed checks must use
@@ -183,10 +194,34 @@ to the generic login form.
 ## Operational notes
 
 App-session and external app bearer tokens are signed with
-`TUTURUUU_APP_COORDINATION_SECRET`. Browser app-session and CLI access JWTs
-default to an 8-hour lifetime. CLI refresh JWTs use a rolling longer-lived
-window so normal CLI usage can keep the session alive without returning to the
-browser.
+`TUTURUUU_APP_COORDINATION_SECRET`.
+
+Token lifetimes are configured from the root workspace Infrastructure page at
+`/{wsId}/infrastructure/app-coordination`; the older
+`/{wsId}/settings/infrastructure/app-coordination` path redirects there. The
+policy is stored in
+`workspace_secrets` on `ROOT_WORKSPACE_ID` as
+`APP_COORDINATION_SESSION_POLICY` and cached in process for at most 60 seconds
+on auth paths. Defaults and caps are:
+
+- Internal app access TTL: 28,800 seconds default, min 300, max 86,400.
+- Internal app refresh TTL: 2,592,000 seconds default, min 86,400, max
+  7,776,000.
+- Internal app refresh-early window: 900 seconds default, min 60, max 7,200.
+- Browser refresh replay grace: 30 seconds default, min 0, max 300.
+- External app bearer TTL: 28,800 seconds default, min 300, max 86,400.
+- CLI access TTL: 28,800 seconds default, min 300, max 86,400.
+- CLI refresh TTL: 7,776,000 seconds default, min 86,400, max 7,776,000.
+
+The policy also supports per-internal-app overrides keyed by registered app id
+for access TTL, refresh TTL, and refresh-early window. If the Infrastructure
+secret is missing or invalid, runtime code falls back to compatibility
+environment variables where available and then to defaults. Existing short-lived
+tokens are not revoked when the policy changes; new cross-app handoffs and
+refresh rotations pick up the latest cached policy after the cache window.
+Refresh tokens remain HttpOnly browser cookies or CLI-local tokens. They are not
+API credentials, are not exposed to browser JavaScript, and should never be sent
+as bearer access tokens.
 
 When registered internal apps are deployed separately, every deployment that
 mints or verifies `tuturuuu_app_session` must share the same signing material.

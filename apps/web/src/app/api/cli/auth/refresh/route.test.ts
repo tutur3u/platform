@@ -13,6 +13,13 @@ vi.mock('@tuturuuu/utils/upstash-rest', () => ({
   getUpstashRestRedisClient: vi.fn(),
 }));
 
+vi.mock('@/lib/app-coordination/session-policy', () => ({
+  getCliAppSessionPolicy: vi.fn().mockResolvedValue({
+    cliAccessTtlSeconds: 28_800,
+    cliRefreshTtlSeconds: 7_776_000,
+  }),
+}));
+
 describe('CLI auth refresh route', () => {
   let refreshReplaySet: ReturnType<typeof vi.fn>;
 

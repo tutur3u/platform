@@ -999,6 +999,71 @@
     "status_code": "Status",
     "user_agent": "User Agent"
   },
+  "app-coordination-settings": {
+    "actions": {
+      "add_override": "Add override",
+      "remove_override": "Remove override",
+      "reset_all": "Reset all",
+      "reset_field": "Reset field",
+      "save": "Save policy"
+    },
+    "description": "Configure Tuturuuu access and refresh token lifetimes for internal apps, external app bearer tokens, and CLI sessions.",
+    "duration_bounds": "{value} now, allowed {min} to {max}",
+    "errors": {
+      "invalid_app_id": "Use a lowercase app id with letters, numbers, underscores, or hyphens."
+    },
+    "fields": {
+      "browserRefreshReplayGraceSeconds": {
+        "description": "Short grace period for duplicate browser refresh submissions during rotation.",
+        "label": "Browser refresh replay grace"
+      },
+      "cliAccessTtlSeconds": {
+        "description": "Lifetime for CLI access tokens issued by cross-app login.",
+        "label": "CLI access token TTL"
+      },
+      "cliRefreshTtlSeconds": {
+        "description": "Lifetime for CLI refresh tokens issued by cross-app login.",
+        "label": "CLI refresh token TTL"
+      },
+      "externalAppBearerTtlSeconds": {
+        "description": "Lifetime for bearer tokens issued to registered external apps.",
+        "label": "External app bearer TTL"
+      },
+      "internalAppAccessTtlSeconds": {
+        "description": "Lifetime for browser access cookies used by registered internal apps.",
+        "label": "Internal app access TTL"
+      },
+      "internalAppRefreshEarlySeconds": {
+        "description": "How early browser proxies rotate access cookies before expiry.",
+        "label": "Internal app refresh early window"
+      },
+      "internalAppRefreshTtlSeconds": {
+        "description": "Lifetime for browser refresh cookies used by registered internal apps.",
+        "label": "Internal app refresh TTL"
+      }
+    },
+    "messages": {
+      "save_failed": "Policy save failed",
+      "saved": "Policy saved"
+    },
+    "override_fields": {
+      "internalAppAccessTtlSeconds": "Access TTL",
+      "internalAppRefreshEarlySeconds": "Refresh early",
+      "internalAppRefreshTtlSeconds": "Refresh TTL"
+    },
+    "overrides": {
+      "app_id": "App ID",
+      "description": "Override access TTL, refresh TTL, and refresh-early behavior for a specific internal app.",
+      "empty": "No per-app overrides configured.",
+      "title": "Internal app overrides"
+    },
+    "source": {
+      "default": "Using default policy because no Infrastructure secret is saved.",
+      "environment": "Using compatibility environment fallback because no valid Infrastructure secret is saved.",
+      "secret": "Using the Infrastructure policy saved in workspace secrets."
+    },
+    "title": "App Coordination"
+  },
   "approvals": {
     "actions": {
       "allApproved": "All items approved successfully.",
@@ -6583,6 +6648,7 @@
     "ai_credits_balances": "Credit Balances",
     "ai_credits_models": "Gateway Models",
     "ai_whitelisted_emails": "AI Whitelisted Emails",
+    "app_coordination": "App Coordination",
     "backups": "Backups",
     "blocked_ips": "Blocked IPs",
     "changelog": "Changelog",

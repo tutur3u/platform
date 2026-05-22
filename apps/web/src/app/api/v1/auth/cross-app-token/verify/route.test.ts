@@ -11,6 +11,22 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
     mocks.createClient(...args),
 }));
 
+vi.mock('@/lib/app-coordination/session-policy', () => ({
+  getAppCoordinationSessionPolicy: vi.fn().mockResolvedValue({
+    policy: {
+      browserRefreshReplayGraceSeconds: 30,
+      cliAccessTtlSeconds: 28_800,
+      cliRefreshTtlSeconds: 7_776_000,
+      externalAppBearerTtlSeconds: 28_800,
+      internalAppAccessTtlSeconds: 28_800,
+      internalAppOverrides: {},
+      internalAppRefreshEarlySeconds: 900,
+      internalAppRefreshTtlSeconds: 2_592_000,
+    },
+    source: 'default',
+  }),
+}));
+
 describe('central cross-app token verification route', () => {
   beforeEach(() => {
     vi.clearAllMocks();

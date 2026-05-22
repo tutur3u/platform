@@ -4,6 +4,10 @@ import {
   getAppSessionClaimsFromRequest,
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
+import {
+  propagateAuthCookies,
+  refreshAppSessionForRequest,
+} from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
 import type { NextRequest } from 'next/server';
@@ -18,6 +22,7 @@ import {
 } from './i18n/routing';
 
 const intlMiddleware = createIntlMiddleware(routing);
+const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 function getPreferredLocale(request: NextRequest): Locale {
   const cookieLocale = request.cookies.get(LOCALE_COOKIE_NAME)?.value;
@@ -86,12 +91,35 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
+    const isLocalAuthApi = request.nextUrl.pathname.startsWith(
+      LOCAL_AUTH_API_PREFIX
+    );
+    const appSessionRefresh = isLocalAuthApi
+      ? null
+      : await refreshAppSessionForRequest(request, {
+          targetApp: 'teach',
+        });
+
+    if (appSessionRefresh && !appSessionRefresh.ok) {
+      return clearSupabaseAuthCookies(
+        request,
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:teach:api',
     });
-    return clearSupabaseAuthCookies(
-      request,
-      guardResponse ?? NextResponse.next()
+    if (guardResponse) {
+      if (appSessionRefresh) {
+        propagateAuthCookies(appSessionRefresh.response, guardResponse);
+      }
+      return clearSupabaseAuthCookies(request, guardResponse);
+    }
+
+    return (
+      appSessionRefresh?.response ??
+      clearSupabaseAuthCookies(request, NextResponse.next())
     );
   }
 
@@ -112,10 +140,21 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     unlocalizedPath.startsWith('/verify-token');
 
   if (!isPublicPath) {
-    const appSession = getAppSessionClaimsFromRequest(request, {
+    const appSessionRefresh = await refreshAppSessionForRequest(request, {
       targetApp: 'teach',
     });
-    const hasWebAppSession = hasWebAppSessionTokenFromRequest(request);
+    const requestWithRefresh = {
+      headers: appSessionRefresh.ok
+        ? (appSessionRefresh.requestHeaders ?? request.headers)
+        : request.headers,
+    };
+    const appSession = appSessionRefresh.ok
+      ? appSessionRefresh.claims
+      : getAppSessionClaimsFromRequest(requestWithRefresh, {
+          targetApp: 'teach',
+        });
+    const hasWebAppSession =
+      hasWebAppSessionTokenFromRequest(requestWithRefresh);
 
     if (!appSession || !hasWebAppSession) {
       const url = new URL(getLoginPath(), request.url);
@@ -125,6 +164,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
+
+    const response = intlMiddleware(request);
+    response.cookies.set(LOCALE_COOKIE_NAME, getPreferredLocale(request));
+    if (appSessionRefresh.ok) {
+      propagateAuthCookies(appSessionRefresh.response, response);
+    }
+    return clearSupabaseAuthCookies(request, response);
   }
 
   const response = intlMiddleware(request);

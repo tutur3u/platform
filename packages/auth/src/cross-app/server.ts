@@ -3,10 +3,17 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { AppName } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
-  createAppSessionToken,
+  createAppSessionTokenPair,
+  getAppSessionRefreshTokenFromRequest,
+  getAppSessionTokenFromRequest,
+  getWebAppSessionRefreshTokenFromRequest,
+  getWebAppSessionTokenFromRequest,
   setAppSessionCookie,
+  setAppSessionRefreshCookie,
   setWebAppSessionCookie,
+  setWebAppSessionRefreshCookie,
 } from '../app-session';
+import type { ResolvedInternalAppSessionPolicy } from '../app-session-policy';
 import {
   CLI_APP_TARGET_APP,
   createCliAppSession,
@@ -22,15 +29,25 @@ type CrossAppTokenRow = {
 
 type CrossAppTokenValidation = {
   appSessionExpiresAt?: string | null;
+  appSessionRefreshEarlySeconds?: number | null;
+  appSessionRefreshExpiresAt?: string | null;
+  appSessionRefreshToken?: string | null;
   appSessionToken?: string | null;
+  internalAppSessionPolicy?: ResolvedInternalAppSessionPolicy | null;
   sessionData: CrossAppTokenRow['session_data'];
   userId: string;
 };
 
 type CrossAppSessionKind = 'app-session' | 'cli-app-session';
 
+type CliSessionPolicy = {
+  cliAccessTtlSeconds: number;
+  cliRefreshTtlSeconds: number;
+};
+
 type CreatePostOptions = {
   appSessionScopes?: string[];
+  resolveCliSessionPolicy?: () => Promise<CliSessionPolicy> | CliSessionPolicy;
   sessionKind?: CrossAppSessionKind;
   verificationBaseUrl?: string;
 };
@@ -113,7 +130,11 @@ async function validateCrossAppTokenWithCentralVerifier({
 
   const body = (await response.json().catch(() => null)) as {
     appSessionExpiresAt?: unknown;
+    appSessionRefreshEarlySeconds?: unknown;
+    appSessionRefreshExpiresAt?: unknown;
+    appSessionRefreshToken?: unknown;
     appSessionToken?: unknown;
+    internalAppSessionPolicy?: unknown;
     sessionData?: CrossAppTokenRow['session_data'];
     userId?: unknown;
   } | null;
@@ -127,11 +148,113 @@ async function validateCrossAppTokenWithCentralVerifier({
       typeof body.appSessionExpiresAt === 'string'
         ? body.appSessionExpiresAt
         : null,
+    appSessionRefreshEarlySeconds:
+      typeof body.appSessionRefreshEarlySeconds === 'number'
+        ? body.appSessionRefreshEarlySeconds
+        : null,
+    appSessionRefreshExpiresAt:
+      typeof body.appSessionRefreshExpiresAt === 'string'
+        ? body.appSessionRefreshExpiresAt
+        : null,
+    appSessionRefreshToken:
+      typeof body.appSessionRefreshToken === 'string'
+        ? body.appSessionRefreshToken
+        : null,
     appSessionToken:
       typeof body.appSessionToken === 'string' ? body.appSessionToken : null,
+    internalAppSessionPolicy: isInternalAppSessionPolicy(
+      body.internalAppSessionPolicy
+    )
+      ? body.internalAppSessionPolicy
+      : null,
     sessionData: body.sessionData ?? null,
     userId: body.userId,
   };
+}
+
+async function refreshAppSessionWithCentralVerifier({
+  accessToken,
+  baseUrl,
+  refreshToken,
+  targetApp,
+}: {
+  accessToken?: string | null;
+  baseUrl: string;
+  refreshToken?: string | null;
+  targetApp: AppName;
+}): Promise<CrossAppTokenValidation | null> {
+  const refreshUrl = new URL('/api/v1/auth/cross-app-session/refresh', baseUrl);
+  const response = await fetch(refreshUrl, {
+    body: JSON.stringify({ accessToken, refreshToken, targetApp }),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  const body = (await response.json().catch(() => null)) as {
+    appSessionExpiresAt?: unknown;
+    appSessionRefreshEarlySeconds?: unknown;
+    appSessionRefreshExpiresAt?: unknown;
+    appSessionRefreshToken?: unknown;
+    appSessionToken?: unknown;
+    internalAppSessionPolicy?: unknown;
+    sessionData?: CrossAppTokenRow['session_data'];
+    userId?: unknown;
+  } | null;
+
+  if (typeof body?.userId !== 'string') {
+    return null;
+  }
+
+  return {
+    appSessionExpiresAt:
+      typeof body.appSessionExpiresAt === 'string'
+        ? body.appSessionExpiresAt
+        : null,
+    appSessionRefreshEarlySeconds:
+      typeof body.appSessionRefreshEarlySeconds === 'number'
+        ? body.appSessionRefreshEarlySeconds
+        : null,
+    appSessionRefreshExpiresAt:
+      typeof body.appSessionRefreshExpiresAt === 'string'
+        ? body.appSessionRefreshExpiresAt
+        : null,
+    appSessionRefreshToken:
+      typeof body.appSessionRefreshToken === 'string'
+        ? body.appSessionRefreshToken
+        : null,
+    appSessionToken:
+      typeof body.appSessionToken === 'string' ? body.appSessionToken : null,
+    internalAppSessionPolicy: isInternalAppSessionPolicy(
+      body.internalAppSessionPolicy
+    )
+      ? body.internalAppSessionPolicy
+      : null,
+    sessionData: body.sessionData ?? null,
+    userId: body.userId,
+  };
+}
+
+function isInternalAppSessionPolicy(
+  value: unknown
+): value is ResolvedInternalAppSessionPolicy {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const policy = value as Partial<ResolvedInternalAppSessionPolicy>;
+
+  return (
+    typeof policy.internalAppAccessTtlSeconds === 'number' &&
+    typeof policy.internalAppRefreshEarlySeconds === 'number' &&
+    typeof policy.internalAppRefreshTtlSeconds === 'number'
+  );
 }
 
 function createAppSessionResponse(
@@ -139,30 +262,51 @@ function createAppSessionResponse(
   appName: AppName,
   options: CreatePostOptions
 ) {
-  const localAppSession = createAppSessionToken({
-    email: validation.sessionData?.email ?? null,
-    scopes: options.appSessionScopes,
-    targetApp: appName,
-    userId: validation.userId,
-  });
+  const localAppSession = createAppSessionTokenPair(
+    {
+      email: validation.sessionData?.email ?? null,
+      originApp: 'web',
+      scopes: options.appSessionScopes,
+      targetApp: appName,
+      userId: validation.userId,
+    },
+    {
+      policy: validation.internalAppSessionPolicy ?? undefined,
+    }
+  );
   const webAppSessionExpiresAt = validation.appSessionExpiresAt
     ? new Date(validation.appSessionExpiresAt)
     : null;
+  const webAppSessionRefreshExpiresAt = validation.appSessionRefreshExpiresAt
+    ? new Date(validation.appSessionRefreshExpiresAt)
+    : null;
   const hasValidWebAppSessionExpiry =
     webAppSessionExpiresAt && !Number.isNaN(webAppSessionExpiresAt.getTime());
+  const hasValidWebAppSessionRefreshExpiry =
+    webAppSessionRefreshExpiresAt &&
+    !Number.isNaN(webAppSessionRefreshExpiresAt.getTime());
   const localAppSessionExpiresAt = hasValidWebAppSessionExpiry
     ? webAppSessionExpiresAt
-    : new Date(localAppSession.claims.exp * 1000);
+    : new Date(localAppSession.access.claims.exp * 1000);
+  const localAppSessionRefreshExpiresAt = hasValidWebAppSessionRefreshExpiry
+    ? webAppSessionRefreshExpiresAt
+    : new Date(localAppSession.refresh.claims.exp * 1000);
 
   const response = NextResponse.json({
     appSessionCreated: true,
+    appSessionRefreshEarlySeconds:
+      validation.appSessionRefreshEarlySeconds ??
+      localAppSession.refreshEarlySeconds,
     userId: validation.userId,
     valid: true,
   });
   response.headers.set('Cache-Control', 'no-store');
 
-  setAppSessionCookie(response, localAppSession.token, {
+  setAppSessionCookie(response, localAppSession.access.token, {
     expires: localAppSessionExpiresAt,
+  });
+  setAppSessionRefreshCookie(response, localAppSession.refresh.token, {
+    expires: localAppSessionRefreshExpiresAt,
   });
 
   if (validation.appSessionToken && hasValidWebAppSessionExpiry) {
@@ -171,12 +315,24 @@ function createAppSessionResponse(
     });
   }
 
+  if (validation.appSessionRefreshToken && hasValidWebAppSessionRefreshExpiry) {
+    setWebAppSessionRefreshCookie(response, validation.appSessionRefreshToken, {
+      expires: webAppSessionRefreshExpiresAt,
+    });
+  }
+
   return response;
 }
 
-function createCliAppSessionResponse(validation: CrossAppTokenValidation) {
+async function createCliAppSessionResponse(
+  validation: CrossAppTokenValidation,
+  options: CreatePostOptions
+) {
+  const policy = await options.resolveCliSessionPolicy?.();
   const cliSession = createCliAppSession({
+    accessExpiresInSeconds: policy?.cliAccessTtlSeconds,
     email: validation.sessionData?.email ?? null,
+    refreshExpiresInSeconds: policy?.cliRefreshTtlSeconds,
     userId: validation.userId,
   });
 
@@ -185,6 +341,58 @@ function createCliAppSessionResponse(validation: CrossAppTokenValidation) {
     email: validation.sessionData?.email ?? null,
     userId: validation.userId,
   });
+}
+
+export function createRefreshPOST(
+  appName: AppName,
+  options: CreatePostOptions = {}
+) {
+  return async function POST(request: NextRequest) {
+    if (!options.verificationBaseUrl) {
+      return jsonNoStore(
+        { error: 'Central verification URL is not configured' },
+        { status: 500 }
+      );
+    }
+
+    const body = (await request.json().catch(() => null)) as {
+      accessToken?: unknown;
+      refreshToken?: unknown;
+    } | null;
+    const accessToken =
+      typeof body?.accessToken === 'string'
+        ? body.accessToken
+        : (getWebAppSessionTokenFromRequest(request) ??
+          getAppSessionTokenFromRequest(request));
+    const refreshToken =
+      typeof body?.refreshToken === 'string'
+        ? body.refreshToken
+        : (getWebAppSessionRefreshTokenFromRequest(request) ??
+          getAppSessionRefreshTokenFromRequest(request));
+
+    if (!accessToken && !refreshToken) {
+      return jsonNoStore(
+        { error: 'Missing app session refresh credentials' },
+        { status: 401 }
+      );
+    }
+
+    const validation = await refreshAppSessionWithCentralVerifier({
+      accessToken,
+      baseUrl: options.verificationBaseUrl,
+      refreshToken,
+      targetApp: appName,
+    });
+
+    if (!validation) {
+      return jsonNoStore(
+        { error: 'Invalid or expired app session refresh credentials' },
+        { status: 401 }
+      );
+    }
+
+    return createAppSessionResponse(validation, appName, options);
+  };
 }
 
 /**
@@ -236,7 +444,7 @@ export function createPOST(appName: AppName, options: CreatePostOptions = {}) {
           );
         }
 
-        return createCliAppSessionResponse(validation);
+        return createCliAppSessionResponse(validation, options);
       }
 
       return createAppSessionResponse(validation, appName, options);

@@ -2,6 +2,10 @@ import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
 } from '@tuturuuu/auth/app-session';
+import {
+  propagateAuthCookies,
+  refreshAppSessionForRequest,
+} from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
@@ -11,7 +15,11 @@ import { type Locale, routing, supportedLocales } from './i18n/routing';
 import { createHivePublicUrl } from './lib/hive-public-url';
 
 const intlMiddleware = createIntlMiddleware(routing);
-const LOCAL_AUTH_API_PATHS = new Set(['/api/auth/logout']);
+const LOCAL_AUTH_API_PATHS = new Set([
+  '/api/auth/logout',
+  '/api/auth/refresh-app-session',
+  '/api/auth/verify-app-token',
+]);
 
 function stripLocale(pathname: string) {
   const segments = pathname.split('/').filter(Boolean);
@@ -51,16 +59,33 @@ function getCanonicalLocaleRedirect(request: NextRequest) {
 
 export async function proxy(request: NextRequest): Promise<NextResponse> {
   if (request.nextUrl.pathname.startsWith('/api')) {
-    if (LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname)) {
-      return clearSupabaseAuthCookies(request, NextResponse.next());
+    const isLocalAuthApi = LOCAL_AUTH_API_PATHS.has(request.nextUrl.pathname);
+    const appSessionRefresh = isLocalAuthApi
+      ? null
+      : await refreshAppSessionForRequest(request, {
+          targetApp: 'hive',
+        });
+
+    if (appSessionRefresh && !appSessionRefresh.ok) {
+      return clearSupabaseAuthCookies(
+        request,
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
     }
 
     const guardResponse = await guardApiProxyRequest(request, {
       prefixBase: 'proxy:hive:api',
     });
-    return clearSupabaseAuthCookies(
-      request,
-      guardResponse ?? NextResponse.next()
+    if (guardResponse) {
+      if (appSessionRefresh) {
+        propagateAuthCookies(appSessionRefresh.response, guardResponse);
+      }
+      return clearSupabaseAuthCookies(request, guardResponse);
+    }
+
+    return (
+      appSessionRefresh?.response ??
+      clearSupabaseAuthCookies(request, NextResponse.next())
     );
   }
 
@@ -76,9 +101,19 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     unlocalizedPath.startsWith('/~recover-browser-state');
 
   if (!isPublicPath) {
-    const appSession = getAppSessionClaimsFromRequest(request, {
+    const appSessionRefresh = await refreshAppSessionForRequest(request, {
       targetApp: 'hive',
     });
+    const requestWithRefresh = {
+      headers: appSessionRefresh.ok
+        ? (appSessionRefresh.requestHeaders ?? request.headers)
+        : request.headers,
+    };
+    const appSession = appSessionRefresh.ok
+      ? appSessionRefresh.claims
+      : getAppSessionClaimsFromRequest(requestWithRefresh, {
+          targetApp: 'hive',
+        });
 
     if (!appSession) {
       const url = createHivePublicUrl('/login', request);
@@ -86,6 +121,12 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       if (next) url.searchParams.set('next', next);
       return clearSupabaseAuthCookies(request, NextResponse.redirect(url));
     }
+
+    const response = intlMiddleware(request);
+    if (appSessionRefresh.ok) {
+      propagateAuthCookies(appSessionRefresh.response, response);
+    }
+    return clearSupabaseAuthCookies(request, response);
   }
 
   return clearSupabaseAuthCookies(request, intlMiddleware(request));

@@ -10,10 +10,20 @@ import {
   isAppCoordinationToken,
   verifyAppCoordinationToken,
 } from './app-coordination';
+import {
+  DEFAULT_APP_COORDINATION_SESSION_POLICY,
+  type ResolvedInternalAppSessionPolicy,
+} from './app-session-policy';
 
 export const APP_SESSION_COOKIE_NAME = 'tuturuuu_app_session';
 export const WEB_APP_SESSION_COOKIE_NAME = 'tuturuuu_web_app_session';
+export const APP_SESSION_REFRESH_COOKIE_NAME = 'tuturuuu_app_session_refresh';
+export const WEB_APP_SESSION_REFRESH_COOKIE_NAME =
+  'tuturuuu_web_app_session_refresh';
 export const APP_SESSION_SCOPE = 'internal-app:session';
+export const APP_SESSION_REFRESH_SCOPE = 'internal-app:refresh';
+export const APP_SESSION_REFRESH_EARLY_SCOPE_PREFIX =
+  'internal-app:refresh-early:';
 export const SUPABASE_AUTH_COOKIE_PATTERN =
   /^sb-[A-Za-z0-9-]+-auth-token(?:\.\d+)?$/u;
 
@@ -37,6 +47,20 @@ export type AppSessionVerification =
       error: string;
       ok: false;
     };
+
+export type AppSessionTokenPair = {
+  access: {
+    claims: AppCoordinationTokenClaims;
+    expiresAt: string;
+    token: string;
+  };
+  refresh: {
+    claims: AppCoordinationTokenClaims;
+    expiresAt: string;
+    token: string;
+  };
+  refreshEarlySeconds: number;
+};
 
 type AppSessionOptions = {
   now?: Date;
@@ -72,6 +96,72 @@ export function createAppSessionToken(
   );
 }
 
+export function createAppSessionRefreshToken(
+  payload: AppSessionTokenPayload,
+  options: {
+    now?: Date;
+    secret?: string;
+  } = {}
+) {
+  return createAppCoordinationToken(
+    {
+      email: payload.email ?? null,
+      expiresInSeconds: payload.expiresInSeconds,
+      originApp: payload.originApp ?? 'web',
+      scopes: normalizeAppSessionRefreshScopes(payload.scopes),
+      targetApp: payload.targetApp,
+      userId: payload.userId,
+    },
+    options
+  );
+}
+
+export function createAppSessionTokenPair(
+  payload: Omit<AppSessionTokenPayload, 'expiresInSeconds'>,
+  options: {
+    now?: Date;
+    policy?: Partial<ResolvedInternalAppSessionPolicy>;
+    secret?: string;
+  } = {}
+): AppSessionTokenPair {
+  const policy = {
+    internalAppAccessTtlSeconds:
+      options.policy?.internalAppAccessTtlSeconds ??
+      DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppAccessTtlSeconds,
+    internalAppRefreshEarlySeconds:
+      options.policy?.internalAppRefreshEarlySeconds ??
+      DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppRefreshEarlySeconds,
+    internalAppRefreshTtlSeconds:
+      options.policy?.internalAppRefreshTtlSeconds ??
+      DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppRefreshTtlSeconds,
+  };
+  const access = createAppSessionToken(
+    {
+      ...payload,
+      expiresInSeconds: policy.internalAppAccessTtlSeconds,
+      scopes: [
+        ...(payload.scopes ?? []),
+        `${APP_SESSION_REFRESH_EARLY_SCOPE_PREFIX}${policy.internalAppRefreshEarlySeconds}`,
+      ],
+    },
+    options
+  );
+  const refresh = createAppSessionRefreshToken(
+    {
+      ...payload,
+      expiresInSeconds: policy.internalAppRefreshTtlSeconds,
+      scopes: undefined,
+    },
+    options
+  );
+
+  return {
+    access,
+    refresh,
+    refreshEarlySeconds: policy.internalAppRefreshEarlySeconds,
+  };
+}
+
 export function verifyAppSessionToken(
   token: string,
   options: AppSessionOptions = {}
@@ -103,6 +193,57 @@ export function verifyAppSessionToken(
   return verification;
 }
 
+export function verifyAppSessionRefreshToken(
+  token: string,
+  options: AppSessionOptions = {}
+): AppSessionVerification {
+  const verification = verifyAppCoordinationToken(token, options);
+
+  if (!verification.ok) {
+    return verification;
+  }
+
+  if (
+    !matchesAppSessionTarget(verification.claims.target_app, options.targetApp)
+  ) {
+    return {
+      error: 'App session target mismatch',
+      ok: false,
+    };
+  }
+
+  if (!verification.claims.scopes.includes(APP_SESSION_REFRESH_SCOPE)) {
+    return {
+      error: 'App session refresh token missing required scope',
+      ok: false,
+    };
+  }
+
+  if (verification.claims.scopes.includes(APP_SESSION_SCOPE)) {
+    return {
+      error: 'App session refresh token must not be an access token',
+      ok: false,
+    };
+  }
+
+  return verification;
+}
+
+export function getAppSessionRefreshEarlySeconds(
+  claims: AppCoordinationTokenClaims,
+  fallbackSeconds = DEFAULT_APP_COORDINATION_SESSION_POLICY.internalAppRefreshEarlySeconds
+) {
+  const scope = claims.scopes.find((entry) =>
+    entry.startsWith(APP_SESSION_REFRESH_EARLY_SCOPE_PREFIX)
+  );
+  const parsed = Number.parseInt(
+    scope?.slice(APP_SESSION_REFRESH_EARLY_SCOPE_PREFIX.length) ?? '',
+    10
+  );
+
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallbackSeconds;
+}
+
 function matchesAppSessionTarget(
   actualTargetApp: string,
   expectedTargetApp?: AppSessionTargetApp | readonly AppSessionTargetApp[]
@@ -120,6 +261,16 @@ function normalizeAppSessionScopes(scopes: string[] = []) {
   return [
     APP_SESSION_SCOPE,
     ...scopes.filter((scope) => scope !== APP_SESSION_SCOPE),
+  ];
+}
+
+function normalizeAppSessionRefreshScopes(scopes: string[] = []) {
+  return [
+    APP_SESSION_REFRESH_SCOPE,
+    ...scopes.filter(
+      (scope) =>
+        scope !== APP_SESSION_REFRESH_SCOPE && scope !== APP_SESSION_SCOPE
+    ),
   ];
 }
 
@@ -160,6 +311,25 @@ export function getWebAppSessionTokenFromRequest(request: RequestLike) {
 
   return webCookieToken && isAppCoordinationToken(webCookieToken)
     ? webCookieToken
+    : null;
+}
+
+export function getAppSessionRefreshTokenFromRequest(request: RequestLike) {
+  const refreshToken = getCookieValue(request, APP_SESSION_REFRESH_COOKIE_NAME);
+
+  return refreshToken && isAppCoordinationToken(refreshToken)
+    ? refreshToken
+    : null;
+}
+
+export function getWebAppSessionRefreshTokenFromRequest(request: RequestLike) {
+  const refreshToken = getCookieValue(
+    request,
+    WEB_APP_SESSION_REFRESH_COOKIE_NAME
+  );
+
+  return refreshToken && isAppCoordinationToken(refreshToken)
+    ? refreshToken
     : null;
 }
 
@@ -280,12 +450,48 @@ export function setWebAppSessionCookie(
   );
 }
 
+export function setAppSessionRefreshCookie(
+  response: NextResponse,
+  token: string,
+  options: {
+    expires?: Date;
+  } = {}
+) {
+  response.cookies.set(
+    APP_SESSION_REFRESH_COOKIE_NAME,
+    token,
+    getAppSessionCookieOptions(options)
+  );
+}
+
+export function setWebAppSessionRefreshCookie(
+  response: NextResponse,
+  token: string,
+  options: {
+    expires?: Date;
+  } = {}
+) {
+  response.cookies.set(
+    WEB_APP_SESSION_REFRESH_COOKIE_NAME,
+    token,
+    getAppSessionCookieOptions(options)
+  );
+}
+
 export function clearAppSessionCookie(response: NextResponse) {
   response.cookies.set(APP_SESSION_COOKIE_NAME, '', {
     ...getAppSessionCookieOptions({ expires: new Date(0) }),
     maxAge: 0,
   });
   response.cookies.set(WEB_APP_SESSION_COOKIE_NAME, '', {
+    ...getAppSessionCookieOptions({ expires: new Date(0) }),
+    maxAge: 0,
+  });
+  response.cookies.set(APP_SESSION_REFRESH_COOKIE_NAME, '', {
+    ...getAppSessionCookieOptions({ expires: new Date(0) }),
+    maxAge: 0,
+  });
+  response.cookies.set(WEB_APP_SESSION_REFRESH_COOKIE_NAME, '', {
     ...getAppSessionCookieOptions({ expires: new Date(0) }),
     maxAge: 0,
   });

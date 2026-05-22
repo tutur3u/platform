@@ -39,14 +39,19 @@ const satelliteAppApiRoots = [
 
 const allowedSatelliteLocalApiRoutes = new Set([
   'apps/learn/src/app/api/auth/logout/route.ts',
+  'apps/learn/src/app/api/auth/refresh-app-session/route.ts',
   'apps/learn/src/app/api/auth/verify-app-token/route.ts',
   'apps/teach/src/app/api/auth/logout/route.ts',
+  'apps/teach/src/app/api/auth/refresh-app-session/route.ts',
   'apps/teach/src/app/api/auth/verify-app-token/route.ts',
   'apps/inventory/src/app/api/auth/logout/route.ts',
+  'apps/inventory/src/app/api/auth/refresh-app-session/route.ts',
   'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
   'apps/drive/src/app/api/auth/logout/route.ts',
+  'apps/drive/src/app/api/auth/refresh-app-session/route.ts',
   'apps/drive/src/app/api/auth/verify-app-token/route.ts',
   'apps/mind/src/app/api/auth/logout/route.ts',
+  'apps/mind/src/app/api/auth/refresh-app-session/route.ts',
   'apps/mind/src/app/api/auth/verify-app-token/route.ts',
 ]);
 
@@ -188,11 +193,13 @@ describe('satellite app-session route inventory', () => {
       const testSource = readFileSync(resolve(repoRoot, testFile), 'utf8');
 
       expect(proxySource, proxyFile).toContain('guardApiProxyRequest');
+      expect(proxySource, proxyFile).toContain('refreshAppSessionForRequest');
       expect(proxySource, proxyFile).toContain(
         `prefixBase: 'proxy:${app}:api'`
       );
       expect(proxySource, proxyFile).not.toContain('LOCAL_AUTH_API_PATHS');
       expect(testSource, testFile).toContain("'/api/auth/logout'");
+      expect(testSource, testFile).toContain("'/api/auth/refresh-app-session'");
       expect(testSource, testFile).toContain("'/api/auth/verify-app-token'");
     }
   });

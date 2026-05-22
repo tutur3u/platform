@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
     (_request: NextRequest, response: NextResponse) => response
   ),
   guardApiProxyRequest: vi.fn(),
+  propagateAuthCookies: vi.fn(),
+  refreshAppSessionForRequest: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
@@ -21,6 +23,15 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: (
     ...args: Parameters<typeof mocks.guardApiProxyRequest>
   ) => mocks.guardApiProxyRequest(...args),
+}));
+
+vi.mock('@tuturuuu/auth/proxy', () => ({
+  propagateAuthCookies: (
+    ...args: Parameters<typeof mocks.propagateAuthCookies>
+  ) => mocks.propagateAuthCookies(...args),
+  refreshAppSessionForRequest: (
+    ...args: Parameters<typeof mocks.refreshAppSessionForRequest>
+  ) => mocks.refreshAppSessionForRequest(...args),
 }));
 
 vi.mock('next-intl/middleware', () => ({
@@ -47,6 +58,7 @@ describe('Teach proxy local auth API guard', () => {
 
   it.each([
     '/api/auth/logout',
+    '/api/auth/refresh-app-session',
     '/api/auth/verify-app-token',
   ])('returns guard responses for %s before local route handling', async (pathname) => {
     const guardResponse = NextResponse.json(

@@ -5,7 +5,9 @@ import {
 } from '@tuturuuu/auth/app-session';
 import {
   createCentralizedAuthProxy,
+  getRequestHeadersWithResponseCookies,
   propagateAuthCookies,
+  refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import {
   getCurrentUserDefaultWorkspace,
@@ -32,17 +34,40 @@ const authProxy = createCentralizedAuthProxy({
   excludeRootPath: true,
   mfa: { enabled: false },
 });
+const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const isLocalAuthApi = req.nextUrl.pathname.startsWith(
+      LOCAL_AUTH_API_PREFIX
+    );
+    const appSessionRefresh = isLocalAuthApi
+      ? null
+      : await refreshAppSessionForRequest(req, {
+          targetApp: 'track',
+        });
+
+    if (appSessionRefresh && !appSessionRefresh.ok) {
+      return clearSupabaseAuthCookies(
+        req,
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:track:api',
     });
     if (guardResponse) {
+      if (appSessionRefresh) {
+        propagateAuthCookies(appSessionRefresh.response, guardResponse);
+      }
       return clearSupabaseAuthCookies(req, guardResponse);
     }
 
-    return clearSupabaseAuthCookies(req, NextResponse.next());
+    return (
+      appSessionRefresh?.response ??
+      clearSupabaseAuthCookies(req, NextResponse.next())
+    );
   }
 
   // Handle authentication and MFA with the centralized middleware
@@ -53,9 +78,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
     return authRes;
   }
 
-  const appSession = getAppSessionClaimsFromRequest(req, {
-    targetApp: 'track',
-  });
+  const authRequestHeaders = getRequestHeadersWithResponseCookies(req, authRes);
+  const appSession = getAppSessionClaimsFromRequest(
+    { headers: authRequestHeaders },
+    {
+      targetApp: 'track',
+    }
+  );
 
   // Handle direct navigation to workspace IDs that are personal workspaces
   // Check if the path matches /[locale]/[wsId] or /[wsId] pattern where wsId is a UUID

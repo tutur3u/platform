@@ -40,6 +40,28 @@ export interface ExternalAppsResponse {
   apps: ExternalAppRegistration[];
 }
 
+export interface InternalAppSessionPolicyOverride {
+  internalAppAccessTtlSeconds?: number;
+  internalAppRefreshEarlySeconds?: number;
+  internalAppRefreshTtlSeconds?: number;
+}
+
+export interface AppCoordinationSessionPolicy {
+  browserRefreshReplayGraceSeconds: number;
+  cliAccessTtlSeconds: number;
+  cliRefreshTtlSeconds: number;
+  externalAppBearerTtlSeconds: number;
+  internalAppAccessTtlSeconds: number;
+  internalAppOverrides: Record<string, InternalAppSessionPolicyOverride>;
+  internalAppRefreshEarlySeconds: number;
+  internalAppRefreshTtlSeconds: number;
+}
+
+export interface AppCoordinationSessionPolicyResponse {
+  policy: AppCoordinationSessionPolicy;
+  source: 'default' | 'environment' | 'secret';
+}
+
 export interface AIWhitelistDomainsResponse {
   count: number;
   data: AIWhitelistDomain[];
@@ -1489,6 +1511,36 @@ export async function rotateExternalAppSecret(
     {
       cache: 'no-store',
       method: 'POST',
+    }
+  );
+}
+
+export async function getAppCoordinationSessionPolicy(
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AppCoordinationSessionPolicyResponse>(
+    '/api/v1/infrastructure/app-coordination',
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function saveAppCoordinationSessionPolicy(
+  payload: AppCoordinationSessionPolicy,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AppCoordinationSessionPolicyResponse>(
+    '/api/v1/infrastructure/app-coordination',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'PUT',
     }
   );
 }

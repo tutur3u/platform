@@ -4,22 +4,36 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  APP_SESSION_REFRESH_SCOPE,
   attachSupabaseAuthUser,
   clearAppSessionCookie,
   clearSupabaseAuthCookies,
   createAppSessionLogoutResponse,
   createAppSessionToken,
+  createAppSessionTokenPair,
   getAppSessionClaimsFromRequest,
+  getAppSessionRefreshEarlySeconds,
+  getAppSessionRefreshTokenFromRequest,
   getAppSessionTokenFromRequest,
   getAppSessionUserFromRequest,
+  getWebAppSessionRefreshTokenFromRequest,
   getWebAppSessionTokenFromRequest,
   hasWebAppSessionTokenFromRequest,
   setAppSessionCookie,
+  setAppSessionRefreshCookie,
   setWebAppSessionCookie,
+  setWebAppSessionRefreshCookie,
+  verifyAppSessionRefreshToken,
   verifyAppSessionRequest,
   verifyAppSessionToken,
   WEB_APP_SESSION_COOKIE_NAME,
+  WEB_APP_SESSION_REFRESH_COOKIE_NAME,
 } from './app-session';
+import {
+  DEFAULT_APP_COORDINATION_SESSION_POLICY,
+  resolveInternalAppSessionPolicy,
+} from './app-session-policy';
 
 describe('app-session JWTs', () => {
   beforeEach(() => {
@@ -62,6 +76,86 @@ describe('app-session JWTs', () => {
     });
 
     expect(claims.scopes).toEqual(['internal-app:session', 'custom:scope']);
+  });
+
+  it('creates policy-based access and refresh token pairs with separate scopes', () => {
+    const pair = createAppSessionTokenPair(
+      {
+        email: 'agent@example.com',
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 600,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+
+    expect(pair.access.claims.exp - pair.access.claims.iat).toBe(600);
+    expect(pair.refresh.claims.exp - pair.refresh.claims.iat).toBe(86_400);
+    expect(pair.access.claims.scopes).toContain('internal-app:session');
+    expect(pair.access.claims.scopes).toContain(
+      'internal-app:refresh-early:120'
+    );
+    expect(pair.refresh.claims.scopes).toEqual([APP_SESSION_REFRESH_SCOPE]);
+    expect(getAppSessionRefreshEarlySeconds(pair.access.claims)).toBe(120);
+  });
+
+  it('rejects refresh tokens as access tokens and access tokens as refresh tokens', () => {
+    const pair = createAppSessionTokenPair({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+
+    expect(
+      verifyAppSessionToken(pair.refresh.token, { targetApp: 'learn' })
+    ).toEqual({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    expect(
+      verifyAppSessionRefreshToken(pair.access.token, { targetApp: 'learn' })
+    ).toEqual({
+      error: 'App session refresh token missing required scope',
+      ok: false,
+    });
+    expect(
+      verifyAppSessionRefreshToken(pair.refresh.token, { targetApp: 'learn' })
+        .ok
+    ).toBe(true);
+  });
+
+  it('resolves per-app overrides for token pair policy', () => {
+    const policy = {
+      ...DEFAULT_APP_COORDINATION_SESSION_POLICY,
+      internalAppOverrides: {
+        learn: {
+          internalAppAccessTtlSeconds: 900,
+          internalAppRefreshEarlySeconds: 180,
+          internalAppRefreshTtlSeconds: 172_800,
+        },
+      },
+    };
+
+    const resolved = resolveInternalAppSessionPolicy(policy, 'learn');
+    const pair = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: resolved,
+      }
+    );
+
+    expect(pair.access.claims.exp - pair.access.claims.iat).toBe(900);
+    expect(pair.refresh.claims.exp - pair.refresh.claims.iat).toBe(172_800);
+    expect(pair.refreshEarlySeconds).toBe(180);
   });
 
   it('falls back to the server-side Supabase secret for deployed satellite apps', () => {
@@ -321,23 +415,33 @@ describe('app-session JWTs', () => {
     }
   });
 
-  it('sets and clears the host-only app-session cookie', () => {
-    const { token } = createAppSessionToken({
+  it('sets and clears the host-only app-session cookie pair', () => {
+    const { access, refresh } = createAppSessionTokenPair({
       targetApp: 'learn',
       userId: 'user-1',
     });
     const response = NextResponse.json({ ok: true });
 
-    setAppSessionCookie(response, token, {
+    setAppSessionCookie(response, access.token, {
       expires: new Date('2026-01-01T08:00:00.000Z'),
     });
-    setWebAppSessionCookie(response, token, {
+    setWebAppSessionCookie(response, access.token, {
+      expires: new Date('2026-01-01T08:00:00.000Z'),
+    });
+    setAppSessionRefreshCookie(response, refresh.token, {
+      expires: new Date('2026-01-31T00:00:00.000Z'),
+    });
+    setWebAppSessionRefreshCookie(response, refresh.token, {
       expires: new Date('2026-01-01T08:00:00.000Z'),
     });
 
     const setCookie = response.headers.get('set-cookie') ?? '';
     expect(setCookie).toContain(`${APP_SESSION_COOKIE_NAME}=ttr_app_`);
     expect(setCookie).toContain(`${WEB_APP_SESSION_COOKIE_NAME}=ttr_app_`);
+    expect(setCookie).toContain(`${APP_SESSION_REFRESH_COOKIE_NAME}=ttr_app_`);
+    expect(setCookie).toContain(
+      `${WEB_APP_SESSION_REFRESH_COOKIE_NAME}=ttr_app_`
+    );
     expect(setCookie).toContain('HttpOnly');
     expect(setCookie).toContain('Path=/');
     expect(setCookie).not.toContain('Domain=');
@@ -348,7 +452,29 @@ describe('app-session JWTs', () => {
     const clearCookie = clearResponse.headers.get('set-cookie') ?? '';
     expect(clearCookie).toContain(`${APP_SESSION_COOKIE_NAME}=`);
     expect(clearCookie).toContain(`${WEB_APP_SESSION_COOKIE_NAME}=`);
+    expect(clearCookie).toContain(`${APP_SESSION_REFRESH_COOKIE_NAME}=`);
+    expect(clearCookie).toContain(`${WEB_APP_SESSION_REFRESH_COOKIE_NAME}=`);
     expect(clearCookie).toContain('Max-Age=0');
+  });
+
+  it('reads refresh tokens from local and Web-issued HttpOnly cookies', () => {
+    const { refresh } = createAppSessionTokenPair({
+      targetApp: 'learn',
+      userId: 'user-1',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.localhost/', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${refresh.token}`,
+          `${WEB_APP_SESSION_REFRESH_COOKIE_NAME}=${refresh.token}`,
+        ].join('; '),
+      },
+    });
+
+    expect(getAppSessionRefreshTokenFromRequest(request)).toBe(refresh.token);
+    expect(getWebAppSessionRefreshTokenFromRequest(request)).toBe(
+      refresh.token
+    );
   });
 
   it('clears stale Supabase auth cookies without touching app-session cookies', () => {

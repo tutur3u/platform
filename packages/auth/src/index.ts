@@ -1,6 +1,7 @@
 // Note: api-keys is not exported from the main entry point because it uses server-side code
 // Import it using '@tuturuuu/auth/api-keys' instead
 export * from './app-session';
+export * from './app-session-policy';
 export * from './cli-session';
 export * from './cross-app';
 export * from './identity-linking';

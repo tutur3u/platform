@@ -1,4 +1,5 @@
 import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
+import { refreshAppSessionForRequest } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,11 @@ import { proxy } from './proxy';
 
 vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
   guardApiProxyRequest: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/auth/proxy', () => ({
+  propagateAuthCookies: vi.fn(),
+  refreshAppSessionForRequest: vi.fn(),
 }));
 
 vi.mock('next-intl/middleware', () => ({
@@ -28,6 +34,25 @@ vi.mock('next-intl/navigation', () => ({
 describe('Hive proxy auth cookie cleanup', () => {
   beforeEach(() => {
     vi.mocked(guardApiProxyRequest).mockReset();
+    vi.mocked(refreshAppSessionForRequest).mockReset();
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValue({
+      claims: {
+        aud: 'tuturuuu-api',
+        email: 'local@tuturuuu.com',
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        iat: Math.floor(Date.now() / 1000),
+        iss: 'tuturuuu',
+        jti: 'jti',
+        origin_app: 'web',
+        scopes: ['internal-app:session'],
+        sub: '00000000-0000-0000-0000-000000000001',
+        target_app: 'hive',
+        typ: 'app_coordination',
+      },
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
   });
 
   it('clears stale Supabase auth cookies without touching unrelated cookies', () => {
@@ -50,7 +75,7 @@ describe('Hive proxy auth cookie cleanup', () => {
     expect(response.headers.get('set-cookie')).toContain('Max-Age=0');
   });
 
-  it('lets local logout skip the generic API guard and clear stale cookies', async () => {
+  it('keeps local logout covered by the generic API guard and clear stale cookies', async () => {
     const request = new NextRequest(
       'https://hive.tuturuuu.com/api/auth/logout',
       {
@@ -64,13 +89,19 @@ describe('Hive proxy auth cookie cleanup', () => {
 
     const response = await proxy(request);
 
-    expect(guardApiProxyRequest).not.toHaveBeenCalled();
+    expect(guardApiProxyRequest).toHaveBeenCalledTimes(1);
+    expect(refreshAppSessionForRequest).not.toHaveBeenCalled();
     expect(response.headers.get('set-cookie')).toContain(
       'sb-resolved-kingfish-21146-auth-token=;'
     );
   });
 
   it('does not redirect unauthenticated users to the internal listener origin', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      error: 'Missing app session',
+      ok: false,
+    });
+
     const response = await proxy(
       new NextRequest('http://0.0.0.0:7814/dashboard')
     );

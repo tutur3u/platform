@@ -1,5 +1,9 @@
 import { expect, test } from '@playwright/test';
-import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import {
+  createAppSessionRefreshToken,
+  createAppSessionToken,
+  createAppSessionTokenPair,
+} from '@tuturuuu/auth/app-session';
 import { TEST_USER } from './helpers/constants';
 import {
   assertSafeE2EEnvironment,
@@ -9,6 +13,184 @@ import {
 test.describe('Gateway app-session JWT auth', () => {
   test.beforeAll(() => {
     assertSafeE2EEnvironment();
+  });
+
+  test('rotates a valid internal app refresh token without Supabase cookies', async ({
+    request,
+  }) => {
+    const secret =
+      process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+      LOCAL_E2E_APP_COORDINATION_SECRET;
+    const session = createAppSessionTokenPair(
+      {
+        email: TEST_USER.email,
+        originApp: 'web',
+        targetApp: 'nova',
+        userId: TEST_USER.id,
+      },
+      { secret }
+    );
+
+    const response = await request.post(
+      '/api/v1/auth/cross-app-session/refresh',
+      {
+        data: {
+          refreshToken: session.refresh.token,
+          targetApp: 'nova',
+        },
+        failOnStatusCode: false,
+      }
+    );
+
+    expect(response.status()).toBe(200);
+    expect(response.headers()['set-cookie'] ?? '').not.toContain('sb-');
+    const body = (await response.json()) as {
+      appSessionRefreshToken: string;
+      appSessionToken: string;
+    };
+    expect(body.appSessionToken).toMatch(/^ttr_app_/u);
+    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
+    expect(body.appSessionToken).not.toBe(session.access.token);
+    expect(body.appSessionRefreshToken).not.toBe(session.refresh.token);
+  });
+
+  test('uses refreshed access for profile APIs when the original access is expired', async ({
+    request,
+  }) => {
+    const secret =
+      process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+      LOCAL_E2E_APP_COORDINATION_SECRET;
+    const expiredAccess = createAppSessionToken(
+      {
+        email: TEST_USER.email,
+        expiresInSeconds: 1,
+        originApp: 'web',
+        targetApp: 'nova',
+        userId: TEST_USER.id,
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        secret,
+      }
+    );
+    const refresh = createAppSessionRefreshToken(
+      {
+        email: TEST_USER.email,
+        originApp: 'web',
+        targetApp: 'nova',
+        userId: TEST_USER.id,
+      },
+      { secret }
+    );
+
+    const refreshResponse = await request.post(
+      '/api/v1/auth/cross-app-session/refresh',
+      {
+        data: {
+          accessToken: expiredAccess.token,
+          refreshToken: refresh.token,
+          targetApp: 'nova',
+        },
+        failOnStatusCode: false,
+      }
+    );
+    expect(refreshResponse.status()).toBe(200);
+    const refreshBody = (await refreshResponse.json()) as {
+      appSessionToken: string;
+    };
+
+    const profileResponse = await request.get('/api/v1/users/me/profile', {
+      failOnStatusCode: false,
+      headers: {
+        Authorization: `Bearer ${refreshBody.appSessionToken}`,
+      },
+    });
+
+    expect(profileResponse.status()).toBe(200);
+    const profile = (await profileResponse.json()) as {
+      id: string;
+    };
+    expect(profile.id).toBe(TEST_USER.id);
+  });
+
+  test('rejects refresh tokens as bearer access tokens', async ({
+    request,
+  }) => {
+    const secret =
+      process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+      LOCAL_E2E_APP_COORDINATION_SECRET;
+    const session = createAppSessionTokenPair(
+      {
+        email: TEST_USER.email,
+        originApp: 'web',
+        targetApp: 'nova',
+        userId: TEST_USER.id,
+      },
+      { secret }
+    );
+
+    const response = await request.get('/api/v1/users/me/profile', {
+      failOnStatusCode: false,
+      headers: {
+        Authorization: `Bearer ${session.refresh.token}`,
+      },
+    });
+
+    expect(response.status()).toBe(401);
+  });
+
+  test('rejects invalid refresh credentials without Supabase fallback', async ({
+    request,
+  }) => {
+    const response = await request.post(
+      '/api/v1/auth/cross-app-session/refresh',
+      {
+        data: {
+          refreshToken: 'ttr_app_invalid',
+          targetApp: 'nova',
+        },
+        failOnStatusCode: false,
+      }
+    );
+
+    expect(response.status()).toBe(401);
+    expect(response.headers()['set-cookie'] ?? '').not.toContain('sb-');
+  });
+
+  test('upgrades a still-valid legacy access-only app session', async ({
+    request,
+  }) => {
+    const secret =
+      process.env.TUTURUUU_APP_COORDINATION_SECRET ??
+      LOCAL_E2E_APP_COORDINATION_SECRET;
+    const access = createAppSessionToken(
+      {
+        email: TEST_USER.email,
+        originApp: 'web',
+        targetApp: 'nova',
+        userId: TEST_USER.id,
+      },
+      { secret }
+    );
+
+    const response = await request.post(
+      '/api/v1/auth/cross-app-session/refresh',
+      {
+        data: {
+          accessToken: access.token,
+          targetApp: 'nova',
+        },
+        failOnStatusCode: false,
+      }
+    );
+
+    expect(response.status()).toBe(200);
+    const body = (await response.json()) as {
+      appSessionRefreshToken: string;
+      appSessionToken: string;
+    };
+    expect(body.appSessionToken).toMatch(/^ttr_app_/u);
+    expect(body.appSessionRefreshToken).toMatch(/^ttr_app_/u);
   });
 
   test('resolves every registered satellite return URL without cloud Supabase auth', async ({

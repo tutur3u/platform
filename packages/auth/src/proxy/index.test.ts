@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { APP_SESSION_COOKIE_NAME, createAppSessionToken } from '../app-session';
+import {
+  APP_SESSION_COOKIE_NAME,
+  APP_SESSION_REFRESH_COOKIE_NAME,
+  createAppSessionToken,
+  createAppSessionTokenPair,
+} from '../app-session';
 import {
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
   MFA_MOBILE_APPROVAL_KIND,
@@ -32,6 +37,7 @@ vi.mock('@tuturuuu/supabase/next/server', () => ({
 describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mocks.updateSession.mockResolvedValue({
       claims: null,
@@ -228,6 +234,160 @@ describe('auth proxy redirect helpers', () => {
 
     expect(response.headers.get('location')).toBeNull();
     expect(mocks.updateSession).not.toHaveBeenCalled();
+  });
+
+  it('refreshes registered app sessions when the access cookie is near expiry', async () => {
+    const oldSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 600,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+    const newSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:09:00.000Z'),
+      }
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ appSessionCreated: true }), {
+        headers: {
+          'set-cookie': `${APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+        },
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const authProxy = createCentralizedAuthProxy({
+      appSession: {
+        now: new Date('2026-01-01T00:08:30.000Z'),
+        targetApp: 'learn',
+      },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('set-cookie')).toContain(
+      `${APP_SESSION_COOKIE_NAME}=ttr_app_`
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL('/api/auth/refresh-app-session', 'https://learn.tuturuuu.com'),
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('lets expired registered app API requests proceed after refresh', async () => {
+    const oldSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 1,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+    const newSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+      }
+    );
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ appSessionCreated: true }), {
+          headers: {
+            'set-cookie': `${APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+          },
+          status: 200,
+        })
+      )
+    );
+
+    const authProxy = createCentralizedAuthProxy({
+      appSession: {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+        targetApp: 'learn',
+      },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/api/data', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+        ].join('; '),
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.status).not.toBe(401);
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('set-cookie')).toContain(
+      `${APP_SESSION_COOKIE_NAME}=ttr_app_`
+    );
+  });
+
+  it('returns 401 for registered app API requests with invalid refresh credentials', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi
+        .fn()
+        .mockResolvedValue(Response.json({ error: 'nope' }, { status: 401 }))
+    );
+    const authProxy = createCentralizedAuthProxy({
+      appSession: {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+        targetApp: 'learn',
+      },
+      skipApiRoutes: true,
+      webAppUrl: 'https://tuturuuu.com',
+    });
+    const request = new NextRequest('https://learn.tuturuuu.com/api/data', {
+      headers: {
+        cookie: `${APP_SESSION_REFRESH_COOKIE_NAME}=ttr_app_invalid`,
+      },
+    });
+
+    const response = await authProxy(request);
+
+    expect(response.status).toBe(401);
+    await expect(response.json()).resolves.toEqual({ error: 'Unauthorized' });
   });
 
   it('expires stale Supabase auth cookies on registered app responses', async () => {

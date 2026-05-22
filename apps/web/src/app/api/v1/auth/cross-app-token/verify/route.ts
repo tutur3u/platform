@@ -1,4 +1,5 @@
-import { createAppSessionToken } from '@tuturuuu/auth/app-session';
+import { createAppSessionTokenPair } from '@tuturuuu/auth/app-session';
+import { resolveInternalAppSessionPolicy } from '@tuturuuu/auth/app-session-policy';
 import { validateCrossAppTokenWithClient } from '@tuturuuu/auth/cross-app/server';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
@@ -8,6 +9,7 @@ import {
 } from '@tuturuuu/utils/internal-domains';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getAppCoordinationSessionPolicy } from '@/lib/app-coordination/session-policy';
 import { withRequestLogDrain } from '@/lib/infrastructure/log-drain';
 
 const verifyCrossAppTokenSchema = z.object({
@@ -51,15 +53,29 @@ async function verifyCrossAppToken(request: NextRequest) {
     return jsonNoStore({ error: 'Invalid or expired token' }, { status: 401 });
   }
 
-  const appSession = createAppSessionToken({
-    email: validation.sessionData?.email ?? null,
-    targetApp: parsed.data.targetApp,
-    userId: validation.userId,
-  });
+  const { policy } = await getAppCoordinationSessionPolicy();
+  const internalAppSessionPolicy = resolveInternalAppSessionPolicy(
+    policy,
+    parsed.data.targetApp
+  );
+  const appSession = createAppSessionTokenPair(
+    {
+      email: validation.sessionData?.email ?? null,
+      targetApp: parsed.data.targetApp,
+      userId: validation.userId,
+    },
+    {
+      policy: internalAppSessionPolicy,
+    }
+  );
 
   return jsonNoStore({
-    appSessionExpiresAt: new Date(appSession.claims.exp * 1000).toISOString(),
-    appSessionToken: appSession.token,
+    appSessionExpiresAt: appSession.access.expiresAt,
+    appSessionRefreshEarlySeconds: appSession.refreshEarlySeconds,
+    appSessionRefreshExpiresAt: appSession.refresh.expiresAt,
+    appSessionRefreshToken: appSession.refresh.token,
+    appSessionToken: appSession.access.token,
+    internalAppSessionPolicy,
     sessionData: validation.sessionData,
     userId: validation.userId,
     valid: true,

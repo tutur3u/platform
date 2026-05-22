@@ -7,6 +7,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getUpstashRestRedisClient } from '@tuturuuu/utils/upstash-rest';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { getCliAppSessionPolicy } from '@/lib/app-coordination/session-policy';
 
 const refreshSchema = z.object({
   refreshToken: z.string().trim().min(1),
@@ -101,8 +102,11 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const policy = await getCliAppSessionPolicy();
   const session = createCliAppSession({
+    accessExpiresInSeconds: policy.cliAccessTtlSeconds,
     email: data.user.email ?? verification.claims.email,
+    refreshExpiresInSeconds: policy.cliRefreshTtlSeconds,
     userId: verification.claims.sub,
   });
 

@@ -60,6 +60,7 @@ import {
   QrCodeIcon,
   Radio,
   ReceiptText,
+  RefreshCw,
   Repeat,
   RulerDimensionLine,
   ScanSearch,
@@ -1301,6 +1302,14 @@ export async function WorkspaceNavigationLinks({
               title: t('infrastructure-tabs.external_apps'),
               href: `/${personalOrWsId}/infrastructure/external-apps`,
               icon: <KeyRound className="h-5 w-5" />,
+              disabled:
+                withoutPermission('manage_workspace_secrets') &&
+                withoutPermission('manage_workspace_roles'),
+            },
+            {
+              title: t('infrastructure-tabs.app_coordination'),
+              href: `/${personalOrWsId}/infrastructure/app-coordination`,
+              icon: <RefreshCw className="h-5 w-5" />,
               disabled:
                 withoutPermission('manage_workspace_secrets') &&
                 withoutPermission('manage_workspace_roles'),

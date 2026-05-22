@@ -47,11 +47,15 @@ describe('cross-app server verification', () => {
     expect(response.headers.get('cache-control')).toBe('no-store');
     await expect(response.json()).resolves.toEqual({
       appSessionCreated: true,
+      appSessionRefreshEarlySeconds: 900,
       userId: 'user-1',
       valid: true,
     });
     expect(response.headers.get('set-cookie')).toContain(
       'tuturuuu_app_session=ttr_app_'
+    );
+    expect(response.headers.get('set-cookie')).toContain(
+      'tuturuuu_app_session_refresh=ttr_app_'
     );
     expect(response.headers.get('set-cookie')).toContain('HttpOnly');
     expect(response.headers.get('set-cookie')).not.toContain('Domain=');
@@ -61,7 +65,15 @@ describe('cross-app server verification', () => {
     const fetchMock = vi.fn().mockResolvedValue(
       Response.json({
         appSessionExpiresAt: '2026-01-01T00:00:00.000Z',
+        appSessionRefreshEarlySeconds: 120,
+        appSessionRefreshExpiresAt: '2026-01-31T00:00:00.000Z',
+        appSessionRefreshToken: 'ttr_app_central-refresh',
         appSessionToken: 'ttr_app_central-session',
+        internalAppSessionPolicy: {
+          internalAppAccessTtlSeconds: 600,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
         sessionData: { email: 'learn@example.com' },
         userId: 'user-2',
         valid: true,
@@ -108,6 +120,9 @@ describe('cross-app server verification', () => {
     expect(setCookie).toContain('tuturuuu_app_session=ttr_app_');
     expect(setCookie).toContain(
       'tuturuuu_web_app_session=ttr_app_central-session'
+    );
+    expect(setCookie).toContain(
+      'tuturuuu_web_app_session_refresh=ttr_app_central-refresh'
     );
   });
 
