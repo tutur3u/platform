@@ -1,4 +1,4 @@
-import { MindDashboard } from '@tuturuuu/mind-ui/dashboard';
+import { MindBoardIndex } from '@tuturuuu/mind-ui';
 import { requireMindUser } from '@/lib/access';
 
 export default async function MindWorkspacePage({
@@ -9,5 +9,5 @@ export default async function MindWorkspacePage({
   const { wsId } = await params;
   await requireMindUser();
 
-  return <MindDashboard wsId={wsId} />;
+  return <MindBoardIndex workspaceSlug={wsId} wsId={wsId} />;
 }

@@ -44,6 +44,7 @@ import {
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
   MORE_TOOLS_NAVIGATION_ID,
+  promoteArchivedWhenMoreToolsOnlyHasArchive,
   SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID,
   SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID,
   type SidebarNavigationPlacement,
@@ -839,7 +840,9 @@ export function Structure({
 
   const currentTitle = navState.titleHistory[navState.titleHistory.length - 1];
   const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
-  const filteredRootLinks = getFilteredLinks(preferredLinks);
+  const filteredRootLinks = promoteArchivedWhenMoreToolsOnlyHasArchive(
+    getFilteredLinks(preferredLinks)
+  );
   const decoratedCurrentLinks = decoratePreferenceActions(filteredCurrentLinks);
 
   const handleSidebarNavigation = () => {

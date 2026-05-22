@@ -5,6 +5,7 @@ import {
   createSidebarNavigationLayoutConfigForHiddenState,
   createSidebarNavigationLayoutConfigForPlacement,
   normalizeSidebarNavigationLayoutConfig,
+  promoteArchivedWhenMoreToolsOnlyHasArchive,
 } from '../sidebar-navigation-preferences';
 
 const links: (NavLink | null)[] = [
@@ -253,5 +254,59 @@ describe('sidebar navigation preferences', () => {
       more: ['forms', 'users', 'inventory'],
       root: ['tasks', 'calendar', 'finance'],
     });
+  });
+});
+
+describe('promoteArchivedWhenMoreToolsOnlyHasArchive', () => {
+  const archivedLink: NavLink = {
+    id: 'archived_navigation',
+    title: 'Archived',
+    href: '/personal/archived',
+  };
+
+  it('promotes Archived to root when More Tools has only Archived', () => {
+    const links: (NavLink | null)[] = [
+      {
+        id: 'more_tools',
+        title: 'More tools',
+        children: [archivedLink],
+      },
+    ];
+
+    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
+      archivedLink,
+    ]);
+  });
+
+  it('promotes Archived to root when More Tools has a separator and Archived', () => {
+    const links: (NavLink | null)[] = [
+      {
+        id: 'more_tools',
+        title: 'More tools',
+        children: [null, archivedLink],
+      },
+    ];
+
+    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
+      archivedLink,
+    ]);
+  });
+
+  it('keeps More Tools grouped when it has other visible children', () => {
+    const tasksLink: NavLink = {
+      id: 'tasks',
+      title: 'Tasks',
+      href: '/personal/tasks',
+    };
+    const moreTools: NavLink = {
+      id: 'more_tools',
+      title: 'More tools',
+      children: [tasksLink, archivedLink],
+    };
+    const links: (NavLink | null)[] = [moreTools];
+
+    expect(promoteArchivedWhenMoreToolsOnlyHasArchive(links)).toEqual([
+      moreTools,
+    ]);
   });
 });

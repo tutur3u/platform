@@ -2,15 +2,15 @@ import { isValidElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  MindDashboard: vi.fn(() => null),
+  MindBoardIndex: vi.fn(() => null),
   getWebMindWorkspaceContext: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error('not-found');
   }),
 }));
 
-vi.mock('@tuturuuu/mind-ui/dashboard', () => ({
-  MindDashboard: mocks.MindDashboard,
+vi.mock('@tuturuuu/mind-ui', () => ({
+  MindBoardIndex: mocks.MindBoardIndex,
 }));
 
 vi.mock('@/lib/mind-workspace-context', () => ({
@@ -36,7 +36,7 @@ describe('web Mind page parity', () => {
     });
   });
 
-  it('renders the shared Mind dashboard inside apps/web with the web route prefix', async () => {
+  it('renders the shared Mind board index inside apps/web with the web route prefix', async () => {
     const MindPage = (await import('./page')).default;
 
     const result = await MindPage({
@@ -45,9 +45,10 @@ describe('web Mind page parity', () => {
 
     expect(mocks.notFound).not.toHaveBeenCalled();
     expect(isValidElement(result)).toBe(true);
-    expect(result.type).toBe(mocks.MindDashboard);
+    expect(result.type).toBe(mocks.MindBoardIndex);
     expect(result.props).toMatchObject({
       mindPrefix: '/mind',
+      workspaceSlug: 'personal',
       wsId: 'workspace-1',
     });
   });

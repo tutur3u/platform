@@ -14,6 +14,7 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { MindAiPanel } from './mind-ai-panel';
+import { MindBoardSelectPrompt } from './mind-board-select-prompt';
 import { MindCanvas } from './mind-canvas';
 import { MindDashboardHeader } from './mind-dashboard-header';
 import { MindEmptyState } from './mind-empty-state';
@@ -23,10 +24,16 @@ import { getNodeMetadata } from './model';
 type Props = {
   initialBoardId?: string;
   mindPrefix?: string;
+  workspaceSlug?: string;
   wsId: string;
 };
 
-export function MindDashboard({ initialBoardId, wsId }: Props) {
+export function MindDashboard({
+  initialBoardId,
+  mindPrefix,
+  workspaceSlug,
+  wsId,
+}: Props) {
   const t = useTranslations('mind');
   const queryClient = useQueryClient();
   const selectedBoardId = initialBoardId ?? null;
@@ -45,7 +52,7 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
   const boardLoadFailed = boardsQuery.isError;
   const hasNoBoards =
     !boardLoadFailed && !boardsQuery.isLoading && boards.length === 0;
-  const activeBoardId = selectedBoardId ?? boards[0]?.id ?? null;
+  const activeBoardId = selectedBoardId ?? null;
   const activeBoard = activeBoardId
     ? boards.find((board) => board.id === activeBoardId)
     : null;
@@ -83,6 +90,31 @@ export function MindDashboard({ initialBoardId, wsId }: Props) {
     }
     return [...values].sort((a, b) => a.localeCompare(b));
   }, [snapshot?.nodes]);
+
+  if (
+    !activeBoardId &&
+    !boardsQuery.isLoading &&
+    !boardLoadFailed &&
+    boards.length > 0 &&
+    workspaceSlug
+  ) {
+    return (
+      <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-background md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
+        <MindBoardSelectPrompt
+          mindPrefix={mindPrefix}
+          workspaceSlug={workspaceSlug}
+        />
+      </main>
+    );
+  }
+
+  if (hasNoBoards) {
+    return (
+      <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-background md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
+        <MindEmptyState />
+      </main>
+    );
+  }
 
   return (
     <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-root-background text-foreground md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">

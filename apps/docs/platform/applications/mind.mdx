@@ -33,6 +33,21 @@ host wrappers for auth, workspace resolution, and route prefixing only. Future
 Mind feature work belongs in `packages/mind-ui` or the centralized Mind APIs so
 the standalone app and web-hosted app stay 1:1.
 
+## Board library vs studio
+
+The workspace index route is a **board library**, not the canvas studio:
+
+- **Web**: `/{wsId}/mind` lists boards (search, create, pick). Selecting or
+  creating a board navigates to `/{wsId}/mind/boards/{boardId}` for the studio.
+- **Satellite**: `/{wsId}` is the same board library; `/{wsId}/boards/{boardId}`
+  is the studio.
+
+`MindBoardIndex` from `@tuturuuu/mind-ui` owns the index experience. Do not
+auto-select the first board on the index route. `MindDashboard` only mounts on
+board routes and receives `initialBoardId`; it must not fall back to
+`boards[0]`. If a board route loads without a selected board, prompt the user to
+return to the index instead of showing an infinite loading state.
+
 ## API Ownership
 
 Protected Mind data stays behind `apps/web` APIs:

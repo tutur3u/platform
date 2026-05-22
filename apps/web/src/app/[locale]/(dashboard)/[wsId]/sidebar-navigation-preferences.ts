@@ -4,6 +4,7 @@ export const SIDEBAR_NAVIGATION_LAYOUT_CONFIG_ID = 'SIDEBAR_NAVIGATION_LAYOUT';
 export const SIDEBAR_RECENT_NAVIGATION_ENABLED_CONFIG_ID =
   'SIDEBAR_RECENT_NAVIGATION_ENABLED';
 export const MORE_TOOLS_NAVIGATION_ID = 'more_tools';
+export const ARCHIVED_NAVIGATION_ID = 'archived_navigation';
 export const SETTINGS_NAVIGATION_ID = 'settings';
 
 export type SidebarNavigationPlacement = 'root' | 'more';
@@ -644,4 +645,27 @@ export function createSidebarNavigationLayoutConfigForPlacement(
         ? uniqueIds(insertRootNavigationId(rootWithoutTarget, id))
         : uniqueIds(rootWithoutTarget),
   };
+}
+
+export function promoteArchivedWhenMoreToolsOnlyHasArchive(
+  links: (NavLink | null)[]
+): (NavLink | null)[] {
+  return links.flatMap((link) => {
+    if (!link || link.id !== MORE_TOOLS_NAVIGATION_ID) {
+      return [link];
+    }
+
+    const nonNullChildren = (link.children ?? []).filter(
+      (child): child is NavLink => Boolean(child)
+    );
+
+    if (
+      nonNullChildren.length === 1 &&
+      nonNullChildren[0]?.id === ARCHIVED_NAVIGATION_ID
+    ) {
+      return [nonNullChildren[0]];
+    }
+
+    return [link];
+  });
 }

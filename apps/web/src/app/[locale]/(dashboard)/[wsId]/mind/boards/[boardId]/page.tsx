@@ -26,6 +26,7 @@ export default async function MindBoardPage({ params }: PageProps) {
     <MindDashboard
       initialBoardId={boardId}
       mindPrefix="/mind"
+      workspaceSlug={wsId}
       wsId={context.wsId}
     />
   );

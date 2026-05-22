@@ -48,7 +48,9 @@ Pin, unpin, and archive also appear on tier-gated items that render grayed out i
 
 Dashboard and Settings are locked and cannot be pinned, unpinned, or archived.
 
-Archived items appear in a compact **Archived** dropdown at the bottom of **More tools**. More tools remains visible when archived items exist, even if every normal More tools child is archived. Selecting an archived item from that dropdown restores it to its previous root or More tools placement.
+Archived items appear in a compact **Archived** dropdown at the bottom of **More tools**. More tools remains visible when archived items exist alongside other visible More tools children.
+
+When every normal More tools child is hidden or unavailable and **Archived** is the only remaining visible child, structure promotion lifts **Archived** to the root sidebar instead of leaving an empty More tools wrapper. Selecting an archived item from that dropdown (or the root Archived entry) restores it to its previous root or More tools placement.
 
 ## Visibility rules
 
