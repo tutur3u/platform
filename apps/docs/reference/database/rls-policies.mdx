@@ -352,6 +352,8 @@ Required controls:
 - Revoke table privileges from `public`, `anon`, and `authenticated`.
 - Keep table access behind service-role API routes that perform the workspace
   permission check first.
+- Keep service-role grants explicit. The proxy route is the public contract; the
+  table is not a browser, mobile, REST, or GraphQL contract.
 - Drop permissive member-only RLS policies on the underlying tables; use
   service-role-only policies when an explicit policy is useful for review.
 - Add the tables to `PROXY_ONLY_PUBLIC_TABLES` in
@@ -359,6 +361,12 @@ Required controls:
   fail loudly during app development.
 - Revoke direct `EXECUTE` from exposed helper RPCs unless the function performs
   its own caller authorization.
+
+The migration `20260522172925_harden_proxy_only_public_tables.sql` applies this
+transition guardrail to the current `PROXY_ONLY_PUBLIC_TABLES` set and also
+revokes automatic grants for future `public` tables, functions, and sequences.
+New migrations that intentionally expose a public Data API surface must now add
+the matching explicit `GRANT` statements in the same migration.
 
 ```sql
 revoke all privileges on table public.sensitive_workspace_table
@@ -385,10 +393,11 @@ all.
 Default new protected database access to the existing `private` schema unless
 the data is intentionally public. Do not add `private` to the Supabase Data API
 exposed schemas or extra search path. New migrations should prefer direct
-server-side Postgres access from `apps/web` through `getPlatformSql()` when an
-app route or server component needs private table or helper access. This keeps
-browser and mobile consumers on centralized `apps/web` API routes while avoiding
-new Supabase REST endpoints for private data.
+server-owned access from `apps/web`: call private RPCs through the server-side
+Supabase admin client with `schema('private').rpc(...)`, and use
+`getPlatformSql()` only for private table access that is not modeled as an RPC.
+This keeps browser and mobile consumers on centralized `apps/web` API routes
+while avoiding new Supabase REST endpoints for private data.
 
 Legacy `public` bridging RPCs may exist while older code is migrated, but do
 not add new public RPCs for tables or protected helper queries that can be
