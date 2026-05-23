@@ -14,6 +14,7 @@ const {
   getDockerNextBuildCpus,
   getDockerNodeMaxOldSpaceSizeMb,
   getDockerStaticGenerationMaxConcurrency,
+  getEffectiveDockerMemoryMb,
   mergeNodeOptions,
   parseMemoryToMb,
 } = require('./run-web-docker-next-build.js');
@@ -219,11 +220,11 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
 
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '8g' }),
-    4096
+    7168
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '10g' }),
-    6144
+    8192
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '12g' }),
@@ -250,14 +251,14 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
       DOCKER_WEB_BUILD_MEMORY: '16g',
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
     }),
-    4096
+    7168
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({
       DOCKER_WEB_BUILD_MEMORY: '12g',
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
     }),
-    12288
+    8192
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({
@@ -265,6 +266,13 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
     }),
     12288
+  );
+  assert.equal(
+    getEffectiveDockerMemoryMb({
+      DOCKER_WEB_BUILD_MEMORY: '24g',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: '16g',
+    }),
+    16 * 1024
   );
 });
 
@@ -488,6 +496,10 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_REACT_COMPILER:-0' +
         '}',
+      '      DOCKER_WEB_WEBPACK_BUILD_WORKER: $' +
+        '{' +
+        'DOCKER_WEB_WEBPACK_BUILD_WORKER:-1' +
+        '}',
       '',
     ].join('\n'),
     ''
@@ -501,6 +513,7 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
   assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
+  assert.match(errors, /DOCKER_WEB_WEBPACK_BUILD_WORKER/);
 });
 
 test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {

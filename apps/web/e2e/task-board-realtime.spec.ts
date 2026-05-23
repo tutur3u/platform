@@ -120,22 +120,25 @@ async function waitForTaskDescriptionEditor(
 }
 
 async function typeTwoParagraphDescription(
+  targetPage: Page,
   editor: Locator,
   firstLine: string,
   secondLine: string
 ) {
+  await targetPage.bringToFront();
   await editor.click();
-  await editor.pressSequentially(firstLine, { delay: 10 });
+  await expect(editor).toBeFocused();
+  await targetPage.keyboard.type(firstLine, { delay: 10 });
   await expect(editor).toContainText(firstLine, { timeout: 10_000 });
 
-  await editor.press('Enter');
+  await targetPage.keyboard.press('Enter');
   await expect(editor.locator('p')).toHaveCount(2, {
     timeout: 30_000,
   });
   await expect(editor.locator('p').nth(0)).toContainText(firstLine);
   await expect(editor.locator('p').nth(1)).toHaveText('');
 
-  await editor.pressSequentially(secondLine, { delay: 10 });
+  await targetPage.keyboard.type(secondLine, { delay: 10 });
   await expect(editor.locator('p')).toHaveCount(2, {
     timeout: 30_000,
   });
@@ -281,7 +284,12 @@ test.describe('Task board realtime and task mutations', () => {
         }
       );
 
-      await typeTwoParagraphDescription(firstEditor, firstLine, secondLine);
+      await typeTwoParagraphDescription(
+        page,
+        firstEditor,
+        firstLine,
+        secondLine
+      );
 
       await expect(secondEditor.locator('p')).toHaveCount(2, {
         timeout: 30_000,
@@ -293,9 +301,11 @@ test.describe('Task board realtime and task mutations', () => {
         timeout: 30_000,
       });
 
+      await page.bringToFront();
       await firstEditor.click();
-      await firstEditor.press('ControlOrMeta+A');
-      await firstEditor.press('Backspace');
+      await expect(firstEditor).toBeFocused();
+      await page.keyboard.press('ControlOrMeta+A');
+      await page.keyboard.press('Backspace');
 
       await expect(secondEditor).not.toContainText(firstLine, {
         timeout: 30_000,

@@ -14,9 +14,11 @@ const NEXT_BIN = path.join(
   'next'
 );
 const AUTO_NODE_MAX_OLD_SPACE_SIZE = 'auto';
-const NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = [16384, 12288, 8192, 6144, 4096];
+const NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = [
+  16384, 12288, 8192, 7168, 6144, 4096,
+];
 const MIN_NODE_MAX_OLD_SPACE_SIZE_MB = 4096;
-const DOCKER_MEMORY_RESERVE_MB = 4096;
+const DOCKER_MEMORY_RESERVE_MB = 1024;
 const SMALL_DOCKER_MEMORY_THRESHOLD_MB = 10 * 1024;
 const LARGE_DOCKER_MEMORY_THRESHOLD_MB = 16 * 1024;
 const TINY_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY = 1;
@@ -74,7 +76,10 @@ function parseMemoryToMb(value) {
 function getAutoDockerNodeMaxOldSpaceSizeMb(env) {
   const dockerMemoryMb = parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT);
   const buildMemoryMb = parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
-  const availableMemoryMb = dockerMemoryMb ?? buildMemoryMb;
+  const availableMemoryMb =
+    dockerMemoryMb && buildMemoryMb
+      ? Math.min(dockerMemoryMb, buildMemoryMb)
+      : (dockerMemoryMb ?? buildMemoryMb);
   const buildHeapBudgetMb = availableMemoryMb
     ? availableMemoryMb - DOCKER_MEMORY_RESERVE_MB
     : null;
@@ -141,9 +146,7 @@ function getDockerStaticGenerationMaxConcurrency(env) {
     return override;
   }
 
-  const dockerMemoryMb =
-    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT) ??
-    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
+  const dockerMemoryMb = getEffectiveDockerMemoryMb(env);
 
   if (dockerMemoryMb && dockerMemoryMb < SMALL_DOCKER_MEMORY_THRESHOLD_MB) {
     return TINY_DOCKER_STATIC_GENERATION_MAX_CONCURRENCY;
@@ -163,9 +166,7 @@ function getDockerNextBuildCpus(env) {
     return override;
   }
 
-  const dockerMemoryMb =
-    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT) ??
-    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY);
+  const dockerMemoryMb = getEffectiveDockerMemoryMb(env);
 
   if (dockerMemoryMb && dockerMemoryMb < SMALL_DOCKER_MEMORY_THRESHOLD_MB) {
     return TINY_DOCKER_NEXT_BUILD_CPUS;
@@ -176,6 +177,15 @@ function getDockerNextBuildCpus(env) {
   }
 
   return LARGE_DOCKER_NEXT_BUILD_CPUS;
+}
+
+function getEffectiveDockerMemoryMb(env) {
+  const memoryValues = [
+    parseMemoryToMb(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT),
+    parseMemoryToMb(env.DOCKER_WEB_BUILD_MEMORY),
+  ].filter((value) => value && Number.isFinite(value) && value > 0);
+
+  return memoryValues.length > 0 ? Math.min(...memoryValues) : null;
 }
 
 function splitNodeOptions(currentOptions) {
@@ -308,6 +318,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  getEffectiveDockerMemoryMb,
   getAutoDockerNodeMaxOldSpaceSizeMb,
   getDockerNextBuildArgs,
   getDockerNextBuildCpus,

@@ -348,10 +348,14 @@ function validateDockerfile({
       !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
       !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
         builderStage
+      ) ||
+      !builderStage.includes('ARG DOCKER_WEB_WEBPACK_BUILD_WORKER=1') ||
+      !/ENV DOCKER_WEB_WEBPACK_BUILD_WORKER=\$\{DOCKER_WEB_WEBPACK_BUILD_WORKER\}/u.test(
+        builderStage
       )
     ) {
       errors.push(
-        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, and React Compiler build args.'
+        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, React Compiler, and Webpack build worker build args.'
       );
     }
 
@@ -592,6 +596,10 @@ function validateDockerProdCompose(composeContent) {
     '      DOCKER_WEB_REACT_COMPILER: ' +
       '${' +
       'DOCKER_WEB_REACT_COMPILER:-0' +
+      '}',
+    '      DOCKER_WEB_WEBPACK_BUILD_WORKER: ' +
+      '${' +
+      'DOCKER_WEB_WEBPACK_BUILD_WORKER:-1' +
       '}',
     '  web:',
     '  web-blue:',

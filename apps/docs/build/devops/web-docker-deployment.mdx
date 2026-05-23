@@ -112,6 +112,16 @@ Compose volumes, and baked blue/green images do not accumulate. E2E also sets
 BuildKit cache/state is disposable; set
 `E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD=0` only when debugging a local E2E build
 and you intentionally want to keep BuildKit cache.
+E2E build caps default to `auto` for memory, CPU, and BuildKit max parallelism.
+The runner reads Docker's current `MemTotal` before booting the stack, forwards
+that value as `DOCKER_WEB_DOCKER_MEMORY_LIMIT`, and resolves the BuildKit memory
+cap just under the active Docker Desktop allocation. On allocations below 10 GB,
+the E2E runner also uses the Webpack Next build path unless
+`DOCKER_WEB_NEXT_BUILD_ENGINE` is explicitly set, because that path cooperates
+better with the repo's capped Node heap during local Playwright runs. It also
+sets `DOCKER_WEB_WEBPACK_BUILD_WORKER=0` unless explicitly overridden, keeping
+the low-memory Webpack build inside the main Next process instead of adding a
+separate build-worker process.
 
 On GitHub-hosted runners, the E2E workflow frees disk before restoring or
 loading cached Supabase Docker images. Keep that cleanup ahead of the cache load:
@@ -720,6 +730,13 @@ How it works:
   reuses the remote Buildx builder named by `DOCKER_WEB_BUILD_BUILDER_NAME`.
   The container is named `${COMPOSE_PROJECT_NAME:-tuturuuu}-buildkit-1`, so it
   stays visually grouped under the `tuturuuu` Docker Desktop stack.
+- The BuildKit caps accept `auto`. Auto memory uses Docker's reported memory
+  limit minus a small host overhead buffer, rounded down to MiB precision; auto
+  CPU uses 1 CPU below 10 GB, 2 CPUs below 16 GB, and 4 CPUs on larger Docker
+  allocations; auto max parallelism uses 1 below 16 GB and 2 above that. The
+  E2E runner uses these auto caps by default so local Playwright verification
+  adapts to the current Docker Desktop setting without requiring one-off env
+  overrides.
 - `DOCKER_WEB_BUILD_MEMORY` caps the Compose-owned BuildKit service's memory
   budget.
 - `DOCKER_WEB_BUILD_CPUS` sets the BuildKit service CPU budget.
@@ -752,14 +769,15 @@ How it works:
   restart, or `1` to force it on a larger host.
 - Docker web builds use `bun run build:web:docker`, which keeps the normal web
   build dependency graph, sets `NODE_OPTIONS=--max-old-space-size` to at least
-  4 GB, and auto-scales the heap to 4 GB, 6 GB, 8 GB, 12 GB, or 16 GB based on
-  Docker's reported memory limit when available, falling back to
+  4 GB, 6 GB, 7 GB, 8 GB, 12 GB, or 16 GB based on the lower of Docker's
+  reported memory limit and the selected BuildKit memory cap, falling back to
   `DOCKER_WEB_BUILD_MEMORY` for environments where Docker memory cannot be
   detected. The helper reads Docker's `MemTotal` and forwards it as
-  `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets reserve 4 GB of Docker memory
-  for BuildKit, the active runtime lane, and sidecar overhead before selecting
-  the Node heap bucket. Docker production builds default to Turbopack under the
-  real Node 24 runtime with App Router-only compilation and React
+  `DOCKER_WEB_DOCKER_MEMORY_LIMIT`; auto buckets reserve 1 GB of effective
+  Docker build memory for BuildKit, the active runtime lane, and sidecar
+  overhead before selecting the Node heap bucket. Docker production builds
+  default to Turbopack under the real Node 24 runtime with App Router-only
+  compilation and React
   Compiler disabled. This avoids Bun runtime crashes while loading native Next
   SWC modules and avoids Webpack heap exhaustion on smaller watcher hosts. The
   Docker `builder` stage is based on
@@ -772,8 +790,10 @@ How it works:
   heap value only when you need to override the bucket selection; values below
   4096 MB are rejected. Set `DOCKER_WEB_NEXT_APP_ONLY=0`,
   `DOCKER_WEB_REACT_COMPILER=1`, or `DOCKER_WEB_NEXT_BUILD_ENGINE=webpack` only
-  on hosts with enough memory headroom for those build paths. Keep the default
-  Turbopack path for local Docker Desktop allocations and watcher hosts unless
+  when the host has enough memory headroom or you are running a constrained
+  local E2E build that needs the Webpack path's predictable heap behavior. Keep
+  `DOCKER_WEB_WEBPACK_BUILD_WORKER=0` scoped to constrained local runs; keep the
+  default Turbopack path and Webpack build worker for production watcher hosts unless
   Webpack-specific diagnostics are needed.
 - Docker standalone Next builds default static page generation to a 180 second
   timeout, and auto-scale the inner Next build CPU count plus static generation

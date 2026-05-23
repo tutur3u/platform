@@ -29,6 +29,13 @@ const LEGACY_BUILDER_NAMES = ['platform-web-capped-builder'];
 const BUILD_STALL_RECOVERY_REASON = 'build-stall-timeout';
 const CACHED_BUILD_ERROR_RECOVERY_REASON = 'cached-build-error';
 const DISABLED_ENV_VALUES = new Set(['0', 'false', 'no', 'off']);
+const AUTO_BUILD_RESOURCE = 'auto';
+const BYTES_PER_GIB = 1024 * 1024 * 1024;
+const BYTES_PER_MIB = 1024 * 1024;
+const AUTO_BUILD_MEMORY_HEADROOM_BYTES = 512 * 1024 * 1024;
+const DEFAULT_AUTO_BUILD_MEMORY = '12g';
+const LOW_DOCKER_MEMORY_THRESHOLD_BYTES = 10 * BYTES_PER_GIB;
+const LARGE_DOCKER_MEMORY_THRESHOLD_BYTES = 16 * BYTES_PER_GIB;
 
 function parsePositiveNumber(value) {
   if (typeof value === 'number') {
@@ -59,6 +66,146 @@ function parsePositiveInteger(value) {
   return parsed;
 }
 
+function parseMemoryToBytes(value) {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalized = value.trim().toLowerCase();
+
+  if (!normalized) {
+    return null;
+  }
+
+  const match = normalized.match(/^([0-9]+(?:\.[0-9]+)?)([kmgt]i?b?|b)?$/u);
+
+  if (!match) {
+    return null;
+  }
+
+  const amount = Number(match[1]);
+
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return null;
+  }
+
+  const unit = match[2] ?? 'b';
+  const multiplier =
+    unit === 't' || unit === 'tb' || unit === 'tib'
+      ? 1024 * BYTES_PER_GIB
+      : unit === 'g' || unit === 'gb' || unit === 'gib'
+        ? BYTES_PER_GIB
+        : unit === 'm' || unit === 'mb' || unit === 'mib'
+          ? 1024 * 1024
+          : unit === 'k' || unit === 'kb' || unit === 'kib'
+            ? 1024
+            : 1;
+
+  return Math.floor(amount * multiplier);
+}
+
+function getDockerMemoryLimitBytes(env = process.env) {
+  return parseMemoryToBytes(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT);
+}
+
+function getAutoBuildMemory(env = process.env) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (!dockerMemoryLimitBytes) {
+    return DEFAULT_AUTO_BUILD_MEMORY;
+  }
+
+  const buildMemoryMib = Math.max(
+    4096,
+    Math.floor(
+      (dockerMemoryLimitBytes - AUTO_BUILD_MEMORY_HEADROOM_BYTES) /
+        BYTES_PER_MIB
+    )
+  );
+
+  return `${buildMemoryMib}m`;
+}
+
+function getAutoBuildCpus(env = process.env) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (
+    dockerMemoryLimitBytes &&
+    dockerMemoryLimitBytes < LOW_DOCKER_MEMORY_THRESHOLD_BYTES
+  ) {
+    return 1;
+  }
+
+  if (
+    dockerMemoryLimitBytes &&
+    dockerMemoryLimitBytes < LARGE_DOCKER_MEMORY_THRESHOLD_BYTES
+  ) {
+    return 2;
+  }
+
+  return 4;
+}
+
+function getAutoBuildMaxParallelism(env = process.env) {
+  const dockerMemoryLimitBytes = getDockerMemoryLimitBytes(env);
+
+  if (
+    dockerMemoryLimitBytes &&
+    dockerMemoryLimitBytes < LARGE_DOCKER_MEMORY_THRESHOLD_BYTES
+  ) {
+    return 1;
+  }
+
+  return 2;
+}
+
+function normalizeAutoString(value) {
+  return (
+    typeof value === 'string' &&
+    value.trim().toLowerCase() === AUTO_BUILD_RESOURCE
+  );
+}
+
+function normalizeBuildMemory(value, env = process.env) {
+  if (value == null) {
+    return null;
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const normalizedValue = value.trim();
+
+  if (!normalizedValue) {
+    return null;
+  }
+
+  return normalizeAutoString(normalizedValue)
+    ? getAutoBuildMemory(env)
+    : normalizedValue;
+}
+
+function normalizeBuildCpus(value, env = process.env) {
+  if (value == null) {
+    return null;
+  }
+
+  return normalizeAutoString(value)
+    ? getAutoBuildCpus(env)
+    : parsePositiveNumber(value);
+}
+
+function normalizeBuildMaxParallelism(value, env = process.env) {
+  if (value == null) {
+    return null;
+  }
+
+  return normalizeAutoString(value)
+    ? getAutoBuildMaxParallelism(env)
+    : parsePositiveInteger(value);
+}
+
 function renderBuildkitConfig(maxParallelism) {
   if (!maxParallelism) {
     return '';
@@ -84,16 +231,13 @@ function normalizeBuilderConfig(rawConfig, env = process.env) {
     rawConfig?.builderName ||
     env.DOCKER_WEB_BUILD_BUILDER_NAME ||
     DEFAULT_BUILDER_NAME;
-  const cpus = parsePositiveNumber(
-    rawConfig?.cpus ?? env.DOCKER_WEB_BUILD_CPUS
-  );
-  const maxParallelism = parsePositiveInteger(
-    rawConfig?.maxParallelism ?? env.DOCKER_WEB_BUILD_MAX_PARALLELISM
-  );
-  const memory =
-    typeof (rawConfig?.memory ?? env.DOCKER_WEB_BUILD_MEMORY) === 'string'
-      ? (rawConfig?.memory ?? env.DOCKER_WEB_BUILD_MEMORY).trim() || null
-      : null;
+  const rawCpus = rawConfig?.cpus ?? env.DOCKER_WEB_BUILD_CPUS;
+  const rawMaxParallelism =
+    rawConfig?.maxParallelism ?? env.DOCKER_WEB_BUILD_MAX_PARALLELISM;
+  const rawMemory = rawConfig?.memory ?? env.DOCKER_WEB_BUILD_MEMORY;
+  const cpus = normalizeBuildCpus(rawCpus, env);
+  const maxParallelism = normalizeBuildMaxParallelism(rawMaxParallelism, env);
+  const memory = normalizeBuildMemory(rawMemory, env);
   const endpoint =
     rawConfig?.endpoint ||
     env.DOCKER_WEB_BUILDKIT_ENDPOINT ||
@@ -741,12 +885,17 @@ module.exports = {
   ensureBuildkitComposeService,
   ensureBuildkitBuilder,
   getBuildkitPaths,
+  getAutoBuildCpus,
+  getAutoBuildMaxParallelism,
+  getAutoBuildMemory,
   getBuilderConfigFingerprint,
+  getDockerMemoryLimitBytes,
   isBuildStallTimeoutError,
   isBunTarballExtractionError,
   isCachedBuildError,
   BUILD_STALL_RECOVERY_REASON,
   normalizeBuilderConfig,
+  parseMemoryToBytes,
   parsePositiveInteger,
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,

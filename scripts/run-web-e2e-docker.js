@@ -21,8 +21,9 @@ const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://localhost:7803/login';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
+const LOW_DOCKER_MEMORY_LIMIT_BYTES = 10 * 1024 * 1024 * 1024;
 
-function getDockerWebUpArgs(envFilePath) {
+function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
     'up',
     '--mode',
@@ -31,11 +32,11 @@ function getDockerWebUpArgs(envFilePath) {
     'blue-green',
     '--reset-supabase',
     '--build-memory',
-    process.env.E2E_DOCKER_BUILD_MEMORY ?? '12g',
+    env.E2E_DOCKER_BUILD_MEMORY ?? 'auto',
     '--build-cpus',
-    process.env.E2E_DOCKER_BUILD_CPUS ?? '4',
+    env.E2E_DOCKER_BUILD_CPUS ?? 'auto',
     '--build-max-parallelism',
-    process.env.E2E_DOCKER_BUILD_MAX_PARALLELISM ?? '1',
+    env.E2E_DOCKER_BUILD_MAX_PARALLELISM ?? 'auto',
     '--env-file',
     envFilePath,
   ];
@@ -201,6 +202,51 @@ function parseE2EProjectImageTags(imageListOutput, projectName) {
   return [...tags].sort();
 }
 
+async function getDockerMemoryLimit({
+  env,
+  runCommandForOutput: runForOutput = runCommandForOutput,
+} = {}) {
+  try {
+    const result = await runForOutput(
+      'docker',
+      ['info', '--format', '{{json .MemTotal}}'],
+      { env }
+    );
+    const parsed = Number.parseInt(result.stdout.trim(), 10);
+
+    return Number.isFinite(parsed) && parsed > 0 ? String(parsed) : null;
+  } catch {
+    return null;
+  }
+}
+
+function applyLocalE2EBuildDefaults(env) {
+  const dockerMemoryLimit = Number.parseInt(
+    String(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT ?? '').trim(),
+    10
+  );
+
+  if (
+    Number.isFinite(dockerMemoryLimit) &&
+    dockerMemoryLimit > 0 &&
+    dockerMemoryLimit < LOW_DOCKER_MEMORY_LIMIT_BYTES
+  ) {
+    const nextEnv = { ...env };
+
+    if (!nextEnv.DOCKER_WEB_NEXT_BUILD_ENGINE) {
+      nextEnv.DOCKER_WEB_NEXT_BUILD_ENGINE = 'webpack';
+    }
+
+    if (!nextEnv.DOCKER_WEB_WEBPACK_BUILD_WORKER) {
+      nextEnv.DOCKER_WEB_WEBPACK_BUILD_WORKER = '0';
+    }
+
+    return nextEnv;
+  }
+
+  return env;
+}
+
 async function removeE2EProjectImages({
   env,
   projectName = getE2EComposeProjectName(env),
@@ -243,7 +289,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
   const envFilePath = options.envFilePath ?? DEFAULT_ENV_FILE;
   ensureLocalE2EEnvFile(envFilePath);
 
-  const env = {
+  let env = {
     ...createLocalE2EProcessEnv(process.env, {
       envFilePath,
       rootDir: ROOT_DIR,
@@ -253,6 +299,19 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
       process.env.E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD ?? '1',
   };
+  const dockerMemoryLimit = await getDockerMemoryLimit({
+    env,
+    runCommandForOutput,
+  });
+
+  if (dockerMemoryLimit && !env.DOCKER_WEB_DOCKER_MEMORY_LIMIT) {
+    env = {
+      ...env,
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
+    };
+  }
+
+  env = applyLocalE2EBuildDefaults(env);
 
   assertSafeE2EEnvironment(env);
 
@@ -262,7 +321,7 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
   try {
     stackTouched = true;
     await runDockerWebWorkflow(
-      parseDockerWebArgs(getDockerWebUpArgs(envFilePath)),
+      parseDockerWebArgs(getDockerWebUpArgs(envFilePath, env)),
       {
         env,
         envFilePath,
@@ -314,7 +373,9 @@ module.exports = {
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
   E2E_COMPOSE_PROJECT_PREFIX,
+  applyLocalE2EBuildDefaults,
   ensureLocalE2EEnvFile,
+  getDockerMemoryLimit,
   getE2EComposeProjectName,
   getDockerWebDownArgs,
   getDockerWebUpArgs,

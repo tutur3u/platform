@@ -10,10 +10,15 @@ const {
   DEFAULT_BUILDER_NAME,
   DEFAULT_BUILDKIT_HOST_PORT,
   ensureBuildkitBuilder,
+  getAutoBuildCpus,
+  getAutoBuildMaxParallelism,
+  getAutoBuildMemory,
   getBuildkitPaths,
   getBuilderConfigFingerprint,
+  getDockerMemoryLimitBytes,
   LEGACY_BUILDER_NAMES,
   normalizeBuilderConfig,
+  parseMemoryToBytes,
   parsePositiveInteger,
   parsePositiveNumber,
   pruneBuildkitCacheAfterBuild,
@@ -61,6 +66,55 @@ test('normalizeBuilderConfig reads throttling defaults from env', () => {
       endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
       maxParallelism: 2,
       memory: '16g',
+    }
+  );
+});
+
+test('normalizeBuilderConfig resolves auto throttling from current Docker memory', () => {
+  const currentDockerMemory = String(9364279296);
+
+  assert.equal(parseMemoryToBytes('8g'), 8 * 1024 * 1024 * 1024);
+  assert.equal(
+    getDockerMemoryLimitBytes({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
+    }),
+    9364279296
+  );
+  assert.equal(
+    getAutoBuildMemory({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
+    }),
+    '8418m'
+  );
+  assert.equal(
+    getAutoBuildCpus({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
+    }),
+    1
+  );
+  assert.equal(
+    getAutoBuildMaxParallelism({
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
+    }),
+    1
+  );
+  assert.deepEqual(
+    normalizeBuilderConfig(
+      {
+        cpus: 'auto',
+        maxParallelism: 'auto',
+        memory: 'auto',
+      },
+      {
+        DOCKER_WEB_DOCKER_MEMORY_LIMIT: currentDockerMemory,
+      }
+    ),
+    {
+      builderName: DEFAULT_BUILDER_NAME,
+      cpus: 1,
+      endpoint: `tcp://127.0.0.1:${DEFAULT_BUILDKIT_HOST_PORT}`,
+      maxParallelism: 1,
+      memory: '8418m',
     }
   );
 });
@@ -679,7 +733,7 @@ test('production Docker root scripts keep the default build caps', () => {
   );
   assert.match(
     runWebDockerNextBuildScript,
-    /NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = \[\s*16384, 12288, 8192, 6144, 4096,?\s*\]/
+    /NODE_MAX_OLD_SPACE_SIZE_BUCKETS_MB = \[\s*16384, 12288, 8192, 7168, 6144, 4096,?\s*\]/
   );
   assert.match(
     runWebDockerNextBuildScript,
@@ -706,6 +760,7 @@ test('production Docker root scripts keep the default build caps', () => {
     /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
+  assert.match(webNextConfig, /DOCKER_WEB_WEBPACK_BUILD_WORKER/);
   assert.match(
     webNextConfig,
     /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/

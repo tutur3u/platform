@@ -25,6 +25,24 @@ function parsePositiveIntegerEnv(name: string, fallback?: number) {
   return parsed;
 }
 
+function parseBooleanEnv(name: string, fallback: boolean) {
+  const rawValue = process.env[name]?.trim().toLowerCase();
+
+  if (!rawValue) {
+    return fallback;
+  }
+
+  if (['1', 'true', 'yes', 'on'].includes(rawValue)) {
+    return true;
+  }
+
+  if (['0', 'false', 'no', 'off'].includes(rawValue)) {
+    return false;
+  }
+
+  throw new Error(`${name} must be a boolean value.`);
+}
+
 const staticPageGenerationTimeout = parsePositiveIntegerEnv(
   'DOCKER_WEB_STATIC_PAGE_GENERATION_TIMEOUT',
   isDockerStandaloneBuild ? 180 : undefined
@@ -36,6 +54,10 @@ const staticGenerationMaxConcurrency = parsePositiveIntegerEnv(
 const dockerNextBuildCpus = parsePositiveIntegerEnv(
   'DOCKER_WEB_NEXT_BUILD_CPUS',
   isDockerStandaloneBuild ? 4 : undefined
+);
+const webpackBuildWorkerEnabled = parseBooleanEnv(
+  'DOCKER_WEB_WEBPACK_BUILD_WORKER',
+  true
 );
 
 const nextConfig: NextConfig = {
@@ -54,7 +76,7 @@ const nextConfig: NextConfig = {
     ...(serwistConfig.experimental ?? {}),
     ...(isDockerStandaloneBuild
       ? {
-          webpackBuildWorker: true,
+          webpackBuildWorker: webpackBuildWorkerEnabled,
           webpackMemoryOptimizations: true,
         }
       : {}),
