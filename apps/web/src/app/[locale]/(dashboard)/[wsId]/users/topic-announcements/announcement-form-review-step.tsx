@@ -1,36 +1,18 @@
 'use client';
 
-import { CalendarClock, Eye, Save, Send } from '@tuturuuu/icons';
+import { Eye } from '@tuturuuu/icons';
 import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
 import type { UserGroup } from '@tuturuuu/types/primitives/UserGroup';
 import { Button } from '@tuturuuu/ui/button';
-import { DateTimePicker } from '@tuturuuu/ui/date-time-picker';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { AnnouncementDeliveryOptions } from './announcement-delivery-options';
+import { AnnouncementEmailPreviewPanel } from './announcement-email-preview-panel';
 import type {
   AnnouncementDeliveryMode,
   AnnouncementFormValues,
 } from './announcement-form-state';
 import { TopicAnnouncementEmailPreviewDialog } from './topic-announcement-email-preview-dialog';
-
-const DELIVERY_OPTIONS = [
-  {
-    icon: Save,
-    labelKey: 'announcement_delivery_draft',
-    value: 'draft',
-  },
-  {
-    icon: Send,
-    labelKey: 'announcement_delivery_send',
-    value: 'send',
-  },
-  {
-    icon: CalendarClock,
-    labelKey: 'announcement_delivery_schedule',
-    value: 'schedule',
-  },
-] as const;
 
 interface Props {
   canSend: boolean;
@@ -43,6 +25,7 @@ interface Props {
   schedulingTimezone: string | null;
   setDeliveryMode: (mode: AnnouncementDeliveryMode) => void;
   setScheduledAt: (date: Date | undefined) => void;
+  wsId: string;
 }
 
 export function AnnouncementFormReviewStep({
@@ -56,6 +39,7 @@ export function AnnouncementFormReviewStep({
   schedulingTimezone,
   setDeliveryMode,
   setScheduledAt,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const selectedContacts = contacts.filter((contact) =>
@@ -66,10 +50,24 @@ export function AnnouncementFormReviewStep({
   const classContext = form.classLabel || groupName;
   const timeRange = [form.startTime, form.endTime].filter(Boolean).join(' - ');
   const [previewOpen, setPreviewOpen] = useState(false);
+  const previewAnnouncement = {
+    attachments: form.attachmentDrafts,
+    body: null,
+    class_label: classContext === t('none') ? null : classContext,
+    contacts: selectedContacts,
+    day_label: form.dayLabel || null,
+    end_time: form.endTime || null,
+    place: form.place || null,
+    room: form.room || null,
+    session_date: form.sessionDate || null,
+    start_time: form.startTime || null,
+    title: form.title,
+    topic: form.topic,
+  };
 
   return (
     <>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)]">
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
         <div className="space-y-4 rounded-md border bg-background p-4">
           <div>
             <h3 className="font-medium text-base">
@@ -123,91 +121,29 @@ export function AnnouncementFormReviewStep({
           </Button>
         </div>
 
-        <div className="space-y-4 rounded-md border bg-background p-4">
-          <div>
-            <h3 className="font-medium text-base">
-              {t('announcement_delivery_title')}
-            </h3>
-            <p className="text-muted-foreground text-sm">
-              {t('announcement_delivery_helper')}
-            </p>
-          </div>
-          <div className="grid gap-2">
-            {DELIVERY_OPTIONS.map((option) => {
-              const Icon = option.icon;
-              const value = option.value;
-              const selected = deliveryMode === value;
-              const disabled = value !== 'draft' && !canSend;
-
-              return (
-                <button
-                  aria-pressed={selected}
-                  className={cn(
-                    'flex items-center gap-3 rounded-md border bg-background p-3 text-left transition-colors',
-                    selected
-                      ? 'border-dynamic-blue/35 bg-dynamic-blue/10'
-                      : 'border-border hover:border-dynamic-blue/25',
-                    disabled && 'cursor-not-allowed opacity-60'
-                  )}
-                  disabled={disabled}
-                  key={value}
-                  onClick={() => setDeliveryMode(value)}
-                  type="button"
-                >
-                  <Icon className="h-4 w-4 text-dynamic-blue" />
-                  <span className="font-medium text-sm">
-                    {t(option.labelKey)}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          {deliveryMode === 'schedule' ? (
-            schedulingTimezone ? (
-              <div className="space-y-2">
-                <DateTimePicker
-                  date={scheduledAt}
-                  inline
-                  preferences={{ timezone: schedulingTimezone }}
-                  setDate={setScheduledAt}
-                />
-                <p className="text-muted-foreground text-xs">
-                  {t('schedule_send_timezone_helper', {
-                    timezone: schedulingTimezone,
-                  })}
-                </p>
-              </div>
-            ) : (
-              <Button
-                onClick={onTimezoneRequired}
-                type="button"
-                variant="outline"
-              >
-                {t('announcement_set_timezone')}
-              </Button>
-            )
-          ) : null}
+        <div className="grid min-h-[32rem] gap-4">
+          <AnnouncementEmailPreviewPanel
+            announcement={previewAnnouncement}
+            onOpenFullPreview={() => setPreviewOpen(true)}
+            wsId={wsId}
+          />
+          <AnnouncementDeliveryOptions
+            canSend={canSend}
+            deliveryMode={deliveryMode}
+            onTimezoneRequired={onTimezoneRequired}
+            scheduledAt={scheduledAt}
+            schedulingTimezone={schedulingTimezone}
+            setDeliveryMode={setDeliveryMode}
+            setScheduledAt={setScheduledAt}
+          />
         </div>
       </div>
 
       <TopicAnnouncementEmailPreviewDialog
-        announcement={{
-          attachments: form.attachmentDrafts,
-          body: null,
-          class_label: classContext === t('none') ? null : classContext,
-          contacts: selectedContacts,
-          day_label: form.dayLabel || null,
-          end_time: form.endTime || null,
-          place: form.place || null,
-          room: form.room || null,
-          session_date: form.sessionDate || null,
-          start_time: form.startTime || null,
-          title: form.title,
-          topic: form.topic,
-        }}
+        announcement={previewAnnouncement}
         onOpenChange={setPreviewOpen}
         open={previewOpen}
+        wsId={wsId}
       />
     </>
   );

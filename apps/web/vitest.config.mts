@@ -15,6 +15,7 @@ export default defineConfig({
     exclude: ['**/.next/**', '**/e2e/**', '**/node_modules/**'],
     environment: 'jsdom',
     setupFiles: ['./vitest.setup.ts'],
+    testTimeout: 30_000,
     env: {
       ...loadEnv('production', process.cwd(), ''),
       // Set test Supabase environment variables

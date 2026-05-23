@@ -1,5 +1,6 @@
 'use client';
 
+import { Search, SlidersHorizontal } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
@@ -143,28 +144,35 @@ export function AnnouncementsPanel({
           schedulingTimezone={schedulingTimezone}
           templates={templates}
           workspaceUsers={workspaceUsers}
+          wsId={wsId}
         />
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Input
-          className="max-w-sm"
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder={t('search')}
-          value={query}
-        />
-        <Select onValueChange={onStatusChange} value={status}>
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {STATUSES.map((value) => (
-              <SelectItem key={value} value={value}>
-                {t(STATUS_LABEL_KEYS[value])}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="flex flex-col gap-3 rounded-md border bg-background p-3 md:flex-row md:items-center md:justify-between">
+        <div className="relative min-w-0 flex-1 md:max-w-md">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            className="pl-9"
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder={t('search')}
+            value={query}
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <Select onValueChange={onStatusChange} value={status}>
+            <SelectTrigger className="w-48">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STATUSES.map((value) => (
+                <SelectItem key={value} value={value}>
+                  {t(STATUS_LABEL_KEYS[value])}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <AnnouncementTable
@@ -188,6 +196,7 @@ export function AnnouncementsPanel({
         onSend={onSend}
         onTimezoneRequired={onTimezoneRequired}
         schedulingTimezone={schedulingTimezone}
+        wsId={wsId}
       />
 
       <div className="flex items-center justify-end gap-2">
@@ -219,6 +228,7 @@ export function AnnouncementsPanel({
           if (!open) setPreviewTarget(null);
         }}
         open={Boolean(previewTarget)}
+        wsId={wsId}
       />
     </div>
   );

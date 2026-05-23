@@ -137,6 +137,13 @@ export interface TopicAnnouncementPayload {
   topic: string;
 }
 
+export interface TopicAnnouncementEmailPreviewContent {
+  attachments: TopicAnnouncementAttachmentDraft[];
+  html: string;
+  subject: string;
+  text: string;
+}
+
 export interface TopicAnnouncementContactPayload {
   archived?: boolean;
   email: string;
@@ -356,6 +363,22 @@ export async function sendTopicAnnouncement(
   const client = getInternalApiClient(options);
   return client.json<{ auditId: string | null; messageId: string | null }>(
     `${basePath(workspaceId)}/announcements/${encodePathSegment(announcementId)}/send`,
+    {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function previewTopicAnnouncementEmail(
+  workspaceId: string,
+  payload: TopicAnnouncementPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: TopicAnnouncementEmailPreviewContent }>(
+    `${basePath(workspaceId)}/preview`,
     {
       body: JSON.stringify(payload),
       headers: { 'Content-Type': 'application/json' },

@@ -57,6 +57,7 @@ interface Props {
   schedulingTimezone: string | null;
   templates: TopicAnnouncementTemplateRecord[];
   workspaceUsers: WorkspaceBasicUserRecord[];
+  wsId: string;
 }
 
 export function AnnouncementForm({
@@ -78,6 +79,7 @@ export function AnnouncementForm({
   schedulingTimezone,
   templates,
   workspaceUsers,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [deliveryMode, setDeliveryMode] =
@@ -219,6 +221,7 @@ export function AnnouncementForm({
             schedulingTimezone={schedulingTimezone}
             setDeliveryMode={setDeliveryMode}
             setScheduledAt={setScheduledAt}
+            wsId={wsId}
           />
         ) : null}
 

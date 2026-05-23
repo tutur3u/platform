@@ -1,22 +1,29 @@
 'use client';
 
-import { FileText, Mail, Paperclip } from '@tuturuuu/icons';
+import { useQuery } from '@tanstack/react-query';
+import { Loader2, Mail } from '@tuturuuu/icons';
 import type {
   TopicAnnouncementAttachmentDraft,
   TopicAnnouncementContact,
+  TopicAnnouncementPayload,
 } from '@tuturuuu/internal-api';
-import { Badge } from '@tuturuuu/ui/badge';
+import { previewTopicAnnouncementEmail } from '@tuturuuu/internal-api';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from '@tuturuuu/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
-import { renderTopicAnnouncementEmail } from '@/lib/topic-announcements-email';
+import {
+  TopicAnnouncementPreviewSidebar,
+  TopicAnnouncementPreviewState,
+} from './topic-announcement-email-preview-parts';
 
 export interface TopicAnnouncementPreviewData {
   attachments: TopicAnnouncementAttachmentDraft[];
@@ -35,28 +42,55 @@ export interface TopicAnnouncementPreviewData {
 
 interface Props {
   announcement: TopicAnnouncementPreviewData | null;
+  confirmLabel?: string;
+  isConfirming?: boolean;
+  onConfirm?: () => void;
   onOpenChange: (open: boolean) => void;
   open: boolean;
+  wsId: string;
 }
 
-function formatBytes(value: number) {
-  if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-  if (value >= 1024) return `${Math.ceil(value / 1024)} KB`;
-  return `${value} B`;
+export function buildTopicAnnouncementPreviewPayload(
+  announcement: TopicAnnouncementPreviewData
+): TopicAnnouncementPayload {
+  return {
+    attachmentDrafts: announcement.attachments,
+    body: announcement.body ?? '',
+    classLabel: announcement.class_label ?? null,
+    contactIds: announcement.contacts.map((contact) => contact.id),
+    dayLabel: announcement.day_label ?? null,
+    endTime: announcement.end_time ?? null,
+    groupId: null,
+    place: announcement.place ?? null,
+    room: announcement.room ?? null,
+    sessionDate: announcement.session_date ?? null,
+    sourceType: 'manual',
+    startTime: announcement.start_time ?? null,
+    title: announcement.title,
+    topic: announcement.topic,
+  };
 }
 
 export function TopicAnnouncementEmailPreviewDialog({
   announcement,
+  confirmLabel,
+  isConfirming = false,
+  onConfirm,
   onOpenChange,
   open,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
-  const email = announcement
-    ? renderTopicAnnouncementEmail({
-        announcement,
-        workspaceName: null,
-      })
+  const payload = announcement
+    ? buildTopicAnnouncementPreviewPayload(announcement)
     : null;
+  const previewQuery = useQuery({
+    enabled: open && Boolean(payload),
+    queryFn: () => previewTopicAnnouncementEmail(wsId, payload!),
+    queryKey: ['topic-announcement-email-preview', wsId, payload],
+  });
+  const email = previewQuery.data?.data ?? null;
+  const canConfirm = Boolean(email) && !previewQuery.isError && !isConfirming;
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -69,58 +103,13 @@ export function TopicAnnouncementEmailPreviewDialog({
           <DialogDescription>{t('email_preview_helper')}</DialogDescription>
         </DialogHeader>
 
-        {announcement && email ? (
+        {announcement ? (
           <div className="grid min-h-0 gap-0 lg:grid-cols-[18rem_minmax(0,1fr)]">
-            <aside className="space-y-4 border-b p-4 lg:border-r lg:border-b-0">
-              <div>
-                <p className="text-muted-foreground text-xs uppercase">
-                  {t('subject')}
-                </p>
-                <p className="mt-1 font-medium text-sm">{email.subject}</p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs uppercase">
-                  {t('recipients')}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {announcement.contacts.map((contact) => (
-                    <Badge key={contact.id} variant="outline">
-                      {contact.email}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="flex items-center gap-1 text-muted-foreground text-xs uppercase">
-                  <Paperclip className="h-3.5 w-3.5" />
-                  {t('attachments')}
-                </p>
-                {announcement.attachments.length > 0 ? (
-                  <div className="mt-2 space-y-2">
-                    {announcement.attachments.map((attachment) => (
-                      <div
-                        className="rounded-md border bg-background p-2 text-sm"
-                        key={attachment.storagePath}
-                      >
-                        <div className="flex min-w-0 items-center gap-2">
-                          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                          <span className="truncate font-medium">
-                            {attachment.fileName}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                          {formatBytes(attachment.sizeBytes)}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="mt-2 text-muted-foreground text-sm">
-                    {t('attachments_none')}
-                  </p>
-                )}
-              </div>
-            </aside>
+            <TopicAnnouncementPreviewSidebar
+              attachments={announcement.attachments}
+              contacts={announcement.contacts}
+              subject={email?.subject ?? announcement.title}
+            />
 
             <Tabs className="min-h-0 p-4" defaultValue="preview">
               <TabsList>
@@ -132,22 +121,60 @@ export function TopicAnnouncementEmailPreviewDialog({
                 className="mt-3 h-[58vh] overflow-hidden rounded-md border"
                 value="preview"
               >
-                <EmailHtmlViewer content={email.html} />
+                <TopicAnnouncementPreviewState
+                  error={previewQuery.isError}
+                  isLoading={previewQuery.isLoading}
+                >
+                  {email ? <EmailHtmlViewer content={email.html} /> : null}
+                </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
                 className="mt-3 h-[58vh] overflow-auto rounded-md border bg-muted/30 p-4"
                 value="text"
               >
-                <pre className="whitespace-pre-wrap text-sm">{email.text}</pre>
+                <TopicAnnouncementPreviewState
+                  error={previewQuery.isError}
+                  isLoading={previewQuery.isLoading}
+                >
+                  <pre className="whitespace-pre-wrap text-sm">
+                    {email?.text}
+                  </pre>
+                </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
                 className="mt-3 h-[58vh] overflow-auto rounded-md border bg-muted/30 p-4"
                 value="source"
               >
-                <pre className="whitespace-pre-wrap text-xs">{email.html}</pre>
+                <TopicAnnouncementPreviewState
+                  error={previewQuery.isError}
+                  isLoading={previewQuery.isLoading}
+                >
+                  <pre className="whitespace-pre-wrap text-xs">
+                    {email?.html}
+                  </pre>
+                </TopicAnnouncementPreviewState>
               </TabsContent>
             </Tabs>
           </div>
+        ) : null}
+
+        {onConfirm ? (
+          <DialogFooter className="border-t px-6 py-4">
+            <Button
+              disabled={isConfirming}
+              onClick={() => onOpenChange(false)}
+              type="button"
+              variant="outline"
+            >
+              {t('cancel')}
+            </Button>
+            <Button disabled={!canConfirm} onClick={onConfirm} type="button">
+              {isConfirming ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {confirmLabel ?? t('send_now')}
+            </Button>
+          </DialogFooter>
         ) : null}
       </DialogContent>
     </Dialog>

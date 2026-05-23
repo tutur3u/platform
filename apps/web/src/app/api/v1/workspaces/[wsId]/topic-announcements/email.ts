@@ -11,6 +11,7 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   htmlEscape,
   renderTopicAnnouncementEmail,
+  type TopicAnnouncementEmailAttachmentSummary,
 } from '@/lib/topic-announcements-email';
 import {
   buildTopicAnnouncementVerificationUrl,
@@ -63,6 +64,7 @@ export function renderVerificationEmail({
 
 export function renderAnnouncementEmail({
   announcement,
+  attachments,
   workspaceName,
 }: {
   announcement: {
@@ -76,9 +78,14 @@ export function renderAnnouncementEmail({
     title: string;
     topic: string;
   };
+  attachments?: TopicAnnouncementEmailAttachmentSummary[];
   workspaceName: string | null;
 }) {
-  return renderTopicAnnouncementEmail({ announcement, workspaceName });
+  return renderTopicAnnouncementEmail({
+    announcement,
+    attachments,
+    workspaceName,
+  });
 }
 
 export async function getContactVerificationStatuses(
@@ -227,6 +234,7 @@ export async function sendTopicAnnouncement({
     .maybeSingle();
   const content = renderAnnouncementEmail({
     announcement,
+    attachments: attachmentMetadata,
     workspaceName: workspace?.name ?? null,
   });
   const result = await sendWorkspaceEmail(normalizedWsId, {

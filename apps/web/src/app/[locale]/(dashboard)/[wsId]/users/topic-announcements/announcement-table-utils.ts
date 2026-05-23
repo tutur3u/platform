@@ -87,3 +87,12 @@ export function getRowClassName(status: TopicAnnouncementRecord['status']) {
   if (status === 'cancelled') return 'bg-muted/60 text-muted-foreground';
   return 'bg-background';
 }
+
+export function getStatusBadgeVariant(
+  status: TopicAnnouncementRecord['status']
+) {
+  if (status === 'sent') return 'success';
+  if (status === 'queued') return 'warning';
+  if (status === 'failed' || status === 'skipped') return 'error';
+  return 'outline';
+}

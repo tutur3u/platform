@@ -1,7 +1,19 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen } from '@testing-library/react';
 import type { TopicAnnouncementRecord } from '@tuturuuu/internal-api';
 import { describe, expect, it, vi } from 'vitest';
 import { AnnouncementTable } from './announcement-table';
+
+const mocks = vi.hoisted(() => ({
+  previewTopicAnnouncementEmail: vi.fn(async () => ({
+    data: {
+      attachments: [],
+      html: '<p>Rendered preview body</p>',
+      subject: 'Rendered preview subject',
+      text: 'Rendered preview text',
+    },
+  })),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, string>) =>
@@ -16,6 +28,10 @@ vi.mock('./announcement-schedule-dialog', () => ({
   AnnouncementScheduleDialog: () => (
     <div data-testid="schedule-dialog">schedule dialog</div>
   ),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  previewTopicAnnouncementEmail: mocks.previewTopicAnnouncementEmail,
 }));
 
 const verifiedContact = {
@@ -81,10 +97,19 @@ function renderTable(
     onSend: vi.fn(),
     onTimezoneRequired: vi.fn(),
     schedulingTimezone: 'Asia/Ho_Chi_Minh',
+    wsId: 'workspace-1',
     ...overrides,
   };
 
-  render(<AnnouncementTable {...props} />);
+  const queryClient = new QueryClient({
+    defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <AnnouncementTable {...props} />
+    </QueryClientProvider>
+  );
   return props;
 }
 
@@ -155,6 +180,32 @@ describe('AnnouncementTable', () => {
     fireEvent.click(await screen.findByText('preview_announcement'));
 
     expect(props.onPreview).toHaveBeenCalledWith(sentAnnouncement);
+  });
+
+  it('requires rendered email preview confirmation before direct sends', async () => {
+    const draftAnnouncement = createAnnouncement({ id: 'draft-1' });
+    const props = renderTable([draftAnnouncement]);
+
+    fireEvent.pointerDown(
+      screen.getByRole('button', { name: 'announcement_actions' })
+    );
+    fireEvent.click(await screen.findByText('send_now'));
+
+    expect(props.onSend).not.toHaveBeenCalled();
+    expect(
+      await screen.findByText('Rendered preview subject')
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'send_now' }));
+
+    expect(props.onSend).toHaveBeenCalledWith('draft-1');
+    expect(mocks.previewTopicAnnouncementEmail).toHaveBeenCalledWith(
+      'workspace-1',
+      expect.objectContaining({
+        contactIds: ['contact-1'],
+        title: 'Unit 3 speaking practice',
+      })
+    );
   });
 
   it('forks sent announcements as a reusable draft', async () => {

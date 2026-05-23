@@ -10,15 +10,6 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import type { TopicAnnouncementRecord } from '@tuturuuu/internal-api';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@tuturuuu/ui/alert-dialog';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -42,6 +33,10 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { AnnouncementScheduleDialog } from './announcement-schedule-dialog';
 import {
+  AnnouncementRemoveDialog,
+  AnnouncementSendPreviewDialog,
+} from './announcement-table-dialogs';
+import {
   ANNOUNCEMENT_STATUS_LABEL_KEYS,
   canRemoveAnnouncement,
   canSendAnnouncement,
@@ -50,6 +45,7 @@ import {
   getClassLabel,
   getDayLabel,
   getRowClassName,
+  getStatusBadgeVariant,
   getTeacherLabel,
   tableCellClassName,
   tableHeadClassName,
@@ -72,6 +68,7 @@ interface Props {
   onSend: (announcementId: string) => void;
   schedulingTimezone: string | null;
   onTimezoneRequired: () => void;
+  wsId: string;
 }
 
 export function AnnouncementTable({
@@ -90,11 +87,14 @@ export function AnnouncementTable({
   onSend,
   schedulingTimezone,
   onTimezoneRequired,
+  wsId,
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [removeTarget, setRemoveTarget] =
     useState<TopicAnnouncementRecord | null>(null);
   const [scheduleTarget, setScheduleTarget] =
+    useState<TopicAnnouncementRecord | null>(null);
+  const [sendPreviewTarget, setSendPreviewTarget] =
     useState<TopicAnnouncementRecord | null>(null);
 
   return (
@@ -233,11 +233,7 @@ export function AnnouncementTable({
                     ) : null}
                   </TableCell>
                   <TableCell className={tableCellClassName}>
-                    <Badge
-                      variant={
-                        announcement.status === 'sent' ? 'success' : 'outline'
-                      }
-                    >
+                    <Badge variant={getStatusBadgeVariant(announcement.status)}>
                       {t(ANNOUNCEMENT_STATUS_LABEL_KEYS[announcement.status])}
                     </Badge>
                   </TableCell>
@@ -271,7 +267,7 @@ export function AnnouncementTable({
                             announcement.status === 'sent' ||
                             !sendReady
                           }
-                          onClick={() => onSend(announcement.id)}
+                          onClick={() => setSendPreviewTarget(announcement)}
                         >
                           <Send className="mr-2 h-4 w-4" />
                           {t('send_now')}
@@ -350,43 +346,24 @@ export function AnnouncementTable({
         />
       ) : null}
 
-      <AlertDialog
-        open={Boolean(removeTarget)}
+      <AnnouncementSendPreviewDialog
+        isSending={isSending}
         onOpenChange={(open) => {
-          if (!open && !isDeleting) setRemoveTarget(null);
+          if (!open) setSendPreviewTarget(null);
         }}
-      >
-        <AlertDialogContent
-          onEscapeKeyDown={(event) => isDeleting && event.preventDefault()}
-        >
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {t('remove_announcement_title')}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('remove_announcement_description', {
-                title: removeTarget?.title ?? '',
-              })}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>
-              {t('cancel')}
-            </AlertDialogCancel>
-            <Button
-              disabled={isDeleting || !removeTarget}
-              onClick={() => {
-                if (!removeTarget) return;
-                onDelete(removeTarget.id);
-                setRemoveTarget(null);
-              }}
-              variant="destructive"
-            >
-              {t('remove_announcement')}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        onSend={onSend}
+        target={sendPreviewTarget}
+        wsId={wsId}
+      />
+
+      <AnnouncementRemoveDialog
+        isDeleting={isDeleting}
+        onDelete={onDelete}
+        onOpenChange={(open) => {
+          if (!open) setRemoveTarget(null);
+        }}
+        target={removeTarget}
+      />
     </>
   );
 }

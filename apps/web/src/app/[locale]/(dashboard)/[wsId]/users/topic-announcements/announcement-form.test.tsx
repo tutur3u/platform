@@ -1,7 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnnouncementForm } from './announcement-form';
+
+const mocks = vi.hoisted(() => ({
+  previewTopicAnnouncementEmail: vi.fn(async () => ({
+    data: {
+      attachments: [],
+      html: '<p>Rendered preview body</p>',
+      subject: 'Rendered preview subject',
+      text: 'Rendered preview text',
+    },
+  })),
+}));
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string, values?: Record<string, string>) =>
@@ -16,6 +27,10 @@ vi.mock('@tuturuuu/ui/date-time-picker', () => ({
   DateTimePicker: () => (
     <div data-testid="schedule-picker">schedule picker</div>
   ),
+}));
+
+vi.mock('@tuturuuu/internal-api', () => ({
+  previewTopicAnnouncementEmail: mocks.previewTopicAnnouncementEmail,
 }));
 
 const verifiedContact = {
@@ -50,6 +65,7 @@ function renderForm(
     schedulingTimezone: 'Asia/Ho_Chi_Minh',
     templates: [],
     workspaceUsers: [],
+    wsId: 'workspace-1',
     ...overrides,
   };
 
@@ -81,6 +97,10 @@ function completeRequiredSteps() {
 }
 
 describe('AnnouncementForm', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it('gates each step and saves a reviewed draft payload', async () => {
     const props = renderForm();
 
@@ -186,6 +206,29 @@ describe('AnnouncementForm', () => {
       )
     );
     expect(props.onCreate).not.toHaveBeenCalled();
+  });
+
+  it('renders the actual email preview in the review step before submit', async () => {
+    renderForm();
+
+    completeRequiredSteps();
+
+    expect(
+      await screen.findByText('Rendered preview subject')
+    ).toBeInTheDocument();
+    fireEvent.click(
+      screen.getByRole('button', { name: 'email_preview_open_full' })
+    );
+
+    expect(screen.getByText('email_preview_title')).toBeInTheDocument();
+    expect(mocks.previewTopicAnnouncementEmail).toHaveBeenLastCalledWith(
+      'workspace-1',
+      expect.objectContaining({
+        contactIds: ['contact-1'],
+        title: 'Unit 3 speaking practice',
+        topic: 'Practice speaking about weekend plans.',
+      })
+    );
   });
 
   it('creates and schedules from the final delivery step', async () => {

@@ -104,6 +104,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Verification links resolve to the public platform origin by default (`https://tuturuuu.com`) so listener hosts such as `0.0.0.0:7803` never leak into recipient inboxes. Set `TOPIC_ANNOUNCEMENT_VERIFICATION_ORIGIN` only when an explicit alternate public origin is required.
 - Verification sends enforce a short pending-link cooldown before creating another token, and email delivery applies workspace, user, IP, and recipient limits. The recipient limit is global across workspaces, so one workspace or many workspaces cannot repeatedly send verification links to the same inbox.
 - Actual announcements are sent by the enabled workspace sender and are written to `email_audit`.
+- The composer and table send flow preview the same server-rendered HTML and text payload that delivery uses. Operators should review that rendered preview before sending or scheduling announcements.
 - The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields.
 - Workspace-shared **announcement templates** store reusable title, topic starter text, class metadata, optional default group, and default recipient ids. Operators apply a template in the composer, then edit the topic field before sending.
 - Operators can fork an existing sent or draft announcement into a new draft. The fork copies title, topic, class context, recipients, and attachment references, but never copies sent, queued, scheduled, or email audit state.
@@ -114,6 +115,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 ### Implementation Notes
 
 - Client UI must call `@tuturuuu/internal-api` Topic Announcements helpers; do not add direct client-side fetches.
+- Email preview must go through the Topic Announcements preview API and shared renderer instead of a client-only template so previews cannot drift from actual delivery.
 - Delivery APIs must check the workspace secret, `manage_users`, `send_user_group_post_emails`, recipient verification, and workspace ownership before sending.
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
 - Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.
