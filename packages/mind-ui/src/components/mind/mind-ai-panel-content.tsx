@@ -1,21 +1,16 @@
 'use client';
 
-import { LoaderCircle, RefreshCw, TriangleAlert } from '@tuturuuu/icons';
+import { RefreshCw, TriangleAlert } from '@tuturuuu/icons';
 import type { MindBoardSnapshotResponse } from '@tuturuuu/internal-api/mind';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import type { UIMessage } from 'ai';
 import { useTranslations } from 'next-intl';
-import {
-  type MindAiDebugContext,
-  MindAiDebugDetails,
-} from './mind-ai-debug-details';
 import { EmptyAiState, MindAiMessage } from './mind-ai-message';
 import type { MindAiArtifactItem } from './mind-ai-tool-activity';
 
 type Props = {
   applyingPatch?: boolean;
-  debugContext: MindAiDebugContext;
   fullscreen: boolean;
   latestMessage?: UIMessage;
   messages: UIMessage[];
@@ -27,14 +22,12 @@ type Props = {
   layoutRefreshError?: string | null;
   retryingLayoutRefresh?: boolean;
   status: string;
-  statusLabel: string | null;
   visibleError: string | null;
   onPickPrompt: (prompt: string) => void | Promise<void>;
 };
 
 export function MindAiPanelContent({
   applyingPatch,
-  debugContext,
   fullscreen,
   latestMessage,
   messages,
@@ -43,7 +36,6 @@ export function MindAiPanelContent({
   patchesError,
   retryingLayoutRefresh,
   status,
-  statusLabel,
   visibleError,
   onApplyPatch,
   onOpenArtifact,
@@ -52,15 +44,12 @@ export function MindAiPanelContent({
 }: Props) {
   const t = useTranslations('mind');
   const isEmpty =
-    messages.length === 0 &&
-    !statusLabel &&
-    !visibleError &&
-    patches.length === 0;
+    messages.length === 0 && !visibleError && patches.length === 0;
 
   return (
     <div
       className={cn(
-        'min-h-full',
+        'min-h-full w-full min-w-0',
         fullscreen ? 'mx-auto w-full max-w-6xl space-y-2' : 'space-y-2',
         isEmpty && 'flex items-center justify-center'
       )}
@@ -84,12 +73,6 @@ export function MindAiPanelContent({
       ) : (
         <EmptyAiState onPickPrompt={onPickPrompt} />
       )}
-      {statusLabel ? (
-        <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-2 text-muted-foreground text-xs">
-          <LoaderCircle className="h-4 w-4 animate-spin" />
-          {statusLabel}
-        </div>
-      ) : null}
       {patchesError ? (
         <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
           <div className="flex items-start gap-2">
@@ -135,7 +118,7 @@ export function MindAiPanelContent({
         </div>
       ) : null}
       {visibleError ? (
-        <div className="space-y-2 rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
+        <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
           <div className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
             <div className="min-w-0">
@@ -145,10 +128,8 @@ export function MindAiPanelContent({
               </p>
             </div>
           </div>
-          <MindAiDebugDetails context={debugContext} tone="error" />
         </div>
       ) : null}
-      {statusLabel ? <MindAiDebugDetails context={debugContext} /> : null}
     </div>
   );
 }

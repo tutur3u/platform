@@ -27,17 +27,21 @@ const ENABLED_SERVER_ID = '11111111-1111-4111-8111-111111111111';
 const DISABLED_SERVER_ID = '22222222-2222-4222-8222-222222222222';
 const USER_ID = '00000000-0000-4000-8000-000000000001';
 
-function createRoleClient(
-  role: {
-    allow_role_management: boolean;
-    enabled: boolean;
-  } | null
-) {
+function createAccessClient({
+  member = { enabled: true },
+  role = null,
+}: {
+  member?: { enabled: boolean } | null;
+  role?: { allow_role_management: boolean; enabled: boolean } | null;
+} = {}) {
   return {
-    from: vi.fn(() => ({
+    from: vi.fn((table: string) => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          maybeSingle: vi.fn().mockResolvedValue({ data: role, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: table === 'hive_members' ? member : role,
+            error: null,
+          }),
         })),
       })),
     })),
@@ -79,7 +83,7 @@ describe('Hive realtime token route', () => {
     mocks.createClient.mockReset();
     mocks.getHiveMemberByUserId.mockReset();
     mocks.getHiveServer.mockReset();
-    mocks.createAdminClient.mockResolvedValue(createRoleClient(null));
+    mocks.createAdminClient.mockResolvedValue(createAccessClient());
     mocks.getHiveMemberByUserId.mockResolvedValue({ enabled: true });
   });
 
@@ -120,9 +124,11 @@ describe('Hive realtime token route', () => {
 
   it('allows Hive admins to issue tokens for disabled servers', async () => {
     mocks.createAdminClient.mockResolvedValueOnce(
-      createRoleClient({ allow_role_management: true, enabled: true })
+      createAccessClient({
+        member: null,
+        role: { allow_role_management: true, enabled: true },
+      })
     );
-    mocks.getHiveMemberByUserId.mockResolvedValueOnce(null);
     mocks.getHiveServer.mockResolvedValue({
       enabled: false,
       id: DISABLED_SERVER_ID,

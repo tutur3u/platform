@@ -16,12 +16,16 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
 type Props = {
+  align?: 'center' | 'end' | 'start';
+  compact?: boolean;
   selectedTags: string[];
   tags: string[];
   onSelectedTagsChange: (tags: string[]) => void;
 };
 
 export function MindTagFilter({
+  align = 'end',
+  compact,
   selectedTags,
   tags,
   onSelectedTagsChange,
@@ -41,20 +45,30 @@ export function MindTagFilter({
     <Popover>
       <PopoverTrigger asChild>
         <Button
-          className="h-9 max-w-48 touch-manipulation justify-start"
+          aria-label={t('tags.filter')}
+          className={cn(
+            'touch-manipulation',
+            compact
+              ? 'h-8 w-8 justify-center p-0'
+              : 'h-9 max-w-48 justify-start'
+          )}
           size="sm"
           type="button"
-          variant={selectedTags.length ? 'secondary' : 'outline'}
+          variant={
+            compact ? 'ghost' : selectedTags.length ? 'secondary' : 'outline'
+          }
         >
           <Tags className="h-4 w-4" />
-          <span className="truncate">
-            {selectedTags.length
-              ? t('tags.selected', { count: selectedTags.length })
-              : t('tags.filter')}
-          </span>
+          {compact ? null : (
+            <span className="truncate">
+              {selectedTags.length
+                ? t('tags.selected', { count: selectedTags.length })
+                : t('tags.filter')}
+            </span>
+          )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80 p-0">
+      <PopoverContent align={align} className="w-80 p-0">
         <Command>
           <CommandInput placeholder={t('tags.search')} />
           <CommandList>

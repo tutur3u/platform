@@ -98,9 +98,9 @@ export const DELETE = withSessionAuth<Params>(
 
       return NextResponse.json({ board });
     } catch (error) {
-      serverLogger.error('Error archiving Mind board:', error);
+      serverLogger.error('Error deleting Mind board:', error);
       return NextResponse.json(
-        { error: 'Failed to archive Mind board' },
+        { error: 'Failed to delete Mind board' },
         { status: 500 }
       );
     }

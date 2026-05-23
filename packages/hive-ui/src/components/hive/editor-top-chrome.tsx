@@ -4,9 +4,7 @@ import type {
 } from '@tuturuuu/internal-api/hive';
 import type { ReactNode } from 'react';
 import type { HiveNpc, HiveUser, HiveWorldData } from '../../engine/types';
-import type { HiveRealtimeStatus } from '../../realtime/hive-realtime-client';
 import { HiveAiContextPanel } from './hive-ai-context-panel';
-import { HiveStatusBadgeGroup } from './hive-status-badge-group';
 import { HiveTopRightToolbar } from './hive-top-right-toolbar';
 import { NpcLabPanel } from './panels/npc-lab-panel';
 import type { HiveAiContextState } from './use-hive-ai-context';
@@ -45,8 +43,6 @@ type EditorTopChromeProps = {
   }) => void;
   onToggleNpcLab: () => void;
   onUpdateServerSettings: (settings: HiveServerSettings) => void;
-  presenceCount: number;
-  realtimeStatus: HiveRealtimeStatus;
   revision: number;
   rightCollapsed: boolean;
   selectedNpc: HiveNpc | null;
@@ -76,8 +72,6 @@ export function EditorTopChrome({
   onRunNpcInteraction,
   onToggleNpcLab,
   onUpdateServerSettings,
-  presenceCount,
-  realtimeStatus,
   revision,
   rightCollapsed,
   selectedNpc,
@@ -86,13 +80,7 @@ export function EditorTopChrome({
   world,
 }: EditorTopChromeProps) {
   return (
-    <div className="flex items-start justify-between gap-3 transition-[padding] duration-300 ease-out">
-      <HiveStatusBadgeGroup
-        npcs={npcs}
-        presenceCount={presenceCount}
-        realtimeStatus={realtimeStatus}
-        world={world}
-      />
+    <div className="flex items-start justify-end gap-3 transition-[padding] duration-300 ease-out">
       <div className="flex min-w-0 flex-col items-end gap-2">
         <HiveTopRightToolbar
           aiContextPanel={

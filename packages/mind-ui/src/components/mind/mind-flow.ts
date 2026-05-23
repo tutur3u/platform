@@ -1,5 +1,5 @@
 import type { SaveMindGraphPayload } from '@tuturuuu/internal-api/mind';
-import type { MindEdge, MindNode } from '@tuturuuu/types/db';
+import type { MindEdge, MindJsonObject, MindNode } from '@tuturuuu/types/db';
 import { type Edge, MarkerType, type Node } from '@xyflow/react';
 import type { MindFlowNodeData } from './mind-node-card';
 
@@ -12,12 +12,18 @@ export type MindEdgeObstacle = {
   y: number;
 };
 export type MindFlowEdgeData = Record<string, unknown> & {
+  dimmed?: boolean;
   edge: MindEdge;
+  focused?: boolean;
+  labelLane?: number;
   labelObstacles?: MindEdgeObstacle[];
+  onHoverEdge?: (edgeId: string | null) => void;
+  onSelectEdge?: (edgeId: string) => void;
   obstacles?: MindEdgeObstacle[];
 };
 export type MindFlowEdge = Edge<MindFlowEdgeData>;
 export type MindGroupFrame = {
+  anchorNodeId: string;
   childCount: number;
   color: string;
   height: number;
@@ -38,8 +44,8 @@ const CHILD_FRAME_PADDING_X = 32;
 const CHILD_FRAME_PADDING_Y = 34;
 const CLUSTER_FRAME_PADDING = 36;
 const MAX_DYNAMIC_PADDING = 56;
-const LEVEL_GAP_Y = 184;
-const NODE_GAP_X = 140;
+const LEVEL_GAP_Y = 220;
+const NODE_GAP_X = 180;
 const ANCHOR_GAP_X = 120;
 const HANDLE_DIRECTION_PENALTY = 640;
 const HANDLE_USAGE_PENALTY = 48;
@@ -60,6 +66,9 @@ const ROOT_NODE_TYPES = new Set<MindNode['nodeType']>([
   'plan',
   'system',
 ]);
+export const MIND_CONNECTION_HANDLE_PREFIX = 'connection-';
+const SOURCE_FRAME_ID_METADATA_KEY = 'sourceFrameId';
+const TARGET_FRAME_ID_METADATA_KEY = 'targetFrameId';
 
 const naturalSort = new Intl.Collator(undefined, {
   numeric: true,
@@ -101,12 +110,10 @@ export function toFlowEdgesWithNodes(
       edge,
       nodeById,
       usage,
-      [...nodeById.values()]
-        .filter(
-          (node) =>
-            node.id !== edge.sourceNodeId && node.id !== edge.targetNodeId
-        )
-        .map(toEdgeObstacle),
+      allNodeObstacles.filter(
+        (obstacle) =>
+          obstacle.id !== edge.sourceNodeId && obstacle.id !== edge.targetNodeId
+      ),
       allNodeObstacles
     )
   );
@@ -150,19 +157,18 @@ export function toFlowEdge(
       color,
       type: MarkerType.ArrowClosed,
     },
-    sourceHandle: `source-${route.sourceSide}`,
+    sourceHandle: getMindConnectionHandleId(route.sourceSide),
     source: edge.sourceNodeId,
     style: {
       stroke: color,
       strokeOpacity: isSequence ? 0.82 : 0.9,
       strokeWidth: isContainment ? 2.4 : isSequence ? 2 : 1.8,
     },
-    targetHandle: `target-${route.targetSide}`,
+    targetHandle: getMindConnectionHandleId(route.targetSide),
     target: edge.targetNodeId,
     type: 'mindRelationship',
   };
 }
-
 export function createMindNode({
   boardHorizon,
   id,
@@ -212,6 +218,77 @@ export function createMindEdge(
     targetNodeId: target ?? '',
     updatedAt: now,
     weight: 1,
+  };
+}
+
+export function createMindConnectionEdge({
+  frames,
+  source,
+  target,
+}: {
+  frames: MindGroupFrame[];
+  source?: string | null;
+  target?: string | null;
+}) {
+  const sourceEndpoint = resolveMindConnectionEndpoint(source, frames);
+  const targetEndpoint = resolveMindConnectionEndpoint(target, frames);
+  if (!sourceEndpoint || !targetEndpoint) return null;
+  if (
+    sourceEndpoint.nodeId === targetEndpoint.nodeId &&
+    !sourceEndpoint.frameId &&
+    !targetEndpoint.frameId
+  ) {
+    return null;
+  }
+
+  const edge = createMindEdge(sourceEndpoint.nodeId, targetEndpoint.nodeId);
+  const metadata: MindJsonObject = {};
+  if (sourceEndpoint.frameId) {
+    metadata[SOURCE_FRAME_ID_METADATA_KEY] = sourceEndpoint.frameId;
+  }
+  if (targetEndpoint.frameId) {
+    metadata[TARGET_FRAME_ID_METADATA_KEY] = targetEndpoint.frameId;
+  }
+
+  return {
+    ...edge,
+    metadata,
+  } satisfies MindEdge;
+}
+
+export function getMindConnectionHandleId(side: EdgeSide) {
+  return `${MIND_CONNECTION_HANDLE_PREFIX}${side}`;
+}
+
+export function getMindEdgeFrameEndpoint(
+  edge: MindEdge,
+  endpoint: 'source' | 'target'
+) {
+  const key =
+    endpoint === 'source'
+      ? SOURCE_FRAME_ID_METADATA_KEY
+      : TARGET_FRAME_ID_METADATA_KEY;
+  const value = edge.metadata[key];
+  return typeof value === 'string' && value ? value : null;
+}
+
+function resolveMindConnectionEndpoint(
+  id: string | null | undefined,
+  frames: MindGroupFrame[]
+) {
+  if (!id) return null;
+
+  const frame = frames.find((item) => item.id === id);
+  if (frame) {
+    return {
+      frameId: frame.id,
+      nodeId: frame.anchorNodeId,
+    };
+  }
+
+  return {
+    frameId: null,
+    nodeId: id,
   };
 }
 
@@ -385,6 +462,7 @@ export function getMindGroupFrames({
         CLUSTER_FRAME_PADDING +
         Math.min(MAX_DYNAMIC_PADDING, descendants.length * 8);
       const clusterFrame = createFrame({
+        anchorNodeId: rootId,
         childCount: descendants.length,
         color: root?.color ?? '#2f80ed',
         ids: memberIds,
@@ -413,6 +491,7 @@ export function getMindGroupFrames({
         CHILD_FRAME_PADDING_Y +
         Math.min(MAX_DYNAMIC_PADDING, childIds.length * 5);
       const childFrame = createFrame({
+        anchorNodeId: parentId,
         childCount: childIds.length,
         color: parent?.color ?? root?.color ?? '#2f80ed',
         ids: childIds,
@@ -436,6 +515,7 @@ export function getMindGroupFrames({
 
 function createFrame({
   childCount,
+  anchorNodeId,
   color,
   ids,
   id,
@@ -447,6 +527,7 @@ function createFrame({
   parentTitle,
   title,
 }: {
+  anchorNodeId: string;
   childCount: number;
   color: string;
   ids: string[];
@@ -471,6 +552,7 @@ function createFrame({
   const maxY = Math.max(...members.map((node) => node.position.y));
 
   return {
+    anchorNodeId,
     childCount,
     color,
     height: maxY - minY + CARD_HEIGHT + paddingY * 2,

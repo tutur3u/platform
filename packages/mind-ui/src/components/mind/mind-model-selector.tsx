@@ -52,7 +52,7 @@ export function MindModelSelector({ model, onModelChange }: Props) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-[min(24rem,calc(100vw-2rem))] p-0"
+        className="w-[var(--radix-popover-trigger-width)] min-w-[min(24rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-0"
         sideOffset={6}
       >
         <Command>

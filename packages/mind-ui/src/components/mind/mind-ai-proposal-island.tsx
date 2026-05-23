@@ -1,7 +1,8 @@
 'use client';
 
-import { ListChecks, X } from '@tuturuuu/icons';
+import { GitMerge, ListChecks, Sparkles, X } from '@tuturuuu/icons';
 import type { MindAiPatchRecord } from '@tuturuuu/types/db';
+import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import type { UIMessage } from 'ai';
@@ -35,27 +36,51 @@ export function MindAiProposalIsland({
 }: Props) {
   const t = useTranslations('mind');
   if (!proposal) return null;
+  const canApply = proposal.patch?.status === 'draft';
+  const isApplied = proposal.patch?.status === 'applied';
+  const statusLabel = canApply
+    ? t('ai.pendingApproval')
+    : isApplied
+      ? t('ai.applied')
+      : proposal.patch
+        ? proposal.patch.status
+        : t('ai.proposalPlan');
 
   return (
     <aside
       className={cn(
         'flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/10 backdrop-blur',
         fullscreen
-          ? 'fixed top-20 right-8 bottom-24 z-[60] w-[min(34rem,calc(100vw-4rem))]'
-          : 'absolute top-20 right-[30rem] bottom-5 z-40 hidden w-[min(34rem,calc(100vw-34rem))] xl:flex'
+          ? 'fixed top-20 right-8 bottom-24 z-[60]'
+          : 'absolute top-20 bottom-5 z-40 hidden xl:flex'
       )}
+      style={
+        fullscreen
+          ? { width: 'min(34rem, calc(100vw - 4rem))' }
+          : {
+              right: '30rem',
+              width: 'min(34rem, calc(100vw - 34rem))',
+            }
+      }
     >
       <div className="flex items-center justify-between gap-3 border-border border-b px-3 py-2">
         <div className="flex min-w-0 items-center gap-2">
           <ListChecks className="h-4 w-4 shrink-0 text-dynamic-blue" />
           <div className="min-w-0">
             <h2 className="truncate font-semibold text-sm">
-              {t('ai.proposalTitle')}
+              {proposal.patch?.summary ?? t('ai.proposalTitle')}
             </h2>
             <p className="truncate text-muted-foreground text-xs">
-              {proposal.patch ? t('ai.proposalDraft') : t('ai.proposalPlan')}
+              {proposal.patch
+                ? t('ai.centralDraftProposal')
+                : t('ai.proposalPlan')}
             </p>
           </div>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <Badge variant={canApply ? 'secondary' : 'outline'}>
+            {statusLabel}
+          </Badge>
         </div>
         <Button
           aria-label={t('ai.hideProposal')}
@@ -69,15 +94,52 @@ export function MindAiProposalIsland({
         </Button>
       </div>
       <div className="min-h-0 flex-1 space-y-2 overflow-y-auto p-2.5">
-        {proposal.visual ? <MindJsonRenderer output={proposal.visual} /> : null}
+        {proposal.visual && !proposal.patch ? (
+          <section className="rounded-lg border border-dynamic-blue/20 bg-dynamic-blue/5 p-2">
+            <div className="mb-2 flex items-center gap-2 px-1 text-muted-foreground text-xs">
+              <Sparkles className="h-3.5 w-3.5 text-dynamic-blue" />
+              <span>{t('ai.proposalPlan')}</span>
+            </div>
+            <MindJsonRenderer output={proposal.visual} />
+          </section>
+        ) : null}
         {proposal.patch ? (
           <MindAiPatchDraftCard
             applying={applying}
             onApplyPatch={onApplyPatch}
             patch={proposal.patch}
+            showApplyAction={false}
           />
         ) : null}
       </div>
+      {proposal.patch && canApply ? (
+        <div className="border-border border-t bg-background/95 p-2.5">
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card/70 px-2.5 py-2">
+            <div className="min-w-0">
+              <p className="truncate font-medium text-sm">
+                {t('ai.awaitingApproval')}
+              </p>
+              <p className="truncate text-muted-foreground text-xs">
+                {t('ai.patchOps', {
+                  count: proposal.patch.patch.operations.length,
+                })}
+              </p>
+            </div>
+            <Button
+              className="shrink-0 gap-1.5"
+              disabled={applying}
+              onClick={() => {
+                if (proposal.patch) onApplyPatch(proposal.patch.id);
+              }}
+              size="sm"
+              type="button"
+            >
+              <GitMerge className="h-3.5 w-3.5" />
+              {t('ai.applyDraft')}
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </aside>
   );
 }

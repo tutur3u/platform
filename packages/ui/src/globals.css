@@ -67,6 +67,25 @@
   }
 }
 
+.dashboard-embed-shell {
+  margin-right: -0.5rem;
+  margin-bottom: -0.5rem;
+  margin-left: -0.5rem;
+  width: calc(100% + 1rem);
+  min-width: 0;
+  height: calc(100dvh - 4.25rem);
+  min-height: calc(100dvh - 4.25rem);
+}
+
+@media (min-width: 48rem) {
+  .dashboard-embed-shell {
+    margin: -1rem;
+    width: calc(100% + 2rem);
+    height: 100dvh;
+    min-height: 100dvh;
+  }
+}
+
 :root {
   --root-background: hsl(20, 60%, 98%);
 

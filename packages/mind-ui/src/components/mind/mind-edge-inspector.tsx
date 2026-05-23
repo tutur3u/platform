@@ -39,7 +39,7 @@ export function MindEdgeInspector({
     <section className="space-y-3 p-3">
       <InspectorHeader
         badge={t(`edgeTypes.${edge.edgeType}`)}
-        title={t('inspector.edge')}
+        title={edge.label || t('inspector.edge')}
         onDelete={() => onDeleteEdge(edge.id)}
       />
       <div className="grid gap-1.5 rounded-lg border border-border bg-muted/30 p-2 text-xs">

@@ -1,12 +1,19 @@
 import { HIVE_REALTIME_URL } from '@tuturuuu/hive-ui/config';
 import { HiveStudio } from '@tuturuuu/hive-ui/studio';
-import { withForwardedInternalApiAuth } from '@tuturuuu/internal-api';
-import { listHiveServers } from '@tuturuuu/internal-api/hive';
+import {
+  InternalApiError,
+  withForwardedInternalApiAuth,
+} from '@tuturuuu/internal-api';
+import {
+  type HiveServersResponse,
+  listHiveServers,
+} from '@tuturuuu/internal-api/hive';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { notFound, redirect } from 'next/navigation';
 import { getHiveBuildInfo } from '@/lib/hive-build-info';
 import { getWebHivePageContext } from '@/lib/hive-page-context';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export const metadata: Metadata = {
   title: 'Hive',
@@ -30,9 +37,27 @@ export default async function HivePage({ params }: PageProps) {
     redirect(`/${wsId}/hive/not-whitelisted`);
   }
 
-  const initialServers = await listHiveServers(
-    withForwardedInternalApiAuth(await headers())
-  );
+  let initialServers: HiveServersResponse;
+
+  try {
+    initialServers = await listHiveServers(
+      withForwardedInternalApiAuth(await headers())
+    );
+  } catch (error) {
+    if (!(error instanceof InternalApiError)) {
+      throw error;
+    }
+
+    serverLogger.error('Failed to preload Hive servers', {
+      code: error.code,
+      message: error.message,
+      status: error.status,
+    });
+    initialServers = {
+      isAdmin: context.access.isAdmin,
+      servers: [],
+    };
+  }
 
   return (
     <HiveStudio

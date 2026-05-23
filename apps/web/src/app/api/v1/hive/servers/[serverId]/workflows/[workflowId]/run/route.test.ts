@@ -24,17 +24,21 @@ vi.mock('@/lib/hive/workflows', () => ({
   runHiveWorkflow: (...args: unknown[]) => mocks.runHiveWorkflow(...args),
 }));
 
-function createRoleClient(
-  role: {
-    allow_role_management: boolean;
-    enabled: boolean;
-  } | null
-) {
+function createAccessClient({
+  member = { enabled: true },
+  role = null,
+}: {
+  member?: { enabled: boolean } | null;
+  role?: { allow_role_management: boolean; enabled: boolean } | null;
+} = {}) {
   return {
-    from: vi.fn(() => ({
+    from: vi.fn((table: string) => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          maybeSingle: vi.fn().mockResolvedValue({ data: role, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: table === 'hive_members' ? member : role,
+            error: null,
+          }),
         })),
       })),
     })),
@@ -67,7 +71,7 @@ describe('Hive workflow run route', () => {
     mocks.createAdminClient.mockReset();
     mocks.getHiveMemberByUserId.mockReset();
     mocks.runHiveWorkflow.mockReset();
-    mocks.createAdminClient.mockResolvedValue(createRoleClient(null));
+    mocks.createAdminClient.mockResolvedValue(createAccessClient());
     mocks.getHiveMemberByUserId.mockResolvedValue({ enabled: true });
     mocks.runHiveWorkflow.mockResolvedValue({
       id: 'run-1',

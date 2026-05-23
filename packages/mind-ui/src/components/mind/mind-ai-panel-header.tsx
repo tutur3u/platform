@@ -1,12 +1,21 @@
 'use client';
 
-import { Bot, SlidersHorizontal } from '@tuturuuu/icons';
+import { Bot, Info, LoaderCircle, SlidersHorizontal } from '@tuturuuu/icons';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { MindAiControls } from './mind-ai-controls';
+import {
+  type MindAiDebugContext,
+  MindAiDebugDetails,
+} from './mind-ai-debug-details';
 import { MindAiHeaderActions } from './mind-ai-header-actions';
 import type { MindAiThinkingMode } from './mind-ai-options';
 import type { MindAiCreditSource } from './use-mind-ai-preferences';
@@ -15,9 +24,11 @@ type Props = {
   creditSource: MindAiCreditSource;
   chatJson: string;
   chatMarkdown: string;
+  debugContext: MindAiDebugContext;
   directWrite: boolean;
   fullscreen: boolean;
   model: AIModelUI;
+  statusLabel: string | null;
   thinkingMode: MindAiThinkingMode;
   personalWsId?: string;
   workspaceCreditLocked?: boolean;
@@ -35,9 +46,11 @@ export function MindAiPanelHeader({
   creditSource,
   chatJson,
   chatMarkdown,
+  debugContext,
   directWrite,
   fullscreen,
   model,
+  statusLabel,
   thinkingMode,
   personalWsId,
   workspaceCreditLocked,
@@ -58,9 +71,14 @@ export function MindAiPanelHeader({
       className={cn(
         'border-border border-b',
         fullscreen
-          ? 'flex min-w-0 items-center gap-2 px-3 py-1.5'
+          ? 'grid min-w-0 items-center gap-2 px-3 py-1.5'
           : 'space-y-1.5 px-3 py-2'
       )}
+      style={
+        fullscreen
+          ? { gridTemplateColumns: 'auto minmax(0, 1fr) auto' }
+          : undefined
+      }
     >
       <div
         className={cn(
@@ -79,10 +97,20 @@ export function MindAiPanelHeader({
             >
               {t('ai.title')}
             </h2>
+            {statusLabel ? (
+              <span
+                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-dynamic-blue"
+                title={statusLabel}
+              >
+                <LoaderCircle className="h-3 w-3 animate-spin" />
+                <span className="sr-only">{statusLabel}</span>
+              </span>
+            ) : null}
           </div>
         </div>
         {!fullscreen ? (
           <div className="flex shrink-0 items-center gap-1">
+            <MindAiDebugMenu debugContext={debugContext} />
             <Button
               aria-label={t('ai.assistantSettings')}
               className="h-7 w-7"
@@ -122,6 +150,7 @@ export function MindAiPanelHeader({
       ) : null}
       {fullscreen ? (
         <div className="flex shrink-0 items-center gap-1">
+          <MindAiDebugMenu debugContext={debugContext} />
           <MindAiHeaderActions
             fullscreen={fullscreen}
             chatJson={chatJson}
@@ -133,5 +162,32 @@ export function MindAiPanelHeader({
         </div>
       ) : null}
     </div>
+  );
+}
+
+function MindAiDebugMenu({
+  debugContext,
+}: {
+  debugContext: MindAiDebugContext;
+}) {
+  const t = useTranslations('mind');
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          aria-label={t('ai.debugDetails')}
+          className="h-7 w-7"
+          size="icon"
+          type="button"
+          variant="ghost"
+        >
+          <Info className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80 p-2">
+        <MindAiDebugDetails context={debugContext} defaultOpen />
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

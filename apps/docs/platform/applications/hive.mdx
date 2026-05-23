@@ -35,8 +35,11 @@ so the standalone app and web-hosted app stay 1:1.
 
 ## Access Model
 
-- Production access requires a row in the Hive Postgres `hive_members` table
-  with `enabled = true`.
+- Production access is resolved from Supabase `public.hive_members` with
+  `enabled = true` plus platform-admin roles. The dedicated Hive Postgres
+  `hive_members` table is still synchronized for product data workflows, but
+  app access gates must not require `HIVE_DATABASE_URL` just to decide whether a
+  signed-in user can open Hive.
 - Researchers who authenticate successfully but are not enabled land on
   `/not-whitelisted`, where they can create or refresh a
   `hive_access_requests` row. That page polls
@@ -49,8 +52,9 @@ so the standalone app and web-hosted app stay 1:1.
 - Pending Hive requests appear in the same platform roles panel. Approving a
   request writes both the dedicated Hive Postgres `hive_members` row and the
   Supabase `public.hive_members` row that the Hive satellite uses for its local
-  server gate. Do not update only one store, or users can authenticate through
-  Tuturuuu and then loop back to the restricted page.
+  server gate and that `apps/web` uses for embedded Hive routes. Do not update
+  only one store, or users can authenticate through Tuturuuu and then loop back
+  to the restricted page or fail an embedded Hive preload.
 - V1 server policy is intentionally broad: every enabled Hive member can join
   every enabled Hive server.
 - Hive servers are global research worlds. Workspace selection inside the Hive
@@ -272,6 +276,10 @@ session and run metadata, and expands rows into input/output context, status,
 model/provider, credits, and export identifiers. Workflow mode is still a 2D
 React Flow graph builder for manual Hive automations, but it must reuse the same
 AI context, run trace, and research timeline contracts as NPC pair queues.
+Embedded `apps/web` Hive routes should load `@xyflow/react/dist/style.css` from
+the Hive route segment layout rather than the root web layout, so React Flow
+styles are available for workflow mode without adding that CSS to unrelated
+dashboard routes.
 Admins can drag nodes from the palette, use starter templates, edit JSON config
 in the inspector, save shared workflows, and run them against the selected
 server. Members see the same graph read-only and can manually run saved

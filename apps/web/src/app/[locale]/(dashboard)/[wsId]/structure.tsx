@@ -839,6 +839,10 @@ export function Structure({
   };
 
   const currentTitle = navState.titleHistory[navState.titleHistory.length - 1];
+  const showCurrentTitle =
+    !isCollapsed &&
+    currentTitle &&
+    currentTitle !== t('sidebar_tabs.more_tools');
   const filteredCurrentLinks = getFilteredLinks(navState.currentLinks);
   const filteredRootLinks = promoteArchivedWhenMoreToolsOnlyHasArchive(
     getFilteredLinks(preferredLinks)
@@ -961,14 +965,14 @@ export function Structure({
                   /* For the back button, we don't want to close the sidebar */
                 }}
               />
-              {!isCollapsed && currentTitle && (
+              {showCurrentTitle && (
                 <div className="p-2 pt-0">
                   <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
                     {currentTitle}
                   </h2>
                 </div>
               )}
-              {!isCollapsed && <div className="mx-4 my-1 border-b" />}
+              {showCurrentTitle && <div className="mx-4 my-1 border-b" />}
               {filteredCurrentLinks.length > 0 && (
                 <div className="scrollbar-none flex-1 overflow-y-auto">
                   <Nav

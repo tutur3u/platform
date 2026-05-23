@@ -76,8 +76,6 @@ export function HiveStudioTop({
       onToggleMiniMap={() => onSetMiniMapCollapsed((value) => !value)}
       onToggleNpcLab={() => onSetNpcLabCollapsed((value) => !value)}
       onUpdateServerSettings={engine.updateServerSettings}
-      presenceCount={engine.presenceCount}
-      realtimeStatus={engine.realtimeStatus}
       revision={engine.revision}
       rightCollapsed={rightCollapsed}
       selectedNpc={engine.selectedNpc}

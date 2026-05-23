@@ -54,8 +54,8 @@ export function MindNodeInspector({
   return (
     <section className="space-y-3 p-3">
       <InspectorHeader
-        badge={t(`nodeStatuses.${node.status}`)}
-        title={t('inspector.node')}
+        badge={t('inspector.node')}
+        title={node.title || t('untitledIdea')}
         onDelete={() => onDeleteNode(node.id)}
       />
       <div className="flex flex-wrap gap-1.5">

@@ -98,6 +98,7 @@ function createAdminClient(
     allow_role_management: true,
     enabled: true,
   },
+  member: { enabled: boolean } | null = null,
   syncError: { message: string } | null = null
 ) {
   const platformRoleLookup = {
@@ -108,6 +109,11 @@ function createAdminClient(
     })),
   };
   const hiveMembersTable = {
+    select: vi.fn(() => ({
+      eq: vi.fn(() => ({
+        maybeSingle: vi.fn().mockResolvedValue({ data: member, error: null }),
+      })),
+    })),
     upsert: vi.fn().mockResolvedValue({ error: syncError }),
   };
 

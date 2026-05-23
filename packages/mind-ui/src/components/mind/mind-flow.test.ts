@@ -7,6 +7,7 @@ import {
 } from './mind-board-export';
 import { buildRelationshipRoute } from './mind-canvas-graph';
 import {
+  createMindConnectionEdge,
   getMindGroupFrames,
   organizeMindLayout,
   toFlowEdges,
@@ -110,6 +111,28 @@ describe('Mind canvas graph utilities', () => {
     expect(framesCollide(children[0], children[1], 120)).toBe(false);
   });
 
+  it('maps manual group-frame links onto persisted node ids with frame metadata', () => {
+    const organized = organizeMindLayout({
+      edges: [],
+      nodes: toFlowNodes([
+        node({ id: 'parent', nodeType: 'milestone', title: 'Parent' }),
+        node({ id: 'child', parentNodeId: 'parent', title: 'Child' }),
+        node({ id: 'external', positionX: 700, title: 'External' }),
+      ]),
+    });
+    const frames = getMindGroupFrames({ edges: [], nodes: organized });
+    const childFrame = frames.find((frame) => frame.kind === 'children');
+    const edge = createMindConnectionEdge({
+      frames,
+      source: 'external',
+      target: childFrame?.id,
+    });
+
+    expect(edge?.sourceNodeId).toBe('external');
+    expect(edge?.targetNodeId).toBe('parent');
+    expect(edge?.metadata.targetFrameId).toBe(childFrame?.id);
+  });
+
   it('adds obstacle context while preserving natural handles for nearby targets', () => {
     const nodes = toFlowNodes([
       node({ id: 'source', title: 'Source' }),
@@ -134,8 +157,8 @@ describe('Mind canvas graph utilities', () => {
       'middle'
     );
     expect(flowEdges.map((item) => item.sourceHandle)).toEqual([
-      'source-right',
-      'source-right',
+      'connection-right',
+      'connection-right',
     ]);
   });
 
@@ -156,8 +179,8 @@ describe('Mind canvas graph utilities', () => {
       nodes
     );
 
-    expect(flowEdge?.sourceHandle).toBe('source-top');
-    expect(flowEdge?.targetHandle).toBe('target-bottom');
+    expect(flowEdge?.sourceHandle).toBe('connection-top');
+    expect(flowEdge?.targetHandle).toBe('connection-bottom');
   });
 
   it('uses straight relationship paths first and detours around node obstacles', () => {

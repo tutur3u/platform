@@ -11,6 +11,7 @@ import type {
 } from '../../engine/types';
 import type { HiveAgentMessage } from './hive-agent-composer';
 import { HiveAgentStudioPanel } from './hive-agent-studio-panel';
+import { HiveNoServerState } from './hive-no-server-state';
 import { HiveStudioCenter } from './hive-studio-center';
 import { HiveStudioDialogs } from './hive-studio-dialogs';
 import { HiveStudioServerPicker } from './hive-studio-server-picker';
@@ -117,6 +118,11 @@ export function HiveStudio({
     }
   };
 
+  const openCreateServerDialog = () => {
+    setServerActionTarget(null);
+    setServerDialogMode('create');
+  };
+
   const serverPicker = (
     <HiveStudioServerPicker
       buildInfo={buildInfo}
@@ -128,6 +134,45 @@ export function HiveStudio({
       onSetWorldAction={setWorldAction}
     />
   );
+  const dialogs = (
+    <HiveStudioDialogs
+      deleteServerOpen={deleteServerOpen}
+      onCreateServer={engine.createServerWithPayload}
+      onDeleteServer={engine.deleteServer}
+      onResetWorld={engine.resetWorld}
+      onSetDeleteServerOpen={setDeleteServerOpen}
+      onSetServerActionTarget={setServerActionTarget}
+      onSetServerDialogMode={setServerDialogMode}
+      onSetWorldAction={setWorldAction}
+      deleteSelectionTarget={deleteSelectionTarget}
+      onDeleteSelection={(target) => engine.eraseSelection(target)}
+      onSetDeleteSelectionTarget={setDeleteSelectionTarget}
+      onUpdateServer={engine.updateServer}
+      selectedServer={engine.selectedServer}
+      serverActionTarget={serverActionTarget}
+      serverDialogMode={serverDialogMode}
+      worldAction={worldAction}
+    />
+  );
+
+  if (!engine.selectedServer) {
+    return (
+      <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
+        <SatelliteWorkspaceShell
+          center={
+            <HiveNoServerState
+              isAdmin={isAdmin}
+              onCreateServer={openCreateServerDialog}
+              onSelectServer={engine.setServerId}
+              servers={engine.servers}
+            />
+          }
+          embedInDashboard={embedInDashboard}
+        />
+        {dialogs}
+      </div>
+    );
+  }
 
   return (
     <div className="contents" data-hive-ready={hydrated ? 'true' : 'false'}>
@@ -199,24 +244,7 @@ export function HiveStudio({
         }
         topCollapsed={topCollapsed}
       />
-      <HiveStudioDialogs
-        deleteServerOpen={deleteServerOpen}
-        onCreateServer={engine.createServerWithPayload}
-        onDeleteServer={engine.deleteServer}
-        onResetWorld={engine.resetWorld}
-        onSetDeleteServerOpen={setDeleteServerOpen}
-        onSetServerActionTarget={setServerActionTarget}
-        onSetServerDialogMode={setServerDialogMode}
-        onSetWorldAction={setWorldAction}
-        deleteSelectionTarget={deleteSelectionTarget}
-        onDeleteSelection={(target) => engine.eraseSelection(target)}
-        onSetDeleteSelectionTarget={setDeleteSelectionTarget}
-        onUpdateServer={engine.updateServer}
-        selectedServer={engine.selectedServer}
-        serverActionTarget={serverActionTarget}
-        serverDialogMode={serverDialogMode}
-        worldAction={worldAction}
-      />
+      {dialogs}
     </div>
   );
 }

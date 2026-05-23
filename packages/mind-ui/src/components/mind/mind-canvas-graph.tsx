@@ -5,28 +5,47 @@ import {
   Background,
   BaseEdge,
   type ColorMode,
+  type Connection,
+  ConnectionMode,
   Controls,
   type EdgeChange,
   EdgeLabelRenderer,
   type EdgeProps,
   getSmoothStepPath,
+  Handle,
+  type Node,
   type NodeChange,
+  type NodeProps,
+  PanOnScrollMode,
   Position,
   ReactFlow,
-  ViewportPortal,
 } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   MindEdgeObstacle,
   MindFlowEdge,
   MindFlowNode,
   MindGroupFrame,
 } from './mind-flow';
+import {
+  getMindConnectionHandleId,
+  getMindEdgeFrameEndpoint,
+} from './mind-flow';
 import { MindNodeCard } from './mind-node-card';
+import { useDebouncedValue } from './use-debounced-value';
 
-const nodeTypes = { mindNode: MindNodeCard };
+type MindGroupFrameNodeData = Record<string, unknown> & {
+  frame: MindGroupFrame;
+};
+type MindGroupFrameNode = Node<MindGroupFrameNodeData, 'mindGroupFrame'>;
+type MindGraphNode = MindFlowNode | MindGroupFrameNode;
+
+const nodeTypes = {
+  mindGroupFrame: MindGroupFrameNode,
+  mindNode: MindNodeCard,
+};
 const edgeTypes = { mindRelationship: MindRelationshipEdge };
 const AXIS_ALIGN_TOLERANCE = 8;
 const DETOUR_GAPS = [72, 128, 196];
@@ -34,27 +53,32 @@ const FRAME_BORDER_LABEL_GAP = 18;
 const FRAME_BORDER_LABEL_THICKNESS = 20;
 const LABEL_ESTIMATED_CHAR_WIDTH = 7.6;
 const LABEL_HEIGHT_COMPACT = 24;
-const LABEL_HEIGHT_WRAPPED = 42;
 const LABEL_OBSTACLE_PADDING = 12;
-const LABEL_OFFSETS = [34, 50, 68] as const;
+const LABEL_OFFSETS = [30, 52, 84, 120, 160] as const;
 const LABEL_PADDING_X = 30;
 const OBSTACLE_PADDING = 28;
 const PORT_GAP = 36;
 const RELATIONSHIP_LINE_LABEL_GAP = 28;
-const VERTICAL_LABEL_GAPS = [12, 20, 32] as const;
+const ROUTING_OBSTACLE_DEBOUNCE_MS = 120;
+const VERTICAL_LABEL_GAPS = [12, 24, 42, 72] as const;
 
 type Props = {
   edges: MindFlowEdge[];
   groupFrames: MindGroupFrame[];
   nodes: MindFlowNode[];
-  onConnect: (source?: string | null, target?: string | null) => void;
+  onConnect: (connection: Connection) => void;
   onCanvasClick?: () => void;
   onEdgesChange: (changes: EdgeChange<MindFlowEdge>[]) => void;
   onEdgesDelete: (edges: MindFlowEdge[]) => void;
   onNodesChange: (changes: NodeChange<MindFlowNode>[]) => void;
   onNodesDelete: (nodes: MindFlowNode[]) => void;
+  onSelectEdgeLabel?: (edgeId: string) => void;
+  selectedEdgeId?: string | null;
+  selectedFrameId?: string | null;
+  selectedNodeId?: string | null;
   onSelectionChange: (selection: {
     edges: MindFlowEdge[];
+    frames: MindGroupFrame[];
     nodes: MindFlowNode[];
   }) => void;
 };
@@ -69,26 +93,54 @@ export function MindCanvasGraph({
   onEdgesDelete,
   onNodesChange,
   onNodesDelete,
+  onSelectEdgeLabel,
+  selectedEdgeId,
+  selectedFrameId,
+  selectedNodeId,
   onSelectionChange,
 }: Props) {
   const { resolvedTheme } = useTheme();
+  const [hoveredEdgeId, setHoveredEdgeId] = useState<string | null>(null);
+  const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
   const colorMode: ColorMode = resolvedTheme === 'light' ? 'light' : 'dark';
+  const focusedEdgeId = hoveredEdgeId ?? selectedEdgeId;
+  const focusedNodeId = hoveredNodeId ?? selectedNodeId;
+  const routingNodes = useDebouncedValue(nodes, ROUTING_OBSTACLE_DEBOUNCE_MS);
+  const routingEdges = useDebouncedValue(edges, ROUTING_OBSTACLE_DEBOUNCE_MS);
+  const routingGroupFrames = useDebouncedValue(
+    groupFrames,
+    ROUTING_OBSTACLE_DEBOUNCE_MS
+  );
+  const frameById = useMemo(
+    () => new Map(groupFrames.map((frame) => [frame.id, frame])),
+    [groupFrames]
+  );
+  const frameNodes = useMemo(
+    () =>
+      groupFrames.map((frame) =>
+        toMindGroupFrameNode(frame, frame.id === selectedFrameId)
+      ),
+    [groupFrames, selectedFrameId]
+  );
   const edgesWithFrameLabelObstacles = useMemo<MindFlowEdge[]>(() => {
-    const frameLabelObstacles = groupFrames.flatMap(toFrameLabelObstacles);
-    const relationshipLineObstacles = getRelationshipLineObstacles(
-      edges,
-      nodes
+    const frameLabelObstacles = routingGroupFrames.flatMap(
+      toFrameLabelObstacles
     );
-    if (
-      frameLabelObstacles.length === 0 &&
-      relationshipLineObstacles.length === 0
-    ) {
-      return edges;
-    }
-
-    return edges.map((edge) => {
+    const nodeLabelObstacles = routingNodes.map(toFlowNodeObstacle);
+    const relationshipLineObstacles = getRelationshipLineObstacles(
+      routingEdges,
+      routingNodes
+    );
+    const relationshipLabelObstacles = getRelationshipLabelObstacles(
+      routingEdges,
+      routingNodes
+    );
+    return edges.map((edge, edgeIndex) => {
       if (!edge.data) return edge;
       const otherRelationshipLineObstacles = relationshipLineObstacles.filter(
+        (obstacle) => !obstacle.id.startsWith(`${edge.id}:`)
+      );
+      const otherRelationshipLabelObstacles = relationshipLabelObstacles.filter(
         (obstacle) => !obstacle.id.startsWith(`${edge.id}:`)
       );
 
@@ -96,85 +148,357 @@ export function MindCanvasGraph({
         ...edge,
         data: {
           ...edge.data,
+          labelLane: edgeIndex,
+          onHoverEdge: setHoveredEdgeId,
+          onSelectEdge: onSelectEdgeLabel,
           labelObstacles: [
             ...(edge.data.labelObstacles ?? []),
+            ...nodeLabelObstacles,
             ...frameLabelObstacles,
             ...otherRelationshipLineObstacles,
+            ...otherRelationshipLabelObstacles,
           ],
         },
       };
     });
-  }, [edges, groupFrames, nodes]);
+  }, [
+    edges,
+    onSelectEdgeLabel,
+    routingEdges,
+    routingGroupFrames,
+    routingNodes,
+  ]);
+  const graphEdges = useMemo(() => {
+    const endpointEdges = applyFrameEndpointsToEdges({
+      edges: edgesWithFrameLabelObstacles,
+      frames: frameById,
+      nodes,
+    });
+
+    return applyGraphFocusToEdges({
+      edges: endpointEdges,
+      focusedEdgeId,
+      focusedNodeId,
+    });
+  }, [
+    edgesWithFrameLabelObstacles,
+    focusedEdgeId,
+    focusedNodeId,
+    frameById,
+    nodes,
+  ]);
+  const graphNodes = useMemo<MindGraphNode[]>(
+    () => [
+      ...frameNodes,
+      ...applyGraphFocusToNodes({
+        edges: graphEdges,
+        nodes,
+        focusedEdgeId,
+        focusedNodeId,
+      }),
+    ],
+    [focusedEdgeId, focusedNodeId, frameNodes, graphEdges, nodes]
+  );
 
   return (
-    <ReactFlow<MindFlowNode, MindFlowEdge>
+    <ReactFlow<MindGraphNode, MindFlowEdge>
       className="bg-root-background"
       colorMode={colorMode}
+      connectionMode={ConnectionMode.Loose}
+      connectionRadius={42}
       defaultEdgeOptions={{ type: 'smoothstep' }}
-      edges={edgesWithFrameLabelObstacles}
+      edges={graphEdges}
       fitView
-      nodes={nodes}
+      nodes={graphNodes}
       edgeTypes={edgeTypes}
       nodeTypes={nodeTypes}
-      onConnect={(connection) =>
-        onConnect(connection.source, connection.target)
-      }
+      onConnect={onConnect}
       onPaneClick={onCanvasClick}
       onEdgesChange={onEdgesChange}
       onEdgesDelete={onEdgesDelete}
-      onNodesChange={onNodesChange}
-      onNodesDelete={onNodesDelete}
-      onSelectionChange={onSelectionChange}
+      onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
+      onEdgeMouseLeave={() => setHoveredEdgeId(null)}
+      onNodeMouseEnter={(_, node) => {
+        if (isMindFlowNode(node)) setHoveredNodeId(node.id);
+      }}
+      onNodeMouseLeave={() => setHoveredNodeId(null)}
+      onNodesChange={(changes) =>
+        onNodesChange(
+          changes.filter((change) => {
+            if (!('id' in change)) return true;
+            return !frameById.has(change.id);
+          }) as NodeChange<MindFlowNode>[]
+        )
+      }
+      onNodesDelete={(deleted) => onNodesDelete(deleted.filter(isMindFlowNode))}
+      onSelectionChange={({ edges: selectedEdges, nodes: selectedNodes }) =>
+        onSelectionChange({
+          edges: selectedEdges,
+          frames: selectedNodes.filter(isMindGroupFrameNode).map((node) => {
+            const data = node.data as MindGroupFrameNodeData;
+            return data.frame;
+          }),
+          nodes: selectedNodes.filter(isMindFlowNode),
+        })
+      }
+      panOnScroll
+      panOnScrollMode={PanOnScrollMode.Free}
+      snapGrid={[16, 16]}
+      snapToGrid
+      zoomOnPinch
+      zoomOnScroll={false}
     >
-      <MindGroupFrames frames={groupFrames} />
       <Background className="bg-root-background" />
       <Controls className="overflow-hidden rounded-md border border-border bg-background/95 shadow-lg [&_.react-flow__controls-button:hover]:bg-muted [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button]:bg-background [&_.react-flow__controls-button]:text-foreground [&_.react-flow__controls-button_svg]:fill-current" />
     </ReactFlow>
   );
 }
 
-function MindGroupFrames({ frames }: { frames: MindGroupFrame[] }) {
+function MindGroupFrameNode({ data, selected }: NodeProps) {
   const t = useTranslations('mind');
+  const frame = (data as MindGroupFrameNodeData).frame;
 
   return (
-    <ViewportPortal>
-      {frames.map((frame) => (
-        <div
-          className="pointer-events-none absolute rounded-2xl border"
-          key={frame.id}
-          style={{
-            borderColor: frame.color,
-            borderStyle: frame.kind === 'children' ? 'solid' : 'dashed',
-            borderWidth: frame.kind === 'children' ? 1.5 : 1,
-            boxShadow:
-              frame.kind === 'children'
-                ? `0 0 0 1px color-mix(in oklab, ${frame.color} 24%, transparent)`
-                : undefined,
-            height: frame.height,
-            left: frame.x,
-            top: frame.y,
-            width: frame.width,
-          }}
-        >
-          <div
-            className="absolute -top-3 left-5 flex items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 font-medium text-[10px] uppercase tracking-[0.12em] shadow-lg"
-            style={{ borderColor: frame.color, color: frame.color }}
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-current" />
-            {frame.kind === 'children'
-              ? t('groups.childrenOf', {
-                  count: frame.childCount,
-                  parent: frame.parentTitle,
-                })
-              : t('groups.cluster', {
-                  count: frame.childCount,
-                  title: frame.title,
-                })}
-          </div>
-        </div>
-      ))}
-    </ViewportPortal>
+    <div
+      className={cn(
+        'group/frame relative h-full w-full rounded-2xl border bg-background/5',
+        selected &&
+          'ring-2 ring-dynamic-blue ring-offset-2 ring-offset-root-background'
+      )}
+      style={{
+        borderColor: frame.color,
+        borderStyle: frame.kind === 'children' ? 'solid' : 'dashed',
+        borderWidth: frame.kind === 'children' ? 1.5 : 1,
+        boxShadow:
+          frame.kind === 'children'
+            ? `0 0 0 1px color-mix(in oklab, ${frame.color} 24%, transparent)`
+            : undefined,
+      }}
+    >
+      <MindFrameHandle position={Position.Top} />
+      <MindFrameHandle position={Position.Right} />
+      <MindFrameHandle position={Position.Bottom} />
+      <MindFrameHandle position={Position.Left} />
+      <div
+        className="absolute -top-3 left-5 flex max-w-[calc(100%-2.5rem)] items-center gap-1.5 rounded-full border bg-background px-2.5 py-1 font-medium text-[10px] uppercase tracking-[0.12em] shadow-lg"
+        style={{ borderColor: frame.color, color: frame.color }}
+      >
+        <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-current" />
+        <span className="truncate">
+          {frame.kind === 'children'
+            ? t('groups.childrenOf', {
+                count: frame.childCount,
+                parent: frame.parentTitle,
+              })
+            : t('groups.cluster', {
+                count: frame.childCount,
+                title: frame.title,
+              })}
+        </span>
+      </div>
+    </div>
   );
+}
+
+function MindFrameHandle({ position }: { position: Position }) {
+  return (
+    <Handle
+      className="pointer-events-auto h-3 w-3 border-2 border-background bg-dynamic-blue opacity-75 transition group-hover/frame:opacity-100"
+      id={getMindConnectionHandleId(positionToEdgeSide(position))}
+      position={position}
+      type="source"
+    />
+  );
+}
+
+function toMindGroupFrameNode(
+  frame: MindGroupFrame,
+  selected: boolean
+): MindGroupFrameNode {
+  return {
+    className: 'pointer-events-auto',
+    connectable: true,
+    data: { frame },
+    deletable: false,
+    draggable: false,
+    focusable: true,
+    id: frame.id,
+    position: { x: frame.x, y: frame.y },
+    selectable: true,
+    selected,
+    style: {
+      height: frame.height,
+      width: frame.width,
+    },
+    type: 'mindGroupFrame',
+    zIndex: 0,
+  };
+}
+
+function applyFrameEndpointsToEdges({
+  edges,
+  frames,
+  nodes,
+}: {
+  edges: MindFlowEdge[];
+  frames: Map<string, MindGroupFrame>;
+  nodes: MindFlowNode[];
+}) {
+  if (frames.size === 0) return edges;
+
+  const rectById = new Map<string, RectLike>();
+  for (const node of nodes) {
+    rectById.set(node.id, {
+      height: Math.max(node.data.node.height || 0, node.height || 0, 168),
+      width: Math.max(node.data.node.width || 0, node.width || 0, 280),
+      x: node.position.x,
+      y: node.position.y,
+    });
+  }
+  for (const frame of frames.values()) {
+    rectById.set(frame.id, frame);
+  }
+
+  return edges.map((edge) => {
+    const rawEdge = edge.data?.edge;
+    if (!rawEdge) return edge;
+
+    const sourceFrameId = getMindEdgeFrameEndpoint(rawEdge, 'source');
+    const targetFrameId = getMindEdgeFrameEndpoint(rawEdge, 'target');
+    const sourceFrame = sourceFrameId ? frames.get(sourceFrameId) : undefined;
+    const targetFrame = targetFrameId ? frames.get(targetFrameId) : undefined;
+    if (!sourceFrame && !targetFrame) return edge;
+
+    const source = sourceFrame?.id ?? edge.source;
+    const target = targetFrame?.id ?? edge.target;
+    const sourceRect = rectById.get(source);
+    const targetRect = rectById.get(target);
+
+    return {
+      ...edge,
+      source,
+      sourceHandle:
+        sourceFrame && sourceRect && targetRect
+          ? getMindConnectionHandleId(getSideFacing(sourceRect, targetRect))
+          : edge.sourceHandle,
+      target,
+      targetHandle:
+        targetFrame && sourceRect && targetRect
+          ? getMindConnectionHandleId(getSideFacing(targetRect, sourceRect))
+          : edge.targetHandle,
+    };
+  });
+}
+
+function applyGraphFocusToEdges({
+  edges,
+  focusedEdgeId,
+  focusedNodeId,
+}: {
+  edges: MindFlowEdge[];
+  focusedEdgeId?: string | null;
+  focusedNodeId?: string | null;
+}) {
+  if (!focusedEdgeId && !focusedNodeId) return edges;
+
+  return edges.map((edge): MindFlowEdge => {
+    const focused =
+      edge.id === focusedEdgeId ||
+      edge.source === focusedNodeId ||
+      edge.target === focusedNodeId;
+    if (!edge.data) return edge;
+
+    return {
+      ...edge,
+      data: {
+        ...edge.data,
+        dimmed: !focused,
+        focused,
+      },
+    };
+  });
+}
+
+function applyGraphFocusToNodes({
+  edges,
+  nodes,
+  focusedEdgeId,
+  focusedNodeId,
+}: {
+  edges: MindFlowEdge[];
+  nodes: MindFlowNode[];
+  focusedEdgeId?: string | null;
+  focusedNodeId?: string | null;
+}) {
+  if (!focusedEdgeId && !focusedNodeId) return nodes;
+
+  const focusedNodeIds = new Set<string>();
+  if (focusedNodeId) focusedNodeIds.add(focusedNodeId);
+  for (const edge of edges) {
+    if (edge.id === focusedEdgeId) {
+      focusedNodeIds.add(edge.source);
+      focusedNodeIds.add(edge.target);
+      continue;
+    }
+    if (
+      focusedNodeId &&
+      (edge.source === focusedNodeId || edge.target === focusedNodeId)
+    ) {
+      focusedNodeIds.add(edge.source);
+      focusedNodeIds.add(edge.target);
+    }
+  }
+
+  return nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      dimmed: !focusedNodeIds.has(node.id),
+    },
+  }));
+}
+
+function isMindFlowNode(node: MindGraphNode): node is MindFlowNode {
+  return node.type === 'mindNode';
+}
+
+function isMindGroupFrameNode(node: MindGraphNode): node is MindGroupFrameNode {
+  return node.type === 'mindGroupFrame';
+}
+
+type EdgeSide = 'bottom' | 'left' | 'right' | 'top';
+type RectLike = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+function positionToEdgeSide(position: Position): EdgeSide {
+  if (position === Position.Top) return 'top';
+  if (position === Position.Bottom) return 'bottom';
+  if (position === Position.Left) return 'left';
+  return 'right';
+}
+
+function getSideFacing(from: RectLike, to: RectLike): EdgeSide {
+  const fromCenter = getRectCenter(from);
+  const toCenter = getRectCenter(to);
+  const dx = toCenter.x - fromCenter.x;
+  const dy = toCenter.y - fromCenter.y;
+
+  if (Math.abs(dx) >= Math.abs(dy)) {
+    return dx >= 0 ? 'right' : 'left';
+  }
+
+  return dy >= 0 ? 'bottom' : 'top';
+}
+
+function getRectCenter(rect: RectLike) {
+  return {
+    x: rect.x + rect.width / 2,
+    y: rect.y + rect.height / 2,
+  };
 }
 
 function MindRelationshipEdge({
@@ -198,17 +522,22 @@ function MindRelationshipEdge({
     typeof label === 'string' && label.trim()
       ? label.trim()
       : data?.edge.edgeType.replaceAll('_', ' ');
+  const edgeStroke = typeof style?.stroke === 'string' ? style.stroke : null;
+  const dimmed = data?.dimmed === true && !selected;
+  const focused = data?.focused === true || selected;
   const route = buildRelationshipRoute({
     fallbackPositions: {
       source: sourceSide,
       target: targetSide,
     },
+    labelLane: data?.labelLane,
     labelObstacles: data?.labelObstacles ?? [],
     labelText: relationshipLabel,
     obstacles: data?.obstacles ?? [],
     source: { x: sourceX, y: sourceY },
     target: { x: targetX, y: targetY },
   });
+  const labelMaxWidth = Math.min(route.label.maxWidth, 220);
 
   return (
     <>
@@ -219,40 +548,98 @@ function MindRelationshipEdge({
         path={route.path}
         style={{
           ...style,
-          strokeWidth: selected ? 3 : style?.strokeWidth,
+          strokeWidth: focused ? 3 : style?.strokeWidth,
+          strokeOpacity: dimmed ? 0.18 : style?.strokeOpacity,
         }}
       />
       {label && route.label.visible !== false ? (
         <EdgeLabelRenderer>
-          <div
+          <EdgeLabelConnector
+            label={route.label}
+            selected={focused}
+            stroke={edgeStroke}
+          />
+          <button
             className={cn(
-              'nodrag nopan pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 rounded-full border border-dynamic-blue/45 bg-background/95 px-2 py-0.5 font-medium text-[11px] shadow-sm backdrop-blur',
-              route.label.oneLine ? 'whitespace-nowrap' : 'break-words'
+              'nodrag nopan pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer rounded-md border border-dynamic-blue/45 bg-background/95 px-2 py-0.5 text-left font-medium text-[11px] shadow-sm backdrop-blur transition hover:bg-muted'
             )}
-            style={{
-              left: route.label.x,
-              maxWidth: route.label.maxWidth,
-              top: route.label.y,
-              zIndex: selected ? 50 : 30,
+            onClick={(event) => {
+              event.stopPropagation();
+              data?.onSelectEdge?.(id);
             }}
+            onPointerEnter={() => data?.onHoverEdge?.(id)}
+            onPointerLeave={() => data?.onHoverEdge?.(null)}
+            onPointerDown={(event) => event.stopPropagation()}
+            style={{
+              borderColor: edgeStroke ?? undefined,
+              left: route.label.x,
+              maxWidth: labelMaxWidth,
+              opacity: dimmed ? 0.35 : undefined,
+              top: route.label.y,
+              zIndex: focused ? 50 : 30,
+            }}
+            title={relationshipLabel}
+            type="button"
           >
-            <span
-              className={cn(
-                'min-w-0 overflow-visible leading-4',
-                route.label.oneLine ? 'whitespace-nowrap' : 'whitespace-normal'
-              )}
-            >
+            <span className="block min-w-0 truncate whitespace-nowrap leading-4">
               {relationshipLabel}
             </span>
-          </div>
+          </button>
         </EdgeLabelRenderer>
       ) : null}
     </>
   );
 }
 
+function EdgeLabelConnector({
+  label,
+  selected,
+  stroke,
+}: {
+  label: LabelPlacement;
+  selected?: boolean;
+  stroke: string | null;
+}) {
+  const deltaX = label.x - label.anchorX;
+  const deltaY = label.y - label.anchorY;
+  if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) return null;
+
+  const left = Math.min(label.x, label.anchorX);
+  const top = Math.min(label.y, label.anchorY);
+  const width = Math.max(1, Math.abs(deltaX));
+  const height = Math.max(1, Math.abs(deltaY));
+
+  return (
+    <svg
+      aria-hidden="true"
+      className="pointer-events-none absolute overflow-visible text-dynamic-blue"
+      style={{
+        height,
+        left,
+        top,
+        width,
+        zIndex: selected ? 49 : 29,
+      }}
+    >
+      <line
+        stroke={stroke ?? 'currentColor'}
+        strokeDasharray="3 3"
+        strokeLinecap="round"
+        strokeOpacity={selected ? 0.9 : 0.65}
+        strokeWidth={1.5}
+        x1={label.anchorX - left}
+        x2={label.x - left}
+        y1={label.anchorY - top}
+        y2={label.y - top}
+      />
+    </svg>
+  );
+}
+
 type Point = { x: number; y: number };
 type LabelPlacement = {
+  anchorX: number;
+  anchorY: number;
   maxWidth: number;
   oneLine: boolean;
   visible?: boolean;
@@ -262,12 +649,15 @@ type LabelPlacement = {
 type LabelCandidate = LabelPlacement & {
   horizontal: boolean;
   lineGap: number;
+  offsetRank: number;
   segmentLength: number;
+  side: -1 | 0 | 1;
 };
 type Rect = { height: number; width: number; x: number; y: number };
 
 export function buildRelationshipRoute({
   fallbackPositions,
+  labelLane = 0,
   labelObstacles = [],
   labelText,
   obstacles,
@@ -275,6 +665,7 @@ export function buildRelationshipRoute({
   target,
 }: {
   fallbackPositions: { source: Position; target: Position };
+  labelLane?: number;
   labelObstacles?: MindEdgeObstacle[];
   labelText?: string;
   obstacles: MindEdgeObstacle[];
@@ -290,6 +681,7 @@ export function buildRelationshipRoute({
 
   if (isAxisAligned(source, target) && isPathClear(direct, safeObstacles)) {
     return createRoute(direct, {
+      labelLane,
       labelObstacles: safeLabelObstacles,
       labelText,
     });
@@ -373,6 +765,7 @@ export function buildRelationshipRoute({
 
   if (clearRoute) {
     return createRoute(clearRoute, {
+      labelLane,
       labelObstacles: safeLabelObstacles,
       labelText,
     });
@@ -394,15 +787,20 @@ export function buildRelationshipRoute({
       [
         {
           horizontal: false,
+          anchorX: labelX,
+          anchorY: labelY,
           lineGap: 0,
           maxWidth: 220,
           oneLine: false,
+          offsetRank: 0,
+          side: 0,
           segmentLength: 0,
           x: labelX,
           y: labelY,
         },
       ],
       {
+        labelLane,
         labelObstacles: safeLabelObstacles,
         labelText,
         routeMidpoint: { x: labelX, y: labelY },
@@ -415,7 +813,11 @@ export function buildRelationshipRoute({
 
 function createRoute(
   points: Point[],
-  options?: { labelObstacles?: MindEdgeObstacle[]; labelText?: string }
+  options?: {
+    labelLane?: number;
+    labelObstacles?: MindEdgeObstacle[];
+    labelText?: string;
+  }
 ) {
   const compacted = compactPoints(points);
   const path = compacted
@@ -445,9 +847,14 @@ function compactPoints(points: Point[]) {
 function getPathLabel(
   points: Point[],
   {
+    labelLane = 0,
     labelObstacles = [],
     labelText,
-  }: { labelObstacles?: MindEdgeObstacle[]; labelText?: string } = {}
+  }: {
+    labelLane?: number;
+    labelObstacles?: MindEdgeObstacle[];
+    labelText?: string;
+  } = {}
 ) {
   const total = getPathLength(points);
   const routeMidpoint = getPointAtPathLength(points, total / 2);
@@ -457,6 +864,7 @@ function getPathLabel(
 
   if (candidates.length > 0) {
     return pickBestLabelCandidate(candidates, {
+      labelLane,
       labelObstacles,
       labelText,
       routeMidpoint,
@@ -464,7 +872,13 @@ function getPathLabel(
   }
 
   const fallback = points[Math.floor(points.length / 2)] ?? { x: 0, y: 0 };
-  return { maxWidth: 180, oneLine: false, ...fallback };
+  return {
+    anchorX: fallback.x,
+    anchorY: fallback.y,
+    maxWidth: 180,
+    oneLine: false,
+    ...fallback,
+  };
 }
 
 function getSegmentLabelCandidates(
@@ -476,28 +890,42 @@ function getSegmentLabelCandidates(
   const horizontal = segment.start.y === segment.end.y;
   const desiredWidth = getDesiredLabelWidth(labelText);
   const maxWidth = horizontal
-    ? Math.min(320, Math.max(112, segment.length - 32))
-    : Math.min(280, Math.max(160, desiredWidth));
-  const oneLine =
-    (horizontal ? segment.length >= 150 : true) && desiredWidth <= maxWidth;
+    ? Math.min(220, Math.max(112, segment.length - 32))
+    : Math.min(220, Math.max(120, desiredWidth));
+  const oneLine = true;
   const base = { horizontal, maxWidth, oneLine, segmentLength: segment.length };
   const ratios = segment.length >= 180 ? [0.22, 0.36, 0.5, 0.64, 0.78] : [0.5];
 
   if (horizontal) {
     return ratios.flatMap((ratio) => {
       const x = segment.start.x + (segment.end.x - segment.start.x) * ratio;
+      const anchor = { anchorX: x, anchorY: segment.start.y };
       return [
-        { ...base, lineGap: 0, x, y: segment.start.y },
-        ...LABEL_OFFSETS.flatMap((offset) => [
+        {
+          ...base,
+          ...anchor,
+          lineGap: 0,
+          offsetRank: 0,
+          side: 0 as const,
+          x,
+          y: segment.start.y,
+        },
+        ...LABEL_OFFSETS.flatMap((offset, offsetIndex) => [
           {
             ...base,
+            ...anchor,
             lineGap: offset - LABEL_HEIGHT_COMPACT / 2,
+            offsetRank: offsetIndex + 1,
+            side: -1 as const,
             x,
             y: segment.start.y - offset,
           },
           {
             ...base,
+            ...anchor,
             lineGap: offset - LABEL_HEIGHT_COMPACT / 2,
+            offsetRank: offsetIndex + 1,
+            side: 1 as const,
             x,
             y: segment.start.y + offset,
           },
@@ -509,11 +937,36 @@ function getSegmentLabelCandidates(
   return ratios.flatMap((ratio) => {
     const y = segment.start.y + (segment.end.y - segment.start.y) * ratio;
     const labelWidth = estimateLabelWidth(labelText, maxWidth);
+    const anchor = { anchorX: segment.start.x, anchorY: y };
     return [
-      { ...base, lineGap: 0, x: segment.start.x, y },
-      ...VERTICAL_LABEL_GAPS.flatMap((gap) => [
-        { ...base, lineGap: gap, x: segment.start.x + labelWidth / 2 + gap, y },
-        { ...base, lineGap: gap, x: segment.start.x - labelWidth / 2 - gap, y },
+      {
+        ...base,
+        ...anchor,
+        lineGap: 0,
+        offsetRank: 0,
+        side: 0 as const,
+        x: segment.start.x,
+        y,
+      },
+      ...VERTICAL_LABEL_GAPS.flatMap((gap, offsetIndex) => [
+        {
+          ...base,
+          ...anchor,
+          lineGap: gap,
+          offsetRank: offsetIndex + 1,
+          side: 1 as const,
+          x: segment.start.x + labelWidth / 2 + gap,
+          y,
+        },
+        {
+          ...base,
+          ...anchor,
+          lineGap: gap,
+          offsetRank: offsetIndex + 1,
+          side: -1 as const,
+          x: segment.start.x - labelWidth / 2 - gap,
+          y,
+        },
       ]),
     ];
   });
@@ -522,23 +975,35 @@ function getSegmentLabelCandidates(
 function pickBestLabelCandidate(
   candidates: LabelCandidate[],
   {
+    labelLane = 0,
     labelObstacles,
     labelText,
     routeMidpoint,
   }: {
+    labelLane?: number;
     labelObstacles: MindEdgeObstacle[];
     labelText?: string;
     routeMidpoint: Point;
   }
 ): LabelPlacement {
-  const best = [...candidates].sort(
+  const safeCandidates = candidates.filter(
+    (candidate) =>
+      getLabelCollisionArea(
+        getLabelRect(candidate, labelText),
+        labelObstacles
+      ) === 0
+  );
+  const eligibleCandidates = safeCandidates.length ? safeCandidates : [];
+  const best = [...eligibleCandidates].sort(
     (a, b) =>
-      getLabelScore(a, labelText, labelObstacles, routeMidpoint) -
-      getLabelScore(b, labelText, labelObstacles, routeMidpoint)
+      getLabelScore(a, labelText, labelObstacles, routeMidpoint, labelLane) -
+      getLabelScore(b, labelText, labelObstacles, routeMidpoint, labelLane)
   )[0];
 
   if (!best) {
     return {
+      anchorX: routeMidpoint.x,
+      anchorY: routeMidpoint.y,
       maxWidth: 180,
       oneLine: false,
       visible: false,
@@ -550,7 +1015,9 @@ function pickBestLabelCandidate(
   const {
     horizontal: _horizontal,
     lineGap: _lineGap,
+    offsetRank: _offsetRank,
     segmentLength: _segmentLength,
+    side: _side,
     ...label
   } = best;
   return { ...label, visible: true };
@@ -560,7 +1027,8 @@ function getLabelScore(
   candidate: LabelCandidate,
   labelText: string | undefined,
   obstacles: MindEdgeObstacle[],
-  routeMidpoint: Point
+  routeMidpoint: Point,
+  labelLane: number
 ) {
   const rect = getLabelRect(candidate, labelText);
   const collisionPenalty = getLabelCollisionArea(rect, obstacles);
@@ -569,12 +1037,22 @@ function getLabelScore(
     Math.abs(candidate.y - routeMidpoint.y);
   const estimatedWidth = estimateLabelWidth(labelText, candidate.maxWidth);
   const fitPenalty = estimatedWidth > candidate.maxWidth ? 300 : 0;
+  const preferredSide = labelLane % 2 === 0 ? -1 : 1;
+  const preferredOffsetRank = Math.floor(labelLane / 2) % 3;
+  const sidePenalty =
+    candidate.side === 0 ? 45 : candidate.side === preferredSide ? 0 : 90;
+  const offsetPenalty =
+    candidate.side === 0
+      ? 0
+      : Math.abs(candidate.offsetRank - (preferredOffsetRank + 1)) * 18;
 
   return (
     collisionPenalty +
     fitPenalty +
+    sidePenalty +
+    offsetPenalty +
     distanceFromMidpoint * 0.75 +
-    candidate.lineGap * 1.8 +
+    candidate.lineGap * 5 +
     (candidate.horizontal ? 0 : 70) +
     (candidate.oneLine ? -60 : 20) -
     candidate.segmentLength * 0.05
@@ -582,8 +1060,8 @@ function getLabelScore(
 }
 
 function getLabelRect(label: LabelPlacement, labelText?: string): Rect {
-  const width = estimateLabelWidth(labelText, label.maxWidth);
-  const height = label.oneLine ? LABEL_HEIGHT_COMPACT : LABEL_HEIGHT_WRAPPED;
+  const width = estimateLabelWidth(labelText, Math.min(label.maxWidth, 220));
+  const height = LABEL_HEIGHT_COMPACT;
 
   return {
     height,
@@ -768,7 +1246,7 @@ function getRelationshipLineObstacles(
   const nodeById = new Map(nodes.map((node) => [node.id, node]));
   const nodeObstacles = nodes.map(toFlowNodeObstacle);
 
-  return edges.flatMap((edge) => {
+  return edges.flatMap((edge, edgeIndex) => {
     const sourceNode = nodeById.get(edge.source);
     const targetNode = nodeById.get(edge.target);
     if (!sourceNode || !targetNode) return [];
@@ -786,6 +1264,7 @@ function getRelationshipLineObstacles(
         source: sourcePosition,
         target: targetPosition,
       },
+      labelLane: edgeIndex,
       obstacles: nodeObstacles.filter(
         (obstacle) => obstacle.id !== edge.source && obstacle.id !== edge.target
       ),
@@ -797,6 +1276,57 @@ function getRelationshipLineObstacles(
       toRelationshipLineObstacle(edge.id, index, segment)
     );
   });
+}
+
+function getRelationshipLabelObstacles(
+  edges: MindFlowEdge[],
+  nodes: MindFlowNode[]
+): MindEdgeObstacle[] {
+  const nodeById = new Map(nodes.map((node) => [node.id, node]));
+  const nodeObstacles = nodes.map(toFlowNodeObstacle);
+
+  return edges.flatMap((edge, edgeIndex) => {
+    const sourceNode = nodeById.get(edge.source);
+    const targetNode = nodeById.get(edge.target);
+    const labelText = getFlowEdgeLabel(edge);
+    if (!sourceNode || !targetNode || !labelText) return [];
+
+    const sourcePosition = getPositionFromHandle(
+      edge.sourceHandle,
+      Position.Right
+    );
+    const targetPosition = getPositionFromHandle(
+      edge.targetHandle,
+      Position.Left
+    );
+    const route = buildRelationshipRoute({
+      fallbackPositions: {
+        source: sourcePosition,
+        target: targetPosition,
+      },
+      labelLane: edgeIndex,
+      labelText,
+      obstacles: nodeObstacles.filter(
+        (obstacle) => obstacle.id !== edge.source && obstacle.id !== edge.target
+      ),
+      source: getFlowNodeSidePoint(sourceNode, sourcePosition),
+      target: getFlowNodeSidePoint(targetNode, targetPosition),
+    });
+
+    if (route.label.visible === false) return [];
+    return toRelationshipLabelObstacle(edge.id, route.label, labelText);
+  });
+}
+
+function getFlowEdgeLabel(edge: MindFlowEdge) {
+  if (typeof edge.label === 'string' && edge.label.trim()) {
+    return edge.label.trim();
+  }
+
+  const dataLabel = edge.data?.edge.label;
+  return typeof dataLabel === 'string' && dataLabel.trim()
+    ? dataLabel.trim()
+    : null;
 }
 
 function getPositionFromHandle(
@@ -886,6 +1416,25 @@ function toRelationshipLineObstacle(
   ];
 }
 
+function toRelationshipLabelObstacle(
+  edgeId: string,
+  label: LabelPlacement,
+  labelText: string
+): MindEdgeObstacle[] {
+  const rect = getLabelRect(label, labelText);
+  const padding = LABEL_OBSTACLE_PADDING / 2;
+
+  return [
+    {
+      height: rect.height + padding * 2,
+      id: `${edgeId}:label`,
+      width: rect.width + padding * 2,
+      x: rect.x - padding,
+      y: rect.y - padding,
+    },
+  ];
+}
+
 function getRouteBounds(
   source: Point,
   target: Point,
@@ -962,7 +1511,7 @@ function getLabelCollisionArea(rect: Rect, obstacles: MindEdgeObstacle[]) {
     (sum, obstacle) =>
       sum +
       getRectIntersectionArea(rect, obstacle) *
-        (obstacle.id.includes(':line-') ? 160 : 1000),
+        (obstacle.id.includes(':line-') ? 500 : 1000),
     0
   );
 }

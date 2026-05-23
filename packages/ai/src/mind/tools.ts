@@ -229,7 +229,7 @@ const loosePatchSchema = z
   .passthrough();
 const looseRenderLeafSchema = z
   .object({
-    children: z.array(z.string()).optional(),
+    children: z.array(z.unknown()).optional(),
     content: z.string().optional(),
     description: z.string().optional(),
     props: mindMetadataSchema.optional(),
@@ -624,68 +624,138 @@ export function normalizeGeneratedPatchIds(
     if (operation.node.id) idMap.set(operation.node.id, nodeId);
   });
 
+  const operations = patch.operations.map((operation, index) => {
+    if (operation.kind === 'create_node') {
+      const nodeId = resolveId(
+        operation.node.id,
+        operation.id || `create_node_${index + 1}`
+      );
+
+      return {
+        ...operation,
+        node: {
+          ...operation.node,
+          id: nodeId,
+          parentNodeId: operation.node.parentNodeId
+            ? resolveId(operation.node.parentNodeId)
+            : operation.node.parentNodeId,
+        },
+      };
+    }
+
+    if (operation.kind === 'create_edge') {
+      const edgeId = resolveId(
+        operation.edge.id,
+        operation.id || `create_edge_${index + 1}`
+      );
+
+      return {
+        ...operation,
+        edge: {
+          ...operation.edge,
+          id: edgeId,
+          sourceNodeId: resolveId(operation.edge.sourceNodeId),
+          targetNodeId: resolveId(operation.edge.targetNodeId),
+        },
+      };
+    }
+
+    if (operation.kind === 'update_node') {
+      return {
+        ...operation,
+        parentNodeId: operation.parentNodeId
+          ? resolveId(operation.parentNodeId)
+          : operation.parentNodeId,
+      };
+    }
+
+    if (operation.kind === 'update_edge') {
+      return {
+        ...operation,
+        sourceNodeId: operation.sourceNodeId
+          ? resolveId(operation.sourceNodeId)
+          : operation.sourceNodeId,
+        targetNodeId: operation.targetNodeId
+          ? resolveId(operation.targetNodeId)
+          : operation.targetNodeId,
+      };
+    }
+
+    return operation;
+  });
+
   return {
     ...patch,
-    operations: patch.operations.map((operation, index) => {
-      if (operation.kind === 'create_node') {
-        const nodeId = resolveId(
-          operation.node.id,
-          operation.id || `create_node_${index + 1}`
-        );
-
-        return {
-          ...operation,
-          node: {
-            ...operation.node,
-            id: nodeId,
-            parentNodeId: operation.node.parentNodeId
-              ? resolveId(operation.node.parentNodeId)
-              : operation.node.parentNodeId,
-          },
-        };
-      }
-
-      if (operation.kind === 'create_edge') {
-        const edgeId = resolveId(
-          operation.edge.id,
-          operation.id || `create_edge_${index + 1}`
-        );
-
-        return {
-          ...operation,
-          edge: {
-            ...operation.edge,
-            id: edgeId,
-            sourceNodeId: resolveId(operation.edge.sourceNodeId),
-            targetNodeId: resolveId(operation.edge.targetNodeId),
-          },
-        };
-      }
-
-      if (operation.kind === 'update_node') {
-        return {
-          ...operation,
-          parentNodeId: operation.parentNodeId
-            ? resolveId(operation.parentNodeId)
-            : operation.parentNodeId,
-        };
-      }
-
-      if (operation.kind === 'update_edge') {
-        return {
-          ...operation,
-          sourceNodeId: operation.sourceNodeId
-            ? resolveId(operation.sourceNodeId)
-            : operation.sourceNodeId,
-          targetNodeId: operation.targetNodeId
-            ? resolveId(operation.targetNodeId)
-            : operation.targetNodeId,
-        };
-      }
-
-      return operation;
-    }),
+    operations: orderMindPatchOperationsForApply(operations),
   } satisfies MindAiPatch;
+}
+
+export function orderMindPatchOperationsForApply(
+  operations: MindPatchOperation[]
+) {
+  const createNodeOperations = operations.filter(
+    (
+      operation
+    ): operation is Extract<MindPatchOperation, { kind: 'create_node' }> =>
+      operation.kind === 'create_node'
+  );
+  const createNodeByRef = new Map<
+    string,
+    (typeof createNodeOperations)[number]
+  >();
+
+  for (const operation of createNodeOperations) {
+    createNodeByRef.set(operation.id, operation);
+    createNodeByRef.set(operation.node.id, operation);
+  }
+
+  const orderedCreateNodes: typeof createNodeOperations = [];
+  const visiting = new Set<string>();
+  const visited = new Set<string>();
+
+  const visitCreateNode = (
+    operation: (typeof createNodeOperations)[number]
+  ) => {
+    if (visited.has(operation.id)) return;
+    if (visiting.has(operation.id)) {
+      orderedCreateNodes.push(operation);
+      visited.add(operation.id);
+      return;
+    }
+
+    visiting.add(operation.id);
+    const parentOperation = operation.node.parentNodeId
+      ? createNodeByRef.get(operation.node.parentNodeId)
+      : undefined;
+    if (parentOperation && parentOperation.id !== operation.id) {
+      visitCreateNode(parentOperation);
+    }
+    visiting.delete(operation.id);
+
+    if (!visited.has(operation.id)) {
+      orderedCreateNodes.push(operation);
+      visited.add(operation.id);
+    }
+  };
+
+  for (const operation of createNodeOperations) {
+    visitCreateNode(operation);
+  }
+
+  const byKind = <Kind extends MindPatchOperation['kind']>(kind: Kind) =>
+    operations.filter(
+      (operation): operation is Extract<MindPatchOperation, { kind: Kind }> =>
+        operation.kind === kind
+    );
+
+  return [
+    ...orderedCreateNodes,
+    ...byKind('update_node'),
+    ...byKind('create_edge'),
+    ...byKind('update_edge'),
+    ...byKind('delete_edge'),
+    ...byKind('delete_node'),
+  ] satisfies MindPatchOperation[];
 }
 
 function describePatchOperation(operation: MindPatchOperation) {
@@ -803,6 +873,55 @@ function validateMindPatchReferences({
     if (!existingEdgeIds.has(operation.edgeId)) {
       pushMissingEdge(operation, operation.edgeId, 'edgeId');
     }
+  }
+
+  return issues;
+}
+
+function validateMindPatchGraphHealth({
+  patch,
+  snapshot,
+}: {
+  patch: MindAiPatch;
+  snapshot: MindBoardSnapshot;
+}) {
+  const createNodeOperations = patch.operations.filter(
+    (
+      operation
+    ): operation is Extract<MindPatchOperation, { kind: 'create_node' }> =>
+      operation.kind === 'create_node'
+  );
+  const issues: string[] = [];
+  if (createNodeOperations.length === 0) return issues;
+
+  const relationshipRefs = new Set<string>();
+  for (const operation of patch.operations) {
+    if (operation.kind === 'create_edge') {
+      relationshipRefs.add(operation.edge.sourceNodeId);
+      relationshipRefs.add(operation.edge.targetNodeId);
+      continue;
+    }
+
+    if (operation.kind === 'update_edge') {
+      if (operation.sourceNodeId) relationshipRefs.add(operation.sourceNodeId);
+      if (operation.targetNodeId) relationshipRefs.add(operation.targetNodeId);
+    }
+  }
+
+  const shouldRequireConnections =
+    snapshot.nodes.length > 0 || createNodeOperations.length > 1;
+
+  if (!shouldRequireConnections) return issues;
+
+  for (const operation of createNodeOperations) {
+    const refs = [operation.id, operation.node.id].filter(Boolean);
+    const hasParent = Boolean(operation.node.parentNodeId);
+    const hasRelationship = refs.some((ref) => relationshipRefs.has(ref));
+    if (hasParent || hasRelationship) continue;
+
+    issues.push(
+      `Patch draft leaves new node "${operation.node.title}" isolated. Add parentNodeId or a relationship edge for it.`
+    );
   }
 
   return issues;
@@ -1261,6 +1380,18 @@ export function createMindStreamTools(
           return {
             ok: false,
             reason: `Patch draft referenced graph items that are not available: ${referenceIssues
+              .slice(0, 6)
+              .join('; ')}`,
+          };
+        }
+        const graphHealthIssues = validateMindPatchGraphHealth({
+          patch: coercedPatch,
+          snapshot,
+        });
+        if (graphHealthIssues.length > 0) {
+          return {
+            ok: false,
+            reason: `Patch draft needs graph-health fixes: ${graphHealthIssues
               .slice(0, 6)
               .join('; ')}`,
           };

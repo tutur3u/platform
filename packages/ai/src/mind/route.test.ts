@@ -206,6 +206,11 @@ describe('mind route payload validation', () => {
     });
     expect(streamOptions?.providerOptions).not.toHaveProperty('gateway');
     expect(streamOptions?.providerOptions).not.toHaveProperty('vertex');
+    expect(streamOptions?.system).toContain('Plan completeness standard');
+    expect(streamOptions?.system).toContain('create_node operations before');
+    expect(streamOptions?.system).toContain('Existing graph is authoritative');
+    expect(streamOptions?.system).toContain('one applyable draft patch');
+    expect(streamOptions?.system).toContain('orphaned nodes');
   });
 
   it('allows non-internal users and deducts from personal credits', async () => {

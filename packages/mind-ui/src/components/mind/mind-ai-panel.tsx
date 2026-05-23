@@ -66,6 +66,7 @@ export function MindAiPanel({
     string | null
   >(null);
   const previousProposalIdRef = useRef<string | null>(null);
+  const latestProposalRef = useRef<MindAiProposal | null>(null);
   const state = useMindAiPanelState({
     boardId,
     enabled: !collapsed,
@@ -139,6 +140,15 @@ export function MindAiPanel({
       queryClient.invalidateQueries({
         queryKey: ['mind', 'patches', wsId, result.patch.boardId || boardId],
       });
+      const appliedProposalId =
+        openedArtifact?.patch?.id === result.patch.id
+          ? openedArtifact.id
+          : latestProposalRef.current?.patch?.id === result.patch.id
+            ? latestProposalRef.current.id
+            : null;
+      setOpenedArtifact(null);
+      if (appliedProposalId) setDismissedProposalId(appliedProposalId);
+      if (!collapsed) onToggleCollapsed();
     },
   });
   const layoutRetryMutation = useMutation({
@@ -174,11 +184,11 @@ export function MindAiPanel({
     setOpenedArtifact(null);
   };
   const handleOpenArtifact = (artifact: MindAiArtifactItem) => {
-    setOpenedArtifact(
-      artifact.type === 'plan'
-        ? { id: artifact.id, visual: artifact.visual }
-        : { id: artifact.id, patch: artifact.patch }
-    );
+    setOpenedArtifact({
+      id: artifact.id,
+      patch: artifact.patch,
+      visual: artifact.visual,
+    });
   };
   const handleDismissProposal = (proposalId: string) => {
     if (openedArtifact?.id === proposalId) {
@@ -226,6 +236,10 @@ export function MindAiPanel({
   ].join(':');
 
   useEffect(() => {
+    latestProposalRef.current = latestProposal;
+  }, [latestProposal]);
+
+  useEffect(() => {
     if (!scrollVersion) return;
     const node = scrollRef.current;
     if (!node) return;
@@ -268,17 +282,30 @@ export function MindAiPanel({
 
   return (
     <>
+      {fullscreen ? (
+        <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
+      ) : null}
       <aside
         className={
           fullscreen
             ? 'fixed inset-3 z-50 flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/20 backdrop-blur md:inset-4'
-            : 'absolute top-20 right-5 bottom-5 z-30 flex min-h-0 w-[min(28rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/10 backdrop-blur'
+            : 'absolute top-20 right-5 bottom-5 z-30 flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/10 backdrop-blur'
+        }
+        style={
+          fullscreen
+            ? undefined
+            : {
+                maxWidth: 'calc(100vw - 2rem)',
+                minWidth: 'min(28rem, calc(100vw - 2rem))',
+                width: 'min(28rem, calc(100vw - 2rem))',
+              }
         }
       >
         <MindAiPanelHeader
           chatJson={chatJson}
           chatMarkdown={chatMarkdown}
           creditSource={activeCreditSource}
+          debugContext={debugContext}
           directWrite={directWrite}
           fullscreen={fullscreen}
           model={model}
@@ -290,18 +317,18 @@ export function MindAiPanel({
           onThinkingModeChange={handleThinkingModeChange}
           onToggleFullscreen={() => setFullscreen((value) => !value)}
           personalWsId={personalWsId}
+          statusLabel={statusLabel}
           thinkingMode={thinkingMode}
           workspaceCreditLocked={workspaceCreditLocked}
           wsId={wsId}
         />
 
         <div
-          className="@container min-h-0 flex-1 overflow-y-auto p-2.5"
+          className="@container min-h-0 min-w-0 flex-1 overflow-y-auto p-2.5"
           ref={scrollRef}
         >
           <MindAiPanelContent
             applyingPatch={applyPatchMutation.isPending}
-            debugContext={debugContext}
             fullscreen={fullscreen}
             latestMessage={latestMessage}
             messages={messages}
@@ -320,7 +347,6 @@ export function MindAiPanel({
             }
             retryingLayoutRefresh={layoutRetryMutation.isPending}
             status={status}
-            statusLabel={statusLabel}
             visibleError={visibleError}
           />
         </div>

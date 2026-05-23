@@ -106,7 +106,7 @@ export function MindAiInput({
 
   return (
     <form
-      className="border-border border-t bg-background/95 p-2.5"
+      className="min-w-0 border-border border-t bg-background/95 p-2.5"
       onSubmit={(event) => {
         event.preventDefault();
         if (canSubmit) onSubmit();
@@ -114,7 +114,7 @@ export function MindAiInput({
     >
       <div
         className={cn(
-          'rounded-xl border border-border bg-card/80',
+          'min-w-0 rounded-xl border border-border bg-card/80',
           panelFullscreen && 'mx-auto max-w-6xl'
         )}
       >
@@ -123,9 +123,9 @@ export function MindAiInput({
           files={files}
           onRemove={onRemoveFile}
         />
-        <div className="flex items-end gap-1.5 p-1.5">
+        <div className="flex min-w-0 items-end gap-1.5 p-1.5">
           <Textarea
-            className="max-h-28 min-h-10 resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none outline-none focus-visible:ring-0! focus-visible:ring-offset-0!"
+            className="max-h-28 min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-sm shadow-none outline-none focus-visible:ring-0! focus-visible:ring-offset-0!"
             disabled={disabled || isBusy}
             onChange={(event) => onInputChange(event.target.value)}
             onKeyDown={(event) => {

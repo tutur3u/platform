@@ -29,17 +29,21 @@ vi.mock('@/lib/hive/workflows', () => ({
     mocks.validateHiveWorkflowForPersistence(...args),
 }));
 
-function createRoleClient(
-  role: {
-    allow_role_management: boolean;
-    enabled: boolean;
-  } | null
-) {
+function createAccessClient({
+  member = { enabled: true },
+  role = null,
+}: {
+  member?: { enabled: boolean } | null;
+  role?: { allow_role_management: boolean; enabled: boolean } | null;
+} = {}) {
   return {
-    from: vi.fn(() => ({
+    from: vi.fn((table: string) => ({
       select: vi.fn(() => ({
         eq: vi.fn(() => ({
-          maybeSingle: vi.fn().mockResolvedValue({ data: role, error: null }),
+          maybeSingle: vi.fn().mockResolvedValue({
+            data: table === 'hive_members' ? member : role,
+            error: null,
+          }),
         })),
       })),
     })),
@@ -87,6 +91,7 @@ describe('Hive workflow collection route', () => {
     mocks.getHiveMemberByUserId.mockReset();
     mocks.listHiveWorkflows.mockReset();
     mocks.validateHiveWorkflowForPersistence.mockReset();
+    mocks.createAdminClient.mockResolvedValue(createAccessClient());
     mocks.getHiveMemberByUserId.mockResolvedValue({ enabled: true });
     mocks.listHiveWorkflows.mockResolvedValue([]);
     mocks.validateHiveWorkflowForPersistence.mockReturnValue({
@@ -97,7 +102,6 @@ describe('Hive workflow collection route', () => {
 
   it('lets Hive members list enabled workflows', async () => {
     const { GET } = await import('./route');
-    mocks.createAdminClient.mockResolvedValue(createRoleClient(null));
 
     const response = await GET(hiveRequest('GET'), {
       params: Promise.resolve({ serverId: 'server-1' }),
@@ -112,7 +116,7 @@ describe('Hive workflow collection route', () => {
 
   it('rejects member workflow creation and allows platform admins', async () => {
     const { POST } = await import('./route');
-    mocks.createAdminClient.mockResolvedValueOnce(createRoleClient(null));
+    mocks.createAdminClient.mockResolvedValueOnce(createAccessClient());
 
     const rejected = await POST(
       hiveRequest('POST', {
@@ -127,7 +131,10 @@ describe('Hive workflow collection route', () => {
     expect(mocks.createHiveWorkflow).not.toHaveBeenCalled();
 
     mocks.createAdminClient.mockResolvedValueOnce(
-      createRoleClient({ allow_role_management: true, enabled: true })
+      createAccessClient({
+        member: null,
+        role: { allow_role_management: true, enabled: true },
+      })
     );
     mocks.createHiveWorkflow.mockResolvedValue({
       definition,

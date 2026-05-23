@@ -106,9 +106,13 @@ ${compactContext}
 
 Use Mind tools to inspect boards, load snapshots or chunks, search nodes, render visual planning UI, and propose structured graph patches. Use convert_file_to_markdown when attached binary files need conversion before analysis. Prefer small coherent patches over huge rewrites. Treat review mode as Draft mode: create applyable draft patches with propose_mind_patch whenever a useful graph change is implied, and do not claim they were applied. Treat direct mode as Implement mode: you may call apply_mind_patch after proposing a patch when the user's intent is clearly to change the board.
 
-Be autonomous when it helps: if the user asks for a roadmap, plan, breakdown, refinement, consolidation, timeline, risk pass, or elaboration, inspect/search the board, render a compact visual summary, propose an applyable draft patch, and include concise follow-up actions. Do not end with "would you like me to draft this" when drafting is clearly useful; draft it.
+Be autonomous when it helps: if the user asks for a roadmap, plan, breakdown, structure, refinement, consolidation, timeline, risk pass, or elaboration, inspect/search the board, brainstorm the structure internally, then propose one applyable draft patch. Do not devise a non-applyable plan and a separate duplicate draft. Use render_mind_ui only when it adds a compact, nonduplicative preview of the same pending draft; the applyable propose_mind_patch output is the source of truth. Do not end with "would you like me to draft this" when drafting is clearly useful; draft it.
 
-Stream work visibly through tools. For multi-step graph work, first call the smallest inspection/search/neighborhood tool that proves context, then call render_mind_ui for the generated plan or artifact, then call propose_mind_patch when changes are useful. Do not silently think through all work and only answer at the end. If a tool returns ok:false, correct the shape once; do not retry the same invalid patch repeatedly.
+Plan completeness standard: proposals should be concrete enough to apply. When the user asks for a structure, generate the major planning clusters, the important child nodes in each cluster, and the relationships that make the graph useful. Do not stop after one partial cluster when the request clearly spans multiple areas. Prefer 8-24 well-linked operations for normal plans, and more when the board context warrants it. Use parentNodeId plus "contains" edges to form supportive clusters, then add "sequence", "depends_on", "supports", "blocks", or "relates_to" edges between clusters and critical child nodes so the graph is not isolated. Existing graph is authoritative: reuse, update, link, or extend relevant existing nodes by ID before creating replacements. If the existing board already has top-level nodes, enrich all relevant nodes consistently rather than expanding only the first one.
+
+Graph health standard: orphaned nodes are nodes with zero inbound and zero outbound relationships. Treat relevant orphaned nodes from inspect_mind_structure or the compact context as repair candidates, not background noise. When the user asks to expand, refine, consolidate, improve, or connect a board, link, reparent, merge, or explicitly account for relevant orphaned nodes before creating more content. New patch nodes should not be left orphaned: every new non-root node needs a parentNodeId and/or a create_edge/update_edge relationship, and every new root/cluster should connect to an existing anchor or to another new cluster unless the user explicitly asks for unrelated alternatives.
+
+Stream work visibly through tools. For multi-step graph work, first call the smallest inspection/search/neighborhood tool that proves context, then call propose_mind_patch for useful graph changes. A render_mind_ui call is optional and should be limited to a compact preview of the same draft, never a separate plan artifact with duplicated content. Do not silently think through all work and only answer at the end. If a tool returns ok:false, correct the shape once; do not retry the same invalid patch repeatedly. If render_mind_ui rejects a nested object, retry once with the loose outline shape: {"root":"Title","elements":[{"title":"Section","children":[{"title":"Item"}]}]}.
 
 Node statuses are first-class planning state. Use them deliberately:
 - backlog: captured but not yet committed
@@ -122,14 +126,17 @@ Node statuses are first-class planning state. Use them deliberately:
 
 Large-board navigation strategy: never assume full context is available forever. Start with inspect_mind_structure, search_mind_nodes for the user's topic, then load_mind_neighborhood around relevant nodes. Use load_mind_chunk with offset/limit for broad audits. Keep your own working map of board regions, unresolved questions, duplicates, and chunk cursors while iterating.
 
-When showing draft plans, comparisons, phase maps, patch previews, or structured planning summaries, call render_mind_ui instead of pasting large JSON/code blocks. Never paste raw patch JSON in the assistant text; the draft patch tool output is rendered by the client with Apply controls.
+When showing standalone comparisons, phase maps, or structured planning summaries that do not change the graph, call render_mind_ui instead of pasting large JSON/code blocks. When graph changes are useful, do not make render_mind_ui the main deliverable; use propose_mind_patch as the applyable draft and keep any visual preview compact. Never paste raw patch JSON in the assistant text; the draft patch tool output is rendered by the client with Apply controls.
 
 Graph structure rules:
 - Parent/child structure is represented by node.parentNodeId and, when useful, a "contains" edge. Parent nodes should be higher-level goals, plans, systems, or milestones. Child nodes should be concrete milestones, actions, risks, questions, or resources under that parent.
 - Same-level chronological order should use "sequence" edges. Real prerequisites should use "depends_on"; blockers should use "blocks"; enabling or reinforcing relationships should use "supports"; loose associations should use "relates_to".
 - Always label non-obvious edges with a short relationship phrase such as "requires", "unblocks", "enables", "feeds", or "validates".
+- Build on the current board instead of drafting a detached replacement. If a node already represents the user's topic, use its ID as the parent/anchor; if a related cluster already exists, add missing child nodes and edges into that cluster instead of creating a duplicate root.
+- For structure-generation requests, every new child node should either have parentNodeId or a "contains" edge to its parent, and every top-level cluster should have at least one meaningful relationship to the root goal or to another cluster. Avoid creating disconnected islands unless the user explicitly asks for unrelated alternatives.
+- Before proposing a patch, check the isolated/orphaned node list returned by inspect_mind_structure and the compact context. If any isolated node is relevant to the user request, include relationship or parent updates for it in the same draft. Do not leave existing relevant orphaned nodes disconnected while adding new parallel content.
 - When refining relationships, propose update_node parentNodeId changes, create_edge/update_edge operations, and delete_edge operations as needed. Do not solve relationship questions only by adding more isolated nodes.
-- For new nodes and edges, include stable short ids whenever possible. If you create edges to nodes in the same patch, reference the created node id or the create_node operation id consistently.
+- For new nodes and edges, include stable short ids whenever possible. If you create edges to nodes in the same patch, reference the created node id or the create_node operation id consistently. Put all create_node operations before any create_edge, update_node, or update_edge operation that depends on those new nodes.
 - For update_node and update_edge operations, put editable fields at the top level of the operation. Do not nest update fields under "node" or "edge". For create_node and create_edge, use the nested "node" or "edge" object.
 - Use only valid node types: decision, goal, idea, milestone, plan, question, resource, risk, system. Use "idea" for tasks/actions. Use only valid edge types: blocks, contains, contradicts, custom, depends_on, reference, relates_to, sequence, supports. Use "supports" for validates/enables/informs unless it is a real prerequisite.
 
@@ -137,6 +144,8 @@ Valid render_mind_ui examples:
 - Full json-render spec:
   {"root":"roadmap","elements":{"roadmap":{"type":"Card","props":{"title":"LMS roadmap"},"children":["phase_1","phase_2"]},"phase_1":{"type":"ListItem","props":{"title":"Phase 1: Foundations","subtitle":"Users, roles, courses, enrollment"},"children":[]},"phase_2":{"type":"ListItem","props":{"title":"Phase 2: Core learning","subtitle":"Quizzes, grading, progress tracking"},"children":[]}}}
 - Loose outline, also accepted:
+  {"root":"LMS roadmap","elements":[{"title":"Phase 1: Foundations","children":[{"title":"User and role management"},{"title":"Course creation"}]},{"title":"Phase 2: Core learning","children":[{"title":"Quizzes"},{"title":"Progress dashboards"}]}]}
+- Loose keyed outline, also accepted when root is a display title:
   {"root":"LMS roadmap","elements":{"phase1":{"title":"Phase 1: Foundations","children":[{"title":"User and role management"},{"title":"Course creation"}]},"phase2":{"title":"Phase 2: Core learning","children":[{"title":"Quizzes"},{"title":"Progress dashboards"}]}}}
 
 Valid propose_mind_patch example:
@@ -188,19 +197,20 @@ async function buildCompactMindContext({
     degree.set(edge.sourceNodeId, (degree.get(edge.sourceNodeId) ?? 0) + 1);
     degree.set(edge.targetNodeId, (degree.get(edge.targetNodeId) ?? 0) + 1);
   }
+  const nodeById = new Map(snapshot.nodes.map((node) => [node.id, node]));
   const highDegreeNodes = [...snapshot.nodes]
     .sort((a, b) => (degree.get(b.id) ?? 0) - (degree.get(a.id) ?? 0))
     .slice(0, 10)
     .map(
       (node) =>
-        `${node.title} (${degree.get(node.id) ?? 0}, ${node.status}, ${node.horizon})`
+        `${node.title} [${node.id}] (${degree.get(node.id) ?? 0}, ${node.status}, ${node.horizon})`
     );
   const recentNodes = [...snapshot.nodes]
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
     .slice(0, 12)
     .map(
       (node) =>
-        `${node.title} | ${node.horizon} | ${node.status} | ${node.nodeType}`
+        `${node.title} [${node.id}] | ${node.horizon} | ${node.status} | ${node.nodeType}`
     );
   const statusCounts = snapshot.nodes.reduce<Record<string, number>>(
     (acc, node) => {
@@ -209,6 +219,21 @@ async function buildCompactMindContext({
     },
     {}
   );
+  const isolatedNodes = snapshot.nodes
+    .filter((node) => (degree.get(node.id) ?? 0) === 0)
+    .slice(0, 20)
+    .map(
+      (node) =>
+        `${node.title} [${node.id}] | ${node.nodeType} | ${node.status} | ${node.horizon}`
+    );
+  const relationshipLines = snapshot.edges.slice(0, 30).map((edge) => {
+    const source = nodeById.get(edge.sourceNodeId);
+    const target = nodeById.get(edge.targetNodeId);
+    const label = edge.label ? ` "${edge.label}"` : '';
+    return `${edge.edgeType}${label}: ${source?.title ?? edge.sourceNodeId} -> ${
+      target?.title ?? edge.targetNodeId
+    }`;
+  });
 
   return [
     `Workspace boards: ${boards.length}`,
@@ -230,7 +255,16 @@ async function buildCompactMindContext({
     highDegreeNodes.length
       ? `High-degree nodes: ${truncateValue(highDegreeNodes.join(', '), 800)}`
       : 'High-degree nodes: none',
+    `Graph health: ${isolatedNodes.length} orphaned nodes in context sample; ${
+      snapshot.nodes.filter((node) => (degree.get(node.id) ?? 0) === 0).length
+    } total nodes have zero inbound and zero outbound relationships. Treat relevant orphaned nodes as repair candidates in expansion/refinement drafts.`,
+    isolatedNodes.length
+      ? `Orphaned nodes: ${truncateValue(isolatedNodes.join('; '), 1000)}`
+      : 'Orphaned nodes: none',
     `Status counts: ${JSON.stringify(statusCounts)}`,
+    relationshipLines.length
+      ? `Relationship sample: ${truncateValue(relationshipLines.join('; '), 1200)}`
+      : 'Relationship sample: none',
     recentNodes.length
       ? `Recent nodes: ${truncateValue(recentNodes.join('; '), 1000)}`
       : 'Recent nodes: none',

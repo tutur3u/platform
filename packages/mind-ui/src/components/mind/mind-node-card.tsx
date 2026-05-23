@@ -8,12 +8,14 @@ import { useTranslations } from 'next-intl';
 import { getNodeMetadata, NODE_STATUS_COLORS } from './model';
 
 export type MindFlowNodeData = Record<string, unknown> & {
+  dimmed?: boolean;
   node: MindNode;
 };
 
 export function MindNodeCard({ data, selected }: NodeProps) {
   const t = useTranslations('mind');
   const node = (data as MindFlowNodeData).node;
+  const dimmed = (data as MindFlowNodeData).dimmed === true && !selected;
   const metadata = getNodeMetadata(node);
   const color = node.color ?? '#2f80ed';
   const statusColor = NODE_STATUS_COLORS[node.status];
@@ -22,15 +24,13 @@ export function MindNodeCard({ data, selected }: NodeProps) {
     <article
       className={cn(
         'group min-h-28 w-64 overflow-hidden rounded-md border bg-card shadow-lg transition',
-        selected ? 'border-primary ring-2 ring-primary/20' : 'border-border'
+        selected ? 'border-primary ring-2 ring-primary/20' : 'border-border',
+        dimmed && 'opacity-30'
       )}
     >
-      <MindHandle id="target-top" position={Position.Top} type="target" />
-      <MindHandle id="source-top" position={Position.Top} type="source" />
-      <MindHandle id="target-left" position={Position.Left} type="target" />
-      <MindHandle id="source-left" position={Position.Left} type="source" />
-      <MindHandle id="target-right" position={Position.Right} type="target" />
-      <MindHandle id="source-right" position={Position.Right} type="source" />
+      <MindHandle id="connection-top" position={Position.Top} />
+      <MindHandle id="connection-left" position={Position.Left} />
+      <MindHandle id="connection-right" position={Position.Right} />
       <div
         className="h-2"
         style={{
@@ -87,40 +87,20 @@ export function MindNodeCard({ data, selected }: NodeProps) {
           </div>
         ) : null}
       </div>
-      <MindHandle id="target-bottom" position={Position.Bottom} type="target" />
-      <MindHandle id="source-bottom" position={Position.Bottom} type="source" />
+      <MindHandle id="connection-bottom" position={Position.Bottom} />
     </article>
   );
 }
 
-function MindHandle({
-  id,
-  position,
-  type,
-}: {
-  id: string;
-  position: Position;
-  type: 'source' | 'target';
-}) {
+function MindHandle({ id, position }: { id: string; position: Position }) {
   return (
     <Handle
       className={cn(
-        'h-2.5 w-2.5 border-2 border-background opacity-70 transition group-hover:opacity-100',
-        type === 'source' ? 'bg-dynamic-green' : 'bg-dynamic-blue'
+        'h-2.5 w-2.5 border-2 border-background bg-dynamic-green opacity-70 transition group-hover:opacity-100'
       )}
       id={id}
       position={position}
-      style={getHandleOffset(position, type)}
-      type={type}
+      type="source"
     />
   );
-}
-
-function getHandleOffset(position: Position, type: 'source' | 'target') {
-  const offset = type === 'source' ? 8 : -8;
-  if (position === Position.Top || position === Position.Bottom) {
-    return { left: `calc(50% + ${offset}px)` };
-  }
-
-  return { top: `calc(50% + ${offset}px)` };
 }

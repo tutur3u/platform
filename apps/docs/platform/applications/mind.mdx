@@ -33,6 +33,13 @@ host wrappers for auth, workspace resolution, and route prefixing only. Future
 Mind feature work belongs in `packages/mind-ui` or the centralized Mind APIs so
 the standalone app and web-hosted app stay 1:1.
 
+Board route-segment layouts that render Mind board routes must load
+`@xyflow/react/dist/style.css`, and the shared Mind shell must keep a concrete
+dashboard embed height. Keep that stylesheet out of root app layouts and the
+Mind index so it is only loaded when users enter a canvas route. Without both
+pieces, React Flow can mount but render as a blank or collapsed canvas inside
+embedded dashboard routes.
+
 ## Board library vs studio
 
 The workspace index route is a **board library**, not the canvas studio:
@@ -85,6 +92,16 @@ inside the assistant panel and must not replace the board canvas with a board
 load error. The legacy full snapshot can still return graph data plus patches
 for backward compatibility.
 
+Mind graph handles use loose React Flow connections with one visible connection
+point per side. Cluster and children frames are synthetic canvas nodes used only
+for interaction: manual links to a frame persist as normal node edges with frame
+endpoint metadata, so saved graph payloads still satisfy the node-only edge
+schema while rendering the relationship to the group boundary.
+Nodes, relationships, clusters, and child-group frames should all be selectable
+from the canvas. Node and relationship selections open editable properties,
+while synthetic group or cluster frame selections open a compact read-only
+properties island that identifies the anchor node and child count.
+
 ## Data Model
 
 Mind product tables live in the `private` schema. User access goes through the
@@ -125,6 +142,20 @@ repository records the patch status, `applied_at`, and applying user for audit.
 
 Structured patches should stay small enough to review. Prefer multiple focused
 patches over a single broad rewrite when consolidating large graphs.
+For normal structure-generation requests, a patch should still be complete
+enough to be useful: include the major clusters, concrete child nodes, and the
+relationship edges that connect them to the root goal or to each other. Avoid
+AI drafts that expand only one branch while leaving related top-level systems as
+isolated nodes.
+The existing board is authoritative. AI drafts should reuse and extend relevant
+existing node IDs first, then create missing child nodes and relationships
+around those anchors. Do not draft a detached replacement root when the current
+mindboard already contains a matching goal, system, cluster, or milestone.
+The patch tool normalizes generated aliases and stores operations in apply-safe
+order: newly-created parent and child nodes are inserted before relationship
+edges or updates that reference them. Existing draft patches are normalized
+again just before application so older edge-first drafts do not fail foreign-key
+checks.
 
 For large boards, the assistant should inspect structure first, then search or
 load neighborhoods/chunks instead of requesting a full graph by default. Keep
@@ -132,21 +163,43 @@ responses action-oriented: suggest follow-up passes, propose draft patches when
 they are useful, and only implement graph writes when the chat is explicitly in
 Implement mode.
 
-After a draft patch is applied from the Mind UI, the client reloads the board,
-runs the smart canvas organizer, saves the resulting positions, and refreshes
-board queries. The organizer should keep true same-level sequence nodes in a
-compact horizontal lane, place explicit children under their parent, and anchor
-supporting or dependency nodes near the higher-level node they affect.
+After a draft patch is applied from the Mind UI, the client closes the
+assistant panel, reloads the board, runs the smart canvas organizer, saves the
+resulting positions, and refreshes board queries. The organizer should keep
+true same-level sequence nodes in a compact horizontal lane, place explicit
+children under their parent, and anchor supporting or dependency nodes near the
+higher-level node they affect.
 Applying a draft and refreshing layout are separate phases: once the patch
 application RPC returns, patch artifacts should show `Applied` immediately. If
 the follow-up auto-layout save fails, keep the patch applied and show a retryable
 layout-refresh warning instead of treating the graph patch as failed.
 
+Mind boards auto-save canvas edits. The board title, canvas tools, tag filter,
+and save status live in one compact top-left island. The title is editable from
+that island, the tag filter uses an icon-only ghost dropdown, and the save icon
+shows saved, saving, unsaved, or retryable error state and can be clicked to
+force a save. The only top-right canvas action is the assistant toggle.
+Autosave signatures, tag indexing, group-frame layout, and relationship routing
+obstacle scans are intentionally debounced so dragging stays responsive on dense
+boards; keep direct node movement immediate and move only derived calculations
+onto short debounce windows.
+
+React Flow canvas routes should pan with two-finger trackpad movement while
+preserving pinch-to-zoom. Do not switch trackpad scrolling back to zoom-only
+behavior; use explicit canvas controls or pinch gestures for zoom.
+
 Generated plans and patch drafts should be treated as artifacts. The newest
-artifact can open in the proposal island, while every plan or draft also remains
-available under the assistant tool-call collapsible for the message that
-generated it. When a draft is applied, the applied patch should render as
-`Applied` in those artifact views instead of staying visually draft-only.
+artifact can open in the proposal island, while every message keeps a compact
+artifact row for reopening it. When a generated visual plan and a draft patch
+belong to the same assistant response, render them as one centralized draft
+proposal pending approval: the structured patch preview is the review context,
+and the single Apply action belongs to the proposal shell. Do not show the
+visual plan and draft patch as duplicated stacked content. Tool-call and
+artifact sections default to
+collapsed compact rows; while the assistant is working, the row should show a
+spinner and the latest tool or artifact name without expanding the full debug
+list. When a draft is applied, the applied patch should render as `Applied` in
+those artifact views instead of staying visually draft-only.
 
 The canvas toolbar can copy the current board as Markdown or JSON. This export
 uses the local in-canvas graph state, including unsaved position edits, so it is

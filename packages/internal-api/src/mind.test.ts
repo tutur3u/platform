@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   applyMindAiPatch,
+  archiveMindBoard,
   createMindBoard,
   getMindBoardGraphSnapshot,
   getMindBoardSnapshot,
@@ -8,6 +9,7 @@ import {
   listMindBoards,
   saveMindGraph,
   searchMindNodes,
+  updateMindBoard,
 } from './mind';
 
 describe('Mind internal API helpers', () => {
@@ -41,6 +43,19 @@ describe('Mind internal API helpers', () => {
       baseUrl: 'https://web.test',
       fetch: fetchMock,
     });
+    await updateMindBoard(
+      'personal',
+      'board-1',
+      { title: 'Renamed arc' },
+      {
+        baseUrl: 'https://web.test',
+        fetch: fetchMock,
+      }
+    );
+    await archiveMindBoard('personal', 'board-1', {
+      baseUrl: 'https://web.test',
+      fetch: fetchMock,
+    });
     await listMindAiPatches('personal', 'board-1', {
       baseUrl: 'https://web.test',
       fetch: fetchMock,
@@ -71,12 +86,16 @@ describe('Mind internal API helpers', () => {
       'https://web.test/api/v1/workspaces/personal/mind/boards',
       'https://web.test/api/v1/workspaces/personal/mind/boards/board-1',
       'https://web.test/api/v1/workspaces/personal/mind/boards/board-1/graph',
+      'https://web.test/api/v1/workspaces/personal/mind/boards/board-1',
+      'https://web.test/api/v1/workspaces/personal/mind/boards/board-1',
       'https://web.test/api/v1/workspaces/personal/mind/boards/board-1/patches',
       'https://web.test/api/v1/workspaces/personal/mind/boards/board-1/graph',
       'https://web.test/api/v1/workspaces/personal/mind/search?q=future&boardId=board-1',
       'https://web.test/api/v1/workspaces/personal/mind/ai/patches/patch-1/apply',
     ]);
     expect(fetchMock.mock.calls.map(([, init]) => init?.cache)).toEqual([
+      'no-store',
+      'no-store',
       'no-store',
       'no-store',
       'no-store',

@@ -83,7 +83,7 @@ const aiContext = {
 } satisfies HiveAiContextState;
 
 describe('EditorTopChrome', () => {
-  it('renders compact status chips without title or helper text', () => {
+  it('renders the consolidated top toolbar without duplicate status metrics', () => {
     render(
       <NextIntlClientProvider locale="en" messages={messages}>
         <EditorTopChrome
@@ -110,8 +110,6 @@ describe('EditorTopChrome', () => {
           onRunNpcInteraction={vi.fn()}
           onToggleNpcLab={vi.fn()}
           onUpdateServerSettings={vi.fn()}
-          presenceCount={2}
-          realtimeStatus="connected"
           revision={4}
           rightCollapsed
           selectedNpc={null}
@@ -124,11 +122,11 @@ describe('EditorTopChrome', () => {
 
     expect(screen.queryByText(/Hive World/i)).toBeNull();
     expect(screen.queryByText(/Tap to place/i)).toBeNull();
-    expect(screen.getByLabelText('Realtime connection')).toBeTruthy();
-    expect(screen.getByLabelText('3 blocks')).toBeTruthy();
-    expect(screen.getByLabelText('2 objects')).toBeTruthy();
-    expect(screen.getByLabelText('1 NPC')).toBeTruthy();
-    expect(screen.getByLabelText('2 online')).toBeTruthy();
+    expect(screen.queryByLabelText('Realtime connection')).toBeNull();
+    expect(screen.queryByLabelText('3 blocks')).toBeNull();
+    expect(screen.queryByLabelText('2 objects')).toBeNull();
+    expect(screen.queryByLabelText('1 NPC')).toBeNull();
+    expect(screen.queryByLabelText('2 online')).toBeNull();
     expect(screen.getByText('Server picker')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'AI context' })).toBeTruthy();
     expect(screen.queryByText('Credit source')).toBeNull();
@@ -175,8 +173,6 @@ describe('EditorTopChrome', () => {
           onRunNpcInteraction={vi.fn()}
           onToggleNpcLab={vi.fn()}
           onUpdateServerSettings={vi.fn()}
-          presenceCount={2}
-          realtimeStatus="connected"
           revision={4}
           rightCollapsed
           selectedNpc={null}

@@ -3,23 +3,25 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bot, CircleAlert, RefreshCw } from '@tuturuuu/icons';
 import {
+  archiveMindBoard,
   getMindBoardGraphSnapshot,
   listMindAiPatches,
   listMindBoards,
   type SaveMindGraphPayload,
   saveMindGraph,
+  updateMindBoard,
 } from '@tuturuuu/internal-api/mind';
 import { Button } from '@tuturuuu/ui/button';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
+import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
+import { buildMindWorkspaceHref } from '../../routes';
 import { MindAiPanel } from './mind-ai-panel';
 import { MindBoardSelectPrompt } from './mind-board-select-prompt';
 import { MindCanvas } from './mind-canvas';
-import { MindDashboardHeader } from './mind-dashboard-header';
 import { MindEmptyState } from './mind-empty-state';
-import { MindTagFilter } from './mind-tag-filter';
-import { getNodeMetadata } from './model';
+import { MindShell } from './mind-shell';
 
 type Props = {
   initialBoardId?: string;
@@ -35,6 +37,7 @@ export function MindDashboard({
   wsId,
 }: Props) {
   const t = useTranslations('mind');
+  const router = useRouter();
   const queryClient = useQueryClient();
   const selectedBoardId = initialBoardId ?? null;
   const [aiOpen, setAiOpen] = useState(false);
@@ -53,9 +56,10 @@ export function MindDashboard({
   const hasNoBoards =
     !boardLoadFailed && !boardsQuery.isLoading && boards.length === 0;
   const activeBoardId = selectedBoardId ?? null;
-  const activeBoard = activeBoardId
-    ? boards.find((board) => board.id === activeBoardId)
-    : null;
+  const workspaceHref = buildMindWorkspaceHref({
+    mindPrefix,
+    workspaceSlug: workspaceSlug ?? wsId,
+  });
   const snapshotQuery = useQuery({
     enabled: !!activeBoardId,
     queryFn: () => getMindBoardGraphSnapshot(wsId, activeBoardId ?? ''),
@@ -66,6 +70,8 @@ export function MindDashboard({
     queryFn: () => listMindAiPatches(wsId, activeBoardId ?? ''),
     queryKey: ['mind', 'patches', wsId, activeBoardId],
   });
+  const snapshot = snapshotQuery.data;
+  const patches = patchesQuery.data?.patches ?? [];
   const saveGraphMutation = useMutation({
     mutationFn: (payload: SaveMindGraphPayload) =>
       saveMindGraph(wsId, activeBoardId ?? '', payload),
@@ -75,21 +81,39 @@ export function MindDashboard({
         nextSnapshot
       );
       queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
-      queryClient.invalidateQueries({
-        queryKey: ['mind', 'graph', wsId, activeBoardId],
-      });
     },
   });
-  const snapshot = snapshotQuery.data;
-  const patches = patchesQuery.data?.patches ?? [];
+  const updateBoardMutation = useMutation({
+    mutationFn: (title: string) =>
+      updateMindBoard(wsId, activeBoardId ?? '', { title }),
+    onSuccess: (response) => {
+      queryClient.setQueryData(
+        ['mind', 'graph', wsId, activeBoardId],
+        (current: typeof snapshot | undefined) =>
+          current
+            ? {
+                ...current,
+                board: {
+                  ...current.board,
+                  ...response.board,
+                },
+              }
+            : current
+      );
+      queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
+    },
+  });
+  const deleteBoardMutation = useMutation({
+    mutationFn: () => archiveMindBoard(wsId, activeBoardId ?? ''),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
+      queryClient.removeQueries({
+        queryKey: ['mind', 'graph', wsId, activeBoardId],
+      });
+      router.push(workspaceHref);
+    },
+  });
   const snapshotLoadFailed = snapshotQuery.isError;
-  const tags = useMemo(() => {
-    const values = new Set<string>();
-    for (const node of snapshot?.nodes ?? []) {
-      for (const tag of getNodeMetadata(node).tags) values.add(tag);
-    }
-    return [...values].sort((a, b) => a.localeCompare(b));
-  }, [snapshot?.nodes]);
 
   if (
     !activeBoardId &&
@@ -99,49 +123,26 @@ export function MindDashboard({
     workspaceSlug
   ) {
     return (
-      <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-background md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
+      <MindShell>
         <MindBoardSelectPrompt
           mindPrefix={mindPrefix}
           workspaceSlug={workspaceSlug}
         />
-      </main>
+      </MindShell>
     );
   }
 
   if (hasNoBoards) {
     return (
-      <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-background md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
+      <MindShell>
         <MindEmptyState />
-      </main>
+      </MindShell>
     );
   }
 
   return (
-    <main className="relative -mx-2 -mb-2 flex h-[calc(100dvh-4.25rem)] min-h-0 w-[calc(100%+1rem)] flex-col overflow-hidden bg-root-background text-foreground md:-m-4 md:h-dvh md:w-[calc(100%+2rem)]">
-      <MindDashboardHeader
-        boardTitle={
-          boardLoadFailed
-            ? t('boardLoadErrorTitle')
-            : hasNoBoards
-              ? t('emptyState.headerTitle')
-              : snapshotLoadFailed
-                ? (activeBoard?.title ?? t('snapshotLoadErrorTitle'))
-                : (snapshot?.board.title ??
-                  activeBoard?.title ??
-                  t('loadingBoard'))
-        }
-        edgeCount={snapshot?.board.edgeCount ?? 0}
-        nodeCount={snapshot?.board.nodeCount ?? 0}
-        tagCount={tags.length}
-      />
+    <MindShell>
       <div className="pointer-events-none absolute top-3 right-3 z-40 flex items-start gap-2">
-        <div className="pointer-events-auto isolate rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-xl backdrop-blur">
-          <MindTagFilter
-            onSelectedTagsChange={setSelectedTags}
-            selectedTags={selectedTags}
-            tags={tags}
-          />
-        </div>
         <div className="pointer-events-auto isolate rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-xl backdrop-blur">
           <Button
             aria-label={t('actions.openAi')}
@@ -174,14 +175,19 @@ export function MindDashboard({
       ) : snapshot ? (
         <MindCanvas
           key={snapshot.board.id}
-          disabled={saveGraphMutation.isPending}
           horizon={horizon}
           onHorizonChange={setHorizon}
-          onSave={(payload) => saveGraphMutation.mutate(payload)}
+          onDeleteBoard={() => deleteBoardMutation.mutateAsync()}
+          onRenameBoard={(title) => updateBoardMutation.mutateAsync(title)}
+          onSave={(payload) => saveGraphMutation.mutateAsync(payload)}
+          onSelectedTagsChange={setSelectedTags}
           onSmartPrompt={(prompt) => {
             setAiOpen(true);
             setQueuedAiPrompt({ id: crypto.randomUUID(), prompt });
           }}
+          boardActionPending={
+            updateBoardMutation.isPending || deleteBoardMutation.isPending
+          }
           saving={saveGraphMutation.isPending}
           selectedTags={selectedTags}
           snapshot={snapshot}
@@ -198,7 +204,7 @@ export function MindDashboard({
         queuedPrompt={queuedAiPrompt}
         wsId={wsId}
       />
-    </main>
+    </MindShell>
   );
 }
 

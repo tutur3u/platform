@@ -4,6 +4,7 @@ import {
   createMindStreamTools,
   type MindToolCallbacks,
   normalizeGeneratedPatchIds,
+  orderMindPatchOperationsForApply,
 } from './tools';
 import type { MindBoardSnapshot } from './types';
 
@@ -116,6 +117,78 @@ describe('normalizeGeneratedPatchIds', () => {
     expect(updateNode.parentNodeId).toBe(createNode.node.id);
     expect(updateEdge.sourceNodeId).toBe(createNode.node.id);
     expect(updateEdge.targetNodeId).toBe(EXISTING_NODE_ID);
+  });
+
+  it('orders created nodes before edges that reference them', () => {
+    const patch = normalizeGeneratedPatchIds({
+      operations: [
+        {
+          edge: {
+            edgeType: 'contains',
+            sourceNodeId: EXISTING_NODE_ID,
+            targetNodeId: 'new_role_node',
+          },
+          id: 'link_existing_to_new_role',
+          kind: 'create_edge',
+        },
+        {
+          id: 'create_new_role',
+          kind: 'create_node',
+          node: {
+            id: 'new_role_node',
+            positionX: 320,
+            positionY: 240,
+            title: 'CEO (Vision, Fundraising)',
+          },
+        },
+      ],
+      summary: 'Add a role under the existing leadership node.',
+    });
+
+    const [createNode, createEdge] = patch.operations;
+    expect(createNode?.kind).toBe('create_node');
+    expect(createEdge?.kind).toBe('create_edge');
+    if (
+      createNode?.kind !== 'create_node' ||
+      createEdge?.kind !== 'create_edge'
+    ) {
+      throw new Error('Unexpected patch order');
+    }
+
+    expect(createEdge.edge.targetNodeId).toBe(createNode.node.id);
+  });
+});
+
+describe('orderMindPatchOperationsForApply', () => {
+  it('keeps parent nodes before newly-created child nodes', () => {
+    const ordered = orderMindPatchOperationsForApply([
+      {
+        id: 'create_child',
+        kind: 'create_node',
+        node: {
+          id: 'child_node',
+          parentNodeId: 'parent_node',
+          positionX: 320,
+          positionY: 240,
+          title: 'Child',
+        },
+      },
+      {
+        id: 'create_parent',
+        kind: 'create_node',
+        node: {
+          id: 'parent_node',
+          positionX: 0,
+          positionY: 0,
+          title: 'Parent',
+        },
+      },
+    ]);
+
+    expect(ordered.map((operation) => operation.id)).toEqual([
+      'create_parent',
+      'create_child',
+    ]);
   });
 });
 
@@ -334,6 +407,92 @@ describe('propose_mind_patch reference validation', () => {
       reason: expect.stringContaining('missing_parent_alias'),
     });
     expect(callbacks.createPatch).not.toHaveBeenCalled();
+  });
+
+  it('rejects draft nodes that would be left isolated', async () => {
+    const callbacks = createCallbacks();
+    const tools = createMindStreamTools(
+      {
+        boardId: BOARD_ID,
+        threadId: THREAD_ID,
+        userId: USER_ID,
+        writeMode: 'review',
+        wsId: WS_ID,
+      },
+      callbacks
+    );
+    const proposePatchTool = getToolExecute(tools.propose_mind_patch);
+
+    const result = await proposePatchTool({
+      boardId: BOARD_ID,
+      patch: {
+        operations: [
+          {
+            id: 'create_detached_node',
+            kind: 'create_node',
+            node: {
+              id: 'detached_node',
+              positionX: 320,
+              positionY: 240,
+              title: 'Detached planning idea',
+            },
+          },
+        ],
+        summary: 'Add detached idea',
+      },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining('isolated'),
+    });
+    expect(callbacks.createPatch).not.toHaveBeenCalled();
+  });
+});
+
+describe('render_mind_ui input parsing', () => {
+  it('accepts deeply nested loose outline objects', async () => {
+    const tools = createMindStreamTools(
+      {
+        boardId: BOARD_ID,
+        threadId: THREAD_ID,
+        userId: USER_ID,
+        writeMode: 'review',
+        wsId: WS_ID,
+      },
+      createCallbacks()
+    );
+    const renderTool = tools.render_mind_ui as {
+      execute?: (
+        args: Record<string, unknown>
+      ) => Promise<Record<string, unknown>>;
+      inputSchema?: {
+        safeParse: (value: unknown) => { success: boolean };
+      };
+    };
+    const input = {
+      elements: {
+        startup_structure: {
+          children: [
+            {
+              children: [
+                { title: 'CEO (Vision, Fundraising)' },
+                { title: 'CTO (Product, Engineering)' },
+              ],
+              title: 'Leadership Team',
+            },
+          ],
+          title: 'Startup Company Structure Overview',
+        },
+      },
+      root: 'startup_structure',
+      title: 'Startup Company Structure Draft',
+    };
+
+    expect(renderTool.inputSchema?.safeParse(input).success).toBe(true);
+
+    const result = await renderTool.execute?.(input);
+    expect(result).toMatchObject({ ok: true });
   });
 });
 

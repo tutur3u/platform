@@ -49,8 +49,8 @@ export function MindAiControls({
 
   if (compact) {
     return (
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <div className="min-w-0 flex-[1_1_20rem] rounded-md border border-border bg-card/80">
+      <div className="flex w-full min-w-0 flex-1 items-center gap-1.5">
+        <div className="min-w-0 flex-1 rounded-md border border-border bg-card/80">
           <MindModelSelector model={model} onModelChange={onModelChange} />
         </div>
         <ThinkingModeSelector
@@ -64,7 +64,7 @@ export function MindAiControls({
           workspaceCreditLocked={workspaceCreditLocked}
           wsId={wsId}
         />
-        <label className="flex h-8 min-w-56 items-center justify-between gap-2 rounded-md border border-border bg-card px-2 text-sm">
+        <label className="flex h-8 w-52 shrink-0 items-center justify-between gap-2 rounded-md border border-border bg-card px-2 text-sm">
           <span className="min-w-0 truncate text-muted-foreground text-xs">
             {t('ai.writeMode')}
           </span>

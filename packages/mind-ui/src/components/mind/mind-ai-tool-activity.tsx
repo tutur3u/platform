@@ -5,6 +5,7 @@ import {
   ChevronDown,
   CircleAlert,
   FileJson,
+  ListChecks,
   LoaderCircle,
   Sparkles,
   Wrench,
@@ -21,6 +22,10 @@ import { resolveMindRenderUiSpec } from './mind-json-render-spec';
 
 type MessagePart = UIMessage['parts'][number];
 type ToolStatus = 'done' | 'error' | 'running';
+type PendingVisualArtifact = {
+  id: string;
+  visual: unknown;
+};
 
 export function MindAiToolActivity({
   applying,
@@ -49,37 +54,26 @@ export function MindAiToolActivity({
   ).length;
   const doneCount = activity.filter((item) => item.status === 'done').length;
   const artifacts = getToolArtifacts(parts, patches ?? []);
-
-  if (isStreaming) {
-    return (
-      <div className="space-y-2 rounded-md border border-dynamic-blue/30 bg-dynamic-blue/5 p-2">
-        <ToolActivitySummary
-          activityCount={activity.length}
-          doneCount={doneCount}
-          errorCount={errorCount}
-          runningCount={runningCount}
-        />
-        <ToolRows activity={activity} />
-        {artifacts.length ? (
-          <ArtifactRows
-            applying={applying}
-            artifacts={artifacts}
-            onApplyPatch={onApplyPatch}
-            onOpenArtifact={onOpenArtifact}
-          />
-        ) : null}
-      </div>
-    );
-  }
+  const latestActivity = activity.at(-1);
+  const latestArtifact = artifacts.at(-1);
 
   return (
     <div className="space-y-2">
-      <details className="group rounded-md border border-border bg-background/60">
+      <details
+        className={cn(
+          'group rounded-md border bg-background/60',
+          runningCount > 0
+            ? 'border-dynamic-blue/30 bg-dynamic-blue/5'
+            : 'border-border'
+        )}
+      >
         <summary className="cursor-pointer list-none marker:hidden">
           <ToolActivitySummary
             activityCount={activity.length}
             doneCount={doneCount}
             errorCount={errorCount}
+            latestName={latestActivity?.name}
+            latestStatus={latestActivity?.status}
             runningCount={runningCount}
             trailingIcon={
               <ChevronDown className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
@@ -90,14 +84,14 @@ export function MindAiToolActivity({
       </details>
       {artifacts.length ? (
         <details className="group rounded-md border border-border bg-background/60">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2 py-1.5 text-muted-foreground text-xs marker:hidden">
-            <span className="flex min-w-0 items-center gap-1.5 font-medium">
-              <FileJson className="h-3.5 w-3.5 shrink-0" />
-              <span className="truncate">
-                {t('ai.artifactSummary', { count: artifacts.length })}
-              </span>
-            </span>
-            <ChevronDown className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
+          <summary className="cursor-pointer list-none marker:hidden">
+            <ArtifactSummary
+              count={artifacts.length}
+              latestName={getArtifactLabel(latestArtifact, t)}
+              trailingIcon={
+                <ChevronDown className="h-3.5 w-3.5 shrink-0 transition group-open:rotate-180" />
+              }
+            />
           </summary>
           <ArtifactRows
             applying={applying}
@@ -115,23 +109,44 @@ function ToolActivitySummary({
   activityCount,
   doneCount,
   errorCount,
+  latestName,
+  latestStatus,
   runningCount,
   trailingIcon,
 }: {
   activityCount: number;
   doneCount: number;
   errorCount: number;
+  latestName?: string;
+  latestStatus?: ToolStatus;
   runningCount: number;
   trailingIcon?: ReactNode;
 }) {
   const t = useTranslations('mind');
+  const SummaryIcon =
+    latestStatus === 'running'
+      ? LoaderCircle
+      : latestStatus === 'error'
+        ? CircleAlert
+        : Wrench;
 
   return (
     <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-muted-foreground text-xs">
-      <span className="flex min-w-0 items-center gap-1.5 font-medium">
-        <Wrench className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate">
-          {t('ai.toolSummary', { count: activityCount })}
+      <span className="flex min-w-0 items-center gap-1.5">
+        <SummaryIcon
+          className={cn(
+            'h-3.5 w-3.5 shrink-0',
+            latestStatus === 'running' && 'animate-spin text-dynamic-blue',
+            latestStatus === 'error' && 'text-dynamic-red'
+          )}
+        />
+        <span className="min-w-0">
+          <span className="block truncate font-medium">
+            {t('ai.toolSummary', { count: activityCount })}
+          </span>
+          {latestName ? (
+            <span className="block truncate text-[10px]">{latestName}</span>
+          ) : null}
         </span>
       </span>
       <span className="flex items-center gap-1">
@@ -165,6 +180,35 @@ function ToolActivitySummary({
         ) : null}
         {trailingIcon}
       </span>
+    </div>
+  );
+}
+
+function ArtifactSummary({
+  count,
+  latestName,
+  trailingIcon,
+}: {
+  count: number;
+  latestName?: string;
+  trailingIcon?: ReactNode;
+}) {
+  const t = useTranslations('mind');
+
+  return (
+    <div className="flex items-center justify-between gap-2 px-2 py-1.5 text-muted-foreground text-xs">
+      <span className="flex min-w-0 items-center gap-1.5">
+        <FileJson className="h-3.5 w-3.5 shrink-0" />
+        <span className="min-w-0">
+          <span className="block truncate font-medium">
+            {t('ai.artifactSummary', { count })}
+          </span>
+          {latestName ? (
+            <span className="block truncate text-[10px]">{latestName}</span>
+          ) : null}
+        </span>
+      </span>
+      {trailingIcon}
     </div>
   );
 }
@@ -216,18 +260,13 @@ function ArtifactRows({
   );
 }
 
-export type MindAiArtifactItem =
-  | {
-      id: string;
-      type: 'plan';
-      visual: unknown;
-    }
-  | {
-      id: string;
-      patch: MindAiPatchRecord;
-      title: string;
-      type: 'patch';
-    };
+export type MindAiArtifactItem = {
+  id: string;
+  patch?: MindAiPatchRecord;
+  title: string;
+  type: 'proposal';
+  visual?: unknown;
+};
 
 function MindAiArtifactRow({
   applying,
@@ -241,9 +280,10 @@ function MindAiArtifactRow({
   onOpenArtifact?: (artifact: MindAiArtifactItem) => void;
 }) {
   const t = useTranslations('mind');
-  const Icon = artifact.type === 'plan' ? Sparkles : Wrench;
-  const label =
-    artifact.type === 'plan' ? t('ai.artifactPlan') : artifact.title;
+  const Icon = artifact.patch ? ListChecks : Sparkles;
+  const label = artifact.title || t('ai.artifactPlan');
+  const canApply = artifact.patch?.status === 'draft';
+  const isApplied = artifact.patch?.status === 'applied';
 
   return (
     <div className="flex min-w-0 items-center gap-2 rounded-md border border-border/70 bg-card/70 p-1.5 text-xs">
@@ -258,21 +298,19 @@ function MindAiArtifactRow({
         <span className="min-w-0 flex-1">
           <span className="block break-words font-medium">{label}</span>
           <span className="mt-0.5 block text-[10px] text-muted-foreground">
-            {artifact.type === 'plan'
-              ? t('ai.openArtifactPlan')
-              : t('ai.patchOps', {
-                  count: artifact.patch.patch.operations.length,
-                })}
+            {artifact.patch
+              ? t('ai.pendingDraftProposal')
+              : t('ai.openArtifactPlan')}
           </span>
         </span>
       </button>
-      {artifact.type === 'patch' && artifact.patch.status === 'draft' ? (
+      {canApply ? (
         <Button
           className="shrink-0 rounded border border-border px-2 py-1 font-medium text-[10px] hover:bg-background"
           disabled={applying}
           onClick={(event) => {
             event.stopPropagation();
-            onApplyPatch?.(artifact.patch.id);
+            if (artifact.patch) onApplyPatch?.(artifact.patch.id);
           }}
           size="sm"
           type="button"
@@ -280,7 +318,7 @@ function MindAiArtifactRow({
         >
           {t('ai.applyDraft')}
         </Button>
-      ) : artifact.type === 'patch' && artifact.patch.status === 'applied' ? (
+      ) : isApplied ? (
         <Badge className="shrink-0 text-[10px]" variant="outline">
           {t('ai.applied')}
         </Badge>
@@ -383,44 +421,67 @@ function getToolName(part: MessagePart) {
   return record.type.replace(/^tool-/, '').replace(/^dynamic-/, '');
 }
 
-function getToolArtifacts(
+export function getToolArtifacts(
   parts: MessagePart[],
   patches: MindAiPatchRecord[]
 ): MindAiArtifactItem[] {
   const patchById = new Map(patches.map((patch) => [patch.id, patch]));
   const artifacts: MindAiArtifactItem[] = [];
+  let pendingVisual: PendingVisualArtifact | undefined;
 
-  parts.forEach((part, index) => {
+  for (const [index, part] of parts.entries()) {
     const name = getToolName(part);
     const toolCallId =
       getToolDebugValue(part, 'toolCallId') ?? `${name}-${index}`;
 
     if (name === 'render_mind_ui') {
       const visual = getToolOutput(part) ?? getToolRawInput(part);
-      if (!resolveMindRenderUiSpec(visual)) return;
+      if (!resolveMindRenderUiSpec(visual)) continue;
 
-      artifacts.push({
+      pendingVisual = {
         id: `plan-${toolCallId}`,
-        type: 'plan',
         visual,
-      });
-      return;
+      };
+      continue;
     }
 
     if (name === 'propose_mind_patch') {
       const patch = getMindAiPatchRecord(getToolOutput(part));
-      if (!patch) return;
+      if (!patch) continue;
+      const currentPatch = patchById.get(patch.id) ?? patch;
 
       artifacts.push({
-        id: `patch-${patch.id}`,
-        patch: patchById.get(patch.id) ?? patch,
-        title: patch.summary,
-        type: 'patch',
+        id: [pendingVisual?.id, `patch-${currentPatch.id}`]
+          .filter(Boolean)
+          .join(':'),
+        patch: currentPatch,
+        title: currentPatch.summary,
+        type: 'proposal',
+        visual: pendingVisual?.visual,
       });
+      pendingVisual = undefined;
     }
-  });
+  }
+
+  if (pendingVisual !== undefined) {
+    const visualArtifact = pendingVisual;
+    artifacts.push({
+      id: visualArtifact.id,
+      title: '',
+      type: 'proposal',
+      visual: visualArtifact.visual,
+    });
+  }
 
   return artifacts;
+}
+
+function getArtifactLabel(
+  artifact: MindAiArtifactItem | undefined,
+  t: ReturnType<typeof useTranslations>
+) {
+  if (!artifact) return undefined;
+  return artifact.title || t('ai.artifactPlan');
 }
 
 function getToolOutput(part: MessagePart) {

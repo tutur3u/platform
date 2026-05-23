@@ -20,9 +20,11 @@ export type MindAiDebugContext = {
 
 export function MindAiDebugDetails({
   context,
+  defaultOpen,
   tone = 'neutral',
 }: {
   context: MindAiDebugContext;
+  defaultOpen?: boolean;
   tone?: 'error' | 'neutral';
 }) {
   const t = useTranslations('mind');
@@ -34,6 +36,7 @@ export function MindAiDebugDetails({
         'group rounded-md border bg-background/70 text-xs',
         tone === 'error' ? 'border-dynamic-red/30' : 'border-border'
       )}
+      open={defaultOpen}
     >
       <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-2 py-1.5 marker:hidden">
         <span className="flex min-w-0 items-center gap-1.5 text-muted-foreground">

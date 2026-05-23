@@ -1,5 +1,7 @@
 import 'server-only';
 
+import { orderMindPatchOperationsForApply } from '@tuturuuu/ai/mind/tools';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type {
   MindAiPatch,
   MindAiPatchRecord,
@@ -112,9 +114,99 @@ export async function applyMindAiPatch({
   userId: string;
   wsId: string;
 }) {
+  await normalizeStoredPatchOperationOrder({ patchId, wsId });
+
   return callMindRpc<MindAiPatchRecord | null>('mind_apply_ai_patch', {
     p_patch_id: patchId,
     p_user_id: userId,
     p_ws_id: wsId,
   });
+}
+
+type MindPatchQueryResult = {
+  data: unknown;
+  error: { message?: string } | null;
+};
+type MindPatchSelectQuery = {
+  eq(column: string, value: string): MindPatchSelectQuery;
+  maybeSingle(): Promise<MindPatchQueryResult>;
+  select(columns: string): MindPatchSelectQuery;
+};
+type MindPatchUpdateQuery = PromiseLike<MindPatchQueryResult> & {
+  eq(column: string, value: string): MindPatchUpdateQuery;
+};
+type MindPatchTableClient = {
+  from(table: string): {
+    select(columns: string): MindPatchSelectQuery;
+    update(values: Record<string, unknown>): MindPatchUpdateQuery;
+  };
+};
+
+async function normalizeStoredPatchOperationOrder({
+  patchId,
+  wsId,
+}: {
+  patchId: string;
+  wsId: string;
+}) {
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const privateClient = getPrivateTableClient(sbAdmin);
+  const { data, error } = await privateClient
+    .from('mind_ai_patches')
+    .select('patch,status')
+    .eq('id', patchId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message ?? 'Failed to load Mind AI patch');
+  }
+  if (!isRecord(data) || data.status !== 'draft') return;
+  if (!isMindAiPatch(data.patch)) return;
+
+  const orderedOperations = orderMindPatchOperationsForApply(
+    data.patch.operations
+  );
+  if (
+    JSON.stringify(orderedOperations) === JSON.stringify(data.patch.operations)
+  ) {
+    return;
+  }
+
+  const updateResult = await privateClient
+    .from('mind_ai_patches')
+    .update({
+      patch: {
+        ...data.patch,
+        operations: orderedOperations,
+      },
+    })
+    .eq('id', patchId)
+    .eq('ws_id', wsId);
+
+  if (updateResult.error) {
+    throw new Error(
+      updateResult.error.message ?? 'Failed to normalize Mind AI patch'
+    );
+  }
+}
+
+function getPrivateTableClient(client: unknown) {
+  if (isRecord(client) && typeof client.schema === 'function') {
+    return client.schema('private') as MindPatchTableClient;
+  }
+
+  return client as MindPatchTableClient;
+}
+
+function isMindAiPatch(value: unknown): value is MindAiPatch {
+  return (
+    isRecord(value) &&
+    typeof value.summary === 'string' &&
+    Array.isArray(value.operations)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }

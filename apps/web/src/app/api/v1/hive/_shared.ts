@@ -10,7 +10,6 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Json } from '@tuturuuu/types/db';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getHiveMemberByUserId } from '@/lib/hive/hive-db';
 import type {
   HiveAccessRequestRow,
   HiveMemberRow,
@@ -19,6 +18,7 @@ import type {
   HiveServerRow,
   HiveWorldEventRow,
 } from '@/lib/hive/types';
+import { resolveWebHiveAccess } from '@/lib/hive-page-context';
 import {
   serverLogger,
   withRequestLogDrain,
@@ -381,25 +381,14 @@ export async function requireHiveAccess(request: NextRequest) {
   }
 
   const sbAdmin = await createAdminClient({ noCookie: true });
-  let member: Awaited<ReturnType<typeof getHiveMemberByUserId>> | null = null;
-  let memberError: Error | null = null;
-  const { data: role, error: roleError } = await sbAdmin
-    .from('platform_user_roles')
-    .select('enabled, allow_role_management')
-    .eq('user_id', user.id)
-    .maybeSingle();
+  const accessResult = await resolveWebHiveAccess({
+    sbAdmin,
+    userId: user.id,
+  });
 
-  try {
-    member = await getHiveMemberByUserId(user.id);
-  } catch (error) {
-    memberError =
-      error instanceof Error ? error : new Error('Hive DB lookup failed');
-  }
-
-  if (memberError || roleError) {
+  if ('error' in accessResult) {
     serverLogger.error('Failed to resolve Hive access', {
-      memberError: memberError?.message,
-      roleError: roleError?.message,
+      userId: user.id,
     });
     return {
       ok: false as const,
@@ -411,8 +400,8 @@ export async function requireHiveAccess(request: NextRequest) {
   }
 
   const access = {
-    isAdmin: !!role?.enabled && !!role.allow_role_management,
-    isMember: !!member?.enabled,
+    isAdmin: accessResult.isAdmin,
+    isMember: accessResult.isMember,
     sbAdmin,
     user,
   };

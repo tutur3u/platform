@@ -959,6 +959,7 @@
         "@upstash/qstash": "^2.10.1",
         "@upstash/ratelimit": "^2.0.8",
         "@upstash/redis": "^1.38.0",
+        "@xyflow/react": "^12.10.2",
         "ai": "^6.0.190",
         "bcrypt": "^6.0.0",
         "browser-image-compression": "^2.0.2",

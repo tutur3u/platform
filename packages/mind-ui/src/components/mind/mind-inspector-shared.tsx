@@ -33,9 +33,9 @@ export function InspectorHeader({
 }) {
   const t = useTranslations('mind');
   return (
-    <div className="flex items-start justify-between gap-4 pr-9">
+    <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
-        <h2 className="truncate font-semibold text-base tracking-normal">
+        <h2 className="text-pretty font-semibold text-base leading-6 tracking-normal">
           {title}
         </h2>
         <Badge className="mt-2" variant="secondary">
@@ -43,7 +43,7 @@ export function InspectorHeader({
         </Badge>
       </div>
       <Button
-        className="h-8 w-8 shrink-0 text-dynamic-red hover:text-dynamic-red"
+        className="h-8 w-8 shrink-0 text-dynamic-red hover:bg-dynamic-red/10 hover:text-dynamic-red"
         onClick={onDelete}
         size="icon"
         type="button"
