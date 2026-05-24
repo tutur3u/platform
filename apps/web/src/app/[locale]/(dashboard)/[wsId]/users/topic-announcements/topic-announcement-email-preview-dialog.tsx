@@ -94,8 +94,8 @@ export function TopicAnnouncementEmailPreviewDialog({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="max-h-[90vh] max-w-5xl overflow-hidden p-0">
-        <DialogHeader className="border-b px-6 pt-6 pb-4">
+      <DialogContent className="!flex !w-[calc(100vw-2rem)] !max-w-[calc(100vw-2rem)] sm:!max-w-[96vw] xl:!max-w-7xl h-[88vh] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0">
+        <DialogHeader className="shrink-0 border-b px-6 pt-6 pr-12 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-dynamic-blue" />
             {t('email_preview_title')}
@@ -104,21 +104,30 @@ export function TopicAnnouncementEmailPreviewDialog({
         </DialogHeader>
 
         {announcement ? (
-          <div className="grid min-h-0 gap-0 lg:grid-cols-[18rem_minmax(0,1fr)]">
+          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[20rem_minmax(0,1fr)]">
             <TopicAnnouncementPreviewSidebar
               attachments={announcement.attachments}
               contacts={announcement.contacts}
               subject={email?.subject ?? announcement.title}
             />
 
-            <Tabs className="min-h-0 p-4" defaultValue="preview">
-              <TabsList>
-                <TabsTrigger value="preview">{t('preview')}</TabsTrigger>
-                <TabsTrigger value="text">{t('text_version')}</TabsTrigger>
-                <TabsTrigger value="source">{t('html_source')}</TabsTrigger>
+            <Tabs
+              className="min-h-0 overflow-hidden p-4 lg:p-6"
+              defaultValue="preview"
+            >
+              <TabsList className="!w-full max-w-full justify-start overflow-x-auto">
+                <TabsTrigger className="shrink-0" value="preview">
+                  {t('preview')}
+                </TabsTrigger>
+                <TabsTrigger className="shrink-0" value="text">
+                  {t('text_version')}
+                </TabsTrigger>
+                <TabsTrigger className="shrink-0" value="source">
+                  {t('html_source')}
+                </TabsTrigger>
               </TabsList>
               <TabsContent
-                className="mt-3 h-[58vh] overflow-hidden rounded-md border"
+                className="mt-3 min-h-0 overflow-hidden rounded-md border"
                 value="preview"
               >
                 <TopicAnnouncementPreviewState
@@ -129,7 +138,7 @@ export function TopicAnnouncementEmailPreviewDialog({
                 </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
-                className="mt-3 h-[58vh] overflow-auto rounded-md border bg-muted/30 p-4"
+                className="mt-3 min-h-0 overflow-auto rounded-md border bg-muted/30 p-4"
                 value="text"
               >
                 <TopicAnnouncementPreviewState
@@ -142,7 +151,7 @@ export function TopicAnnouncementEmailPreviewDialog({
                 </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
-                className="mt-3 h-[58vh] overflow-auto rounded-md border bg-muted/30 p-4"
+                className="mt-3 min-h-0 overflow-auto rounded-md border bg-muted/30 p-4"
                 value="source"
               >
                 <TopicAnnouncementPreviewState
@@ -159,7 +168,7 @@ export function TopicAnnouncementEmailPreviewDialog({
         ) : null}
 
         {onConfirm ? (
-          <DialogFooter className="border-t px-6 py-4">
+          <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button
               disabled={isConfirming}
               onClick={() => onOpenChange(false)}

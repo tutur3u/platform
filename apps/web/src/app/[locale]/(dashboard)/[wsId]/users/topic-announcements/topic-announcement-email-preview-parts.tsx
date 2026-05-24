@@ -27,12 +27,12 @@ export function TopicAnnouncementPreviewSidebar({
   const t = useTranslations('ws-topic-announcements');
 
   return (
-    <aside className="space-y-4 border-b p-4 lg:border-r lg:border-b-0">
+    <aside className="min-h-0 space-y-4 overflow-y-auto border-b p-4 lg:border-r lg:border-b-0 lg:p-5">
       <div>
         <p className="text-muted-foreground text-xs uppercase">
           {t('subject')}
         </p>
-        <p className="mt-1 font-medium text-sm">{subject}</p>
+        <p className="mt-1 break-words font-medium text-sm">{subject}</p>
       </div>
       <div>
         <p className="text-muted-foreground text-xs uppercase">
@@ -40,7 +40,12 @@ export function TopicAnnouncementPreviewSidebar({
         </p>
         <div className="mt-2 flex flex-wrap gap-1">
           {contacts.map((contact) => (
-            <Badge key={contact.id} variant="outline">
+            <Badge
+              className="max-w-full truncate"
+              key={contact.id}
+              title={contact.email}
+              variant="outline"
+            >
               {contact.email}
             </Badge>
           ))}
