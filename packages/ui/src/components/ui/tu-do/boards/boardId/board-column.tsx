@@ -36,7 +36,10 @@ import { useTranslations } from 'next-intl';
 import type React from 'react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
-import { useProgressiveLoader } from '../../shared/progressive-loader-context';
+import {
+  type ListPaginationState,
+  useProgressiveLoader,
+} from '../../shared/progressive-loader-context';
 import { normalizeBoardText } from './board-text-utils';
 import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { ListActions } from './list-actions';
@@ -130,6 +133,16 @@ function sortExternalTasks(tasks: Task[], sortBy: ExternalTaskSortBy) {
   });
 
   return sorted;
+}
+
+export function shouldStartInitialColumnLoad({
+  hasElement,
+  listState,
+}: {
+  hasElement: boolean;
+  listState?: ListPaginationState;
+}) {
+  return hasElement && !listState;
 }
 
 interface BoardColumnProps {
@@ -256,7 +269,12 @@ export function BoardColumn({
   const columnRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const el = columnRef.current;
-    if (!el || listState || isExternalCollapsed) return; // Already loaded, loading, or intentionally collapsed
+    if (!shouldStartInitialColumnLoad({ hasElement: Boolean(el), listState })) {
+      return;
+    }
+
+    if (!el) return;
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry?.isIntersecting) {
@@ -268,7 +286,7 @@ export function BoardColumn({
     );
     observer.observe(el);
     return () => observer.disconnect();
-  }, [isExternalCollapsed, listState, loadColumnPage]);
+  }, [listState, loadColumnPage]);
 
   useEffect(() => {
     if (
