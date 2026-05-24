@@ -24,6 +24,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import type {
@@ -67,6 +68,7 @@ export function useTaskBoardAiChatBarTaskFlow({
   );
   const [selectedLabelIds, setSelectedLabelIds] = useState<string[]>([]);
   const [currentPreviewIndex, setCurrentPreviewIndex] = useState(0);
+  const submitLockRef = useRef(false);
   const selectedListStorageKey = useMemo(
     () => `${LAST_SELECTED_LIST_STORAGE_KEY_PREFIX}:${wsId}:${boardId}`,
     [boardId, wsId]
@@ -180,13 +182,16 @@ export function useTaskBoardAiChatBarTaskFlow({
   );
 
   const simpleCreateMutation = useMutation({
-    mutationFn: async () => {
-      const entry = taskInput.trim();
-      if (!entry || !selectedListId) return [];
-
+    mutationFn: async ({
+      entry,
+      listId,
+    }: {
+      entry: string;
+      listId: string;
+    }) => {
       const payload = await createWorkspaceTask(wsId, {
         name: entry,
-        listId: selectedListId,
+        listId,
         assignee_ids: [currentUser.id],
       });
       return payload.task ? [payload.task] : [];
@@ -208,13 +213,13 @@ export function useTaskBoardAiChatBarTaskFlow({
           : tTasks('errors.failed_create_task')
       );
     },
+    onSettled: () => {
+      submitLockRef.current = false;
+    },
   });
 
   const previewMutation = useMutation({
-    mutationFn: async () => {
-      const entry = taskInput.trim();
-      if (!entry) return null;
-
+    mutationFn: async ({ entry }: { entry: string }) => {
       return createWorkspaceTaskJournal(wsId, {
         entry,
         previewOnly: true,
@@ -224,14 +229,14 @@ export function useTaskBoardAiChatBarTaskFlow({
         ...getClientTimeContext(),
       });
     },
-    onSuccess: (payload) => {
+    onSuccess: (payload, variables) => {
       if (!payload?.tasks?.length) {
         toast.error(tTasks('errors.failed_generate_preview'));
         return;
       }
 
       setLastResult(payload as JournalTaskResponse);
-      setPreviewEntry(taskInput.trim());
+      setPreviewEntry(variables.entry);
       setSelectedLabelIds([]);
       setCurrentPreviewIndex(0);
       setPreviewOpen(true);
@@ -242,6 +247,9 @@ export function useTaskBoardAiChatBarTaskFlow({
           ? error.message
           : tTasks('errors.failed_generate_preview')
       );
+    },
+    onSettled: () => {
+      submitLockRef.current = false;
     },
   });
 
@@ -300,14 +308,18 @@ export function useTaskBoardAiChatBarTaskFlow({
     savePreviewMutation.isPending;
 
   const submitTaskInput = () => {
-    if (!canCreateTask || isWorking) return;
+    const entry = taskInput.trim();
+    const listId = selectedListId;
+    if (!entry || !listId || isWorking || submitLockRef.current) return;
+
+    submitLockRef.current = true;
 
     if (aiTaskMode) {
-      previewMutation.mutate();
+      previewMutation.mutate({ entry });
       return;
     }
 
-    simpleCreateMutation.mutate();
+    simpleCreateMutation.mutate({ entry, listId });
   };
 
   const handleTaskSubmit = (event: FormEvent) => {

@@ -10,6 +10,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { MeasuredTaskCard } from './task';
+import {
+  getTaskListDragPreviewSlot,
+  type TaskListDragPreviewPosition,
+  type TaskListDragPreviewSlotTarget,
+} from './task-list-drag-preview';
 
 const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
 const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
@@ -35,13 +40,7 @@ interface VirtualizedTaskListProps {
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
-  dragPreviewPosition?: {
-    listId: string;
-    overTaskId: string | null;
-    position: 'before' | 'after' | 'empty';
-    task: Task;
-    height: number;
-  } | null;
+  dragPreviewPosition?: TaskListDragPreviewPosition | null;
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
@@ -62,16 +61,46 @@ interface TaskListContentProps {
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
-  dragPreviewPosition?: {
-    listId: string;
-    overTaskId: string | null;
-    position: 'before' | 'after' | 'empty';
-    task: Task;
-    height: number;
-  } | null;
+  dragPreviewPosition?: TaskListDragPreviewPosition | null;
   updateSize: (id: string, height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+}
+
+function DragPreviewSlot({
+  columnId,
+  preview,
+  target,
+}: {
+  columnId: string;
+  preview: TaskListDragPreviewPosition | null | undefined;
+  target: TaskListDragPreviewSlotTarget;
+}) {
+  const slot = getTaskListDragPreviewSlot({
+    columnId,
+    preview,
+    target,
+  });
+
+  if (!slot) return null;
+
+  if (slot.kind === 'insertion-line') {
+    return (
+      <div className="flex h-3 items-center" aria-hidden="true">
+        <div className="h-0.5 w-full rounded-full bg-primary/70 shadow-[0_0_0_1px_hsl(var(--background))]" />
+        <span className="sr-only">{slot.taskName}</span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
+      style={{ height: `${slot.height}px` }}
+    >
+      <p className="text-muted-foreground text-xs">{slot.taskName}</p>
+    </div>
+  );
 }
 
 function TaskListContent({
@@ -93,36 +122,19 @@ function TaskListContent({
 }: TaskListContentProps) {
   return (
     <>
-      {/* Preview at beginning of list - when dropping on column header */}
-      {dragPreviewPosition &&
-        dragPreviewPosition.position === 'before' &&
-        dragPreviewPosition.overTaskId === null && (
-          <div
-            className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
-            style={{ height: `${dragPreviewPosition.height}px` }}
-          >
-            <p className="text-muted-foreground text-xs">
-              {dragPreviewPosition.task.name}
-            </p>
-          </div>
-        )}
+      <DragPreviewSlot
+        columnId={column.id}
+        preview={dragPreviewPosition}
+        target={{ kind: 'start' }}
+      />
 
       {tasks.map((task, idx) => (
         <React.Fragment key={task.id}>
-          {/* Preview before this specific task - but NOT for the task being dragged */}
-          {dragPreviewPosition &&
-            dragPreviewPosition.position === 'before' &&
-            dragPreviewPosition.overTaskId === task.id &&
-            dragPreviewPosition.task.id !== task.id && (
-              <div
-                className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
-                style={{ height: `${dragPreviewPosition.height}px` }}
-              >
-                <p className="text-muted-foreground text-xs">
-                  {dragPreviewPosition.task.name}
-                </p>
-              </div>
-            )}
+          <DragPreviewSlot
+            columnId={column.id}
+            preview={dragPreviewPosition}
+            target={{ kind: 'before-task', taskId: task.id }}
+          />
 
           <MeasuredTaskCard
             task={task}
@@ -144,19 +156,13 @@ function TaskListContent({
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
           />
 
-          {/* Preview at end of list - when dropping on column surface */}
-          {dragPreviewPosition &&
-            dragPreviewPosition.position === 'empty' &&
-            idx === tasks.length - 1 && (
-              <div
-                className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
-                style={{ height: `${dragPreviewPosition.height}px` }}
-              >
-                <p className="text-muted-foreground text-xs">
-                  {dragPreviewPosition.task.name}
-                </p>
-              </div>
-            )}
+          {idx === tasks.length - 1 && (
+            <DragPreviewSlot
+              columnId={column.id}
+              preview={dragPreviewPosition}
+              target={{ kind: 'end' }}
+            />
+          )}
         </React.Fragment>
       ))}
     </>
@@ -435,7 +441,15 @@ function VirtualizedTaskListInner({
       )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
-          {isExternalStaging ? (
+          {dragPreviewPosition ? (
+            <div className="w-full px-1">
+              <DragPreviewSlot
+                columnId={column.id}
+                preview={dragPreviewPosition}
+                target={{ kind: 'empty-list' }}
+              />
+            </div>
+          ) : isExternalStaging ? (
             <div className="flex max-w-56 flex-col items-center gap-2 text-center">
               <div className="flex h-9 w-9 items-center justify-center rounded-full border border-dynamic-cyan/30 border-dashed bg-dynamic-cyan/10 text-dynamic-cyan">
                 <MoveRight className="h-4 w-4" />
