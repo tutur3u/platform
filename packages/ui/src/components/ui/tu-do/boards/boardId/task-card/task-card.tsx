@@ -143,6 +143,7 @@ export interface TaskCardProps {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
+  suppressSortableTransform?: boolean;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>; // For bulk operations
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>; // From useBulkOperations
@@ -162,6 +163,7 @@ function TaskCardInner({
   isPersonalWorkspace = false,
   onSelect,
   onClearSelection,
+  suppressSortableTransform = false,
   optimisticUpdateInProgress,
   selectedTasks,
   bulkUpdateCustomDueDate,
@@ -672,19 +674,26 @@ function TaskCardInner({
     });
   }
 
-  const { setNodeRef, attributes, listeners, transform, isDragging } =
-    useSortable({
-      id: task.id,
-      data: {
-        type: 'Task',
-        task: {
-          ...task,
-          list_id: String(task.list_id),
-        },
+  const sortableDisabled = dragDisabled || isOverlay;
+  const sortableId = isOverlay ? `${task.id}:drag-overlay` : task.id;
+  const {
+    setNodeRef,
+    attributes,
+    listeners,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: sortableId,
+    data: {
+      type: 'Task',
+      task: {
+        ...task,
+        list_id: String(task.list_id),
       },
-      disabled: dragDisabled,
-      transition: null, // Disable @dnd-kit's built-in transitions
-    });
+    },
+    disabled: sortableDisabled,
+  });
 
   const cardVisibilityState = getTaskCardVisibilityState({
     isDragging,
@@ -727,13 +736,15 @@ function TaskCardInner({
   }, []);
 
   const style: React.CSSProperties = {
-    transform: isDragging
-      ? 'translate3d(0, 0, 0)'
-      : CSS.Transform.toString(transform),
-    transition: 'none', // Always disable transitions - rely on optimistic updates
+    transform:
+      isOverlay || isDragging || suppressSortableTransform
+        ? 'translate3d(0, 0, 0)'
+        : CSS.Transform.toString(transform),
+    transition: isOverlay || suppressSortableTransform ? 'none' : transition,
     height: 'var(--task-height)',
+    background: isOverlay ? 'var(--card)' : undefined,
     // Show reduced opacity for optimistic tasks (pending realtime confirmation)
-    opacity: isOptimistic ? 0.6 : undefined,
+    opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
 
   const now = new Date();
@@ -1584,21 +1595,19 @@ function TaskCardInner({
         setMenuGuardUntil(Date.now() + 300);
       }}
       // Apply sortable listeners/attributes to the full card so the whole surface remains draggable
-      {...attributes}
-      {...(!dragDisabled && listeners)}
+      {...(sortableDisabled ? {} : attributes)}
+      {...(sortableDisabled ? {} : listeners)}
       className={cn(
         'group relative overflow-hidden rounded-lg border-l-4',
-        dragDisabled
+        cardVisibilityState.hidden && 'pointer-events-none opacity-0',
+        sortableDisabled
           ? 'cursor-default'
           : 'cursor-grab touch-none select-none active:cursor-grabbing',
         // Task list or priority-based styling
         getCardColorClasses(),
         showBlockedByCallout && 'bg-dynamic-red/[0.03]',
-        // Hide only the live drag source. Optimistically moved cards must stay visible.
-        cardVisibilityState.hidden && 'opacity-0',
         cardVisibilityState.pending && 'opacity-90',
-        isOverlay &&
-          'scale-105 shadow-2xl ring-2 ring-primary/50 backdrop-blur-sm',
+        isOverlay && 'bg-card bg-none shadow-lg ring-2 ring-primary/50',
         // Closed state (closed tasks)
         (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
         // Overdue state

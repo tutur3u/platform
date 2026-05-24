@@ -9,6 +9,15 @@ export function areTaskCardPropsEqual(
   if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
   if (prev.boardId !== next.boardId) return false;
   if (prev.workspaceId !== next.workspaceId) return false;
+  if (prev.suppressSortableTransform !== next.suppressSortableTransform) {
+    return false;
+  }
+  if (
+    (prev.optimisticUpdateInProgress?.has(prev.task.id) ?? false) !==
+    (next.optimisticUpdateInProgress?.has(next.task.id) ?? false)
+  ) {
+    return false;
+  }
 
   if (
     prev.taskList?.color !== next.taskList?.color ||

@@ -38,6 +38,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useProgressiveLoader } from '../../shared/progressive-loader-context';
 import { normalizeBoardText } from './board-text-utils';
+import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { ListActions } from './list-actions';
 import { statusIcons } from './status-section';
 import type { TaskFilters } from './task-filter';
@@ -145,13 +146,8 @@ interface BoardColumnProps {
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
   onAddTask?: (list: TaskList) => void;
-  dragPreviewPosition?: {
-    listId: string;
-    overTaskId: string | null;
-    position: 'before' | 'after' | 'empty';
-    task: Task;
-    height: number;
-  } | null;
+  dragPreviewPosition?: DragPreviewPosition | null;
+  suppressTaskTransforms?: boolean;
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
   filters?: TaskFilters;
@@ -176,6 +172,7 @@ export function BoardColumn({
   isPersonalWorkspace,
   onAddTask,
   dragPreviewPosition,
+  suppressTaskTransforms,
   taskHeightsRef,
   optimisticUpdateInProgress,
   filters,
@@ -709,6 +706,7 @@ export function BoardColumn({
           onTaskSelect={onTaskSelect}
           onClearSelection={onClearSelection}
           dragPreviewPosition={dragPreviewPosition}
+          suppressSortableTransform={suppressTaskTransforms}
           taskHeightsRef={taskHeightsRef}
           optimisticUpdateInProgress={optimisticUpdateInProgress}
           bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}

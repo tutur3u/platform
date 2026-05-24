@@ -25,6 +25,13 @@ type ReorderTaskCacheInput = {
 };
 
 type LocallyMutatedTask = Task & { _localMutationAt: number };
+type ReorderTaskMutationInput = {
+  taskId: string;
+  newListId: string;
+  newSortKey: number;
+  optimisticPreviousTasks?: Task[];
+  optimisticPreviousFullTasks?: Task[];
+};
 
 export function mergeOptimisticReorderedTaskIntoCache(
   tasks: Task[] | undefined,
@@ -123,17 +130,16 @@ export function useReorderTask(boardId: string, wsId: string) {
       taskId,
       newListId,
       newSortKey,
-    }: {
-      taskId: string;
-      newListId: string;
-      newSortKey: number;
-    }) => {
+    }: ReorderTaskMutationInput) => {
       return reorderTask(wsId, taskId, newListId, newSortKey);
     },
-    onMutate: async ({ taskId, newListId, newSortKey }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
-
+    onMutate: ({
+      taskId,
+      newListId,
+      newSortKey,
+      optimisticPreviousTasks,
+      optimisticPreviousFullTasks,
+    }) => {
       // Snapshot the previous value
       const previousTasks = queryClient.getQueryData<Task[]>([
         'tasks',
@@ -143,6 +149,9 @@ export function useReorderTask(boardId: string, wsId: string) {
         'tasks-full',
         boardId,
       ]);
+
+      // Cancel any outgoing refetches without delaying the optimistic landing.
+      void queryClient.cancelQueries({ queryKey: ['tasks', boardId] });
 
       // Check if moving to a done or closed list
       const targetList = queryClient.getQueryData(['task_lists', boardId]) as
@@ -183,7 +192,11 @@ export function useReorderTask(boardId: string, wsId: string) {
         })
       );
 
-      return { previousTasks, previousFullTasks, blockedTaskIdsPromise };
+      return {
+        previousTasks: optimisticPreviousTasks ?? previousTasks,
+        previousFullTasks: optimisticPreviousFullTasks ?? previousFullTasks,
+        blockedTaskIdsPromise,
+      };
     },
     onError: (err, _, context) => {
       if (context?.previousTasks) {

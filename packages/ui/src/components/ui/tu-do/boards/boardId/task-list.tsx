@@ -6,15 +6,10 @@ import {
 import { Loader2, MoveRight } from '@tuturuuu/icons';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
-import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import type { DragPreviewPosition } from './kanban/dnd/use-kanban-dnd';
 import { MeasuredTaskCard } from './task';
-import {
-  getTaskListDragPreviewSlot,
-  type TaskListDragPreviewPosition,
-  type TaskListDragPreviewSlotTarget,
-} from './task-list-drag-preview';
 
 const VIRTUALIZE_THRESHOLD = 60; // only virtualize for fairly large lists
 const ESTIMATED_ITEM_HEIGHT = 96; // px including margin (space-y-2 gap)
@@ -40,7 +35,8 @@ interface VirtualizedTaskListProps {
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
-  dragPreviewPosition?: TaskListDragPreviewPosition | null;
+  dragPreviewPosition?: DragPreviewPosition | null;
+  suppressSortableTransform?: boolean;
   taskHeightsRef?: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
@@ -61,10 +57,45 @@ interface TaskListContentProps {
   isPersonalWorkspace?: boolean;
   onTaskSelect?: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection?: () => void;
-  dragPreviewPosition?: TaskListDragPreviewPosition | null;
+  dragPreviewPosition?: DragPreviewPosition | null;
+  suppressSortableTransform?: boolean;
   updateSize: (id: string, height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+}
+
+type DragPreviewSlotTarget =
+  | { kind: 'start' }
+  | { kind: 'before-task'; taskId: string }
+  | { kind: 'after-task'; taskId: string }
+  | { kind: 'empty-list' };
+
+function shouldRenderDragPreviewSlot({
+  columnId,
+  preview,
+  target,
+}: {
+  columnId: string;
+  preview: DragPreviewPosition | null | undefined;
+  target: DragPreviewSlotTarget;
+}) {
+  if (!preview || preview.listId !== columnId) return false;
+
+  if (preview.position === 'empty') {
+    return target.kind === 'empty-list';
+  }
+
+  if (preview.position === 'before' && preview.overTaskId === null) {
+    return target.kind === 'start';
+  }
+
+  if (preview.position === 'before') {
+    return (
+      target.kind === 'before-task' && target.taskId === preview.overTaskId
+    );
+  }
+
+  return target.kind === 'after-task' && target.taskId === preview.overTaskId;
 }
 
 function DragPreviewSlot({
@@ -73,33 +104,20 @@ function DragPreviewSlot({
   target,
 }: {
   columnId: string;
-  preview: TaskListDragPreviewPosition | null | undefined;
-  target: TaskListDragPreviewSlotTarget;
+  preview: DragPreviewPosition | null | undefined;
+  target: DragPreviewSlotTarget;
 }) {
-  const slot = getTaskListDragPreviewSlot({
-    columnId,
-    preview,
-    target,
-  });
+  if (!shouldRenderDragPreviewSlot({ columnId, preview, target })) return null;
 
-  if (!slot) return null;
-
-  if (slot.kind === 'insertion-line') {
-    return (
-      <div className="flex h-3 items-center" aria-hidden="true">
-        <div className="h-0.5 w-full rounded-full bg-primary/70 shadow-[0_0_0_1px_hsl(var(--background))]" />
-        <span className="sr-only">{slot.taskName}</span>
-      </div>
-    );
-  }
+  const height = Math.max(64, Math.round(preview?.height ?? 96));
 
   return (
     <div
-      className="flex items-center justify-center rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 opacity-60"
-      style={{ height: `${slot.height}px` }}
-    >
-      <p className="text-muted-foreground text-xs">{slot.taskName}</p>
-    </div>
+      aria-hidden="true"
+      className="pointer-events-none"
+      data-dnd-preview-slot="task"
+      style={{ height }}
+    />
   );
 }
 
@@ -116,6 +134,7 @@ function TaskListContent({
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
+  suppressSortableTransform,
   updateSize,
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
@@ -127,44 +146,45 @@ function TaskListContent({
         preview={dragPreviewPosition}
         target={{ kind: 'start' }}
       />
+      {tasks.map((task) => {
+        const isDraggedPreviewTask = dragPreviewPosition?.task.id === task.id;
 
-      {tasks.map((task, idx) => (
-        <React.Fragment key={task.id}>
-          <DragPreviewSlot
-            columnId={column.id}
-            preview={dragPreviewPosition}
-            target={{ kind: 'before-task', taskId: task.id }}
-          />
-
-          <MeasuredTaskCard
-            task={task}
-            taskList={column}
-            boardId={boardId}
-            workspaceId={workspaceId}
-            availableLists={availableLists}
-            onUpdate={onUpdate}
-            isSelected={Boolean(
-              isMultiSelectMode && selectedTasks?.has(task.id)
-            )}
-            isMultiSelectMode={isMultiSelectMode}
-            isPersonalWorkspace={isPersonalWorkspace}
-            onSelect={onTaskSelect}
-            onClearSelection={onClearSelection}
-            onHeight={(h) => updateSize(task.id, h)}
-            optimisticUpdateInProgress={optimisticUpdateInProgress}
-            selectedTasks={selectedTasks}
-            bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-          />
-
-          {idx === tasks.length - 1 && (
+        return (
+          <React.Fragment key={task.id}>
             <DragPreviewSlot
               columnId={column.id}
               preview={dragPreviewPosition}
-              target={{ kind: 'end' }}
+              target={{ kind: 'before-task', taskId: task.id }}
             />
-          )}
-        </React.Fragment>
-      ))}
+            <MeasuredTaskCard
+              task={task}
+              taskList={column}
+              boardId={boardId}
+              workspaceId={workspaceId}
+              availableLists={availableLists}
+              onUpdate={onUpdate}
+              isSelected={Boolean(
+                isMultiSelectMode && selectedTasks?.has(task.id)
+              )}
+              isMultiSelectMode={isMultiSelectMode}
+              isPersonalWorkspace={isPersonalWorkspace}
+              onSelect={onTaskSelect}
+              onClearSelection={onClearSelection}
+              suppressSortableTransform={suppressSortableTransform}
+              hiddenFromLayout={isDraggedPreviewTask}
+              onHeight={(h) => updateSize(task.id, h)}
+              optimisticUpdateInProgress={optimisticUpdateInProgress}
+              selectedTasks={selectedTasks}
+              bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+            />
+            <DragPreviewSlot
+              columnId={column.id}
+              preview={dragPreviewPosition}
+              target={{ kind: 'after-task', taskId: task.id }}
+            />
+          </React.Fragment>
+        );
+      })}
     </>
   );
 }
@@ -216,6 +236,7 @@ function VirtualizedTaskListInner({
   onTaskSelect,
   onClearSelection,
   dragPreviewPosition,
+  suppressSortableTransform,
   taskHeightsRef: externalTaskHeightsRef,
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
@@ -227,14 +248,13 @@ function VirtualizedTaskListInner({
   const tTasks = useTranslations('ws-tasks');
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const isExternalStaging = column.is_external_staging === true;
-  const { setNodeRef: setDroppableRef, isOver: isColumnDragOverRaw } =
-    useDroppable({
-      id: `column-surface-${column.id}`,
-      data: {
-        type: 'ColumnSurface',
-        columnId: String(column.id),
-      },
-    });
+  const { setNodeRef: setDroppableRef } = useDroppable({
+    id: `column-surface-${column.id}`,
+    data: {
+      type: 'ColumnSurface',
+      columnId: String(column.id),
+    },
+  });
   const attachScrollableRef = useCallback(
     (node: HTMLDivElement | null) => {
       scrollRef.current = node;
@@ -251,30 +271,20 @@ function VirtualizedTaskListInner({
 
   const shouldVirtualize = tasks.length > VIRTUALIZE_THRESHOLD;
   const [isDraggingHere, setIsDraggingHere] = useState(false);
-  const [draggedTaskListId, setDraggedTaskListId] = useState<string | null>(
-    null
-  );
-
-  // Only show column drag-over effect if task is from a different column
-  const isColumnDragOver =
-    isColumnDragOverRaw && draggedTaskListId !== column.id;
 
   // Monitor drag state to widen window while a task from this column is dragged
   useDndMonitor({
     onDragStart(event) {
       const t = event.active.data?.current?.task as Task | undefined;
       if (t) {
-        setDraggedTaskListId(t.list_id);
         if (t.list_id === column.id) setIsDraggingHere(true);
       }
     },
     onDragEnd() {
       setIsDraggingHere(false);
-      setDraggedTaskListId(null);
     },
     onDragCancel() {
       setIsDraggingHere(false);
-      setDraggedTaskListId(null);
     },
   });
 
@@ -405,43 +415,13 @@ function VirtualizedTaskListInner({
   return (
     <div
       ref={attachScrollableRef}
-      className={cn(
-        'relative h-full flex-1 space-y-2 overflow-y-auto p-3 transition-all duration-200',
-        isColumnDragOver &&
-          'fade-in-0 animate-in rounded-lg bg-linear-to-br from-primary/10 via-primary/5 to-transparent shadow-inner ring-2 ring-primary/40 duration-300'
-      )}
+      className="relative h-full flex-1 space-y-2 overflow-y-auto p-3"
       // When not virtualizing we still want consistent styling
       data-virtualized={shouldVirtualize ? 'true' : 'false'}
     >
-      {/* Drop indicator when hovering over empty column */}
-      {tasks.length === 0 && isColumnDragOver && (
-        <div className="fade-in-0 zoom-in-95 absolute inset-4 flex animate-in flex-col items-center justify-center gap-3 rounded-lg border-2 border-primary/50 border-dashed bg-primary/5 duration-300">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20 ring-4 ring-primary/10">
-            <svg
-              className="h-6 w-6 animate-bounce text-primary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <title>
-                Drop here to add (or drag tasks onto the + Add task button)
-              </title>
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
-          </div>
-          <p className="font-semibold text-primary text-sm">
-            {t('drop_here_to_add')}
-          </p>
-        </div>
-      )}
       {tasks.length === 0 ? (
         <div className="flex h-32 items-center justify-center text-muted-foreground">
-          {dragPreviewPosition ? (
+          {dragPreviewPosition?.listId === column.id ? (
             <div className="w-full px-1">
               <DragPreviewSlot
                 columnId={column.id}
@@ -494,6 +474,7 @@ function VirtualizedTaskListInner({
                 onTaskSelect={onTaskSelect}
                 onClearSelection={onClearSelection}
                 dragPreviewPosition={dragPreviewPosition}
+                suppressSortableTransform={suppressSortableTransform}
                 updateSize={updateSize}
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
@@ -520,6 +501,7 @@ function VirtualizedTaskListInner({
             onTaskSelect={onTaskSelect}
             onClearSelection={onClearSelection}
             dragPreviewPosition={dragPreviewPosition}
+            suppressSortableTransform={suppressSortableTransform}
             updateSize={updateSize}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}

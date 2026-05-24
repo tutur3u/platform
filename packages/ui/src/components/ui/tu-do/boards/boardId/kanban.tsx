@@ -50,6 +50,11 @@ import type { TaskFilters } from './task-filter';
 // Prefer pointerWithin for precise targeting; fall back to closestCenter
 // when the pointer isn't inside any droppable (e.g. between columns).
 const kanbanCollisionDetection: CollisionDetection = (args) => {
+  if (args.active.data.current?.type === 'Task') {
+    const centerCollisions = closestCenter(args);
+    if (centerCollisions.length > 0) return centerCollisions;
+  }
+
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) return pointerCollisions;
   return closestCenter(args);
@@ -390,8 +395,9 @@ export function KanbanBoard({
             onTaskSelect={handleTaskSelect}
             onClearSelection={clearSelection}
             onUpdate={() => {}} // Optimistic updates handled in DnD
-            createTask={createTask}
             dragPreviewPosition={dragPreviewPosition}
+            suppressTaskTransforms={Boolean(activeTask)}
+            createTask={createTask}
             taskHeightsRef={taskHeightsRef}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             filters={filters}

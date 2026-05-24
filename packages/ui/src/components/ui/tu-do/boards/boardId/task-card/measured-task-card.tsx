@@ -15,6 +15,8 @@ interface MeasuredTaskCardProps {
   isPersonalWorkspace?: boolean;
   onSelect?: (taskId: string, event: MouseEvent) => void;
   onClearSelection?: () => void;
+  suppressSortableTransform?: boolean;
+  hiddenFromLayout?: boolean;
   onHeight: (height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   selectedTasks?: Set<string>;
@@ -33,6 +35,8 @@ export function MeasuredTaskCard({
   isPersonalWorkspace,
   onSelect,
   onClearSelection,
+  suppressSortableTransform,
+  hiddenFromLayout,
   onHeight,
   optimisticUpdateInProgress,
   selectedTasks,
@@ -66,7 +70,13 @@ export function MeasuredTaskCard({
   }, []);
 
   return (
-    <div ref={ref} data-id={task.id}>
+    <div
+      ref={ref}
+      data-id={task.id}
+      data-task-card-id={task.id}
+      data-task-list-id={taskList.id}
+      hidden={hiddenFromLayout}
+    >
       <TaskCard
         task={task}
         taskList={taskList}
@@ -79,6 +89,7 @@ export function MeasuredTaskCard({
         isPersonalWorkspace={isPersonalWorkspace}
         onSelect={onSelect}
         onClearSelection={onClearSelection}
+        suppressSortableTransform={suppressSortableTransform}
         optimisticUpdateInProgress={optimisticUpdateInProgress}
         selectedTasks={selectedTasks}
         bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}

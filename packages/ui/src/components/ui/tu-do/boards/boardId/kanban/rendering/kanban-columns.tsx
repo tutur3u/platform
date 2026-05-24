@@ -11,6 +11,7 @@ import CursorOverlayMultiWrapper from '../../../../shared/cursor-overlay-multi-w
 import { BoardColumn } from '../../board-column';
 import type { TaskFilters } from '../../task-filter';
 import { TaskListForm } from '../../task-list-form';
+import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanColumnWidth } from './kanban-column-width';
 
@@ -28,13 +29,14 @@ interface KanbanColumnsProps {
   onTaskSelect: (taskId: string, event: React.MouseEvent) => void;
   onClearSelection: () => void;
   onUpdate: () => void;
+  dragPreviewPosition?: DragPreviewPosition | null;
+  suppressTaskTransforms?: boolean;
   createTask: (
     boardId: string,
     listId: string,
     columns: TaskList[],
     filters?: TaskFilters
   ) => void;
-  dragPreviewPosition: any;
   taskHeightsRef: React.MutableRefObject<Map<string, number>>;
   optimisticUpdateInProgress: Set<string>;
   filters?: TaskFilters;
@@ -59,8 +61,9 @@ export function KanbanColumns({
   onTaskSelect,
   onClearSelection,
   onUpdate,
-  createTask,
   dragPreviewPosition,
+  suppressTaskTransforms,
+  createTask,
   taskHeightsRef,
   optimisticUpdateInProgress,
   filters,
@@ -167,11 +170,8 @@ export function KanbanColumns({
                 setIsMultiSelectMode={setIsMultiSelectMode}
                 onTaskSelect={onTaskSelect}
                 onClearSelection={onClearSelection}
-                dragPreviewPosition={
-                  dragPreviewPosition?.listId === String(list.id)
-                    ? dragPreviewPosition
-                    : null
-                }
+                dragPreviewPosition={dragPreviewPosition}
+                suppressTaskTransforms={suppressTaskTransforms}
                 taskHeightsRef={taskHeightsRef}
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
                 filters={filters}
