@@ -44,6 +44,11 @@ import {
   sortTasksForList,
 } from './task-drag-order';
 import {
+  addPendingTaskIds,
+  getPendingTaskIdsForDrop,
+  removePendingTaskIds,
+} from './task-drag-pending';
+import {
   dragPreviewPositionsEqual,
   getTaskDropEndPreviewFromRects,
   getTaskDropPreviewFromListSurface,
@@ -553,6 +558,20 @@ export function useKanbanDnd({
     },
     [setDragPreviewPosition]
   );
+
+  const markTaskIdsPending = useCallback((taskIds: string[]) => {
+    if (taskIds.length === 0) return;
+
+    setOptimisticUpdateInProgress((prev) => addPendingTaskIds(prev, taskIds));
+  }, []);
+
+  const clearPendingTaskIds = useCallback((taskIds: string[]) => {
+    if (taskIds.length === 0) return;
+
+    setOptimisticUpdateInProgress((prev) =>
+      removePendingTaskIds(prev, taskIds)
+    );
+  }, []);
 
   const processTaskDragPreview = useCallback(
     (event: DragMoveEvent) => {
@@ -1123,6 +1142,8 @@ export function useKanbanDnd({
         (newSortKey !== null &&
           (activeTaskForDrop.sort_key ?? MAX_SAFE_INTEGER_SORT) !== newSortKey);
 
+      let shouldPreservePendingAfterDragReset = false;
+
       if (needsUpdate) {
         if (isMultiSelectMode && selectedTasks.size > 1) {
           const selectedTaskIds = Array.from(selectedTasks);
@@ -1312,6 +1333,10 @@ export function useKanbanDnd({
                   batchSortKey
                 );
               } else {
+                const pendingTaskIds = [task.id];
+                markTaskIdsPending(pendingTaskIds);
+                shouldPreservePendingAfterDragReset = true;
+
                 reorderTaskMutation.mutate(
                   {
                     taskId: task.id,
@@ -1329,6 +1354,9 @@ export function useKanbanDnd({
                           closed_at: updatedTask.closed_at,
                         },
                       });
+                    },
+                    onSettled: () => {
+                      clearPendingTaskIds(pendingTaskIds);
                     },
                   }
                 );
@@ -1366,6 +1394,13 @@ export function useKanbanDnd({
           } else {
             const repairedTaskSortKeys =
               optimisticDropPreview?.repairedTaskSortKeys ?? [];
+            const pendingTaskIds = getPendingTaskIdsForDrop({
+              activeTaskId: activeTaskForDrop.id,
+              repairedTaskSortKeys,
+            });
+            markTaskIdsPending(pendingTaskIds);
+            shouldPreservePendingAfterDragReset = true;
+
             const handleReorderSuccess = (updatedTask: Task) => {
               broadcast?.('task:upsert', {
                 task: {
@@ -1380,44 +1415,48 @@ export function useKanbanDnd({
 
             if (repairedTaskSortKeys.length > 0) {
               void (async () => {
-                const results = await Promise.allSettled(
-                  repairedTaskSortKeys.map((repair) =>
-                    reorderTaskMutation.mutateAsync(
-                      {
-                        taskId: repair.taskId,
-                        newListId: repair.listId,
-                        newSortKey: repair.sortKey,
-                        optimisticPreviousFullTasks:
-                          optimisticDropPreview?.previousFullTasks,
-                        optimisticPreviousTasks:
-                          optimisticDropPreview?.previousTasks,
-                      },
-                      {
-                        onSuccess: handleReorderSuccess,
-                      }
+                try {
+                  const results = await Promise.allSettled(
+                    repairedTaskSortKeys.map((repair) =>
+                      reorderTaskMutation.mutateAsync(
+                        {
+                          taskId: repair.taskId,
+                          newListId: repair.listId,
+                          newSortKey: repair.sortKey,
+                          optimisticPreviousFullTasks:
+                            optimisticDropPreview?.previousFullTasks,
+                          optimisticPreviousTasks:
+                            optimisticDropPreview?.previousTasks,
+                        },
+                        {
+                          onSuccess: handleReorderSuccess,
+                        }
+                      )
                     )
-                  )
-                );
-                const failedResults = results.filter(
-                  (result) => result.status === 'rejected'
-                );
+                  );
+                  const failedResults = results.filter(
+                    (result) => result.status === 'rejected'
+                  );
 
-                if (failedResults.length === 0) return;
+                  if (failedResults.length === 0) return;
 
-                console.error(
-                  'Failed to persist repaired task sort keys:',
-                  failedResults
-                );
-                rollbackOptimisticDropPreview();
-                if (boardId) {
-                  void queryClient.invalidateQueries({
-                    queryKey: ['tasks', boardId],
-                  });
-                  void queryClient.invalidateQueries({
-                    queryKey: ['tasks-full', boardId],
-                  });
+                  console.error(
+                    'Failed to persist repaired task sort keys:',
+                    failedResults
+                  );
+                  rollbackOptimisticDropPreview();
+                  if (boardId) {
+                    void queryClient.invalidateQueries({
+                      queryKey: ['tasks', boardId],
+                    });
+                    void queryClient.invalidateQueries({
+                      queryKey: ['tasks-full', boardId],
+                    });
+                  }
+                  toast.error('Failed to reorder task');
+                } finally {
+                  clearPendingTaskIds(pendingTaskIds);
                 }
-                toast.error('Failed to reorder task');
               })();
             } else {
               reorderTaskMutation.mutate(
@@ -1431,6 +1470,9 @@ export function useKanbanDnd({
                 },
                 {
                   onSuccess: handleReorderSuccess,
+                  onSettled: () => {
+                    clearPendingTaskIds(pendingTaskIds);
+                  },
                 }
               );
             }
@@ -1438,7 +1480,7 @@ export function useKanbanDnd({
         }
 
         requestAnimationFrame(() => {
-          resetDragState(true);
+          resetDragState(!shouldPreservePendingAfterDragReset);
         });
       } else {
         restoreDragStartCache();
