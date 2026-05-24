@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
+  WorkspaceStorageError: class WorkspaceStorageError extends Error {
+    constructor(
+      message: string,
+      public readonly status = 500
+    ) {
+      super(message);
+    }
+  },
   createWorkspaceStorageSignedReadUrl: vi.fn(),
   createAdminClient: vi.fn(),
   deleteWorkspaceExternalProjectAsset: vi.fn(),
@@ -40,14 +48,7 @@ vi.mock('@/lib/external-projects/store', () => ({
 }));
 
 vi.mock('@/lib/workspace-storage-provider', () => ({
-  WorkspaceStorageError: class WorkspaceStorageError extends Error {
-    constructor(
-      message: string,
-      public readonly status = 500
-    ) {
-      super(message);
-    }
-  },
+  WorkspaceStorageError: mocks.WorkspaceStorageError,
   createWorkspaceStorageSignedReadUrl: (
     ...args: Parameters<typeof mocks.createWorkspaceStorageSignedReadUrl>
   ) => mocks.createWorkspaceStorageSignedReadUrl(...args),
@@ -73,12 +74,6 @@ describe('external project asset route', () => {
   });
 
   it('forwards Supabase image transform params when resolving an asset', async () => {
-    const createSignedUrlMock = vi.fn().mockResolvedValue({
-      data: {
-        signedUrl: 'https://signed.example.com/cover.png',
-      },
-      error: null,
-    });
     const singleMock = vi.fn().mockResolvedValue({
       data: {
         id: 'asset-1',
@@ -96,15 +91,13 @@ describe('external project asset route', () => {
     const eqAssetIdMock = vi.fn(() => ({ eq: eqWorkspaceIdMock }));
     const selectMock = vi.fn(() => ({ eq: eqAssetIdMock }));
 
+    mocks.createWorkspaceStorageSignedReadUrl.mockResolvedValue(
+      'https://signed.example.com/cover.png'
+    );
     mocks.createAdminClient.mockResolvedValue({
       from: vi.fn(() => ({
         select: selectMock,
       })),
-      storage: {
-        from: vi.fn(() => ({
-          createSignedUrl: createSignedUrlMock,
-        })),
-      },
     });
 
     const { GET } = await import(
@@ -123,10 +116,13 @@ describe('external project asset route', () => {
       }
     );
 
-    expect(createSignedUrlMock).toHaveBeenCalledWith(
-      'ws-1/external-projects/yoola/artworks/entry-one/cover.png',
-      60 * 60,
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
+      'ws-1',
+      'external-projects/yoola/artworks/entry-one/cover.png',
       {
+        expiresIn: 60 * 60,
+        provider: 'supabase',
+        requireExists: true,
         transform: {
           height: 1200,
           quality: 80,
@@ -142,7 +138,6 @@ describe('external project asset route', () => {
   });
 
   it('resolves R2-backed assets through the workspace storage provider', async () => {
-    const createSignedUrlMock = vi.fn();
     const singleMock = vi.fn().mockResolvedValue({
       data: {
         id: 'asset-1',
@@ -171,11 +166,6 @@ describe('external project asset route', () => {
       from: vi.fn(() => ({
         select: selectMock,
       })),
-      storage: {
-        from: vi.fn(() => ({
-          createSignedUrl: createSignedUrlMock,
-        })),
-      },
     });
 
     const { GET } = await import(
@@ -194,19 +184,225 @@ describe('external project asset route', () => {
       }
     );
 
-    expect(createSignedUrlMock).not.toHaveBeenCalled();
     expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenCalledWith(
       'ws-1',
       'external-projects/yoola/games/mine/cover.png',
       {
         expiresIn: 60 * 60,
         provider: 'r2',
+        requireExists: true,
+        transform: undefined,
       }
     );
     expect(response.status).toBe(307);
     expect(response.headers.get('location')).toBe(
       'https://r2.example.com/signed-cover.png'
     );
+  });
+
+  it('falls back from stale R2 metadata to Supabase with image transforms', async () => {
+    const singleMock = vi.fn().mockResolvedValue({
+      data: {
+        id: 'asset-1',
+        metadata: {
+          provider: 'r2',
+        },
+        source_url: null,
+        storage_path: 'external-projects/theguyser/gallery/hero.png',
+        workspace_external_project_entries: {
+          status: 'published',
+        },
+        ws_id: 'ws-1',
+      },
+      error: null,
+    });
+    const eqWorkspaceIdMock = vi.fn(() => ({ single: singleMock }));
+    const eqAssetIdMock = vi.fn(() => ({ eq: eqWorkspaceIdMock }));
+    const selectMock = vi.fn(() => ({ eq: eqAssetIdMock }));
+
+    mocks.createWorkspaceStorageSignedReadUrl
+      .mockRejectedValueOnce(
+        new mocks.WorkspaceStorageError('Storage object not found', 404)
+      )
+      .mockResolvedValueOnce('https://supabase.example.com/signed-hero.png');
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: selectMock,
+      })),
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1?width=900&height=600&resize=cover'
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenNthCalledWith(
+      1,
+      'ws-1',
+      'external-projects/theguyser/gallery/hero.png',
+      {
+        expiresIn: 60 * 60,
+        provider: 'r2',
+        requireExists: true,
+        transform: undefined,
+      }
+    );
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenNthCalledWith(
+      2,
+      'ws-1',
+      'external-projects/theguyser/gallery/hero.png',
+      {
+        expiresIn: 60 * 60,
+        provider: 'supabase',
+        requireExists: true,
+        transform: {
+          height: 600,
+          resize: 'cover',
+          width: 900,
+        },
+      }
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://supabase.example.com/signed-hero.png'
+    );
+  });
+
+  it('falls back from a missing Supabase object to R2', async () => {
+    const singleMock = vi.fn().mockResolvedValue({
+      data: {
+        id: 'asset-1',
+        metadata: {},
+        source_url: null,
+        storage_path: 'external-projects/yoola/gallery/cover.png',
+        workspace_external_project_entries: {
+          status: 'published',
+        },
+        ws_id: 'ws-1',
+      },
+      error: null,
+    });
+    const eqWorkspaceIdMock = vi.fn(() => ({ single: singleMock }));
+    const eqAssetIdMock = vi.fn(() => ({ eq: eqWorkspaceIdMock }));
+    const selectMock = vi.fn(() => ({ eq: eqAssetIdMock }));
+
+    mocks.createWorkspaceStorageSignedReadUrl
+      .mockRejectedValueOnce(
+        new mocks.WorkspaceStorageError('Storage object not found', 404)
+      )
+      .mockResolvedValueOnce('https://r2.example.com/fallback-cover.png');
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: selectMock,
+      })),
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1'
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenNthCalledWith(
+      1,
+      'ws-1',
+      'external-projects/yoola/gallery/cover.png',
+      {
+        expiresIn: 60 * 60,
+        provider: 'supabase',
+        requireExists: true,
+        transform: undefined,
+      }
+    );
+    expect(mocks.createWorkspaceStorageSignedReadUrl).toHaveBeenNthCalledWith(
+      2,
+      'ws-1',
+      'external-projects/yoola/gallery/cover.png',
+      {
+        expiresIn: 60 * 60,
+        provider: 'r2',
+        requireExists: true,
+        transform: undefined,
+      }
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('location')).toBe(
+      'https://r2.example.com/fallback-cover.png'
+    );
+  });
+
+  it('returns 404 when neither storage provider has the asset object', async () => {
+    const singleMock = vi.fn().mockResolvedValue({
+      data: {
+        id: 'asset-1',
+        metadata: {},
+        source_url: null,
+        storage_path: 'external-projects/theguyser/gallery/missing.png',
+        workspace_external_project_entries: {
+          status: 'published',
+        },
+        ws_id: 'ws-1',
+      },
+      error: null,
+    });
+    const eqWorkspaceIdMock = vi.fn(() => ({ single: singleMock }));
+    const eqAssetIdMock = vi.fn(() => ({ eq: eqWorkspaceIdMock }));
+    const selectMock = vi.fn(() => ({ eq: eqAssetIdMock }));
+
+    mocks.createWorkspaceStorageSignedReadUrl
+      .mockRejectedValueOnce(
+        new mocks.WorkspaceStorageError('Storage object not found', 404)
+      )
+      .mockRejectedValueOnce(
+        new mocks.WorkspaceStorageError('Storage object not found', 404)
+      );
+    mocks.createAdminClient.mockResolvedValue({
+      from: vi.fn(() => ({
+        select: selectMock,
+      })),
+    });
+
+    const { GET } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/assets/[assetId]/route'
+    );
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/v1/workspaces/ws-1/external-projects/assets/asset-1'
+      ),
+      {
+        params: Promise.resolve({
+          assetId: 'asset-1',
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Asset not available',
+    });
   });
 
   it('rejects incomplete transform query params', async () => {

@@ -1260,6 +1260,7 @@ export async function createWorkspaceStorageSignedReadUrl(
   options?: {
     expiresIn?: number;
     provider?: WorkspaceStorageProvider;
+    requireExists?: boolean;
     transform?: unknown;
   }
 ): Promise<string> {
@@ -1286,8 +1287,18 @@ export async function createWorkspaceStorageSignedReadUrl(
       );
     }
 
+    const client = createR2Client(config);
+
+    if (options?.requireExists) {
+      const exists = await hasR2Object(client, config.bucket, fullPath);
+
+      if (!exists) {
+        throw new WorkspaceStorageError('Storage object not found', 404);
+      }
+    }
+
     return getSignedUrl(
-      createR2Client(config),
+      client,
       new GetObjectCommand({
         Bucket: config.bucket,
         Key: fullPath,
@@ -1297,6 +1308,17 @@ export async function createWorkspaceStorageSignedReadUrl(
   }
 
   const supabase = await createDynamicAdminClient();
+  if (options?.requireExists) {
+    const object = await findSupabaseStorageObject(
+      supabase as TypedSupabaseClient,
+      fullPath
+    );
+
+    if (!object) {
+      throw new WorkspaceStorageError('Storage object not found', 404);
+    }
+  }
+
   const { data, error } = await supabase.storage
     .from('workspaces')
     .createSignedUrl(fullPath, options?.expiresIn ?? 31_536_000, {

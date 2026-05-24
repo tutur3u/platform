@@ -28,14 +28,6 @@ import {
   WorkspaceStorageError,
 } from '@/lib/workspace-storage-provider';
 
-function isStorageObjectMissing(message: string | null | undefined) {
-  if (!message) {
-    return false;
-  }
-
-  return message.toLowerCase().includes('object not found');
-}
-
 function getAssetStorageProvider(metadata: unknown) {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
     return null;
@@ -188,27 +180,6 @@ export async function GET(
     });
 
     for (const provider of providerCandidates) {
-      if (provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE) {
-        const { data: signed, error: signedError } = await admin.storage
-          .from('workspaces')
-          .createSignedUrl(`${resolvedWsId}/${asset.storage_path}`, 60 * 60, {
-            transform: transform as never,
-          });
-
-        if (isStorageObjectMissing(signedError?.message)) {
-          continue;
-        }
-
-        if (signedError || !signed?.signedUrl) {
-          return NextResponse.json(
-            { error: 'Failed to resolve asset URL' },
-            { status: 500 }
-          );
-        }
-
-        return NextResponse.redirect(signed.signedUrl, { status: 307 });
-      }
-
       try {
         const signedUrl = await createWorkspaceStorageSignedReadUrl(
           resolvedWsId,
@@ -216,6 +187,11 @@ export async function GET(
           {
             expiresIn: 60 * 60,
             provider,
+            requireExists: true,
+            transform:
+              provider === WORKSPACE_STORAGE_PROVIDER_SUPABASE
+                ? transform
+                : undefined,
           }
         );
 
