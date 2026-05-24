@@ -154,8 +154,19 @@ test('Hive realtime Docker image hoists production dependencies for Bun runtime 
 
 test('Hive Docker image builds workspace dist exports before Next build', () => {
   const dockerfileContent = fs.readFileSync(HIVE_DOCKERFILE_PATH, 'utf8');
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(ROOT_DIR, 'apps', 'hive', 'package.json'), 'utf8')
+  );
 
   assert.deepEqual(validateHiveDockerfile(dockerfileContent), []);
+  assert.equal(
+    packageJson.scripts['build:docker'],
+    'node ../../scripts/run-hive-docker-next-build.js'
+  );
+  assert.match(
+    dockerfileContent,
+    /node scripts\/run-hive-docker-next-build\.js --env-file \/tmp\/web\.env/u
+  );
 });
 
 test('Hive Docker image copies every workspace manifest before frozen install', () => {

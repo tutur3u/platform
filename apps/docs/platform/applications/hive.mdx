@@ -149,6 +149,13 @@ through `INTERNAL_WEB_API_ORIGIN=http://web-proxy:7803`. If that value is empty,
 the Hive Next.js rewrite can fall back to the public web origin and turn every
 editor save into a browser-to-Hive-to-public-Web round trip.
 
+Hive Docker production builds run the Next.js build through
+`scripts/run-hive-docker-next-build.js` under the real `node:24` builder stage.
+The builder still copies Bun from the dependency stage for workspace package
+builds, but the final Hive `next build --turbopack` step must be launched with
+Node and `/tmp/web.env` instead of `bun --env-file` so production E2E image
+bakes do not depend on Bun's Next.js process shim.
+
 Hive graph workflows are server-scoped product data. Platform admins author
 shared workflow definitions in `hive_workflows`; enabled Hive members can run
 enabled, unarchived workflows manually, and every run writes a row in

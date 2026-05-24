@@ -9,7 +9,7 @@
     "devx": "bun sb:stop && bun sb:start && bun dev",
     "devrs": "bun sb:stop && bun sb:start && bun sb:reset && bun dev",
     "build": "next build --turbopack",
-    "build:docker": "NODE_OPTIONS='--max-old-space-size=8192 --experimental-require-module' next build --turbopack",
+    "build:docker": "node ../../scripts/run-hive-docker-next-build.js",
     "serve:hive": "NODE_OPTIONS='--max-http-header-size=65536 --experimental-require-module' next start -p 7814",
     "start": "NODE_OPTIONS='--max-http-header-size=65536' next start -p 7814",
     "preview": "next build --turbopack && NODE_OPTIONS='--max-http-header-size=65536' next start -p 7814",

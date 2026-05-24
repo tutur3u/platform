@@ -930,11 +930,16 @@ function validateHiveDockerfile(
     }),
   ];
   const requiredSnippets = [
+    'FROM node:24-bookworm-slim AS builder',
+    'COPY scripts/run-web-docker-next-build.js ./scripts/run-web-docker-next-build.js',
+    'COPY scripts/run-hive-docker-next-build.js ./scripts/run-hive-docker-next-build.js',
+    'COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun',
+    'ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node',
     'bun install --frozen-lockfile --filter @tuturuuu/hive',
     'bun run --filter @tuturuuu/types build',
     'bun run --filter @tuturuuu/internal-api build',
     'bun run --filter @tuturuuu/supabase build',
-    'bun --env-file=/tmp/web.env run --filter @tuturuuu/hive build:docker',
+    'node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env',
   ];
 
   for (const snippet of requiredSnippets) {

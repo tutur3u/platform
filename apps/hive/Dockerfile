@@ -9,6 +9,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
+COPY scripts/run-web-docker-next-build.js ./scripts/run-web-docker-next-build.js
+COPY scripts/run-hive-docker-next-build.js ./scripts/run-hive-docker-next-build.js
 COPY apps/apps/package.json ./apps/apps/package.json
 COPY apps/calendar/package.json ./apps/calendar/package.json
 COPY apps/cms/package.json ./apps/cms/package.json
@@ -84,12 +86,17 @@ EXPOSE 7814
 
 CMD ["bun", "run", "--filter", "@tuturuuu/hive", "dev"]
 
-FROM deps AS builder
+FROM node:24-bookworm-slim AS builder
+
+WORKDIR /workspace
 
 ENV HIVE_DOCKER_BUILD=1
 ENV NODE_ENV=production
 ENV PORT=7814
+ENV DOCKER_WEB_NODE_BINARY=/usr/local/bin/node
 
+COPY --from=deps /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=deps /workspace ./
 COPY apps/hive ./apps/hive
 COPY packages ./packages
 
@@ -98,7 +105,7 @@ RUN --mount=type=cache,id=platform-hive-next-cache,target=/workspace/apps/hive/.
   bun run --filter @tuturuuu/types build && \
   bun run --filter @tuturuuu/internal-api build && \
   bun run --filter @tuturuuu/supabase build && \
-  bun --env-file=/tmp/web.env run --filter @tuturuuu/hive build:docker
+  node scripts/run-hive-docker-next-build.js --env-file /tmp/web.env
 
 FROM node:24-bookworm-slim AS runner
 
