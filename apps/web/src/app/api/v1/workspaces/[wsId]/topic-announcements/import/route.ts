@@ -90,6 +90,7 @@ export async function POST(request: Request, { params }: Params) {
 
   if (validRows.length === 0) {
     return NextResponse.json({
+      announcementIds: [],
       createdAnnouncements: 0,
       createdContacts: 0,
       rowErrors,
@@ -193,6 +194,9 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   return NextResponse.json({
+    announcementIds: (announcements ?? []).map(
+      (announcement: any) => announcement.id
+    ),
     batchId: batch.id,
     createdAnnouncements: announcements?.length ?? 0,
     createdContacts: missingContacts.length,

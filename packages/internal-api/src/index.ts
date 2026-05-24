@@ -656,6 +656,7 @@ export {
   type TopicAnnouncementContactPayload,
   type TopicAnnouncementEmailPreviewContent,
   type TopicAnnouncementImportPayload,
+  type TopicAnnouncementImportResult,
   type TopicAnnouncementImportRow,
   type TopicAnnouncementPayload,
   type TopicAnnouncementRecord,

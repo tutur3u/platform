@@ -49,12 +49,14 @@ describe('renderTopicAnnouncementEmail', () => {
     expect(email.html).toContain('CENTER 1');
     expect(email.html).toContain('lesson-plan.pdf');
     expect(email.html).toContain('Demo Workspace');
+    expect(email.html).not.toContain('Tuturuuu Topic Announcement');
+    expect(email.html).not.toContain('through Tuturuuu');
     expect(email.text).toContain('Class: HUONG-EGET1');
     expect(email.text).toContain('Attachments:\n- lesson-plan.pdf (2 KB)');
-    expect(email.text).toContain('Sent by Demo Workspace through Tuturuuu.');
+    expect(email.text).toContain('Sent by Demo Workspace.');
   });
 
-  it('falls back to the Tuturuuu workspace label', () => {
+  it('falls back to a neutral workspace label', () => {
     const email = renderTopicAnnouncementEmail({
       announcement: {
         body: '',
@@ -65,8 +67,8 @@ describe('renderTopicAnnouncementEmail', () => {
     });
 
     expect(email.html).toContain(
-      'Sent by <strong style="color:#0f172a">Tuturuuu</strong>'
+      'Sent by <strong style="color:#0f172a">your workspace team</strong>'
     );
-    expect(email.text).toContain('Sent by Tuturuuu through Tuturuuu.');
+    expect(email.text).toContain('Sent by your workspace team.');
   });
 });

@@ -173,6 +173,14 @@ export interface TopicAnnouncementImportPayload {
   sourceType?: string;
 }
 
+export interface TopicAnnouncementImportResult {
+  announcementIds: string[];
+  batchId?: string;
+  createdAnnouncements: number;
+  createdContacts: number;
+  rowErrors: { message: string; rowNumber: number }[];
+}
+
 function basePath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/topic-announcements`;
 }
@@ -342,16 +350,14 @@ export async function importTopicAnnouncements(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{
-    batchId?: string;
-    createdAnnouncements: number;
-    createdContacts: number;
-    rowErrors: { message: string; rowNumber: number }[];
-  }>(`${basePath(workspaceId)}/import`, {
-    body: JSON.stringify(payload),
-    headers: { 'Content-Type': 'application/json' },
-    method: 'POST',
-  });
+  return client.json<TopicAnnouncementImportResult>(
+    `${basePath(workspaceId)}/import`,
+    {
+      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
 }
 
 export async function sendTopicAnnouncement(

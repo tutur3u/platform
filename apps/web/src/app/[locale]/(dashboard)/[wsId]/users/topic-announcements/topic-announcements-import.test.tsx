@@ -11,19 +11,54 @@ vi.mock('next-intl', () => ({
       : key,
 }));
 
+const defaultProps = {
+  canSend: true,
+  importResult: null,
+  isImporting: false,
+  isSending: false,
+  onImport: vi.fn(),
+  onImportAndSend: vi.fn(),
+};
+
 describe('ImportPanel', () => {
-  it('previews CSV fallback rows and imports only valid rows', () => {
+  it('lets operators edit rows directly and create drafts from valid rows', () => {
     const onImport = vi.fn();
 
-    render(
-      <ImportPanel
-        importResult={null}
-        isImporting={false}
-        onImport={onImport}
-      />
+    render(<ImportPanel {...defaultProps} onImport={onImport} />);
+
+    fireEvent.change(screen.getByLabelText('email 1'), {
+      target: { value: 'ready@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText('topic 1'), {
+      target: { value: 'Ready topic' },
+    });
+    fireEvent.change(screen.getByLabelText('announcement_title 1'), {
+      target: { value: 'Ready title' },
+    });
+
+    expect(screen.getByText('import_ready')).toBeInTheDocument();
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /bulk_create_drafts/u })
     );
 
-    expect(screen.getByText('import_empty_preview')).toBeInTheDocument();
+    expect(onImport).toHaveBeenCalledWith({
+      rows: [
+        {
+          contactEmail: 'ready@example.com',
+          title: 'Ready title',
+          topic: 'Ready topic',
+        },
+      ],
+      sourceName: undefined,
+      sourceType: 'foreign_teacher_schedule',
+    });
+  });
+
+  it('loads CSV into the editable grid and can create then send', () => {
+    const onImportAndSend = vi.fn();
+
+    render(<ImportPanel {...defaultProps} onImportAndSend={onImportAndSend} />);
 
     fireEvent.change(screen.getByLabelText('paste_csv'), {
       target: {
@@ -36,14 +71,17 @@ describe('ImportPanel', () => {
       },
     });
 
-    expect(screen.getByText('ready@example.com')).toBeInTheDocument();
-    expect(screen.getByText('import_ready')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /bulk_load_csv/u }));
+
+    expect(screen.getByDisplayValue('ready@example.com')).toBeInTheDocument();
     expect(screen.getByText('import_error_missing_topic')).toBeInTheDocument();
     expect(screen.getByText('import_error_missing_email')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /import_rows/u }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /bulk_create_and_send/u })
+    );
 
-    expect(onImport).toHaveBeenCalledWith({
+    expect(onImportAndSend).toHaveBeenCalledWith({
       rows: [
         {
           contactEmail: 'ready@example.com',

@@ -117,7 +117,7 @@ export function renderTopicAnnouncementEmail({
     .map(([label, value]) => `${label}: ${value}`)
     .join('\n');
   const body = announcement.body || announcement.topic;
-  const safeWorkspaceName = workspaceName || 'Tuturuuu';
+  const safeWorkspaceName = workspaceName || 'your workspace team';
   const attachmentText = attachments
     .map(
       (attachment) =>
@@ -145,8 +145,7 @@ export function renderTopicAnnouncementEmail({
               <tbody>
                 <tr>
                   <td style="padding:0 0 14px 0">
-                    <p style="margin:0;color:#2563eb;font-size:12px;line-height:18px;font-weight:800;letter-spacing:.12em;text-transform:uppercase">Tuturuuu Topic Announcement</p>
-                    <h1 style="margin:8px 0 0 0;color:#0f172a;font-size:28px;line-height:34px;font-weight:800">${htmlEscape(announcement.title)}</h1>
+                    <h1 style="margin:0;color:#0f172a;font-size:28px;line-height:34px;font-weight:800">${htmlEscape(announcement.title)}</h1>
                   </td>
                 </tr>
                 <tr>
@@ -158,7 +157,7 @@ export function renderTopicAnnouncementEmail({
                       ${renderAttachmentRows(attachments)}
                     </div>
                     <div style="border-top:1px solid #e5e7eb;background:#f8fafc;padding:18px 28px">
-                      <p style="margin:0;color:#475569;font-size:13px;line-height:20px">Sent by <strong style="color:#0f172a">${htmlEscape(safeWorkspaceName)}</strong> through Tuturuuu.</p>
+                      <p style="margin:0;color:#475569;font-size:13px;line-height:20px">Sent by <strong style="color:#0f172a">${htmlEscape(safeWorkspaceName)}</strong>.</p>
                       <p style="margin:6px 0 0 0;color:#94a3b8;font-size:12px;line-height:18px">This message was prepared by your workspace team. Reply to the sender if you need changes or clarification.</p>
                     </div>
                   </td>
@@ -172,6 +171,6 @@ export function renderTopicAnnouncementEmail({
   </body>
 </html>`,
     subject: announcement.title,
-    text: `Hello,\n\n${body}\n\n${detailText ? `${detailText}\n\n` : ''}${attachmentText ? `Attachments:\n${attachmentText}\n\n` : ''}Sent by ${safeWorkspaceName} through Tuturuuu.`,
+    text: `Hello,\n\n${body}\n\n${detailText ? `${detailText}\n\n` : ''}${attachmentText ? `Attachments:\n${attachmentText}\n\n` : ''}Sent by ${safeWorkspaceName}.`,
   };
 }

@@ -13,7 +13,9 @@ import {
   requestTopicAnnouncementContactVerification,
   scheduleTopicAnnouncement,
   sendTopicAnnouncement,
+  sendTopicAnnouncementsBulk,
   type TopicAnnouncementContactPayload,
+  type TopicAnnouncementImportResult,
   type TopicAnnouncementPayload,
   type TopicAnnouncementTemplatePayload,
   updateTopicAnnouncementTemplate,
@@ -23,12 +25,7 @@ import { useTranslations } from 'next-intl';
 
 interface Options {
   invalidate: () => void;
-  onImportSuccess?: (result: {
-    batchId?: string;
-    createdAnnouncements: number;
-    createdContacts: number;
-    rowErrors: { message: string; rowNumber: number }[];
-  }) => void;
+  onImportSuccess?: (result: TopicAnnouncementImportResult) => void;
   wsId: string;
 }
 
@@ -191,6 +188,37 @@ export function useTopicAnnouncementActions({
       invalidate();
     },
   });
+  const importAndSendMutation = useMutation({
+    mutationFn: async (
+      rows: Parameters<typeof importTopicAnnouncements>[1]
+    ) => {
+      const importResult = await importTopicAnnouncements(wsId, rows);
+      const announcementIds = importResult.announcementIds ?? [];
+      if (announcementIds.length === 0) {
+        return { importResult, sendResult: null };
+      }
+
+      const sendResult = await sendTopicAnnouncementsBulk(wsId, {
+        announcementIds,
+      });
+
+      return { importResult, sendResult };
+    },
+    onError: (error) =>
+      toast.error(error instanceof Error ? error.message : t('send_failed')),
+    onSuccess: ({ importResult, sendResult }) => {
+      const sentCount =
+        sendResult?.results.filter((result) => !result.error).length ?? 0;
+      toast.success(
+        t('bulk_created_and_sent', {
+          created: importResult.createdAnnouncements.toString(),
+          sent: sentCount.toString(),
+        })
+      );
+      onImportSuccess?.(importResult);
+      invalidate();
+    },
+  });
 
   return {
     cancelScheduleMutation,
@@ -200,6 +228,7 @@ export function useTopicAnnouncementActions({
     deleteContactMutation,
     deleteAnnouncementMutation,
     deleteTemplateMutation,
+    importAndSendMutation,
     importMutation,
     scheduleMutation,
     sendMutation,

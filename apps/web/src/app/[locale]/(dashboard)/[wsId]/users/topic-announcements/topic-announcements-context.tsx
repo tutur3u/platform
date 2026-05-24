@@ -11,6 +11,7 @@ import {
   type TopicAnnouncementContact,
   type TopicAnnouncementContactPayload,
   type TopicAnnouncementImportPayload,
+  type TopicAnnouncementImportResult,
   type TopicAnnouncementPayload,
   type TopicAnnouncementRecord,
   type TopicAnnouncementTemplatePayload,
@@ -32,12 +33,7 @@ import type { TemplateFormValues } from './template-form-dialog';
 import { useTopicAnnouncementActions } from './topic-announcements-actions';
 import { isSchedulingTimezoneReady } from './topic-announcements-scheduling';
 
-interface ImportResult {
-  batchId?: string;
-  createdAnnouncements: number;
-  createdContacts: number;
-  rowErrors: { message: string; rowNumber: number }[];
-}
+type ImportResult = TopicAnnouncementImportResult;
 
 interface TopicAnnouncementPendingState {
   cancelSchedule: boolean;
@@ -47,6 +43,7 @@ interface TopicAnnouncementPendingState {
   deleteAnnouncement: boolean;
   deleteContact: boolean;
   deleteTemplate: boolean;
+  importAndSendRows: boolean;
   importRows: boolean;
   schedule: boolean;
   send: boolean;
@@ -67,6 +64,7 @@ interface TopicAnnouncementActions {
   deleteAnnouncement: (announcementId: string) => void;
   deleteContact: (contactId: string) => void;
   deleteTemplate: (templateId: string) => void;
+  importAndSendRows: (payload: TopicAnnouncementImportPayload) => void;
   importRows: (payload: TopicAnnouncementImportPayload) => void;
   requestTimezone: () => void;
   saveTemplateFromForm: (values: TemplateFormValues) => void;
@@ -316,6 +314,7 @@ export function TopicAnnouncementsProvider({
         deleteAnnouncement: mutations.deleteAnnouncementMutation.isPending,
         deleteContact: mutations.deleteContactMutation.isPending,
         deleteTemplate: mutations.deleteTemplateMutation.isPending,
+        importAndSendRows: mutations.importAndSendMutation.isPending,
         importRows: mutations.importMutation.isPending,
         schedule: mutations.scheduleMutation.isPending,
         send: mutations.sendMutation.isPending,
@@ -409,6 +408,8 @@ function createActions({
       mutations.deleteContactMutation.mutate(contactId),
     deleteTemplate: (templateId) =>
       mutations.deleteTemplateMutation.mutate(templateId),
+    importAndSendRows: (payload) =>
+      mutations.importAndSendMutation.mutate(payload),
     importRows: (payload) => mutations.importMutation.mutate(payload),
     requestTimezone: () => setTimezoneDialogOpen(true),
     saveTemplateFromForm: (values) => {

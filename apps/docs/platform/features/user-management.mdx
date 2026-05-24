@@ -105,7 +105,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Verification sends enforce a short pending-link cooldown before creating another token, and email delivery applies workspace, user, IP, and recipient limits. The recipient limit is global across workspaces, so one workspace or many workspaces cannot repeatedly send verification links to the same inbox.
 - Actual announcements are sent by the enabled workspace sender and are written to `email_audit`.
 - The composer and table send flow preview the same server-rendered HTML and text payload that delivery uses. Operators should review that rendered preview before sending or scheduling announcements.
-- The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields.
+- The first import preset supports foreign-teacher schedule rows with day/date, class, room, time, teacher/contact, email, place, and topic fields. The import UI now uses an editable Excel-like table as the review surface; uploaded spreadsheets, CSV, and direct paste all load into that table so operators can correct every email field before creating drafts or sending valid rows in bulk.
 - Workspace-shared **announcement templates** store reusable title, topic starter text, class metadata, optional default group, and default recipient ids. Operators apply a template in the composer, then edit the topic field before sending.
 - Operators can fork an existing sent or draft announcement into a new draft. The fork copies title, topic, class context, recipients, and attachment references, but never copies sent, queued, scheduled, or email audit state.
 - **Scheduled send** sets `status = queued` and `scheduled_send_at` using the workspace's fixed IANA timezone from calendar settings. Scheduling is blocked while the workspace timezone is still `auto` or unset; use the same calendar timezone gate as the main calendar product.
@@ -116,6 +116,7 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 
 - Client UI must call `@tuturuuu/internal-api` Topic Announcements helpers; do not add direct client-side fetches.
 - Email preview must go through the Topic Announcements preview API and shared renderer instead of a client-only template so previews cannot drift from actual delivery.
+- Bulk create/send must keep using the import API plus `send-bulk` helper from `@tuturuuu/internal-api`; do not bypass the shared renderer, recipient verification, or delivery gates for spreadsheet rows.
 - Delivery APIs must check the workspace secret, `manage_users`, `send_user_group_post_emails`, recipient verification, and workspace ownership before sending.
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
 - Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.

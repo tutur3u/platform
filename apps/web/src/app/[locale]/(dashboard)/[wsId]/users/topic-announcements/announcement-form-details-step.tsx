@@ -90,7 +90,7 @@ export function AnnouncementFormDetailsStep({
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-2">
           <Label>{t('template_apply_label')}</Label>
           <Combobox
@@ -130,20 +130,6 @@ export function AnnouncementFormDetailsStep({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="topic-class-label">{t('classLabel')}</Label>
-          <Input
-            id="topic-class-label"
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                classLabel: event.target.value,
-              }))
-            }
-            value={form.classLabel}
-          />
-        </div>
-
-        <div className="space-y-2">
           <Label>{t('linked_group')}</Label>
           <Combobox
             disabled={isDisabled}
@@ -161,71 +147,122 @@ export function AnnouncementFormDetailsStep({
             selected={form.groupId}
           />
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="topic-day-label">{t('day_label')}</Label>
-          <Input
-            id="topic-day-label"
-            onChange={(event) =>
+      <div className="space-y-3 rounded-md border bg-muted/30 p-3">
+        <div>
+          <h4 className="font-medium text-sm">{t('custom_fields_title')}</h4>
+          <p className="text-muted-foreground text-xs">
+            {t('custom_fields_helper')}
+          </p>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <EditableInput
+            id="topic-class-label"
+            label={t('classLabel')}
+            onChange={(value) =>
               setForm((current) => ({
                 ...current,
-                dayLabel: event.target.value,
+                classLabel: value,
               }))
             }
-            value={form.dayLabel}
+            value={form.classLabel}
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="topic-session-date">{t('session_date')}</Label>
-          <Input
-            id="topic-session-date"
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                sessionDate: event.target.value,
-              }))
-            }
-            type="date"
-            value={form.sessionDate}
-          />
-        </div>
+          <div className="space-y-2">
+            <Label htmlFor="topic-day-label">{t('day_label')}</Label>
+            <Input
+              id="topic-day-label"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  dayLabel: event.target.value,
+                }))
+              }
+              value={form.dayLabel}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="topic-session-date">{t('session_date')}</Label>
+            <Input
+              id="topic-session-date"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  sessionDate: event.target.value,
+                }))
+              }
+              type="date"
+              value={form.sessionDate}
+            />
+          </div>
 
-        <TimeSelect
-          label={t('startTime')}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, startTime: value }))
-          }
-          value={form.startTime}
-        />
-        <TimeSelect
-          label={t('endTime')}
-          onChange={(value) =>
-            setForm((current) => ({ ...current, endTime: value }))
-          }
-          value={form.endTime}
-        />
+          <TimeSelect
+            label={t('startTime')}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, startTime: value }))
+            }
+            value={form.startTime}
+          />
+          <TimeSelect
+            label={t('endTime')}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, endTime: value }))
+            }
+            value={form.endTime}
+          />
 
-        <div className="space-y-2">
-          <Label htmlFor="topic-room">{t('room')}</Label>
-          <Input
-            id="topic-room"
-            onChange={(event) =>
-              setForm((current) => ({ ...current, room: event.target.value }))
-            }
-            value={form.room}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="topic-place">{t('place')}</Label>
-          <Input
-            id="topic-place"
-            onChange={(event) =>
-              setForm((current) => ({ ...current, place: event.target.value }))
-            }
-            value={form.place}
-          />
+          <div className="space-y-2">
+            <Label htmlFor="topic-room">{t('room')}</Label>
+            <Input
+              id="topic-room"
+              onChange={(event) =>
+                setForm((current) => ({ ...current, room: event.target.value }))
+              }
+              value={form.room}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="topic-place">{t('place')}</Label>
+            <Input
+              id="topic-place"
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  place: event.target.value,
+                }))
+              }
+              value={form.place}
+            />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function EditableInput({
+  id,
+  label,
+  onChange,
+  type = 'text',
+  value,
+}: {
+  id: string;
+  label: string;
+  onChange: (value: string) => void;
+  type?: string;
+  value: string;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <Input
+        id={id}
+        onChange={(event) => onChange(event.target.value)}
+        type={type}
+        value={value}
+      />
     </div>
   );
 }
