@@ -38,6 +38,7 @@ const TaskBoardContextSchema = z.object({
   workspaceName: z.string().trim().min(1).max(160).optional(),
   boardId: z.string().trim().min(1).max(MAX_ID_LENGTH),
   boardName: z.string().trim().min(1).max(160).optional(),
+  selectedList: TaskBoardContextListSchema.nullable().optional(),
   lists: z.array(TaskBoardContextListSchema).max(80).default([]),
 });
 

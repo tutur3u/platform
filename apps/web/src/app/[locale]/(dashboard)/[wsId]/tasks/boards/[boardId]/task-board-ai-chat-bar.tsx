@@ -5,7 +5,7 @@ import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { TaskPreviewDialog } from '@tuturuuu/ui/tu-do/my-tasks/task-preview-dialog';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ModeButton,
   TaskBoardMiraChatPopup,
@@ -22,6 +22,7 @@ const CHAT_POPUP_EXIT_MS = 220;
 const HOVER_CLOSE_DELAY_MS = 180;
 const HOVER_OPEN_DELAY_MS = 80;
 const HOVER_REOPEN_COOLDOWN_MS = 220;
+const UNFOCUSED_COLLAPSE_DELAY_MS = 3000;
 
 interface TaskBoardAiChatBarProps {
   assistantName: string;
@@ -41,7 +42,9 @@ export function TaskBoardAiChatBar({
   const islandRef = useRef<HTMLDivElement>(null);
   const hoverCloseTimerRef = useRef<number | null>(null);
   const hoverOpenTimerRef = useRef<number | null>(null);
+  const unfocusedCollapseTimerRef = useRef<number | null>(null);
   const lastHoverCloseAtRef = useRef(0);
+  const pointerInsideIslandRef = useRef(false);
   const [expanded, setExpanded] = useState(false);
   const [hoverPreview, setHoverPreview] = useState(false);
   const [mode, setMode] = useState<TaskBoardAiChatBarMode>('task');
@@ -60,27 +63,72 @@ export function TaskBoardAiChatBar({
     wsId,
   });
 
-  useEffect(() => {
-    if (!expanded) return;
-
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-      if (islandRef.current?.contains(target)) return;
-      if (
+  const isIslandOrPortalTarget = useCallback((target: EventTarget | null) => {
+    if (!(target instanceof Element)) return false;
+    return Boolean(
+      islandRef.current?.contains(target) ||
         target.closest(
           '[data-radix-popper-content-wrapper], [role="dialog"], [data-task-board-ai-island-portal]'
         )
+    );
+  }, []);
+
+  const clearUnfocusedCollapseTimer = useCallback(() => {
+    if (unfocusedCollapseTimerRef.current !== null) {
+      window.clearTimeout(unfocusedCollapseTimerRef.current);
+      unfocusedCollapseTimerRef.current = null;
+    }
+  }, []);
+
+  const collapseIsland = useCallback(() => {
+    clearUnfocusedCollapseTimer();
+    setExpanded(false);
+    setHoverPreview(false);
+  }, [clearUnfocusedCollapseTimer]);
+
+  const scheduleUnfocusedCollapse = useCallback(() => {
+    if (!expanded) return;
+    clearUnfocusedCollapseTimer();
+
+    unfocusedCollapseTimerRef.current = window.setTimeout(() => {
+      unfocusedCollapseTimerRef.current = null;
+
+      if (
+        pointerInsideIslandRef.current ||
+        isIslandOrPortalTarget(document.activeElement)
       ) {
         return;
       }
 
-      setExpanded(false);
+      collapseIsland();
+    }, UNFOCUSED_COLLAPSE_DELAY_MS);
+  }, [
+    clearUnfocusedCollapseTimer,
+    collapseIsland,
+    expanded,
+    isIslandOrPortalTarget,
+  ]);
+
+  useEffect(() => {
+    if (!expanded) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (isIslandOrPortalTarget(event.target)) {
+        clearUnfocusedCollapseTimer();
+        return;
+      }
+
+      scheduleUnfocusedCollapse();
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [expanded]);
+  }, [
+    clearUnfocusedCollapseTimer,
+    expanded,
+    isIslandOrPortalTarget,
+    scheduleUnfocusedCollapse,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -89,6 +137,9 @@ export function TaskBoardAiChatBar({
       }
       if (hoverCloseTimerRef.current !== null) {
         window.clearTimeout(hoverCloseTimerRef.current);
+      }
+      if (unfocusedCollapseTimerRef.current !== null) {
+        window.clearTimeout(unfocusedCollapseTimerRef.current);
       }
     };
   }, []);
@@ -107,9 +158,16 @@ export function TaskBoardAiChatBar({
         activeLists: taskFlow.activeLists,
         boardId,
         boardName: taskFlow.boardName,
+        selectedList: taskFlow.selectedList,
         wsId,
       }),
-    [boardId, taskFlow.activeLists, taskFlow.boardName, wsId]
+    [
+      boardId,
+      taskFlow.activeLists,
+      taskFlow.boardName,
+      taskFlow.selectedList,
+      wsId,
+    ]
   );
 
   useEffect(() => {
@@ -135,6 +193,7 @@ export function TaskBoardAiChatBar({
     : tTasks('cmd_task_placeholder');
 
   const openTaskComposer = () => {
+    clearUnfocusedCollapseTimer();
     setMode('task');
     setExpanded(true);
     setHoverPreview(false);
@@ -142,6 +201,7 @@ export function TaskBoardAiChatBar({
   };
 
   const openAssistant = () => {
+    clearUnfocusedCollapseTimer();
     setMode('chat');
     setExpanded(true);
     setHoverPreview(false);
@@ -199,20 +259,26 @@ export function TaskBoardAiChatBar({
       <div className="pointer-events-none fixed inset-x-3 bottom-4 z-40 flex justify-center sm:bottom-6">
         <div
           ref={islandRef}
-          onMouseEnter={scheduleHoverOpen}
-          onMouseLeave={scheduleHoverClose}
+          onMouseEnter={() => {
+            pointerInsideIslandRef.current = true;
+            clearUnfocusedCollapseTimer();
+            scheduleHoverOpen();
+          }}
+          onMouseLeave={() => {
+            pointerInsideIslandRef.current = false;
+            if (expanded) scheduleUnfocusedCollapse();
+            else scheduleHoverClose();
+          }}
           onFocusCapture={() => {
             clearHoverTimers();
+            clearUnfocusedCollapseTimer();
             setHoverPreview(true);
           }}
           onBlurCapture={(event) => {
             const nextTarget = event.relatedTarget;
-            if (
-              !(nextTarget instanceof Node) ||
-              !event.currentTarget.contains(nextTarget)
-            ) {
-              scheduleHoverClose();
-            }
+            if (isIslandOrPortalTarget(nextTarget)) return;
+            if (expanded) scheduleUnfocusedCollapse();
+            else scheduleHoverClose();
           }}
           className={cn(
             'pointer-events-auto flex w-full flex-col items-stretch transition-[max-width,opacity,transform] duration-300 ease-out',

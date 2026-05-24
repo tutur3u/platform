@@ -35,12 +35,30 @@ export interface MiraTaskBoardContext {
   workspaceName?: string;
   boardId: string;
   boardName?: string;
+  selectedList?: {
+    id: string;
+    name?: string | null;
+    status?: string | null;
+    position?: number | null;
+  } | null;
   lists: Array<{
     id: string;
     name?: string | null;
     status?: string | null;
     position?: number | null;
   }>;
+}
+
+export function getEffectiveMiraWorkspaceContextId({
+  taskBoardContext,
+  workspaceContextId,
+}: {
+  taskBoardContext?: Pick<MiraTaskBoardContext, 'workspaceId'>;
+  workspaceContextId: string;
+}) {
+  return normalizeWorkspaceContextId(
+    taskBoardContext?.workspaceId ?? workspaceContextId
+  );
 }
 
 function toModelUi(modelId: string): AIModelUI {
@@ -166,11 +184,15 @@ export function useMiraChatConfig({
 
   // model.value is already the gateway ID (e.g. "google/gemini-2.5-flash")
   const gatewayModelId = model.value;
+  const effectiveWorkspaceContextId = getEffectiveMiraWorkspaceContextId({
+    taskBoardContext,
+    workspaceContextId,
+  });
 
   const chatRequestBody = useMemo(
     () => ({
       wsId,
-      workspaceContextId,
+      workspaceContextId: effectiveWorkspaceContextId,
       model: gatewayModelId,
       isMiraMode: true,
       timezone: timezoneForChat,
@@ -182,11 +204,11 @@ export function useMiraChatConfig({
     [
       activeCreditSource,
       creditWsId,
+      effectiveWorkspaceContextId,
       gatewayModelId,
       taskBoardContext,
       thinkingMode,
       timezoneForChat,
-      workspaceContextId,
       wsId,
     ]
   );

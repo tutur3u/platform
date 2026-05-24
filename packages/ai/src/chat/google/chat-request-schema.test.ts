@@ -37,6 +37,12 @@ describe('ChatRequestBodySchema', () => {
         workspaceName: ' Workspace One ',
         boardId: ' board-1 ',
         boardName: ' Launch Board ',
+        selectedList: {
+          id: ' list-1 ',
+          name: ' To Do ',
+          status: ' not_started ',
+          position: 0,
+        },
         lists: [
           {
             id: ' list-1 ',
@@ -55,6 +61,12 @@ describe('ChatRequestBodySchema', () => {
         workspaceName: 'Workspace One',
         boardId: 'board-1',
         boardName: 'Launch Board',
+        selectedList: {
+          id: 'list-1',
+          name: 'To Do',
+          status: 'not_started',
+          position: 0,
+        },
         lists: [
           {
             id: 'list-1',

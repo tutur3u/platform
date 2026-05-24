@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { resolveInitialThinkingMode } from '../use-mira-chat-config';
+import { getEffectiveMiraWorkspaceContextId } from '../use-mira-chat-config';
 
-describe('resolveInitialThinkingMode', () => {
-  it('defaults to fast when no stored mode exists', () => {
-    expect(resolveInitialThinkingMode(null)).toBe('fast');
+describe('getEffectiveMiraWorkspaceContextId', () => {
+  it('uses the current task-board workspace context when available', () => {
+    expect(
+      getEffectiveMiraWorkspaceContextId({
+        taskBoardContext: {
+          workspaceId: '00000000-0000-0000-0000-000000000000',
+        },
+        workspaceContextId: 'personal',
+      })
+    ).toBe('00000000-0000-0000-0000-000000000000');
   });
 
-  it('ignores stale stored thinking mode so new sessions stay fast-first', () => {
-    expect(resolveInitialThinkingMode('thinking')).toBe('fast');
-  });
-
-  it('keeps an explicit stored fast mode', () => {
-    expect(resolveInitialThinkingMode('fast')).toBe('fast');
+  it('falls back to the selected Mira workspace context outside task boards', () => {
+    expect(
+      getEffectiveMiraWorkspaceContextId({
+        workspaceContextId: 'internal',
+      })
+    ).toBe('00000000-0000-0000-0000-000000000000');
   });
 });

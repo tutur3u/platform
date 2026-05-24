@@ -13,26 +13,39 @@ export function buildTaskBoardMiraContext({
   activeLists,
   boardId,
   boardName,
+  selectedList,
   wsId,
   workspaceName,
 }: {
   activeLists: TaskBoardAiChatBarList[];
   boardId: string;
   boardName?: string | null;
+  selectedList?: TaskBoardAiChatBarList | null;
   wsId: string;
   workspaceName?: string | null;
 }): MiraTaskBoardContext {
+  const lists = [...activeLists]
+    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    .map((list) => ({
+      id: list.id,
+      name: list.name,
+      position: list.position ?? null,
+      status: list.status,
+    }));
+  const selectedContextList = selectedList
+    ? (lists.find((list) => list.id === selectedList.id) ?? {
+        id: selectedList.id,
+        name: selectedList.name,
+        position: selectedList.position ?? null,
+        status: selectedList.status,
+      })
+    : null;
+
   return {
     boardId,
     ...(boardName?.trim() ? { boardName: boardName.trim() } : {}),
-    lists: [...activeLists]
-      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      .map((list) => ({
-        id: list.id,
-        name: list.name,
-        position: list.position ?? null,
-        status: list.status,
-      })),
+    lists,
+    ...(selectedContextList ? { selectedList: selectedContextList } : {}),
     workspaceId: wsId,
     ...(workspaceName?.trim() ? { workspaceName: workspaceName.trim() } : {}),
   };

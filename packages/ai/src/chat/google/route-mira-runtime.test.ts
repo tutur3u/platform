@@ -200,6 +200,12 @@ describe('prepareMiraRuntime', () => {
       taskBoardContext: {
         boardId: 'board-1',
         boardName: 'Launch board',
+        selectedList: {
+          id: 'list-2',
+          name: 'Doing',
+          status: 'active',
+          position: 1,
+        },
         lists: [
           {
             id: 'list-1',
@@ -224,12 +230,22 @@ describe('prepareMiraRuntime', () => {
       'The user is currently viewing workspace Workspace Two'
     );
     expect(result.miraSystemPrompt).toContain(
-      'task board Launch board (board-1)'
+      'Current workspace id: workspace-2'
+    );
+    expect(result.miraSystemPrompt).toContain(
+      'Current task board: Launch board (board-1)'
+    );
+    expect(result.miraSystemPrompt).toContain('Current board id: board-1');
+    expect(result.miraSystemPrompt).toContain(
+      'Selected/default task list: Doing [active] (list id: list-2).'
     );
     expect(result.miraSystemPrompt).toContain('To Do [not_started]');
     expect(result.miraSystemPrompt).toContain('Doing [active]');
     expect(result.miraSystemPrompt).toContain(
-      'Do not call workspace context tools just to rediscover this board context.'
+      'including ids that look like all-zero UUIDs'
+    );
+    expect(result.miraSystemPrompt).toContain(
+      'do not call workspace context tools just to rediscover this board context.'
     );
   });
 });

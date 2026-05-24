@@ -1,4 +1,5 @@
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { NextRequest } from 'next/server';
 import { buildMiraContext } from '../../tools/context-builder';
@@ -51,9 +52,18 @@ function buildTaskBoardContextInstruction({
 
   const workspaceName =
     taskBoardContext.workspaceName?.trim() || resolvedWorkspaceContext.name;
+  const workspaceId = normalizeWorkspaceContextId(
+    taskBoardContext.workspaceId || resolvedWorkspaceContext.wsId
+  );
   const workspaceKind = resolvedWorkspaceContext.personal
     ? 'personal workspace'
     : 'shared workspace';
+  const selectedList = taskBoardContext.selectedList ?? null;
+  const selectedListName = selectedList?.name?.trim() || 'Untitled list';
+  const selectedListStatus = selectedList?.status?.trim() || 'unknown';
+  const selectedListLine = selectedList
+    ? `Selected/default task list: ${selectedListName} [${selectedListStatus}] (list id: ${selectedList.id}).`
+    : 'Selected/default task list: none selected in the client yet.';
   const listLines =
     taskBoardContext.lists.length > 0
       ? taskBoardContext.lists
@@ -67,12 +77,16 @@ function buildTaskBoardContextInstruction({
 
   return `## Current Task Board
 
-The user is currently viewing workspace ${workspaceName} (${workspaceKind}) and task board ${formatTaskBoardReference(taskBoardContext)}.
+The user is currently viewing workspace ${workspaceName} (${workspaceKind}).
+- Current workspace id: ${workspaceId}
+- Current task board: ${formatTaskBoardReference(taskBoardContext)}
+- Current board id: ${taskBoardContext.boardId}
+- ${selectedListLine}
 
 Visible task lists on this board:
 ${listLines}
 
-Use these list names and statuses when the user refers to "this board", "this task board", or asks to create or move board tasks. Prefer these known board/list ids over rediscovering the same context. Do not call workspace context tools just to rediscover this board context.`;
+Use these list names and statuses when the user refers to "this board", "this task board", or asks to create or move board tasks. The current workspace id and current board id above are authoritative, including ids that look like all-zero UUIDs or ids that map from the "internal" slug. Prefer these known workspace/board/list ids over rediscovering the same context. Do not reject the current workspace id based on its shape or display name, and do not call workspace context tools just to rediscover this board context.`;
 }
 
 export async function prepareMiraRuntime({

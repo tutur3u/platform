@@ -133,6 +133,12 @@ describe('task board AI chat bar cache utilities', () => {
       ],
       boardId: 'board-1',
       boardName: 'Launch Board',
+      selectedList: makeList({
+        id: 'list-2',
+        name: 'Doing',
+        position: 2,
+        status: 'active',
+      }),
       wsId: 'workspace-1',
     });
 
@@ -153,6 +159,12 @@ describe('task board AI chat bar cache utilities', () => {
           status: 'active',
         },
       ],
+      selectedList: {
+        id: 'list-2',
+        name: 'Doing',
+        position: 2,
+        status: 'active',
+      },
       workspaceId: 'workspace-1',
     });
   });
