@@ -2,7 +2,7 @@
 
 import type { HiveServersResponse } from '@tuturuuu/internal-api/hive';
 import { SatelliteWorkspaceShell } from '@tuturuuu/satellite';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type {
   HiveBuildInfo,
   HiveSelection,
@@ -26,7 +26,10 @@ type HiveStudioProps = {
   buildInfo: HiveBuildInfo;
   currentUser: HiveUser;
   embedInDashboard?: boolean;
+  initialPanel?: 'agents' | 'timeline' | 'workflows' | 'world' | null;
+  initialServerId?: string | null;
   initialServers: HiveServersResponse;
+  initialWorkflowId?: string | null;
   isAdmin: boolean;
   realtimeUrl: string;
 };
@@ -35,12 +38,16 @@ export function HiveStudio({
   buildInfo,
   currentUser,
   embedInDashboard = false,
+  initialPanel,
+  initialServerId,
   initialServers,
+  initialWorkflowId,
   isAdmin,
   realtimeUrl,
 }: HiveStudioProps) {
   const engine = useHiveStudioEngine({
     currentUser,
+    initialServerId,
     initialServers,
     realtimeUrl,
   });
@@ -86,8 +93,19 @@ export function HiveStudio({
     useState<NonNullable<HiveSelection> | null>(null);
   const [agentMessages, setAgentMessages] = useState<HiveAgentMessage[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  const initialPanelAppliedRef = useRef(false);
 
   useEffect(() => setHydrated(true), []);
+  useEffect(() => {
+    if (
+      initialPanel &&
+      !initialPanelAppliedRef.current &&
+      isStudioMode(initialPanel)
+    ) {
+      initialPanelAppliedRef.current = true;
+      setActivePanel(initialPanel);
+    }
+  }, [initialPanel, setActivePanel]);
   useEffect(() => {
     if (!engine.selection) {
       setRightCollapsed(true);
@@ -192,6 +210,7 @@ export function HiveStudio({
             bottomCollapsed={bottomCollapsed}
             chatOpen={chatOpen}
             engine={engine}
+            initialWorkflowId={initialWorkflowId}
             isAdmin={isAdmin}
             miniMapCollapsed={miniMapCollapsed}
             onSelectEntity={selectEntity}

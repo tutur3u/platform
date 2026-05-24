@@ -266,6 +266,8 @@ export type {
   HiveEconomySnapshot,
   HiveMember,
   HiveMemberPayload,
+  HiveMindSimulationPayload,
+  HiveMindSimulationResponse,
   HiveNpc,
   HiveNpcMemory,
   HiveNpcPayload,
@@ -305,6 +307,7 @@ export type {
 } from './hive';
 export {
   approveHiveAccessRequest,
+  createHiveMindSimulation,
   createHiveNpc,
   createHiveResearchSession,
   createHiveServer,

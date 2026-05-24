@@ -14,6 +14,7 @@ type HiveStudioCenterProps = {
   bottomCollapsed: boolean;
   chatOpen: boolean;
   engine: ReturnType<typeof useHiveStudioEngine>;
+  initialWorkflowId?: string | null;
   isAdmin: boolean;
   miniMapCollapsed: boolean;
   onSelectEntity: (selection: HiveSelection) => void;
@@ -34,6 +35,7 @@ export function HiveStudioCenter({
   bottomCollapsed,
   chatOpen,
   engine,
+  initialWorkflowId,
   isAdmin,
   miniMapCollapsed,
   onSelectEntity,
@@ -88,6 +90,7 @@ export function HiveStudioCenter({
       {activePanel === 'workflows' ? (
         <div className="absolute top-24 right-8 bottom-8 left-8 z-30 overflow-hidden rounded-xl border border-border/70 bg-background shadow-2xl shadow-foreground/20">
           <HiveWorkflowStudio
+            initialWorkflowId={initialWorkflowId}
             isAdmin={isAdmin}
             onExitWorkflows={() => onSetActivePanel('world')}
             serverId={engine.serverId}

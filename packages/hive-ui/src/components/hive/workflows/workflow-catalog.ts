@@ -61,6 +61,17 @@ export const workflowCatalog: WorkflowCatalogItem[] = [
     type: 'simulation_tick',
   },
   {
+    defaultConfig: {
+      maxPairs: 8,
+      maxTurns: 4,
+      pairs: [],
+      prompt: 'Coordinate agents around the current workflow scenario.',
+    },
+    icon: Bot,
+    labelKey: 'agent_interaction',
+    type: 'agent_interaction',
+  },
+  {
     defaultConfig: { npcId: '', spokenText: 'Workflow instruction received.' },
     icon: Bot,
     labelKey: 'npc_decision',
@@ -126,6 +137,7 @@ export const workflowCatalog: WorkflowCatalogItem[] = [
 ];
 
 export type WorkflowTemplateKey =
+  | 'agent_roundtable'
   | 'farm_cycle'
   | 'market_trade'
   | 'npc_daily'
@@ -279,6 +291,48 @@ export function createWorkflowTemplate(
           id: 'cleanup',
           position: { x: 520, y: 80 },
           type: 'world_event',
+        },
+      ],
+      version: 1,
+    };
+  }
+
+  if (key === 'agent_roundtable') {
+    return {
+      edges: [
+        { id: 'trigger-context', source: 'trigger', target: 'context' },
+        { id: 'context-agents', source: 'context', target: 'agents' },
+        { id: 'agents-log', source: 'agents', target: 'log' },
+      ],
+      nodes: [
+        manual,
+        context,
+        {
+          data: {
+            config: {
+              maxPairs: 8,
+              maxTurns: 4,
+              pairs: [],
+              prompt:
+                'Run a compact multi-agent roundtable for this Hive scenario.',
+            },
+            label: label('nodes.agent_interaction'),
+          },
+          id: 'agents',
+          position: { x: 520, y: 80 },
+          type: 'agent_interaction',
+        },
+        {
+          data: {
+            config: {
+              message:
+                'Agent roundtable completed {{steps.agents.output.summary.completed}} of {{steps.agents.output.summary.total}} pairs.',
+            },
+            label: label('nodes.log'),
+          },
+          id: 'log',
+          position: { x: 790, y: 80 },
+          type: 'log',
         },
       ],
       version: 1,

@@ -45,6 +45,7 @@ import { WorkflowRunPanel } from './workflow-run-panel';
 import { NEW_WORKFLOW_ID, WorkflowTopBar } from './workflow-top-bar';
 
 type HiveWorkflowStudioProps = {
+  initialWorkflowId?: string | null;
   isAdmin: boolean;
   onExitWorkflows: () => void;
   serverId: string | null;
@@ -64,6 +65,7 @@ export function HiveWorkflowStudio(props: HiveWorkflowStudioProps) {
 }
 
 function HiveWorkflowStudioInner({
+  initialWorkflowId,
   isAdmin,
   onExitWorkflows,
   serverId,
@@ -77,7 +79,7 @@ function HiveWorkflowStudioInner({
   const { screenToFlowPosition } = useReactFlow();
   const workflowsQuery = useHiveWorkflows(serverId, true);
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(
-    null
+    initialWorkflowId ?? null
   );
   const firstWorkflow = workflowsQuery.data?.workflows[0] ?? null;
   const selectedWorkflow =
@@ -133,10 +135,22 @@ function HiveWorkflowStudioInner({
   );
 
   useEffect(() => {
+    if (
+      selectedWorkflowId &&
+      selectedWorkflowId !== NEW_WORKFLOW_ID &&
+      workflowsQuery.data?.workflows.length &&
+      !workflowsQuery.data.workflows.some(
+        (workflow) => workflow.id === selectedWorkflowId
+      )
+    ) {
+      setSelectedWorkflowId(firstWorkflow?.id ?? null);
+      return;
+    }
+
     if (!selectedWorkflowId && firstWorkflow?.id) {
       setSelectedWorkflowId(firstWorkflow.id);
     }
-  }, [firstWorkflow?.id, selectedWorkflowId]);
+  }, [firstWorkflow?.id, selectedWorkflowId, workflowsQuery.data?.workflows]);
 
   useEffect(() => {
     const definition =

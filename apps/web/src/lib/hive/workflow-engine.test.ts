@@ -137,6 +137,7 @@ describe('Hive workflow execution', () => {
         }),
         log,
         persistNpcDecision: vi.fn(),
+        runAgentInteractions: vi.fn(),
         runFarmingAction: vi.fn(),
         runSimulationTick: vi.fn(),
         runTradeAccept: vi.fn(),
@@ -222,6 +223,7 @@ describe('Hive workflow execution', () => {
         getSnapshot: vi.fn(),
         log: vi.fn(),
         persistNpcDecision: vi.fn(),
+        runAgentInteractions: vi.fn(),
         runFarmingAction: vi.fn(),
         runSimulationTick: vi.fn(),
         runTradeAccept: vi.fn(),
@@ -240,6 +242,70 @@ describe('Hive workflow execution', () => {
     ]);
   });
 
+  it('runs agent interaction nodes through workflow capabilities', async () => {
+    const runAgentInteractions = vi.fn().mockResolvedValue({
+      summary: { completed: 1, failed: 0, total: 1 },
+    });
+    const definition: HiveWorkflowDefinition = {
+      edges: [{ id: 'trigger-agents', source: 'trigger', target: 'agents' }],
+      nodes: [
+        {
+          data: { label: 'Manual run' },
+          id: 'trigger',
+          position: { x: 0, y: 0 },
+          type: 'manual_trigger',
+        },
+        {
+          data: {
+            config: {
+              pairs: [
+                {
+                  sourceNpcId: 'npc-1',
+                  targetNpcId: 'npc-2',
+                },
+              ],
+              prompt: 'Debate the Mind board.',
+            },
+            label: 'Agent interaction',
+          },
+          id: 'agents',
+          position: { x: 220, y: 0 },
+          type: 'agent_interaction',
+        },
+      ],
+      version: 1,
+    };
+
+    const result = await executeHiveWorkflowDefinition({
+      actorUserId: '00000000-0000-4000-8000-000000000001',
+      capabilities: {
+        createHiveWorldEvent: vi.fn(),
+        createTradeOffer: vi.fn(),
+        createWarehouse: vi.fn(),
+        getSnapshot: vi.fn(),
+        log: vi.fn(),
+        persistNpcDecision: vi.fn(),
+        runAgentInteractions,
+        runFarmingAction: vi.fn(),
+        runSimulationTick: vi.fn(),
+        runTradeAccept: vi.fn(),
+        transferInventory: vi.fn(),
+        updateNpc: vi.fn(),
+      },
+      definition,
+      serverId: 'server-1',
+    });
+
+    expect(result.status).toBe('completed');
+    expect(runAgentInteractions).toHaveBeenCalledWith({
+      pairs: [{ sourceNpcId: 'npc-1', targetNpcId: 'npc-2' }],
+      prompt: 'Debate the Mind board.',
+    });
+    expect(result.trace.at(-1)?.output).toEqual({
+      summary: { completed: 1, failed: 0, total: 1 },
+    });
+  });
+
   it('records failed node traces and stops execution', async () => {
     const result = await executeHiveWorkflowDefinition({
       actorUserId: '00000000-0000-4000-8000-000000000001',
@@ -250,6 +316,7 @@ describe('Hive workflow execution', () => {
         getSnapshot: vi.fn(),
         log: vi.fn(),
         persistNpcDecision: vi.fn(),
+        runAgentInteractions: vi.fn(),
         runFarmingAction: vi.fn(),
         runSimulationTick: vi.fn(),
         runTradeAccept: vi.fn(),

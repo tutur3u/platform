@@ -328,6 +328,7 @@
       "name": "Tên quy trình",
       "new_workflow": "Quy trình mới",
       "nodes": {
+        "agent_interaction": "Tương tác agent",
         "condition": "Điều kiện",
         "context": "Đọc ngữ cảnh",
         "farming": "Thao tác nông trại",
@@ -361,6 +362,10 @@
       "saved": "Đã lưu quy trình",
       "select_workflow": "Chọn quy trình",
       "templates": {
+        "agent_roundtable": {
+          "description": "Chạy một bàn tròn LLM gọn giữa các agent Hive đã chọn.",
+          "name": "Bàn tròn agent"
+        },
         "farm_cycle": {
           "description": "Trồng cây, lưu cây trồng và đặt một ô vườn hiển thị vào thế giới.",
           "name": "Chu kỳ nông trại"

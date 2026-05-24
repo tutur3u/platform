@@ -39,6 +39,7 @@ import { createWorldEventPersistence } from './use-world-event-persistence';
 type UseHiveStudioEngineProps = {
   currentUser: HiveUser;
   initialServers: HiveServersResponse;
+  initialServerId?: string | null;
   realtimeUrl: string;
 };
 
@@ -51,11 +52,12 @@ type HiveNpcRunState = {
 export function useHiveStudioEngine({
   currentUser,
   initialServers,
+  initialServerId,
   realtimeUrl,
 }: UseHiveStudioEngineProps) {
   const [serverId, setServerId] = useHivePersistedState<string | null>(
     'hive.editor.serverId',
-    initialServers.servers[0]?.id ?? null,
+    initialServerId ?? initialServers.servers[0]?.id ?? null,
     { validate: isNullableString }
   );
   const serversQuery = useHiveServers(initialServers);
@@ -135,6 +137,15 @@ export function useHiveStudioEngine({
   };
 
   useEffect(() => {
+    if (
+      initialServerId &&
+      initialServerId !== serverId &&
+      serversQuery.data.servers.some((server) => server.id === initialServerId)
+    ) {
+      setServerId(initialServerId);
+      return;
+    }
+
     const nextServer =
       serversQuery.data.servers.find((server) => server.id === serverId) ??
       serversQuery.data.servers[0] ??
@@ -143,7 +154,7 @@ export function useHiveStudioEngine({
     if ((nextServer?.id ?? null) !== serverId) {
       setServerId(nextServer?.id ?? null);
     }
-  }, [serverId, serversQuery.data.servers, setServerId]);
+  }, [initialServerId, serverId, serversQuery.data.servers, setServerId]);
 
   const getOwnAwareness = useCallback(
     (cursor?: HiveVector3 | null): HiveAwareness =>

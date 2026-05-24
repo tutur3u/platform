@@ -95,6 +95,7 @@ describe('Hive workflow run route', () => {
       actorUserId: '00000000-0000-4000-8000-000000000002',
       input: { mode: 'manual' },
       isAdmin: false,
+      sbAdmin: expect.any(Object),
       serverId: 'server-1',
       workflowId: 'workflow-1',
     });

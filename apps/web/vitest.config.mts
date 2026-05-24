@@ -27,6 +27,27 @@ export default defineConfig({
     alias: [
       { find: '@', replacement: resolve(__dirname, './src') },
       {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/$1.ts'
+        ),
+      },
+      {
+        find: /^@tuturuuu\/internal-api$/,
+        replacement: resolve(
+          __dirname,
+          '../../packages/internal-api/src/index.ts'
+        ),
+      },
+      {
+        find: '@tuturuuu/supabase/next/auth-session-user',
+        replacement: resolve(
+          __dirname,
+          '../../packages/supabase/src/next/auth-session-user.ts'
+        ),
+      },
+      {
         find: '@tuturuuu/supabase/next/server',
         replacement: resolve(
           __dirname,

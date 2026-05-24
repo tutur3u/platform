@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   archiveHiveWorkflow,
+  createHiveMindSimulation,
   createHiveResearchSession,
   createHiveWorkflow,
   exportHiveResearchSession,
@@ -61,6 +62,14 @@ describe('Hive workflow internal API helpers', () => {
       },
       options
     );
+    await createHiveMindSimulation(
+      'server-1',
+      {
+        boardId: '00000000-0000-4000-8000-000000000001',
+        workspaceId: 'workspace-1',
+      },
+      options
+    );
     await updateHiveWorkflow(
       'server-1',
       'workflow-1',
@@ -80,6 +89,10 @@ describe('Hive workflow internal API helpers', () => {
     expect(fetch.mock.calls.map(([url, init]) => [url, init?.method])).toEqual([
       [
         'https://internal.example.com/api/v1/hive/servers/server-1/workflows',
+        'POST',
+      ],
+      [
+        'https://internal.example.com/api/v1/hive/servers/server-1/mind-simulations',
         'POST',
       ],
       [

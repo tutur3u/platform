@@ -37,6 +37,7 @@ describe('Hive workflow world patches', () => {
         }),
         log: vi.fn(),
         persistNpcDecision: vi.fn(),
+        runAgentInteractions: vi.fn(),
         runFarmingAction: vi.fn().mockResolvedValue({
           crop: {
             crop_type: 'turnip',

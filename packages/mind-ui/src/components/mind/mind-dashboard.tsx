@@ -21,9 +21,11 @@ import { MindAiPanel } from './mind-ai-panel';
 import { MindBoardSelectPrompt } from './mind-board-select-prompt';
 import { MindCanvas } from './mind-canvas';
 import { MindEmptyState } from './mind-empty-state';
+import { MindHiveLauncher } from './mind-hive-launcher';
 import { MindShell } from './mind-shell';
 
 type Props = {
+  hiveHref?: string;
   initialBoardId?: string;
   mindPrefix?: string;
   workspaceSlug?: string;
@@ -31,6 +33,7 @@ type Props = {
 };
 
 export function MindDashboard({
+  hiveHref,
   initialBoardId,
   mindPrefix,
   workspaceSlug,
@@ -143,7 +146,15 @@ export function MindDashboard({
   return (
     <MindShell>
       <div className="pointer-events-none absolute top-3 right-3 z-40 flex items-start gap-2">
-        <div className="pointer-events-auto isolate rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-xl backdrop-blur">
+        <div className="pointer-events-auto isolate flex items-center gap-1 rounded-xl border border-border bg-background/90 p-1 shadow-foreground/5 shadow-xl backdrop-blur">
+          {hiveHref ? (
+            <MindHiveLauncher
+              boardId={activeBoardId}
+              disabled={!snapshot}
+              hiveHref={hiveHref}
+              workspaceId={wsId}
+            />
+          ) : null}
           <Button
             aria-label={t('actions.openAi')}
             className="h-9 w-9 touch-manipulation"

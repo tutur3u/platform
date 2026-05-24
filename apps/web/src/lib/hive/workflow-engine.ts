@@ -32,6 +32,9 @@ export type HiveWorkflowExecutionCapabilities = {
   getSnapshot: (serverId: string) => Promise<unknown>;
   log?: (message: string) => void;
   persistNpcDecision: (payload: WorkflowCapabilityPayload) => Promise<unknown>;
+  runAgentInteractions: (
+    payload: WorkflowCapabilityPayload
+  ) => Promise<unknown>;
   runFarmingAction: (payload: WorkflowCapabilityPayload) => Promise<unknown>;
   runSimulationTick: (serverId: string) => Promise<unknown>;
   runTradeAccept: (payload: WorkflowCapabilityPayload) => Promise<unknown>;
@@ -175,6 +178,8 @@ async function executeNode(input: {
   const config = getConfig(node, context);
 
   switch (node.type) {
+    case 'agent_interaction':
+      return capabilities.runAgentInteractions(config);
     case 'condition': {
       const result = compareCondition(config);
       return { result };

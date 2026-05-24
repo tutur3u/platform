@@ -270,6 +270,20 @@
       "cluster": "{title} cluster",
       "sameLevel": "{count, plural, one {same level} other {same level}}"
     },
+    "hiveLauncher": {
+      "adminRequired": "Hive admin access is required to import this board.",
+      "createdToast": "Created {agents} agents and {pairs} interaction pairs in Hive.",
+      "description": "Turn this Mind board into Hive agents, pair interactions, and a saved workflow.",
+      "errorToast": "Could not create the Hive simulation.",
+      "launch": "Create simulation",
+      "loadingServers": "Loading Hive servers...",
+      "noServers": "No Hive servers available.",
+      "open": "Simulate in Hive",
+      "server": "Hive server",
+      "serverCount": "{count, plural, one {# server available} other {# servers available}}",
+      "serverPlaceholder": "Select server",
+      "title": "Simulate in Hive"
+    },
     "horizons": {
       "all": "All horizons",
       "day": "Day",

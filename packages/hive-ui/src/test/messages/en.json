@@ -328,6 +328,7 @@
       "name": "Workflow name",
       "new_workflow": "New workflow",
       "nodes": {
+        "agent_interaction": "Agent interaction",
         "condition": "Condition",
         "context": "Read context",
         "farming": "Farming action",
@@ -361,6 +362,10 @@
       "saved": "Workflow saved",
       "select_workflow": "Select workflow",
       "templates": {
+        "agent_roundtable": {
+          "description": "Run a compact LLM-powered roundtable across selected Hive agents.",
+          "name": "Agent roundtable"
+        },
         "farm_cycle": {
           "description": "Plant a crop, persist it, and stamp a visible garden plot into the world.",
           "name": "Farm cycle"

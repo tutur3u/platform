@@ -8560,6 +8560,20 @@
       "cluster": "Cụm {title}",
       "sameLevel": "{count, plural, one {cùng cấp} other {cùng cấp}}"
     },
+    "hiveLauncher": {
+      "adminRequired": "Cần quyền quản trị Hive để nhập bảng này.",
+      "createdToast": "Đã tạo {agents} agent và {pairs} cặp tương tác trong Hive.",
+      "description": "Biến bảng Mind này thành agent Hive, cặp tương tác và quy trình đã lưu.",
+      "errorToast": "Không thể tạo mô phỏng Hive.",
+      "launch": "Tạo mô phỏng",
+      "loadingServers": "Đang tải máy chủ Hive...",
+      "noServers": "Chưa có máy chủ Hive.",
+      "open": "Mô phỏng trong Hive",
+      "server": "Máy chủ Hive",
+      "serverCount": "Có {count} máy chủ khả dụng",
+      "serverPlaceholder": "Chọn máy chủ",
+      "title": "Mô phỏng trong Hive"
+    },
     "horizons": {
       "all": "Mọi tầm nhìn",
       "day": "Ngày",
@@ -11241,6 +11255,7 @@
       "name": "Tên quy trình",
       "new_workflow": "Quy trình mới",
       "nodes": {
+        "agent_interaction": "Tương tác agent",
         "condition": "Điều kiện",
         "context": "Đọc ngữ cảnh",
         "farming": "Thao tác nông trại",
@@ -11274,6 +11289,10 @@
       "saved": "Đã lưu quy trình",
       "select_workflow": "Chọn quy trình",
       "templates": {
+        "agent_roundtable": {
+          "description": "Chạy một bàn tròn LLM gọn giữa các agent Hive đã chọn.",
+          "name": "Bàn tròn agent"
+        },
         "farm_cycle": {
           "description": "Trồng cây, lưu cây trồng và đặt một ô vườn hiển thị vào thế giới.",
           "name": "Chu kỳ nông trại"

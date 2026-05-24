@@ -270,6 +270,20 @@
       "cluster": "Cụm {title}",
       "sameLevel": "{count, plural, one {cùng cấp} other {cùng cấp}}"
     },
+    "hiveLauncher": {
+      "adminRequired": "Cần quyền quản trị Hive để nhập bảng này.",
+      "createdToast": "Đã tạo {agents} agent và {pairs} cặp tương tác trong Hive.",
+      "description": "Biến bảng Mind này thành agent Hive, cặp tương tác và quy trình đã lưu.",
+      "errorToast": "Không thể tạo mô phỏng Hive.",
+      "launch": "Tạo mô phỏng",
+      "loadingServers": "Đang tải máy chủ Hive...",
+      "noServers": "Chưa có máy chủ Hive.",
+      "open": "Mô phỏng trong Hive",
+      "server": "Máy chủ Hive",
+      "serverCount": "Có {count} máy chủ khả dụng",
+      "serverPlaceholder": "Chọn máy chủ",
+      "title": "Mô phỏng trong Hive"
+    },
     "horizons": {
       "all": "Mọi tầm nhìn",
       "day": "Ngày",

@@ -169,6 +169,14 @@ only. Do not add arbitrary JavaScript evaluation to workflow config. Workflow
 applies that patch to the latest server snapshot and persists the result through
 the same audited world-event path as manual editor saves.
 
+Workflow `agent_interaction` nodes run configured NPC pairs through the same
+LLM-backed interaction path as Agent Studio pair queues, with deterministic
+fallback behavior when provider access is unavailable. Mind imports use
+`/api/v1/hive/servers/:serverId/mind-simulations` to create NPC agents from a
+Mind board, create source graph interaction pairs, and save a Hive workflow that
+stamps the Mind source context before running those pairs. That import route is
+an admin operation because it creates shared Hive server state.
+
 Research sessions are the shared audit spine for multi-agent experiments. A
 running `hive_research_sessions` row can be attached to NPC runs, workflow
 runs, world events, and simulation ticks through nullable `research_session_id`

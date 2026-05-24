@@ -14,6 +14,7 @@ type WorkflowPaletteProps = {
 };
 
 const templates: WorkflowTemplateKey[] = [
+  'agent_roundtable',
   'npc_daily',
   'farm_cycle',
   'market_trade',

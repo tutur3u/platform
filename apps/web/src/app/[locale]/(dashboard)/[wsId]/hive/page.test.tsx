@@ -100,6 +100,11 @@ describe('web Hive page parity', () => {
 
     const result = await HivePage({
       params: Promise.resolve({ locale: 'en', wsId: 'personal' }),
+      searchParams: Promise.resolve({
+        panel: 'workflows',
+        serverId: 'server-1',
+        workflowId: 'workflow-1',
+      }),
     });
 
     expect(mocks.redirect).not.toHaveBeenCalled();
@@ -113,10 +118,13 @@ describe('web Hive page parity', () => {
         id: 'user-1',
       },
       embedInDashboard: true,
+      initialPanel: 'workflows',
+      initialServerId: 'server-1',
       initialServers: {
         isAdmin: true,
         servers: [{ id: 'server-1', name: 'Main server' }],
       },
+      initialWorkflowId: 'workflow-1',
       isAdmin: true,
       realtimeUrl: 'wss://hive-realtime.test/realtime',
     });

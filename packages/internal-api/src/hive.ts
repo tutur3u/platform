@@ -459,6 +459,7 @@ export type HiveTradeActionPayload =
     };
 
 export type HiveWorkflowNodeType =
+  | 'agent_interaction'
   | 'condition'
   | 'context'
   | 'farming'
@@ -694,6 +695,28 @@ export type HivePairQueueResponse = {
     failed: number;
     total: number;
   };
+};
+
+export type HiveMindSimulationPayload = {
+  boardId: string;
+  maxAgents?: number;
+  maxPairs?: number;
+  workspaceId: string;
+};
+
+export type HiveMindSimulationResponse = {
+  mindBoard: {
+    edgeCount: number;
+    id: string;
+    nodeCount: number;
+    title: string;
+  };
+  npcs: HiveNpc[];
+  summary: {
+    agents: number;
+    pairs: number;
+  };
+  workflow: HiveWorkflow;
 };
 
 export type HiveResearchExport = {
@@ -1264,6 +1287,22 @@ export async function createHiveWorkflow(
     {
       body: JSON.stringify(payload),
       cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function createHiveMindSimulation(
+  serverId: string,
+  payload: HiveMindSimulationPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<HiveMindSimulationResponse>(
+    `/api/v1/hive/servers/${encodeURIComponent(serverId)}/mind-simulations`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     }
   );

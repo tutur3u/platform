@@ -4,6 +4,28 @@ import { createWorkflowTemplate } from './workflow-catalog';
 const label = (key: string) => key;
 
 describe('Hive workflow templates', () => {
+  it('builds an agent roundtable that runs pair interactions', () => {
+    const definition = createWorkflowTemplate('agent_roundtable', label);
+    const agentNode = definition.nodes.find((node) => node.id === 'agents');
+
+    expect(definition.edges).toEqual(
+      expect.arrayContaining([
+        { id: 'context-agents', source: 'context', target: 'agents' },
+        { id: 'agents-log', source: 'agents', target: 'log' },
+      ])
+    );
+    expect(agentNode).toMatchObject({
+      data: {
+        config: {
+          maxPairs: 8,
+          maxTurns: 4,
+          pairs: [],
+        },
+      },
+      type: 'agent_interaction',
+    });
+  });
+
   it('builds a farm cycle that persists a crop and stamps it into the visible world', () => {
     const definition = createWorkflowTemplate('farm_cycle', label);
     const farmNode = definition.nodes.find((node) => node.id === 'farm');

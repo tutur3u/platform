@@ -25,10 +25,16 @@ interface PageProps {
     locale: string;
     wsId: string;
   }>;
+  searchParams?: Promise<{
+    panel?: string;
+    serverId?: string;
+    workflowId?: string;
+  }>;
 }
 
-export default async function HivePage({ params }: PageProps) {
+export default async function HivePage({ params, searchParams }: PageProps) {
   const { wsId } = await params;
+  const query = (await searchParams) ?? {};
   const context = await getWebHivePageContext(wsId);
 
   if (!context) notFound();
@@ -64,9 +70,21 @@ export default async function HivePage({ params }: PageProps) {
       buildInfo={getHiveBuildInfo()}
       currentUser={context.access.user}
       embedInDashboard
+      initialPanel={toHivePanel(query.panel)}
+      initialServerId={query.serverId ?? null}
       initialServers={initialServers}
+      initialWorkflowId={query.workflowId ?? null}
       isAdmin={context.access.isAdmin}
       realtimeUrl={HIVE_REALTIME_URL}
     />
   );
+}
+
+function toHivePanel(value: string | undefined) {
+  return value === 'agents' ||
+    value === 'timeline' ||
+    value === 'workflows' ||
+    value === 'world'
+    ? value
+    : null;
 }

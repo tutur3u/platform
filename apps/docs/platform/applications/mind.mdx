@@ -65,6 +65,8 @@ Protected Mind data stays behind `apps/web` APIs:
 - `/api/v1/workspaces/:wsId/mind/boards/:boardId/patches`
 - `/api/v1/workspaces/:wsId/mind/search`
 - `/api/v1/workspaces/:wsId/mind/ai/patches/:patchId/apply`
+- `/api/v1/hive/servers/:serverId/mind-simulations` for importing a Mind board
+  into Hive as agents plus a saved interaction workflow
 - `/api/ai/mind`
 - `/api/ai/chat/upload-url`, `/api/ai/chat/delete-file`, and
   `/api/ai/chat/file-urls` for Mind chat attachments
@@ -101,6 +103,21 @@ Nodes, relationships, clusters, and child-group frames should all be selectable
 from the canvas. Node and relationship selections open editable properties,
 while synthetic group or cluster frame selections open a compact read-only
 properties island that identifies the anchor node and child count.
+
+## Hive Integration
+
+Inside `apps/web`, a Mind board can be sent to Hive from the compact top-right
+canvas controls. The import API reads the saved Mind graph, verifies workspace
+membership through the request-scoped client, requires Hive admin access, and
+creates Hive NPC agents from the highest-signal Mind nodes. Mind edges become
+Hive agent interaction pairs, and the generated Hive workflow first stamps the
+Mind source context into the world before running the agent-interaction node.
+
+Keep this integration hosted in `apps/web`: the standalone `apps/mind` surface
+should stay a shared Mind canvas and must not assume that the Hive satellite is
+available in the same host. Client code should call
+`createHiveMindSimulation()` from `@tuturuuu/internal-api/hive`; do not add
+client-local raw fetch calls or duplicate graph-to-agent conversion logic.
 
 ## Data Model
 
@@ -178,7 +195,8 @@ Mind boards auto-save canvas edits. The board title, canvas tools, tag filter,
 and save status live in one compact top-left island. The title is editable from
 that island, the tag filter uses an icon-only ghost dropdown, and the save icon
 shows saved, saving, unsaved, or retryable error state and can be clicked to
-force a save. The only top-right canvas action is the assistant toggle.
+force a save. In the web-hosted board route, the compact top-right island owns
+the Hive simulation launcher and the assistant toggle.
 Autosave signatures, tag indexing, group-frame layout, and relationship routing
 obstacle scans are intentionally debounced so dragging stays responsive on dense
 boards; keep direct node movement immediate and move only derived calculations

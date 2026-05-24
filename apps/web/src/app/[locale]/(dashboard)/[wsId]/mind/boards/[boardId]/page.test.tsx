@@ -51,6 +51,7 @@ describe('web Mind board page parity', () => {
     expect(isValidElement(result)).toBe(true);
     expect(result.type).toBe(mocks.MindDashboard);
     expect(result.props).toMatchObject({
+      hiveHref: '/personal/hive',
       initialBoardId: 'board-1',
       mindPrefix: '/mind',
       wsId: 'workspace-1',

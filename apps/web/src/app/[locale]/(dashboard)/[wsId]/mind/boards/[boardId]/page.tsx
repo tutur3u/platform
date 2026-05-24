@@ -24,6 +24,7 @@ export default async function MindBoardPage({ params }: PageProps) {
 
   return (
     <MindDashboard
+      hiveHref={`/${wsId}/hive`}
       initialBoardId={boardId}
       mindPrefix="/mind"
       workspaceSlug={wsId}

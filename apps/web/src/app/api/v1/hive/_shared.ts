@@ -195,6 +195,7 @@ export const hiveAccessRequestApprovalSchema = z.object({
 });
 
 export const hiveWorkflowNodeTypeSchema = z.enum([
+  'agent_interaction',
   'condition',
   'context',
   'farming',
