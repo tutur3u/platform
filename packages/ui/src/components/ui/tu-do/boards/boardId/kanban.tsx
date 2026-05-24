@@ -248,6 +248,7 @@ export function KanbanBoard({
     dragPreviewPosition,
     optimisticUpdateInProgress,
     onDragStart,
+    onDragMove,
     onDragOver,
     onDragEnd,
   } = useKanbanDnd({
@@ -372,6 +373,7 @@ export function KanbanBoard({
           sensors={sensors}
           collisionDetection={kanbanCollisionDetection}
           onDragStart={onDragStart}
+          onDragMove={onDragMove}
           onDragOver={onDragOver}
           onDragEnd={onDragEnd}
           measuring={{

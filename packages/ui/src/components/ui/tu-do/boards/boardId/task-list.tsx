@@ -63,21 +63,30 @@ interface TaskListContentProps {
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
   startIndex?: number;
-  totalTaskCount?: number;
+  taskOrder?: Pick<Task, 'id'>[];
 }
 
 export function getTaskDragPreviewSlotIndex({
   columnId,
   preview,
-  taskCount,
+  tasks,
 }: {
   columnId: string;
   preview: DragPreviewPosition | null | undefined;
-  taskCount: number;
+  tasks: Pick<Task, 'id'>[];
 }) {
   if (!preview || preview.listId !== columnId) return null;
 
-  return Math.max(0, Math.min(preview.insertionIndex, taskCount));
+  const activeTaskIndex = tasks.findIndex(
+    (task) => task.id === preview.task.id
+  );
+  const maxSlotIndex = tasks.length;
+  const renderInsertionIndex =
+    activeTaskIndex !== -1 && preview.insertionIndex >= activeTaskIndex
+      ? preview.insertionIndex + 1
+      : preview.insertionIndex;
+
+  return Math.max(0, Math.min(renderInsertionIndex, maxSlotIndex));
 }
 
 function DragPreviewSlot({
@@ -122,12 +131,12 @@ function TaskListContent({
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
   startIndex = 0,
-  totalTaskCount = tasks.length,
+  taskOrder = tasks,
 }: TaskListContentProps) {
   const slotIndex = getTaskDragPreviewSlotIndex({
     columnId: column.id,
     preview: dragPreviewPosition,
-    taskCount: totalTaskCount,
+    tasks: taskOrder,
   });
 
   return (
@@ -464,7 +473,7 @@ function VirtualizedTaskListInner({
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
                 startIndex={startIndex}
-                totalTaskCount={tasks.length}
+                taskOrder={tasks}
               />
             </div>
           </div>
@@ -492,7 +501,7 @@ function VirtualizedTaskListInner({
             updateSize={updateSize}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
-            totalTaskCount={tasks.length}
+            taskOrder={tasks}
           />
           {loadMoreSentinel}
         </SortableContext>

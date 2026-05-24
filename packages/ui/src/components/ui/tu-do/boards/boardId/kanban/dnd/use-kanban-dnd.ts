@@ -2,10 +2,11 @@
 
 import type {
   DragEndEvent,
+  DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
-import { type QueryClient, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   removeCurrentUserTaskPersonalPlacement,
   upsertCurrentUserTaskPersonalPlacement,
@@ -25,6 +26,68 @@ import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { useAutoScroll } from './auto-scroll';
 import { getColumnReorderUpdates } from './column-reorder';
 import { calculateSortKeyWithRetry as createCalculateSortKeyWithRetry } from './kanban-sort-helpers';
+import {
+  applyTaskDropPreviewToCache,
+  mergePersonalPlacementMutationTask,
+  setBoardTaskCache,
+} from './task-drag-cache';
+import {
+  getFrozenActiveRectFromDelta,
+  getTaskDropPositionFromRects,
+} from './task-drag-geometry';
+import {
+  getNeighborTaskIds,
+  getProjectedTaskDropOrderFromPreview,
+  getTaskInsertionIndex,
+  insertTaskAtDropPosition,
+  insertTaskAtInsertionIndex,
+  sortTasksForList,
+} from './task-drag-order';
+import {
+  dragPreviewPositionsEqual,
+  getTaskDropEndPreviewFromRects,
+  getTaskDropPreviewFromListSurface,
+  getTaskDropPreviewFromRects,
+} from './task-drag-preview';
+import type {
+  DragCacheSnapshot,
+  DragPreviewPosition,
+  DragSessionMetrics,
+  TaskRect,
+  VerticalRect,
+} from './task-drag-types';
+
+export {
+  applyTaskDropPreviewToCache,
+  getTaskDropPreviewCacheTasks,
+  mergePersonalPlacementMutationTask,
+  mergeTaskIntoBoardTaskCache,
+} from './task-drag-cache';
+export {
+  getFrozenActiveRectFromDelta,
+  getTaskDropPositionFromRects,
+} from './task-drag-geometry';
+export {
+  getProjectedTaskDropOrderFromPreview,
+  getTaskInsertionIndex,
+  insertTaskAtDropPosition,
+  insertTaskAtInsertionIndex,
+  sortTasksForList,
+} from './task-drag-order';
+export {
+  dragPreviewPositionsEqual,
+  getTaskDropEndPreviewFromRects,
+  getTaskDropPreviewFromListSurface,
+  getTaskDropPreviewFromRects,
+} from './task-drag-preview';
+export type {
+  DragCacheSnapshot,
+  DragPreviewPosition,
+  DragSessionMetrics,
+  TaskDropPosition,
+  TaskRect,
+  VerticalRect,
+} from './task-drag-types';
 
 interface UseKanbanDndProps {
   wsId?: string | null;
@@ -54,450 +117,40 @@ function usesPersonalPlacement(task: Task) {
   );
 }
 
-function getNeighborTaskIds(tasks: Task[], taskId: string) {
-  const taskIndex = tasks.findIndex((task) => task.id === taskId);
-
-  if (taskIndex === -1) {
-    return {
-      previousTaskId: null,
-      nextTaskId: null,
-    };
-  }
-
-  return {
-    previousTaskId: tasks[taskIndex - 1]?.id ?? null,
-    nextTaskId: tasks[taskIndex + 1]?.id ?? null,
-  };
-}
-
-export type TaskDropPosition = 'before' | 'after';
-type VerticalRect = {
-  height: number;
-  top: number;
-};
-type TaskRect = VerticalRect & {
-  originalIndex?: number;
-  taskId: string;
-};
-export type DragPreviewPosition = {
-  insertionIndex: number;
-  listId: string;
-  task: Task;
-  height: number;
-};
-type DragCacheSnapshot = {
-  tasks?: Task[];
-  fullTasks?: Task[];
-};
-export type DragSessionMetrics = {
-  activeInitialRect: VerticalRect | null;
-  activeTaskId: string;
-  height: number;
-  sourceInsertionIndex: number;
-  sourceListId: string;
-};
-type TaskSortKeyRepair = {
-  listId: string;
-  sortKey: number;
-  taskId: string;
-};
-
-const SORT_KEY_BASE_UNIT = 1_000_000;
-const SORT_KEY_DEFAULT = SORT_KEY_BASE_UNIT * 1000;
-const SORT_KEY_MIN_GAP = 1000;
-
-function dragPreviewPositionsEqual(
-  current: DragPreviewPosition | null,
-  next: DragPreviewPosition | null
-) {
-  if (current === next) return true;
-  if (!current || !next) return false;
-
-  return (
-    current.listId === next.listId &&
-    current.insertionIndex === next.insertionIndex &&
-    current.task.id === next.task.id &&
-    current.height === next.height
-  );
-}
-
-export function getTaskDropPositionFromRects({
-  activeRect,
-  overRect,
-  pointerY,
-}: {
-  activeRect?: VerticalRect | null;
-  overRect?: VerticalRect | null;
-  pointerY?: number | null;
-}): TaskDropPosition {
-  if (!overRect) return 'before';
-
-  if (typeof pointerY === 'number') {
-    return pointerY >= overRect.top + overRect.height / 2 ? 'after' : 'before';
-  }
-
-  if (!activeRect) return 'before';
-
-  const activeCenterY = activeRect.top + activeRect.height / 2;
-  const overCenterY = overRect.top + overRect.height / 2;
-
-  return activeCenterY >= overCenterY ? 'after' : 'before';
-}
-
 function getTaskDropPosition(
-  event: DragOverEvent | DragEndEvent,
-  pointerY?: number | null
+  event: DragMoveEvent | DragEndEvent,
+  pointerY?: number | null,
+  dragSession?: DragSessionMetrics | null
 ) {
   return getTaskDropPositionFromRects({
-    activeRect:
-      event.active.rect.current.translated ?? event.active.rect.current.initial,
+    activeRect: getActiveDragRect(event, dragSession),
     overRect: event.over?.rect,
     pointerY,
   });
 }
 
-function getActiveDragRect(event: DragOverEvent | DragEndEvent) {
-  const activeRect =
-    event.active.rect.current.translated ?? event.active.rect.current.initial;
+function getActiveDragRect(
+  event: DragMoveEvent | DragEndEvent,
+  dragSession?: DragSessionMetrics | null
+) {
+  const translatedRect = event.active.rect.current.translated;
+  const fallbackRect = translatedRect ?? event.active.rect.current.initial;
 
-  if (!activeRect) return null;
-
-  return {
-    height: activeRect.height,
-    top: activeRect.top,
-  };
-}
-
-export function getTaskInsertionIndex({
-  overTaskId,
-  position,
-  tasks,
-}: {
-  overTaskId: string;
-  position: TaskDropPosition;
-  tasks: Pick<Task, 'id'>[];
-}) {
-  const overIndex = tasks.findIndex((task) => task.id === overTaskId);
-  if (overIndex === -1) return tasks.length;
-
-  return overIndex + (position === 'after' ? 1 : 0);
-}
-
-export function insertTaskAtDropPosition({
-  activeTask,
-  overTaskId,
-  position,
-  targetListTasks,
-}: {
-  activeTask: Task;
-  overTaskId: string;
-  position: TaskDropPosition;
-  targetListTasks: Task[];
-}) {
-  const tasksWithoutActive = targetListTasks.filter(
-    (task) => task.id !== activeTask.id
-  );
-  const insertionIndex = getTaskInsertionIndex({
-    overTaskId,
-    position,
-    tasks: tasksWithoutActive,
-  });
-
-  return [
-    ...tasksWithoutActive.slice(0, insertionIndex),
-    activeTask,
-    ...tasksWithoutActive.slice(insertionIndex),
-  ];
-}
-
-export function insertTaskAtInsertionIndex({
-  activeTask,
-  insertionIndex,
-  targetListTasks,
-}: {
-  activeTask: Task;
-  insertionIndex: number;
-  targetListTasks: Task[];
-}) {
-  const tasksWithoutActive = targetListTasks.filter(
-    (task) => task.id !== activeTask.id
-  );
-  const safeInsertionIndex = Math.max(
-    0,
-    Math.min(insertionIndex, tasksWithoutActive.length)
-  );
-
-  return [
-    ...tasksWithoutActive.slice(0, safeInsertionIndex),
-    activeTask,
-    ...tasksWithoutActive.slice(safeInsertionIndex),
-  ];
-}
-
-function getRectCenterY(rect: VerticalRect) {
-  return rect.top + rect.height / 2;
-}
-
-function getRectBottom(rect: VerticalRect) {
-  return rect.top + rect.height;
-}
-
-function getStationaryTaskRects(rects: TaskRect[], activeTaskId: string) {
-  return [...rects]
-    .filter((rect) => rect.taskId !== activeTaskId && rect.height > 0)
-    .sort((a, b) => {
-      const indexA = a.originalIndex ?? Number.MAX_SAFE_INTEGER;
-      const indexB = b.originalIndex ?? Number.MAX_SAFE_INTEGER;
-
-      if (indexA !== indexB) {
-        return indexA - indexB;
-      }
-
-      return a.top - b.top;
-    });
-}
-
-function createDragPreviewPosition({
-  activeTask,
-  height,
-  insertionIndex,
-  listId,
-  stationaryTaskCount,
-}: {
-  activeTask: Task;
-  height: number;
-  insertionIndex: number;
-  listId: string;
-  stationaryTaskCount: number;
-}): DragPreviewPosition {
-  return {
-    height,
-    insertionIndex: Math.max(0, Math.min(insertionIndex, stationaryTaskCount)),
-    listId,
-    task: activeTask,
-  };
-}
-
-export function getTaskDropPreviewFromRects({
-  activeRect,
-  activeTask,
-  dragSession,
-  height,
-  listId,
-  rects,
-}: {
-  activeRect?: VerticalRect | null;
-  activeTask: Task;
-  dragSession?: DragSessionMetrics | null;
-  height: number;
-  listId: string;
-  rects: TaskRect[];
-}): DragPreviewPosition {
-  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
-  const activeHeight = Math.max(1, Math.round(height));
-
-  if (stationaryRects.length === 0 || !activeRect) {
-    return createDragPreviewPosition({
-      activeTask,
-      height: activeHeight,
-      insertionIndex: stationaryRects.length,
-      listId,
-      stationaryTaskCount: stationaryRects.length,
-    });
-  }
-
-  const sourceListId = dragSession?.sourceListId;
-  const sourceInsertionIndex = dragSession?.sourceInsertionIndex ?? null;
-  const initialRect = dragSession?.activeInitialRect ?? null;
-  const activeBottom = getRectBottom(activeRect);
-  const initialBottom = initialRect ? getRectBottom(initialRect) : null;
-  const sameList = sourceListId === listId;
-
-  if (
-    sameList &&
-    typeof sourceInsertionIndex === 'number' &&
-    initialRect !== null
-  ) {
-    if (activeRect.top < initialRect.top) {
-      let insertionIndex = sourceInsertionIndex;
-
-      for (let index = 0; index < stationaryRects.length; index++) {
-        const rect = stationaryRects[index];
-        const originalIndex = rect?.originalIndex ?? index;
-
-        if (!rect || originalIndex >= sourceInsertionIndex) continue;
-
-        if (activeRect.top <= getRectCenterY(rect)) {
-          insertionIndex = index;
-          break;
-        }
-      }
-
-      return createDragPreviewPosition({
-        activeTask,
-        height: activeHeight,
-        insertionIndex,
-        listId,
-        stationaryTaskCount: stationaryRects.length,
-      });
-    }
-
-    if (typeof initialBottom === 'number' && activeBottom > initialBottom) {
-      let insertionIndex = sourceInsertionIndex;
-
-      for (let index = 0; index < stationaryRects.length; index++) {
-        const rect = stationaryRects[index];
-        const originalIndex = rect?.originalIndex ?? index;
-
-        if (!rect || originalIndex <= sourceInsertionIndex) continue;
-
-        if (activeBottom >= getRectCenterY(rect)) {
-          insertionIndex = index + 1;
-        } else {
-          break;
-        }
-      }
-
-      return createDragPreviewPosition({
-        activeTask,
-        height: activeHeight,
-        insertionIndex,
-        listId,
-        stationaryTaskCount: stationaryRects.length,
-      });
-    }
-
-    return createDragPreviewPosition({
-      activeTask,
-      height: activeHeight,
-      insertionIndex: sourceInsertionIndex,
-      listId,
-      stationaryTaskCount: stationaryRects.length,
-    });
-  }
-
-  if (initialRect && activeRect.top < initialRect.top) {
-    for (let index = 0; index < stationaryRects.length; index++) {
-      const rect = stationaryRects[index];
-
-      if (rect && activeRect.top <= getRectCenterY(rect)) {
-        return createDragPreviewPosition({
-          activeTask,
-          height: activeHeight,
-          insertionIndex: index,
-          listId,
-          stationaryTaskCount: stationaryRects.length,
-        });
-      }
-    }
-  }
-
-  if (initialRect && activeRect.top > initialRect.top) {
-    let insertionIndex = 0;
-
-    for (let index = 0; index < stationaryRects.length; index++) {
-      const rect = stationaryRects[index];
-
-      if (rect && activeBottom >= getRectCenterY(rect)) {
-        insertionIndex = index + 1;
-      } else {
-        break;
-      }
-    }
-
-    return createDragPreviewPosition({
-      activeTask,
-      height: activeHeight,
-      insertionIndex,
-      listId,
-      stationaryTaskCount: stationaryRects.length,
-    });
-  }
-
-  const activeCenterY = getRectCenterY(activeRect);
-  const insertionIndex = stationaryRects.findIndex(
-    (rect) => activeCenterY < getRectCenterY(rect)
-  );
-
-  return createDragPreviewPosition({
-    activeTask,
-    height: activeHeight,
-    insertionIndex:
-      insertionIndex === -1 ? stationaryRects.length : insertionIndex,
-    listId,
-    stationaryTaskCount: stationaryRects.length,
-  });
-}
-
-export function getTaskDropEndPreviewFromRects({
-  activeTask,
-  height,
-  listId,
-  rects,
-}: {
-  activeTask: Task;
-  height: number;
-  listId: string;
-  rects: TaskRect[];
-}): DragPreviewPosition {
-  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
-
-  return createDragPreviewPosition({
-    activeTask,
-    height,
-    insertionIndex: stationaryRects.length,
-    listId,
-    stationaryTaskCount: stationaryRects.length,
-  });
-}
-
-function getTaskDropPreviewFromListSurface({
-  activeRect,
-  activeTask,
-  dragSession,
-  height,
-  listId,
-  rects,
-}: {
-  activeRect?: VerticalRect | null;
-  activeTask: Task;
-  dragSession?: DragSessionMetrics | null;
-  height: number;
-  listId: string;
-  rects: TaskRect[];
-}): DragPreviewPosition {
-  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
-  const firstRect = stationaryRects[0];
-  const lastRect = stationaryRects[stationaryRects.length - 1];
-
-  if (!firstRect || !lastRect || !activeRect) {
-    return getTaskDropEndPreviewFromRects({
-      activeTask,
-      height,
-      listId,
-      rects,
-    });
-  }
-
-  if (
-    getRectBottom(activeRect) < getRectCenterY(firstRect) ||
-    activeRect.top > getRectCenterY(lastRect)
-  ) {
-    return getTaskDropEndPreviewFromRects({
-      activeTask,
-      height,
-      listId,
-      rects,
-    });
-  }
-
-  return getTaskDropPreviewFromRects({
-    activeRect,
-    activeTask,
+  return getFrozenActiveRectFromDelta({
+    deltaY: event.delta?.y,
     dragSession,
-    height,
-    listId,
-    rects,
+    fallbackRect: fallbackRect
+      ? {
+          height: fallbackRect.height,
+          top: fallbackRect.top,
+        }
+      : null,
+    translatedRect: translatedRect
+      ? {
+          height: translatedRect.height,
+          top: translatedRect.top,
+        }
+      : null,
   });
 }
 
@@ -542,46 +195,6 @@ function getVisibleTaskRectsForList(
     });
 }
 
-function sortTasksForList({
-  disableSort,
-  targetList,
-  tasks,
-}: {
-  disableSort: boolean;
-  targetList: TaskList | undefined;
-  tasks: Task[];
-}) {
-  return [...tasks].sort((a, b) => {
-    if (targetList?.status === 'done') {
-      const completionA = a.completed_at
-        ? new Date(a.completed_at).getTime()
-        : 0;
-      const completionB = b.completed_at
-        ? new Date(b.completed_at).getTime()
-        : 0;
-      return completionB - completionA;
-    }
-
-    if (targetList?.status === 'closed') {
-      const closedA = a.closed_at ? new Date(a.closed_at).getTime() : 0;
-      const closedB = b.closed_at ? new Date(b.closed_at).getTime() : 0;
-      return closedB - closedA;
-    }
-
-    if (!disableSort) {
-      const sortA = a.sort_key ?? MAX_SAFE_INTEGER_SORT;
-      const sortB = b.sort_key ?? MAX_SAFE_INTEGER_SORT;
-      if (sortA !== sortB) return sortA - sortB;
-      if (!a.created_at || !b.created_at) return 0;
-      return (
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-    }
-
-    return 0;
-  });
-}
-
 function getProjectedTaskDropOrder({
   activeTask,
   event,
@@ -591,9 +204,11 @@ function getProjectedTaskDropOrder({
   overType,
   pointerY,
   targetListTasks,
+  dragSession,
 }: {
   activeTask: Task;
-  event: DragOverEvent | DragEndEvent;
+  dragSession?: DragSessionMetrics | null;
+  event: DragMoveEvent | DragEndEvent;
   isCompletionList: boolean;
   latestDragPreviewPosition: DragPreviewPosition | null;
   overId: string;
@@ -628,355 +243,9 @@ function getProjectedTaskDropOrder({
   return insertTaskAtDropPosition({
     activeTask,
     overTaskId: overId,
-    position: getTaskDropPosition(event, pointerY),
+    position: getTaskDropPosition(event, pointerY, dragSession),
     targetListTasks,
   });
-}
-
-export function getProjectedTaskDropOrderFromPreview({
-  activeTask,
-  isCompletionList,
-  preview,
-  targetListTasks,
-}: {
-  activeTask: Task;
-  isCompletionList: boolean;
-  preview: DragPreviewPosition | null;
-  targetListTasks: Task[];
-}) {
-  const targetListTasksWithoutActive = targetListTasks.filter(
-    (task) => task.id !== activeTask.id
-  );
-
-  if (isCompletionList) {
-    return [activeTask, ...targetListTasksWithoutActive];
-  }
-
-  if (!preview) {
-    return [...targetListTasksWithoutActive, activeTask];
-  }
-
-  return insertTaskAtInsertionIndex({
-    activeTask,
-    insertionIndex: preview.insertionIndex,
-    targetListTasks,
-  });
-}
-
-function getTaskSortKeyInsertionContext({
-  activeTaskId,
-  orderedTasks,
-}: {
-  activeTaskId: string;
-  orderedTasks: Pick<Task, 'id' | 'sort_key'>[];
-}) {
-  const activeIndex = orderedTasks.findIndex(
-    (task) => task.id === activeTaskId
-  );
-  if (activeIndex === -1) {
-    return {
-      activeIndex,
-      nextSortKey: null,
-      previousSortKey: null,
-    };
-  }
-
-  return {
-    activeIndex,
-    nextSortKey: orderedTasks[activeIndex + 1]?.sort_key ?? null,
-    previousSortKey: orderedTasks[activeIndex - 1]?.sort_key ?? null,
-  };
-}
-
-function hasRepresentableSortKeyGap(
-  previousSortKey: number | null,
-  nextSortKey: number | null
-) {
-  if (previousSortKey === null) {
-    return nextSortKey === null || nextSortKey >= SORT_KEY_MIN_GAP;
-  }
-
-  if (nextSortKey === null) {
-    return true;
-  }
-
-  return nextSortKey - previousSortKey >= SORT_KEY_MIN_GAP;
-}
-
-function getRepairedSortKeyForIndex(index: number) {
-  return (index + 1) * SORT_KEY_BASE_UNIT;
-}
-
-function getDeterministicPreviewSortKey({
-  nextSortKey,
-  previousSortKey,
-}: {
-  nextSortKey: number | null;
-  previousSortKey: number | null;
-}) {
-  if (previousSortKey === null) {
-    if (nextSortKey === null) return SORT_KEY_DEFAULT;
-    if (nextSortKey <= 1) return SORT_KEY_DEFAULT;
-
-    const halfNext = Math.floor(nextSortKey / 2);
-
-    if (nextSortKey <= SORT_KEY_MIN_GAP) {
-      return Math.max(1, Math.min(halfNext, nextSortKey - 1));
-    }
-
-    return Math.max(
-      halfNext,
-      Math.min(SORT_KEY_BASE_UNIT, nextSortKey - SORT_KEY_MIN_GAP)
-    );
-  }
-
-  if (nextSortKey === null) {
-    return previousSortKey + SORT_KEY_BASE_UNIT;
-  }
-
-  const gap = nextSortKey - previousSortKey;
-
-  if (gap <= 1) {
-    return previousSortKey + SORT_KEY_BASE_UNIT;
-  }
-
-  return Math.floor((previousSortKey + nextSortKey) / 2);
-}
-
-function getPreviewSortKeyPlan({
-  activeTaskId,
-  orderedTasks,
-  targetListId,
-}: {
-  activeTaskId: string;
-  orderedTasks: Pick<Task, 'id' | 'sort_key'>[];
-  targetListId: string;
-}): {
-  previewSortKey: number;
-  repairedTaskSortKeys: TaskSortKeyRepair[];
-} {
-  const { activeIndex, nextSortKey, previousSortKey } =
-    getTaskSortKeyInsertionContext({
-      activeTaskId,
-      orderedTasks,
-    });
-
-  if (activeIndex === -1) {
-    return {
-      previewSortKey: MAX_SAFE_INTEGER_SORT,
-      repairedTaskSortKeys: [],
-    };
-  }
-
-  const previewSortKey = getDeterministicPreviewSortKey({
-    nextSortKey,
-    previousSortKey,
-  });
-  const effectiveOrderedTasks = orderedTasks.map((task) => ({
-    ...task,
-    sort_key: task.id === activeTaskId ? previewSortKey : task.sort_key,
-  }));
-  const orderNeedsRepair = effectiveOrderedTasks.some((task, index) => {
-    if (typeof task.sort_key !== 'number' || !Number.isFinite(task.sort_key)) {
-      return true;
-    }
-
-    const previousTask = effectiveOrderedTasks[index - 1];
-    if (!previousTask) return false;
-
-    if (
-      typeof previousTask.sort_key !== 'number' ||
-      !Number.isFinite(previousTask.sort_key)
-    ) {
-      return true;
-    }
-
-    return task.sort_key - previousTask.sort_key < SORT_KEY_MIN_GAP;
-  });
-
-  if (
-    !hasRepresentableSortKeyGap(previousSortKey, nextSortKey) ||
-    orderNeedsRepair
-  ) {
-    return {
-      previewSortKey: getRepairedSortKeyForIndex(activeIndex),
-      repairedTaskSortKeys: orderedTasks.map((task, index) => ({
-        listId: targetListId,
-        sortKey: getRepairedSortKeyForIndex(index),
-        taskId: task.id,
-      })),
-    };
-  }
-
-  return {
-    previewSortKey,
-    repairedTaskSortKeys: [],
-  };
-}
-
-export function getTaskDropPreviewCacheTasks({
-  activeTask,
-  localMutationAt = Date.now(),
-  orderedTasks,
-  tasks,
-  targetList,
-  targetListId,
-}: {
-  activeTask: Task;
-  localMutationAt?: number;
-  orderedTasks: Task[];
-  tasks: Task[] | undefined;
-  targetList: TaskList | undefined;
-  targetListId: string;
-}) {
-  if (!tasks) return { previewSortKey: null, tasks };
-
-  const { previewSortKey, repairedTaskSortKeys } = getPreviewSortKeyPlan({
-    activeTaskId: activeTask.id,
-    orderedTasks,
-    targetListId,
-  });
-  const repairedSortKeysByTaskId = new Map(
-    repairedTaskSortKeys.map((repair) => [repair.taskId, repair.sortKey])
-  );
-  const mutationTimestamp = new Date(localMutationAt).toISOString();
-  const targetIsCompleted = targetList?.status === 'done';
-  const targetIsTerminal = targetList?.status === 'closed';
-
-  return {
-    previewSortKey,
-    repairedTaskSortKeys,
-    tasks: tasks.map((task) =>
-      task.id === activeTask.id
-        ? ({
-            ...task,
-            list_id: targetListId,
-            sort_key: previewSortKey,
-            completed: targetIsCompleted,
-            completed_at: targetIsCompleted
-              ? (task.completed_at ?? mutationTimestamp)
-              : null,
-            closed_at: targetIsTerminal
-              ? (task.closed_at ?? mutationTimestamp)
-              : null,
-            _localMutationAt: localMutationAt,
-          } as Task & { _localMutationAt: number })
-        : repairedSortKeysByTaskId.has(task.id)
-          ? ({
-              ...task,
-              sort_key: repairedSortKeysByTaskId.get(task.id) ?? task.sort_key,
-              _localMutationAt: localMutationAt,
-            } as Task & { _localMutationAt: number })
-          : task
-    ),
-  };
-}
-
-function applyTaskDropPreviewToCache({
-  activeTask,
-  boardId,
-  orderedTasks,
-  queryClient,
-  snapshot,
-  targetList,
-  targetListId,
-}: {
-  activeTask: Task;
-  boardId: string | null;
-  orderedTasks: Task[];
-  queryClient: QueryClient;
-  snapshot: DragCacheSnapshot;
-  targetList: TaskList | undefined;
-  targetListId: string;
-}) {
-  if (!boardId) return null;
-
-  const localMutationAt = Date.now();
-  const previewTasks = getTaskDropPreviewCacheTasks({
-    activeTask,
-    localMutationAt,
-    orderedTasks,
-    tasks: snapshot.tasks,
-    targetList,
-    targetListId,
-  });
-  const previewFullTasks = getTaskDropPreviewCacheTasks({
-    activeTask,
-    localMutationAt,
-    orderedTasks,
-    tasks: snapshot.fullTasks,
-    targetList,
-    targetListId,
-  });
-
-  if (previewTasks.tasks) {
-    queryClient.setQueryData(['tasks', boardId], previewTasks.tasks);
-  }
-
-  if (previewFullTasks.tasks) {
-    queryClient.setQueryData(['tasks-full', boardId], previewFullTasks.tasks);
-  }
-
-  return {
-    previousFullTasks: snapshot.fullTasks,
-    previousTasks: snapshot.tasks,
-    previewSortKey: previewTasks.previewSortKey,
-    repairedTaskSortKeys: previewTasks.repairedTaskSortKeys,
-  };
-}
-
-export function mergeTaskIntoBoardTaskCache(
-  currentTasks: Task[] | undefined,
-  nextTask: Task
-) {
-  const existingTasks = currentTasks ?? [];
-  let found = false;
-
-  const mergedTasks = existingTasks.map((task) => {
-    if (task.id !== nextTask.id) return task;
-    found = true;
-    return { ...task, ...nextTask } as Task;
-  });
-
-  return found ? mergedTasks : [...mergedTasks, nextTask];
-}
-
-function setBoardTaskCache(
-  queryClient: QueryClient,
-  boardId: string,
-  nextTask: Task
-) {
-  queryClient.setQueryData(['tasks', boardId], (old: Task[] | undefined) =>
-    mergeTaskIntoBoardTaskCache(old, nextTask)
-  );
-
-  if (queryClient.getQueryData<Task[]>(['tasks-full', boardId])) {
-    queryClient.setQueryData(
-      ['tasks-full', boardId],
-      (old: Task[] | undefined) => mergeTaskIntoBoardTaskCache(old, nextTask)
-    );
-  }
-}
-
-export function mergePersonalPlacementMutationTask(
-  task: Task,
-  nextTask: Task & { _localMutationAt: number },
-  responseTask: Task | undefined,
-  isStagingTarget: boolean
-) {
-  return {
-    ...nextTask,
-    ...(responseTask ?? {}),
-    assignees: task.assignees,
-    labels: task.labels,
-    projects: task.projects,
-    list_id: responseTask?.list_id ?? nextTask.list_id,
-    sort_key: responseTask?.sort_key ?? nextTask.sort_key,
-    personal_sort_key:
-      responseTask?.personal_sort_key ?? nextTask.personal_sort_key,
-    is_personal_external_default: isStagingTarget,
-    _localMutationAt: nextTask._localMutationAt,
-  } as Task & { _localMutationAt: number };
 }
 
 export function useKanbanDnd({
@@ -1079,6 +348,44 @@ export function useKanbanDnd({
             listId,
             rects: visibleTaskRects,
           });
+
+      if (
+        dragSession?.activeTaskId === activeTask.id &&
+        dragSession.sourceListId === preview.listId &&
+        dragSession.sourceInsertionIndex === preview.insertionIndex
+      ) {
+        return null;
+      }
+
+      return preview;
+    },
+    [getCachedVisibleTaskRects, taskHeightsRef]
+  );
+
+  const getDragPreviewForListSurface = useCallback(
+    ({
+      activeRect,
+      activeTask,
+      listId,
+    }: {
+      activeRect: VerticalRect | null;
+      activeTask: Task;
+      listId: string;
+    }) => {
+      const dragSession = dragSessionMetricsRef.current;
+      const height =
+        dragSession?.activeTaskId === activeTask.id
+          ? dragSession.height
+          : (taskHeightsRef.current.get(activeTask.id) ?? 96);
+      const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const preview = getTaskDropPreviewFromListSurface({
+        activeRect,
+        activeTask,
+        dragSession,
+        height,
+        listId,
+        rects: visibleTaskRects,
+      });
 
       if (
         dragSession?.activeTaskId === activeTask.id &&
@@ -1247,18 +554,9 @@ export function useKanbanDnd({
     [setDragPreviewPosition]
   );
 
-  const processDragOver = useCallback(
-    (event: DragOverEvent) => {
+  const processTaskDragPreview = useCallback(
+    (event: DragMoveEvent) => {
       const { active, over } = event;
-      if (!over) {
-        if (lastTargetListIdRef.current) {
-          lastTargetListIdRef.current = null;
-          setHoverTargetListId(null);
-          setDragPreviewPosition(null);
-        }
-        return;
-      }
-
       const activeType = active.data?.current?.type;
       if (!activeType) return;
 
@@ -1272,33 +570,50 @@ export function useKanbanDnd({
         const activeTask = active.data?.current?.task;
         if (!activeTask) return;
 
+        if (!over) {
+          const targetListId = String(
+            dragPreviewPositionRef.current?.listId ??
+              lastTargetListIdRef.current ??
+              pickedUpTaskColumn.current ??
+              activeTask.list_id
+          );
+          const targetListExists = columns.some(
+            (col) => String(col.id) === targetListId
+          );
+
+          if (!targetListExists) {
+            setHoverTargetListId(null);
+            setDragPreviewPosition(null);
+            return;
+          }
+
+          const nextPreviewPosition = getDragPreviewForListSurface({
+            activeRect: getActiveDragRect(event, dragSessionMetricsRef.current),
+            activeTask,
+            listId: targetListId,
+          });
+
+          setDragPreviewPosition(nextPreviewPosition);
+          setHoverTargetListId((current) =>
+            current === targetListId ? current : targetListId
+          );
+          lastTargetListIdRef.current = targetListId;
+          return;
+        }
+
         let targetListId: string;
         const overType = over.data?.current?.type;
         let nextPreviewPosition: DragPreviewPosition | null = null;
-        const activeRect = getActiveDragRect(event);
+        const dragSession = dragSessionMetricsRef.current;
+        const activeRect = getActiveDragRect(event, dragSession);
 
         if (overType === 'Column') {
           targetListId = String(over.id);
-          const dragSession = dragSessionMetricsRef.current;
-          const height =
-            dragSession && dragSession.activeTaskId === activeTask.id
-              ? dragSession.height
-              : (taskHeightsRef.current.get(activeTask.id) ?? 96);
-          nextPreviewPosition = {
-            height,
-            insertionIndex: 0,
+          nextPreviewPosition = getDragPreviewForListSurface({
+            activeRect,
+            activeTask,
             listId: targetListId,
-            task: activeTask,
-          };
-          if (
-            dragSession &&
-            dragSession.activeTaskId === activeTask.id &&
-            dragSession.sourceListId === nextPreviewPosition.listId &&
-            dragSession.sourceInsertionIndex ===
-              nextPreviewPosition.insertionIndex
-          ) {
-            nextPreviewPosition = null;
-          }
+          });
           setDragPreviewPosition(nextPreviewPosition);
         } else if (overType === 'Task') {
           if (String(over.id) === String(active.id)) {
@@ -1328,29 +643,11 @@ export function useKanbanDnd({
           const columnId = over.data?.current?.columnId || over.id;
           if (!columnId) return;
           targetListId = String(columnId);
-          const visibleTaskRects = getCachedVisibleTaskRects(targetListId);
-          const dragSession = dragSessionMetricsRef.current;
-          const height =
-            dragSession && dragSession.activeTaskId === activeTask.id
-              ? dragSession.height
-              : (taskHeightsRef.current.get(activeTask.id) ?? 96);
-          nextPreviewPosition = getTaskDropPreviewFromListSurface({
+          nextPreviewPosition = getDragPreviewForListSurface({
             activeRect,
             activeTask,
-            dragSession,
-            height,
             listId: targetListId,
-            rects: visibleTaskRects,
           });
-          if (
-            dragSession &&
-            dragSession.activeTaskId === activeTask.id &&
-            dragSession.sourceListId === nextPreviewPosition.listId &&
-            dragSession.sourceInsertionIndex ===
-              nextPreviewPosition.insertionIndex
-          ) {
-            nextPreviewPosition = null;
-          }
           setDragPreviewPosition(nextPreviewPosition);
         } else {
           return;
@@ -1380,10 +677,9 @@ export function useKanbanDnd({
     },
     [
       columns,
-      getCachedVisibleTaskRects,
       getDragPreviewForList,
+      getDragPreviewForListSurface,
       setDragPreviewPosition,
-      taskHeightsRef,
       wsId,
     ]
   );
@@ -1481,7 +777,11 @@ export function useKanbanDnd({
   }
 
   function onDragOver(event: DragOverEvent) {
-    processDragOver(event);
+    processTaskDragPreview(event);
+  }
+
+  function onDragMove(event: DragMoveEvent) {
+    processTaskDragPreview(event);
   }
 
   async function onDragEnd(event: DragEndEvent) {
@@ -1709,6 +1009,7 @@ export function useKanbanDnd({
             })
           : getProjectedTaskDropOrder({
               activeTask: activeTaskForDrop,
+              dragSession: dragSessionMetricsRef.current,
               event,
               isCompletionList,
               latestDragPreviewPosition: latestPreviewForActive,
@@ -1864,7 +1165,11 @@ export function useKanbanDnd({
           } else if (overType === 'Task') {
             insertionIndex = getTaskInsertionIndex({
               overTaskId: String(over.id),
-              position: getTaskDropPosition(event),
+              position: getTaskDropPosition(
+                event,
+                undefined,
+                dragSessionMetricsRef.current
+              ),
               tasks: targetListTasksExcludingMoved,
             });
           } else {
@@ -2149,6 +1454,7 @@ export function useKanbanDnd({
     dragPreviewPosition,
     optimisticUpdateInProgress,
     onDragStart,
+    onDragMove,
     onDragOver,
     onDragEnd,
   };

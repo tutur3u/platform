@@ -21,7 +21,12 @@ describe('getTaskDragPreviewSlotIndex', () => {
       getTaskDragPreviewSlotIndex({
         columnId: 'list-1',
         preview: createPreview({ insertionIndex: 2 }),
-        taskCount: 4,
+        tasks: [
+          { id: 'task-a' },
+          { id: 'task-b' },
+          { id: 'task-c' },
+          { id: 'task-d' },
+        ],
       })
     ).toBe(2);
   });
@@ -31,7 +36,12 @@ describe('getTaskDragPreviewSlotIndex', () => {
       getTaskDragPreviewSlotIndex({
         columnId: 'list-2',
         preview: createPreview(),
-        taskCount: 4,
+        tasks: [
+          { id: 'task-a' },
+          { id: 'task-b' },
+          { id: 'task-c' },
+          { id: 'task-d' },
+        ],
       })
     ).toBeNull();
   });
@@ -41,15 +51,51 @@ describe('getTaskDragPreviewSlotIndex', () => {
       getTaskDragPreviewSlotIndex({
         columnId: 'list-1',
         preview: createPreview({ insertionIndex: 0 }),
-        taskCount: 0,
+        tasks: [],
       })
     ).toBe(0);
     expect(
       getTaskDragPreviewSlotIndex({
         columnId: 'list-1',
         preview: createPreview({ insertionIndex: 99 }),
-        taskCount: 3,
+        tasks: [{ id: 'task-a' }, { id: 'task-b' }, { id: 'task-c' }],
       })
     ).toBe(3);
+  });
+
+  it('converts same-list stationary indexes into full-list render slots after the dragged task', () => {
+    expect(
+      getTaskDragPreviewSlotIndex({
+        columnId: 'list-1',
+        preview: createPreview({
+          insertionIndex: 2,
+          task: { id: 'task-2' } as Task,
+        }),
+        tasks: [
+          { id: 'task-1' },
+          { id: 'task-2' },
+          { id: 'task-3' },
+          { id: 'task-4' },
+        ],
+      })
+    ).toBe(3);
+  });
+
+  it('keeps same-list upward slots aligned before the dragged task', () => {
+    expect(
+      getTaskDragPreviewSlotIndex({
+        columnId: 'list-1',
+        preview: createPreview({
+          insertionIndex: 1,
+          task: { id: 'task-4' } as Task,
+        }),
+        tasks: [
+          { id: 'task-1' },
+          { id: 'task-2' },
+          { id: 'task-3' },
+          { id: 'task-4' },
+        ],
+      })
+    ).toBe(1);
   });
 });

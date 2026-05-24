@@ -1606,7 +1606,9 @@ function TaskCardInner({
         // Task list or priority-based styling
         getCardColorClasses(),
         showBlockedByCallout && 'bg-dynamic-red/[0.03]',
-        cardVisibilityState.pending && 'opacity-90',
+        cardVisibilityState.pending
+          ? 'border-dashed opacity-90'
+          : 'border-solid',
         (isOverlay || isDragging) &&
           'bg-card bg-none shadow-lg ring-2 ring-primary/50',
         // Closed state (closed tasks)
