@@ -94,7 +94,7 @@ export function TopicAnnouncementEmailPreviewDialog({
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
-      <DialogContent className="!flex !w-[calc(100vw-2rem)] !max-w-[calc(100vw-2rem)] sm:!max-w-[96vw] xl:!max-w-7xl h-[88vh] max-h-[calc(100vh-2rem)] gap-0 overflow-hidden p-0">
+      <DialogContent className="!flex !h-[92vh] !w-[calc(100vw-2rem)] !max-w-[calc(100vw-2rem)] !flex-col sm:!max-w-[96vw] xl:!max-w-7xl gap-0 overflow-hidden p-0">
         <DialogHeader className="shrink-0 border-b px-6 pt-6 pr-12 pb-4">
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-dynamic-blue" />
@@ -104,7 +104,7 @@ export function TopicAnnouncementEmailPreviewDialog({
         </DialogHeader>
 
         {announcement ? (
-          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[20rem_minmax(0,1fr)]">
+          <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(16rem,22rem)_minmax(0,1fr)]">
             <TopicAnnouncementPreviewSidebar
               attachments={announcement.attachments}
               contacts={announcement.contacts}
@@ -112,7 +112,7 @@ export function TopicAnnouncementEmailPreviewDialog({
             />
 
             <Tabs
-              className="min-h-0 overflow-hidden p-4 lg:p-6"
+              className="flex min-h-0 flex-col overflow-hidden p-4 lg:p-6"
               defaultValue="preview"
             >
               <TabsList className="!w-full max-w-full justify-start overflow-x-auto">
@@ -127,7 +127,7 @@ export function TopicAnnouncementEmailPreviewDialog({
                 </TabsTrigger>
               </TabsList>
               <TabsContent
-                className="mt-3 min-h-0 overflow-hidden rounded-md border"
+                className="mt-3 min-h-0 flex-1 overflow-hidden rounded-md border"
                 value="preview"
               >
                 <TopicAnnouncementPreviewState
@@ -138,7 +138,7 @@ export function TopicAnnouncementEmailPreviewDialog({
                 </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
-                className="mt-3 min-h-0 overflow-auto rounded-md border bg-muted/30 p-4"
+                className="mt-3 min-h-0 flex-1 overflow-auto rounded-md border bg-muted/30 p-4"
                 value="text"
               >
                 <TopicAnnouncementPreviewState
@@ -151,7 +151,7 @@ export function TopicAnnouncementEmailPreviewDialog({
                 </TopicAnnouncementPreviewState>
               </TabsContent>
               <TabsContent
-                className="mt-3 min-h-0 overflow-auto rounded-md border bg-muted/30 p-4"
+                className="mt-3 min-h-0 flex-1 overflow-auto rounded-md border bg-muted/30 p-4"
                 value="source"
               >
                 <TopicAnnouncementPreviewState
