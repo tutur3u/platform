@@ -44,10 +44,15 @@ export function MeasuredTaskCard({
 }: MeasuredTaskCardProps) {
   const ref = useRef<HTMLDivElement | null>(null);
   const onHeightRef = useRef(onHeight);
+  const hiddenFromLayoutRef = useRef(Boolean(hiddenFromLayout));
 
   useEffect(() => {
     onHeightRef.current = onHeight;
   }, [onHeight]);
+
+  useEffect(() => {
+    hiddenFromLayoutRef.current = Boolean(hiddenFromLayout);
+  }, [hiddenFromLayout]);
 
   useEffect(() => {
     if (!ref.current) return;
@@ -55,12 +60,17 @@ export function MeasuredTaskCard({
     const card = node.firstElementChild as HTMLElement;
     if (!card) return;
 
-    onHeightRef.current(card.getBoundingClientRect().height);
+    const publishHeight = (height: number) => {
+      if (hiddenFromLayoutRef.current || height <= 0) return;
+      onHeightRef.current(height);
+    };
+
+    publishHeight(card.getBoundingClientRect().height);
 
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         if (entry.target === card) {
-          onHeightRef.current(entry.contentRect.height);
+          publishHeight(entry.contentRect.height);
         }
       }
     });

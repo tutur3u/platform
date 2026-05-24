@@ -62,54 +62,37 @@ interface TaskListContentProps {
   updateSize: (id: string, height: number) => void;
   optimisticUpdateInProgress?: Set<string>;
   bulkUpdateCustomDueDate?: (date: Date | null) => Promise<void>;
+  startIndex?: number;
+  totalTaskCount?: number;
 }
 
-type DragPreviewSlotTarget =
-  | { kind: 'start' }
-  | { kind: 'before-task'; taskId: string }
-  | { kind: 'after-task'; taskId: string }
-  | { kind: 'empty-list' };
-
-function shouldRenderDragPreviewSlot({
+export function getTaskDragPreviewSlotIndex({
   columnId,
   preview,
-  target,
+  taskCount,
 }: {
   columnId: string;
   preview: DragPreviewPosition | null | undefined;
-  target: DragPreviewSlotTarget;
+  taskCount: number;
 }) {
-  if (!preview || preview.listId !== columnId) return false;
+  if (!preview || preview.listId !== columnId) return null;
 
-  if (preview.position === 'empty') {
-    return target.kind === 'empty-list';
-  }
-
-  if (preview.position === 'before' && preview.overTaskId === null) {
-    return target.kind === 'start';
-  }
-
-  if (preview.position === 'before') {
-    return (
-      target.kind === 'before-task' && target.taskId === preview.overTaskId
-    );
-  }
-
-  return target.kind === 'after-task' && target.taskId === preview.overTaskId;
+  return Math.max(0, Math.min(preview.insertionIndex, taskCount));
 }
 
 function DragPreviewSlot({
   columnId,
   preview,
-  target,
 }: {
   columnId: string;
   preview: DragPreviewPosition | null | undefined;
-  target: DragPreviewSlotTarget;
 }) {
-  if (!shouldRenderDragPreviewSlot({ columnId, preview, target })) return null;
+  if (!preview || preview.listId !== columnId) return null;
 
-  const height = Math.max(64, Math.round(preview?.height ?? 96));
+  const height =
+    Number.isFinite(preview.height) && preview.height > 0
+      ? Math.round(preview.height)
+      : 96;
 
   return (
     <div
@@ -138,24 +121,26 @@ function TaskListContent({
   updateSize,
   optimisticUpdateInProgress,
   bulkUpdateCustomDueDate,
+  startIndex = 0,
+  totalTaskCount = tasks.length,
 }: TaskListContentProps) {
+  const slotIndex = getTaskDragPreviewSlotIndex({
+    columnId: column.id,
+    preview: dragPreviewPosition,
+    taskCount: totalTaskCount,
+  });
+
   return (
     <>
-      <DragPreviewSlot
-        columnId={column.id}
-        preview={dragPreviewPosition}
-        target={{ kind: 'start' }}
-      />
-      {tasks.map((task) => {
+      {slotIndex === startIndex && (
+        <DragPreviewSlot columnId={column.id} preview={dragPreviewPosition} />
+      )}
+      {tasks.map((task, index) => {
         const isDraggedPreviewTask = dragPreviewPosition?.task.id === task.id;
+        const globalIndex = startIndex + index;
 
         return (
           <React.Fragment key={task.id}>
-            <DragPreviewSlot
-              columnId={column.id}
-              preview={dragPreviewPosition}
-              target={{ kind: 'before-task', taskId: task.id }}
-            />
             <MeasuredTaskCard
               task={task}
               taskList={column}
@@ -177,11 +162,12 @@ function TaskListContent({
               selectedTasks={selectedTasks}
               bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
             />
-            <DragPreviewSlot
-              columnId={column.id}
-              preview={dragPreviewPosition}
-              target={{ kind: 'after-task', taskId: task.id }}
-            />
+            {slotIndex === globalIndex + 1 && (
+              <DragPreviewSlot
+                columnId={column.id}
+                preview={dragPreviewPosition}
+              />
+            )}
           </React.Fragment>
         );
       })}
@@ -426,7 +412,6 @@ function VirtualizedTaskListInner({
               <DragPreviewSlot
                 columnId={column.id}
                 preview={dragPreviewPosition}
-                target={{ kind: 'empty-list' }}
               />
             </div>
           ) : isExternalStaging ? (
@@ -478,6 +463,8 @@ function VirtualizedTaskListInner({
                 updateSize={updateSize}
                 optimisticUpdateInProgress={optimisticUpdateInProgress}
                 bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+                startIndex={startIndex}
+                totalTaskCount={tasks.length}
               />
             </div>
           </div>
@@ -505,6 +492,7 @@ function VirtualizedTaskListInner({
             updateSize={updateSize}
             optimisticUpdateInProgress={optimisticUpdateInProgress}
             bulkUpdateCustomDueDate={bulkUpdateCustomDueDate}
+            totalTaskCount={tasks.length}
           />
           {loadMoreSentinel}
         </SortableContext>

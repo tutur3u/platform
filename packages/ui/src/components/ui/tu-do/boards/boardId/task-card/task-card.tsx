@@ -742,7 +742,7 @@ function TaskCardInner({
         : CSS.Transform.toString(transform),
     transition: isOverlay || suppressSortableTransform ? 'none' : transition,
     height: 'var(--task-height)',
-    background: isOverlay ? 'var(--card)' : undefined,
+    background: isOverlay || isDragging ? 'var(--card)' : undefined,
     // Show reduced opacity for optimistic tasks (pending realtime confirmation)
     opacity: isOverlay ? 1 : isOptimistic ? 0.6 : undefined,
   };
@@ -1607,7 +1607,8 @@ function TaskCardInner({
         getCardColorClasses(),
         showBlockedByCallout && 'bg-dynamic-red/[0.03]',
         cardVisibilityState.pending && 'opacity-90',
-        isOverlay && 'bg-card bg-none shadow-lg ring-2 ring-primary/50',
+        (isOverlay || isDragging) &&
+          'bg-card bg-none shadow-lg ring-2 ring-primary/50',
         // Closed state (closed tasks)
         (!!task.closed_at || !!task.completed_at) && 'opacity-70 saturate-75',
         // Overdue state

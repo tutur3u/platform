@@ -75,24 +75,26 @@ type VerticalRect = {
   height: number;
   top: number;
 };
-type DragDirection = 'up' | 'down';
 type TaskRect = VerticalRect & {
+  originalIndex?: number;
   taskId: string;
 };
 export type DragPreviewPosition = {
+  insertionIndex: number;
   listId: string;
-  overTaskId: string | null;
-  position: 'before' | 'after' | 'empty';
   task: Task;
   height: number;
-};
-type TaskInsertionPreview = DragPreviewPosition & {
-  overTaskId: string;
-  position: TaskDropPosition;
 };
 type DragCacheSnapshot = {
   tasks?: Task[];
   fullTasks?: Task[];
+};
+export type DragSessionMetrics = {
+  activeInitialRect: VerticalRect | null;
+  activeTaskId: string;
+  height: number;
+  sourceInsertionIndex: number;
+  sourceListId: string;
 };
 type TaskSortKeyRepair = {
   listId: string;
@@ -113,8 +115,7 @@ function dragPreviewPositionsEqual(
 
   return (
     current.listId === next.listId &&
-    current.overTaskId === next.overTaskId &&
-    current.position === next.position &&
+    current.insertionIndex === next.insertionIndex &&
     current.task.id === next.task.id &&
     current.height === next.height
   );
@@ -155,22 +156,6 @@ function getTaskDropPosition(
   });
 }
 
-function getActiveDragCenterY(event: DragOverEvent | DragEndEvent) {
-  const activeRect =
-    event.active.rect.current.translated ?? event.active.rect.current.initial;
-
-  if (!activeRect) return null;
-
-  return activeRect.top + activeRect.height / 2;
-}
-
-function getActiveDragTop(event: DragOverEvent | DragEndEvent) {
-  const activeRect =
-    event.active.rect.current.translated ?? event.active.rect.current.initial;
-
-  return activeRect?.top ?? null;
-}
-
 function getActiveDragRect(event: DragOverEvent | DragEndEvent) {
   const activeRect =
     event.active.rect.current.translated ?? event.active.rect.current.initial;
@@ -181,36 +166,6 @@ function getActiveDragRect(event: DragOverEvent | DragEndEvent) {
     height: activeRect.height,
     top: activeRect.top,
   };
-}
-
-function getEffectiveTaskDropPosition({
-  droppedOnPreviewPlaceholder,
-  event,
-  pointerY,
-  preview,
-}: {
-  droppedOnPreviewPlaceholder: boolean;
-  event: DragOverEvent | DragEndEvent;
-  pointerY?: number | null;
-  preview: DragPreviewPosition | null;
-}): TaskDropPosition {
-  if (
-    droppedOnPreviewPlaceholder &&
-    (preview?.position === 'before' || preview?.position === 'after')
-  ) {
-    return preview.position;
-  }
-
-  return getTaskDropPosition(event, pointerY);
-}
-
-function isTaskInsertionPreview(
-  preview: DragPreviewPosition | null
-): preview is TaskInsertionPreview {
-  return Boolean(
-    preview?.overTaskId &&
-      (preview.position === 'before' || preview.position === 'after')
-  );
 }
 
 export function getTaskInsertionIndex({
@@ -255,155 +210,223 @@ export function insertTaskAtDropPosition({
   ];
 }
 
+export function insertTaskAtInsertionIndex({
+  activeTask,
+  insertionIndex,
+  targetListTasks,
+}: {
+  activeTask: Task;
+  insertionIndex: number;
+  targetListTasks: Task[];
+}) {
+  const tasksWithoutActive = targetListTasks.filter(
+    (task) => task.id !== activeTask.id
+  );
+  const safeInsertionIndex = Math.max(
+    0,
+    Math.min(insertionIndex, tasksWithoutActive.length)
+  );
+
+  return [
+    ...tasksWithoutActive.slice(0, safeInsertionIndex),
+    activeTask,
+    ...tasksWithoutActive.slice(safeInsertionIndex),
+  ];
+}
+
+function getRectCenterY(rect: VerticalRect) {
+  return rect.top + rect.height / 2;
+}
+
+function getRectBottom(rect: VerticalRect) {
+  return rect.top + rect.height;
+}
+
+function getStationaryTaskRects(rects: TaskRect[], activeTaskId: string) {
+  return [...rects]
+    .filter((rect) => rect.taskId !== activeTaskId && rect.height > 0)
+    .sort((a, b) => {
+      const indexA = a.originalIndex ?? Number.MAX_SAFE_INTEGER;
+      const indexB = b.originalIndex ?? Number.MAX_SAFE_INTEGER;
+
+      if (indexA !== indexB) {
+        return indexA - indexB;
+      }
+
+      return a.top - b.top;
+    });
+}
+
+function createDragPreviewPosition({
+  activeTask,
+  height,
+  insertionIndex,
+  listId,
+  stationaryTaskCount,
+}: {
+  activeTask: Task;
+  height: number;
+  insertionIndex: number;
+  listId: string;
+  stationaryTaskCount: number;
+}): DragPreviewPosition {
+  return {
+    height,
+    insertionIndex: Math.max(0, Math.min(insertionIndex, stationaryTaskCount)),
+    listId,
+    task: activeTask,
+  };
+}
+
 export function getTaskDropPreviewFromRects({
-  activeCenterY,
-  activeDirection,
   activeRect,
   activeTask,
-  activeTop,
+  dragSession,
   height,
-  initialActiveTop,
   listId,
   rects,
 }: {
-  activeCenterY?: number | null;
-  activeDirection?: DragDirection | null;
   activeRect?: VerticalRect | null;
   activeTask: Task;
-  activeTop?: number | null;
+  dragSession?: DragSessionMetrics | null;
   height: number;
-  initialActiveTop?: number | null;
   listId: string;
   rects: TaskRect[];
 }): DragPreviewPosition {
-  const effectiveActiveRect =
-    activeRect ??
-    (typeof activeTop === 'number' ? { height, top: activeTop } : null);
-  const fallbackActiveCenterY =
-    typeof effectiveActiveRect?.top === 'number'
-      ? effectiveActiveRect.top + effectiveActiveRect.height / 2
-      : null;
-  const effectiveCenterY = activeCenterY ?? fallbackActiveCenterY;
+  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
+  const activeHeight = Math.max(1, Math.round(height));
 
-  if (rects.length === 0 || typeof effectiveCenterY !== 'number') {
-    return {
+  if (stationaryRects.length === 0 || !activeRect) {
+    return createDragPreviewPosition({
+      activeTask,
+      height: activeHeight,
+      insertionIndex: stationaryRects.length,
       listId,
-      overTaskId: null,
-      position: 'empty',
-      task: activeTask,
-      height,
-    };
+      stationaryTaskCount: stationaryRects.length,
+    });
   }
 
-  const sortedRects = [...rects].sort((a, b) => a.top - b.top);
-  const nonActiveRects = sortedRects.filter(
-    (rect) => rect.taskId !== activeTask.id
-  );
-
-  if (nonActiveRects.length === 0) {
-    return {
-      listId,
-      overTaskId: null,
-      position: 'empty',
-      task: activeTask,
-      height,
-    };
-  }
+  const sourceListId = dragSession?.sourceListId;
+  const sourceInsertionIndex = dragSession?.sourceInsertionIndex ?? null;
+  const initialRect = dragSession?.activeInitialRect ?? null;
+  const activeBottom = getRectBottom(activeRect);
+  const initialBottom = initialRect ? getRectBottom(initialRect) : null;
+  const sameList = sourceListId === listId;
 
   if (
-    effectiveActiveRect &&
-    (activeDirection || typeof initialActiveTop === 'number')
+    sameList &&
+    typeof sourceInsertionIndex === 'number' &&
+    initialRect !== null
   ) {
-    const activeBottom = effectiveActiveRect.top + effectiveActiveRect.height;
-    const fallbackDirection =
-      typeof initialActiveTop !== 'number'
-        ? null
-        : effectiveActiveRect.top < initialActiveTop
-          ? 'up'
-          : effectiveActiveRect.top > initialActiveTop
-            ? 'down'
-            : null;
-    const direction = activeDirection ?? fallbackDirection;
+    if (activeRect.top < initialRect.top) {
+      let insertionIndex = sourceInsertionIndex;
 
-    if (direction === 'up') {
-      for (const rect of nonActiveRects) {
-        const rectCenterY = rect.top + rect.height / 2;
+      for (let index = 0; index < stationaryRects.length; index++) {
+        const rect = stationaryRects[index];
+        const originalIndex = rect?.originalIndex ?? index;
 
-        if (effectiveActiveRect.top <= rectCenterY) {
-          return {
-            listId,
-            overTaskId: rect.taskId,
-            position: 'before',
-            task: activeTask,
-            height,
-          };
+        if (!rect || originalIndex >= sourceInsertionIndex) continue;
+
+        if (activeRect.top <= getRectCenterY(rect)) {
+          insertionIndex = index;
+          break;
         }
       }
 
-      return {
+      return createDragPreviewPosition({
+        activeTask,
+        height: activeHeight,
+        insertionIndex,
         listId,
-        overTaskId: nonActiveRects[nonActiveRects.length - 1]?.taskId ?? null,
-        position: 'after',
-        task: activeTask,
-        height,
-      };
+        stationaryTaskCount: stationaryRects.length,
+      });
     }
 
-    if (direction === 'down') {
-      let crossedRect: TaskRect | null = null;
+    if (typeof initialBottom === 'number' && activeBottom > initialBottom) {
+      let insertionIndex = sourceInsertionIndex;
 
-      for (const rect of nonActiveRects) {
-        const rectCenterY = rect.top + rect.height / 2;
+      for (let index = 0; index < stationaryRects.length; index++) {
+        const rect = stationaryRects[index];
+        const originalIndex = rect?.originalIndex ?? index;
 
-        if (activeBottom >= rectCenterY) {
-          crossedRect = rect;
-          continue;
+        if (!rect || originalIndex <= sourceInsertionIndex) continue;
+
+        if (activeBottom >= getRectCenterY(rect)) {
+          insertionIndex = index + 1;
+        } else {
+          break;
         }
+      }
 
+      return createDragPreviewPosition({
+        activeTask,
+        height: activeHeight,
+        insertionIndex,
+        listId,
+        stationaryTaskCount: stationaryRects.length,
+      });
+    }
+
+    return createDragPreviewPosition({
+      activeTask,
+      height: activeHeight,
+      insertionIndex: sourceInsertionIndex,
+      listId,
+      stationaryTaskCount: stationaryRects.length,
+    });
+  }
+
+  if (initialRect && activeRect.top < initialRect.top) {
+    for (let index = 0; index < stationaryRects.length; index++) {
+      const rect = stationaryRects[index];
+
+      if (rect && activeRect.top <= getRectCenterY(rect)) {
+        return createDragPreviewPosition({
+          activeTask,
+          height: activeHeight,
+          insertionIndex: index,
+          listId,
+          stationaryTaskCount: stationaryRects.length,
+        });
+      }
+    }
+  }
+
+  if (initialRect && activeRect.top > initialRect.top) {
+    let insertionIndex = 0;
+
+    for (let index = 0; index < stationaryRects.length; index++) {
+      const rect = stationaryRects[index];
+
+      if (rect && activeBottom >= getRectCenterY(rect)) {
+        insertionIndex = index + 1;
+      } else {
         break;
       }
-
-      if (crossedRect) {
-        return {
-          listId,
-          overTaskId: crossedRect.taskId,
-          position: 'after',
-          task: activeTask,
-          height,
-        };
-      }
-
-      return {
-        listId,
-        overTaskId: nonActiveRects[0]?.taskId ?? null,
-        position: 'before',
-        task: activeTask,
-        height,
-      };
     }
+
+    return createDragPreviewPosition({
+      activeTask,
+      height: activeHeight,
+      insertionIndex,
+      listId,
+      stationaryTaskCount: stationaryRects.length,
+    });
   }
 
-  for (const rect of nonActiveRects) {
-    const rectCenterY = rect.top + rect.height / 2;
+  const activeCenterY = getRectCenterY(activeRect);
+  const insertionIndex = stationaryRects.findIndex(
+    (rect) => activeCenterY < getRectCenterY(rect)
+  );
 
-    if (effectiveCenterY < rectCenterY) {
-      return {
-        listId,
-        overTaskId: rect.taskId,
-        position: 'before',
-        task: activeTask,
-        height,
-      };
-    }
-  }
-
-  return {
+  return createDragPreviewPosition({
+    activeTask,
+    height: activeHeight,
+    insertionIndex:
+      insertionIndex === -1 ? stationaryRects.length : insertionIndex,
     listId,
-    overTaskId: nonActiveRects[nonActiveRects.length - 1]?.taskId ?? null,
-    position: 'after',
-    task: activeTask,
-    height,
-  };
+    stationaryTaskCount: stationaryRects.length,
+  });
 }
 
 export function getTaskDropEndPreviewFromRects({
@@ -417,61 +440,37 @@ export function getTaskDropEndPreviewFromRects({
   listId: string;
   rects: TaskRect[];
 }): DragPreviewPosition {
-  const nonActiveRects = [...rects]
-    .filter((rect) => rect.taskId !== activeTask.id)
-    .sort((a, b) => a.top - b.top);
-  const lastRect = nonActiveRects[nonActiveRects.length - 1];
+  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
 
-  if (!lastRect) {
-    return {
-      listId,
-      overTaskId: null,
-      position: 'empty',
-      task: activeTask,
-      height,
-    };
-  }
-
-  return {
-    listId,
-    overTaskId: lastRect.taskId,
-    position: 'after',
-    task: activeTask,
+  return createDragPreviewPosition({
+    activeTask,
     height,
-  };
+    insertionIndex: stationaryRects.length,
+    listId,
+    stationaryTaskCount: stationaryRects.length,
+  });
 }
 
 function getTaskDropPreviewFromListSurface({
-  activeCenterY,
-  activeDirection,
   activeRect,
   activeTask,
-  activeTop,
+  dragSession,
   height,
-  initialActiveTop,
   listId,
   rects,
 }: {
-  activeCenterY?: number | null;
-  activeDirection?: DragDirection | null;
   activeRect?: VerticalRect | null;
   activeTask: Task;
-  activeTop?: number | null;
+  dragSession?: DragSessionMetrics | null;
   height: number;
-  initialActiveTop?: number | null;
   listId: string;
   rects: TaskRect[];
 }): DragPreviewPosition {
-  const nonActiveRects = [...rects]
-    .filter((rect) => rect.taskId !== activeTask.id)
-    .sort((a, b) => a.top - b.top);
-  const firstRect = nonActiveRects[0];
-  const lastRect = nonActiveRects[nonActiveRects.length - 1];
-  const fallbackActiveCenterY =
-    typeof activeTop === 'number' ? activeTop + height / 2 : null;
-  const effectiveCenterY = activeCenterY ?? fallbackActiveCenterY;
+  const stationaryRects = getStationaryTaskRects(rects, activeTask.id);
+  const firstRect = stationaryRects[0];
+  const lastRect = stationaryRects[stationaryRects.length - 1];
 
-  if (!firstRect || !lastRect || typeof effectiveCenterY !== 'number') {
+  if (!firstRect || !lastRect || !activeRect) {
     return getTaskDropEndPreviewFromRects({
       activeTask,
       height,
@@ -480,30 +479,9 @@ function getTaskDropPreviewFromListSurface({
     });
   }
 
-  if (activeRect) {
-    const activeBottom = activeRect.top + activeRect.height;
-
-    if (activeBottom < firstRect.top) {
-      return {
-        listId,
-        overTaskId: firstRect.taskId,
-        position: 'before',
-        task: activeTask,
-        height,
-      };
-    }
-
-    if (activeRect.top > lastRect.top + lastRect.height) {
-      return getTaskDropEndPreviewFromRects({
-        activeTask,
-        height,
-        listId,
-        rects,
-      });
-    }
-  } else if (
-    effectiveCenterY < firstRect.top ||
-    effectiveCenterY > lastRect.top + lastRect.height
+  if (
+    getRectBottom(activeRect) < getRectCenterY(firstRect) ||
+    activeRect.top > getRectCenterY(lastRect)
   ) {
     return getTaskDropEndPreviewFromRects({
       activeTask,
@@ -514,19 +492,19 @@ function getTaskDropPreviewFromListSurface({
   }
 
   return getTaskDropPreviewFromRects({
-    activeCenterY,
-    activeDirection,
     activeRect,
     activeTask,
-    activeTop,
+    dragSession,
     height,
-    initialActiveTop,
     listId,
     rects,
   });
 }
 
-function getVisibleTaskRectsForList(listId: string) {
+function getVisibleTaskRectsForList(
+  listId: string,
+  originalIndexesByTaskId?: Map<string, number>
+) {
   if (typeof document === 'undefined') {
     return [];
   }
@@ -543,13 +521,25 @@ function getVisibleTaskRectsForList(listId: string) {
 
       return {
         taskId: element.dataset.taskCardId ?? '',
+        originalIndex:
+          originalIndexesByTaskId?.get(element.dataset.taskCardId ?? '') ??
+          Number.MAX_SAFE_INTEGER,
         top: rect.top,
         height: rect.height,
         width: rect.width,
       };
     })
     .filter((rect) => rect.taskId && rect.height > 0 && rect.width > 0)
-    .sort((a, b) => a.top - b.top);
+    .sort((a, b) => {
+      const indexA = a.originalIndex ?? Number.MAX_SAFE_INTEGER;
+      const indexB = b.originalIndex ?? Number.MAX_SAFE_INTEGER;
+
+      if (indexA !== indexB) {
+        return indexA - indexB;
+      }
+
+      return a.top - b.top;
+    });
 }
 
 function sortTasksForList({
@@ -594,7 +584,6 @@ function sortTasksForList({
 
 function getProjectedTaskDropOrder({
   activeTask,
-  droppedOnPreviewPlaceholder,
   event,
   isCompletionList,
   latestDragPreviewPosition,
@@ -602,10 +591,8 @@ function getProjectedTaskDropOrder({
   overType,
   pointerY,
   targetListTasks,
-  taskInsertionPreview,
 }: {
   activeTask: Task;
-  droppedOnPreviewPlaceholder: boolean;
   event: DragOverEvent | DragEndEvent;
   isCompletionList: boolean;
   latestDragPreviewPosition: DragPreviewPosition | null;
@@ -613,7 +600,6 @@ function getProjectedTaskDropOrder({
   overType: unknown;
   pointerY?: number | null;
   targetListTasks: Task[];
-  taskInsertionPreview: TaskInsertionPreview | null;
 }) {
   const targetListTasksWithoutActive = targetListTasks.filter(
     (task) => task.id !== activeTask.id
@@ -623,23 +609,16 @@ function getProjectedTaskDropOrder({
     return [activeTask, ...targetListTasksWithoutActive];
   }
 
-  const effectiveOverTaskId =
-    taskInsertionPreview?.overTaskId ??
-    (droppedOnPreviewPlaceholder && latestDragPreviewPosition?.overTaskId
-      ? latestDragPreviewPosition.overTaskId
-      : overId);
-
-  const taskDropPosition =
-    taskInsertionPreview?.position ??
-    getEffectiveTaskDropPosition({
-      droppedOnPreviewPlaceholder,
-      event,
-      pointerY,
-      preview: taskInsertionPreview ?? latestDragPreviewPosition,
+  if (latestDragPreviewPosition) {
+    return insertTaskAtInsertionIndex({
+      activeTask,
+      insertionIndex: latestDragPreviewPosition.insertionIndex,
+      targetListTasks,
     });
+  }
 
   const overIndex = targetListTasksWithoutActive.findIndex(
-    (task) => task.id === effectiveOverTaskId
+    (task) => task.id === overId
   );
 
   if (overIndex === -1) {
@@ -648,8 +627,8 @@ function getProjectedTaskDropOrder({
 
   return insertTaskAtDropPosition({
     activeTask,
-    overTaskId: effectiveOverTaskId,
-    position: taskDropPosition,
+    overTaskId: overId,
+    position: getTaskDropPosition(event, pointerY),
     targetListTasks,
   });
 }
@@ -673,24 +652,15 @@ export function getProjectedTaskDropOrderFromPreview({
     return [activeTask, ...targetListTasksWithoutActive];
   }
 
-  if (!preview || preview.position === 'empty') {
+  if (!preview) {
     return [...targetListTasksWithoutActive, activeTask];
   }
 
-  if (preview.position === 'before' && preview.overTaskId === null) {
-    return [activeTask, ...targetListTasksWithoutActive];
-  }
-
-  if (isTaskInsertionPreview(preview)) {
-    return insertTaskAtDropPosition({
-      activeTask,
-      overTaskId: preview.overTaskId,
-      position: preview.position,
-      targetListTasks,
-    });
-  }
-
-  return [...targetListTasksWithoutActive, activeTask];
+  return insertTaskAtInsertionIndex({
+    activeTask,
+    insertionIndex: preview.insertionIndex,
+    targetListTasks,
+  });
 }
 
 function getTaskSortKeyInsertionContext({
@@ -1045,9 +1015,10 @@ export function useKanbanDnd({
   const dragPreviewPositionRef = useRef<DragPreviewPosition | null>(null);
   const dragStartCacheRef = useRef<DragCacheSnapshot | null>(null);
   const taskRectsCacheRef = useRef<Map<string, TaskRect[]>>(new Map());
-  const activeInitialTopRef = useRef<number | null>(null);
-  const lastActiveTopRef = useRef<number | null>(null);
-  const lastDragDirectionRef = useRef<DragDirection | null>(null);
+  const dragSessionMetricsRef = useRef<DragSessionMetrics | null>(null);
+  const dragStartTaskIndexesByListRef = useRef<
+    Map<string, Map<string, number>>
+  >(new Map());
 
   const setDragPreviewPosition = useCallback(
     (position: DragPreviewPosition | null) => {
@@ -1066,11 +1037,61 @@ export function useKanbanDnd({
     const cached = taskRectsCacheRef.current.get(listId);
     if (cached) return cached;
 
-    const rects = getVisibleTaskRectsForList(listId);
+    const rects = getVisibleTaskRectsForList(
+      listId,
+      dragStartTaskIndexesByListRef.current.get(listId)
+    );
     taskRectsCacheRef.current.set(listId, rects);
 
     return rects;
   }, []);
+
+  const getDragPreviewForList = useCallback(
+    ({
+      activeRect,
+      activeTask,
+      listId,
+      preferEnd,
+    }: {
+      activeRect: VerticalRect | null;
+      activeTask: Task;
+      listId: string;
+      preferEnd?: boolean;
+    }) => {
+      const dragSession = dragSessionMetricsRef.current;
+      const height =
+        dragSession?.activeTaskId === activeTask.id
+          ? dragSession.height
+          : (taskHeightsRef.current.get(activeTask.id) ?? 96);
+      const visibleTaskRects = getCachedVisibleTaskRects(listId);
+      const preview = preferEnd
+        ? getTaskDropEndPreviewFromRects({
+            activeTask,
+            height,
+            listId,
+            rects: visibleTaskRects,
+          })
+        : getTaskDropPreviewFromRects({
+            activeRect,
+            activeTask,
+            dragSession,
+            height,
+            listId,
+            rects: visibleTaskRects,
+          });
+
+      if (
+        dragSession?.activeTaskId === activeTask.id &&
+        dragSession.sourceListId === preview.listId &&
+        dragSession.sourceInsertionIndex === preview.insertionIndex
+      ) {
+        return null;
+      }
+
+      return preview;
+    },
+    [getCachedVisibleTaskRects, taskHeightsRef]
+  );
 
   const restoreDragStartCache = useCallback(() => {
     if (!boardId || !dragStartCacheRef.current) return;
@@ -1215,9 +1236,8 @@ export function useKanbanDnd({
       lastTargetListIdRef.current = null;
       dragStartCacheRef.current = null;
       taskRectsCacheRef.current.clear();
-      activeInitialTopRef.current = null;
-      lastActiveTopRef.current = null;
-      lastDragDirectionRef.current = null;
+      dragSessionMetricsRef.current = null;
+      dragStartTaskIndexesByListRef.current.clear();
       isDraggingRef.current = false;
 
       if (clearOptimisticUpdates) {
@@ -1255,41 +1275,30 @@ export function useKanbanDnd({
         let targetListId: string;
         const overType = over.data?.current?.type;
         let nextPreviewPosition: DragPreviewPosition | null = null;
-        const activeTop = getActiveDragTop(event);
-        const activeCenterY = getActiveDragCenterY(event);
         const activeRect = getActiveDragRect(event);
-        const previousActiveTop = lastActiveTopRef.current;
-        let activeDirection = lastDragDirectionRef.current;
-
-        if (
-          typeof activeTop === 'number' &&
-          typeof previousActiveTop === 'number'
-        ) {
-          const topDelta = activeTop - previousActiveTop;
-
-          if (Math.abs(topDelta) >= 1) {
-            activeDirection = topDelta < 0 ? 'up' : 'down';
-            lastDragDirectionRef.current = activeDirection;
-          }
-        }
-
-        if (typeof activeTop === 'number') {
-          lastActiveTopRef.current = activeTop;
-        }
-
-        // Get cached height for the dragged task, fallback to 96px
-        const cachedHeight = taskHeightsRef.current.get(activeTask.id) || 96;
 
         if (overType === 'Column') {
           targetListId = String(over.id);
-          // Dropping on column header - preview at beginning
+          const dragSession = dragSessionMetricsRef.current;
+          const height =
+            dragSession && dragSession.activeTaskId === activeTask.id
+              ? dragSession.height
+              : (taskHeightsRef.current.get(activeTask.id) ?? 96);
           nextPreviewPosition = {
+            height,
+            insertionIndex: 0,
             listId: targetListId,
-            overTaskId: null,
-            position: 'before',
             task: activeTask,
-            height: cachedHeight,
           };
+          if (
+            dragSession &&
+            dragSession.activeTaskId === activeTask.id &&
+            dragSession.sourceListId === nextPreviewPosition.listId &&
+            dragSession.sourceInsertionIndex ===
+              nextPreviewPosition.insertionIndex
+          ) {
+            nextPreviewPosition = null;
+          }
           setDragPreviewPosition(nextPreviewPosition);
         } else if (overType === 'Task') {
           if (String(over.id) === String(active.id)) {
@@ -1298,34 +1307,20 @@ export function useKanbanDnd({
             targetListId = String(
               overTask?.list_id ?? currentPreview?.listId ?? activeTask.list_id
             );
-            const visibleTaskRects = getCachedVisibleTaskRects(targetListId);
-            nextPreviewPosition = getTaskDropPreviewFromRects({
-              activeTask,
-              activeDirection,
+            nextPreviewPosition = getDragPreviewForList({
               activeRect,
-              activeTop,
-              activeCenterY,
-              height: cachedHeight,
-              initialActiveTop: activeInitialTopRef.current,
+              activeTask,
               listId: targetListId,
-              rects: visibleTaskRects,
             });
             setDragPreviewPosition(nextPreviewPosition);
           } else {
             const overTask = over.data?.current?.task as Task | undefined;
             if (!overTask) return;
             targetListId = String(overTask.list_id);
-            const visibleTaskRects = getCachedVisibleTaskRects(targetListId);
-            nextPreviewPosition = getTaskDropPreviewFromRects({
-              activeTask,
-              activeDirection,
+            nextPreviewPosition = getDragPreviewForList({
               activeRect,
-              activeTop,
-              activeCenterY,
-              height: cachedHeight,
-              initialActiveTop: activeInitialTopRef.current,
+              activeTask,
               listId: targetListId,
-              rects: visibleTaskRects,
             });
             setDragPreviewPosition(nextPreviewPosition);
           }
@@ -1334,17 +1329,28 @@ export function useKanbanDnd({
           if (!columnId) return;
           targetListId = String(columnId);
           const visibleTaskRects = getCachedVisibleTaskRects(targetListId);
+          const dragSession = dragSessionMetricsRef.current;
+          const height =
+            dragSession && dragSession.activeTaskId === activeTask.id
+              ? dragSession.height
+              : (taskHeightsRef.current.get(activeTask.id) ?? 96);
           nextPreviewPosition = getTaskDropPreviewFromListSurface({
-            activeCenterY,
-            activeDirection,
             activeRect,
             activeTask,
-            activeTop,
-            height: cachedHeight,
-            initialActiveTop: activeInitialTopRef.current,
+            dragSession,
+            height,
             listId: targetListId,
             rects: visibleTaskRects,
           });
+          if (
+            dragSession &&
+            dragSession.activeTaskId === activeTask.id &&
+            dragSession.sourceListId === nextPreviewPosition.listId &&
+            dragSession.sourceInsertionIndex ===
+              nextPreviewPosition.insertionIndex
+          ) {
+            nextPreviewPosition = null;
+          }
           setDragPreviewPosition(nextPreviewPosition);
         } else {
           return;
@@ -1375,6 +1381,7 @@ export function useKanbanDnd({
     [
       columns,
       getCachedVisibleTaskRects,
+      getDragPreviewForList,
       setDragPreviewPosition,
       taskHeightsRef,
       wsId,
@@ -1411,10 +1418,53 @@ export function useKanbanDnd({
         dragStartCacheRef.current = null;
       }
       taskRectsCacheRef.current.clear();
-      activeInitialTopRef.current =
-        event.active.rect.current.initial?.top ?? null;
-      lastActiveTopRef.current = activeInitialTopRef.current;
-      lastDragDirectionRef.current = null;
+      dragStartTaskIndexesByListRef.current.clear();
+
+      const dragStartTasks = dragStartCacheRef.current?.tasks ?? tasks;
+      for (const column of columns) {
+        const orderedListTasks = sortTasksForList({
+          disableSort,
+          targetList: column,
+          tasks: dragStartTasks.filter(
+            (item) => String(item.list_id) === String(column.id)
+          ),
+        });
+        dragStartTaskIndexesByListRef.current.set(
+          String(column.id),
+          new Map(orderedListTasks.map((item, index) => [item.id, index]))
+        );
+      }
+
+      const sourceListId = String(task.list_id);
+      const sourceList = columns.find(
+        (column) => String(column.id) === sourceListId
+      );
+      const sourceTasks = sortTasksForList({
+        disableSort,
+        targetList: sourceList,
+        tasks: dragStartTasks.filter(
+          (item) => String(item.list_id) === sourceListId
+        ),
+      });
+      const sourceInsertionIndex = Math.max(
+        0,
+        sourceTasks.findIndex((item) => item.id === task.id)
+      );
+      const initialRect = event.active.rect.current.initial
+        ? {
+            height: event.active.rect.current.initial.height,
+            top: event.active.rect.current.initial.top,
+          }
+        : null;
+      const activeHeight =
+        initialRect?.height || taskHeightsRef.current.get(task.id) || 96;
+      dragSessionMetricsRef.current = {
+        activeInitialRect: initialRect,
+        activeTaskId: task.id,
+        height: Math.max(1, Math.round(activeHeight)),
+        sourceInsertionIndex,
+        sourceListId,
+      };
 
       // If this is a multi-select drag, include all selected tasks
       if (isMultiSelectMode && selectedTasks.has(task.id)) {
@@ -1423,9 +1473,9 @@ export function useKanbanDnd({
         setActiveTask(task);
       }
 
-      pickedUpTaskColumn.current = String(task.list_id);
-      lastTargetListIdRef.current = String(task.list_id);
-      setHoverTargetListId(String(task.list_id));
+      pickedUpTaskColumn.current = sourceListId;
+      lastTargetListIdRef.current = sourceListId;
+      setHoverTargetListId(sourceListId);
       return;
     }
   }
@@ -1564,28 +1614,28 @@ export function useKanbanDnd({
         latestDragPreviewPosition?.task.id === activeTask.id
           ? latestDragPreviewPosition
           : null;
-      const droppedOnPreviewPlaceholder =
-        overType === 'Task' && String(over.id) === String(active.id);
+
+      if (
+        !latestPreviewForActive &&
+        overType === 'Task' &&
+        String(over.id) === String(active.id)
+      ) {
+        restoreDragStartCache();
+        resetDragState(true);
+        return;
+      }
 
       if (latestPreviewForActive) {
         targetListId = latestPreviewForActive.listId;
       } else if (overType === 'Column') {
         targetListId = String(over.id);
       } else if (overType === 'Task') {
-        if (droppedOnPreviewPlaceholder && latestDragPreviewPosition) {
-          targetListId = latestDragPreviewPosition.listId;
-        } else if (droppedOnPreviewPlaceholder) {
+        const targetTask = over.data?.current?.task;
+        if (!targetTask) {
           resetTaskDragAfterInvalidDrop();
           return;
-        } else {
-          // When dropping on a task, use the list_id of the target task
-          const targetTask = over.data?.current?.task;
-          if (!targetTask) {
-            resetTaskDragAfterInvalidDrop();
-            return;
-          }
-          targetListId = String(targetTask.list_id);
         }
+        targetListId = String(targetTask.list_id);
       } else if (overType === 'ColumnSurface') {
         const columnId = over.data?.current?.columnId || over.id;
         if (!columnId) {
@@ -1614,11 +1664,6 @@ export function useKanbanDnd({
         resetTaskDragAfterInvalidDrop();
         return;
       }
-      const taskInsertionPreview =
-        latestPreviewForActive?.listId === targetListId &&
-        isTaskInsertionPreview(latestPreviewForActive)
-          ? latestPreviewForActive
-          : null;
 
       // Calculate target position based on drop location
       // Get all tasks in the target list (INCLUDE the dragged task if it's in the same list)
@@ -1664,14 +1709,12 @@ export function useKanbanDnd({
             })
           : getProjectedTaskDropOrder({
               activeTask: activeTaskForDrop,
-              droppedOnPreviewPlaceholder,
               event,
               isCompletionList,
-              latestDragPreviewPosition,
+              latestDragPreviewPosition: latestPreviewForActive,
               overId: String(over.id),
               overType,
               targetListTasks,
-              taskInsertionPreview,
             });
       const currentTaskIndex = targetListTasks.findIndex(
         (task) => task.id === activeTask.id
@@ -1816,23 +1859,12 @@ export function useKanbanDnd({
           let insertionIndex: number;
           if (isCompletionList) {
             insertionIndex = 0;
-          } else if (overType === 'Task' || taskInsertionPreview) {
-            const effectiveOverTaskId =
-              taskInsertionPreview?.overTaskId ??
-              (droppedOnPreviewPlaceholder &&
-              latestDragPreviewPosition?.overTaskId
-                ? latestDragPreviewPosition.overTaskId
-                : String(over.id));
-            const taskDropPosition =
-              taskInsertionPreview?.position ??
-              getEffectiveTaskDropPosition({
-                droppedOnPreviewPlaceholder,
-                event,
-                preview: taskInsertionPreview ?? latestDragPreviewPosition,
-              });
+          } else if (latestPreviewForActive?.listId === targetListId) {
+            insertionIndex = latestPreviewForActive.insertionIndex;
+          } else if (overType === 'Task') {
             insertionIndex = getTaskInsertionIndex({
-              overTaskId: effectiveOverTaskId,
-              position: taskDropPosition,
+              overTaskId: String(over.id),
+              position: getTaskDropPosition(event),
               tasks: targetListTasksExcludingMoved,
             });
           } else {

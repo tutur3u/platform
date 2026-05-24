@@ -198,15 +198,14 @@ describe('task drag insertion helpers', () => {
         height: 112,
         listId: 'target-list',
         rects: [
-          { taskId: 'task-2', top: 100, height: 120 },
-          { taskId: 'task-3', top: 232, height: 120 },
+          { taskId: 'task-2', top: 100, height: 120, originalIndex: 0 },
+          { taskId: 'task-3', top: 232, height: 120, originalIndex: 1 },
         ],
       })
     ).toEqual({
       height: 112,
+      insertionIndex: 2,
       listId: 'target-list',
-      overTaskId: 'task-3',
-      position: 'after',
       task: activeTask,
     });
   });
@@ -219,216 +218,193 @@ describe('task drag insertion helpers', () => {
         activeTask,
         height: 112,
         listId: 'target-list',
-        rects: [{ taskId: 'task-1', top: 100, height: 112 }],
+        rects: [{ taskId: 'task-1', top: 100, height: 112, originalIndex: 0 }],
       })
     ).toEqual({
       height: 112,
+      insertionIndex: 0,
       listId: 'target-list',
-      overTaskId: null,
-      position: 'empty',
       task: activeTask,
     });
   });
 
-  it('projects column-surface entry before the first visible task when the pointer is near the top', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'source-list' });
+  it('keeps same-list preview at the original index before midpoint crossing', () => {
+    const activeTask = createTask({ id: 'task-2', list_id: 'target-list' });
 
     expect(
       getTaskDropPreviewFromRects({
-        activeCenterY: 110,
+        activeRect: { height: 100, top: 210 },
         activeTask,
-        height: 112,
+        dragSession: {
+          activeInitialRect: { height: 100, top: 220 },
+          activeTaskId: 'task-2',
+          height: 100,
+          sourceInsertionIndex: 1,
+          sourceListId: 'target-list',
+        },
+        height: 100,
         listId: 'target-list',
         rects: [
-          { taskId: 'task-2', top: 100, height: 120 },
-          { taskId: 'task-3', top: 232, height: 120 },
+          { taskId: 'task-1', top: 100, height: 100, originalIndex: 0 },
+          { taskId: 'task-2', top: 220, height: 100, originalIndex: 1 },
+          { taskId: 'task-3', top: 340, height: 100, originalIndex: 2 },
         ],
-      })
-    ).toEqual({
-      height: 112,
-      listId: 'target-list',
-      overTaskId: 'task-2',
-      position: 'before',
-      task: activeTask,
-    });
+      }).insertionIndex
+    ).toBe(1);
   });
 
-  it('projects column-surface entry after the last visible task when the pointer is below the stack', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'source-list' });
+  it('moves same-list upward once the dragged top crosses the previous card center', () => {
+    const activeTask = createTask({ id: 'task-2', list_id: 'target-list' });
 
     expect(
       getTaskDropPreviewFromRects({
-        activeCenterY: 380,
+        activeRect: { height: 100, top: 140 },
         activeTask,
-        height: 112,
+        dragSession: {
+          activeInitialRect: { height: 100, top: 220 },
+          activeTaskId: 'task-2',
+          height: 100,
+          sourceInsertionIndex: 1,
+          sourceListId: 'target-list',
+        },
+        height: 100,
         listId: 'target-list',
         rects: [
-          { taskId: 'task-2', top: 100, height: 120 },
-          { taskId: 'task-3', top: 232, height: 120 },
+          { taskId: 'task-1', top: 100, height: 100, originalIndex: 0 },
+          { taskId: 'task-2', top: 220, height: 100, originalIndex: 1 },
+          { taskId: 'task-3', top: 340, height: 100, originalIndex: 2 },
         ],
-      })
-    ).toEqual({
-      height: 112,
-      listId: 'target-list',
-      overTaskId: 'task-3',
-      position: 'after',
-      task: activeTask,
-    });
+      }).insertionIndex
+    ).toBe(0);
   });
 
-  it('keeps the preview before the next task until the dragged card center crosses it', () => {
+  it('moves same-list downward once the dragged bottom crosses the next card center', () => {
+    const activeTask = createTask({ id: 'task-2', list_id: 'target-list' });
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 290 },
+        activeTask,
+        dragSession: {
+          activeInitialRect: { height: 100, top: 220 },
+          activeTaskId: 'task-2',
+          height: 100,
+          sourceInsertionIndex: 1,
+          sourceListId: 'target-list',
+        },
+        height: 100,
+        listId: 'target-list',
+        rects: [
+          { taskId: 'task-1', top: 100, height: 100, originalIndex: 0 },
+          { taskId: 'task-2', top: 220, height: 100, originalIndex: 1 },
+          { taskId: 'task-3', top: 340, height: 100, originalIndex: 2 },
+        ],
+      }).insertionIndex
+    ).toBe(2);
+  });
+
+  it('supports same-list multi-card jumps from frozen task centers', () => {
     const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
-    const expectedPreview = {
-      height: 112,
-      listId: 'target-list',
-      overTaskId: 'task-3',
-      position: 'before' as const,
-      task: activeTask,
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 420 },
+        activeTask,
+        dragSession: {
+          activeInitialRect: { height: 100, top: 100 },
+          activeTaskId: 'task-1',
+          height: 100,
+          sourceInsertionIndex: 0,
+          sourceListId: 'target-list',
+        },
+        height: 100,
+        listId: 'target-list',
+        rects: [
+          { taskId: 'task-1', top: 100, height: 100, originalIndex: 0 },
+          { taskId: 'task-2', top: 220, height: 100, originalIndex: 1 },
+          { taskId: 'task-3', top: 340, height: 100, originalIndex: 2 },
+          { taskId: 'task-4', top: 460, height: 100, originalIndex: 3 },
+        ],
+      }).insertionIndex
+    ).toBe(3);
+  });
+
+  it('projects cross-list top, middle, end, and empty-list slots', () => {
+    const activeTask = createTask({ id: 'task-1', list_id: 'source-list' });
+    const dragSession = {
+      activeInitialRect: { height: 100, top: 0 },
+      activeTaskId: 'task-1',
+      height: 100,
+      sourceInsertionIndex: 0,
+      sourceListId: 'source-list',
     };
-
-    expect(
-      getTaskDropPreviewFromRects({
-        activeTask,
-        activeTop: 232,
-        height: 112,
-        listId: 'target-list',
-        rects: [
-          { taskId: 'task-2', top: 100, height: 120 },
-          { taskId: 'task-1', top: 232, height: 112 },
-          { taskId: 'task-3', top: 356, height: 120 },
-        ],
-      })
-    ).toEqual(expectedPreview);
-  });
-
-  it('uses the real dragged card center instead of recomputing from cached height', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
-
-    expect(
-      getTaskDropPreviewFromRects({
-        activeCenterY: 356,
-        activeTask,
-        activeTop: 110,
-        height: 112,
-        listId: 'target-list',
-        rects: [
-          { taskId: 'task-2', top: 100, height: 120 },
-          { taskId: 'task-3', top: 232, height: 120 },
-        ],
-      })
-    ).toEqual({
-      height: 112,
-      listId: 'target-list',
-      overTaskId: 'task-3',
-      position: 'after',
-      task: activeTask,
-    });
-  });
-
-  it('moves downward after a task when the dragged bottom edge crosses the task center', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
-
-    expect(
-      getTaskDropPreviewFromRects({
-        activeRect: { height: 100, top: 170 },
-        activeTask,
-        height: 100,
-        initialActiveTop: 100,
-        listId: 'target-list',
-        rects: [
-          { taskId: 'task-2', top: 220, height: 100 },
-          { taskId: 'task-3', top: 340, height: 100 },
-        ],
-      })
-    ).toEqual({
-      height: 100,
-      listId: 'target-list',
-      overTaskId: 'task-2',
-      position: 'after',
-      task: activeTask,
-    });
-  });
-
-  it('moves upward before a task when the dragged top edge crosses the task center', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
-
-    expect(
-      getTaskDropPreviewFromRects({
-        activeRect: { height: 100, top: 270 },
-        activeTask,
-        height: 100,
-        initialActiveTop: 400,
-        listId: 'target-list',
-        rects: [
-          { taskId: 'task-2', top: 220, height: 100 },
-          { taskId: 'task-3', top: 340, height: 100 },
-        ],
-      })
-    ).toEqual({
-      height: 100,
-      listId: 'target-list',
-      overTaskId: 'task-2',
-      position: 'before',
-      task: activeTask,
-    });
-  });
-
-  it('uses the current upward direction even when the card is still below its drag-start top', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
-
-    expect(
-      getTaskDropPreviewFromRects({
-        activeDirection: 'up',
-        activeRect: { height: 100, top: 270 },
-        activeTask,
-        height: 100,
-        initialActiveTop: 100,
-        listId: 'target-list',
-        rects: [
-          { taskId: 'task-2', top: 220, height: 100 },
-          { taskId: 'task-3', top: 340, height: 100 },
-        ],
-      })
-    ).toEqual({
-      height: 100,
-      listId: 'target-list',
-      overTaskId: 'task-2',
-      position: 'before',
-      task: activeTask,
-    });
-  });
-
-  it('switches to the next slot as soon as the dragged center crosses a task center', () => {
-    const activeTask = createTask({ id: 'task-1', list_id: 'target-list' });
     const rects = [
-      { taskId: 'task-2', top: 100, height: 120 },
-      { taskId: 'task-3', top: 232, height: 120 },
+      { taskId: 'task-2', top: 100, height: 100, originalIndex: 0 },
+      { taskId: 'task-3', top: 220, height: 100, originalIndex: 1 },
+      { taskId: 'task-4', top: 340, height: 100, originalIndex: 2 },
     ];
 
     expect(
       getTaskDropPreviewFromRects({
-        activeCenterY: 291,
+        activeRect: { height: 100, top: 20 },
         activeTask,
-        height: 112,
+        dragSession,
+        height: 100,
         listId: 'target-list',
         rects,
-      }).position
-    ).toBe('before');
+      }).insertionIndex
+    ).toBe(0);
     expect(
       getTaskDropPreviewFromRects({
-        activeCenterY: 293,
+        activeRect: { height: 100, top: 90 },
         activeTask,
-        height: 112,
+        dragSession,
+        height: 100,
         listId: 'target-list',
         rects,
-      })
-    ).toEqual({
-      height: 112,
-      listId: 'target-list',
-      overTaskId: 'task-3',
-      position: 'after',
-      task: activeTask,
-    });
+      }).insertionIndex
+    ).toBe(1);
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 430 },
+        activeTask,
+        dragSession,
+        height: 100,
+        listId: 'target-list',
+        rects,
+      }).insertionIndex
+    ).toBe(3);
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 100, top: 430 },
+        activeTask,
+        dragSession,
+        height: 100,
+        listId: 'empty-list',
+        rects: [],
+      }).insertionIndex
+    ).toBe(0);
+  });
+
+  it('keeps preview spacer height frozen from drag start', () => {
+    const activeTask = createTask({ id: 'task-1', list_id: 'source-list' });
+
+    expect(
+      getTaskDropPreviewFromRects({
+        activeRect: { height: 80, top: 90 },
+        activeTask,
+        dragSession: {
+          activeInitialRect: { height: 144, top: 0 },
+          activeTaskId: 'task-1',
+          height: 144,
+          sourceInsertionIndex: 0,
+          sourceListId: 'source-list',
+        },
+        height: 144,
+        listId: 'target-list',
+        rects: [{ taskId: 'task-2', top: 100, height: 100, originalIndex: 0 }],
+      }).height
+    ).toBe(144);
   });
 
   it('calculates before and after insertion indexes', () => {
@@ -674,9 +650,8 @@ describe('task drag insertion helpers', () => {
         isCompletionList: false,
         preview: {
           height: 112,
+          insertionIndex: 1,
           listId: 'target-list',
-          overTaskId: 'task-3',
-          position: 'before',
           task: activeTask,
         },
         targetListTasks: [task2, task3],
