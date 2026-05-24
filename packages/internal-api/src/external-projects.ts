@@ -605,6 +605,21 @@ export async function updateWorkspaceExternalProjectBlock(
   );
 }
 
+export async function deleteWorkspaceExternalProjectBlock(
+  workspaceId: string,
+  blockId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ id: string }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/external-projects/blocks/${encodePathSegment(blockId)}`,
+    {
+      cache: 'no-store',
+      method: 'DELETE',
+    }
+  );
+}
+
 export async function createWorkspaceExternalProjectAsset(
   workspaceId: string,
   payload: WorkspaceExternalProjectAssetPayload,

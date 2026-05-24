@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   deleteWorkspaceExternalProjectCollection: vi.fn(),
+  deleteWorkspaceExternalProjectBlock: vi.fn(),
   deleteWorkspaceExternalProjectEntry: vi.fn(),
   requireWorkspaceExternalProjectAccess: vi.fn(),
   updateWorkspaceExternalProjectBlock: vi.fn(),
@@ -19,6 +20,9 @@ vi.mock('@/lib/external-projects/store', () => ({
   deleteWorkspaceExternalProjectCollection: (
     ...args: Parameters<typeof mocks.deleteWorkspaceExternalProjectCollection>
   ) => mocks.deleteWorkspaceExternalProjectCollection(...args),
+  deleteWorkspaceExternalProjectBlock: (
+    ...args: Parameters<typeof mocks.deleteWorkspaceExternalProjectBlock>
+  ) => mocks.deleteWorkspaceExternalProjectBlock(...args),
   deleteWorkspaceExternalProjectEntry: (
     ...args: Parameters<typeof mocks.deleteWorkspaceExternalProjectEntry>
   ) => mocks.deleteWorkspaceExternalProjectEntry(...args),
@@ -122,6 +126,39 @@ describe('external project PATCH route workspace scoping', () => {
         title: 'Updated block',
         workspaceId: 'ws-normalized',
       }),
+      access.admin
+    );
+  });
+
+  it('passes the authorized workspace to block deletes', async () => {
+    mocks.deleteWorkspaceExternalProjectBlock.mockResolvedValue({
+      id: 'block-1',
+    });
+    const { DELETE } = await import(
+      '@/app/api/v1/workspaces/[wsId]/external-projects/blocks/[blockId]/route'
+    );
+
+    const response = await DELETE(
+      new Request(
+        'http://localhost/api/v1/workspaces/personal/external-projects/blocks/block-1',
+        {
+          method: 'DELETE',
+        }
+      ),
+      {
+        params: Promise.resolve({
+          blockId: 'block-1',
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.deleteWorkspaceExternalProjectBlock).toHaveBeenCalledWith(
+      'block-1',
+      {
+        workspaceId: 'ws-normalized',
+      },
       access.admin
     );
   });

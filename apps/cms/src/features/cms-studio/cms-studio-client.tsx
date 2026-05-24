@@ -48,7 +48,13 @@ import {
   type CmsContentModelTemplate,
   getCollectionFieldDefinitions,
 } from './cms-content-model';
-import { isGameLikeCollection } from './cms-games-shared';
+import {
+  collectionMatchesCmsEditorView,
+  getCmsEditorCollectionView,
+  getCmsTaxonomyConfigForCollection,
+  getCmsTaxonomySectionCollection,
+  resolveCmsEditorCapabilities,
+} from './cms-editor-capabilities';
 import { CmsLibrarySection } from './cms-library-section';
 import type { CmsLibrarySectionProps } from './cms-library-section-shared';
 import { CmsLibraryTaxonomyDialog } from './cms-library-taxonomy-dialog';
@@ -137,7 +143,7 @@ export function CmsStudioClient({
   availableEditSections?: EditSection[];
   binding: WorkspaceExternalProjectBinding;
   cmsGamesEnabled?: boolean;
-  collectionScope?: 'all' | 'games';
+  collectionScope?: string;
   headerDescription?: string;
   initialEditSection?: EditSection;
   initialEditorEntryId?: string | null;
@@ -190,56 +196,38 @@ export function CmsStudioClient({
     studio?.collections ?? initialStudio?.collections ?? [];
   const fieldDefinitions =
     studio?.fieldDefinitions ?? initialStudio?.fieldDefinitions ?? [];
-  const collections =
-    collectionScope === 'games'
-      ? allCollections.filter(isGameLikeCollection)
-      : allCollections;
+  const cmsCapabilities = resolveCmsEditorCapabilities({
+    binding,
+    collections: allCollections,
+    fieldDefinitions,
+    studio: studio ?? initialStudio,
+  });
+  const activeCollectionView = getCmsEditorCollectionView(
+    cmsCapabilities,
+    collectionScope
+  );
+  const collections = allCollections.filter((collection) =>
+    collectionMatchesCmsEditorView(collection, activeCollectionView)
+  );
   const scopedCollectionIds = new Set(
     collections.map((collection) => collection.id)
   );
-  const entries =
-    collectionScope === 'games'
-      ? allEntries.filter((entry) =>
-          scopedCollectionIds.has(entry.collection_id)
-        )
-      : allEntries;
+  const scopedToCollectionView = !activeCollectionView?.includeAll;
+  const entries = scopedToCollectionView
+    ? allEntries.filter((entry) => scopedCollectionIds.has(entry.collection_id))
+    : allEntries;
   const scopedEntryIds = new Set(entries.map((entry) => entry.id));
   const assets = (studio?.assets ?? initialStudio?.assets ?? []).filter(
     (asset) =>
-      collectionScope !== 'games' ||
+      !scopedToCollectionView ||
       !asset.entry_id ||
       scopedEntryIds.has(asset.entry_id)
   );
   const publishEvents =
     studio?.publishEvents ?? initialStudio?.publishEvents ?? [];
-  const artworkCollection =
-    collections.find((collection) => collection.slug === 'artworks') ?? null;
-  const loreCollection =
-    collections.find((collection) =>
-      /lore|writing/.test(
-        [collection.slug, collection.collection_type, collection.title]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-      )
-    ) ?? null;
-  const singletonSectionCollection =
-    collections.find((collection) =>
-      /singleton|section/.test(
-        [collection.slug, collection.collection_type, collection.title]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase()
-      )
-    ) ?? null;
-  const singletonSectionEntries = singletonSectionCollection
-    ? entries.filter(
-        (entry) => entry.collection_id === singletonSectionCollection.id
-      )
-    : [];
-  const singletonSectionEntryBySlug = new Map(
-    singletonSectionEntries.map((entry) => [entry.slug, entry] as const)
-  );
+  const activeViewCreateDefaults = activeCollectionView?.createCollection;
+  const activeViewIsGames = activeCollectionView?.id === 'games';
+  const activeViewEmptyHint = activeViewCreateDefaults?.emptyHint ?? undefined;
 
   const previewQuery = useCmsLivePreview({
     enabled: mode === 'preview',
@@ -422,28 +410,39 @@ export function CmsStudioClient({
     ) ?? null;
   const entryDeleteCandidate =
     entries.find((entry) => entry.id === entryDeleteTarget) ?? null;
+  const taxonomyConfig = getCmsTaxonomyConfigForCollection(
+    cmsCapabilities,
+    activeCollection
+  );
+  const taxonomySectionCollection = getCmsTaxonomySectionCollection(
+    allCollections,
+    taxonomyConfig
+  );
+  const taxonomySectionEntry = taxonomyConfig
+    ? (allEntries.find(
+        (entry) =>
+          entry.collection_id === taxonomySectionCollection?.id &&
+          entry.slug === taxonomyConfig.sectionSlug
+      ) ?? null)
+    : null;
   const taxonomySectionConfig =
-    activeCollection?.id === artworkCollection?.id
+    taxonomyConfig && taxonomySectionCollection
       ? {
-          sectionEntry: singletonSectionEntryBySlug.get('gallery') ?? null,
-          sectionSlug: 'gallery',
-          sectionTitle: 'Gallery',
+          sectionEntry: taxonomySectionEntry,
+          sectionSlug: taxonomyConfig.sectionSlug,
+          sectionTitle: taxonomyConfig.sectionTitle,
         }
-      : activeCollection?.id === loreCollection?.id
-        ? {
-            sectionEntry: singletonSectionEntryBySlug.get('writing') ?? null,
-            sectionSlug: 'writing',
-            sectionTitle: 'Writing',
-          }
-        : null;
+      : null;
   const taxonomyAvailable = Boolean(taxonomySectionConfig);
   const taxonomyCategoryOptions = normalizeTaxonomyOptions(
-    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
-      .categoryOptions
+    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)[
+      taxonomyConfig?.categoryField ?? 'categoryOptions'
+    ]
   );
   const taxonomyTagOptions = normalizeTaxonomyOptions(
-    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)
-      .tagOptions
+    asProfileDataRecord(taxonomySectionConfig?.sectionEntry?.profile_data)[
+      taxonomyConfig?.tagField ?? 'tagOptions'
+    ]
   );
 
   const updateStudioCache = (
@@ -552,15 +551,22 @@ export function CmsStudioClient({
       let createdCollection: ExternalProjectCollection | null = null;
       let collectionId = activeCollection?.id ?? collections[0]?.id ?? null;
 
-      if (!collectionId && collectionScope === 'games') {
+      if (!collectionId && activeViewCreateDefaults) {
         createdCollection = await createWorkspaceExternalProjectCollection(
           workspaceId,
           {
-            collection_type: 'game',
+            collection_type: activeViewCreateDefaults.collectionType,
             config: {},
-            description: strings.gamesCollectionDescription,
-            slug: 'games',
-            title: strings.gamesCollectionTitle,
+            description:
+              activeViewCreateDefaults.description ??
+              strings.gamesCollectionDescription,
+            slug:
+              activeViewCreateDefaults.slug ??
+              slugifyLabel(
+                activeViewCreateDefaults.title,
+                `collection-${Date.now()}`
+              ),
+            title: activeViewCreateDefaults.title,
           }
         );
         collectionId = createdCollection.id;
@@ -599,9 +605,10 @@ export function CmsStudioClient({
         subtitle: null,
         summary: null,
         title:
-          collectionScope === 'games'
+          activeViewCreateDefaults?.entryTitle ??
+          (activeViewIsGames
             ? strings.gamesUntitledEntryTitle
-            : 'Untitled entry',
+            : 'Untitled entry'),
       });
 
       return {
@@ -631,14 +638,14 @@ export function CmsStudioClient({
   const createCollectionMutation = useMutation({
     mutationFn: async () => {
       const collectionType =
-        collectionScope === 'games'
-          ? 'game'
-          : (binding.canonical_project?.allowed_collections[0] ??
-            activeCollection?.collection_type ??
-            'collection');
+        activeViewCreateDefaults?.collectionType ??
+        binding.canonical_project?.allowed_collections[0] ??
+        activeCollection?.collection_type ??
+        'collection';
       const title =
         newCollectionTitle.trim() ||
-        (collectionScope === 'games'
+        activeViewCreateDefaults?.title ||
+        (activeViewIsGames
           ? strings.gamesCollectionTitle
           : 'Untitled collection');
       const slug = slugifyLabel(title, `collection-${Date.now()}`);
@@ -825,9 +832,12 @@ export function CmsStudioClient({
         throw new Error(strings.emptyEntries);
       }
 
-      if (!taxonomySectionConfig || !singletonSectionCollection) {
+      if (!taxonomySectionConfig || !taxonomySectionCollection) {
         throw new Error(strings.quickTaxonomyDescription);
       }
+      const categoryOptionsField =
+        taxonomyConfig?.categoryField ?? 'categoryOptions';
+      const tagOptionsField = taxonomyConfig?.tagField ?? 'tagOptions';
 
       const nextProfileData = {
         ...asProfileDataRecord(entry.profile_data),
@@ -842,7 +852,7 @@ export function CmsStudioClient({
         const normalizedCategory = payload.category?.trim() ?? '';
         if (normalizedCategory) {
           nextProfileData.category = normalizedCategory;
-          taxonomyProfileData.categoryOptions = mergeTaxonomyOptions(
+          taxonomyProfileData[categoryOptionsField] = mergeTaxonomyOptions(
             taxonomyCategoryOptions,
             [normalizedCategory]
           );
@@ -853,9 +863,8 @@ export function CmsStudioClient({
 
       if (payload.removeCategoryOption) {
         const removedCategory = payload.removeCategoryOption.trim();
-        taxonomyProfileData.categoryOptions = taxonomyCategoryOptions.filter(
-          (value) => value !== removedCategory
-        );
+        taxonomyProfileData[categoryOptionsField] =
+          taxonomyCategoryOptions.filter((value) => value !== removedCategory);
         if (nextProfileData.category === removedCategory) {
           delete nextProfileData.category;
         }
@@ -867,7 +876,7 @@ export function CmsStudioClient({
         );
         if (normalizedTags.length > 0) {
           nextProfileData.tags = normalizedTags;
-          taxonomyProfileData.tagOptions = mergeTaxonomyOptions(
+          taxonomyProfileData[tagOptionsField] = mergeTaxonomyOptions(
             taxonomyTagOptions,
             normalizedTags
           );
@@ -878,7 +887,7 @@ export function CmsStudioClient({
 
       if (payload.removeTagOption) {
         const removedTag = payload.removeTagOption.trim();
-        taxonomyProfileData.tagOptions = taxonomyTagOptions.filter(
+        taxonomyProfileData[tagOptionsField] = taxonomyTagOptions.filter(
           (value) => value !== removedTag
         );
         const nextTags = asStringArray(nextProfileData.tags).filter(
@@ -892,17 +901,17 @@ export function CmsStudioClient({
       }
 
       if (
-        !Array.isArray(taxonomyProfileData.categoryOptions) ||
-        taxonomyProfileData.categoryOptions.length === 0
+        !Array.isArray(taxonomyProfileData[categoryOptionsField]) ||
+        taxonomyProfileData[categoryOptionsField].length === 0
       ) {
-        delete taxonomyProfileData.categoryOptions;
+        delete taxonomyProfileData[categoryOptionsField];
       }
 
       if (
-        !Array.isArray(taxonomyProfileData.tagOptions) ||
-        taxonomyProfileData.tagOptions.length === 0
+        !Array.isArray(taxonomyProfileData[tagOptionsField]) ||
+        taxonomyProfileData[tagOptionsField].length === 0
       ) {
-        delete taxonomyProfileData.tagOptions;
+        delete taxonomyProfileData[tagOptionsField];
       }
 
       const updatedEntries: ExternalProjectEntry[] = [
@@ -924,7 +933,7 @@ export function CmsStudioClient({
       } else {
         updatedEntries.push(
           await createWorkspaceExternalProjectEntry(workspaceId, {
-            collection_id: singletonSectionCollection.id,
+            collection_id: taxonomySectionCollection.id,
             metadata: {},
             profile_data: taxonomyProfileData as Json,
             slug: taxonomySectionConfig.sectionSlug,
@@ -1048,9 +1057,11 @@ export function CmsStudioClient({
     collections,
     counts,
     createEntryHint:
-      collectionScope === 'games' && !activeCollection
+      !activeCollection && activeViewIsGames
         ? strings.gamesAutoCreateCollectionHint
-        : undefined,
+        : !activeCollection
+          ? activeViewEmptyHint
+          : undefined,
     createEntryPending: createEntryMutation.isPending,
     deleteFieldDefinitionPending: deleteFieldDefinitionMutation.isPending,
     editSection,

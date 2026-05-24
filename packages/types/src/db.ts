@@ -878,6 +878,77 @@ export type ExternalProjectLoadingData =
       sections: Record<string, unknown>;
     };
 
+export type CmsEditorCollectionView = {
+  id: string;
+  label: string;
+  description?: string | null;
+  collectionSlugs?: string[];
+  collectionTypes?: string[];
+  includeAll?: boolean;
+  navigationLabel?: string | null;
+  createCollection?: {
+    collectionType: string;
+    description?: string | null;
+    emptyHint?: string | null;
+    entryTitle?: string | null;
+    slug?: string | null;
+    title: string;
+  } | null;
+};
+
+export type CmsEditorTaxonomyConfig = {
+  id: string;
+  label: string;
+  categoryField?: string | null;
+  collectionSlugs?: string[];
+  collectionTypes?: string[];
+  sectionCollectionSlugs?: string[];
+  sectionCollectionTypes?: string[];
+  sectionSlug: string;
+  sectionTitle: string;
+  tagField?: string | null;
+};
+
+export type CmsEditorFeaturedEntryRule = {
+  id: string;
+  label: string;
+  collectionSlugs?: string[];
+  collectionTypes?: string[];
+  metadataKey: string;
+  maxItems?: number | null;
+};
+
+export type CmsEditorCapabilities = {
+  version: 1;
+  adapter: ExternalProjectAdapterKind | null;
+  appLabel: string;
+  navigationLabel: string;
+  defaultViewId: string;
+  collectionViews: CmsEditorCollectionView[];
+  media: {
+    enabled: boolean;
+    assetTypes: string[];
+    supportsAltText: boolean;
+    supportsCoverSelection: boolean;
+    supportsUploads: boolean;
+  };
+  contentModel: {
+    enabled: boolean;
+    fieldDefinitionsEnabled: boolean;
+  };
+  workflow: {
+    enabled: boolean;
+    scheduledPublishingEnabled: boolean;
+    statuses: ExternalProjectEntryStatus[];
+  };
+  preview: {
+    enabled: boolean;
+    entryPreviewEnabled: boolean;
+  };
+  taxonomies: CmsEditorTaxonomyConfig[];
+  featuredEntryRules: CmsEditorFeaturedEntryRule[];
+};
+
 export type ExternalProjectDeliveryPayload = {
   workspaceId: string;
   canonicalProjectId: string;
@@ -896,6 +967,7 @@ export type ExternalProjectStudioData = {
   fieldDefinitions: ExternalProjectFieldDefinition[];
   importJobs: ExternalProjectImportJob[];
   publishEvents: ExternalProjectPublishEvent[];
+  cmsCapabilities?: CmsEditorCapabilities | null;
   loadingData: ExternalProjectLoadingData | null;
 };
 

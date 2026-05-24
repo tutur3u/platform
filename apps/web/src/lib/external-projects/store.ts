@@ -1642,6 +1642,63 @@ export async function updateWorkspaceExternalProjectBlock(
   return data;
 }
 
+export async function deleteWorkspaceExternalProjectBlock(
+  blockId: string,
+  payload: {
+    workspaceId: string;
+  },
+  db?: AdminDb
+) {
+  const admin = db ?? ((await createAdminClient()) as TypedSupabaseClient);
+  const { workspaceId } = payload;
+  const { data: blockAssets, error: blockAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .select('storage_path')
+    .eq('ws_id', workspaceId)
+    .eq('block_id', blockId);
+
+  if (blockAssetsError) {
+    throw new Error(blockAssetsError.message);
+  }
+
+  const storagePaths = Array.from(
+    new Set(
+      (blockAssets ?? [])
+        .map((asset) => asset.storage_path)
+        .filter((value): value is string => typeof value === 'string')
+        .filter(isExternalProjectStoragePath)
+    )
+  );
+
+  await Promise.all(
+    storagePaths.map((storagePath) =>
+      deleteWorkspaceStorageObjectByPath(workspaceId, storagePath)
+    )
+  );
+
+  const { error: deleteAssetsError } = await admin
+    .from('workspace_external_project_assets')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('block_id', blockId);
+
+  if (deleteAssetsError) {
+    throw new Error(deleteAssetsError.message);
+  }
+
+  const { error } = await admin
+    .from('workspace_external_project_blocks')
+    .delete()
+    .eq('ws_id', workspaceId)
+    .eq('id', blockId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return { id: blockId };
+}
+
 type UpsertEntryPayload = {
   collection_id: string;
   metadata: Json;

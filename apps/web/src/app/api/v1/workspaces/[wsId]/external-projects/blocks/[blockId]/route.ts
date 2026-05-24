@@ -2,7 +2,10 @@ import type { Json } from '@tuturuuu/types';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
-import { updateWorkspaceExternalProjectBlock } from '@/lib/external-projects/store';
+import {
+  deleteWorkspaceExternalProjectBlock,
+  updateWorkspaceExternalProjectBlock,
+} from '@/lib/external-projects/store';
 
 const updateBlockSchema = z.object({
   block_type: z.string().min(1).max(120).optional(),
@@ -50,6 +53,37 @@ export async function PATCH(
     console.error('Failed to update workspace external project block', error);
     return NextResponse.json(
       { error: 'Failed to update workspace external project block' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ blockId: string; wsId: string }> }
+) {
+  const { blockId, wsId } = await params;
+  const access = await requireWorkspaceExternalProjectAccess({
+    mode: 'manage',
+    request,
+    wsId,
+  });
+  if (!access.ok) return access.response;
+
+  try {
+    const result = await deleteWorkspaceExternalProjectBlock(
+      blockId,
+      {
+        workspaceId: access.normalizedWorkspaceId,
+      },
+      access.admin
+    );
+
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error('Failed to delete workspace external project block', error);
+    return NextResponse.json(
+      { error: 'Failed to delete workspace external project block' },
       { status: 500 }
     );
   }

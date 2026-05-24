@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
+import { getExternalProjectCmsEditorCapabilities } from '@/lib/external-projects/cms-capabilities';
 import { getWorkspaceExternalProjectStudioData } from '@/lib/external-projects/store';
 
 export async function GET(
@@ -23,6 +24,11 @@ export async function GET(
     return NextResponse.json({
       binding: access.binding,
       ...studio,
+      cmsCapabilities: getExternalProjectCmsEditorCapabilities({
+        binding: access.binding,
+        collections: studio.collections,
+        fieldDefinitions: studio.fieldDefinitions,
+      }),
     });
   } catch (error) {
     console.error('Failed to load external project studio', error);
