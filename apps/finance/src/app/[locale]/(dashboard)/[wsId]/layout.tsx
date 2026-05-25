@@ -1,6 +1,7 @@
 import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
+import { FinanceNumbersVisibilityToggle } from '@tuturuuu/ui/finance/shared/numbers-visibility-toggle';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { getPermissions, getWorkspace } from '@tuturuuu/utils/workspace-helper';
@@ -105,6 +106,9 @@ export default async function Layout({ children, params }: LayoutProps) {
       >
         <FinanceRouteProvider prefix="">
           <RealtimeLogProvider wsId={wsId}>
+            <div className="mb-4 flex justify-end">
+              <FinanceNumbersVisibilityToggle />
+            </div>
             {children}
             <QuickActions
               wsId={workspaceSlug}

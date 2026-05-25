@@ -1,4 +1,5 @@
 import { FinanceRouteProvider } from '@tuturuuu/ui/finance/finance-route-context';
+import { FinanceNumbersVisibilityToggle } from '@tuturuuu/ui/finance/shared/numbers-visibility-toggle';
 import { QuickActions } from '@tuturuuu/ui/finance/shared/quick-actions';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import type { ReactNode } from 'react';
@@ -25,6 +26,11 @@ export default async function WebFinanceLayout({
 
   return (
     <FinanceRouteProvider prefix="/finance">
+      {context && (
+        <div className="mb-4 flex justify-end">
+          <FinanceNumbersVisibilityToggle />
+        </div>
+      )}
       {children}
       {context && (
         <QuickActions
