@@ -47,6 +47,69 @@
     "workspace_slug_placeholder": "acme",
     "workspaces": "Workspaces"
   },
+  "finance": {
+    "new_debt": "New debt",
+    "new_loan": "New loan",
+    "new_recurring_transaction": "New recurring transaction",
+    "unknown_user": "Unknown user"
+  },
+  "finance-analytics": {
+    "failed-to-load-data": "Failed to load data",
+    "next-period": "Next period",
+    "previous-period": "Previous period",
+    "week-of": "Week of {date}"
+  },
+  "finance-recurring": {
+    "active_title": "Active recurring",
+    "amount": "Amount",
+    "amount_description": "Use a negative amount for expenses and a positive amount for income.",
+    "amount_invalid": "Amount must be a valid number",
+    "amount_placeholder": "-500.00",
+    "amount_required": "Amount is required",
+    "cancel": "Cancel",
+    "category": "Category",
+    "create_success": "Recurring transaction created successfully",
+    "create_transaction": "Create recurring transaction",
+    "daily": "Daily",
+    "delete": "Delete",
+    "delete_description": "Are you sure you want to delete \"{name}\"? This action cannot be undone.",
+    "delete_error": "Failed to delete recurring transaction",
+    "delete_success": "Recurring transaction deleted successfully",
+    "delete_title": "Delete recurring transaction",
+    "deleting": "Deleting...",
+    "description": "Description",
+    "description_placeholder": "Optional description",
+    "edit": "Edit",
+    "edit_transaction": "Edit recurring transaction",
+    "end_date": "End date",
+    "end_date_description": "Leave empty to keep this schedule running indefinitely.",
+    "frequency": "Frequency",
+    "monthly": "Monthly",
+    "name": "Name",
+    "name_placeholder": "Monthly rent",
+    "name_required": "Name is required",
+    "next_occurrence": "Next: {date}",
+    "no_active_transactions": "No active recurring transactions",
+    "no_category": "No category",
+    "no_upcoming_transactions": "No upcoming transactions",
+    "open_menu": "Open menu",
+    "page_description": "Manage automatic income and expense schedules that feed your wallets and categories.",
+    "save_error": "Failed to save recurring transaction",
+    "scheduled_for": "Scheduled for {date}",
+    "select_category": "Select category",
+    "select_frequency": "Select frequency",
+    "select_wallet": "Select wallet",
+    "start_date": "Start date",
+    "start_date_required": "Start date is required",
+    "title": "Recurring transactions",
+    "upcoming_title": "Upcoming next 30 days",
+    "update_success": "Recurring transaction updated successfully",
+    "update_transaction": "Update recurring transaction",
+    "wallet": "Wallet",
+    "wallet_required": "Wallet is required",
+    "weekly": "Weekly",
+    "yearly": "Yearly"
+  },
   "mind": {
     "actions": {
       "addNode": "Add node",
@@ -400,5 +463,12 @@
     "no-notifications": "No notifications",
     "notifications": "Notifications",
     "view-all": "View all"
+  },
+  "ws-debt-loan": {
+    "amount_positive": "Amount must be greater than 0",
+    "counterparty_too_long": "Counterparty must be 255 characters or fewer",
+    "description_too_long": "Description must be 500 characters or fewer",
+    "name_required": "Name is required",
+    "start_date_required": "Start date is required"
   }
 }
