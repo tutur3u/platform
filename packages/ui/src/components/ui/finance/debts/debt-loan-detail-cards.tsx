@@ -8,6 +8,10 @@ import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Progress } from '../../progress';
 import { Separator } from '../../separator';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface DebtLoanDetailCardsProps {
   debtLoan: DebtLoanWithBalance;
@@ -17,6 +21,8 @@ export function DebtLoanPaymentOverviewCard({
   debtLoan,
 }: DebtLoanDetailCardsProps) {
   const t = useTranslations('ws-debt-loan');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   return (
     <Card>
@@ -30,13 +36,17 @@ export function DebtLoanPaymentOverviewCard({
               {t('principal_amount')}
             </span>
             <span className="font-semibold text-lg">
-              {formatCurrency(debtLoan.principal_amount, debtLoan.currency)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatCurrency(debtLoan.principal_amount, debtLoan.currency)}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">{t('amount_paid')}</span>
             <span className="font-semibold text-dynamic-green text-lg">
-              {formatCurrency(debtLoan.total_paid, debtLoan.currency)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatCurrency(debtLoan.total_paid, debtLoan.currency)}
             </span>
           </div>
           {debtLoan.total_interest_paid > 0 && (
@@ -45,10 +55,12 @@ export function DebtLoanPaymentOverviewCard({
                 {t('interest_paid')}
               </span>
               <span className="text-muted-foreground">
-                {formatCurrency(
-                  debtLoan.total_interest_paid,
-                  debtLoan.currency
-                )}
+                {areNumbersHidden
+                  ? FINANCE_HIDDEN_AMOUNT
+                  : formatCurrency(
+                      debtLoan.total_interest_paid,
+                      debtLoan.currency
+                    )}
               </span>
             </div>
           )}
@@ -58,14 +70,18 @@ export function DebtLoanPaymentOverviewCard({
             <span
               className={cn(
                 'font-bold text-xl',
-                debtLoan.remaining_balance === 0
-                  ? 'text-dynamic-green'
-                  : debtLoan.type === 'debt'
-                    ? 'text-dynamic-red'
-                    : 'text-dynamic-blue'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : debtLoan.remaining_balance === 0
+                    ? 'text-dynamic-green'
+                    : debtLoan.type === 'debt'
+                      ? 'text-dynamic-red'
+                      : 'text-dynamic-blue'
               )}
             >
-              {formatCurrency(debtLoan.remaining_balance, debtLoan.currency)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatCurrency(debtLoan.remaining_balance, debtLoan.currency)}
             </span>
           </div>
         </div>

@@ -3,7 +3,6 @@
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type React from 'react';
-import { useEffect, useState } from 'react';
 import { Card } from '../../card';
 import {
   Tooltip,
@@ -11,20 +10,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../tooltip';
-
-// Cookie helper function
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface Props {
   title?: string;
@@ -52,36 +41,7 @@ const StatisticCard = ({
   currency,
   locale = 'vi-VN',
 }: Props) => {
-  const [isConfidential, setIsConfidential] = useState(true); // Default to hidden
-
-  // Load confidential mode from cookie on mount
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    // Listen for changes from other components
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    // Custom event for same-tab updates
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
+  const { isConfidential } = useFinanceConfidentialVisibility();
 
   const formatValue = (
     val: string | number | null | undefined
@@ -124,7 +84,9 @@ const StatisticCard = ({
   };
 
   const formattedValue = formatValue(value);
-  const displayValue = isConfidential ? '•••••' : formattedValue.display;
+  const displayValue = isConfidential
+    ? FINANCE_HIDDEN_AMOUNT
+    : formattedValue.display;
 
   // Responsive font sizing based on value length
   const getFontSizeClass = (val: string): string => {

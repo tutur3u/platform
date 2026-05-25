@@ -25,6 +25,10 @@ import {
 import { Progress } from '@tuturuuu/ui/progress';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface BudgetCardProps {
   budget: FinanceBudget;
@@ -63,6 +67,8 @@ export function BudgetCard({
   onEdit,
 }: BudgetCardProps) {
   const t = useTranslations('finance-budgets');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const alertThreshold = budget.alert_threshold ?? 80;
   const percentage =
     budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0;
@@ -158,7 +164,9 @@ export function BudgetCard({
                 isNearThreshold && !isOverBudget && 'text-dynamic-orange'
               )}
             >
-              {formatCurrency(locale, currency, budget.spent)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatCurrency(locale, currency, budget.spent)}
             </span>
           </div>
           <Progress
@@ -169,7 +177,9 @@ export function BudgetCard({
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t('budget')}</span>
             <span className="font-medium">
-              {formatCurrency(locale, currency, budget.amount)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatCurrency(locale, currency, budget.amount)}
             </span>
           </div>
         </div>
@@ -180,14 +190,20 @@ export function BudgetCard({
             <p
               className={cn(
                 'font-semibold text-lg',
-                remaining < 0 ? 'text-dynamic-red' : 'text-dynamic-green'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : remaining < 0
+                    ? 'text-dynamic-red'
+                    : 'text-dynamic-green'
               )}
             >
-              {new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-                signDisplay: 'always',
-              }).format(Number(remaining))}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : new Intl.NumberFormat(locale, {
+                    style: 'currency',
+                    currency,
+                    signDisplay: 'always',
+                  }).format(Number(remaining))}
             </p>
           </div>
           <div>

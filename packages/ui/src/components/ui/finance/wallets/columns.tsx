@@ -19,6 +19,10 @@ import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import Link from 'next/link';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { WalletIconDisplay } from './wallet-icon-display';
 
 interface WalletExtraData {
@@ -27,6 +31,104 @@ interface WalletExtraData {
   currency?: string;
   exchangeRates?: ExchangeRate[];
   isPersonalWorkspace?: boolean;
+}
+
+function WalletBalanceCell({
+  balance,
+  walletCurrency,
+  workspaceCurrency,
+  exchangeRates,
+}: {
+  balance: number;
+  walletCurrency: string;
+  workspaceCurrency: string;
+  exchangeRates?: ExchangeRate[];
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  const formattedBalance = formatCurrency(balance, walletCurrency, undefined, {
+    signDisplay: 'auto',
+  });
+
+  let convertedText: string | null = null;
+  if (
+    walletCurrency !== workspaceCurrency &&
+    exchangeRates &&
+    exchangeRates.length > 0 &&
+    balance !== 0
+  ) {
+    const converted = convertCurrency(
+      balance,
+      walletCurrency,
+      workspaceCurrency,
+      exchangeRates
+    );
+    if (converted !== null) {
+      convertedText = formatCurrency(
+        Math.abs(converted),
+        workspaceCurrency,
+        undefined,
+        { signDisplay: 'never', maximumFractionDigits: 0 }
+      );
+    }
+  }
+
+  if (areNumbersHidden) {
+    return (
+      <Badge variant="outline" className="font-semibold text-muted-foreground">
+        {FINANCE_HIDDEN_AMOUNT}
+      </Badge>
+    );
+  }
+
+  const isPositive = balance > 0;
+  const isNegative = balance < 0;
+  const isNeutral = balance === 0;
+
+  return (
+    <div className="flex flex-col gap-0.5">
+      <div className="flex items-center gap-2">
+        {isPositive && (
+          <Badge
+            variant="outline"
+            className={cn(
+              'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
+              'flex items-center gap-1'
+            )}
+          >
+            <TrendingUp className="h-3 w-3" />
+            {formattedBalance}
+          </Badge>
+        )}
+        {isNegative && (
+          <Badge
+            variant="outline"
+            className={cn(
+              'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
+              'flex items-center gap-1'
+            )}
+          >
+            <TrendingDown className="h-3 w-3" />
+            {formattedBalance}
+          </Badge>
+        )}
+        {isNeutral && (
+          <Badge
+            variant="outline"
+            className="font-semibold text-muted-foreground"
+          >
+            {formattedBalance}
+          </Badge>
+        )}
+      </div>
+      {convertedText && (
+        <span className="text-muted-foreground text-xs">
+          {'\u2248'} {convertedText}
+        </span>
+      )}
+    </div>
+  );
 }
 
 export const walletColumns = ({
@@ -122,85 +224,13 @@ export const walletColumns = ({
       cell: ({ row }) => {
         const balance = Number(row.getValue('balance')) || 0;
         const walletCurrency = row.original.currency || workspaceCurrency;
-
-        const formattedBalance = formatCurrency(
-          balance,
-          walletCurrency,
-          undefined,
-          { signDisplay: 'auto' }
-        );
-
-        // Show converted amount if wallet currency differs from workspace currency
-        const exchangeRates = extraData?.exchangeRates;
-        let convertedText: string | null = null;
-        if (
-          walletCurrency !== workspaceCurrency &&
-          exchangeRates &&
-          exchangeRates.length > 0 &&
-          balance !== 0
-        ) {
-          const converted = convertCurrency(
-            balance,
-            walletCurrency,
-            workspaceCurrency,
-            exchangeRates
-          );
-          if (converted !== null) {
-            convertedText = formatCurrency(
-              Math.abs(converted),
-              workspaceCurrency,
-              undefined,
-              { signDisplay: 'never', maximumFractionDigits: 0 }
-            );
-          }
-        }
-
-        const isPositive = balance > 0;
-        const isNegative = balance < 0;
-        const isNeutral = balance === 0;
-
         return (
-          <div className="flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              {isPositive && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'border-dynamic-green/30 bg-dynamic-green/10 font-semibold text-dynamic-green',
-                    'flex items-center gap-1'
-                  )}
-                >
-                  <TrendingUp className="h-3 w-3" />
-                  {formattedBalance}
-                </Badge>
-              )}
-              {isNegative && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'border-dynamic-red/30 bg-dynamic-red/10 font-semibold text-dynamic-red',
-                    'flex items-center gap-1'
-                  )}
-                >
-                  <TrendingDown className="h-3 w-3" />
-                  {formattedBalance}
-                </Badge>
-              )}
-              {isNeutral && (
-                <Badge
-                  variant="outline"
-                  className="font-semibold text-muted-foreground"
-                >
-                  {formattedBalance}
-                </Badge>
-              )}
-            </div>
-            {convertedText && (
-              <span className="text-muted-foreground text-xs">
-                {'\u2248'} {convertedText}
-              </span>
-            )}
-          </div>
+          <WalletBalanceCell
+            balance={balance}
+            walletCurrency={walletCurrency}
+            workspaceCurrency={workspaceCurrency}
+            exchangeRates={extraData?.exchangeRates}
+          />
         );
       },
     },

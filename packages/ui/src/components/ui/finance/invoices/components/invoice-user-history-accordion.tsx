@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceHref } from '../../finance-route-context';
+import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 import { useInfiniteUserInvoices } from '../hooks';
 
 interface Props {
@@ -138,12 +139,16 @@ export function InvoiceUserHistoryAccordion({
                         </div>
                         <div className="shrink-0 text-right">
                           <p className="font-semibold text-dynamic-blue text-sm">
-                            {invoice.price !== undefined
-                              ? formatCurrency(
+                            {invoice.price !== undefined ? (
+                              <FinanceDisplayAmount
+                                value={formatCurrency(
                                   invoice.price + (invoice.total_diff || 0),
                                   currency
-                                )
-                              : '-'}
+                                )}
+                              />
+                            ) : (
+                              '-'
+                            )}
                           </p>
                         </div>
                       </div>

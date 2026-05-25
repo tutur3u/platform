@@ -13,6 +13,10 @@ import { useAnalyticsFilters } from '../../../../hooks/use-analytics-filters';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Skeleton } from '../../skeleton';
 import { CategoryBreakdownChart } from '../shared/charts/category-breakdown-chart';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { AnalyticsDateControls } from './analytics-date-controls';
 import { BalanceTrendChart } from './balance-trend-chart';
 import { IncomeExpenseChart } from './income-expense-chart';
@@ -188,7 +192,10 @@ function SpendingTrendsSummary({
   includeConfidential,
 }: SpendingTrendsSummaryProps) {
   const t = useTranslations('finance-analytics');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
+  const shouldHideAmounts = areNumbersHidden || !includeConfidential;
 
   const formatValue = (value: number) => {
     return new Intl.NumberFormat(locale, {
@@ -255,7 +262,9 @@ function SpendingTrendsSummary({
             {t('total-income')}
           </span>
           <span className="font-semibold text-dynamic-green">
-            {includeConfidential ? formatValue(totalDailyIncome) : '•••••'}
+            {shouldHideAmounts
+              ? FINANCE_HIDDEN_AMOUNT
+              : formatValue(totalDailyIncome)}
           </span>
         </div>
         <div className="flex items-center justify-between">
@@ -263,7 +272,9 @@ function SpendingTrendsSummary({
             {t('total-expense')}
           </span>
           <span className="font-semibold text-dynamic-red">
-            {includeConfidential ? formatValue(totalDailyExpense) : '•••••'}
+            {shouldHideAmounts
+              ? FINANCE_HIDDEN_AMOUNT
+              : formatValue(totalDailyExpense)}
           </span>
         </div>
         <div className="border-t pt-4">
@@ -274,10 +285,16 @@ function SpendingTrendsSummary({
             <span
               className={cn(
                 'font-semibold',
-                netTotal >= 0 ? 'text-dynamic-green' : 'text-dynamic-red'
+                shouldHideAmounts
+                  ? 'text-muted-foreground'
+                  : netTotal >= 0
+                    ? 'text-dynamic-green'
+                    : 'text-dynamic-red'
               )}
             >
-              {includeConfidential ? formatValue(netTotal) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(netTotal)}
             </span>
           </div>
         </div>
@@ -287,7 +304,9 @@ function SpendingTrendsSummary({
               {t('daily-avg-income')}
             </span>
             <span className="font-medium text-sm">
-              {includeConfidential ? formatValue(dailyAvgIncome) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(dailyAvgIncome)}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between">
@@ -295,7 +314,9 @@ function SpendingTrendsSummary({
               {t('daily-avg-expense')}
             </span>
             <span className="font-medium text-sm">
-              {includeConfidential ? formatValue(dailyAvgExpense) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(dailyAvgExpense)}
             </span>
           </div>
         </div>

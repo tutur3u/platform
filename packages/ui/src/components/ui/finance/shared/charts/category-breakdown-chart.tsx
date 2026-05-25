@@ -20,7 +20,11 @@ import {
   getActualCategoryBreakdownDisplayRange,
   getCategoryBreakdownDateRange,
 } from './category-breakdown-chart-utils';
-import { useFinanceConfidentialVisibility } from './use-finance-confidential-visibility';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from './use-finance-confidential-visibility';
 
 interface CategoryBreakdownChartProps {
   wsId: string;
@@ -42,6 +46,7 @@ export function CategoryBreakdownChart({
   const t = useTranslations();
   const { isConfidential, toggleConfidential } =
     useFinanceConfidentialVisibility();
+  const shouldHideAmounts = isConfidential || !includeConfidential;
   const [dateOffset, setDateOffset] = useState(0);
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
@@ -138,7 +143,7 @@ export function CategoryBreakdownChart({
 
   const formatValue = useCallback(
     (value: number) => {
-      if (isConfidential) return '•••••';
+      if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
       return new Intl.NumberFormat(getCurrencyLocale(currency), {
         style: 'currency',
         currency,
@@ -146,19 +151,19 @@ export function CategoryBreakdownChart({
         maximumFractionDigits: 0,
       }).format(value);
     },
-    [isConfidential, currency]
+    [shouldHideAmounts, currency]
   );
 
   const formatCompactValue = useCallback(
     (value: number) => {
-      if (isConfidential) return '•••';
+      if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
       return new Intl.NumberFormat(locale, {
         notation: 'compact',
         compactDisplay: 'short',
         maximumFractionDigits: 1,
       }).format(value);
     },
-    [isConfidential, locale]
+    [shouldHideAmounts, locale]
   );
 
   const handleLegendClick = useCallback((entry: LegendPayload) => {

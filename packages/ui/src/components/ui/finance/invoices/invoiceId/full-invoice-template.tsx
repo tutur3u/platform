@@ -7,6 +7,7 @@ import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 
 export function FullInvoiceTemplate({
   invoice,
@@ -201,19 +202,23 @@ export function FullInvoiceTemplate({
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.price, currency, undefined, {
-                  signDisplay: 'never',
-                })}
+                <FinanceDisplayAmount
+                  value={formatCurrency(product.price, currency, undefined, {
+                    signDisplay: 'never',
+                  })}
+                />
               </td>
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(
-                  product.amount * product.price,
-                  currency,
-                  undefined,
-                  { signDisplay: 'never' }
-                )}
+                <FinanceDisplayAmount
+                  value={formatCurrency(
+                    product.amount * product.price,
+                    currency,
+                    undefined,
+                    { signDisplay: 'never' }
+                  )}
+                />
               </td>
             </tr>
           ))}
@@ -234,11 +239,15 @@ export function FullInvoiceTemplate({
               className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
               {promo.name || promo.code}:{' '}
-              {promo.use_ratio
-                ? `${promo.value}%`
-                : formatCurrency(promo.value, currency, undefined, {
-                    signDisplay: 'never',
-                  })}
+              <FinanceDisplayAmount
+                value={
+                  promo.use_ratio
+                    ? `${promo.value}%`
+                    : formatCurrency(promo.value, currency, undefined, {
+                        signDisplay: 'never',
+                      })
+                }
+              />
             </p>
           ))}
         </div>
@@ -251,9 +260,11 @@ export function FullInvoiceTemplate({
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-          {formatCurrency(subtotal, currency, undefined, {
-            signDisplay: 'never',
-          })}
+          <FinanceDisplayAmount
+            value={formatCurrency(subtotal, currency, undefined, {
+              signDisplay: 'never',
+            })}
+          />
         </p>
         {promotions.length > 0 && (
           <p
@@ -262,10 +273,11 @@ export function FullInvoiceTemplate({
             <span className="font-semibold">
               {t('invoices.discounts')}: {''}
             </span>
-            {'-'}
-            {formatCurrency(discount_amount, currency, undefined, {
-              signDisplay: 'never',
-            })}
+            <FinanceDisplayAmount
+              value={`-${formatCurrency(discount_amount, currency, undefined, {
+                signDisplay: 'never',
+              })}`}
+            />
           </p>
         )}
         {invoice.total_diff !== 0 && (
@@ -273,9 +285,11 @@ export function FullInvoiceTemplate({
             className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
             <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-            {formatCurrency(invoice.total_diff, currency, undefined, {
-              signDisplay: 'never',
-            })}
+            <FinanceDisplayAmount
+              value={formatCurrency(invoice.total_diff, currency, undefined, {
+                signDisplay: 'never',
+              })}
+            />
           </p>
         )}
         <Separator className="my-2" />
@@ -284,12 +298,14 @@ export function FullInvoiceTemplate({
         >
           <span className="font-bold">{t('invoices.total')}:</span>{' '}
           <span className="font-semibold">
-            {formatCurrency(
-              invoice.price + invoice.total_diff,
-              currency,
-              undefined,
-              { signDisplay: 'never' }
-            )}
+            <FinanceDisplayAmount
+              value={formatCurrency(
+                invoice.price + invoice.total_diff,
+                currency,
+                undefined,
+                { signDisplay: 'never' }
+              )}
+            />
           </span>
         </p>
       </div>

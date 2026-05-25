@@ -5,6 +5,10 @@ import type { InterestSummary, PendingDepositInfo } from '@tuturuuu/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../../shared/use-finance-confidential-visibility';
 
 interface WalletInterestSummaryProps {
   summary: InterestSummary;
@@ -19,8 +23,11 @@ export function WalletInterestSummary({
   currency,
 }: WalletInterestSummaryProps) {
   const t = useTranslations('wallet-interest');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const formatCurrency = (amount: number) => {
+    if (areNumbersHidden) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency: currency || 'USD',
@@ -138,8 +145,11 @@ function PendingDepositsAlert({
   currency: string;
 }) {
   const t = useTranslations('wallet-interest');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const formatCurrency = (amount: number) => {
+    if (areNumbersHidden) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency: currency || 'USD',

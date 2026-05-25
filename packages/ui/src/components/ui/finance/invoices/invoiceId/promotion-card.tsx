@@ -1,6 +1,7 @@
 import { DollarSign, Percent } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { FinanceDisplayAmount } from '@tuturuuu/ui/finance/shared/finance-display-amount';
 import { formatCurrency } from '@tuturuuu/utils/format';
 
 interface PromotionCardProps {
@@ -56,9 +57,13 @@ export function PromotionCard({
           </div>
           <div className="text-right">
             <div className="font-bold text-foreground text-lg">
-              {isPercentage
-                ? `${promotion.value}%`
-                : `-${formatCurrency(promotion.value, currency)}`}
+              <FinanceDisplayAmount
+                value={
+                  isPercentage
+                    ? `${promotion.value}%`
+                    : `-${formatCurrency(promotion.value, currency)}`
+                }
+              />
             </div>
             <div className="text-muted-foreground text-xs">
               {isPercentage ? 'Discount' : 'Off'}

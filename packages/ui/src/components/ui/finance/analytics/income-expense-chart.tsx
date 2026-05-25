@@ -14,6 +14,11 @@ import {
 } from '../../chart';
 import { Skeleton } from '../../skeleton';
 import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
+import {
   formatIncomeExpenseAxisDate,
   formatIncomeExpenseTooltipDate,
 } from './income-expense-chart-utils';
@@ -53,12 +58,15 @@ export function IncomeExpenseChart({
   const t = useTranslations('transaction-data-table');
   const analyticsT = useTranslations('finance-analytics');
   const [viewMode, setViewMode] = useState<IncomeExpenseViewMode>('all');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const shouldHideAmounts = areNumbersHidden || !includeConfidential;
 
   const incomeColor = 'var(--chart-2)';
   const expenseColor = 'var(--chart-5)';
 
   const formatValue = (value: number) => {
-    if (!includeConfidential) return '•••••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -68,7 +76,7 @@ export function IncomeExpenseChart({
   };
 
   const formatCompactValue = (value: number) => {
-    if (!includeConfidential) return '•••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',

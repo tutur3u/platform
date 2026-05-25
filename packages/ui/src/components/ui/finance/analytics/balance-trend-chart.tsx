@@ -18,6 +18,11 @@ import {
   ChartTooltipContent,
 } from '../../chart';
 import { Skeleton } from '../../skeleton';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface BalanceTrendChartProps {
   wsId: string;
@@ -46,6 +51,9 @@ export function BalanceTrendChart({
   const locale = useLocale();
   const walletT = useTranslations('wallet-data-table');
   const analyticsT = useTranslations('finance-analytics');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const shouldHideAmounts = areNumbersHidden || !includeConfidential;
 
   const balanceColor = 'var(--chart-1)';
   const positiveGradient = 'var(--chart-2)';
@@ -132,7 +140,7 @@ export function BalanceTrendChart({
   });
 
   const formatValue = (value: number) => {
-    if (!includeConfidential) return '•••••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -142,7 +150,7 @@ export function BalanceTrendChart({
   };
 
   const formatCompactValue = (value: number) => {
-    if (!includeConfidential) return '•••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',
@@ -226,7 +234,11 @@ export function BalanceTrendChart({
           <span
             className={cn(
               'font-semibold text-sm',
-              isPositiveTrend ? 'text-dynamic-green' : 'text-dynamic-red'
+              shouldHideAmounts
+                ? 'text-muted-foreground'
+                : isPositiveTrend
+                  ? 'text-dynamic-green'
+                  : 'text-dynamic-red'
             )}
           >
             {formatValue(balanceData[balanceData.length - 1]?.balance || 0)}

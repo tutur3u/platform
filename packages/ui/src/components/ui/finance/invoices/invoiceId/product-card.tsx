@@ -1,6 +1,7 @@
 import { Box, Edit } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import { FinanceDisplayAmount } from '@tuturuuu/ui/finance/shared/finance-display-amount';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 
@@ -53,10 +54,14 @@ export function ProductCard({
           </div>
           <div className="text-right">
             <div className="font-semibold text-card-foreground text-sm transition-colors duration-200 group-hover:text-primary">
-              {formatCurrency(totalPrice, currency)}
+              <FinanceDisplayAmount
+                value={formatCurrency(totalPrice, currency)}
+              />
             </div>
             <div className="text-muted-foreground text-xs">
-              {formatCurrency(product.price, currency)} each
+              <FinanceDisplayAmount
+                value={`${formatCurrency(product.price, currency)} each`}
+              />
             </div>
           </div>
           {product.product_id && workspaceId && (

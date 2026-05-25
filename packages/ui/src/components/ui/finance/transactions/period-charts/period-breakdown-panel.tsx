@@ -31,22 +31,12 @@ import {
   CollapsibleTrigger,
 } from '../../../collapsible';
 import { Skeleton } from '../../../skeleton';
+import {
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 import { ActivityDistributionChart } from './activity-distribution-chart';
 import { CategoryDonutChart } from './category-donut-chart';
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
 
 interface PeriodBreakdownPanelProps {
   transactions: Transaction[];
@@ -89,7 +79,7 @@ export function PeriodBreakdownPanel({
   walletId,
 }: PeriodBreakdownPanelProps) {
   const t = useTranslations('finance-transactions');
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential } = useFinanceConfidentialVisibility();
   const { data: exchangeRatesData } = useExchangeRates();
   const exchangeRates = exchangeRatesData?.data ?? [];
 
@@ -101,33 +91,6 @@ export function PeriodBreakdownPanel({
   useEffect(() => {
     setIsExpanded(viewMode !== 'daily');
   }, [viewMode]);
-
-  // Sync with confidential mode cookie
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
 
   // Extract date string from period timestamps (handles both YYYY-MM-DD and full ISO timestamps)
   // IMPORTANT: Do NOT convert to UTC - extract the date directly from the local ISO string
@@ -324,7 +287,7 @@ export function PeriodBreakdownPanel({
   }, [stats.netTotal, previousPeriodStats]);
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential) return '•••';
+    if (isConfidential) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -490,7 +453,7 @@ export function PeriodBreakdownPanel({
                   <TrendingDown className="h-3 w-3" />
                 )}
                 {isConfidential
-                  ? '•••%'
+                  ? `${FINANCE_HIDDEN_COMPACT_AMOUNT}%`
                   : `${trendVsPrevious.isPositive ? '+' : ''}${trendVsPrevious.value.toFixed(0)}%`}
               </span>
             </div>

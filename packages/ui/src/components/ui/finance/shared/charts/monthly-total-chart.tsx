@@ -5,7 +5,7 @@ import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -23,27 +23,11 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '../../../chart';
-
-// Cookie helper functions
-const setCookie = (name: string, value: string, days = 365) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  // biome-ignore lint/suspicious/noDocumentCookie: Used for finance confidential mode state persistence
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-};
-
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../use-finance-confidential-visibility';
 
 type ViewMode = 'all' | 'income' | 'expense';
 
@@ -65,52 +49,14 @@ export function MonthlyTotalChart({
   const tAnalytics = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('all');
-  const [isConfidential, setIsConfidential] = useState(true); // Default to hidden
+  const { isConfidential, toggleConfidential } =
+    useFinanceConfidentialVisibility();
 
   const incomeColor = resolvedTheme === 'dark' ? '#4ade80' : '#16a34a';
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
 
-  // Load confidential mode from cookie on mount
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    // Listen for changes from other components
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    // Custom event for same-tab updates
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
-
-  // Save confidential mode to cookie
-  const toggleConfidential = () => {
-    const newValue = !isConfidential;
-    setIsConfidential(newValue);
-    setCookie('finance-confidential-mode', String(newValue));
-
-    // Trigger event for other components in the same tab
-    window.dispatchEvent(new Event('finance-confidential-mode-change'));
-  };
-
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -120,7 +66,7 @@ export function MonthlyTotalChart({
   };
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential) return '•••';
+    if (isConfidential) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',

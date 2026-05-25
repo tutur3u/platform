@@ -32,20 +32,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../../../tooltip';
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 
 // Dynamic color palette using CSS variables
 // NOTE: CSS variables --chart-N already contain full hsl() values (e.g., "hsl(12 76% 61%)"),
@@ -123,39 +114,12 @@ export function CategoryBreakdownDialog({
 }: CategoryBreakdownDialogProps) {
   const t = useTranslations('finance-transactions');
   const locale = useLocale();
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential } = useFinanceConfidentialVisibility();
   const [type, setType] = useState<'all' | 'expense' | 'income'>(initialType);
   // Track hidden categories by name
   const [hiddenCategories, setHiddenCategories] = useState<Set<string>>(
     new Set()
   );
-
-  // Sync with confidential mode cookie
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
 
   // Reset type and hidden categories when dialog opens
   useEffect(() => {
@@ -482,7 +446,7 @@ export function CategoryBreakdownDialog({
   const effectiveIsLoading = useClientSide ? false : isLoading;
 
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     const prefix = isEstimated ? '≈ ' : '';
     return (
       prefix +
@@ -496,7 +460,7 @@ export function CategoryBreakdownDialog({
   };
 
   const formatPercentage = (percentage: number) => {
-    if (isConfidential) return '•••%';
+    if (isConfidential) return `${FINANCE_HIDDEN_COMPACT_AMOUNT}%`;
     return `${percentage.toFixed(1)}%`;
   };
 

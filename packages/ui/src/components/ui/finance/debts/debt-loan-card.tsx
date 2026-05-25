@@ -9,6 +9,10 @@ import { Badge } from '../../badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Progress } from '../../progress';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface Props {
   debtLoan: DebtLoanWithBalance;
@@ -20,6 +24,8 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
   const t = useTranslations('ws-debt-loan');
   const locale = useLocale();
   const financeHref = useFinanceHref();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale).format(new Date(value));
 
@@ -91,10 +97,12 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
                 {t('principal_amount')}
               </span>
               <span className="font-medium">
-                {formatCurrency(
-                  debtLoan.principal_amount,
-                  currency || debtLoan.currency
-                )}
+                {areNumbersHidden
+                  ? FINANCE_HIDDEN_AMOUNT
+                  : formatCurrency(
+                      debtLoan.principal_amount,
+                      currency || debtLoan.currency
+                    )}
               </span>
             </div>
             {debtLoan.total_paid > 0 && (
@@ -103,10 +111,12 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
                   {t('amount_paid')}
                 </span>
                 <span className="font-medium text-green-600 dark:text-green-400">
-                  {formatCurrency(
-                    debtLoan.total_paid,
-                    currency || debtLoan.currency
-                  )}
+                  {areNumbersHidden
+                    ? FINANCE_HIDDEN_AMOUNT
+                    : formatCurrency(
+                        debtLoan.total_paid,
+                        currency || debtLoan.currency
+                      )}
                 </span>
               </div>
             )}
@@ -115,17 +125,21 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
               <span
                 className={cn(
                   'font-semibold',
-                  debtLoan.remaining_balance === 0
-                    ? 'text-green-600 dark:text-green-400'
-                    : debtLoan.type === 'debt'
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-blue-600 dark:text-blue-400'
+                  areNumbersHidden
+                    ? 'text-muted-foreground'
+                    : debtLoan.remaining_balance === 0
+                      ? 'text-green-600 dark:text-green-400'
+                      : debtLoan.type === 'debt'
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-blue-600 dark:text-blue-400'
                 )}
               >
-                {formatCurrency(
-                  debtLoan.remaining_balance,
-                  currency || debtLoan.currency
-                )}
+                {areNumbersHidden
+                  ? FINANCE_HIDDEN_AMOUNT
+                  : formatCurrency(
+                      debtLoan.remaining_balance,
+                      currency || debtLoan.currency
+                    )}
               </span>
             </div>
           </div>

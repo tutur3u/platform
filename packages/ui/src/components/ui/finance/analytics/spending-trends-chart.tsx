@@ -20,6 +20,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface SpendingTrendsChartProps {
   wsId: string;
@@ -35,6 +40,8 @@ export function SpendingTrendsChart({
   const locale = useLocale();
   const t = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
   const formatChartDate = (
@@ -66,10 +73,12 @@ export function SpendingTrendsChart({
         <CardTitle>{t('spending-trends')}</CardTitle>
         <p className="text-muted-foreground text-sm">
           {t('daily-avg-expense')}:{' '}
-          {new Intl.NumberFormat(locale, {
-            style: 'currency',
-            currency,
-          }).format(averageSpending)}
+          {areNumbersHidden
+            ? FINANCE_HIDDEN_AMOUNT
+            : new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency,
+              }).format(averageSpending)}
         </p>
       </CardHeader>
       <CardContent className="flex-1">
@@ -94,10 +103,12 @@ export function SpendingTrendsChart({
                 />
                 <YAxis
                   tickFormatter={(value) =>
-                    new Intl.NumberFormat(locale, {
-                      style: 'decimal',
-                      notation: 'compact',
-                    }).format(value)
+                    areNumbersHidden
+                      ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                      : new Intl.NumberFormat(locale, {
+                          style: 'decimal',
+                          notation: 'compact',
+                        }).format(value)
                   }
                   tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
                 />
@@ -112,10 +123,12 @@ export function SpendingTrendsChart({
                         })
                       }
                       formatter={(value) =>
-                        new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(Number(value))
+                        areNumbersHidden
+                          ? FINANCE_HIDDEN_AMOUNT
+                          : new Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency,
+                            }).format(Number(value))
                       }
                     />
                   }

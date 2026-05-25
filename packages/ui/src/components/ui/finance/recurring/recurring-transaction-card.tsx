@@ -24,6 +24,10 @@ import {
 } from '@tuturuuu/ui/dropdown-menu';
 import { format } from 'date-fns';
 import type { useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface RecurringTransactionCardProps {
   currency: string;
@@ -46,6 +50,8 @@ export function RecurringTransactionCard({
 }: RecurringTransactionCardProps) {
   const amount = Number(transaction.amount);
   const isDeleting = deletingId === transaction.id;
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   return (
     <Card>
@@ -76,14 +82,20 @@ export function RecurringTransactionCard({
           <div className="flex shrink-0 items-start gap-2">
             <p
               className={`font-semibold ${
-                amount >= 0 ? 'text-dynamic-green' : 'text-dynamic-red'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : amount >= 0
+                    ? 'text-dynamic-green'
+                    : 'text-dynamic-red'
               }`}
             >
-              {new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-                signDisplay: 'always',
-              }).format(amount)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : new Intl.NumberFormat(locale, {
+                    style: 'currency',
+                    currency,
+                    signDisplay: 'always',
+                  }).format(amount)}
             </p>
             <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>

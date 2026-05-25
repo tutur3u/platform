@@ -2,6 +2,7 @@ import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 
 export function CompactInvoiceTemplate({
   invoice,
@@ -111,12 +112,14 @@ export function CompactInvoiceTemplate({
           <span
             className={`font-bold ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {formatCurrency(
-              invoice.price + invoice.total_diff,
-              currency,
-              undefined,
-              { signDisplay: 'never' }
-            )}
+            <FinanceDisplayAmount
+              value={formatCurrency(
+                invoice.price + invoice.total_diff,
+                currency,
+                undefined,
+                { signDisplay: 'never' }
+              )}
+            />
           </span>
         </div>
 

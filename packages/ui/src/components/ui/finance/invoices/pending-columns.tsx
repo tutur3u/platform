@@ -11,11 +11,34 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
 import Link from 'next/link';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 type PendingInvoiceRow = PendingInvoice & {
   group_ids?: string[];
   group_names?: string[];
 };
+
+function PendingInvoicePotentialTotalCell({
+  amount,
+  currency,
+}: {
+  amount: number;
+  currency: string;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  return (
+    <div className="min-w-32 font-semibold">
+      {areNumbersHidden
+        ? FINANCE_HIDDEN_AMOUNT
+        : formatCurrency(amount, currency)}
+    </div>
+  );
+}
 
 export const pendingInvoiceColumns = (
   t: any,
@@ -220,12 +243,10 @@ export const pendingInvoiceColumns = (
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-32 font-semibold">
-          {formatCurrency(
-            row.getValue<number>('potential_total') || 0,
-            currency
-          )}
-        </div>
+        <PendingInvoicePotentialTotalCell
+          amount={row.getValue<number>('potential_total') || 0}
+          currency={currency}
+        />
       ),
     },
     {

@@ -6,6 +6,7 @@ import { Label } from '@tuturuuu/ui/label';
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 
 interface InvoiceCheckoutSummaryProps {
   subtotal: number;
@@ -44,7 +45,7 @@ export function InvoiceCheckoutSummary({
           <span className="text-muted-foreground">
             {t('ws-invoices.subtotal')}
           </span>
-          <span>{formatCurrency(subtotal, currency)}</span>
+          <FinanceDisplayAmount value={formatCurrency(subtotal, currency)} />
         </div>
 
         {discountAmount !== undefined && discountLabel && (
@@ -52,9 +53,10 @@ export function InvoiceCheckoutSummary({
             <span className="text-muted-foreground">
               {t('ws-invoices.discount')} ({discountLabel})
             </span>
-            <span className={discountClassName}>
-              -{formatCurrency(discountAmount, currency)}
-            </span>
+            <FinanceDisplayAmount
+              className={discountClassName}
+              value={`-${formatCurrency(discountAmount, currency)}`}
+            />
           </div>
         )}
 
@@ -62,16 +64,20 @@ export function InvoiceCheckoutSummary({
 
         <div className="flex justify-between font-semibold">
           <span>{t('ws-invoices.total')}</span>
-          <span>{formatCurrency(roundedTotal, currency)}</span>
+          <FinanceDisplayAmount
+            value={formatCurrency(roundedTotal, currency)}
+          />
         </div>
 
         {Math.abs(roundedTotal - totalBeforeRounding) > 0.01 && (
           <div className="flex justify-between text-muted-foreground text-sm">
             <span>{t('ws-invoices.adjustment')}</span>
-            <span>
-              {roundedTotal > totalBeforeRounding ? '+' : ''}
-              {formatCurrency(roundedTotal - totalBeforeRounding, currency)}
-            </span>
+            <FinanceDisplayAmount
+              value={`${roundedTotal > totalBeforeRounding ? '+' : ''}${formatCurrency(
+                roundedTotal - totalBeforeRounding,
+                currency
+              )}`}
+            />
           </div>
         )}
       </div>

@@ -55,6 +55,11 @@ import { useLocale, useTranslations } from 'next-intl';
 import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useExchangeRates } from '../../../../hooks/use-exchange-rates';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { TransactionForm } from './form';
 import {
   getTransactionStatsWithInternalApi,
@@ -135,6 +140,8 @@ export function InfiniteTransactionsList({
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const { data: exchangeRatesData } = useExchangeRates();
   const exchangeRates = exchangeRatesData?.data ?? [];
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const [selectedTransaction, setSelectedTransaction] =
     useState<Transaction | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -775,15 +782,17 @@ export function InfiniteTransactionsList({
                         <div className="flex items-center gap-1">
                           <TrendingUp className="h-3 w-3 text-dynamic-green" />
                           <span className="text-dynamic-green">
-                            {Intl.NumberFormat(
-                              getCurrencyLocale(currency || 'USD'),
-                              {
-                                style: 'currency',
-                                currency: currency || 'USD',
-                                notation: 'compact',
-                                maximumFractionDigits: 1,
-                              }
-                            ).format(income)}
+                            {areNumbersHidden
+                              ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                              : Intl.NumberFormat(
+                                  getCurrencyLocale(currency || 'USD'),
+                                  {
+                                    style: 'currency',
+                                    currency: currency || 'USD',
+                                    notation: 'compact',
+                                    maximumFractionDigits: 1,
+                                  }
+                                ).format(income)}
                           </span>
                         </div>
                       )}
@@ -791,15 +800,17 @@ export function InfiniteTransactionsList({
                         <div className="flex items-center gap-1">
                           <TrendingDown className="h-3 w-3 text-dynamic-red" />
                           <span className="text-dynamic-red">
-                            {Intl.NumberFormat(
-                              getCurrencyLocale(currency || 'USD'),
-                              {
-                                style: 'currency',
-                                currency: currency || 'USD',
-                                notation: 'compact',
-                                maximumFractionDigits: 1,
-                              }
-                            ).format(Math.abs(expense))}
+                            {areNumbersHidden
+                              ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                              : Intl.NumberFormat(
+                                  getCurrencyLocale(currency || 'USD'),
+                                  {
+                                    style: 'currency',
+                                    currency: currency || 'USD',
+                                    notation: 'compact',
+                                    maximumFractionDigits: 1,
+                                  }
+                                ).format(Math.abs(expense))}
                           </span>
                         </div>
                       )}
@@ -832,22 +843,25 @@ export function InfiniteTransactionsList({
                         <div
                           className={cn(
                             'font-bold text-xl tabular-nums',
-                            isPositive
-                              ? 'text-dynamic-green'
-                              : 'text-dynamic-red'
+                            areNumbersHidden
+                              ? 'text-muted-foreground'
+                              : isPositive
+                                ? 'text-dynamic-green'
+                                : 'text-dynamic-red'
                           )}
                         >
-                          {hasRedactedAmounts && '≈ '}
-                          {Intl.NumberFormat(
-                            getCurrencyLocale(currency || 'USD'),
-                            {
-                              style: 'currency',
-                              currency: currency || 'USD',
-                              minimumFractionDigits: 0,
-                              maximumFractionDigits: 0,
-                              signDisplay: 'always',
-                            }
-                          ).format(dailyTotal)}
+                          {areNumbersHidden
+                            ? FINANCE_HIDDEN_AMOUNT
+                            : `${hasRedactedAmounts ? '≈ ' : ''}${Intl.NumberFormat(
+                                getCurrencyLocale(currency || 'USD'),
+                                {
+                                  style: 'currency',
+                                  currency: currency || 'USD',
+                                  minimumFractionDigits: 0,
+                                  maximumFractionDigits: 0,
+                                  signDisplay: 'always',
+                                }
+                              ).format(dailyTotal)}`}
                         </div>
                       </div>
                     </div>

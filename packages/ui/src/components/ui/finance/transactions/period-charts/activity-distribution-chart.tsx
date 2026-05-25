@@ -6,7 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import moment from 'moment';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import {
   type ChartConfig,
@@ -14,20 +14,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from '../../../chart';
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 
 interface ActivityDistributionChartProps {
   transactions: Transaction[];
@@ -54,37 +44,10 @@ export function ActivityDistributionChart({
   const t = useTranslations('finance-transactions');
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential } = useFinanceConfidentialVisibility();
 
   const incomeColor = resolvedTheme === 'dark' ? '#4ade80' : '#16a34a';
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
-
-  // Sync with confidential mode cookie
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
 
   // Generate buckets based on view mode
   const chartData = useMemo(() => {
@@ -210,7 +173,7 @@ export function ActivityDistributionChart({
   }, [chartData]);
 
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,

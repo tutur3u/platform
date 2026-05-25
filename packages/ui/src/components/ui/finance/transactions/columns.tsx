@@ -11,6 +11,10 @@ import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
 import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${name}`;
@@ -19,6 +23,36 @@ function getAvatarPlaceholder(name: string) {
 interface TransactionExtraData {
   currency?: string;
   isPersonalWorkspace?: boolean;
+}
+
+function TransactionAmountCell({
+  amount,
+  currency,
+}: {
+  amount: number;
+  currency: string;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const isExpense = amount < 0;
+
+  return (
+    <div
+      className={`min-w-32 font-semibold ${
+        areNumbersHidden
+          ? 'text-muted-foreground'
+          : isExpense
+            ? 'text-dynamic-red'
+            : 'text-dynamic-green'
+      }`}
+    >
+      {areNumbersHidden
+        ? FINANCE_HIDDEN_AMOUNT
+        : formatCurrency(amount, currency, undefined, {
+            signDisplay: 'always',
+          })}
+    </div>
+  );
 }
 
 export const transactionColumns = ({
@@ -170,19 +204,7 @@ export const transactionColumns = ({
       ),
       cell: ({ row }) => {
         const amount = Number(row.getValue('amount')) || 0;
-        const isExpense = amount < 0;
-
-        return (
-          <div
-            className={`min-w-32 font-semibold ${
-              isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
-            }`}
-          >
-            {formatCurrency(amount, currency, undefined, {
-              signDisplay: 'always',
-            })}
-          </div>
-        );
+        return <TransactionAmountCell amount={amount} currency={currency} />;
       },
     },
     {

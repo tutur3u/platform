@@ -14,6 +14,10 @@ import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface TransactionStatisticsProps {
   transactions: Transaction[];
@@ -37,6 +41,8 @@ export function TransactionStatistics({
   exchangeRates = [],
 }: TransactionStatisticsProps) {
   const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const localStatistics = useMemo(() => {
     if (stats) return stats;
@@ -160,13 +166,17 @@ export function TransactionStatistics({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-2xl text-dynamic-green tabular-nums">
-              {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(getCurrencyLocale(currency), {
-                style: 'currency',
-                currency,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(statistics.totalIncome)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : `${statistics.hasRedactedAmounts ? '≈ ' : ''}${Intl.NumberFormat(
+                    getCurrencyLocale(currency),
+                    {
+                      style: 'currency',
+                      currency,
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }
+                  ).format(statistics.totalIncome)}`}
             </span>
           </div>
         </div>
@@ -181,13 +191,17 @@ export function TransactionStatistics({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="font-bold text-2xl text-dynamic-red tabular-nums">
-              {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(getCurrencyLocale(currency), {
-                style: 'currency',
-                currency,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-              }).format(Math.abs(statistics.totalExpense))}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : `${statistics.hasRedactedAmounts ? '≈ ' : ''}${Intl.NumberFormat(
+                    getCurrencyLocale(currency),
+                    {
+                      style: 'currency',
+                      currency,
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                    }
+                  ).format(Math.abs(statistics.totalExpense))}`}
             </span>
           </div>
         </div>
@@ -220,17 +234,25 @@ export function TransactionStatistics({
             <span
               className={cn(
                 'font-bold text-2xl tabular-nums',
-                isNetPositive ? 'text-dynamic-green' : 'text-dynamic-red'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : isNetPositive
+                    ? 'text-dynamic-green'
+                    : 'text-dynamic-red'
               )}
             >
-              {statistics.hasRedactedAmounts && '≈ '}
-              {Intl.NumberFormat(getCurrencyLocale(currency), {
-                style: 'currency',
-                currency,
-                minimumFractionDigits: 0,
-                maximumFractionDigits: 0,
-                signDisplay: 'always',
-              }).format(statistics.netTotal)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : `${statistics.hasRedactedAmounts ? '≈ ' : ''}${Intl.NumberFormat(
+                    getCurrencyLocale(currency),
+                    {
+                      style: 'currency',
+                      currency,
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                      signDisplay: 'always',
+                    }
+                  ).format(statistics.netTotal)}`}
             </span>
           </div>
         </div>

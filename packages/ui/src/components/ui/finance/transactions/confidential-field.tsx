@@ -5,6 +5,10 @@ import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Checkbox } from '../../checkbox';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../../tooltip';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface ConfidentialFieldProps {
   isConfidential: boolean;
@@ -67,6 +71,8 @@ export function ConfidentialAmount({
   style,
 }: ConfidentialAmountProps) {
   const t = useTranslations('workspace-finance-transactions');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   // Auto-detect redaction: amount is null AND field is confidential
   const actuallyRedacted = isRedacted ?? (amount === null && isConfidential);
@@ -75,6 +81,17 @@ export function ConfidentialAmount({
   // Use 'exceptZero' to show + for income, - for expense, no sign for zero
   const defaultFormatter = (amt: number) =>
     formatCurrency(amt, currency, undefined, { signDisplay: 'exceptZero' });
+
+  if (areNumbersHidden && !actuallyRedacted) {
+    return (
+      <span
+        className={className}
+        style={{ ...style, color: 'var(--muted-foreground)' }}
+      >
+        {FINANCE_HIDDEN_AMOUNT}
+      </span>
+    );
+  }
 
   if (actuallyRedacted) {
     return (

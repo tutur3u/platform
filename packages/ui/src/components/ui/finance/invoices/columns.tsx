@@ -15,6 +15,11 @@ import {
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { getAvatarPlaceholder, getInitials } from '@tuturuuu/utils/name-helper';
 import moment from 'moment';
+import type { ReactNode } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -25,6 +30,77 @@ interface InvoiceExtraData {
   canDeleteInvoices?: boolean;
   deleteInvoiceAction?: DeleteInvoiceAction;
   currency?: string;
+}
+
+function InvoiceAmountText({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  return (
+    <span className={className}>
+      {areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : children}
+    </span>
+  );
+}
+
+function InvoiceFinalPriceCell({
+  price,
+  totalDiff,
+  currency,
+}: {
+  price: number;
+  totalDiff: number;
+  currency: string;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  if (areNumbersHidden) {
+    return (
+      <div className="min-w-32 font-semibold text-muted-foreground">
+        {FINANCE_HIDDEN_AMOUNT}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-w-32">
+      <TooltipProvider>
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger className="font-semibold">
+            {formatCurrency(price + totalDiff, currency)}
+          </TooltipTrigger>
+          <TooltipContent className="text-center font-semibold">
+            <div>
+              <span className="text-blue-600 dark:text-blue-300">
+                {formatCurrency(price, currency, undefined, {
+                  signDisplay: 'never',
+                })}
+              </span>{' '}
+              {totalDiff < 0 ? '-' : '+'}{' '}
+              <span
+                className={
+                  totalDiff < 0
+                    ? 'text-red-600 dark:text-red-300'
+                    : 'text-green-600 dark:text-green-300'
+                }
+              >
+                {formatCurrency(totalDiff, currency, undefined, {
+                  signDisplay: 'never',
+                })}
+              </span>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
 }
 
 export const invoiceColumns = ({
@@ -182,7 +258,9 @@ export const invoiceColumns = ({
       ),
       cell: ({ row }) => (
         <div className="min-w-32">
-          {formatCurrency(row.getValue<number>('price') || 0, currency)}
+          <InvoiceAmountText>
+            {formatCurrency(row.getValue<number>('price') || 0, currency)}
+          </InvoiceAmountText>
         </div>
       ),
     },
@@ -197,11 +275,18 @@ export const invoiceColumns = ({
       ),
       cell: ({ row }) => (
         <div className="min-w-32">
-          {row.getValue('total_diff') === 0
-            ? '-'
-            : formatCurrency(row.getValue('total_diff'), currency, undefined, {
-                signDisplay: 'always',
-              })}
+          <InvoiceAmountText>
+            {row.getValue('total_diff') === 0
+              ? '-'
+              : formatCurrency(
+                  row.getValue('total_diff'),
+                  currency,
+                  undefined,
+                  {
+                    signDisplay: 'always',
+                  }
+                )}
+          </InvoiceAmountText>
         </div>
       ),
     },
@@ -215,46 +300,11 @@ export const invoiceColumns = ({
         />
       ),
       cell: ({ row }) => (
-        <div className="min-w-32">
-          <TooltipProvider>
-            <Tooltip delayDuration={0}>
-              <TooltipTrigger className="font-semibold">
-                {formatCurrency(
-                  (row.getValue<number>('price') || 0) +
-                    (row.getValue<number>('total_diff') || 0),
-                  currency
-                )}
-              </TooltipTrigger>
-              <TooltipContent className="text-center font-semibold">
-                <div>
-                  <span className="text-blue-600 dark:text-blue-300">
-                    {formatCurrency(
-                      row.getValue<number>('price') || 0,
-                      currency,
-                      undefined,
-                      { signDisplay: 'never' }
-                    )}
-                  </span>{' '}
-                  {(row.getValue<number>('total_diff') || 0) < 0 ? '-' : '+'}{' '}
-                  <span
-                    className={
-                      (row.getValue<number>('total_diff') || 0) < 0
-                        ? 'text-red-600 dark:text-red-300'
-                        : 'text-green-600 dark:text-green-300'
-                    }
-                  >
-                    {formatCurrency(
-                      row.getValue<number>('total_diff') || 0,
-                      currency,
-                      undefined,
-                      { signDisplay: 'never' }
-                    )}
-                  </span>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <InvoiceFinalPriceCell
+          price={row.getValue<number>('price') || 0}
+          totalDiff={row.getValue<number>('total_diff') || 0}
+          currency={currency}
+        />
       ),
     },
     {

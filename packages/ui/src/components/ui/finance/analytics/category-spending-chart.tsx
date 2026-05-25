@@ -12,6 +12,10 @@ import {
 import { cn } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface CategorySpendingChartProps {
   wsId: string;
@@ -43,6 +47,8 @@ export function CategorySpendingChart({
 }: CategorySpendingChartProps) {
   const locale = useLocale();
   const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const { data: categoryData, isLoading } = useQuery({
     queryKey: ['category_spending', wsId, startDate, endDate],
@@ -126,10 +132,12 @@ export function CategorySpendingChart({
                     content={
                       <ChartTooltipContent
                         formatter={(value) =>
-                          new Intl.NumberFormat(locale, {
-                            style: 'currency',
-                            currency,
-                          }).format(Number(value))
+                          areNumbersHidden
+                            ? FINANCE_HIDDEN_AMOUNT
+                            : new Intl.NumberFormat(locale, {
+                                style: 'currency',
+                                currency,
+                              }).format(Number(value))
                         }
                       />
                     }
@@ -164,10 +172,12 @@ export function CategorySpendingChart({
                         {percentage.toFixed(1)}%
                       </span>
                       <span className="font-medium">
-                        {new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(item.value)}
+                        {areNumbersHidden
+                          ? FINANCE_HIDDEN_AMOUNT
+                          : new Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency,
+                            }).format(item.value)}
                       </span>
                     </div>
                   </div>
@@ -177,10 +187,12 @@ export function CategorySpendingChart({
                 <div className="flex items-center justify-between">
                   <span>{t('finance-transactions.total')}</span>
                   <span>
-                    {new Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency,
-                    }).format(totalSpending)}
+                    {areNumbersHidden
+                      ? FINANCE_HIDDEN_AMOUNT
+                      : new Intl.NumberFormat(locale, {
+                          style: 'currency',
+                          currency,
+                        }).format(totalSpending)}
                   </span>
                 </div>
               </div>

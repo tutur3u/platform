@@ -20,6 +20,10 @@ import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface WalletFilterProps {
   wsId: string;
@@ -42,6 +46,8 @@ export function WalletFilter({
 }: WalletFilterProps) {
   const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const hasActiveFilters = selectedWalletIds.length > 0;
 
@@ -153,15 +159,19 @@ export function WalletFilter({
                                 {wallet.name}
                               </span>
                               <span className="text-muted-foreground text-xs">
-                                {Intl.NumberFormat(
-                                  getCurrencyLocale(wallet.currency || 'USD'),
-                                  {
-                                    style: 'currency',
-                                    currency: wallet.currency || 'USD',
-                                    minimumFractionDigits: 0,
-                                    maximumFractionDigits: 0,
-                                  }
-                                ).format(wallet.balance || 0)}
+                                {areNumbersHidden
+                                  ? FINANCE_HIDDEN_AMOUNT
+                                  : Intl.NumberFormat(
+                                      getCurrencyLocale(
+                                        wallet.currency || 'USD'
+                                      ),
+                                      {
+                                        style: 'currency',
+                                        currency: wallet.currency || 'USD',
+                                        minimumFractionDigits: 0,
+                                        maximumFractionDigits: 0,
+                                      }
+                                    ).format(wallet.balance || 0)}
                               </span>
                             </div>
                           </div>

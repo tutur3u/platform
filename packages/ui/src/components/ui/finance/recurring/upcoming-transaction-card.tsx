@@ -4,6 +4,10 @@ import type { UpcomingRecurringTransactionRecord } from '@tuturuuu/internal-api/
 import { Card, CardContent } from '@tuturuuu/ui/card';
 import { format } from 'date-fns';
 import type { useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface UpcomingTransactionCardProps {
   currency: string;
@@ -21,6 +25,8 @@ export function UpcomingTransactionCard({
   transaction,
 }: UpcomingTransactionCardProps) {
   const amount = Number(transaction.amount);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   return (
     <Card key={`${transaction.id}-${index}`}>
@@ -55,14 +61,20 @@ export function UpcomingTransactionCard({
           <div className="text-right">
             <p
               className={`font-semibold ${
-                amount >= 0 ? 'text-dynamic-green' : 'text-dynamic-red'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : amount >= 0
+                    ? 'text-dynamic-green'
+                    : 'text-dynamic-red'
               }`}
             >
-              {new Intl.NumberFormat(locale, {
-                style: 'currency',
-                currency,
-                signDisplay: 'always',
-              }).format(amount)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : new Intl.NumberFormat(locale, {
+                    style: 'currency',
+                    currency,
+                    signDisplay: 'always',
+                  }).format(amount)}
             </p>
           </div>
         </div>

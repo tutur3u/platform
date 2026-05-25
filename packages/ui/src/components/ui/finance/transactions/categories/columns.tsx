@@ -12,9 +12,47 @@ import { DataTableColumnHeader } from '@tuturuuu/ui/custom/tables/data-table-col
 import { TransactionCategoryRowActions } from '@tuturuuu/ui/finance/transactions/categories/row-actions';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import moment from 'moment';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 
 interface TransactionCategoryExtraData {
   currency?: string;
+}
+
+function CategoryAmountCell({
+  amount,
+  currency,
+  isExpense,
+}: {
+  amount: number;
+  currency: string;
+  isExpense: boolean;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  return (
+    <div
+      className={`font-semibold tabular-nums ${
+        areNumbersHidden
+          ? 'text-muted-foreground'
+          : isExpense
+            ? 'text-dynamic-red'
+            : 'text-dynamic-green'
+      }`}
+    >
+      {areNumbersHidden
+        ? FINANCE_HIDDEN_AMOUNT
+        : new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+            style: 'currency',
+            currency,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
+          }).format(Math.abs(amount))}
+    </div>
+  );
 }
 
 export const transactionCategoryColumns = ({
@@ -149,21 +187,14 @@ export const transactionCategoryColumns = ({
       ),
       cell: ({ row }) => {
         const amount = Number(row.getValue('amount')) || 0;
-        const isExpense = row.original.is_expense;
+        const isExpense = Boolean(row.original.is_expense);
 
         return (
-          <div
-            className={`font-semibold tabular-nums ${
-              isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
-            }`}
-          >
-            {new Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
-              style: 'currency',
-              currency,
-              minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
-            }).format(Math.abs(amount))}
-          </div>
+          <CategoryAmountCell
+            amount={amount}
+            currency={currency}
+            isExpense={isExpense}
+          />
         );
       },
     },

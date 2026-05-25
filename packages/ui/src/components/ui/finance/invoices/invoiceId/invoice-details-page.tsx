@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-card';
 import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
+import { FinanceDisplayAmount } from '@tuturuuu/ui/finance/shared/finance-display-amount';
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { formatCurrency } from '@tuturuuu/utils/format';
@@ -113,16 +114,20 @@ export default async function InvoiceDetailsPage({
               <DetailItem
                 icon={<DollarSign className="h-5 w-5" />}
                 label={t('invoice-data-table.final_price')}
-                value={`${formatCurrency(
-                  invoice.price,
-                  currency
-                )} + ${formatCurrency(
-                  invoice.total_diff,
-                  currency
-                )} = ${formatCurrency(
-                  invoice.price + invoice.total_diff,
-                  currency
-                )}`}
+                value={
+                  <FinanceDisplayAmount
+                    value={`${formatCurrency(
+                      invoice.price,
+                      currency
+                    )} + ${formatCurrency(
+                      invoice.total_diff,
+                      currency
+                    )} = ${formatCurrency(
+                      invoice.price + invoice.total_diff,
+                      currency
+                    )}`}
+                  />
+                }
               />
               <DetailItem
                 icon={<Calendar className="h-5 w-5" />}

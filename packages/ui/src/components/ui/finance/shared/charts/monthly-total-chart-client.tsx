@@ -29,7 +29,11 @@ import {
   ChartTooltipContent,
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
-import { useFinanceConfidentialVisibility } from './use-finance-confidential-visibility';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from './use-finance-confidential-visibility';
 
 type ViewMode = 'all' | 'income' | 'expense';
 
@@ -52,6 +56,7 @@ export function MonthlyTotalChartClient({
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const { isConfidential, toggleConfidential } =
     useFinanceConfidentialVisibility();
+  const shouldHideAmounts = isConfidential || !includeConfidential;
   const [dateOffset, setDateOffset] = useState(0);
 
   const incomeColor = 'var(--chart-2)';
@@ -130,7 +135,7 @@ export function MonthlyTotalChartClient({
   const closingBalance = closingBalanceRes?.balance;
 
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -140,7 +145,7 @@ export function MonthlyTotalChartClient({
   };
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential) return '•••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',
@@ -378,7 +383,7 @@ export function MonthlyTotalChartClient({
                 maxBarSize={50}
               />
             )}
-            {openingBalance !== undefined && !isConfidential && (
+            {openingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={openingBalance}
                 stroke="hsl(var(--primary))"
@@ -392,7 +397,7 @@ export function MonthlyTotalChartClient({
                 }}
               />
             )}
-            {closingBalance !== undefined && !isConfidential && (
+            {closingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={closingBalance}
                 stroke="hsl(var(--muted-foreground))"
