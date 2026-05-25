@@ -31,7 +31,18 @@ import { invalidateWalletMutationQueries } from './query-invalidation';
 import { WalletIconImagePicker } from './wallet-icon-image-picker';
 import WalletRoleAccess from './walletId/wallet-role-access';
 
-const createWalletFormSchema = (t: (key: string) => string) =>
+const walletValidationMessageKeys = {
+  creditLimitRequired: 'wallet-data-table.credit_limit_required',
+  paymentDateRequired: 'wallet-data-table.payment_date_required',
+  statementDateRequired: 'wallet-data-table.statement_date_required',
+} as const;
+
+type WalletValidationMessageKey =
+  (typeof walletValidationMessageKeys)[keyof typeof walletValidationMessageKeys];
+
+const createWalletFormSchema = (
+  t: (key: WalletValidationMessageKey) => string
+) =>
   z
     .object({
       id: z.string().optional(),
@@ -52,21 +63,21 @@ const createWalletFormSchema = (t: (key: string) => string) =>
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['limit'],
-            message: t('wallet-data-table.credit_limit_required'),
+            message: t(walletValidationMessageKeys.creditLimitRequired),
           });
         }
         if (!data.statement_date) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['statement_date'],
-            message: t('wallet-data-table.statement_date_required'),
+            message: t(walletValidationMessageKeys.statementDateRequired),
           });
         }
         if (!data.payment_date) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['payment_date'],
-            message: t('wallet-data-table.payment_date_required'),
+            message: t(walletValidationMessageKeys.paymentDateRequired),
           });
         }
       }

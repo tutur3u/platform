@@ -41,14 +41,16 @@ const typeOptions = [
     icon: ArrowDownCircle,
     color: 'text-dynamic-red',
   },
-];
+] as const;
 
 export function TypeFilter({
   selectedType,
   onTypeChange,
   className,
 }: TypeFilterProps) {
-  const t = useTranslations();
+  const t = useTranslations('transaction-data-table');
+  const categoryT = useTranslations('transaction-category-data-table');
+  const commonT = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilter = !!selectedType;
@@ -76,9 +78,7 @@ export function TypeFilter({
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <Filter className="h-3 w-3" />
             <span className="text-xs">
-              {selectedOption
-                ? t(`transaction-data-table.${selectedOption.labelKey}`)
-                : t('transaction-data-table.type')}
+              {selectedOption ? t(selectedOption.labelKey) : categoryT('type')}
             </span>
             {hasActiveFilter && (
               <Badge
@@ -93,7 +93,7 @@ export function TypeFilter({
         <PopoverContent className="w-50 p-0" align="start">
           <Command>
             <CommandList>
-              <CommandEmpty>{t('common.no_results')}</CommandEmpty>
+              <CommandEmpty>{commonT('no_results_found')}</CommandEmpty>
 
               <CommandGroup>
                 {typeOptions.map((option) => {
@@ -118,7 +118,7 @@ export function TypeFilter({
                       </div>
                       <Icon className={cn('h-4 w-4', option.color)} />
                       <span className="flex-1 font-medium text-sm">
-                        {t(`transaction-data-table.${option.labelKey}`)}
+                        {t(option.labelKey)}
                       </span>
                     </CommandItem>
                   );
@@ -134,7 +134,7 @@ export function TypeFilter({
                       className="cursor-pointer justify-center text-center text-destructive"
                     >
                       <X className="mr-2 h-4 w-4" />
-                      {t('common.clear')}
+                      {commonT('clear')}
                     </CommandItem>
                   </CommandGroup>
                 </>
