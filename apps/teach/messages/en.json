@@ -150,6 +150,11 @@
         "uploadFile": "Upload file"
       },
       "description": "Upload a PDF, Word document, or text file. AI will create structured modules, quizzes, and flashcards.",
+      "context": {
+        "hint": "Optional. Add the class level, learning goals, or any constraints the AI should follow.",
+        "label": "Teacher context",
+        "placeholder": "For example: Focus on beginner-friendly explanations and include review questions after each module."
+      },
       "dropzone": {
         "description": "PDF, Word (.docx), or plain text · max {maxSize} MB",
         "title": "Drop a file here or click to browse"

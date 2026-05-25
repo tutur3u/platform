@@ -9,6 +9,7 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -54,6 +55,7 @@ export function AiGenerateDialog({
   const t = useTranslations('teachModules.aiGenerate');
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [context, setContext] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -108,6 +110,7 @@ export function AiGenerateDialog({
     if (!file || mutation.isPending) return;
     setUploadProgress(0);
     mutation.mutate({
+      context,
       file,
       onProgress: (pct) => setUploadProgress(pct),
     });
@@ -206,6 +209,22 @@ export function AiGenerateDialog({
           {/* ── Idle / error state ────────────────────────────────────────── */}
           {!isDone && !isActive && (
             <>
+              <div className="space-y-2">
+                <label className="font-bold text-sm" htmlFor="ai-context">
+                  {t('context.label')}
+                </label>
+                <Textarea
+                  id="ai-context"
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder={t('context.placeholder')}
+                  className="min-h-28 resize-y border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]"
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t('context.hint')}
+                </p>
+              </div>
+
               {/* Drop zone */}
               <div
                 className={cn(

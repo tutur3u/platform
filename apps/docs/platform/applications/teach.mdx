@@ -35,6 +35,8 @@ All non-`apps/web` education apps use the shared Neobrutalist design language fr
 
 Teach should read as a teacher operations dashboard, not a landing page. The protected surface should keep courses, module authoring, learner enrollment, schedule-aware attendance, posts, report previews, score metrics, settings, and learner-preview handoffs visible as first-class paths. Use multiple dynamic accent roles across these work loops and keep rails readable in light, dark, and system themes.
 
+Teach module generation now accepts optional teacher context in the AI modal. Teachers can add class level, learning goals, or other constraints before uploading source material; the central course-generation route passes that context into the AI prompt alongside the document content.
+
 Report authoring should include a Teach-local preview before save. The preview should show learner identity, course context, score, report body, feedback, and a metric snapshot so teachers do not need to open `apps/web` report pages for normal course reporting. When a learner-facing check is useful, link intentionally to `apps/learn` course, assignment, report, or marks pages.
 
 Teach reads and mutates course groups and module data through central `apps/web` APIs. Web API routes that serve Teach must opt in to app-session auth for the `teach` audience and resolve permissions from the forwarded app-session user before falling back to workspace group membership filters.

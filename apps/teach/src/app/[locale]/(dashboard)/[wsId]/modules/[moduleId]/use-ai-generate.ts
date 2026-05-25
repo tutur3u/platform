@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   generateWorkspaceCourseModulesFromStorage,
+  InternalApiError,
   uploadWorkspaceUserGroupStorageFile,
 } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
@@ -30,35 +31,55 @@ export interface AiGenerateState {
 export function useAiGenerate(wsId: string, courseId: string) {
   const qc = useQueryClient();
 
+  function redirectToLogin() {
+    if (typeof window === 'undefined') return;
+
+    const nextPath = window.location.pathname + window.location.search;
+    window.location.assign(`/login?next=${encodeURIComponent(nextPath)}`);
+  }
+
+  function isUnauthorizedError(error: unknown) {
+    return error instanceof InternalApiError && error.status === 401;
+  }
+
   const mutation = useMutation<
     AiGenerateState['result'],
     Error,
-    { file: File; onProgress: (pct: number) => void }
+    { context?: string; file: File; onProgress: (pct: number) => void }
   >({
-    mutationFn: async ({ file, onProgress }) => {
-      // 1. Upload file to user-group storage
-      const uploaded = await uploadWorkspaceUserGroupStorageFile(
-        wsId,
-        courseId,
-        file,
-        {
-          onUploadProgress: ({ percent }) => onProgress(percent),
+    mutationFn: async ({ context, file, onProgress }) => {
+      try {
+        // 1. Upload file to user-group storage
+        const uploaded = await uploadWorkspaceUserGroupStorageFile(
+          wsId,
+          courseId,
+          file,
+          {
+            onUploadProgress: ({ percent }) => onProgress(percent),
+          }
+        );
+
+        // 2. Generate course modules from the uploaded file
+        const response = await generateWorkspaceCourseModulesFromStorage(wsId, {
+          context: context?.trim() || undefined,
+          groupId: courseId,
+          storagePath: uploaded.path,
+          fileName: file.name,
+        });
+
+        return {
+          totalModules: response.createdModules?.length ?? 0,
+          totalQuizzes: 0,
+          totalFlashcards: 0,
+          creditsCharged: response.metadata?.creditsCharged,
+        };
+      } catch (error) {
+        if (isUnauthorizedError(error)) {
+          redirectToLogin();
         }
-      );
 
-      // 2. Generate course modules from the uploaded file
-      const response = await generateWorkspaceCourseModulesFromStorage(wsId, {
-        groupId: courseId,
-        storagePath: uploaded.path,
-        fileName: file.name,
-      });
-
-      return {
-        totalModules: response.createdModules?.length ?? 0,
-        totalQuizzes: 0,
-        totalFlashcards: 0,
-        creditsCharged: response.metadata?.creditsCharged,
-      };
+        throw error;
+      }
     },
     onSuccess: (result) => {
       qc.invalidateQueries({ queryKey: moduleGroupsKey(wsId, courseId) });
@@ -68,6 +89,10 @@ export function useAiGenerate(wsId: string, courseId: string) {
       );
     },
     onError: (err) => {
+      if (isUnauthorizedError(err)) {
+        return;
+      }
+
       toast.error(`AI generation failed: ${err.message}`);
     },
   });

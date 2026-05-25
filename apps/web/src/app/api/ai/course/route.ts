@@ -78,6 +78,24 @@ function markdownToTipTapDocument(markdown: string) {
   };
 }
 
+function buildCourseGenerationPrompt({
+  context,
+  documentContent,
+}: {
+  context?: string | null | undefined;
+  documentContent: string;
+}) {
+  const promptSections: string[] = [];
+
+  if (context?.trim()) {
+    promptSections.push(`Teacher context:\n${context.trim()}`);
+  }
+
+  promptSections.push(`Document Content:\n${documentContent}`);
+
+  return `Analyze the following document and create structured course modules with quizzes and flashcards.\n\n${promptSections.join('\n\n')}`;
+}
+
 async function cleanupGeneratedCourseArtifacts({
   flashcardIds,
   moduleIds,
@@ -173,7 +191,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { fileName, groupId, maxCharacters, storagePath, wsId } =
+    const { context, fileName, groupId, maxCharacters, storagePath, wsId } =
       parsedBody.data;
     const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
     const sanitizedStoragePath = sanitizePath(storagePath);
@@ -256,7 +274,10 @@ export async function POST(request: Request) {
       model: google('gemini-2.0-flash'),
       schema: CourseGenerationSchema,
       system: COURSE_GENERATION_PROMPT,
-      prompt: `Analyze the following document and create structured course modules with quizzes and flashcards.\n\nDocument Content:\n${markitdownResult.markdown}`,
+      prompt: buildCourseGenerationPrompt({
+        context,
+        documentContent: markitdownResult.markdown ?? '',
+      }),
     });
 
     // 7. Resolve or create module group

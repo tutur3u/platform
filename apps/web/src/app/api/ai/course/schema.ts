@@ -111,6 +111,7 @@ export const CourseGenerationSchema = z.object({
 // ─── Request Schema ──────────────────────────────────────────────────────────
 
 export const GenerateCourseRequestSchema = z.object({
+  context: z.string().max(4_000).optional(),
   fileName: z.string().max(255).optional(),
   groupId: z.uuid(),
   maxCharacters: z.number().int().positive().max(1_000_000).optional(),

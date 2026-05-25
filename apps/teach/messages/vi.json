@@ -150,6 +150,11 @@
         "uploadFile": "Tải tệp lên"
       },
       "description": "Tải lên tệp PDF, Word hoặc văn bản. AI sẽ tạo module có cấu trúc, câu hỏi kiểm tra và flashcard.",
+      "context": {
+        "hint": "Không bắt buộc. Hãy thêm trình độ lớp học, mục tiêu học tập hoặc các ràng buộc mà AI nên tuân theo.",
+        "label": "Ngữ cảnh giảng dạy",
+        "placeholder": "Ví dụ: Tập trung vào giải thích cho người mới bắt đầu và thêm câu hỏi ôn tập sau mỗi module."
+      },
       "dropzone": {
         "description": "PDF, Word (.docx), hoặc văn bản thuần · tối đa {maxSize} MB",
         "title": "Thả tệp vào đây hoặc bấm để chọn"

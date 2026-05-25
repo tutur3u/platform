@@ -23,6 +23,7 @@ export interface GenerateWorkspaceCourseModulesFromStoragePayload {
   fileName?: string;
   groupId: string;
   maxCharacters?: number;
+  context?: string;
   storagePath: string;
 }
 
