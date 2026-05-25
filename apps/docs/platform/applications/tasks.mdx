@@ -18,6 +18,13 @@ Tasks provides:
 - **Custom statuses** - Per-board status workflows
 - **Labels & priorities** - Flexible categorization
 
+## Board And List Name Uniqueness
+
+- Active and archived task board names are unique per workspace using `lower(btrim(name))`; only trashed boards with `deleted_at` set release the name.
+- Non-deleted task list names are unique per board using `lower(btrim(name))`, regardless of status/category.
+- Duplicate board writes return `409` with `code: "TASK_BOARD_NAME_EXISTS"`. Duplicate list writes return `409` with `code: "TASK_LIST_NAME_EXISTS"`.
+- Existing duplicate rows are preserved by the forward migration that renames older duplicates with a deterministic ` (duplicate <id>)` suffix before the unique indexes are created. The migration does not move or delete tasks.
+
 ## Satellite Auth And API Ownership
 
 `apps/tasks` is registered internally as the `tasks` app. All app-session

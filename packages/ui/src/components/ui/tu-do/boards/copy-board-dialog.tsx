@@ -17,6 +17,7 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useId, useState } from 'react';
+import { isTaskBoardNameExistsError } from '../shared/task-board-errors';
 
 interface CopyBoardDialogProps {
   board: Pick<WorkspaceTaskBoard, 'id' | 'ws_id' | 'name'>;
@@ -80,6 +81,11 @@ export function CopyBoardDialog({
         // Refresh the current page to show updated boards
         router.refresh();
       } else {
+        if (isTaskBoardNameExistsError(data)) {
+          toast.error(t('ws-task-boards.errors.name_exists'));
+          return;
+        }
+
         throw new Error(data.error || 'Failed to copy board');
       }
     } catch (error) {

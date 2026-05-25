@@ -12,7 +12,7 @@ import { GripVertical, Lock, MoreVertical, Trash2 } from '@tuturuuu/icons';
 import {
   deleteWorkspaceTask,
   updateWorkspaceTaskList,
-} from '@tuturuuu/internal-api';
+} from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -41,6 +41,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useTaskDialog } from '../../hooks/useTaskDialog';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
+import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { normalizeBoardText } from './board-text-utils';
 import { TaskCard } from './task';
 
@@ -104,6 +105,7 @@ export function EnhancedTaskList({
   onAddTask,
 }: Props) {
   const t = useTranslations('common');
+  const taskBoardT = useTranslations();
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(list.name);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -177,7 +179,11 @@ export function EnhancedTaskList({
     },
     onError: (error) => {
       console.error('Failed to update list name:', error);
-      toast.error('Failed to update list name');
+      toast.error(
+        isTaskListNameExistsError(error)
+          ? taskBoardT('ws-task-boards.layout_settings.list_name_exists')
+          : 'Failed to update list name'
+      );
     },
   });
 

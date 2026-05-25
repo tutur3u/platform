@@ -3565,6 +3565,12 @@
     "create": "Tạo bảng",
     "create_description": "Tạo bảng nhiệm vụ",
     "description": "Bảng nhiệm vụ được sử dụng để quản lý các công việc liên quan đến một dự án hoặc mục tiêu cụ thể.",
+    "errors": {
+      "name_exists": "Đã có bảng nhiệm vụ với tên này trong không gian làm việc."
+    },
+    "layout_settings": {
+      "list_name_exists": "Đã có danh sách với tên này trong bảng."
+    },
     "name": "Tên bảng",
     "plural": "Bảng nhiệm vụ",
     "select_or_create_list": "Chọn hoặc tạo danh sách",

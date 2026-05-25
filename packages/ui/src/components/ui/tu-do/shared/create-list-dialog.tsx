@@ -10,7 +10,7 @@ import {
   FileText,
   Loader2,
 } from '@tuturuuu/icons';
-import { createWorkspaceTaskList } from '@tuturuuu/internal-api';
+import { createWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { TaskBoardStatus } from '@tuturuuu/types/primitives/TaskBoard';
 import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
@@ -35,7 +35,8 @@ import {
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { getDefaultTaskListColorForStatus } from '@tuturuuu/utils/task-list-status';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { isTaskListNameExistsError } from './task-board-errors';
 
 interface CreateListDialogProps {
   open: boolean;
@@ -57,6 +58,7 @@ interface CreateListDialogProps {
     createList?: string;
     listCreatedSuccessfully?: string;
     failedToCreateList?: string;
+    listNameAlreadyExists?: string;
     // Status labels
     backlog?: string;
     active?: string;
@@ -151,6 +153,9 @@ export function CreateListDialog({
       translations?.listCreatedSuccessfully ?? 'List created successfully',
     failedToCreateList:
       translations?.failedToCreateList ?? 'Failed to create list',
+    listNameAlreadyExists:
+      translations?.listNameAlreadyExists ??
+      'A list with this name already exists on this board',
     // Status labels
     backlog: translations?.backlog ?? 'Backlog',
     active: translations?.active ?? 'Active',
@@ -178,6 +183,7 @@ export function CreateListDialog({
   const [newListColor, setNewListColor] = useState<SupportedColor>(
     getDefaultTaskListColorForStatus(resolvedInitialStatus)
   );
+  const submitInFlightRef = useRef(false);
 
   // Sync initial fields when dialog opens
   useEffect(() => {
@@ -258,12 +264,27 @@ export function CreateListDialog({
       resetForm();
     },
     onError: (error: any) => {
-      toast.error(error.message || t.failedToCreateList);
+      toast.error(
+        isTaskListNameExistsError(error)
+          ? t.listNameAlreadyExists
+          : error.message || t.failedToCreateList
+      );
+    },
+    onSettled: () => {
+      submitInFlightRef.current = false;
     },
   });
 
   const handleCreateList = () => {
-    if (!newListName.trim()) return;
+    if (
+      !newListName.trim() ||
+      submitInFlightRef.current ||
+      createListMutation.isPending
+    ) {
+      return;
+    }
+
+    submitInFlightRef.current = true;
     createListMutation.mutate({
       name: newListName.trim(),
       status: newListStatus,

@@ -31,6 +31,7 @@ import { useTranslations } from 'next-intl';
 import React from 'react';
 import * as z from 'zod';
 import IconPicker from '../../custom/icon-picker';
+import { isTaskBoardNameExistsError } from '../shared/task-board-errors';
 
 interface Props {
   wsId: string;
@@ -137,7 +138,9 @@ export function TaskBoardForm({
       console.error('Error submitting form:', error);
 
       toast.error(
-        getErrorMessage(error) ?? t('ws-task-boards.errors.unexpected')
+        isTaskBoardNameExistsError(error)
+          ? t('ws-task-boards.errors.name_exists')
+          : (getErrorMessage(error) ?? t('ws-task-boards.errors.unexpected'))
       );
     }
   };

@@ -25,6 +25,30 @@ const updateListSchema = z
     }
   );
 
+const TASK_LIST_NAME_EXISTS_CODE = 'TASK_LIST_NAME_EXISTS';
+const TASK_LIST_NAME_EXISTS_ERROR =
+  'A task list with this name already exists on this board';
+
+function isUniqueViolation(error: unknown) {
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505'
+  );
+}
+
+function taskListNameExistsResponse() {
+  return NextResponse.json(
+    {
+      code: TASK_LIST_NAME_EXISTS_CODE,
+      error: TASK_LIST_NAME_EXISTS_ERROR,
+    },
+    { status: 409 }
+  );
+}
+
 export async function PATCH(
   request: Request,
   {
@@ -106,6 +130,10 @@ export async function PATCH(
       .maybeSingle();
 
     if (error) {
+      if (isUniqueViolation(error)) {
+        return taskListNameExistsResponse();
+      }
+
       return NextResponse.json(
         { error: 'Failed to update task list' },
         { status: 500 }

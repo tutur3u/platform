@@ -31,6 +31,7 @@ export default function MyTasksContent({
   isPersonal,
 }: MyTasksContentProps) {
   const t = useTranslations('ws-tasks');
+  const taskBoardT = useTranslations();
   const queryClient = useQueryClient();
   const { data: credits } = useAiCredits(wsId);
   const aiCreditsExhausted = credits ? credits.remaining <= 0 : false;
@@ -230,6 +231,11 @@ export default function MyTasksContent({
           onSuccess={(listId) => {
             state.setSelectedListId(listId);
             state.setNewListName('');
+          }}
+          translations={{
+            listNameAlreadyExists: taskBoardT(
+              'ws-task-boards.layout_settings.list_name_exists'
+            ),
           }}
         />
       )}

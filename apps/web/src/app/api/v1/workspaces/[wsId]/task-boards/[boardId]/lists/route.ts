@@ -12,6 +12,30 @@ const createListSchema = z.object({
   color: supportedColorSchema.optional(),
 });
 
+const TASK_LIST_NAME_EXISTS_CODE = 'TASK_LIST_NAME_EXISTS';
+const TASK_LIST_NAME_EXISTS_ERROR =
+  'A task list with this name already exists on this board';
+
+function isUniqueViolation(error: unknown) {
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505'
+  );
+}
+
+function taskListNameExistsResponse() {
+  return NextResponse.json(
+    {
+      code: TASK_LIST_NAME_EXISTS_CODE,
+      error: TASK_LIST_NAME_EXISTS_ERROR,
+    },
+    { status: 409 }
+  );
+}
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ wsId: string; boardId: string }> }
@@ -106,6 +130,10 @@ export async function POST(
     );
 
     if (error) {
+      if (isUniqueViolation(error)) {
+        return taskListNameExistsResponse();
+      }
+
       const message =
         typeof error.message === 'string' && error.message.trim().length > 0
           ? error.message

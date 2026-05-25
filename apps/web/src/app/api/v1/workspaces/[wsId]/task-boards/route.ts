@@ -29,6 +29,10 @@ const createBoardSchema = z.object({
   template_id: z.guid().optional(),
 });
 
+const TASK_BOARD_NAME_EXISTS_CODE = 'TASK_BOARD_NAME_EXISTS';
+const TASK_BOARD_NAME_EXISTS_ERROR =
+  'A task board with this name already exists';
+
 const listBoardsSearchSchema = z.object({
   q: z.string().trim().max(100).optional(),
   page: z.coerce.number().int().min(1).optional(),
@@ -40,6 +44,26 @@ const listBoardsSearchSchema = z.object({
 });
 
 const BOARD_IDS_BATCH_SIZE = 500;
+
+function isUniqueViolation(error: unknown) {
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505'
+  );
+}
+
+function taskBoardNameExistsResponse() {
+  return NextResponse.json(
+    {
+      code: TASK_BOARD_NAME_EXISTS_CODE,
+      error: TASK_BOARD_NAME_EXISTS_ERROR,
+    },
+    { status: 409 }
+  );
+}
 
 type TaskBoardRequestAuth =
   | {
@@ -366,6 +390,10 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (error) {
+      if (isUniqueViolation(error)) {
+        return taskBoardNameExistsResponse();
+      }
+
       return NextResponse.json(
         { error: 'Failed to create workspace board' },
         { status: 500 }

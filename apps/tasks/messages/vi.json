@@ -12198,6 +12198,9 @@
       "description": "Tạo bảng đầu tiên để bắt đầu sắp xếp công việc.",
       "title": "Không tìm thấy bảng"
     },
+    "errors": {
+      "name_exists": "Đã có bảng nhiệm vụ với tên này trong không gian làm việc."
+    },
     "filters": {
       "search_label": "Tìm kiếm",
       "search_placeholder": "Tìm bảng...",
@@ -12267,6 +12270,7 @@
       "indigo": "Xanh chàm",
       "list_deleted": "Xóa danh sách thành công",
       "list_name": "Tên danh sách",
+      "list_name_exists": "Đã có danh sách với tên này trong bảng.",
       "list_updated": "Cập nhật danh sách thành công",
       "lists_reordered": "Đã sắp xếp lại danh sách",
       "moved_to_status": "Đã di chuyển sang {status}",

@@ -38,6 +38,7 @@ import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useBoardBroadcast } from '../../shared/board-broadcast-context';
 import { EditListDialog } from '../../shared/edit-list-dialog';
+import { isTaskListNameExistsError } from '../../shared/task-board-errors';
 import { BoardSelector } from '../board-selector';
 
 interface Props {
@@ -68,6 +69,7 @@ export function ListActions({
   onEditOpenChange,
 }: Props) {
   const t = useTranslations('common');
+  const taskBoardT = useTranslations();
   const canManageList = Boolean(wsId && boardId);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isArchiveDialogOpen, setIsArchiveDialogOpen] = useState(false);
@@ -213,7 +215,13 @@ export function ListActions({
           context.previousLists
         );
       }
-      toast.error(error instanceof Error ? error.message : t('save_failed'));
+      toast.error(
+        isTaskListNameExistsError(error)
+          ? taskBoardT('ws-task-boards.layout_settings.list_name_exists')
+          : error instanceof Error
+            ? error.message
+            : t('save_failed')
+      );
     },
   });
 
@@ -279,7 +287,11 @@ export function ListActions({
     },
     onError: (error) => {
       console.error('Failed to archive tasks:', error);
-      toast.error(t('failed_to_archive_tasks'));
+      toast.error(
+        isTaskListNameExistsError(error)
+          ? taskBoardT('ws-task-boards.layout_settings.list_name_exists')
+          : t('failed_to_archive_tasks')
+      );
     },
   });
 

@@ -11,6 +11,21 @@ const eqUpdatedIdMock = vi.fn();
 const updateMock = vi.fn();
 const fromMock = vi.fn();
 
+vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
+  SUPPORTED_COLORS: [
+    'GRAY',
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+  ],
+}));
+
 vi.mock('../access', () => ({
   requireBoardAccess: (...args: Parameters<typeof requireBoardAccessMock>) =>
     requireBoardAccessMock(...args),
@@ -133,6 +148,45 @@ describe('task board lists/[listId] route PATCH', () => {
       name: 'Abandoned',
       status: 'closed',
       color: 'PURPLE',
+    });
+  });
+
+  it('returns a stable duplicate-name error when renaming to an existing list name', async () => {
+    maybeSingleUpdatedListMock.mockResolvedValueOnce({
+      data: null,
+      error: {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "idx_task_lists_unique_active_name"',
+      },
+    });
+
+    const response = await PATCH(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/board-1/lists/list-1',
+        {
+          method: 'PATCH',
+          body: JSON.stringify({
+            name: 'Backlog',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: 'board-1',
+          listId: 'list-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'TASK_LIST_NAME_EXISTS',
+      error: 'A task list with this name already exists on this board',
     });
   });
 });

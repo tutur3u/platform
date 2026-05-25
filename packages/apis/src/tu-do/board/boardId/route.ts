@@ -22,6 +22,30 @@ const paramsSchema = z.object({
   boardId: z.guid(),
 });
 
+const TASK_BOARD_NAME_EXISTS_CODE = 'TASK_BOARD_NAME_EXISTS';
+const TASK_BOARD_NAME_EXISTS_ERROR =
+  'A task board with this name already exists';
+
+function isUniqueViolation(error: unknown) {
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505'
+  );
+}
+
+function taskBoardNameExistsResponse() {
+  return NextResponse.json(
+    {
+      code: TASK_BOARD_NAME_EXISTS_CODE,
+      error: TASK_BOARD_NAME_EXISTS_ERROR,
+    },
+    { status: 409 }
+  );
+}
+
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: id, boardId } = await params;
   const parsedSchema = paramsSchema.safeParse({ boardId });
@@ -86,6 +110,10 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
+    if (isUniqueViolation(error)) {
+      return taskBoardNameExistsResponse();
+    }
+
     console.log(error);
     return NextResponse.json(
       { message: 'Error updating workspace board' },

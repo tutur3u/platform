@@ -12218,6 +12218,9 @@
       "description": "Create your first board to start organizing tasks.",
       "title": "No boards found"
     },
+    "errors": {
+      "name_exists": "A task board with this name already exists in this workspace."
+    },
     "filters": {
       "search_label": "Search",
       "search_placeholder": "Search boards...",
@@ -12287,6 +12290,7 @@
       "indigo": "Indigo",
       "list_deleted": "List deleted successfully",
       "list_name": "List Name",
+      "list_name_exists": "A list with this name already exists on this board.",
       "list_updated": "List updated successfully",
       "lists_reordered": "Lists reordered",
       "moved_to_status": "Moved to {status}",

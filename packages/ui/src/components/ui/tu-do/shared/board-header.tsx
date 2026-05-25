@@ -1081,6 +1081,9 @@ export function BoardHeader({
             failedToUpdateList: t(
               'ws-task-boards.layout_settings.failed_to_update'
             ),
+            listNameAlreadyExists: t(
+              'ws-task-boards.layout_settings.list_name_exists'
+            ),
             colorUpdated: t('ws-task-boards.layout_settings.color_updated'),
             failedToUpdateColor: t(
               'ws-task-boards.layout_settings.failed_to_update_color'

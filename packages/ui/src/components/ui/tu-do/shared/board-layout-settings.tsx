@@ -31,7 +31,7 @@ import {
   Plus,
   Trash2,
 } from '@tuturuuu/icons';
-import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
+import { updateWorkspaceTaskList } from '@tuturuuu/internal-api/tasks';
 import type { WorkspaceTaskList } from '@tuturuuu/types';
 import type { SupportedColor } from '@tuturuuu/types/primitives/SupportedColors';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -73,6 +73,7 @@ import {
 } from './board-broadcast-context';
 import { CreateListDialog } from './create-list-dialog';
 import { EditListDialog } from './edit-list-dialog';
+import { isTaskListNameExistsError } from './task-board-errors';
 import { translateTaskListNameForDisplay } from './utils/translate-task-list-display-name';
 
 interface BoardLayoutSettingsProps {
@@ -101,6 +102,7 @@ interface BoardLayoutSettingsProps {
     deleteListConfirm?: string;
     listUpdatedSuccessfully?: string;
     failedToUpdateList?: string;
+    listNameAlreadyExists?: string;
     colorUpdated?: string;
     failedToUpdateColor?: string;
     listDeletedSuccessfully?: string;
@@ -495,6 +497,9 @@ export function BoardLayoutSettings({
         translations?.listUpdatedSuccessfully ?? 'List updated successfully',
       failedToUpdateList:
         translations?.failedToUpdateList ?? 'Failed to update list',
+      listNameAlreadyExists:
+        translations?.listNameAlreadyExists ??
+        'A list with this name already exists on this board',
       colorUpdated: translations?.colorUpdated ?? 'Color updated',
       failedToUpdateColor:
         translations?.failedToUpdateColor ?? 'Failed to update color',
@@ -624,7 +629,11 @@ export function BoardLayoutSettings({
         queryClient.setQueryData(['task_lists', boardId], context.previous);
       }
       toast.error(
-        error instanceof Error ? error.message : t.failedToUpdateList
+        isTaskListNameExistsError(error)
+          ? t.listNameAlreadyExists
+          : error instanceof Error
+            ? error.message
+            : t.failedToUpdateList
       );
     },
   });
@@ -1029,6 +1038,9 @@ export function BoardLayoutSettings({
         initialStatus={createListStatus}
         onSuccess={() => {
           onUpdate();
+        }}
+        translations={{
+          listNameAlreadyExists: t.listNameAlreadyExists,
         }}
       />
 

@@ -3565,6 +3565,12 @@
     "create": "Create board",
     "create_description": "Create a task board",
     "description": "Task boards are used to manage tasks that are related to a specific project or goal.",
+    "errors": {
+      "name_exists": "A task board with this name already exists in this workspace."
+    },
+    "layout_settings": {
+      "list_name_exists": "A list with this name already exists on this board."
+    },
     "name": "Board name",
     "plural": "Task boards",
     "select_or_create_list": "Select or create a list",

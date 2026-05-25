@@ -174,6 +174,7 @@ function TaskCardInner({
   const broadcast = useBoardBroadcast();
   const t = useTranslations('common');
   const tTasks = useTranslations('ws-tasks');
+  const taskBoardT = useTranslations();
   const tasksHref = useTasksHref();
   const locale = useLocale();
   const dateLocale = locale === 'vi' ? vi : enUS;
@@ -2427,6 +2428,11 @@ function TaskCardInner({
           initialStatus="active"
           onSuccess={(listId) => {
             handleMoveToList(listId);
+          }}
+          translations={{
+            listNameAlreadyExists: taskBoardT(
+              'ws-task-boards.layout_settings.list_name_exists'
+            ),
           }}
         />
       )}

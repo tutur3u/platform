@@ -17392,6 +17392,7 @@
       "title": "Không tìm thấy bảng"
     },
     "errors": {
+      "name_exists": "Đã có bảng nhiệm vụ với tên này trong không gian làm việc.",
       "unexpected": "Đã xảy ra lỗi không mong muốn"
     },
     "filters": {
@@ -17463,6 +17464,7 @@
       "indigo": "Xanh chàm",
       "list_deleted": "Xóa danh sách thành công",
       "list_name": "Tên danh sách",
+      "list_name_exists": "Đã có danh sách với tên này trong bảng.",
       "list_updated": "Cập nhật danh sách thành công",
       "lists_reordered": "Đã sắp xếp lại danh sách",
       "moved_to_status": "Đã di chuyển sang {status}",

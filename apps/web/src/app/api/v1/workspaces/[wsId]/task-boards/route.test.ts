@@ -7,7 +7,10 @@ const workspaceMembersEqMock = vi.fn();
 const boardsOrderCreatedAtMock = vi.fn();
 const boardsOrderNameMock = vi.fn();
 const boardsEqMock = vi.fn();
+const boardsInsertMock = vi.fn();
 const boardsSelectMock = vi.fn();
+const insertedBoardSelectMock = vi.fn();
+const insertedBoardSingleMock = vi.fn();
 const taskListsEqMock = vi.fn();
 const taskListsInMock = vi.fn();
 const taskListsSelectMock = vi.fn();
@@ -74,7 +77,7 @@ vi.mock('@/lib/tasks/default-personal-task-board', () => ({
   ) => ensureDefaultPersonalTaskBoardMock(...args),
 }));
 
-import { GET } from './route';
+import { GET, POST } from './route';
 
 describe('task boards route GET', () => {
   beforeEach(() => {
@@ -133,6 +136,20 @@ describe('task boards route GET', () => {
     boardsSelectMock.mockReturnValue({
       eq: boardsEqMock,
     });
+    boardsInsertMock.mockReturnValue({
+      select: insertedBoardSelectMock,
+    });
+    insertedBoardSelectMock.mockReturnValue({
+      single: insertedBoardSingleMock,
+    });
+    insertedBoardSingleMock.mockResolvedValue({
+      data: {
+        id: '00000000-0000-4000-8000-000000000456',
+        name: 'Roadmap',
+        ws_id: '00000000-0000-4000-8000-000000000123',
+      },
+      error: null,
+    });
 
     taskListsEqMock.mockResolvedValue({
       data: [],
@@ -167,6 +184,7 @@ describe('task boards route GET', () => {
 
       if (table === 'workspace_boards') {
         return {
+          insert: boardsInsertMock,
           select: boardsSelectMock,
         };
       }
@@ -301,5 +319,45 @@ describe('task boards route GET', () => {
       expect.any(NextRequest),
       { targetApp: ['calendar', 'tasks'] }
     );
+  });
+
+  it('returns a stable duplicate-name error when creating an existing board name', async () => {
+    getPermissionsMock.mockResolvedValue({
+      containsPermission: vi.fn().mockReturnValue(true),
+    });
+    insertedBoardSingleMock.mockResolvedValueOnce({
+      data: null,
+      error: {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "idx_workspace_boards_unique_active_name"',
+      },
+    });
+
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: ' Roadmap ',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'TASK_BOARD_NAME_EXISTS',
+      error: 'A task board with this name already exists',
+    });
   });
 });

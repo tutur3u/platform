@@ -4,6 +4,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const requireBoardAccessMock = vi.fn();
 const rpcMock = vi.fn();
 
+vi.mock('@tuturuuu/types/primitives/SupportedColors', () => ({
+  SUPPORTED_COLORS: [
+    'GRAY',
+    'RED',
+    'BLUE',
+    'GREEN',
+    'YELLOW',
+    'ORANGE',
+    'PURPLE',
+    'PINK',
+    'INDIGO',
+    'CYAN',
+  ],
+}));
+
 vi.mock('./access', () => ({
   requireBoardAccess: (...args: Parameters<typeof requireBoardAccessMock>) =>
     requireBoardAccessMock(...args),
@@ -220,6 +235,45 @@ describe('task board lists route POST', () => {
     expect(response.status).toBe(500);
     await expect(response.json()).resolves.toEqual({
       error: 'Only one closed list is allowed per board',
+    });
+  });
+
+  it('returns a stable duplicate-name error when creating an existing list name', async () => {
+    rpcMock.mockResolvedValue({
+      data: null,
+      error: {
+        code: '23505',
+        message:
+          'duplicate key value violates unique constraint "idx_task_lists_unique_active_name"',
+      },
+    });
+
+    const response = await POST(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/board-1/lists',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            name: ' Backlog ',
+            status: 'not_started',
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: 'board-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({
+      code: 'TASK_LIST_NAME_EXISTS',
+      error: 'A task list with this name already exists on this board',
     });
   });
 });

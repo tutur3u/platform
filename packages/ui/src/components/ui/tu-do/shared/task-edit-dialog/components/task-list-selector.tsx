@@ -116,6 +116,11 @@ export function TaskListSelector({
         onSuccess={(listId) => {
           onListChange(listId);
         }}
+        translations={{
+          listNameAlreadyExists: t(
+            'ws-task-boards.layout_settings.list_name_exists'
+          ),
+        }}
       />
     </>
   );

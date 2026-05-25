@@ -20,6 +20,30 @@ const copySchema = z.object({
   newBoardName: z.string().trim().min(1).max(255).optional(),
 });
 
+const TASK_BOARD_NAME_EXISTS_CODE = 'TASK_BOARD_NAME_EXISTS';
+const TASK_BOARD_NAME_EXISTS_ERROR =
+  'A task board with this name already exists';
+
+function isUniqueViolation(error: unknown) {
+  return (
+    error !== null &&
+    error !== undefined &&
+    typeof error === 'object' &&
+    'code' in error &&
+    error.code === '23505'
+  );
+}
+
+function taskBoardNameExistsResponse() {
+  return NextResponse.json(
+    {
+      code: TASK_BOARD_NAME_EXISTS_CODE,
+      error: TASK_BOARD_NAME_EXISTS_ERROR,
+    },
+    { status: 409 }
+  );
+}
+
 interface Params {
   params: Promise<{
     wsId: string;
@@ -136,6 +160,10 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (boardError || !createdBoard) {
+      if (isUniqueViolation(boardError)) {
+        return taskBoardNameExistsResponse();
+      }
+
       return NextResponse.json(
         { error: 'Failed to create board copy' },
         { status: 500 }

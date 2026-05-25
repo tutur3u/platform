@@ -15,6 +15,12 @@ export default defineConfig({
     silent,
   },
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: '@tuturuuu/internal-api/tasks',
+        replacement: resolve(__dirname, '../internal-api/src/tasks.ts'),
+      },
+    ],
   },
 });

@@ -4,6 +4,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { toast } from '@tuturuuu/ui/sonner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TaskBoardForm } from '../form';
 
@@ -100,6 +101,30 @@ describe('TaskBoardForm', () => {
         name: 'My Board',
         icon: null,
       });
+    });
+  });
+
+  it('shows the localized duplicate-name message when the API rejects a duplicate board name', async () => {
+    mutateAsync.mockRejectedValueOnce({
+      code: 'TASK_BOARD_NAME_EXISTS',
+      message: 'Internal API request failed: 409',
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <TaskBoardForm wsId="ws-1" onFinish={vi.fn()} />
+      </QueryClientProvider>
+    );
+
+    fireEvent.change(screen.getByLabelText('ws-task-boards.name'), {
+      target: { value: 'Roadmap' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'common.create' }));
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith(
+        'ws-task-boards.errors.name_exists'
+      );
     });
   });
 });

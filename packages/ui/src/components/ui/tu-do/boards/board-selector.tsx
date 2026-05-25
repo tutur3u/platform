@@ -289,6 +289,11 @@ export function BoardSelector({
             setSelectedListId(listId);
             setNewListName('');
           }}
+          translations={{
+            listNameAlreadyExists: t(
+              'ws-task-boards.layout_settings.list_name_exists'
+            ),
+          }}
         />
       )}
     </Dialog>
