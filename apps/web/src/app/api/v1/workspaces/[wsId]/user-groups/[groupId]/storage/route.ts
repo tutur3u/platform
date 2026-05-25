@@ -1,15 +1,10 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import { sanitizeFilename } from '@tuturuuu/utils/storage-path';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { SessionAuthContext } from '@/lib/api-auth';
+import { withSessionAuth } from '@/lib/api-auth';
+import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   createWorkspaceStorageUploadPayload,
   deleteWorkspaceStorageObjectByPath,
@@ -39,8 +34,10 @@ function mapStorageError(error: unknown) {
 }
 
 async function prepareUserGroupStorageRequest(
-  request: Request,
-  rawParams: Promise<{ wsId: string; groupId: string }>,
+  rawParams:
+    | { wsId: string; groupId: string }
+    | Promise<{ wsId: string; groupId: string }>,
+  context: SessionAuthContext,
   permission: UserGroupStoragePermission
 ): Promise<
   | {
@@ -58,28 +55,20 @@ async function prepareUserGroupStorageRequest(
   }
 
   const { wsId, groupId } = parsedParams.data;
-  const supabase = await createClient(request);
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  const access = await requireTeachWorkspaceAccess({
+    context,
+    permission,
+    wsId,
+  });
+  if (access instanceof NextResponse) {
+    return access;
   }
 
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const permissions = await getPermissions({ wsId: normalizedWsId, request });
-
-  if (!permissions?.containsPermission(permission)) {
-    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-  }
-
-  const sbAdmin = await createAdminClient();
-  const { data: group, error: groupError } = await sbAdmin
+  const { data: group, error: groupError } = await access.sbAdmin
     .from('workspace_user_groups')
     .select('id')
-    .eq('ws_id', normalizedWsId)
+    .eq('ws_id', access.normalizedWsId)
     .eq('id', groupId)
     .maybeSingle();
 
@@ -97,35 +86,38 @@ async function prepareUserGroupStorageRequest(
     );
   }
 
-  return { groupId, normalizedWsId };
+  return { groupId, normalizedWsId: access.normalizedWsId };
 }
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ wsId: string; groupId: string }> }
-) {
-  try {
-    const prepared = await prepareUserGroupStorageRequest(
-      request,
-      params,
-      'view_user_groups'
-    );
-    if (prepared instanceof NextResponse) {
-      return prepared;
-    }
-
-    const result = await listWorkspaceStorageDirectory(
-      prepared.normalizedWsId,
-      {
-        path: `user-groups/${prepared.groupId}`,
+export const GET = withSessionAuth<{
+  groupId: string;
+  wsId: string;
+}>(
+  async (_request, context, params) => {
+    try {
+      const prepared = await prepareUserGroupStorageRequest(
+        params,
+        context,
+        'view_user_groups'
+      );
+      if (prepared instanceof NextResponse) {
+        return prepared;
       }
-    );
 
-    return NextResponse.json({ data: result.data });
-  } catch (error) {
-    return mapStorageError(error);
-  }
-}
+      const result = await listWorkspaceStorageDirectory(
+        prepared.normalizedWsId,
+        {
+          path: `user-groups/${prepared.groupId}`,
+        }
+      );
+
+      return NextResponse.json({ data: result.data });
+    } catch (error) {
+      return mapStorageError(error);
+    }
+  },
+  { allowAppSessionAuth: { targetApp: 'teach' } }
+);
 
 const uploadUrlSchema = z.object({
   filename: z.string().min(1).max(255),
@@ -133,112 +125,118 @@ const uploadUrlSchema = z.object({
   size: z.number().int().min(0).optional(),
 });
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ wsId: string; groupId: string }> }
-) {
-  try {
-    const prepared = await prepareUserGroupStorageRequest(
-      request,
-      params,
-      'update_user_groups'
-    );
-    if (prepared instanceof NextResponse) {
-      return prepared;
-    }
-
-    let payload: unknown;
+export const POST = withSessionAuth<{
+  groupId: string;
+  wsId: string;
+}>(
+  async (request, context, params) => {
     try {
-      payload = await request.json();
-    } catch {
-      return NextResponse.json(
-        { message: 'Invalid request body' },
-        { status: 400 }
+      const prepared = await prepareUserGroupStorageRequest(
+        params,
+        context,
+        'update_user_groups'
       );
-    }
-
-    const parsed = uploadUrlSchema.safeParse(payload);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { message: 'Invalid request body', errors: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const sanitizedFilename = sanitizeFilename(parsed.data.filename);
-    if (!sanitizedFilename) {
-      return NextResponse.json(
-        { message: 'Invalid filename' },
-        { status: 400 }
-      );
-    }
-
-    const filenameWithSuffix =
-      parsed.data.upsert === true
-        ? sanitizedFilename
-        : `${generateRandomUUID()}-${sanitizedFilename}`;
-
-    const uploadPayload = await createWorkspaceStorageUploadPayload(
-      prepared.normalizedWsId,
-      filenameWithSuffix,
-      {
-        path: `user-groups/${prepared.groupId}`,
-        upsert: parsed.data.upsert ?? false,
-        size: parsed.data.size,
+      if (prepared instanceof NextResponse) {
+        return prepared;
       }
-    );
 
-    return NextResponse.json({
-      signedUrl: uploadPayload.signedUrl,
-      token: uploadPayload.token,
-      headers: uploadPayload.headers,
-      path: uploadPayload.path,
-      fullPath: uploadPayload.fullPath,
-    });
-  } catch (error) {
-    return mapStorageError(error);
-  }
-}
+      let payload: unknown;
+      try {
+        payload = await request.json();
+      } catch {
+        return NextResponse.json(
+          { message: 'Invalid request body' },
+          { status: 400 }
+        );
+      }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ wsId: string; groupId: string }> }
-) {
-  try {
-    const prepared = await prepareUserGroupStorageRequest(
-      request,
-      params,
-      'update_user_groups'
-    );
-    if (prepared instanceof NextResponse) {
-      return prepared;
-    }
+      const parsed = uploadUrlSchema.safeParse(payload);
+      if (!parsed.success) {
+        return NextResponse.json(
+          { message: 'Invalid request body', errors: parsed.error.issues },
+          { status: 400 }
+        );
+      }
 
-    const url = new URL(request.url);
-    const filename = url.searchParams.get('filename');
+      const sanitizedFilename = sanitizeFilename(parsed.data.filename);
+      if (!sanitizedFilename) {
+        return NextResponse.json(
+          { message: 'Invalid filename' },
+          { status: 400 }
+        );
+      }
 
-    if (!filename) {
-      return NextResponse.json(
-        { message: 'Filename required' },
-        { status: 400 }
+      const filenameWithSuffix =
+        parsed.data.upsert === true
+          ? sanitizedFilename
+          : `${generateRandomUUID()}-${sanitizedFilename}`;
+
+      const uploadPayload = await createWorkspaceStorageUploadPayload(
+        prepared.normalizedWsId,
+        filenameWithSuffix,
+        {
+          path: `user-groups/${prepared.groupId}`,
+          upsert: parsed.data.upsert ?? false,
+          size: parsed.data.size,
+        }
       );
-    }
 
-    const sanitizedFilename = sanitizeFilename(filename);
-    if (!sanitizedFilename) {
-      return NextResponse.json(
-        { message: 'Invalid filename' },
-        { status: 400 }
+      return NextResponse.json({
+        signedUrl: uploadPayload.signedUrl,
+        token: uploadPayload.token,
+        headers: uploadPayload.headers,
+        path: uploadPayload.path,
+        fullPath: uploadPayload.fullPath,
+      });
+    } catch (error) {
+      return mapStorageError(error);
+    }
+  },
+  { allowAppSessionAuth: { targetApp: 'teach' } }
+);
+
+export const DELETE = withSessionAuth<{
+  groupId: string;
+  wsId: string;
+}>(
+  async (request, context, params) => {
+    try {
+      const prepared = await prepareUserGroupStorageRequest(
+        params,
+        context,
+        'update_user_groups'
       );
+      if (prepared instanceof NextResponse) {
+        return prepared;
+      }
+
+      const url = new URL(request.url);
+      const filename = url.searchParams.get('filename');
+
+      if (!filename) {
+        return NextResponse.json(
+          { message: 'Filename required' },
+          { status: 400 }
+        );
+      }
+
+      const sanitizedFilename = sanitizeFilename(filename);
+      if (!sanitizedFilename) {
+        return NextResponse.json(
+          { message: 'Invalid filename' },
+          { status: 400 }
+        );
+      }
+
+      await deleteWorkspaceStorageObjectByPath(
+        prepared.normalizedWsId,
+        `user-groups/${prepared.groupId}/${sanitizedFilename}`
+      );
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      return mapStorageError(error);
     }
-
-    await deleteWorkspaceStorageObjectByPath(
-      prepared.normalizedWsId,
-      `user-groups/${prepared.groupId}/${sanitizedFilename}`
-    );
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return mapStorageError(error);
-  }
-}
+  },
+  { allowAppSessionAuth: { targetApp: 'teach' } }
+);

@@ -7,7 +7,7 @@ Teach lives in `apps/teach` and runs locally on port `7813`. It is the teacher-f
 
 ## Ownership model
 
-Teach is a standalone teacher UI, but not a separate backend. Core teacher actions must stay inside `apps/teach`; avoid protected dashboard and course actions that jump teachers back to `apps/web`. The app forwards `/api/v1/*` traffic to the central web app through the satellite rewrite and API proxy guard; Teach-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Teach host.
+Teach is a standalone teacher UI, but not a separate backend. Core teacher actions must stay inside `apps/teach`; avoid protected dashboard and course actions that jump teachers back to `apps/web`. The app forwards `/api/v1/*` and `/api/ai/*` traffic to the central web app through the satellite rewrite and API proxy guard; Teach-local API routes must stay limited to the auth cookie handoff and logout surfaces that require the Teach host.
 
 `apps/web` remains the protected API owner. Teach-callable routes must opt in to app-session auth for the `teach` audience, resolve permissions from the forwarded app-session user, and then perform admin-backed reads/writes only after workspace membership is verified. New Teach-owned flows should add typed helpers in `@tuturuuu/internal-api` and consume those helpers from Teach client components with TanStack Query.
 
