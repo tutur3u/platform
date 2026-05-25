@@ -1,6 +1,7 @@
 'use client';
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { listTransactionCategories } from '@tuturuuu/internal-api/finance';
 import type { TransactionCategoryWithStats } from '@tuturuuu/types/primitives/TransactionCategory';
 
 export interface TransactionCategoriesParams {
@@ -45,18 +46,8 @@ export function useTransactionCategories(
       { q, page, pageSize, type, minAmount, maxAmount },
     ],
     queryFn: async (): Promise<TransactionCategoriesResponse> => {
-      // Fetch all categories from the existing API endpoint
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/categories`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch transaction categories');
-      }
-
       const allCategories: TransactionCategoryWithStats[] =
-        await response.json();
+        await listTransactionCategories(wsId);
 
       // Apply client-side filtering
       let filtered = allCategories;

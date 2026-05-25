@@ -2,13 +2,15 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from '@tuturuuu/icons';
+import {
+  getFinanceBalanceAtDate,
+  listFinanceDailyIncomeExpense,
+} from '@tuturuuu/internal-api/finance';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
 import dayjs from 'dayjs';
-import { useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -26,27 +28,7 @@ import {
   ChartTooltipContent,
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
-
-const setCookie = (name: string, value: string, days = 365) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  // biome-ignore lint/suspicious/noDocumentCookie: Used for finance confidential mode state persistence
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-};
+import { useFinanceConfidentialVisibility } from './use-finance-confidential-visibility';
 
 type ViewMode = 'all' | 'income' | 'expense';
 
@@ -63,14 +45,41 @@ export function DailyTotalChartClient({
   className,
   includeConfidential = true,
 }: DailyTotalChartClientProps) {
+  const appLocale = useLocale();
   const t = useTranslations('transaction-data-table');
-  const { resolvedTheme } = useTheme();
+  const analyticsT = useTranslations('finance-analytics');
   const [viewMode, setViewMode] = useState<ViewMode>('all');
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential, toggleConfidential } =
+    useFinanceConfidentialVisibility();
   const [dateOffset, setDateOffset] = useState(0);
 
-  const incomeColor = resolvedTheme === 'dark' ? '#4ade80' : '#16a34a';
-  const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
+  const incomeColor = 'var(--chart-2)';
+  const expenseColor = 'var(--chart-5)';
+  const shortDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(appLocale, { month: 'short', day: 'numeric' }),
+    [appLocale]
+  );
+  const longDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(appLocale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+    [appLocale]
+  );
+
+  const formatChartDate = (value: unknown, formatter: Intl.DateTimeFormat) => {
+    const fallback = String(value);
+    const date = new Date(fallback);
+
+    if (Number.isNaN(date.getTime())) {
+      return fallback;
+    }
+
+    return formatter.format(date);
+  };
 
   // Calculate date range based on offset (14-day windows)
   const dateRange = useMemo(() => {
@@ -79,13 +88,13 @@ export function DailyTotalChartClient({
     return {
       startDate: startDate.startOf('day').toISOString(),
       endDate: endDate.endOf('day').toISOString(),
-      displayStart: startDate.format('MMM D'),
-      displayEnd: endDate.format('MMM D, YYYY'),
+      displayStart: shortDateFormatter.format(startDate.toDate()),
+      displayEnd: longDateFormatter.format(endDate.toDate()),
     };
-  }, [dateOffset]);
+  }, [dateOffset, longDateFormatter, shortDateFormatter]);
 
   // Fetch chart data
-  const { data: chartResponse, isLoading } = useQuery({
+  const { data = [], isLoading } = useQuery({
     queryKey: [
       'daily-chart',
       wsId,
@@ -93,19 +102,12 @@ export function DailyTotalChartClient({
       dateRange.endDate,
       includeConfidential,
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
+    queryFn: () =>
+      listFinanceDailyIncomeExpense(wsId, {
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/daily?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch daily chart data');
-      return res.json();
-    },
+        includeConfidential,
+      }),
   });
 
   // Fetch opening balance (balance at start of period)
@@ -116,80 +118,31 @@ export function DailyTotalChartClient({
       dateRange.startDate,
       includeConfidential,
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
+    queryFn: () =>
+      getFinanceBalanceAtDate(wsId, {
         date: dateRange.startDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/balance?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch opening balance');
-      return res.json();
-    },
+        includeConfidential,
+      }),
   });
 
   // Fetch closing balance (balance at end of period)
   const { data: closingBalanceRes } = useQuery({
     queryKey: ['closing-balance', wsId, dateRange.endDate, includeConfidential],
-    queryFn: async () => {
-      const params = new URLSearchParams({
+    queryFn: () =>
+      getFinanceBalanceAtDate(wsId, {
         date: dateRange.endDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/balance?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch closing balance');
-      return res.json();
-    },
+        includeConfidential,
+      }),
   });
 
-  const data = chartResponse?.data || [];
   const openingBalance = openingBalanceRes?.balance;
   const closingBalance = closingBalanceRes?.balance;
 
-  // Load confidential mode from cookie on mount
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
-
-  const toggleConfidential = () => {
-    const newValue = !isConfidential;
-    setIsConfidential(newValue);
-    setCookie('finance-confidential-mode', String(newValue));
-    window.dispatchEvent(new Event('finance-confidential-mode-change'));
-  };
-
-  const locale = getCurrencyLocale(currency);
+  const currencyLocale = getCurrencyLocale(currency);
 
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
@@ -199,7 +152,7 @@ export function DailyTotalChartClient({
 
   const formatCompactValue = (value: number) => {
     if (isConfidential) return '•••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,
@@ -226,7 +179,9 @@ export function DailyTotalChartClient({
           <CardTitle>{t('daily_total_from_14_recent_days')}</CardTitle>
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
-          <p className="text-muted-foreground text-sm">No data available</p>
+          <p className="text-muted-foreground text-sm">
+            {analyticsT('no-data')}
+          </p>
         </CardContent>
       </Card>
     );
@@ -266,7 +221,7 @@ export function DailyTotalChartClient({
                 size="icon"
                 onClick={() => setDateOffset((d) => d + 1)}
                 className="h-7 w-7"
-                title="Previous period"
+                title={analyticsT('previous-period')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -279,7 +234,7 @@ export function DailyTotalChartClient({
                 onClick={() => setDateOffset((d) => Math.max(0, d - 1))}
                 disabled={dateOffset === 0}
                 className="h-7 w-7"
-                title="Next period"
+                title={analyticsT('next-period')}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -356,11 +311,7 @@ export function DailyTotalChartClient({
               tickMargin={10}
               axisLine={false}
               tickFormatter={(value) => {
-                try {
-                  return format(new Date(value), 'MMM dd');
-                } catch {
-                  return value;
-                }
+                return formatChartDate(value, shortDateFormatter);
               }}
             />
             <YAxis
@@ -375,11 +326,7 @@ export function DailyTotalChartClient({
             <ChartTooltip
               content={<ChartTooltipContent indicator="dot" />}
               labelFormatter={(value) => {
-                try {
-                  return format(new Date(value), 'MMMM dd, yyyy');
-                } catch {
-                  return value;
-                }
+                return formatChartDate(value, longDateFormatter);
               }}
               formatter={(value, name) => {
                 const formattedValue =

@@ -5,7 +5,7 @@ import StatisticCard from '@tuturuuu/ui/finance/statistics/card';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import dayjs from 'dayjs';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 
 const enabled = true;
 
@@ -20,6 +20,7 @@ export default async function MonthlyExpenseStatistics({
 }) {
   const supabase = await createClient();
   const t = await getTranslations();
+  const locale = await getLocale();
 
   // Parse includeConfidential from URL param (defaults to true if not set)
   const includeConfidentialBool = includeConfidential !== 'false';
@@ -46,7 +47,9 @@ export default async function MonthlyExpenseStatistics({
   if (!enabled || !containsPermission('manage_finance')) return null;
 
   // Get current month name for the title
-  const currentMonth = dayjs().format('MMMM');
+  const currentMonth = new Intl.DateTimeFormat(locale, {
+    month: 'long',
+  }).format(new Date());
 
   return (
     <StatisticCard

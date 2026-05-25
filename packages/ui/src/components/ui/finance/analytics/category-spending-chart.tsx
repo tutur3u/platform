@@ -10,7 +10,7 @@ import {
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { cn } from '@tuturuuu/utils/format';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 
 interface CategorySpendingChartProps {
@@ -42,6 +42,7 @@ export function CategorySpendingChart({
   currency = 'USD',
 }: CategorySpendingChartProps) {
   const locale = useLocale();
+  const t = useTranslations();
 
   const { data: categoryData, isLoading } = useQuery({
     queryKey: ['category_spending', wsId, startDate, endDate],
@@ -55,7 +56,8 @@ export function CategorySpendingChart({
       const categoryMap = new Map<string, number>();
 
       data?.forEach((transaction) => {
-        const categoryName = transaction.category_name || 'Uncategorized';
+        const categoryName =
+          transaction.category_name || t('finance-transactions.no-category');
         const amount = Math.abs(Number(transaction.total));
 
         categoryMap.set(
@@ -89,7 +91,7 @@ export function CategorySpendingChart({
   return (
     <Card className={cn('flex flex-col', className)}>
       <CardHeader>
-        <CardTitle>Spending by Category</CardTitle>
+        <CardTitle>{t('finance.spending-by-category')}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
         {isLoading ? (
@@ -138,8 +140,8 @@ export function CategorySpendingChart({
 
             <div className="space-y-2">
               <div className="flex justify-between border-b pb-2 font-semibold">
-                <span>Category</span>
-                <span>Amount</span>
+                <span>{t('transaction-data-table.category')}</span>
+                <span>{t('transaction-data-table.amount')}</span>
               </div>
               {categoryData.map((item, index) => {
                 const percentage = (item.value / totalSpending) * 100;
@@ -173,7 +175,7 @@ export function CategorySpendingChart({
               })}
               <div className="border-t pt-2 font-semibold">
                 <div className="flex items-center justify-between">
-                  <span>Total</span>
+                  <span>{t('finance-transactions.total')}</span>
                   <span>
                     {new Intl.NumberFormat(locale, {
                       style: 'currency',
@@ -186,7 +188,7 @@ export function CategorySpendingChart({
           </div>
         ) : (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
-            No spending data available for the selected period
+            {t('finance-analytics.no-data')}
           </div>
         )}
       </CardContent>

@@ -19,6 +19,7 @@ import {
 } from '@tuturuuu/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface TypeFilterProps {
@@ -30,13 +31,13 @@ interface TypeFilterProps {
 const typeOptions = [
   {
     value: 'income',
-    label: 'Income',
+    labelKey: 'income',
     icon: ArrowUpCircle,
     color: 'text-dynamic-green',
   },
   {
     value: 'expense',
-    label: 'Expense',
+    labelKey: 'expense',
     icon: ArrowDownCircle,
     color: 'text-dynamic-red',
   },
@@ -47,6 +48,7 @@ export function TypeFilter({
   onTypeChange,
   className,
 }: TypeFilterProps) {
+  const t = useTranslations();
   const [isOpen, setIsOpen] = useState(false);
 
   const hasActiveFilter = !!selectedType;
@@ -74,7 +76,9 @@ export function TypeFilter({
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <Filter className="h-3 w-3" />
             <span className="text-xs">
-              {selectedOption ? selectedOption.label : 'Filter by type'}
+              {selectedOption
+                ? t(`transaction-data-table.${selectedOption.labelKey}`)
+                : t('transaction-data-table.type')}
             </span>
             {hasActiveFilter && (
               <Badge
@@ -89,7 +93,7 @@ export function TypeFilter({
         <PopoverContent className="w-50 p-0" align="start">
           <Command>
             <CommandList>
-              <CommandEmpty>No type found.</CommandEmpty>
+              <CommandEmpty>{t('common.no_results')}</CommandEmpty>
 
               <CommandGroup>
                 {typeOptions.map((option) => {
@@ -114,7 +118,7 @@ export function TypeFilter({
                       </div>
                       <Icon className={cn('h-4 w-4', option.color)} />
                       <span className="flex-1 font-medium text-sm">
-                        {option.label}
+                        {t(`transaction-data-table.${option.labelKey}`)}
                       </span>
                     </CommandItem>
                   );
@@ -130,7 +134,7 @@ export function TypeFilter({
                       className="cursor-pointer justify-center text-center text-destructive"
                     >
                       <X className="mr-2 h-4 w-4" />
-                      Clear filter
+                      {t('common.clear')}
                     </CommandItem>
                   </CommandGroup>
                 </>

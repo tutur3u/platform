@@ -96,8 +96,7 @@ export function AttendanceCalendar({
           sessionDate.getFullYear() === currentDate.getFullYear()
         );
       });
-    } catch (error) {
-      console.error('Error checking session availability:', error);
+    } catch {
       return false;
     }
   };

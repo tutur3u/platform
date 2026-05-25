@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { Ellipsis } from '@tuturuuu/icons';
 import {
   createWorkspaceStorageSignedUrl,
@@ -20,17 +21,28 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { Input } from '@tuturuuu/ui/input';
 import { toast } from '@tuturuuu/ui/sonner';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import type { FormEvent } from 'react';
+import { useId, useState } from 'react';
+import { invalidateTransactionAttachmentQueries } from '../query-invalidation';
 
 interface Props {
   wsId: string;
@@ -46,7 +58,12 @@ export function TransactionObjectRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const fileNameInputId = useId();
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
   const deleteStorageObject = async () => {
     if (!storageObj.name) return;
@@ -57,6 +74,11 @@ export function TransactionObjectRowActions({
         wsId,
         joinPath('finance', 'transactions', transactionId, storageObj.name)
       );
+      await invalidateTransactionAttachmentQueries(
+        queryClient,
+        wsId,
+        transactionId
+      );
       toast.success(t('ws-transactions.file_deleted'));
       router.refresh();
     } catch {
@@ -66,14 +88,19 @@ export function TransactionObjectRowActions({
     }
   };
 
-  const renameStorageObject = async () => {
+  const openRenameDialog = () => {
     if (!storageObj.name) return;
 
-    const newName = prompt(
-      'Enter new name',
-      storageObj.name.split(`${wsId}/`)[1]
-    );
+    setRenameValue(storageObj.name.split(`${wsId}/`).pop() || storageObj.name);
+    setShowRenameDialog(true);
+  };
 
+  const renameStorageObject = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!storageObj.name) return;
+
+    const newName = renameValue.trim();
     if (!newName) return;
 
     // re-add extension if it was removed
@@ -83,12 +110,20 @@ export function TransactionObjectRowActions({
         : `${newName}.${storageObj.name.split('.').pop()}`
       : newName;
 
+    setIsRenaming(true);
     try {
       await renameWorkspaceStorageObject(wsId, {
         path: joinPath('finance', 'transactions', transactionId),
         currentName: storageObj.name,
         newName: safeNewName,
       });
+      await invalidateTransactionAttachmentQueries(
+        queryClient,
+        wsId,
+        transactionId
+      );
+      toast.success(t('ws-transactions.file_renamed'));
+      setShowRenameDialog(false);
       router.refresh();
     } catch (error) {
       toast.error(
@@ -96,6 +131,8 @@ export function TransactionObjectRowActions({
           ? error.message
           : t('ws-transactions.failed_to_rename_file')
       );
+    } finally {
+      setIsRenaming(false);
     }
   };
 
@@ -107,7 +144,7 @@ export function TransactionObjectRowActions({
         wsId,
         joinPath('finance', 'transactions', transactionId, storageObj.name)
       );
-      const response = await fetch(signedUrl);
+      const response = await fetch(signedUrl, { cache: 'no-store' });
       if (!response.ok) {
         throw new Error('Failed to download file');
       }
@@ -135,11 +172,11 @@ export function TransactionObjectRowActions({
             size="xs"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">
-          <DropdownMenuItem onClick={renameStorageObject}>
+          <DropdownMenuItem onClick={openRenameDialog}>
             {t('common.rename')}
           </DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -179,6 +216,48 @@ export function TransactionObjectRowActions({
           </AlertDialog>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <Dialog open={showRenameDialog} onOpenChange={setShowRenameDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('ws-transactions.rename_file')}</DialogTitle>
+            <DialogDescription>
+              {t('ws-transactions.rename_file_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={renameStorageObject}>
+            <div className="space-y-2">
+              <label className="font-medium text-sm" htmlFor={fileNameInputId}>
+                {t('ws-transactions.file_name')}
+              </label>
+              <Input
+                id={fileNameInputId}
+                value={renameValue}
+                onChange={(event) => setRenameValue(event.target.value)}
+                placeholder={t('ws-transactions.file_name_placeholder')}
+                disabled={isRenaming}
+                autoFocus
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowRenameDialog(false)}
+                disabled={isRenaming}
+              >
+                {t('common.cancel')}
+              </Button>
+              <Button
+                type="submit"
+                disabled={isRenaming || !renameValue.trim()}
+              >
+                {isRenaming ? t('common.saving') : t('common.rename')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

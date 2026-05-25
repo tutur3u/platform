@@ -2,6 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Wallet, X } from '@tuturuuu/icons';
+import { listWallets } from '@tuturuuu/internal-api/finance';
+import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,24 +20,6 @@ import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
-import * as z from 'zod';
-
-const WorkspaceWalletSchema = z
-  .object({
-    id: z.string(),
-    name: z.string().nullable(),
-    balance: z.number().nullable(),
-    currency: z.string().nullable().optional(),
-  })
-  .passthrough(); // Allow optional fields from API (viewing_window, custom_days)
-const WorkspaceWalletListSchema = z.array(WorkspaceWalletSchema);
-
-interface WorkspaceWallet {
-  id: string;
-  name: string | null;
-  balance: number | null;
-  currency?: string | null;
-}
 
 interface WalletFilterProps {
   wsId: string;
@@ -44,12 +28,10 @@ interface WalletFilterProps {
   className?: string;
 }
 
-// Function to fetch workspace wallets
-async function fetchWorkspaceWallets(wsId: string): Promise<WorkspaceWallet[]> {
-  const res = await fetch(`/api/workspaces/${wsId}/wallets`);
-  if (!res.ok) throw new Error('Failed to fetch wallets');
-  const data = await res.json();
-  return WorkspaceWalletListSchema.parse(data);
+function hasWalletId(
+  wallet: WalletType
+): wallet is WalletType & { id: string } {
+  return typeof wallet.id === 'string' && wallet.id.length > 0;
 }
 
 export function WalletFilter({
@@ -70,7 +52,7 @@ export function WalletFilter({
     error,
   } = useQuery({
     queryKey: ['workspace-wallets', wsId],
-    queryFn: () => fetchWorkspaceWallets(wsId),
+    queryFn: () => listWallets(wsId),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
     enabled: !!wsId, // Only run query if wsId is provided
@@ -133,6 +115,7 @@ export function WalletFilter({
               {!isLoading && !error && wallets.length > 0 && (
                 <CommandGroup>
                   {wallets
+                    .filter(hasWalletId)
                     .sort((a, b) => {
                       // Sort selected wallets to the top
                       const aSelected = selectedWalletIds.includes(a.id);

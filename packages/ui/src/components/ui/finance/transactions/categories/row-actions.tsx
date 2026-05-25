@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteTransactionCategory } from '@tuturuuu/internal-api/finance';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import {
   AlertDialog,
@@ -39,26 +40,14 @@ export function TransactionCategoryRowActions(props: Props) {
 
   const data = props.row.original;
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch(
-        `/api/workspaces/${data.ws_id}/transactions/categories/${data.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!response.ok) {
-        let message = t('ws-transaction-categories.failed_to_delete_category');
-        try {
-          const errorData = (await response.json()) as { message?: string };
-          if (errorData.message) {
-            message = errorData.message;
-          }
-        } catch {
-          // Keep fallback error message.
-        }
-        throw new Error(message);
+    mutationFn: () => {
+      if (!data.ws_id || !data.id) {
+        throw new Error(
+          t('ws-transaction-categories.failed_to_delete_category')
+        );
       }
+
+      return deleteTransactionCategory(data.ws_id, data.id);
     },
     onSuccess: async () => {
       toast.success(t('ws-transaction-categories.category_deleted'));
@@ -87,7 +76,7 @@ export function TransactionCategoryRowActions(props: Props) {
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Tag, X } from '@tuturuuu/icons';
+import { listTransactionTags } from '@tuturuuu/internal-api/finance';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -18,29 +19,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-interface TransactionTag {
-  id: string;
-  name: string;
-  color: string;
-}
-
 interface TagFilterProps {
   wsId: string;
   selectedTagIds: string[];
   onTagsChange: (tagIds: string[]) => void;
   className?: string;
-}
-
-async function fetchTransactionTags(wsId: string): Promise<TransactionTag[]> {
-  const response = await fetch(`/api/workspaces/${wsId}/tags`, {
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch transaction tags');
-  }
-
-  return ((await response.json()) as TransactionTag[]) || [];
 }
 
 export function TagFilter({
@@ -60,7 +43,7 @@ export function TagFilter({
     error,
   } = useQuery({
     queryKey: ['transaction-tags', wsId],
-    queryFn: () => fetchTransactionTags(wsId),
+    queryFn: () => listTransactionTags(wsId),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled: !!wsId,

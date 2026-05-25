@@ -16,12 +16,19 @@ import { useEffect, useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
 
+interface YearPickerLabels {
+  placeholder: string;
+  previousDecade: string;
+  nextDecade: string;
+}
+
 interface Props {
   defaultValue?: Date;
   fromDate?: Date;
   toDate?: Date;
   onValueChange: (date?: Date) => void;
   className?: string;
+  labels: YearPickerLabels;
 }
 
 export function YearPicker({
@@ -30,6 +37,7 @@ export function YearPicker({
   toDate,
   onValueChange,
   className,
+  labels,
 }: Props) {
   const [open, setOpen] = useState(false);
   const today = new Date();
@@ -86,7 +94,7 @@ export function YearPicker({
           {defaultValue ? (
             format(defaultValue, 'yyyy')
           ) : (
-            <span>Pick a year</span>
+            <span>{labels.placeholder}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -95,7 +103,7 @@ export function YearPicker({
           <Button
             variant="outline"
             name="previous-decade"
-            aria-label="Go to previous decade"
+            aria-label={labels.previousDecade}
             onClick={() => changeDecade(-1)}
             disabled={
               fromDate &&
@@ -121,7 +129,7 @@ export function YearPicker({
           <Button
             variant="outline"
             name="next-decade"
-            aria-label="Go to next decade"
+            aria-label={labels.nextDecade}
             onClick={() => changeDecade(1)}
             disabled={
               toDate &&

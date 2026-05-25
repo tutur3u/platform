@@ -62,6 +62,7 @@ export function MonthlyTotalChart({
 }) {
   const locale = useLocale();
   const t = useTranslations('transaction-data-table');
+  const tAnalytics = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [isConfidential, setIsConfidential] = useState(true); // Default to hidden
@@ -134,7 +135,9 @@ export function MonthlyTotalChart({
           <CardTitle>{t('monthly_total_from_12_recent_months')}</CardTitle>
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
-          <p className="text-muted-foreground text-sm">No data available</p>
+          <p className="text-muted-foreground text-sm">
+            {tAnalytics('no-data')}
+          </p>
         </CardContent>
       </Card>
     );

@@ -15,6 +15,11 @@ vi.mock('@tuturuuu/internal-api', () => ({
     mocks.listBudgets(...args),
 }));
 
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string, values?: Record<string, string>) =>
+    values?.name ? `${key}:${values.name}` : key,
+}));
+
 vi.mock('./form', () => ({
   BudgetForm: () => null,
 }));

@@ -49,6 +49,10 @@ vi.mock('@tuturuuu/ui/custom/feature-summary', () => ({
   default: () => null,
 }));
 
+vi.mock('@tuturuuu/ui/finance/shared/create-dialog-feature-summary', () => ({
+  CreateDialogFeatureSummary: () => null,
+}));
+
 vi.mock('@tuturuuu/ui/finance/wallets/form', () => ({
   WalletForm: () => null,
 }));

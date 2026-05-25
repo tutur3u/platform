@@ -4,7 +4,7 @@ import { Calendar, Clock, Percent, User, Wallet } from '@tuturuuu/icons';
 import type { DebtLoanWithBalance } from '@tuturuuu/types/primitives/DebtLoan';
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Badge } from '../../badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Progress } from '../../progress';
@@ -18,7 +18,10 @@ interface Props {
 
 export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
   const t = useTranslations('ws-debt-loan');
+  const locale = useLocale();
   const financeHref = useFinanceHref();
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(locale).format(new Date(value));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -158,7 +161,7 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
                 <Calendar className="h-3.5 w-3.5" />
                 <span>
                   {isOverdue && `${t('overdue')}: `}
-                  {new Date(debtLoan.due_date).toLocaleDateString()}
+                  {formatDate(debtLoan.due_date)}
                 </span>
               </div>
             )}
@@ -170,7 +173,7 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
             )}
             <div className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
-              <span>{new Date(debtLoan.start_date).toLocaleDateString()}</span>
+              <span>{formatDate(debtLoan.start_date)}</span>
             </div>
           </div>
         </CardContent>

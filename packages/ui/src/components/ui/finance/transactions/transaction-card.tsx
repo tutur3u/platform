@@ -74,6 +74,7 @@ export function TransactionCard({
   isDaily = false,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
+  const commonT = useTranslations('common');
   const financeHref = useFinanceHref();
   const [isHovered, setIsHovered] = useState(false);
   const effectiveCurrency = transaction.wallet_currency || currency;
@@ -455,14 +456,14 @@ export function TransactionCard({
                       )}
                     >
                       <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{commonT('actions')}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {canEdit && (
                       <DropdownMenuItem onClick={handleEdit}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit
+                        {commonT('edit')}
                       </DropdownMenuItem>
                     )}
                     {canDelete && (
@@ -471,7 +472,7 @@ export function TransactionCard({
                         className="text-dynamic-red focus:text-dynamic-red"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {commonT('delete')}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>

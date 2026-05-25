@@ -20,6 +20,15 @@ import {
   Wallet as WalletIcon,
   X,
 } from '@tuturuuu/icons';
+import {
+  createTransaction,
+  deleteTransaction,
+  listTransactionCategories,
+  listTransactionTagLinks,
+  listTransactionTags,
+  listWallets,
+  updateTransaction,
+} from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
@@ -54,7 +63,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
-import { fetcher } from '@tuturuuu/utils/fetcher';
 import { cn } from '@tuturuuu/utils/format';
 import { computeAccessibleLabelStyles } from '@tuturuuu/utils/label-colors';
 import Image from 'next/image';
@@ -64,6 +72,7 @@ import type * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getWalletImagePath } from '../wallets/wallet-images';
 import { ConfidentialToggle } from './confidential-field';
+import { invalidateTransactionMutationQueries } from './query-invalidation';
 
 // Helper to get category icon - extracted to avoid lint warnings about JSX in iterables
 function getCategoryIcon(
@@ -215,17 +224,17 @@ export function TransactionEditDialog({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch categories
-  const { data: categoriesData } = useQuery<TransactionCategory[]>({
+  const { data: categoriesData } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/transactions/categories`),
+    queryFn: () => listTransactionCategories(wsId),
     enabled: isOpen,
   });
   const categories = Array.isArray(categoriesData) ? categoriesData : [];
 
   // Fetch wallets
-  const { data: walletsData } = useQuery<Wallet[]>({
+  const { data: walletsData } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/wallets`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/wallets`),
+    queryFn: () => listWallets(wsId),
     enabled: isOpen,
   });
   const wallets = Array.isArray(walletsData) ? walletsData : [];
@@ -237,11 +246,9 @@ export function TransactionEditDialog({
   );
 
   // Fetch tags
-  const { data: tagsData } = useQuery<
-    Array<{ id: string; name: string; color: string }>
-  >({
+  const { data: tagsData } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/tags`],
-    queryFn: () => fetcher(`/api/workspaces/${wsId}/tags`),
+    queryFn: () => listTransactionTags(wsId),
     enabled: isOpen,
   });
   const tags = Array.isArray(tagsData) ? tagsData : [];
@@ -249,8 +256,7 @@ export function TransactionEditDialog({
   // Fetch existing tags for this transaction
   const { data: existingTagsData } = useQuery<Array<{ tag_id: string }>>({
     queryKey: [`/api/workspaces/${wsId}/transactions/${transaction?.id}/tags`],
-    queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/transactions/${transaction?.id}/tags`),
+    queryFn: () => listTransactionTagLinks(wsId, transaction?.id || ''),
     enabled: isOpen && !!transaction?.id,
   });
   const existingTags = Array.isArray(existingTagsData) ? existingTagsData : [];
@@ -324,64 +330,44 @@ export function TransactionEditDialog({
     try {
       const finalAmount = isExpense ? -Math.abs(amount) : Math.abs(amount);
 
-      const res = await fetch(
+      const payload = {
+        description,
+        amount: finalAmount,
+        origin_wallet_id: walletId,
+        category_id: categoryId,
+        taken_at: takenAt?.toISOString(),
+        report_opt_in: reportOptIn,
+        tag_ids: selectedTagIds,
+        is_amount_confidential: isAmountConfidential,
+        is_description_confidential: isDescriptionConfidential,
+        is_category_confidential: isCategoryConfidential,
+      };
+
+      if (transaction?.id) {
+        await updateTransaction(wsId, transaction.id, payload);
+      } else {
+        await createTransaction(wsId, payload);
+      }
+
+      toast.success(
         transaction?.id
-          ? `/api/workspaces/${wsId}/transactions/${transaction.id}`
-          : `/api/workspaces/${wsId}/transactions`,
-        {
-          method: transaction?.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: transaction?.id,
-            description,
-            amount: finalAmount,
-            origin_wallet_id: walletId,
-            category_id: categoryId,
-            taken_at: takenAt?.toISOString(),
-            report_opt_in: reportOptIn,
-            tag_ids: selectedTagIds,
-            is_amount_confidential: isAmountConfidential,
-            is_description_confidential: isDescriptionConfidential,
-            is_category_confidential: isCategoryConfidential,
-          }),
-        }
+          ? t('ws-transactions.edit')
+          : t('ws-transactions.create')
       );
 
-      if (res.ok) {
-        toast.success(
-          transaction?.id
-            ? t('ws-transactions.edit')
-            : t('ws-transactions.create'),
-          {
-            description: transaction?.id
-              ? 'Transaction updated successfully'
-              : 'Transaction created successfully',
-          }
-        );
+      await invalidateTransactionMutationQueries(queryClient, wsId);
 
-        // Invalidate all transaction queries (including infinite scroll)
-        await queryClient.invalidateQueries({
-          predicate: (query) =>
-            Array.isArray(query.queryKey) &&
-            typeof query.queryKey[0] === 'string' &&
-            query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`),
-        });
-
-        onUpdate?.();
+      onUpdate?.();
+      if (!onUpdate) {
         router.refresh();
-        onClose();
-      } else {
-        const error = await res.json();
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t('ws-transactions.error_saving_transaction')
-        );
       }
-    } catch {
-      toast.error(t('ws-transactions.error_saving_transaction'));
+      onClose();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-transactions.error_saving_transaction')
+      );
     } finally {
       setIsLoading(false);
     }
@@ -421,37 +407,22 @@ export function TransactionEditDialog({
     setIsLoading(true);
 
     try {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/transactions/${transaction.id}`,
-        {
-          method: 'DELETE',
-        }
-      );
+      await deleteTransaction(wsId, transaction.id);
+      toast.success(t('ws-transactions.delete'));
 
-      if (res.ok) {
-        toast.success(t('ws-transactions.delete'));
+      await invalidateTransactionMutationQueries(queryClient, wsId);
 
-        // Invalidate all transaction queries (including infinite scroll)
-        await queryClient.invalidateQueries({
-          predicate: (query) =>
-            Array.isArray(query.queryKey) &&
-            typeof query.queryKey[0] === 'string' &&
-            query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`),
-        });
-
-        onUpdate?.();
+      onUpdate?.();
+      if (!onUpdate) {
         router.refresh();
-        onClose();
-      } else {
-        const error = await res.json();
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : t('ws-transactions.error_deleting_transaction')
-        );
       }
-    } catch {
-      toast.error(t('ws-transactions.error_deleting_transaction'));
+      onClose();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-transactions.error_deleting_transaction')
+      );
     } finally {
       setIsLoading(false);
       setShowDeleteConfirm(false);
@@ -693,7 +664,9 @@ export function TransactionEditDialog({
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Add details about this transaction..."
+                  placeholder={t(
+                    'transaction-data-table.description_placeholder'
+                  )}
                   disabled={isDisabled || !canUpdateTransactions}
                   className={cn(
                     'min-h-20 resize-none',

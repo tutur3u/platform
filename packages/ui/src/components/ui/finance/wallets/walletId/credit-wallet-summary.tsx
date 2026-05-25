@@ -9,6 +9,10 @@ import {
   CreditCard,
   TrendingDown,
 } from '@tuturuuu/icons';
+import {
+  getWalletCreditSummary,
+  type WalletCreditSummary,
+} from '@tuturuuu/internal-api/finance';
 import type { Wallet } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -19,24 +23,6 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-
-interface CreditSummaryData {
-  limit: number;
-  balance: number;
-  availableCredit: number;
-  totalOutstanding: number;
-  utilization: number;
-  statementBalance: number;
-  currentActivity: number;
-  nextStatementDate: string;
-  daysUntilStatement: number;
-  nextPaymentDate: string;
-  daysUntilPayment: number;
-  cycleStart: string;
-  cycleEnd: string;
-  prevCycleStart: string;
-  prevCycleEnd: string;
-}
 
 interface CreditWalletSummaryProps {
   wsId: string;
@@ -62,20 +48,14 @@ export function CreditWalletSummary({
   const t = useTranslations('wallet-data-table');
   const [showDetails, setShowDetails] = useState(false);
   const currency = wallet.currency ?? 'VND';
+  const walletId = wallet.id ?? '';
   const { formatCurrency } = useCurrencyFormatter({ currency });
 
-  const { data, isLoading, error } = useQuery<CreditSummaryData>({
-    queryKey: ['credit-summary', wallet.id],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${wallet.id}/credit-summary`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch credit summary');
-      return res.json();
-    },
+  const { data, isLoading, error } = useQuery<WalletCreditSummary>({
+    queryKey: ['credit-summary', wsId, walletId],
+    queryFn: () => getWalletCreditSummary(wsId, walletId),
     staleTime: 30000,
-    enabled: wallet.type === 'CREDIT',
+    enabled: wallet.type === 'CREDIT' && Boolean(walletId),
   });
 
   const handleToggle = useCallback(() => {

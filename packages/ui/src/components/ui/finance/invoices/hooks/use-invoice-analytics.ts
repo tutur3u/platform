@@ -3,28 +3,10 @@ import type {
   InvoiceAnalyticsFilters,
   InvoiceTotalsByGroup,
 } from '@tuturuuu/types/primitives/Invoice';
-
-interface InvoiceAnalyticsResponseDateRange {
-  walletData: InvoiceTotalsByGroup[];
-  creatorData: InvoiceTotalsByGroup[];
-  hasDateRange: true;
-  startDate: string;
-  endDate: string;
-}
-
-interface InvoiceAnalyticsResponseDefault {
-  dailyWalletData: InvoiceTotalsByGroup[];
-  weeklyWalletData: InvoiceTotalsByGroup[];
-  monthlyWalletData: InvoiceTotalsByGroup[];
-  dailyCreatorData: InvoiceTotalsByGroup[];
-  weeklyCreatorData: InvoiceTotalsByGroup[];
-  monthlyCreatorData: InvoiceTotalsByGroup[];
-  hasDateRange: false;
-}
-
-type InvoiceAnalyticsResponse =
-  | InvoiceAnalyticsResponseDateRange
-  | InvoiceAnalyticsResponseDefault;
+import {
+  getInvoiceAnalyticsWithInternalApi,
+  type InvoiceAnalyticsResponse,
+} from '../internal-api';
 
 interface UseInvoiceAnalyticsResult {
   walletData?: InvoiceTotalsByGroup[];
@@ -71,32 +53,14 @@ export function useInvoiceAnalytics(
       { walletIds, userIds, startDate, endDate, weekStartsOn, granularity },
     ],
     queryFn: async (): Promise<InvoiceAnalyticsResponse> => {
-      const searchParams = new URLSearchParams();
-
-      walletIds.forEach((id) => {
-        searchParams.append('walletIds', id);
+      return getInvoiceAnalyticsWithInternalApi(wsId, {
+        endDate,
+        granularity,
+        startDate,
+        userIds,
+        walletIds,
+        weekStartsOn,
       });
-      userIds.forEach((id) => {
-        searchParams.append('userIds', id);
-      });
-      if (startDate) searchParams.set('start', startDate);
-      if (endDate) searchParams.set('end', endDate);
-      if (granularity) searchParams.set('granularity', granularity);
-      searchParams.set('weekStartsOn', String(weekStartsOn));
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/analytics?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || 'Failed to fetch invoice analytics'
-        );
-      }
-
-      return response.json();
     },
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds

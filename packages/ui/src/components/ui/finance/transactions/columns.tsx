@@ -31,6 +31,7 @@ export const transactionColumns = ({
   const locale = useLocale();
   const currency = extraData?.currency || 'USD';
   const isPersonalWorkspace = extraData?.isPersonalWorkspace || false;
+  const unknownUserLabel = t('finance.unknown_user');
 
   const columns: ColumnDef<Transaction>[] = [
     // {
@@ -116,8 +117,8 @@ export const transactionColumns = ({
             <div className="flex min-w-48 items-center gap-2">
               <Avatar className="h-8 w-8 border">
                 <AvatarImage
-                  src={getAvatarPlaceholder('Unknown User')}
-                  alt="Unknown User"
+                  src={getAvatarPlaceholder(unknownUserLabel)}
+                  alt={unknownUserLabel}
                 />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>

@@ -10,8 +10,7 @@ import {
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   CartesianGrid,
@@ -34,9 +33,14 @@ export function SpendingTrendsChart({
   currency = 'USD',
 }: SpendingTrendsChartProps) {
   const locale = useLocale();
+  const t = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
 
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
+  const formatChartDate = (
+    value: string,
+    options: Intl.DateTimeFormatOptions
+  ) => new Intl.DateTimeFormat(locale, options).format(new Date(value));
 
   const { data: trendsData, isLoading } = useQuery({
     queryKey: ['spending_trends', wsId],
@@ -45,7 +49,7 @@ export function SpendingTrendsChart({
 
   const chartConfig = {
     amount: {
-      label: 'Spending',
+      label: t('spending-trends'),
       color: expenseColor,
     },
   } satisfies ChartConfig;
@@ -59,9 +63,9 @@ export function SpendingTrendsChart({
   return (
     <Card className={cn('flex flex-col', className)}>
       <CardHeader>
-        <CardTitle>Spending Trends (Last 30 Days)</CardTitle>
+        <CardTitle>{t('spending-trends')}</CardTitle>
         <p className="text-muted-foreground text-sm">
-          Daily average:{' '}
+          {t('daily-avg-expense')}:{' '}
           {new Intl.NumberFormat(locale, {
             style: 'currency',
             currency,
@@ -80,7 +84,12 @@ export function SpendingTrendsChart({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(value) => format(new Date(value), 'MMM dd')}
+                  tickFormatter={(value) =>
+                    formatChartDate(value, {
+                      day: 'numeric',
+                      month: 'short',
+                    })
+                  }
                   tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
                 />
                 <YAxis
@@ -96,7 +105,11 @@ export function SpendingTrendsChart({
                   content={
                     <ChartTooltipContent
                       labelFormatter={(value) =>
-                        format(new Date(value), 'MMM dd, yyyy')
+                        formatChartDate(String(value), {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
                       }
                       formatter={(value) =>
                         new Intl.NumberFormat(locale, {
@@ -120,7 +133,7 @@ export function SpendingTrendsChart({
           </ChartContainer>
         ) : (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
-            No spending data available
+            {t('no-data')}
           </div>
         )}
       </CardContent>

@@ -2,7 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Check, Users, X } from '@tuturuuu/icons';
-import { listWorkspaceMembers } from '@tuturuuu/internal-api/workspaces';
+import {
+  type FinanceFilterUserType,
+  listFinanceFilterUsers,
+} from '@tuturuuu/internal-api/finance';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
@@ -38,35 +41,9 @@ interface UserFilterProps {
 
 async function fetchWorkspaceUsers(
   wsId: string,
-  filterType: 'all' | 'transaction_creators' | 'invoice_creators' = 'all'
+  filterType: FinanceFilterUserType = 'all'
 ): Promise<WorkspaceUser[]> {
-  if (filterType === 'transaction_creators') {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/finance/filter-users?type=transaction_creators`,
-      {
-        cache: 'no-store',
-      }
-    );
-
-    if (!response.ok) throw new Error('Failed to fetch transaction creators');
-    const data = (await response.json()) as { users?: WorkspaceUser[] };
-    return data.users || [];
-  }
-
-  if (filterType === 'invoice_creators') {
-    const response = await fetch(
-      `/api/v1/workspaces/${wsId}/finance/filter-users?type=invoice_creators`,
-      {
-        cache: 'no-store',
-      }
-    );
-
-    if (!response.ok) throw new Error('Failed to fetch invoice creators');
-    const data = (await response.json()) as { users?: WorkspaceUser[] };
-    return data.users || [];
-  }
-
-  return (await listWorkspaceMembers(wsId)) as WorkspaceUser[];
+  return listFinanceFilterUsers(wsId, { type: filterType });
 }
 
 export function UserFilter({
@@ -115,6 +92,7 @@ export function UserFilter({
   const filterLabel = isCreatorFilter
     ? t('finance.filter_by_creator')
     : t('finance.filter_by_users');
+  const unknownUserLabel = t('finance.unknown_user');
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
@@ -218,9 +196,15 @@ export function UserFilter({
 
                         // For users with the same selection status, sort by name
                         const aName =
-                          a.display_name || a.full_name || a.email || 'Unknown';
+                          a.display_name ||
+                          a.full_name ||
+                          a.email ||
+                          unknownUserLabel;
                         const bName =
-                          b.display_name || b.full_name || b.email || 'Unknown';
+                          b.display_name ||
+                          b.full_name ||
+                          b.email ||
+                          unknownUserLabel;
                         return aName.localeCompare(bName);
                       })
                       .map((user) => {
@@ -229,7 +213,7 @@ export function UserFilter({
                           user.display_name ||
                           user.full_name ||
                           user.email ||
-                          'Unknown User';
+                          unknownUserLabel;
 
                         return (
                           <CommandItem

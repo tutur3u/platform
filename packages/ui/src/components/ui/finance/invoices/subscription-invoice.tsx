@@ -49,6 +49,7 @@ import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
 import { useSubscriptionAutoSelection } from './hooks/use-subscription-auto-selection';
 import { useSubscriptionInvoiceContent } from './hooks/use-subscription-invoice-content';
+import { createSubscriptionInvoiceWithInternalApi } from './internal-api';
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 import {
@@ -674,20 +675,10 @@ export function SubscriptionInvoice({
         frontend_total: subscriptionRoundedTotal,
       };
 
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/subscription`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(requestPayload),
-        }
-      );
-
-      const result = await response.json();
-      if (!response.ok)
-        throw new Error(
-          result.message || 'Failed to create subscription invoice'
-        );
+      const result = await createSubscriptionInvoiceWithInternalApi(wsId, {
+        ...requestPayload,
+        customer_id: selectedUserId,
+      });
 
       if (result.data?.values_recalculated) {
         const { calculated_values, frontend_values } = result.data;
@@ -727,7 +718,6 @@ export function SubscriptionInvoice({
         setCustomerSearch('');
       }
     } catch (error) {
-      console.error('Error creating subscription invoice:', error);
       toast(
         t('ws-invoices.error_creating_subscription_invoice', {
           error:

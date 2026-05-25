@@ -12,7 +12,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { ScrollArea } from '@tuturuuu/ui/scroll-area';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useRef, useState } from 'react';
 import { useFinanceHref } from '../../finance-route-context';
 import { useInfiniteUserInvoices } from '../hooks';
@@ -29,7 +29,10 @@ export function InvoiceUserHistoryAccordion({
   currency = 'VND',
 }: Props) {
   const t = useTranslations();
+  const locale = useLocale();
   const financeHref = useFinanceHref();
+  const formatDate = (value: string) =>
+    new Intl.DateTimeFormat(locale).format(new Date(value));
 
   const {
     data: userInvoicesData,
@@ -173,7 +176,7 @@ export function InvoiceUserHistoryAccordion({
                         )}
                         <p className="text-muted-foreground text-xs">
                           {invoice.created_at
-                            ? new Date(invoice.created_at).toLocaleDateString()
+                            ? formatDate(invoice.created_at)
                             : t('ws-invoices.no_date')}
                         </p>
                         {invoice.note && (

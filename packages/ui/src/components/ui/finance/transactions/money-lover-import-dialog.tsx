@@ -49,12 +49,15 @@ import {
 } from '@tuturuuu/ui/select';
 import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import {
+  importMoneyLoverTransactionsWithInternalApi,
+  type MoneyLoverTransactionImportRow,
+} from './internal-api';
 
 interface MoneyLoverImportDialogProps {
   wsId: string;
@@ -68,15 +71,31 @@ const importFormSchema = z.object({
 
 type ImportFormValues = z.infer<typeof importFormSchema>;
 
-interface ParsedTransaction {
-  id: string;
-  date: string;
-  category: string;
-  amount: string;
-  currency: string;
-  note: string;
-  wallet: string;
-}
+type ParsedTransaction = MoneyLoverTransactionImportRow;
+
+type MoneyLoverImportStreamEvent =
+  | {
+      batch: number;
+      current: number;
+      total: number;
+      totalBatches: number;
+      type: 'progress';
+    }
+  | {
+      errors?: string[];
+      imported?: number;
+      total?: number;
+      type: 'complete';
+    }
+  | {
+      message?: string;
+      type: 'error';
+    };
+
+type MoneyLoverImportCompleteEvent = Extract<
+  MoneyLoverImportStreamEvent,
+  { type: 'complete' }
+>;
 
 type ImportStep =
   | 'idle'
@@ -104,7 +123,6 @@ export default function MoneyLoverImportDialog({
   currency = 'USD',
 }: MoneyLoverImportDialogProps) {
   const t = useTranslations();
-  const router = useRouter();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [previewData, setPreviewData] = useState<ParsedTransaction[]>([]);
@@ -228,6 +246,23 @@ export default function MoneyLoverImportDialog({
   // Calculate estimated batches
   const estimatedBatches = Math.ceil(allData.length / BATCH_SIZE);
 
+  const refreshImportedFinanceData = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({
+        predicate: (query) =>
+          Array.isArray(query.queryKey) &&
+          typeof query.queryKey[0] === 'string' &&
+          (query.queryKey[0].includes(`/api/workspaces/${wsId}/transactions`) ||
+            query.queryKey[0] === `/api/workspaces/${wsId}/wallets`),
+      }),
+      queryClient.invalidateQueries({
+        queryKey: ['transaction-categories', wsId],
+      }),
+      queryClient.invalidateQueries({ queryKey: ['wallets', wsId] }),
+      queryClient.invalidateQueries({ queryKey: ['workspace-wallets', wsId] }),
+    ]);
+  };
+
   const onSubmit = async (data: ImportFormValues) => {
     if (!data.file) {
       toast.error(t('money-lover-import.no_file_selected'));
@@ -271,10 +306,6 @@ export default function MoneyLoverImportDialog({
         }),
       });
 
-      // Step 2: Send to API
-      const formData = new FormData();
-      formData.append('transactions', JSON.stringify(transactions));
-
       const batchCount = Math.ceil(transactions.length / BATCH_SIZE);
 
       setProgress({
@@ -294,24 +325,26 @@ export default function MoneyLoverImportDialog({
         totalBatches: batchCount,
       });
 
-      const res = await fetch(
-        `/api/workspaces/${wsId}/transactions/import/money-lover`,
-        {
-          method: 'POST',
-          body: formData,
-        }
+      const res = await importMoneyLoverTransactionsWithInternalApi(
+        wsId,
+        transactions
       );
 
       if (!res.ok) {
-        const errorResult = await res.json();
+        const errorResult = (await res.json().catch(() => null)) as {
+          message?: string;
+        } | null;
+        const errorMessage =
+          errorResult?.message || t('money-lover-import.error');
+
         setProgress({
           step: 'error',
           current: 0,
           total: transactions.length,
           status: 'error',
-          message: errorResult.message || t('money-lover-import.error'),
+          message: errorMessage,
         });
-        toast.error(errorResult.message || t('money-lover-import.error'));
+        toast.error(errorMessage);
         setLoading(false);
         return;
       }
@@ -319,20 +352,25 @@ export default function MoneyLoverImportDialog({
       // Handle streaming response
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
-      let finalResult: any = null;
+      let finalResult: MoneyLoverImportCompleteEvent | null = null;
 
       if (reader) {
         try {
+          let pendingChunk = '';
+
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            pendingChunk += decoder.decode(value, { stream: true });
+            const lines = pendingChunk.split('\n');
+            pendingChunk = lines.pop() ?? '';
 
             for (const line of lines) {
               if (line.startsWith('data: ')) {
-                const data = JSON.parse(line.slice(6));
+                const data = JSON.parse(
+                  line.slice(6)
+                ) as MoneyLoverImportStreamEvent;
 
                 if (data.type === 'progress') {
                   setProgress({
@@ -353,24 +391,26 @@ export default function MoneyLoverImportDialog({
                 } else if (data.type === 'complete') {
                   finalResult = data;
                 } else if (data.type === 'error') {
-                  throw new Error(data.message);
+                  throw new Error(
+                    data.message || t('money-lover-import.error')
+                  );
                 }
               }
             }
           }
         } catch (streamError) {
-          console.error('Stream error:', streamError);
+          const errorMessage =
+            streamError instanceof Error
+              ? streamError.message
+              : t('money-lover-import.error');
           setProgress({
             step: 'error',
             current: 0,
             total: transactions.length,
             status: 'error',
-            message:
-              streamError instanceof Error
-                ? streamError.message
-                : t('money-lover-import.error'),
+            message: errorMessage,
           });
-          toast.error(t('money-lover-import.error'));
+          toast.error(errorMessage);
           setLoading(false);
           return;
         }
@@ -393,7 +433,6 @@ export default function MoneyLoverImportDialog({
         );
 
         if (finalResult.errors && finalResult.errors.length > 0) {
-          console.error('Import errors:', finalResult.errors);
           setProgress({
             step: 'complete',
             current: finalResult.imported || 0,
@@ -413,10 +452,7 @@ export default function MoneyLoverImportDialog({
           );
         }
 
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
-        });
-        router.refresh();
+        await refreshImportedFinanceData();
 
         // Wait a bit before clearing
         setTimeout(() => {
@@ -429,18 +465,16 @@ export default function MoneyLoverImportDialog({
         }, 3000);
       }
     } catch (error) {
-      console.error('Import error:', error);
+      const errorMessage =
+        error instanceof Error ? error.message : t('money-lover-import.error');
       setProgress({
         step: 'error',
         current: 0,
         total: 0,
         status: 'error',
-        message:
-          error instanceof Error
-            ? error.message
-            : t('money-lover-import.error'),
+        message: errorMessage,
       });
-      toast.error(t('money-lover-import.error'));
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

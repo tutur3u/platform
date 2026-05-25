@@ -15,6 +15,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from '@tuturuuu/icons';
+import { deleteTransaction } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import type {
   TransactionPeriod,
@@ -55,6 +56,11 @@ import { parseAsArrayOf, parseAsString, useQueryState } from 'nuqs';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useExchangeRates } from '../../../../hooks/use-exchange-rates';
 import { TransactionForm } from './form';
+import {
+  getTransactionStatsWithInternalApi,
+  listInfiniteTransactionsWithInternalApi,
+  listTransactionPeriodsWithInternalApi,
+} from './internal-api';
 import { PeriodBreakdownPanel } from './period-charts';
 import { TransactionCard } from './transaction-card';
 import { TransactionStatistics } from './transaction-statistics';
@@ -170,17 +176,8 @@ export function InfiniteTransactionsList({
   };
 
   const deleteMutation = useMutation({
-    mutationFn: async (transactionId: string) => {
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/${transactionId}`,
-        { method: 'DELETE' }
-      );
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.message || 'Failed to delete transaction');
-      }
-      return response.json();
-    },
+    mutationFn: (transactionId: string) =>
+      deleteTransaction(wsId, transactionId),
     onSuccess: () => {
       toast.success(t('ws-transactions.transaction_deleted'));
       handleTransactionUpdate();
@@ -271,36 +268,21 @@ export function InfiniteTransactionsList({
     })
   );
 
-  const buildQueryString = useCallback(
+  const buildQueryInput = useCallback(
     (cursor?: string, isPeriods = false) => {
-      const params = new URLSearchParams();
-      if (cursor) params.set('cursor', cursor);
-      if (q) params.set('q', q);
-      if (walletId) params.set('walletId', walletId);
-      if (transactionType) params.set('transactionType', transactionType);
-      if (start) params.set('start', start);
-      if (end) params.set('end', end);
-      userIds.forEach((id) => {
-        params.append('userIds', id);
-      });
-      categoryIds.forEach((id) => {
-        params.append('categoryIds', id);
-      });
-      walletIds.forEach((id) => {
-        params.append('walletIds', id);
-      });
-      tagIds.forEach((id) => {
-        params.append('tagIds', id);
-      });
-      if (isPeriods) {
-        params.set('viewMode', viewMode);
-        params.set('limit', '10');
-        // Include timezone for period grouping
-        params.set('timezone', resolvedTimezone);
-      } else {
-        params.set('limit', '20');
-      }
-      return params.toString();
+      return {
+        categoryIds,
+        cursor,
+        end,
+        limit: isPeriods ? 10 : 20,
+        q,
+        start,
+        tagIds,
+        transactionType,
+        userIds,
+        walletId,
+        walletIds,
+      };
     },
     [
       q,
@@ -312,8 +294,6 @@ export function InfiniteTransactionsList({
       categoryIds,
       walletIds,
       tagIds,
-      viewMode,
-      resolvedTimezone,
     ]
   );
 
@@ -385,14 +365,10 @@ export function InfiniteTransactionsList({
       'daily',
     ],
     queryFn: async ({ pageParam }) => {
-      const queryString = buildQueryString(pageParam as string | undefined);
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/infinite?${queryString}`,
-        { cache: 'no-store' }
+      const json = await listInfiniteTransactionsWithInternalApi(
+        wsId,
+        buildQueryInput(pageParam as string | undefined)
       );
-      if (!response.ok) throw new Error('Failed to fetch transactions');
-
-      const json = (await response.json()) as TransactionResponse;
 
       return {
         ...json,
@@ -433,19 +409,12 @@ export function InfiniteTransactionsList({
       viewMode,
       resolvedTimezone,
     ],
-    queryFn: async ({ pageParam }) => {
-      const queryString = buildQueryString(
-        pageParam as string | undefined,
-        true
-      );
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/periods?${queryString}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch transaction periods');
-
-      return (await response.json()) as TransactionPeriodResponse;
-    },
+    queryFn: async ({ pageParam }) =>
+      listTransactionPeriodsWithInternalApi(wsId, {
+        ...buildQueryInput(pageParam as string | undefined, true),
+        timezone: resolvedTimezone,
+        viewMode,
+      }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     initialPageParam: undefined,
     enabled: usePeriods,
@@ -495,15 +464,7 @@ export function InfiniteTransactionsList({
       start,
       end,
     ],
-    queryFn: async () => {
-      const queryString = buildQueryString();
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/stats?${queryString}`,
-        { cache: 'no-store' }
-      );
-      if (!response.ok) throw new Error('Failed to fetch transaction stats');
-      return response.json();
-    },
+    queryFn: () => getTransactionStatsWithInternalApi(wsId, buildQueryInput()),
     enabled: hasActiveFilter && !isLoading && !error,
   });
 
@@ -621,7 +582,7 @@ export function InfiniteTransactionsList({
           {t('common.error')}
         </h3>
         <p className="text-muted-foreground text-sm">
-          {error instanceof Error ? error.message : 'Unknown error'}
+          {error instanceof Error ? error.message : t('common.unknown')}
         </p>
       </div>
     );

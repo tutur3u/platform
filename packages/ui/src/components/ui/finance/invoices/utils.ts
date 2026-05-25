@@ -232,8 +232,7 @@ export const getSessionsForMonth = (
     });
 
     return filteredSessions.length;
-  } catch (error) {
-    console.error('Error filtering sessions by month:', error);
+  } catch {
     return 0;
   }
 };
@@ -307,8 +306,7 @@ export const getSessionsUntilMonth = (
     });
 
     return filteredSessions.length;
-  } catch (error) {
-    console.error('Error filtering sessions until month:', error);
+  } catch {
     return 0;
   }
 };

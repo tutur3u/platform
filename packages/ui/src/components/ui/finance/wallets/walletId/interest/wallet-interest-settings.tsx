@@ -2,9 +2,16 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CalendarIcon, Settings, TrendingUp } from '@tuturuuu/icons';
+import {
+  createWalletInterestConfig,
+  createWalletInterestRate,
+  deleteWalletInterestConfig,
+  updateWalletInterestConfig,
+} from '@tuturuuu/internal-api/finance';
 import type {
   ProviderDetectionResult,
   WalletInterestConfig,
+  WalletInterestProvider,
   WalletInterestRate,
   ZaloPayTier,
 } from '@tuturuuu/types';
@@ -30,7 +37,8 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { cn } from '@tuturuuu/utils/format';
 import { format, parseISO } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { WalletInterestDisableDialog } from './wallet-interest-disable-dialog';
 import { WalletInterestRateDialog } from './wallet-interest-rate-dialog';
@@ -60,8 +68,10 @@ export function WalletInterestSettings({
   onConfigChange,
   embedded = false,
 }: WalletInterestSettingsProps) {
+  const locale = useLocale();
   const t = useTranslations('wallet-interest');
   const queryClient = useQueryClient();
+  const dateLocale = locale.startsWith('vi') ? vi : enUS;
 
   // Dialog states
   const [isSetupOpen, setIsSetupOpen] = useState(false);
@@ -70,35 +80,22 @@ export function WalletInterestSettings({
 
   // Create config mutation
   const createMutation = useMutation({
-    mutationFn: async (data: {
-      provider: string;
-      tier: string | null;
+    mutationFn: (data: {
+      provider: WalletInterestProvider;
       rate: number;
+      tier: ZaloPayTier | null;
       trackingStartDate: string | null;
-    }) => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${walletId}/interest`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            provider: data.provider,
-            zalopay_tier: data.tier,
-            initial_rate: data.rate,
-            tracking_start_date: data.trackingStartDate,
-          }),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to enable interest tracking');
-      }
-      return res.json();
-    },
+    }) =>
+      createWalletInterestConfig(wsId, walletId, {
+        provider: data.provider,
+        zalopay_tier: data.tier,
+        initial_rate: data.rate,
+        tracking_start_date: data.trackingStartDate,
+      }),
     onSuccess: () => {
       toast.success(t('tracking_enabled'));
       queryClient.invalidateQueries({
-        queryKey: ['wallet-interest', walletId],
+        queryKey: ['wallet-interest', wsId, walletId],
       });
       setIsSetupOpen(false);
       onConfigChange?.();
@@ -110,30 +107,16 @@ export function WalletInterestSettings({
 
   // Update config mutation (tier, enabled, dates)
   const updateMutation = useMutation({
-    mutationFn: async (data: {
+    mutationFn: (data: {
       zalopay_tier?: ZaloPayTier | null;
       enabled?: boolean;
       tracking_start_date?: string | null;
       tracking_end_date?: string | null;
-    }) => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${walletId}/interest/config`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update settings');
-      }
-      return res.json();
-    },
+    }) => updateWalletInterestConfig(wsId, walletId, data),
     onSuccess: () => {
       toast.success(t('settings_updated'));
       queryClient.invalidateQueries({
-        queryKey: ['wallet-interest', walletId],
+        queryKey: ['wallet-interest', wsId, walletId],
       });
       onConfigChange?.();
     },
@@ -144,25 +127,12 @@ export function WalletInterestSettings({
 
   // Add rate mutation
   const addRateMutation = useMutation({
-    mutationFn: async (rate: number) => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${walletId}/interest/rates`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ annual_rate: rate }),
-        }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update rate');
-      }
-      return res.json();
-    },
+    mutationFn: (rate: number) =>
+      createWalletInterestRate(wsId, walletId, { annual_rate: rate }),
     onSuccess: () => {
       toast.success(t('rate_updated'));
       queryClient.invalidateQueries({
-        queryKey: ['wallet-interest', walletId],
+        queryKey: ['wallet-interest', wsId, walletId],
       });
       setIsRateDialogOpen(false);
       onConfigChange?.();
@@ -174,21 +144,11 @@ export function WalletInterestSettings({
 
   // Delete config mutation
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${walletId}/interest/config`,
-        { method: 'DELETE' }
-      );
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to disable tracking');
-      }
-      return res.json();
-    },
+    mutationFn: () => deleteWalletInterestConfig(wsId, walletId),
     onSuccess: () => {
       toast.success(t('tracking_disabled'));
       queryClient.invalidateQueries({
-        queryKey: ['wallet-interest', walletId],
+        queryKey: ['wallet-interest', wsId, walletId],
       });
       setIsDisableDialogOpen(false);
       onConfigChange?.();
@@ -321,7 +281,7 @@ export function WalletInterestSettings({
               >
                 <CalendarIcon className="mr-2 h-3 w-3" />
                 {trackingStartDate ? (
-                  format(trackingStartDate, 'PP')
+                  format(trackingStartDate, 'PP', { locale: dateLocale })
                 ) : (
                   <span className="text-xs">{t('set_start_date')}</span>
                 )}
@@ -332,6 +292,7 @@ export function WalletInterestSettings({
                 mode="single"
                 selected={trackingStartDate}
                 onSelect={handleStartDateChange}
+                locale={dateLocale}
                 initialFocus
               />
             </PopoverContent>
@@ -354,7 +315,7 @@ export function WalletInterestSettings({
               >
                 <CalendarIcon className="mr-2 h-3 w-3" />
                 {trackingEndDate ? (
-                  format(trackingEndDate, 'PP')
+                  format(trackingEndDate, 'PP', { locale: dateLocale })
                 ) : (
                   <span className="text-xs">{t('no_end_date')}</span>
                 )}
@@ -366,6 +327,7 @@ export function WalletInterestSettings({
                   mode="single"
                   selected={trackingEndDate}
                   onSelect={handleEndDateChange}
+                  locale={dateLocale}
                   initialFocus
                 />
                 {trackingEndDate && (

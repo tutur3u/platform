@@ -7,13 +7,19 @@ import {
 } from '@tanstack/react-query';
 import { ArrowLeftRight, Paperclip, Settings2, Wallet } from '@tuturuuu/icons';
 import {
+  createTransaction,
+  createTransfer,
   deleteWorkspaceStorageObjects,
+  listTransactionCategories,
+  listTransactionTagLinks,
+  listTransactionTags,
+  listWallets,
   listWorkspaceStorageObjects,
+  updateTransaction,
+  updateTransfer,
   uploadWorkspaceStorageFile,
   type WorkspaceStorageListItem,
 } from '@tuturuuu/internal-api';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
-import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { Form } from '@tuturuuu/ui/form';
 import { useExchangeRates } from '@tuturuuu/ui/hooks/use-exchange-rates';
@@ -27,7 +33,6 @@ import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { convertCurrency } from '@tuturuuu/utils/exchange-rates';
-import { fetcher } from '@tuturuuu/utils/fetcher';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
 import { joinPath } from '@tuturuuu/utils/path-helper';
 import { useRouter } from 'next/navigation';
@@ -46,6 +51,7 @@ import type {
   NewContentType,
   TransactionFormProps,
 } from './form-types';
+import { invalidateTransactionMutationQueries } from './query-invalidation';
 import {
   type TransactionAttachmentDraft,
   TransactionAttachmentsField,
@@ -96,40 +102,24 @@ export function TransactionForm({
     saveLastSelections,
   } = useFinanceTransactionPreferences(wsId);
 
-  const { data: categories, isLoading: categoriesLoading } = useQuery<
-    TransactionCategory[]
-  >({
+  const { data: categories, isLoading: categoriesLoading } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/transactions/categories`],
-    queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/transactions/categories`, {
-        cache: 'no-store',
-      }),
+    queryFn: () => listTransactionCategories(wsId),
   });
 
-  const { data: wallets, isLoading: walletsLoading } = useQuery<WalletType[]>({
+  const { data: wallets, isLoading: walletsLoading } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/wallets`],
-    queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/wallets`, {
-        cache: 'no-store',
-      }),
+    queryFn: () => listWallets(wsId),
   });
 
-  const { data: tags, isLoading: tagsLoading } = useQuery<
-    Array<{ id: string; name: string; color: string }>
-  >({
+  const { data: tags, isLoading: tagsLoading } = useQuery({
     queryKey: [`/api/workspaces/${wsId}/tags`],
-    queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/tags`, {
-        cache: 'no-store',
-      }),
+    queryFn: () => listTransactionTags(wsId),
   });
 
   const { data: existingTags } = useQuery<Array<{ tag_id: string }>>({
     queryKey: [`/api/workspaces/${wsId}/transactions/${data?.id}/tags`],
-    queryFn: () =>
-      fetcher(`/api/workspaces/${wsId}/transactions/${data?.id}/tags`, {
-        cache: 'no-store',
-      }),
+    queryFn: () => listTransactionTagLinks(wsId, data?.id || ''),
     enabled: !!data?.id,
   });
 
@@ -337,10 +327,11 @@ export function TransactionForm({
     !!data?.transfer?.linked_wallet_id;
 
   const refreshTransactions = async () => {
-    await queryClient.invalidateQueries({
-      queryKey: [`/api/workspaces/${wsId}/transactions/infinite`],
-    });
-    router.refresh();
+    await invalidateTransactionMutationQueries(queryClient, wsId);
+
+    if (!onFinish) {
+      router.refresh();
+    }
   };
 
   const updateAttachmentStatus = (
@@ -509,12 +500,7 @@ export function TransactionForm({
       report_opt_in: boolean;
       tag_ids?: string[];
     }) => {
-      const body = await fetcher(`/api/workspaces/${wsId}/transfers`, {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const body = await createTransfer(wsId, payload);
 
       if (!body || body.message !== 'success') {
         throw new Error(
@@ -544,12 +530,7 @@ export function TransactionForm({
       report_opt_in: boolean;
       tag_ids?: string[];
     }) => {
-      const body = await fetcher(`/api/workspaces/${wsId}/transfers`, {
-        method: 'PUT',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      const body = await updateTransfer(wsId, payload);
 
       if (!body || body.message !== 'success') {
         throw new Error(
@@ -576,17 +557,10 @@ export function TransactionForm({
       is_description_confidential?: boolean;
       is_category_confidential?: boolean;
     }) => {
-      const body = await fetcher(
-        payload.id
-          ? `/api/workspaces/${wsId}/transactions/${payload.id}`
-          : `/api/workspaces/${wsId}/transactions`,
-        {
-          method: payload.id ? 'PUT' : 'POST',
-          cache: 'no-store',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        }
-      );
+      const { id, ...transactionPayload } = payload;
+      const body = id
+        ? await updateTransaction(wsId, id, transactionPayload)
+        : await createTransaction(wsId, transactionPayload);
 
       if (!body || body.message !== 'success') {
         throw new Error(

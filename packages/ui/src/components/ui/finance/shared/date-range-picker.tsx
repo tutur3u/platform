@@ -5,6 +5,8 @@ interface Props {
   setStartDate: (date?: Date) => void;
   endDate?: Date;
   setEndDate: (date?: Date) => void;
+  startLabel: string;
+  endLabel: string;
   className?: string;
 }
 
@@ -13,12 +15,14 @@ export function DateRangePicker({
   setStartDate,
   endDate,
   setEndDate,
+  startLabel,
+  endLabel,
   className,
 }: Props) {
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Select start date</h2>
+        <h2 className="font-semibold text-lg">{startLabel}</h2>
         <DatePicker
           defaultValue={startDate}
           onValueChange={setStartDate}
@@ -26,7 +30,7 @@ export function DateRangePicker({
         />
       </div>
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Select end date</h2>
+        <h2 className="font-semibold text-lg">{endLabel}</h2>
         <DatePicker
           defaultValue={endDate}
           onValueChange={setEndDate}

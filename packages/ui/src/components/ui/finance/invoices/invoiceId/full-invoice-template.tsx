@@ -6,7 +6,6 @@ import type {
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 
 export function FullInvoiceTemplate({
@@ -15,6 +14,7 @@ export function FullInvoiceTemplate({
   promotions,
   configs,
   isDarkPreview,
+  lang,
   currency = 'VND',
 }: {
   invoice: Invoice & {
@@ -32,10 +32,22 @@ export function FullInvoiceTemplate({
   promotions: InvoicePromotion[];
   configs: WorkspaceConfig[];
   isDarkPreview: boolean;
+  lang: string;
   currency?: string;
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+  const brandName = getConfig('BRAND_NAME');
+  const brandLogoAlt = brandName
+    ? t('invoices.brand_logo_alt', { brand: brandName })
+    : t('invoices.logo_alt');
+  const invoiceDate = invoice.created_at
+    ? new Intl.DateTimeFormat(lang, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(invoice.created_at))
+    : null;
 
   const subtotal = products.reduce((total, product) => {
     return total + product.price * product.amount;
@@ -57,7 +69,7 @@ export function FullInvoiceTemplate({
             // biome-ignore lint/performance/noImgElement: <>
             <img
               src={getConfig('BRAND_LOGO_URL')!}
-              alt="logo"
+              alt={brandLogoAlt}
               className="max-h-20 object-contain"
             />
           )}
@@ -78,11 +90,11 @@ export function FullInvoiceTemplate({
 
       {/* Company Info */}
       <div className="mb-8 text-center">
-        {getConfig('BRAND_NAME') && (
+        {brandName && (
           <h2
             className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {getConfig('BRAND_NAME')}
+            {brandName}
           </h2>
         )}
         {getConfig('BRAND_LOCATION') && (
@@ -118,7 +130,7 @@ export function FullInvoiceTemplate({
           </p>
         </div>
         <div className="text-right">
-          {invoice.created_at && (
+          {invoiceDate && (
             <p
               className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
@@ -127,7 +139,7 @@ export function FullInvoiceTemplate({
               >
                 {t('invoices.invoice_date')}:
               </span>{' '}
-              {dayjs(invoice.created_at).format('DD/MM/YYYY')}
+              {invoiceDate}
             </p>
           )}
         </div>

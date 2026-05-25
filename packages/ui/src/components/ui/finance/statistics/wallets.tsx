@@ -39,8 +39,8 @@ export default async function WalletsStatistics({
   if (enabled) {
     try {
       walletsCount = (await listWallets(wsId, internalApiOptions)).length;
-    } catch (error) {
-      console.error('Failed to load wallet statistics:', error);
+    } catch {
+      walletsCount = 0;
     }
   }
 

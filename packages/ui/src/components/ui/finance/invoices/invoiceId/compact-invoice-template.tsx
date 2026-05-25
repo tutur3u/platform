@@ -1,7 +1,6 @@
 import type { Invoice } from '@tuturuuu/types';
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
 
 export function CompactInvoiceTemplate({
@@ -30,8 +29,19 @@ export function CompactInvoiceTemplate({
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
   const BRAND_LOGO_URL = getConfig('BRAND_LOGO_URL');
+  const BRAND_NAME = getConfig('BRAND_NAME');
   const BRAND_LOCATION = getConfig('BRAND_LOCATION');
   const BRAND_PHONE_NUMBER = getConfig('BRAND_PHONE_NUMBER');
+  const brandLogoAlt = BRAND_NAME
+    ? t('invoices.brand_logo_alt', { brand: BRAND_NAME })
+    : t('invoices.logo_alt');
+  const invoiceDate = invoice.created_at
+    ? new Intl.DateTimeFormat(lang, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(invoice.created_at))
+    : null;
   const dividerClass = isDarkPreview
     ? 'border-foreground/30 print:border-black'
     : 'border-black/30 print:border-black';
@@ -45,7 +55,7 @@ export function CompactInvoiceTemplate({
             // biome-ignore lint/performance/noImgElement: <>
             <img
               src={BRAND_LOGO_URL!}
-              alt="logo"
+              alt={brandLogoAlt}
               className="max-h-24 object-contain"
             />
           )}
@@ -129,11 +139,11 @@ export function CompactInvoiceTemplate({
 
       {/* Footer */}
       <div className="flex flex-col items-end gap-1">
-        {invoice.created_at && (
+        {invoiceDate && (
           <p
             className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {dayjs(invoice.created_at).locale(lang).format('DD/MM/YYYY')}
+            {invoiceDate}
           </p>
         )}
         {(invoice.creator_id ||

@@ -1,48 +1,33 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createBudget,
   type FinanceBudgetUpsertPayload,
+  listTransactionCategories,
+  listWallets,
   updateBudget,
 } from '@tuturuuu/internal-api';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
-import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Form } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
-const budgetFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  amount: z.string().min(1, 'Amount is required'),
-  period: z.enum(['monthly', 'yearly', 'custom']),
-  start_date: z.string().min(1, 'Start date is required'),
-  end_date: z.string().optional(),
-  alert_threshold: z.string().optional(),
-  category_id: z.string().optional(),
-  wallet_id: z.string().optional(),
-});
-
-type BudgetFormValues = z.infer<typeof budgetFormSchema>;
+import {
+  BudgetAmountFields,
+  BudgetBasicsFields,
+  BudgetDateFields,
+  BudgetPeriodField,
+  BudgetScopeFields,
+  BudgetSubmitButton,
+} from './form-fields';
+import {
+  type BudgetFormValues,
+  createBudgetFormSchema,
+  NO_CATEGORY_VALUE,
+  NO_WALLET_VALUE,
+} from './form-schema';
 
 interface BudgetFormProps {
   wsId: string;
@@ -57,7 +42,19 @@ export function BudgetForm({
   initialData,
   onSuccess,
 }: BudgetFormProps) {
+  const t = useTranslations('finance-budgets');
   const queryClient = useQueryClient();
+  const budgetFormSchema = useMemo(() => createBudgetFormSchema(t), [t]);
+
+  const { data: categories = [], isLoading: isLoadingCategories } = useQuery({
+    queryKey: ['transaction-categories', wsId],
+    queryFn: () => listTransactionCategories(wsId),
+  });
+
+  const { data: wallets = [], isLoading: isLoadingWallets } = useQuery({
+    queryKey: ['wallets', wsId],
+    queryFn: () => listWallets(wsId),
+  });
 
   const form = useForm<BudgetFormValues>({
     resolver: zodResolver(budgetFormSchema),
@@ -69,8 +66,8 @@ export function BudgetForm({
       start_date: new Date().toISOString().split('T')[0],
       end_date: '',
       alert_threshold: '80',
-      category_id: '',
-      wallet_id: '',
+      category_id: NO_CATEGORY_VALUE,
+      wallet_id: NO_WALLET_VALUE,
     },
   });
 
@@ -86,16 +83,15 @@ export function BudgetForm({
     onSuccess: (result) => {
       toast.success(
         result === 'updated'
-          ? 'Budget updated successfully'
-          : 'Budget created successfully'
+          ? t('updated_successfully')
+          : t('created_successfully')
       );
       void queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
       void queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
       onSuccess?.();
     },
-    onError: (error) => {
-      console.error('Error saving budget:', error);
-      toast.error('Failed to save budget');
+    onError: () => {
+      toast.error(t('failed_to_save'));
     },
   });
 
@@ -110,150 +106,35 @@ export function BudgetForm({
       alert_threshold: data.alert_threshold
         ? parseFloat(data.alert_threshold)
         : 80,
-      category_id: data.category_id || null,
-      wallet_id: data.wallet_id || null,
+      category_id:
+        data.category_id && data.category_id !== NO_CATEGORY_VALUE
+          ? data.category_id
+          : null,
+      wallet_id:
+        data.wallet_id && data.wallet_id !== NO_WALLET_VALUE
+          ? data.wallet_id
+          : null,
     });
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Monthly food budget" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <BudgetBasicsFields form={form} />
+        <BudgetAmountFields form={form} />
+        <BudgetPeriodField form={form} />
+        <BudgetScopeFields
+          categories={categories}
+          form={form}
+          isLoadingCategories={isLoadingCategories}
+          isLoadingWallets={isLoadingWallets}
+          wallets={wallets}
         />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Optional description for this budget"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <BudgetDateFields form={form} />
+        <BudgetSubmitButton
+          isEditing={!!budgetId}
+          isPending={mutation.isPending}
         />
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Budget Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="1000.00"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="alert_threshold"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Alert Threshold (%)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    placeholder="80"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Get alerted when spending reaches this percentage
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="period"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Period</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a period" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="start_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="end_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Date (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormDescription>
-                  Leave empty for recurring budgets
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button type="submit" disabled={mutation.isPending}>
-            {budgetId ? 'Update Budget' : 'Create Budget'}
-          </Button>
-        </div>
       </form>
     </Form>
   );

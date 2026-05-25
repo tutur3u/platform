@@ -5,14 +5,36 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import {
+  getPendingFinanceInvoicesCurrentMonthCount,
+  getSubscriptionInvoiceContext,
+  listFinanceInvoices,
+  listPendingFinanceInvoices,
+  listTransactionCategories,
+  listWallets,
+} from '@tuturuuu/internal-api/finance';
+import {
+  getOptionalWorkspaceConfig,
+  parseWorkspaceConfigIdList,
+} from '@tuturuuu/internal-api/workspace-configs';
 import type { Invoice } from '@tuturuuu/types/primitives/Invoice';
 import type { PendingInvoice } from '@tuturuuu/types/primitives/PendingInvoice';
 import { parseMonthsOwed } from '@tuturuuu/types/primitives/PendingInvoice';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
-import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { z } from 'zod';
-import type { Product, Promotion, UserGroupProducts } from './types';
+import type { WorkspaceUserLinkedPromotion } from './internal-api';
+import {
+  createPromotionWithInternalApi,
+  getWorkspaceUserWithInternalApi,
+  listInvoiceProductsWithInternalApi,
+  listMultiGroupProductsWithInternalApi,
+  listPromotionsWithInternalApi,
+  listUserGroupProductsWithInternalApi,
+  listUserGroupsWithInternalApi,
+  listUserLinkedPromotionsWithInternalApi,
+  listUserReferralDiscountsWithInternalApi,
+  listWorkspaceUsersWithInternalApi,
+} from './internal-api';
 import type { UserGroup } from './utils';
 
 // ==================== ZOD SCHEMAS ====================
@@ -145,6 +167,13 @@ const createdPromotionResponseSchema = z.object({
   data: createdPromotionSchema,
 });
 
+const INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD_CONFIG_ID =
+  'INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD';
+const INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION_CONFIG_ID =
+  'INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION';
+const INVOICE_USE_ATTENDANCE_BASED_CALCULATION_CONFIG_ID =
+  'INVOICE_USE_ATTENDANCE_BASED_CALCULATION';
+
 // ==================== INVOICES DATA FETCHING ====================
 
 export interface InvoicesParams {
@@ -191,32 +220,15 @@ export function useWorkspaceInvoices(
       { q, page, pageSize, start, end, userIds, walletIds },
     ],
     queryFn: async (): Promise<InvoicesResponse> => {
-      const searchParams = new URLSearchParams();
-
-      if (q) searchParams.set('q', q);
-      searchParams.set('page', String(page));
-      searchParams.set('pageSize', String(pageSize));
-      if (start) searchParams.set('start', start);
-      if (end) searchParams.set('end', end);
-
-      userIds.forEach((userId) => {
-        searchParams.append('userIds', userId);
+      const json = await listFinanceInvoices(wsId, {
+        end,
+        page,
+        pageSize,
+        q,
+        start,
+        userIds,
+        walletIds,
       });
-
-      walletIds.forEach((walletId) => {
-        searchParams.append('walletIds', walletId);
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace invoices');
-      }
-
-      const json = await response.json();
       const result = invoicesResponseSchema.safeParse(json);
 
       if (!result.success) {
@@ -242,24 +254,12 @@ export function useWorkspaceInvoices(
 export const useUsers = (wsId: string) => {
   return useQuery({
     queryKey: ['users', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users?limit=500`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace users');
-      }
-
-      const payload = (await response.json()) as
-        | WorkspaceUser[]
-        | { data?: WorkspaceUser[] };
-
-      return (Array.isArray(payload) ? payload : payload.data || []) as
-        | WorkspaceUser[]
-        | [];
-    },
+    queryFn: async () =>
+      (
+        await listWorkspaceUsersWithInternalApi(wsId, {
+          limit: 500,
+        })
+      ).data,
   });
 };
 
@@ -271,53 +271,17 @@ type WorkspaceUsersPage = {
   offset: number;
 };
 
-function parseWorkspaceUsersPayload(
-  payload: WorkspaceUser[] | { data?: WorkspaceUser[]; count?: number }
-) {
-  if (Array.isArray(payload)) {
-    return {
-      data: payload,
-      count: payload.length,
-    };
-  }
-
-  return {
-    data: payload.data ?? [],
-    count: payload.count ?? payload.data?.length ?? 0,
-  };
-}
-
 async function fetchInvoiceCustomerPage(
   wsId: string,
   searchQuery: string,
   offset: number
 ): Promise<WorkspaceUsersPage> {
-  const searchParams = new URLSearchParams({
-    from: String(offset),
-    to: String(offset + INVOICE_CUSTOMER_PAGE_SIZE - 1),
-    limit: String(INVOICE_CUSTOMER_PAGE_SIZE),
+  const payload = await listWorkspaceUsersWithInternalApi(wsId, {
+    from: offset,
+    limit: INVOICE_CUSTOMER_PAGE_SIZE,
+    q: searchQuery.trim() || undefined,
+    to: offset + INVOICE_CUSTOMER_PAGE_SIZE - 1,
   });
-
-  if (searchQuery.trim()) {
-    searchParams.set('q', searchQuery.trim());
-  }
-
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/users?${searchParams.toString()}`,
-    {
-      cache: 'no-store',
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch workspace users');
-  }
-
-  const payload = parseWorkspaceUsersPayload(
-    (await response.json()) as
-      | WorkspaceUser[]
-      | { data?: WorkspaceUser[]; count?: number }
-  );
 
   return {
     data: payload.data,
@@ -330,19 +294,7 @@ async function fetchWorkspaceUserById(
   wsId: string,
   userId: string
 ): Promise<WorkspaceUser | null> {
-  const response = await fetch(`/api/v1/workspaces/${wsId}/users/${userId}`, {
-    cache: 'no-store',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch workspace user');
-  }
-
-  const payload = (await response.json()) as WorkspaceUser[] | WorkspaceUser;
-  if (Array.isArray(payload)) {
-    return payload[0] ?? null;
-  }
-  return payload ?? null;
+  return getWorkspaceUserWithInternalApi(wsId, userId);
 }
 
 export function useInvoiceCustomerSearch(
@@ -415,58 +367,19 @@ export function useInvoiceCustomerSearch(
 export const useUsersWithSelectableGroups = (wsId: string) => {
   return useQuery({
     queryKey: ['users-with-selectable-groups', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users?limit=500`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch workspace users');
-      }
-
-      const payload = (await response.json()) as
-        | WorkspaceUser[]
-        | { data?: WorkspaceUser[] };
-
-      return (Array.isArray(payload) ? payload : payload.data || []) as
-        | WorkspaceUser[]
-        | [];
-    },
+    queryFn: async () =>
+      (
+        await listWorkspaceUsersWithInternalApi(wsId, {
+          limit: 500,
+        })
+      ).data,
   });
 };
 
 export const useProducts = (wsId: string) => {
   return useQuery({
     queryKey: ['products', wsId],
-    queryFn: async () => {
-      const pageSize = 500;
-      let page = 1;
-      let count = 0;
-      const products: Product[] = [];
-
-      do {
-        const response = await fetch(
-          `/api/v1/workspaces/${wsId}/inventory/products?page=${page}&pageSize=${pageSize}`,
-          { cache: 'no-store' }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch products');
-        }
-
-        const payload = (await response.json()) as {
-          data?: Product[];
-          count?: number;
-        };
-
-        products.push(...(payload.data ?? []));
-        count = payload.count ?? products.length;
-        page += 1;
-      } while (products.length < count);
-
-      return products;
-    },
+    queryFn: () => listInvoiceProductsWithInternalApi(wsId),
   });
 };
 
@@ -474,17 +387,7 @@ export const usePromotions = (wsId: string) => {
   return useQuery({
     queryKey: ['promotions', wsId],
     queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch promotions');
-      }
-
-      const data = (await response.json()) as Array<
-        Promotion & { promo_type?: string | null }
-      >;
+      const data = await listPromotionsWithInternalApi(wsId);
       return data.filter((promotion) => promotion.promo_type !== 'REFERRAL');
     },
   });
@@ -493,35 +396,14 @@ export const usePromotions = (wsId: string) => {
 export const useWallets = (wsId: string) => {
   return useQuery({
     queryKey: ['wallets', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/wallets`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch wallets');
-      }
-
-      return ((await response.json()) as Wallet[]) || [];
-    },
+    queryFn: () => listWallets(wsId),
   });
 };
 
 export const useCategories = (wsId: string) => {
   return useQuery({
     queryKey: ['categories', wsId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/workspaces/${wsId}/transactions/categories`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch categories');
-      }
-
-      return ((await response.json()) as TransactionCategory[]) || [];
-    },
+    queryFn: () => listTransactionCategories(wsId),
   });
 };
 
@@ -529,16 +411,11 @@ export const useUserInvoices = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-invoices', wsId, userId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices?page=1&pageSize=100&customerIds=${userId}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user invoices');
-      }
-
-      const payload = (await response.json()) as InvoicesResponse;
+      const payload = await listFinanceInvoices(wsId, {
+        customerIds: [userId],
+        page: 1,
+        pageSize: 100,
+      });
       return payload.data || [];
     },
     enabled: !!userId,
@@ -553,22 +430,11 @@ export const useInfiniteUserInvoices = (
   return useInfiniteQuery({
     queryKey: ['infinite-user-invoices', wsId, userId],
     queryFn: async ({ pageParam = 1 }: { pageParam: number }) => {
-      const searchParams = new URLSearchParams({
+      const payload = await listFinanceInvoices(wsId, {
+        customerIds: [userId],
         page: String(pageParam),
         pageSize: String(pageSize),
       });
-      searchParams.append('customerIds', userId);
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user invoices');
-      }
-
-      const payload = (await response.json()) as InvoicesResponse;
       const data = payload.data || [];
       const count = payload.count ?? 0;
       const fetchedCount = pageParam * pageSize;
@@ -592,17 +458,8 @@ export const useUserGroups = (wsId: string, userId: string) => {
     queryKey: ['user-groups', wsId, userId],
     queryFn: async (): Promise<UserGroup[]> => {
       if (!userId) return [];
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/user-groups`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user groups');
-      }
-
-      return (((await response.json()) as UserGroup[]) || []).map((group) => ({
+      const groups = await listUserGroupsWithInternalApi(wsId, userId);
+      return (groups || []).map((group) => ({
         workspace_user_groups: group.workspace_user_groups ?? null,
       }));
     },
@@ -638,35 +495,11 @@ export const useSubscriptionInvoiceContext = (
         };
       }
 
-      const searchParams = new URLSearchParams({
-        userId,
+      return getSubscriptionInvoiceContext(wsId, {
+        groupIds,
         month,
+        userId,
       });
-      groupIds.forEach((groupId) => {
-        searchParams.append('groupIds', groupId);
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/subscription/context?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch subscription invoice context');
-      }
-
-      return (await response.json()) as {
-        attendance: Array<{
-          status: string;
-          date: string;
-          group_id?: string;
-        }>;
-        latestInvoices: Array<{
-          group_id?: string;
-          valid_until?: string | null;
-          created_at?: string | null;
-        }>;
-      };
     },
     enabled: !!wsId && !!userId && groupIds.length > 0 && !!month,
     staleTime: 5 * 60 * 1000,
@@ -685,25 +518,17 @@ export const useInvoiceAttendanceConfig = (wsId: string) => {
       if (!wsId) return true; // Default to true for backward compatibility
 
       try {
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/INVOICE_USE_ATTENDANCE_BASED_CALCULATION`,
-          { cache: 'no-store' }
+        const config = await getOptionalWorkspaceConfig(
+          wsId,
+          INVOICE_USE_ATTENDANCE_BASED_CALCULATION_CONFIG_ID
         );
 
-        if (!res.ok) {
-          if (res.status === 404) {
-            // Config not set, return default (true)
-            return true;
-          }
-          throw new Error('Failed to fetch invoice attendance config');
-        }
+        if (!config) return true;
 
-        const data = await res.json();
         // workspace_configs stores values as text, so we need to parse "true"/"false" strings
-        const value = data.value?.toLowerCase();
-        return value === 'true' || value === true;
-      } catch (error) {
-        console.error('❌ Invoice attendance config fetch error:', error);
+        const value = config.value?.trim().toLowerCase();
+        return value === 'true';
+      } catch {
         // Return default (true) on error to maintain backward compatibility
         return true;
       }
@@ -725,25 +550,17 @@ export const useInvoicePromotionConfig = (wsId: string) => {
       if (!wsId) return true; // Default to true for backward compatibility
 
       try {
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD`,
-          { cache: 'no-store' }
+        const config = await getOptionalWorkspaceConfig(
+          wsId,
+          INVOICE_ALLOW_PROMOTIONS_FOR_STANDARD_CONFIG_ID
         );
 
-        if (!res.ok) {
-          if (res.status === 404) {
-            // Config not set, return default (true)
-            return true;
-          }
-          throw new Error('Failed to fetch invoice promotion config');
-        }
+        if (!config) return true;
 
-        const data = await res.json();
         // workspace_configs stores values as text, so we need to parse "true"/"false" strings
-        const value = data.value?.trim().toLowerCase();
+        const value = config.value?.trim().toLowerCase();
         return value !== 'false';
-      } catch (error) {
-        console.error('❌ Invoice promotion config fetch error:', error);
+      } catch {
         // Return default (true) on error to maintain backward compatibility
         return true;
       }
@@ -765,29 +582,13 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
       if (!wsId) return [];
 
       try {
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/settings/INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION`,
-          { cache: 'no-store' }
+        const config = await getOptionalWorkspaceConfig(
+          wsId,
+          INVOICE_BLOCKED_GROUP_IDS_FOR_CREATION_CONFIG_ID
         );
 
-        if (!res.ok) {
-          if (res.status === 404) {
-            return [];
-          }
-          throw new Error('Failed to fetch invoice blocked groups config');
-        }
-
-        const data = await res.json();
-        const value = data.value?.trim();
-
-        if (!value) return [];
-
-        return value
-          .split(',')
-          .map((id: string) => id.trim())
-          .filter(Boolean);
-      } catch (error) {
-        console.error('❌ Invoice blocked groups config fetch error:', error);
+        return parseWorkspaceConfigIdList(config?.value);
+      } catch {
         return [];
       }
     },
@@ -803,43 +604,7 @@ export const useInvoiceBlockedGroups = (wsId: string) => {
 export const useUserGroupProducts = (wsId: string, groupId: string) => {
   return useQuery({
     queryKey: ['user-group-products', wsId, groupId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/${groupId}/linked-products`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch linked products');
-      }
-
-      const payload = (await response.json()) as {
-        items?: Array<{
-          id: string;
-          name: string | null;
-          description?: string | null;
-          warehouse_id: string | null;
-          unit_id: string | null;
-        }>;
-      };
-
-      return (payload.items ?? []).map((item) => ({
-        workspace_products: {
-          id: item.id,
-          name: item.name,
-          product_categories: {
-            name: null,
-          },
-        },
-        inventory_units: item.unit_id
-          ? {
-              id: item.unit_id,
-              name: null,
-            }
-          : null,
-        warehouse_id: item.warehouse_id,
-      })) as UserGroupProducts[];
-    },
+    queryFn: () => listUserGroupProductsWithInternalApi(wsId, groupId),
     enabled: !!wsId && !!groupId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -854,26 +619,7 @@ export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
     queryKey: ['multi-group-products', wsId, groupIds],
     queryFn: async () => {
       if (groupIds.length === 0) return [];
-
-      const searchParams = new URLSearchParams();
-      groupIds.forEach((groupId) => {
-        searchParams.append('groupIds', groupId);
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/user-groups/linked-products?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch linked products');
-      }
-
-      const payload = (await response.json()) as {
-        items?: Array<UserGroupProducts & { group_id?: string }>;
-      };
-
-      return payload.items ?? [];
+      return listMultiGroupProductsWithInternalApi(wsId, groupIds);
     },
     enabled: !!wsId && groupIds.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -887,32 +633,7 @@ export const useMultiGroupProducts = (wsId: string, groupIds: string[]) => {
 export const useUserLinkedPromotions = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-linked-promotions', wsId, userId],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch linked promotions');
-      }
-
-      return (
-        ((await response.json()) as Array<{
-          promo_id: string | null;
-          workspace_promotions?: {
-            id?: string | null;
-            name?: string | null;
-            code?: string | null;
-            value?: number | null;
-            use_ratio?: boolean | null;
-            promo_type?: string | null;
-            max_uses?: number | null;
-            current_uses?: number | null;
-          } | null;
-        }>) || []
-      );
-    },
+    queryFn: () => listUserLinkedPromotionsWithInternalApi(wsId, userId),
     enabled: !!wsId && !!userId,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
@@ -926,19 +647,7 @@ export const useUserReferralDiscounts = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['user-referral-discounts', wsId, userId],
     queryFn: async () => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/users/${userId}/referral-discounts`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch referral discounts');
-      }
-
-      const data = (await response.json()) as Array<{
-        promo_id: string | null;
-        calculated_discount_value: number | null;
-      }>;
+      const data = await listUserReferralDiscountsWithInternalApi(wsId, userId);
 
       return (
         (data || []).map((row) => ({
@@ -973,51 +682,12 @@ export const useAvailablePromotions = (wsId: string, userId: string) => {
   return useQuery({
     queryKey: ['available-promotions', wsId, userId],
     queryFn: async () => {
-      const [regularResponse, linkedResponse] = await Promise.all([
-        fetch(`/api/v1/workspaces/${wsId}/promotions`, {
-          cache: 'no-store',
-        }),
+      const [regular, linked] = await Promise.all([
+        listPromotionsWithInternalApi(wsId),
         userId
-          ? fetch(
-              `/api/v1/workspaces/${wsId}/users/${userId}/linked-promotions`,
-              { cache: 'no-store' }
-            )
-          : Promise.resolve(null),
+          ? listUserLinkedPromotionsWithInternalApi(wsId, userId)
+          : Promise.resolve([] as WorkspaceUserLinkedPromotion[]),
       ]);
-
-      if (!regularResponse.ok) {
-        throw new Error('Failed to fetch promotions');
-      }
-
-      if (linkedResponse && !linkedResponse.ok) {
-        throw new Error('Failed to fetch linked promotions');
-      }
-
-      const regular = (await regularResponse.json()) as Array<{
-        id: string;
-        name: string | null;
-        code: string | null;
-        value: number | null;
-        use_ratio: boolean | null;
-        promo_type?: string | null;
-        max_uses?: number | null;
-        current_uses?: number | null;
-      }>;
-      const linked = linkedResponse
-        ? ((await linkedResponse.json()) as Array<{
-            promo_id: string | null;
-            workspace_promotions?: {
-              id?: string | null;
-              name?: string | null;
-              code?: string | null;
-              value?: number | null;
-              use_ratio?: boolean | null;
-              promo_type?: string | null;
-              max_uses?: number | null;
-              current_uses?: number | null;
-            } | null;
-          }>)
-        : [];
 
       // Build result: include all regular + only linked where promo_type == 'REFERRAL'
       const resultMap = new Map<string, AvailablePromotion>();
@@ -1093,23 +763,14 @@ export function useCreatePromotion(wsId: string) {
       unit: 'percentage' | 'currency';
       max_uses?: number | null;
     }) => {
-      const res = await fetch(`/api/v1/workspaces/${wsId}/promotions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: input.name,
-          description: input.description,
-          code: input.code,
-          value: input.value,
-          unit: input.unit,
-          max_uses: input.max_uses ?? null,
-        }),
+      const json = await createPromotionWithInternalApi(wsId, {
+        code: input.code,
+        description: input.description,
+        max_uses: input.max_uses ?? null,
+        name: input.name,
+        unit: input.unit,
+        value: input.value,
       });
-
-      const json = await res.json();
-      if (!res.ok) {
-        throw new Error(json?.message || 'Failed to create promotion');
-      }
 
       const parsed = createdPromotionResponseSchema.safeParse(json);
       if (!parsed.success) {
@@ -1156,27 +817,13 @@ export const usePendingInvoices = (
       { page, pageSize, q, userIds, groupByUser },
     ],
     queryFn: async () => {
-      const searchParams = new URLSearchParams({
-        page: String(page),
-        pageSize: String(pageSize),
+      const json = await listPendingFinanceInvoices(wsId, {
+        groupByUser,
+        page,
+        pageSize,
         q: q || '',
-        groupByUser: String(groupByUser),
+        userIds,
       });
-
-      userIds.forEach((userId) => {
-        searchParams.append('userIds', userId);
-      });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch pending invoices');
-      }
-
-      const json = await response.json();
       const result = pendingInvoicesResponseSchema.safeParse(json);
 
       if (!result.success) {
@@ -1217,21 +864,9 @@ export const usePendingInvoicesCurrentMonthCount = (
   return useQuery({
     queryKey: ['pending-invoices-current-month', wsId, groupByUser],
     queryFn: async () => {
-      const searchParams = new URLSearchParams({
-        groupByUser: String(groupByUser),
-        currentMonthOnly: 'true',
+      const count = await getPendingFinanceInvoicesCurrentMonthCount(wsId, {
+        groupByUser,
       });
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch pending invoices current month count');
-      }
-
-      const count = await response.json();
       return typeof count === 'number' ? count : 0;
     },
     enabled: !!wsId && enabled,

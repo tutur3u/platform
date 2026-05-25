@@ -116,6 +116,7 @@ export function WalletInterestProjections({
                 data={data}
                 currentBalance={currentBalance}
                 formatDate={formatDate}
+                ariaLabel={t('projection_chart_aria_label')}
               />
             )}
           </TabsContent>
@@ -143,10 +144,12 @@ function ProjectionChart({
   data,
   currentBalance,
   formatDate,
+  ariaLabel,
 }: {
   data: InterestProjection[];
   currentBalance: number;
   formatDate: (dateStr: string) => string;
+  ariaLabel: string;
 }) {
   if (data.length < 2) return null;
 
@@ -172,7 +175,7 @@ function ProjectionChart({
           viewBox="0 0 100 100"
           preserveAspectRatio="none"
           role="img"
-          aria-label="Interest projection chart"
+          aria-label={ariaLabel}
         >
           {/* Grid lines */}
           <line

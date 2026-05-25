@@ -37,6 +37,7 @@ import {
 import { useBestPromotionSelection } from './hooks/use-best-promotion-selection';
 import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
+import { createInvoiceWithInternalApi } from './internal-api';
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 
@@ -316,23 +317,7 @@ export function StandardInvoice({
         frontend_total: roundedTotal,
       };
 
-      // Call the API endpoint
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestPayload),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.message || 'Failed to create invoice');
-      }
+      const result = await createInvoiceWithInternalApi(wsId, requestPayload);
 
       // Show notification if values were recalculated
       if (result.data?.values_recalculated) {
@@ -384,8 +369,6 @@ export function StandardInvoice({
         setCustomerSearch('');
       }
     } catch (error) {
-      console.error('Error creating invoice:', error);
-
       // Show error message
       const rawMessage = error instanceof Error ? error.message : '';
       const friendlyMessage = rawMessage

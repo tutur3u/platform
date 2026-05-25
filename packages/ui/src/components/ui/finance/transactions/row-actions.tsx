@@ -1,7 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
+import { deleteTransaction as deleteTransactionWithInternalApi } from '@tuturuuu/internal-api/finance';
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import {
   AlertDialog,
@@ -29,6 +31,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { invalidateTransactionMutationQueries } from './query-invalidation';
 
 interface Props {
   row: Row<Transaction>;
@@ -39,30 +42,25 @@ export function TransactionRowActions(props: Props) {
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = props.row.original;
   const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteTransaction = async () => {
+    if (!data.ws_id || !data.id) return;
+
     setIsDeleting(true);
     try {
-      const res = await fetch(
-        `/api/workspaces/${data.ws_id}/transactions/${data.id}`,
-        {
-          method: 'DELETE',
-        }
+      await deleteTransactionWithInternalApi(data.ws_id, data.id);
+      await invalidateTransactionMutationQueries(queryClient, data.ws_id);
+      toast.success(t('ws-transactions.transaction_deleted'));
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-transactions.failed_to_delete_transaction')
       );
-
-      if (res.ok) {
-        toast.success(t('ws-transactions.transaction_deleted'));
-        router.refresh();
-      } else {
-        const errorData = await res.json();
-        toast.error(
-          errorData.message || t('ws-transactions.failed_to_delete_transaction')
-        );
-      }
-    } catch {
-      toast.error(t('ws-transactions.failed_to_delete_transaction'));
     } finally {
       setIsDeleting(false);
     }
@@ -93,7 +91,7 @@ export function TransactionRowActions(props: Props) {
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">

@@ -7,6 +7,7 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface AmountRangeFilterProps {
@@ -25,6 +26,8 @@ export function AmountRangeFilter({
   onAmountRangeChange,
   className,
 }: AmountRangeFilterProps) {
+  const t = useTranslations('transaction-category-data-table');
+  const commonT = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
   const [localMin, setLocalMin] = useState(minAmount || '');
   const [localMax, setLocalMax] = useState(maxAmount || '');
@@ -58,7 +61,7 @@ export function AmountRangeFilter({
         <PopoverTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 gap-1.5">
             <DollarSign className="h-3 w-3" />
-            <span className="text-xs">Filter by amount</span>
+            <span className="text-xs">{t('filter_by_amount')}</span>
             {hasActiveFilter && (
               <Badge
                 variant="secondary"
@@ -72,18 +75,19 @@ export function AmountRangeFilter({
         <PopoverContent className="w-70" align="start">
           <div className="space-y-4">
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Amount Range</h4>
+              <h4 className="font-medium text-sm">{t('amount_range')}</h4>
               <p className="text-muted-foreground text-xs">
-                Set minimum and maximum amounts
+                {t('amount_range_description')}
               </p>
             </div>
 
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label htmlFor="min-amount" className="text-xs">
-                  Minimum Amount
+                  {t('minimum_amount')}
                 </Label>
                 <Input
+                  id="min-amount"
                   type="number"
                   placeholder="0"
                   value={localMin}
@@ -94,11 +98,12 @@ export function AmountRangeFilter({
 
               <div className="space-y-1.5">
                 <Label htmlFor="max-amount" className="text-xs">
-                  Maximum Amount
+                  {t('maximum_amount')}
                 </Label>
                 <Input
+                  id="max-amount"
                   type="number"
-                  placeholder="No limit"
+                  placeholder={t('no_limit')}
                   value={localMax}
                   onChange={(e) => setLocalMax(e.target.value)}
                   className="h-8"
@@ -115,11 +120,11 @@ export function AmountRangeFilter({
                   className="flex-1 text-destructive"
                 >
                   <X className="mr-2 h-3 w-3" />
-                  Clear
+                  {commonT('clear')}
                 </Button>
               )}
               <Button size="sm" onClick={handleApply} className="flex-1">
-                Apply
+                {t('apply_filter')}
               </Button>
             </div>
           </div>

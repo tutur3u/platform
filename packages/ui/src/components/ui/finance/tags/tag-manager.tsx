@@ -13,6 +13,14 @@ import {
   Trash2,
 } from '@tuturuuu/icons';
 import {
+  createTransactionTag,
+  deleteTransactionTag,
+  listTransactionTagStats,
+  listTransactionTags,
+  type TransactionTagRecord,
+  updateTransactionTag,
+} from '@tuturuuu/internal-api/finance';
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -61,12 +69,7 @@ interface TagManagerProps {
   wsId: string;
 }
 
-interface TransactionTag {
-  id: string;
-  name: string;
-  color: string;
-  description: string | null;
-}
+type TransactionTag = TransactionTagRecord;
 
 const tagFormSchema = z.object({
   name: z.string().min(1, 'Name is required').max(50),
@@ -89,15 +92,6 @@ const PRESET_COLORS = [
   '#ec4899', // pink
 ];
 
-const getErrorMessage = async (response: Response, fallback: string) => {
-  try {
-    const data = (await response.json()) as { message?: string };
-    return data.message || fallback;
-  } catch {
-    return fallback;
-  }
-};
-
 export function TagManager({ wsId }: TagManagerProps) {
   const t = useTranslations();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -107,43 +101,25 @@ export function TagManager({ wsId }: TagManagerProps) {
   const queryClient = useQueryClient();
   const router = useRouter();
   const financeHref = useFinanceHref();
+  const invalidateTagQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['transaction_tags', wsId] });
+    queryClient.invalidateQueries({ queryKey: ['transaction-tags', wsId] });
+    queryClient.invalidateQueries({
+      queryKey: ['transaction_tag_stats', wsId],
+    });
+    queryClient.invalidateQueries({
+      queryKey: [`/api/workspaces/${wsId}/tags`],
+    });
+  };
 
   const { data: tags, isLoading } = useQuery({
     queryKey: ['transaction_tags', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/tags`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(response, 'Failed to fetch transaction tags')
-        );
-      }
-      return (await response.json()) as TransactionTag[];
-    },
+    queryFn: () => listTransactionTags(wsId),
   });
 
   const { data: tagStats } = useQuery({
     queryKey: ['transaction_tag_stats', wsId],
-    queryFn: async () => {
-      const response = await fetch(`/api/workspaces/${wsId}/tags/stats`, {
-        cache: 'no-store',
-      });
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(
-            response,
-            'Failed to fetch transaction tag stats'
-          )
-        );
-      }
-      return (await response.json()) as Array<{
-        tag_id: string;
-        tag_name: string;
-        tag_color: string;
-        transaction_count: number;
-      }>;
-    },
+    queryFn: () => listTransactionTagStats(wsId),
   });
 
   const filteredTags = useMemo(() => {
@@ -167,28 +143,15 @@ export function TagManager({ wsId }: TagManagerProps) {
   });
 
   const createMutation = useMutation({
-    mutationFn: async (data: TagFormValues) => {
-      const response = await fetch(`/api/workspaces/${wsId}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          color: data.color,
-          description: data.description || null,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(response, 'Failed to create transaction tag')
-        );
-      }
-    },
+    mutationFn: (data: TagFormValues) =>
+      createTransactionTag(wsId, {
+        name: data.name,
+        color: data.color,
+        description: data.description || null,
+      }),
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.create_success'));
-      queryClient.invalidateQueries({ queryKey: ['transaction_tags', wsId] });
-      queryClient.invalidateQueries({
-        queryKey: ['transaction_tag_stats', wsId],
-      });
+      invalidateTagQueries();
       form.reset();
       setIsDialogOpen(false);
     },
@@ -198,28 +161,15 @@ export function TagManager({ wsId }: TagManagerProps) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: string; data: TagFormValues }) => {
-      const response = await fetch(`/api/workspaces/${wsId}/tags/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: data.name,
-          color: data.color,
-          description: data.description || null,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(response, 'Failed to update transaction tag')
-        );
-      }
-    },
+    mutationFn: ({ id, data }: { id: string; data: TagFormValues }) =>
+      updateTransactionTag(wsId, id, {
+        name: data.name,
+        color: data.color,
+        description: data.description || null,
+      }),
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.update_success'));
-      queryClient.invalidateQueries({ queryKey: ['transaction_tags', wsId] });
-      queryClient.invalidateQueries({
-        queryKey: ['transaction_tag_stats', wsId],
-      });
+      invalidateTagQueries();
       setEditingTag(null);
       setIsDialogOpen(false);
       form.reset();
@@ -230,22 +180,10 @@ export function TagManager({ wsId }: TagManagerProps) {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (tagId: string) => {
-      const response = await fetch(`/api/workspaces/${wsId}/tags/${tagId}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(response, 'Failed to delete transaction tag')
-        );
-      }
-    },
+    mutationFn: (tagId: string) => deleteTransactionTag(wsId, tagId),
     onSuccess: () => {
       toast.success(t('ws-transaction-tags.delete_success'));
-      queryClient.invalidateQueries({ queryKey: ['transaction_tags', wsId] });
-      queryClient.invalidateQueries({
-        queryKey: ['transaction_tag_stats', wsId],
-      });
+      invalidateTagQueries();
       setTagToDelete(null);
     },
     onError: (error: Error) => {

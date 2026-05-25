@@ -1,6 +1,8 @@
 import { Calendar as CalendarIcon } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Calendar } from '../../../ui/calendar';
@@ -26,7 +28,10 @@ export function DatePicker({
   toDate,
   preferences,
 }: Props) {
+  const locale = useLocale();
+  const t = useTranslations();
   const [open, setOpen] = useState(false);
+  const dateLocale = locale.startsWith('vi') ? vi : enUS;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -41,9 +46,9 @@ export function DatePicker({
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {defaultValue ? (
-            format(defaultValue, 'PPP')
+            format(defaultValue, 'PPP', { locale: dateLocale })
           ) : (
-            <span>Pick a date</span>
+            <span>{t('common.pick_a_date')}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -60,6 +65,7 @@ export function DatePicker({
           fromDate={fromDate}
           toDate={toDate}
           preferences={preferences}
+          locale={dateLocale}
           initialFocus
         />
       </PopoverContent>

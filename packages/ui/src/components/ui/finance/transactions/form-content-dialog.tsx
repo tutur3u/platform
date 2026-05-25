@@ -1,6 +1,7 @@
 'use client';
 
 import type { QueryClient } from '@tanstack/react-query';
+import { createTransactionTag } from '@tuturuuu/internal-api/finance';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import type { Wallet as WalletType } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
@@ -60,28 +61,20 @@ export function FormContentDialog({
     if (!newContent || !('name' in newContent) || !newContent.name) return;
 
     try {
-      const res = await fetch(`/api/workspaces/${wsId}/tags`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newContent.name,
-          color: newTagColor,
-        }),
+      const createdTag = await createTransactionTag(wsId, {
+        name: newContent.name,
+        color: newTagColor,
       });
-
-      if (res.ok) {
-        const createdTag = await res.json();
-        queryClient.invalidateQueries({
-          queryKey: [`/api/workspaces/${wsId}/tags`],
-        });
-        const currentTags = form.getValues('tag_ids') || [];
-        form.setValue('tag_ids', [...currentTags, createdTag.id]);
-        setNewContent(undefined);
-        setNewContentType(undefined);
-        toast.success(t('ws-tags.created'));
-      } else {
-        toast.error(t('ws-tags.error_creating'));
-      }
+      queryClient.invalidateQueries({
+        queryKey: [`/api/workspaces/${wsId}/tags`],
+      });
+      queryClient.invalidateQueries({ queryKey: ['transaction-tags', wsId] });
+      queryClient.invalidateQueries({ queryKey: ['transaction_tags', wsId] });
+      const currentTags = form.getValues('tag_ids') || [];
+      form.setValue('tag_ids', [...currentTags, createdTag.id]);
+      setNewContent(undefined);
+      setNewContentType(undefined);
+      toast.success(t('ws-tags.created'));
     } catch {
       toast.error(t('ws-tags.error_creating'));
     }

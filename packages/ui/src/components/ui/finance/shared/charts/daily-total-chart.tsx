@@ -3,10 +3,9 @@
 import { Eye, EyeOff } from '@tuturuuu/icons';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -60,10 +59,37 @@ export function DailyTotalChart({
   openingBalance?: number;
   closingBalance?: number;
 }) {
+  const appLocale = useLocale();
   const t = useTranslations('transaction-data-table');
+  const tAnalytics = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
   const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [isConfidential, setIsConfidential] = useState(true); // Default to hidden
+  const shortDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(appLocale, { month: 'short', day: 'numeric' }),
+    [appLocale]
+  );
+  const longDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(appLocale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      }),
+    [appLocale]
+  );
+
+  const formatChartDate = (value: unknown, formatter: Intl.DateTimeFormat) => {
+    const fallback = String(value);
+    const date = new Date(fallback);
+
+    if (Number.isNaN(date.getTime())) {
+      return fallback;
+    }
+
+    return formatter.format(date);
+  };
 
   const incomeColor = resolvedTheme === 'dark' ? '#4ade80' : '#16a34a';
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
@@ -107,11 +133,11 @@ export function DailyTotalChart({
     window.dispatchEvent(new Event('finance-confidential-mode-change'));
   };
 
-  const locale = getCurrencyLocale(currency);
+  const currencyLocale = getCurrencyLocale(currency);
 
   const formatValue = (value: number) => {
     if (isConfidential) return '•••••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       style: 'currency',
       currency,
       minimumFractionDigits: 0,
@@ -121,7 +147,7 @@ export function DailyTotalChart({
 
   const formatCompactValue = (value: number) => {
     if (isConfidential) return '•••';
-    return new Intl.NumberFormat(locale, {
+    return new Intl.NumberFormat(currencyLocale, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,
@@ -135,7 +161,9 @@ export function DailyTotalChart({
           <CardTitle>{t('daily_total_from_14_recent_days')}</CardTitle>
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
-          <p className="text-muted-foreground text-sm">No data available</p>
+          <p className="text-muted-foreground text-sm">
+            {tAnalytics('no-data')}
+          </p>
         </CardContent>
       </Card>
     );
@@ -234,11 +262,7 @@ export function DailyTotalChart({
               tickMargin={10}
               axisLine={false}
               tickFormatter={(value) => {
-                try {
-                  return format(new Date(value), 'MMM dd');
-                } catch {
-                  return value;
-                }
+                return formatChartDate(value, shortDateFormatter);
               }}
             />
             <YAxis
@@ -253,11 +277,7 @@ export function DailyTotalChart({
             <ChartTooltip
               content={<ChartTooltipContent indicator="dot" />}
               labelFormatter={(value) => {
-                try {
-                  return format(new Date(value), 'MMMM dd, yyyy');
-                } catch {
-                  return value;
-                }
+                return formatChartDate(value, longDateFormatter);
               }}
               formatter={(value, name) => {
                 const formattedValue =
