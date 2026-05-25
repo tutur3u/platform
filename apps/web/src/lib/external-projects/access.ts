@@ -131,14 +131,15 @@ async function ensureCanonicalExternalProject({
   adapter,
   admin,
   actorId,
+  canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter),
   schema,
 }: {
   adapter: ExternalProjectAdapterKind;
   admin: AdminDb;
   actorId: string;
+  canonicalProjectId?: string;
   schema?: ExternalProjectSyncSchema;
 }) {
-  const canonicalProjectId = getDefaultCanonicalExternalProjectId(adapter);
   const { data: existingProject, error: existingProjectError } = await admin
     .from('canonical_external_projects')
     .select('*')
@@ -339,13 +340,15 @@ export async function ensureWorkspaceExternalProjectStudio({
   if (
     currentBinding.enabled &&
     currentBinding.canonical_project &&
-    currentBinding.canonical_id === canonicalProjectId
+    currentBinding.adapter === adapter &&
+    currentBinding.canonical_id
   ) {
     const { created: createdCanonicalProject } =
       await ensureCanonicalExternalProject({
         actorId,
         adapter,
         admin,
+        canonicalProjectId: currentBinding.canonical_id,
         schema,
       });
 
@@ -363,10 +366,7 @@ export async function ensureWorkspaceExternalProjectStudio({
     };
   }
 
-  if (
-    currentBinding.canonical_id &&
-    currentBinding.canonical_id !== canonicalProjectId
-  ) {
+  if (currentBinding.canonical_id) {
     throw new Error(
       `Workspace is already configured for ${currentBinding.canonical_id}`
     );
