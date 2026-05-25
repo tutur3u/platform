@@ -7,6 +7,7 @@ interface Props {
     wsId: string;
   }>;
   searchParams: Promise<{
+    create?: string;
     type?: string;
   }>;
 }

@@ -9,6 +9,7 @@ interface Props {
     wsId: string;
   }>;
   searchParams: Promise<{
+    create?: string;
     q: string;
     page: string;
     pageSize: string;
@@ -32,6 +33,7 @@ export default async function WorkspaceWalletsPage({
       currency={context.currency}
       financePrefix=""
       internalApiOptions={internalApiOptions}
+      openCreateDialog={sp.create === 'wallet'}
       page={sp.page}
       pageSize={sp.pageSize}
       permissions={context.permissions}
