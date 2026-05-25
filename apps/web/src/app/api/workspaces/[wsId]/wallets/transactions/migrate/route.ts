@@ -1,5 +1,6 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function PUT(req: Request) {
   const supabase = await createClient();
@@ -13,7 +14,7 @@ export async function PUT(req: Request) {
   );
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error migrating workspace transactions:', error);
     return NextResponse.json(
       { message: 'Error migrating workspace transactions' },
       { status: 500 }

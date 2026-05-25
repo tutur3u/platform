@@ -2,6 +2,7 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { format } from 'date-fns';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -45,7 +46,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('taken_at', { ascending: true });
 
   if (error) {
-    console.error('Error fetching spending trends:', error);
+    serverLogger.error('Error fetching spending trends:', error);
     return NextResponse.json(
       { message: 'Failed to fetch spending trends' },
       { status: 500 }

@@ -2,6 +2,7 @@ import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const recurringTransactionSchema = z.object({
   name: z.string().min(1),
@@ -42,7 +43,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('next_occurrence', { ascending: true });
 
   if (error) {
-    console.error('Error fetching recurring transactions:', error);
+    serverLogger.error('Error fetching recurring transactions:', error);
     return NextResponse.json(
       { message: 'Failed to fetch recurring transactions' },
       { status: 500 }
@@ -88,7 +89,7 @@ export async function POST(request: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.error('Error creating recurring transaction:', error);
+    serverLogger.error('Error creating recurring transaction:', error);
     return NextResponse.json(
       { message: 'Failed to create recurring transaction' },
       { status: 500 }

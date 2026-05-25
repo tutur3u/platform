@@ -1,6 +1,7 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
 import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -44,7 +45,7 @@ export async function GET(request: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error('Error fetching category breakdown:', error);
+    serverLogger.error('Error fetching category breakdown:', error);
     return NextResponse.json(
       { message: 'Failed to fetch category breakdown' },
       { status: 500 }

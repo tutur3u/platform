@@ -6,6 +6,7 @@ import { MAX_LONG_TEXT_LENGTH } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -56,7 +57,7 @@ export async function GET(req: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching wallet whitelist:', error);
     return NextResponse.json(
       { message: 'Error fetching wallet whitelist' },
       { status: 500 }
@@ -187,7 +188,7 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error adding wallet to whitelist:', error);
     // Check if it's a unique constraint violation
     if (error.code === '23505') {
       return NextResponse.json(

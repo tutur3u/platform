@@ -4,6 +4,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface MoneyLoverTransaction {
   id: string;
@@ -27,17 +28,24 @@ export async function POST(req: Request, { params }: Params) {
     const supabase = await createClient();
     const sbAdmin = await createAdminClient();
 
-    console.log('[Money Lover Import] Starting import for workspace:', wsId);
+    serverLogger.info('[Money Lover Import] Starting import for workspace', {
+      wsId,
+    });
 
     // Get the current user
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
-      console.error('[Money Lover Import] Unauthorized - no user found');
+      serverLogger.error('[Money Lover Import] Unauthorized - no user found', {
+        wsId,
+      });
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('[Money Lover Import] User authenticated:', user.id);
+    serverLogger.info('[Money Lover Import] User authenticated', {
+      userId: user.id,
+      wsId,
+    });
 
     // Get workspace user ID from linked users table
     const { data: linkedUser, error: linkedUserError } = await supabase
@@ -48,10 +56,11 @@ export async function POST(req: Request, { params }: Params) {
       .single();
 
     if (linkedUserError || !linkedUser) {
-      console.error(
-        '[Money Lover Import] User not linked to workspace:',
-        linkedUserError
-      );
+      serverLogger.error('[Money Lover Import] User not linked to workspace', {
+        error: linkedUserError,
+        userId: user.id,
+        wsId,
+      });
       return NextResponse.json(
         { message: 'User not found in workspace' },
         { status: 403 }
@@ -59,13 +68,19 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const workspaceUserId = linkedUser.virtual_user_id;
-    console.log('[Money Lover Import] Workspace user ID:', workspaceUserId);
+    serverLogger.info('[Money Lover Import] Workspace user resolved', {
+      workspaceUserId,
+      wsId,
+    });
 
     const formData = await req.formData();
     const transactionsJson = formData.get('transactions') as string;
 
     if (!transactionsJson) {
-      console.error('[Money Lover Import] No transactions data in request');
+      serverLogger.error(
+        '[Money Lover Import] No transactions data in request',
+        { wsId }
+      );
       return NextResponse.json(
         { message: 'No transactions data provided' },
         { status: 400 }
@@ -74,13 +89,15 @@ export async function POST(req: Request, { params }: Params) {
 
     const transactions: MoneyLoverTransaction[] = JSON.parse(transactionsJson);
 
-    console.log(
-      '[Money Lover Import] Parsed transactions:',
-      transactions.length
-    );
+    serverLogger.info('[Money Lover Import] Parsed transactions', {
+      count: transactions.length,
+      wsId,
+    });
 
     if (transactions.length === 0) {
-      console.error('[Money Lover Import] Empty transactions array');
+      serverLogger.error('[Money Lover Import] Empty transactions array', {
+        wsId,
+      });
       return NextResponse.json(
         { message: 'No transactions found in the file' },
         { status: 400 }
@@ -94,15 +111,15 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (categoriesError) {
-      console.error(
-        '[Money Lover Import] Error fetching categories:',
-        categoriesError
-      );
+      serverLogger.error('[Money Lover Import] Error fetching categories', {
+        error: categoriesError,
+        wsId,
+      });
     } else {
-      console.log(
-        '[Money Lover Import] Found existing categories:',
-        existingCategories?.length || 0
-      );
+      serverLogger.info('[Money Lover Import] Found existing categories', {
+        count: existingCategories?.length || 0,
+        wsId,
+      });
     }
 
     const { data: existingWallets, error: walletsError } = await sbAdmin
@@ -111,15 +128,15 @@ export async function POST(req: Request, { params }: Params) {
       .eq('ws_id', wsId);
 
     if (walletsError) {
-      console.error(
-        '[Money Lover Import] Error fetching wallets:',
-        walletsError
-      );
+      serverLogger.error('[Money Lover Import] Error fetching wallets', {
+        error: walletsError,
+        wsId,
+      });
     } else {
-      console.log(
-        '[Money Lover Import] Found existing wallets:',
-        existingWallets?.length || 0
-      );
+      serverLogger.info('[Money Lover Import] Found existing wallets', {
+        count: existingWallets?.length || 0,
+        wsId,
+      });
     }
 
     const categoryMap = new Map(
@@ -138,14 +155,17 @@ export async function POST(req: Request, { params }: Params) {
     const errors: string[] = [];
 
     // Step 1: Extract unique wallets from transactions
-    console.log('[Money Lover Import] Step 1: Extracting unique wallets...');
+    serverLogger.info(
+      '[Money Lover Import] Step 1: Extracting unique wallets',
+      { wsId }
+    );
     const uniqueWallets = new Set(
       transactions.map((t) => t.wallet).filter((w) => w?.trim())
     );
-    console.log(
-      '[Money Lover Import] Found unique wallets:',
-      Array.from(uniqueWallets)
-    );
+    serverLogger.info('[Money Lover Import] Found unique wallets', {
+      wallets: Array.from(uniqueWallets),
+      wsId,
+    });
 
     // Create missing wallets
     const walletsToCreate = Array.from(uniqueWallets).filter(
@@ -153,10 +173,10 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     if (walletsToCreate.length > 0) {
-      console.log(
-        '[Money Lover Import] Creating missing wallets:',
-        walletsToCreate
-      );
+      serverLogger.info('[Money Lover Import] Creating missing wallets', {
+        wallets: walletsToCreate,
+        wsId,
+      });
       const { data: newWallets, error: walletCreateError } = await sbAdmin
         .from('workspace_wallets')
         .insert(
@@ -169,10 +189,10 @@ export async function POST(req: Request, { params }: Params) {
         .select('id, name');
 
       if (walletCreateError) {
-        console.error(
-          '[Money Lover Import] Failed to create wallets:',
-          walletCreateError
-        );
+        serverLogger.error('[Money Lover Import] Failed to create wallets', {
+          error: walletCreateError,
+          wsId,
+        });
         return NextResponse.json(
           { message: `Failed to create wallets: ${walletCreateError.message}` },
           { status: 500 }
@@ -180,7 +200,10 @@ export async function POST(req: Request, { params }: Params) {
       }
 
       if (newWallets) {
-        console.log('[Money Lover Import] Created wallets:', newWallets.length);
+        serverLogger.info('[Money Lover Import] Created wallets', {
+          count: newWallets.length,
+          wsId,
+        });
         newWallets.forEach((wallet) => {
           walletMap.set(wallet.name?.toLowerCase(), wallet);
         });
@@ -188,7 +211,10 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Step 2: Extract unique categories with their expense type
-    console.log('[Money Lover Import] Step 2: Extracting unique categories...');
+    serverLogger.info(
+      '[Money Lover Import] Step 2: Extracting unique categories',
+      { wsId }
+    );
     const categoryTypeMap = new Map<string, boolean>(); // category name -> is_expense
 
     for (const transaction of transactions) {
@@ -206,10 +232,10 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     if (categoriesToCreate.length > 0) {
-      console.log(
-        '[Money Lover Import] Creating missing categories:',
-        categoriesToCreate.map(([name]) => name)
-      );
+      serverLogger.info('[Money Lover Import] Creating missing categories', {
+        categories: categoriesToCreate.map(([name]) => name),
+        wsId,
+      });
       const { data: newCategories, error: categoryCreateError } = await supabase
         .from('transaction_categories')
         .insert(
@@ -222,10 +248,10 @@ export async function POST(req: Request, { params }: Params) {
         .select('id, name, is_expense');
 
       if (categoryCreateError) {
-        console.error(
-          '[Money Lover Import] Failed to create categories:',
-          categoryCreateError
-        );
+        serverLogger.error('[Money Lover Import] Failed to create categories', {
+          error: categoryCreateError,
+          wsId,
+        });
         return NextResponse.json(
           {
             message: `Failed to create categories: ${categoryCreateError.message}`,
@@ -235,10 +261,10 @@ export async function POST(req: Request, { params }: Params) {
       }
 
       if (newCategories) {
-        console.log(
-          '[Money Lover Import] Created categories:',
-          newCategories.length
-        );
+        serverLogger.info('[Money Lover Import] Created categories', {
+          count: newCategories.length,
+          wsId,
+        });
         newCategories.forEach((category) => {
           categoryMap.set(category.name.toLowerCase(), category);
         });
@@ -246,8 +272,9 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     // Step 3: Prepare transactions for batch insert
-    console.log(
-      '[Money Lover Import] Step 3: Preparing transactions for batch insert...'
+    serverLogger.info(
+      '[Money Lover Import] Step 3: Preparing transactions for batch insert',
+      { wsId }
     );
     const transactionsToInsert: any[] = [];
 
@@ -255,7 +282,10 @@ export async function POST(req: Request, { params }: Params) {
       try {
         const amount = parseFloat(transaction.amount);
         if (Number.isNaN(amount)) {
-          console.error(`[Money Lover Import] Invalid amount:`, transaction);
+          serverLogger.error('[Money Lover Import] Invalid amount', {
+            transaction,
+            wsId,
+          });
           errors.push(
             `Invalid amount "${transaction.amount}" for transaction on ${transaction.date}`
           );
@@ -287,23 +317,25 @@ export async function POST(req: Request, { params }: Params) {
           report_opt_in: true,
         });
       } catch (error) {
-        console.error(
-          `[Money Lover Import] Error preparing transaction:`,
-          error
-        );
+        serverLogger.error('[Money Lover Import] Error preparing transaction', {
+          error,
+          wsId,
+        });
         errors.push(
           `Error processing transaction: ${error instanceof Error ? error.message : 'Unknown error'}`
         );
       }
     }
 
-    console.log(
-      `[Money Lover Import] Prepared ${transactionsToInsert.length} transactions for insert`
-    );
+    serverLogger.info('[Money Lover Import] Prepared transactions for insert', {
+      count: transactionsToInsert.length,
+      wsId,
+    });
 
     // Step 4: Insert transactions in batches of 1000 with streaming progress
-    console.log(
-      '[Money Lover Import] Step 4: Inserting transactions in batches...'
+    serverLogger.info(
+      '[Money Lover Import] Step 4: Inserting transactions in batches',
+      { wsId }
     );
     const BATCH_SIZE = 1000;
     let imported = 0;
@@ -319,26 +351,40 @@ export async function POST(req: Request, { params }: Params) {
           for (let i = 0; i < transactionsToInsert.length; i += BATCH_SIZE) {
             const batch = transactionsToInsert.slice(i, i + BATCH_SIZE);
             const batchNumber = Math.floor(i / BATCH_SIZE) + 1;
-            console.log(
-              `[Money Lover Import] Inserting batch ${batchNumber}/${totalBatches}: ${batch.length} transactions`
-            );
+            serverLogger.info('[Money Lover Import] Inserting batch', {
+              batchNumber,
+              batchSize: batch.length,
+              totalBatches,
+              wsId,
+            });
 
             const { error: insertError } = await supabase
               .from('wallet_transactions')
               .insert(batch);
 
             if (insertError) {
-              console.error(
-                `[Money Lover Import] Failed to insert batch:`,
-                insertError
+              serverLogger.error(
+                '[Money Lover Import] Failed to insert batch',
+                {
+                  batchNumber,
+                  error: insertError,
+                  totalBatches,
+                  wsId,
+                }
               );
               errors.push(
                 `Failed to insert batch ${batchNumber}: ${insertError.message}`
               );
             } else {
               imported += batch.length;
-              console.log(
-                `[Money Lover Import] Successfully inserted batch ${batchNumber}. Total imported: ${imported}`
+              serverLogger.info(
+                '[Money Lover Import] Successfully inserted batch',
+                {
+                  batchNumber,
+                  imported,
+                  totalBatches,
+                  wsId,
+                }
               );
             }
 
@@ -353,9 +399,12 @@ export async function POST(req: Request, { params }: Params) {
             controller.enqueue(encoder.encode(`data: ${progressData}\n\n`));
           }
 
-          console.log(
-            `[Money Lover Import] Import completed. Imported: ${imported}, Total: ${transactions.length}, Errors: ${errors.length}`
-          );
+          serverLogger.info('[Money Lover Import] Import completed', {
+            errors: errors.length,
+            imported,
+            total: transactions.length,
+            wsId,
+          });
 
           // Send final result
           const finalData = JSON.stringify({
@@ -367,7 +416,10 @@ export async function POST(req: Request, { params }: Params) {
           controller.enqueue(encoder.encode(`data: ${finalData}\n\n`));
           controller.close();
         } catch (error) {
-          console.error('[Money Lover Import] Stream error:', error);
+          serverLogger.error('[Money Lover Import] Stream error', {
+            error,
+            wsId,
+          });
           const errorData = JSON.stringify({
             type: 'error',
             message: error instanceof Error ? error.message : 'Unknown error',
@@ -386,7 +438,7 @@ export async function POST(req: Request, { params }: Params) {
       },
     });
   } catch (error) {
-    console.error('Import error:', error);
+    serverLogger.error('[Money Lover Import] Import error', { error });
     return NextResponse.json(
       {
         message:

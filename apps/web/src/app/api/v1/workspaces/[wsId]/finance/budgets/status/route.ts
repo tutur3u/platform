@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBudgetAccess } from '../shared';
 
 interface Params {
@@ -19,7 +20,7 @@ export async function GET(request: Request, { params }: Params) {
   });
 
   if (error) {
-    console.error('Error fetching budget status:', error);
+    serverLogger.error('Error fetching budget status:', error);
     return NextResponse.json(
       { message: 'Error fetching budget status' },
       { status: 500 }
