@@ -1992,6 +1992,15 @@ export type Database = {
         }[];
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_wallet_interest_initial_balance: {
+        Args: {
+          _actor_id: string;
+          _from_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: number;
+      };
       list_task_source_filter_ids: {
         Args: {
           p_actor_id: string;

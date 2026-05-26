@@ -29,7 +29,7 @@ export async function GET(req: Request, { params }: Params) {
     wsId,
     walletId,
     requiredPermission: 'view_transactions',
-    select: 'balance',
+    select: 'id',
   });
 
   if (access.response) {
@@ -124,23 +124,24 @@ export async function GET(req: Request, { params }: Params) {
         amount: t.amount as number,
       })) || [];
 
-  // Get initial balance (balance at start of period)
-  // This is calculated by subtracting all transactions from current balance
-  const currentBalance = (access.wallet.balance as number | null) || 0;
+  const { data: initialBalanceData, error: initialBalanceError } =
+    await access.context.sbAdmin
+      .schema('private')
+      .rpc('get_wallet_interest_initial_balance', {
+        _actor_id: access.context.userId,
+        _from_date: fromDate,
+        _wallet_id: walletId,
+        _ws_id: access.context.normalizedWsId,
+      });
 
-  // Get all transactions after fromDate to calculate initial balance
-  const { data: allTransactions } = await access.context.supabase
-    .from('wallet_transactions')
-    .select('amount')
-    .eq('wallet_id', walletId)
-    .gte('created_at', fromDate);
+  if (initialBalanceError || initialBalanceData === null) {
+    return NextResponse.json(
+      { message: 'Error calculating initial balance' },
+      { status: 500 }
+    );
+  }
 
-  const sumOfTransactions =
-    allTransactions?.reduce(
-      (sum: number, t: { amount: number | null }) => sum + (t.amount ?? 0),
-      0
-    ) || 0;
-  const initialBalance = currentBalance - sumOfTransactions;
+  const initialBalance = Math.max(0, Number(initialBalanceData) || 0);
 
   // Calculate interest
   const result = calculateInterest({
@@ -149,13 +150,13 @@ export async function GET(req: Request, { params }: Params) {
     holidays: holidayDates,
     fromDate,
     toDate,
-    initialBalance: Math.max(0, initialBalance),
+    initialBalance,
   });
 
   return NextResponse.json({
     fromDate,
     toDate,
-    initialBalance: Math.max(0, initialBalance),
+    initialBalance,
     ...result,
   });
 }
