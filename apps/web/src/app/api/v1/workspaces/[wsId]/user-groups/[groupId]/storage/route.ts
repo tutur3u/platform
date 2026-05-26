@@ -175,19 +175,23 @@ export const POST = withSessionAuth<{
         );
       }
 
-      const sanitizedFilename = sanitizeFilename(parsed.data.filename);
-      if (!sanitizedFilename) {
-        const original = parsed.data.filename;
-        const sanitizedPreview = process.env.NODE_ENV === 'production' ? undefined : sanitizedFilename;
+      let sanitizedFilename = sanitizeFilename(parsed.data.filename);
 
-        return NextResponse.json(
-          {
-            message: 'Invalid filename',
-            filename: original,
-            sanitized: sanitizedPreview,
-          },
-          { status: 400 }
-        );
+      // If sanitization removed all characters, fall back to a safe generated name
+      if (!sanitizedFilename) {
+        const original = parsed.data.filename || 'file';
+
+        // Preserve a simple extension if present on the original filename
+        const extMatch = String(original).match(/\.[a-zA-Z0-9]{1,8}$/);
+        const ext = extMatch ? extMatch[0] : '';
+
+        sanitizedFilename = `${generateRandomUUID()}${ext}`;
+        // Helpful dev-time hint; avoid leaking in production logs
+        if (process.env.NODE_ENV !== 'production') {
+          console.warn(
+            `[storage] filename sanitized to fallback: ${sanitizedFilename} (original: ${original})`
+          );
+        }
       }
 
       const filenameWithSuffix =
