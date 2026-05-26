@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = {
-  calculateInvoiceValues: vi.fn(),
+  getCalculatedInvoiceValuesFromRpc: vi.fn(),
   getFinanceRouteContext: vi.fn(),
   getPermissions: vi.fn(),
   getUser: vi.fn(),
@@ -37,9 +37,9 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 }));
 
 vi.mock('../route', () => ({
-  calculateInvoiceValues: (
-    ...args: Parameters<typeof mocks.calculateInvoiceValues>
-  ) => mocks.calculateInvoiceValues(...args),
+  getCalculatedInvoiceValuesFromRpc: (
+    ...args: Parameters<typeof mocks.getCalculatedInvoiceValuesFromRpc>
+  ) => mocks.getCalculatedInvoiceValuesFromRpc(...args),
 }));
 
 vi.mock('@/utils/workspace-config', () => ({
@@ -75,7 +75,7 @@ describe('subscription invoice create route', () => {
       },
     }));
     mocks.isGroupBlockedForSubscriptionInvoices.mockResolvedValue(false);
-    mocks.calculateInvoiceValues.mockResolvedValue({
+    mocks.getCalculatedInvoiceValuesFromRpc.mockResolvedValue({
       subtotal: 100,
       discount_amount: 0,
       total: 100,

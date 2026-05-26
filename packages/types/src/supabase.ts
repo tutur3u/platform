@@ -1903,6 +1903,31 @@ export type Database = {
         };
       };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
+      calculate_invoice_values: {
+        Args: {
+          p_frontend_discount_amount?: number;
+          p_frontend_subtotal?: number;
+          p_frontend_total?: number;
+          p_is_subscription_invoice?: boolean;
+          p_products: Json;
+          p_promotion_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          allow_promotions: boolean;
+          discount_amount: number;
+          promotion_code: string;
+          promotion_description: string;
+          promotion_id: string;
+          promotion_name: string;
+          promotion_use_ratio: boolean;
+          promotion_value: number;
+          rounding_applied: number;
+          subtotal: number;
+          total: number;
+          values_recalculated: boolean;
+        }[];
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       compute_abuse_risk_tier: {

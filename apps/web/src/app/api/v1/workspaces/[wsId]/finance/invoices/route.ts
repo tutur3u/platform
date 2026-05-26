@@ -1,6 +1,4 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { WorkspacePromotion } from '@tuturuuu/types/db';
 import {
   MAX_COLOR_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -24,7 +22,6 @@ import {
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { canCreateInventorySales } from '@/lib/inventory/permissions';
-import { isPromotionAllowedForWorkspace } from '@/utils/workspace-config';
 
 const SearchParamsSchema = z.object({
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
@@ -80,6 +77,15 @@ interface CreateInvoiceRequest {
   frontend_total?: number;
 }
 
+export interface CalculatedPromotion {
+  code: string | null;
+  description: string | null;
+  id: string;
+  name: string | null;
+  use_ratio: boolean | null;
+  value: number;
+}
+
 export interface CalculatedValues {
   subtotal: number;
   discount_amount: number;
@@ -87,142 +93,116 @@ export interface CalculatedValues {
   values_recalculated: boolean;
   rounding_applied: number;
   allowPromotions: boolean;
-  promotion?: WorkspacePromotion;
+  promotion?: CalculatedPromotion;
 }
 
-// Backend calculation functions
+interface InvoiceCalculationRpcRow {
+  allow_promotions: boolean | null;
+  discount_amount: number | string | null;
+  promotion_code: string | null;
+  promotion_description: string | null;
+  promotion_id: string | null;
+  promotion_name: string | null;
+  promotion_use_ratio: boolean | null;
+  promotion_value: number | string | null;
+  rounding_applied: number | string | null;
+  subtotal: number | string | null;
+  total: number | string | null;
+  values_recalculated: boolean | null;
+}
 
-export async function calculateInvoiceValues(
-  wsId: string,
-  products: InvoiceProduct[],
-  promotion_id?: string,
+type InvoiceCalculationRpcClient = {
+  rpc: (
+    fn: 'calculate_invoice_values',
+    args: Record<string, unknown>
+  ) => Promise<{
+    data: InvoiceCalculationRpcRow[] | InvoiceCalculationRpcRow | null;
+    error: { code?: string; message?: string } | null;
+  }>;
+};
+
+type InvoiceCalculationSchemaClient = {
+  schema: (schema: 'private') => InvoiceCalculationRpcClient;
+};
+
+const toNumber = (value: number | string | null | undefined) =>
+  Number(value ?? 0);
+
+export async function getCalculatedInvoiceValuesFromRpc({
+  supabase,
+  wsId,
+  products,
+  promotionId,
+  frontendValues,
+  isSubscriptionInvoice = false,
+}: {
+  supabase: unknown;
+  wsId: string;
+  products: InvoiceProduct[];
+  promotionId?: string;
   frontendValues?: {
     subtotal?: number;
     discount_amount?: number;
     total?: number;
-  },
-  isSubscriptionInvoice: boolean = false
-): Promise<CalculatedValues> {
-  const supabase = await createAdminClient();
-  // Calculate subtotal from products
-  let subtotal = 0;
-  const productIds = products.map((p) => p.product_id);
-  const unitIds = products.map((p) => p.unit_id);
-  const warehouseIds = products.map((p) => p.warehouse_id);
-
-  // Get current product prices and validate products exist
-  const { data: productData, error: productError } = await supabase
-    .from('inventory_products')
-    .select(`
-      product_id,
-      unit_id,
-      warehouse_id,
-      price,
-      workspace_products!inner(name, ws_id)
-    `)
-    .in('product_id', productIds)
-    .in('unit_id', unitIds)
-    .in('warehouse_id', warehouseIds)
-    .filter('workspace_products.archived', 'eq', 'false')
-    .eq('workspace_products.ws_id', wsId);
-
-  if (productError) {
-    throw new Error(`Error fetching product data: ${productError.message}`);
-  }
-
-  // Create a map for quick lookup
-  const productMap = new Map();
-  productData.forEach((item) => {
-    const key = `${item.product_id}-${item.unit_id}-${item.warehouse_id}`;
-    productMap.set(key, item);
-  });
-
-  // Calculate subtotal using backend prices
-  for (const product of products) {
-    const key = `${product.product_id}-${product.unit_id}-${product.warehouse_id}`;
-    const productInfo = productMap.get(key);
-
-    if (!productInfo) {
-      throw new Error(
-        `Product not found or not available: ${product.product_id}`
-      );
-    }
-    subtotal += productInfo.price * product.quantity;
-  }
-
-  // Calculate discount amount
-  let discount_amount = 0;
-  let promotionData: WorkspacePromotion | undefined;
-  const allowPromotions = await isPromotionAllowedForWorkspace(
-    wsId,
-    isSubscriptionInvoice
+  };
+  isSubscriptionInvoice?: boolean;
+}): Promise<CalculatedValues> {
+  const privateClient = (supabase as InvoiceCalculationSchemaClient).schema(
+    'private'
   );
 
-  if (promotion_id && promotion_id !== 'none') {
-    if (allowPromotions) {
-      const { data: promotion, error: promotionError } = await supabase
-        .from('workspace_promotions')
-        // NOTE: column types land after migration + typegen; keep TS unblocked
-        .select('*')
-        .eq('id', promotion_id)
-        .eq('ws_id', wsId)
-        .single();
+  const { data, error } = await privateClient.rpc('calculate_invoice_values', {
+    p_frontend_discount_amount: frontendValues?.discount_amount ?? null,
+    p_frontend_subtotal: frontendValues?.subtotal ?? null,
+    p_frontend_total: frontendValues?.total ?? null,
+    p_is_subscription_invoice: isSubscriptionInvoice,
+    p_products: products.map((product) => ({
+      product_id: product.product_id,
+      quantity: product.quantity,
+      unit_id: product.unit_id,
+      warehouse_id: product.warehouse_id,
+    })),
+    p_promotion_id: promotionId && promotionId !== 'none' ? promotionId : null,
+    p_ws_id: wsId,
+  });
 
-      if (promotionError) {
-        throw new Error(`Invalid promotion: ${promotionError.message}`);
-      }
+  if (error) {
+    const calculationError = new Error(
+      error.message || 'Error calculating invoice values'
+    );
 
-      if (promotion) {
-        if (
-          promotion.max_uses !== null &&
-          promotion.max_uses !== undefined &&
-          Number(promotion.current_uses ?? 0) >= Number(promotion.max_uses)
-        ) {
-          const err = new Error('Promotion usage limit reached');
-          (err as any).code = 'PROMOTION_LIMIT_REACHED';
-          throw err;
-        }
-
-        promotionData = promotion;
-        if (promotion.use_ratio) {
-          discount_amount = subtotal * (promotion.value / 100);
-        } else {
-          discount_amount = Math.min(promotion.value, subtotal);
-        }
-      }
+    if (error.message?.includes('Promotion usage limit reached')) {
+      (calculationError as { code?: string }).code = 'PROMOTION_LIMIT_REACHED';
     }
+
+    throw calculationError;
   }
 
-  const total_before_rounding = subtotal - discount_amount;
+  const row = Array.isArray(data) ? data[0] : data;
 
-  // Use frontend's rounded total if provided, otherwise use calculated total
-  let total: number;
-  let rounding_applied: number;
-
-  if (frontendValues?.total !== undefined) {
-    // Use frontend's rounding decision
-    total = frontendValues.total;
-    rounding_applied = total - total_before_rounding;
-  } else {
-    // No frontend rounding, use exact calculation
-    total = total_before_rounding;
-    rounding_applied = 0;
+  if (!row) {
+    throw new Error('Invoice value calculation returned no data');
   }
-
-  // Check if values were recalculated (excluding rounding)
-  const values_recalculated = frontendValues
-    ? Math.abs(subtotal - (frontendValues.subtotal || 0)) > 0.01 ||
-      Math.abs(discount_amount - (frontendValues.discount_amount || 0)) > 0.01
-    : true;
 
   return {
-    subtotal,
-    discount_amount,
-    total,
-    values_recalculated,
-    rounding_applied,
-    allowPromotions,
-    promotion: promotionData,
+    allowPromotions: Boolean(row.allow_promotions),
+    discount_amount: toNumber(row.discount_amount),
+    ...(row.promotion_id
+      ? {
+          promotion: {
+            code: row.promotion_code,
+            description: row.promotion_description,
+            id: row.promotion_id,
+            name: row.promotion_name,
+            use_ratio: row.promotion_use_ratio,
+            value: toNumber(row.promotion_value),
+          },
+        }
+      : {}),
+    rounding_applied: toNumber(row.rounding_applied),
+    subtotal: toNumber(row.subtotal),
+    total: toNumber(row.total),
+    values_recalculated: Boolean(row.values_recalculated),
   };
 }
 
@@ -565,20 +545,21 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    // Calculate values using backend logic
+    // Calculate values through the private database RPC
     let calculatedValues: CalculatedValues;
     try {
-      calculatedValues = await calculateInvoiceValues(
-        wsId,
-        products,
-        promotion_id,
-        {
+      calculatedValues = await getCalculatedInvoiceValuesFromRpc({
+        frontendValues: {
           subtotal: frontend_subtotal,
           discount_amount: frontend_discount_amount,
           total: frontend_total,
         },
-        isSubscriptionInvoice
-      );
+        isSubscriptionInvoice,
+        products,
+        promotionId: promotion_id,
+        supabase: sbAdmin,
+        wsId,
+      });
     } catch (e) {
       if ((e as any)?.code === 'PROMOTION_LIMIT_REACHED') {
         return NextResponse.json(
