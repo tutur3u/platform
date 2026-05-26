@@ -1948,6 +1948,14 @@ export type Database = {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
       };
+      finance_credit_cycle_date: {
+        Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
+        Returns: string;
+      };
+      get_credit_wallet_summary: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
