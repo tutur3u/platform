@@ -1956,6 +1956,32 @@ export type Database = {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
       };
+      get_debt_loan_with_balance: {
+        Args: { _actor_id: string; _debt_id: string; _ws_id: string };
+        Returns: {
+          counterparty: string;
+          created_at: string;
+          creator_id: string;
+          currency: string;
+          description: string;
+          due_date: string;
+          id: string;
+          interest_rate: number;
+          interest_type: Database['public']['Enums']['interest_calculation_type'];
+          name: string;
+          principal_amount: number;
+          progress_percentage: number;
+          remaining_balance: number;
+          start_date: string;
+          status: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid: number;
+          total_paid: number;
+          type: Database['public']['Enums']['debt_loan_type'];
+          updated_at: string;
+          wallet_id: string;
+          ws_id: string;
+        }[];
+      };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {

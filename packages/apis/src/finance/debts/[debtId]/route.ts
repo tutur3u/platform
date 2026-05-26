@@ -12,6 +12,26 @@ interface Params {
   }>;
 }
 
+type DebtLoanDetail =
+  Database['public']['Tables']['workspace_debt_loans']['Row'] & {
+    progress_percentage: number;
+    remaining_balance: number;
+  };
+
+type PrivateDebtLoanRpcClient = {
+  rpc: (
+    fn: 'get_debt_loan_with_balance',
+    args: {
+      _actor_id: string;
+      _debt_id: string;
+      _ws_id: string;
+    }
+  ) => Promise<{
+    data: DebtLoanDetail[] | null;
+    error: { message?: string } | null;
+  }>;
+};
+
 export async function GET(
   req: Request,
   { params }: Params,
@@ -24,7 +44,7 @@ export async function GET(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   if (withoutPermission('manage_finance')) {
@@ -34,20 +54,16 @@ export async function GET(
     );
   }
 
-  const { data, error } = await supabase
-    .from('workspace_debt_loans')
-    .select('*')
-    .eq('id', debtId)
-    .eq('ws_id', normalizedWsId)
-    .single();
+  const privateRpc = sbAdmin.schema(
+    'private'
+  ) as unknown as PrivateDebtLoanRpcClient;
+  const { data, error } = await privateRpc.rpc('get_debt_loan_with_balance', {
+    _actor_id: user.id,
+    _debt_id: debtId,
+    _ws_id: normalizedWsId,
+  });
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      return NextResponse.json(
-        { message: 'Debt/loan not found' },
-        { status: 404 }
-      );
-    }
     console.error('Error fetching debt/loan:', error);
     return NextResponse.json(
       { message: 'Error fetching debt/loan' },
@@ -55,18 +71,16 @@ export async function GET(
     );
   }
 
-  // Calculate remaining balance
-  const remaining_balance = data.principal_amount - data.total_paid;
-  const progress_percentage =
-    data.principal_amount === 0
-      ? 100
-      : Math.round((data.total_paid / data.principal_amount) * 10000) / 100;
+  const debt = data?.[0];
 
-  return NextResponse.json({
-    ...data,
-    remaining_balance,
-    progress_percentage,
-  });
+  if (!debt) {
+    return NextResponse.json(
+      { message: 'Debt/loan not found' },
+      { status: 404 }
+    );
+  }
+
+  return NextResponse.json(debt);
 }
 
 export async function PUT(
