@@ -36,8 +36,69 @@ export function useLessonDetail(
     queryKey: lessonQueryKey(wsId, courseId),
   });
 
-  const lesson =
+  const rawLesson =
     (modulesQuery.data ?? []).find((m) => m.id === lessonId) ?? null;
+
+  function normalizeNode(node: any): any {
+    // Null/undefined -> empty text node
+    if (node === null || node === undefined) return { type: 'text', text: '' };
+    // Strings -> text node
+    if (typeof node === 'string') return { type: 'text', text: node };
+    // Primitives -> text node of their string form
+    if (typeof node !== 'object') return { type: 'text', text: String(node) };
+
+    const out: any = { ...node };
+    // Ensure attrs is not null (TipTap expects object or absent)
+    if ('attrs' in out && out.attrs === null) delete out.attrs;
+
+    // Ensure a type exists for text-like shapes
+    if (!out.type) {
+      if (typeof out.text === 'string') out.type = 'text';
+      else out.type = 'paragraph';
+    }
+
+    if (Array.isArray(out.content)) {
+      out.content = out.content.map(normalizeNode).filter(Boolean);
+    }
+
+    return out;
+  }
+
+  function normalizeContent(content: any): JSONContent | null {
+    if (content === null || content === undefined) return null;
+
+    // If someone stored a raw string or array, coerce into a proper doc
+    if (typeof content === 'string') {
+      return {
+        type: 'doc',
+        content: [
+          { type: 'paragraph', content: [{ type: 'text', text: content }] },
+        ],
+      } as JSONContent;
+    }
+
+    if (Array.isArray(content)) {
+      // array of nodes -> wrap in doc
+      return {
+        type: 'doc',
+        content: content.map(normalizeNode),
+      } as JSONContent;
+    }
+
+    // If it already looks like a TipTap doc/node
+    const normalized = normalizeNode(content);
+    if (normalized.type === 'doc') return normalized as JSONContent;
+
+    // Wrap single node into a doc
+    return {
+      type: 'doc',
+      content: [normalized],
+    } as JSONContent;
+  }
+
+  const lesson = rawLesson
+    ? { ...rawLesson, content: normalizeContent(rawLesson.content) }
+    : null;
 
   // ─── Save mutation ──────────────────────────────────────────────────────────
 
