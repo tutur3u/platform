@@ -31598,6 +31598,13 @@ export type Database = {
           sign_in_count: number;
         }[];
       };
+      get_spending_trends: {
+        Args: { _days?: number; _timezone?: string; _ws_id: string };
+        Returns: {
+          amount: number;
+          date: string;
+        }[];
+      };
       get_submission_statistics: {
         Args: never;
         Returns: {

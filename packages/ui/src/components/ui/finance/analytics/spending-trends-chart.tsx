@@ -44,14 +44,15 @@ export function SpendingTrendsChart({
     useFinanceConfidentialVisibility();
 
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
   const formatChartDate = (
     value: string,
     options: Intl.DateTimeFormatOptions
   ) => new Intl.DateTimeFormat(locale, options).format(new Date(value));
 
   const { data: trendsData, isLoading } = useQuery({
-    queryKey: ['spending_trends', wsId],
-    queryFn: async () => getSpendingTrends(wsId, { days: 30 }),
+    queryKey: ['spending_trends', wsId, timezone],
+    queryFn: async () => getSpendingTrends(wsId, { days: 30, timezone }),
   });
 
   const chartConfig = {
