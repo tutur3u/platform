@@ -499,6 +499,11 @@ export interface FinanceBalanceAtDate {
   date: string;
 }
 
+export interface FinanceBalanceTrendPoint {
+  balance: number;
+  date: string;
+}
+
 export interface FinanceCategoryBreakdownPoint {
   period: string;
   category_id: string | null;
@@ -1665,6 +1670,23 @@ export async function getFinanceBalanceAtDate(
       cache: 'no-store',
     }
   );
+}
+
+export async function listFinanceBalanceTrend(
+  workspaceId: string,
+  query: FinanceChartRangeQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{ data: FinanceBalanceTrendPoint[] }>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/balance-trend`,
+    {
+      query,
+      cache: 'no-store',
+    }
+  );
+
+  return payload.data ?? [];
 }
 
 export async function listFinanceCategoryBreakdown(

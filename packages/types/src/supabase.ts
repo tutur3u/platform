@@ -30619,6 +30619,19 @@ export type Database = {
           phone: string;
         }[];
       };
+      get_balance_trend: {
+        Args: {
+          _end_date?: string;
+          _max_points?: number;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          balance: number;
+          date: string;
+        }[];
+      };
       get_blocked_tasks: {
         Args: { p_task_id: string };
         Returns: {

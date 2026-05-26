@@ -1,10 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import {
-  getFinanceBalanceAtDate,
-  listFinanceDailyIncomeExpense,
-} from '@tuturuuu/internal-api/finance';
+import { listFinanceBalanceTrend } from '@tuturuuu/internal-api/finance';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
@@ -59,82 +56,25 @@ export function BalanceTrendChart({
   const positiveGradient = 'var(--chart-2)';
   const negativeGradient = 'var(--chart-5)';
 
-  // Generate date points for balance calculation
-  const datePoints = useMemo(() => {
-    const end = endDate ? dayjs(endDate) : dayjs();
-    const start = startDate ? dayjs(startDate) : end.subtract(29, 'days');
-    const points: string[] = [];
-
-    let current = start;
-    while (current.isBefore(end) || current.isSame(end, 'day')) {
-      points.push(current.format('YYYY-MM-DD'));
-      current = current.add(1, 'day');
-    }
-
-    // Limit to reasonable number of points (max 60)
-    if (points.length > 60) {
-      const step = Math.ceil(points.length / 60);
-      return points.filter((_, i) => i % step === 0 || i === points.length - 1);
-    }
-
-    return points;
-  }, [startDate, endDate]);
-
-  // Fetch balance at each date point
   const {
     data: balanceData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['balance-trend', wsId, datePoints, includeConfidential],
+    queryKey: ['balance-trend', wsId, startDate, endDate, includeConfidential],
     queryFn: async () => {
-      const endBalance = await getFinanceBalanceAtDate(wsId, {
-        date: datePoints.at(-1) || dayjs().format('YYYY-MM-DD'),
-        includeConfidential,
-      });
-
-      // Calculate running balance backwards from end balance
-      const dailyArray = await listFinanceDailyIncomeExpense(wsId, {
+      const trend = await listFinanceBalanceTrend(wsId, {
+        startDate,
         endDate,
         includeConfidential,
-        startDate,
       });
-      const dailyMap = new Map<string, { income: number; expense: number }>();
 
-      dailyArray.forEach(
-        (item: {
-          day: string;
-          total_income: number;
-          total_expense: number;
-        }) => {
-          // Normalize the date format to YYYY-MM-DD for consistent lookup
-          const normalizedDay = dayjs(item.day).format('YYYY-MM-DD');
-          dailyMap.set(normalizedDay, {
-            income: Number(item.total_income) || 0,
-            expense: Number(item.total_expense) || 0,
-          });
-        }
+      return trend.map(
+        (point): BalanceDataPoint => ({
+          date: dayjs(point.date).format('YYYY-MM-DD'),
+          balance: Number(point.balance) || 0,
+        })
       );
-
-      // Build balance data points
-      let currentBalance = Number(endBalance.balance) || 0;
-      const result: BalanceDataPoint[] = [];
-
-      // Work backwards from the end
-      for (let i = datePoints.length - 1; i >= 0; i--) {
-        const date = datePoints[i];
-        if (!date) continue;
-
-        result.unshift({ date, balance: currentBalance });
-
-        // Subtract today's net to get yesterday's ending balance
-        const dayData = dailyMap.get(date);
-        if (dayData) {
-          currentBalance -= dayData.income - dayData.expense;
-        }
-      }
-
-      return result;
     },
     staleTime: 30_000,
   });

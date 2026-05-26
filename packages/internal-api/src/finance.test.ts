@@ -8,6 +8,7 @@ import {
   getPendingFinanceInvoicesCurrentMonthCount,
   getSubscriptionInvoiceContext,
   importMoneyLoverTransactions,
+  listFinanceBalanceTrend,
   listFinanceInvoices,
   listPendingFinanceInvoices,
   listWalletRoleAccess,
@@ -223,6 +224,39 @@ describe('finance internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/v1/workspaces/workspace%201/finance/invoices/analytics?walletIds=wallet%2F1&userIds=user%2F1&userIds=user%2F2&start=2026-05-01&end=2026-05-31&granularity=weekly&weekStartsOn=1',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists balance trends through the chart RPC endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [
+          {
+            balance: 125000,
+            date: '2026-05-24',
+          },
+        ],
+      })
+    );
+
+    await listFinanceBalanceTrend(
+      'workspace 1',
+      {
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+        includeConfidential: false,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/finance/charts/balance-trend?startDate=2026-05-01&endDate=2026-05-31&includeConfidential=false',
       expect.objectContaining({
         cache: 'no-store',
       })
