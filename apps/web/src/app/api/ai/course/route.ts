@@ -51,32 +51,116 @@ function textContent(text: string): TipTapTextNode[] | undefined {
 }
 
 function markdownToTipTapDocument(markdown: string) {
-  const content: TipTapBlockNode[] = markdown
+  // Split into blocks separated by one or more blank lines
+  const blocks = markdown
     .split(/\n{2,}/u)
-    .map((block) => block.trim())
-    .filter(Boolean)
-    .map((block) => {
-      const heading = block.match(/^(#{1,3})\s+(.+)$/u);
-      if (heading?.[1] && heading[2]) {
-        return {
-          type: 'heading',
-          attrs: { level: heading[1].length },
-          content: textContent(heading[2]),
-        };
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  const content: any[] = [];
+
+  for (const block of blocks) {
+    // Heading: #, ##, ###
+    const heading = block.match(/^(#{1,6})\s+(.+)$/u);
+    if (heading) {
+      content.push({
+        type: 'heading',
+        attrs: { level: heading[1].length },
+        content: textContent(heading[2]),
+      });
+      continue;
+    }
+
+    // List detection: lines starting with -, *, + or numbered lists
+    const lines = block.split(/\n+/u).map((l) => l.trim()).filter(Boolean);
+    const isList = lines.every((ln) => /^([*+-]|\d+\.)\s+/.test(ln));
+    if (isList) {
+      // Determine if ordered
+      const firstMatch = lines[0].match(/^\s*(\d+)\./);
+      const ordered = Boolean(firstMatch);
+      const listNode: any = {
+        type: ordered ? 'ordered_list' : 'bullet_list',
+        ...(ordered ? { attrs: { order: 1 } } : {}),
+        content: [],
+      };
+
+      for (const ln of lines) {
+        const itemText = ln.replace(/^([*+-]|\d+\.)\s+/, '');
+        listNode.content.push({
+          type: 'list_item',
+          content: [
+            { type: 'paragraph', content: textContent(itemText) || [] },
+          ],
+        });
       }
 
-      return {
-        type: 'paragraph',
-        content: textContent(block.replace(/\n+/gu, '\n')),
-      };
+      content.push(listNode);
+      continue;
+    }
+
+    // Fallback: paragraph (preserve internal newlines as line breaks)
+    content.push({
+      type: 'paragraph',
+      content: textContent(block.replace(/\n+/gu, '\n')),
     });
+  }
+
+  return {
+    type: 'doc',
+    content: content.length > 0 ? content : [{ type: 'paragraph', content: textContent(markdown) }],
+  };
+}
+
+// Normalize incoming module/section content into a TipTap `doc` object.
+function normalizeContentToTipTap(content: unknown) {
+  // Already a TipTap doc?
+  if (
+    content &&
+    typeof content === 'object' &&
+    (content as any).type === 'doc'
+  ) {
+    return content as any;
+  }
+
+  // If it's a string assume Markdown and convert
+  if (typeof content === 'string') {
+    return markdownToTipTapDocument(content);
+  }
+
+  // Unknown -> empty doc
+  return { type: 'doc', content: [] };
+}
+
+// Build a TipTap document from an array of sections where each section may be TipTap or Markdown.
+function sectionsToTipTapDoc(sections: Array<any>) {
+  const contentBlocks: any[] = [];
+  for (const sec of sections) {
+    if (!sec) continue;
+    if (sec.title && typeof sec.title === 'string') {
+      const heading = {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: textContent(sec.title),
+      };
+      contentBlocks.push(heading);
+    }
+
+    if (sec.content) {
+      if (sec.content.type === 'doc' && Array.isArray(sec.content.content)) {
+        contentBlocks.push(...sec.content.content);
+      } else if (typeof sec.content === 'string') {
+        const doc = markdownToTipTapDocument(sec.content as string);
+        if (Array.isArray(doc.content)) contentBlocks.push(...doc.content);
+      }
+    }
+  }
 
   return {
     type: 'doc',
     content:
-      content.length > 0
-        ? content
-        : [{ type: 'paragraph', content: textContent(markdown) }],
+      contentBlocks.length > 0
+        ? contentBlocks
+        : [{ type: 'paragraph', content: textContent('') }],
   };
 }
 
@@ -340,17 +424,38 @@ export const POST = withSessionAuth(
 
       // 9. Insert modules
       const moduleInsertPayload: TablesInsert<'workspace_course_modules'>[] =
-        object.modules.map((mod, index) => ({
-          content: markdownToTipTapDocument(mod.content),
-          extra_content: mod.extra_content
-            ? markdownToTipTapDocument(mod.extra_content)
-            : null,
-          group_id: groupId,
-          module_group_id: moduleGroupId,
-          name: mod.name,
-          sort_key: startingSortKey + index,
-          youtube_links: mod.youtube_links ?? null,
-        }));
+        object.modules.map((mod, index) => {
+          // Prefer explicit TipTap content, support markdown strings, or sections array.
+          let tiptapContent: any;
+          if ((mod as any).content) {
+            tiptapContent = normalizeContentToTipTap((mod as any).content);
+          } else if ((mod as any).sections) {
+            tiptapContent = sectionsToTipTapDoc((mod as any).sections as any[]);
+          } else {
+            tiptapContent = { type: 'doc', content: [] };
+          }
+
+          let extraContent = null;
+          if ((mod as any).extra_content) {
+            if ((mod as any).extra_content.type === 'doc') {
+              extraContent = (mod as any).extra_content;
+            } else if (typeof (mod as any).extra_content === 'string') {
+              extraContent = markdownToTipTapDocument(
+                (mod as any).extra_content
+              );
+            }
+          }
+
+          return {
+            content: tiptapContent,
+            extra_content: extraContent,
+            group_id: groupId,
+            module_group_id: moduleGroupId,
+            name: mod.name,
+            sort_key: startingSortKey + index,
+            youtube_links: mod.youtube_links ?? null,
+          };
+        });
 
       const { data: createdModules, error: insertError } = await sbAdmin
         .from('workspace_course_modules')

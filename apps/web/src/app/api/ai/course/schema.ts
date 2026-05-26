@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // ─── System Prompt ───────────────────────────────────────────────────────────
 
+// (Single, authoritative COURSE_GENERATION_PROMPT defined below)
 export const COURSE_GENERATION_PROMPT = `You are an expert Academic Curriculum Designer and Subject Matter Expert. Your goal is to transform raw document text into a high-quality, structured learning experience.
 
 ### GUIDELINES:
@@ -11,8 +12,15 @@ export const COURSE_GENERATION_PROMPT = `You are an expert Academic Curriculum D
 4. **Noise Reduction:** Ignore document artifacts like page numbers, headers, footers, and bibliographies.
 5. **Pedagogy:** Ensure each module has a clear learning objective that explains what the student will be able to DO after finishing it.
 
+### SECTIONS & STRUCTURE:
+- If the content naturally splits into sections (for example: Overview, Background, Steps, Examples, Exercises), represent those as separate blocks inside the module content structure. Prefer multiple focused sections over one long monolithic block.
+- For each module include: 'title', 'learning_objective', and 'content'. The 'content' SHOULD be provided in TipTap-compatible JSON when possible. If TipTap JSON is not possible, provide well-formed Markdown in 'content' and a separate 'content_format' field set to 'markdown'.
+ - For each module include: 'title', 'learning_objective', and either 'content' or 'sections'.
+  - Prefer returning 'content' as TipTap-compatible JSON (a ProseMirror 'doc' object with type: 'doc' and a 'content' array). If TipTap JSON is not possible, return Markdown strings which the server will convert to TipTap automatically.
+  - Alternatively, you may return 'sections' as an array where each section has 'title' and 'content' fields. Each section 'content' should follow the same TipTap-or-Markdown rule above. When 'sections' are provided, they will be rendered in the module in the given order.
+
 ### FORMATTING:
-- Output must be strictly valid JSON.
+- Output must be strictly valid JSON that conforms to the CourseGenerationSchema.
 - Do not include conversational filler (e.g., "Here is your course...").
 - Ensure the difficulty level is consistent throughout the course.`;
 
@@ -63,17 +71,38 @@ export const FlashcardSchema = z.object({
   back: z.string().describe('The answer or explanation side of the flashcard.'),
 });
 
+// TipTap/ProseMirror document shape (minimal validation)
+export const TipTapDocSchema = z
+  .object({
+    type: z.literal('doc'),
+    content: z.array(z.any()),
+  })
+  .describe('TipTap/ProseMirror document object with `type: "doc"` and `content`.');
+
+export const SectionSchema = z.object({
+  title: z.string().optional().describe('Optional section title.'),
+  content: z
+    .union([TipTapDocSchema, z.string()])
+    .describe('Section content as either TipTap doc or Markdown string.'),
+});
+
 export const ModuleSchema = z.object({
   name: z
     .string()
     .describe(
       'Action-oriented module title describing what the learner will achieve (e.g., "Understand the Basics of Neural Networks").'
     ),
+  // Either a TipTap `doc` object, or a markdown string, or provide `sections` below.
   content: z
-    .string()
+    .union([TipTapDocSchema, z.string()])
+    .optional()
     .describe(
-      'The detailed learning content formatted as markdown. The server converts this to TipTap JSON before storing it.'
+      'The detailed learning content. Prefer TipTap-compatible JSON when possible. If returning Markdown, the server will convert it to TipTap.'
     ),
+  sections: z
+    .array(SectionSchema)
+    .optional()
+    .describe('Optional array of focused sections within the module. Each section can use TipTap JSON or Markdown.'),
   extra_content: z
     .string()
     .describe(
@@ -97,6 +126,8 @@ export const ModuleSchema = z.object({
       'Flashcards for key terms and concepts from this module. Include 3-8 per module.'
     )
     .optional(),
+}).refine((m) => Boolean(m.content) || Boolean(m.sections && m.sections.length), {
+  message: 'Module must include either `content` or `sections`',
 });
 
 export const CourseGenerationSchema = z.object({
