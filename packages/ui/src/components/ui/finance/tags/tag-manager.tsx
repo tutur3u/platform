@@ -3,6 +3,9 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  Activity,
+  ArrowDownRight,
+  ArrowUpRight,
   ExternalLink,
   Loader2,
   MoreVertical,
@@ -57,15 +60,20 @@ import { Input } from '@tuturuuu/ui/input';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Textarea } from '@tuturuuu/ui/textarea';
-import { cn } from '@tuturuuu/utils/format';
+import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface TagManagerProps {
+  currency: string;
   wsId: string;
 }
 
@@ -92,8 +100,11 @@ const PRESET_COLORS = [
   '#ec4899', // pink
 ];
 
-export function TagManager({ wsId }: TagManagerProps) {
+export function TagManager({ currency, wsId }: TagManagerProps) {
   const t = useTranslations();
+  const locale = useLocale();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<TransactionTag | null>(null);
   const [tagToDelete, setTagToDelete] = useState<TransactionTag | null>(null);
@@ -111,6 +122,27 @@ export function TagManager({ wsId }: TagManagerProps) {
       queryKey: [`/api/workspaces/${wsId}/tags`],
     });
   };
+
+  const numberFormatter = useMemo(
+    () => new Intl.NumberFormat(locale),
+    [locale]
+  );
+  const formatCount = (count: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : numberFormatter.format(count);
+  const formatTagAmount = (amount: number) =>
+    areNumbersHidden
+      ? FINANCE_HIDDEN_AMOUNT
+      : formatCurrency(amount, currency, locale, {
+          signDisplay: 'always',
+        });
+  const formatCountLabel = (count: number) =>
+    areNumbersHidden
+      ? FINANCE_HIDDEN_AMOUNT
+      : t('ws-transaction-tags.transaction_count_short', { count });
+  const formatRecentPace = (count: number) =>
+    areNumbersHidden
+      ? FINANCE_HIDDEN_AMOUNT
+      : t('ws-transaction-tags.recent_pace_value', { count });
 
   const { data: tags, isLoading } = useQuery({
     queryKey: ['transaction_tags', wsId],
@@ -280,6 +312,14 @@ export function TagManager({ wsId }: TagManagerProps) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredTags.map((tag) => {
             const stats = tagStats?.find((s) => s.tag_id === tag.id);
+            const transactionCount = Number(stats?.transaction_count ?? 0);
+            const incomeCount = Number(stats?.income_count ?? 0);
+            const expenseCount = Number(stats?.expense_count ?? 0);
+            const totalIncome = Number(stats?.total_income ?? 0);
+            const totalExpense = Number(stats?.total_expense ?? 0);
+            const recentTransactionCount = Number(
+              stats?.recent_transaction_count ?? 0
+            );
             return (
               <Card
                 key={tag.id}
@@ -355,11 +395,13 @@ export function TagManager({ wsId }: TagManagerProps) {
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
-                  <div className="mt-3 flex items-center justify-between text-sm">
+                  <div className="mt-4 flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {t('ws-transaction-tags.transaction_count', {
-                        count: stats?.transaction_count || 0,
-                      })}
+                      {areNumbersHidden
+                        ? t('ws-transaction-tags.transactions_hidden')
+                        : t('ws-transaction-tags.transaction_count', {
+                            count: transactionCount,
+                          })}
                     </span>
                     <span
                       className="rounded-full px-2 py-0.5 font-medium text-xs"
@@ -368,7 +410,44 @@ export function TagManager({ wsId }: TagManagerProps) {
                         color: tag.color,
                       }}
                     >
-                      {stats?.transaction_count || 0}
+                      {formatCount(transactionCount)}
+                    </span>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    <div className="rounded-md border border-dynamic-green/20 bg-dynamic-green/5 p-2">
+                      <div className="flex items-center gap-1 text-dynamic-green text-xs">
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                        {t('ws-transaction-tags.income')}
+                      </div>
+                      <div className="mt-1 break-words font-semibold text-dynamic-green text-sm">
+                        {formatTagAmount(totalIncome)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {formatCountLabel(incomeCount)}
+                      </div>
+                    </div>
+                    <div className="rounded-md border border-dynamic-red/20 bg-dynamic-red/5 p-2">
+                      <div className="flex items-center gap-1 text-dynamic-red text-xs">
+                        <ArrowDownRight className="h-3.5 w-3.5" />
+                        {t('ws-transaction-tags.expense')}
+                      </div>
+                      <div className="mt-1 break-words font-semibold text-dynamic-red text-sm">
+                        {formatTagAmount(-totalExpense)}
+                      </div>
+                      <div className="text-muted-foreground text-xs">
+                        {formatCountLabel(expenseCount)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center justify-between rounded-md bg-muted/40 px-3 py-2 text-xs">
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <Activity className="h-3.5 w-3.5" />
+                      {t('ws-transaction-tags.recent_pace')}
+                    </span>
+                    <span className="font-medium">
+                      {formatRecentPace(recentTransactionCount)}
                     </span>
                   </div>
                 </CardContent>

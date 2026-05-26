@@ -73,7 +73,7 @@ export default function CategoriesTagsTabs({
       </TabsContent>
 
       <TabsContent value="tags">
-        <TagManager wsId={wsId} />
+        <TagManager wsId={wsId} currency={currency} />
       </TabsContent>
     </Tabs>
   );
