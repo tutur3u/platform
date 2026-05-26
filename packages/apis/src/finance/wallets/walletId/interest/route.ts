@@ -4,23 +4,8 @@
  * GET: Get interest summary with projections
  * POST: Enable interest tracking (create config)
  */
-import type {
-  CreateInterestConfigInput,
-  InterestSummary,
-  WalletInterestConfig,
-  WalletInterestRate,
-} from '@tuturuuu/types';
-import {
-  calculateInterest,
-  estimateMonthlyInterest,
-  estimateYearlyInterest,
-  findPendingDeposits,
-  formatDateString,
-  getMonthToDateRange,
-  getYearToDateRange,
-  holidaysToSet,
-  projectInterest,
-} from '@tuturuuu/utils/finance';
+import type { CreateInterestConfigInput } from '@tuturuuu/types';
+import { formatDateString } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAccessibleWallet } from '../../wallet-access';
@@ -53,222 +38,40 @@ export async function GET(req: Request, { params }: Params) {
     wsId,
     walletId,
     requiredPermission: 'view_transactions',
-    select: 'balance',
+    select: 'id',
   });
 
   if (access.response) {
     return access.response;
   }
 
-  // Check if interest tracking is enabled for this wallet
-  const { data: config, error: configError } = await access.context.supabase
-    .from('wallet_interest_configs')
-    .select('*')
-    .eq('wallet_id', walletId)
-    .single();
+  const { data: summary, error: summaryError } = await access.context.sbAdmin
+    .schema('private')
+    .rpc('get_wallet_interest_summary', {
+      _actor_id: access.context.userId,
+      _wallet_id: walletId,
+      _ws_id: access.context.normalizedWsId,
+    });
 
-  if (configError || !config) {
-    // No config means interest tracking is not enabled
+  if (summaryError) {
+    console.error('Error fetching wallet interest summary:', summaryError);
     return NextResponse.json(
-      {
-        enabled: false,
-        message: 'Interest tracking not enabled for this wallet',
-      },
-      { status: 200 }
-    );
-  }
-
-  if (!config.enabled) {
-    return NextResponse.json(
-      { enabled: false, config, message: 'Interest tracking is disabled' },
-      { status: 200 }
-    );
-  }
-
-  // Get rate history
-  const { data: rates, error: ratesError } = await access.context.supabase
-    .from('wallet_interest_rates')
-    .select('*')
-    .eq('config_id', config.id)
-    .order('effective_from', { ascending: false });
-
-  if (ratesError) {
-    return NextResponse.json(
-      { message: 'Error fetching interest rates' },
+      { message: 'Error fetching interest summary' },
       { status: 500 }
     );
   }
 
-  // Get current rate (most recent with no effective_to)
-  const currentRate =
-    rates?.find((r: { effective_to: string | null }) => !r.effective_to) ||
-    null;
-
-  // Get holidays for calculation
-  const today = new Date();
-  const yearStart = new Date(today.getFullYear(), 0, 1);
-  const { data: holidays } = await access.context.supabase
-    .from('vietnamese_holidays')
-    .select('date')
-    .gte('date', formatDateString(yearStart))
-    .lte('date', formatDateString(new Date(today.getFullYear() + 1, 11, 31)));
-
-  const holidayDates = holidays?.map((h: { date: string }) => h.date) || [];
-
-  const balance = (access.wallet.balance as number | null) || 0;
-
-  // Determine the effective start date for tracking
-  // Use tracking_start_date if set, otherwise use yearStart
-  // Note: tracking_start_date is already in YYYY-MM-DD format from the database
-  const trackingStartStr =
-    config.tracking_start_date || formatDateString(yearStart);
-  const yearStartStr = formatDateString(yearStart);
-  // Use string comparison to avoid timezone issues
-  const effectiveStartStr =
-    trackingStartStr > yearStartStr ? trackingStartStr : yearStartStr;
-
-  // Get transactions for the tracking period
-  let transactionQuery = access.context.supabase
-    .from('wallet_transactions')
-    .select('created_at, amount')
-    .eq('wallet_id', walletId)
-    .gte('created_at', effectiveStartStr)
-    .order('created_at', { ascending: true });
-
-  // Apply end date filter if set
-  if (config.tracking_end_date) {
-    transactionQuery = transactionQuery.lte(
-      'created_at',
-      config.tracking_end_date
-    );
+  const payload = summary as { error?: string } | null;
+  if (payload?.error === 'wallet_not_found') {
+    return NextResponse.json({ message: 'Wallet not found' }, { status: 404 });
   }
 
-  const { data: transactions } = await transactionQuery;
-
-  const txList =
-    transactions
-      ?.filter(
-        (t: { amount: number | null; created_at: string | null }) =>
-          t.amount !== null && t.created_at !== null
-      )
-      .map((t: { created_at: string | null; amount: number | null }) => ({
-        date: formatDateString(new Date(t.created_at as string)),
-        amount: t.amount as number,
-      })) || [];
-
-  // Calculate YTD interest
-  const ytdRange = getYearToDateRange(today);
-  const ytdResult = calculateInterest({
-    transactions: txList,
-    rates: rates as WalletInterestRate[],
-    holidays: holidayDates,
-    fromDate: ytdRange.fromDate,
-    toDate: ytdRange.toDate,
-  });
-
-  // Calculate MTD interest
-  const mtdRange = getMonthToDateRange(today);
-  const mtdResult = calculateInterest({
-    transactions: txList.filter(
-      (t: { date: string }) => t.date >= mtdRange.fromDate
-    ),
-    rates: rates as WalletInterestRate[],
-    holidays: holidayDates,
-    fromDate: mtdRange.fromDate,
-    toDate: mtdRange.toDate,
-  });
-
-  // Calculate today's interest
-  const todayStr = formatDateString(today);
-  const todayResult = calculateInterest({
-    transactions: txList.filter((t: { date: string }) => t.date === todayStr),
-    rates: rates as WalletInterestRate[],
-    holidays: holidayDates,
-    fromDate: todayStr,
-    toDate: todayStr,
-    initialBalance: balance,
-  });
-
-  // Find pending deposits
-  // Only consider deposits within 7 days AND after tracking_start_date
-  // (trackingStartStr is already defined above from the config)
-
-  // Calculate date 7 days ago for filtering
-  const sevenDaysAgo = new Date(today);
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const sevenDaysAgoStr = formatDateString(sevenDaysAgo);
-
-  const recentTransactions = txList.filter((t: { date: string }) => {
-    // Must be within 7 days (using string comparison for consistency)
-    if (t.date < sevenDaysAgoStr) return false;
-    // Must not be in the future
-    if (t.date > todayStr) return false;
-    // Must be on or after tracking start date if set
-    if (trackingStartStr && t.date < trackingStartStr) return false;
-    return true;
-  });
-  const pendingDeposits = findPendingDeposits(
-    recentTransactions,
-    holidaysToSet(holidayDates),
-    today
-  );
-
-  // Generate projections
-  const annualRate = currentRate?.annual_rate || 0;
-  const weekProjections = projectInterest({
-    currentBalance: balance,
-    currentRate: annualRate,
-    holidays: holidayDates,
-    days: 7,
-    startDate: todayStr,
-  });
-
-  const monthProjections = projectInterest({
-    currentBalance: balance,
-    currentRate: annualRate,
-    holidays: holidayDates,
-    days: 30,
-    startDate: todayStr,
-  });
-
-  const quarterProjections = projectInterest({
-    currentBalance: balance,
-    currentRate: annualRate,
-    holidays: holidayDates,
-    days: 90,
-    startDate: todayStr,
-  });
-
-  const yearProjections = projectInterest({
-    currentBalance: balance,
-    currentRate: annualRate,
-    holidays: holidayDates,
-    days: 365,
-    startDate: todayStr,
-  });
-
-  const summary: InterestSummary = {
-    config: config as WalletInterestConfig,
-    currentRate: currentRate as WalletInterestRate | null,
-    rateHistory: rates as WalletInterestRate[],
-    todayInterest: todayResult.totalInterest,
-    monthToDateInterest: mtdResult.totalInterest,
-    yearToDateInterest: ytdResult.totalInterest,
-    totalEarnedInterest: config.total_interest_earned ?? 0,
-    pendingDeposits,
-    projections: {
-      week: weekProjections,
-      month: monthProjections,
-      quarter: quarterProjections,
-      year: yearProjections,
-    },
-    averageDailyInterest:
-      ytdResult.businessDaysCount > 0
-        ? Math.floor(ytdResult.totalInterest / ytdResult.businessDaysCount)
-        : 0,
-    estimatedMonthlyInterest: estimateMonthlyInterest(balance, annualRate),
-    estimatedYearlyInterest: estimateYearlyInterest(balance, annualRate),
-  };
+  if (payload?.error) {
+    return NextResponse.json(
+      { message: 'Error fetching interest summary' },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json(summary);
 }

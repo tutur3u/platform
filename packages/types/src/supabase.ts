@@ -2011,6 +2011,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      get_wallet_interest_summary: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
       list_task_source_filter_ids: {
         Args: {
           p_actor_id: string;
@@ -2257,6 +2261,35 @@ export type Database = {
       user_group_activity_resource_type: {
         Args: { p_table_name: string };
         Returns: string;
+      };
+      wallet_interest_calculation_result: {
+        Args: {
+          _config_id: string;
+          _from_date: string;
+          _initial_balance?: number;
+          _to_date: string;
+          _transaction_from_date: string;
+          _transaction_to_date: string;
+          _wallet_id: string;
+        };
+        Returns: Json;
+      };
+      wallet_interest_is_business_day: {
+        Args: { _date: string };
+        Returns: boolean;
+      };
+      wallet_interest_next_business_day: {
+        Args: { _date: string };
+        Returns: string;
+      };
+      wallet_interest_project_rows: {
+        Args: {
+          _current_balance: number;
+          _current_rate: number;
+          _days: number;
+          _start_date: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {
