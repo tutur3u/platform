@@ -54,10 +54,12 @@ import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
+import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import {
   importMoneyLoverTransactionsWithInternalApi,
   type MoneyLoverTransactionImportRow,
 } from './internal-api';
+import { formatMoneyLoverImportPreviewAmount } from './money-lover-import-dialog-utils';
 
 interface MoneyLoverImportDialogProps {
   wsId: string;
@@ -123,6 +125,8 @@ export default function MoneyLoverImportDialog({
   currency = 'USD',
 }: MoneyLoverImportDialogProps) {
   const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const queryClient = useQueryClient();
   const [loading, setLoading] = useState(false);
   const [previewData, setPreviewData] = useState<ParsedTransaction[]>([]);
@@ -751,16 +755,11 @@ export default function MoneyLoverImportDialog({
                                       : 'text-dynamic-green'
                                   )}
                                 >
-                                  {Intl.NumberFormat(
-                                    currency === 'VND' ? 'vi-VN' : 'en-US',
-                                    {
-                                      style: 'currency',
-                                      currency,
-                                      minimumFractionDigits: 0,
-                                      maximumFractionDigits: 0,
-                                      signDisplay: 'always',
-                                    }
-                                  ).format(amount)}
+                                  {formatMoneyLoverImportPreviewAmount(
+                                    amount,
+                                    currency,
+                                    areNumbersHidden
+                                  )}
                                 </td>
                                 <td className="p-2.5">
                                   <Badge

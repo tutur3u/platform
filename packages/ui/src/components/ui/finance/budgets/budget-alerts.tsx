@@ -10,6 +10,10 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface BudgetAlertsProps {
   wsId: string;
@@ -24,10 +28,18 @@ export function BudgetAlerts({
 }: BudgetAlertsProps) {
   const t = useTranslations('finance-budgets');
   const financeHref = useFinanceHref();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const currencyFormatter = new Intl.NumberFormat(getCurrencyLocale(currency), {
     style: 'currency',
     currency,
   });
+  const formatVisibleCurrency = (amount: string | number) =>
+    areNumbersHidden
+      ? FINANCE_HIDDEN_AMOUNT
+      : currencyFormatter.format(Number(amount));
+  const formatVisiblePercentage = (percentage: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : percentage.toFixed(1);
 
   const { data: budgetStatus } = useQuery({
     queryKey: ['budget_status', wsId],
@@ -56,9 +68,9 @@ export function BudgetAlerts({
           <AlertDescription className="mt-2 flex flex-col gap-2">
             <p>
               {t('alert_exceeded_description', {
-                amount: currencyFormatter.format(Number(budget.amount)),
-                percentage: budget.percentage_used.toFixed(1),
-                spent: currencyFormatter.format(Number(budget.spent)),
+                amount: formatVisibleCurrency(budget.amount),
+                percentage: formatVisiblePercentage(budget.percentage_used),
+                spent: formatVisibleCurrency(budget.spent),
               })}
             </p>
             <Link href={`/${wsId}${financeHref('/budgets')}`}>
@@ -79,7 +91,7 @@ export function BudgetAlerts({
           <AlertDescription className="mt-2 flex flex-col gap-2">
             <p>
               {t('alert_near_threshold_description', {
-                percentage: budget.percentage_used.toFixed(1),
+                percentage: formatVisiblePercentage(budget.percentage_used),
               })}
             </p>
             <Link href={`/${wsId}${financeHref('/budgets')}`}>

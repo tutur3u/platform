@@ -16,6 +16,10 @@ import { Label } from '@tuturuuu/ui/label';
 import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import type { Product, ProductInventory, SelectedProductItem } from './types';
 
 interface Props {
@@ -37,7 +41,11 @@ export function ProductSelection({
   currency = 'USD',
 }: Props) {
   const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const [selectedProductId, setSelectedProductId] = useState<string>('');
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount, currency);
 
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const availableInventory =
@@ -166,13 +174,12 @@ export function ProductSelection({
               </Label>
               <span className="font-medium text-muted-foreground text-xs">
                 {t('ws-invoices.subtotal')}:{' '}
-                {formatCurrency(
+                {formatVisibleCurrency(
                   selectedProducts.reduce(
                     (total, item) =>
                       total + item.inventory.price * item.quantity,
                     0
-                  ),
-                  currency
+                  )
                 )}
               </span>
             </div>
@@ -196,7 +203,7 @@ export function ProductSelection({
                         {item.inventory.warehouse_name} •{' '}
                         {item.inventory.unit_name}
                         {' · '}
-                        {formatCurrency(item.inventory.price, currency)}{' '}
+                        {formatVisibleCurrency(item.inventory.price)}{' '}
                         {t('ws-invoices.each')}
                         {item.inventory.amount !== null &&
                           ` · ${t('ws-invoices.available')}: ${item.inventory.amount}`}
@@ -276,7 +283,11 @@ interface StockItemProps {
 
 function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
   const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const [quantity, setQuantity] = useState(1);
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount, currency);
 
   const handleAdd = () => {
     if (
@@ -299,7 +310,7 @@ function StockItem({ inventory, onAdd, currency = 'USD' }: StockItemProps) {
             {inventory.amount === null
               ? t('ws-invoices.unlimited')
               : inventory.amount}{' '}
-            {inventory.unit_name} • {formatCurrency(inventory.price, currency)}{' '}
+            {inventory.unit_name} • {formatVisibleCurrency(inventory.price)}{' '}
             {t('ws-invoices.each')}
           </p>
           {inventory.amount !== null &&
