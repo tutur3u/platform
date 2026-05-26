@@ -14,9 +14,40 @@ import type { JSONContent } from '@tuturuuu/types/tiptap';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, useEffect } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
 import { useLessonDetail } from './use-lesson-detail';
+import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
+import { toast } from '@tuturuuu/ui/sonner';
+
+function AttachFilesLoader({
+  wsId,
+  courseId,
+  onLoaded,
+}: {
+  wsId: string;
+  courseId: string;
+  onLoaded: (files: any[]) => void;
+}) {
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const data = await listWorkspaceUserGroupStorageFiles(wsId, courseId);
+        if (mounted) onLoaded(data ?? []);
+      } catch (err) {
+        if (mounted) onLoaded([]);
+        void err;
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [wsId, courseId, onLoaded]);
+
+  return null;
+}
 
 // ─── Main client component ────────────────────────────────────────────────────
 
@@ -50,6 +81,11 @@ export function LessonDetailClient({
   const [addingYoutube, setAddingYoutube] = useState(false);
   const [youtubeDraft, setYoutubeDraft] = useState('');
   const skipNameBlurRef = useRef(false);
+  // Attach dialog state
+  const [showAttachDialog, setShowAttachDialog] = useState(false);
+  const [attachFiles, setAttachFiles] = useState<any[] | null>(null);
+  const [selectedPaths, setSelectedPaths] = useState<Record<string, boolean>>({});
+  const [attachLoading, setAttachLoading] = useState(false);
 
   // ─── Name editing ───────────────────────────────────────────────────────────
 
@@ -153,6 +189,16 @@ export function LessonDetailClient({
         <div className="ml-auto flex items-center gap-3">
           <SaveStatus isSaving={isSaving} />
 
+          {/* Attach files button */}
+          <button
+            className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            onClick={() => setShowAttachDialog(true)}
+            type="button"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Attach files
+          </button>
+
           {/* Published toggle */}
           <button
             className={cn(
@@ -180,6 +226,14 @@ export function LessonDetailClient({
       </nav>
 
       <div className="mx-auto max-w-4xl px-5 py-6 md:px-8">
+        {/* load attach files when dialog opens */}
+        {showAttachDialog && attachFiles === null && (
+          <AttachFilesLoader
+            wsId={wsId}
+            courseId={courseId}
+            onLoaded={(files) => setAttachFiles(files)}
+          />
+        )}
         {/* ── Lesson title ──────────────────────────────────────────────────── */}
         <div className="mb-6 flex items-start gap-3">
           <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[2px_2px_0_var(--border)]">
@@ -259,6 +313,109 @@ export function LessonDetailClient({
         </div>
 
         {/* ── YouTube links ─────────────────────────────────────────────────── */}
+        
+        {/* ── Attach files dialog (modal) ────────────────────────────────────── */}
+        {showAttachDialog && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="mx-4 max-w-3xl rounded border-2 border-border bg-background p-4 shadow-[8px_8px_0_var(--border)]">
+              <div className="mb-3 flex items-center justify-between">
+                <h3 className="font-black">Attach files</h3>
+                <button
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowAttachDialog(false)}
+                  type="button"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="mb-3">
+                <p className="text-sm text-muted-foreground">
+                  Select files from the workspace drive to attach to this lesson.
+                </p>
+              </div>
+
+              <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
+                {!attachFiles && (
+                  <div className="p-4 text-sm text-muted-foreground">Loading files…</div>
+                )}
+                {attachFiles && attachFiles.length === 0 && (
+                  <div className="p-4 text-sm text-muted-foreground">No files found.</div>
+                )}
+                {attachFiles?.map((f) => (
+                  <label key={f.path} className="flex items-center gap-2 p-2">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedPaths[f.path])}
+                      onChange={() =>
+                        setSelectedPaths((s) => ({ ...s, [f.path]: !s[f.path] }))
+                      }
+                    />
+                    <div className="min-w-0 flex-1 text-sm">
+                      <div className="font-medium truncate">{f.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {f.path}
+                      </div>
+                    </div>
+                    <div className="text-xs text-muted-foreground">{f.size ?? ''}</div>
+                  </label>
+                ))}
+              </div>
+
+              <div className="mt-3 flex justify-end gap-2">
+                <button
+                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                  onClick={() => setShowAttachDialog(false)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                  disabled={attachLoading}
+                  onClick={async () => {
+                    const paths = Object.keys(selectedPaths).filter(
+                      (p) => selectedPaths[p]
+                    );
+                    if (paths.length === 0) return toast.error('Select at least one file');
+                    setAttachLoading(true);
+                    try {
+                      // Build attachments payload from selected files
+                      const picked = (attachFiles ?? []).filter((f) =>
+                        paths.includes(f.path)
+                      ).map((f) => ({
+                        path: f.path,
+                        fullPath: f.fullPath ?? null,
+                        name: f.name,
+                        size: f.size ?? null,
+                        contentType: f.contentType ?? null,
+                      }));
+
+                      // Merge into existing extra_content.attachments if present
+                      const existing = (lesson as any)?.extra_content?.attachments ?? [];
+                      const merged = [...existing, ...picked];
+
+                      await updateWorkspaceCourseModule(wsId, lessonId, {
+                        extra_content: { ...(lesson as any)?.extra_content, attachments: merged },
+                      });
+
+                      toast.success('Files attached');
+                      setShowAttachDialog(false);
+                    } catch (err) {
+                      toast.error('Failed to attach files');
+                      void err;
+                    } finally {
+                      setAttachLoading(false);
+                    }
+                  }}
+                  type="button"
+                >
+                  Attach selected
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-black text-lg">YouTube Videos</h2>
