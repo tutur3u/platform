@@ -126,14 +126,45 @@ export const transactionColumns = ({
           title={t(`${namespace}.description`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="min-w-32">
-          <div className="font-semibold">{row.original.category || '-'}</div>
-          {row.original.description && (
-            <div className="opacity-70">{row.original.description}</div>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const description = row.original.description?.trim();
+        const category = row.original.category?.trim();
+        const tags = row.original.tags ?? [];
+
+        return (
+          <div className="min-w-44 max-w-80 space-y-1">
+            <div className="line-clamp-2 font-semibold">
+              {description || category || '-'}
+            </div>
+            {category && description && (
+              <div className="line-clamp-1 text-muted-foreground text-xs">
+                {category}
+              </div>
+            )}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="rounded border px-1.5 py-0.5 text-xs"
+                    style={{
+                      borderColor: tag.color || undefined,
+                      color: tag.color || undefined,
+                    }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                {tags.length > 3 && (
+                  <span className="rounded border px-1.5 py-0.5 text-muted-foreground text-xs">
+                    ...
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'user',

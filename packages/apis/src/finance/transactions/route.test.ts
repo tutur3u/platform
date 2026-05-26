@@ -216,8 +216,15 @@ describe('transactions route', () => {
         {
           id: 'transaction-1',
           amount: -150,
+          category_color: '#ef4444',
+          category_icon: 'Utensils',
+          category_name: 'Food & Beverage',
+          creator_avatar_url: 'https://example.com/avatar.png',
+          creator_email: 'creator@example.com',
+          creator_full_name: 'Creator Name',
           taken_at: '2026-03-30T08:00:00.000Z',
           description: 'Lunch',
+          wallet_name: 'Cash',
         },
       ],
       error: null,
@@ -251,6 +258,9 @@ describe('transactions route', () => {
     await expect(response.json()).resolves.toEqual([
       expect.objectContaining({
         id: 'transaction-1',
+        category: 'Food & Beverage',
+        category_color: '#ef4444',
+        category_icon: 'Utensils',
         tags: [
           {
             id: 'tag-1',
@@ -258,6 +268,12 @@ describe('transactions route', () => {
             color: '#ff0000',
           },
         ],
+        user: {
+          avatar_url: 'https://example.com/avatar.png',
+          email: 'creator@example.com',
+          full_name: 'Creator Name',
+        },
+        wallet: 'Cash',
       }),
     ]);
   });
