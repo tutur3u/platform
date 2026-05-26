@@ -29,7 +29,7 @@ const WEB_APP_URL = trimTrailingSlashes(
     process.env.NEXT_PUBLIC_APP_URL ||
     (IS_DEPLOYED_ENVIRONMENT
       ? 'https://tuturuuu.com'
-      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`))
+      : getLocalInternalAppUrl('platform', `https://tuturuuu.localhost`))
 );
 
 const nextConfig: NextConfig = {
