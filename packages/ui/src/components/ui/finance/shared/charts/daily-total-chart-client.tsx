@@ -2,10 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from '@tuturuuu/icons';
-import {
-  getFinanceBalanceAtDate,
-  listFinanceDailyIncomeExpense,
-} from '@tuturuuu/internal-api/finance';
+import { listFinanceIncomeExpenseSummary } from '@tuturuuu/internal-api/finance';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
@@ -98,8 +95,7 @@ export function DailyTotalChartClient({
     };
   }, [dateOffset, longDateFormatter, shortDateFormatter]);
 
-  // Fetch chart data
-  const { data = [], isLoading } = useQuery({
+  const { data: summary, isLoading } = useQuery({
     queryKey: [
       'daily-chart',
       wsId,
@@ -108,40 +104,17 @@ export function DailyTotalChartClient({
       includeConfidential,
     ],
     queryFn: () =>
-      listFinanceDailyIncomeExpense(wsId, {
+      listFinanceIncomeExpenseSummary(wsId, {
+        interval: 'daily',
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
         includeConfidential,
       }),
   });
 
-  // Fetch opening balance (balance at start of period)
-  const { data: openingBalanceRes } = useQuery({
-    queryKey: [
-      'opening-balance',
-      wsId,
-      dateRange.startDate,
-      includeConfidential,
-    ],
-    queryFn: () =>
-      getFinanceBalanceAtDate(wsId, {
-        date: dateRange.startDate,
-        includeConfidential,
-      }),
-  });
-
-  // Fetch closing balance (balance at end of period)
-  const { data: closingBalanceRes } = useQuery({
-    queryKey: ['closing-balance', wsId, dateRange.endDate, includeConfidential],
-    queryFn: () =>
-      getFinanceBalanceAtDate(wsId, {
-        date: dateRange.endDate,
-        includeConfidential,
-      }),
-  });
-
-  const openingBalance = openingBalanceRes?.balance;
-  const closingBalance = closingBalanceRes?.balance;
+  const data = summary?.data ?? [];
+  const openingBalance = summary?.opening_balance;
+  const closingBalance = summary?.closing_balance;
 
   const currencyLocale = getCurrencyLocale(currency);
 
@@ -193,8 +166,12 @@ export function DailyTotalChartClient({
   }
 
   const chartData = data.map(
-    (item: { day: string; total_income: number; total_expense: number }) => ({
-      date: item.day,
+    (item: {
+      period: string;
+      total_income: number;
+      total_expense: number;
+    }) => ({
+      date: item.period,
       income: Number(item.total_income) || 0,
       expense: Number(item.total_expense) || 0,
     })

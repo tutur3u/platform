@@ -9,6 +9,7 @@ import {
   getSubscriptionInvoiceContext,
   importMoneyLoverTransactions,
   listFinanceBalanceTrend,
+  listFinanceIncomeExpenseSummary,
   listFinanceInvoices,
   listPendingFinanceInvoices,
   listWalletRoleAccess,
@@ -257,6 +258,43 @@ describe('finance internal API helpers', () => {
 
     expect(fetchMock).toHaveBeenCalledWith(
       'https://internal.example.com/api/workspaces/workspace%201/finance/charts/balance-trend?startDate=2026-05-01&endDate=2026-05-31&includeConfidential=false',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
+  it('lists income and expense chart summaries through one RPC endpoint', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        closing_balance: 200,
+        data: [
+          {
+            period: '2026-05-24',
+            total_expense: 25,
+            total_income: 100,
+          },
+        ],
+        opening_balance: 125,
+      })
+    );
+
+    await listFinanceIncomeExpenseSummary(
+      'workspace 1',
+      {
+        startDate: '2026-05-01',
+        endDate: '2026-05-31',
+        includeConfidential: false,
+        interval: 'daily',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/workspaces/workspace%201/finance/charts/income-expense-summary?startDate=2026-05-01&endDate=2026-05-31&includeConfidential=false&interval=daily',
       expect.objectContaining({
         cache: 'no-store',
       })

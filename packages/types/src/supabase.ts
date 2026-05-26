@@ -31097,6 +31097,16 @@ export type Database = {
           total_prompt_tokens: number;
         }[];
       };
+      get_income_expense_chart_summary: {
+        Args: {
+          _end_date?: string;
+          _interval?: string;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: Json;
+      };
       get_inventory_batches_count: { Args: { ws_id: string }; Returns: number };
       get_inventory_product_categories_count: {
         Args: { ws_id: string };

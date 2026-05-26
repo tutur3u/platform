@@ -466,6 +466,12 @@ export type FinanceChartRangeQuery = {
   startDate?: string | null;
 };
 
+export type FinanceIncomeExpenseSummaryInterval = 'daily' | 'monthly';
+
+export type FinanceIncomeExpenseSummaryQuery = FinanceChartRangeQuery & {
+  interval: FinanceIncomeExpenseSummaryInterval;
+};
+
 export type FinanceBalanceAtDateQuery = {
   date: string;
   includeConfidential?: boolean;
@@ -492,6 +498,18 @@ export interface FinanceMonthlyIncomeExpensePoint {
   month: string;
   total_expense: number;
   total_income: number;
+}
+
+export interface FinanceIncomeExpenseSummaryPoint {
+  period: string;
+  total_expense: number;
+  total_income: number;
+}
+
+export interface FinanceIncomeExpenseSummary {
+  closing_balance: number;
+  data: FinanceIncomeExpenseSummaryPoint[];
+  opening_balance: number;
 }
 
 export interface FinanceBalanceAtDate {
@@ -1655,6 +1673,21 @@ export async function listFinanceMonthlyIncomeExpense(
   );
 
   return payload.data ?? [];
+}
+
+export async function listFinanceIncomeExpenseSummary(
+  workspaceId: string,
+  query: FinanceIncomeExpenseSummaryQuery,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<FinanceIncomeExpenseSummary>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/finance/charts/income-expense-summary`,
+    {
+      query,
+      cache: 'no-store',
+    }
+  );
 }
 
 export async function getFinanceBalanceAtDate(
