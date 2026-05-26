@@ -152,16 +152,40 @@ export const POST = withSessionAuth<{
 
       const parsed = uploadUrlSchema.safeParse(payload);
       if (!parsed.success) {
+        // Include the raw payload in dev-mode responses to aid debugging of
+        // client-side issues (do not expose sensitive data in production).
+        const bodyPreview =
+          process.env.NODE_ENV === 'production'
+            ? undefined
+            : (() => {
+                try {
+                  return JSON.parse(JSON.stringify(payload));
+                } catch {
+                  return String(payload);
+                }
+              })();
+
         return NextResponse.json(
-          { message: 'Invalid request body', errors: parsed.error.issues },
+          {
+            message: 'Invalid request body',
+            errors: parsed.error.issues,
+            payload: bodyPreview,
+          },
           { status: 400 }
         );
       }
 
       const sanitizedFilename = sanitizeFilename(parsed.data.filename);
       if (!sanitizedFilename) {
+        const original = parsed.data.filename;
+        const sanitizedPreview = process.env.NODE_ENV === 'production' ? undefined : sanitizedFilename;
+
         return NextResponse.json(
-          { message: 'Invalid filename' },
+          {
+            message: 'Invalid filename',
+            filename: original,
+            sanitized: sanitizedPreview,
+          },
           { status: 400 }
         );
       }
