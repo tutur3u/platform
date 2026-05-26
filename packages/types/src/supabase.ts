@@ -32797,6 +32797,16 @@ export type Database = {
             };
             Returns: number;
           };
+      get_workspace_wallets_net_total: {
+        Args: {
+          end_date?: string;
+          include_confidential?: boolean;
+          p_user_id?: string;
+          start_date?: string;
+          ws_id: string;
+        };
+        Returns: number;
+      };
       habit_tracker_entry_numeric_value: {
         Args: {
           p_aggregation_strategy: string;
