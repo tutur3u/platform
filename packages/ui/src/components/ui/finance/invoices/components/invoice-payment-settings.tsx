@@ -14,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
-import { formatCurrency } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { useFinanceConfidentialVisibility } from '../../shared/use-finance-confidential-visibility';
 import type { AvailablePromotion } from '../hooks';
+import { formatInvoicePromotionValue } from '../invoice-visibility-format';
 
 interface InvoicePaymentSettingsProps {
   wallets: Array<{
@@ -78,6 +79,8 @@ export function InvoicePaymentSettings({
 }: InvoicePaymentSettingsProps) {
   const t = useTranslations();
   const shouldShowPromotion = showPromotion && promotionsAllowed;
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const promotionOptions = (() => {
     if (!shouldShowPromotion) return [];
@@ -86,12 +89,13 @@ export function InvoicePaymentSettings({
       { value: 'none', label: t('ws-invoices.no_promotion') },
       ...availablePromotions.map((promotion): ComboboxOption => {
         const referralPercent = referralDiscountMap?.get(promotion.id);
-        const labelValue =
-          referralPercent !== undefined
-            ? `${referralPercent || 0}%`
-            : promotion.use_ratio
-              ? `${promotion.value}%`
-              : formatCurrency(promotion.value, currency);
+        const labelValue = formatInvoicePromotionValue({
+          areNumbersHidden,
+          currency,
+          referralPercent,
+          useRatio: promotion.use_ratio,
+          value: promotion.value,
+        });
         return {
           value: promotion.id,
           label: `${promotion.name || t('ws-invoices.unnamed_promotion')} (${labelValue})`,
@@ -108,9 +112,16 @@ export function InvoicePaymentSettings({
       const referralName =
         linkedPromotions.find((lp) => lp.promo_id === selectedPromotionId)
           ?.workspace_promotions?.name || t('ws-invoices.unnamed_promotion');
+      const labelValue = formatInvoicePromotionValue({
+        areNumbersHidden,
+        currency,
+        referralPercent: referralPercent ?? 0,
+        useRatio: true,
+        value: referralPercent ?? 0,
+      });
       list.splice(1, 0, {
         value: selectedPromotionId,
-        label: `${referralName} (${referralPercent ?? 0}%)`,
+        label: `${referralName} (${labelValue})`,
       } as ComboboxOption);
     }
 

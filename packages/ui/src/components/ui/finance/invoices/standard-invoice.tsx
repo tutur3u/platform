@@ -7,13 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
 import { Separator } from '@tuturuuu/ui/separator';
 import { toast } from '@tuturuuu/ui/sonner';
 import { shouldLockFinanceWalletSelectionOnCreate } from '@tuturuuu/utils/finance';
-import { formatCurrency } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useQueryState } from 'nuqs';
 import { useEffect, useMemo, useState } from 'react';
 import { useDebounce } from '../../../../hooks/use-debounce';
 import { useFinanceHref } from '../finance-route-context';
+import { useFinanceConfidentialVisibility } from '../shared/use-finance-confidential-visibility';
 import { InvoiceBlockedState } from './components/invoice-blocked-state';
 import { InvoiceCheckoutSummary } from './components/invoice-checkout-summary';
 import { InvoiceContentEditor } from './components/invoice-content-editor';
@@ -38,6 +38,7 @@ import { useBestPromotionSelection } from './hooks/use-best-promotion-selection'
 import { useInvoiceRounding } from './hooks/use-invoice-rounding';
 import { useInvoiceSubtotal } from './hooks/use-invoice-subtotal';
 import { createInvoiceWithInternalApi } from './internal-api';
+import { formatInvoiceRecalculationDescription } from './invoice-visibility-format';
 import { ProductSelection } from './product-selection';
 import type { SelectedProductItem } from './types';
 
@@ -64,6 +65,8 @@ export function StandardInvoice({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const queryClient = useQueryClient();
   const financeHref = useFinanceHref();
@@ -322,19 +325,16 @@ export function StandardInvoice({
       // Show notification if values were recalculated
       if (result.data?.values_recalculated) {
         const { calculated_values, frontend_values } = result.data;
-        const roundingInfo =
-          calculated_values.rounding_applied !== 0
-            ? ` | ${t('ws-invoices.rounding')}: ${formatCurrency(calculated_values.rounding_applied, defaultCurrency)}`
-            : '';
 
         toast(t('ws-invoices.invoice_created_recalculated'), {
-          description: `${t('ws-invoices.server_calculated')}: ${formatCurrency(
-            calculated_values.total,
-            defaultCurrency
-          )} | ${t('ws-invoices.frontend_calculated')}: ${formatCurrency(
-            frontend_values?.total || 0,
-            defaultCurrency
-          )}${roundingInfo}`,
+          description: formatInvoiceRecalculationDescription({
+            areNumbersHidden,
+            calculatedTotal: calculated_values.total,
+            currency: defaultCurrency,
+            frontendTotal: frontend_values?.total || 0,
+            roundingApplied: calculated_values.rounding_applied,
+            t,
+          }),
           duration: 5000,
         });
       } else {
