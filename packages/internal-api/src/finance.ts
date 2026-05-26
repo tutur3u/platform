@@ -513,12 +513,29 @@ export interface TransactionTagRecord {
   name: string;
   color: string;
   description: string | null;
+  ws_id?: string;
+  amount?: number;
+  transaction_count?: number;
+  income_count?: number;
+  expense_count?: number;
+  total_income?: number;
+  total_expense?: number;
+  net_total?: number;
+  recent_transaction_count?: number;
+  recent_income_count?: number;
+  recent_expense_count?: number;
+  recent_total_income?: number;
+  recent_total_expense?: number;
+  last_transaction_at?: string | null;
 }
 
 export interface TransactionTagStatsRecord {
   tag_id: string;
   tag_name: string;
   tag_color: string;
+  tag_description?: string | null;
+  ws_id?: string;
+  total_amount?: number;
   transaction_count: number;
   income_count: number;
   expense_count: number;

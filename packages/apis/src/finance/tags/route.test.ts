@@ -4,23 +4,13 @@ const mocks = vi.hoisted(() => {
   const getPermissions = vi.fn();
   const getFinanceRouteContext = vi.fn();
   const normalizeWorkspaceId = vi.fn();
-  const tagOrder = vi.fn();
+  const tagStatsRpc = vi.fn();
 
-  const sessionSupabase = {};
+  const sessionSupabase = {
+    rpc: tagStatsRpc,
+  };
   const adminSupabase = {
-    from: vi.fn((table: string) => {
-      if (table !== 'transaction_tags') {
-        throw new Error(`Unexpected admin table: ${table}`);
-      }
-
-      return {
-        select: vi.fn(() => ({
-          eq: vi.fn(() => ({
-            order: tagOrder,
-          })),
-        })),
-      };
-    }),
+    from: vi.fn(),
   };
 
   return {
@@ -29,7 +19,7 @@ const mocks = vi.hoisted(() => {
     getPermissions,
     normalizeWorkspaceId,
     sessionSupabase,
-    tagOrder,
+    tagStatsRpc,
   };
 });
 
@@ -65,7 +55,7 @@ describe('finance tags route', () => {
         normalizedWsId: 'ws-1',
         permissions: await mocks.getPermissions(),
         sbAdmin: mocks.adminSupabase,
-        supabase: mocks.adminSupabase,
+        supabase: mocks.sessionSupabase,
         user: {
           email: 'agent@example.com',
           id: 'user-1',
@@ -73,30 +63,27 @@ describe('finance tags route', () => {
       },
     }));
     mocks.normalizeWorkspaceId.mockResolvedValue('ws-1');
-    mocks.tagOrder.mockResolvedValue({
+    mocks.tagStatsRpc.mockResolvedValue({
       data: [
         {
-          id: 'tag-1',
-          name: 'Bills',
-          color: '#ff0000',
-          description: 'Monthly bills',
+          tag_id: 'tag-1',
+          tag_name: 'Bills',
+          tag_color: '#ff0000',
+          tag_description: 'Monthly bills',
           ws_id: 'ws-1',
-          wallet_transaction_tags: [
-            {
-              transaction_id: 'tx-1',
-              wallet_transactions: {
-                amount: -250,
-                wallet_id: 'wallet-1',
-              },
-            },
-            {
-              transaction_id: 'tx-2',
-              wallet_transactions: {
-                amount: 100,
-                wallet_id: 'wallet-1',
-              },
-            },
-          ],
+          transaction_count: 2,
+          income_count: 1,
+          expense_count: 1,
+          total_amount: 350,
+          total_income: 100,
+          total_expense: 250,
+          net_total: -150,
+          recent_transaction_count: 1,
+          recent_income_count: 0,
+          recent_expense_count: 1,
+          recent_total_income: 0,
+          recent_total_expense: 250,
+          last_transaction_at: '2026-05-23T00:00:00.000Z',
         },
       ],
       error: null,
@@ -116,6 +103,12 @@ describe('finance tags route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.tagStatsRpc).toHaveBeenCalledWith(
+      'get_transaction_count_by_tag',
+      {
+        _ws_id: 'ws-1',
+      }
+    );
     await expect(response.json()).resolves.toEqual([
       {
         id: 'tag-1',
@@ -125,6 +118,17 @@ describe('finance tags route', () => {
         ws_id: 'ws-1',
         amount: 350,
         transaction_count: 2,
+        income_count: 1,
+        expense_count: 1,
+        total_income: 100,
+        total_expense: 250,
+        net_total: -150,
+        recent_transaction_count: 1,
+        recent_income_count: 0,
+        recent_expense_count: 1,
+        recent_total_income: 0,
+        recent_total_expense: 250,
+        last_transaction_at: '2026-05-23T00:00:00.000Z',
       },
     ]);
   });

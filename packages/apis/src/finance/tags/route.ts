@@ -21,7 +21,7 @@ export async function GET(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, sbAdmin } = access.context;
+  const { normalizedWsId, permissions, supabase } = access.context;
   const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
@@ -32,23 +32,9 @@ export async function GET(
     );
   }
 
-  const { data, error } = await sbAdmin
-    .from('transaction_tags')
-    .select(
-      `
-        id,
-        name,
-        color,
-        description,
-        ws_id,
-        wallet_transaction_tags(
-          transaction_id,
-          wallet_transactions(amount, wallet_id)
-        )
-      `
-    )
-    .eq('ws_id', normalizedWsId)
-    .order('name');
+  const { data, error } = await supabase.rpc('get_transaction_count_by_tag', {
+    _ws_id: normalizedWsId,
+  });
 
   if (error) {
     return NextResponse.json(
@@ -57,38 +43,26 @@ export async function GET(
     );
   }
 
-  const normalizedData = (data ?? []).map((tag) => {
-    const taggedTransactions = Array.isArray(tag.wallet_transaction_tags)
-      ? tag.wallet_transaction_tags
-      : [];
-    var amount = 0;
-    var transactionCount = 0;
-
-    for (const taggedTransaction of taggedTransactions) {
-      const walletTransaction = Array.isArray(
-        taggedTransaction.wallet_transactions
-      )
-        ? taggedTransaction.wallet_transactions[0]
-        : taggedTransaction.wallet_transactions;
-
-      if (walletTransaction == null) {
-        continue;
-      }
-
-      amount += Math.abs(Number(walletTransaction.amount ?? 0));
-      transactionCount += 1;
-    }
-
-    return {
-      id: tag.id,
-      name: tag.name,
-      color: tag.color,
-      description: tag.description,
-      ws_id: tag.ws_id,
-      amount,
-      transaction_count: transactionCount,
-    };
-  });
+  const normalizedData = (data ?? []).map((tag) => ({
+    id: tag.tag_id,
+    name: tag.tag_name,
+    color: tag.tag_color,
+    description: tag.tag_description,
+    ws_id: tag.ws_id,
+    amount: Number(tag.total_amount ?? 0),
+    transaction_count: Number(tag.transaction_count ?? 0),
+    income_count: Number(tag.income_count ?? 0),
+    expense_count: Number(tag.expense_count ?? 0),
+    total_income: Number(tag.total_income ?? 0),
+    total_expense: Number(tag.total_expense ?? 0),
+    net_total: Number(tag.net_total ?? 0),
+    recent_transaction_count: Number(tag.recent_transaction_count ?? 0),
+    recent_income_count: Number(tag.recent_income_count ?? 0),
+    recent_expense_count: Number(tag.recent_expense_count ?? 0),
+    recent_total_income: Number(tag.recent_total_income ?? 0),
+    recent_total_expense: Number(tag.recent_total_expense ?? 0),
+    last_transaction_at: tag.last_transaction_at,
+  }));
 
   return NextResponse.json(normalizedData);
 }

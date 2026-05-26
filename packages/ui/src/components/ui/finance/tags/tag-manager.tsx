@@ -18,7 +18,6 @@ import {
 import {
   createTransactionTag,
   deleteTransactionTag,
-  listTransactionTagStats,
   listTransactionTags,
   type TransactionTagRecord,
   updateTransactionTag,
@@ -147,11 +146,6 @@ export function TagManager({ currency, wsId }: TagManagerProps) {
   const { data: tags, isLoading } = useQuery({
     queryKey: ['transaction_tags', wsId],
     queryFn: () => listTransactionTags(wsId),
-  });
-
-  const { data: tagStats } = useQuery({
-    queryKey: ['transaction_tag_stats', wsId],
-    queryFn: () => listTransactionTagStats(wsId),
   });
 
   const filteredTags = useMemo(() => {
@@ -311,14 +305,13 @@ export function TagManager({ currency, wsId }: TagManagerProps) {
       ) : filteredTags.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredTags.map((tag) => {
-            const stats = tagStats?.find((s) => s.tag_id === tag.id);
-            const transactionCount = Number(stats?.transaction_count ?? 0);
-            const incomeCount = Number(stats?.income_count ?? 0);
-            const expenseCount = Number(stats?.expense_count ?? 0);
-            const totalIncome = Number(stats?.total_income ?? 0);
-            const totalExpense = Number(stats?.total_expense ?? 0);
+            const transactionCount = Number(tag.transaction_count ?? 0);
+            const incomeCount = Number(tag.income_count ?? 0);
+            const expenseCount = Number(tag.expense_count ?? 0);
+            const totalIncome = Number(tag.total_income ?? 0);
+            const totalExpense = Number(tag.total_expense ?? 0);
             const recentTransactionCount = Number(
-              stats?.recent_transaction_count ?? 0
+              tag.recent_transaction_count ?? 0
             );
             return (
               <Card

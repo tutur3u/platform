@@ -31775,11 +31775,14 @@ export type Database = {
           recent_total_income: number;
           recent_transaction_count: number;
           tag_color: string;
+          tag_description: string;
           tag_id: string;
           tag_name: string;
+          total_amount: number;
           total_expense: number;
           total_income: number;
           transaction_count: number;
+          ws_id: string;
         }[];
       };
       get_transaction_creators: {
