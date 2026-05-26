@@ -2001,6 +2001,16 @@ export type Database = {
         };
         Returns: number;
       };
+      get_wallet_interest_projection: {
+        Args: {
+          _actor_id: string;
+          _days: number;
+          _start_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       list_task_source_filter_ids: {
         Args: {
           p_actor_id: string;
