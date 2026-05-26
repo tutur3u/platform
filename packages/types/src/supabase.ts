@@ -31765,9 +31765,20 @@ export type Database = {
       get_transaction_count_by_tag: {
         Args: { _ws_id: string };
         Returns: {
+          expense_count: number;
+          income_count: number;
+          last_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
           tag_color: string;
           tag_id: string;
           tag_name: string;
+          total_expense: number;
+          total_income: number;
           transaction_count: number;
         }[];
       };
@@ -36357,6 +36368,7 @@ export type Database = {
           id: string;
           in_progress_size: number;
           key: string;
+          metadata: Json | null;
           owner_id: string | null;
           upload_signature: string;
           user_metadata: Json | null;
@@ -36368,6 +36380,7 @@ export type Database = {
           id: string;
           in_progress_size?: number;
           key: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature: string;
           user_metadata?: Json | null;
@@ -36379,6 +36392,7 @@ export type Database = {
           id?: string;
           in_progress_size?: number;
           key?: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature?: string;
           user_metadata?: Json | null;
@@ -36497,6 +36511,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      allow_any_operation: {
+        Args: { expected_operations: string[] };
+        Returns: boolean;
+      };
+      allow_only_operation: {
+        Args: { expected_operation: string };
+        Returns: boolean;
+      };
       can_insert_object: {
         Args: { bucketid: string; metadata: Json; name: string; owner: string };
         Returns: undefined;
