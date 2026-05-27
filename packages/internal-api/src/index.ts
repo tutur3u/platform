@@ -905,6 +905,7 @@ export {
   type RootNavigationTarget,
   removeCurrentUserAvatar,
   repairWorkspaceUserPlatformLinks,
+  SHOW_VERSION_BADGE_CONFIG_ID,
   type UpdatePlatformUserRolesPayload,
   updateCurrentUserDefaultWorkspace,
   updateCurrentUserProfile,

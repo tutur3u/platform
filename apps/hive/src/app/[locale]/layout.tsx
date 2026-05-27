@@ -1,4 +1,5 @@
 import { SerwistProvider } from '@tuturuuu/offline/provider';
+import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -84,7 +85,12 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelInsights />
           <Suspense>
             <Providers>
-              <NextIntlClientProvider>{children}</NextIntlClientProvider>
+              <NextIntlClientProvider>
+                {children}
+                <Suspense fallback={null}>
+                  <SatelliteVersionBadge appName="Hive" />
+                </Suspense>
+              </NextIntlClientProvider>
             </Providers>
           </Suspense>
           <TailwindIndicator />

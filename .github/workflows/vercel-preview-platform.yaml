@@ -76,6 +76,10 @@ jobs:
         if: steps.check_commits.outputs.skip_build != 'true'
         run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api --filter=@tuturuuu/masonry
 
+      - name: Generate shared build metadata
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}

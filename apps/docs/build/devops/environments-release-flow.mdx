@@ -42,6 +42,25 @@ This page explains how Tuturuuu moves from code to running environments.
 - `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
 - The production workflow also skips if a newer commit already exists on `production`.
 
+### Browser App Version Metadata
+
+- Browser apps share one platform version from
+  `packages/utils/src/platform-release.ts`; do not read visible app versions
+  from individual app `package.json` files.
+- The current shared browser app version is `0.1.0`.
+- Every Vercel browser app workflow runs
+  `bun run --silent scripts/ci/generate-build-metadata.ts` before
+  `vercel build`. The generated metadata includes the commit hash, short hash,
+  commit message, ref, environment, deployment URL, deployment stamp, and build
+  timestamp.
+- The account-scoped version badge uses `public.user_configs` key
+  `SHOW_VERSION_BADGE`. It is hidden by default and only exact
+  `@tuturuuu.com` accounts may enable a truthy value.
+- Exact-domain enforcement happens on the server through
+  `isExactTuturuuuDotComEmail`; subdomains such as `@xwf.tuturuuu.com` are not
+  eligible, and client cookies cannot make the badge render for ineligible
+  users.
+
 ### Production Database
 
 `supabase-production.yaml` is stricter than staging:

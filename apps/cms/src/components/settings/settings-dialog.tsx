@@ -16,6 +16,7 @@ import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { toast } from '@tuturuuu/ui/sonner';
 import { Switch } from '@tuturuuu/ui/switch';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -253,7 +254,9 @@ export function SettingsDialog({
 
       {activeTab === 'appearance' && (
         <div className="h-full">
-          <AppearanceSettings />
+          <AppearanceSettings
+            canManageVersionBadge={isExactTuturuuuDotComEmail(user?.email)}
+          />
         </div>
       )}
 

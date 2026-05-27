@@ -1,3 +1,4 @@
+import { SatelliteVersionBadge } from '@tuturuuu/satellite/version-badge';
 import { ProductionIndicator } from '@tuturuuu/ui/custom/production-indicator';
 import { StaffToolbar } from '@tuturuuu/ui/custom/staff-toolbar';
 import { TailwindIndicator } from '@tuturuuu/ui/custom/tailwind-indicator';
@@ -8,7 +9,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
 import { setRequestLocale } from 'next-intl/server';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
 import { TeachQueryProvider } from '@/components/teach-query-provider';
 import { TeachThemeProvider } from '@/components/teach-theme-provider';
 import { BASE_URL } from '@/constants/common';
@@ -62,7 +63,12 @@ export default async function RootLayout({ children, params }: Props) {
       >
         <TeachThemeProvider>
           <TeachQueryProvider>
-            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+            <NextIntlClientProvider>
+              {children}
+              <Suspense fallback={null}>
+                <SatelliteVersionBadge appName="Teach" />
+              </Suspense>
+            </NextIntlClientProvider>
           </TeachQueryProvider>
         </TeachThemeProvider>
         <TailwindIndicator />

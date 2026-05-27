@@ -16,6 +16,7 @@ import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useSidebar } from '@/context/sidebar-context';
@@ -163,7 +164,9 @@ export function SettingsDialog({
 
       {activeTab === 'appearance' && (
         <div className="h-full">
-          <AppearanceSettings />
+          <AppearanceSettings
+            canManageVersionBadge={isExactTuturuuuDotComEmail(user?.email)}
+          />
         </div>
       )}
 

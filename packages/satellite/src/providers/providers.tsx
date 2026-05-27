@@ -1,9 +1,16 @@
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
-import type { ReactNode } from 'react';
+import { type ReactNode, Suspense } from 'react';
+import { SatelliteVersionBadge } from '../components/version-badge-gate';
 import { ClientProviders } from './client-providers';
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers({
+  appName = 'Tuturuuu App',
+  children,
+}: {
+  appName?: string;
+  children: ReactNode;
+}) {
   return (
     <NextIntlClientProvider>
       <ThemeProvider
@@ -20,7 +27,12 @@ export function Providers({ children }: { children: ReactNode }) {
         // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
         // for more details
       >
-        <ClientProviders>{children}</ClientProviders>
+        <ClientProviders>
+          {children}
+          <Suspense fallback={null}>
+            <SatelliteVersionBadge appName={appName} />
+          </Suspense>
+        </ClientProviders>
       </ThemeProvider>
     </NextIntlClientProvider>
   );

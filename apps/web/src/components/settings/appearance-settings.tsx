@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { VersionBadgeSetting } from '@tuturuuu/ui/custom/version-badge';
 import { Label } from '@tuturuuu/ui/label';
 import { RadioGroup, RadioGroupItem } from '@tuturuuu/ui/radio-group';
 import {
@@ -22,7 +23,11 @@ import {
   detectSystemTimezone,
 } from '@/lib/calendar-settings-resolver';
 
-export default function AppearanceSettings() {
+export default function AppearanceSettings({
+  canManageVersionBadge = false,
+}: {
+  canManageVersionBadge?: boolean;
+}) {
   const t = useTranslations();
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
@@ -159,6 +164,13 @@ export default function AppearanceSettings() {
           </div>
         </RadioGroup>
       </SettingItemTab>
+
+      {canManageVersionBadge ? (
+        <>
+          <Separator />
+          <VersionBadgeSetting canManage={canManageVersionBadge} />
+        </>
+      ) : null}
 
       <Separator />
 

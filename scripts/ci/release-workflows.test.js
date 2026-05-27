@@ -33,6 +33,38 @@ test('Vercel workflows grant marker permissions and record successful runs', () 
   }
 });
 
+test('Vercel workflows generate shared build metadata before building', () => {
+  for (const workflowName of vercelWorkflows) {
+    const workflow = fs.readFileSync(
+      path.join(repoRoot, '.github', 'workflows', workflowName),
+      'utf8'
+    );
+    const buildMetadataIndex = workflow.indexOf(
+      'Generate shared build metadata'
+    );
+    const buildProjectIndex = workflow.indexOf('Build Project Artifacts');
+
+    assert.notEqual(
+      buildMetadataIndex,
+      -1,
+      `${workflowName} must generate shared build metadata`
+    );
+    assert.notEqual(
+      buildProjectIndex,
+      -1,
+      `${workflowName} must build project artifacts`
+    );
+    assert.ok(
+      buildMetadataIndex < buildProjectIndex,
+      `${workflowName} must generate shared build metadata before Vercel build`
+    );
+    assert.match(
+      workflow,
+      /bun run --silent scripts\/ci\/generate-build-metadata\.ts/
+    );
+  }
+});
+
 test('CI workflows use main instead of retired staging branch filters', () => {
   const workflowsWithoutStagingBranchFilters = [
     'branch-name-check.yaml',

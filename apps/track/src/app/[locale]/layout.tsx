@@ -68,7 +68,7 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelAnalytics />
         <VercelInsights />
         <Suspense>
-          <Providers>{children}</Providers>
+          <Providers appName={siteConfig.name}>{children}</Providers>
         </Suspense>
         <TailwindIndicator />
         <ProductionIndicator />

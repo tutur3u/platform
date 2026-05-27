@@ -13877,6 +13877,25 @@
     },
     "guest_user_checkup_threshold": "Số ngày tham dự tối thiểu"
   },
+  "version-badge": {
+    "app": "Ứng dụng",
+    "commit": "Commit",
+    "commit_hash": "Mã commit",
+    "commit_message": "Nội dung commit",
+    "deployment_stamp": "Dấu triển khai",
+    "deployment_time": "Thời gian triển khai",
+    "deployment_url": "URL triển khai",
+    "description": "Thông tin bản dựng và triển khai của ứng dụng này.",
+    "environment": "Môi trường",
+    "not_available": "Không có",
+    "ref": "Nhánh/thẻ",
+    "setting_description": "Hiển thị huy hiệu phiên bản nhỏ ở góc dưới bên phải trong các ứng dụng được hỗ trợ.",
+    "setting_title": "Huy hiệu phiên bản",
+    "setting_toggle_label": "Bật/tắt huy hiệu phiên bản",
+    "title": "Thông tin phiên bản",
+    "trigger_label": "Mở thông tin phiên bản",
+    "version": "Phiên bản"
+  },
   "vietnameseWomensDay": {
     "achievements": {
       "items": {

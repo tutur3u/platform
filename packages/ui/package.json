@@ -348,6 +348,10 @@
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
     },
+    "./custom/version-badge": {
+      "types": "./src/components/ui/custom/version-badge.tsx",
+      "import": "./src/components/ui/custom/version-badge.tsx"
+    },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",
     "./custom/workspace-wrapper": {

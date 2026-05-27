@@ -72,7 +72,7 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelAnalytics />
           <VercelInsights />
           <Suspense>
-            <Providers>
+            <Providers appName={siteConfig.name}>
               <FadeSettingInitializer />
               {children}
             </Providers>

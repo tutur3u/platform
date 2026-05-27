@@ -15,13 +15,18 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { useTransition } from 'react';
+import { VersionBadgeSetting } from '../version-badge';
 
 /**
  * Shared appearance settings with theme and language.
  * For app-specific extensions (e.g., calendar timezone settings),
  * wrap or extend this component in your app.
  */
-export function AppearanceSettings() {
+export function AppearanceSettings({
+  canManageVersionBadge = false,
+}: {
+  canManageVersionBadge?: boolean;
+}) {
   const t = useTranslations();
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
@@ -112,6 +117,13 @@ export function AppearanceSettings() {
           </SelectContent>
         </Select>
       </SettingItemTab>
+
+      {canManageVersionBadge ? (
+        <>
+          <Separator />
+          <VersionBadgeSetting canManage={canManageVersionBadge} />
+        </>
+      ) : null}
     </div>
   );
 }
