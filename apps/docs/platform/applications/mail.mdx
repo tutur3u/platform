@@ -55,3 +55,6 @@ repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`,
 workflow-level `env`; Mail deploys should rely on Vercel project environment
 variables pulled by `vercel pull`. Manual production dispatch is only valid from
 `refs/heads/production`.
+
+`apps/mail/vercel.json` disables Vercel Git deployments and GitHub integration
+so preview and production deploys only happen through the CI workflows.
