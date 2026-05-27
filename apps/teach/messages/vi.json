@@ -193,6 +193,18 @@
       "saved": "Đã lưu",
       "saving": "Đang lưu..."
     },
+    "lesson": {
+      "attachFailed": "Không thể đính kèm tệp",
+      "attachFiles": "Đính kèm tệp",
+      "attachFilesDescription": "Chọn tệp từ drive workspace để đính kèm vào bài học này.",
+      "attachSelected": "Đính kèm tệp đã chọn",
+      "cancel": "Hủy",
+      "filesAttached": "Đã đính kèm tệp",
+      "loadFilesError": "Không thể tải danh sách tệp.",
+      "loadingFiles": "Đang tải tệp…",
+      "noFilesFound": "Không tìm thấy tệp.",
+      "selectAtLeastOneFile": "Vui lòng chọn ít nhất một tệp"
+    },
     "loadError": "Không tải được khóa học. Vui lòng thử lại.",
     "modules": "Module",
     "noCourses": "Chưa có khóa học. Hãy tạo khóa học nháp đầu tiên ngay trong Teach.",
@@ -212,6 +224,7 @@
       "description": "Xem các tệp và thư mục đã tải lên cho nhóm khóa học này.",
       "empty": "Chưa có tệp nào được tải lên.",
       "error": "Không tải được dữ liệu lưu trữ đã tải lên.",
+      "generateWithAi": "Tạo module bằng AI",
       "kinds": {
         "file": "Tệp",
         "folder": "Thư mục"
@@ -457,13 +470,15 @@
     "create": "Tạo câu hỏi",
     "create_description": "Tạo câu hỏi mới",
     "create_manually": "Tạo thủ công",
-    "description": "Quản lý bộ trắc nghiệm trong không gian làm việc của bạn có các câu hỏi nhiều lựa chọn dành cho mục đích học tập.",
+    "description": "Quản lý bộ câu hỏi trắc nghiệm trong không gian làm việc của bạn với nhiều loại câu hỏi phục vụ học tập.",
     "edit": "Chỉnh sửa câu hỏi",
     "edit_description": "Chỉnh sửa câu hỏi hiện có",
     "false": "Sai",
+    "empty_module": "Chưa có câu hỏi trắc nghiệm nào cho module này.",
     "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!",
     "generation_error": "Đã xảy ra lỗi khi tạo bộ câu hỏi.",
     "left_item": "Mục bên trái",
+    "load_error": "Không thể tải câu hỏi trắc nghiệm. Vui lòng thử lại.",
     "manual_create": "Tạo câu hỏi thủ công",
     "matching": "Ghép đôi",
     "matching_pairs": "Các cặp ghép đôi",

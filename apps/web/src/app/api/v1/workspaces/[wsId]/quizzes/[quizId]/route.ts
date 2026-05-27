@@ -14,11 +14,17 @@ const QuizOptionSchema = z.object({
   is_correct: z.boolean(),
   explanation: z.string().trim().max(2000).nullable().optional(),
 });
+const QuizTypeSchema = z.enum([
+  'true_false',
+  'multiple_choice',
+  'matching',
+  'ordering',
+]);
 
 const QuizUpdateSchema = z.object({
   question: z.string().trim().min(1).max(4000),
   quiz_options: z.array(QuizOptionSchema).optional(),
-  type: z.string().optional(),
+  type: QuizTypeSchema.optional(),
   content: z.any().optional(),
   answer: z.any().optional(),
 });
@@ -92,40 +98,39 @@ export const PUT = withSessionAuth(
       return NextResponse.json({ message: 'Quiz not found' }, { status: 404 });
     }
 
-    const { error: deleteOptionsError } = await access.sbAdmin
-      .from('quiz_options')
-      .delete()
-      .eq('quiz_id', parsedParams.data.quizId);
-
-    if (deleteOptionsError) {
-      console.error('Failed to reset quiz options', deleteOptionsError);
-      return NextResponse.json(
-        { message: 'Error updating workspace quiz options' },
-        { status: 500 }
-      );
-    }
-
-    if (
-      parsedBody.data.quiz_options != null &&
-      parsedBody.data.quiz_options.length > 0
-    ) {
-      const { error: insertOptionsError } = await access.sbAdmin
+    if (parsedBody.data.quiz_options !== undefined) {
+      const { error: deleteOptionsError } = await access.sbAdmin
         .from('quiz_options')
-        .insert(
-          parsedBody.data.quiz_options.map((option) => ({
-            quiz_id: parsedParams.data.quizId,
-            value: option.value,
-            is_correct: option.is_correct,
-            explanation: option.explanation ?? null,
-          }))
-        );
+        .delete()
+        .eq('quiz_id', parsedParams.data.quizId);
 
-      if (insertOptionsError) {
-        console.error('Failed to insert quiz options', insertOptionsError);
+      if (deleteOptionsError) {
+        console.error('Failed to reset quiz options', deleteOptionsError);
         return NextResponse.json(
           { message: 'Error updating workspace quiz options' },
           { status: 500 }
         );
+      }
+
+      if (parsedBody.data.quiz_options.length > 0) {
+        const { error: insertOptionsError } = await access.sbAdmin
+          .from('quiz_options')
+          .insert(
+            parsedBody.data.quiz_options.map((option) => ({
+              quiz_id: parsedParams.data.quizId,
+              value: option.value,
+              is_correct: option.is_correct,
+              explanation: option.explanation ?? null,
+            }))
+          );
+
+        if (insertOptionsError) {
+          console.error('Failed to insert quiz options', insertOptionsError);
+          return NextResponse.json(
+            { message: 'Error updating workspace quiz options' },
+            { status: 500 }
+          );
+        }
       }
     }
 

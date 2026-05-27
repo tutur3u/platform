@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpen,
@@ -13,42 +14,31 @@ import {
 import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
 import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useCallback, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
 import LessonQuizzesSection from './quizzes-section';
-import { useLessonDetail } from './use-lesson-detail';
+import { lessonQueryKey, useLessonDetail } from './use-lesson-detail';
 
-function AttachFilesLoader({
-  wsId,
-  courseId,
-  onLoaded,
-}: {
-  wsId: string;
-  courseId: string;
-  onLoaded: (files: any[]) => void;
-}) {
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const data = await listWorkspaceUserGroupStorageFiles(wsId, courseId);
-        if (mounted) onLoaded(data ?? []);
-      } catch (err) {
-        if (mounted) onLoaded([]);
-        void err;
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
-  }, [wsId, courseId, onLoaded]);
-
-  return null;
-}
+type AttachFile = {
+  contentType?: string | null;
+  fullPath?: string | null;
+  name: string;
+  path: string;
+  size?: number | null;
+};
 
 // ─── Main client component ────────────────────────────────────────────────────
 
@@ -63,6 +53,8 @@ export function LessonDetailClient({
   wsId: string;
   workspaceName: string | null;
 }) {
+  const queryClient = useQueryClient();
+  const t = useTranslations('teachModules.lesson');
   const {
     lesson,
     isLoading,
@@ -84,11 +76,19 @@ export function LessonDetailClient({
   const skipNameBlurRef = useRef(false);
   // Attach dialog state
   const [showAttachDialog, setShowAttachDialog] = useState(false);
-  const [attachFiles, setAttachFiles] = useState<any[] | null>(null);
   const [selectedPaths, setSelectedPaths] = useState<Record<string, boolean>>(
     {}
   );
   const [attachLoading, setAttachLoading] = useState(false);
+  const attachFilesQuery = useQuery({
+    enabled: showAttachDialog,
+    queryFn: async () =>
+      (await listWorkspaceUserGroupStorageFiles(
+        wsId,
+        courseId
+      )) as AttachFile[],
+    queryKey: ['teach-lesson-attach-files', wsId, courseId] as const,
+  });
 
   // ─── Name editing ───────────────────────────────────────────────────────────
 
@@ -199,7 +199,7 @@ export function LessonDetailClient({
             type="button"
           >
             <Plus className="h-3.5 w-3.5" />
-            Attach files
+            {t('attachFiles')}
           </button>
 
           {/* Published toggle */}
@@ -229,14 +229,6 @@ export function LessonDetailClient({
       </nav>
 
       <div className="mx-auto max-w-4xl px-5 py-6 md:px-8">
-        {/* load attach files when dialog opens */}
-        {showAttachDialog && attachFiles === null && (
-          <AttachFilesLoader
-            wsId={wsId}
-            courseId={courseId}
-            onLoaded={(files) => setAttachFiles(files)}
-          />
-        )}
         {/* ── Lesson title ──────────────────────────────────────────────────── */}
         <div className="mb-6 flex items-start gap-3">
           <span className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[2px_2px_0_var(--border)]">
@@ -318,122 +310,143 @@ export function LessonDetailClient({
         {/* ── YouTube links ─────────────────────────────────────────────────── */}
 
         {/* ── Attach files dialog (modal) ────────────────────────────────────── */}
-        {showAttachDialog && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="mx-4 max-w-3xl rounded border-2 border-border bg-background p-4 shadow-[8px_8px_0_var(--border)]">
-              <div className="mb-3 flex items-center justify-between">
-                <h3 className="font-black">Attach files</h3>
-                <button
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() => setShowAttachDialog(false)}
-                  type="button"
+        <Dialog
+          open={showAttachDialog}
+          onOpenChange={(open) => {
+            setShowAttachDialog(open);
+            if (!open) setSelectedPaths({});
+          }}
+        >
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{t('attachFiles')}</DialogTitle>
+              <DialogDescription>
+                {t('attachFilesDescription')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
+              {attachFilesQuery.isLoading && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('loadingFiles')}
+                </div>
+              )}
+              {attachFilesQuery.isError && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('loadFilesError')}
+                </div>
+              )}
+              {attachFilesQuery.data?.length === 0 && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('noFilesFound')}
+                </div>
+              )}
+              {attachFilesQuery.data?.map((file) => (
+                <label
+                  key={file.fullPath ?? file.path}
+                  className="flex items-center gap-2 p-2"
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mb-3">
-                <p className="text-muted-foreground text-sm">
-                  Select files from the workspace drive to attach to this
-                  lesson.
-                </p>
-              </div>
-
-              <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
-                {!attachFiles && (
-                  <div className="p-4 text-muted-foreground text-sm">
-                    Loading files…
-                  </div>
-                )}
-                {attachFiles && attachFiles.length === 0 && (
-                  <div className="p-4 text-muted-foreground text-sm">
-                    No files found.
-                  </div>
-                )}
-                {attachFiles?.map((f) => (
-                  <label key={f.path} className="flex items-center gap-2 p-2">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selectedPaths[f.path])}
-                      onChange={() =>
-                        setSelectedPaths((s) => ({
-                          ...s,
-                          [f.path]: !s[f.path],
-                        }))
-                      }
-                    />
-                    <div className="min-w-0 flex-1 text-sm">
-                      <div className="truncate font-medium">{f.name}</div>
-                      <div className="truncate text-muted-foreground text-xs">
-                        {f.path}
-                      </div>
-                    </div>
-                    <div className="text-muted-foreground text-xs">
-                      {f.size ?? ''}
-                    </div>
-                  </label>
-                ))}
-              </div>
-
-              <div className="mt-3 flex justify-end gap-2">
-                <button
-                  className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
-                  onClick={() => setShowAttachDialog(false)}
-                  type="button"
-                >
-                  Cancel
-                </button>
-                <button
-                  className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
-                  disabled={attachLoading}
-                  onClick={async () => {
-                    const paths = Object.keys(selectedPaths).filter(
-                      (p) => selectedPaths[p]
-                    );
-                    if (paths.length === 0)
-                      return toast.error('Select at least one file');
-                    setAttachLoading(true);
-                    try {
-                      // Build attachments payload from selected files
-                      const picked = (attachFiles ?? [])
-                        .filter((f) => paths.includes(f.path))
-                        .map((f) => ({
-                          path: f.path,
-                          fullPath: f.fullPath ?? null,
-                          name: f.name,
-                          size: f.size ?? null,
-                          contentType: f.contentType ?? null,
-                        }));
-
-                      // Merge into existing extra_content.attachments if present
-                      const existing =
-                        (lesson as any)?.extra_content?.attachments ?? [];
-                      const merged = [...existing, ...picked];
-
-                      await updateWorkspaceCourseModule(wsId, lessonId, {
-                        extra_content: {
-                          ...(lesson as any)?.extra_content,
-                          attachments: merged,
-                        },
-                      });
-
-                      toast.success('Files attached');
-                      setShowAttachDialog(false);
-                    } catch (err) {
-                      toast.error('Failed to attach files');
-                      void err;
-                    } finally {
-                      setAttachLoading(false);
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selectedPaths[file.path])}
+                    onChange={() =>
+                      setSelectedPaths((selected) => ({
+                        ...selected,
+                        [file.path]: !selected[file.path],
+                      }))
                     }
-                  }}
-                  type="button"
-                >
-                  Attach selected
-                </button>
-              </div>
+                  />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="truncate font-medium">{file.name}</div>
+                    <div className="truncate text-muted-foreground text-xs">
+                      {file.path}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {file.size ?? ''}
+                  </div>
+                </label>
+              ))}
             </div>
-          </div>
-        )}
+
+            <DialogFooter>
+              <button
+                className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                onClick={() => setShowAttachDialog(false)}
+                type="button"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                disabled={attachLoading}
+                onClick={async () => {
+                  const paths = Object.keys(selectedPaths).filter(
+                    (path) => selectedPaths[path]
+                  );
+                  if (paths.length === 0) {
+                    return toast.error(t('selectAtLeastOneFile'));
+                  }
+
+                  setAttachLoading(true);
+                  try {
+                    const picked = (attachFilesQuery.data ?? [])
+                      .filter((file) => paths.includes(file.path))
+                      .map((file) => ({
+                        contentType: file.contentType ?? null,
+                        fullPath: file.fullPath ?? null,
+                        name: file.name,
+                        path: file.path,
+                        size: file.size ?? null,
+                      }));
+
+                    const existing =
+                      (lesson as any)?.extra_content?.attachments ?? [];
+                    const merged = Array.from(
+                      new Map(
+                        [...existing, ...picked].map((file) => [
+                          file.fullPath ?? file.path,
+                          file,
+                        ])
+                      ).values()
+                    );
+                    const nextExtraContent = {
+                      ...(lesson as any)?.extra_content,
+                      attachments: merged,
+                    };
+
+                    await updateWorkspaceCourseModule(wsId, lessonId, {
+                      extra_content: nextExtraContent,
+                    });
+                    queryClient.setQueryData(
+                      lessonQueryKey(wsId, courseId),
+                      (modules: any[] | undefined) =>
+                        modules?.map((module) =>
+                          module.id === lessonId
+                            ? {
+                                ...module,
+                                extra_content: nextExtraContent,
+                              }
+                            : module
+                        )
+                    );
+
+                    toast.success(t('filesAttached'));
+                    setShowAttachDialog(false);
+                  } catch (err) {
+                    toast.error(t('attachFailed'));
+                    void err;
+                  } finally {
+                    setAttachLoading(false);
+                  }
+                }}
+                type="button"
+              >
+                {t('attachSelected')}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-black text-lg">YouTube Videos</h2>

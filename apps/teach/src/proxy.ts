@@ -32,8 +32,7 @@ function getPreferredLocale(request: NextRequest): Locale {
   }
 
   const headers = {
-    'accept-language':
-      request.headers.get('accept-language') ?? 'en-US,en;q=0.5',
+    'accept-language': request.headers.get('accept-language') ?? defaultLocale,
   };
   const languages = new Negotiator({ headers })
     .languages()

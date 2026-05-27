@@ -85,13 +85,22 @@ export function useAiGenerate(wsId: string, courseId: string) {
           throw new Error('Please select a file or storage document.');
         }
 
+        const sourcePayload = fileId
+          ? {
+              fileId,
+              fileName: selectedFileName,
+              storagePath: selectedStoragePath,
+            }
+          : {
+              fileName: selectedFileName!,
+              storagePath: selectedStoragePath!,
+            };
+
         // 2. Generate course modules from the selected storage file
         const response = await generateWorkspaceCourseModulesFromStorage(wsId, {
           context: context?.trim() || undefined,
           groupId: courseId,
-          storagePath: selectedStoragePath,
-          fileName: selectedFileName,
-          fileId,
+          ...sourcePayload,
         });
 
         return {

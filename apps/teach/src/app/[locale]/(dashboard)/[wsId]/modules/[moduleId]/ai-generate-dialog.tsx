@@ -27,6 +27,7 @@ const ACCEPTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md'];
 const ACCEPTED_EXTENSIONS = ACCEPTED_FILE_EXTENSIONS.join(',');
 const MAX_SIZE_MB = 50;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const MAX_CONTEXT_LENGTH = 4000;
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -109,8 +110,9 @@ export function AiGenerateDialog({
   function handleGenerate() {
     if (!file || mutation.isPending) return;
     setUploadProgress(0);
+    const trimmedContext = context.trim();
     mutation.mutate({
-      context,
+      context: trimmedContext || undefined,
       file,
       onProgress: (pct: number) => setUploadProgress(pct),
     });
@@ -218,6 +220,7 @@ export function AiGenerateDialog({
                   value={context}
                   onChange={(e) => setContext(e.target.value)}
                   placeholder={t('context.placeholder')}
+                  maxLength={MAX_CONTEXT_LENGTH}
                   className="min-h-28 resize-y border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]"
                 />
                 <p className="text-muted-foreground text-xs">

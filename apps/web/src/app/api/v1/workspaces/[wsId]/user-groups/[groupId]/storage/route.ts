@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { SessionAuthContext } from '@/lib/api-auth';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 import {
   createWorkspaceStorageUploadPayload,
@@ -188,9 +189,10 @@ export const POST = withSessionAuth<{
         sanitizedFilename = `${generateRandomUUID()}${ext}`;
         // Helpful dev-time hint; avoid leaking in production logs
         if (process.env.NODE_ENV !== 'production') {
-          console.warn(
-            `[storage] filename sanitized to fallback: ${sanitizedFilename} (original: ${original})`
-          );
+          serverLogger.warn('[storage] filename sanitized to fallback', {
+            original,
+            sanitizedFilename,
+          });
         }
       }
 

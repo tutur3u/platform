@@ -19,7 +19,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
   const [creating, setCreating] = useState(false);
 
   // Fetch quizzes using TanStack Query
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isError, isLoading, refetch } = useQuery({
     queryKey: ['module-quizzes', wsId, lessonId],
     queryFn: () => getWorkspaceQuizzes(wsId, { moduleId: lessonId }),
     enabled: Boolean(wsId) && Boolean(lessonId),
@@ -68,10 +68,14 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
+      ) : isError ? (
+        <p className="text-muted-foreground text-sm">
+          {t('ws-quizzes.load_error')}
+        </p>
       ) : quizzes.length === 0 ? (
         !creating && (
           <p className="text-muted-foreground text-sm">
-            No quizzes created for this module yet.
+            {t('ws-quizzes.empty_module')}
           </p>
         )
       ) : (

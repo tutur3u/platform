@@ -16,12 +16,18 @@ const QuizOptionSchema = z.object({
   is_correct: z.boolean(),
   explanation: z.string().trim().max(2000).nullable().optional(),
 });
+const QuizTypeSchema = z.enum([
+  'true_false',
+  'multiple_choice',
+  'matching',
+  'ordering',
+]);
 
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
   quiz_options: z.array(QuizOptionSchema).optional(),
-  type: z.string().optional(),
+  type: QuizTypeSchema.optional(),
   content: z.any().optional(),
   answer: z.any().optional(),
 });
@@ -187,13 +193,21 @@ export const POST = withSessionAuth(
         if (quiz.answer !== undefined) updateData.answer = quiz.answer;
 
         if (quiz.id != null) {
-          const { error: updateErr } = await access.sbAdmin
+          const { data: updated, error: updateErr } = await access.sbAdmin
             .from('workspace_quizzes')
             .update(updateData)
             .eq('id', quiz.id)
-            .eq('ws_id', access.normalizedWsId);
+            .eq('ws_id', access.normalizedWsId)
+            .select('id')
+            .maybeSingle();
           if (updateErr) throw updateErr;
-          quizId = quiz.id;
+          if (!updated) {
+            return NextResponse.json(
+              { message: 'Quiz not found' },
+              { status: 404 }
+            );
+          }
+          quizId = updated.id;
         } else {
           const insertData: any = {
             question: quiz.question,
@@ -236,24 +250,26 @@ export const POST = withSessionAuth(
           }
         }
 
-        const { error: deleteOptionsError } = await access.sbAdmin
-          .from('quiz_options')
-          .delete()
-          .eq('quiz_id', quizId);
-        if (deleteOptionsError) throw deleteOptionsError;
-
-        if (quiz.quiz_options != null && quiz.quiz_options.length > 0) {
-          const optionsPayload = quiz.quiz_options.map((option) => ({
-            quiz_id: quizId,
-            value: option.value,
-            is_correct: option.is_correct,
-            explanation: option.explanation ?? null,
-          }));
-
-          const { error: insertOptionsError } = await access.sbAdmin
+        if (quiz.quiz_options !== undefined) {
+          const { error: deleteOptionsError } = await access.sbAdmin
             .from('quiz_options')
-            .insert(optionsPayload);
-          if (insertOptionsError) throw insertOptionsError;
+            .delete()
+            .eq('quiz_id', quizId);
+          if (deleteOptionsError) throw deleteOptionsError;
+
+          if (quiz.quiz_options.length > 0) {
+            const optionsPayload = quiz.quiz_options.map((option) => ({
+              quiz_id: quizId,
+              value: option.value,
+              is_correct: option.is_correct,
+              explanation: option.explanation ?? null,
+            }));
+
+            const { error: insertOptionsError } = await access.sbAdmin
+              .from('quiz_options')
+              .insert(optionsPayload);
+            if (insertOptionsError) throw insertOptionsError;
+          }
         }
       }
 

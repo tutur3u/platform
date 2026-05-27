@@ -84,8 +84,19 @@ export default function DynamicQuizForm({
         payloadContent = {};
         payloadAnswer = { correct: tfAnswer };
       } else if (type === 'multiple_choice') {
-        payloadContent = { options: mcOptions.filter((o) => o.trim() !== '') };
-        payloadAnswer = { correctIndex: mcAnswer };
+        const normalizedOptions = mcOptions
+          .map((value, index) => ({ index, value: value.trim() }))
+          .filter((option) => option.value.length > 0);
+        const remappedIndex = normalizedOptions.findIndex(
+          (option) => option.index === mcAnswer
+        );
+
+        payloadContent = {
+          options: normalizedOptions.map((option) => option.value),
+        };
+        payloadAnswer = {
+          correctIndex: remappedIndex >= 0 ? remappedIndex : 0,
+        };
       } else if (type === 'matching') {
         const filteredPairs = matchingPairs.filter(
           (p) => p.left.trim() !== '' && p.right.trim() !== ''

@@ -1,21 +1,37 @@
 import { createDynamicAdminClient } from '@tuturuuu/supabase/next/server';
+import { sanitizePath } from '@tuturuuu/utils/storage-path';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+import { canAccessFinanceTransactionStoragePath } from '@/lib/finance-transaction-storage-access';
 import {
   logWorkspaceStorageRouteError,
   resolveWorkspaceStorageRouteAuth,
 } from '../../route-auth';
+
+const routeParamsSchema = z.object({
+  id: z.guid(),
+  wsId: z.string().min(1),
+});
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ wsId: string; id: string }> }
 ) {
   try {
-    const { wsId, id } = await params;
+    const parsedParams = routeParamsSchema.safeParse(await params);
+    if (!parsedParams.success) {
+      return NextResponse.json(
+        { message: 'Invalid route params', errors: parsedParams.error.issues },
+        { status: 400 }
+      );
+    }
+
+    const { wsId, id } = parsedParams.data;
     const auth = await resolveWorkspaceStorageRouteAuth(request, wsId);
     if (!auth.ok) {
       return auth.response;
     }
-    const { normalizedWsId } = auth.context;
+    const { normalizedWsId, permissions, userId } = auth.context;
 
     const supabase = await createDynamicAdminClient();
     const { data: object, error } = await supabase
@@ -36,12 +52,36 @@ export async function GET(
     }
 
     const relativePath = object.name.substring(prefix.length);
+    const sanitizedPath = sanitizePath(relativePath);
+    if (!sanitizedPath) {
+      return NextResponse.json(
+        { message: 'Invalid file path' },
+        { status: 400 }
+      );
+    }
+
+    const canReadStorageObject =
+      !permissions.withoutPermission('view_drive') ||
+      (await canAccessFinanceTransactionStoragePath({
+        access: 'read',
+        normalizedWsId,
+        path: sanitizedPath,
+        permissions,
+        userId,
+      }));
+
+    if (!canReadStorageObject) {
+      return NextResponse.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
 
     return NextResponse.json({
       data: {
         id: object.id,
         name: object.name.split('/').pop() || '',
-        path: relativePath,
+        path: sanitizedPath,
         fullPath: object.name,
         bucketId: object.bucket_id,
         size: (object.metadata as any)?.size ?? 0,

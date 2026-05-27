@@ -39,9 +39,8 @@ export function useLessonDetail(
   const rawLesson =
     (modulesQuery.data ?? []).find((m) => m.id === lessonId) ?? null;
 
-  function normalizeNode(node: any): any {
-    // Null/undefined -> empty text node
-    if (node === null || node === undefined) return { type: 'text', text: '' };
+  function normalizeNode(node: any): any | null {
+    if (node === null || node === undefined) return null;
     // Strings -> text node
     if (typeof node === 'string') return { type: 'text', text: node };
     // Primitives -> text node of their string form
@@ -64,6 +63,20 @@ export function useLessonDetail(
     return out;
   }
 
+  function normalizeTopLevelNode(node: any): any | null {
+    const normalized = normalizeNode(node);
+    if (!normalized) return null;
+
+    if (normalized.type === 'text') {
+      return {
+        type: 'paragraph',
+        content: [normalized],
+      };
+    }
+
+    return normalized;
+  }
+
   function normalizeContent(content: any): JSONContent | null {
     if (content === null || content === undefined) return null;
 
@@ -81,18 +94,26 @@ export function useLessonDetail(
       // array of nodes -> wrap in doc
       return {
         type: 'doc',
-        content: content.map(normalizeNode),
+        content: content.map(normalizeTopLevelNode).filter(Boolean),
       } as JSONContent;
     }
 
     // If it already looks like a TipTap doc/node
     const normalized = normalizeNode(content);
-    if (normalized.type === 'doc') return normalized as JSONContent;
+    if (!normalized) return null;
+    if (normalized.type === 'doc') {
+      return {
+        ...normalized,
+        content: Array.isArray(normalized.content)
+          ? normalized.content.map(normalizeTopLevelNode).filter(Boolean)
+          : [],
+      } as JSONContent;
+    }
 
     // Wrap single node into a doc
     return {
       type: 'doc',
-      content: [normalized],
+      content: [normalizeTopLevelNode(normalized)].filter(Boolean),
     } as JSONContent;
   }
 

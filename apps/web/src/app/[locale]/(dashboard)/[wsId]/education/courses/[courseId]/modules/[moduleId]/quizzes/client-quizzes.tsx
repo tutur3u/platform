@@ -21,6 +21,55 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import DynamicQuizForm from './dynamic-form';
 
+type MultipleChoiceOptionView = {
+  explanation: string | null;
+  id: string;
+  isCorrect: boolean;
+  value: string;
+};
+
+function getLegacyMultipleChoiceData(quiz: any) {
+  if (quiz?.type && quiz.type !== 'multiple_choice') return {};
+  if (!quiz?.quiz_options?.length) return {};
+
+  const correctIndex = quiz.quiz_options.findIndex((o: any) => o?.is_correct);
+
+  return {
+    content: {
+      options: quiz.quiz_options.map((o: any) => o?.value || ''),
+    },
+    answer: {
+      correctIndex: correctIndex >= 0 ? correctIndex : undefined,
+    },
+  };
+}
+
+function getMultipleChoiceOptions(quiz: any): MultipleChoiceOptionView[] {
+  const contentOptions = Array.isArray(quiz?.content?.options)
+    ? quiz.content.options.filter(
+        (option: unknown) => typeof option === 'string'
+      )
+    : [];
+
+  if (contentOptions.length > 0) {
+    return contentOptions.map((value: string, index: number) => ({
+      explanation: null,
+      id: `content-${index}`,
+      isCorrect: quiz?.answer?.correctIndex === index,
+      value,
+    }));
+  }
+
+  return (quiz?.quiz_options ?? [])
+    .filter(Boolean)
+    .map((option: any, index: number) => ({
+      explanation: option?.explanation ?? null,
+      id: option?.id ?? `legacy-${index}`,
+      isCorrect: Boolean(option?.is_correct),
+      value: option?.value ?? '',
+    }));
+}
+
 export default function ClientQuizzes({
   wsId,
   moduleId,
@@ -89,19 +138,7 @@ export default function ClientQuizzes({
                   type: quiz.type,
                   content: quiz.content,
                   answer: quiz.answer,
-                  ...((!quiz.type || quiz.type === 'multiple_choice') &&
-                  quiz.quiz_options?.length
-                    ? {
-                        content: {
-                          options: quiz.quiz_options.map((o) => o?.value || ''),
-                        },
-                        answer: {
-                          correctIndex: quiz.quiz_options.findIndex(
-                            (o) => o?.is_correct
-                          ),
-                        },
-                      }
-                    : {}),
+                  ...getLegacyMultipleChoiceData(quiz),
                 }}
                 onFinish={() => setEditingQuizId(null)}
               />
@@ -157,51 +194,33 @@ export default function ClientQuizzes({
                 {/* Multiple Choice Rendering */}
                 {(!quiz?.type || quiz.type === 'multiple_choice') && (
                   <ul className="mt-4 grid gap-2">
-                    {quiz?.content?.options
-                      ? quiz.content.options.map(
-                          (option: string, oidx: number) => (
-                            <div
-                              key={oidx}
+                    {getMultipleChoiceOptions(quiz).map((option) => (
+                      <li
+                        key={option.id}
+                        className={cn(
+                          'rounded-md border p-2 text-sm',
+                          option.isCorrect
+                            ? 'border-dynamic-green bg-dynamic-green/10 font-semibold text-dynamic-green'
+                            : 'border-foreground/5 bg-foreground/5'
+                        )}
+                      >
+                        <span className="font-semibold">{option.value}</span>
+                        {option.explanation && (
+                          <>
+                            <Separator
                               className={cn(
-                                'rounded-md border p-2 text-sm',
-                                quiz.answer?.correctIndex === oidx
-                                  ? 'border-dynamic-green bg-dynamic-green/10 font-semibold text-dynamic-green'
-                                  : 'border-foreground/5 bg-foreground/5'
+                                option.isCorrect
+                                  ? 'bg-dynamic-green/10'
+                                  : 'bg-foreground/10'
                               )}
-                            >
-                              <span>{option}</span>
+                            />
+                            <div className="mt-2 text-xs opacity-80">
+                              {option.explanation}
                             </div>
-                          )
-                        )
-                      : quiz?.quiz_options?.map((option, oidx) => (
-                          <div
-                            key={option?.id || oidx}
-                            className={cn(
-                              'rounded-md border p-2 text-sm',
-                              option?.is_correct
-                                ? 'border-dynamic-green bg-dynamic-green/10 font-semibold text-dynamic-green'
-                                : 'border-foreground/5 bg-foreground/5'
-                            )}
-                          >
-                            <span className="font-semibold">
-                              {option?.value}
-                            </span>
-                            {option?.explanation && (
-                              <>
-                                <Separator
-                                  className={cn(
-                                    option?.is_correct
-                                      ? 'bg-dynamic-green/10'
-                                      : 'bg-foreground/10'
-                                  )}
-                                />
-                                <div className="mt-2 text-xs opacity-80">
-                                  {option.explanation}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ))}
+                          </>
+                        )}
+                      </li>
+                    ))}
                   </ul>
                 )}
 

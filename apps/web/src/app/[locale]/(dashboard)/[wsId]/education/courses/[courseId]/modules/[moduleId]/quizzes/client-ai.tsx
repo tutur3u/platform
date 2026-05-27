@@ -63,7 +63,9 @@ export default function AIQuizzes({
         })
         .filter(
           (quiz) =>
-            quiz.question.length > 0 && (quiz.quiz_options?.length ?? 0) >= 2
+            quiz.question.length > 0 &&
+            (quiz.quiz_options?.length ?? 0) >= 2 &&
+            quiz.quiz_options?.some((option) => option.is_correct)
         );
 
       if (quizzes.length === 0) {

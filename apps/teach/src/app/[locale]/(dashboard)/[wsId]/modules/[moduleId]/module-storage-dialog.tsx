@@ -133,7 +133,8 @@ function StorageItemRow({
               })
             }
             disabled={generateMutation.isPending}
-            title="Generate Modules with AI"
+            title={t('generateWithAi')}
+            aria-label={t('generateWithAi')}
           >
             {isPending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -257,7 +258,12 @@ export function ModuleStorageDialog({
             <div className="space-y-3">
               {storageFiles.map((entry) => (
                 <StorageItemRow
-                  key={`${entry.name}-${entry.created_at ?? ''}`}
+                  key={
+                    entry.id ??
+                    entry.fullPath ??
+                    entry.path ??
+                    `${entry.name}-${entry.created_at ?? ''}`
+                  }
                   entry={entry}
                   generateMutation={generateMutation}
                 />

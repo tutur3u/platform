@@ -145,10 +145,10 @@ export const GenerateCourseRequestSchema = z
   .object({
     context: z.string().max(4_000).optional(),
     fileName: z.string().max(255).optional(),
-    groupId: z.uuid(),
+    groupId: z.guid(),
     maxCharacters: z.number().int().positive().max(1_000_000).optional(),
     storagePath: z.string().min(1).max(1024).optional(),
-    fileId: z.string().uuid().optional(),
+    fileId: z.guid().optional(),
     wsId: z.string().min(1),
   })
   .refine((data) => data.storagePath || data.fileId, {

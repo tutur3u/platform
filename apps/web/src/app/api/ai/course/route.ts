@@ -3,7 +3,6 @@ import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/marki
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -251,8 +250,15 @@ export const POST = withSessionAuth(
         );
       }
 
-      let { fileName, groupId, maxCharacters, storagePath, wsId, fileId } =
-        parsedBody.data;
+      let {
+        context: teacherContext,
+        fileName,
+        groupId,
+        maxCharacters,
+        storagePath,
+        wsId,
+        fileId,
+      } = parsedBody.data;
 
       // Require teach workspace access consistent with other Teach routes
       const access = await requireTeachWorkspaceAccess({
@@ -318,17 +324,6 @@ export const POST = withSessionAuth(
         ? sanitizedStoragePath
         : `${normalizedWsId}/${sanitizedStoragePath}`;
 
-      // 3. Permission check
-      // 3. Permission check (already validated by requireTeachWorkspaceAccess,
-      // but still fetch a permissions object for completeness)
-      const permissions = await getPermissions({
-        user: context.user,
-        wsId: normalizedWsId,
-      });
-      if (!permissions) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-
       // 4. Verify group exists in workspace
       const { data: group, error: groupError } = await sbAdmin
         .from('workspace_user_groups')
@@ -375,11 +370,15 @@ export const POST = withSessionAuth(
       }
 
       // 6. Generate structured course via AI SDK
+      const trimmedTeacherContext = teacherContext?.trim();
+      const contextPrompt = trimmedTeacherContext
+        ? `\n\nTeacher Context:\n${trimmedTeacherContext}`
+        : '';
       const { object } = await generateObject({
         model: google('gemini-2.0-flash'),
         schema: CourseGenerationSchema,
         system: COURSE_GENERATION_PROMPT,
-        prompt: `Analyze the following document and create structured course modules with quizzes and flashcards.\n\nDocument Content:\n${markitdownResult.markdown}`,
+        prompt: `Analyze the following document and create structured course modules with quizzes and flashcards.${contextPrompt}\n\nDocument Content:\n${markitdownResult.markdown}`,
       });
 
       // 7. Resolve or create module group
