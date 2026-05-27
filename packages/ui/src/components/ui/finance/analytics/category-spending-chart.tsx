@@ -93,6 +93,8 @@ export function CategorySpendingChart({
 
   const totalSpending =
     categoryData?.reduce((sum, item) => sum + item.value, 0) || 0;
+  const formatPercentage = (percentage: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : `${percentage.toFixed(1)}%`;
 
   return (
     <Card className={cn('flex flex-col', className)}>
@@ -115,7 +117,9 @@ export function CategorySpendingChart({
                     cy="50%"
                     labelLine={false}
                     label={(props) =>
-                      `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
+                      areNumbersHidden
+                        ? `${props.name}: ${FINANCE_HIDDEN_AMOUNT}`
+                        : `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
                     }
                     outerRadius={80}
                     fill="#8884d8"
@@ -169,7 +173,7 @@ export function CategorySpendingChart({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">
-                        {percentage.toFixed(1)}%
+                        {formatPercentage(percentage)}
                       </span>
                       <span className="font-medium">
                         {areNumbersHidden
