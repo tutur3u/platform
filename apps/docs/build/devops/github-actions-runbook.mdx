@@ -1,7 +1,7 @@
 ---
-title: 'GitHub Actions Runbook'
-description: 'How the repository’s automation is organized, gated, and operated.'
-updatedAt: '2026-05-20'
+title: "GitHub Actions Runbook"
+description: "How the repository’s automation is organized, gated, and operated."
+updatedAt: "2026-05-27"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -76,6 +76,7 @@ CMS uses the same Vercel pattern as the other satellite apps:
 - preview workflow: `vercel-preview-cms.yaml`
 - production workflow: `vercel-production-cms.yaml`
 - project secret: `VERCEL_CMS_PROJECT_ID`
+- environments: `vercel-preview-cms` and `vercel-production-cms`
 
 The Apps gateway uses the same pattern:
 
@@ -93,6 +94,11 @@ QR uses the same pattern:
 
 These workflows:
 
+- run with default `contents: read` permissions
+- bind deploy jobs to `vercel-preview-<app>` or `vercel-production-<app>`
+  GitHub Environments
+- reject manual dispatches from the wrong branch before install/build/deploy work
+  starts
 - install Bun and Node 24
 - install dependencies
 - build selected shared workspace dependencies before Vercel resolves package exports:
@@ -138,6 +144,14 @@ before executing tests so dependency installation and workspace package builds
 match the local setup path. Vercel workflows should invoke Turborepo through
 `bun turbo:local ...` after `bun install` so CI uses the pinned repo dependency
 instead of resolving a global or downloaded Turbo binary.
+
+Vercel deploy credentials must stay environment-scoped. Do not put
+`${{ secrets.* }}` values in a Vercel workflow-level `env:` block, and do not
+export production Supabase, encryption, provider, or Turborepo remote-cache
+secrets from GitHub Actions. Store app runtime and build-time configuration in
+the Vercel project environment. The regression test
+`bun test scripts/ci/release-workflows.test.js` enforces this for every
+`vercel-preview-*.yaml` and `vercel-production-*.yaml` workflow.
 
 ### Other delivery surfaces
 

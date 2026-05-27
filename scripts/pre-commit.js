@@ -3,6 +3,16 @@
 const { execFileSync, spawnSync } = require('node:child_process');
 
 const MOBILE_PATH_PREFIX = 'apps/mobile/';
+const FALLBACK_GIT_LOCAL_ENV_KEYS = [
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES',
+  'GIT_COMMON_DIR',
+  'GIT_DIR',
+  'GIT_INDEX_FILE',
+  'GIT_NAMESPACE',
+  'GIT_OBJECT_DIRECTORY',
+  'GIT_PREFIX',
+  'GIT_WORK_TREE',
+];
 
 function runGit(execFile, args) {
   return execFile('git', args, {
@@ -34,10 +44,38 @@ function touchesMobile(files) {
   );
 }
 
+function getGitLocalEnvKeys(execFile = execFileSync) {
+  try {
+    const output = runGit(execFile, ['rev-parse', '--local-env-vars']);
+    const keys = output
+      .split(/\r?\n/)
+      .map((key) => key.trim())
+      .filter(Boolean);
+
+    return keys.length > 0 ? keys : FALLBACK_GIT_LOCAL_ENV_KEYS;
+  } catch {
+    return FALLBACK_GIT_LOCAL_ENV_KEYS;
+  }
+}
+
+function createChildEnv(
+  env = process.env,
+  gitLocalEnvKeys = getGitLocalEnvKeys()
+) {
+  const childEnv = { ...env };
+
+  for (const key of gitLocalEnvKeys) {
+    delete childEnv[key];
+  }
+
+  return childEnv;
+}
+
 function runCommand(command, args, spawnImpl = spawnSync) {
   const result = spawnImpl(command, args, {
     stdio: 'inherit',
     shell: process.platform === 'win32',
+    env: createChildEnv(),
   });
 
   if (result.error) {
@@ -82,6 +120,8 @@ if (require.main === module) {
 }
 
 module.exports = {
+  createChildEnv,
+  getGitLocalEnvKeys,
   getCurrentBranch,
   getStagedFiles,
   runPreCommit,

@@ -1,0 +1,74 @@
+---
+title: AI Agent Deployment
+description: Operate apps/web-hosted Discord and Zalo AI agents backed by Chat SDK and AI SDK.
+---
+
+The internal Infrastructure → AI Agents module manages root-only agent configs
+that are served by `apps/web` webhook routes. It is the first production path
+for bidirectional agent presence across Discord and Zalo.
+
+## Runtime Boundary
+
+Deploying an agent enables an `apps/web` webhook endpoint:
+
+```txt
+/api/v1/webhooks/ai-agents/:adapter/:channelId
+```
+
+`apps/web` loads the channel config from root `workspace_secrets`, creates a
+Chat SDK runtime through `@tuturuuu/ai/chat-sdk`, and runs the response loop with
+AI SDK `ToolLoopAgent`.
+
+Production deployments require a root secret named
+`AI_AGENT_CHAT_SDK_STATE_REDIS_URL`. Local development may use the Chat SDK
+memory state adapter, but production must use Redis so thread subscriptions,
+dedupe, and locks survive cold starts and multiple instances.
+
+## Secret Namespace
+
+The module intentionally avoids a database migration in v1. It stores
+configuration under the root workspace:
+
+```txt
+AI_AGENT_REGISTRY:<agentId>:meta
+AI_AGENT_REGISTRY:<agentId>:instructions
+AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:meta
+AI_AGENT_REGISTRY:<agentId>:channel:<channelId>:secret:<name>
+AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId>
+```
+
+Admin APIs redact channel secrets. One-time generated values are shown only
+after rotation.
+
+## Discord And Zalo Setup
+
+For Discord, configure the app with the generated webhook URL, then store the
+application ID, public key, bot token, guild ID, and optional mention role IDs
+on the Discord channel.
+
+For Zalo, configure the bot webhook URL in the Zalo Bot dashboard, set the
+secret token to the channel's `webhookSecret`, and store the bot token plus OA ID
+on the Zalo channel.
+
+## Mapped User Requirement
+
+Agents never write as a global service user in v1. Each inbound external user
+must map to a Tuturuuu workspace user before task or calendar tools can run.
+
+Discord uses the existing `discord_guild_members` mapping for the configured
+guild. Zalo uses root secret identity links:
+
+```txt
+AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId> = <platformUserId>
+```
+
+The mapped Tuturuuu user's permissions are enforced. Task writes require
+`manage_projects`; calendar writes require `manage_calendar`. If permissions are
+missing, the agent replies with a permission-aware message instead of writing.
+
+## Tool Allowlist
+
+V1 exposes only workspace context, members, task handoff, and calendar tools.
+Finance, time tracking, memory, image generation, web search, delete tools, and
+broad marketplace tool selection stay out of scope until there is a separate
+approval and audit model.

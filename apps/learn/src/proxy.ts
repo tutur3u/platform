@@ -4,6 +4,7 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  consumeVerifyTokenRequest,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
@@ -113,6 +114,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const canonicalPublicRedirect = getCanonicalPublicRedirect(request);
   if (canonicalPublicRedirect) {
     return clearSupabaseAuthCookies(request, canonicalPublicRedirect);
+  }
+
+  const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
+    locales: supportedLocales,
+  });
+  if (verifyTokenResponse) {
+    return verifyTokenResponse;
   }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);

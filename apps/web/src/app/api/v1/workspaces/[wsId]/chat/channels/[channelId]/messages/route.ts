@@ -1,107 +1,102 @@
-import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import {
-  normalizeWorkspaceId,
-  verifyWorkspaceMembershipType,
-} from '@tuturuuu/utils/workspace-helper';
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
+import {
+  type ChatMessage,
+  callPrivateChatRpc,
+  chatRpcErrorResponse,
+  resolveChatRouteContext,
+  toLegacyMessage,
+} from '@/lib/chat/private-rpc';
 
-async function requireWorkspaceUser(request: Request, wsId: string) {
-  const supabase = await createClient(request);
-  const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
-  if (authError || !user) {
-    return {
-      error: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
-    };
-  }
-  const normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
-  const membership = await verifyWorkspaceMembershipType({
-    wsId: normalizedWsId,
-    userId: user.id,
-    supabase: supabase,
-  });
-  if (membership.error === 'membership_lookup_failed') {
-    return {
-      error: NextResponse.json(
-        { error: 'Failed to verify workspace membership' },
-        { status: 500 }
-      ),
-    };
-  }
+type RouteParams = {
+  channelId: string;
+  wsId: string;
+};
 
-  if (!membership.ok) {
-    return {
-      error: NextResponse.json({ message: 'Forbidden' }, { status: 403 }),
-    };
-  }
-  return { user, normalizedWsId };
-}
+const createMessageSchema = z.object({
+  content: z.string().trim().min(1).max(10000),
+});
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ wsId: string; channelId: string }> }
-) {
-  const { wsId, channelId } = await params;
-  const auth = await requireWorkspaceUser(request, wsId);
-  if ('error' in auth) return auth.error;
+export const GET = withSessionAuth<RouteParams>(
+  async (_request: NextRequest, auth, params) => {
+    const context = await resolveChatRouteContext({
+      auth,
+      permission: 'view_chat',
+      wsId: params.wsId,
+    });
+    if (!context.ok) return context.response;
 
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .from('workspace_chat_messages')
-    .select('*')
-    .eq('channel_id', channelId)
-    .is('deleted_at', null)
-    .order('created_at', { ascending: true });
+    try {
+      const messages = await callPrivateChatRpc<ChatMessage[]>(
+        'chat_list_messages',
+        {
+          p_actor_user_id: auth.user.id,
+          p_before: null,
+          p_conversation_id: params.channelId,
+          p_limit: 100,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
 
-  if (error) {
-    return NextResponse.json(
-      { message: 'Failed to load messages' },
-      { status: 500 }
-    );
-  }
+      return NextResponse.json({
+        messages: (messages ?? []).map(toLegacyMessage),
+      });
+    } catch (error) {
+      return chatRpcErrorResponse(error, 'Failed to load messages');
+    }
+  },
+  { allowAppSessionAuth: true, rateLimitKind: 'read' }
+);
 
-  return NextResponse.json({ messages: data ?? [] });
-}
+export const POST = withSessionAuth<RouteParams>(
+  async (request: NextRequest, auth, params) => {
+    const context = await resolveChatRouteContext({
+      auth,
+      permission: 'view_chat',
+      wsId: params.wsId,
+    });
+    if (!context.ok) return context.response;
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ wsId: string; channelId: string }> }
-) {
-  const { wsId, channelId } = await params;
-  const auth = await requireWorkspaceUser(request, wsId);
-  if ('error' in auth) return auth.error;
+    let payload: unknown;
+    try {
+      payload = await request.json();
+    } catch {
+      return NextResponse.json(
+        { message: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
 
-  const parsed = z
-    .object({ content: z.string().trim().min(1).max(5000) })
-    .safeParse(await request.json());
-  if (!parsed.success) {
-    return NextResponse.json(
-      { message: 'Invalid request body', errors: parsed.error.issues },
-      { status: 400 }
-    );
-  }
+    const parsed = createMessageSchema.safeParse(payload);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: 'Invalid request body', errors: parsed.error.issues },
+        { status: 400 }
+      );
+    }
 
-  const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
-    .from('workspace_chat_messages')
-    .insert({
-      channel_id: channelId,
-      user_id: auth.user.id,
-      content: parsed.data.content,
-    })
-    .select('*')
-    .single();
+    try {
+      const message = await callPrivateChatRpc<ChatMessage>(
+        'chat_send_message',
+        {
+          p_actor_user_id: auth.user.id,
+          p_attachments: [],
+          p_content: parsed.data.content,
+          p_conversation_id: params.channelId,
+          p_kind: 'user',
+          p_reply_to_message_id: null,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
 
-  if (error || !data) {
-    return NextResponse.json(
-      { message: 'Failed to send message' },
-      { status: 500 }
-    );
-  }
-
-  return NextResponse.json({ message: data }, { status: 201 });
-}
+      return NextResponse.json(
+        { message: toLegacyMessage(message) },
+        { status: 201 }
+      );
+    } catch (error) {
+      return chatRpcErrorResponse(error, 'Failed to send message');
+    }
+  },
+  { allowAppSessionAuth: true }
+);

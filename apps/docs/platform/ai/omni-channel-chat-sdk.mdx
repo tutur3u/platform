@@ -1,0 +1,119 @@
+---
+title: Omni-Channel Chat SDK
+description: How packages/ai wires Chat SDK adapters for agentic presence workflows.
+---
+
+`packages/ai` exposes the Vercel Chat SDK through
+`@tuturuuu/ai/chat-sdk`. Use it when a Tuturuuu agent needs to operate across
+external channels and internal product surfaces with one normalized thread and
+message contract.
+
+The target workflow is:
+
+```txt
+Input <-> Omni-channel <-> Tuturuuu Digest <-> Coordinator <-> Internal Apps <-> End users
+```
+
+## Package Boundary
+
+Import the Chat SDK boundary from:
+
+```ts
+import {
+  createChatSdkRuntime,
+  createChatTools,
+} from '@tuturuuu/ai/chat-sdk';
+```
+
+The boundary re-exports Chat SDK core types and the `chat/ai` tool helpers, then
+adds Tuturuuu registry helpers for platform and state adapters.
+
+## Adapter Coverage
+
+The adapter registry mirrors the Chat SDK adapter directory.
+
+Official platform adapters:
+
+- Slack: `@chat-adapter/slack`
+- Microsoft Teams: `@chat-adapter/teams`
+- Google Chat: `@chat-adapter/gchat`
+- Discord: `@chat-adapter/discord`
+- GitHub: `@chat-adapter/github`
+- Linear: `@chat-adapter/linear`
+- Telegram: `@chat-adapter/telegram`
+- WhatsApp Business Cloud: `@chat-adapter/whatsapp`
+- Messenger: `@chat-adapter/messenger`
+- Web: `@chat-adapter/web`
+
+Vendor-official platform adapters:
+
+- Beeper Matrix: `@beeper/chat-adapter-matrix`
+- Photon iMessage: `chat-adapter-imessage`
+- Resend: `@resend/chat-sdk-adapter`
+- Zernio: `@zernio/chat-sdk-adapter`
+- Liveblocks: `@liveblocks/chat-sdk-adapter`
+
+Community platform adapters:
+
+- Webex: `@bitbasti/chat-adapter-webex`
+- Baileys WhatsApp: `chat-adapter-baileys`
+- Sendblue iMessage: `chat-adapter-sendblue`
+- Blooio iMessage/RCS/SMS: `chat-adapter-blooio`
+- Zalo: `chat-adapter-zalo`
+- Mattermost: `chat-adapter-mattermost`
+
+State adapters:
+
+- Memory: `@chat-adapter/state-memory`
+- Redis: `@chat-adapter/state-redis`
+- ioredis: `@chat-adapter/state-ioredis`
+- PostgreSQL: `@chat-adapter/state-pg`
+- Cloudflare Durable Objects: `chat-state-cloudflare-do`
+- MySQL: `chat-state-mysql`
+
+## Runtime Construction
+
+Create a runtime by selecting only the adapters a route or worker owns. Passing
+`true` means the adapter should read credentials from its documented
+environment variables. Passing an object forwards that object to the adapter
+factory.
+
+```ts
+const chat = await createChatSdkRuntime({
+  userName: 'mira',
+  adapters: {
+    slack: true,
+    zalo: {
+      botToken: process.env.ZALO_BOT_TOKEN,
+      webhookSecret: process.env.ZALO_WEBHOOK_SECRET,
+    },
+  },
+  state: {
+    id: 'redis',
+    config: { url: process.env.REDIS_URL },
+  },
+});
+```
+
+Always choose a production state adapter for deployed bots. Chat SDK state
+persists thread subscriptions, webhook dedupe, cache entries, and distributed
+locks. The memory adapter is only appropriate for local development and tests.
+
+Cloudflare Durable Objects state is declared in the registry, but its package
+imports `cloudflare:workers`; load it only in a Cloudflare Workers runtime.
+
+## Agent Tools
+
+Expose the selected chat runtime to AI SDK calls with Chat SDK tools:
+
+```ts
+const tools = createChatTools({
+  chat,
+  preset: 'messenger',
+});
+```
+
+Use the `reader` preset for analysis-only agents, `messenger` for normal
+posting and DM workflows, and `moderator` for destructive operations such as
+editing and deleting messages. Keep approval gates enabled by default for
+visible writes unless the workflow has an explicit unattended execution policy.

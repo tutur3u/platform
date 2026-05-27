@@ -8,6 +8,7 @@ export const TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS = [
 export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   apps: `https://apps.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   calendar: `https://calendar.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  chat: `https://chat.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   cms: `https://cms.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   drive: `https://drive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   external: `https://external.${TUTURUUU_PORTLESS_ROOT_HOST}`,
@@ -16,6 +17,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   'hive-realtime': `https://realtime.hive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   inventory: `https://inventory.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   learn: `https://learn.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  mail: `https://mail.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   meet: `https://meet.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   mind: `https://mind.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   nova: `https://nova.${TUTURUUU_PORTLESS_ROOT_HOST}`,

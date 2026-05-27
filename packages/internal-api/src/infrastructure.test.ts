@@ -4,9 +4,16 @@ import {
   createAIWhitelistEmail,
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
+  deployAiAgentChannel,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
+  listAiAgents,
   listAiGatewayModelsPage,
+  pauseAiAgentChannel,
+  rotateAiAgentChannelSecret,
+  saveAiAgent,
+  saveAiAgentIdentityLink,
+  testAiAgentChannel,
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
 } from './infrastructure';
@@ -262,5 +269,147 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+});
+
+describe('AI agent internal API helpers', () => {
+  it('lists AI agents through the apps/web infrastructure API', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ agents: [], identities: [] }));
+
+    await listAiAgents({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai-agents',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('saves AI agent registry payloads', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        agent: { channels: [], id: 'support' },
+      })
+    );
+    const payload = {
+      enabled: true,
+      id: 'support',
+      name: 'Support Agent',
+    };
+
+    await saveAiAgent(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai-agents',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
+  });
+
+  it('routes deploy, pause, test, and rotate actions through encoded paths', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ ok: true, response: 'ok' }));
+
+    await deployAiAgentChannel('agent/id', 'discord/main', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await pauseAiAgentChannel('agent/id', 'discord/main', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await testAiAgentChannel('agent/id', 'discord/main', 'ping', {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+    await rotateAiAgentChannelSecret(
+      'agent/id',
+      'zalo/main',
+      'webhookSecret',
+      undefined,
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      1,
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/agent%2Fid/deploy',
+      expect.objectContaining({
+        body: JSON.stringify({ channelId: 'discord/main' }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/agent%2Fid/pause',
+      expect.objectContaining({
+        body: JSON.stringify({ channelId: 'discord/main' }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      3,
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/agent%2Fid/test',
+      expect.objectContaining({
+        body: JSON.stringify({ channelId: 'discord/main', prompt: 'ping' }),
+        method: 'POST',
+      })
+    );
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      4,
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/agent%2Fid/channels/zalo%2Fmain/secrets',
+      expect.objectContaining({
+        body: JSON.stringify({
+          name: 'webhookSecret',
+          value: undefined,
+        }),
+        method: 'POST',
+      })
+    );
+  });
+
+  it('saves Zalo identity links through the AI agent API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        identity: { platformUserId: 'platform-user-1' },
+      })
+    );
+    const payload = {
+      externalUserId: 'zalo-user-1',
+      platformUserId: 'platform-user-1',
+      provider: 'zalo' as const,
+      providerAccountId: 'oa-1',
+      workspaceId: 'workspace-1',
+    };
+
+    await saveAiAgentIdentityLink(payload, {
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai-agents/identities',
+      expect.objectContaining({
+        body: JSON.stringify(payload),
+        cache: 'no-store',
+        method: 'POST',
+      })
+    );
   });
 });

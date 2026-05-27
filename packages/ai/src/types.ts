@@ -1,9 +1,20 @@
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { UIMessage } from 'ai';
+import type {
+  ChatSdkKnownAdapterId,
+  ChatSdkPlatformAdapterId,
+  ChatSdkStateAdapterId,
+} from './chat-sdk/adapters';
 import type { supportedActions } from './supported-actions';
 import type { supportedProviders } from './supported-providers';
 
-export type { UIMessage, UseChatHelpers };
+export type {
+  ChatSdkKnownAdapterId,
+  ChatSdkPlatformAdapterId,
+  ChatSdkStateAdapterId,
+  UIMessage,
+  UseChatHelpers,
+};
 
 export type SupportedAIAction = (typeof supportedActions)[number];
 export type SupportedAIProvider = (typeof supportedProviders)[number];

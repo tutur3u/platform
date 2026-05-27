@@ -57,7 +57,7 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelAnalytics />
         <VercelInsights />
         <Suspense>
-          <Providers>{children}</Providers>
+          <Providers appName="Tuturuuu Apps">{children}</Providers>
         </Suspense>
         <TailwindIndicator />
         <Toaster />

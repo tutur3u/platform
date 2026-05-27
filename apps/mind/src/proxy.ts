@@ -3,6 +3,7 @@ import {
   getAppSessionClaimsFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  consumeVerifyTokenRequest,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
@@ -92,6 +93,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const canonicalLocaleRedirect = getCanonicalLocaleRedirect(request);
   if (canonicalLocaleRedirect) {
     return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
+  }
+
+  const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
+    locales: supportedLocales,
+  });
+  if (verifyTokenResponse) {
+    return verifyTokenResponse;
   }
 
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { getMailAppOrigin } from '@/lib/mail-app-url';
 
 export const metadata: Metadata = {
   title: 'Mail',
@@ -12,5 +13,5 @@ export default async function MailPage({
   params: Promise<{ wsId: string }>;
 }) {
   const { wsId } = await params;
-  redirect(`/${wsId}/mail/sent`);
+  redirect(`${getMailAppOrigin()}/${wsId}`);
 }

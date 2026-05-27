@@ -277,6 +277,121 @@ function createNextResponseWithRequestHeaders(headers?: Headers) {
     : NextResponse.next();
 }
 
+type ConsumeVerifyTokenRequestOptions = {
+  fallbackPath?: string;
+  locales?: readonly string[];
+  verifyApiPath?: string;
+  verifyPath?: string;
+};
+
+function matchesVerifyTokenPath(
+  pathname: string,
+  options: Pick<ConsumeVerifyTokenRequestOptions, 'locales' | 'verifyPath'>
+) {
+  const verifyPath = options.verifyPath ?? '/verify-token';
+
+  if (pathname === verifyPath) {
+    return true;
+  }
+
+  const locales = options.locales ?? [];
+  if (locales.length === 0) {
+    return false;
+  }
+
+  const segments = pathname.split('/').filter(Boolean);
+  const verifySegment = verifyPath.replace(/^\/+/u, '');
+
+  return (
+    segments.length === 2 &&
+    segments[1] === verifySegment &&
+    locales.includes(segments[0] ?? '')
+  );
+}
+
+async function readVerifyTokenResponse(response: Response) {
+  return response.json().catch(() => null) as Promise<{
+    appSessionCreated?: unknown;
+    userId?: unknown;
+    valid?: unknown;
+  } | null>;
+}
+
+function redirectToNormalizedVerifyTarget(req: NextRequest, nextPath: string) {
+  return NextResponse.redirect(new URL(nextPath, req.nextUrl));
+}
+
+function redirectToVerifyFallback(
+  req: NextRequest,
+  fallbackPath: string,
+  response?: NextResponse
+) {
+  return clearSupabaseAuthCookies(
+    req,
+    response ?? NextResponse.redirect(new URL(fallbackPath, req.nextUrl))
+  );
+}
+
+export async function consumeVerifyTokenRequest(
+  req: NextRequest,
+  options: ConsumeVerifyTokenRequestOptions = {}
+): Promise<NextResponse | null> {
+  if (!matchesVerifyTokenPath(req.nextUrl.pathname, options)) {
+    return null;
+  }
+
+  const fallbackPath = options.fallbackPath ?? '/';
+  const nextPath = normalizeAuthRedirectPath(
+    req.nextUrl.searchParams.get('nextUrl'),
+    req.nextUrl.origin,
+    fallbackPath
+  );
+  const token = req.nextUrl.searchParams.get('token');
+
+  if (!token) {
+    return clearSupabaseAuthCookies(
+      req,
+      redirectToNormalizedVerifyTarget(req, nextPath)
+    );
+  }
+
+  const verifyUrl = new URL(
+    options.verifyApiPath ?? '/api/auth/verify-app-token',
+    req.nextUrl.origin
+  );
+  const verifyResponse = await fetch(verifyUrl, {
+    body: JSON.stringify({ token }),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+      cookie: req.headers.get('cookie') ?? '',
+    },
+    method: 'POST',
+  }).catch(() => null);
+
+  if (!verifyResponse?.ok) {
+    return redirectToVerifyFallback(req, fallbackPath);
+  }
+
+  const body = await readVerifyTokenResponse(verifyResponse);
+
+  if (
+    body?.valid !== true ||
+    body.appSessionCreated !== true ||
+    typeof body.userId !== 'string'
+  ) {
+    return redirectToVerifyFallback(req, fallbackPath);
+  }
+
+  const redirectResponse = redirectToNormalizedVerifyTarget(req, nextPath);
+  copySetCookieHeaders(
+    getSetCookieHeaders(verifyResponse.headers),
+    redirectResponse
+  );
+
+  return clearSupabaseAuthCookies(req, redirectResponse);
+}
+
 type AppSessionRefreshState =
   | {
       claims: AppCoordinationTokenClaims;

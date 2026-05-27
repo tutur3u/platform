@@ -2,6 +2,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const {
+  createChildEnv,
+  getGitLocalEnvKeys,
   getCurrentBranch,
   getStagedFiles,
   runPreCommit,
@@ -10,6 +12,10 @@ const {
 
 function createGitExecFile({ branch = 'main', stagedFiles = '' } = {}) {
   return (_command, args) => {
+    if (args[0] === 'rev-parse') {
+      return 'GIT_DIR\nGIT_WORK_TREE\n';
+    }
+
     if (args[0] === 'branch') {
       return `${branch}\n`;
     }
@@ -40,6 +46,44 @@ test('getStagedFiles trims blank lines from git output', () => {
 test('touchesMobile returns true when a staged file is under apps/mobile', () => {
   assert.equal(touchesMobile(['apps/mobile/lib/main.dart']), true);
   assert.equal(touchesMobile(['apps/web/src/app/page.tsx']), false);
+});
+
+test('getGitLocalEnvKeys reads git local environment keys', () => {
+  const keys = getGitLocalEnvKeys(() => 'GIT_DIR\nGIT_WORK_TREE\n');
+
+  assert.deepEqual(keys, ['GIT_DIR', 'GIT_WORK_TREE']);
+});
+
+test('createChildEnv removes git local environment keys', () => {
+  const env = createChildEnv(
+    {
+      GIT_DIR: '.git',
+      GIT_WORK_TREE: '/tmp/worktree',
+      PATH: '/usr/bin',
+    },
+    ['GIT_DIR', 'GIT_WORK_TREE']
+  );
+
+  assert.deepEqual(env, { PATH: '/usr/bin' });
+});
+
+test('runPreCommit removes git local environment keys from checks', () => {
+  const envs = [];
+
+  const exitCode = runPreCommit({
+    execFile: createGitExecFile({
+      stagedFiles: 'apps/web/src/app/page.tsx\n',
+    }),
+    spawn: (_command, _args, options) => {
+      envs.push(options.env);
+      return { status: 0 };
+    },
+  });
+
+  assert.equal(exitCode, 0);
+  assert.equal(envs.length, 1);
+  assert.equal(envs[0].GIT_DIR, undefined);
+  assert.equal(envs[0].GIT_WORK_TREE, undefined);
 });
 
 test('runPreCommit runs bun check only when mobile is untouched', () => {

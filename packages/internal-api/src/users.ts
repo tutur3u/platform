@@ -12,6 +12,8 @@ type UserWorkspaceConfigResponse = {
   value: string | null;
 };
 
+export const SHOW_VERSION_BADGE_CONFIG_ID = 'SHOW_VERSION_BADGE';
+
 export type RootNavigationTarget =
   | 'workspace_home'
   | 'tasks'

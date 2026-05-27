@@ -37,6 +37,11 @@
       "import": "./dist/calendar.js",
       "require": "./dist/calendar.js"
     },
+    "./chat": {
+      "types": "./dist/chat.d.ts",
+      "import": "./dist/chat.js",
+      "require": "./dist/chat.js"
+    },
     "./client": {
       "types": "./dist/client.d.ts",
       "import": "./dist/client.js",
@@ -71,6 +76,11 @@
       "types": "./dist/mail.d.ts",
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
+    },
+    "./meet": {
+      "types": "./dist/meet.d.ts",
+      "import": "./dist/meet.js",
+      "require": "./dist/meet.js"
     },
     "./mind": {
       "types": "./dist/mind.d.ts",

@@ -72,7 +72,7 @@ export default async function RootLayout({ children, params }: Props) {
           <VercelInsights />
           <NuqsAdapter>
             <Suspense>
-              <Providers>{children}</Providers>
+              <Providers appName={siteConfig.name}>{children}</Providers>
             </Suspense>
           </NuqsAdapter>
           <TailwindIndicator />

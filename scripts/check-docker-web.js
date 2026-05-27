@@ -15,6 +15,12 @@ const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
   'hive-realtime',
   'Dockerfile'
 );
+const MEET_REALTIME_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'meet-realtime',
+  'Dockerfile'
+);
 const HIVE_DB_MIGRATE_SCRIPT_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -612,6 +618,7 @@ function validateDockerProdCompose(composeContent) {
     '  hive-blue:',
     '  hive-green:',
     '  hive-realtime:',
+    '  meet-realtime:',
     '  hive-postgres:',
     '  hive-db-migrate:',
     '  hive-ollama:',
@@ -621,6 +628,7 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: Dockerfile.markitdown',
     '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
     '      dockerfile: apps/hive-realtime/Dockerfile',
+    '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
@@ -688,6 +696,7 @@ function validateDockerProdCompose(composeContent) {
     '${' + 'DOCKER_WEB_DIRECT_HOST_PORT:-7803' + '}:7803',
     '${' + 'DOCKER_WEB_PROXY_HOST_PORT:-7803' + '}:7803',
     '${' + 'DOCKER_HIVE_PROXY_HOST_PORT:-7814' + '}:7814',
+    '${' + 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816' + '}:7816',
     '127.0.0.1:$' + '{' + 'DOCKER_WEB_REDIS_HOST_PORT:-6379' + '}:6379',
     '127.0.0.1:$' +
       '{' +
@@ -696,6 +705,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7803/__platform/drain-status',
     'http://127.0.0.1:8000/health',
     'http://127.0.0.1:7815/health',
+    'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
     '      - PORT=8000\n      - SUPABASE_URL',
     'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
@@ -713,6 +723,9 @@ function validateDockerProdCompose(composeContent) {
       'HIVE_OLLAMA_BASE_URL:-http://hive-ollama:11434' +
       '}',
     '    - HIVE_REALTIME_TOKEN_SECRET',
+    '    - MEET_REALTIME_TOKEN_SECRET',
+    '    - CLOUDFLARE_REALTIME_APP_ID',
+    '    - CLOUDFLARE_REALTIME_APP_SECRET',
     '    - INTERNAL_WEB_API_ORIGIN=${' +
       'INTERNAL_WEB_API_ORIGIN:-http://web-proxy:7803' +
       '}',
@@ -986,6 +999,42 @@ function validateHiveRealtimeDockerfile(
   return errors;
 }
 
+function validateMeetRealtimeDockerfile(dockerfileContent) {
+  const errors = [];
+  const depsStage = getStageContent(dockerfileContent, 'deps');
+  const runnerStage = getStageContent(dockerfileContent, 'runner');
+
+  if (!depsStage) {
+    errors.push('apps/meet-realtime/Dockerfile is missing the deps stage.');
+  }
+
+  if (!runnerStage) {
+    errors.push('apps/meet-realtime/Dockerfile is missing the runner stage.');
+  }
+
+  const requiredSnippets = [
+    'COPY package.json bun.lock turbo.json ./',
+    'COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js',
+    'COPY packages/realtime/package.json ./packages/realtime/package.json',
+    '--mount=type=cache,id=platform-meet-realtime-bun-install,target=/root/.bun/install/cache',
+    'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+    'COPY --from=deps /workspace/node_modules ./node_modules',
+    'COPY packages/realtime ./packages/realtime',
+    'COPY apps/meet-realtime/src ./apps/meet-realtime/src',
+    'CMD ["bun", "apps/meet-realtime/src/index.ts"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/meet-realtime/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateHiveDbMigrateScript(scriptContent) {
   const errors = [];
   const requiredSnippets = [
@@ -1068,6 +1117,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'hive-realtime', 'Dockerfile'),
     'utf8'
   ),
+  meetRealtimeDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'meet-realtime', 'Dockerfile'),
+    'utf8'
+  ),
   hiveDbMigrateScriptContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'hive', 'db', 'migrate-forward.sh'),
     'utf8'
@@ -1095,6 +1148,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateMeetRealtimeDockerfile(meetRealtimeDockerfileContent),
     ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
@@ -1123,6 +1177,7 @@ module.exports = {
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
+  MEET_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKERIGNORE_PATH,
@@ -1146,5 +1201,6 @@ module.exports = {
   validateHiveDbMigrateScript,
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
+  validateMeetRealtimeDockerfile,
   validateWatcherDockerfile,
 };

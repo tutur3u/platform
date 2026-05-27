@@ -1,4 +1,6 @@
+import { SHOW_VERSION_BADGE_CONFIG_ID } from '@tuturuuu/internal-api/users';
 import { MAX_MEDIUM_TEXT_LENGTH } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -8,6 +10,13 @@ import { safeParseBody } from '@/lib/safe-parse-body';
 
 export const GET = withSessionAuth<{ configId: string }>(
   async (_req, { user, supabase }, { configId: id }) => {
+    if (
+      id === SHOW_VERSION_BADGE_CONFIG_ID &&
+      !isExactTuturuuuDotComEmail(user.email)
+    ) {
+      return NextResponse.json({ value: null });
+    }
+
     const { data, error } = await supabase
       .from('user_configs')
       .select('value')
@@ -48,6 +57,31 @@ export const PUT = withSessionAuth<{ configId: string }>(
     }
 
     const { value } = parsedBody.data;
+    const isVersionBadgeConfig = id === SHOW_VERSION_BADGE_CONFIG_ID;
+
+    if (
+      isVersionBadgeConfig &&
+      value !== null &&
+      value !== '' &&
+      value !== 'true' &&
+      value !== 'false'
+    ) {
+      return NextResponse.json(
+        { message: 'Invalid version badge config value' },
+        { status: 400 }
+      );
+    }
+
+    if (
+      isVersionBadgeConfig &&
+      value === 'true' &&
+      !isExactTuturuuuDotComEmail(user.email)
+    ) {
+      return NextResponse.json(
+        { message: 'Version badge is limited to @tuturuuu.com accounts' },
+        { status: 403 }
+      );
+    }
 
     if (value === null || value === '') {
       const { error } = await supabase

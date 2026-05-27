@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => ({
   clearSupabaseAuthCookies: vi.fn(
     (_request: NextRequest, response: NextResponse) => response
   ),
+  consumeVerifyTokenRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
@@ -26,6 +27,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
+  consumeVerifyTokenRequest: (
+    ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
+  ) => mocks.consumeVerifyTokenRequest(...args),
   propagateAuthCookies: (
     ...args: Parameters<typeof mocks.propagateAuthCookies>
   ) => mocks.propagateAuthCookies(...args),
@@ -52,6 +56,10 @@ vi.mock('next-intl/navigation', () => ({
 }));
 
 describe('Teach proxy local auth API guard', () => {
+  beforeEach(() => {
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });
@@ -67,6 +75,25 @@ describe('Teach proxy local auth API guard', () => {
 
     expect(response.headers.get('x-middleware-next')).toBe('1');
     expect(response.status).toBe(200);
+  });
+
+  it('consumes verify-token requests before rendering the public verifier page', async () => {
+    const verifyResponse = NextResponse.redirect(
+      'https://teach.tuturuuu.com/dashboard'
+    );
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(verifyResponse);
+    const request = new NextRequest(
+      'https://teach.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fdashboard'
+    );
+
+    const response = await proxy(request);
+
+    expect(response).toBe(verifyResponse);
+    expect(mocks.consumeVerifyTokenRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ locales: expect.any(Array) })
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
   it.each([

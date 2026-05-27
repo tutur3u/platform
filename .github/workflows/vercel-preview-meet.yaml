@@ -1,14 +1,12 @@
 name: Vercel Meet Preview Deployment
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TUMEET_PROJECT_ID }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 on:
   push:
     branches-ignore:
       - production
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   check-ci:
@@ -21,7 +19,8 @@ jobs:
 
   Deploy-Preview:
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: github.ref != 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    environment: vercel-preview-meet
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -69,14 +68,24 @@ jobs:
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TUMEET_PROJECT_ID }}
         run: vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
         if: steps.check_commits.outputs.skip_build != 'true'
         run: bun turbo:local run build --filter=@tuturuuu/types --filter=@tuturuuu/supabase --filter=@tuturuuu/internal-api
 
+      - name: Generate shared build metadata
+        if: steps.check_commits.outputs.skip_build != 'true'
+        run: bun run --silent scripts/ci/generate-build-metadata.ts
+
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TUMEET_PROJECT_ID }}
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel deployment marker

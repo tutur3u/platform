@@ -19,7 +19,23 @@ export type TaskActorRpcArgs<T extends TaskActorRpcName> = Omit<
   p_actor_user_id: string;
 };
 
+type PrivateTable<TableName extends keyof Database['private']['Tables']> =
+  Tables<{ schema: 'private' }, TableName>;
+
 export type AIChat = Tables<'ai_chats'>;
+export type MailAttachment = PrivateTable<'mail_attachments'>;
+export type MailEvent = PrivateTable<'mail_events'>;
+export type MailInboundJob = PrivateTable<'mail_inbound_jobs'>;
+export type MailLabel = PrivateTable<'mail_labels'>;
+export type MailMailbox = PrivateTable<'mail_mailboxes'>;
+export type MailMailboxMember = PrivateTable<'mail_mailbox_members'>;
+export type MailMessage = PrivateTable<'mail_messages'>;
+export type MailMessageLabel = PrivateTable<'mail_message_labels'>;
+export type MailMessageUserState = PrivateTable<'mail_message_user_state'>;
+export type MailOutboundJob = PrivateTable<'mail_outbound_jobs'>;
+export type MailRawMessage = PrivateTable<'mail_raw_messages'>;
+export type MailRecipient = PrivateTable<'mail_recipients'>;
+export type MailThread = PrivateTable<'mail_threads'>;
 export type AIGatewayModel = Tables<'ai_gateway_models'>;
 export type MindBoardStatus = 'active' | 'archived';
 export type MindHorizon =
@@ -750,6 +766,10 @@ export type ExternalProjectFieldType =
 export type PermissionId =
   | Database['public']['Enums']['workspace_role_permission']
   | 'change_finance_wallets'
+  | 'view_chat'
+  | 'create_chat'
+  | 'manage_chat'
+  | 'moderate_chat'
   | 'set_finance_wallets_on_create';
 
 export type WorkspaceExternalProjectBinding = {
@@ -1519,6 +1539,14 @@ export type WorkspaceEducationAccessRequest =
 
 export type RecordingStatus = Database['public']['Enums']['recording_status'];
 export type RecordingTranscript = Tables<'recording_transcripts'>;
+export type MeetStreamEvent = Tables<
+  { schema: 'private' },
+  'meet_stream_events'
+>;
+export type MeetStreamLiveInput = Tables<
+  { schema: 'private' },
+  'meet_stream_live_inputs'
+>;
 
 export type SupportInquiry = Tables<'support_inquiries'>;
 export type SupportType = Database['public']['Enums']['support_type'];

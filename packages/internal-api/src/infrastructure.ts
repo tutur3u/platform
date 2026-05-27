@@ -40,6 +40,59 @@ export interface ExternalAppsResponse {
   apps: ExternalAppRegistration[];
 }
 
+export type AiAgentAdapter = 'discord' | 'zalo';
+
+export type AiAgentChannelStatus = 'draft' | 'deployed' | 'error' | 'paused';
+
+export interface AiAgentSecretDescriptor {
+  configured: boolean;
+  lastFour: string | null;
+  name: string;
+}
+
+export interface AiAgentChannelConfig {
+  adapter: AiAgentAdapter;
+  displayName: string;
+  enabled: boolean;
+  id: string;
+  lastDeployedAt: string | null;
+  lastError: string | null;
+  lastEventAt: string | null;
+  mentionRoleIds: string[];
+  secrets: AiAgentSecretDescriptor[];
+  status: AiAgentChannelStatus;
+  webhookUrl: string | null;
+  workspaceId: string;
+  discordGuildId?: string | null;
+  zaloOfficialAccountId?: string | null;
+}
+
+export interface AiAgentDefinition {
+  channels: AiAgentChannelConfig[];
+  createdAt: string | null;
+  enabled: boolean;
+  id: string;
+  instructions: string;
+  modelId: string;
+  name: string;
+  temperature: number | null;
+  tools: string[];
+  updatedAt: string | null;
+}
+
+export interface AiAgentIdentityLink {
+  externalUserId: string;
+  platformUserId: string;
+  provider: 'zalo';
+  providerAccountId: string;
+  workspaceId: string;
+}
+
+export interface AiAgentsResponse {
+  agents: AiAgentDefinition[];
+  identities: AiAgentIdentityLink[];
+}
+
 export interface InternalAppSessionPolicyOverride {
   internalAppAccessTtlSeconds?: number;
   internalAppRefreshEarlySeconds?: number;
@@ -155,6 +208,57 @@ export interface SaveExternalAppPayload {
 export interface SaveExternalAppResponse {
   app: ExternalAppRegistration;
   secret: string | null;
+}
+
+export interface SaveAiAgentPayload {
+  channels?: Array<{
+    adapter: AiAgentAdapter;
+    displayName?: string;
+    enabled?: boolean;
+    id: string;
+    mentionRoleIds?: string[];
+    secrets?: Record<string, string | null | undefined>;
+    status?: AiAgentChannelStatus;
+    workspaceId: string;
+    discordGuildId?: string | null;
+    zaloOfficialAccountId?: string | null;
+  }>;
+  enabled?: boolean;
+  id: string;
+  instructions?: string;
+  modelId?: string;
+  name: string;
+  temperature?: number | null;
+  tools?: string[];
+}
+
+export interface SaveAiAgentResponse {
+  agent: AiAgentDefinition;
+}
+
+export interface AiAgentDeployResponse {
+  agent: AiAgentDefinition;
+  channel: AiAgentChannelConfig;
+  missing: string[];
+  ok: boolean;
+  webhookUrl: string;
+}
+
+export interface AiAgentTestResponse {
+  ok: boolean;
+  response: string;
+}
+
+export interface RotateAiAgentChannelSecretResponse {
+  secret: {
+    lastFour: string;
+    name: string;
+    value: string;
+  };
+}
+
+export interface SaveAiAgentIdentityResponse {
+  identity: AiAgentIdentityLink;
 }
 
 function mapGatewayModel(model: GatewayModelRow): AIModelUI {
@@ -1570,6 +1674,127 @@ export async function rotateExternalAppSecret(
     `/api/v1/infrastructure/external-apps/${encodeURIComponent(appId)}/secrets`,
     {
       cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function listAiAgents(options?: InternalApiClientOptions) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentsResponse>('/api/v1/infrastructure/ai-agents', {
+    cache: 'no-store',
+  });
+}
+
+export async function saveAiAgent(
+  payload: SaveAiAgentPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SaveAiAgentResponse>('/api/v1/infrastructure/ai-agents', {
+    body: JSON.stringify(payload),
+    cache: 'no-store',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+  });
+}
+
+export async function deployAiAgentChannel(
+  agentId: string,
+  channelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentDeployResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(agentId)}/deploy`,
+    {
+      body: JSON.stringify({ channelId }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function pauseAiAgentChannel(
+  agentId: string,
+  channelId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SaveAiAgentResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(agentId)}/pause`,
+    {
+      body: JSON.stringify({ channelId }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function testAiAgentChannel(
+  agentId: string,
+  channelId: string,
+  prompt?: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<AiAgentTestResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(agentId)}/test`,
+    {
+      body: JSON.stringify({ channelId, prompt }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function rotateAiAgentChannelSecret(
+  agentId: string,
+  channelId: string,
+  name: string,
+  value?: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<RotateAiAgentChannelSecretResponse>(
+    `/api/v1/infrastructure/ai-agents/${encodePathSegment(
+      agentId
+    )}/channels/${encodePathSegment(channelId)}/secrets`,
+    {
+      body: JSON.stringify({ name, value }),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+    }
+  );
+}
+
+export async function saveAiAgentIdentityLink(
+  payload: AiAgentIdentityLink,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<SaveAiAgentIdentityResponse>(
+    '/api/v1/infrastructure/ai-agents/identities',
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       method: 'POST',
     }
   );

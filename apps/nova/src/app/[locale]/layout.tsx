@@ -1,3 +1,4 @@
+import { VersionBadgeGate } from '@/components/version-badge-gate';
 import { siteConfig } from '@/constants/configs';
 import { type Locale, routing, supportedLocales } from '@/i18n/routing';
 import '@tuturuuu/ui/globals.css';
@@ -125,7 +126,12 @@ export default async function RootLayout({ children, params }: Props) {
         <VercelInsights />
         <Suspense>
           <Providers>
-            <NextIntlClientProvider>{children}</NextIntlClientProvider>
+            <NextIntlClientProvider>
+              {children}
+              <Suspense fallback={null}>
+                <VersionBadgeGate />
+              </Suspense>
+            </NextIntlClientProvider>
           </Providers>
         </Suspense>
         <Toaster />

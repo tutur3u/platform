@@ -139,7 +139,7 @@ describe('SESEmailProvider', () => {
       );
     });
 
-    it('uses raw MIME delivery only when attachments are present', async () => {
+    it('uses raw MIME delivery when attachments are present', async () => {
       mockSend.mockResolvedValueOnce({
         MessageId: 'raw-msg-id-123',
         $metadata: { httpStatusCode: 200 },
@@ -189,6 +189,54 @@ describe('SESEmailProvider', () => {
       );
       expect(rawMessage).toContain('Content-Type: application/pdf');
       expect(rawMessage).toContain('JVBERg==');
+    });
+
+    it('uses raw MIME delivery when threading headers are present', async () => {
+      mockSend.mockResolvedValueOnce({
+        MessageId: 'raw-msg-id-456',
+        $metadata: { httpStatusCode: 200 },
+      });
+
+      const result = await provider.send({
+        ...defaultParams,
+        content: {
+          ...defaultParams.content,
+          headers: {
+            'In-Reply-To': '<previous-message@example.com>',
+            References: '<root@example.com> <previous-message@example.com>',
+          },
+          text: 'Test Body',
+        },
+      });
+
+      expect(result.success).toBe(true);
+      expect(SendEmailCommand).not.toHaveBeenCalled();
+      expect(SendRawEmailCommand).toHaveBeenCalledWith(
+        expect.objectContaining({
+          RawMessage: {
+            Data: expect.any(Uint8Array),
+          },
+        })
+      );
+
+      const sendRawEmailMock = SendRawEmailCommand as unknown as ReturnType<
+        typeof vi.fn
+      >;
+      const rawCommandInput = sendRawEmailMock.mock.calls[0]?.[0] as
+        | { RawMessage: { Data: Uint8Array } }
+        | undefined;
+      expect(rawCommandInput).toBeDefined();
+      if (!rawCommandInput) throw new Error('Raw SES command was not created');
+
+      const rawMessage = new TextDecoder().decode(
+        rawCommandInput.RawMessage.Data
+      );
+      expect(rawMessage).toContain(
+        'In-Reply-To: <previous-message@example.com>'
+      );
+      expect(rawMessage).toContain(
+        'References: <root@example.com> <previous-message@example.com>'
+      );
     });
   });
 

@@ -8,6 +8,10 @@
       "name": "calendar.tuturuuu",
       "script": "dev:app"
     },
+    "apps/chat": {
+      "name": "chat.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/cms": {
       "name": "cms.tuturuuu",
       "script": "dev:app"
@@ -38,6 +42,10 @@
     },
     "apps/learn": {
       "name": "learn.tuturuuu",
+      "script": "dev:app"
+    },
+    "apps/mail": {
+      "name": "mail.tuturuuu",
       "script": "dev:app"
     },
     "apps/meet": {

@@ -87,7 +87,9 @@
               {
                 "group": "AI",
                 "pages": [
+                  "platform/ai/ai-agent-deployment",
                   "platform/ai/model-catalog",
+                  "platform/ai/omni-channel-chat-sdk",
                   "platform/ai/structured-data"
                 ]
               },
@@ -104,10 +106,12 @@
                 "pages": [
                   "platform/applications/apps",
                   "platform/applications/calendar",
+                  "platform/applications/chat",
                   "platform/applications/cms",
                   "platform/applications/drive",
                   "platform/applications/finance",
                   "platform/applications/inventory",
+                  "platform/applications/mail",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",
                   "platform/applications/qr",

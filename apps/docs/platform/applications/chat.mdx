@@ -1,0 +1,97 @@
+---
+title: Chat
+description: Private-schema workspace messaging for direct messages, groups, channels, AI conversations, and Drive-backed attachments.
+---
+
+Chat is implemented in two hosts:
+
+- `apps/web` owns protected APIs, workspace authorization, storage signing, and
+  private Supabase RPC execution.
+- `apps/chat` is the standalone satellite UI at
+  `https://chat.tuturuuu.com`, with local Portless origin
+  `https://chat.tuturuuu.localhost` and direct fallback
+  `http://localhost:7821`.
+
+Both hosts render the same shared UI from `@tuturuuu/ui/chat/chat-workspace`
+and call the same `@tuturuuu/internal-api` chat client. Do not add direct
+browser Supabase reads, client-local raw `fetch('/api/...')`, or host-specific
+chat business logic.
+
+## API Ownership
+
+`apps/chat` forwards `/api/v1/*` and `/api/ai/*` to `apps/web`. The standalone
+app authenticates through the cross-app session target `chat`; `apps/web`
+accepts that target only on the chat API surface and still performs normal
+request-scoped user validation before protected work.
+
+Chat routes must follow this order:
+
+1. Authenticate the request user or app-session user.
+2. Normalize workspace aliases such as `personal`.
+3. Verify workspace membership and the required chat permission.
+4. Call private-schema RPCs through a service-role admin client with
+   `.schema('private').rpc(...)`.
+5. Return only JSON DTOs that are safe for participants of the conversation.
+
+## Private Schema Contract
+
+Durable chat data lives in private tables only:
+
+- `private.chat_conversations`
+- `private.chat_conversation_members`
+- `private.chat_messages`
+- `private.chat_message_attachments`
+- `private.chat_message_reactions`
+- `private.chat_conversation_ai_settings`
+- `private.chat_audit_events`
+
+The migration revokes private schema, table, and function access from `public`,
+`anon`, and `authenticated`; grants execution only to `service_role`; and keeps
+RLS enabled with no permissive direct-access policies. Browser clients must
+recover durable state by refetching the `apps/web` API, never by reading private
+or legacy public chat tables directly.
+
+RPCs enforce participant access, workspace membership, direct-chat uniqueness,
+attachment path ownership, message ownership, reaction limits, search scoping,
+read state, and audit metadata. When adding behavior, extend the private RPC
+surface first and keep the web route as a thin auth/validation wrapper.
+
+## Attachments
+
+Chat attachments use the existing workspace storage provider rather than a
+separate chat bucket. The upload flow is:
+
+1. Client requests
+   `/api/v1/workspaces/:wsId/chat/conversations/:conversationId/attachments/upload-url`.
+2. `apps/web` verifies the participant through `private.chat_prepare_attachment`.
+3. `apps/web` creates a Drive-backed signed upload payload under
+   `:wsId/chats/:conversationId/*`.
+4. The client uploads to the signed URL and sends the returned attachment draft
+   with the message.
+5. `private.chat_send_message` finalizes records and links attachments to the
+   message.
+
+Downloads use the attachment signing route. It calls `private.chat_get_attachment`
+first, then issues a short-lived storage read URL only after the caller is
+confirmed as a participant.
+
+## Permissions
+
+The chat permission set is:
+
+- `view_chat`: read conversations where the actor is a participant.
+- `create_chat`: create direct messages, groups, channels, and AI chats.
+- `manage_chat`: manage chat membership, state, and AI settings.
+- `moderate_chat`: moderate messages and reactions.
+
+Member defaults include `view_chat` and `create_chat`. The dashboard navigation
+should hide or disable Chat when `view_chat` is missing.
+
+## AI Conversations
+
+AI conversations are normal private chat conversations with
+`ai_enabled = true` plus private AI settings. Existing AI audit or billing
+tables can remain for provider usage tracking, but human chat access must not
+depend on public AI chat tables. Persist generated assistant messages through
+private chat RPCs so conversation history, read state, attachments, and audit
+events remain in one protected chat domain.

@@ -112,7 +112,7 @@ export function AiGenerateDialog({
     mutation.mutate({
       context,
       file,
-      onProgress: (pct) => setUploadProgress(pct),
+      onProgress: (pct: number) => setUploadProgress(pct),
     });
   }
 

@@ -1,9 +1,9 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { redirect } from 'next/navigation';
+import { ChatWorkspace } from '@tuturuuu/ui/chat/chat-workspace';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
+import { notFound, redirect } from 'next/navigation';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import RealtimeChatContent from './realtime-chat-content';
 
 export default async function RealtimeChatPage({
   params,
@@ -12,16 +12,18 @@ export default async function RealtimeChatPage({
 }) {
   return (
     <WorkspaceWrapper params={params}>
-      {async ({ wsId, isRoot }) => {
+      {async ({ wsId }) => {
         const supabase = await createClient();
 
         const { user } = await resolveAuthenticatedSessionUser(supabase);
 
         if (!user) redirect('/login');
-        if (!isRoot || !isValidTuturuuuEmail(user.email || ''))
-          redirect(`/${wsId}`);
 
-        return <RealtimeChatContent wsId={wsId} userId={user.id} />;
+        const permissions = await getPermissions({ user, wsId });
+        if (!permissions) notFound();
+        if (permissions.withoutPermission('view_chat')) redirect(`/${wsId}`);
+
+        return <ChatWorkspace currentUserId={user.id} wsId={wsId} />;
       }}
     </WorkspaceWrapper>
   );

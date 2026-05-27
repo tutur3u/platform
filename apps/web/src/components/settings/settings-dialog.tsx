@@ -45,6 +45,7 @@ import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
 import { useWorkspaceConfigs } from '@tuturuuu/ui/hooks/use-workspace-config';
 import { Separator } from '@tuturuuu/ui/separator';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
@@ -178,6 +179,7 @@ export function SettingsDialog({
     workspacePermissions?.manage_workspace_settings ?? false;
   const canManageWorkspaceMembers =
     workspacePermissions?.manage_workspace_members ?? false;
+  const canManageVersionBadge = isExactTuturuuuDotComEmail(user?.email);
   const isRootWorkspace = workspace?.id === ROOT_WORKSPACE_ID;
   const allowWorkspaceBasicsEdit =
     !isRootWorkspace &&
@@ -718,7 +720,7 @@ export function SettingsDialog({
 
         {activeTab === 'appearance' && (
           <div className="h-full">
-            <AppearanceSettings />
+            <AppearanceSettings canManageVersionBadge={canManageVersionBadge} />
           </div>
         )}
 

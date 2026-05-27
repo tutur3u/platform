@@ -429,6 +429,25 @@
     "previous-period": "Previous period",
     "week-of": "Week of {date}"
   },
+  "version-badge": {
+    "app": "App",
+    "commit": "Commit",
+    "commit_hash": "Commit hash",
+    "commit_message": "Commit message",
+    "deployment_stamp": "Deployment stamp",
+    "deployment_time": "Deployment time",
+    "deployment_url": "Deployment URL",
+    "description": "Build and deployment details for this app.",
+    "environment": "Environment",
+    "not_available": "Not available",
+    "ref": "Ref",
+    "setting_description": "Show a compact build/version badge in the bottom-right corner of supported apps.",
+    "setting_title": "Version badge",
+    "setting_toggle_label": "Toggle version badge",
+    "title": "Version details",
+    "trigger_label": "Open version details",
+    "version": "Version"
+  },
   "ws-quizzes": {
     "add_item": "Add Item",
     "add_pair": "Add Pair",

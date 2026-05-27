@@ -42,6 +42,12 @@ function daysFromNow(days: number): string {
   return hoursFromNow(days * 24);
 }
 
+function priorityWeight(priority: keyof typeof PRIORITY_WEIGHTS): number {
+  const weight = PRIORITY_WEIGHTS[priority];
+  expect(weight).toBeDefined();
+  return weight as number;
+}
+
 // ============================================================================
 // TESTS: PRIORITY_WEIGHTS
 // ============================================================================
@@ -64,9 +70,9 @@ describe('PRIORITY_WEIGHTS', () => {
   });
 
   it('should maintain correct ordering', () => {
-    expect(PRIORITY_WEIGHTS.critical).toBeGreaterThan(PRIORITY_WEIGHTS.high);
-    expect(PRIORITY_WEIGHTS.high).toBeGreaterThan(PRIORITY_WEIGHTS.normal);
-    expect(PRIORITY_WEIGHTS.normal).toBeGreaterThan(PRIORITY_WEIGHTS.low);
+    expect(priorityWeight('critical')).toBeGreaterThan(priorityWeight('high'));
+    expect(priorityWeight('high')).toBeGreaterThan(priorityWeight('normal'));
+    expect(priorityWeight('normal')).toBeGreaterThan(priorityWeight('low'));
   });
 });
 

@@ -4,7 +4,7 @@ import type { TaskList } from '@tuturuuu/types/primitives/TaskList';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import { cn } from '@tuturuuu/utils/format';
 import { isTaskBoardResolvedStatus } from '@tuturuuu/utils/task-list-status';
-import { memo } from 'react';
+import { type MouseEvent, memo } from 'react';
 import { getListColorClasses } from '../../../utils/taskColorUtils';
 import { isOverdue } from '../../../utils/taskDateUtils';
 
@@ -39,7 +39,9 @@ export const TaskCardCheckbox = memo(function TaskCardCheckbox({
       )}
       disabled={isLoading}
       onCheckedChange={onToggle}
-      onClick={(e) => e.stopPropagation()}
+      onClick={(event: MouseEvent<HTMLButtonElement>) =>
+        event.stopPropagation()
+      }
     />
   );
 });

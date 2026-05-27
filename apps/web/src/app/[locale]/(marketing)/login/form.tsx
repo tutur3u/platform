@@ -206,6 +206,10 @@ export default function LoginForm() {
     shouldResolveReturnApp && isResolvingConfiguredReturnApp;
   const isInternalAppReturn =
     returnApp !== null && returnApp !== 'web' && returnApp !== 'platform';
+  const isRegisteredInternalAppReturn =
+    staticReturnApp !== null &&
+    staticReturnApp !== 'web' &&
+    staticReturnApp !== 'platform';
   const returnAppName =
     resolvedReturnApp?.appName ?? getReturnAppName(returnApp);
 
@@ -308,7 +312,12 @@ export default function LoginForm() {
   const oauthErrorToastKeyRef = useRef<string | null>(null);
   const captchaRefPassword = useRef<TurnstileInstance>(null);
   const currentUserProfileQuery = useCurrentUserProfile({
-    enabled: Boolean(user && isInternalAppReturn && !requiresMFA),
+    enabled: Boolean(
+      user &&
+        isInternalAppReturn &&
+        !isRegisteredInternalAppReturn &&
+        !requiresMFA
+    ),
     userId: user?.id,
   });
   const otpSettingsQuery = useQuery({
@@ -522,6 +531,10 @@ export default function LoginForm() {
       return true;
     }
 
+    if (isRegisteredInternalAppReturn) {
+      return false;
+    }
+
     if (!resolvedReturnApp || ['platform', 'web'].includes(resolvedReturnApp)) {
       return false;
     }
@@ -540,6 +553,7 @@ export default function LoginForm() {
     return true;
   }, [
     markReturnUrlValidationFailure,
+    isRegisteredInternalAppReturn,
     refetchResolvedReturnApp,
     returnApp,
     searchParams,
@@ -1288,7 +1302,7 @@ export default function LoginForm() {
       }
 
       if (user && !requiresMFA) {
-        if (isInternalAppReturn) {
+        if (isInternalAppReturn && !isRegisteredInternalAppReturn) {
           setReadyForAuth(true);
           return;
         }
@@ -1321,6 +1335,7 @@ export default function LoginForm() {
     hasActiveReturnUrlFailure,
     initialized,
     isInternalAppReturn,
+    isRegisteredInternalAppReturn,
     isResolvingReturnApp,
     markReturnUrlValidationFailure,
     processNextUrl,
@@ -1409,7 +1424,12 @@ export default function LoginForm() {
     );
   }
 
-  if (user && !requiresMFA && isInternalAppReturn) {
+  if (
+    user &&
+    !requiresMFA &&
+    isInternalAppReturn &&
+    !isRegisteredInternalAppReturn
+  ) {
     const currentUserProfile = currentUserProfileQuery.data;
     const hasMatchingCurrentProfile = currentUserProfile?.id === user.id;
     const currentProfileIsLoading =

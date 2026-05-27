@@ -348,6 +348,10 @@
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"
     },
+    "./custom/version-badge": {
+      "types": "./src/components/ui/custom/version-badge.tsx",
+      "import": "./src/components/ui/custom/version-badge.tsx"
+    },
     "./custom/settings/*": "./src/components/ui/custom/settings/*.tsx",
     "./custom/missed-entry/*": "./src/components/ui/custom/missed-entry/*.tsx",
     "./custom/workspace-wrapper": {
@@ -362,6 +366,15 @@
       "types": "./src/lib/calendar-settings-resolver.ts",
       "import": "./src/lib/calendar-settings-resolver.ts"
     },
+    "./chat/chat-workspace": {
+      "types": "./src/components/ui/chat/chat-workspace.tsx",
+      "import": "./src/components/ui/chat/chat-workspace.tsx"
+    },
+    "./chat/hooks": {
+      "types": "./src/components/ui/chat/hooks.ts",
+      "import": "./src/components/ui/chat/hooks.ts"
+    },
+    "./chat/*": "./src/components/ui/chat/*.tsx",
     "./calendar-app/hooks": {
       "types": "./src/components/ui/calendar-app/hooks/index.ts",
       "import": "./src/components/ui/calendar-app/hooks/index.ts"
