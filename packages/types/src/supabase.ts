@@ -2006,6 +2006,29 @@ export type Database = {
         }[];
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_transaction_tag_stats: {
+        Args: { _actor_id: string; _ws_id: string };
+        Returns: {
+          expense_count: number;
+          income_count: number;
+          last_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
+          tag_color: string;
+          tag_description: string;
+          tag_id: string;
+          tag_name: string;
+          total_amount: number;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          ws_id: string;
+        }[];
+      };
       get_wallet_interest_initial_balance: {
         Args: {
           _actor_id: string;

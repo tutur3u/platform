@@ -4,6 +4,7 @@ import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
 } from '../request-access';
+import { getTransactionTagStats } from './tag-stats-rpc';
 
 interface Params {
   params: Promise<{ wsId: string }>;
@@ -21,7 +22,7 @@ export async function GET(
     return access.response;
   }
 
-  const { normalizedWsId, permissions, supabase } = access.context;
+  const { normalizedWsId, permissions, sbAdmin, user } = access.context;
   const { withoutPermission } = permissions;
 
   // TODO: Migrate to another permission
@@ -32,8 +33,9 @@ export async function GET(
     );
   }
 
-  const { data, error } = await supabase.rpc('get_transaction_count_by_tag', {
-    _ws_id: normalizedWsId,
+  const { data, error } = await getTransactionTagStats(sbAdmin, {
+    actorId: user.id,
+    wsId: normalizedWsId,
   });
 
   if (error) {

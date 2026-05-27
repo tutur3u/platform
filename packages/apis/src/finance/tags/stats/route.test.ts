@@ -3,13 +3,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const getFinanceRouteContext = vi.fn();
   const transactionTagStatsRpc = vi.fn();
+  const privateRpc = vi.fn();
 
   const sessionSupabase = {
     rpc: transactionTagStatsRpc,
   };
+  const adminSupabase = {
+    schema: vi.fn(() => ({
+      rpc: privateRpc,
+    })),
+  };
 
   return {
+    adminSupabase,
     getFinanceRouteContext,
+    privateRpc,
     sessionSupabase,
     transactionTagStatsRpc,
   };
@@ -32,10 +40,14 @@ describe('finance tag stats route', () => {
         permissions: {
           withoutPermission: vi.fn(() => false),
         },
+        sbAdmin: mocks.adminSupabase,
         supabase: mocks.sessionSupabase,
+        user: {
+          id: 'user-1',
+        },
       },
     });
-    mocks.transactionTagStatsRpc.mockResolvedValue({
+    mocks.privateRpc.mockResolvedValue({
       data: [
         {
           tag_id: 'tag-1',
@@ -72,12 +84,12 @@ describe('finance tag stats route', () => {
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.transactionTagStatsRpc).toHaveBeenCalledWith(
-      'get_transaction_count_by_tag',
-      {
-        _ws_id: 'ws-1',
-      }
-    );
+    expect(mocks.adminSupabase.schema).toHaveBeenCalledWith('private');
+    expect(mocks.privateRpc).toHaveBeenCalledWith('get_transaction_tag_stats', {
+      _actor_id: 'user-1',
+      _ws_id: 'ws-1',
+    });
+    expect(mocks.transactionTagStatsRpc).not.toHaveBeenCalled();
     await expect(response.json()).resolves.toEqual([
       {
         tag_id: 'tag-1',
