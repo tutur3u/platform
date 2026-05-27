@@ -316,27 +316,6 @@ function applyMoreToolSectionLabels(items: NavLink[]): NavLink[] {
   }));
 }
 
-function applySettingsSeparators(items: NavLink[]): (NavLink | null)[] {
-  const result: (NavLink | null)[] = [];
-
-  items.forEach((item, index) => {
-    const previousItem = result.at(-1);
-    const nextItem = items[index + 1];
-
-    if (item.id === SETTINGS_NAVIGATION_ID && previousItem) {
-      result.push(null);
-    }
-
-    result.push(item);
-
-    if (item.id === SETTINGS_NAVIGATION_ID && nextItem) {
-      result.push(null);
-    }
-  });
-
-  return cleanSeparators(result);
-}
-
 export function applySidebarNavigationPreferences(
   links: (NavLink | null)[],
   rawConfig: unknown,
@@ -389,6 +368,13 @@ export function applySidebarNavigationPreferences(
     itemById,
     pathname: options?.pathname,
   });
+  const rootItemsWithoutSettings = rootItems.filter(
+    (item) => item.id !== SETTINGS_NAVIGATION_ID
+  );
+  const settingsLink =
+    itemById.get(SETTINGS_NAVIGATION_ID)?.link ??
+    rootItems.find((item) => item.id === SETTINGS_NAVIGATION_ID) ??
+    null;
   const moreItems = buildPlacementOrder({
     defaultPlacement: 'more',
     explicitIds: moreConfigIds,
@@ -402,8 +388,10 @@ export function applySidebarNavigationPreferences(
   const rootWithSeparators = cleanSeparators(
     [
       ...lockedRootItems,
-      lockedRootItems.length > 0 && rootItems.length > 0 ? null : undefined,
-      ...applySettingsSeparators(rootItems),
+      lockedRootItems.length > 0 && rootItemsWithoutSettings.length > 0
+        ? null
+        : undefined,
+      ...rootItemsWithoutSettings,
     ].filter((link): link is NavLink | null => link !== undefined)
   );
   const linksWithMoreTools: (NavLink | null)[] =
@@ -419,6 +407,13 @@ export function applySidebarNavigationPreferences(
           },
         ].filter((link): link is NavLink | null => link !== undefined)
       : rootWithSeparators;
+  const linksWithSettingsFooter: (NavLink | null)[] = settingsLink
+    ? [
+        ...linksWithMoreTools,
+        linksWithMoreTools.length > 0 ? null : undefined,
+        settingsLink,
+      ].filter((link): link is NavLink | null => link !== undefined)
+    : linksWithMoreTools;
 
   const placementById = new Map<string, SidebarNavigationPlacement>();
   for (const id of rootConfigIds) placementById.set(id, 'root');
@@ -442,7 +437,7 @@ export function applySidebarNavigationPreferences(
   return {
     archivedLinks,
     items: preferenceItems,
-    links: cleanSeparators(linksWithMoreTools),
+    links: cleanSeparators(linksWithSettingsFooter),
     normalizedConfig: {
       hidden: hiddenConfigIds,
       more: moreConfigIds,
