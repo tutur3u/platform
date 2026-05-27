@@ -1,17 +1,12 @@
 name: Vercel Nova Production Deployment
-env:
-  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
-  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
-  TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
-  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.PRODUCTION_SUPABASE_URL }}
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PRODUCTION_SUPABASE_PUBLISHABLE_KEY }}
-  SUPABASE_SECRET_KEY: ${{ secrets.PRODUCTION_SUPABASE_SECRET_KEY }}
 on:
   push:
     branches:
       - production
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   check-ci:
@@ -24,7 +19,8 @@ jobs:
 
   Deploy-Production:
     needs: [check-ci]
-    if: needs.check-ci.outputs.should_run == 'true'
+    if: github.ref == 'refs/heads/production' && needs.check-ci.outputs.should_run == 'true'
+    environment: vercel-production-nova
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -71,6 +67,9 @@ jobs:
 
       - name: Pull Vercel Environment Information
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
         run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Build workspace dependencies
@@ -83,10 +82,16 @@ jobs:
 
       - name: Build Project Artifacts
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
         run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Deploy Project Artifacts to Vercel
         if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_NOVA_PROJECT_ID }}
         run: vercel deploy --archive=tgz --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel deployment marker

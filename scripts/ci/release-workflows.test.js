@@ -190,101 +190,87 @@ test('Supabase production migration is bound to production deployment and staged
 });
 
 test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', () => {
-  const environmentScopedWorkflows = {
-    'vercel-preview-apps.yaml': {
-      environment: 'vercel-preview-apps',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_APPS_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-apps.yaml': {
-      environment: 'vercel-production-apps',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_APPS_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
-    'vercel-preview-chat.yaml': {
-      environment: 'vercel-preview-chat',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_CHAT_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-chat.yaml': {
-      environment: 'vercel-production-chat',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_CHAT_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
-    'vercel-preview-drive.yaml': {
-      environment: 'vercel-preview-drive',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_DRIVE_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-drive.yaml': {
-      environment: 'vercel-production-drive',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_DRIVE_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
-    'vercel-preview-learn.yaml': {
-      environment: 'vercel-preview-learn',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_LEARN_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-learn.yaml': {
-      environment: 'vercel-production-learn',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_LEARN_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
-    'vercel-preview-qr.yaml': {
-      environment: 'vercel-preview-qr',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_QR_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-qr.yaml': {
-      environment: 'vercel-production-qr',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_QR_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
-    'vercel-preview-teach.yaml': {
-      environment: 'vercel-preview-teach',
-      jobName: 'Deploy-Preview',
-      projectSecret: 'VERCEL_TEACH_PROJECT_ID',
-      refGuard: /github\.ref != 'refs\/heads\/production'/,
-    },
-    'vercel-production-teach.yaml': {
-      environment: 'vercel-production-teach',
-      jobName: 'Deploy-Production',
-      projectSecret: 'VERCEL_TEACH_PROJECT_ID',
-      refGuard: /github\.ref == 'refs\/heads\/production'/,
-    },
+  const projectSecretsByApp = {
+    apps: 'VERCEL_APPS_PROJECT_ID',
+    calendar: 'VERCEL_CALENDAR_PROJECT_ID',
+    chat: 'VERCEL_CHAT_PROJECT_ID',
+    cms: 'VERCEL_CMS_PROJECT_ID',
+    drive: 'VERCEL_DRIVE_PROJECT_ID',
+    finance: 'VERCEL_FINANCE_PROJECT_ID',
+    inventory: 'VERCEL_INVENTORY_PROJECT_ID',
+    learn: 'VERCEL_LEARN_PROJECT_ID',
+    meet: 'VERCEL_TUMEET_PROJECT_ID',
+    mind: 'VERCEL_MIND_PROJECT_ID',
+    nova: 'VERCEL_NOVA_PROJECT_ID',
+    platform: 'VERCEL_PLATFORM_PROJECT_ID',
+    qr: 'VERCEL_QR_PROJECT_ID',
+    rewise: 'VERCEL_REWISE_PROJECT_ID',
+    shortener: 'VERCEL_SHORTENER_PROJECT_ID',
+    tasks: 'VERCEL_TUDO_PROJECT_ID',
+    teach: 'VERCEL_TEACH_PROJECT_ID',
+    track: 'VERCEL_TRACK_PROJECT_ID',
   };
+  const forbiddenWorkflowSecrets = [
+    'ENCRYPTION_MASTER_KEY',
+    'GOOGLE_VERTEX_LOCATION',
+    'GOOGLE_VERTEX_PROJECT',
+    'PRODUCTION_SUPABASE_PUBLISHABLE_KEY',
+    'PRODUCTION_SUPABASE_SECRET_KEY',
+    'PRODUCTION_SUPABASE_URL',
+    'TURBO_TEAM',
+    'TURBO_TOKEN',
+  ];
 
-  for (const [workflowName, expected] of Object.entries(
-    environmentScopedWorkflows
-  )) {
+  for (const workflowName of vercelWorkflows) {
+    const match = workflowName.match(
+      /^vercel-(preview|production)-(.+)\.yaml$/
+    );
+    assert.ok(
+      match,
+      `${workflowName} must follow the Vercel workflow naming convention`
+    );
+
+    const [, target, app] = match;
+    const isPreview = target === 'preview';
+    const jobName = isPreview ? 'Deploy-Preview' : 'Deploy-Production';
+    const expectedEnvironment = `vercel-${target}-${app}`;
+    const expectedRefGuard = isPreview
+      ? /github\.ref != 'refs\/heads\/production'/
+      : /github\.ref == 'refs\/heads\/production'/;
+    const projectSecret = projectSecretsByApp[app];
+
+    assert.ok(
+      projectSecret,
+      `${workflowName} must declare an expected project secret`
+    );
+
     const workflow = fs.readFileSync(
       path.join(repoRoot, '.github', 'workflows', workflowName),
       'utf8'
     );
     const header = workflow.slice(0, workflow.indexOf('\njobs:'));
-    const deployJob = readWorkflowJobBlock(workflowName, expected.jobName);
+    const deployJob = readWorkflowJobBlock(workflowName, jobName);
     const installIndex = workflow.indexOf('run: bun install\n');
     const firstSecretIndex = workflow.indexOf('secrets.');
 
+    assert.doesNotMatch(
+      header,
+      /^env:/m,
+      `${workflowName} must not define workflow-scope environment variables`
+    );
     assert.doesNotMatch(
       header,
       /\bsecrets\./,
       `${workflowName} must not expose GitHub secrets at workflow scope`
     );
     assert.match(header, /\npermissions:\n {2}contents: read\n/);
-    assert.match(deployJob, expected.refGuard);
-    assert.match(deployJob, new RegExp(`environment: ${expected.environment}`));
+    assert.match(deployJob, expectedRefGuard);
+    assert.match(deployJob, new RegExp(`environment: ${expectedEnvironment}`));
+    assert.doesNotMatch(
+      workflow.slice(0, installIndex),
+      /\bsecrets\./,
+      `${workflowName} must not expose secrets before dependency install runs`
+    );
     assert.ok(
       installIndex > -1 && installIndex < firstSecretIndex,
       `${workflowName} must install dependencies before deployment secrets are introduced`
@@ -296,21 +282,17 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
     assert.match(
       deployJob,
       new RegExp(
-        `VERCEL_PROJECT_ID: \\$\\{\\{ secrets\\.${expected.projectSecret} \\}\\}`
+        `VERCEL_PROJECT_ID: \\$\\{\\{ secrets\\.${projectSecret} \\}\\}`
       )
     );
-    assert.doesNotMatch(
-      workflow,
-      /TURBO_TOKEN:\s*\$\{\{ secrets\.TURBO_TOKEN \}\}/
-    );
-    assert.doesNotMatch(
-      workflow,
-      /TURBO_TEAM:\s*\$\{\{ secrets\.TURBO_TEAM \}\}/
-    );
-    assert.doesNotMatch(
-      workflow,
-      /SUPABASE_SECRET_KEY:\s*\$\{\{ secrets\.PRODUCTION_SUPABASE_SECRET_KEY \}\}/
-    );
+
+    for (const secretName of forbiddenWorkflowSecrets) {
+      assert.doesNotMatch(
+        workflow,
+        new RegExp(`secrets\\.${secretName}`),
+        `${workflowName} must read ${secretName} from the Vercel project environment, not GitHub Actions`
+      );
+    }
   }
 });
 

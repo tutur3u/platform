@@ -1,21 +1,21 @@
 ---
-title: 'Environments & Release Flow'
-description: 'How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys.'
-updatedAt: '2026-05-20'
+title: "Environments & Release Flow"
+description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
+updatedAt: "2026-05-27"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
 
 ## Branch-to-Environment Map
 
-| Branch or event | What deploys | Follow-up automation |
-| --- | --- | --- |
-| Feature branch push | Vercel preview deployment for the touched app workflow | None by default |
-| `main` push | Vercel preview deployment | `supabase-staging.yaml` can apply staging migrations after preview succeeds |
-| `production` push | Vercel production deployment | `supabase-production.yaml` can apply production migrations after prerequisites pass |
-| `main` push for `apps/discord` | Discord Modal deployment after Python CI succeeds | None |
-| Manual `workflow_dispatch` | Depends on workflow | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
-| Self-hosted server after `git pull` | Docker deploy from current checkout | Optional blue/green cutover through `bun serve:web:docker:bg` |
+| Branch or event                     | What deploys                                                                                                                       | Follow-up automation                                                                                                                 |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Feature branch push                 | Vercel preview deployment for the touched app workflow, subject to the matching `vercel-preview-<app>` GitHub Environment controls | None by default                                                                                                                      |
+| `main` push                         | Vercel preview deployment                                                                                                          | `supabase-staging.yaml` can apply staging migrations after preview succeeds                                                          |
+| `production` push                   | Vercel production deployment                                                                                                       | `supabase-production.yaml` can apply production migrations after prerequisites pass                                                  |
+| `main` push for `apps/discord`      | Discord Modal deployment after Python CI succeeds                                                                                  | None                                                                                                                                 |
+| Manual `workflow_dispatch`          | Depends on workflow                                                                                                                | Bypasses normal branch trigger timing, but not the workflow logic; production Supabase migration dispatches must select `production` |
+| Self-hosted server after `git pull` | Docker deploy from current checkout                                                                                                | Optional blue/green cutover through `bun serve:web:docker:bg`                                                                        |
 
 ## Hosted Web Release Flow
 
@@ -24,6 +24,8 @@ This page explains how Tuturuuu moves from code to running environments.
 - Preview workflows are named `vercel-preview-<app>.yaml`.
 - They trigger on non-`production` pushes, including `main`.
 - Each workflow checks whether a newer commit exists on the same branch before spending time on install/build/deploy.
+- Each deploy job is bound to a `vercel-preview-<app>` GitHub Environment and
+  introduces Vercel credentials only after dependency installation.
 - Preview deploys are the normal validation surface for branch work and merged
   `main` changes.
 
@@ -41,6 +43,9 @@ This page explains how Tuturuuu moves from code to running environments.
 - `apps/apps` production deploys are handled by `vercel-production-apps.yaml`.
 - `apps/qr` production deploys are handled by `vercel-production-qr.yaml`.
 - The production workflow also skips if a newer commit already exists on `production`.
+- Production deploy jobs are bound to `vercel-production-<app>` GitHub
+  Environments and reject manual dispatches unless the selected branch is
+  `production`.
 
 ### Browser App Version Metadata
 
