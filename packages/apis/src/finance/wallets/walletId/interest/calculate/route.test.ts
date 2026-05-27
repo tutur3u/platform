@@ -3,82 +3,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => {
   const calculateInterest = vi.fn();
   const getAccessibleWallet = vi.fn();
-  const initialBalanceRpc = vi.fn();
-  const selectedColumns: string[] = [];
-
-  function responseFor(table: string, selected: string) {
-    if (table === 'wallet_interest_configs') {
-      return { data: { enabled: true, id: 'config-1' }, error: null };
-    }
-
-    if (table === 'wallet_interest_rates') {
-      return {
-        data: [{ annual_rate: 5, effective_from: '2026-01-01' }],
-        error: null,
-      };
-    }
-
-    if (table === 'vietnamese_holidays') {
-      return { data: [], error: null };
-    }
-
-    if (table === 'wallet_transactions' && selected === 'created_at, amount') {
-      return {
-        data: [
-          {
-            amount: 100,
-            created_at: '2026-05-01T00:00:00.000Z',
-          },
-        ],
-        error: null,
-      };
-    }
-
-    if (table === 'wallet_transactions') {
-      return { data: [], error: null };
-    }
-
-    return { data: null, error: null };
-  }
-
-  function createQuery(table: string) {
-    let selected = '';
-    const query = {
-      eq: vi.fn(() => query),
-      gte: vi.fn(() => query),
-      lte: vi.fn(() =>
-        table === 'vietnamese_holidays'
-          ? Promise.resolve(responseFor(table, selected))
-          : query
-      ),
-      order: vi.fn(() => Promise.resolve(responseFor(table, selected))),
-      select: vi.fn((columns: string) => {
-        selected = columns;
-        selectedColumns.push(columns);
-        return query;
-      }),
-      single: vi.fn(() => Promise.resolve(responseFor(table, selected))),
-    };
-
-    return query;
-  }
+  const calculationRpc = vi.fn();
 
   const supabase = {
-    from: vi.fn((table: string) => createQuery(table)),
+    from: vi.fn(),
   };
 
   const sbAdmin = {
     schema: vi.fn(() => ({
-      rpc: initialBalanceRpc,
+      rpc: calculationRpc,
     })),
   };
 
   return {
     calculateInterest,
+    calculationRpc,
     getAccessibleWallet,
-    initialBalanceRpc,
     sbAdmin,
-    selectedColumns,
     supabase,
   };
 });
@@ -99,7 +40,6 @@ describe('wallet interest calculate route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.selectedColumns.length = 0;
 
     mocks.getAccessibleWallet.mockResolvedValue({
       context: {
@@ -112,17 +52,22 @@ describe('wallet interest calculate route', () => {
         id: 'wallet-1',
       },
     });
-    mocks.initialBalanceRpc.mockResolvedValue({ data: 750, error: null });
-    mocks.calculateInterest.mockReturnValue({
-      businessDaysCount: 1,
-      dailyResults: [],
-      finalBalance: 750,
-      nonBusinessDaysCount: 0,
-      totalInterest: 0,
+    mocks.calculationRpc.mockResolvedValue({
+      data: {
+        businessDaysCount: 1,
+        dailyResults: [],
+        finalBalance: 750,
+        fromDate: '2026-05-01',
+        initialBalance: 750,
+        nonBusinessDaysCount: 0,
+        toDate: '2026-05-02',
+        totalInterest: 0,
+      },
+      error: null,
     });
   });
 
-  it('loads the initial balance from a private RPC instead of summing transactions in the route', async () => {
+  it('loads the date-range interest calculation from a private RPC', async () => {
     const { GET } = await import('./route.js');
 
     const response = await GET(
@@ -147,21 +92,18 @@ describe('wallet interest calculate route', () => {
       })
     );
     expect(mocks.sbAdmin.schema).toHaveBeenCalledWith('private');
-    expect(mocks.initialBalanceRpc).toHaveBeenCalledWith(
-      'get_wallet_interest_initial_balance',
+    expect(mocks.calculationRpc).toHaveBeenCalledWith(
+      'calculate_wallet_interest',
       {
         _actor_id: 'user-1',
         _from_date: '2026-05-01',
+        _to_date: '2026-05-02',
         _wallet_id: 'wallet-1',
         _ws_id: 'ws-1',
       }
     );
-    expect(mocks.selectedColumns).not.toContain('amount');
-    expect(mocks.calculateInterest).toHaveBeenCalledWith(
-      expect.objectContaining({
-        initialBalance: 750,
-      })
-    );
+    expect(mocks.supabase.from).not.toHaveBeenCalled();
+    expect(mocks.calculateInterest).not.toHaveBeenCalled();
     await expect(response.json()).resolves.toMatchObject({
       fromDate: '2026-05-01',
       initialBalance: 750,

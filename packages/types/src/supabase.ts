@@ -1928,6 +1928,16 @@ export type Database = {
           values_recalculated: boolean;
         }[];
       };
+      calculate_wallet_interest: {
+        Args: {
+          _actor_id: string;
+          _from_date: string;
+          _to_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       compute_abuse_risk_tier: {
