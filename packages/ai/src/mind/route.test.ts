@@ -34,6 +34,16 @@ vi.mock('ai', async (importOriginal) => {
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createAdminClient: (...args: Parameters<typeof mocks.createAdminClient>) =>
     mocks.createAdminClient(...args),
+  createClient: vi.fn(async () => ({})),
+}));
+
+vi.mock('@tuturuuu/supabase/next/auth-session-user', () => ({
+  resolveAuthenticatedSessionUser: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  normalizeWorkspaceId: vi.fn(async (wsId: string) => wsId),
+  verifyWorkspaceMembershipType: vi.fn(async () => ({ ok: true })),
 }));
 
 vi.mock('../chat/google/route-credits', () => ({
@@ -211,6 +221,36 @@ describe('mind route payload validation', () => {
     expect(streamOptions?.system).toContain('Existing graph is authoritative');
     expect(streamOptions?.system).toContain('one applyable draft patch');
     expect(streamOptions?.system).toContain('orphaned nodes');
+  });
+
+  it('normalizes legacy Gemini 3.1 Flash Lite preview requests before streaming', async () => {
+    mocks.resolvePlanModel.mockResolvedValueOnce({
+      allocationId: 'allocation-1',
+      modelId: 'google/gemini-3.1-flash-lite',
+      source: 'requested',
+      tier: 'PRO',
+    });
+    const route = createPOST(createAcceptedCallbacks());
+
+    const response = await route(
+      createRequest({
+        boardId: null,
+        messages: [],
+        model: 'google/gemini-3.1-flash-lite-preview',
+        threadId: '00000000-0000-4000-8000-000000000001',
+        wsId: 'personal',
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.text()).resolves.toBe('stream ok');
+    expect(mocks.resolvePlanModel).toHaveBeenCalledWith(
+      expect.objectContaining({
+        requestedModel: 'google/gemini-3.1-flash-lite',
+      })
+    );
+    expect(mocks.google).toHaveBeenCalledWith('gemini-3.1-flash-lite');
+    expect(mocks.gateway).not.toHaveBeenCalled();
   });
 
   it('allows non-internal users and deducts from personal credits', async () => {

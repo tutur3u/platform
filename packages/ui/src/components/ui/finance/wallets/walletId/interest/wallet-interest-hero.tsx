@@ -8,6 +8,10 @@ import { Card, CardContent } from '@tuturuuu/ui/card';
 import { useCurrencyFormatter } from '@tuturuuu/ui/hooks/use-currency-formatter';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../../shared/use-finance-confidential-visibility';
 
 interface WalletInterestHeroProps {
   summary: InterestSummary;
@@ -28,6 +32,10 @@ export function WalletInterestHero({
 }: WalletInterestHeroProps) {
   const t = useTranslations('wallet-interest');
   const { formatCurrency } = useCurrencyFormatter({ currency });
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount);
 
   const rate = summary.currentRate?.annual_rate ?? 0;
 
@@ -45,7 +53,7 @@ export function WalletInterestHero({
                 {t('total_interest_earned')}
               </p>
               <p className="font-bold text-2xl text-primary md:text-3xl">
-                {formatCurrency(summary.totalEarnedInterest)}
+                {formatVisibleCurrency(summary.totalEarnedInterest)}
               </p>
               <Badge variant="secondary" className="mt-1">
                 {rate}% {t('annual_rate').toLowerCase()}
@@ -57,17 +65,17 @@ export function WalletInterestHero({
           <div className="flex flex-1 justify-center gap-4 border-foreground/10 md:gap-6 md:border-x md:px-6">
             <QuickStat
               label={t('today_interest')}
-              value={formatCurrency(summary.todayInterest)}
+              value={formatVisibleCurrency(summary.todayInterest)}
               icon={<Clock className="h-4 w-4" />}
             />
             <QuickStat
               label={t('mtd_interest')}
-              value={formatCurrency(summary.monthToDateInterest)}
+              value={formatVisibleCurrency(summary.monthToDateInterest)}
               icon={<Calendar className="h-4 w-4" />}
             />
             <QuickStat
               label={t('ytd_interest')}
-              value={formatCurrency(summary.yearToDateInterest)}
+              value={formatVisibleCurrency(summary.yearToDateInterest)}
               icon={<TrendingUp className="h-4 w-4" />}
             />
           </div>
@@ -98,19 +106,19 @@ export function WalletInterestHero({
             <span>
               <span className="text-muted-foreground">{t('daily_avg')}:</span>{' '}
               <span className="font-medium">
-                {formatCurrency(summary.averageDailyInterest)}
+                {formatVisibleCurrency(summary.averageDailyInterest)}
               </span>
             </span>
             <span className="hidden sm:inline">
               <span className="text-muted-foreground">{t('monthly_est')}:</span>{' '}
               <span className="font-medium">
-                {formatCurrency(summary.estimatedMonthlyInterest)}
+                {formatVisibleCurrency(summary.estimatedMonthlyInterest)}
               </span>
             </span>
             <span className="hidden md:inline">
               <span className="text-muted-foreground">{t('yearly_est')}:</span>{' '}
               <span className="font-medium">
-                {formatCurrency(summary.estimatedYearlyInterest)}
+                {formatVisibleCurrency(summary.estimatedYearlyInterest)}
               </span>
             </span>
           </div>

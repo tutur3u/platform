@@ -10,8 +10,7 @@ import {
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { cn } from '@tuturuuu/utils/format';
-import { format } from 'date-fns';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import {
   CartesianGrid,
@@ -21,6 +20,11 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface SpendingTrendsChartProps {
   wsId: string;
@@ -34,18 +38,26 @@ export function SpendingTrendsChart({
   currency = 'USD',
 }: SpendingTrendsChartProps) {
   const locale = useLocale();
+  const t = useTranslations('finance-analytics');
   const { resolvedTheme } = useTheme();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  const formatChartDate = (
+    value: string,
+    options: Intl.DateTimeFormatOptions
+  ) => new Intl.DateTimeFormat(locale, options).format(new Date(value));
 
   const { data: trendsData, isLoading } = useQuery({
-    queryKey: ['spending_trends', wsId],
-    queryFn: async () => getSpendingTrends(wsId, { days: 30 }),
+    queryKey: ['spending_trends', wsId, timezone],
+    queryFn: async () => getSpendingTrends(wsId, { days: 30, timezone }),
   });
 
   const chartConfig = {
     amount: {
-      label: 'Spending',
+      label: t('spending-trends'),
       color: expenseColor,
     },
   } satisfies ChartConfig;
@@ -59,13 +71,15 @@ export function SpendingTrendsChart({
   return (
     <Card className={cn('flex flex-col', className)}>
       <CardHeader>
-        <CardTitle>Spending Trends (Last 30 Days)</CardTitle>
+        <CardTitle>{t('spending-trends')}</CardTitle>
         <p className="text-muted-foreground text-sm">
-          Daily average:{' '}
-          {new Intl.NumberFormat(locale, {
-            style: 'currency',
-            currency,
-          }).format(averageSpending)}
+          {t('daily-avg-expense')}:{' '}
+          {areNumbersHidden
+            ? FINANCE_HIDDEN_AMOUNT
+            : new Intl.NumberFormat(locale, {
+                style: 'currency',
+                currency,
+              }).format(averageSpending)}
         </p>
       </CardHeader>
       <CardContent className="flex-1">
@@ -80,15 +94,22 @@ export function SpendingTrendsChart({
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis
                   dataKey="date"
-                  tickFormatter={(value) => format(new Date(value), 'MMM dd')}
+                  tickFormatter={(value) =>
+                    formatChartDate(value, {
+                      day: 'numeric',
+                      month: 'short',
+                    })
+                  }
                   tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
                 />
                 <YAxis
                   tickFormatter={(value) =>
-                    new Intl.NumberFormat(locale, {
-                      style: 'decimal',
-                      notation: 'compact',
-                    }).format(value)
+                    areNumbersHidden
+                      ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                      : new Intl.NumberFormat(locale, {
+                          style: 'decimal',
+                          notation: 'compact',
+                        }).format(value)
                   }
                   tick={{ fill: 'hsl(var(--foreground))', opacity: 0.7 }}
                 />
@@ -96,13 +117,19 @@ export function SpendingTrendsChart({
                   content={
                     <ChartTooltipContent
                       labelFormatter={(value) =>
-                        format(new Date(value), 'MMM dd, yyyy')
+                        formatChartDate(String(value), {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric',
+                        })
                       }
                       formatter={(value) =>
-                        new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(Number(value))
+                        areNumbersHidden
+                          ? FINANCE_HIDDEN_AMOUNT
+                          : new Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency,
+                            }).format(Number(value))
                       }
                     />
                   }
@@ -120,7 +147,7 @@ export function SpendingTrendsChart({
           </ChartContainer>
         ) : (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
-            No spending data available
+            {t('no-data')}
           </div>
         )}
       </CardContent>

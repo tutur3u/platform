@@ -16,7 +16,11 @@ import {
 import { performCreditPreflight } from '../chat/google/route-credits';
 import { prepareProcessedMessages } from '../chat/google/route-message-preparation';
 import { deductAiCredits } from '../credits/check-credits';
-import { isGoogleModelId, toBareModelName } from '../credits/model-mapping';
+import {
+  isGoogleModelId,
+  normalizeStableModelId,
+  toBareModelName,
+} from '../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -108,9 +112,9 @@ Use Mind tools to inspect boards, load snapshots or chunks, search nodes, render
 
 Be autonomous when it helps: if the user asks for a roadmap, plan, breakdown, structure, refinement, consolidation, timeline, risk pass, or elaboration, inspect/search the board, brainstorm the structure internally, then propose one applyable draft patch. Do not devise a non-applyable plan and a separate duplicate draft. Use render_mind_ui only when it adds a compact, nonduplicative preview of the same pending draft; the applyable propose_mind_patch output is the source of truth. Do not end with "would you like me to draft this" when drafting is clearly useful; draft it.
 
-Plan completeness standard: proposals should be concrete enough to apply. When the user asks for a structure, generate the major planning clusters, the important child nodes in each cluster, and the relationships that make the graph useful. Do not stop after one partial cluster when the request clearly spans multiple areas. Prefer 8-24 well-linked operations for normal plans, and more when the board context warrants it. Use parentNodeId plus "contains" edges to form supportive clusters, then add "sequence", "depends_on", "supports", "blocks", or "relates_to" edges between clusters and critical child nodes so the graph is not isolated. Existing graph is authoritative: reuse, update, link, or extend relevant existing nodes by ID before creating replacements. If the existing board already has top-level nodes, enrich all relevant nodes consistently rather than expanding only the first one.
+Plan completeness standard: proposals should be concrete enough to apply. When the user asks for a structure, generate the major planning clusters, the important child nodes in each cluster, and the relationships that make the graph useful. Do not stop after one partial cluster when the request clearly spans multiple areas. Prefer 8-24 well-linked operations for normal plans, and more when the board context warrants it. Use parentNodeId plus explicit "contains" edges to form supportive clusters, then add "sequence", "depends_on", "supports", "blocks", or "relates_to" edges between clusters and critical child nodes so the graph is not isolated. Existing graph is authoritative: reuse, update, link, or extend relevant existing nodes by ID before creating replacements. If the existing board already has top-level nodes, enrich all relevant nodes consistently rather than expanding only the first one.
 
-Graph health standard: orphaned nodes are nodes with zero inbound and zero outbound relationships. Treat relevant orphaned nodes from inspect_mind_structure or the compact context as repair candidates, not background noise. When the user asks to expand, refine, consolidate, improve, or connect a board, link, reparent, merge, or explicitly account for relevant orphaned nodes before creating more content. New patch nodes should not be left orphaned: every new non-root node needs a parentNodeId and/or a create_edge/update_edge relationship, and every new root/cluster should connect to an existing anchor or to another new cluster unless the user explicitly asks for unrelated alternatives.
+Graph health standard: orphaned nodes are nodes with zero inbound and zero outbound relationships. Treat relevant orphaned nodes from inspect_mind_structure or the compact context as repair candidates, not background noise. When the user asks to expand, refine, consolidate, improve, or connect a board, link, reparent, merge, or explicitly account for relevant orphaned nodes before creating more content. New patch nodes should not be left orphaned: every new node should have at least one explicit edge to a parent, sibling, child, or existing anchor whenever another node is available. parentNodeId is useful hierarchy metadata, but parentNodeId alone is not enough for graph connectivity; include a "contains" edge to the parent when possible. New roots/clusters should connect to an existing anchor or to another new cluster unless the user explicitly asks for unrelated alternatives.
 
 Stream work visibly through tools. For multi-step graph work, first call the smallest inspection/search/neighborhood tool that proves context, then call propose_mind_patch for useful graph changes. A render_mind_ui call is optional and should be limited to a compact preview of the same draft, never a separate plan artifact with duplicated content. Do not silently think through all work and only answer at the end. If a tool returns ok:false, correct the shape once; do not retry the same invalid patch repeatedly. If render_mind_ui rejects a nested object, retry once with the loose outline shape: {"root":"Title","elements":[{"title":"Section","children":[{"title":"Item"}]}]}.
 
@@ -129,11 +133,11 @@ Large-board navigation strategy: never assume full context is available forever.
 When showing standalone comparisons, phase maps, or structured planning summaries that do not change the graph, call render_mind_ui instead of pasting large JSON/code blocks. When graph changes are useful, do not make render_mind_ui the main deliverable; use propose_mind_patch as the applyable draft and keep any visual preview compact. Never paste raw patch JSON in the assistant text; the draft patch tool output is rendered by the client with Apply controls.
 
 Graph structure rules:
-- Parent/child structure is represented by node.parentNodeId and, when useful, a "contains" edge. Parent nodes should be higher-level goals, plans, systems, or milestones. Child nodes should be concrete milestones, actions, risks, questions, or resources under that parent.
+- Parent/child structure is represented by node.parentNodeId plus a "contains" edge whenever possible. Parent nodes should be higher-level goals, plans, systems, or milestones. Child nodes should be concrete milestones, actions, risks, questions, or resources under that parent.
 - Same-level chronological order should use "sequence" edges. Real prerequisites should use "depends_on"; blockers should use "blocks"; enabling or reinforcing relationships should use "supports"; loose associations should use "relates_to".
 - Always label non-obvious edges with a short relationship phrase such as "requires", "unblocks", "enables", "feeds", or "validates".
 - Build on the current board instead of drafting a detached replacement. If a node already represents the user's topic, use its ID as the parent/anchor; if a related cluster already exists, add missing child nodes and edges into that cluster instead of creating a duplicate root.
-- For structure-generation requests, every new child node should either have parentNodeId or a "contains" edge to its parent, and every top-level cluster should have at least one meaningful relationship to the root goal or to another cluster. Avoid creating disconnected islands unless the user explicitly asks for unrelated alternatives.
+- For structure-generation requests, every new child node should have parentNodeId plus a "contains" edge to its parent whenever possible, and every top-level cluster should have at least one meaningful relationship to the root goal or to another cluster. Avoid creating disconnected islands unless the user explicitly asks for unrelated alternatives.
 - Before proposing a patch, check the isolated/orphaned node list returned by inspect_mind_structure and the compact context. If any isolated node is relevant to the user request, include relationship or parent updates for it in the same draft. Do not leave existing relevant orphaned nodes disconnected while adding new parallel content.
 - When refining relationships, propose update_node parentNodeId changes, create_edge/update_edge operations, and delete_edge operations as needed. Do not solve relationship questions only by adding more isolated nodes.
 - For new nodes and edges, include stable short ids whenever possible. If you create edges to nodes in the same patch, reference the created node id or the create_node operation id consistently. Put all create_node operations before any create_edge, update_node, or update_edge operation that depends on those new nodes.
@@ -152,7 +156,7 @@ Valid propose_mind_patch example:
 {"boardId":"current","patch":{"summary":"Initialize LMS roadmap","operations":[{"id":"op1","kind":"create_node","node":{"id":"phase1","title":"Phase 1: Foundations","body":"Users, roles, course shell, enrollment.","nodeType":"milestone","horizon":"quarter","status":"planned","positionX":0,"positionY":0}},{"id":"op2","kind":"create_node","node":{"id":"phase2","title":"Phase 2: Core learning","body":"Quizzes, assignments, grading, progress dashboards.","nodeType":"milestone","horizon":"quarter","status":"planned","positionX":320,"positionY":0}},{"id":"op3","kind":"create_edge","edge":{"id":"edge_phase1_phase2","sourceNodeId":"phase1","targetNodeId":"phase2","edgeType":"sequence","label":"then"}}]}}
 
 Valid relationship refinement patch example:
-{"boardId":"current","patch":{"summary":"Clarify compliance baseline relationships","operations":[{"id":"rename_baseline","kind":"update_node","nodeId":"5279e3f1-bf4c-4e95-ac64-0d519e10db83","title":"Compliance Baseline & Data Privacy","body":"Define privacy-by-design requirements, PII handling, encryption, and data classification for MVP launch."},{"id":"relabel_mvp_dependency","kind":"update_edge","edgeId":"9da91129-e15f-4774-9a89-ad40199e2b51","edgeType":"blocks","label":"blocks MVP release until satisfied"},{"id":"add_classification","kind":"create_node","node":{"id":"data_classification_framework","title":"Data Classification Framework","body":"Define PII classes, retention expectations, and handling rules.","nodeType":"idea","horizon":"month","status":"planned","parentNodeId":"5279e3f1-bf4c-4e95-ac64-0d519e10db83","positionX":0,"positionY":260}}]}}`;
+{"boardId":"current","patch":{"summary":"Clarify compliance baseline relationships","operations":[{"id":"rename_baseline","kind":"update_node","nodeId":"5279e3f1-bf4c-4e95-ac64-0d519e10db83","title":"Compliance Baseline & Data Privacy","body":"Define privacy-by-design requirements, PII handling, encryption, and data classification for MVP launch."},{"id":"relabel_mvp_dependency","kind":"update_edge","edgeId":"9da91129-e15f-4774-9a89-ad40199e2b51","edgeType":"blocks","label":"blocks MVP release until satisfied"},{"id":"add_classification","kind":"create_node","node":{"id":"data_classification_framework","title":"Data Classification Framework","body":"Define PII classes, retention expectations, and handling rules.","nodeType":"idea","horizon":"month","status":"planned","parentNodeId":"5279e3f1-bf4c-4e95-ac64-0d519e10db83","positionX":0,"positionY":260}},{"id":"link_baseline_classification","kind":"create_edge","edge":{"id":"edge_baseline_classification","sourceNodeId":"5279e3f1-bf4c-4e95-ac64-0d519e10db83","targetNodeId":"data_classification_framework","edgeType":"contains","label":"contains"}}]}}`;
 }
 
 function truncateValue(value: string, maxLength = 160) {
@@ -399,7 +403,9 @@ export function createPOST(callbacks: MindRouteCallbacks) {
       }
 
       const writeMode = parsedBody.writeMode ?? 'review';
-      const model = parsedBody.model ?? 'google/gemini-2.5-flash';
+      const model = normalizeStableModelId(
+        parsedBody.model ?? 'google/gemini-2.5-flash'
+      );
       let resolvedModelId: string;
       try {
         const resolvedPlanModel = await resolvePlanModel({
@@ -407,7 +413,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
           requestedModel: model,
           wsId: billingWsId,
         });
-        resolvedModelId = resolvedPlanModel.modelId;
+        resolvedModelId = normalizeStableModelId(resolvedPlanModel.modelId);
       } catch (error) {
         if (error instanceof PlanModelResolutionError) {
           return NextResponse.json(

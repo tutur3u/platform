@@ -2,6 +2,11 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TrendingDown, TrendingUp } from '@tuturuuu/icons';
+import {
+  getDebtLoanSummary,
+  listDebtLoans,
+  listWallets,
+} from '@tuturuuu/internal-api/finance';
 import type {
   DebtLoanSummary,
   DebtLoanType,
@@ -9,7 +14,7 @@ import type {
 } from '@tuturuuu/types/primitives/DebtLoan';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '../../button';
 import {
   Dialog,
@@ -24,10 +29,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
 import { DebtLoanForm } from './debt-loan-form';
 import { DebtLoanList } from './debt-loan-list';
 import { DebtLoanSummaryCards } from './debt-loan-summary';
+import { invalidateDebtLoanMutationQueries } from './query-invalidation';
 
 interface Props {
   wsId: string;
   searchParams?: {
+    create?: string;
     type?: string;
   };
 }
@@ -35,53 +42,47 @@ interface Props {
 export function DebtsPage({ wsId, searchParams }: Props) {
   const t = useTranslations('ws-debt-loan');
   const queryClient = useQueryClient();
+  const requestedCreateType =
+    searchParams?.create === 'loan'
+      ? 'loan'
+      : searchParams?.create === 'debt'
+        ? 'debt'
+        : null;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [defaultCreateType, setDefaultCreateType] =
-    useState<DebtLoanType>('debt');
+  const [defaultCreateType, setDefaultCreateType] = useState<DebtLoanType>(
+    requestedCreateType ?? 'debt'
+  );
   const [activeTab, setActiveTab] = useState<string>(
     searchParams?.type || 'all'
   );
 
-  // Fetch summary
+  useEffect(() => {
+    if (!requestedCreateType) return;
+
+    setDefaultCreateType(requestedCreateType);
+    setIsCreateDialogOpen(true);
+  }, [requestedCreateType]);
+
   const { data: summary, isLoading: isLoadingSummary } =
     useQuery<DebtLoanSummary>({
       queryKey: ['debt-loan-summary', wsId],
-      queryFn: async () => {
-        const res = await fetch(
-          `/api/v1/workspaces/${wsId}/finance/debts/summary`,
-          { cache: 'no-store' }
-        );
-        if (!res.ok) throw new Error('Failed to fetch summary');
-        return res.json();
-      },
+      queryFn: () => getDebtLoanSummary(wsId),
     });
 
-  // Fetch debts/loans based on active tab
   const { data: debtLoans = [], isLoading: isLoadingDebtLoans } = useQuery<
     DebtLoanWithBalance[]
   >({
     queryKey: ['debt-loans', wsId, activeTab],
-    queryFn: async () => {
-      const typeParam = activeTab !== 'all' ? `?type=${activeTab}` : '';
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/debts${typeParam}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch debt/loans');
-      return res.json();
-    },
+    queryFn: () =>
+      listDebtLoans(
+        wsId,
+        activeTab !== 'all' ? { type: activeTab as DebtLoanType } : {}
+      ),
   });
 
-  // Fetch wallets for the form
   const { data: wallets = [] } = useQuery<Wallet[]>({
     queryKey: ['wallets', wsId],
-    queryFn: async () => {
-      const res = await fetch(`/api/v1/workspaces/${wsId}/wallets`, {
-        cache: 'no-store',
-      });
-      if (!res.ok) throw new Error('Failed to fetch wallets');
-      return res.json();
-    },
+    queryFn: () => listWallets(wsId),
   });
 
   const handleCreateNew = (type: DebtLoanType = 'debt') => {
@@ -91,8 +92,7 @@ export function DebtsPage({ wsId, searchParams }: Props) {
 
   const handleFormFinish = () => {
     setIsCreateDialogOpen(false);
-    queryClient.invalidateQueries({ queryKey: ['debt-loans', wsId] });
-    queryClient.invalidateQueries({ queryKey: ['debt-loan-summary', wsId] });
+    void invalidateDebtLoanMutationQueries(queryClient, wsId);
   };
 
   // Filter for active items

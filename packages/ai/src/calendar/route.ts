@@ -60,7 +60,7 @@ For example:
   promptText += `\nContext: ${context.prompt}`;
 
   const result = streamText({
-    model: google('gemini-3.1-flash-lite-preview'),
+    model: google('gemini-3.1-flash-lite'),
     output: Output.object({ schema: calendarEventsSchema }),
     prompt: promptText,
   });

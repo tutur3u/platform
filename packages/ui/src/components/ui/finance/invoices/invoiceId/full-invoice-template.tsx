@@ -6,8 +6,8 @@ import type {
 import type { WorkspaceConfig } from '@tuturuuu/types/primitives/WorkspaceConfig';
 import { Separator } from '@tuturuuu/ui/separator';
 import { formatCurrency } from '@tuturuuu/utils/format';
-import dayjs from 'dayjs';
 import { useTranslations } from 'next-intl';
+import { FinanceDisplayAmount } from '../../shared/finance-display-amount';
 
 export function FullInvoiceTemplate({
   invoice,
@@ -15,6 +15,7 @@ export function FullInvoiceTemplate({
   promotions,
   configs,
   isDarkPreview,
+  lang,
   currency = 'VND',
 }: {
   invoice: Invoice & {
@@ -32,10 +33,22 @@ export function FullInvoiceTemplate({
   promotions: InvoicePromotion[];
   configs: WorkspaceConfig[];
   isDarkPreview: boolean;
+  lang: string;
   currency?: string;
 }) {
   const t = useTranslations();
   const getConfig = (id: string) => configs.find((c) => c.id === id)?.value;
+  const brandName = getConfig('BRAND_NAME');
+  const brandLogoAlt = brandName
+    ? t('invoices.brand_logo_alt', { brand: brandName })
+    : t('invoices.logo_alt');
+  const invoiceDate = invoice.created_at
+    ? new Intl.DateTimeFormat(lang, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      }).format(new Date(invoice.created_at))
+    : null;
 
   const subtotal = products.reduce((total, product) => {
     return total + product.price * product.amount;
@@ -57,7 +70,7 @@ export function FullInvoiceTemplate({
             // biome-ignore lint/performance/noImgElement: <>
             <img
               src={getConfig('BRAND_LOGO_URL')!}
-              alt="logo"
+              alt={brandLogoAlt}
               className="max-h-20 object-contain"
             />
           )}
@@ -78,11 +91,11 @@ export function FullInvoiceTemplate({
 
       {/* Company Info */}
       <div className="mb-8 text-center">
-        {getConfig('BRAND_NAME') && (
+        {brandName && (
           <h2
             className={`font-bold text-xl ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
-            {getConfig('BRAND_NAME')}
+            {brandName}
           </h2>
         )}
         {getConfig('BRAND_LOCATION') && (
@@ -118,7 +131,7 @@ export function FullInvoiceTemplate({
           </p>
         </div>
         <div className="text-right">
-          {invoice.created_at && (
+          {invoiceDate && (
             <p
               className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
@@ -127,7 +140,7 @@ export function FullInvoiceTemplate({
               >
                 {t('invoices.invoice_date')}:
               </span>{' '}
-              {dayjs(invoice.created_at).format('DD/MM/YYYY')}
+              {invoiceDate}
             </p>
           )}
         </div>
@@ -189,19 +202,23 @@ export function FullInvoiceTemplate({
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(product.price, currency, undefined, {
-                  signDisplay: 'never',
-                })}
+                <FinanceDisplayAmount
+                  value={formatCurrency(product.price, currency, undefined, {
+                    signDisplay: 'never',
+                  })}
+                />
               </td>
               <td
                 className={`py-2 text-right ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
               >
-                {formatCurrency(
-                  product.amount * product.price,
-                  currency,
-                  undefined,
-                  { signDisplay: 'never' }
-                )}
+                <FinanceDisplayAmount
+                  value={formatCurrency(
+                    product.amount * product.price,
+                    currency,
+                    undefined,
+                    { signDisplay: 'never' }
+                  )}
+                />
               </td>
             </tr>
           ))}
@@ -222,11 +239,15 @@ export function FullInvoiceTemplate({
               className={`${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
             >
               {promo.name || promo.code}:{' '}
-              {promo.use_ratio
-                ? `${promo.value}%`
-                : formatCurrency(promo.value, currency, undefined, {
-                    signDisplay: 'never',
-                  })}
+              <FinanceDisplayAmount
+                value={
+                  promo.use_ratio
+                    ? `${promo.value}%`
+                    : formatCurrency(promo.value, currency, undefined, {
+                        signDisplay: 'never',
+                      })
+                }
+              />
             </p>
           ))}
         </div>
@@ -239,9 +260,11 @@ export function FullInvoiceTemplate({
           className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
         >
           <span className="font-semibold">{t('invoices.subtotal')}:</span>{' '}
-          {formatCurrency(subtotal, currency, undefined, {
-            signDisplay: 'never',
-          })}
+          <FinanceDisplayAmount
+            value={formatCurrency(subtotal, currency, undefined, {
+              signDisplay: 'never',
+            })}
+          />
         </p>
         {promotions.length > 0 && (
           <p
@@ -250,10 +273,11 @@ export function FullInvoiceTemplate({
             <span className="font-semibold">
               {t('invoices.discounts')}: {''}
             </span>
-            {'-'}
-            {formatCurrency(discount_amount, currency, undefined, {
-              signDisplay: 'never',
-            })}
+            <FinanceDisplayAmount
+              value={`-${formatCurrency(discount_amount, currency, undefined, {
+                signDisplay: 'never',
+              })}`}
+            />
           </p>
         )}
         {invoice.total_diff !== 0 && (
@@ -261,9 +285,11 @@ export function FullInvoiceTemplate({
             className={`mb-2 ${isDarkPreview ? 'text-foreground/70' : 'text-black'}`}
           >
             <span className="font-semibold">{t('invoices.rounding')}:</span>{' '}
-            {formatCurrency(invoice.total_diff, currency, undefined, {
-              signDisplay: 'never',
-            })}
+            <FinanceDisplayAmount
+              value={formatCurrency(invoice.total_diff, currency, undefined, {
+                signDisplay: 'never',
+              })}
+            />
           </p>
         )}
         <Separator className="my-2" />
@@ -272,12 +298,14 @@ export function FullInvoiceTemplate({
         >
           <span className="font-bold">{t('invoices.total')}:</span>{' '}
           <span className="font-semibold">
-            {formatCurrency(
-              invoice.price + invoice.total_diff,
-              currency,
-              undefined,
-              { signDisplay: 'never' }
-            )}
+            <FinanceDisplayAmount
+              value={formatCurrency(
+                invoice.price + invoice.total_diff,
+                currency,
+                undefined,
+                { signDisplay: 'never' }
+              )}
+            />
           </span>
         </p>
       </div>

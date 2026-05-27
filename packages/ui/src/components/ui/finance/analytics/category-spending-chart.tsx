@@ -10,8 +10,12 @@ import {
   ChartTooltipContent,
 } from '@tuturuuu/ui/chart';
 import { cn } from '@tuturuuu/utils/format';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface CategorySpendingChartProps {
   wsId: string;
@@ -42,6 +46,9 @@ export function CategorySpendingChart({
   currency = 'USD',
 }: CategorySpendingChartProps) {
   const locale = useLocale();
+  const t = useTranslations();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const { data: categoryData, isLoading } = useQuery({
     queryKey: ['category_spending', wsId, startDate, endDate],
@@ -55,7 +62,8 @@ export function CategorySpendingChart({
       const categoryMap = new Map<string, number>();
 
       data?.forEach((transaction) => {
-        const categoryName = transaction.category_name || 'Uncategorized';
+        const categoryName =
+          transaction.category_name || t('finance-transactions.no-category');
         const amount = Math.abs(Number(transaction.total));
 
         categoryMap.set(
@@ -85,11 +93,13 @@ export function CategorySpendingChart({
 
   const totalSpending =
     categoryData?.reduce((sum, item) => sum + item.value, 0) || 0;
+  const formatPercentage = (percentage: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : `${percentage.toFixed(1)}%`;
 
   return (
     <Card className={cn('flex flex-col', className)}>
       <CardHeader>
-        <CardTitle>Spending by Category</CardTitle>
+        <CardTitle>{t('finance.spending-by-category')}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1">
         {isLoading ? (
@@ -107,7 +117,9 @@ export function CategorySpendingChart({
                     cy="50%"
                     labelLine={false}
                     label={(props) =>
-                      `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
+                      areNumbersHidden
+                        ? `${props.name}: ${FINANCE_HIDDEN_AMOUNT}`
+                        : `${props.name}: ${((props.percent || 0) * 100).toFixed(0)}%`
                     }
                     outerRadius={80}
                     fill="#8884d8"
@@ -124,10 +136,12 @@ export function CategorySpendingChart({
                     content={
                       <ChartTooltipContent
                         formatter={(value) =>
-                          new Intl.NumberFormat(locale, {
-                            style: 'currency',
-                            currency,
-                          }).format(Number(value))
+                          areNumbersHidden
+                            ? FINANCE_HIDDEN_AMOUNT
+                            : new Intl.NumberFormat(locale, {
+                                style: 'currency',
+                                currency,
+                              }).format(Number(value))
                         }
                       />
                     }
@@ -138,8 +152,8 @@ export function CategorySpendingChart({
 
             <div className="space-y-2">
               <div className="flex justify-between border-b pb-2 font-semibold">
-                <span>Category</span>
-                <span>Amount</span>
+                <span>{t('transaction-data-table.category')}</span>
+                <span>{t('transaction-data-table.amount')}</span>
               </div>
               {categoryData.map((item, index) => {
                 const percentage = (item.value / totalSpending) * 100;
@@ -159,13 +173,15 @@ export function CategorySpendingChart({
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-muted-foreground">
-                        {percentage.toFixed(1)}%
+                        {formatPercentage(percentage)}
                       </span>
                       <span className="font-medium">
-                        {new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(item.value)}
+                        {areNumbersHidden
+                          ? FINANCE_HIDDEN_AMOUNT
+                          : new Intl.NumberFormat(locale, {
+                              style: 'currency',
+                              currency,
+                            }).format(item.value)}
                       </span>
                     </div>
                   </div>
@@ -173,12 +189,14 @@ export function CategorySpendingChart({
               })}
               <div className="border-t pt-2 font-semibold">
                 <div className="flex items-center justify-between">
-                  <span>Total</span>
+                  <span>{t('finance-transactions.total')}</span>
                   <span>
-                    {new Intl.NumberFormat(locale, {
-                      style: 'currency',
-                      currency,
-                    }).format(totalSpending)}
+                    {areNumbersHidden
+                      ? FINANCE_HIDDEN_AMOUNT
+                      : new Intl.NumberFormat(locale, {
+                          style: 'currency',
+                          currency,
+                        }).format(totalSpending)}
                   </span>
                 </div>
               </div>
@@ -186,7 +204,7 @@ export function CategorySpendingChart({
           </div>
         ) : (
           <div className="flex h-64 items-center justify-center text-muted-foreground">
-            No spending data available for the selected period
+            {t('finance-analytics.no-data')}
           </div>
         )}
       </CardContent>

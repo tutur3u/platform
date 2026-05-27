@@ -1,49 +1,54 @@
 'use client';
 
 import { AmountRangeFilter } from '@tuturuuu/ui/finance/transactions/categories/amount-filter';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { parseAsFloat, parseAsInteger, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 
-export function AmountFilterWrapper() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+const parseAmountValue = (value: string | undefined) => {
+  if (!value) return null;
+  const parsedValue = Number(value);
+  return Number.isFinite(parsedValue) ? parsedValue : null;
+};
 
-  // Get current amount range from search params
-  const minAmount = searchParams.get('minAmount') || undefined;
-  const maxAmount = searchParams.get('maxAmount') || undefined;
+const formatAmountValue = (value: number | null) =>
+  value === null ? undefined : String(value);
+
+export function AmountFilterWrapper() {
+  const [minAmount, setMinAmount] = useQueryState(
+    'minAmount',
+    parseAsFloat.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [maxAmount, setMaxAmount] = useQueryState(
+    'maxAmount',
+    parseAsFloat.withOptions({
+      shallow: true,
+    })
+  );
+
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle amount range filter changes
   const handleAmountRangeChange = useCallback(
-    (min: string | undefined, max: string | undefined) => {
-      const params = new URLSearchParams(searchParams);
-
-      // Remove existing amount params
-      params.delete('minAmount');
-      params.delete('maxAmount');
-
-      // Add new amount params if provided
-      if (min) {
-        params.set('minAmount', min);
-      }
-      if (max) {
-        params.set('maxAmount', max);
-      }
-
-      // Reset to first page when filtering
-      params.set('page', '1');
-
-      const newUrl = `${pathname}?${params.toString()}`;
-      router.push(newUrl);
-      router.refresh();
+    async (min: string | undefined, max: string | undefined) => {
+      await setMinAmount(parseAmountValue(min));
+      await setMaxAmount(parseAmountValue(max));
+      await setPage(1);
     },
-    [router, searchParams, pathname]
+    [setMinAmount, setMaxAmount, setPage]
   );
 
   return (
     <AmountRangeFilter
-      minAmount={minAmount}
-      maxAmount={maxAmount}
+      minAmount={formatAmountValue(minAmount)}
+      maxAmount={formatAmountValue(maxAmount)}
       onAmountRangeChange={handleAmountRangeChange}
     />
   );

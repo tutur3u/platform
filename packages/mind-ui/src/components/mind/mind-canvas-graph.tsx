@@ -8,21 +8,28 @@ import {
   type Connection,
   ConnectionMode,
   Controls,
+  type DefaultEdgeOptions,
   type EdgeChange,
   EdgeLabelRenderer,
+  type EdgeMouseHandler,
   type EdgeProps,
   getSmoothStepPath,
   Handle,
   type Node,
   type NodeChange,
+  type NodeMouseHandler,
   type NodeProps,
+  type OnNodesChange,
+  type OnNodesDelete,
+  type OnSelectionChangeFunc,
   PanOnScrollMode,
   Position,
   ReactFlow,
+  type SnapGrid,
 } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import type {
   MindEdgeObstacle,
   MindFlowEdge,
@@ -42,11 +49,8 @@ type MindGroupFrameNodeData = Record<string, unknown> & {
 type MindGroupFrameNode = Node<MindGroupFrameNodeData, 'mindGroupFrame'>;
 type MindGraphNode = MindFlowNode | MindGroupFrameNode;
 
-const nodeTypes = {
-  mindGroupFrame: MindGroupFrameNode,
-  mindNode: MindNodeCard,
-};
-const edgeTypes = { mindRelationship: MindRelationshipEdge };
+const DEFAULT_EDGE_OPTIONS: DefaultEdgeOptions = { type: 'smoothstep' };
+const SNAP_GRID: SnapGrid = [16, 16];
 const AXIS_ALIGN_TOLERANCE = 8;
 const DETOUR_GAPS = [72, 128, 196];
 const FRAME_BORDER_LABEL_GAP = 18;
@@ -61,6 +65,11 @@ const PORT_GAP = 36;
 const RELATIONSHIP_LINE_LABEL_GAP = 28;
 const ROUTING_OBSTACLE_DEBOUNCE_MS = 120;
 const VERTICAL_LABEL_GAPS = [12, 24, 42, 72] as const;
+const dimmedNodeCache = new WeakMap<MindFlowNode, MindFlowNode>();
+const focusedEdgeCache = new WeakMap<
+  MindFlowEdge,
+  { dimmed?: MindFlowEdge; focused?: MindFlowEdge }
+>();
 
 type Props = {
   edges: MindFlowEdge[];
@@ -199,6 +208,52 @@ export function MindCanvasGraph({
     ],
     [focusedEdgeId, focusedNodeId, frameNodes, graphEdges, nodes]
   );
+  const handleEdgeMouseEnter = useCallback<EdgeMouseHandler<MindFlowEdge>>(
+    (_, edge) => setHoveredEdgeId(edge.id),
+    []
+  );
+  const handleEdgeMouseLeave = useCallback<EdgeMouseHandler<MindFlowEdge>>(
+    () => setHoveredEdgeId(null),
+    []
+  );
+  const handleNodeMouseEnter = useCallback<NodeMouseHandler<MindGraphNode>>(
+    (_, node) => {
+      if (isMindFlowNode(node)) setHoveredNodeId(node.id);
+    },
+    []
+  );
+  const handleNodeMouseLeave = useCallback<NodeMouseHandler<MindGraphNode>>(
+    () => setHoveredNodeId(null),
+    []
+  );
+  const handleNodesChange = useCallback<OnNodesChange<MindGraphNode>>(
+    (changes) =>
+      onNodesChange(
+        changes.filter((change) => {
+          if (!('id' in change)) return true;
+          return !frameById.has(change.id);
+        }) as NodeChange<MindFlowNode>[]
+      ),
+    [frameById, onNodesChange]
+  );
+  const handleNodesDelete = useCallback<OnNodesDelete<MindGraphNode>>(
+    (deleted) => onNodesDelete(deleted.filter(isMindFlowNode)),
+    [onNodesDelete]
+  );
+  const handleSelectionChange = useCallback<
+    OnSelectionChangeFunc<MindGraphNode, MindFlowEdge>
+  >(
+    ({ edges: selectedEdges, nodes: selectedNodes }) =>
+      onSelectionChange({
+        edges: selectedEdges,
+        frames: selectedNodes.filter(isMindGroupFrameNode).map((node) => {
+          const data = node.data as MindGroupFrameNodeData;
+          return data.frame;
+        }),
+        nodes: selectedNodes.filter(isMindFlowNode),
+      }),
+    [onSelectionChange]
+  );
 
   return (
     <ReactFlow<MindGraphNode, MindFlowEdge>
@@ -206,7 +261,7 @@ export function MindCanvasGraph({
       colorMode={colorMode}
       connectionMode={ConnectionMode.Loose}
       connectionRadius={42}
-      defaultEdgeOptions={{ type: 'smoothstep' }}
+      defaultEdgeOptions={DEFAULT_EDGE_OPTIONS}
       edges={graphEdges}
       fitView
       nodes={graphNodes}
@@ -216,34 +271,17 @@ export function MindCanvasGraph({
       onPaneClick={onCanvasClick}
       onEdgesChange={onEdgesChange}
       onEdgesDelete={onEdgesDelete}
-      onEdgeMouseEnter={(_, edge) => setHoveredEdgeId(edge.id)}
-      onEdgeMouseLeave={() => setHoveredEdgeId(null)}
-      onNodeMouseEnter={(_, node) => {
-        if (isMindFlowNode(node)) setHoveredNodeId(node.id);
-      }}
-      onNodeMouseLeave={() => setHoveredNodeId(null)}
-      onNodesChange={(changes) =>
-        onNodesChange(
-          changes.filter((change) => {
-            if (!('id' in change)) return true;
-            return !frameById.has(change.id);
-          }) as NodeChange<MindFlowNode>[]
-        )
-      }
-      onNodesDelete={(deleted) => onNodesDelete(deleted.filter(isMindFlowNode))}
-      onSelectionChange={({ edges: selectedEdges, nodes: selectedNodes }) =>
-        onSelectionChange({
-          edges: selectedEdges,
-          frames: selectedNodes.filter(isMindGroupFrameNode).map((node) => {
-            const data = node.data as MindGroupFrameNodeData;
-            return data.frame;
-          }),
-          nodes: selectedNodes.filter(isMindFlowNode),
-        })
-      }
+      onEdgeMouseEnter={handleEdgeMouseEnter}
+      onEdgeMouseLeave={handleEdgeMouseLeave}
+      onNodeMouseEnter={handleNodeMouseEnter}
+      onNodeMouseLeave={handleNodeMouseLeave}
+      onNodesChange={handleNodesChange}
+      onNodesDelete={handleNodesDelete}
+      onSelectionChange={handleSelectionChange}
+      onlyRenderVisibleElements
       panOnScroll
       panOnScrollMode={PanOnScrollMode.Free}
-      snapGrid={[16, 16]}
+      snapGrid={SNAP_GRID}
       snapToGrid
       zoomOnPinch
       zoomOnScroll={false}
@@ -406,16 +444,7 @@ function applyGraphFocusToEdges({
       edge.id === focusedEdgeId ||
       edge.source === focusedNodeId ||
       edge.target === focusedNodeId;
-    if (!edge.data) return edge;
-
-    return {
-      ...edge,
-      data: {
-        ...edge.data,
-        dimmed: !focused,
-        focused,
-      },
-    };
+    return getFocusedEdge(edge, focused);
   });
 }
 
@@ -449,13 +478,64 @@ function applyGraphFocusToNodes({
     }
   }
 
-  return nodes.map((node) => ({
+  return nodes.map((node) => getFocusedNode(node, focusedNodeIds.has(node.id)));
+}
+
+function getFocusedEdge(edge: MindFlowEdge, focused: boolean) {
+  if (!edge.data) return edge;
+
+  const dimmed = !focused;
+  if (edge.data.dimmed === dimmed && edge.data.focused === focused) {
+    return edge;
+  }
+
+  const cacheKey = focused ? 'focused' : 'dimmed';
+  const cached = focusedEdgeCache.get(edge)?.[cacheKey];
+  if (cached) return cached;
+
+  const next = {
+    ...edge,
+    data: {
+      ...edge.data,
+      dimmed,
+      focused,
+    },
+  };
+  const cache = focusedEdgeCache.get(edge) ?? {};
+  cache[cacheKey] = next;
+  focusedEdgeCache.set(edge, cache);
+
+  return next;
+}
+
+function getFocusedNode(node: MindFlowNode, focused: boolean) {
+  if (focused) {
+    if (node.data.dimmed !== true) return node;
+
+    return {
+      ...node,
+      data: {
+        ...node.data,
+        dimmed: false,
+      },
+    };
+  }
+
+  if (node.data.dimmed === true) return node;
+
+  const cached = dimmedNodeCache.get(node);
+  if (cached) return cached;
+
+  const next = {
     ...node,
     data: {
       ...node.data,
-      dimmed: !focusedNodeIds.has(node.id),
+      dimmed: true,
     },
-  }));
+  };
+  dimmedNodeCache.set(node, next);
+
+  return next;
 }
 
 function isMindFlowNode(node: MindGraphNode): node is MindFlowNode {
@@ -525,18 +605,33 @@ function MindRelationshipEdge({
   const edgeStroke = typeof style?.stroke === 'string' ? style.stroke : null;
   const dimmed = data?.dimmed === true && !selected;
   const focused = data?.focused === true || selected;
-  const route = buildRelationshipRoute({
-    fallbackPositions: {
-      source: sourceSide,
-      target: targetSide,
-    },
-    labelLane: data?.labelLane,
-    labelObstacles: data?.labelObstacles ?? [],
-    labelText: relationshipLabel,
-    obstacles: data?.obstacles ?? [],
-    source: { x: sourceX, y: sourceY },
-    target: { x: targetX, y: targetY },
-  });
+  const route = useMemo(
+    () =>
+      buildRelationshipRoute({
+        fallbackPositions: {
+          source: sourceSide,
+          target: targetSide,
+        },
+        labelLane: data?.labelLane,
+        labelObstacles: data?.labelObstacles ?? [],
+        labelText: relationshipLabel,
+        obstacles: data?.obstacles ?? [],
+        source: { x: sourceX, y: sourceY },
+        target: { x: targetX, y: targetY },
+      }),
+    [
+      data?.labelLane,
+      data?.labelObstacles,
+      data?.obstacles,
+      relationshipLabel,
+      sourceSide,
+      sourceX,
+      sourceY,
+      targetSide,
+      targetX,
+      targetY,
+    ]
+  );
   const labelMaxWidth = Math.min(route.label.maxWidth, 220);
 
   return (
@@ -635,6 +730,18 @@ function EdgeLabelConnector({
     </svg>
   );
 }
+
+const MemoizedMindGroupFrameNode = memo(MindGroupFrameNode);
+MemoizedMindGroupFrameNode.displayName = 'MindGroupFrameNode';
+
+const MemoizedMindRelationshipEdge = memo(MindRelationshipEdge);
+MemoizedMindRelationshipEdge.displayName = 'MindRelationshipEdge';
+
+const nodeTypes = {
+  mindGroupFrame: MemoizedMindGroupFrameNode,
+  mindNode: MindNodeCard,
+};
+const edgeTypes = { mindRelationship: MemoizedMindRelationshipEdge };
 
 type Point = { x: number; y: number };
 type LabelPlacement = {
@@ -857,17 +964,25 @@ function getPathLabel(
   } = {}
 ) {
   const total = getPathLength(points);
-  const routeMidpoint = getPointAtPathLength(points, total / 2);
-  const candidates = getSegments(points).flatMap((segment) =>
-    getSegmentLabelCandidates(segment, labelText)
-  );
+  const pathMidpoint = getPointAtPathLength(points, total / 2);
+  const relationMidpoint = getRelationMidpoint(points) ?? pathMidpoint;
+  const candidates = [
+    ...getDetachedRelationLabelCandidates({
+      labelText,
+      relationMidpoint,
+      routeAnchor: pathMidpoint,
+    }),
+    ...getSegments(points).flatMap((segment) =>
+      getSegmentLabelCandidates(segment, labelText)
+    ),
+  ];
 
   if (candidates.length > 0) {
     return pickBestLabelCandidate(candidates, {
       labelLane,
       labelObstacles,
       labelText,
-      routeMidpoint,
+      routeMidpoint: relationMidpoint,
     });
   }
 
@@ -879,6 +994,74 @@ function getPathLabel(
     oneLine: false,
     ...fallback,
   };
+}
+
+function getRelationMidpoint(points: Point[]) {
+  const first = points[0];
+  const last = points.at(-1);
+  if (!first || !last) return null;
+
+  return {
+    x: (first.x + last.x) / 2,
+    y: (first.y + last.y) / 2,
+  };
+}
+
+function getDetachedRelationLabelCandidates({
+  labelText,
+  relationMidpoint,
+  routeAnchor,
+}: {
+  labelText?: string;
+  relationMidpoint: Point;
+  routeAnchor: Point;
+}): LabelCandidate[] {
+  const routeDistance =
+    Math.abs(routeAnchor.x - relationMidpoint.x) +
+    Math.abs(routeAnchor.y - relationMidpoint.y);
+  if (routeDistance < 96) return [];
+
+  const maxWidth = Math.min(
+    220,
+    Math.max(120, getDesiredLabelWidth(labelText))
+  );
+  const base = {
+    anchorX: routeAnchor.x,
+    anchorY: routeAnchor.y,
+    horizontal: true,
+    maxWidth,
+    oneLine: true,
+    segmentLength: 0,
+  };
+
+  return [
+    {
+      ...base,
+      lineGap: 0,
+      offsetRank: 0,
+      side: 0 as const,
+      x: relationMidpoint.x,
+      y: relationMidpoint.y,
+    },
+    ...LABEL_OFFSETS.flatMap((offset, offsetIndex) => [
+      {
+        ...base,
+        lineGap: 0,
+        offsetRank: offsetIndex + 1,
+        side: -1 as const,
+        x: relationMidpoint.x,
+        y: relationMidpoint.y - offset,
+      },
+      {
+        ...base,
+        lineGap: 0,
+        offsetRank: offsetIndex + 1,
+        side: 1 as const,
+        x: relationMidpoint.x,
+        y: relationMidpoint.y + offset,
+      },
+    ]),
+  ];
 }
 
 function getSegmentLabelCandidates(

@@ -24,8 +24,8 @@ export default async function TotalBalanceStatistics({
   // Parse includeConfidential from URL param (defaults to true if not set)
   const includeConfidentialBool = includeConfidential !== 'false';
 
-  const { data: income } = enabled
-    ? await supabase.rpc('get_workspace_wallets_income', {
+  const { data: netTotal } = enabled
+    ? await supabase.rpc('get_workspace_wallets_net_total', {
         ws_id: wsId,
         start_date:
           startDate && view
@@ -42,27 +42,6 @@ export default async function TotalBalanceStatistics({
         include_confidential: includeConfidentialBool,
       })
     : { data: 0 };
-
-  const { data: expense } = enabled
-    ? await supabase.rpc('get_workspace_wallets_expense', {
-        ws_id: wsId,
-        start_date:
-          startDate && view
-            ? dayjs(startDate)
-                .startOf(view as OpUnitType)
-                .toISOString()
-            : undefined,
-        end_date:
-          endDate && view
-            ? dayjs(endDate)
-                .endOf(view as OpUnitType)
-                .toISOString()
-            : undefined,
-        include_confidential: includeConfidentialBool,
-      })
-    : { data: 0 };
-
-  const sum = (income || 0) + (expense || 0);
 
   const permissions = await getPermissions({
     wsId,
@@ -75,7 +54,7 @@ export default async function TotalBalanceStatistics({
   return (
     <StatisticCard
       title={t('finance-overview.total-balance')}
-      value={sum || 0}
+      value={netTotal || 0}
       icon={<Wallet className="h-5 w-5" />}
       className="md:col-span-2"
       currency={currency}

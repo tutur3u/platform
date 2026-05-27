@@ -29,6 +29,51 @@ const TransactionSchema = z.object({
   is_category_confidential: z.boolean().optional(),
 });
 
+type TransactionListRow = {
+  category?: string | null;
+  category_color?: string | null;
+  category_icon?: string | null;
+  category_name?: string | null;
+  creator_avatar_url?: string | null;
+  creator_email?: string | null;
+  creator_full_name?: string | null;
+  id: string;
+  user?: {
+    avatar_url?: string | null;
+    email?: string | null;
+    full_name?: string | null;
+  } | null;
+  wallet?: string | null;
+  wallet_name?: string | null;
+};
+
+function normalizeTransactionListRow<TTransaction extends TransactionListRow>(
+  transaction: TTransaction
+) {
+  const hasCreator = Boolean(
+    transaction.creator_full_name ||
+      transaction.creator_email ||
+      transaction.creator_avatar_url
+  );
+
+  return {
+    ...transaction,
+    category: transaction.category ?? transaction.category_name ?? null,
+    category_color: transaction.category_color ?? null,
+    category_icon: transaction.category_icon ?? null,
+    user:
+      transaction.user ??
+      (hasCreator
+        ? {
+            avatar_url: transaction.creator_avatar_url ?? null,
+            email: transaction.creator_email ?? null,
+            full_name: transaction.creator_full_name ?? null,
+          }
+        : undefined),
+    wallet: transaction.wallet ?? transaction.wallet_name ?? null,
+  };
+}
+
 function normalizeTransactionDate(value: string | Date) {
   const date = typeof value === 'string' ? new Date(value) : value;
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
@@ -115,8 +160,12 @@ export async function GET(
     );
   }
 
+  const normalizedData = (enrichedData ?? []).map((transaction) =>
+    normalizeTransactionListRow(transaction)
+  );
+
   if (!includeCount) {
-    return NextResponse.json(enrichedData ?? []);
+    return NextResponse.json(normalizedData);
   }
 
   const total = Number(
@@ -126,7 +175,7 @@ export async function GET(
 
   return NextResponse.json({
     count: total,
-    data: enrichedData ?? [],
+    data: normalizedData,
     pagination: {
       hasNextPage: offset + itemsPerPage < total,
       hasPreviousPage: offset > 0,

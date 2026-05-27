@@ -82,7 +82,7 @@ function moreChildIds(navLinks: (NavLink | null)[]) {
 }
 
 describe('sidebar navigation preferences', () => {
-  it('defaults root navigation to Dashboard, core tools, Settings, then More tools', () => {
+  it('defaults root navigation to Dashboard, core tools, More tools, then Settings', () => {
     const result = applySidebarNavigationPreferences(links, null);
 
     expect(visibleIds(result.links)).toEqual([
@@ -90,8 +90,8 @@ describe('sidebar navigation preferences', () => {
       'tasks',
       'calendar',
       'finance',
-      'settings',
       'more_tools',
+      'settings',
     ]);
     expect(moreChildIds(result.links)).toEqual(['forms', 'users', 'inventory']);
     expect(result.links.map((link) => link?.id ?? null)).toEqual([
@@ -101,9 +101,9 @@ describe('sidebar navigation preferences', () => {
       'calendar',
       'finance',
       null,
-      'settings',
-      null,
       'more_tools',
+      null,
+      'settings',
     ]);
     expect(
       result.links
@@ -127,8 +127,8 @@ describe('sidebar navigation preferences', () => {
       'dashboard',
       'finance',
       'tasks',
-      'settings',
       'more_tools',
+      'settings',
     ]);
     expect(moreChildIds(result.links)).toEqual([
       'calendar',
@@ -170,8 +170,8 @@ describe('sidebar navigation preferences', () => {
       'tasks',
       'calendar',
       'finance',
-      'settings',
       'more_tools',
+      'settings',
     ]);
     expect(moreChildIds(result.links)).toEqual([]);
     expect(result.archivedLinks.map((link) => link.id)).toEqual([
@@ -195,7 +195,7 @@ describe('sidebar navigation preferences', () => {
     });
   });
 
-  it('creates a saved config that pins More tools items before Settings', () => {
+  it('creates a saved config that keeps Settings pinned as a footer item', () => {
     expect(
       createSidebarNavigationLayoutConfigForPlacement(
         links,

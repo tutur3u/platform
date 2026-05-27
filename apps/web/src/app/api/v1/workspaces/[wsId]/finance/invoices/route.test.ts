@@ -90,6 +90,89 @@ describe('invoice create route', () => {
     });
   });
 
+  it('calculates invoice values through the private database RPC', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        {
+          allow_promotions: true,
+          discount_amount: 10000,
+          promotion_code: 'PROMO',
+          promotion_description: 'Discount',
+          promotion_id: 'promo-1',
+          promotion_name: 'Promo',
+          promotion_use_ratio: false,
+          promotion_value: 10000,
+          rounding_applied: 0,
+          subtotal: 50000,
+          total: 40000,
+          values_recalculated: true,
+        },
+      ],
+      error: null,
+    });
+    const schema = vi.fn(() => ({ rpc }));
+
+    const { getCalculatedInvoiceValuesFromRpc } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/route'
+    );
+
+    const result = await getCalculatedInvoiceValuesFromRpc({
+      frontendValues: {
+        discount_amount: 0,
+        subtotal: 50000,
+        total: 50000,
+      },
+      isSubscriptionInvoice: false,
+      products: [
+        {
+          category_id: 'category-1',
+          price: 50000,
+          product_id: 'product-1',
+          quantity: 1,
+          unit_id: 'unit-1',
+          warehouse_id: 'warehouse-1',
+        },
+      ],
+      promotionId: 'promo-1',
+      supabase: { schema },
+      wsId: '00000000-0000-0000-0000-000000000000',
+    });
+
+    expect(schema).toHaveBeenCalledWith('private');
+    expect(rpc).toHaveBeenCalledWith('calculate_invoice_values', {
+      p_frontend_discount_amount: 0,
+      p_frontend_subtotal: 50000,
+      p_frontend_total: 50000,
+      p_is_subscription_invoice: false,
+      p_products: [
+        {
+          product_id: 'product-1',
+          quantity: 1,
+          unit_id: 'unit-1',
+          warehouse_id: 'warehouse-1',
+        },
+      ],
+      p_promotion_id: 'promo-1',
+      p_ws_id: '00000000-0000-0000-0000-000000000000',
+    });
+    expect(result).toEqual({
+      allowPromotions: true,
+      discount_amount: 10000,
+      promotion: {
+        code: 'PROMO',
+        description: 'Discount',
+        id: 'promo-1',
+        name: 'Promo',
+        use_ratio: false,
+        value: 10000,
+      },
+      rounding_applied: 0,
+      subtotal: 50000,
+      total: 40000,
+      values_recalculated: true,
+    });
+  });
+
   it('rejects non-default wallets on create without wallet override permissions', async () => {
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/finance/invoices/route'

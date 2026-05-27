@@ -23,6 +23,15 @@ type GatewayModelRow = {
   tags: string[] | null;
 };
 
+type GatewayModelsPageResponse = {
+  data: GatewayModelRow[];
+  pagination: {
+    limit: number;
+    page: number;
+    total: number;
+  };
+};
+
 export type GatewayModelProviderSummary = {
   allowedCount: number;
   provider: string;
@@ -72,20 +81,32 @@ function mapGatewayModel(model: GatewayModelRow): GatewayModelUi {
   };
 }
 
-function matchesGatewayModelSearch(model: GatewayModelUi, search?: string) {
-  const trimmedSearch = search?.trim().toLowerCase();
-  if (!trimmedSearch) return true;
+async function fetchGatewayModelPage({
+  ids,
+  limit = 100,
+  page = 1,
+  provider,
+  search,
+}: {
+  ids?: string[];
+  limit?: number;
+  page?: number;
+  provider?: string;
+  search?: string;
+}): Promise<GatewayModelsPageResponse> {
+  const params = new URLSearchParams({
+    enabled: 'true',
+    format: 'paginated',
+    limit: String(limit),
+    page: String(page),
+    type: 'language',
+  });
 
-  return (
-    model.label.toLowerCase().includes(trimmedSearch) ||
-    model.value.toLowerCase().includes(trimmedSearch) ||
-    model.provider.toLowerCase().includes(trimmedSearch) ||
-    (model.description?.toLowerCase().includes(trimmedSearch) ?? false)
-  );
-}
+  if (provider) params.set('provider', provider);
+  if (search) params.set('q', search);
+  if (ids?.length) params.set('ids', ids.join(','));
 
-async function fetchGatewayModelCatalog(): Promise<GatewayModelUi[]> {
-  const response = await fetch('/api/v1/infrastructure/ai/models', {
+  const response = await fetch(`/api/v1/infrastructure/ai/models?${params}`, {
     cache: 'no-store',
   });
 
@@ -93,8 +114,30 @@ async function fetchGatewayModelCatalog(): Promise<GatewayModelUi[]> {
     throw new Error('Failed to fetch AI gateway models');
   }
 
-  const data = (await response.json()) as GatewayModelRow[];
-  return data.map((model) => mapGatewayModel(model));
+  return (await response.json()) as GatewayModelsPageResponse;
+}
+
+async function fetchGatewayModelCatalog(
+  options: { ids?: string[]; search?: string } = {}
+): Promise<GatewayModelUi[]> {
+  const models: GatewayModelUi[] = [];
+  let page = 1;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const response = await fetchGatewayModelPage({
+      ids: options.ids,
+      page,
+      search: options.search,
+    });
+    models.push(...response.data.map((model) => mapGatewayModel(model)));
+
+    const loaded = response.pagination.page * response.pagination.limit;
+    hasNextPage = loaded < response.pagination.total;
+    page += 1;
+  }
+
+  return models;
 }
 
 export function sortModelsForDisplay<T extends AIModelUI>(
@@ -132,9 +175,7 @@ export async function fetchGatewayProviders({
   hideLockedModels = false,
   search,
 }: FetchGatewayProvidersOptions = {}): Promise<GatewayModelProviderSummary[]> {
-  const data = (await fetchGatewayModelCatalog()).filter((model) =>
-    matchesGatewayModelSearch(model, search)
-  );
+  const data = await fetchGatewayModelCatalog({ search });
 
   if (data.length === 0) return [];
 
@@ -170,20 +211,23 @@ export async function fetchGatewayModelsPage({
   items: GatewayModelUi[];
   nextOffset?: number;
 }> {
-  const data = (await fetchGatewayModelCatalog()).filter(
-    (model) =>
-      model.provider === provider && matchesGatewayModelSearch(model, search)
-  );
+  const page = Math.floor(offset / limit) + 1;
+  const response = await fetchGatewayModelPage({
+    limit,
+    page,
+    provider,
+    search,
+  });
+  const items = response.data.map((model) => mapGatewayModel(model));
+  const nextOffset = offset + items.length;
 
-  if (data.length === 0) {
+  if (items.length === 0) {
     return { items: [], nextOffset: undefined };
   }
 
-  const items = data.slice(offset, offset + limit);
-
   return {
     items,
-    nextOffset: items.length < limit ? undefined : offset + limit,
+    nextOffset: nextOffset < response.pagination.total ? nextOffset : undefined,
   };
 }
 
@@ -204,10 +248,7 @@ export async function fetchGatewayFavoriteModels(
   };
   if (favoriteIds.length === 0) return [];
 
-  const favoriteIdSet = new Set(favoriteIds);
-  const catalog = await fetchGatewayModelCatalog();
-
-  return catalog.filter((model) => favoriteIdSet.has(model.value));
+  return fetchGatewayModelCatalog({ ids: favoriteIds });
 }
 
 export async function fetchGatewayModels(): Promise<GatewayModelUi[]> {

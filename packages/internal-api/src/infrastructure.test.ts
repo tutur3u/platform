@@ -6,6 +6,7 @@ import {
   deleteAIWhitelistEmail,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
+  listAiGatewayModelsPage,
   updateAIWhitelistDomain,
   updateAIWhitelistEmail,
 } from './infrastructure';
@@ -202,5 +203,64 @@ describe('AI whitelist email internal API helpers', () => {
         method: 'DELETE',
       })
     );
+  });
+});
+
+describe('AI gateway model internal API helpers', () => {
+  it('lists a searchable paginated model page through the apps/web API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        data: [
+          {
+            context_window: 1_000_000,
+            description: 'Stable Flash Lite',
+            id: 'google/gemini-3.1-flash-lite',
+            is_enabled: true,
+            name: 'Gemini 3.1 Flash Lite',
+            provider: 'google',
+            tags: ['thinking'],
+          },
+        ],
+        pagination: { limit: 25, page: 2, total: 51 },
+      })
+    );
+
+    const page = await listAiGatewayModelsPage(
+      {
+        enabled: true,
+        ids: ['google/gemini-3.1-flash-lite'],
+        limit: 25,
+        page: 2,
+        provider: 'google',
+        q: 'flash',
+        tag: 'thinking',
+        type: 'language',
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/ai/models?enabled=true&format=paginated&ids=google%2Fgemini-3.1-flash-lite&limit=25&page=2&provider=google&q=flash&tag=thinking&type=language',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    expect(page).toEqual({
+      data: [
+        {
+          context: 1_000_000,
+          description: 'Stable Flash Lite',
+          disabled: false,
+          label: 'Gemini 3.1 Flash Lite',
+          provider: 'google',
+          tags: ['thinking'],
+          value: 'google/gemini-3.1-flash-lite',
+        },
+      ],
+      pagination: { limit: 25, page: 2, total: 51 },
+    });
   });
 });

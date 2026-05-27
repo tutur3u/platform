@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { ProductCard } from '@tuturuuu/ui/finance/invoices/invoiceId/product-card';
 import { PromotionCard } from '@tuturuuu/ui/finance/invoices/invoiceId/promotion-card';
+import { FinanceDisplayAmount } from '@tuturuuu/ui/finance/shared/finance-display-amount';
 import { Separator } from '@tuturuuu/ui/separator';
 import { availableConfigs } from '@tuturuuu/utils/configs/reports';
 import { formatCurrency } from '@tuturuuu/utils/format';
@@ -43,12 +44,13 @@ export default async function InvoiceDetailsPage({
 }: Props) {
   const t = await getTranslations();
 
-  const invoice = await getInvoiceDetails(invoiceId);
-  const products = await getProducts(invoiceId);
-  const promotions = await getPromotions(invoiceId);
-  const { data: configs } = await getConfigs(wsId);
+  const invoice = await getInvoiceDetails(wsId, invoiceId);
 
   if (!invoice) notFound();
+
+  const products = await getProducts(wsId, invoice.id);
+  const promotions = await getPromotions(wsId, invoice.id);
+  const { data: configs } = await getConfigs(wsId);
 
   return (
     <>
@@ -113,16 +115,20 @@ export default async function InvoiceDetailsPage({
               <DetailItem
                 icon={<DollarSign className="h-5 w-5" />}
                 label={t('invoice-data-table.final_price')}
-                value={`${formatCurrency(
-                  invoice.price,
-                  currency
-                )} + ${formatCurrency(
-                  invoice.total_diff,
-                  currency
-                )} = ${formatCurrency(
-                  invoice.price + invoice.total_diff,
-                  currency
-                )}`}
+                value={
+                  <FinanceDisplayAmount
+                    value={`${formatCurrency(
+                      invoice.price,
+                      currency
+                    )} + ${formatCurrency(
+                      invoice.total_diff,
+                      currency
+                    )} = ${formatCurrency(
+                      invoice.price + invoice.total_diff,
+                      currency
+                    )}`}
+                  />
+                }
               />
               <DetailItem
                 icon={<Calendar className="h-5 w-5" />}
@@ -242,7 +248,7 @@ function DetailItem({
   );
 }
 
-async function getInvoiceDetails(invoiceId: string) {
+async function getInvoiceDetails(wsId: string, invoiceId: string) {
   const sbAdmin = await createAdminClient();
 
   // Fetch invoice with both platform and workspace user data in a single query
@@ -256,9 +262,11 @@ async function getInvoiceDetails(invoiceId: string) {
       wallet:workspace_wallets(name)`
     )
     .eq('id', invoiceId)
-    .single();
+    .eq('ws_id', wsId)
+    .maybeSingle();
 
   if (invoiceError) throw invoiceError;
+  if (!invoice) return null;
 
   // Extract platform and legacy creator data
   const platformCreator = invoice.platform_creator as {
@@ -297,30 +305,46 @@ async function getInvoiceDetails(invoiceId: string) {
   };
 }
 
-async function getProducts(invoiceId: string) {
+async function getProducts(wsId: string, invoiceId: string) {
   const sbAdmin = await createAdminClient();
 
   const { data: products, error: productsError } = await sbAdmin
     .from('finance_invoice_products')
-    .select('*')
-    .eq('invoice_id', invoiceId);
+    .select('*, finance_invoices!inner(ws_id)')
+    .eq('invoice_id', invoiceId)
+    .eq('finance_invoices.ws_id', wsId);
 
   if (productsError) throw productsError;
 
-  return products;
+  return (products ?? []).map((product) => {
+    const { finance_invoices: _invoice, ...rest } =
+      product as typeof product & {
+        finance_invoices?: unknown;
+      };
+
+    return rest;
+  });
 }
 
-async function getPromotions(invoiceId: string) {
+async function getPromotions(wsId: string, invoiceId: string) {
   const sbAdmin = await createAdminClient();
 
   const { data: promotions, error: promotionsError } = await sbAdmin
     .from('finance_invoice_promotions')
-    .select('*')
-    .eq('invoice_id', invoiceId);
+    .select('*, finance_invoices!inner(ws_id)')
+    .eq('invoice_id', invoiceId)
+    .eq('finance_invoices.ws_id', wsId);
 
   if (promotionsError) throw promotionsError;
 
-  return promotions;
+  return (promotions ?? []).map((promotion) => {
+    const { finance_invoices: _invoice, ...rest } =
+      promotion as typeof promotion & {
+        finance_invoices?: unknown;
+      };
+
+    return rest;
+  });
 }
 
 async function getConfigs(wsId: string) {

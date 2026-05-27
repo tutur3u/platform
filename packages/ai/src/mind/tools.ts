@@ -283,6 +283,15 @@ function readRecordValue(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
+function mergeRecordValues(...values: unknown[]): Record<string, unknown> {
+  const merged: Record<string, unknown> = {};
+  for (const value of values) {
+    Object.assign(merged, readRecordValue(value));
+  }
+
+  return merged;
+}
+
 function readMindMetadata(value: unknown): MindJsonObject | undefined {
   const parsed = mindMetadataSchema.safeParse(value);
   return parsed.success ? (parsed.data as MindJsonObject) : undefined;
@@ -314,10 +323,30 @@ function pickEnumValue<T extends readonly string[]>(
   fallback: T[number],
   aliases: Record<string, T[number]> = {}
 ): T[number] {
-  const raw = readStringValue(value)?.toLowerCase().replaceAll('-', '_');
+  const raw = readStringValue(value)
+    ?.toLowerCase()
+    .replaceAll('-', '_')
+    .replace(/\s+/gu, '_');
   if (!raw) return fallback;
-  if ((allowed as readonly string[]).includes(raw)) return raw as T[number];
-  return aliases[raw] ?? fallback;
+
+  const candidates = [
+    raw,
+    ...raw
+      .split(/[,:;|/]+/u)
+      .map((part) => part.trim())
+      .filter(Boolean),
+  ];
+
+  for (const candidate of candidates) {
+    if ((allowed as readonly string[]).includes(candidate)) {
+      return candidate as T[number];
+    }
+
+    const alias = aliases[candidate];
+    if (alias) return alias;
+  }
+
+  return fallback;
 }
 
 function coercePatchOperation(
@@ -325,7 +354,7 @@ function coercePatchOperation(
   index: number
 ): MindPatchOperation | null {
   const nestedNode = readRecordValue(operation.node);
-  const nestedEdge = readRecordValue(operation.edge);
+  const nestedEdge = mergeRecordValues(nestedNode.edge, operation.edge);
   const id = readStringValue(operation.id) ?? `op_${index + 1}`;
   const kind = operation.kind.trim();
 
@@ -915,13 +944,18 @@ function validateMindPatchGraphHealth({
 
   for (const operation of createNodeOperations) {
     const refs = [operation.id, operation.node.id].filter(Boolean);
-    const hasParent = Boolean(operation.node.parentNodeId);
     const hasRelationship = refs.some((ref) => relationshipRefs.has(ref));
-    if (hasParent || hasRelationship) continue;
+    if (hasRelationship) continue;
 
-    issues.push(
-      `Patch draft leaves new node "${operation.node.title}" isolated. Add parentNodeId or a relationship edge for it.`
-    );
+    if (operation.node.parentNodeId) {
+      issues.push(
+        `Patch draft sets parentNodeId for new node "${operation.node.title}" but does not connect it with an explicit edge. Add a contains edge to the parent when possible.`
+      );
+    } else {
+      issues.push(
+        `Patch draft leaves new node "${operation.node.title}" isolated. Add a relationship edge to a parent, sibling, or existing anchor when possible.`
+      );
+    }
   }
 
   return issues;
@@ -1328,7 +1362,7 @@ export function createMindStreamTools(
     }),
     inspect_mind_structure: tool({
       description:
-        'Inspect board organization before planning changes. Returns counts by horizon, status, and type plus high-degree and isolated nodes so large boards can be navigated in chunks.',
+        'Inspect board organization before planning changes. Returns counts by horizon, status, and type plus high-degree and isolated nodes so large boards can be navigated in chunks and relationship gaps can be repaired.',
       inputSchema: z.object({
         boardId: toolBoardIdSchema,
       }),
@@ -1347,7 +1381,7 @@ export function createMindStreamTools(
     }),
     propose_mind_patch: tool({
       description:
-        'Create a structured applyable Mind draft patch for user review or implementation.',
+        'Create a structured applyable Mind draft patch for user review or implementation. Use kind=create_node with node fields for nodes. Use kind=create_edge with a top-level edge object containing sourceNodeId, targetNodeId, and edgeType; sourceNodeId and targetNodeId may reference IDs of nodes created earlier in the same patch. When the board or patch has more than one possible node, every new node must participate in at least one explicit edge; use contains edges for parent/child structure even when parentNodeId is also set.',
       inputSchema: z.object({
         boardId: toolBoardIdSchema,
         patch: loosePatchSchema,

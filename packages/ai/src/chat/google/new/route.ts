@@ -19,7 +19,7 @@ const HUMAN_PROMPT = '\n\nHuman:';
 const AI_PROMPT = '\n\nAssistant:';
 
 /** Always use a lightweight model for title generation */
-const TITLE_MODEL = 'gemini-3.1-flash-lite-preview';
+const TITLE_MODEL = 'gemini-3.1-flash-lite';
 
 async function buildRateLimitResponse(
   req: Request,

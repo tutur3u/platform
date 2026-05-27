@@ -11,6 +11,10 @@ import moment from 'moment';
 import 'moment/locale/vi';
 import { useLocale } from 'next-intl';
 import { DataTableColumnHeader } from '../../custom/tables/data-table-column-header';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 function getAvatarPlaceholder(name: string) {
   return `https://ui-avatars.com/api/?name=${name}`;
@@ -19,6 +23,36 @@ function getAvatarPlaceholder(name: string) {
 interface TransactionExtraData {
   currency?: string;
   isPersonalWorkspace?: boolean;
+}
+
+function TransactionAmountCell({
+  amount,
+  currency,
+}: {
+  amount: number;
+  currency: string;
+}) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const isExpense = amount < 0;
+
+  return (
+    <div
+      className={`min-w-32 font-semibold ${
+        areNumbersHidden
+          ? 'text-muted-foreground'
+          : isExpense
+            ? 'text-dynamic-red'
+            : 'text-dynamic-green'
+      }`}
+    >
+      {areNumbersHidden
+        ? FINANCE_HIDDEN_AMOUNT
+        : formatCurrency(amount, currency, undefined, {
+            signDisplay: 'always',
+          })}
+    </div>
+  );
 }
 
 export const transactionColumns = ({
@@ -31,6 +65,7 @@ export const transactionColumns = ({
   const locale = useLocale();
   const currency = extraData?.currency || 'USD';
   const isPersonalWorkspace = extraData?.isPersonalWorkspace || false;
+  const unknownUserLabel = t('finance.unknown_user');
 
   const columns: ColumnDef<Transaction>[] = [
     // {
@@ -76,11 +111,12 @@ export const transactionColumns = ({
           title={t(`${namespace}.wallet`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="min-w-32 font-semibold">
-          {row.getValue('wallet') || '-'}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const wallet =
+          row.original.wallet?.trim() || row.original.wallet_name?.trim();
+
+        return <div className="min-w-32 font-semibold">{wallet || '-'}</div>;
+      },
     },
     {
       accessorKey: 'description',
@@ -91,14 +127,46 @@ export const transactionColumns = ({
           title={t(`${namespace}.description`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="min-w-32">
-          <div className="font-semibold">{row.original.category || '-'}</div>
-          {row.original.description && (
-            <div className="opacity-70">{row.original.description}</div>
-          )}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const description = row.original.description?.trim();
+        const category =
+          row.original.category?.trim() || row.original.category_name?.trim();
+        const tags = row.original.tags ?? [];
+
+        return (
+          <div className="min-w-44 max-w-80 space-y-1">
+            <div className="line-clamp-2 font-semibold">
+              {description || category || '-'}
+            </div>
+            {category && description && (
+              <div className="line-clamp-1 text-muted-foreground text-xs">
+                {category}
+              </div>
+            )}
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {tags.slice(0, 3).map((tag) => (
+                  <span
+                    key={tag.id}
+                    className="rounded border px-1.5 py-0.5 text-xs"
+                    style={{
+                      borderColor: tag.color || undefined,
+                      color: tag.color || undefined,
+                    }}
+                  >
+                    {tag.name}
+                  </span>
+                ))}
+                {tags.length > 3 && (
+                  <span className="rounded border px-1.5 py-0.5 text-muted-foreground text-xs">
+                    ...
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: 'user',
@@ -116,8 +184,8 @@ export const transactionColumns = ({
             <div className="flex min-w-48 items-center gap-2">
               <Avatar className="h-8 w-8 border">
                 <AvatarImage
-                  src={getAvatarPlaceholder('Unknown User')}
-                  alt="Unknown User"
+                  src={getAvatarPlaceholder(unknownUserLabel)}
+                  alt={unknownUserLabel}
                 />
                 <AvatarFallback>U</AvatarFallback>
               </Avatar>
@@ -169,19 +237,7 @@ export const transactionColumns = ({
       ),
       cell: ({ row }) => {
         const amount = Number(row.getValue('amount')) || 0;
-        const isExpense = amount < 0;
-
-        return (
-          <div
-            className={`min-w-32 font-semibold ${
-              isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
-            }`}
-          >
-            {formatCurrency(amount, currency, undefined, {
-              signDisplay: 'always',
-            })}
-          </div>
-        );
+        return <TransactionAmountCell amount={amount} currency={currency} />;
       },
     },
     {

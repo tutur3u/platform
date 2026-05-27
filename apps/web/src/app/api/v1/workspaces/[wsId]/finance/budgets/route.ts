@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   budgetPayloadSchema,
   requireBudgetAccess,
@@ -26,7 +27,7 @@ export async function GET(request: Request, { params }: Params) {
     .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error fetching budgets:', error);
+    serverLogger.error('Error fetching budgets:', error);
     return NextResponse.json(
       { message: 'Error fetching budgets' },
       { status: 500 }
@@ -58,7 +59,7 @@ export async function POST(request: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.error('Error creating budget:', error);
+    serverLogger.error('Error creating budget:', error);
     return NextResponse.json(
       { message: 'Error creating budget' },
       { status: 500 }

@@ -92,8 +92,26 @@ type GatewayModelRow = {
 
 export interface ListAiGatewayModelsParams {
   enabled?: boolean;
+  ids?: string[];
   q?: string;
+  provider?: string;
+  tag?: string;
   type?: 'all' | 'embedding' | 'image' | 'language';
+}
+
+export interface ListAiGatewayModelsPageParams
+  extends ListAiGatewayModelsParams {
+  limit?: number | string;
+  page?: number | string;
+}
+
+export interface AiGatewayModelsPage {
+  data: AIModelUI[];
+  pagination: {
+    limit: number;
+    page: number;
+    total: number;
+  };
 }
 
 export interface ResolveInfrastructureWorkspaceIdResponse {
@@ -1298,6 +1316,45 @@ export async function listAiGatewayModels(
   params?: ListAiGatewayModelsParams,
   options?: InternalApiClientOptions
 ) {
+  return listAiGatewayModelsLegacy(params, options);
+}
+
+export async function listAiGatewayModelsPage(
+  params?: ListAiGatewayModelsPageParams,
+  options?: InternalApiClientOptions
+): Promise<AiGatewayModelsPage> {
+  const client = getInternalApiClient(options);
+  const response = await client.json<{
+    data: GatewayModelRow[];
+    pagination: AiGatewayModelsPage['pagination'];
+  }>('/api/v1/infrastructure/ai/models', {
+    cache: 'no-store',
+    query: {
+      enabled:
+        typeof params?.enabled === 'boolean'
+          ? String(params.enabled)
+          : undefined,
+      format: 'paginated',
+      ids: params?.ids?.join(','),
+      limit: params?.limit,
+      page: params?.page,
+      provider: params?.provider,
+      q: params?.q,
+      tag: params?.tag,
+      type: params?.type ?? 'language',
+    },
+  });
+
+  return {
+    data: response.data.map((row) => mapGatewayModel(row)),
+    pagination: response.pagination,
+  };
+}
+
+export async function listAiGatewayModelsLegacy(
+  params?: ListAiGatewayModelsParams,
+  options?: InternalApiClientOptions
+) {
   const client = getInternalApiClient(options);
   const rows = await client.json<GatewayModelRow[]>(
     '/api/v1/infrastructure/ai/models',
@@ -1308,7 +1365,10 @@ export async function listAiGatewayModels(
           typeof params?.enabled === 'boolean'
             ? String(params.enabled)
             : undefined,
+        ids: params?.ids?.join(','),
+        provider: params?.provider,
         q: params?.q,
+        tag: params?.tag,
         type: params?.type ?? 'language',
       },
     }

@@ -1,41 +1,39 @@
 'use client';
 
 import { TypeFilter } from '@tuturuuu/ui/finance/transactions/categories/type-filter';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { parseAsInteger, parseAsStringLiteral, useQueryState } from 'nuqs';
 import { useCallback } from 'react';
 
-export function TypeFilterWrapper() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
+const CATEGORY_TYPES = ['income', 'expense'] as const;
 
-  // Get current type from search params
-  const currentType = searchParams.get('type') || undefined;
+export function TypeFilterWrapper() {
+  const [currentType, setType] = useQueryState(
+    'type',
+    parseAsStringLiteral(CATEGORY_TYPES).withOptions({
+      shallow: true,
+    })
+  );
+
+  const [, setPage] = useQueryState(
+    'page',
+    parseAsInteger.withDefault(1).withOptions({
+      shallow: true,
+    })
+  );
 
   // Handle type filter changes
   const handleTypeChange = useCallback(
-    (type: string | undefined) => {
-      const params = new URLSearchParams(searchParams);
-
-      // Remove existing type param
-      params.delete('type');
-
-      // Add new type param if provided
-      if (type) {
-        params.set('type', type);
-      }
-
-      // Reset to first page when filtering
-      params.set('page', '1');
-
-      const newUrl = `${pathname}?${params.toString()}`;
-      router.push(newUrl);
-      router.refresh();
+    async (type: string | undefined) => {
+      await setType(type === 'income' || type === 'expense' ? type : null);
+      await setPage(1);
     },
-    [router, searchParams, pathname]
+    [setType, setPage]
   );
 
   return (
-    <TypeFilter selectedType={currentType} onTypeChange={handleTypeChange} />
+    <TypeFilter
+      selectedType={currentType ?? undefined}
+      onTypeChange={handleTypeChange}
+    />
   );
 }

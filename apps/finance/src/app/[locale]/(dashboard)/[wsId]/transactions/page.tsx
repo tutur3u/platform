@@ -6,10 +6,17 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<{
+    create?: string;
+  }>;
 }
 
-export default async function WorkspaceTransactionsPage({ params }: Props) {
+export default async function WorkspaceTransactionsPage({
+  params,
+  searchParams,
+}: Props) {
   const { wsId: id } = await params;
+  const sp = await searchParams;
   const context = await getFinanceWorkspaceContext(id);
   if (!context) notFound();
 
@@ -18,6 +25,7 @@ export default async function WorkspaceTransactionsPage({ params }: Props) {
       wsId={context.wsId}
       currency={context.currency}
       permissions={context.permissions}
+      openCreateDialog={sp.create === 'transaction'}
       showTransactionTypeFilter
       workspace={context.workspace}
     />

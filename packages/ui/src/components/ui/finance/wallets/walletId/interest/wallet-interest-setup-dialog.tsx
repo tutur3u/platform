@@ -25,7 +25,8 @@ import {
 } from '@tuturuuu/ui/select';
 import { cn } from '@tuturuuu/utils/format';
 import { format } from 'date-fns';
-import { useTranslations } from 'next-intl';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 interface WalletInterestSetupDialogProps {
@@ -54,7 +55,9 @@ export function WalletInterestSetupDialog({
   defaultProvider = 'momo',
   defaultTier = 'standard',
 }: WalletInterestSetupDialogProps) {
+  const locale = useLocale();
   const t = useTranslations('wallet-interest');
+  const dateLocale = locale.startsWith('vi') ? vi : enUS;
 
   const [provider, setProvider] =
     useState<WalletInterestProvider>(defaultProvider);
@@ -168,7 +171,7 @@ export function WalletInterestSetupDialog({
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {trackingStartDate ? (
-                    format(trackingStartDate, 'PPP')
+                    format(trackingStartDate, 'PPP', { locale: dateLocale })
                   ) : (
                     <span>{t('set_start_date')}</span>
                   )}
@@ -179,6 +182,7 @@ export function WalletInterestSetupDialog({
                   mode="single"
                   selected={trackingStartDate}
                   onSelect={setTrackingStartDate}
+                  locale={dateLocale}
                   initialFocus
                 />
               </PopoverContent>

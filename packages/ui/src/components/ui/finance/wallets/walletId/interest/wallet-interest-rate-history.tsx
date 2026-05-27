@@ -3,7 +3,7 @@
 import { History } from '@tuturuuu/icons';
 import type { WalletInterestRate } from '@tuturuuu/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 interface WalletInterestRateHistoryProps {
   rates: WalletInterestRate[];
@@ -18,6 +18,7 @@ export function WalletInterestRateHistory({
   rates,
   embedded = false,
 }: WalletInterestRateHistoryProps) {
+  const locale = useLocale();
   const t = useTranslations('wallet-interest');
 
   if (rates.length === 0) {
@@ -33,7 +34,7 @@ export function WalletInterestRateHistory({
   }
 
   const formatDate = (dateStr: string) => {
-    return new Intl.DateTimeFormat('vi-VN', {
+    return new Intl.DateTimeFormat(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

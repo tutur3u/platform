@@ -1,12 +1,20 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import {
+  type FinanceIncomeExpenseSummary,
+  listFinanceIncomeExpenseSummary,
+} from '@tuturuuu/internal-api/finance';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useAnalyticsFilters } from '../../../../hooks/use-analytics-filters';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
 import { Skeleton } from '../../skeleton';
 import { CategoryBreakdownChart } from '../shared/charts/category-breakdown-chart';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { AnalyticsDateControls } from './analytics-date-controls';
 import { BalanceTrendChart } from './balance-trend-chart';
 import { IncomeExpenseChart } from './income-expense-chart';
@@ -16,103 +24,61 @@ interface AnalyticsPageProps {
   currency?: string;
 }
 
-interface DailyData {
-  day: string;
-  total_income: number;
-  total_expense: number;
-}
-
-interface MonthlyData {
-  month: string;
-  total_income: number;
-  total_expense: number;
-}
-
 export default function AnalyticsPage({
   wsId,
   currency = 'USD',
 }: AnalyticsPageProps) {
   const t = useTranslations('finance-analytics');
   const filters = useAnalyticsFilters({ preset: '30d' });
+  const summaryInterval = filters.interval === 'monthly' ? 'monthly' : 'daily';
 
-  // Fetch daily data
   const {
-    data: dailyResponse,
-    isLoading: isDailyLoading,
-    error: dailyError,
+    data: incomeExpenseSummary,
+    isLoading: isSummaryLoading,
+    error: summaryError,
   } = useQuery({
     queryKey: [
-      'analytics-daily',
+      'analytics-income-expense-summary',
       wsId,
+      summaryInterval,
       filters.apiDateRange.startDate,
       filters.apiDateRange.endDate,
       filters.includeConfidential,
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.apiDateRange.startDate) {
-        params.set('startDate', filters.apiDateRange.startDate);
-      }
-      if (filters.apiDateRange.endDate) {
-        params.set('endDate', filters.apiDateRange.endDate);
-      }
-      params.set('includeConfidential', String(filters.includeConfidential));
-
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/daily?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch daily data');
-      }
-      return res.json();
-    },
+    queryFn: () =>
+      listFinanceIncomeExpenseSummary(wsId, {
+        endDate: filters.apiDateRange.endDate,
+        includeConfidential: filters.includeConfidential,
+        interval: summaryInterval,
+        startDate: filters.apiDateRange.startDate,
+      }),
     staleTime: 30_000,
   });
 
-  // Fetch monthly data
-  const {
-    data: monthlyResponse,
-    isLoading: isMonthlyLoading,
-    error: monthlyError,
-  } = useQuery({
-    queryKey: [
-      'analytics-monthly',
-      wsId,
-      filters.apiDateRange.startDate,
-      filters.apiDateRange.endDate,
-      filters.includeConfidential,
-    ],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.apiDateRange.startDate) {
-        params.set('startDate', filters.apiDateRange.startDate);
-      }
-      if (filters.apiDateRange.endDate) {
-        params.set('endDate', filters.apiDateRange.endDate);
-      }
-      params.set('includeConfidential', String(filters.includeConfidential));
-
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/monthly?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch monthly data');
-      }
-      return res.json();
-    },
-    staleTime: 30_000,
-  });
-
-  const dailyData: DailyData[] = dailyResponse?.data || [];
-  const monthlyData: MonthlyData[] = monthlyResponse?.data || [];
-
-  // Determine which chart to show based on interval
   const showDailyChart =
     filters.interval === 'daily' || filters.interval === 'weekly';
+  const incomeExpenseChartData = (incomeExpenseSummary?.data ?? []).map(
+    (item) => ({
+      day: item.period,
+      total_expense: item.total_expense,
+      total_income: item.total_income,
+    })
+  );
+  const presetDisplayLabels = {
+    '7d': t('last-7-days'),
+    '30d': t('last-30-days'),
+    'this-month': t('this-month'),
+    'last-month': t('last-month'),
+    'this-quarter': t('this-quarter'),
+    'this-year': t('this-year'),
+    all: t('all-time'),
+  } satisfies Record<typeof filters.preset, string>;
+  const displayRange =
+    filters.preset === 'all'
+      ? filters.displayRange === 'All time'
+        ? t('all-time')
+        : filters.displayRange
+      : presetDisplayLabels[filters.preset];
 
   return (
     <div className="space-y-6">
@@ -130,7 +96,7 @@ export default function AnalyticsPage({
         onPresetChange={filters.setPreset}
         onIntervalChange={filters.setInterval}
         onConfidentialToggle={filters.toggleConfidential}
-        displayRange={filters.displayRange}
+        displayRange={displayRange}
         className="rounded-lg border bg-card p-4"
       />
 
@@ -139,9 +105,9 @@ export default function AnalyticsPage({
         {/* Income vs Expense Chart */}
         {showDailyChart ? (
           <IncomeExpenseChart
-            data={dailyData}
-            isLoading={isDailyLoading}
-            error={dailyError}
+            data={incomeExpenseChartData}
+            isLoading={isSummaryLoading}
+            error={summaryError}
             currency={currency}
             title={t('income-vs-expense')}
             interval={filters.interval}
@@ -149,13 +115,9 @@ export default function AnalyticsPage({
           />
         ) : (
           <IncomeExpenseChart
-            data={monthlyData.map((item) => ({
-              day: item.month,
-              total_income: item.total_income,
-              total_expense: item.total_expense,
-            }))}
-            isLoading={isMonthlyLoading}
-            error={monthlyError}
+            data={incomeExpenseChartData}
+            isLoading={isSummaryLoading}
+            error={summaryError}
             currency={currency}
             title={t('income-vs-expense')}
             interval={filters.interval}
@@ -182,10 +144,9 @@ export default function AnalyticsPage({
 
         {/* Spending Trends Summary Card */}
         <SpendingTrendsSummary
-          dailyData={dailyData}
-          monthlyData={monthlyData}
-          isLoading={isDailyLoading || isMonthlyLoading}
-          error={dailyError || monthlyError}
+          summary={incomeExpenseSummary}
+          isLoading={isSummaryLoading}
+          error={summaryError}
           currency={currency}
           includeConfidential={filters.includeConfidential}
         />
@@ -195,8 +156,7 @@ export default function AnalyticsPage({
 }
 
 interface SpendingTrendsSummaryProps {
-  dailyData: DailyData[];
-  monthlyData: MonthlyData[];
+  summary?: FinanceIncomeExpenseSummary;
   isLoading: boolean;
   error?: Error | null;
   currency: string;
@@ -204,16 +164,17 @@ interface SpendingTrendsSummaryProps {
 }
 
 function SpendingTrendsSummary({
-  dailyData,
-  // monthlyData is available for future use (e.g., monthly comparisons)
-  monthlyData: _monthlyData,
+  summary,
   isLoading,
   error,
   currency,
   includeConfidential,
 }: SpendingTrendsSummaryProps) {
   const t = useTranslations('finance-analytics');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const locale = currency === 'VND' ? 'vi-VN' : 'en-US';
+  const shouldHideAmounts = areNumbersHidden || !includeConfidential;
 
   const formatValue = (value: number) => {
     return new Intl.NumberFormat(locale, {
@@ -224,20 +185,11 @@ function SpendingTrendsSummary({
     }).format(value);
   };
 
-  // Calculate summary statistics
-  const totalDailyIncome = dailyData.reduce(
-    (sum, d) => sum + (d.total_income || 0),
-    0
-  );
-  const totalDailyExpense = dailyData.reduce(
-    (sum, d) => sum + (d.total_expense || 0),
-    0
-  );
-  const dailyAvgIncome =
-    dailyData.length > 0 ? totalDailyIncome / dailyData.length : 0;
-  const dailyAvgExpense =
-    dailyData.length > 0 ? totalDailyExpense / dailyData.length : 0;
-  const netTotal = totalDailyIncome - totalDailyExpense;
+  const totalIncome = summary?.total_income ?? 0;
+  const totalExpense = summary?.total_expense ?? 0;
+  const averageIncome = summary?.average_income ?? 0;
+  const averageExpense = summary?.average_expense ?? 0;
+  const netTotal = summary?.net_total ?? 0;
 
   if (isLoading) {
     return (
@@ -262,7 +214,7 @@ function SpendingTrendsSummary({
         </CardHeader>
         <CardContent className="flex h-[200px] items-center justify-center">
           <p className="text-muted-foreground text-sm">
-            {error.message || 'Failed to load data'}
+            {error.message || t('failed-to-load-data')}
           </p>
         </CardContent>
       </Card>
@@ -277,52 +229,64 @@ function SpendingTrendsSummary({
       <CardContent className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-sm">
-            {t('total-income') ?? 'Total Income'}
+            {t('total-income')}
           </span>
-          <span className="font-semibold text-green-600 dark:text-green-400">
-            {includeConfidential ? formatValue(totalDailyIncome) : '•••••'}
+          <span className="font-semibold text-dynamic-green">
+            {shouldHideAmounts
+              ? FINANCE_HIDDEN_AMOUNT
+              : formatValue(totalIncome)}
           </span>
         </div>
         <div className="flex items-center justify-between">
           <span className="text-muted-foreground text-sm">
-            {t('total-expense') ?? 'Total Expense'}
+            {t('total-expense')}
           </span>
-          <span className="font-semibold text-red-600 dark:text-red-400">
-            {includeConfidential ? formatValue(totalDailyExpense) : '•••••'}
+          <span className="font-semibold text-dynamic-red">
+            {shouldHideAmounts
+              ? FINANCE_HIDDEN_AMOUNT
+              : formatValue(totalExpense)}
           </span>
         </div>
         <div className="border-t pt-4">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground text-sm">
-              {t('net-total') ?? 'Net Total'}
+              {t('net-total')}
             </span>
             <span
               className={cn(
                 'font-semibold',
-                netTotal >= 0
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-red-600 dark:text-red-400'
+                shouldHideAmounts
+                  ? 'text-muted-foreground'
+                  : netTotal >= 0
+                    ? 'text-dynamic-green'
+                    : 'text-dynamic-red'
               )}
             >
-              {includeConfidential ? formatValue(netTotal) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(netTotal)}
             </span>
           </div>
         </div>
         <div className="border-t pt-4">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground text-sm">
-              {t('daily-avg-income') ?? 'Daily Avg Income'}
+              {t('daily-avg-income')}
             </span>
             <span className="font-medium text-sm">
-              {includeConfidential ? formatValue(dailyAvgIncome) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(averageIncome)}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between">
             <span className="text-muted-foreground text-sm">
-              {t('daily-avg-expense') ?? 'Daily Avg Expense'}
+              {t('daily-avg-expense')}
             </span>
             <span className="font-medium text-sm">
-              {includeConfidential ? formatValue(dailyAvgExpense) : '•••••'}
+              {shouldHideAmounts
+                ? FINANCE_HIDDEN_AMOUNT
+                : formatValue(averageExpense)}
             </span>
           </div>
         </div>

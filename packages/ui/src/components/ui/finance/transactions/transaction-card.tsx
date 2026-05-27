@@ -42,6 +42,10 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { useFinanceHref } from '../finance-route-context';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface TransactionCardProps {
   transaction: Transaction & {
@@ -74,8 +78,11 @@ export function TransactionCard({
   isDaily = false,
 }: TransactionCardProps) {
   const t = useTranslations('workspace-finance-transactions');
+  const commonT = useTranslations('common');
   const financeHref = useFinanceHref();
   const [isHovered, setIsHovered] = useState(false);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const effectiveCurrency = transaction.wallet_currency || currency;
   const isExpense = (transaction.amount || 0) < 0;
   const isTransfer = !!transaction.transfer;
@@ -424,22 +431,30 @@ export function TransactionCard({
                   transaction.transfer.linked_wallet_currency.toUpperCase() !==
                     effectiveCurrency.toUpperCase() && (
                     <span className="text-[10px] text-dynamic-blue tabular-nums sm:text-xs">
-                      {formatCurrency(
-                        Math.abs(transaction.transfer.linked_amount),
-                        transaction.transfer.linked_wallet_currency,
-                        undefined,
-                        { signDisplay: 'always' }
-                      )}
+                      {areNumbersHidden
+                        ? FINANCE_HIDDEN_AMOUNT
+                        : formatCurrency(
+                            Math.abs(transaction.transfer.linked_amount),
+                            transaction.transfer.linked_wallet_currency,
+                            undefined,
+                            { signDisplay: 'always' }
+                          )}
                     </span>
                   )}
                 {!isTransfer &&
                   isForeignCurrency &&
                   convertedAmount != null && (
                     <span className="text-[10px] text-muted-foreground tabular-nums sm:text-xs">
-                      ≈{' '}
-                      {formatCurrency(convertedAmount, currency, undefined, {
-                        signDisplay: 'exceptZero',
-                      })}
+                      {areNumbersHidden
+                        ? FINANCE_HIDDEN_AMOUNT
+                        : `≈ ${formatCurrency(
+                            convertedAmount,
+                            currency,
+                            undefined,
+                            {
+                              signDisplay: 'exceptZero',
+                            }
+                          )}`}
                     </span>
                   )}
               </div>
@@ -455,14 +470,14 @@ export function TransactionCard({
                       )}
                     >
                       <MoreVertical className="h-4 w-4" />
-                      <span className="sr-only">Actions</span>
+                      <span className="sr-only">{commonT('actions')}</span>
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {canEdit && (
                       <DropdownMenuItem onClick={handleEdit}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edit
+                        {commonT('edit')}
                       </DropdownMenuItem>
                     )}
                     {canDelete && (
@@ -471,7 +486,7 @@ export function TransactionCard({
                         className="text-dynamic-red focus:text-dynamic-red"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {commonT('delete')}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>

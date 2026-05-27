@@ -1,8 +1,14 @@
 import type { MindAiPatchRecord } from '@tuturuuu/types/db';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { getLatestMindAiProposal } from './mind-ai-proposal-island';
-import { getToolArtifacts } from './mind-ai-tool-activity';
+import {
+  getLatestMindAiProposal,
+  getMindAiProposalPartType,
+} from './mind-ai-proposal-island';
+import {
+  getMindToolFailureReason,
+  getToolArtifacts,
+} from './mind-ai-tool-activity';
 
 describe('Mind AI proposal consolidation', () => {
   it('combines a generated plan and draft patch into one proposal', () => {
@@ -15,6 +21,22 @@ describe('Mind AI proposal consolidation', () => {
       patch: expect.objectContaining({ id: PATCH_ID }),
       visual,
     });
+  });
+
+  it('does not surface an already applied patch as the latest proposal', () => {
+    const message = proposalMessage();
+
+    const proposal = getLatestMindAiProposal(
+      [message],
+      [
+        patchRecord({
+          appliedAt: '2026-05-23T00:05:00.000Z',
+          status: 'applied',
+        }),
+      ]
+    );
+
+    expect(proposal).toBeNull();
   });
 
   it('renders one artifact row for a plan followed by its draft patch', () => {
@@ -31,6 +53,20 @@ describe('Mind AI proposal consolidation', () => {
         visual,
       }),
     ]);
+  });
+
+  it('distinguishes render-only plans from applyable draft proposals', () => {
+    expect(getMindAiProposalPartType(renderOnlyMessage())).toBe('plan');
+    expect(getMindAiProposalPartType(proposalMessage())).toBe('draft');
+  });
+
+  it('surfaces unsuccessful tool outputs as failure reasons', () => {
+    const message = failedPatchMessage();
+
+    expect(getMindAiProposalPartType(message)).toBe('plan');
+    expect(getMindToolFailureReason(message.parts[1]!)).toContain(
+      'Patch draft was not applyable'
+    );
   });
 });
 
@@ -60,7 +96,51 @@ function proposalMessage(): UIMessage {
   } as unknown as UIMessage;
 }
 
-function patchRecord(): MindAiPatchRecord {
+function renderOnlyMessage(): UIMessage {
+  return {
+    id: 'message-visual',
+    parts: [
+      {
+        input: {},
+        output: { ok: true, spec: visual },
+        state: 'output-available',
+        toolCallId: PLAN_CALL_ID,
+        type: 'tool-render_mind_ui',
+      },
+    ],
+    role: 'assistant',
+  } as unknown as UIMessage;
+}
+
+function failedPatchMessage(): UIMessage {
+  return {
+    id: 'message-failed-patch',
+    parts: [
+      {
+        input: {},
+        output: { ok: true, spec: visual },
+        state: 'output-available',
+        toolCallId: PLAN_CALL_ID,
+        type: 'tool-render_mind_ui',
+      },
+      {
+        input: {},
+        output: {
+          ok: false,
+          reason: 'Patch draft was not applyable: invalid edge reference',
+        },
+        state: 'output-available',
+        toolCallId: 'patch-call',
+        type: 'tool-propose_mind_patch',
+      },
+    ],
+    role: 'assistant',
+  } as unknown as UIMessage;
+}
+
+function patchRecord(
+  patch: Partial<MindAiPatchRecord> = {}
+): MindAiPatchRecord {
   return {
     appliedAt: null,
     boardId: 'board-1',
@@ -88,6 +168,7 @@ function patchRecord(): MindAiPatchRecord {
     status: 'draft',
     summary: 'Break down yearly goals',
     threadId: 'thread-1',
+    ...patch,
   };
 }
 

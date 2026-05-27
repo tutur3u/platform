@@ -4,6 +4,7 @@ import { cn } from '@tuturuuu/utils/format';
 import { format, isValid, parse } from 'date-fns';
 import dayjs from 'dayjs';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../../../ui/button';
 import {
@@ -99,6 +100,7 @@ const isSameDraft = (left: FilterDraft, right: FilterDraft): boolean =>
   toDateParam(left.endDate) === toDateParam(right.endDate);
 
 export function Filter({ className }: { className: string }) {
+  const t = useTranslations('finance-overview');
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const router = useRouter();
@@ -168,15 +170,15 @@ export function Filter({ className }: { className: string }) {
       )}
     >
       <div className="flex flex-col gap-2">
-        <h2 className="font-semibold text-lg">Filter by</h2>
+        <h2 className="font-semibold text-lg">{t('filter_by')}</h2>
         <Select value={draft.view} onValueChange={handleViewChange}>
           <SelectTrigger className="w-full lg:min-w-48">
-            <SelectValue placeholder="Filter by" />
+            <SelectValue placeholder={t('filter_by')} />
           </SelectTrigger>
           <SelectContent className="w-full lg:min-w-48">
-            <SelectItem value="date">Date range</SelectItem>
-            <SelectItem value="month">Month range</SelectItem>
-            <SelectItem value="year">Year range</SelectItem>
+            <SelectItem value="date">{t('date_range')}</SelectItem>
+            <SelectItem value="month">{t('month_range')}</SelectItem>
+            <SelectItem value="year">{t('year_range')}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -187,6 +189,8 @@ export function Filter({ className }: { className: string }) {
           endDate={draft.endDate}
           setStartDate={handleStartDateChange}
           setEndDate={handleEndDateChange}
+          startLabel={t('select_start_date')}
+          endLabel={t('select_end_date')}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
@@ -206,6 +210,13 @@ export function Filter({ className }: { className: string }) {
           }
           setStartMonth={handleStartDateChange}
           setEndMonth={handleEndDateChange}
+          startLabel={t('select_start_month')}
+          endLabel={t('select_end_month')}
+          pickerLabels={{
+            placeholder: t('pick_month'),
+            previousYear: t('previous_year'),
+            nextYear: t('next_year'),
+          }}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
@@ -224,6 +235,13 @@ export function Filter({ className }: { className: string }) {
           }
           setStartYear={handleStartDateChange}
           setEndYear={handleEndDateChange}
+          startLabel={t('select_start_year')}
+          endLabel={t('select_end_year')}
+          pickerLabels={{
+            placeholder: t('pick_year'),
+            previousDecade: t('previous_decade'),
+            nextDecade: t('next_decade'),
+          }}
           className="flex w-full flex-col gap-4 md:w-auto md:flex-row"
         />
       )}
@@ -234,7 +252,7 @@ export function Filter({ className }: { className: string }) {
         onClick={resetFilter}
         disabled={paramsKey === ''}
       >
-        Reset
+        {t('reset_filter')}
       </Button>
       <Button
         variant="default"
@@ -242,7 +260,7 @@ export function Filter({ className }: { className: string }) {
         onClick={applyFilter}
         disabled={!isDirty()}
       >
-        Apply
+        {t('apply_filter')}
       </Button>
     </div>
   );

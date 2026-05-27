@@ -9,6 +9,10 @@ import {
   CreditCard,
   TrendingDown,
 } from '@tuturuuu/icons';
+import {
+  getWalletCreditSummary,
+  type WalletCreditSummary,
+} from '@tuturuuu/internal-api/finance';
 import type { Wallet } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
@@ -19,24 +23,10 @@ import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
-
-interface CreditSummaryData {
-  limit: number;
-  balance: number;
-  availableCredit: number;
-  totalOutstanding: number;
-  utilization: number;
-  statementBalance: number;
-  currentActivity: number;
-  nextStatementDate: string;
-  daysUntilStatement: number;
-  nextPaymentDate: string;
-  daysUntilPayment: number;
-  cycleStart: string;
-  cycleEnd: string;
-  prevCycleStart: string;
-  prevCycleEnd: string;
-}
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 
 interface CreditWalletSummaryProps {
   wsId: string;
@@ -62,20 +52,18 @@ export function CreditWalletSummary({
   const t = useTranslations('wallet-data-table');
   const [showDetails, setShowDetails] = useState(false);
   const currency = wallet.currency ?? 'VND';
+  const walletId = wallet.id ?? '';
   const { formatCurrency } = useCurrencyFormatter({ currency });
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount);
 
-  const { data, isLoading, error } = useQuery<CreditSummaryData>({
-    queryKey: ['credit-summary', wallet.id],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${wallet.id}/credit-summary`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch credit summary');
-      return res.json();
-    },
+  const { data, isLoading, error } = useQuery<WalletCreditSummary>({
+    queryKey: ['credit-summary', wsId, walletId],
+    queryFn: () => getWalletCreditSummary(wsId, walletId),
     staleTime: 30000,
-    enabled: wallet.type === 'CREDIT',
+    enabled: wallet.type === 'CREDIT' && Boolean(walletId),
   });
 
   const handleToggle = useCallback(() => {
@@ -137,8 +125,8 @@ export function CreditWalletSummary({
             )}
           />
           <p className="text-muted-foreground text-xs">
-            {formatCurrency(data.totalOutstanding)}{' '}
-            {t('of_limit', { limit: formatCurrency(data.limit) })}
+            {formatVisibleCurrency(data.totalOutstanding)}{' '}
+            {t('of_limit', { limit: formatVisibleCurrency(data.limit) })}
           </p>
         </div>
 
@@ -149,7 +137,7 @@ export function CreditWalletSummary({
               {t('available_credit')}
             </p>
             <p className="font-semibold text-lg">
-              {formatCurrency(data.availableCredit)}
+              {formatVisibleCurrency(data.availableCredit)}
             </p>
           </div>
           <div className="rounded-lg border p-3">
@@ -158,8 +146,8 @@ export function CreditWalletSummary({
             </p>
             <p className="font-semibold text-lg">
               {data.totalOutstanding > 0
-                ? formatCurrency(data.totalOutstanding)
-                : formatCurrency(0)}
+                ? formatVisibleCurrency(data.totalOutstanding)
+                : formatVisibleCurrency(0)}
             </p>
           </div>
           <div className="rounded-lg border p-3">
@@ -168,7 +156,7 @@ export function CreditWalletSummary({
             </p>
             <p className="font-semibold text-lg">
               {data.currentActivity !== 0
-                ? formatCurrency(data.currentActivity)
+                ? formatVisibleCurrency(data.currentActivity)
                 : t('no_charges')}
             </p>
           </div>
@@ -205,7 +193,7 @@ export function CreditWalletSummary({
                 sublabel={`${t('previous_cycle')}: ${data.prevCycleStart} — ${data.prevCycleEnd}`}
                 value={
                   data.statementBalance !== 0
-                    ? formatCurrency(data.statementBalance)
+                    ? formatVisibleCurrency(data.statementBalance)
                     : t('no_charges')
                 }
               />

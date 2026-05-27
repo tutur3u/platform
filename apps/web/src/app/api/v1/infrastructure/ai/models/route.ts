@@ -37,6 +37,19 @@ function sanitizeIlikeTerm(value: string) {
   return value.trim().replaceAll(/[,%()]/g, '');
 }
 
+function parseIds(value: string | null) {
+  if (!value) return [];
+
+  return [
+    ...new Set(
+      value
+        .split(',')
+        .map((id) => id.trim())
+        .filter(Boolean)
+    ),
+  ].slice(0, 100);
+}
+
 export async function GET(request: NextRequest) {
   const sbAdmin = await createAdminClient();
   const searchParams = request.nextUrl.searchParams;
@@ -51,6 +64,7 @@ export async function GET(request: NextRequest) {
     searchParams.get('search') ?? searchParams.get('q') ?? ''
   );
   const tag = searchParams.get('tag');
+  const ids = parseIds(searchParams.get('ids'));
   const shouldPaginate =
     searchParams.get('format') === 'paginated' ||
     pageParam !== null ||
@@ -73,6 +87,10 @@ export async function GET(request: NextRequest) {
 
   if (tag) {
     query = query.contains('tags', [tag]);
+  }
+
+  if (ids.length > 0) {
+    query = query.in('id', ids);
   }
 
   if (search) {

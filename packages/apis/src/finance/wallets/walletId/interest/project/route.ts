@@ -3,7 +3,7 @@
  *
  * GET: Get interest projections
  */
-import { formatDateString, projectInterest } from '@tuturuuu/utils/finance';
+import { formatDateString } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { getAccessibleWallet } from '../../../wallet-access';
 
@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: Params) {
     wsId,
     walletId,
     requiredPermission: 'view_transactions',
-    select: 'balance',
+    select: 'id',
   });
 
   if (access.response) {
@@ -52,93 +52,51 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  // Get config
-  const { data: config, error: configError } = await access.context.supabase
-    .from('wallet_interest_configs')
-    .select('id, enabled')
-    .eq('wallet_id', walletId)
-    .single();
+  const { data, error } = await access.context.sbAdmin
+    .schema('private')
+    .rpc('get_wallet_interest_projection', {
+      _actor_id: access.context.userId,
+      _days: days,
+      _start_date: startDate,
+      _wallet_id: walletId,
+      _ws_id: access.context.normalizedWsId,
+    });
 
-  if (configError || !config) {
+  if (error || !data) {
+    return NextResponse.json(
+      { message: 'Error projecting interest' },
+      { status: 500 }
+    );
+  }
+
+  const resultError =
+    typeof data === 'object' &&
+    !Array.isArray(data) &&
+    'error' in data &&
+    typeof data.error === 'string'
+      ? data.error
+      : null;
+
+  if (resultError === 'not_enabled') {
     return NextResponse.json(
       { message: 'Interest tracking not enabled for this wallet' },
       { status: 404 }
     );
   }
 
-  if (!config.enabled) {
+  if (resultError === 'disabled') {
     return NextResponse.json(
       { message: 'Interest tracking is disabled for this wallet' },
       { status: 400 }
     );
   }
 
-  // Get current rate
-  const { data: rates } = await access.context.supabase
-    .from('wallet_interest_rates')
-    .select('annual_rate')
-    .eq('config_id', config.id)
-    .is('effective_to', null)
-    .order('effective_from', { ascending: false })
-    .limit(1);
-
-  const currentRate = rates?.[0]?.annual_rate || 0;
-
-  if (currentRate === 0) {
+  if (resultError === 'no_active_rate') {
     return NextResponse.json(
       { message: 'No active interest rate configured' },
       { status: 400 }
     );
   }
 
-  // Get wallet balance
-  const balance = (access.wallet.balance as number | null) || 0;
-
-  // Get holidays for projection period
-  const endDate = new Date(startDate);
-  endDate.setDate(endDate.getDate() + days);
-
-  const { data: holidays } = await access.context.supabase
-    .from('vietnamese_holidays')
-    .select('date')
-    .gte('date', startDate)
-    .lte('date', formatDateString(endDate));
-
-  const holidayDates = holidays?.map((h: { date: string }) => h.date) || [];
-
-  // Generate projections
-  const projections = projectInterest({
-    currentBalance: balance,
-    currentRate,
-    holidays: holidayDates,
-    days,
-    startDate,
-  });
-
-  // Calculate summary
-  const totalProjectedInterest = projections.reduce(
-    (sum, p) => sum + p.projectedDailyInterest,
-    0
-  );
-  const businessDays = projections.filter((p) => p.isBusinessDay).length;
-  const finalBalance =
-    projections[projections.length - 1]?.projectedBalance || balance;
-
-  return NextResponse.json({
-    startDate,
-    days,
-    currentBalance: balance,
-    currentRate,
-    projections,
-    summary: {
-      totalProjectedInterest,
-      businessDays,
-      nonBusinessDays: days - businessDays,
-      finalBalance,
-      percentageGain:
-        balance > 0
-          ? (((finalBalance - balance) / balance) * 100).toFixed(4)
-          : '0',
-    },
-  });
+  return NextResponse.json(data);
 }

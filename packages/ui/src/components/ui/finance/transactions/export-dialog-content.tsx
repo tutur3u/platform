@@ -356,7 +356,7 @@ export default function ExportDialogContent({
             disabled={isExporting}
           >
             <SelectTrigger className="w-full" id={fileTypeId}>
-              <SelectValue placeholder="File type" />
+              <SelectValue placeholder={t('common.file-type')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="excel">Excel</SelectItem>

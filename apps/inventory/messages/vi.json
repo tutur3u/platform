@@ -717,6 +717,69 @@
     "yellow": "Vàng",
     "yesterday": "Hôm qua"
   },
+  "finance": {
+    "new_debt": "Khoản nợ mới",
+    "new_loan": "Khoản cho vay mới",
+    "new_recurring_transaction": "Giao dịch định kỳ mới",
+    "unknown_user": "Người dùng không xác định"
+  },
+  "finance-analytics": {
+    "failed-to-load-data": "Không thể tải dữ liệu",
+    "next-period": "Kỳ tiếp theo",
+    "previous-period": "Kỳ trước",
+    "week-of": "Tuần bắt đầu {date}"
+  },
+  "finance-recurring": {
+    "active_title": "Định kỳ đang hoạt động",
+    "amount": "Số tiền",
+    "amount_description": "Dùng số âm cho chi tiêu và số dương cho thu nhập.",
+    "amount_invalid": "Số tiền phải là một số hợp lệ",
+    "amount_placeholder": "-500.00",
+    "amount_required": "Vui lòng nhập số tiền",
+    "cancel": "Hủy",
+    "category": "Danh mục",
+    "create_success": "Đã tạo giao dịch định kỳ thành công",
+    "create_transaction": "Tạo giao dịch định kỳ",
+    "daily": "Hàng ngày",
+    "delete": "Xóa",
+    "delete_description": "Bạn có chắc muốn xóa \"{name}\" không? Hành động này không thể hoàn tác.",
+    "delete_error": "Không thể xóa giao dịch định kỳ",
+    "delete_success": "Đã xóa giao dịch định kỳ thành công",
+    "delete_title": "Xóa giao dịch định kỳ",
+    "deleting": "Đang xóa...",
+    "description": "Mô tả",
+    "description_placeholder": "Mô tả tùy chọn",
+    "edit": "Chỉnh sửa",
+    "edit_transaction": "Chỉnh sửa giao dịch định kỳ",
+    "end_date": "Ngày kết thúc",
+    "end_date_description": "Để trống để lịch này chạy vô thời hạn.",
+    "frequency": "Tần suất",
+    "monthly": "Hàng tháng",
+    "name": "Tên",
+    "name_placeholder": "Tiền thuê nhà hằng tháng",
+    "name_required": "Vui lòng nhập tên",
+    "next_occurrence": "Tiếp theo: {date}",
+    "no_active_transactions": "Chưa có giao dịch định kỳ đang hoạt động",
+    "no_category": "Không có danh mục",
+    "no_upcoming_transactions": "Không có giao dịch sắp tới",
+    "open_menu": "Mở menu",
+    "page_description": "Quản lý lịch thu nhập và chi tiêu tự động gắn với ví và danh mục của bạn.",
+    "save_error": "Không thể lưu giao dịch định kỳ",
+    "scheduled_for": "Đã lên lịch cho {date}",
+    "select_category": "Chọn danh mục",
+    "select_frequency": "Chọn tần suất",
+    "select_wallet": "Chọn ví",
+    "start_date": "Ngày bắt đầu",
+    "start_date_required": "Vui lòng chọn ngày bắt đầu",
+    "title": "Giao dịch định kỳ",
+    "upcoming_title": "Sắp tới trong 30 ngày",
+    "update_success": "Đã cập nhật giao dịch định kỳ thành công",
+    "update_transaction": "Cập nhật giao dịch định kỳ",
+    "wallet": "Ví",
+    "wallet_required": "Vui lòng chọn ví",
+    "weekly": "Hàng tuần",
+    "yearly": "Hàng năm"
+  },
   "inventory": {
     "checkout": {
       "calculator": {
@@ -1971,5 +2034,12 @@
     "workspace-activity-description": "Thông báo về thay đổi và cập nhật không gian làm việc",
     "workspace-settings-description": "Cài đặt không gian làm việc mặc định",
     "workspaces-usage": "Không gian làm việc"
+  },
+  "ws-debt-loan": {
+    "amount_positive": "Số tiền phải lớn hơn 0",
+    "counterparty_too_long": "Đối tác không được vượt quá 255 ký tự",
+    "description_too_long": "Mô tả không được vượt quá 500 ký tự",
+    "name_required": "Vui lòng nhập tên",
+    "start_date_required": "Vui lòng chọn ngày bắt đầu"
   }
 }

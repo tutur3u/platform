@@ -22,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
 import { useLocalStorage } from '@tuturuuu/ui/hooks/use-local-storage';
+import { toast } from '@tuturuuu/ui/sonner';
 import { Tabs, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -206,12 +207,13 @@ export default function InvoiceCard({
           1.0
         );
       });
-    } catch (error) {
-      console.error('PNG export failed:', error);
+      toast.success(t('common.export-success'));
+    } catch {
+      toast.error(t('common.export-error'));
     } finally {
       setIsExporting(false);
     }
-  }, [invoice.id, isDarkPreview]);
+  }, [invoice.id, isDarkPreview, t]);
 
   // Auto trigger print or image download when URL contains ?print=true or ?image=true
   useEffect(() => {
@@ -232,8 +234,8 @@ export default function InvoiceCard({
             if (shouldDownloadImage) {
               await handlePngExport();
             }
-          } catch (error) {
-            console.error('Auto-export failed:', error);
+          } catch {
+            toast.error(t('common.export-error'));
           }
 
           const url = new URL(window.location.href);
@@ -241,13 +243,13 @@ export default function InvoiceCard({
           url.searchParams.delete('image');
           window.history.replaceState({}, '', url.toString());
         }
-      } catch (error) {
-        console.error('Failed to trigger auto-export:', error);
+      } catch {
+        toast.error(t('common.export-error'));
       }
     };
 
     triggerExports();
-  }, [handlePrintExport, handlePngExport, isCompactInitialized]);
+  }, [handlePrintExport, handlePngExport, isCompactInitialized, t]);
 
   return (
     <div className="overflow-x-auto xl:flex-none">
@@ -347,6 +349,7 @@ export default function InvoiceCard({
               promotions={promotions}
               configs={configs}
               isDarkPreview={isDarkPreview}
+              lang={lang}
               currency={currency}
             />
           )}

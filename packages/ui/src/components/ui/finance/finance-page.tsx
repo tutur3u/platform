@@ -6,6 +6,7 @@ import {
 import type { Transaction } from '@tuturuuu/types/primitives/Transaction';
 import { CustomDataTable } from '@tuturuuu/ui/custom/tables/custom-data-table';
 import { BudgetAlerts } from '@tuturuuu/ui/finance/budgets/budget-alerts';
+import { FinanceOverviewMetrics } from '@tuturuuu/ui/finance/finance-overview-metrics';
 import { CategoryBreakdownChart } from '@tuturuuu/ui/finance/shared/charts/category-breakdown-chart';
 import { DailyTotalChartClient } from '@tuturuuu/ui/finance/shared/charts/daily-total-chart-client';
 import { MonthlyTotalChartClient } from '@tuturuuu/ui/finance/shared/charts/monthly-total-chart-client';
@@ -14,10 +15,6 @@ import { DashboardHeader } from '@tuturuuu/ui/finance/shared/dashboard-header';
 import { Filter } from '@tuturuuu/ui/finance/shared/filter';
 import LoadingStatisticCard from '@tuturuuu/ui/finance/shared/loaders/statistics';
 import type { FinanceDashboardSearchParams } from '@tuturuuu/ui/finance/shared/metrics';
-import InvoicesStatistics from '@tuturuuu/ui/finance/statistics/invoices';
-import TransactionCategoriesStatistics from '@tuturuuu/ui/finance/statistics/transaction-categories';
-import TransactionsStatistics from '@tuturuuu/ui/finance/statistics/transactions';
-import WalletsStatistics from '@tuturuuu/ui/finance/statistics/wallets';
 import { transactionColumns } from '@tuturuuu/ui/finance/transactions/columns';
 import { Separator } from '@tuturuuu/ui/separator';
 import {
@@ -87,76 +84,15 @@ export default async function FinancePage({
         <ConfidentialToggle hasPermission={canViewConfidentialAmount} />
       )}
 
-      <BudgetAlerts wsId={wsId} className="mb-4" />
+      <BudgetAlerts wsId={wsId} className="mb-4" currency={currency} />
 
       <div className="grid items-end gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {/*<Suspense fallback={<LoadingStatisticCard className="md:col-span-2" />}>
-          <TotalBalanceStatistics
+        <Suspense fallback={<FinanceOverviewMetricsFallback />}>
+          <FinanceOverviewMetrics
             wsId={wsId}
             currency={currency}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <IncomeStatistics wsId={wsId} currency={currency} searchParams={sp} />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <ExpenseStatistics
-            wsId={wsId}
-            currency={currency}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <MonthlyIncomeStatistics
-            wsId={wsId}
-            currency={currency}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <MonthlyExpenseStatistics
-            wsId={wsId}
-            currency={currency}
-            searchParams={sp}
-          />
-        </Suspense>*/}
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <WalletsStatistics
-            wsId={wsId}
             financePrefix={financePrefix}
-            permissions={resolvedPermissions}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionCategoriesStatistics
-            wsId={wsId}
-            financePrefix={financePrefix}
-            permissions={resolvedPermissions}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <TransactionsStatistics
-            wsId={wsId}
-            financePrefix={financePrefix}
-            permissions={resolvedPermissions}
-            searchParams={sp}
-          />
-        </Suspense>
-
-        <Suspense fallback={<LoadingStatisticCard />}>
-          <InvoicesStatistics
-            wsId={wsId}
-            financePrefix={financePrefix}
+            internalApiOptions={resolvedInternalApiOptions}
             permissions={resolvedPermissions}
             searchParams={sp}
           />
@@ -208,6 +144,12 @@ export default async function FinancePage({
       </div>
     </>
   );
+}
+
+function FinanceOverviewMetricsFallback() {
+  return Array.from({ length: 8 }, (_, index) => (
+    <LoadingStatisticCard key={index} />
+  ));
 }
 
 async function getRecentTransactions(

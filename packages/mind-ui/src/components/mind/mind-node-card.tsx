@@ -5,6 +5,7 @@ import { Badge } from '@tuturuuu/ui/badge';
 import { cn } from '@tuturuuu/utils/format';
 import { Handle, type NodeProps, Position } from '@xyflow/react';
 import { useTranslations } from 'next-intl';
+import { memo } from 'react';
 import { getNodeMetadata, NODE_STATUS_COLORS } from './model';
 
 export type MindFlowNodeData = Record<string, unknown> & {
@@ -12,7 +13,10 @@ export type MindFlowNodeData = Record<string, unknown> & {
   node: MindNode;
 };
 
-export function MindNodeCard({ data, selected }: NodeProps) {
+export const MindNodeCard = memo(function MindNodeCard({
+  data,
+  selected,
+}: NodeProps) {
   const t = useTranslations('mind');
   const node = (data as MindFlowNodeData).node;
   const dimmed = (data as MindFlowNodeData).dimmed === true && !selected;
@@ -90,7 +94,7 @@ export function MindNodeCard({ data, selected }: NodeProps) {
       <MindHandle id="connection-bottom" position={Position.Bottom} />
     </article>
   );
-}
+});
 
 function MindHandle({ id, position }: { id: string; position: Position }) {
   return (

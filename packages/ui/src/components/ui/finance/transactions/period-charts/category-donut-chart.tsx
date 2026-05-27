@@ -10,7 +10,7 @@ import timezonePlugin from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { useExchangeRates } from '../../../../../hooks/use-exchange-rates';
 import {
@@ -21,25 +21,16 @@ import {
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
 import { Tabs, TabsList, TabsTrigger } from '../../../tabs';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 import { CategoryBreakdownDialog } from './category-breakdown-dialog';
 
 // Initialize dayjs plugins for timezone-aware date operations
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
 
 // Dynamic color palette using CSS variables
 // NOTE: CSS variables --chart-N already contain full hsl() values (e.g., "hsl(12 76% 61%)"),
@@ -112,7 +103,7 @@ export function CategoryDonutChart({
   const t = useTranslations('finance-transactions');
   const locale = useLocale();
   const { resolvedTheme } = useTheme();
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential } = useFinanceConfidentialVisibility();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [type, setType] = useState<'all' | 'expense' | 'income'>(initialType);
   const { data: exchangeRatesData } = useExchangeRates();
@@ -144,33 +135,6 @@ export function CategoryDonutChart({
   // Check if immersive view is available (needs workspace context)
   const canOpenDialog =
     enableImmersiveView && !!workspaceId && !!periodStartDate;
-
-  // Sync with confidential mode cookie
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
 
   // Fetch category data from RPC when workspace context is available
   const shouldFetchCategories = !!workspaceId && !!periodStartDate;
@@ -451,7 +415,7 @@ export function CategoryDonutChart({
   );
 
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
@@ -595,7 +559,9 @@ export function CategoryDonutChart({
                     </span>
                   </div>
                   <span className="shrink-0 font-medium tabular-nums">
-                    {isConfidential ? '•••' : `${item.percentage.toFixed(0)}%`}
+                    {isConfidential
+                      ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                      : `${item.percentage.toFixed(0)}%`}
                   </span>
                 </div>
               ))}

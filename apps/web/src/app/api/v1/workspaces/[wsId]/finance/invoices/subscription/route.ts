@@ -5,7 +5,10 @@ import { NextResponse } from 'next/server';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { isGroupBlockedForSubscriptionInvoices } from '@/utils/workspace-config';
-import { type CalculatedValues, calculateInvoiceValues } from '../route';
+import {
+  type CalculatedValues,
+  getCalculatedInvoiceValuesFromRpc,
+} from '../route';
 
 interface Params {
   params: Promise<{
@@ -132,21 +135,22 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
-    // Calculate values using backend logic (shared)
+    // Calculate values through the private database RPC
     let calculatedValues: CalculatedValues;
 
     try {
-      calculatedValues = await calculateInvoiceValues(
-        wsId,
-        products,
-        promotion_id,
-        {
+      calculatedValues = await getCalculatedInvoiceValuesFromRpc({
+        frontendValues: {
           subtotal: frontend_subtotal,
           discount_amount: frontend_discount_amount,
           total: frontend_total,
         },
-        true
-      );
+        isSubscriptionInvoice: true,
+        products,
+        promotionId: promotion_id,
+        supabase: sbAdmin,
+        wsId,
+      });
     } catch (e) {
       if ((e as { code?: string })?.code === 'PROMOTION_LIMIT_REACHED') {
         return NextResponse.json(

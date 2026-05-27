@@ -1903,6 +1903,41 @@ export type Database = {
         };
       };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
+      calculate_invoice_values: {
+        Args: {
+          p_frontend_discount_amount?: number;
+          p_frontend_subtotal?: number;
+          p_frontend_total?: number;
+          p_is_subscription_invoice?: boolean;
+          p_products: Json;
+          p_promotion_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          allow_promotions: boolean;
+          discount_amount: number;
+          promotion_code: string;
+          promotion_description: string;
+          promotion_id: string;
+          promotion_name: string;
+          promotion_use_ratio: boolean;
+          promotion_value: number;
+          rounding_applied: number;
+          subtotal: number;
+          total: number;
+          values_recalculated: boolean;
+        }[];
+      };
+      calculate_wallet_interest: {
+        Args: {
+          _actor_id: string;
+          _from_date: string;
+          _to_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       compute_abuse_risk_tier: {
@@ -1919,9 +1954,47 @@ export type Database = {
         };
         Returns: number;
       };
+      detect_wallet_interest_transactions: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
+      };
+      finance_credit_cycle_date: {
+        Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
+        Returns: string;
+      };
+      get_credit_wallet_summary: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
+      get_debt_loan_with_balance: {
+        Args: { _actor_id: string; _debt_id: string; _ws_id: string };
+        Returns: {
+          counterparty: string;
+          created_at: string;
+          creator_id: string;
+          currency: string;
+          description: string;
+          due_date: string;
+          id: string;
+          interest_rate: number;
+          interest_type: Database['public']['Enums']['interest_calculation_type'];
+          name: string;
+          principal_amount: number;
+          progress_percentage: number;
+          remaining_balance: number;
+          start_date: string;
+          status: Database['public']['Enums']['debt_loan_status'];
+          total_interest_paid: number;
+          total_paid: number;
+          type: Database['public']['Enums']['debt_loan_type'];
+          updated_at: string;
+          wallet_id: string;
+          ws_id: string;
+        }[];
       };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
@@ -1933,6 +2006,52 @@ export type Database = {
         }[];
       };
       get_request_ip: { Args: { p_headers: Json }; Returns: unknown };
+      get_transaction_tag_stats: {
+        Args: { _actor_id: string; _ws_id: string };
+        Returns: {
+          expense_count: number;
+          income_count: number;
+          last_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
+          tag_color: string;
+          tag_description: string;
+          tag_id: string;
+          tag_name: string;
+          total_amount: number;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          ws_id: string;
+        }[];
+      };
+      get_wallet_interest_initial_balance: {
+        Args: {
+          _actor_id: string;
+          _from_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: number;
+      };
+      get_wallet_interest_projection: {
+        Args: {
+          _actor_id: string;
+          _days: number;
+          _start_date: string;
+          _wallet_id: string;
+          _ws_id: string;
+        };
+        Returns: Json;
+      };
+      get_wallet_interest_summary: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
       list_task_source_filter_ids: {
         Args: {
           p_actor_id: string;
@@ -2179,6 +2298,35 @@ export type Database = {
       user_group_activity_resource_type: {
         Args: { p_table_name: string };
         Returns: string;
+      };
+      wallet_interest_calculation_result: {
+        Args: {
+          _config_id: string;
+          _from_date: string;
+          _initial_balance?: number;
+          _to_date: string;
+          _transaction_from_date: string;
+          _transaction_to_date: string;
+          _wallet_id: string;
+        };
+        Returns: Json;
+      };
+      wallet_interest_is_business_day: {
+        Args: { _date: string };
+        Returns: boolean;
+      };
+      wallet_interest_next_business_day: {
+        Args: { _date: string };
+        Returns: string;
+      };
+      wallet_interest_project_rows: {
+        Args: {
+          _current_balance: number;
+          _current_rate: number;
+          _days: number;
+          _start_date: string;
+        };
+        Returns: Json;
       };
     };
     Enums: {
@@ -30594,6 +30742,19 @@ export type Database = {
           phone: string;
         }[];
       };
+      get_balance_trend: {
+        Args: {
+          _end_date?: string;
+          _max_points?: number;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          balance: number;
+          date: string;
+        }[];
+      };
       get_blocked_tasks: {
         Args: { p_task_id: string };
         Returns: {
@@ -31058,6 +31219,16 @@ export type Database = {
           total_completion_tokens: number;
           total_prompt_tokens: number;
         }[];
+      };
+      get_income_expense_chart_summary: {
+        Args: {
+          _end_date?: string;
+          _interval?: string;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: Json;
       };
       get_inventory_batches_count: { Args: { ws_id: string }; Returns: number };
       get_inventory_product_categories_count: {
@@ -31598,6 +31769,13 @@ export type Database = {
           sign_in_count: number;
         }[];
       };
+      get_spending_trends: {
+        Args: { _days?: number; _timezone?: string; _ws_id: string };
+        Returns: {
+          amount: number;
+          date: string;
+        }[];
+      };
       get_submission_statistics: {
         Args: never;
         Returns: {
@@ -31765,10 +31943,24 @@ export type Database = {
       get_transaction_count_by_tag: {
         Args: { _ws_id: string };
         Returns: {
+          expense_count: number;
+          income_count: number;
+          last_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
           tag_color: string;
+          tag_description: string;
           tag_id: string;
           tag_name: string;
+          total_amount: number;
+          total_expense: number;
+          total_income: number;
           transaction_count: number;
+          ws_id: string;
         }[];
       };
       get_transaction_creators: {
@@ -32738,6 +32930,16 @@ export type Database = {
             };
             Returns: number;
           };
+      get_workspace_wallets_net_total: {
+        Args: {
+          end_date?: string;
+          include_confidential?: boolean;
+          p_user_id?: string;
+          start_date?: string;
+          ws_id: string;
+        };
+        Returns: number;
+      };
       habit_tracker_entry_numeric_value: {
         Args: {
           p_aggregation_strategy: string;
@@ -36357,6 +36559,7 @@ export type Database = {
           id: string;
           in_progress_size: number;
           key: string;
+          metadata: Json | null;
           owner_id: string | null;
           upload_signature: string;
           user_metadata: Json | null;
@@ -36368,6 +36571,7 @@ export type Database = {
           id: string;
           in_progress_size?: number;
           key: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature: string;
           user_metadata?: Json | null;
@@ -36379,6 +36583,7 @@ export type Database = {
           id?: string;
           in_progress_size?: number;
           key?: string;
+          metadata?: Json | null;
           owner_id?: string | null;
           upload_signature?: string;
           user_metadata?: Json | null;
@@ -36497,6 +36702,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      allow_any_operation: {
+        Args: { expected_operations: string[] };
+        Returns: boolean;
+      };
+      allow_only_operation: {
+        Args: { expected_operation: string };
+        Returns: boolean;
+      };
       can_insert_object: {
         Args: { bucketid: string; metadata: Json; name: string; owner: string };
         Returns: undefined;

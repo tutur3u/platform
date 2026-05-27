@@ -4,7 +4,7 @@ import {
   withForwardedInternalApiAuth,
 } from '@tuturuuu/internal-api';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
+import { CreateDialogFeatureSummary } from '@tuturuuu/ui/finance/shared/create-dialog-feature-summary';
 import { WalletForm } from '@tuturuuu/ui/finance/wallets/form';
 import { WalletsDataTable } from '@tuturuuu/ui/finance/wallets/wallets-data-table';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -21,6 +21,7 @@ import { getTranslations } from 'next-intl/server';
 interface Props {
   wsId: string;
   searchParams: {
+    create?: string;
     q: string;
     page: string;
     pageSize: string;
@@ -30,6 +31,7 @@ interface Props {
   currency?: string;
   financePrefix?: string;
   internalApiOptions?: InternalApiClientOptions;
+  openCreateDialog?: boolean;
   permissions?: PermissionsResult;
   workspace?: {
     personal?: boolean | null;
@@ -44,6 +46,7 @@ export default async function WalletsPage({
   currency,
   financePrefix = '/finance',
   internalApiOptions,
+  openCreateDialog = false,
   permissions,
   workspace,
 }: Props) {
@@ -78,12 +81,13 @@ export default async function WalletsPage({
 
   return (
     <>
-      <FeatureSummary
+      <CreateDialogFeatureSummary
         pluralTitle={t('ws-wallets.plural')}
         singularTitle={t('ws-wallets.singular')}
         description={t('ws-wallets.description')}
         createTitle={t('ws-wallets.create')}
         createDescription={t('ws-wallets.create_description')}
+        defaultOpen={openCreateDialog || searchParams.create === 'wallet'}
         form={canCreateWallets ? <WalletForm wsId={wsId} /> : undefined}
       />
       <Separator className="my-4" />

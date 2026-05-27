@@ -21,6 +21,22 @@ export default defineConfig({
         find: '@tuturuuu/internal-api/tasks',
         replacement: resolve(__dirname, '../internal-api/src/tasks.ts'),
       },
+      {
+        find: /^@tuturuuu\/internal-api\/(.+)$/,
+        replacement: `${resolve(__dirname, '../internal-api/src')}/$1.ts`,
+      },
+      {
+        find: '@tuturuuu/internal-api',
+        replacement: resolve(__dirname, '../internal-api/src/index.ts'),
+      },
+      {
+        find: '@tuturuuu/supabase/next/client',
+        replacement: resolve(__dirname, '../supabase/src/next/client.ts'),
+      },
+      {
+        find: '@tuturuuu/supabase/next/server',
+        replacement: resolve(__dirname, '../supabase/src/next/server.ts'),
+      },
     ],
   },
 });

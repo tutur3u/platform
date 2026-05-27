@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
+  AlertCircle,
   Download,
   ExternalLink,
   File,
@@ -219,7 +220,12 @@ function TransactionAttachmentPreviewDialog({
   });
 
   const textContentQuery = useQuery({
-    queryKey: ['finance-transaction-attachment-text', signedUrlQuery.data],
+    queryKey: [
+      'finance-transaction-attachment-text',
+      wsId,
+      relativePath,
+      signedUrlQuery.data,
+    ],
     queryFn: async () => {
       if (!signedUrlQuery.data) {
         throw new Error('Missing signed URL');
@@ -227,7 +233,9 @@ function TransactionAttachmentPreviewDialog({
 
       const response = await fetch(signedUrlQuery.data, { cache: 'no-store' });
       if (!response.ok) {
-        throw new Error('Failed to load file preview');
+        throw new Error(
+          t('transaction-data-table.failed_to_load_file_preview')
+        );
       }
 
       return response.text();
@@ -287,6 +295,20 @@ function TransactionAttachmentPreviewDialog({
           <div className="flex flex-col items-center gap-3 text-muted-foreground text-sm">
             <Loader2 className="h-8 w-8 animate-spin" />
             {t('common.loading')}
+          </div>
+        </div>
+      );
+    }
+
+    if (
+      signedUrlQuery.isError ||
+      (attachmentKind === 'text' && textContentQuery.isError)
+    ) {
+      return (
+        <div className={previewClass}>
+          <div className="space-y-2 text-center text-muted-foreground text-sm">
+            <AlertCircle className="mx-auto h-10 w-10 text-dynamic-red" />
+            {t('transaction-data-table.failed_to_load_file_preview')}
           </div>
         </div>
       );

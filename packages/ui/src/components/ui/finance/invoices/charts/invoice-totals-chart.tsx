@@ -10,7 +10,7 @@ import type {
 import { cn, formatCurrency } from '@tuturuuu/utils/format';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -31,6 +31,11 @@ import {
   TooltipTrigger,
   Tooltip as TooltipUI,
 } from '../../../tooltip';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 
 // Re-export types for convenience
 export type {
@@ -42,27 +47,6 @@ export type {
 
 // Chart display mode for creator view
 type ChartMode = 'grouped' | 'stacked';
-
-// Cookie helper functions
-const setCookie = (name: string, value: string, days = 365) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  // biome-ignore lint/suspicious/noDocumentCookie: Used for finance confidential mode state persistence
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-};
-
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
 
 // Color palette for groups
 const GROUP_COLORS = [
@@ -118,41 +102,8 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   const [metric, setMetric] = useState<InvoiceAnalyticsMetric>('amount');
   const [groupBy, setGroupBy] = useState<InvoiceAnalyticsGroupBy>('wallet');
   const [chartMode, setChartMode] = useState<ChartMode>('stacked');
-  const [isConfidential, setIsConfidential] = useState(true);
-
-  // Load confidential mode from cookie on mount
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
-
-  const toggleConfidential = () => {
-    const newValue = !isConfidential;
-    setIsConfidential(newValue);
-    setCookie('finance-confidential-mode', String(newValue));
-    window.dispatchEvent(new Event('finance-confidential-mode-change'));
-  };
+  const { isConfidential, toggleConfidential } =
+    useFinanceConfidentialVisibility();
 
   // Get raw data based on mode, period, and groupBy
   const rawData = useMemo(() => {
@@ -247,7 +198,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   }, [rawData]);
 
   const formatValue = (value: number) => {
-    if (isConfidential && metric === 'amount') return '******';
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
@@ -255,7 +206,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   };
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential && metric === 'amount') return '***';
+    if (isConfidential) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
@@ -454,7 +405,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                     <TooltipTrigger asChild>
                       <Badge variant="secondary" className="font-mono">
                         {isConfidential
-                          ? '***'
+                          ? FINANCE_HIDDEN_COMPACT_AMOUNT
                           : formatCompactValue(totals.totalAmount)}
                       </Badge>
                     </TooltipTrigger>
@@ -469,7 +420,9 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                   <TooltipUI>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="font-mono">
-                        {totals.totalCount.toLocaleString(locale)}{' '}
+                        {isConfidential
+                          ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                          : totals.totalCount.toLocaleString(locale)}{' '}
                         {t('invoices')}
                       </Badge>
                     </TooltipTrigger>

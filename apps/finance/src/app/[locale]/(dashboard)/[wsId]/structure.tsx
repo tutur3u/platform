@@ -396,14 +396,13 @@ export function Structure({
   const sidebarHeader = (
     <>
       {isCollapsed || wsId === ROOT_WORKSPACE_ID || (
-        <Link href="/" className="flex flex-none items-center gap-2">
+        <Link
+          href="/"
+          className="flex flex-none items-center gap-2"
+          aria-label={t('common.home')}
+        >
           <div className="flex-none">
-            <TuturuuLogo
-              className="h-6 w-6"
-              width={32}
-              height={32}
-              alt="logo"
-            />
+            <TuturuuLogo className="h-6 w-6" width={32} height={32} alt="" />
           </div>
           <LogoTitle />
         </Link>
@@ -492,8 +491,12 @@ export function Structure({
   const mobileHeader = (
     <>
       <div className="flex flex-none items-center gap-2">
-        <Link href="/" className="flex flex-none items-center gap-2">
-          <TuturuuLogo className="h-8 w-8" width={32} height={32} alt="logo" />
+        <Link
+          href="/"
+          className="flex flex-none items-center gap-2"
+          aria-label={t('common.home')}
+        >
+          <TuturuuLogo className="h-8 w-8" width={32} height={32} alt="" />
         </Link>
       </div>
       <div className="mx-2 h-4 w-px flex-none rotate-30 bg-foreground/20" />

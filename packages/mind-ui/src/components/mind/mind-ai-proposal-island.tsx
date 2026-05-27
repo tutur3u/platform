@@ -1,7 +1,7 @@
 'use client';
 
 import { GitMerge, ListChecks, Sparkles, X } from '@tuturuuu/icons';
-import type { MindAiPatchRecord } from '@tuturuuu/types/db';
+import type { MindAiPatchRecord, MindNode } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -22,14 +22,21 @@ export type MindAiProposal = {
 type Props = {
   applying?: boolean;
   fullscreen?: boolean;
+  nodes?: Pick<MindNode, 'id' | 'title'>[];
   proposal: MindAiProposal | null;
   onApplyPatch: (patchId: string) => void;
   onDismiss: (proposalId: string) => void;
 };
 
+const DOCKED_ASSISTANT_WIDTH = '30rem';
+const DOCKED_ASSISTANT_RIGHT = '0.75rem';
+const DOCKED_PANEL_GAP = '1rem';
+const DOCKED_LEFT_MARGIN = '1.5rem';
+
 export function MindAiProposalIsland({
   applying,
   fullscreen,
+  nodes = [],
   proposal,
   onApplyPatch,
   onDismiss,
@@ -58,8 +65,8 @@ export function MindAiProposalIsland({
         fullscreen
           ? { width: 'min(34rem, calc(100vw - 4rem))' }
           : {
-              right: '30rem',
-              width: 'min(34rem, calc(100vw - 34rem))',
+              right: `calc(${DOCKED_ASSISTANT_WIDTH} + ${DOCKED_ASSISTANT_RIGHT} + ${DOCKED_PANEL_GAP})`,
+              width: `min(34rem, calc(100vw - ${DOCKED_ASSISTANT_WIDTH} - ${DOCKED_ASSISTANT_RIGHT} - ${DOCKED_PANEL_GAP} - ${DOCKED_LEFT_MARGIN}))`,
             }
       }
     >
@@ -106,6 +113,7 @@ export function MindAiProposalIsland({
         {proposal.patch ? (
           <MindAiPatchDraftCard
             applying={applying}
+            nodes={nodes}
             onApplyPatch={onApplyPatch}
             patch={proposal.patch}
             showApplyAction={false}
@@ -173,8 +181,11 @@ export function getLatestMindAiProposal(
         const patch = getMindAiPatchRecord(getToolOutput(part));
         if (patch && !patchIds.has(patch.id)) {
           patchIds.add(patch.id);
-          latestPatch = patchById.get(patch.id) ?? patch;
-          latestPatchId = `patch-${patch.id}`;
+          const resolvedPatch = patchById.get(patch.id) ?? patch;
+          if (resolvedPatch.status === 'draft') {
+            latestPatch = resolvedPatch;
+            latestPatchId = `patch-${patch.id}`;
+          }
         }
       }
     }
@@ -196,13 +207,26 @@ export function getLatestMindAiProposal(
   };
 }
 
+export function getMindAiProposalVisibilityKey(proposal: MindAiProposal) {
+  return proposal.patch ? `patch:${proposal.patch.id}` : proposal.id;
+}
+
 export function hasMindAiProposalPart(message: UIMessage) {
-  return message.parts.some((part) => {
+  return getMindAiProposalPartType(message) !== null;
+}
+
+export function getMindAiProposalPartType(message: UIMessage) {
+  let hasVisual = false;
+
+  const hasPatch = message.parts.some((part) => {
     const name = getToolName(part);
     if (name === 'render_mind_ui') {
-      return Boolean(
-        resolveMindRenderUiSpec(getToolOutput(part) ?? getToolRawInput(part))
-      );
+      hasVisual =
+        hasVisual ||
+        Boolean(
+          resolveMindRenderUiSpec(getToolOutput(part) ?? getToolRawInput(part))
+        );
+      return false;
     }
 
     if (name === 'propose_mind_patch') {
@@ -211,6 +235,10 @@ export function hasMindAiProposalPart(message: UIMessage) {
 
     return false;
   });
+
+  if (hasPatch) return 'draft';
+  if (hasVisual) return 'plan';
+  return null;
 }
 
 function getToolName(part: MessagePart) {

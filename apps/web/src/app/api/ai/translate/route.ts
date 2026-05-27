@@ -105,7 +105,7 @@ ${JSON.stringify(viMessages || {}, null, 2)}
 Return ONLY a valid JSON object (not wrapped in any markdown or code blocks) with the complete Vietnamese translations, maintaining the exact same structure as the English JSON.`;
 
     const result = streamText({
-      model: google('gemini-3.1-flash-lite-preview'),
+      model: google('gemini-3.1-flash-lite'),
       prompt,
       temperature: 0.3, // Lower temperature for more consistent translations
     });

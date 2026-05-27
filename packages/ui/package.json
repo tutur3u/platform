@@ -162,6 +162,10 @@
   "exports": {
     "./globals.css": "./src/globals.css",
     "./postcss.config": "./postcss.config.mjs",
+    "./tooltip": {
+      "types": "./src/components/ui/tooltip.tsx",
+      "import": "./src/components/ui/tooltip.tsx"
+    },
     "./form": {
       "types": "./src/components/ui/form.tsx",
       "import": "./src/components/ui/form.tsx"

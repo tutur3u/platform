@@ -58,6 +58,7 @@ export type MindCanvasInnerProps = {
   saving?: boolean;
   selectedTags: string[];
   snapshot: MindBoardSnapshot;
+  snapshotRefreshVersion?: number;
 };
 
 export function MindCanvasInner({
@@ -73,6 +74,7 @@ export function MindCanvasInner({
   saving,
   selectedTags,
   snapshot,
+  snapshotRefreshVersion = 0,
 }: MindCanvasInnerProps) {
   const t = useTranslations('mind');
   const reactFlow = useReactFlow<MindFlowNode, MindFlowEdge>();
@@ -97,6 +99,7 @@ export function MindCanvasInner({
   const hasUnsavedLocalEditsRef = useRef(false);
   const saveInFlightRef = useRef(false);
   const previousSnapshotBoardIdRef = useRef(snapshot.board.id);
+  const previousSnapshotRefreshVersionRef = useRef(snapshotRefreshVersion);
   const savePayloadInput = useMemo(
     () => ({ deletedEdgeIds, deletedNodeIds, edges, nodes }),
     [deletedEdgeIds, deletedNodeIds, edges, nodes]
@@ -130,7 +133,11 @@ export function MindCanvasInner({
   useEffect(() => {
     const boardChanged =
       previousSnapshotBoardIdRef.current !== snapshot.board.id;
-    if (!boardChanged && hasUnsavedLocalEditsRef.current) return;
+    const refreshRequested =
+      previousSnapshotRefreshVersionRef.current !== snapshotRefreshVersion;
+    if (!boardChanged && !refreshRequested && hasUnsavedLocalEditsRef.current) {
+      return;
+    }
 
     const nextNodes = toFlowNodes(snapshot.nodes);
     const nextEdges = toFlowEdges(snapshot.edges);
@@ -143,6 +150,7 @@ export function MindCanvasInner({
     const nextSignature = getMindGraphSignature(nextPayload);
 
     previousSnapshotBoardIdRef.current = snapshot.board.id;
+    previousSnapshotRefreshVersionRef.current = snapshotRefreshVersion;
     editVersionRef.current = 0;
     hasUnsavedLocalEditsRef.current = false;
     setNodes(nextNodes);
@@ -157,7 +165,7 @@ export function MindCanvasInner({
     setRelatedViewOpen(false);
     setSavedGraphSignature(nextSignature);
     setAutoSaveStatus('saved');
-  }, [snapshot]);
+  }, [snapshot, snapshotRefreshVersion]);
 
   useEffect(() => {
     latestSaveRef.current = {
@@ -380,7 +388,7 @@ export function MindCanvasInner({
     [focusEdgeInView, inspectorMinimized]
   );
 
-  const closeInspector = () => {
+  const closeInspector = useCallback(() => {
     setInspectorOpen(false);
     setInspectorMinimized(false);
     setRelatedViewOpen(false);
@@ -397,7 +405,15 @@ export function MindCanvasInner({
         edge.selected ? { ...edge, selected: false } : edge
       )
     );
-  };
+  }, []);
+
+  const submitInspectorSmartPrompt = useCallback(
+    (prompt: string) => {
+      closeInspector();
+      onSmartPrompt?.(prompt);
+    },
+    [closeInspector, onSmartPrompt]
+  );
 
   const updateNode = (nodeId: string, patch: Partial<MindNode>) => {
     markGraphEdited();
@@ -517,6 +533,7 @@ export function MindCanvasInner({
           tags={tags}
         />
         <MindCanvasGraph
+          key={snapshotRefreshVersion}
           edges={visibleEdges}
           groupFrames={groupFrames}
           nodes={visibleNodes}
@@ -658,7 +675,7 @@ export function MindCanvasInner({
           }}
           onOpenRelatedView={() => setRelatedViewOpen(true)}
           onUpdateEdge={updateEdge}
-          onSmartPrompt={onSmartPrompt}
+          onSmartPrompt={submitInspectorSmartPrompt}
           onUpdateNode={updateNode}
         />
       ) : null}

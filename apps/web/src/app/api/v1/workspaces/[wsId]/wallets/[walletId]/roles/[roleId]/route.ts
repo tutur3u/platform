@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { viewingWindowBaseSchema } from '@tuturuuu/ui/finance/wallets/wallet-form-schema';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -13,9 +14,10 @@ interface Params {
 
 // PUT - Update role's viewing window for a wallet
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const { wsId, walletId, roleId } = await params;
   const permissions = await getPermissions({
+    request: req,
     wsId,
   });
   if (!permissions) {
@@ -54,7 +56,12 @@ export async function PUT(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error updating wallet role access', {
+      error,
+      roleId,
+      walletId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error updating role access' },
       { status: 500 }
@@ -65,10 +72,11 @@ export async function PUT(req: Request, { params }: Params) {
 }
 
 // DELETE - Remove role's access to wallet
-export async function DELETE(_: Request, { params }: Params) {
-  const supabase = await createClient();
+export async function DELETE(req: Request, { params }: Params) {
+  const supabase = await createClient(req);
   const { wsId, walletId, roleId } = await params;
   const permissions = await getPermissions({
+    request: req,
     wsId,
   });
   if (!permissions) {
@@ -90,7 +98,12 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('role_id', roleId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error removing wallet role access', {
+      error,
+      roleId,
+      walletId,
+      wsId,
+    });
     return NextResponse.json(
       { message: 'Error removing role access' },
       { status: 500 }

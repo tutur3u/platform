@@ -12,6 +12,10 @@ import { useCurrencyFormatter } from '@tuturuuu/ui/hooks/use-currency-formatter'
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../../shared/use-finance-confidential-visibility';
 
 interface WalletInterestPendingDepositsProps {
   deposits: PendingDepositInfo[];
@@ -35,6 +39,10 @@ export function WalletInterestPendingDeposits({
 }: WalletInterestPendingDepositsProps) {
   const t = useTranslations('wallet-interest');
   const { formatCurrency, formatDate } = useCurrencyFormatter({ currency });
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount);
   const [isOpen, setIsOpen] = useState(false);
 
   // Aggregate deposits by date
@@ -82,7 +90,7 @@ export function WalletInterestPendingDeposits({
             <div className="flex items-center justify-between">
               <h4 className="font-medium">{t('pending_deposits_title')}</h4>
               <span className="font-semibold text-dynamic-yellow text-sm">
-                {formatCurrency(totalPending)}
+                {formatVisibleCurrency(totalPending)}
               </span>
             </div>
 
@@ -90,7 +98,7 @@ export function WalletInterestPendingDeposits({
             <p className="mt-1 text-foreground/70 text-sm">
               {t('pending_deposits_summary', {
                 count: deposits.length,
-                amount: formatCurrency(totalPending),
+                amount: formatVisibleCurrency(totalPending),
               })}
             </p>
 
@@ -111,7 +119,7 @@ export function WalletInterestPendingDeposits({
                 <CollapsibleContent className="pt-2">
                   <DepositList
                     deposits={aggregatedDeposits}
-                    formatCurrency={formatCurrency}
+                    formatCurrency={formatVisibleCurrency}
                     formatDate={formatDate}
                     t={t}
                   />
@@ -121,7 +129,7 @@ export function WalletInterestPendingDeposits({
               <div className="mt-2">
                 <DepositList
                   deposits={aggregatedDeposits}
-                  formatCurrency={formatCurrency}
+                  formatCurrency={formatVisibleCurrency}
                   formatDate={formatDate}
                   t={t}
                 />

@@ -1,8 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
 import { Check, ChevronDown } from '@tuturuuu/icons';
-import { listAiGatewayModels } from '@tuturuuu/internal-api/infrastructure';
+import { listAiGatewayModelsPage } from '@tuturuuu/internal-api/infrastructure';
 import type { AIModelUI } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -17,7 +17,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { MIND_AI_MODELS } from './mind-ai-options';
 import { ProviderLogo } from './provider-logo';
 
@@ -26,14 +26,43 @@ type Props = {
   onModelChange: (model: AIModelUI) => void;
 };
 
+type MindModelsPage = Awaited<ReturnType<typeof listAiGatewayModelsPage>>;
+
 export function MindModelSelector({ model, onModelChange }: Props) {
   const t = useTranslations('mind');
-  const modelsQuery = useQuery({
-    queryFn: () => listAiGatewayModels({ enabled: true, type: 'language' }),
-    queryKey: ['mind', 'ai-models', 'language'],
+  const [search, setSearch] = useState('');
+  const modelsQuery = useInfiniteQuery<
+    MindModelsPage,
+    Error,
+    InfiniteData<MindModelsPage, number>,
+    readonly ['mind', 'ai-models', 'language', string],
+    number
+  >({
+    getNextPageParam: (lastPage) => {
+      const loaded = lastPage.pagination.page * lastPage.pagination.limit;
+      return loaded < lastPage.pagination.total
+        ? lastPage.pagination.page + 1
+        : undefined;
+    },
+    initialPageParam: 1,
+    queryFn: ({ pageParam }) =>
+      listAiGatewayModelsPage({
+        enabled: true,
+        limit: 40,
+        page: pageParam,
+        q: search,
+        type: 'language',
+      }),
+    queryKey: ['mind', 'ai-models', 'language', search],
     staleTime: 5 * 60 * 1000,
   });
-  const models = modelsQuery.data?.length ? modelsQuery.data : MIND_AI_MODELS;
+  const pageModels = modelsQuery.data?.pages.flatMap((page) => page.data) ?? [];
+  const fallbackModels =
+    search || pageModels.length ? pageModels : MIND_AI_MODELS;
+  const models = useMemo(
+    () => mergeModels([model], fallbackModels),
+    [fallbackModels, model]
+  );
   const groups = useMemo(() => groupModels(models), [models]);
 
   return (
@@ -55,8 +84,12 @@ export function MindModelSelector({ model, onModelChange }: Props) {
         className="w-[var(--radix-popover-trigger-width)] min-w-[min(24rem,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] p-0"
         sideOffset={6}
       >
-        <Command>
-          <CommandInput placeholder={t('ai.modelSearch')} />
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder={t('ai.modelSearch')}
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList className="max-h-80">
             <CommandEmpty>
               {modelsQuery.isLoading ? t('ai.loadingModels') : t('ai.noModels')}
@@ -96,11 +129,40 @@ export function MindModelSelector({ model, onModelChange }: Props) {
                 ))}
               </CommandGroup>
             ))}
+            {modelsQuery.hasNextPage && (
+              <div className="border-t p-2">
+                <Button
+                  className="w-full"
+                  disabled={modelsQuery.isFetchingNextPage}
+                  size="sm"
+                  type="button"
+                  variant="ghost"
+                  onClick={() => modelsQuery.fetchNextPage()}
+                >
+                  {modelsQuery.isFetchingNextPage
+                    ? t('ai.loadingMoreModels')
+                    : t('ai.loadMoreModels')}
+                </Button>
+              </div>
+            )}
           </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
   );
+}
+
+function mergeModels(pinnedModels: AIModelUI[], models: AIModelUI[]) {
+  const seen = new Set<string>();
+  const merged: AIModelUI[] = [];
+
+  for (const model of [...pinnedModels, ...models]) {
+    if (seen.has(model.value)) continue;
+    seen.add(model.value);
+    merged.push(model);
+  }
+
+  return merged;
 }
 
 function groupModels(models: AIModelUI[]) {

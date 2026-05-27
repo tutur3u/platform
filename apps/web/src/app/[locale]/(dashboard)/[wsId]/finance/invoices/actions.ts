@@ -5,6 +5,7 @@ import {
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { revalidatePath } from 'next/cache';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function deleteInvoice(wsId: string, invoiceId: string) {
   const supabase = await createClient();
@@ -66,7 +67,7 @@ export async function deleteInvoice(wsId: string, invoiceId: string) {
       .eq('ws_id', wsId);
 
     if (deleteError) {
-      console.error('Error deleting invoice:', deleteError);
+      serverLogger.error('Error deleting invoice:', deleteError);
       return { success: false, message: 'Failed to delete invoice' };
     }
 
@@ -75,7 +76,7 @@ export async function deleteInvoice(wsId: string, invoiceId: string) {
 
     return { success: true, message: 'Invoice deleted successfully' };
   } catch (error) {
-    console.error('Unexpected error deleting invoice:', error);
+    serverLogger.error('Unexpected error deleting invoice:', error);
     return { success: false, message: 'Internal server error' };
   }
 }

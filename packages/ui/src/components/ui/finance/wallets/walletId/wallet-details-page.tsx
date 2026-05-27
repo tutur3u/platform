@@ -30,6 +30,7 @@ import { WalletIconDisplay } from '../wallet-icon-display';
 import { CreditWalletSummary } from './credit-wallet-summary';
 import { WalletInterestSection } from './interest';
 import { WalletDetailsActions } from './wallet-details-actions';
+import { WalletDetailsAmount } from './wallet-details-amount';
 import WalletRoleAccessDialog from './wallet-role-access-dialog';
 
 interface Props {
@@ -188,17 +189,13 @@ export default async function WalletDetailsPage({
               icon={<DollarSign className="h-5 w-5" />}
               label={t('wallet-data-table.balance')}
               value={
-                <span>
-                  {Intl.NumberFormat(getCurrencyLocale(currency), {
+                <WalletDetailsAmount
+                  primary={Intl.NumberFormat(getCurrencyLocale(currency), {
                     style: 'currency',
                     currency,
                   }).format(wallet.balance || 0)}
-                  {convertedBalanceText && (
-                    <span className="ml-2 text-muted-foreground text-sm">
-                      {'\u2248'} {convertedBalanceText}
-                    </span>
-                  )}
-                </span>
+                  converted={convertedBalanceText}
+                />
               }
             />
             <DetailItem
@@ -223,12 +220,19 @@ export default async function WalletDetailsPage({
                   icon={<DollarSign className="h-5 w-5" />}
                   label={t('wallet-data-table.credit_limit')}
                   value={
-                    wallet.limit != null
-                      ? Intl.NumberFormat(getCurrencyLocale(currency), {
-                          style: 'currency',
-                          currency,
-                        }).format(wallet.limit)
-                      : '-'
+                    wallet.limit != null ? (
+                      <WalletDetailsAmount
+                        primary={Intl.NumberFormat(
+                          getCurrencyLocale(currency),
+                          {
+                            style: 'currency',
+                            currency,
+                          }
+                        ).format(wallet.limit)}
+                      />
+                    ) : (
+                      '-'
+                    )
                   }
                 />
                 <DetailItem

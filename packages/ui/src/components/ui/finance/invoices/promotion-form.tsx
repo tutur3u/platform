@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -27,8 +28,13 @@ import { Switch } from '@tuturuuu/ui/switch';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { z } from 'zod';
+import {
+  createPromotionWithInternalApi,
+  updatePromotionWithInternalApi,
+} from './internal-api';
+import { invalidateInvoiceMutationQueries } from './query-invalidation';
 
 interface Props {
   wsId: string;
@@ -43,26 +49,30 @@ interface Props {
   showCancelButton?: boolean;
 }
 
-export const FormSchema = z
-  .object({
-    id: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().optional(),
-    code: z.string().min(1).max(255),
-    value: z.coerce.number().min(0),
-    unit: z.string(),
-    // NULL/undefined = unlimited
-    max_uses: z.union([z.coerce.number().int().min(1), z.null()]).optional(),
-  })
-  .refine(
-    ({ unit, value }) =>
-      (unit === 'percentage' && value <= 100) || unit !== 'percentage',
-    {
-      // TODO: i18n
-      message: 'Percentage value cannot exceed 100%',
-      path: ['value'],
-    }
-  );
+const createPromotionFormSchema = (messages?: { percentageValueMax: string }) =>
+  z
+    .object({
+      id: z.string().optional(),
+      name: z.string().min(1).max(255),
+      description: z.string().optional(),
+      code: z.string().min(1).max(255),
+      value: z.coerce.number().min(0),
+      unit: z.enum(['percentage', 'currency']),
+      // NULL/undefined = unlimited
+      max_uses: z.union([z.coerce.number().int().min(1), z.null()]).optional(),
+    })
+    .refine(
+      ({ unit, value }) =>
+        (unit === 'percentage' && value <= 100) || unit !== 'percentage',
+      {
+        message:
+          messages?.percentageValueMax || 'Percentage value cannot exceed 100%',
+        path: ['value'],
+      }
+    );
+
+export const FormSchema = createPromotionFormSchema();
+type PromotionFormValues = z.infer<typeof FormSchema>;
 
 export function PromotionForm({
   wsId,
@@ -77,9 +87,17 @@ export function PromotionForm({
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const formSchema = useMemo(
+    () =>
+      createPromotionFormSchema({
+        percentageValueMax: t('ws-inventory-promotions.percentage_value_max'),
+      }),
+    [t]
+  );
 
   const form = useForm({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       id: data?.id,
       name: data?.name,
@@ -91,7 +109,7 @@ export function PromotionForm({
     },
   });
 
-  async function onSubmit(data: z.infer<typeof FormSchema>) {
+  async function onSubmit(data: PromotionFormValues) {
     setLoading(true);
 
     // Check permissions before proceeding
@@ -107,39 +125,36 @@ export function PromotionForm({
       return;
     }
 
-    const res = await fetch(
-      data?.id
-        ? `/api/v1/workspaces/${wsId}/promotions/${data.id}`
-        : `/api/v1/workspaces/${wsId}/promotions`,
-      {
-        method: data?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description,
-          code: data.code,
-          value: data.value,
-          unit: data.unit,
-          max_uses: data.max_uses ?? null,
-        }),
-      }
-    );
+    const payload = {
+      name: data.name,
+      description: data.description,
+      code: data.code,
+      value: data.value,
+      unit: data.unit,
+      max_uses: data.max_uses ?? null,
+    };
 
-    if (res.ok) {
-      const json = await res.json().catch(() => null);
-      const promotion = json?.data as ProductPromotion | undefined;
-      setLoading(false);
+    try {
+      const json = data.id
+        ? await updatePromotionWithInternalApi(wsId, data.id, payload)
+        : await createPromotionWithInternalApi(wsId, payload);
+      const promotion =
+        'data' in json
+          ? (json.data as ProductPromotion | undefined)
+          : undefined;
+
+      await invalidateInvoiceMutationQueries(queryClient, wsId);
       onFinish?.(data, promotion);
       router.refresh();
       return promotion;
-    } else {
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : t('ws-inventory-promotions.failed_create_promotion');
+      toast.error(message);
+    } finally {
       setLoading(false);
-      const json = await res.json().catch(() => null);
-      toast.error(
-        json?.message || t('ws-inventory-promotions.failed_create_promotion')
-      );
     }
   }
 

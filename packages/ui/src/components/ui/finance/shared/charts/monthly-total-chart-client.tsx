@@ -2,12 +2,12 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight, Eye, EyeOff } from '@tuturuuu/icons';
+import { listFinanceIncomeExpenseSummary } from '@tuturuuu/internal-api/finance';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
 import { cn } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -26,27 +26,11 @@ import {
   ChartTooltipContent,
 } from '../../../chart';
 import { Skeleton } from '../../../skeleton';
-
-// Cookie helper functions
-const getCookie = (name: string): string | null => {
-  if (typeof document === 'undefined') return null;
-  const nameEQ = `${name}=`;
-  const ca = document.cookie.split(';');
-  for (let i = 0; i < ca.length; i++) {
-    let c = ca[i];
-    if (!c) continue;
-    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
-    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
-  }
-  return null;
-};
-
-const setCookie = (name: string, value: string, days = 365) => {
-  const expires = new Date();
-  expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  // biome-ignore lint/suspicious/noDocumentCookie: Used for finance confidential mode state persistence
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
-};
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from './use-finance-confidential-visibility';
 
 type ViewMode = 'all' | 'income' | 'expense';
 
@@ -65,13 +49,23 @@ export function MonthlyTotalChartClient({
 }: MonthlyTotalChartClientProps) {
   const locale = useLocale();
   const t = useTranslations('transaction-data-table');
-  const { resolvedTheme } = useTheme();
+  const analyticsT = useTranslations('finance-analytics');
   const [viewMode, setViewMode] = useState<ViewMode>('all');
-  const [isConfidential, setIsConfidential] = useState(true);
+  const { isConfidential, toggleConfidential } =
+    useFinanceConfidentialVisibility();
+  const shouldHideAmounts = isConfidential || !includeConfidential;
   const [dateOffset, setDateOffset] = useState(0);
 
-  const incomeColor = resolvedTheme === 'dark' ? '#4ade80' : '#16a34a';
-  const expenseColor = resolvedTheme === 'dark' ? '#f87171' : '#dc2626';
+  const incomeColor = 'var(--chart-2)';
+  const expenseColor = 'var(--chart-5)';
+  const rangeDateFormatter = useMemo(
+    () =>
+      new Intl.DateTimeFormat(locale, {
+        month: locale === 'vi' ? 'numeric' : 'short',
+        year: 'numeric',
+      }),
+    [locale]
+  );
 
   // Calculate date range based on offset (12-month windows)
   const dateRange = useMemo(() => {
@@ -82,13 +76,12 @@ export function MonthlyTotalChartClient({
     return {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      displayStart: startDate.format('MMM YYYY'),
-      displayEnd: endDate.format('MMM YYYY'),
+      displayStart: rangeDateFormatter.format(startDate.toDate()),
+      displayEnd: rangeDateFormatter.format(endDate.toDate()),
     };
-  }, [dateOffset]);
+  }, [dateOffset, rangeDateFormatter]);
 
-  // Fetch chart data
-  const { data: chartResponse, isLoading } = useQuery({
+  const { data: summary, isLoading } = useQuery({
     queryKey: [
       'monthly-chart',
       wsId,
@@ -96,105 +89,21 @@ export function MonthlyTotalChartClient({
       dateRange.endDate,
       includeConfidential,
     ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
+    queryFn: () =>
+      listFinanceIncomeExpenseSummary(wsId, {
+        interval: 'monthly',
         startDate: dateRange.startDate,
         endDate: dateRange.endDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/monthly?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch monthly chart data');
-      return res.json();
-    },
+        includeConfidential,
+      }),
   });
 
-  // Fetch opening balance (balance at start of period)
-  const { data: openingBalanceRes } = useQuery({
-    queryKey: [
-      'monthly-opening-balance',
-      wsId,
-      dateRange.startDate,
-      includeConfidential,
-    ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        date: dateRange.startDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/balance?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch opening balance');
-      return res.json();
-    },
-  });
-
-  // Fetch closing balance (balance at end of period)
-  const { data: closingBalanceRes } = useQuery({
-    queryKey: [
-      'monthly-closing-balance',
-      wsId,
-      dateRange.endDate,
-      includeConfidential,
-    ],
-    queryFn: async () => {
-      const params = new URLSearchParams({
-        date: dateRange.endDate,
-        includeConfidential: String(includeConfidential),
-      });
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/balance?${params}`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) throw new Error('Failed to fetch closing balance');
-      return res.json();
-    },
-  });
-
-  const data = chartResponse?.data || [];
-  const openingBalance = openingBalanceRes?.balance;
-  const closingBalance = closingBalanceRes?.balance;
-
-  // Load confidential mode from cookie on mount
-  useEffect(() => {
-    const saved = getCookie('finance-confidential-mode');
-    if (saved !== null) {
-      setIsConfidential(saved === 'true');
-    }
-
-    const handleStorageChange = () => {
-      const newValue = getCookie('finance-confidential-mode');
-      if (newValue !== null) {
-        setIsConfidential(newValue === 'true');
-      }
-    };
-
-    window.addEventListener(
-      'finance-confidential-mode-change',
-      handleStorageChange as EventListener
-    );
-
-    return () => {
-      window.removeEventListener(
-        'finance-confidential-mode-change',
-        handleStorageChange as EventListener
-      );
-    };
-  }, []);
-
-  const toggleConfidential = () => {
-    const newValue = !isConfidential;
-    setIsConfidential(newValue);
-    setCookie('finance-confidential-mode', String(newValue));
-    window.dispatchEvent(new Event('finance-confidential-mode-change'));
-  };
+  const data = summary?.data ?? [];
+  const openingBalance = summary?.opening_balance;
+  const closingBalance = summary?.closing_balance;
 
   const formatValue = (value: number) => {
-    if (isConfidential) return '•••••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -204,7 +113,7 @@ export function MonthlyTotalChartClient({
   };
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential) return '•••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',
@@ -232,15 +141,21 @@ export function MonthlyTotalChartClient({
           <CardTitle>{t('monthly_total_from_12_recent_months')}</CardTitle>
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
-          <p className="text-muted-foreground text-sm">No data available</p>
+          <p className="text-muted-foreground text-sm">
+            {analyticsT('no-data')}
+          </p>
         </CardContent>
       </Card>
     );
   }
 
   const chartData = data.map(
-    (item: { month: string; total_income: number; total_expense: number }) => ({
-      month: item.month,
+    (item: {
+      period: string;
+      total_income: number;
+      total_expense: number;
+    }) => ({
+      month: item.period,
       income: Number(item.total_income) || 0,
       expense: Number(item.total_expense) || 0,
     })
@@ -272,7 +187,7 @@ export function MonthlyTotalChartClient({
                 size="icon"
                 onClick={() => setDateOffset((d) => d + 1)}
                 className="h-7 w-7"
-                title="Previous period"
+                title={analyticsT('previous-period')}
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -285,7 +200,7 @@ export function MonthlyTotalChartClient({
                 onClick={() => setDateOffset((d) => Math.max(0, d - 1))}
                 disabled={dateOffset === 0}
                 className="h-7 w-7"
-                title="Next period"
+                title={analyticsT('next-period')}
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -440,7 +355,7 @@ export function MonthlyTotalChartClient({
                 maxBarSize={50}
               />
             )}
-            {openingBalance !== undefined && !isConfidential && (
+            {openingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={openingBalance}
                 stroke="hsl(var(--primary))"
@@ -454,7 +369,7 @@ export function MonthlyTotalChartClient({
                 }}
               />
             )}
-            {closingBalance !== undefined && !isConfidential && (
+            {closingBalance !== undefined && !shouldHideAmounts && (
               <ReferenceLine
                 y={closingBalance}
                 stroke="hsl(var(--muted-foreground))"

@@ -2,7 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { DefaultChatTransport } from '@tuturuuu/ai/core';
-import { matchesAllowedModel } from '@tuturuuu/ai/credits/model-mapping';
+import {
+  matchesAllowedModel,
+  normalizeStableModelId,
+} from '@tuturuuu/ai/credits/model-mapping';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useAiCredits } from '@tuturuuu/ui/hooks/use-ai-credits';
 import { normalizeWorkspaceContextId } from '@tuturuuu/utils/constants';
@@ -62,15 +65,16 @@ export function getEffectiveMiraWorkspaceContextId({
 }
 
 function toModelUi(modelId: string): AIModelUI {
-  const provider = modelId.includes('/')
-    ? (modelId.split('/')[0] ?? 'google')
+  const stableModelId = normalizeStableModelId(modelId);
+  const provider = stableModelId.includes('/')
+    ? (stableModelId.split('/')[0] ?? 'google')
     : 'google';
-  const label = modelId.includes('/')
-    ? modelId.split('/').slice(1).join('/')
-    : modelId;
+  const label = stableModelId.includes('/')
+    ? stableModelId.split('/').slice(1).join('/')
+    : stableModelId;
 
   return {
-    value: modelId,
+    value: stableModelId,
     provider,
     label,
   };
@@ -243,10 +247,17 @@ export function useMiraChatConfig({
         label?: string;
       };
       if (parsed.value && parsed.provider) {
+        const stableValue = normalizeStableModelId(parsed.value);
         setSelectedModel({
-          value: parsed.value,
+          value: stableValue,
           provider: parsed.provider,
-          label: parsed.label ?? parsed.value.split('/').pop() ?? parsed.value,
+          label:
+            parsed.label?.replace(
+              'gemini-3.1-flash-lite-preview',
+              'gemini-3.1-flash-lite'
+            ) ??
+            stableValue.split('/').pop() ??
+            stableValue,
         });
       } else {
         setSelectedModel(toModelUi(defaultLanguageModelId));

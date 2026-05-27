@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { TrendingUp } from '@tuturuuu/icons';
+import {
+  getWalletInterestSummary,
+  type WalletInterestSummaryResponse,
+} from '@tuturuuu/internal-api/finance';
 import type {
   InterestSummary,
   ProviderDetectionResult,
@@ -37,11 +41,10 @@ export function WalletInterestSection({
 }: WalletInterestSectionProps) {
   const t = useTranslations('wallet-interest');
   const [showSetup, setShowSetup] = useState(false);
+  const walletId = wallet.id ?? '';
 
   // User preferences for display
-  const { preferences, updatePreference } = useInterestPreferences(
-    wallet.id || ''
-  );
+  const { preferences, updatePreference } = useInterestPreferences(walletId);
 
   const { data: experimentalConfig } = useWorkspaceConfig(
     wsId,
@@ -59,19 +62,10 @@ export function WalletInterestSection({
     isLoading,
     error,
     refetch,
-  } = useQuery<InterestSummary | { enabled: false; config?: null }>({
-    queryKey: ['wallet-interest', wallet.id],
-    queryFn: async () => {
-      const res = await fetch(
-        `/api/workspaces/${wsId}/wallets/${wallet.id}/interest`,
-        { cache: 'no-store' }
-      );
-      if (!res.ok) {
-        if (res.status === 404) return { enabled: false };
-        throw new Error('Failed to fetch interest data');
-      }
-      return res.json();
-    },
+  } = useQuery<WalletInterestSummaryResponse>({
+    queryKey: ['wallet-interest', wsId, walletId],
+    queryFn: () => getWalletInterestSummary(wsId, walletId),
+    enabled: Boolean(walletId),
     staleTime: 30000, // 30 seconds
   });
 
@@ -118,6 +112,8 @@ export function WalletInterestSection({
     return null;
   }
 
+  if (!walletId) return null;
+
   const hasConfig =
     interestData && 'config' in interestData && interestData.config != null;
   const isEnabled =
@@ -142,7 +138,7 @@ export function WalletInterestSection({
       <>
         <WalletInterestSettings
           wsId={wsId}
-          walletId={wallet.id!}
+          walletId={walletId}
           config={null}
           currentRate={null}
           onConfigChange={handleConfigChange}
@@ -173,7 +169,7 @@ export function WalletInterestSection({
             <div className="grid gap-4 md:grid-cols-2">
               <WalletInterestSettings
                 wsId={wsId}
-                walletId={wallet.id!}
+                walletId={walletId}
                 config={summary.config}
                 currentRate={summary.currentRate}
                 onConfigChange={handleConfigChange}
@@ -248,7 +244,7 @@ export function WalletInterestSection({
               />
               <WalletInterestSettings
                 wsId={wsId}
-                walletId={wallet.id!}
+                walletId={walletId}
                 config={summary.config}
                 currentRate={summary.currentRate}
                 onConfigChange={handleConfigChange}

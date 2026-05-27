@@ -1,5 +1,6 @@
 'use client';
 
+import { normalizeStableModelId } from '@tuturuuu/ai/credits/model-mapping';
 import type { AIModelUI } from '@tuturuuu/types';
 import { useEffect, useState } from 'react';
 import {
@@ -19,13 +20,19 @@ function modelFromStorage(value: string | null): AIModelUI {
   try {
     const parsed = JSON.parse(value) as Partial<AIModelUI>;
     if (parsed.value && parsed.provider) {
+      const stableValue = normalizeStableModelId(parsed.value);
+      const stableLabel =
+        parsed.label === 'gemini-3.1-flash-lite-preview'
+          ? 'gemini-3.1-flash-lite'
+          : parsed.label;
+
       return {
         label:
-          parsed.label ??
-          parsed.value.split('/').slice(1).join('/') ??
-          parsed.value,
+          stableLabel ??
+          stableValue.split('/').slice(1).join('/') ??
+          stableValue,
         provider: parsed.provider,
-        value: parsed.value,
+        value: stableValue,
       };
     }
   } catch {

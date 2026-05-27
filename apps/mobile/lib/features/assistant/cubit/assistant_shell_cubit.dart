@@ -15,8 +15,8 @@ import '../models/assistant_models.dart';
 part 'assistant_shell_state.dart';
 
 const _defaultAssistantModel = AssistantGatewayModel(
-  value: 'google/gemini-3.1-flash-lite-preview',
-  label: 'gemini-3.1-flash-lite-preview',
+  value: 'google/gemini-3.1-flash-lite',
+  label: 'gemini-3.1-flash-lite',
   provider: 'google',
 );
 
@@ -256,12 +256,7 @@ class AssistantShellCubit extends Cubit<AssistantShellState> {
     if (isClosed || requestVersion != _insightsRequestVersion) return;
     if (state.workspace?.id != workspaceId) return;
 
-    _emitIfOpen(
-      state.copyWith(
-        tasksInsight: tasks,
-        calendarInsight: calendar,
-      ),
-    );
+    _emitIfOpen(state.copyWith(tasksInsight: tasks, calendarInsight: calendar));
   }
 
   AssistantGatewayModel _resolveSelectedModel(

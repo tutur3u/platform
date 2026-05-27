@@ -15,6 +15,8 @@ interface WalletIconDisplayProps {
   size?: 'sm' | 'md' | 'lg';
   /** Additional class names */
   className?: string;
+  /** Accessible text for meaningful wallet images; leave empty for decorative use. */
+  alt?: string;
 }
 
 const sizeClasses = {
@@ -38,6 +40,7 @@ export function WalletIconDisplay({
   imageSrc,
   size = 'md',
   className,
+  alt = '',
 }: WalletIconDisplayProps) {
   const sizeClass = sizeClasses[size];
   const imageSize = imageSizes[size];
@@ -47,7 +50,7 @@ export function WalletIconDisplay({
     return (
       <Image
         src={getWalletImagePath(imageSrc)}
-        alt="Wallet"
+        alt={alt}
         width={imageSize}
         height={imageSize}
         className={cn(sizeClass, 'rounded-sm object-contain', className)}

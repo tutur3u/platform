@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import { CreditCard, Loader2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -23,6 +24,8 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useWallets } from '../hooks';
+import { updateInvoiceWithInternalApi } from '../internal-api';
+import { invalidateInvoiceMutationQueries } from '../query-invalidation';
 
 interface Props {
   wsId: string;
@@ -43,6 +46,7 @@ export default function InvoiceEditForm({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { data: wallets = [], isLoading: walletsLoading } = useWallets(wsId);
 
   const [notice, setNotice] = useState<string>(initialNotice || '');
@@ -53,29 +57,13 @@ export default function InvoiceEditForm({
   const handleSave = async () => {
     try {
       setSaving(true);
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/finance/invoices/${invoiceId}`,
-        {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store',
-          body: JSON.stringify({
-            notice,
-            note,
-            wallet_id: walletId || null,
-          }),
-        }
-      );
+      await updateInvoiceWithInternalApi(wsId, invoiceId, {
+        notice,
+        note,
+        wallet_id: walletId || null,
+      });
 
-      if (!response.ok) {
-        const errorBody = (await response.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        throw new Error(errorBody?.message || 'Failed to update invoice');
-      }
-
+      await invalidateInvoiceMutationQueries(queryClient, wsId);
       toast.success(t('common.saved', { default: 'Saved' }));
       router.refresh();
     } catch (e) {

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
 import { deleteInvoice } from '@tuturuuu/internal-api/finance';
@@ -28,6 +29,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { invalidateInvoiceMutationQueries } from './query-invalidation';
 
 type DeleteInvoiceAction = (
   wsId: string,
@@ -49,6 +51,7 @@ export function InvoiceRowActions({
 }: InvoiceRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -70,6 +73,7 @@ export function InvoiceRowActions({
         : { success: true, ...(await deleteInvoice(data.ws_id, data.id)) };
 
       if (result.success) {
+        await invalidateInvoiceMutationQueries(queryClient, data.ws_id);
         toast.success(t('ws-invoices.invoice_deleted'));
         router.refresh();
       } else {
@@ -102,7 +106,7 @@ export function InvoiceRowActions({
             className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
           >
             <Ellipsis className="h-4 w-4" />
-            <span className="sr-only">Open menu</span>
+            <span className="sr-only">{t('common.open_menu')}</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-40">

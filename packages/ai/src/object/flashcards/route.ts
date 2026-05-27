@@ -7,7 +7,7 @@ import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
 import { flashcardSchema } from '../types';
 
-const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite-preview';
+const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite';
 
 export async function POST(req: Request) {
   const sbAdmin = await createAdminClient();

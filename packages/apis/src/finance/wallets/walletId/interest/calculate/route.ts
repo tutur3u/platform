@@ -3,8 +3,7 @@
  *
  * GET: Calculate interest for a date range
  */
-import type { WalletInterestRate } from '@tuturuuu/types';
-import { calculateInterest, formatDateString } from '@tuturuuu/utils/finance';
+import { formatDateString } from '@tuturuuu/utils/finance';
 import { NextResponse } from 'next/server';
 import { getAccessibleWallet } from '../../../wallet-access';
 
@@ -29,7 +28,7 @@ export async function GET(req: Request, { params }: Params) {
     wsId,
     walletId,
     requiredPermission: 'view_transactions',
-    select: 'balance',
+    select: 'id',
   });
 
   if (access.response) {
@@ -60,102 +59,50 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  // Get config
-  const { data: config, error: configError } = await access.context.supabase
-    .from('wallet_interest_configs')
-    .select('id, enabled')
-    .eq('wallet_id', walletId)
-    .single();
+  const { data: calculation, error: calculationError } =
+    await access.context.sbAdmin
+      .schema('private')
+      .rpc('calculate_wallet_interest', {
+        _actor_id: access.context.userId,
+        _from_date: fromDate,
+        _to_date: toDate,
+        _wallet_id: walletId,
+        _ws_id: access.context.normalizedWsId,
+      });
 
-  if (configError || !config) {
+  if (calculationError) {
+    console.error('Error calculating wallet interest:', calculationError);
+    return NextResponse.json(
+      { message: 'Error calculating interest' },
+      { status: 500 }
+    );
+  }
+
+  const payload = calculation as { error?: string } | null;
+  if (payload?.error === 'wallet_not_found') {
+    return NextResponse.json({ message: 'Wallet not found' }, { status: 404 });
+  }
+
+  if (payload?.error === 'not_enabled') {
     return NextResponse.json(
       { message: 'Interest tracking not enabled for this wallet' },
       { status: 404 }
     );
   }
 
-  if (!config.enabled) {
+  if (payload?.error === 'disabled') {
     return NextResponse.json(
       { message: 'Interest tracking is disabled for this wallet' },
       { status: 400 }
     );
   }
 
-  // Get rates
-  const { data: rates, error: ratesError } = await access.context.supabase
-    .from('wallet_interest_rates')
-    .select('*')
-    .eq('config_id', config.id)
-    .order('effective_from', { ascending: false });
-
-  if (ratesError) {
+  if (payload?.error) {
     return NextResponse.json(
-      { message: 'Error fetching interest rates' },
+      { message: 'Error calculating interest' },
       { status: 500 }
     );
   }
 
-  // Get holidays
-  const { data: holidays } = await access.context.supabase
-    .from('vietnamese_holidays')
-    .select('date')
-    .gte('date', fromDate)
-    .lte('date', toDate);
-
-  const holidayDates = holidays?.map((h: { date: string }) => h.date) || [];
-
-  // Get transactions for the period
-  const { data: transactions } = await access.context.supabase
-    .from('wallet_transactions')
-    .select('created_at, amount')
-    .eq('wallet_id', walletId)
-    .gte('created_at', fromDate)
-    .lte('created_at', `${toDate}T23:59:59`)
-    .order('created_at', { ascending: true });
-
-  const txList =
-    transactions
-      ?.filter(
-        (t: { amount: number | null; created_at: string | null }) =>
-          t.amount !== null && t.created_at !== null
-      )
-      .map((t: { created_at: string | null; amount: number | null }) => ({
-        date: formatDateString(new Date(t.created_at as string)),
-        amount: t.amount as number,
-      })) || [];
-
-  // Get initial balance (balance at start of period)
-  // This is calculated by subtracting all transactions from current balance
-  const currentBalance = (access.wallet.balance as number | null) || 0;
-
-  // Get all transactions after fromDate to calculate initial balance
-  const { data: allTransactions } = await access.context.supabase
-    .from('wallet_transactions')
-    .select('amount')
-    .eq('wallet_id', walletId)
-    .gte('created_at', fromDate);
-
-  const sumOfTransactions =
-    allTransactions?.reduce(
-      (sum: number, t: { amount: number | null }) => sum + (t.amount ?? 0),
-      0
-    ) || 0;
-  const initialBalance = currentBalance - sumOfTransactions;
-
-  // Calculate interest
-  const result = calculateInterest({
-    transactions: txList,
-    rates: rates as WalletInterestRate[],
-    holidays: holidayDates,
-    fromDate,
-    toDate,
-    initialBalance: Math.max(0, initialBalance),
-  });
-
-  return NextResponse.json({
-    fromDate,
-    toDate,
-    initialBalance: Math.max(0, initialBalance),
-    ...result,
-  });
+  return NextResponse.json(calculation);
 }

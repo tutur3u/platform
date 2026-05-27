@@ -9,14 +9,17 @@ import {
   Sparkles,
   Trash2,
 } from '@tuturuuu/icons';
-import type { MindAiPatchRecord } from '@tuturuuu/types/db';
+import type { MindAiPatchRecord, MindNode } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 
+type MindPatchLabelNode = Pick<MindNode, 'id' | 'title'>;
+
 type Props = {
   applying?: boolean;
+  nodes?: MindPatchLabelNode[];
   patch: MindAiPatchRecord;
   onApplyPatch: (patchId: string) => void;
   showApplyAction?: boolean;
@@ -24,23 +27,25 @@ type Props = {
 
 export function MindAiPatchDraftCard({
   applying,
+  nodes = [],
   patch,
   onApplyPatch,
   showApplyAction = true,
 }: Props) {
   const t = useTranslations('mind');
   const operations = patch.patch.operations;
+  const nodeLabelById = getKnownNodeLabelMap(nodes);
   const counts = operations.reduce<Record<string, number>>((acc, operation) => {
     acc[operation.kind] = (acc[operation.kind] ?? 0) + 1;
     return acc;
   }, {});
   const highlights = operations
     .slice(0, 4)
-    .map((operation) => getOperationLabel(operation))
+    .map((operation) => getOperationLabel(operation, nodeLabelById))
     .filter(Boolean);
   const canApply = patch.status === 'draft';
   const isApplied = patch.status === 'applied';
-  const preview = getPatchFlowPreview(patch);
+  const preview = getPatchFlowPreview(patch, nodes);
 
   return (
     <section
@@ -187,27 +192,52 @@ function PreviewIcon({ tone }: { tone: PreviewTone }) {
 }
 
 function getOperationLabel(
-  operation: MindAiPatchRecord['patch']['operations'][number]
+  operation: MindAiPatchRecord['patch']['operations'][number],
+  nodeLabelById: Map<string, string>
 ) {
   if (operation.kind === 'create_node') return operation.node.title;
   if (operation.kind === 'update_node')
-    return operation.title ?? operation.nodeId;
+    return operation.title ?? getNodeLabel(nodeLabelById, operation.nodeId);
   if (operation.kind === 'create_edge') {
     return (
       operation.edge.label ??
-      `${operation.edge.sourceNodeId} -> ${operation.edge.targetNodeId}`
+      getNodePairLabel(
+        nodeLabelById,
+        operation.edge.sourceNodeId,
+        operation.edge.targetNodeId
+      )
     );
   }
-  if (operation.kind === 'update_edge')
-    return operation.label ?? operation.edgeId;
-  if (operation.kind === 'delete_node') return operation.nodeId;
-  return operation.edgeId;
+  if (operation.kind === 'update_edge') {
+    if (operation.label) return operation.label;
+    if (operation.sourceNodeId && operation.targetNodeId) {
+      return getNodePairLabel(
+        nodeLabelById,
+        operation.sourceNodeId,
+        operation.targetNodeId
+      );
+    }
+
+    return shortId(operation.edgeId);
+  }
+  if (operation.kind === 'delete_node')
+    return getNodeLabel(nodeLabelById, operation.nodeId);
+  return shortId(operation.edgeId);
 }
 
 type PreviewTone = 'create' | 'delete' | 'update';
 
-function getPatchFlowPreview(patch: MindAiPatchRecord) {
+export function getPatchFlowPreview(
+  patch: MindAiPatchRecord,
+  nodes: MindPatchLabelNode[] = []
+) {
   const nodeLabels = new Map<string, { label: string; tone: PreviewTone }>();
+  for (const node of nodes) {
+    const label = node.title.trim();
+    if (!label) continue;
+    nodeLabels.set(node.id, { label, tone: 'update' });
+  }
+
   const standaloneNodes: Array<{
     id: string;
     label: string;
@@ -289,17 +319,40 @@ function getPatchFlowPreview(patch: MindAiPatchRecord) {
   const connectedLabels = new Set(
     edges.flatMap((edge) => [edge.source, edge.target])
   );
-  const nodes = standaloneNodes.filter(
+  const previewNodes = standaloneNodes.filter(
     (node) => !connectedLabels.has(node.label)
   );
-  const visibleCount = Math.min(edges.length, 4) + Math.min(nodes.length, 5);
-  const totalCount = edges.length + nodes.length;
+  const visibleCount =
+    Math.min(edges.length, 4) + Math.min(previewNodes.length, 5);
+  const totalCount = edges.length + previewNodes.length;
 
   return {
     edges,
     hiddenCount: Math.max(0, totalCount - visibleCount),
-    nodes,
+    nodes: previewNodes,
   };
+}
+
+function getKnownNodeLabelMap(nodes: MindPatchLabelNode[]) {
+  const labels = new Map<string, string>();
+  for (const node of nodes) {
+    const label = node.title.trim();
+    if (label) labels.set(node.id, label);
+  }
+
+  return labels;
+}
+
+function getNodeLabel(nodeLabelById: Map<string, string>, nodeId: string) {
+  return nodeLabelById.get(nodeId) ?? shortId(nodeId);
+}
+
+function getNodePairLabel(
+  nodeLabelById: Map<string, string>,
+  sourceNodeId: string,
+  targetNodeId: string
+) {
+  return `${getNodeLabel(nodeLabelById, sourceNodeId)} -> ${getNodeLabel(nodeLabelById, targetNodeId)}`;
 }
 
 function getPreviewNodeLabel(

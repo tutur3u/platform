@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  Flag,
   GitMerge,
   Lightbulb,
   ListChecks,
@@ -267,6 +268,17 @@ function NodeSmartActions({
         title: node.title,
       }),
     },
+    {
+      icon: Flag,
+      label: t('smartActions.milestones'),
+      prompt: t('smartPrompts.milestones', {
+        body: node.body ?? '',
+        horizon: node.horizon,
+        id: node.id,
+        status: node.status,
+        title: node.title,
+      }),
+    },
   ];
 
   return (
@@ -292,7 +304,7 @@ function NodeSmartActions({
           const Icon = action.icon;
           return (
             <Button
-              className="h-8 justify-start gap-1.5 px-2 text-xs"
+              className="h-9 min-w-0 justify-start gap-1.5 rounded-md bg-background/70 px-2 text-xs hover:bg-muted"
               key={action.label}
               onClick={() => onSmartPrompt(action.prompt)}
               size="sm"
@@ -305,7 +317,7 @@ function NodeSmartActions({
           );
         })}
         <Button
-          className="col-span-2 h-8 justify-start gap-1.5 px-2 text-xs"
+          className="col-span-2 h-9 justify-start gap-1.5 rounded-md border border-dynamic-blue/35 bg-dynamic-blue/10 px-2 text-dynamic-blue text-xs hover:bg-dynamic-blue/15"
           onClick={() =>
             onSmartPrompt(
               t('smartPrompts.expandSystem', {

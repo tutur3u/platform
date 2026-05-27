@@ -1,6 +1,7 @@
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -40,7 +41,7 @@ async function getDataWithApiKey({
   });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error calculating income sum:', error);
     return NextResponse.json(
       { message: 'Error calculating income sum' },
       { status: 500 }
@@ -59,7 +60,7 @@ async function getDataFromSession({ wsId }: { wsId: string }) {
   });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error calculating income sum:', error);
     return NextResponse.json(
       { message: 'Error calculating income sum' },
       { status: 500 }

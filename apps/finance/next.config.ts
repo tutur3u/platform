@@ -35,6 +35,20 @@ const WEB_APP_URL = trimTrailingSlashes(
 const nextConfig: NextConfig = {
   allowedDevOrigins: [...TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS],
   reactCompiler: true,
+  transpilePackages: [
+    '@tuturuuu/ai',
+    '@tuturuuu/apis',
+    '@tuturuuu/auth',
+    '@tuturuuu/icons',
+    '@tuturuuu/internal-api',
+    '@tuturuuu/offline',
+    '@tuturuuu/satellite',
+    '@tuturuuu/supabase',
+    '@tuturuuu/types',
+    '@tuturuuu/ui',
+    '@tuturuuu/utils',
+    '@tuturuuu/vercel',
+  ],
   typescript: {
     ignoreBuildErrors: true,
   },

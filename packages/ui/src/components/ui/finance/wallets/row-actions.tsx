@@ -1,7 +1,9 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis, Eye } from '@tuturuuu/icons';
+import { deleteWallet as deleteWalletWithInternalApi } from '@tuturuuu/internal-api/finance';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import {
   AlertDialog,
@@ -29,6 +31,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from '../../sonner';
+import { invalidateWalletMutationQueries } from './query-invalidation';
 
 interface WalletRowActionsProps {
   row: Row<Wallet>;
@@ -48,30 +51,25 @@ export function WalletRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
   const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteWallet = async () => {
+    if (!data.ws_id || !data.id) return;
+
     setIsDeleting(true);
     try {
-      const res = await fetch(
-        `/api/workspaces/${data.ws_id}/wallets/${data.id}`,
-        {
-          method: 'DELETE',
-        }
+      await deleteWalletWithInternalApi(data.ws_id, data.id);
+      await invalidateWalletMutationQueries(queryClient, data.ws_id);
+      toast.success(t('ws-wallets.wallet_deleted'));
+      router.refresh();
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('ws-wallets.failed_to_delete_wallet')
       );
-
-      if (res.ok) {
-        toast.success(t('ws-wallets.wallet_deleted'));
-        router.refresh();
-      } else {
-        const errorData = await res.json();
-        toast.error(
-          errorData.message || t('ws-wallets.failed_to_delete_wallet')
-        );
-      }
-    } catch {
-      toast.error(t('ws-wallets.failed_to_delete_wallet'));
     } finally {
       setIsDeleting(false);
     }
@@ -102,7 +100,7 @@ export function WalletRowActions({
               className="flex h-8 w-8 p-0 data-[state=open]:bg-muted"
             >
               <Ellipsis className="h-4 w-4" />
-              <span className="sr-only">Open menu</span>
+              <span className="sr-only">{t('common.open_menu')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-40">
@@ -157,6 +155,7 @@ export function WalletRowActions({
           <WalletForm
             wsId={data.ws_id}
             data={data}
+            onFinish={() => setShowEditDialog(false)}
             isPersonalWorkspace={isPersonalWorkspace}
           />
         }

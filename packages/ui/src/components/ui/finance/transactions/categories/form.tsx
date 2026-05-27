@@ -7,6 +7,10 @@ import {
   Dices,
   ExternalLink,
 } from '@tuturuuu/icons';
+import {
+  createTransactionCategory,
+  updateTransactionCategory,
+} from '@tuturuuu/internal-api/finance';
 import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import { Button } from '@tuturuuu/ui/button';
 import { ColorPicker } from '@tuturuuu/ui/color-picker';
@@ -167,34 +171,18 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
 
   const saveCategoryMutation = useMutation({
     mutationFn: async (formData: z.infer<typeof FormSchema>) => {
-      const response = await fetch(
-        formData.id
-          ? `/api/workspaces/${wsId}/transactions/categories/${formData.id}`
-          : `/api/workspaces/${wsId}/transactions/categories`,
-        {
-          method: formData.id ? 'PUT' : 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            is_expense: formData.type === 'EXPENSE',
-            icon: formData.icon || null,
-            color: formData.color || null,
-          }),
-        }
-      );
+      const payload = {
+        name: formData.name,
+        is_expense: formData.type === 'EXPENSE',
+        icon: formData.icon || null,
+        color: formData.color || null,
+      };
 
-      if (!response.ok) {
-        let message = 'An error occurred while saving the category';
-        try {
-          const errorData = (await response.json()) as { message?: string };
-          if (errorData.message) {
-            message = errorData.message;
-          }
-        } catch {
-          // Use fallback message when response body is not JSON.
-        }
-        throw new Error(message);
+      if (formData.id) {
+        return updateTransactionCategory(wsId, formData.id, payload);
       }
+
+      return createTransactionCategory(wsId, payload);
     },
     onSuccess: async (_, formData) => {
       await queryClient.invalidateQueries({
@@ -203,7 +191,7 @@ export function TransactionCategoryForm({ wsId, data, onFinish }: Props) {
       onFinish?.(formData);
     },
     onError: (error: Error) => {
-      toast.error('Error saving category', {
+      toast.error(t('common.error_saving'), {
         description: error.message,
       });
     },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isGoogleModelId,
+  normalizeStableModelId,
   resolveGatewayModelId,
   toBareModelName,
   toGatewayModelId,
@@ -74,6 +75,26 @@ describe('model-mapping', () => {
     it('does not classify other provider prefixes as Google models', () => {
       expect(isGoogleModelId('openai/gpt-5')).toBe(false);
       expect(isGoogleModelId('anthropic/claude-sonnet-4')).toBe(false);
+    });
+  });
+
+  describe('normalizeStableModelId', () => {
+    it('maps Gemini 3.1 Flash Lite preview ids to the stable model id', () => {
+      expect(normalizeStableModelId('gemini-3.1-flash-lite-preview')).toBe(
+        'gemini-3.1-flash-lite'
+      );
+      expect(
+        normalizeStableModelId('google/gemini-3.1-flash-lite-preview')
+      ).toBe('google/gemini-3.1-flash-lite');
+    });
+
+    it('preserves provider prefixes and unrelated preview models', () => {
+      expect(
+        normalizeStableModelId('google-vertex/gemini-3.1-flash-lite-preview')
+      ).toBe('google-vertex/gemini-3.1-flash-lite');
+      expect(normalizeStableModelId('gemini-3.1-flash-live-preview')).toBe(
+        'gemini-3.1-flash-live-preview'
+      );
     });
   });
 });

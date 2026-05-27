@@ -8,7 +8,7 @@ import type { NormalizedSepayPayload } from './schemas';
 type SepayAdminClient = TypedSupabaseClient;
 
 const CATEGORY_CONFIDENCE_THRESHOLD = 0.6;
-const CLASSIFIER_MODEL = 'gemini-3.1-flash-lite-preview';
+const CLASSIFIER_MODEL = 'gemini-3.1-flash-lite';
 const CLASSIFIER_TIMEOUT_MS = 4_000;
 const fallbackCategoryCache = new Map<string, Promise<string>>();
 

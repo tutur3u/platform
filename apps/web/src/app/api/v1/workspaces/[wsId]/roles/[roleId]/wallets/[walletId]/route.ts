@@ -2,6 +2,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import * as z from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -90,7 +91,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
       .single();
 
     if (error) {
-      console.log(error);
+      serverLogger.error('Error updating wallet whitelist:', error);
       if (error.code === 'PGRST116') {
         return NextResponse.json(
           { message: 'Wallet whitelist entry not found' },
@@ -105,7 +106,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error updating wallet whitelist:', error);
+    serverLogger.error('Error updating wallet whitelist:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }
@@ -139,7 +140,7 @@ export async function DELETE(_: Request, { params }: Params) {
     .eq('wallet_id', walletId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error removing wallet from whitelist:', error);
     return NextResponse.json(
       { message: 'Error removing wallet from whitelist' },
       { status: 500 }

@@ -6,62 +6,25 @@ import {
   createRecurringTransaction,
   listTransactionCategories,
   listWallets,
+  type RecurringTransactionRecord,
   updateRecurringTransaction,
 } from '@tuturuuu/internal-api/finance';
 import { Button } from '@tuturuuu/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@tuturuuu/ui/form';
-import { Input } from '@tuturuuu/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@tuturuuu/ui/select';
+import { Form } from '@tuturuuu/ui/form';
 import { toast } from '@tuturuuu/ui/sonner';
-import { Textarea } from '@tuturuuu/ui/textarea';
+import { useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-
-const recurringFormSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().optional(),
-  amount: z.string().min(1, 'Amount is required'),
-  wallet_id: z.string().min(1, 'Wallet is required'),
-  category_id: z.string().optional(),
-  frequency: z.enum(['daily', 'weekly', 'monthly', 'yearly']),
-  start_date: z.string().min(1, 'Start date is required'),
-  end_date: z.string().optional(),
-});
-
-type RecurringFormValues = z.infer<typeof recurringFormSchema>;
-
-interface RecurringTransaction {
-  id: string;
-  name: string;
-  description: string | null;
-  amount: number;
-  frequency: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  next_occurrence: string;
-  start_date: string;
-  end_date: string | null;
-  is_active: boolean;
-  wallet_id: string;
-  category_id: string | null;
-}
+import { RecurringFormFields } from './form-fields';
+import {
+  createRecurringFormSchema,
+  NO_CATEGORY_VALUE,
+  type RecurringFormValues,
+} from './form-schema';
 
 interface RecurringTransactionFormProps {
-  wsId: string;
-  data?: RecurringTransaction;
+  data?: RecurringTransactionRecord;
   onSuccess?: () => void;
+  wsId: string;
 }
 
 export function RecurringTransactionForm({
@@ -69,28 +32,30 @@ export function RecurringTransactionForm({
   data,
   onSuccess,
 }: RecurringTransactionFormProps) {
+  const t = useTranslations('finance-recurring');
   const queryClient = useQueryClient();
   const isEditing = !!data?.id;
+  const formSchema = createRecurringFormSchema(t);
 
   const { data: wallets } = useQuery({
     queryKey: ['wallets', wsId],
-    queryFn: async () => listWallets(wsId),
+    queryFn: () => listWallets(wsId),
   });
 
   const { data: categories } = useQuery({
     queryKey: ['categories', wsId],
-    queryFn: async () => listTransactionCategories(wsId),
+    queryFn: () => listTransactionCategories(wsId),
   });
 
   const form = useForm<RecurringFormValues>({
-    resolver: zodResolver(recurringFormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: data
       ? {
           name: data.name,
           description: data.description || '',
           amount: String(data.amount),
           wallet_id: data.wallet_id,
-          category_id: data.category_id || '',
+          category_id: data.category_id || NO_CATEGORY_VALUE,
           frequency: data.frequency,
           start_date: data.start_date,
           end_date: data.end_date || '',
@@ -100,7 +65,7 @@ export function RecurringTransactionForm({
           description: '',
           amount: '',
           wallet_id: '',
-          category_id: '',
+          category_id: NO_CATEGORY_VALUE,
           frequency: 'monthly',
           start_date: new Date().toISOString().split('T')[0],
           end_date: '',
@@ -114,7 +79,10 @@ export function RecurringTransactionForm({
         description: formData.description || null,
         amount: parseFloat(formData.amount),
         wallet_id: formData.wallet_id,
-        category_id: formData.category_id || null,
+        category_id:
+          formData.category_id === NO_CATEGORY_VALUE
+            ? null
+            : formData.category_id || null,
         frequency: formData.frequency,
         start_date: formData.start_date,
         end_date: formData.end_date || null,
@@ -122,10 +90,10 @@ export function RecurringTransactionForm({
 
       if (isEditing && data) {
         await updateRecurringTransaction(wsId, data.id, transactionData);
-        toast.success('Recurring transaction updated successfully');
+        toast.success(t('update_success'));
       } else {
         await createRecurringTransaction(wsId, transactionData);
-        toast.success('Recurring transaction created successfully');
+        toast.success(t('create_success'));
       }
 
       queryClient.invalidateQueries({
@@ -137,203 +105,23 @@ export function RecurringTransactionForm({
 
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('Error saving recurring transaction:', error);
-      toast.error(
-        isEditing
-          ? 'Failed to update recurring transaction'
-          : 'Failed to create recurring transaction'
-      );
+      toast.error(error instanceof Error ? error.message : t('save_error'));
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Monthly rent" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
+        <RecurringFormFields
+          categories={categories}
+          form={form}
+          t={t}
+          wallets={wallets}
         />
-
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Optional description" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="wallet_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Wallet</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select wallet" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {wallets
-                      ?.filter(
-                        (wallet): wallet is typeof wallet & { id: string } =>
-                          typeof wallet.id === 'string'
-                      )
-                      .map((wallet) => (
-                        <SelectItem key={wallet.id} value={wallet.id}>
-                          {wallet.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="category_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Category (Optional)</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value || undefined}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {categories
-                      ?.filter(
-                        (
-                          category
-                        ): category is typeof category & { id: string } =>
-                          typeof category.id === 'string'
-                      )
-                      .map((category) => (
-                        <SelectItem key={category.id} value={category.id}>
-                          {category.name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    placeholder="-500.00"
-                    {...field}
-                  />
-                </FormControl>
-                <FormDescription>
-                  Negative for expense, positive for income
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="frequency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Frequency</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="daily">Daily</SelectItem>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="yearly">Yearly</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="start_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Start Date</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="end_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>End Date (Optional)</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormDescription>Leave empty for indefinite</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
 
         <div className="flex justify-end">
           <Button type="submit">
-            {isEditing
-              ? 'Update Recurring Transaction'
-              : 'Create Recurring Transaction'}
+            {isEditing ? t('update_transaction') : t('create_transaction')}
           </Button>
         </div>
       </form>

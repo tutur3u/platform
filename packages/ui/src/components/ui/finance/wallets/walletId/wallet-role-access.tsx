@@ -2,6 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Loader2, Plus, Search, Shield, Trash2 } from '@tuturuuu/icons';
+import {
+  addWalletRoleAccess,
+  listWalletRoleAccess,
+  removeWalletRoleAccess,
+  updateWalletRoleAccess,
+} from '@tuturuuu/internal-api/finance';
 import { listWorkspaceRoles } from '@tuturuuu/internal-api/roles';
 import type { WorkspaceRoleWalletWhitelist } from '@tuturuuu/types/primitives/WorkspaceRoleWalletWhitelist';
 import {
@@ -66,17 +72,17 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [pendingViewingWindows, setPendingViewingWindows] = useState<
-    Record<string, string>
+    Record<string, RoleFormValues['viewing_window']>
   >({});
 
   const roleAccessQuery = useQuery({
     queryKey: ['workspaces', wsId, 'wallets', walletId, 'roles'],
-    queryFn: () => getRoleAccess(wsId, walletId),
+    queryFn: () => listWalletRoleAccess(wsId, walletId),
   });
 
   const availableRolesQuery = useQuery({
     queryKey: ['workspaces', wsId, 'roles'],
-    queryFn: () => getAvailableRoles(wsId),
+    queryFn: () => listWorkspaceRoles(wsId),
   });
 
   const roleAccess = roleAccessQuery.data || [];
@@ -102,23 +108,8 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
   }, [allRoles, roleAccess]);
 
   const addRoleMutation = useMutation({
-    mutationFn: async (data: RoleFormValues) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/wallets/${walletId}/roles`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to add role');
-      }
-
-      return res.json();
-    },
+    mutationFn: (data: RoleFormValues) =>
+      addWalletRoleAccess(wsId, walletId, data),
     onSuccess: () => {
       toast.success(t('ws-wallets.role_added_successfully'));
       form.reset();
@@ -138,24 +129,8 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
       data,
     }: {
       roleId: string;
-      data: { viewing_window: string; custom_days?: number };
-    }) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/wallets/${walletId}/roles/${roleId}`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
-        }
-      );
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to update role');
-      }
-
-      return res.json();
-    },
+      data: Pick<RoleFormValues, 'custom_days' | 'viewing_window'>;
+    }) => updateWalletRoleAccess(wsId, walletId, roleId, data),
     onSuccess: (_data, variables) => {
       toast.success(t('ws-wallets.role_updated_successfully'));
       queryClient.invalidateQueries({
@@ -174,19 +149,8 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
   });
 
   const deleteRoleMutation = useMutation({
-    mutationFn: async (roleId: string) => {
-      const res = await fetch(
-        `/api/v1/workspaces/${wsId}/wallets/${walletId}/roles/${roleId}`,
-        {
-          method: 'DELETE',
-        }
-      );
-
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Failed to remove role');
-      }
-    },
+    mutationFn: (roleId: string) =>
+      removeWalletRoleAccess(wsId, walletId, roleId),
     onSuccess: () => {
       toast.success(t('ws-wallets.role_removed_successfully'));
       queryClient.invalidateQueries({
@@ -222,7 +186,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
 
   const handleUpdateWindow = (
     roleId: string,
-    window: string,
+    window: RoleFormValues['viewing_window'],
     days?: number
   ) => {
     updateRoleMutation.mutate({
@@ -235,7 +199,7 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
   };
 
   const getViewingWindowLabel = (
-    window: string,
+    window: RoleFormValues['viewing_window'],
     customDays?: number | null
   ) => {
     const option = viewingWindowOptions.find((opt) => opt.value === window);
@@ -465,7 +429,11 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
                         delete next[item.role_id];
                         return next;
                       });
-                      handleUpdateWindow(item.role_id, value, undefined);
+                      handleUpdateWindow(
+                        item.role_id,
+                        value as RoleFormValues['viewing_window'],
+                        undefined
+                      );
                     }}
                   >
                     <SelectTrigger className="w-35">
@@ -567,16 +535,4 @@ export default function WalletRoleAccess({ wsId, walletId }: Props) {
       )}
     </div>
   );
-}
-
-async function getRoleAccess(wsId: string, walletId: string) {
-  const res = await fetch(
-    `/api/v1/workspaces/${wsId}/wallets/${walletId}/roles`
-  );
-  if (!res.ok) throw new Error('Failed to fetch role access');
-  return res.json();
-}
-
-async function getAvailableRoles(wsId: string) {
-  return listWorkspaceRoles(wsId);
 }

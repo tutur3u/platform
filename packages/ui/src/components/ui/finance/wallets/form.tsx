@@ -1,5 +1,7 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import { createWallet, updateWallet } from '@tuturuuu/internal-api/finance';
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { Button } from '@tuturuuu/ui/button';
 import { SelectField } from '@tuturuuu/ui/custom/select-field';
@@ -15,62 +17,84 @@ import { useForm, useWatch } from '@tuturuuu/ui/hooks/use-form';
 import { useWorkspaceCurrency } from '@tuturuuu/ui/hooks/use-workspace-currency';
 import { Input } from '@tuturuuu/ui/input';
 import { zodResolver } from '@tuturuuu/ui/resolvers';
-import { SUPPORTED_CURRENCIES } from '@tuturuuu/utils/currencies';
+import {
+  getCurrencyLocale,
+  SUPPORTED_CURRENCIES,
+} from '@tuturuuu/utils/currencies';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import * as z from 'zod';
 import { toast } from '../../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
+import { invalidateWalletMutationQueries } from './query-invalidation';
 import { WalletIconImagePicker } from './wallet-icon-image-picker';
 import WalletRoleAccess from './walletId/wallet-role-access';
+
+const walletValidationMessageKeys = {
+  creditLimitRequired: 'wallet-data-table.credit_limit_required',
+  paymentDateRequired: 'wallet-data-table.payment_date_required',
+  statementDateRequired: 'wallet-data-table.statement_date_required',
+} as const;
+
+type WalletValidationMessageKey =
+  (typeof walletValidationMessageKeys)[keyof typeof walletValidationMessageKeys];
+
+const createWalletFormSchema = (
+  t: (key: WalletValidationMessageKey) => string
+) =>
+  z
+    .object({
+      id: z.string().optional(),
+      name: z.string().min(1).max(255),
+      description: z.string().max(500).optional(),
+      balance: z.number().optional(),
+      type: z.enum(['STANDARD', 'CREDIT']),
+      currency: z.string().min(1),
+      icon: z.string().nullable().optional(),
+      image_src: z.string().nullable().optional(),
+      limit: z.number().positive().optional(),
+      statement_date: z.number().min(1).max(31).optional(),
+      payment_date: z.number().min(1).max(31).optional(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.type === 'CREDIT') {
+        if (!data.limit || data.limit <= 0) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['limit'],
+            message: t(walletValidationMessageKeys.creditLimitRequired),
+          });
+        }
+        if (!data.statement_date) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['statement_date'],
+            message: t(walletValidationMessageKeys.statementDateRequired),
+          });
+        }
+        if (!data.payment_date) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['payment_date'],
+            message: t(walletValidationMessageKeys.paymentDateRequired),
+          });
+        }
+      }
+    });
+
+type WalletFormValues = z.infer<ReturnType<typeof createWalletFormSchema>>;
 
 interface Props {
   wsId: string;
   data?: Wallet;
-  onFinish?: (data: z.infer<typeof FormSchema>) => void;
+  onFinish?: (data: WalletFormValues) => void;
   isPersonalWorkspace?: boolean;
 }
-
-const FormSchema = z
-  .object({
-    id: z.string().optional(),
-    name: z.string().min(1).max(255),
-    description: z.string().max(500).optional(),
-    balance: z.number().optional(),
-    type: z.string(),
-    currency: z.string().min(1),
-    icon: z.string().nullable().optional(),
-    image_src: z.string().nullable().optional(),
-    limit: z.number().positive().optional(),
-    statement_date: z.number().min(1).max(31).optional(),
-    payment_date: z.number().min(1).max(31).optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.type === 'CREDIT') {
-      if (!data.limit || data.limit <= 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['limit'],
-          message: 'Credit limit is required for credit wallets',
-        });
-      }
-      if (!data.statement_date) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['statement_date'],
-          message: 'Statement date is required for credit wallets',
-        });
-      }
-      if (!data.payment_date) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ['payment_date'],
-          message: 'Payment date is required for credit wallets',
-        });
-      }
-    }
-  });
 
 export function WalletForm({
   wsId,
@@ -80,6 +104,9 @@ export function WalletForm({
 }: Props) {
   const t = useTranslations();
   const { currency: workspaceCurrency } = useWorkspaceCurrency(wsId);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -89,9 +116,10 @@ export function WalletForm({
   const [localImageSrc, setLocalImageSrc] = useState<string | null>(
     data?.image_src || null
   );
+  const formSchema = useMemo(() => createWalletFormSchema(t), [t]);
 
   const form = useForm({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(formSchema),
     defaultValues: {
       id: data?.id,
       name: data?.name || '',
@@ -108,6 +136,7 @@ export function WalletForm({
   });
 
   const walletType = useWatch({ control: form.control, name: 'type' });
+  const walletCurrency = useWatch({ control: form.control, name: 'currency' });
 
   // Handle icon change - update both local state and form
   const handleIconChange = useCallback(
@@ -127,30 +156,26 @@ export function WalletForm({
     [form]
   );
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(formData: WalletFormValues) {
     setLoading(true);
 
-    const res = await fetch(
-      formData?.id
-        ? `/api/workspaces/${wsId}/wallets/${formData.id}`
-        : `/api/workspaces/${wsId}/wallets`,
-      {
-        method: formData?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          icon: formData.icon || null,
-          image_src: formData.image_src || null,
-        }),
-      }
-    );
+    try {
+      const payload = {
+        ...formData,
+        icon: formData.icon || null,
+        image_src: formData.image_src || null,
+      };
 
-    if (res.ok) {
+      if (formData.id) {
+        await updateWallet(wsId, formData.id, payload);
+      } else {
+        await createWallet(wsId, payload);
+      }
+
+      await invalidateWalletMutationQueries(queryClient, wsId);
       onFinish?.(formData);
       router.refresh();
-    } else {
+    } catch {
       setLoading(false);
       toast.error(t('ws-wallets.failed_to_create_wallet'));
     }
@@ -184,8 +209,20 @@ export function WalletForm({
                       clear: t('common.clear'),
                       selectIcon: t('wallet-data-table.select_icon'),
                       iconDescription: t('wallet-data-table.icon_description'),
+                      changeIconOrImageDescription: t(
+                        'wallet-data-table.change_icon_or_image_description'
+                      ),
+                      chooseIconOrImageDescription: t(
+                        'wallet-data-table.choose_icon_or_image_description'
+                      ),
                       searchIcons: t('wallet-data-table.search_icons'),
                       noIcon: t('wallet-data-table.no_icon'),
+                      banksAvailable: (count) =>
+                        t('wallet-data-table.banks_available', { count }),
+                      mobileProvidersAvailable: (count) =>
+                        t('wallet-data-table.mobile_providers_available', {
+                          count,
+                        }),
                     }}
                   />
                 </FormControl>
@@ -202,7 +239,10 @@ export function WalletForm({
               <FormItem className="flex-1">
                 <FormLabel>{t('wallet-data-table.wallet_name')}</FormLabel>
                 <FormControl>
-                  <Input placeholder="Cash" {...field} />
+                  <Input
+                    placeholder={t('wallet-data-table.wallet_name_placeholder')}
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -218,7 +258,10 @@ export function WalletForm({
             <FormItem>
               <FormLabel>{t('wallet-data-table.description')}</FormLabel>
               <FormControl>
-                <Input placeholder="Personal savings" {...field} />
+                <Input
+                  placeholder={t('wallet-data-table.description_placeholder')}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -236,11 +279,18 @@ export function WalletForm({
                   placeholder="0"
                   {...field}
                   value={
-                    !field.value
-                      ? ''
-                      : new Intl.NumberFormat('en-US', {
-                          maximumFractionDigits: 2,
-                        }).format(Math.abs(field.value))
+                    areNumbersHidden
+                      ? FINANCE_HIDDEN_AMOUNT
+                      : !field.value
+                        ? ''
+                        : new Intl.NumberFormat(
+                            getCurrencyLocale(
+                              walletCurrency || workspaceCurrency || 'USD'
+                            ),
+                            {
+                              maximumFractionDigits: 2,
+                            }
+                          ).format(Math.abs(field.value))
                   }
                   onChange={(e) => {
                     // Remove non-numeric characters except decimal point, then parse
@@ -273,7 +323,7 @@ export function WalletForm({
               <FormControl>
                 <SelectField
                   id="wallet-type"
-                  placeholder="Select a type"
+                  placeholder={t('wallet-data-table.select_type')}
                   options={[
                     {
                       value: 'STANDARD',

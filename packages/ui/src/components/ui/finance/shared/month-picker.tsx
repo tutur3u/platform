@@ -12,9 +12,17 @@ import {
   isBefore,
   startOfMonth,
 } from 'date-fns';
+import { enUS, vi } from 'date-fns/locale';
+import { useLocale } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { Button } from '../../../ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '../../../ui/popover';
+
+interface MonthPickerLabels {
+  placeholder: string;
+  previousYear: string;
+  nextYear: string;
+}
 
 interface Props {
   defaultValue?: Date;
@@ -22,6 +30,7 @@ interface Props {
   toDate?: Date;
   onValueChange: (date?: Date) => void;
   className?: string;
+  labels: MonthPickerLabels;
 }
 
 export function MonthPicker({
@@ -30,12 +39,15 @@ export function MonthPicker({
   toDate,
   onValueChange,
   className,
+  labels,
 }: Props) {
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const today = new Date();
   const [previewDate, setPreviewDate] = useState(
     defaultValue || new Date(today.getFullYear(), today.getMonth(), 1)
   );
+  const dateLocale = locale.startsWith('vi') ? vi : enUS;
 
   useEffect(() => {
     if (defaultValue) {
@@ -79,9 +91,9 @@ export function MonthPicker({
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
           {defaultValue ? (
-            format(defaultValue, 'MMMM yyyy')
+            format(defaultValue, 'MMMM yyyy', { locale: dateLocale })
           ) : (
-            <span>Pick a month</span>
+            <span>{labels.placeholder}</span>
           )}
         </Button>
       </PopoverTrigger>
@@ -90,7 +102,7 @@ export function MonthPicker({
           <Button
             variant="outline"
             name="previous-year"
-            aria-label="Go to previous year"
+            aria-label={labels.previousYear}
             onClick={() => changeYear(-1)}
             disabled={
               fromDate &&
@@ -115,7 +127,7 @@ export function MonthPicker({
           <Button
             variant="outline"
             name="next-year"
-            aria-label="Go to next year"
+            aria-label={labels.nextYear}
             onClick={() => changeYear(1)}
             disabled={
               toDate &&
@@ -153,7 +165,7 @@ export function MonthPicker({
                 disabled={isMonthDisabled(month)}
               >
                 <time dateTime={format(month, 'yyyy-MM-dd')}>
-                  {format(month, 'MMMM')}
+                  {format(month, 'MMMM', { locale: dateLocale })}
                 </time>
               </Button>
             </div>

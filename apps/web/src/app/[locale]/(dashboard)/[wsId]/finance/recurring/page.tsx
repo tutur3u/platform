@@ -6,17 +6,25 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
+  searchParams: Promise<{
+    create?: string;
+  }>;
 }
 
-export default async function WorkspaceRecurringPage({ params }: Props) {
+export default async function WorkspaceRecurringPage({
+  params,
+  searchParams,
+}: Props) {
   const { wsId: id } = await params;
   const context = await getWebFinanceWorkspaceContext(id);
   if (!context) notFound();
+  const sp = await searchParams;
 
   return (
     <RecurringTransactionsPage
       wsId={context.wsId}
       currency={context.currency}
+      openCreateDialog={sp.create === 'recurring'}
     />
   );
 }

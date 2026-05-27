@@ -33,6 +33,23 @@ import {
   WALLET_MOBILE_IMAGES,
 } from './wallet-images';
 
+interface WalletIconImagePickerTranslations {
+  selectIconOrImage: string;
+  iconTab: string;
+  bankTab: string;
+  mobileTab: string;
+  searchPlaceholder: string;
+  clear: string;
+  selectIcon: string;
+  iconDescription: string;
+  changeIconOrImageDescription: string;
+  chooseIconOrImageDescription: string;
+  searchIcons: string;
+  noIcon: string;
+  banksAvailable: (count: number) => string;
+  mobileProvidersAvailable: (count: number) => string;
+}
+
 interface WalletIconImagePickerProps {
   /** Currently selected icon (lucide icon key) */
   icon?: string | null;
@@ -45,18 +62,7 @@ interface WalletIconImagePickerProps {
   /** Whether the picker is disabled */
   disabled?: boolean;
   /** Translations */
-  translations?: {
-    selectIconOrImage?: string;
-    iconTab?: string;
-    bankTab?: string;
-    mobileTab?: string;
-    searchPlaceholder?: string;
-    clear?: string;
-    selectIcon?: string;
-    iconDescription?: string;
-    searchIcons?: string;
-    noIcon?: string;
-  };
+  translations: WalletIconImagePickerTranslations;
 }
 
 /**
@@ -69,23 +75,27 @@ export function WalletIconImagePicker({
   onIconChange,
   onImageSrcChange,
   disabled = false,
-  translations = {},
+  translations,
 }: WalletIconImagePickerProps) {
   const [open, setOpen] = useState(false);
   const [bankSearch, setBankSearch] = useState('');
   const [mobileSearch, setMobileSearch] = useState('');
 
   const {
-    selectIconOrImage = 'Select Icon or Image',
-    iconTab = 'Icon',
-    bankTab = 'Bank',
-    mobileTab = 'Mobile',
-    searchPlaceholder = 'Search...',
-    clear = 'Clear',
-    selectIcon = 'Select an icon',
-    iconDescription = 'Choose an icon for this wallet',
-    searchIcons = 'Search icons...',
-    noIcon = 'No icon',
+    selectIconOrImage,
+    iconTab,
+    bankTab,
+    mobileTab,
+    searchPlaceholder,
+    clear,
+    selectIcon,
+    iconDescription,
+    changeIconOrImageDescription,
+    chooseIconOrImageDescription,
+    searchIcons,
+    noIcon,
+    banksAvailable,
+    mobileProvidersAvailable,
   } = translations;
 
   // Determine what to show in the trigger button
@@ -94,7 +104,7 @@ export function WalletIconImagePicker({
       return (
         <Image
           src={getWalletImagePath(imageSrc)}
-          alt="Wallet"
+          alt=""
           width={20}
           height={20}
           className="h-5 w-5 rounded-sm object-contain"
@@ -164,6 +174,7 @@ export function WalletIconImagePicker({
           variant="outline"
           disabled={disabled}
           className="h-10 w-10 p-0"
+          aria-label={selectIconOrImage}
         >
           {TriggerContent}
         </Button>
@@ -173,8 +184,8 @@ export function WalletIconImagePicker({
           <DialogTitle>{selectIconOrImage}</DialogTitle>
           <DialogDescription>
             {icon || imageSrc
-              ? 'Change the icon or image for this wallet'
-              : 'Choose an icon or image for this wallet'}
+              ? changeIconOrImageDescription
+              : chooseIconOrImageDescription}
           </DialogDescription>
         </DialogHeader>
 
@@ -233,12 +244,12 @@ export function WalletIconImagePicker({
                     onClick={() => setBankSearch('')}
                   >
                     <X className="h-3.5 w-3.5" />
+                    <span className="sr-only">{clear}</span>
                   </Button>
                 )}
               </div>
               <p className="text-muted-foreground text-xs">
-                {filteredBankImages.length} bank
-                {filteredBankImages.length !== 1 ? 's' : ''} available
+                {banksAvailable(filteredBankImages.length)}
               </p>
               <ScrollArea className="h-64">
                 <TooltipProvider delayDuration={200}>
@@ -296,12 +307,12 @@ export function WalletIconImagePicker({
                     onClick={() => setMobileSearch('')}
                   >
                     <X className="h-3.5 w-3.5" />
+                    <span className="sr-only">{clear}</span>
                   </Button>
                 )}
               </div>
               <p className="text-muted-foreground text-xs">
-                {filteredMobileImages.length} provider
-                {filteredMobileImages.length !== 1 ? 's' : ''} available
+                {mobileProvidersAvailable(filteredMobileImages.length)}
               </p>
               <ScrollArea className="h-64">
                 <TooltipProvider delayDuration={200}>

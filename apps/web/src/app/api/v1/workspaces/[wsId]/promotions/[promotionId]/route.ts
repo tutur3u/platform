@@ -7,6 +7,7 @@ import {
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const PromotionUpdateSchema = z
   .object({
@@ -39,7 +40,7 @@ export async function PUT(req: Request, { params }: Params) {
   const { wsId, promotionId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -51,7 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
   const parsed = PromotionUpdateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -80,11 +81,11 @@ export async function PUT(req: Request, { params }: Params) {
     .update({
       ...updateData,
     })
-    .eq('id', promotionId);
+    .eq('id', promotionId)
+    .eq('ws_id', permissions.wsId);
 
   if (error) {
-    // TODO: logging
-    console.error(error);
+    serverLogger.error('Error updating promotion:', error);
     return NextResponse.json(
       { message: 'Error updating promotion' },
       { status: 500 }
@@ -94,11 +95,11 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(_: Request, { params }: Params) {
+export async function DELETE(req: Request, { params }: Params) {
   const { wsId, promotionId } = await params;
 
   // Check permissions
-  const permissions = await getPermissions({ wsId });
+  const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -110,17 +111,18 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createClient(req);
 
   const { error } = await supabase
     .from('workspace_promotions')
     .delete()
-    .eq('id', promotionId);
+    .eq('id', promotionId)
+    .eq('ws_id', permissions.wsId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error deleting promotion:', error);
     return NextResponse.json(
-      { message: 'Error deleting workspace user' },
+      { message: 'Error deleting promotion' },
       { status: 500 }
     );
   }

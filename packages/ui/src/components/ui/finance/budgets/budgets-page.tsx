@@ -1,22 +1,11 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Ellipsis, Plus } from '@tuturuuu/icons';
+import { Plus } from '@tuturuuu/icons';
 import { deleteBudget, listBudgets } from '@tuturuuu/internal-api';
 import type { FinanceBudget } from '@tuturuuu/types';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@tuturuuu/ui/card';
+import { Card, CardContent, CardHeader } from '@tuturuuu/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -24,24 +13,18 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@tuturuuu/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
-import { Progress } from '@tuturuuu/ui/progress';
 import { toast } from '@tuturuuu/ui/sonner';
 import { getCurrencyLocale } from '@tuturuuu/utils/currencies';
-import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import { useEffect, useState } from 'react';
+import { BudgetCard } from './budget-card';
 import { BudgetForm } from './form';
 
 interface BudgetsPageProps {
   wsId: string;
   currency?: string;
   searchParams: {
+    create?: string;
     q?: string;
     page?: string;
     pageSize?: string;
@@ -51,14 +34,22 @@ interface BudgetsPageProps {
 export default function BudgetsPage({
   wsId,
   currency = 'USD',
+  searchParams,
 }: BudgetsPageProps) {
+  const t = useTranslations('finance-budgets');
   const locale = getCurrencyLocale(currency);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(
+    searchParams.create === 'budget'
+  );
   const [editingBudget, setEditingBudget] = useState<FinanceBudget | null>(
     null
   );
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (searchParams.create === 'budget') setIsCreateDialogOpen(true);
+  }, [searchParams.create]);
 
   const { data: budgets, isLoading } = useQuery({
     queryKey: ['budgets', wsId],
@@ -71,32 +62,25 @@ export default function BudgetsPage({
       await deleteBudget(wsId, id);
     },
     onSuccess: () => {
-      toast.success('Budget deleted successfully');
+      toast.success(t('deleted_successfully'));
       void queryClient.invalidateQueries({ queryKey: ['budgets', wsId] });
       void queryClient.invalidateQueries({ queryKey: ['budget_status', wsId] });
     },
-    onError: (error) => {
-      console.error('Error deleting budget:', error);
-      toast.error('Failed to delete budget');
+    onError: () => {
+      toast.error(t('failed_to_delete'));
     },
     onSettled: () => {
       setDeletingId(null);
     },
   });
 
-  const getProgressColor = (percentage: number, threshold: number) => {
-    if (percentage >= 100) return 'bg-dynamic-red';
-    if (percentage >= threshold) return 'bg-dynamic-orange';
-    return 'bg-dynamic-green';
-  };
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-bold text-2xl">Budgets</h1>
+          <h1 className="font-bold text-2xl">{t('plural')}</h1>
           <p className="text-muted-foreground text-sm">
-            Track and manage your workspace budgets
+            {t('title_description')}
           </p>
         </div>
 
@@ -104,12 +88,12 @@ export default function BudgetsPage({
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Create Budget
+              {t('create')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Create New Budget</DialogTitle>
+              <DialogTitle>{t('create_new')}</DialogTitle>
             </DialogHeader>
             <BudgetForm
               wsId={wsId}
@@ -135,181 +119,27 @@ export default function BudgetsPage({
         </div>
       ) : budgets && budgets.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {budgets.map((budget) => {
-            const alertThreshold = budget.alert_threshold ?? 80;
-            const percentage =
-              budget.amount > 0 ? (budget.spent / budget.amount) * 100 : 0;
-            const remaining = budget.amount - budget.spent;
-            const isOverBudget = budget.spent > budget.amount;
-            const isNearThreshold = percentage >= alertThreshold;
-
-            return (
-              <Card
-                key={budget.id}
-                className={cn(
-                  isOverBudget && 'border-dynamic-red',
-                  isNearThreshold && !isOverBudget && 'border-dynamic-orange'
-                )}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span className="flex-1">{budget.name}</span>
-                    <div className="flex items-center gap-2">
-                      {isOverBudget && (
-                        <span className="rounded-full bg-dynamic-red/10 px-2 py-1 font-medium text-dynamic-red text-xs">
-                          Over Budget
-                        </span>
-                      )}
-                      {isNearThreshold && !isOverBudget && (
-                        <span className="rounded-full bg-dynamic-orange/10 px-2 py-1 font-medium text-dynamic-orange text-xs">
-                          Alert
-                        </span>
-                      )}
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            className="h-8 w-8 p-0 data-[state=open]:bg-muted"
-                          >
-                            <Ellipsis className="h-4 w-4" />
-                            <span className="sr-only">Open menu</span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={() => setEditingBudget(budget)}
-                          >
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <DropdownMenuItem
-                                onSelect={(e) => e.preventDefault()}
-                                disabled={deletingId === budget.id}
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Delete Budget
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete &quot;
-                                  {budget.name}&quot;? This action cannot be
-                                  undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() =>
-                                    deleteBudgetMutation.mutate(budget.id)
-                                  }
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  disabled={deletingId === budget.id}
-                                >
-                                  {deletingId === budget.id
-                                    ? 'Deleting...'
-                                    : 'Delete'}
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardTitle>
-                  {budget.description && (
-                    <p className="text-muted-foreground text-sm">
-                      {budget.description}
-                    </p>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Spent</span>
-                      <span
-                        className={cn(
-                          'font-medium',
-                          isOverBudget && 'text-dynamic-red',
-                          isNearThreshold &&
-                            !isOverBudget &&
-                            'text-dynamic-orange'
-                        )}
-                      >
-                        {new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(Number(budget.spent))}
-                      </span>
-                    </div>
-                    <Progress
-                      value={Math.min(percentage, 100)}
-                      className="h-2"
-                      indicatorClassName={getProgressColor(
-                        percentage,
-                        alertThreshold
-                      )}
-                    />
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Budget</span>
-                      <span className="font-medium">
-                        {new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                        }).format(Number(budget.amount))}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 border-t pt-4">
-                    <div>
-                      <p className="text-muted-foreground text-xs">Remaining</p>
-                      <p
-                        className={cn(
-                          'font-semibold text-lg',
-                          remaining < 0
-                            ? 'text-dynamic-red'
-                            : 'text-dynamic-green'
-                        )}
-                      >
-                        {new Intl.NumberFormat(locale, {
-                          style: 'currency',
-                          currency,
-                          signDisplay: 'always',
-                        }).format(Number(remaining))}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-xs">Used</p>
-                      <p className="font-semibold text-lg">
-                        {percentage.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-muted-foreground text-xs">
-                    Period: {budget.period}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+          {budgets.map((budget) => (
+            <BudgetCard
+              key={budget.id}
+              budget={budget}
+              currency={currency}
+              deletingId={deletingId}
+              locale={locale}
+              onDelete={(id) => deleteBudgetMutation.mutate(id)}
+              onEdit={setEditingBudget}
+            />
+          ))}
         </div>
       ) : (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <p className="mb-4 text-muted-foreground">
-              No budgets yet. Create your first budget to start tracking
-              spending.
+              {t('empty_description')}
             </p>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Create Budget
+              {t('create')}
             </Button>
           </CardContent>
         </Card>
@@ -322,7 +152,7 @@ export default function BudgetsPage({
       >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Budget</DialogTitle>
+            <DialogTitle>{t('edit_budget')}</DialogTitle>
           </DialogHeader>
           {editingBudget && (
             <BudgetForm

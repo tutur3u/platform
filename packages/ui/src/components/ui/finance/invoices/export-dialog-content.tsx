@@ -1,5 +1,9 @@
 'use client';
 
+import {
+  listFinanceInvoices,
+  listPendingFinanceInvoices,
+} from '@tuturuuu/internal-api/finance';
 import { Button } from '@tuturuuu/ui/button';
 import {
   DialogClose,
@@ -18,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@tuturuuu/ui/select';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { jsonToCSV } from 'react-papaparse';
@@ -95,6 +100,22 @@ type CreatedInvoiceExportData = InvoiceExportRow & {
   } | null;
 };
 
+type PendingInvoiceApiRow = Omit<
+  PendingInvoiceExportData,
+  'creator' | 'customer' | 'group_id' | 'group_name' | 'months_owed' | 'wallet'
+> & {
+  group_id?: string | null;
+  group_ids?: string[] | null;
+  group_name?: string | null;
+  group_names?: string[] | null;
+  months_owed?: string | string[] | null;
+};
+
+function normalizeQueryArray(value?: string | string[]) {
+  if (!value) return [];
+  return (Array.isArray(value) ? value : [value]).filter(Boolean);
+}
+
 // Helper function to fetch pending invoices data for export
 async function getPendingInvoicesData(
   wsId: string,
@@ -112,42 +133,34 @@ async function getPendingInvoicesData(
     groupByUser?: boolean;
   }
 ): Promise<{ data: PendingInvoiceExportData[]; count: number }> {
-  const searchParams = new URLSearchParams({
+  const payload = await listPendingFinanceInvoices(wsId, {
+    groupByUser,
     page,
     pageSize,
     q: q || '',
-    groupByUser: String(groupByUser),
+    userIds: normalizeQueryArray(userIds),
   });
 
-  if (userIds) {
-    if (Array.isArray(userIds)) {
-      userIds.forEach((userId) => {
-        searchParams.append('userIds', userId);
-      });
-    } else {
-      searchParams.append('userIds', userIds);
-    }
-  }
-
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/finance/invoices/pending?${searchParams.toString()}`,
-    { cache: 'no-store' }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch pending invoices for export');
-  }
-
-  const payload = await response.json();
-  const rawData = payload.data || [];
+  const rawData = (payload.data || []) as PendingInvoiceApiRow[];
   const totalCount = payload.count || 0;
 
-  const transformedData = rawData.map((invoice: any) => {
+  const transformedData = rawData.map((invoice): PendingInvoiceExportData => {
     const monthsOwed = Array.isArray(invoice.months_owed)
       ? invoice.months_owed.join(', ')
       : typeof invoice.months_owed === 'string'
         ? invoice.months_owed
         : '';
+
+    const baseInvoice = {
+      ...invoice,
+      attendance_days: invoice.attendance_days ?? 0,
+      months_owed: monthsOwed,
+      potential_total: invoice.potential_total ?? 0,
+      total_sessions: invoice.total_sessions ?? 0,
+      user_avatar_url: invoice.user_avatar_url || '',
+      user_id: invoice.user_id || '',
+      user_name: invoice.user_name || '',
+    };
 
     if (groupByUser) {
       const groupNames = Array.isArray(invoice.group_names)
@@ -159,10 +172,9 @@ async function getPendingInvoicesData(
         : '';
 
       return {
-        ...invoice,
+        ...baseInvoice,
         group_id: groupIdValue,
         group_name: groupedName,
-        months_owed: monthsOwed,
         customer: {
           full_name: invoice.user_name || '',
           avatar_url: invoice.user_avatar_url || '',
@@ -173,8 +185,9 @@ async function getPendingInvoicesData(
     }
 
     return {
-      ...invoice,
-      months_owed: monthsOwed,
+      ...baseInvoice,
+      group_id: invoice.group_id || '',
+      group_name: invoice.group_name || '',
       customer: invoice.user_id
         ? {
             full_name: invoice.user_name || '',
@@ -218,6 +231,7 @@ export default function ExportDialogContent({
   const [progress, setProgress] = useState(0);
   const [isExporting, setIsExporting] = useState(false);
   const [filename, setFilename] = useState('');
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const filenameId = useId();
   const fileTypeId = useId();
@@ -267,6 +281,7 @@ export default function ExportDialogContent({
   const handleExport = async () => {
     setIsExporting(true);
     setProgress(0);
+    setExportError(null);
 
     const allData: InvoiceExportRow[] = [];
     let currentPage = 1;
@@ -345,9 +360,12 @@ export default function ExportDialogContent({
           `${(filename || defaultFilename).replace(/\.xlsx/g, '')}.xlsx`
         );
       }
-    } catch (error) {
-      console.error('Export failed:', error);
-      // You might want to show a toast error here
+
+      toast.success(t('common.export-success'));
+    } catch {
+      const errorMessage = t('common.export-error');
+      setExportError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsExporting(false);
     }
@@ -393,7 +411,7 @@ export default function ExportDialogContent({
             disabled={isExporting}
           >
             <SelectTrigger className="w-full" id={fileTypeId}>
-              <SelectValue placeholder="File type" />
+              <SelectValue placeholder={t('common.file-type')} />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="excel">Excel</SelectItem>
@@ -405,6 +423,12 @@ export default function ExportDialogContent({
         {isExporting && (
           <div>
             <Progress value={progress} className="h-2 w-full" />
+          </div>
+        )}
+
+        {exportError && (
+          <div className="mt-2 rounded-md bg-destructive/10 p-3 text-destructive text-sm">
+            {exportError}
           </div>
         )}
       </div>
@@ -448,45 +472,20 @@ async function getData(
     walletIds?: string | string[];
   }
 ) {
-  const searchParams = new URLSearchParams({
+  const walletFilterIds = [
+    ...(walletId ? [walletId] : []),
+    ...normalizeQueryArray(walletIds),
+  ];
+
+  return (await listFinanceInvoices(wsId, {
+    end,
     page,
     pageSize,
-  });
-
-  if (q) searchParams.set('q', q);
-  if (start) searchParams.set('start', start);
-  if (end) searchParams.set('end', end);
-  if (walletId) searchParams.append('walletIds', walletId);
-
-  const normalizedUserIds = Array.isArray(userIds)
-    ? userIds
-    : userIds
-      ? [userIds]
-      : [];
-  const normalizedWalletIds = Array.isArray(walletIds)
-    ? walletIds
-    : walletIds
-      ? [walletIds]
-      : [];
-
-  for (const userId of normalizedUserIds.filter(Boolean)) {
-    searchParams.append('userIds', userId);
-  }
-
-  for (const selectedWalletId of normalizedWalletIds.filter(Boolean)) {
-    searchParams.append('walletIds', selectedWalletId);
-  }
-
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/finance/invoices?${searchParams.toString()}`,
-    { cache: 'no-store' }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch invoices for export');
-  }
-
-  return (await response.json()) as {
+    q,
+    start,
+    userIds: normalizeQueryArray(userIds),
+    walletIds: walletFilterIds,
+  })) as {
     data: CreatedInvoiceExportData[];
     count: number;
   };

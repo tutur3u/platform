@@ -4,9 +4,32 @@
  * while existing code uses bare names (e.g., `gemini-2.5-flash`).
  */
 
+export const GEMINI_31_FLASH_LITE_MODEL = 'gemini-3.1-flash-lite';
+export const GEMINI_31_FLASH_LITE_GATEWAY_MODEL =
+  'google/gemini-3.1-flash-lite';
+export const GEMINI_31_FLASH_LITE_PREVIEW_MODEL =
+  'gemini-3.1-flash-lite-preview';
+export const GEMINI_31_FLASH_LITE_PREVIEW_GATEWAY_MODEL =
+  'google/gemini-3.1-flash-lite-preview';
+
+/** Normalize retired model aliases to the current stable model ids. */
+export function normalizeStableModelId(modelId: string): string {
+  const slashIndex = modelId.indexOf('/');
+  const providerPrefix =
+    slashIndex === -1 ? '' : `${modelId.slice(0, slashIndex + 1)}`;
+  const bareModelId =
+    slashIndex === -1 ? modelId : modelId.slice(slashIndex + 1);
+
+  if (bareModelId === GEMINI_31_FLASH_LITE_PREVIEW_MODEL) {
+    return `${providerPrefix}${GEMINI_31_FLASH_LITE_MODEL}`;
+  }
+
+  return modelId;
+}
+
 /** Convert a bare model name + provider to a gateway model ID */
 export function toGatewayModelId(provider: string, modelName: string): string {
-  return `${provider}/${modelName}`;
+  return `${provider}/${normalizeStableModelId(modelName)}`;
 }
 
 /**
@@ -18,8 +41,9 @@ export function resolveGatewayModelId(
   modelName: string,
   provider?: string
 ): string {
-  if (modelName.includes('/')) return modelName;
-  return `${provider || 'google'}/${modelName}`;
+  const stableModelName = normalizeStableModelId(modelName);
+  if (stableModelName.includes('/')) return stableModelName;
+  return `${provider || 'google'}/${stableModelName}`;
 }
 
 /**

@@ -1,12 +1,11 @@
 'use client';
 
 import {
-  ArrowDownCircle,
-  ArrowUpCircle,
   CalendarIcon,
   DollarSign,
   Edit,
   FolderOpen,
+  Paperclip,
   Tag,
   TrendingDown,
   TrendingUp,
@@ -23,16 +22,18 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { useFinanceHref } from '../../finance-route-context';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../shared/use-finance-confidential-visibility';
 import { TransactionEditDialog } from '../transaction-edit-dialog';
 import { Bill } from './bill';
-import { DetailObjects } from './objects';
 
 interface Props {
   wsId: string;
   currency?: string;
   transaction: any;
   tags: Array<{ id: string; name: string; color: string }>;
-  objects: any[];
 }
 
 export function TransactionDetailsClientPage({
@@ -40,11 +41,12 @@ export function TransactionDetailsClientPage({
   currency = 'USD',
   transaction,
   tags,
-  objects,
 }: Props) {
   const t = useTranslations();
   const financeHref = useFinanceHref();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   const isExpense = (transaction.amount || 0) < 0;
   const transactionType = isExpense
@@ -96,16 +98,22 @@ export function TransactionDetailsClientPage({
             <div className="text-right">
               <div
                 className={`font-bold text-3xl tabular-nums ${
-                  isExpense ? 'text-dynamic-red' : 'text-dynamic-green'
+                  areNumbersHidden
+                    ? 'text-muted-foreground'
+                    : isExpense
+                      ? 'text-dynamic-red'
+                      : 'text-dynamic-green'
                 }`}
               >
-                {Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
-                  style: 'currency',
-                  currency,
-                  minimumFractionDigits: 0,
-                  maximumFractionDigits: 0,
-                  signDisplay: 'always',
-                }).format(transaction.amount || 0)}
+                {areNumbersHidden
+                  ? FINANCE_HIDDEN_AMOUNT
+                  : Intl.NumberFormat(currency === 'VND' ? 'vi-VN' : 'en-US', {
+                      style: 'currency',
+                      currency,
+                      minimumFractionDigits: 0,
+                      maximumFractionDigits: 0,
+                      signDisplay: 'always',
+                    }).format(transaction.amount || 0)}
               </div>
               <p className="text-muted-foreground text-sm">
                 {transaction.taken_at
@@ -257,28 +265,16 @@ export function TransactionDetailsClientPage({
               )}
             </div>
           </Card>
-
-          {objects.length > 0 && (
-            <DetailObjects
-              wsId={wsId}
-              transactionId={transaction.id}
-              objects={objects}
-            />
-          )}
         </div>
 
         <Card className="h-fit overflow-hidden">
           <div className="space-y-0 bg-linear-to-br from-primary/5 to-primary/10 p-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                {isExpense ? (
-                  <ArrowDownCircle className="h-4 w-4 text-primary" />
-                ) : (
-                  <ArrowUpCircle className="h-4 w-4 text-primary" />
-                )}
+                <Paperclip className="h-4 w-4 text-primary" />
               </div>
               <h2 className="font-semibold text-base">
-                {t('ai_chat.upload_files')}
+                {t('transaction-data-table.attachments')}
               </h2>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { google } from '@ai-sdk/google';
 import { stepCountIs, ToolLoopAgent } from 'ai';
 import { z } from 'zod';
 
-const PARALLEL_CHECKS_MODEL = 'gemini-3.1-flash-lite-preview';
+const PARALLEL_CHECKS_MODEL = 'gemini-3.1-flash-lite';
 
 const ParallelChecksArgsSchema = z.object({
   question: z

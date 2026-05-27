@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { createDebtLoan, updateDebtLoan } from '@tuturuuu/internal-api/finance';
 import type {
   DebtLoan,
   DebtLoanFormData,
@@ -11,7 +12,6 @@ import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
 import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 import { Button } from '../../button';
 import { SelectField } from '../../custom/select-field';
 import {
@@ -26,6 +26,10 @@ import {
 import { Input } from '../../input';
 import { toast } from '../../sonner';
 import { Textarea } from '../../textarea';
+import {
+  createDebtLoanFormSchema,
+  type DebtLoanFormValues,
+} from './debt-loan-form-schema';
 
 interface Props {
   wsId: string;
@@ -35,20 +39,6 @@ interface Props {
   onFinish?: (data: DebtLoanFormData) => void;
   onCancel?: () => void;
 }
-
-const FormSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(255),
-  description: z.string().max(500).optional(),
-  counterparty: z.string().max(255).optional(),
-  type: z.enum(['debt', 'loan']),
-  principal_amount: z.number().min(1, 'Amount must be greater than 0'),
-  currency: z.string().default('VND'),
-  interest_rate: z.number().min(0).max(100).optional(),
-  interest_type: z.enum(['simple', 'compound']).optional(),
-  start_date: z.string(),
-  due_date: z.string().optional(),
-  wallet_id: z.string().optional(),
-});
 
 export function DebtLoanForm({
   wsId,
@@ -60,9 +50,10 @@ export function DebtLoanForm({
 }: Props) {
   const t = useTranslations('ws-debt-loan');
   const [loading, setLoading] = useState(false);
+  const formSchema = createDebtLoanFormSchema(t);
 
-  const form = useForm({
-    resolver: zodResolver(FormSchema),
+  const form = useForm<DebtLoanFormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: data?.name || '',
       description: data?.description || '',
@@ -93,7 +84,7 @@ export function DebtLoanForm({
     [form]
   );
 
-  async function onSubmit(formData: z.infer<typeof FormSchema>) {
+  async function onSubmit(formData: DebtLoanFormValues) {
     setLoading(true);
 
     try {
@@ -115,28 +106,16 @@ export function DebtLoanForm({
       if (formData.due_date) submitData.due_date = formData.due_date;
       if (formData.wallet_id) submitData.wallet_id = formData.wallet_id;
 
-      const res = await fetch(
-        data?.id
-          ? `/api/v1/workspaces/${wsId}/finance/debts/${data.id}`
-          : `/api/v1/workspaces/${wsId}/finance/debts`,
-        {
-          method: data?.id ? 'PUT' : 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(submitData),
-        }
-      );
-
-      if (res.ok) {
-        toast.success(data?.id ? t('update_success') : t('create_success'));
-        onFinish?.(submitData);
+      if (data?.id) {
+        await updateDebtLoan(wsId, data.id, submitData);
       } else {
-        const error = await res.json();
-        toast.error(error.message || t('error'));
+        await createDebtLoan(wsId, submitData);
       }
-    } catch {
-      toast.error(t('error'));
+
+      toast.success(data?.id ? t('update_success') : t('create_success'));
+      onFinish?.(submitData);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('error'));
     } finally {
       setLoading(false);
     }

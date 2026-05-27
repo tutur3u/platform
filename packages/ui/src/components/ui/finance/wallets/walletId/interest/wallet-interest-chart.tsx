@@ -16,6 +16,11 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../../../shared/use-finance-confidential-visibility';
 
 export type ChartPeriod = 'week' | 'month' | 'quarter' | 'year';
 
@@ -65,6 +70,10 @@ export function WalletInterestChart({
 }: WalletInterestChartProps) {
   const t = useTranslations('wallet-interest');
   const { formatCurrency, formatDate } = useCurrencyFormatter({ currency });
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const formatVisibleCurrency = (amount: number) =>
+    areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : formatCurrency(amount);
 
   const [period, setPeriod] = useState<ChartPeriod>(defaultPeriod);
   const [showProjections, setShowProjections] = useState(
@@ -196,14 +205,18 @@ export function WalletInterestChart({
               {t('projected_interest')}
             </p>
             <p className="font-bold text-primary">
-              +{formatCurrency(summary.totalInterest)}
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : `+${formatCurrency(summary.totalInterest)}`}
             </p>
           </div>
           <div className="text-center">
             <p className="text-muted-foreground text-xs">
               {t('final_balance')}
             </p>
-            <p className="font-bold">{formatCurrency(summary.finalBalance)}</p>
+            <p className="font-bold">
+              {formatVisibleCurrency(summary.finalBalance)}
+            </p>
           </div>
           <div className="text-center">
             <p className="text-muted-foreground text-xs">{t('growth')}</p>
@@ -234,6 +247,7 @@ export function WalletInterestChart({
             />
             <YAxis
               tickFormatter={(value) => {
+                if (areNumbersHidden) return FINANCE_HIDDEN_COMPACT_AMOUNT;
                 if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
                 if (value >= 1000) return `${(value / 1000).toFixed(0)}K`;
                 return value.toString();
@@ -250,7 +264,7 @@ export function WalletInterestChart({
                   labelFormatter={(label) => label}
                   formatter={(value) => (
                     <span className="font-medium">
-                      {formatCurrency(Number(value))}
+                      {formatVisibleCurrency(Number(value))}
                     </span>
                   )}
                 />

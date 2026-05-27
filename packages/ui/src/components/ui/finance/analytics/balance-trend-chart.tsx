@@ -1,10 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
+import { listFinanceBalanceTrend } from '@tuturuuu/internal-api/finance';
 import { cn, getCurrencyLocale } from '@tuturuuu/utils/format';
 import dayjs from 'dayjs';
 import { useLocale, useTranslations } from 'next-intl';
-import { useTheme } from 'next-themes';
 import { useMemo } from 'react';
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../../card';
@@ -15,6 +15,11 @@ import {
   ChartTooltipContent,
 } from '../../chart';
 import { Skeleton } from '../../skeleton';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  FINANCE_HIDDEN_COMPACT_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 
 interface BalanceTrendChartProps {
   wsId: string;
@@ -41,118 +46,41 @@ export function BalanceTrendChart({
   className,
 }: BalanceTrendChartProps) {
   const locale = useLocale();
-  const t = useTranslations('wallet-data-table');
-  const { resolvedTheme } = useTheme();
+  const walletT = useTranslations('wallet-data-table');
+  const analyticsT = useTranslations('finance-analytics');
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+  const shouldHideAmounts = areNumbersHidden || !includeConfidential;
 
-  const balanceColor = resolvedTheme === 'dark' ? '#60a5fa' : '#3b82f6';
-  const positiveGradient = resolvedTheme === 'dark' ? '#4ade8020' : '#16a34a20';
-  const negativeGradient = resolvedTheme === 'dark' ? '#f8717120' : '#dc262620';
+  const balanceColor = 'var(--chart-1)';
+  const positiveGradient = 'var(--chart-2)';
+  const negativeGradient = 'var(--chart-5)';
 
-  // Generate date points for balance calculation
-  const datePoints = useMemo(() => {
-    const end = endDate ? dayjs(endDate) : dayjs();
-    const start = startDate ? dayjs(startDate) : end.subtract(29, 'days');
-    const points: string[] = [];
-
-    let current = start;
-    while (current.isBefore(end) || current.isSame(end, 'day')) {
-      points.push(current.format('YYYY-MM-DD'));
-      current = current.add(1, 'day');
-    }
-
-    // Limit to reasonable number of points (max 60)
-    if (points.length > 60) {
-      const step = Math.ceil(points.length / 60);
-      return points.filter((_, i) => i % step === 0 || i === points.length - 1);
-    }
-
-    return points;
-  }, [startDate, endDate]);
-
-  // Fetch balance at each date point
   const {
     data: balanceData,
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['balance-trend', wsId, datePoints, includeConfidential],
+    queryKey: ['balance-trend', wsId, startDate, endDate, includeConfidential],
     queryFn: async () => {
-      // Fetch balance at start and end, then interpolate from daily data
-      const params = new URLSearchParams({
-        date: datePoints[datePoints.length - 1] || dayjs().format('YYYY-MM-DD'),
-        includeConfidential: String(includeConfidential),
+      const trend = await listFinanceBalanceTrend(wsId, {
+        startDate,
+        endDate,
+        includeConfidential,
       });
 
-      const res = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/balance?${params}`,
-        { cache: 'no-store' }
+      return trend.map(
+        (point): BalanceDataPoint => ({
+          date: dayjs(point.date).format('YYYY-MM-DD'),
+          balance: Number(point.balance) || 0,
+        })
       );
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch balance');
-      }
-      const endBalance = await res.json();
-
-      // Fetch daily data to calculate running balance
-      const dailyParams = new URLSearchParams();
-      if (startDate) dailyParams.set('startDate', startDate);
-      if (endDate) dailyParams.set('endDate', endDate);
-      dailyParams.set('includeConfidential', String(includeConfidential));
-
-      const dailyRes = await fetch(
-        `/api/workspaces/${wsId}/finance/charts/daily?${dailyParams}`,
-        { cache: 'no-store' }
-      );
-      if (!dailyRes.ok) {
-        const errorData = await dailyRes.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to fetch daily data');
-      }
-      const dailyData = await dailyRes.json();
-
-      // Calculate running balance backwards from end balance
-      const dailyArray = dailyData.data || [];
-      const dailyMap = new Map<string, { income: number; expense: number }>();
-
-      dailyArray.forEach(
-        (item: {
-          day: string;
-          total_income: number;
-          total_expense: number;
-        }) => {
-          // Normalize the date format to YYYY-MM-DD for consistent lookup
-          const normalizedDay = dayjs(item.day).format('YYYY-MM-DD');
-          dailyMap.set(normalizedDay, {
-            income: Number(item.total_income) || 0,
-            expense: Number(item.total_expense) || 0,
-          });
-        }
-      );
-
-      // Build balance data points
-      let currentBalance = Number(endBalance.balance) || 0;
-      const result: BalanceDataPoint[] = [];
-
-      // Work backwards from the end
-      for (let i = datePoints.length - 1; i >= 0; i--) {
-        const date = datePoints[i];
-        if (!date) continue;
-
-        result.unshift({ date, balance: currentBalance });
-
-        // Subtract today's net to get yesterday's ending balance
-        const dayData = dailyMap.get(date);
-        if (dayData) {
-          currentBalance -= dayData.income - dayData.expense;
-        }
-      }
-
-      return result;
     },
     staleTime: 30_000,
   });
 
   const formatValue = (value: number) => {
-    if (!includeConfidential) return '•••••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_AMOUNT;
     return new Intl.NumberFormat(getCurrencyLocale(currency), {
       style: 'currency',
       currency,
@@ -162,12 +90,21 @@ export function BalanceTrendChart({
   };
 
   const formatCompactValue = (value: number) => {
-    if (!includeConfidential) return '•••';
+    if (shouldHideAmounts) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     return new Intl.NumberFormat(locale, {
       notation: 'compact',
       compactDisplay: 'short',
       maximumFractionDigits: 1,
     }).format(value);
+  };
+
+  const formatChartDate = (
+    value: string,
+    options: Intl.DateTimeFormatOptions
+  ) => {
+    return new Intl.DateTimeFormat(locale, options).format(
+      dayjs(value).toDate()
+    );
   };
 
   // Determine if balance is positive or negative overall
@@ -179,7 +116,7 @@ export function BalanceTrendChart({
 
   const chartConfig = {
     balance: {
-      label: t('balance') || 'Balance',
+      label: walletT('balance'),
       color: balanceColor,
     },
   } satisfies ChartConfig;
@@ -205,7 +142,9 @@ export function BalanceTrendChart({
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
           <p className="text-muted-foreground text-sm">
-            {error instanceof Error ? error.message : 'Failed to load data'}
+            {error instanceof Error
+              ? error.message
+              : analyticsT('failed-to-load-data')}
           </p>
         </CardContent>
       </Card>
@@ -219,7 +158,9 @@ export function BalanceTrendChart({
           <CardTitle>{title}</CardTitle>
         </CardHeader>
         <CardContent className="flex h-75 items-center justify-center">
-          <p className="text-muted-foreground text-sm">No data available</p>
+          <p className="text-muted-foreground text-sm">
+            {analyticsT('no-data')}
+          </p>
         </CardContent>
       </Card>
     );
@@ -233,9 +174,11 @@ export function BalanceTrendChart({
           <span
             className={cn(
               'font-semibold text-sm',
-              isPositiveTrend
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-red-600 dark:text-red-400'
+              shouldHideAmounts
+                ? 'text-muted-foreground'
+                : isPositiveTrend
+                  ? 'text-dynamic-green'
+                  : 'text-dynamic-red'
             )}
           >
             {formatValue(balanceData[balanceData.length - 1]?.balance || 0)}
@@ -252,14 +195,14 @@ export function BalanceTrendChart({
                   stopColor={
                     isPositiveTrend ? positiveGradient : negativeGradient
                   }
-                  stopOpacity={0.8}
+                  stopOpacity={0.2}
                 />
                 <stop
                   offset="95%"
                   stopColor={
                     isPositiveTrend ? positiveGradient : negativeGradient
                   }
-                  stopOpacity={0.1}
+                  stopOpacity={0.04}
                 />
               </linearGradient>
             </defs>
@@ -274,7 +217,10 @@ export function BalanceTrendChart({
               axisLine={false}
               tickFormatter={(value) => {
                 try {
-                  return dayjs(value).format('MMM DD');
+                  return formatChartDate(value, {
+                    day: 'numeric',
+                    month: 'short',
+                  });
                 } catch {
                   return value;
                 }
@@ -294,7 +240,11 @@ export function BalanceTrendChart({
               content={<ChartTooltipContent indicator="line" />}
               labelFormatter={(value) => {
                 try {
-                  return dayjs(value).format('MMMM DD, YYYY');
+                  return formatChartDate(String(value), {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  });
                 } catch {
                   return value;
                 }
@@ -314,7 +264,7 @@ export function BalanceTrendChart({
                   >
                     {formattedValue}
                   </span>,
-                  t('balance') || 'Balance',
+                  walletT('balance'),
                 ];
               }}
               cursor={{
@@ -328,7 +278,7 @@ export function BalanceTrendChart({
               stroke={balanceColor}
               strokeWidth={2}
               fill="url(#balanceGradient)"
-              name={t('balance') || 'Balance'}
+              name={walletT('balance')}
             />
           </AreaChart>
         </ChartContainer>

@@ -1,4 +1,3 @@
-import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import ExportDialogContent from '@tuturuuu/ui/finance/transactions/export-dialog-content';
 import { TransactionForm } from '@tuturuuu/ui/finance/transactions/form';
 import { TransactionsInfinitePage } from '@tuturuuu/ui/finance/transactions/transactions-infinite-page';
@@ -11,6 +10,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
+import { CreateDialogFeatureSummary } from '../shared/create-dialog-feature-summary';
 
 interface Props {
   currency?: string;
@@ -20,6 +20,7 @@ interface Props {
     personal?: boolean | null;
     timezone?: string | null;
   };
+  openCreateDialog?: boolean;
   showTransactionTypeFilter?: boolean;
 }
 
@@ -28,6 +29,7 @@ export default async function TransactionsPage({
   permissions,
   wsId,
   workspace,
+  openCreateDialog = false,
   showTransactionTypeFilter = false,
 }: Props) {
   const [t, resolvedWorkspace, resolvedPermissions, resolvedCurrency] =
@@ -74,12 +76,13 @@ export default async function TransactionsPage({
 
   return (
     <>
-      <FeatureSummary
+      <CreateDialogFeatureSummary
         pluralTitle={t('ws-transactions.plural')}
         singularTitle={t('ws-transactions.singular')}
         description={t('ws-transactions.description')}
         createTitle={t('ws-transactions.create')}
         createDescription={t('ws-transactions.create_description')}
+        defaultOpen={openCreateDialog}
         form={
           canCreateTransactions ? (
             <TransactionForm
