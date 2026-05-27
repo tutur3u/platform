@@ -13,6 +13,7 @@ COPY scripts/run-web-docker-next-build.js ./scripts/run-web-docker-next-build.js
 COPY scripts/run-hive-docker-next-build.js ./scripts/run-hive-docker-next-build.js
 COPY apps/apps/package.json ./apps/apps/package.json
 COPY apps/calendar/package.json ./apps/calendar/package.json
+COPY apps/chat/package.json ./apps/chat/package.json
 COPY apps/cms/package.json ./apps/cms/package.json
 COPY apps/database/package.json ./apps/database/package.json
 COPY apps/drive/package.json ./apps/drive/package.json

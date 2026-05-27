@@ -9,6 +9,7 @@ const repoRoot = path.resolve(__dirname, '..', '..');
 const targetApps = [
   ['apps', '@tuturuuu/apps'],
   ['calendar', '@tuturuuu/calendar'],
+  ['chat', '@tuturuuu/chat'],
   ['cms', '@tuturuuu/cms'],
   ['drive', '@tuturuuu/drive'],
   ['finance', '@tuturuuu/finance'],
@@ -28,6 +29,7 @@ const targetApps = [
 const vercelWorkflows = [
   'apps',
   'calendar',
+  'chat',
   'cms',
   'drive',
   'finance',
@@ -87,6 +89,18 @@ function createFixtureRoot() {
         '@tuturuuu/vercel',
       ],
       calendar: ['@tuturuuu/ui'],
+      chat: [
+        '@tuturuuu/auth',
+        '@tuturuuu/icons',
+        '@tuturuuu/internal-api',
+        '@tuturuuu/offline',
+        '@tuturuuu/satellite',
+        '@tuturuuu/supabase',
+        '@tuturuuu/types',
+        '@tuturuuu/ui',
+        '@tuturuuu/utils',
+        '@tuturuuu/vercel',
+      ],
       cms: ['@tuturuuu/satellite'],
       drive: [
         '@tuturuuu/auth',

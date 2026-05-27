@@ -171,6 +171,18 @@ test('environment-scoped Vercel workflows scope deploy secrets to deploy jobs', 
       projectSecret: 'VERCEL_APPS_PROJECT_ID',
       refGuard: /github\.ref == 'refs\/heads\/production'/,
     },
+    'vercel-preview-chat.yaml': {
+      environment: 'vercel-preview-chat',
+      jobName: 'Deploy-Preview',
+      projectSecret: 'VERCEL_CHAT_PROJECT_ID',
+      refGuard: /github\.ref != 'refs\/heads\/production'/,
+    },
+    'vercel-production-chat.yaml': {
+      environment: 'vercel-production-chat',
+      jobName: 'Deploy-Production',
+      projectSecret: 'VERCEL_CHAT_PROJECT_ID',
+      refGuard: /github\.ref == 'refs\/heads\/production'/,
+    },
     'vercel-preview-drive.yaml': {
       environment: 'vercel-preview-drive',
       jobName: 'Deploy-Preview',

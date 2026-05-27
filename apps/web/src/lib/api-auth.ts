@@ -150,6 +150,7 @@ type StrictAppSessionAuthOptions = Exclude<AppSessionAuthOptions, boolean>;
 const LEARN_TEACH_APP_SESSION_TARGETS = ['learn', 'teach'] as const;
 const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'calendar',
+  'chat',
   'cms',
   'drive',
   'finance',
@@ -189,6 +190,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
     pattern:
       /^\/api\/v1\/workspaces\/[^/]+\/(?:calendar|calendar-hours|calendar-settings|encryption)(?:\/|$)/u,
     targetApp: 'calendar',
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/chat(?:\/|$)/u,
+    targetApp: 'chat',
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/storage(?:\/|$)/u,

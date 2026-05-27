@@ -117,7 +117,7 @@ export default function NewInvoicePage({
             <DropdownMenuContent
               align="end"
               className="w-56"
-              onCloseAutoFocus={(e) => e.preventDefault()}
+              onCloseAutoFocus={(event: Event) => event.preventDefault()}
             >
               {isInitialized ? (
                 <div className="flex flex-col gap-3 p-3">

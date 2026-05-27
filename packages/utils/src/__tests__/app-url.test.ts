@@ -118,6 +118,7 @@ describe('getLocalInternalAppUrl', () => {
     ['platform', 'https://tuturuuu.localhost'],
     ['cms', 'https://cms.tuturuuu.localhost'],
     ['calendar', 'https://calendar.tuturuuu.localhost'],
+    ['chat', 'https://chat.tuturuuu.localhost'],
     ['drive', 'https://drive.tuturuuu.localhost'],
     ['qr', 'https://qr.tuturuuu.localhost'],
     ['nova', 'https://nova.tuturuuu.localhost'],
@@ -147,6 +148,7 @@ describe('Portless app origin registry', () => {
     expect(Object.values(TUTURUUU_PORTLESS_APP_ORIGINS)).toEqual([
       'https://apps.tuturuuu.localhost',
       'https://calendar.tuturuuu.localhost',
+      'https://chat.tuturuuu.localhost',
       'https://cms.tuturuuu.localhost',
       'https://drive.tuturuuu.localhost',
       'https://external.tuturuuu.localhost',

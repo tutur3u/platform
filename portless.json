@@ -8,6 +8,10 @@
       "name": "calendar.tuturuuu",
       "script": "dev:app"
     },
+    "apps/chat": {
+      "name": "chat.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/cms": {
       "name": "cms.tuturuuu",
       "script": "dev:app"

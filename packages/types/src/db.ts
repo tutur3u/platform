@@ -750,6 +750,10 @@ export type ExternalProjectFieldType =
 export type PermissionId =
   | Database['public']['Enums']['workspace_role_permission']
   | 'change_finance_wallets'
+  | 'view_chat'
+  | 'create_chat'
+  | 'manage_chat'
+  | 'moderate_chat'
   | 'set_finance_wallets_on_create';
 
 export type WorkspaceExternalProjectBinding = {

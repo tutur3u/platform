@@ -193,6 +193,7 @@ test('getBlueGreenDeploymentBuildServices scopes support image builds to changed
       'web-green',
       'hive-green',
       'hive-realtime',
+      'meet-realtime',
       'markitdown',
       'storage-unzip-proxy',
       'web-cron-runner',
@@ -1204,12 +1205,12 @@ test('renderBlueGreenProxyConfig points traffic at the selected color', () => {
   assert.match(config, /proxy_pass http:\/\/web_upstream;/);
   assert.equal(
     (config.match(/proxy_set_header Host \$http_host;/gu) ?? []).length,
-    4
+    7
   );
   assert.equal(
     (config.match(/proxy_set_header X-Forwarded-Host \$http_host;/gu) ?? [])
       .length,
-    4
+    7
   );
   assert.doesNotMatch(config, /proxy_set_header Host \$host;/u);
 });
@@ -2881,7 +2882,7 @@ test('getBlueGreenComposeMigration stages target ports while the legacy project 
   );
 });
 
-test('hasBlueGreenProxyHostPortBindings requires the Hive host port on web-proxy', async () => {
+test('hasBlueGreenProxyHostPortBindings requires support host ports on web-proxy', async () => {
   let inspectPorts = {
     '7803/tcp': [{ HostIp: '0.0.0.0', HostPort: '7803' }],
   };
@@ -2920,6 +2921,20 @@ test('hasBlueGreenProxyHostPortBindings requires the Hive host port on web-proxy
   inspectPorts = {
     ...inspectPorts,
     '7814/tcp': [{ HostIp: '0.0.0.0', HostPort: '7814' }],
+  };
+
+  assert.equal(
+    await hasBlueGreenProxyHostPortBindings({
+      composeFile: PROD_COMPOSE_FILE,
+      env: { PATH: 'test-path' },
+      runCommand,
+    }),
+    false
+  );
+
+  inspectPorts = {
+    ...inspectPorts,
+    '7816/tcp': [{ HostIp: '0.0.0.0', HostPort: '7816' }],
   };
 
   assert.equal(
@@ -4087,6 +4102,15 @@ test('runBlueGreenCachedRecoveryWorkflow writes a valid proxy config before star
         signal: null,
         stderr: '',
         stdout: activeBootstrapped ? 'hive-realtime-123\n' : '',
+      };
+    }
+
+    if (args.includes('ps') && args.at(-1) === 'meet-realtime') {
+      return {
+        code: 0,
+        signal: null,
+        stderr: '',
+        stdout: activeBootstrapped ? 'meet-realtime-123\n' : '',
       };
     }
 

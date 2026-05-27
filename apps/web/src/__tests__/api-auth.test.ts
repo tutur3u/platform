@@ -724,6 +724,7 @@ describe('withSessionAuth', () => {
     ).toEqual({
       targetApp: [
         'calendar',
+        'chat',
         'cms',
         'drive',
         'finance',
@@ -746,6 +747,7 @@ describe('withSessionAuth', () => {
     ).toEqual({
       targetApp: [
         'calendar',
+        'chat',
         'cms',
         'drive',
         'finance',
@@ -761,6 +763,11 @@ describe('withSessionAuth', () => {
         'track',
       ],
     });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/chat/conversations'
+      )
+    ).toEqual({ targetApp: 'chat' });
   });
 
   it('should accept Inventory app-session auth for current-user bootstrap APIs', async () => {

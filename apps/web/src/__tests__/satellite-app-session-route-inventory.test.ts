@@ -17,6 +17,7 @@ const satelliteRouteRoots = [
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar',
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-settings',
   'apps/web/src/app/api/v1/workspaces/[wsId]/calendar-hours',
+  'apps/web/src/app/api/v1/workspaces/[wsId]/chat',
   'apps/web/src/app/api/v1/workspaces/[wsId]/encryption',
   'apps/web/src/app/api/v1/workspaces/[wsId]/storage',
   'apps/web/src/app/api/v1/workspaces/[wsId]/inventory',
@@ -32,6 +33,7 @@ const satelliteRouteRoots = [
 const satelliteAppApiRoots = [
   'apps/learn/src/app/api',
   'apps/teach/src/app/api',
+  'apps/chat/src/app/api',
   'apps/inventory/src/app/api',
   'apps/drive/src/app/api',
   'apps/mind/src/app/api',
@@ -44,6 +46,9 @@ const allowedSatelliteLocalApiRoutes = new Set([
   'apps/teach/src/app/api/auth/logout/route.ts',
   'apps/teach/src/app/api/auth/refresh-app-session/route.ts',
   'apps/teach/src/app/api/auth/verify-app-token/route.ts',
+  'apps/chat/src/app/api/auth/logout/route.ts',
+  'apps/chat/src/app/api/auth/refresh-app-session/route.ts',
+  'apps/chat/src/app/api/auth/verify-app-token/route.ts',
   'apps/inventory/src/app/api/auth/logout/route.ts',
   'apps/inventory/src/app/api/auth/refresh-app-session/route.ts',
   'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
@@ -152,6 +157,7 @@ describe('satellite app-session route inventory', () => {
     for (const file of [
       'apps/learn/src/app/api/auth/logout/route.ts',
       'apps/teach/src/app/api/auth/logout/route.ts',
+      'apps/chat/src/app/api/auth/logout/route.ts',
       'apps/inventory/src/app/api/auth/logout/route.ts',
       'apps/mind/src/app/api/auth/logout/route.ts',
     ]) {
@@ -166,6 +172,7 @@ describe('satellite app-session route inventory', () => {
     for (const file of [
       'apps/learn/src/app/api/auth/verify-app-token/route.ts',
       'apps/teach/src/app/api/auth/verify-app-token/route.ts',
+      'apps/chat/src/app/api/auth/verify-app-token/route.ts',
       'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
       'apps/mind/src/app/api/auth/verify-app-token/route.ts',
     ]) {

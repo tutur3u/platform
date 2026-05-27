@@ -623,12 +623,12 @@ export async function WorkspaceNavigationLinks({
           title: t('sidebar_tabs.chat'),
           href: `/${personalOrWsId}/chat`,
           icon: <MessageCircleIcon className="h-5 w-5" />,
+          aliases: [`/${personalOrWsId}/chat`],
+          disabled: withoutPermission('view_chat'),
           requiredWorkspaceTier: createTierRequirement('chat', {
             alwaysShow: true,
           }),
           experimental: 'beta',
-          requireRootMember: true,
-          requireRootWorkspace: true,
           preferenceSectionLabel: sidebarSections.ai,
         },
         {
