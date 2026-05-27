@@ -198,7 +198,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   }, [rawData]);
 
   const formatValue = (value: number) => {
-    if (isConfidential && metric === 'amount') return FINANCE_HIDDEN_AMOUNT;
+    if (isConfidential) return FINANCE_HIDDEN_AMOUNT;
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
@@ -206,8 +206,7 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
   };
 
   const formatCompactValue = (value: number) => {
-    if (isConfidential && metric === 'amount')
-      return FINANCE_HIDDEN_COMPACT_AMOUNT;
+    if (isConfidential) return FINANCE_HIDDEN_COMPACT_AMOUNT;
     if (metric === 'count') {
       return value.toLocaleString(locale);
     }
@@ -421,7 +420,9 @@ export function InvoiceTotalsChart(props: InvoiceTotalsChartProps) {
                   <TooltipUI>
                     <TooltipTrigger asChild>
                       <Badge variant="outline" className="font-mono">
-                        {totals.totalCount.toLocaleString(locale)}{' '}
+                        {isConfidential
+                          ? FINANCE_HIDDEN_COMPACT_AMOUNT
+                          : totals.totalCount.toLocaleString(locale)}{' '}
                         {t('invoices')}
                       </Badge>
                     </TooltipTrigger>
