@@ -1,4 +1,4 @@
-import type { WorkspaceCourseModule } from '@tuturuuu/types';
+import type { Json, WorkspaceCourseModule } from '@tuturuuu/types';
 import type {
   WorkspaceCourseBuilderModule,
   WorkspaceCourseModuleGroup,
@@ -103,8 +103,8 @@ export interface UpsertWorkspaceQuizPayload {
     explanation?: string | null;
   }>;
   type?: string;
-  content?: any;
-  answer?: any;
+  content?: Json;
+  answer?: Json;
 }
 
 export interface CreateWorkspaceQuizPayload {
@@ -965,8 +965,8 @@ export interface ListWorkspaceQuizzesResponse {
     id: string;
     question: string;
     type?: string;
-    content?: any;
-    answer?: any;
+    content?: Json;
+    answer?: Json;
     created_at?: string;
     quiz_options?: Array<{
       id: string;
