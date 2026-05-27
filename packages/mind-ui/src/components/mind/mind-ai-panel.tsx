@@ -7,7 +7,7 @@ import {
 } from '@tuturuuu/internal-api/mind';
 import type { MindAiPatchRecord, MindNode } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MindAiInput } from './mind-ai-input';
 import { applyMindPatchWithLayoutRefresh } from './mind-ai-panel-actions';
 import { MindAiPanelContent } from './mind-ai-panel-content';
@@ -20,6 +20,7 @@ import {
 } from './mind-ai-panel-utils';
 import {
   getLatestMindAiProposal,
+  getMindAiProposalVisibilityKey,
   type MindAiProposal,
   MindAiProposalIsland,
 } from './mind-ai-proposal-island';
@@ -59,8 +60,8 @@ export function MindAiPanel({
   const queuedPromptIdRef = useRef<string | null>(null);
   const [threadId, setThreadId] = useState(() => crypto.randomUUID());
   const [fullscreen, setFullscreen] = useState(false);
-  const [dismissedProposalId, setDismissedProposalId] = useState<string | null>(
-    null
+  const [hiddenProposalKeys, setHiddenProposalKeys] = useState<Set<string>>(
+    () => new Set()
   );
   const [openedArtifact, setOpenedArtifact] = useState<MindAiProposal | null>(
     null
@@ -68,8 +69,22 @@ export function MindAiPanel({
   const [layoutRefreshBoardId, setLayoutRefreshBoardId] = useState<
     string | null
   >(null);
-  const previousProposalIdRef = useRef<string | null>(null);
   const latestProposalRef = useRef<MindAiProposal | null>(null);
+  const hideProposalKey = useCallback((key: string) => {
+    setHiddenProposalKeys((current) => {
+      if (current.has(key)) return current;
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+  }, []);
+  const hideProposal = useCallback(
+    (proposal: MindAiProposal | null) => {
+      if (!proposal) return;
+      hideProposalKey(getMindAiProposalVisibilityKey(proposal));
+    },
+    [hideProposalKey]
+  );
   const state = useMindAiPanelState({
     boardId,
     enabled: !collapsed,
@@ -146,14 +161,18 @@ export function MindAiPanel({
       queryClient.invalidateQueries({
         queryKey: ['mind', 'patches', wsId, result.patch.boardId || boardId],
       });
-      const appliedProposalId =
+      const appliedProposal =
         openedArtifact?.patch?.id === result.patch.id
-          ? openedArtifact.id
+          ? openedArtifact
           : latestProposalRef.current?.patch?.id === result.patch.id
-            ? latestProposalRef.current.id
+            ? latestProposalRef.current
             : null;
       setOpenedArtifact(null);
-      if (appliedProposalId) setDismissedProposalId(appliedProposalId);
+      if (appliedProposal) {
+        hideProposal(appliedProposal);
+      } else {
+        hideProposalKey(`patch:${result.patch.id}`);
+      }
       if (!collapsed) onToggleCollapsed();
     },
   });
@@ -188,6 +207,7 @@ export function MindAiPanel({
   const handleNewChat = () => {
     startNewChat();
     setThreadId(crypto.randomUUID());
+    setHiddenProposalKeys(new Set());
     setOpenedArtifact(null);
   };
   const handleOpenArtifact = (artifact: MindAiArtifactItem) => {
@@ -199,20 +219,33 @@ export function MindAiPanel({
   };
   const handleDismissProposal = (proposalId: string) => {
     if (openedArtifact?.id === proposalId) {
+      hideProposal(openedArtifact);
       setOpenedArtifact(null);
       return;
     }
 
-    setDismissedProposalId(proposalId);
+    if (latestProposalRef.current?.id === proposalId) {
+      hideProposal(latestProposalRef.current);
+      return;
+    }
+
+    hideProposalKey(proposalId);
   };
   const latestMessage = messages.at(-1);
   const latestProposal = useMemo(
     () => getLatestMindAiProposal(messages, patches),
     [messages, patches]
   );
+  const suppressProposalForQueuedPrompt = Boolean(
+    queuedPrompt && queuedPrompt.id !== queuedPromptIdRef.current
+  );
   const visibleProposal =
     openedArtifact ??
-    (latestProposal?.id === dismissedProposalId ? null : latestProposal);
+    (latestProposal &&
+    !suppressProposalForQueuedPrompt &&
+    !hiddenProposalKeys.has(getMindAiProposalVisibilityKey(latestProposal))
+      ? latestProposal
+      : null);
   const visiblePatchesError = visibleProposal?.patch ? null : patchesError;
   const chatMarkdown = useMemo(
     () => formatChatAsMarkdown(messages),
@@ -248,6 +281,13 @@ export function MindAiPanel({
   }, [latestProposal]);
 
   useEffect(() => {
+    if (!queuedPrompt) return;
+    if (queuedPromptIdRef.current === queuedPrompt.id) return;
+    setOpenedArtifact(null);
+    hideProposal(latestProposalRef.current);
+  }, [hideProposal, queuedPrompt]);
+
+  useEffect(() => {
     if (!scrollVersion) return;
     const node = scrollRef.current;
     if (!node) return;
@@ -278,13 +318,6 @@ export function MindAiPanel({
     queuedPromptIdRef.current = queuedPrompt.id;
     void submit(queuedPrompt.prompt);
   }, [boardId, collapsed, isBusy, queuedPrompt, submit]);
-
-  useEffect(() => {
-    const nextProposalId = latestProposal?.id ?? null;
-    if (nextProposalId === previousProposalIdRef.current) return;
-    previousProposalIdRef.current = nextProposalId;
-    setDismissedProposalId(null);
-  }, [latestProposal?.id]);
 
   if (collapsed) return null;
 

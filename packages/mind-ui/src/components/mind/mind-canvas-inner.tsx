@@ -388,7 +388,7 @@ export function MindCanvasInner({
     [focusEdgeInView, inspectorMinimized]
   );
 
-  const closeInspector = () => {
+  const closeInspector = useCallback(() => {
     setInspectorOpen(false);
     setInspectorMinimized(false);
     setRelatedViewOpen(false);
@@ -405,7 +405,15 @@ export function MindCanvasInner({
         edge.selected ? { ...edge, selected: false } : edge
       )
     );
-  };
+  }, []);
+
+  const submitInspectorSmartPrompt = useCallback(
+    (prompt: string) => {
+      closeInspector();
+      onSmartPrompt?.(prompt);
+    },
+    [closeInspector, onSmartPrompt]
+  );
 
   const updateNode = (nodeId: string, patch: Partial<MindNode>) => {
     markGraphEdited();
@@ -667,7 +675,7 @@ export function MindCanvasInner({
           }}
           onOpenRelatedView={() => setRelatedViewOpen(true)}
           onUpdateEdge={updateEdge}
-          onSmartPrompt={onSmartPrompt}
+          onSmartPrompt={submitInspectorSmartPrompt}
           onUpdateNode={updateNode}
         />
       ) : null}

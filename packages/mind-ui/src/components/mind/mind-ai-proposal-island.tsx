@@ -181,8 +181,11 @@ export function getLatestMindAiProposal(
         const patch = getMindAiPatchRecord(getToolOutput(part));
         if (patch && !patchIds.has(patch.id)) {
           patchIds.add(patch.id);
-          latestPatch = patchById.get(patch.id) ?? patch;
-          latestPatchId = `patch-${patch.id}`;
+          const resolvedPatch = patchById.get(patch.id) ?? patch;
+          if (resolvedPatch.status === 'draft') {
+            latestPatch = resolvedPatch;
+            latestPatchId = `patch-${patch.id}`;
+          }
         }
       }
     }
@@ -202,6 +205,10 @@ export function getLatestMindAiProposal(
     patch: latestPatch,
     visual: latestVisual,
   };
+}
+
+export function getMindAiProposalVisibilityKey(proposal: MindAiProposal) {
+  return proposal.patch ? `patch:${proposal.patch.id}` : proposal.id;
 }
 
 export function hasMindAiProposalPart(message: UIMessage) {

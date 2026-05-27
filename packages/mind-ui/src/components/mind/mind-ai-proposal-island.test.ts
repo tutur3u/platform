@@ -23,6 +23,22 @@ describe('Mind AI proposal consolidation', () => {
     });
   });
 
+  it('does not surface an already applied patch as the latest proposal', () => {
+    const message = proposalMessage();
+
+    const proposal = getLatestMindAiProposal(
+      [message],
+      [
+        patchRecord({
+          appliedAt: '2026-05-23T00:05:00.000Z',
+          status: 'applied',
+        }),
+      ]
+    );
+
+    expect(proposal).toBeNull();
+  });
+
   it('renders one artifact row for a plan followed by its draft patch', () => {
     const message = proposalMessage();
 
@@ -122,7 +138,9 @@ function failedPatchMessage(): UIMessage {
   } as unknown as UIMessage;
 }
 
-function patchRecord(): MindAiPatchRecord {
+function patchRecord(
+  patch: Partial<MindAiPatchRecord> = {}
+): MindAiPatchRecord {
   return {
     appliedAt: null,
     boardId: 'board-1',
@@ -150,6 +168,7 @@ function patchRecord(): MindAiPatchRecord {
     status: 'draft',
     summary: 'Break down yearly goals',
     threadId: 'thread-1',
+    ...patch,
   };
 }
 
