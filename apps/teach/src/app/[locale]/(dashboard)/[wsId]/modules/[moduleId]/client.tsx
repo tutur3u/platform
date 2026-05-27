@@ -23,11 +23,13 @@ import {
   Sparkles,
 } from '@tuturuuu/icons';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useCallback, useState } from 'react';
 import { CourseMembersPanel } from '@/components/teach-operations/course-members-panel';
 import { AiGenerateDialog } from './ai-generate-dialog';
 import { EmptyState, LoadingSkeleton } from './module-detail-components';
 import { ModuleGroupSection } from './module-group-section';
+import { ModuleStorageDialog } from './module-storage-dialog';
 import {
   type ModuleGroupWithModules,
   useModuleDetail,
@@ -58,6 +60,7 @@ export function ModuleDetailClient({
     renameModule,
     togglePublished,
   } = useModuleDetail(wsId, courseId);
+  const t = useTranslations();
 
   // Local optimistic group order for drag
   const [localGroups, setLocalGroups] = useState<
@@ -264,15 +267,16 @@ export function ModuleDetailClient({
                   type="button"
                 >
                   <Sparkles className="h-4 w-4" />
-                  Generate with AI
+                  {t('teachModules.aiGenerate.title')}
                 </button>
+                <ModuleStorageDialog courseId={courseId} wsId={wsId} />
                 <button
                   className="inline-flex items-center gap-2 border-2 border-border bg-primary px-4 py-2 font-bold text-primary-foreground text-sm shadow-[3px_3px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[4px_4px_0_var(--border)]"
                   onClick={() => setShowAddSection(true)}
                   type="button"
                 >
                   <Plus className="h-4 w-4" />
-                  Add section
+                  {t('teachModules.addSection')}
                 </button>
               </div>
             )}

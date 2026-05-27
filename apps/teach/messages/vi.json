@@ -140,6 +140,7 @@
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachModules": {
+    "addSection": "Thêm mục",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",
@@ -202,6 +203,24 @@
     "published": "Đã xuất bản",
     "remaining": "Còn lại",
     "reviewCourse": "Xem lại khóa học",
+    "storage": {
+      "actions": {
+        "close": "Đóng",
+        "refresh": "Tải lại"
+      },
+      "button": "Lưu trữ",
+      "description": "Xem các tệp và thư mục đã tải lên cho nhóm khóa học này.",
+      "empty": "Chưa có tệp nào được tải lên.",
+      "error": "Không tải được dữ liệu lưu trữ đã tải lên.",
+      "kinds": {
+        "file": "Tệp",
+        "folder": "Thư mục"
+      },
+      "loading": "Đang tải dữ liệu lưu trữ đã tải lên...",
+      "size": "Dung lượng",
+      "title": "Lưu trữ khóa học",
+      "updatedAt": "Cập nhật"
+    },
     "title": "Module khóa học",
     "totalModules": "tổng module",
     "unpublish": "Hủy xuất bản",

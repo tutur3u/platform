@@ -140,6 +140,7 @@
     "workspaceFallback": "Education workspace"
   },
   "teachModules": {
+    "addSection": "Add section",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",
@@ -202,6 +203,24 @@
     "published": "Published",
     "remaining": "Remaining",
     "reviewCourse": "Review course",
+    "storage": {
+      "actions": {
+        "close": "Close",
+        "refresh": "Refresh"
+      },
+      "button": "Storage",
+      "description": "View uploaded files and folders for this course group.",
+      "empty": "No uploaded files yet.",
+      "error": "Failed to load uploaded storage.",
+      "kinds": {
+        "file": "File",
+        "folder": "Folder"
+      },
+      "loading": "Loading uploaded storage...",
+      "size": "Size",
+      "title": "Course storage",
+      "updatedAt": "Updated"
+    },
     "title": "Course Modules",
     "totalModules": "total modules",
     "unpublish": "Unpublish",
