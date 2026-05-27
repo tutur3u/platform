@@ -27,6 +27,8 @@ Learn follows the same platform-login pattern: the learner app keeps `/verify-to
 
 Teach and Learn both hide locale prefixes from public and protected URLs. Legacy locale-prefixed paths such as `/vi/dashboard` redirect to the unprefixed canonical path while preserving the selected locale in `NEXT_LOCALE`.
 
+Teach proxy locale detection must sanitize `Accept-Language` before it reaches `intl-localematcher`. Wildcard or malformed locale tokens can throw a `RangeError` in the proxy and surface as a broken `/login` or protected course page even when the route itself still exists.
+
 Teach metadata and auth return URLs must resolve to absolute HTTP(S) app URLs. Prefer `TEACH_APP_URL` or `NEXT_PUBLIC_TEACH_APP_URL` for the Teach origin and `LEARN_APP_URL` or `NEXT_PUBLIC_LEARN_APP_URL` for Learn handoffs. A valid absolute `BASE_URL` can be used as a fallback for Teach, but non-URL environment values such as `development` are ignored so local development falls back to `https://teach.tuturuuu.localhost` through Portless.
 
 ## Visual direction
