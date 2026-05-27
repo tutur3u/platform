@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => {
-  const requireEducationWorkspaceAccess = vi.fn();
+  const requireTeachWorkspaceAccess = vi.fn();
 
   const quizzesBuilder: Record<string, any> = Promise.resolve({
     data: [
@@ -41,7 +41,7 @@ const mocks = vi.hoisted(() => {
   };
 
   return {
-    requireEducationWorkspaceAccess,
+    requireTeachWorkspaceAccess,
     quizzesBuilder,
     sessionSupabase,
   };
@@ -70,25 +70,25 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
-vi.mock('@/lib/education/access', () => ({
-  requireEducationWorkspaceAccess: (
-    ...args: Parameters<typeof mocks.requireEducationWorkspaceAccess>
-  ) => mocks.requireEducationWorkspaceAccess(...args),
+vi.mock('@/lib/teach/api', () => ({
+  requireTeachWorkspaceAccess: (
+    ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
+  ) => mocks.requireTeachWorkspaceAccess(...args),
 }));
 
 describe('workspace quizzes route', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
-    mocks.requireEducationWorkspaceAccess.mockResolvedValue({
+    mocks.requireTeachWorkspaceAccess.mockResolvedValue({
       normalizedWsId: '00000000-0000-0000-0000-000000000001',
       ok: true,
-      sbAdmin: {},
+      sbAdmin: mocks.sessionSupabase,
     });
   });
 
   it('returns 403 before disclosing answer keys when education access is denied', async () => {
-    mocks.requireEducationWorkspaceAccess.mockResolvedValue(
+    mocks.requireTeachWorkspaceAccess.mockResolvedValue(
       NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
