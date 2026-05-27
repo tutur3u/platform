@@ -466,6 +466,29 @@ export type FinanceChartRangeQuery = {
   startDate?: string | null;
 };
 
+export type FinanceOverviewMetricsView = 'date' | 'month' | 'year';
+
+export type FinanceOverviewMetricsQuery = FinanceChartRangeQuery & {
+  view?: FinanceOverviewMetricsView;
+};
+
+export interface FinanceOverviewMetrics {
+  categoryCount: number;
+  invoiceCount: number;
+  latestTransactionAt: string | null;
+  netTotal: number;
+  recentExpenseCount: number;
+  recentIncomeCount: number;
+  recentNetTotal: number;
+  recentTotalExpense: number;
+  recentTotalIncome: number;
+  recentTransactionCount: number;
+  totalExpense: number;
+  totalIncome: number;
+  transactionCount: number;
+  walletCount: number;
+}
+
 export type FinanceIncomeExpenseSummaryInterval = 'daily' | 'monthly';
 
 export type FinanceIncomeExpenseSummaryQuery = FinanceChartRangeQuery & {
@@ -1639,6 +1662,21 @@ export async function deleteRecurringTransaction(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/finance/recurring-transactions/${encodePathSegment(recurringTransactionId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getFinanceOverviewMetrics(
+  workspaceId: string,
+  query: FinanceOverviewMetricsQuery = {},
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<FinanceOverviewMetrics>(
+    `/api/workspaces/${encodePathSegment(workspaceId)}/finance/overview`,
+    {
+      query,
       cache: 'no-store',
     }
   );
