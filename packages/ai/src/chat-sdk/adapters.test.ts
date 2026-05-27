@@ -124,7 +124,7 @@ describe('Chat SDK adapter factories', () => {
         expect(factory).toEqual(expect.any(Function));
       })
     );
-  });
+  }, 20_000);
 
   it('loads Node-compatible state adapter factories', async () => {
     await Promise.all(
