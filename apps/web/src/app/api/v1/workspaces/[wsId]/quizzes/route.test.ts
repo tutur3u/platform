@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => {
+type RouteMocks = ReturnType<typeof createRouteMocks>;
+
+let mocks: RouteMocks;
+
+function createRouteMocks() {
   const requireTeachWorkspaceAccess = vi.fn();
 
   const quizzesBuilder: Record<string, any> = Promise.resolve({
@@ -69,7 +73,7 @@ const mocks = vi.hoisted(() => {
     updateQuizBuilder,
     workspaceQuizzesTable,
   };
-});
+}
 
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
@@ -102,8 +106,8 @@ vi.mock('@/lib/teach/api', () => ({
 
 describe('workspace quizzes route', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
+    mocks = createRouteMocks();
     mocks.requireTeachWorkspaceAccess.mockResolvedValue({
       normalizedWsId: '00000000-0000-0000-0000-000000000001',
       ok: true,

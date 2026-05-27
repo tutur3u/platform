@@ -9,6 +9,7 @@ ENV NODE_ENV=production
 COPY package.json bun.lock turbo.json ./
 COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js
 COPY packages/realtime/package.json ./packages/realtime/package.json
+COPY packages/typescript-config/package.json ./packages/typescript-config/package.json
 
 RUN --mount=type=cache,id=platform-meet-realtime-bun-install,target=/root/.bun/install/cache \
   bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted

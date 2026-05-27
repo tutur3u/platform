@@ -483,6 +483,7 @@
     "matching": "Matching",
     "matching_pairs": "Matching Pairs",
     "multiple_choice": "Multiple Choice",
+    "multiple_choice_min_options": "Add at least two non-empty options before saving.",
     "order": "Order",
     "ordering": "Ordering",
     "ordering_items": "Ordering Items",

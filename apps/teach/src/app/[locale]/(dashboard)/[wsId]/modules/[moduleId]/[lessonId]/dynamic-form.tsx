@@ -87,6 +87,9 @@ export default function DynamicQuizForm({
         const normalizedOptions = mcOptions
           .map((value, index) => ({ index, value: value.trim() }))
           .filter((option) => option.value.length > 0);
+        if (normalizedOptions.length < 2) {
+          throw new Error(t('ws-quizzes.multiple_choice_min_options'));
+        }
         const remappedIndex = normalizedOptions.findIndex(
           (option) => option.index === mcAnswer
         );

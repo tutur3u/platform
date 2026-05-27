@@ -29,6 +29,11 @@ type MultipleChoiceOptionView = {
   value: string;
 };
 
+type ContentMultipleChoiceOption = {
+  index: number;
+  value: string;
+};
+
 function getLegacyMultipleChoiceData(quiz: any) {
   if (quiz?.type && quiz.type !== 'multiple_choice') return {};
   if (!quiz?.quiz_options?.length) return {};
@@ -46,14 +51,22 @@ function getLegacyMultipleChoiceData(quiz: any) {
 }
 
 function getMultipleChoiceOptions(quiz: any): MultipleChoiceOptionView[] {
-  const contentOptions = Array.isArray(quiz?.content?.options)
-    ? quiz.content.options.filter(
-        (option: unknown) => typeof option === 'string'
-      )
+  const contentOptions: ContentMultipleChoiceOption[] = Array.isArray(
+    quiz?.content?.options
+  )
+    ? quiz.content.options
+        .map((option: unknown, index: number) =>
+          typeof option === 'string' ? { index, value: option } : null
+        )
+        .filter(
+          (
+            option: ContentMultipleChoiceOption | null
+          ): option is ContentMultipleChoiceOption => option != null
+        )
     : [];
 
   if (contentOptions.length > 0) {
-    return contentOptions.map((value: string, index: number) => ({
+    return contentOptions.map(({ index, value }) => ({
       explanation: null,
       id: `content-${index}`,
       isCorrect: quiz?.answer?.correctIndex === index,

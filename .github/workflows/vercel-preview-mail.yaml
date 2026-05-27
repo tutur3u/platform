@@ -27,16 +27,17 @@ jobs:
       deployments: write
     steps:
       - name: Check out code
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Check for newer commits
         id: check_commits
         run: |
           CURRENT_BRANCH=${GITHUB_REF#refs/heads/}
-          git fetch origin $CURRENT_BRANCH || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
-          LATEST_COMMIT=$(git rev-parse origin/$CURRENT_BRANCH 2>/dev/null || echo "")
+          git fetch origin "${CURRENT_BRANCH}" || { echo "Remote branch not found, continuing with build"; echo "skip_build=false" >> $GITHUB_OUTPUT; exit 0; }
+          LATEST_COMMIT=$(git rev-parse "origin/${CURRENT_BRANCH}" 2>/dev/null || echo "")
           CURRENT_COMMIT=${GITHUB_SHA}
           if [ -n "$LATEST_COMMIT" ] && [ "$LATEST_COMMIT" != "$CURRENT_COMMIT" ]; then
             echo "Newer commit found on $CURRENT_BRANCH branch. Skipping build."
@@ -48,13 +49,13 @@ jobs:
 
       - name: Setup bun
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: oven-sh/setup-bun@v2
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6
         with:
           bun-version: latest
 
       - name: Use Node.js 24
         if: steps.check_commits.outputs.skip_build != 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e
         with:
           node-version: 24
 
@@ -87,6 +88,13 @@ jobs:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MAIL_PROJECT_ID }}
         run: vercel build --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy Project Artifacts to Vercel
+        if: steps.check_commits.outputs.skip_build != 'true'
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_MAIL_PROJECT_ID }}
+        run: vercel deploy --archive=tgz --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
 
       - name: Record successful Vercel deployment marker
         if: steps.check_commits.outputs.skip_build != 'true'

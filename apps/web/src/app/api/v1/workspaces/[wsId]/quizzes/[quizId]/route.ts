@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
@@ -87,7 +88,11 @@ export const PUT = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to update workspace quiz', error);
+      serverLogger.error('Failed to update workspace quiz', {
+        error,
+        quizId: parsedParams.data.quizId,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error updating workspace quiz' },
         { status: 500 }
@@ -105,7 +110,11 @@ export const PUT = withSessionAuth(
         .eq('quiz_id', parsedParams.data.quizId);
 
       if (deleteOptionsError) {
-        console.error('Failed to reset quiz options', deleteOptionsError);
+        serverLogger.error('Failed to reset quiz options', {
+          error: deleteOptionsError,
+          quizId: parsedParams.data.quizId,
+          wsId: access.normalizedWsId,
+        });
         return NextResponse.json(
           { message: 'Error updating workspace quiz options' },
           { status: 500 }
@@ -125,7 +134,11 @@ export const PUT = withSessionAuth(
           );
 
         if (insertOptionsError) {
-          console.error('Failed to insert quiz options', insertOptionsError);
+          serverLogger.error('Failed to insert quiz options', {
+            error: insertOptionsError,
+            quizId: parsedParams.data.quizId,
+            wsId: access.normalizedWsId,
+          });
           return NextResponse.json(
             { message: 'Error updating workspace quiz options' },
             { status: 500 }
@@ -174,7 +187,11 @@ export const DELETE = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to delete workspace quiz', error);
+      serverLogger.error('Failed to delete workspace quiz', {
+        error,
+        quizId: parsedParams.data.quizId,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error deleting workspace quiz' },
         { status: 500 }

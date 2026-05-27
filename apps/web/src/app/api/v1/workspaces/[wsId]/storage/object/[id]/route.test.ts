@@ -3,14 +3,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const VALID_OBJECT_ID = '00000000-0000-0000-0000-000000000111';
 
-const mocks = vi.hoisted(() => ({
-  canAccessFinanceTransactionStoragePath: vi.fn(),
-  createDynamicAdminClient: vi.fn(),
-  logWorkspaceStorageRouteError: vi.fn(),
-  objectQuery: undefined as any,
-  resolveWorkspaceStorageRouteAuth: vi.fn(),
-  storageObjectResult: undefined as any,
-}));
+type RouteMocks = ReturnType<typeof createRouteMocks>;
+
+let mocks: RouteMocks;
+
+function createRouteMocks() {
+  return {
+    canAccessFinanceTransactionStoragePath: vi.fn(),
+    createDynamicAdminClient: vi.fn(),
+    logWorkspaceStorageRouteError: vi.fn(),
+    objectQuery: undefined as any,
+    resolveWorkspaceStorageRouteAuth: vi.fn(),
+    storageObjectResult: undefined as any,
+  };
+}
 
 vi.mock('@tuturuuu/supabase/next/server', () => ({
   createDynamicAdminClient: (
@@ -58,8 +64,8 @@ function createObjectQuery() {
 
 describe('workspace storage object by id route', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
+    mocks = createRouteMocks();
 
     mocks.objectQuery = createObjectQuery();
     mocks.storageObjectResult = {

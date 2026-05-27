@@ -16630,6 +16630,7 @@
     "matching": "Ghép đôi",
     "matching_pairs": "Các cặp ghép đôi",
     "multiple_choice": "Trắc nghiệm nhiều lựa chọn",
+    "multiple_choice_min_options": "Vui lòng thêm ít nhất hai lựa chọn không trống trước khi lưu.",
     "order": "Thứ tự",
     "ordering": "Sắp xếp thứ tự",
     "ordering_items": "Các mục sắp xếp",

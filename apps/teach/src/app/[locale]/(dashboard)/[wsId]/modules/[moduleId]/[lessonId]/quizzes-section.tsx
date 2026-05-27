@@ -68,7 +68,7 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
 
       {isLoading ? (
         <p className="text-muted-foreground text-sm">{t('common.loading')}</p>
-      ) : isError ? (
+      ) : isError && quizzes.length === 0 ? (
         <p className="text-muted-foreground text-sm">
           {t('ws-quizzes.load_error')}
         </p>
@@ -79,9 +79,16 @@ export default function LessonQuizzesSection({ wsId, lessonId }: Props) {
           </p>
         )
       ) : (
-        <div className="grid gap-4 md:grid-cols-2">
-          <ClientQuizzes wsId={wsId} moduleId={lessonId} quizzes={quizzes} />
-        </div>
+        <>
+          {isError && (
+            <p className="text-muted-foreground text-sm">
+              {t('ws-quizzes.load_error')}
+            </p>
+          )}
+          <div className="grid gap-4 md:grid-cols-2">
+            <ClientQuizzes wsId={wsId} moduleId={lessonId} quizzes={quizzes} />
+          </div>
+        </>
       )}
     </section>
   );

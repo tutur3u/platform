@@ -46,6 +46,10 @@ Both workflows are registered in `tuturuuu.ts` and use the shared
 plus `VERCEL_MAIL_PROJECT_ID`; production Supabase and SES values should live in
 the Vercel project environment rather than GitHub Actions.
 
+The preview workflow builds and deploys prebuilt artifacts through Vercel CLI.
+The production workflow also uses workflow concurrency so stale production runs
+are canceled instead of deploying after a newer production commit is pushed.
+
 Deployment credentials must stay environment-scoped in GitHub Actions. The
 preview job is bound to the `vercel-preview-mail` GitHub Environment, and the
 production job is bound to `vercel-production-mail`. Store `VERCEL_TOKEN`,
