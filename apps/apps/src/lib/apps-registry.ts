@@ -105,6 +105,15 @@ export const GATEWAY_APPS = [
     title: 'Learn',
   },
   {
+    appRoot: 'apps/mail',
+    category: 'productivity',
+    packageName: '@tuturuuu/mail',
+    portlessApp: 'mail',
+    productionUrl: 'https://mail.tuturuuu.com',
+    slug: 'mail',
+    title: 'Mail',
+  },
+  {
     appRoot: 'apps/meet',
     category: 'productivity',
     packageName: '@tuturuuu/meet',

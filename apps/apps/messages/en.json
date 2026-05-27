@@ -25,6 +25,9 @@
       "learn": {
         "description": "Learner dashboards, courses, and education experiences."
       },
+      "mail": {
+        "description": "Team mailboxes for exact @tuturuuu.com accounts."
+      },
       "meet": {
         "description": "Meeting coordination and shared availability."
       },

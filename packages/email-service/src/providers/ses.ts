@@ -44,6 +44,37 @@ function sanitizeFilename(value: string) {
   return sanitizeHeaderValue(value).replaceAll(/["\\]/g, '_');
 }
 
+const RESERVED_CUSTOM_HEADERS = new Set([
+  'bcc',
+  'cc',
+  'content-transfer-encoding',
+  'content-type',
+  'from',
+  'mime-version',
+  'reply-to',
+  'subject',
+  'to',
+]);
+
+function sanitizeHeaderName(value: string) {
+  const trimmed = value.trim();
+  return /^[A-Za-z0-9-]+$/u.test(trimmed) ? trimmed : null;
+}
+
+function buildCustomHeaderLines(headers: Record<string, string> | undefined) {
+  if (!headers) return [];
+
+  return Object.entries(headers).flatMap(([name, value]) => {
+    const headerName = sanitizeHeaderName(name);
+    if (!headerName || RESERVED_CUSTOM_HEADERS.has(headerName.toLowerCase())) {
+      return [];
+    }
+
+    const headerValue = sanitizeHeaderValue(value);
+    return headerValue ? [`${headerName}: ${headerValue}`] : [];
+  });
+}
+
 function buildTextPart({
   boundary,
   content,
@@ -107,6 +138,7 @@ function buildRawMimeMessage({
       ? `Reply-To: ${params.content.replyTo.map(sanitizeHeaderValue).join(', ')}`
       : null,
     `Subject: ${encodeMimeHeader(params.content.subject)}`,
+    ...buildCustomHeaderLines(params.content.headers),
     'MIME-Version: 1.0',
     `Content-Type: multipart/mixed; boundary="${mixedBoundary}"`,
   ].filter(Boolean);
@@ -172,7 +204,10 @@ export class SESEmailProvider extends BaseEmailProvider {
       const plainText =
         params.content.text || this.htmlToPlainText(params.content.html);
 
-      if (params.content.attachments?.length) {
+      if (
+        params.content.attachments?.length ||
+        Object.keys(params.content.headers ?? {}).length > 0
+      ) {
         const rawMessage = buildRawMimeMessage({
           html: sanitizedHtml,
           params,

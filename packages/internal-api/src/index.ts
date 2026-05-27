@@ -586,7 +586,7 @@ export {
   updateInventoryBundle,
   updateInventoryStorefront,
 } from './inventory';
-export { listWorkspaceEmails } from './mail';
+export * from './mail';
 export {
   applyMindAiPatch,
   archiveMindBoard,

@@ -115,6 +115,17 @@ export const emailContentSchema = z
       .max(10 * 1024 * 1024, 'Text content too large (max 10MB)')
       .optional(),
     replyTo: emailArraySchema.optional(),
+    headers: z
+      .record(
+        z.string().regex(/^[A-Za-z0-9-]+$/, 'Invalid email header name'),
+        z
+          .string()
+          .max(4096, 'Email header value too long')
+          .refine((value) => !/[\r\n]/u.test(value), {
+            message: 'Email header values cannot contain newlines',
+          })
+      )
+      .optional(),
     attachments: z
       .array(emailAttachmentSchema)
       .max(

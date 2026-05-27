@@ -111,6 +111,7 @@
                   "platform/applications/drive",
                   "platform/applications/finance",
                   "platform/applications/inventory",
+                  "platform/applications/mail",
                   "platform/applications/shiraoki",
                   "platform/applications/nova",
                   "platform/applications/qr",

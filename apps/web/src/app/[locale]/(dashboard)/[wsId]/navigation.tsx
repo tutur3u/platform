@@ -110,6 +110,7 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import {
   getPermissions,
   getSecret,
@@ -123,6 +124,7 @@ import { DEV_MODE } from '@/constants/common';
 import { createTierRequirement } from '@/lib/feature-tiers';
 import { HABITS_ENABLED_SECRET } from '@/lib/habits/access';
 import { resolveWebHiveAccess } from '@/lib/hive-page-context';
+import { getMailAppOrigin } from '@/lib/mail-app-url';
 import { getQrAppOrigin } from '@/lib/qr-app-url';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 
@@ -158,6 +160,8 @@ export async function WorkspaceNavigationLinks({
     'true'
   );
   const qrAppHref = getQrAppOrigin();
+  const isMailUser = isExactTuturuuuDotComEmail(user?.email);
+  const mailAppHref = `${getMailAppOrigin()}/${personalOrWsId}`;
 
   // Parallelize user-dependent queries
   const [
@@ -1127,48 +1131,48 @@ export async function WorkspaceNavigationLinks({
         {
           id: 'mail',
           title: t('sidebar_tabs.mail'),
-          href: `/${personalOrWsId}/mail`,
+          href: mailAppHref,
           icon: <Mail className="h-5 w-5" />,
           requireRootMember: true,
-          disabled: !isPersonal,
+          disabled: !isMailUser,
           experimental: 'beta',
           preferenceSectionLabel: sidebarSections.utilities,
           children: [
             {
               title: t('mail.inbox'),
+              href: mailAppHref,
               icon: <Mail className="h-5 w-5" />,
-              disabled: !isPersonal,
-              tempDisabled: true,
+              disabled: !isMailUser,
             },
             {
               title: t('mail.starred'),
+              href: `${mailAppHref}?folder=starred`,
               icon: <Star className="h-5 w-5" />,
-              disabled: !isPersonal,
-              tempDisabled: true,
+              disabled: !isMailUser,
             },
             {
               title: t('mail.sent'),
-              href: `/${personalOrWsId}/mail/sent`,
+              href: `${mailAppHref}?folder=sent`,
               icon: <Send className="h-5 w-5" />,
-              disabled: !isPersonal,
+              disabled: !isMailUser,
             },
             {
               title: t('mail.drafts'),
+              href: `${mailAppHref}?folder=drafts`,
               icon: <TextSelect className="h-5 w-5" />,
-              disabled: !isPersonal,
-              tempDisabled: true,
+              disabled: !isMailUser,
             },
             {
               title: t('mail.spam'),
+              href: `${mailAppHref}?folder=spam`,
               icon: <TriangleAlert className="h-5 w-5" />,
-              disabled: !isPersonal,
-              tempDisabled: true,
+              disabled: !isMailUser,
             },
             {
               title: t('mail.trash'),
+              href: `${mailAppHref}?folder=trash`,
               icon: <Trash className="h-5 w-5" />,
-              disabled: !isPersonal,
-              tempDisabled: true,
+              disabled: !isMailUser,
             },
           ],
         },

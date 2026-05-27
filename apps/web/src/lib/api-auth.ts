@@ -157,6 +157,7 @@ const ALL_SATELLITE_APP_SESSION_TARGETS = [
   'hive',
   'inventory',
   'learn',
+  'mail',
   'mind',
   'mira',
   'nova',
@@ -206,6 +207,10 @@ const APP_SESSION_ROUTE_AUDIENCE_RULES: readonly {
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/inventory(?:\/|$)/u,
     targetApp: 'inventory',
+  },
+  {
+    pattern: /^\/api\/v1\/workspaces\/[^/]+\/mail(?:\/|$)/u,
+    targetApp: 'mail',
   },
   {
     pattern: /^\/api\/v1\/workspaces\/[^/]+\/mind(?:\/|$)/u,

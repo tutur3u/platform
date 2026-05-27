@@ -19,6 +19,7 @@ COPY apps/finance/package.json ./apps/finance/package.json
 COPY apps/hive/package.json ./apps/hive/package.json
 COPY apps/hive-realtime/package.json ./apps/hive-realtime/package.json
 COPY apps/inventory/package.json ./apps/inventory/package.json
+COPY apps/mail/package.json ./apps/mail/package.json
 COPY apps/meet/package.json ./apps/meet/package.json
 COPY apps/mind/package.json ./apps/mind/package.json
 COPY apps/mobile/package.json ./apps/mobile/package.json

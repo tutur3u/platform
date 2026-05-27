@@ -731,6 +731,7 @@ describe('withSessionAuth', () => {
         'hive',
         'inventory',
         'learn',
+        'mail',
         'mind',
         'mira',
         'nova',
@@ -754,6 +755,7 @@ describe('withSessionAuth', () => {
         'hive',
         'inventory',
         'learn',
+        'mail',
         'mind',
         'mira',
         'nova',
@@ -768,6 +770,11 @@ describe('withSessionAuth', () => {
         'http://localhost:3000/api/v1/workspaces/ws-1/chat/conversations'
       )
     ).toEqual({ targetApp: 'chat' });
+    expect(
+      getDefaultAppSessionVerificationOptions(
+        'http://localhost:3000/api/v1/workspaces/ws-1/mail/bootstrap'
+      )
+    ).toEqual({ targetApp: 'mail' });
   });
 
   it('should accept Inventory app-session auth for current-user bootstrap APIs', async () => {

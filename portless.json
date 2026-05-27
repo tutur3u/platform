@@ -44,6 +44,10 @@
       "name": "learn.tuturuuu",
       "script": "dev:app"
     },
+    "apps/mail": {
+      "name": "mail.tuturuuu",
+      "script": "dev:app"
+    },
     "apps/meet": {
       "name": "meet.tuturuuu",
       "script": "dev:app"

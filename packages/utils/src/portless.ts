@@ -17,6 +17,7 @@ export const TUTURUUU_PORTLESS_APP_ORIGINS = {
   'hive-realtime': `https://realtime.hive.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   inventory: `https://inventory.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   learn: `https://learn.${TUTURUUU_PORTLESS_ROOT_HOST}`,
+  mail: `https://mail.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   meet: `https://meet.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   mind: `https://mind.${TUTURUUU_PORTLESS_ROOT_HOST}`,
   nova: `https://nova.${TUTURUUU_PORTLESS_ROOT_HOST}`,

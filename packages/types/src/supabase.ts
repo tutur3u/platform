@@ -149,6 +149,326 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_audit_events: {
+        Row: {
+          actor_id: string | null;
+          conversation_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          metadata: Json;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          metadata?: Json;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          conversation_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          metadata?: Json;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_audit_events_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_conversation_ai_settings: {
+        Row: {
+          auto_reply: boolean;
+          conversation_id: string;
+          created_at: string;
+          enabled: boolean;
+          metadata: Json;
+          model_id: string | null;
+          system_prompt: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          auto_reply?: boolean;
+          conversation_id: string;
+          created_at?: string;
+          enabled?: boolean;
+          metadata?: Json;
+          model_id?: string | null;
+          system_prompt?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          auto_reply?: boolean;
+          conversation_id?: string;
+          created_at?: string;
+          enabled?: boolean;
+          metadata?: Json;
+          model_id?: string | null;
+          system_prompt?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_conversation_ai_settings_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: true;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_conversation_members: {
+        Row: {
+          archived_at: string | null;
+          conversation_id: string;
+          id: string;
+          joined_at: string;
+          last_read_at: string | null;
+          last_seen_message_id: string | null;
+          metadata: Json;
+          muted_at: string | null;
+          pinned_at: string | null;
+          role: string;
+          user_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          conversation_id: string;
+          id?: string;
+          joined_at?: string;
+          last_read_at?: string | null;
+          last_seen_message_id?: string | null;
+          metadata?: Json;
+          muted_at?: string | null;
+          pinned_at?: string | null;
+          role?: string;
+          user_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          conversation_id?: string;
+          id?: string;
+          joined_at?: string;
+          last_read_at?: string | null;
+          last_seen_message_id?: string | null;
+          metadata?: Json;
+          muted_at?: string | null;
+          pinned_at?: string | null;
+          role?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_conversation_members_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_conversations: {
+        Row: {
+          ai_enabled: boolean;
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          description: string | null;
+          direct_key: string | null;
+          id: string;
+          metadata: Json;
+          title: string | null;
+          type: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          ai_enabled?: boolean;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          direct_key?: string | null;
+          id?: string;
+          metadata?: Json;
+          title?: string | null;
+          type?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          ai_enabled?: boolean;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string | null;
+          direct_key?: string | null;
+          id?: string;
+          metadata?: Json;
+          title?: string | null;
+          type?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      chat_message_attachments: {
+        Row: {
+          content_type: string | null;
+          conversation_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          filename: string;
+          full_path: string | null;
+          id: string;
+          message_id: string | null;
+          metadata: Json;
+          size_bytes: number | null;
+          storage_path: string;
+          uploader_id: string | null;
+        };
+        Insert: {
+          content_type?: string | null;
+          conversation_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename: string;
+          full_path?: string | null;
+          id?: string;
+          message_id?: string | null;
+          metadata?: Json;
+          size_bytes?: number | null;
+          storage_path: string;
+          uploader_id?: string | null;
+        };
+        Update: {
+          content_type?: string | null;
+          conversation_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          filename?: string;
+          full_path?: string | null;
+          id?: string;
+          message_id?: string | null;
+          metadata?: Json;
+          size_bytes?: number | null;
+          storage_path?: string;
+          uploader_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_attachments_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'chat_message_attachments_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_message_reactions: {
+        Row: {
+          created_at: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          emoji: string;
+          message_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          emoji?: string;
+          message_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_message_reactions_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      chat_messages: {
+        Row: {
+          content: string;
+          conversation_id: string;
+          created_at: string;
+          deleted_at: string | null;
+          edited_at: string | null;
+          id: string;
+          kind: string;
+          metadata: Json;
+          reply_to_message_id: string | null;
+          sender_id: string | null;
+          updated_at: string | null;
+        };
+        Insert: {
+          content?: string;
+          conversation_id: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          kind?: string;
+          metadata?: Json;
+          reply_to_message_id?: string | null;
+          sender_id?: string | null;
+          updated_at?: string | null;
+        };
+        Update: {
+          content?: string;
+          conversation_id?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          edited_at?: string | null;
+          id?: string;
+          kind?: string;
+          metadata?: Json;
+          reply_to_message_id?: string | null;
+          sender_id?: string | null;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'chat_messages_conversation_id_fkey';
+            columns: ['conversation_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_conversations';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'chat_messages_reply_to_message_id_fkey';
+            columns: ['reply_to_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'chat_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       cross_app_tokens: {
         Row: {
           created_at: string;
@@ -787,6 +1107,690 @@ export type Database = {
           ws_id?: string;
         };
         Relationships: [];
+      };
+      mail_attachments: {
+        Row: {
+          content_id: string | null;
+          content_type: string;
+          created_at: string;
+          disposition: string;
+          filename: string;
+          id: string;
+          message_id: string;
+          metadata: Json;
+          raw_message_id: string | null;
+          sha256: string | null;
+          size_bytes: number;
+          storage_bucket: string | null;
+          storage_key: string | null;
+        };
+        Insert: {
+          content_id?: string | null;
+          content_type?: string;
+          created_at?: string;
+          disposition?: string;
+          filename: string;
+          id?: string;
+          message_id: string;
+          metadata?: Json;
+          raw_message_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_bucket?: string | null;
+          storage_key?: string | null;
+        };
+        Update: {
+          content_id?: string | null;
+          content_type?: string;
+          created_at?: string;
+          disposition?: string;
+          filename?: string;
+          id?: string;
+          message_id?: string;
+          metadata?: Json;
+          raw_message_id?: string | null;
+          sha256?: string | null;
+          size_bytes?: number;
+          storage_bucket?: string | null;
+          storage_key?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_attachments_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_attachments_raw_message_id_fkey';
+            columns: ['raw_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_raw_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_events: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          mailbox_id: string | null;
+          message_id: string | null;
+          payload: Json;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          mailbox_id?: string | null;
+          message_id?: string | null;
+          payload?: Json;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          mailbox_id?: string | null;
+          message_id?: string | null;
+          payload?: Json;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_events_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_events_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_inbound_jobs: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          payload: Json;
+          processed_at: string | null;
+          provider: string;
+          provider_message_id: string;
+          receipt_recipients: string[];
+          s3_bucket: string | null;
+          s3_key: string | null;
+          sns_topic_arn: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          payload?: Json;
+          processed_at?: string | null;
+          provider?: string;
+          provider_message_id: string;
+          receipt_recipients?: string[];
+          s3_bucket?: string | null;
+          s3_key?: string | null;
+          sns_topic_arn?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          payload?: Json;
+          processed_at?: string | null;
+          provider?: string;
+          provider_message_id?: string;
+          receipt_recipients?: string[];
+          s3_bucket?: string | null;
+          s3_key?: string | null;
+          sns_topic_arn?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      mail_labels: {
+        Row: {
+          color: string | null;
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          mailbox_id: string;
+          name: string;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          color?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          mailbox_id: string;
+          name: string;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          color?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          mailbox_id?: string;
+          name?: string;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_labels_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_mailbox_members: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          mailbox_id: string;
+          role: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          mailbox_id: string;
+          role?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          mailbox_id?: string;
+          role?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_mailbox_members_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_mailboxes: {
+        Row: {
+          address: string;
+          archived_at: string | null;
+          created_at: string;
+          created_by: string | null;
+          display_name: string;
+          id: string;
+          metadata: Json;
+          status: string;
+          type: string;
+          updated_at: string;
+        };
+        Insert: {
+          address: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          display_name?: string;
+          id?: string;
+          metadata?: Json;
+          status?: string;
+          type?: string;
+          updated_at?: string;
+        };
+        Update: {
+          address?: string;
+          archived_at?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          display_name?: string;
+          id?: string;
+          metadata?: Json;
+          status?: string;
+          type?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      mail_message_labels: {
+        Row: {
+          created_at: string;
+          label_id: string;
+          message_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          label_id: string;
+          message_id: string;
+        };
+        Update: {
+          created_at?: string;
+          label_id?: string;
+          message_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_message_labels_label_id_fkey';
+            columns: ['label_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_labels';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_message_labels_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_message_user_state: {
+        Row: {
+          archived_at: string | null;
+          created_at: string;
+          mailbox_id: string;
+          message_id: string;
+          metadata: Json;
+          read_at: string | null;
+          snoozed_until: string | null;
+          starred_at: string | null;
+          trashed_at: string | null;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          archived_at?: string | null;
+          created_at?: string;
+          mailbox_id: string;
+          message_id: string;
+          metadata?: Json;
+          read_at?: string | null;
+          snoozed_until?: string | null;
+          starred_at?: string | null;
+          trashed_at?: string | null;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          archived_at?: string | null;
+          created_at?: string;
+          mailbox_id?: string;
+          message_id?: string;
+          metadata?: Json;
+          read_at?: string | null;
+          snoozed_until?: string | null;
+          starred_at?: string | null;
+          trashed_at?: string | null;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_message_user_state_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_message_user_state_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_messages: {
+        Row: {
+          body_html: string | null;
+          body_text: string | null;
+          created_at: string;
+          created_by: string | null;
+          direction: string;
+          from_address: string;
+          from_name: string | null;
+          has_attachments: boolean;
+          id: string;
+          in_reply_to: string | null;
+          internet_message_id: string | null;
+          mailbox_id: string;
+          metadata: Json;
+          provider: string;
+          provider_message_id: string | null;
+          raw_message_id: string | null;
+          received_at: string | null;
+          references_headers: string[];
+          sanitized_html: string | null;
+          sent_at: string | null;
+          size_bytes: number | null;
+          snippet: string | null;
+          status: string;
+          subject: string;
+          thread_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          body_html?: string | null;
+          body_text?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          direction: string;
+          from_address: string;
+          from_name?: string | null;
+          has_attachments?: boolean;
+          id?: string;
+          in_reply_to?: string | null;
+          internet_message_id?: string | null;
+          mailbox_id: string;
+          metadata?: Json;
+          provider?: string;
+          provider_message_id?: string | null;
+          raw_message_id?: string | null;
+          received_at?: string | null;
+          references_headers?: string[];
+          sanitized_html?: string | null;
+          sent_at?: string | null;
+          size_bytes?: number | null;
+          snippet?: string | null;
+          status?: string;
+          subject?: string;
+          thread_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          body_html?: string | null;
+          body_text?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          direction?: string;
+          from_address?: string;
+          from_name?: string | null;
+          has_attachments?: boolean;
+          id?: string;
+          in_reply_to?: string | null;
+          internet_message_id?: string | null;
+          mailbox_id?: string;
+          metadata?: Json;
+          provider?: string;
+          provider_message_id?: string | null;
+          raw_message_id?: string | null;
+          received_at?: string | null;
+          references_headers?: string[];
+          sanitized_html?: string | null;
+          sent_at?: string | null;
+          size_bytes?: number | null;
+          snippet?: string | null;
+          status?: string;
+          subject?: string;
+          thread_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_messages_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_messages_raw_message_id_fkey';
+            columns: ['raw_message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_raw_messages';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_outbound_jobs: {
+        Row: {
+          attempts: number;
+          created_at: string;
+          error_message: string | null;
+          id: string;
+          mailbox_id: string;
+          message_id: string;
+          provider: string;
+          provider_message_id: string | null;
+          queued_at: string;
+          recipients: Json;
+          sent_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          attempts?: number;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          mailbox_id: string;
+          message_id: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          queued_at?: string;
+          recipients?: Json;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          attempts?: number;
+          created_at?: string;
+          error_message?: string | null;
+          id?: string;
+          mailbox_id?: string;
+          message_id?: string;
+          provider?: string;
+          provider_message_id?: string | null;
+          queued_at?: string;
+          recipients?: Json;
+          sent_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_outbound_jobs_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'mail_outbound_jobs_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_raw_messages: {
+        Row: {
+          created_at: string;
+          dkim_verdict: string | null;
+          dmarc_verdict: string | null;
+          id: string;
+          provider: string;
+          provider_message_id: string;
+          provider_payload: Json;
+          raw_headers: Json;
+          s3_bucket: string | null;
+          s3_key: string | null;
+          sha256: string | null;
+          size_bytes: number | null;
+          spam_verdict: string | null;
+          spf_verdict: string | null;
+          status: string;
+          virus_verdict: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          dkim_verdict?: string | null;
+          dmarc_verdict?: string | null;
+          id?: string;
+          provider?: string;
+          provider_message_id: string;
+          provider_payload?: Json;
+          raw_headers?: Json;
+          s3_bucket?: string | null;
+          s3_key?: string | null;
+          sha256?: string | null;
+          size_bytes?: number | null;
+          spam_verdict?: string | null;
+          spf_verdict?: string | null;
+          status?: string;
+          virus_verdict?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          dkim_verdict?: string | null;
+          dmarc_verdict?: string | null;
+          id?: string;
+          provider?: string;
+          provider_message_id?: string;
+          provider_payload?: Json;
+          raw_headers?: Json;
+          s3_bucket?: string | null;
+          s3_key?: string | null;
+          sha256?: string | null;
+          size_bytes?: number | null;
+          spam_verdict?: string | null;
+          spf_verdict?: string | null;
+          status?: string;
+          virus_verdict?: string | null;
+        };
+        Relationships: [];
+      };
+      mail_recipients: {
+        Row: {
+          address: string;
+          created_at: string;
+          display_name: string | null;
+          id: string;
+          kind: string;
+          message_id: string;
+        };
+        Insert: {
+          address: string;
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          kind: string;
+          message_id: string;
+        };
+        Update: {
+          address?: string;
+          created_at?: string;
+          display_name?: string | null;
+          id?: string;
+          kind?: string;
+          message_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_recipients_message_id_fkey';
+            columns: ['message_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_messages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      mail_threads: {
+        Row: {
+          created_at: string;
+          id: string;
+          last_message_at: string | null;
+          mailbox_id: string;
+          message_count: number;
+          metadata: Json;
+          normalized_subject: string;
+          status: string;
+          subject: string;
+          unread_count: number;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string | null;
+          mailbox_id: string;
+          message_count?: number;
+          metadata?: Json;
+          normalized_subject?: string;
+          status?: string;
+          subject?: string;
+          unread_count?: number;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          last_message_at?: string | null;
+          mailbox_id?: string;
+          message_count?: number;
+          metadata?: Json;
+          normalized_subject?: string;
+          status?: string;
+          subject?: string;
+          unread_count?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'mail_threads_mailbox_id_fkey';
+            columns: ['mailbox_id'];
+            isOneToOne: false;
+            referencedRelation: 'mail_mailboxes';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       mind_ai_messages: {
         Row: {
@@ -1938,6 +2942,172 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_actor_can_access_conversation: {
+        Args: { p_actor_user_id: string; p_conversation_id: string };
+        Returns: boolean;
+      };
+      chat_assert_workspace_member: {
+        Args: { p_user_id: string; p_ws_id: string };
+        Returns: undefined;
+      };
+      chat_assert_workspace_permission: {
+        Args: {
+          p_actor_user_id: string;
+          p_permission: string;
+          p_ws_id: string;
+        };
+        Returns: undefined;
+      };
+      chat_attachment_json: {
+        Args: {
+          a: Database['private']['Tables']['chat_message_attachments']['Row'];
+        };
+        Returns: Json;
+      };
+      chat_conversation_json: {
+        Args: { p_actor_user_id: string; p_conversation_id: string };
+        Returns: Json;
+      };
+      chat_create_conversation: {
+        Args: { p_actor_user_id: string; p_input: Json; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_delete_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_edit_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_content: string;
+          p_conversation_id: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_finalize_attachment: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_payload: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_get_attachment: {
+        Args: {
+          p_actor_user_id: string;
+          p_attachment_id: string;
+          p_conversation_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_get_conversation: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_list_conversations: {
+        Args: { p_actor_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_list_messages: {
+        Args: {
+          p_actor_user_id: string;
+          p_before?: string;
+          p_conversation_id: string;
+          p_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_member_profile_json: {
+        Args: { p_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_message_json: {
+        Args: { m: Database['private']['Tables']['chat_messages']['Row'] };
+        Returns: Json;
+      };
+      chat_persist_ai_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_content: string;
+          p_conversation_id: string;
+          p_metadata?: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_prepare_attachment: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_filename: string;
+          p_size_bytes?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_search_directory: {
+        Args: {
+          p_actor_user_id: string;
+          p_limit?: number;
+          p_query?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_search_messages: {
+        Args: {
+          p_actor_user_id: string;
+          p_limit?: number;
+          p_query: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_send_message: {
+        Args: {
+          p_actor_user_id: string;
+          p_attachments?: Json;
+          p_content: string;
+          p_conversation_id: string;
+          p_kind?: string;
+          p_reply_to_message_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_set_read_state: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_message_id?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_toggle_reaction: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_emoji: string;
+          p_message_id: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };
       compute_abuse_risk_tier: {
@@ -1994,6 +3164,32 @@ export type Database = {
           updated_at: string;
           wallet_id: string;
           ws_id: string;
+        }[];
+      };
+      get_finance_overview_metrics: {
+        Args: {
+          _actor_id: string;
+          _end_date?: string;
+          _start_date?: string;
+          _view?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          category_count: number;
+          invoice_count: number;
+          latest_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_net_total: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          wallet_count: number;
         }[];
       };
       get_rate_limit_trust_decision: {
@@ -36277,7 +37473,11 @@ export type Database = {
         | 'view_inventory_analytics'
         | 'view_inventory_audit_logs'
         | 'change_finance_wallets'
-        | 'set_finance_wallets_on_create';
+        | 'set_finance_wallets_on_create'
+        | 'view_chat'
+        | 'create_chat'
+        | 'manage_chat'
+        | 'moderate_chat';
       zalopay_tier: 'standard' | 'gold' | 'diamond';
     };
     CompositeTypes: {
@@ -39014,6 +40214,10 @@ export const Constants = {
         'view_inventory_audit_logs',
         'change_finance_wallets',
         'set_finance_wallets_on_create',
+        'view_chat',
+        'create_chat',
+        'manage_chat',
+        'moderate_chat',
       ],
       zalopay_tier: ['standard', 'gold', 'diamond'],
     },

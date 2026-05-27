@@ -104,6 +104,7 @@ const RESERVED_MANAGED_PROJECT_HOSTNAMES = new Set([
   'inventory.tuturuuu.com',
   'learn.tuturuuu.com',
   'localhost',
+  'mail.tuturuuu.com',
   'mira.tuturuuu.com',
   'nova.ai.vn',
   'platform.tuturuuu.com',

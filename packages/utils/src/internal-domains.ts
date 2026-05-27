@@ -26,6 +26,10 @@ export const PRODUCTION_INTERNAL_APP_DOMAINS = [
     url: 'https://drive.tuturuuu.com',
   },
   {
+    name: 'mail',
+    url: 'https://mail.tuturuuu.com',
+  },
+  {
     name: 'qr',
     url: 'https://qr.tuturuuu.com',
   },
@@ -101,6 +105,10 @@ export const PORTLESS_INTERNAL_APP_DOMAINS = [
     url: getTuturuuuPortlessAppOrigin('drive'),
   },
   {
+    name: 'mail',
+    url: getTuturuuuPortlessAppOrigin('mail'),
+  },
+  {
     name: 'qr',
     url: getTuturuuuPortlessAppOrigin('qr'),
   },
@@ -166,6 +174,10 @@ export const LOCALHOST_INTERNAL_APP_DOMAINS = [
   {
     name: 'drive',
     url: 'http://localhost:7817',
+  },
+  {
+    name: 'mail',
+    url: 'http://localhost:7820',
   },
   {
     name: 'qr',

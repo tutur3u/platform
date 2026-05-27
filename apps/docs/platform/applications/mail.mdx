@@ -1,0 +1,35 @@
+---
+title: Tuturuuu Mail
+description: SES-backed team mailbox app for exact @tuturuuu.com accounts.
+---
+
+`apps/mail` is the standalone Tuturuuu mailbox app. It runs on `https://mail.tuturuuu.com` in production and port `7820` locally, delegates auth to `apps/web`, and only admits exact `@tuturuuu.com` accounts. Addresses such as `@xwf.tuturuuu.com` are intentionally denied.
+
+## Architecture
+
+- `apps/mail` owns the mailbox UI and proxies `/api/*` to `apps/web`.
+- `apps/web` owns all protected mail APIs under `/api/v1/workspaces/:wsId/mail/*`.
+- The mailbox mirror is stored in `private.mail_*` tables and is service-role only. App pages and route handlers must authorize exact-domain users and mailbox membership before returning data.
+- Outbound messages use `@tuturuuu/email-service` with the selected mailbox address as the source.
+- Inbound messages use SES Email Receiving with S3 raw-message storage and SNS notifications. The webhook stores an idempotent inbound job, fetches raw MIME from S3, mirrors sanitized bodies and attachment metadata, and quarantines unknown recipients.
+
+## SES Receiving Setup
+
+Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.
+
+1. Verify the domain or pilot subdomain in the SES receiving region.
+2. Create an S3 bucket for raw MIME objects.
+3. Create an SNS topic for receipt notifications and subscribe the web webhook:
+   `POST /api/v1/webhooks/mail/ses`.
+4. Create an SES receipt rule that stores raw MIME in S3 and publishes the SNS notification.
+5. Configure `MAIL_SES_INBOUND_TOPIC_ARN`, `MAIL_SES_INBOUND_BUCKET`, `MAIL_SES_INBOUND_KEY_PREFIX`, and `MAIL_SES_REGION`.
+6. Only after validation, stage the MX/DNS change outside the app repository.
+
+For local SNS fixture tests, set `MAIL_SES_SNS_SIGNATURE_VERIFICATION=disabled`. Do not use that setting in production.
+
+## Operations
+
+- Run `bun sb:up` locally after mail schema changes, then `bun sb:typegen`.
+- Keep new mail route access checks in `apps/web`; do not add direct client Supabase reads in `apps/mail`.
+- Use `packages/internal-api/src/mail.ts` for client helpers and TanStack Query in the app UI.
+- Unknown inbound recipients are retained as `quarantined` jobs for administrator review instead of being delivered to a user inbox.

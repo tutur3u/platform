@@ -25,6 +25,9 @@
       "learn": {
         "description": "Dashboard học viên, khóa học và trải nghiệm giáo dục."
       },
+      "mail": {
+        "description": "Hộp thư nhóm cho tài khoản chính xác @tuturuuu.com."
+      },
       "meet": {
         "description": "Điều phối cuộc họp và thời gian rảnh chung."
       },
