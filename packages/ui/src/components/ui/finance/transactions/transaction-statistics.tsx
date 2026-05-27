@@ -104,6 +104,11 @@ export function TransactionStatistics({
 
   const statistics = stats || localStatistics;
   const isNetPositive = statistics.netTotal >= 0;
+  const transactionCountLabel = areNumbersHidden
+    ? t('date_groups.transactions')
+    : statistics.totalTransactions === 1
+      ? t('date_groups.transaction')
+      : t('date_groups.transactions');
 
   if (isLoading) {
     return (
@@ -145,13 +150,18 @@ export function TransactionStatistics({
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="font-bold text-2xl text-foreground tabular-nums">
-              {statistics.totalTransactions}
+            <span
+              className={cn(
+                'font-bold text-2xl tabular-nums',
+                areNumbersHidden ? 'text-muted-foreground' : 'text-foreground'
+              )}
+            >
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : statistics.totalTransactions}
             </span>
             <Badge variant="secondary" className="text-[10px]">
-              {statistics.totalTransactions === 1
-                ? t('date_groups.transaction')
-                : t('date_groups.transactions')}
+              {transactionCountLabel}
             </Badge>
           </div>
         </div>
@@ -210,13 +220,17 @@ export function TransactionStatistics({
         <div
           className={cn(
             'flex flex-col gap-2 rounded-xl p-4 transition-all',
-            isNetPositive
-              ? 'bg-dynamic-green/10 hover:bg-dynamic-green/15'
-              : 'bg-dynamic-red/10 hover:bg-dynamic-red/15'
+            areNumbersHidden
+              ? 'bg-muted/30 hover:bg-muted/50'
+              : isNetPositive
+                ? 'bg-dynamic-green/10 hover:bg-dynamic-green/15'
+                : 'bg-dynamic-red/10 hover:bg-dynamic-red/15'
           )}
         >
           <div className="flex items-center gap-2">
-            {isNetPositive ? (
+            {areNumbersHidden ? (
+              <Calculator className="h-4 w-4 text-muted-foreground" />
+            ) : isNetPositive ? (
               <TrendingUp className="h-4 w-4 text-dynamic-green" />
             ) : (
               <TrendingDown className="h-4 w-4 text-dynamic-red" />
@@ -224,7 +238,11 @@ export function TransactionStatistics({
             <span
               className={cn(
                 'font-medium text-xs',
-                isNetPositive ? 'text-dynamic-green/80' : 'text-dynamic-red/80'
+                areNumbersHidden
+                  ? 'text-muted-foreground'
+                  : isNetPositive
+                    ? 'text-dynamic-green/80'
+                    : 'text-dynamic-red/80'
               )}
             >
               {t('workspace-finance-transactions.net-total')}
