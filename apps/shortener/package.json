@@ -33,7 +33,7 @@
     "@tuturuuu/vercel": "workspace:*",
     "@tuturuuu/icons": "workspace:*",
     "bcrypt": "^6.0.0",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "nanoid": "^5.1.11",
     "next": "^16.2.6",
     "react": "^19.2.6",

@@ -82,7 +82,7 @@
     "chat-adapter-zalo": "^0.1.0",
     "chat-state-cloudflare-do": "^0.2.0",
     "chat-state-mysql": "^0.1.0",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "next": "^16.2.6",
     "qrcode": "^1.5.4",
     "react": "^19.2.6",

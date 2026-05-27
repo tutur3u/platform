@@ -31,7 +31,7 @@
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

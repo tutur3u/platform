@@ -11,7 +11,7 @@
   "dependencies": {
     "@tuturuuu/types": "workspace:*",
     "browser-image-compression": "^2.0.2",
-    "dayjs": "^1.11.20"
+    "dayjs": "^1.11.21"
   },
   "peerDependencies": {
     "@tanstack/react-query": "^5.100.11",

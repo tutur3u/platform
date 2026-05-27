@@ -15,7 +15,7 @@
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
     "ai": "^6.0.190",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "next": "^16.2.6",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",

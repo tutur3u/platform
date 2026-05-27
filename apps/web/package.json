@@ -121,7 +121,7 @@
     "cron-parser": "^5.5.0",
     "cronstrue": "^3.14.0",
     "date-fns": "^4.2.1",
-    "dayjs": "^1.11.20",
+    "dayjs": "^1.11.21",
     "dompurify": "^3.4.5",
     "eventemitter3": "^5.0.4",
     "firebase-admin": "^13.10.0",
