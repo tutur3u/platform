@@ -1397,6 +1397,12 @@ export async function WorkspaceNavigationLinks({
                 withoutPermission('manage_workspace_roles'),
             },
             {
+              title: t('infrastructure-tabs.ai_agents'),
+              href: `/${personalOrWsId}/infrastructure/ai-agents`,
+              icon: <Bot className="h-5 w-5" />,
+              disabled: withoutPermission('manage_workspace_secrets'),
+            },
+            {
               title: t('infrastructure-tabs.email_blacklist'),
               href: `/${personalOrWsId}/infrastructure/email-blacklist`,
               icon: <MailX className="h-5 w-5" />,

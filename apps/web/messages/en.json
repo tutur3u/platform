@@ -624,6 +624,85 @@
     "you": "You",
     "you_selected": "You selected"
   },
+  "ai-agents-settings": {
+    "actions": {
+      "copy": "Copy",
+      "create": "Create agent",
+      "deploy": "Deploy",
+      "dismiss": "Dismiss",
+      "link_identity": "Link user",
+      "pause": "Pause",
+      "rotate_zalo_secret": "Rotate Zalo secret",
+      "save": "Save",
+      "test": "Test"
+    },
+    "channels": {
+      "discord": "Discord",
+      "zalo": "Zalo"
+    },
+    "description": "Manage apps/web-hosted AI agents that receive Discord and Zalo messages, then act through mapped Tuturuuu users.",
+    "fields": {
+      "agent_id": "Agent ID",
+      "channel_enabled": "Channel enabled",
+      "discord_application_id": "Discord application ID",
+      "discord_bot_token": "Discord bot token",
+      "discord_guild_id": "Discord guild ID",
+      "discord_mentions": "Discord mention role IDs",
+      "discord_public_key": "Discord public key",
+      "display_name": "Display name",
+      "enabled": "Enabled",
+      "instructions": "Instructions",
+      "model": "Model",
+      "name": "Name",
+      "platform_user_id": "Tuturuuu user ID",
+      "workspace_id": "Workspace ID",
+      "zalo_bot_token": "Zalo bot token",
+      "zalo_oa_id": "Zalo OA ID",
+      "zalo_user_id": "Zalo user ID",
+      "zalo_webhook_secret": "Zalo webhook secret"
+    },
+    "identity": {
+      "empty": "No Zalo identities linked yet.",
+      "title": "Zalo identity links"
+    },
+    "messages": {
+      "copy_success": "Secret copied",
+      "deploy_error": "Deploy failed",
+      "deploy_success": "Agent channel deployed",
+      "identity_error": "Identity link failed",
+      "identity_success": "Identity linked",
+      "pause_error": "Pause failed",
+      "pause_success": "Agent channel paused",
+      "rotate_error": "Secret rotation failed",
+      "rotate_success": "Secret rotated",
+      "save_error": "Agent save failed",
+      "save_success": "Agent saved",
+      "test_error": "Test failed"
+    },
+    "new_agent": {
+      "title": "New agent"
+    },
+    "registered": {
+      "empty": "No AI agents registered yet.",
+      "title": "Registered agents"
+    },
+    "secret": {
+      "configured": "Ends in {suffix}",
+      "description": "Store this {name} value for {channelId}. It is shown once.",
+      "missing": "Missing",
+      "title": "One-time channel secret",
+      "value_label": "Generated channel secret"
+    },
+    "status": {
+      "deployed": "Deployed",
+      "disabled": "Disabled",
+      "draft": "Draft",
+      "enabled": "Enabled",
+      "error": "Error",
+      "paused": "Paused"
+    },
+    "title": "AI Agents"
+  },
   "ai-credits": {
     "beta": "Beta",
     "error_credits_exhausted": "Monthly AI credits used up. Upgrade your plan for more. Credit top-up coming soon.",
@@ -6831,6 +6910,7 @@
   "infrastructure-tabs": {
     "abuse_events": "Abuse Events",
     "abuse_intelligence": "Abuse Intelligence",
+    "ai_agents": "AI Agents",
     "ai_credits": "AI Credits",
     "ai_credits_allocations": "Credit Allocations",
     "ai_credits_balances": "Credit Balances",

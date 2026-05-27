@@ -624,6 +624,85 @@
     "you": "Bạn",
     "you_selected": "Bạn đã chọn"
   },
+  "ai-agents-settings": {
+    "actions": {
+      "copy": "Sao chép",
+      "create": "Tạo agent",
+      "deploy": "Triển khai",
+      "dismiss": "Đóng",
+      "link_identity": "Liên kết người dùng",
+      "pause": "Tạm dừng",
+      "rotate_zalo_secret": "Xoay bí mật Zalo",
+      "save": "Lưu",
+      "test": "Kiểm tra"
+    },
+    "channels": {
+      "discord": "Discord",
+      "zalo": "Zalo"
+    },
+    "description": "Quản lý AI agent chạy bằng apps/web để nhận tin nhắn Discord và Zalo, rồi thao tác qua người dùng Tuturuuu đã liên kết.",
+    "fields": {
+      "agent_id": "ID agent",
+      "channel_enabled": "Bật kênh",
+      "discord_application_id": "ID ứng dụng Discord",
+      "discord_bot_token": "Token bot Discord",
+      "discord_guild_id": "ID guild Discord",
+      "discord_mentions": "ID vai trò mention Discord",
+      "discord_public_key": "Public key Discord",
+      "display_name": "Tên hiển thị",
+      "enabled": "Bật",
+      "instructions": "Chỉ dẫn",
+      "model": "Mô hình",
+      "name": "Tên",
+      "platform_user_id": "ID người dùng Tuturuuu",
+      "workspace_id": "ID không gian",
+      "zalo_bot_token": "Token bot Zalo",
+      "zalo_oa_id": "ID OA Zalo",
+      "zalo_user_id": "ID người dùng Zalo",
+      "zalo_webhook_secret": "Bí mật webhook Zalo"
+    },
+    "identity": {
+      "empty": "Chưa liên kết danh tính Zalo nào.",
+      "title": "Liên kết danh tính Zalo"
+    },
+    "messages": {
+      "copy_success": "Đã sao chép bí mật",
+      "deploy_error": "Triển khai thất bại",
+      "deploy_success": "Đã triển khai kênh agent",
+      "identity_error": "Liên kết danh tính thất bại",
+      "identity_success": "Đã liên kết danh tính",
+      "pause_error": "Tạm dừng thất bại",
+      "pause_success": "Đã tạm dừng kênh agent",
+      "rotate_error": "Xoay bí mật thất bại",
+      "rotate_success": "Đã xoay bí mật",
+      "save_error": "Lưu agent thất bại",
+      "save_success": "Đã lưu agent",
+      "test_error": "Kiểm tra thất bại"
+    },
+    "new_agent": {
+      "title": "Agent mới"
+    },
+    "registered": {
+      "empty": "Chưa đăng ký AI agent nào.",
+      "title": "Agent đã đăng ký"
+    },
+    "secret": {
+      "configured": "Kết thúc bằng {suffix}",
+      "description": "Lưu giá trị {name} này cho {channelId}. Giá trị chỉ hiển thị một lần.",
+      "missing": "Thiếu",
+      "title": "Bí mật kênh một lần",
+      "value_label": "Bí mật kênh đã tạo"
+    },
+    "status": {
+      "deployed": "Đã triển khai",
+      "disabled": "Đã tắt",
+      "draft": "Nháp",
+      "enabled": "Đang bật",
+      "error": "Lỗi",
+      "paused": "Tạm dừng"
+    },
+    "title": "AI Agents"
+  },
   "ai-credits": {
     "beta": "Beta",
     "error_credits_exhausted": "Đã dùng hết tín dụng AI hàng tháng. Nâng cấp gói để có thêm. Mua thêm tín dụng sẽ sớm ra mắt.",
@@ -6831,6 +6910,7 @@
   "infrastructure-tabs": {
     "abuse_events": "Sự kiện lạm dụng",
     "abuse_intelligence": "Tình báo lạm dụng",
+    "ai_agents": "AI Agents",
     "ai_credits": "Tín dụng AI",
     "ai_credits_allocations": "Phân bổ tín dụng",
     "ai_credits_balances": "Số dư tín dụng",

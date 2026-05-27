@@ -1,0 +1,57 @@
+import { describe, expect, it } from 'vitest';
+import { buildAgentPayload } from './ai-agents-utils';
+
+describe('AI agent settings payload builder', () => {
+  it('builds Discord and Zalo channel payloads from the dense admin form', () => {
+    const formData = new FormData();
+    formData.set('id', 'support');
+    formData.set('name', 'Support Agent');
+    formData.set('enabled', 'on');
+    formData.set('workspaceId', 'workspace-1');
+    formData.set('modelId', 'google/gemini-3.1-flash-lite');
+    formData.set('instructions', 'Help users.');
+    formData.set('discordDisplayName', 'Discord');
+    formData.set('discordEnabled', 'on');
+    formData.set('discordGuildId', 'guild-1');
+    formData.set('discordMentionRoleIds', 'role-1\nrole-2');
+    formData.set('discordApplicationId', 'app-1');
+    formData.set('discordPublicKey', 'public-key');
+    formData.set('discordBotToken', 'discord-token');
+    formData.set('zaloDisplayName', 'Zalo');
+    formData.set('zaloEnabled', 'on');
+    formData.set('zaloOfficialAccountId', 'oa-1');
+    formData.set('zaloBotToken', 'zalo-token');
+    formData.set('zaloWebhookSecret', 'zalo-secret');
+
+    expect(buildAgentPayload(formData)).toMatchObject({
+      channels: [
+        {
+          adapter: 'discord',
+          discordGuildId: 'guild-1',
+          id: 'support-discord',
+          mentionRoleIds: ['role-1', 'role-2'],
+          secrets: {
+            applicationId: 'app-1',
+            botToken: 'discord-token',
+            publicKey: 'public-key',
+          },
+          workspaceId: 'workspace-1',
+        },
+        {
+          adapter: 'zalo',
+          id: 'support-zalo',
+          secrets: {
+            botToken: 'zalo-token',
+            webhookSecret: 'zalo-secret',
+          },
+          workspaceId: 'workspace-1',
+          zaloOfficialAccountId: 'oa-1',
+        },
+      ],
+      enabled: true,
+      id: 'support',
+      instructions: 'Help users.',
+      name: 'Support Agent',
+    });
+  });
+});
