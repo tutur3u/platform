@@ -41,6 +41,40 @@ function TransactionAmountCell({ amount }: { amount: number }) {
   );
 }
 
+function TransactionColumnCell({
+  accessorKey,
+  original,
+}: {
+  accessorKey: string;
+  original: Record<string, unknown>;
+}) {
+  const columns = transactionColumns({
+    t,
+    namespace: 'transaction-data-table',
+    extraData: {
+      currency: 'USD',
+    },
+  });
+  const column = columns.find(
+    (item) =>
+      (item as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
+      accessorKey
+  );
+
+  if (typeof column?.cell !== 'function') return null;
+
+  return (
+    <>
+      {column.cell({
+        row: {
+          getValue: (key: string) => original[key],
+          original,
+        },
+      } as never)}
+    </>
+  );
+}
+
 describe('transactionColumns', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
@@ -63,5 +97,23 @@ describe('transactionColumns', () => {
 
     await waitFor(() => expect(screen.getByText(/\+\$123/)).toBeVisible());
     expect(screen.queryByText('•••••')).not.toBeInTheDocument();
+  });
+
+  it('falls back to raw RPC wallet and category names in overview rows', () => {
+    render(
+      <>
+        <TransactionColumnCell
+          accessorKey="wallet"
+          original={{ wallet_name: 'Cash' }}
+        />
+        <TransactionColumnCell
+          accessorKey="description"
+          original={{ category_name: 'Food & Beverage' }}
+        />
+      </>
+    );
+
+    expect(screen.getByText('Cash')).toBeVisible();
+    expect(screen.getByText('Food & Beverage')).toBeVisible();
   });
 });

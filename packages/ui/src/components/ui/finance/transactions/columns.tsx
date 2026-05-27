@@ -111,11 +111,12 @@ export const transactionColumns = ({
           title={t(`${namespace}.wallet`)}
         />
       ),
-      cell: ({ row }) => (
-        <div className="min-w-32 font-semibold">
-          {row.getValue('wallet') || '-'}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const wallet =
+          row.original.wallet?.trim() || row.original.wallet_name?.trim();
+
+        return <div className="min-w-32 font-semibold">{wallet || '-'}</div>;
+      },
     },
     {
       accessorKey: 'description',
@@ -128,7 +129,8 @@ export const transactionColumns = ({
       ),
       cell: ({ row }) => {
         const description = row.original.description?.trim();
-        const category = row.original.category?.trim();
+        const category =
+          row.original.category?.trim() || row.original.category_name?.trim();
         const tags = row.original.tags ?? [];
 
         return (

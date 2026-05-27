@@ -11,10 +11,12 @@ export interface Transaction {
   description?: string;
   category_id?: string;
   category?: string;
+  category_name?: string;
   category_icon?: string | null;
   category_color?: string | null;
   wallet_id?: string;
   wallet?: string;
+  wallet_name?: string;
   wallet_currency?: string;
   ws_id?: string;
   taken_at?: string;
