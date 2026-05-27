@@ -70,6 +70,10 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import type * as React from 'react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { getWalletImagePath } from '../wallets/wallet-images';
 import { ConfidentialToggle } from './confidential-field';
 import { invalidateTransactionMutationQueries } from './query-invalidation';
@@ -165,6 +169,8 @@ export function TransactionEditDialog({
   const locale = useLocale();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
 
   // Check if transaction has confidential fields that user cannot view
   const hasConfidentialAmount =
@@ -640,14 +646,21 @@ export function TransactionEditDialog({
                         ? t('transaction-data-table.expense')
                         : t('transaction-data-table.income')}
                     </span>
-                    <span className="font-medium">
-                      {Intl.NumberFormat(getCurrencyLocale(currency), {
-                        style: 'currency',
-                        currency,
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0,
-                        signDisplay: 'always',
-                      }).format(isExpense ? -amount : amount)}
+                    <span
+                      className={cn(
+                        'font-medium',
+                        areNumbersHidden && 'text-muted-foreground'
+                      )}
+                    >
+                      {areNumbersHidden
+                        ? FINANCE_HIDDEN_AMOUNT
+                        : Intl.NumberFormat(getCurrencyLocale(currency), {
+                            style: 'currency',
+                            currency,
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                            signDisplay: 'always',
+                          }).format(isExpense ? -amount : amount)}
                     </span>
                   </div>
                 </div>

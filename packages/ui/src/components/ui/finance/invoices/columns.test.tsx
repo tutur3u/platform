@@ -1,39 +1,35 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { transactionColumns } from './columns';
+import { invoiceColumns } from './columns';
 
-vi.mock('next-intl', () => ({
-  useLocale: () => 'en',
-}));
-
-vi.mock('@tuturuuu/ui/finance/transactions/row-actions', () => ({
-  TransactionRowActions: () => null,
+vi.mock('@tuturuuu/ui/finance/invoices/row-actions', () => ({
+  InvoiceRowActions: () => null,
 }));
 
 const t = (key: string) => key;
 
-function TransactionAmountCell({ amount }: { amount: number }) {
-  const columns = transactionColumns({
+function InvoicePriceCell({ price }: { price: number }) {
+  const columns = invoiceColumns({
     t,
-    namespace: 'transaction-data-table',
+    namespace: 'invoice-data-table',
     extraData: {
       currency: 'USD',
     },
   });
-  const amountColumn = columns.find(
+  const priceColumn = columns.find(
     (column) =>
       (column as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
-      'amount'
+      'price'
   );
 
-  if (typeof amountColumn?.cell !== 'function') return null;
+  if (typeof priceColumn?.cell !== 'function') return null;
 
   return (
     <>
-      {amountColumn.cell({
+      {priceColumn.cell({
         row: {
-          getValue: (key: string) => (key === 'amount' ? amount : undefined),
+          getValue: (key: string) => (key === 'price' ? price : undefined),
           original: {},
         },
       } as never)}
@@ -41,27 +37,30 @@ function TransactionAmountCell({ amount }: { amount: number }) {
   );
 }
 
-describe('transactionColumns', () => {
+describe('invoiceColumns', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
     document.cookie =
       'finance-confidential-mode=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
   });
 
-  it('masks the amount column when finance numbers are globally hidden', () => {
-    render(<TransactionAmountCell amount={123} />);
+  it('masks amount columns when finance numbers are globally hidden', () => {
+    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
+    document.cookie = 'finance-confidential-mode=true;path=/';
+
+    render(<InvoicePriceCell price={123} />);
 
     expect(screen.getByText('•••••')).toBeVisible();
     expect(screen.queryByText(/\$123/)).not.toBeInTheDocument();
   });
 
-  it('shows the amount column when finance numbers are globally visible', async () => {
+  it('shows amount columns when finance numbers are globally visible', async () => {
     // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
     document.cookie = 'finance-confidential-mode=false;path=/';
 
-    render(<TransactionAmountCell amount={123} />);
+    render(<InvoicePriceCell price={123} />);
 
-    await waitFor(() => expect(screen.getByText(/\+\$123/)).toBeVisible());
+    await waitFor(() => expect(screen.getByText(/\$123/)).toBeVisible());
     expect(screen.queryByText('•••••')).not.toBeInTheDocument();
   });
 });

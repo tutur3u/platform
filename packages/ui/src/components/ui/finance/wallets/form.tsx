@@ -27,6 +27,10 @@ import { useCallback, useMemo, useState } from 'react';
 import * as z from 'zod';
 import { toast } from '../../sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../tabs';
+import {
+  FINANCE_HIDDEN_AMOUNT,
+  useFinanceConfidentialVisibility,
+} from '../shared/use-finance-confidential-visibility';
 import { invalidateWalletMutationQueries } from './query-invalidation';
 import { WalletIconImagePicker } from './wallet-icon-image-picker';
 import WalletRoleAccess from './walletId/wallet-role-access';
@@ -100,6 +104,8 @@ export function WalletForm({
 }: Props) {
   const t = useTranslations();
   const { currency: workspaceCurrency } = useWorkspaceCurrency(wsId);
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(false);
@@ -273,16 +279,18 @@ export function WalletForm({
                   placeholder="0"
                   {...field}
                   value={
-                    !field.value
-                      ? ''
-                      : new Intl.NumberFormat(
-                          getCurrencyLocale(
-                            walletCurrency || workspaceCurrency || 'USD'
-                          ),
-                          {
-                            maximumFractionDigits: 2,
-                          }
-                        ).format(Math.abs(field.value))
+                    areNumbersHidden
+                      ? FINANCE_HIDDEN_AMOUNT
+                      : !field.value
+                        ? ''
+                        : new Intl.NumberFormat(
+                            getCurrencyLocale(
+                              walletCurrency || workspaceCurrency || 'USD'
+                            ),
+                            {
+                              maximumFractionDigits: 2,
+                            }
+                          ).format(Math.abs(field.value))
                   }
                   onChange={(e) => {
                     // Remove non-numeric characters except decimal point, then parse
