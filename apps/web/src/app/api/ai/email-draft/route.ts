@@ -109,7 +109,7 @@ Format the email content with proper paragraph breaks. Use double line breaks be
 Generate the email with a compelling subject line and well-crafted content.`;
 
     const result = await generateObject({
-      model: google('gemini-3.1-flash-lite-preview'),
+      model: google('gemini-3.1-flash-lite'),
       schema: emailDraftSchema,
       prompt,
     });

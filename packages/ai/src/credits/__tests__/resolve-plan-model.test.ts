@@ -1,4 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getWorkspaceTier: vi.fn(),
+}));
+
 import {
   PlanModelResolutionError,
   selectEffectivePlanModel,
@@ -65,6 +74,31 @@ describe('selectEffectivePlanModel', () => {
 
     expect(result.modelId).toBe('google/gemini-2.5-flash');
     expect(result.source).toBe('plan_default');
+  });
+
+  it('normalizes legacy Gemini 3.1 Flash Lite preview allocation values', () => {
+    const result = selectEffectivePlanModel({
+      allocation: {
+        ...baseAllocation,
+        allowed_models: ['google/gemini-3.1-flash-lite-preview'],
+        default_language_model: 'google/gemini-3.1-flash-lite-preview',
+      },
+      capability: 'language',
+      modelsById: new Map([
+        [
+          'google/gemini-3.1-flash-lite',
+          {
+            id: 'google/gemini-3.1-flash-lite',
+            is_enabled: true,
+            type: 'language',
+          },
+        ],
+      ]),
+      requestedModel: 'google/gemini-3.1-flash-lite-preview',
+    });
+
+    expect(result.modelId).toBe('google/gemini-3.1-flash-lite');
+    expect(result.source).toBe('requested');
   });
 
   it('falls back to the image default for invalid requested image model', () => {

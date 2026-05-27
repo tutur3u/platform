@@ -59,5 +59,5 @@ export const appConfig: AppConfig = {
     privateKeyId: process.env.GOOGLE_VERTEX_PRIVATE_KEY_ID,
     credentials: process.env.GOOGLE_APPLICATION_CREDENTIALS,
   },
-  defaultModel: process.env.DEFAULT_AI_MODEL || 'gemini-3.1-flash-lite-preview',
+  defaultModel: process.env.DEFAULT_AI_MODEL || 'gemini-3.1-flash-lite',
 };

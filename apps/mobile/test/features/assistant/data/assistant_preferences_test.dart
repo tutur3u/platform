@@ -41,14 +41,33 @@ void main() {
 
     test('restores serialized models', () async {
       const model = AssistantGatewayModel(
-        value: 'google/gemini-3.1-flash-lite-preview',
-        label: 'gemini-3.1-flash-lite-preview',
+        value: 'google/gemini-3.1-flash-lite',
+        label: 'gemini-3.1-flash-lite',
         provider: 'google',
       );
 
       await preferences.saveModel('ws-1', model);
 
       expect(await preferences.loadModel('ws-1'), model);
+    });
+
+    test('normalizes legacy Gemini Flash Lite preview models', () async {
+      const legacyModel = AssistantGatewayModel(
+        value: 'google/gemini-3.1-flash-lite-preview',
+        label: 'gemini-3.1-flash-lite-preview',
+        provider: 'google',
+      );
+
+      await preferences.saveModel('ws-1', legacyModel);
+
+      expect(
+        await preferences.loadModel('ws-1'),
+        const AssistantGatewayModel(
+          value: 'google/gemini-3.1-flash-lite',
+          label: 'gemini-3.1-flash-lite',
+          provider: 'google',
+        ),
+      );
     });
   });
 }

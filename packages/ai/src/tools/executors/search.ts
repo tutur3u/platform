@@ -3,7 +3,7 @@ import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
 import type { MiraToolContext } from '../mira-tools';
 
-const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite-preview';
+const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite';
 
 type SearchSource = {
   sourceId?: string;

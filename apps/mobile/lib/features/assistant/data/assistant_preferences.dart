@@ -15,6 +15,12 @@ const assistantCreditSourceStorageKeyPrefix = 'mira-dashboard-credit-source-';
 const assistantWorkspaceContextStorageKeyPrefix =
     'mira-dashboard-workspace-context-';
 
+const _flashLitePreviewModel = 'gemini-3.1-flash-lite-preview';
+const _flashLiteStableModel = 'gemini-3.1-flash-lite';
+
+String _normalizeStoredModelId(String value) =>
+    value.replaceFirst(_flashLitePreviewModel, _flashLiteStableModel);
+
 class AssistantPreferences {
   Future<String?> loadChatId(String wsId) async {
     final prefs = await SharedPreferences.getInstance();
@@ -37,8 +43,29 @@ class AssistantPreferences {
     if (raw == null || raw.isEmpty) return null;
 
     try {
-      return AssistantGatewayModel.fromJson(
+      final model = AssistantGatewayModel.fromJson(
         jsonDecode(raw) as Map<String, dynamic>,
+      );
+      final stableValue = _normalizeStoredModelId(model.value);
+      final stableLabel = model.label == _flashLitePreviewModel
+          ? _flashLiteStableModel
+          : model.label;
+
+      if (stableValue == model.value && stableLabel == model.label) {
+        return model;
+      }
+
+      return AssistantGatewayModel(
+        value: stableValue,
+        label: stableLabel,
+        provider: model.provider,
+        description: model.description,
+        context: model.context,
+        disabled: model.disabled,
+        tags: model.tags,
+        inputPricePerToken: model.inputPricePerToken,
+        outputPricePerToken: model.outputPricePerToken,
+        maxTokens: model.maxTokens,
       );
     } on Object {
       return null;
@@ -64,10 +91,7 @@ class AssistantPreferences {
     return null;
   }
 
-  Future<void> saveThinkingMode(
-    String wsId,
-    AssistantThinkingMode mode,
-  ) async {
+  Future<void> saveThinkingMode(String wsId, AssistantThinkingMode mode) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
       '$assistantThinkingModeStorageKeyPrefix$wsId',

@@ -3,7 +3,7 @@ import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveAiRouteAuth } from '../route-auth';
 
-const model = 'gemini-3.1-flash-lite-preview';
+const model = 'gemini-3.1-flash-lite';
 
 export function createPATCH() {
   return async function handler(req: NextRequest) {

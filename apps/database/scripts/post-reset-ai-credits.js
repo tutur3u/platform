@@ -374,7 +374,8 @@ async function normalizeAllocations(
   const defaultsByTier = {
     FREE: {
       default_language_model: pickExistingModelId(availableModelIds, [
-        'gemini-3.1-flash-lite-preview',
+        'google/gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite',
       ]),
       default_image_model: pickExistingModelId(availableModelIds, [
         'google/imagen-4.0-fast-generate-001',
@@ -383,7 +384,8 @@ async function normalizeAllocations(
     },
     PLUS: {
       default_language_model: pickExistingModelId(availableModelIds, [
-        'gemini-3.1-flash-lite-preview',
+        'google/gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite',
       ]),
       default_image_model: pickExistingModelId(availableModelIds, [
         'google/imagen-4.0-generate-001',
@@ -392,7 +394,8 @@ async function normalizeAllocations(
     },
     PRO: {
       default_language_model: pickExistingModelId(availableModelIds, [
-        'gemini-3.1-flash-lite-preview',
+        'google/gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite',
       ]),
       default_image_model: pickExistingModelId(availableModelIds, [
         'google/imagen-4.0-generate-001',
@@ -401,7 +404,8 @@ async function normalizeAllocations(
     },
     ENTERPRISE: {
       default_language_model: pickExistingModelId(availableModelIds, [
-        'gemini-3.1-flash-lite-preview',
+        'google/gemini-3.1-flash-lite',
+        'gemini-3.1-flash-lite',
       ]),
       default_image_model: pickExistingModelId(availableModelIds, [
         'google/imagen-4.0-generate-001',

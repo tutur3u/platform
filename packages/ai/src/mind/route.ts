@@ -16,7 +16,11 @@ import {
 import { performCreditPreflight } from '../chat/google/route-credits';
 import { prepareProcessedMessages } from '../chat/google/route-message-preparation';
 import { deductAiCredits } from '../credits/check-credits';
-import { isGoogleModelId, toBareModelName } from '../credits/model-mapping';
+import {
+  isGoogleModelId,
+  normalizeStableModelId,
+  toBareModelName,
+} from '../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -399,7 +403,9 @@ export function createPOST(callbacks: MindRouteCallbacks) {
       }
 
       const writeMode = parsedBody.writeMode ?? 'review';
-      const model = parsedBody.model ?? 'google/gemini-2.5-flash';
+      const model = normalizeStableModelId(
+        parsedBody.model ?? 'google/gemini-2.5-flash'
+      );
       let resolvedModelId: string;
       try {
         const resolvedPlanModel = await resolvePlanModel({
@@ -407,7 +413,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
           requestedModel: model,
           wsId: billingWsId,
         });
-        resolvedModelId = resolvedPlanModel.modelId;
+        resolvedModelId = normalizeStableModelId(resolvedPlanModel.modelId);
       } catch (error) {
         if (error instanceof PlanModelResolutionError) {
           return NextResponse.json(

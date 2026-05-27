@@ -3,7 +3,7 @@ import { createClient } from '@tuturuuu/supabase/next/server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
 
-const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite-preview';
+const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite';
 
 const transcriptSchema = z.object({
   text: z.string().describe('The full transcript text'),

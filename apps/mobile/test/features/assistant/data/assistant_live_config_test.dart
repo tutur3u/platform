@@ -19,7 +19,7 @@ void main() {
 
     test('rejects non-live models', () {
       expect(
-        assistantLiveModelMatches('google/gemini-3.1-flash-lite-preview'),
+        assistantLiveModelMatches('google/gemini-3.1-flash-lite'),
         isFalse,
       );
     });

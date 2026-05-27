@@ -7,7 +7,7 @@ import type { NormalizedSepayPayload } from './schemas';
 
 type SepayAdminClient = TypedSupabaseClient;
 
-const TAGGER_MODEL = 'gemini-3.1-flash-lite-preview';
+const TAGGER_MODEL = 'gemini-3.1-flash-lite';
 const TAGGER_TIMEOUT_MS = 4_000;
 
 const taggerResultSchema = z.object({

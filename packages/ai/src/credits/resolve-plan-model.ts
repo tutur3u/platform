@@ -1,6 +1,10 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
-import { matchesAllowedModel, resolveGatewayModelId } from './model-mapping';
+import {
+  matchesAllowedModel,
+  normalizeStableModelId,
+  resolveGatewayModelId,
+} from './model-mapping';
 
 export type PlanModelCapability = 'image' | 'language';
 
@@ -75,9 +79,10 @@ export function selectEffectivePlanModel(args: {
   const requestedModel = args.requestedModel?.trim()
     ? resolveGatewayModelId(args.requestedModel)
     : null;
-  const defaultModelId =
+  const defaultModelId = normalizeStableModelId(
     allocation[getDefaultModelField(capability)] ??
-    getFallbackPlanModelId(allocation.tier, capability);
+      getFallbackPlanModelId(allocation.tier, capability)
+  );
 
   if (requestedModel) {
     const requestedRow = modelsById.get(requestedModel);
@@ -172,10 +177,14 @@ export async function resolvePlanModel(args: {
   }
 
   const candidateIds = new Set<string>([
-    allocation.default_language_model ??
-      getFallbackPlanModelId(allocation.tier, 'language'),
-    allocation.default_image_model ??
-      getFallbackPlanModelId(allocation.tier, 'image'),
+    normalizeStableModelId(
+      allocation.default_language_model ??
+        getFallbackPlanModelId(allocation.tier, 'language')
+    ),
+    normalizeStableModelId(
+      allocation.default_image_model ??
+        getFallbackPlanModelId(allocation.tier, 'image')
+    ),
   ]);
 
   if (args.requestedModel?.trim()) {

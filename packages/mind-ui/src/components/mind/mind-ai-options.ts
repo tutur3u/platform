@@ -2,9 +2,9 @@ import type { AIModelUI } from '@tuturuuu/types';
 
 export const MIND_AI_MODELS: AIModelUI[] = [
   {
-    label: 'Gemini 3.1 Flash Lite Preview',
+    label: 'Gemini 3.1 Flash Lite',
     provider: 'google',
-    value: 'google/gemini-3.1-flash-lite-preview',
+    value: 'google/gemini-3.1-flash-lite',
   },
   {
     label: 'Gemini 2.5 Flash',
