@@ -1954,6 +1954,10 @@ export type Database = {
         };
         Returns: number;
       };
+      detect_wallet_interest_transactions: {
+        Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
+        Returns: Json;
+      };
       ensure_user_group_metric_category_ids: {
         Args: { p_category_ids?: string[]; p_ws_id: string };
         Returns: string[];
