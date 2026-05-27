@@ -284,10 +284,12 @@ function readRecordValue(value: unknown): Record<string, unknown> {
 }
 
 function mergeRecordValues(...values: unknown[]): Record<string, unknown> {
-  return values.reduce<Record<string, unknown>>(
-    (merged, value) => ({ ...merged, ...readRecordValue(value) }),
-    {}
-  );
+  const merged: Record<string, unknown> = {};
+  for (const value of values) {
+    Object.assign(merged, readRecordValue(value));
+  }
+
+  return merged;
 }
 
 function readMindMetadata(value: unknown): MindJsonObject | undefined {

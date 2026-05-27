@@ -525,6 +525,7 @@ export function MindCanvasInner({
           tags={tags}
         />
         <MindCanvasGraph
+          key={snapshotRefreshVersion}
           edges={visibleEdges}
           groupFrames={groupFrames}
           nodes={visibleNodes}

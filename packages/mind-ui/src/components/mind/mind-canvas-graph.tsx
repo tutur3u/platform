@@ -857,17 +857,25 @@ function getPathLabel(
   } = {}
 ) {
   const total = getPathLength(points);
-  const routeMidpoint = getPointAtPathLength(points, total / 2);
-  const candidates = getSegments(points).flatMap((segment) =>
-    getSegmentLabelCandidates(segment, labelText)
-  );
+  const pathMidpoint = getPointAtPathLength(points, total / 2);
+  const relationMidpoint = getRelationMidpoint(points) ?? pathMidpoint;
+  const candidates = [
+    ...getDetachedRelationLabelCandidates({
+      labelText,
+      relationMidpoint,
+      routeAnchor: pathMidpoint,
+    }),
+    ...getSegments(points).flatMap((segment) =>
+      getSegmentLabelCandidates(segment, labelText)
+    ),
+  ];
 
   if (candidates.length > 0) {
     return pickBestLabelCandidate(candidates, {
       labelLane,
       labelObstacles,
       labelText,
-      routeMidpoint,
+      routeMidpoint: relationMidpoint,
     });
   }
 
@@ -879,6 +887,74 @@ function getPathLabel(
     oneLine: false,
     ...fallback,
   };
+}
+
+function getRelationMidpoint(points: Point[]) {
+  const first = points[0];
+  const last = points.at(-1);
+  if (!first || !last) return null;
+
+  return {
+    x: (first.x + last.x) / 2,
+    y: (first.y + last.y) / 2,
+  };
+}
+
+function getDetachedRelationLabelCandidates({
+  labelText,
+  relationMidpoint,
+  routeAnchor,
+}: {
+  labelText?: string;
+  relationMidpoint: Point;
+  routeAnchor: Point;
+}): LabelCandidate[] {
+  const routeDistance =
+    Math.abs(routeAnchor.x - relationMidpoint.x) +
+    Math.abs(routeAnchor.y - relationMidpoint.y);
+  if (routeDistance < 96) return [];
+
+  const maxWidth = Math.min(
+    220,
+    Math.max(120, getDesiredLabelWidth(labelText))
+  );
+  const base = {
+    anchorX: routeAnchor.x,
+    anchorY: routeAnchor.y,
+    horizontal: true,
+    maxWidth,
+    oneLine: true,
+    segmentLength: 0,
+  };
+
+  return [
+    {
+      ...base,
+      lineGap: 0,
+      offsetRank: 0,
+      side: 0 as const,
+      x: relationMidpoint.x,
+      y: relationMidpoint.y,
+    },
+    ...LABEL_OFFSETS.flatMap((offset, offsetIndex) => [
+      {
+        ...base,
+        lineGap: 0,
+        offsetRank: offsetIndex + 1,
+        side: -1 as const,
+        x: relationMidpoint.x,
+        y: relationMidpoint.y - offset,
+      },
+      {
+        ...base,
+        lineGap: 0,
+        offsetRank: offsetIndex + 1,
+        side: 1 as const,
+        x: relationMidpoint.x,
+        y: relationMidpoint.y + offset,
+      },
+    ]),
+  ];
 }
 
 function getSegmentLabelCandidates(

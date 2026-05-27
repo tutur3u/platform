@@ -285,6 +285,26 @@ describe('Mind canvas graph utilities', () => {
     expect(route.label.y).not.toBe(130);
   });
 
+  it('keeps labels for detoured relationships closer to related nodes', () => {
+    const route = buildRelationshipRoute({
+      fallbackPositions: { source: Position.Right, target: Position.Left },
+      labelText: 'provides data for audit',
+      obstacles: [
+        {
+          height: 160,
+          id: 'blocked-center',
+          width: 140,
+          x: 180,
+          y: -80,
+        },
+      ],
+      source: { x: 0, y: 0 },
+      target: { x: 500, y: 0 },
+    });
+
+    expect(Math.abs(route.label.y)).toBeLessThan(160);
+  });
+
   it('exports the current board as markdown and json snapshots', () => {
     const snapshot = boardSnapshot([
       node({ id: 'parent', nodeType: 'milestone', title: 'Parent' }),
