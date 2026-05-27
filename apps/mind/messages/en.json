@@ -205,6 +205,8 @@
       "layoutRefreshError": "The draft was applied, but Mind could not finish auto-organizing the board. Retry the layout refresh or keep working with the updated graph.",
       "layoutRefreshErrorTitle": "Layout refresh needs retry",
       "loadingModels": "Loading models...",
+      "loadingMoreModels": "Loading more models...",
+      "loadMoreModels": "Load more models",
       "messageActions": "Message actions",
       "model": "Model",
       "modelSearch": "Search models",

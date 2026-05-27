@@ -6,45 +6,49 @@ import {
 
 describe('mira gateway models helpers', () => {
   const fetchMock = vi.fn();
+  const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
-    vi.stubGlobal('fetch', fetchMock);
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {
-    vi.unstubAllGlobals();
+    globalThis.fetch = originalFetch;
     fetchMock.mockReset();
   });
 
   it('derives provider summaries from the API catalog response', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => [
-        {
-          context_window: 1000,
-          description: 'Fast model',
-          id: 'google/gemini-2.5-flash',
-          input_price_per_token: 0,
-          is_enabled: true,
-          max_tokens: 2000,
-          name: 'Gemini 2.5 Flash',
-          output_price_per_token: 0,
-          provider: 'google',
-          tags: ['file-input'],
-        },
-        {
-          context_window: 1000,
-          description: 'Thinking model',
-          id: 'openai/gpt-5',
-          input_price_per_token: 0,
-          is_enabled: false,
-          max_tokens: 2000,
-          name: 'GPT-5',
-          output_price_per_token: 0,
-          provider: 'openai',
-          tags: [],
-        },
-      ],
+      json: async () => ({
+        data: [
+          {
+            context_window: 1000,
+            description: 'Fast model',
+            id: 'google/gemini-2.5-flash',
+            input_price_per_token: 0,
+            is_enabled: true,
+            max_tokens: 2000,
+            name: 'Gemini 2.5 Flash',
+            output_price_per_token: 0,
+            provider: 'google',
+            tags: ['file-input'],
+          },
+          {
+            context_window: 1000,
+            description: 'Thinking model',
+            id: 'openai/gpt-5',
+            input_price_per_token: 0,
+            is_enabled: false,
+            max_tokens: 2000,
+            name: 'GPT-5',
+            output_price_per_token: 0,
+            provider: 'openai',
+            tags: [],
+          },
+        ],
+        pagination: { limit: 100, page: 1, total: 2 },
+      }),
     });
 
     await expect(
@@ -57,52 +61,32 @@ describe('mira gateway models helpers', () => {
       { provider: 'openai', total: 1 },
     ]);
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/v1/infrastructure/ai/models', {
-      cache: 'no-store',
-    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/infrastructure/ai/models?enabled=true&format=paginated&limit=100&page=1&type=language',
+      { cache: 'no-store' }
+    );
   });
 
-  it('filters and paginates provider models from the API catalog response', async () => {
+  it('requests provider pages with server-side search and pagination', async () => {
     fetchMock.mockResolvedValue({
       ok: true,
-      json: async () => [
-        {
-          context_window: 1000,
-          description: 'Fast model',
-          id: 'google/gemini-2.5-flash',
-          input_price_per_token: 0,
-          is_enabled: true,
-          max_tokens: 2000,
-          name: 'Gemini 2.5 Flash',
-          output_price_per_token: 0,
-          provider: 'google',
-          tags: ['file-input'],
-        },
-        {
-          context_window: 1000,
-          description: 'Thinking model',
-          id: 'google/gemini-2.5-pro',
-          input_price_per_token: 0,
-          is_enabled: true,
-          max_tokens: 2000,
-          name: 'Gemini 2.5 Pro',
-          output_price_per_token: 0,
-          provider: 'google',
-          tags: [],
-        },
-        {
-          context_window: 1000,
-          description: 'Different provider',
-          id: 'openai/gpt-5',
-          input_price_per_token: 0,
-          is_enabled: true,
-          max_tokens: 2000,
-          name: 'GPT-5',
-          output_price_per_token: 0,
-          provider: 'openai',
-          tags: [],
-        },
-      ],
+      json: async () => ({
+        data: [
+          {
+            context_window: 1000,
+            description: 'Thinking model',
+            id: 'google/gemini-2.5-pro',
+            input_price_per_token: 0,
+            is_enabled: true,
+            max_tokens: 2000,
+            name: 'Gemini 2.5 Pro',
+            output_price_per_token: 0,
+            provider: 'google',
+            tags: [],
+          },
+        ],
+        pagination: { limit: 1, page: 1, total: 2 },
+      }),
     });
 
     await expect(
@@ -129,5 +113,31 @@ describe('mira gateway models helpers', () => {
       ],
       nextOffset: 1,
     });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/infrastructure/ai/models?enabled=true&format=paginated&limit=1&page=1&type=language&provider=google&q=pro',
+      { cache: 'no-store' }
+    );
+  });
+
+  it('fetches later server pages for load-more requests', async () => {
+    fetchMock.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        data: [],
+        pagination: { limit: 5, page: 2, total: 5 },
+      }),
+    });
+
+    await fetchGatewayModelsPage({
+      limit: 5,
+      offset: 5,
+      provider: 'google',
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/v1/infrastructure/ai/models?enabled=true&format=paginated&limit=5&page=2&type=language&provider=google',
+      { cache: 'no-store' }
+    );
   });
 });

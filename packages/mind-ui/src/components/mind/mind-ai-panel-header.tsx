@@ -69,10 +69,10 @@ export function MindAiPanelHeader({
   return (
     <div
       className={cn(
-        'border-border border-b',
+        'border-border border-b bg-background/80',
         fullscreen
           ? 'grid min-w-0 items-center gap-2 px-3 py-1.5'
-          : 'space-y-1.5 px-3 py-2'
+          : 'space-y-2 px-3 py-2.5'
       )}
       style={
         fullscreen
@@ -87,11 +87,11 @@ export function MindAiPanelHeader({
         )}
       >
         <div className="min-w-0">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <Bot className="h-4 w-4 text-dynamic-blue" />
             <h2
               className={cn(
-                'font-semibold tracking-normal',
+                'min-w-0 shrink-0 font-semibold tracking-normal',
                 fullscreen && 'max-w-28 truncate text-sm'
               )}
             >
@@ -99,11 +99,11 @@ export function MindAiPanelHeader({
             </h2>
             {statusLabel ? (
               <span
-                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border bg-muted/50 text-dynamic-blue"
+                className="inline-flex min-w-0 max-w-36 shrink items-center gap-1 rounded-full border border-border bg-muted/50 px-1.5 py-0.5 text-dynamic-blue text-xs"
                 title={statusLabel}
               >
                 <LoaderCircle className="h-3 w-3 animate-spin" />
-                <span className="sr-only">{statusLabel}</span>
+                <span className="truncate">{statusLabel}</span>
               </span>
             ) : null}
           </div>

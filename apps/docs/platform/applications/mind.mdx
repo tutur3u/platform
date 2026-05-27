@@ -20,6 +20,16 @@ credit source, checks the caller's membership for workspace credits, preflights
 model availability and remaining credits, and deducts usage from that same
 billing workspace after a successful stream.
 
+Mind AI uses the stable `google/gemini-3.1-flash-lite` model entry for its
+Flash Lite default/fallback surface. Stored preferences and old clients that
+still send `google/gemini-3.1-flash-lite-preview` are normalized to the stable
+ID before credit model resolution and provider streaming.
+
+The model selector reads from the paginated infrastructure model catalog with
+server-side search and "load more" pages. Do not reintroduce first-page-only
+catalog fetches or local-only filtering; matching models must remain reachable
+even when they are outside the initial response.
+
 ## Dual-Host Parity
 
 Mind is available through both the standalone satellite host and the main web

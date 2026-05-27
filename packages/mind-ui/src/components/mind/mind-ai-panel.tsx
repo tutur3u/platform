@@ -1,34 +1,26 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  applyMindAiPatch,
-  getMindBoardGraphSnapshot,
-  saveMindGraph,
-} from '@tuturuuu/internal-api/mind';
-import type { MindAiPatchRecord, MindBoardSnapshot } from '@tuturuuu/types/db';
-import type { UIMessage } from 'ai';
+import { applyMindAiPatch } from '@tuturuuu/internal-api/mind';
+import type { MindAiPatchRecord } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MindAiInput } from './mind-ai-input';
-import {
-  applyMindPatchWithLayoutRefresh,
-  mergeMindPatchRecord,
-} from './mind-ai-panel-actions';
+import { applyMindPatchWithLayoutRefresh } from './mind-ai-panel-actions';
 import { MindAiPanelContent } from './mind-ai-panel-content';
 import { MindAiPanelHeader } from './mind-ai-panel-header';
+import { MindAiPanelShell } from './mind-ai-panel-shell';
+import {
+  formatChatAsMarkdown,
+  organizeAndSaveBoard,
+  updateMindPatchCaches,
+} from './mind-ai-panel-utils';
 import {
   getLatestMindAiProposal,
   type MindAiProposal,
   MindAiProposalIsland,
 } from './mind-ai-proposal-island';
 import type { MindAiArtifactItem } from './mind-ai-tool-activity';
-import {
-  organizeMindLayout,
-  toFlowEdges,
-  toFlowNodes,
-  toSaveMindGraphPayload,
-} from './mind-flow';
 import { useMindAiPanelState } from './use-mind-ai-panel-state';
 
 type Props = {
@@ -282,87 +274,69 @@ export function MindAiPanel({
 
   return (
     <>
-      {fullscreen ? (
-        <div className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm" />
-      ) : null}
-      <aside
-        className={
-          fullscreen
-            ? 'fixed inset-3 z-50 flex min-h-0 flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/20 backdrop-blur md:inset-4'
-            : 'absolute top-20 right-5 bottom-5 z-30 flex min-h-0 min-w-0 shrink-0 flex-col overflow-hidden rounded-xl border border-border bg-background/95 shadow-2xl shadow-foreground/10 backdrop-blur'
-        }
-        style={
-          fullscreen
-            ? undefined
-            : {
-                maxWidth: 'calc(100vw - 2rem)',
-                minWidth: 'min(28rem, calc(100vw - 2rem))',
-                width: 'min(28rem, calc(100vw - 2rem))',
-              }
-        }
-      >
-        <MindAiPanelHeader
-          chatJson={chatJson}
-          chatMarkdown={chatMarkdown}
-          creditSource={activeCreditSource}
-          debugContext={debugContext}
-          directWrite={directWrite}
-          fullscreen={fullscreen}
-          model={model}
-          onClose={onToggleCollapsed}
-          onCreditSourceChange={handleCreditSourceChange}
-          onDirectWriteChange={setDirectWrite}
-          onModelChange={handleModelChange}
-          onNewChat={handleNewChat}
-          onThinkingModeChange={handleThinkingModeChange}
-          onToggleFullscreen={() => setFullscreen((value) => !value)}
-          personalWsId={personalWsId}
-          statusLabel={statusLabel}
-          thinkingMode={thinkingMode}
-          workspaceCreditLocked={workspaceCreditLocked}
-          wsId={wsId}
-        />
-
-        <div
-          className="@container min-h-0 min-w-0 flex-1 overflow-y-auto p-2.5"
-          ref={scrollRef}
-        >
-          <MindAiPanelContent
-            applyingPatch={applyPatchMutation.isPending}
-            fullscreen={fullscreen}
-            latestMessage={latestMessage}
-            messages={messages}
-            onApplyPatch={(patchId) => applyPatchMutation.mutate(patchId)}
-            onOpenArtifact={handleOpenArtifact}
-            onPickPrompt={submit}
-            patches={patches}
-            patchesError={patchesError}
-            layoutRefreshError={
-              layoutRefreshBoardId ? t('ai.layoutRefreshError') : null
-            }
-            onRetryLayoutRefresh={
-              layoutRefreshBoardId
-                ? () => layoutRetryMutation.mutate(layoutRefreshBoardId)
-                : undefined
-            }
-            retryingLayoutRefresh={layoutRetryMutation.isPending}
-            status={status}
-            visibleError={visibleError}
+      <MindAiPanelShell
+        footer={
+          <MindAiInput
+            disabled={!boardId}
+            files={attachedFiles}
+            input={input}
+            isBusy={isBusy}
+            onAddFiles={addFiles}
+            onInputChange={setInput}
+            onRemoveFile={removeFile}
+            onSubmit={() => void submit(input)}
+            panelFullscreen={fullscreen}
           />
-        </div>
-
-        <MindAiInput
-          disabled={!boardId}
-          files={attachedFiles}
-          input={input}
-          isBusy={isBusy}
-          onAddFiles={addFiles}
-          onInputChange={setInput}
-          onRemoveFile={removeFile}
-          onSubmit={() => void submit(input)}
-          panelFullscreen={fullscreen}
+        }
+        fullscreen={fullscreen}
+        header={
+          <MindAiPanelHeader
+            chatJson={chatJson}
+            chatMarkdown={chatMarkdown}
+            creditSource={activeCreditSource}
+            debugContext={debugContext}
+            directWrite={directWrite}
+            fullscreen={fullscreen}
+            model={model}
+            onClose={onToggleCollapsed}
+            onCreditSourceChange={handleCreditSourceChange}
+            onDirectWriteChange={setDirectWrite}
+            onModelChange={handleModelChange}
+            onNewChat={handleNewChat}
+            onThinkingModeChange={handleThinkingModeChange}
+            onToggleFullscreen={() => setFullscreen((value) => !value)}
+            personalWsId={personalWsId}
+            statusLabel={statusLabel}
+            thinkingMode={thinkingMode}
+            workspaceCreditLocked={workspaceCreditLocked}
+            wsId={wsId}
+          />
+        }
+        scrollRef={scrollRef}
+      >
+        <MindAiPanelContent
+          applyingPatch={applyPatchMutation.isPending}
+          fullscreen={fullscreen}
+          latestMessage={latestMessage}
+          layoutRefreshError={
+            layoutRefreshBoardId ? t('ai.layoutRefreshError') : null
+          }
+          messages={messages}
+          onApplyPatch={(patchId) => applyPatchMutation.mutate(patchId)}
+          onOpenArtifact={handleOpenArtifact}
+          onPickPrompt={submit}
+          onRetryLayoutRefresh={
+            layoutRefreshBoardId
+              ? () => layoutRetryMutation.mutate(layoutRefreshBoardId)
+              : undefined
+          }
+          patches={patches}
+          patchesError={patchesError}
+          retryingLayoutRefresh={layoutRetryMutation.isPending}
+          status={status}
+          visibleError={visibleError}
         />
-      </aside>
+      </MindAiPanelShell>
       <MindAiProposalIsland
         applying={applyPatchMutation.isPending}
         fullscreen={fullscreen}
@@ -372,78 +346,4 @@ export function MindAiPanel({
       />
     </>
   );
-}
-
-function updateMindPatchCaches({
-  boardId,
-  patch,
-  queryClient,
-  wsId,
-}: {
-  boardId?: string | null;
-  patch: MindAiPatchRecord;
-  queryClient: ReturnType<typeof useQueryClient>;
-  wsId: string;
-}) {
-  const targetBoardId = patch.boardId || boardId;
-  if (!targetBoardId) return;
-
-  queryClient.setQueryData<{ patches: MindAiPatchRecord[] }>(
-    ['mind', 'patches', wsId, targetBoardId],
-    (current) => ({
-      patches: mergeMindPatchRecord(current?.patches, patch),
-    })
-  );
-  queryClient.setQueryData<
-    MindBoardSnapshot & { patches?: MindAiPatchRecord[] }
-  >(['mind', 'snapshot', wsId, targetBoardId], (current) =>
-    current
-      ? {
-          ...current,
-          patches: mergeMindPatchRecord(current.patches, patch),
-        }
-      : current
-  );
-}
-
-async function organizeAndSaveBoard(
-  wsId: string,
-  boardId: string
-): Promise<MindBoardSnapshot> {
-  const snapshot = await getMindBoardGraphSnapshot(wsId, boardId);
-  const edges = toFlowEdges(snapshot.edges);
-  const nodes = organizeMindLayout({
-    edges,
-    nodes: toFlowNodes(snapshot.nodes),
-  });
-
-  return saveMindGraph(
-    wsId,
-    boardId,
-    toSaveMindGraphPayload({
-      deletedEdgeIds: [],
-      deletedNodeIds: [],
-      edges,
-      nodes,
-    })
-  );
-}
-
-function formatChatAsMarkdown(messages: UIMessage[]) {
-  return messages
-    .map((message) => {
-      const text = getMessageText(message);
-      if (!text.trim()) return null;
-      const role = message.role === 'user' ? 'User' : 'Mind';
-      return `### ${role}\n\n${text.trim()}`;
-    })
-    .filter(Boolean)
-    .join('\n\n');
-}
-
-function getMessageText(message: UIMessage) {
-  return message.parts
-    .map((part) => (part.type === 'text' ? part.text : ''))
-    .filter(Boolean)
-    .join('\n\n');
 }

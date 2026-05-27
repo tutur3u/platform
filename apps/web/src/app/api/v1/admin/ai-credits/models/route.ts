@@ -8,6 +8,12 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  applyAdminAiCreditsModelFilters,
+  parseAdminAiCreditsModelFilters,
+  parsePositiveInt,
+} from './route-filters';
 
 async function requireRootAdmin() {
   const supabase = await createClient();
@@ -52,27 +58,19 @@ export async function GET(req: NextRequest) {
     if ('error' in auth && auth.error) return auth.error;
 
     const searchParams = req.nextUrl.searchParams;
-    const page = Math.max(1, Number(searchParams.get('page') ?? 1));
+    const page = parsePositiveInt(searchParams.get('page'), 1);
     const limit = Math.min(
       100,
-      Math.max(1, Number(searchParams.get('limit') ?? 50))
+      parsePositiveInt(searchParams.get('limit'), 50)
     );
-    const provider = searchParams.get('provider');
-    const enabled = searchParams.get('enabled');
+    const filters = parseAdminAiCreditsModelFilters(searchParams);
 
     const sbAdmin = await createAdminClient();
     let query = sbAdmin
       .from('ai_gateway_models')
       .select('*', { count: 'exact' });
 
-    if (provider) {
-      query = query.eq('provider', provider);
-    }
-    if (enabled === 'true') {
-      query = query.eq('is_enabled', true);
-    } else if (enabled === 'false') {
-      query = query.eq('is_enabled', false);
-    }
+    query = applyAdminAiCreditsModelFilters(query, filters);
 
     const from = (page - 1) * limit;
     const to = from + limit - 1;
@@ -94,7 +92,7 @@ export async function GET(req: NextRequest) {
       pagination: { page, limit, total: count ?? 0 },
     });
   } catch (error) {
-    console.error('Error in models GET:', error);
+    serverLogger.error('Error in AI credits models GET:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -170,7 +168,7 @@ export async function PATCH(req: Request) {
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error in models PATCH:', error);
+    serverLogger.error('Error in AI credits models PATCH:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

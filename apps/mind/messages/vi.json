@@ -205,6 +205,8 @@
       "layoutRefreshError": "Bản nháp đã được áp dụng, nhưng Mind chưa thể tự sắp xếp lại bảng. Hãy thử làm mới bố cục hoặc tiếp tục với đồ thị đã cập nhật.",
       "layoutRefreshErrorTitle": "Cần thử lại bố cục",
       "loadingModels": "Đang tải mô hình...",
+      "loadingMoreModels": "Đang tải thêm mô hình...",
+      "loadMoreModels": "Tải thêm mô hình",
       "messageActions": "Thao tác với tin nhắn",
       "model": "Mô hình",
       "modelSearch": "Tìm mô hình",

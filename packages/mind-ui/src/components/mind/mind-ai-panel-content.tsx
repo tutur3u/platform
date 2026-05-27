@@ -6,6 +6,7 @@ import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
 import type { UIMessage } from 'ai';
 import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 import { EmptyAiState, MindAiMessage } from './mind-ai-message';
 import type { MindAiArtifactItem } from './mind-ai-tool-activity';
 
@@ -74,62 +75,92 @@ export function MindAiPanelContent({
         <EmptyAiState onPickPrompt={onPickPrompt} />
       )}
       {patchesError ? (
-        <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <div className="min-w-0">
-              <p className="font-medium">{t('ai.patchLoadErrorTitle')}</p>
-              <p className="mt-0.5 break-words text-dynamic-red/90">
-                {patchesError}
-              </p>
-            </div>
-          </div>
-        </div>
+        <MindAiAlert
+          description={patchesError}
+          title={t('ai.patchLoadErrorTitle')}
+          variant="warning"
+        />
       ) : null}
       {layoutRefreshError ? (
-        <div className="space-y-2 rounded-md border border-dynamic-yellow/30 bg-dynamic-yellow/10 px-3 py-2 text-xs">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-dynamic-yellow" />
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">{t('ai.layoutRefreshErrorTitle')}</p>
-              <p className="mt-0.5 break-words text-muted-foreground">
-                {layoutRefreshError}
-              </p>
-            </div>
-          </div>
-          {onRetryLayoutRefresh ? (
-            <Button
-              className="h-7 gap-1.5 px-2 text-xs"
-              disabled={retryingLayoutRefresh}
-              onClick={onRetryLayoutRefresh}
-              size="sm"
-              type="button"
-              variant="outline"
-            >
-              <RefreshCw
-                className={cn(
-                  'h-3.5 w-3.5',
-                  retryingLayoutRefresh && 'animate-spin'
-                )}
-              />
-              {t('ai.retryLayoutRefresh')}
-            </Button>
-          ) : null}
-        </div>
+        <MindAiAlert
+          action={
+            onRetryLayoutRefresh ? (
+              <Button
+                className="h-7 gap-1.5 px-2 text-xs"
+                disabled={retryingLayoutRefresh}
+                onClick={onRetryLayoutRefresh}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    retryingLayoutRefresh && 'animate-spin'
+                  )}
+                />
+                {t('ai.retryLayoutRefresh')}
+              </Button>
+            ) : null
+          }
+          description={layoutRefreshError}
+          title={t('ai.layoutRefreshErrorTitle')}
+          variant="warning"
+        />
       ) : null}
       {visibleError ? (
-        <div className="rounded-md border border-dynamic-red/30 bg-dynamic-red/10 px-3 py-2 text-dynamic-red text-xs">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
-            <div className="min-w-0">
-              <p className="font-medium">{t('ai.errorTitle')}</p>
-              <p className="mt-0.5 break-words text-dynamic-red/90">
-                {visibleError}
-              </p>
-            </div>
-          </div>
-        </div>
+        <MindAiAlert
+          description={visibleError}
+          title={t('ai.errorTitle')}
+          variant="danger"
+        />
       ) : null}
+    </div>
+  );
+}
+
+function MindAiAlert({
+  action,
+  description,
+  title,
+  variant,
+}: {
+  action?: ReactNode;
+  description: string;
+  title: string;
+  variant: 'danger' | 'warning';
+}) {
+  const isDanger = variant === 'danger';
+
+  return (
+    <div
+      className={cn(
+        'space-y-2 rounded-md border px-3 py-2 text-xs',
+        isDanger
+          ? 'border-dynamic-red/30 bg-dynamic-red/10 text-dynamic-red'
+          : 'border-dynamic-yellow/30 bg-dynamic-yellow/10 text-foreground'
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <TriangleAlert
+          className={cn(
+            'mt-0.5 h-4 w-4 shrink-0',
+            isDanger ? 'text-dynamic-red' : 'text-dynamic-yellow'
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium">{title}</p>
+          <p
+            className={cn(
+              'mt-0.5 break-words',
+              isDanger ? 'text-dynamic-red/90' : 'text-muted-foreground'
+            )}
+          >
+            {description}
+          </p>
+        </div>
+      </div>
+      {action ? <div className="pl-6">{action}</div> : null}
     </div>
   );
 }

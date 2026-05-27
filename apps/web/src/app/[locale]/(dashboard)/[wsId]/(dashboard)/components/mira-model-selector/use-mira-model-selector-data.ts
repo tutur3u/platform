@@ -98,12 +98,13 @@ export function useMiraModelSelectorData({
   const providerSummariesQuery = useQuery({
     queryKey: [
       MIRA_GATEWAY_PROVIDERS_QUERY_KEY,
-      { allowedModels, hideLockedModels },
+      { allowedModels, hideLockedModels, search },
     ],
     queryFn: () =>
       fetchGatewayProviders({
         allowedModels,
         hideLockedModels,
+        search,
       }),
     enabled: deferredOpen,
     staleTime: 5 * 60 * 1000,

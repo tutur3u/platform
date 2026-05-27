@@ -5,7 +5,17 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   plugins: [react()],
   resolve: {
-    alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+    alias: [
+      { find: '@', replacement: resolve(__dirname, './src') },
+      {
+        find: /^@tuturuuu\/ai\/(.*)$/,
+        replacement: resolve(__dirname, '../ai/src/$1.ts'),
+      },
+      {
+        find: /^@tuturuuu\/internal-api\/(.*)$/,
+        replacement: resolve(__dirname, '../internal-api/src/$1.ts'),
+      },
+    ],
   },
   test: {
     environment: 'jsdom',
