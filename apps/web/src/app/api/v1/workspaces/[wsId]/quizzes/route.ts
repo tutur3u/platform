@@ -20,7 +20,10 @@ const QuizOptionSchema = z.object({
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
-  quiz_options: z.array(QuizOptionSchema).min(2),
+  quiz_options: z.array(QuizOptionSchema).optional(),
+  type: z.string().optional(),
+  content: z.any().optional(),
+  answer: z.any().optional(),
 });
 
 const QuizCreateSchema = z.object({
@@ -66,14 +69,42 @@ export const GET = withSessionAuth(
       MAX_PAGE_SIZE
     );
 
+    const moduleId = request.nextUrl.searchParams.get('moduleId')?.trim();
+
     const queryBuilder = context.supabase
       .from('workspace_quizzes')
       .select(
-        'id, question, created_at, quiz_options(id, value, is_correct, explanation)',
+        'id, question, type, content, answer, created_at, quiz_options(id, value, is_correct, explanation)',
         { count: 'exact' }
       )
       .eq('ws_id', access.normalizedWsId)
       .order('created_at', { ascending: false });
+
+    if (moduleId) {
+      const { data: moduleQuizzes, error: mqErr } = await context.supabase
+        .from('course_module_quizzes')
+        .select('quiz_id')
+        .eq('module_id', moduleId);
+
+      if (mqErr) {
+        console.error('Failed to fetch course module quizzes', mqErr);
+        return NextResponse.json(
+          { message: 'Error fetching course module quizzes' },
+          { status: 500 }
+        );
+      }
+
+      const quizIds = (moduleQuizzes ?? []).map((mq) => mq.quiz_id);
+      if (quizIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          count: 0,
+          page,
+          pageSize,
+        });
+      }
+      queryBuilder.in('id', quizIds);
+    }
 
     if ((q?.length ?? 0) > 0) {
       queryBuilder.ilike('question', `%${q}%`);
@@ -145,21 +176,31 @@ export const POST = withSessionAuth(
       for (const quiz of quizzes) {
         let quizId: string;
 
+        const updateData: any = { question: quiz.question };
+        if (quiz.type !== undefined) updateData.type = quiz.type;
+        if (quiz.content !== undefined) updateData.content = quiz.content;
+        if (quiz.answer !== undefined) updateData.answer = quiz.answer;
+
         if (quiz.id != null) {
           const { error: updateErr } = await context.supabase
             .from('workspace_quizzes')
-            .update({ question: quiz.question })
+            .update(updateData)
             .eq('id', quiz.id)
             .eq('ws_id', access.normalizedWsId);
           if (updateErr) throw updateErr;
           quizId = quiz.id;
         } else {
+          const insertData: any = {
+            question: quiz.question,
+            ws_id: access.normalizedWsId,
+          };
+          if (quiz.type !== undefined) insertData.type = quiz.type;
+          if (quiz.content !== undefined) insertData.content = quiz.content;
+          if (quiz.answer !== undefined) insertData.answer = quiz.answer;
+
           const { data: inserted, error: insertErr } = await context.supabase
             .from('workspace_quizzes')
-            .insert({
-              question: quiz.question,
-              ws_id: access.normalizedWsId,
-            })
+            .insert(insertData)
             .select('id')
             .single();
           if (insertErr) throw insertErr;
@@ -196,17 +237,19 @@ export const POST = withSessionAuth(
           .eq('quiz_id', quizId);
         if (deleteOptionsError) throw deleteOptionsError;
 
-        const optionsPayload = quiz.quiz_options.map((option) => ({
-          quiz_id: quizId,
-          value: option.value,
-          is_correct: option.is_correct,
-          explanation: option.explanation ?? null,
-        }));
+        if (quiz.quiz_options != null && quiz.quiz_options.length > 0) {
+          const optionsPayload = quiz.quiz_options.map((option) => ({
+            quiz_id: quizId,
+            value: option.value,
+            is_correct: option.is_correct,
+            explanation: option.explanation ?? null,
+          }));
 
-        const { error: insertOptionsError } = await context.supabase
-          .from('quiz_options')
-          .insert(optionsPayload);
-        if (insertOptionsError) throw insertOptionsError;
+          const { error: insertOptionsError } = await context.supabase
+            .from('quiz_options')
+            .insert(optionsPayload);
+          if (insertOptionsError) throw insertOptionsError;
+        }
       }
 
       return NextResponse.json({

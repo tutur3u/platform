@@ -19,6 +19,7 @@ import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
+import LessonQuizzesSection from './quizzes-section';
 import { useLessonDetail } from './use-lesson-detail';
 
 function AttachFilesLoader({
@@ -497,6 +498,8 @@ export function LessonDetailClient({
             </div>
           )}
         </section>
+
+        <LessonQuizzesSection wsId={wsId} lessonId={lessonId} />
       </div>
     </main>
   );

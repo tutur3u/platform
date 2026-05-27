@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Trash, X } from '@tuturuuu/icons';
-import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api/education';
+import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -62,9 +63,10 @@ export default function ClientQuizzes({
   const onDelete = async (id: string) => {
     try {
       await deleteWorkspaceQuiz(wsId, id);
+      toast.success(t('common.success'));
       router.refresh();
     } catch (error) {
-      console.log(error);
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

@@ -96,12 +96,15 @@ export interface UpsertWorkspaceCourseModuleGroupPayload {
 export interface UpsertWorkspaceQuizPayload {
   id?: string;
   question: string;
-  quiz_options: Array<{
+  quiz_options?: Array<{
     id?: string;
     value: string;
     is_correct: boolean;
     explanation?: string | null;
   }>;
+  type?: string;
+  content?: any;
+  answer?: any;
 }
 
 export interface CreateWorkspaceQuizPayload {
@@ -945,6 +948,58 @@ export async function deleteWorkspaceQuiz(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes/${encodePathSegment(quizId)}`,
     {
       method: 'DELETE',
+      cache: 'no-store',
+    }
+  );
+}
+
+export interface ListWorkspaceQuizzesParams {
+  page?: number;
+  pageSize?: number;
+  q?: string;
+  moduleId?: string;
+}
+
+export interface ListWorkspaceQuizzesResponse {
+  data: Array<{
+    id: string;
+    question: string;
+    type?: string;
+    content?: any;
+    answer?: any;
+    created_at?: string;
+    quiz_options?: Array<{
+      id: string;
+      value: string;
+      is_correct: boolean;
+      explanation?: string | null;
+    }>;
+  }>;
+  count: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function getWorkspaceQuizzes(
+  workspaceId: string,
+  params?: ListWorkspaceQuizzesParams,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const searchParams = new URLSearchParams();
+  if (params?.page) searchParams.set('page', params.page.toString());
+  if (params?.pageSize)
+    searchParams.set('pageSize', params.pageSize.toString());
+  if (params?.q) searchParams.set('q', params.q);
+  if (params?.moduleId) searchParams.set('moduleId', params.moduleId);
+
+  const query = searchParams.toString();
+  return client.json<ListWorkspaceQuizzesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/quizzes${
+      query ? `?${query}` : ''
+    }`,
+    {
+      method: 'GET',
       cache: 'no-store',
     }
   );

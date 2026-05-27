@@ -1996,6 +1996,32 @@ export type Database = {
           ws_id: string;
         }[];
       };
+      get_finance_overview_metrics: {
+        Args: {
+          _actor_id: string;
+          _end_date?: string;
+          _start_date?: string;
+          _view?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          category_count: number;
+          invoice_count: number;
+          latest_transaction_at: string;
+          net_total: number;
+          recent_expense_count: number;
+          recent_income_count: number;
+          recent_net_total: number;
+          recent_total_expense: number;
+          recent_total_income: number;
+          recent_transaction_count: number;
+          total_expense: number;
+          total_income: number;
+          transaction_count: number;
+          wallet_count: number;
+        }[];
+      };
       get_rate_limit_trust_decision: {
         Args: { p_api_key_id?: string; p_ip?: unknown; p_user_id?: string };
         Returns: {
@@ -25727,27 +25753,36 @@ export type Database = {
       };
       workspace_quizzes: {
         Row: {
+          answer: Json | null;
+          content: Json | null;
           created_at: string;
           id: string;
           instruction: Json | null;
           question: string;
           score: number;
+          type: string;
           ws_id: string;
         };
         Insert: {
+          answer?: Json | null;
+          content?: Json | null;
           created_at?: string;
           id?: string;
           instruction?: Json | null;
           question: string;
           score?: number;
+          type?: string;
           ws_id: string;
         };
         Update: {
+          answer?: Json | null;
+          content?: Json | null;
           created_at?: string;
           id?: string;
           instruction?: Json | null;
           question?: string;
           score?: number;
+          type?: string;
           ws_id?: string;
         };
         Relationships: [

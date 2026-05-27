@@ -17,7 +17,10 @@ const QuizOptionSchema = z.object({
 
 const QuizUpdateSchema = z.object({
   question: z.string().trim().min(1).max(4000),
-  quiz_options: z.array(QuizOptionSchema).min(2),
+  quiz_options: z.array(QuizOptionSchema).optional(),
+  type: z.string().optional(),
+  content: z.any().optional(),
+  answer: z.any().optional(),
 });
 
 export const PUT = withSessionAuth(
@@ -60,9 +63,17 @@ export const PUT = withSessionAuth(
       );
     }
 
+    const updateData: any = { question: parsedBody.data.question };
+    if (parsedBody.data.type !== undefined)
+      updateData.type = parsedBody.data.type;
+    if (parsedBody.data.content !== undefined)
+      updateData.content = parsedBody.data.content;
+    if (parsedBody.data.answer !== undefined)
+      updateData.answer = parsedBody.data.answer;
+
     const { data, error } = await context.supabase
       .from('workspace_quizzes')
-      .update({ question: parsedBody.data.question })
+      .update(updateData)
       .eq('id', parsedParams.data.quizId)
       .eq('ws_id', access.normalizedWsId)
       .select('id')
@@ -93,23 +104,28 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const { error: insertOptionsError } = await context.supabase
-      .from('quiz_options')
-      .insert(
-        parsedBody.data.quiz_options.map((option) => ({
-          quiz_id: parsedParams.data.quizId,
-          value: option.value,
-          is_correct: option.is_correct,
-          explanation: option.explanation ?? null,
-        }))
-      );
+    if (
+      parsedBody.data.quiz_options != null &&
+      parsedBody.data.quiz_options.length > 0
+    ) {
+      const { error: insertOptionsError } = await context.supabase
+        .from('quiz_options')
+        .insert(
+          parsedBody.data.quiz_options.map((option) => ({
+            quiz_id: parsedParams.data.quizId,
+            value: option.value,
+            is_correct: option.is_correct,
+            explanation: option.explanation ?? null,
+          }))
+        );
 
-    if (insertOptionsError) {
-      console.error('Failed to insert quiz options', insertOptionsError);
-      return NextResponse.json(
-        { message: 'Error updating workspace quiz options' },
-        { status: 500 }
-      );
+      if (insertOptionsError) {
+        console.error('Failed to insert quiz options', insertOptionsError);
+        return NextResponse.json(
+          { message: 'Error updating workspace quiz options' },
+          { status: 500 }
+        );
+      }
     }
 
     return NextResponse.json({ message: 'success' });
