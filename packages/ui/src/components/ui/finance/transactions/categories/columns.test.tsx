@@ -35,6 +35,35 @@ function CategoryAmountCell({ amount }: { amount: number }) {
   );
 }
 
+function CategoryCountCell({ count }: { count: number }) {
+  const columns = transactionCategoryColumns({
+    t,
+    namespace: 'transaction-category-data-table',
+    extraData: {
+      currency: 'USD',
+    },
+  });
+  const countColumn = columns.find(
+    (column) =>
+      (column as ColumnDef<unknown> & { accessorKey?: string }).accessorKey ===
+      'transaction_count'
+  );
+
+  if (typeof countColumn?.cell !== 'function') return null;
+
+  return (
+    <>
+      {countColumn.cell({
+        row: {
+          getValue: (key: string) =>
+            key === 'transaction_count' ? count : undefined,
+          original: {},
+        },
+      } as never)}
+    </>
+  );
+}
+
 describe('transactionCategoryColumns', () => {
   beforeEach(() => {
     // biome-ignore lint/suspicious/noDocumentCookie: test resets the finance visibility cookie.
@@ -59,6 +88,26 @@ describe('transactionCategoryColumns', () => {
     render(<CategoryAmountCell amount={123} />);
 
     await waitFor(() => expect(screen.getByText(/\$123/)).toBeVisible());
+    expect(screen.queryByText('•••••')).not.toBeInTheDocument();
+  });
+
+  it('masks the transaction count column when finance numbers are globally hidden', () => {
+    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
+    document.cookie = 'finance-confidential-mode=true;path=/';
+
+    render(<CategoryCountCell count={1234} />);
+
+    expect(screen.getByText('•••••')).toBeVisible();
+    expect(screen.queryByText('1,234')).not.toBeInTheDocument();
+  });
+
+  it('shows the transaction count column when finance numbers are globally visible', async () => {
+    // biome-ignore lint/suspicious/noDocumentCookie: test sets the finance visibility cookie.
+    document.cookie = 'finance-confidential-mode=false;path=/';
+
+    render(<CategoryCountCell count={1234} />);
+
+    await waitFor(() => expect(screen.getByText('1,234')).toBeVisible());
     expect(screen.queryByText('•••••')).not.toBeInTheDocument();
   });
 });

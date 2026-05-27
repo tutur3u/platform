@@ -75,6 +75,7 @@ export function BudgetCard({
   const remaining = budget.amount - budget.spent;
   const isOverBudget = budget.spent > budget.amount;
   const isNearThreshold = percentage >= alertThreshold;
+  const visibleProgressValue = areNumbersHidden ? 0 : Math.min(percentage, 100);
   const periodLabel = isBudgetPeriod(budget.period)
     ? t(budget.period)
     : budget.period;
@@ -82,20 +83,23 @@ export function BudgetCard({
   return (
     <Card
       className={cn(
-        isOverBudget && 'border-dynamic-red',
-        isNearThreshold && !isOverBudget && 'border-dynamic-orange'
+        !areNumbersHidden && isOverBudget && 'border-dynamic-red',
+        !areNumbersHidden &&
+          isNearThreshold &&
+          !isOverBudget &&
+          'border-dynamic-orange'
       )}
     >
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <span className="flex-1">{budget.name}</span>
           <div className="flex items-center gap-2">
-            {isOverBudget && (
+            {!areNumbersHidden && isOverBudget && (
               <span className="rounded-full bg-dynamic-red/10 px-2 py-1 font-medium text-dynamic-red text-xs">
                 {t('over_budget')}
               </span>
             )}
-            {isNearThreshold && !isOverBudget && (
+            {!areNumbersHidden && isNearThreshold && !isOverBudget && (
               <span className="rounded-full bg-dynamic-orange/10 px-2 py-1 font-medium text-dynamic-orange text-xs">
                 {t('alert')}
               </span>
@@ -170,9 +174,13 @@ export function BudgetCard({
             </span>
           </div>
           <Progress
-            value={Math.min(percentage, 100)}
+            value={visibleProgressValue}
             className="h-2"
-            indicatorClassName={getProgressColor(percentage, alertThreshold)}
+            indicatorClassName={
+              areNumbersHidden
+                ? 'bg-muted-foreground/30'
+                : getProgressColor(percentage, alertThreshold)
+            }
           />
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t('budget')}</span>
@@ -208,7 +216,11 @@ export function BudgetCard({
           </div>
           <div>
             <p className="text-muted-foreground text-xs">{t('used')}</p>
-            <p className="font-semibold text-lg">{percentage.toFixed(1)}%</p>
+            <p className="font-semibold text-lg">
+              {areNumbersHidden
+                ? FINANCE_HIDDEN_AMOUNT
+                : `${percentage.toFixed(1)}%`}
+            </p>
           </div>
         </div>
 

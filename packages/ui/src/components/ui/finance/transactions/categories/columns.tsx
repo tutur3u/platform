@@ -55,6 +55,17 @@ function CategoryAmountCell({
   );
 }
 
+function CategoryCountCell({ count }: { count: number }) {
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
+
+  return (
+    <div className="text-muted-foreground tabular-nums">
+      {areNumbersHidden ? FINANCE_HIDDEN_AMOUNT : count.toLocaleString()}
+    </div>
+  );
+}
+
 export const transactionCategoryColumns = ({
   t,
   namespace,
@@ -169,11 +180,7 @@ export const transactionCategoryColumns = ({
       ),
       cell: ({ row }) => {
         const count = Number(row.getValue('transaction_count')) || 0;
-        return (
-          <div className="text-muted-foreground tabular-nums">
-            {count.toLocaleString()}
-          </div>
-        );
+        return <CategoryCountCell count={count} />;
       },
     },
     {
