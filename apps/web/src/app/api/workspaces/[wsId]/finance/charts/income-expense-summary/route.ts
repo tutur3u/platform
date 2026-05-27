@@ -11,9 +11,14 @@ const pointSchema = z.object({
 });
 
 const rpcResponseSchema = z.object({
+  average_expense: z.coerce.number().default(0),
+  average_income: z.coerce.number().default(0),
   closing_balance: z.coerce.number().default(0),
   data: z.array(pointSchema).default([]),
+  net_total: z.coerce.number().default(0),
   opening_balance: z.coerce.number().default(0),
+  total_expense: z.coerce.number().default(0),
+  total_income: z.coerce.number().default(0),
 });
 
 const querySchema = z.object({

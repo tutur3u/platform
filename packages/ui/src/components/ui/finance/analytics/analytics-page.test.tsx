@@ -9,17 +9,13 @@ const mocks = vi.hoisted(() => ({
   categoryBreakdownChart: vi.fn(),
   filters: vi.fn(),
   incomeExpenseChart: vi.fn(),
-  listFinanceDailyIncomeExpense: vi.fn(),
-  listFinanceMonthlyIncomeExpense: vi.fn(),
+  listFinanceIncomeExpenseSummary: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/internal-api/finance', () => ({
-  listFinanceDailyIncomeExpense: (
-    ...args: Parameters<typeof mocks.listFinanceDailyIncomeExpense>
-  ) => mocks.listFinanceDailyIncomeExpense(...args),
-  listFinanceMonthlyIncomeExpense: (
-    ...args: Parameters<typeof mocks.listFinanceMonthlyIncomeExpense>
-  ) => mocks.listFinanceMonthlyIncomeExpense(...args),
+  listFinanceIncomeExpenseSummary: (
+    ...args: Parameters<typeof mocks.listFinanceIncomeExpenseSummary>
+  ) => mocks.listFinanceIncomeExpenseSummary(...args),
 }));
 
 vi.mock('next-intl', () => ({
@@ -96,36 +92,34 @@ describe('analytics page', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockFilters();
-    mocks.listFinanceDailyIncomeExpense.mockResolvedValue([
-      {
-        day: '2026-05-01',
-        total_expense: 40,
-        total_income: 100,
-      },
-    ]);
-    mocks.listFinanceMonthlyIncomeExpense.mockResolvedValue([
-      {
-        month: '2026-05',
-        total_expense: 400,
-        total_income: 1000,
-      },
-    ]);
+    mocks.listFinanceIncomeExpenseSummary.mockResolvedValue({
+      average_expense: 40,
+      average_income: 100,
+      closing_balance: 60,
+      data: [
+        {
+          period: '2026-05-01',
+          total_expense: 40,
+          total_income: 100,
+        },
+      ],
+      net_total: 60,
+      opening_balance: 0,
+      total_expense: 40,
+      total_income: 100,
+    });
   });
 
   it('loads analytics through internal API helpers', async () => {
     renderAnalyticsPage();
 
     await waitFor(() => {
-      expect(mocks.listFinanceDailyIncomeExpense).toHaveBeenCalledWith('ws-1', {
-        endDate: '2026-05-24',
-        includeConfidential: true,
-        startDate: '2026-05-01',
-      });
-      expect(mocks.listFinanceMonthlyIncomeExpense).toHaveBeenCalledWith(
+      expect(mocks.listFinanceIncomeExpenseSummary).toHaveBeenCalledWith(
         'ws-1',
         {
           endDate: '2026-05-24',
           includeConfidential: true,
+          interval: 'daily',
           startDate: '2026-05-01',
         }
       );
@@ -151,6 +145,22 @@ describe('analytics page', () => {
 
   it('maps monthly analytics points into the shared income expense chart', async () => {
     mockFilters('monthly');
+    mocks.listFinanceIncomeExpenseSummary.mockResolvedValue({
+      average_expense: 400,
+      average_income: 1000,
+      closing_balance: 600,
+      data: [
+        {
+          period: '2026-05',
+          total_expense: 400,
+          total_income: 1000,
+        },
+      ],
+      net_total: 600,
+      opening_balance: 0,
+      total_expense: 400,
+      total_income: 1000,
+    });
 
     renderAnalyticsPage();
 

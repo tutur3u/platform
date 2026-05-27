@@ -22,6 +22,8 @@ describe('finance income expense chart summary route', () => {
   it('returns prepared chart totals and balances from the database RPC', async () => {
     const rpcMock = vi.fn().mockResolvedValue({
       data: {
+        average_expense: 25,
+        average_income: 100,
         closing_balance: 200,
         data: [
           {
@@ -30,7 +32,10 @@ describe('finance income expense chart summary route', () => {
             total_income: 100,
           },
         ],
+        net_total: 75,
         opening_balance: 125,
+        total_expense: 25,
+        total_income: 100,
       },
       error: null,
     });
@@ -66,6 +71,8 @@ describe('finance income expense chart summary route', () => {
       include_confidential: false,
     });
     await expect(response.json()).resolves.toEqual({
+      average_expense: 25,
+      average_income: 100,
       closing_balance: 200,
       data: [
         {
@@ -74,7 +81,10 @@ describe('finance income expense chart summary route', () => {
           total_income: 100,
         },
       ],
+      net_total: 75,
       opening_balance: 125,
+      total_expense: 25,
+      total_income: 100,
     });
   });
 });

@@ -507,9 +507,14 @@ export interface FinanceIncomeExpenseSummaryPoint {
 }
 
 export interface FinanceIncomeExpenseSummary {
+  average_expense: number;
+  average_income: number;
   closing_balance: number;
   data: FinanceIncomeExpenseSummaryPoint[];
+  net_total: number;
   opening_balance: number;
+  total_expense: number;
+  total_income: number;
 }
 
 export interface FinanceBalanceAtDate {

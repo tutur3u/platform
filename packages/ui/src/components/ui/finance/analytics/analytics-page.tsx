@@ -2,10 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import {
-  type FinanceDailyIncomeExpensePoint,
-  type FinanceMonthlyIncomeExpensePoint,
-  listFinanceDailyIncomeExpense,
-  listFinanceMonthlyIncomeExpense,
+  type FinanceIncomeExpenseSummary,
+  listFinanceIncomeExpenseSummary,
 } from '@tuturuuu/internal-api/finance';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
@@ -32,44 +30,26 @@ export default function AnalyticsPage({
 }: AnalyticsPageProps) {
   const t = useTranslations('finance-analytics');
   const filters = useAnalyticsFilters({ preset: '30d' });
+  const summaryInterval = filters.interval === 'monthly' ? 'monthly' : 'daily';
 
   const {
-    data: dailyData = [],
-    isLoading: isDailyLoading,
-    error: dailyError,
+    data: incomeExpenseSummary,
+    isLoading: isSummaryLoading,
+    error: summaryError,
   } = useQuery({
     queryKey: [
-      'analytics-daily',
+      'analytics-income-expense-summary',
       wsId,
+      summaryInterval,
       filters.apiDateRange.startDate,
       filters.apiDateRange.endDate,
       filters.includeConfidential,
     ],
     queryFn: () =>
-      listFinanceDailyIncomeExpense(wsId, {
+      listFinanceIncomeExpenseSummary(wsId, {
         endDate: filters.apiDateRange.endDate,
         includeConfidential: filters.includeConfidential,
-        startDate: filters.apiDateRange.startDate,
-      }),
-    staleTime: 30_000,
-  });
-
-  const {
-    data: monthlyData = [],
-    isLoading: isMonthlyLoading,
-    error: monthlyError,
-  } = useQuery({
-    queryKey: [
-      'analytics-monthly',
-      wsId,
-      filters.apiDateRange.startDate,
-      filters.apiDateRange.endDate,
-      filters.includeConfidential,
-    ],
-    queryFn: () =>
-      listFinanceMonthlyIncomeExpense(wsId, {
-        endDate: filters.apiDateRange.endDate,
-        includeConfidential: filters.includeConfidential,
+        interval: summaryInterval,
         startDate: filters.apiDateRange.startDate,
       }),
     staleTime: 30_000,
@@ -77,6 +57,13 @@ export default function AnalyticsPage({
 
   const showDailyChart =
     filters.interval === 'daily' || filters.interval === 'weekly';
+  const incomeExpenseChartData = (incomeExpenseSummary?.data ?? []).map(
+    (item) => ({
+      day: item.period,
+      total_expense: item.total_expense,
+      total_income: item.total_income,
+    })
+  );
   const presetDisplayLabels = {
     '7d': t('last-7-days'),
     '30d': t('last-30-days'),
@@ -118,9 +105,9 @@ export default function AnalyticsPage({
         {/* Income vs Expense Chart */}
         {showDailyChart ? (
           <IncomeExpenseChart
-            data={dailyData}
-            isLoading={isDailyLoading}
-            error={dailyError}
+            data={incomeExpenseChartData}
+            isLoading={isSummaryLoading}
+            error={summaryError}
             currency={currency}
             title={t('income-vs-expense')}
             interval={filters.interval}
@@ -128,13 +115,9 @@ export default function AnalyticsPage({
           />
         ) : (
           <IncomeExpenseChart
-            data={monthlyData.map((item) => ({
-              day: item.month,
-              total_income: item.total_income,
-              total_expense: item.total_expense,
-            }))}
-            isLoading={isMonthlyLoading}
-            error={monthlyError}
+            data={incomeExpenseChartData}
+            isLoading={isSummaryLoading}
+            error={summaryError}
             currency={currency}
             title={t('income-vs-expense')}
             interval={filters.interval}
@@ -161,10 +144,9 @@ export default function AnalyticsPage({
 
         {/* Spending Trends Summary Card */}
         <SpendingTrendsSummary
-          dailyData={dailyData}
-          monthlyData={monthlyData}
-          isLoading={isDailyLoading || isMonthlyLoading}
-          error={dailyError || monthlyError}
+          summary={incomeExpenseSummary}
+          isLoading={isSummaryLoading}
+          error={summaryError}
           currency={currency}
           includeConfidential={filters.includeConfidential}
         />
@@ -174,8 +156,7 @@ export default function AnalyticsPage({
 }
 
 interface SpendingTrendsSummaryProps {
-  dailyData: FinanceDailyIncomeExpensePoint[];
-  monthlyData: FinanceMonthlyIncomeExpensePoint[];
+  summary?: FinanceIncomeExpenseSummary;
   isLoading: boolean;
   error?: Error | null;
   currency: string;
@@ -183,9 +164,7 @@ interface SpendingTrendsSummaryProps {
 }
 
 function SpendingTrendsSummary({
-  dailyData,
-  // monthlyData is available for future use (e.g., monthly comparisons)
-  monthlyData: _monthlyData,
+  summary,
   isLoading,
   error,
   currency,
@@ -206,20 +185,11 @@ function SpendingTrendsSummary({
     }).format(value);
   };
 
-  // Calculate summary statistics
-  const totalDailyIncome = dailyData.reduce(
-    (sum, d) => sum + (d.total_income || 0),
-    0
-  );
-  const totalDailyExpense = dailyData.reduce(
-    (sum, d) => sum + (d.total_expense || 0),
-    0
-  );
-  const dailyAvgIncome =
-    dailyData.length > 0 ? totalDailyIncome / dailyData.length : 0;
-  const dailyAvgExpense =
-    dailyData.length > 0 ? totalDailyExpense / dailyData.length : 0;
-  const netTotal = totalDailyIncome - totalDailyExpense;
+  const totalIncome = summary?.total_income ?? 0;
+  const totalExpense = summary?.total_expense ?? 0;
+  const averageIncome = summary?.average_income ?? 0;
+  const averageExpense = summary?.average_expense ?? 0;
+  const netTotal = summary?.net_total ?? 0;
 
   if (isLoading) {
     return (
@@ -264,7 +234,7 @@ function SpendingTrendsSummary({
           <span className="font-semibold text-dynamic-green">
             {shouldHideAmounts
               ? FINANCE_HIDDEN_AMOUNT
-              : formatValue(totalDailyIncome)}
+              : formatValue(totalIncome)}
           </span>
         </div>
         <div className="flex items-center justify-between">
@@ -274,7 +244,7 @@ function SpendingTrendsSummary({
           <span className="font-semibold text-dynamic-red">
             {shouldHideAmounts
               ? FINANCE_HIDDEN_AMOUNT
-              : formatValue(totalDailyExpense)}
+              : formatValue(totalExpense)}
           </span>
         </div>
         <div className="border-t pt-4">
@@ -306,7 +276,7 @@ function SpendingTrendsSummary({
             <span className="font-medium text-sm">
               {shouldHideAmounts
                 ? FINANCE_HIDDEN_AMOUNT
-                : formatValue(dailyAvgIncome)}
+                : formatValue(averageIncome)}
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between">
@@ -316,7 +286,7 @@ function SpendingTrendsSummary({
             <span className="font-medium text-sm">
               {shouldHideAmounts
                 ? FINANCE_HIDDEN_AMOUNT
-                : formatValue(dailyAvgExpense)}
+                : formatValue(averageExpense)}
             </span>
           </div>
         </div>
