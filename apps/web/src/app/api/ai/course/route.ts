@@ -49,7 +49,7 @@ function markdownToTipTapDocument(markdown: string) {
   for (const block of blocks) {
     // Heading: #, ##, ###
     const heading = block.match(/^(#{1,6})\s+(.+)$/u);
-    if (heading && heading[1] && heading[2]) {
+    if (heading?.[1] && heading[2]) {
       content.push({
         type: 'heading',
         attrs: { level: heading[1].length },

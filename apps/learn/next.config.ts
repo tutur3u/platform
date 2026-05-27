@@ -5,7 +5,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const IS_DEPLOYED_ENVIRONMENT =
   process.env.VERCEL === '1' ||
   process.env.VERCEL_ENV === 'preview' ||
