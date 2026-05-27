@@ -28,6 +28,11 @@ type Props = {
   onDismiss: (proposalId: string) => void;
 };
 
+const DOCKED_ASSISTANT_WIDTH = '30rem';
+const DOCKED_ASSISTANT_RIGHT = '0.75rem';
+const DOCKED_PANEL_GAP = '1rem';
+const DOCKED_LEFT_MARGIN = '1.5rem';
+
 export function MindAiProposalIsland({
   applying,
   fullscreen,
@@ -60,8 +65,8 @@ export function MindAiProposalIsland({
         fullscreen
           ? { width: 'min(34rem, calc(100vw - 4rem))' }
           : {
-              right: '30rem',
-              width: 'min(34rem, calc(100vw - 34rem))',
+              right: `calc(${DOCKED_ASSISTANT_WIDTH} + ${DOCKED_ASSISTANT_RIGHT} + ${DOCKED_PANEL_GAP})`,
+              width: `min(34rem, calc(100vw - ${DOCKED_ASSISTANT_WIDTH} - ${DOCKED_ASSISTANT_RIGHT} - ${DOCKED_PANEL_GAP} - ${DOCKED_LEFT_MARGIN}))`,
             }
       }
     >

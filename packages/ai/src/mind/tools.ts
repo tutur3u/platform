@@ -942,13 +942,18 @@ function validateMindPatchGraphHealth({
 
   for (const operation of createNodeOperations) {
     const refs = [operation.id, operation.node.id].filter(Boolean);
-    const hasParent = Boolean(operation.node.parentNodeId);
     const hasRelationship = refs.some((ref) => relationshipRefs.has(ref));
-    if (hasParent || hasRelationship) continue;
+    if (hasRelationship) continue;
 
-    issues.push(
-      `Patch draft leaves new node "${operation.node.title}" isolated. Add parentNodeId or a relationship edge for it.`
-    );
+    if (operation.node.parentNodeId) {
+      issues.push(
+        `Patch draft sets parentNodeId for new node "${operation.node.title}" but does not connect it with an explicit edge. Add a contains edge to the parent when possible.`
+      );
+    } else {
+      issues.push(
+        `Patch draft leaves new node "${operation.node.title}" isolated. Add a relationship edge to a parent, sibling, or existing anchor when possible.`
+      );
+    }
   }
 
   return issues;
@@ -1355,7 +1360,7 @@ export function createMindStreamTools(
     }),
     inspect_mind_structure: tool({
       description:
-        'Inspect board organization before planning changes. Returns counts by horizon, status, and type plus high-degree and isolated nodes so large boards can be navigated in chunks.',
+        'Inspect board organization before planning changes. Returns counts by horizon, status, and type plus high-degree and isolated nodes so large boards can be navigated in chunks and relationship gaps can be repaired.',
       inputSchema: z.object({
         boardId: toolBoardIdSchema,
       }),
@@ -1374,7 +1379,7 @@ export function createMindStreamTools(
     }),
     propose_mind_patch: tool({
       description:
-        'Create a structured applyable Mind draft patch for user review or implementation. Use kind=create_node with node fields for nodes. Use kind=create_edge with a top-level edge object containing sourceNodeId, targetNodeId, and edgeType; sourceNodeId and targetNodeId may reference IDs of nodes created earlier in the same patch.',
+        'Create a structured applyable Mind draft patch for user review or implementation. Use kind=create_node with node fields for nodes. Use kind=create_edge with a top-level edge object containing sourceNodeId, targetNodeId, and edgeType; sourceNodeId and targetNodeId may reference IDs of nodes created earlier in the same patch. When the board or patch has more than one possible node, every new node must participate in at least one explicit edge; use contains edges for parent/child structure even when parentNodeId is also set.',
       inputSchema: z.object({
         boardId: toolBoardIdSchema,
         patch: loosePatchSchema,

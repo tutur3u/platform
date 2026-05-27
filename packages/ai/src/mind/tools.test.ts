@@ -588,6 +588,47 @@ describe('propose_mind_patch reference validation', () => {
     });
     expect(callbacks.createPatch).not.toHaveBeenCalled();
   });
+
+  it('rejects new child nodes that only set parentNodeId without an edge', async () => {
+    const callbacks = createCallbacks();
+    const tools = createMindStreamTools(
+      {
+        boardId: BOARD_ID,
+        threadId: THREAD_ID,
+        userId: USER_ID,
+        writeMode: 'review',
+        wsId: WS_ID,
+      },
+      callbacks
+    );
+    const proposePatchTool = getToolExecute(tools.propose_mind_patch);
+
+    const result = await proposePatchTool({
+      boardId: BOARD_ID,
+      patch: {
+        operations: [
+          {
+            id: 'create_child_without_edge',
+            kind: 'create_node',
+            node: {
+              id: 'child_without_edge',
+              parentNodeId: EXISTING_NODE_ID,
+              positionX: 320,
+              positionY: 240,
+              title: 'Child without relationship edge',
+            },
+          },
+        ],
+        summary: 'Add child without relationship edge',
+      },
+    });
+
+    expect(result).toMatchObject({
+      ok: false,
+      reason: expect.stringContaining('explicit edge'),
+    });
+    expect(callbacks.createPatch).not.toHaveBeenCalled();
+  });
 });
 
 describe('render_mind_ui input parsing', () => {

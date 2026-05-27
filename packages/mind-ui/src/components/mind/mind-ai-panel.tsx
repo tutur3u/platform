@@ -213,6 +213,7 @@ export function MindAiPanel({
   const visibleProposal =
     openedArtifact ??
     (latestProposal?.id === dismissedProposalId ? null : latestProposal);
+  const visiblePatchesError = visibleProposal?.patch ? null : patchesError;
   const chatMarkdown = useMemo(
     () => formatChatAsMarkdown(messages),
     [messages]
@@ -347,7 +348,7 @@ export function MindAiPanel({
           }
           onRetryPatches={onRetryPatches}
           patches={patches}
-          patchesError={patchesError}
+          patchesError={visiblePatchesError}
           retryingLayoutRefresh={layoutRetryMutation.isPending}
           retryingPatches={retryingPatches}
           status={status}
