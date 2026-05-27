@@ -45,26 +45,53 @@ export function useAiGenerate(wsId: string, courseId: string) {
   const mutation = useMutation<
     AiGenerateState['result'],
     Error,
-    { context?: string; file: File; onProgress: (pct: number) => void }
+    {
+      context?: string;
+      file?: File;
+      fileName?: string;
+      onProgress?: (pct: number) => void;
+      storagePath?: string;
+      fileId?: string;
+    }
   >({
-    mutationFn: async ({ context, file, onProgress }) => {
+    mutationFn: async ({
+      context,
+      file,
+      fileName,
+      onProgress,
+      storagePath,
+      fileId,
+    }) => {
       try {
-        // 1. Upload file to user-group storage
-        const uploaded = await uploadWorkspaceUserGroupStorageFile(
-          wsId,
-          courseId,
-          file,
-          {
-            onUploadProgress: ({ percent }) => onProgress(percent),
-          }
-        );
+        let selectedStoragePath = storagePath?.trim();
+        let selectedFileName = fileName?.trim();
 
-        // 2. Generate course modules from the uploaded file
+        if (file) {
+          // 1. Upload file to user-group storage
+          const uploaded = await uploadWorkspaceUserGroupStorageFile(
+            wsId,
+            courseId,
+            file,
+            {
+              onUploadProgress: ({ percent }) => onProgress?.(percent),
+            }
+          );
+
+          selectedStoragePath = uploaded.path;
+          selectedFileName = file.name;
+        }
+
+        if (!fileId && (!selectedStoragePath || !selectedFileName)) {
+          throw new Error('Please select a file or storage document.');
+        }
+
+        // 2. Generate course modules from the selected storage file
         const response = await generateWorkspaceCourseModulesFromStorage(wsId, {
           context: context?.trim() || undefined,
           groupId: courseId,
-          storagePath: uploaded.path,
-          fileName: file.name,
+          storagePath: selectedStoragePath,
+          fileName: selectedFileName,
+          fileId,
         });
 
         return {

@@ -1,8 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { FileText, FolderOpen, Loader2, X } from '@tuturuuu/icons';
+import { FileText, FolderOpen, Loader2, Sparkles, X } from '@tuturuuu/icons';
 import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
+import { Button } from '@tuturuuu/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -13,6 +14,7 @@ import {
 } from '@tuturuuu/ui/dialog';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
+import { useAiGenerate } from './use-ai-generate';
 
 type ModuleStorageEntry = {
   id?: string | null;
@@ -60,7 +62,13 @@ function formatDate(value?: string | null) {
   }).format(parsed);
 }
 
-function StorageItemRow({ entry }: { entry: ModuleStorageEntry }) {
+function StorageItemRow({
+  entry,
+  generateMutation,
+}: {
+  entry: ModuleStorageEntry;
+  generateMutation: ReturnType<typeof useAiGenerate>;
+}) {
   const t = useTranslations('teachModules.storage');
   const isFolder = !entry.id;
   const size = isFolder
@@ -74,9 +82,13 @@ function StorageItemRow({ entry }: { entry: ModuleStorageEntry }) {
   const updatedAt =
     entry.updated_at ?? entry.created_at ?? entry.last_accessed_at;
 
+  const isPending =
+    generateMutation.isPending &&
+    generateMutation.variables?.fileId === entry.id;
+
   return (
     <div className="border-2 border-border bg-card px-4 py-3 shadow-[3px_3px_0_var(--border)]">
-      <div className="flex items-start gap-3">
+      <div className="flex items-center gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center border-2 border-border bg-dynamic-cyan/15 shadow-[2px_2px_0_var(--border)]">
           {isFolder ? (
             <FolderOpen className="h-4 w-4" />
@@ -97,7 +109,7 @@ function StorageItemRow({ entry }: { entry: ModuleStorageEntry }) {
           </p>
         </div>
 
-        <div className="shrink-0 space-y-1 text-right text-muted-foreground text-xs">
+        <div className="mr-2 shrink-0 space-y-1 text-right text-muted-foreground text-xs">
           <p>
             <span className="font-semibold text-foreground">{t('size')}:</span>{' '}
             {formatBytes(size)}
@@ -109,6 +121,27 @@ function StorageItemRow({ entry }: { entry: ModuleStorageEntry }) {
             {formatDate(updatedAt)}
           </p>
         </div>
+
+        {!isFolder && entry.id && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="flex-shrink-0 border-2 border-transparent text-dynamic-yellow hover:border-border hover:bg-dynamic-yellow/10 hover:text-dynamic-yellow"
+            onClick={() =>
+              generateMutation.mutate({
+                fileId: entry.id!,
+              })
+            }
+            disabled={generateMutation.isPending}
+            title="Generate Modules with AI"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+          </Button>
+        )}
       </div>
     </div>
   );
@@ -123,6 +156,7 @@ export function ModuleStorageDialog({
 }) {
   const t = useTranslations('teachModules.storage');
   const [open, setOpen] = useState(false);
+  const generateMutation = useAiGenerate(wsId, courseId);
 
   const storageQuery = useQuery({
     enabled: open,
@@ -225,6 +259,7 @@ export function ModuleStorageDialog({
                 <StorageItemRow
                   key={`${entry.name}-${entry.created_at ?? ''}`}
                   entry={entry}
+                  generateMutation={generateMutation}
                 />
               ))}
             </div>

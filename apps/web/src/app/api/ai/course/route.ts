@@ -1,16 +1,9 @@
 import { google } from '@ai-sdk/google';
 import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/markitdown';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
-import {
-  getPermissions,
-  normalizeWorkspaceId,
-} from '@tuturuuu/utils/workspace-helper';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { generateObject } from 'ai';
 import { NextResponse } from 'next/server';
 import { withSessionAuth } from '@/lib/api-auth';
@@ -40,12 +33,6 @@ type TipTapTextNode = {
   text: string;
 };
 
-type TipTapBlockNode = {
-  type: 'heading' | 'paragraph';
-  attrs?: { level: number };
-  content?: TipTapTextNode[];
-};
-
 function textContent(text: string): TipTapTextNode[] | undefined {
   return text.trim() ? [{ type: 'text', text: text.trim() }] : undefined;
 }
@@ -62,7 +49,7 @@ function markdownToTipTapDocument(markdown: string) {
   for (const block of blocks) {
     // Heading: #, ##, ###
     const heading = block.match(/^(#{1,6})\s+(.+)$/u);
-    if (heading) {
+    if (heading && heading[1] && heading[2]) {
       content.push({
         type: 'heading',
         attrs: { level: heading[1].length },
@@ -72,9 +59,13 @@ function markdownToTipTapDocument(markdown: string) {
     }
 
     // List detection: lines starting with -, *, + or numbered lists
-    const lines = block.split(/\n+/u).map((l) => l.trim()).filter(Boolean);
-    const isList = lines.every((ln) => /^([*+-]|\d+\.)\s+/.test(ln));
-    if (isList) {
+    const lines = block
+      .split(/\n+/u)
+      .map((l) => l.trim())
+      .filter(Boolean);
+    const isList =
+      lines.length > 0 && lines.every((ln) => /^([*+-]|\d+\.)\s+/.test(ln));
+    if (isList && lines[0]) {
       // Determine if ordered
       const firstMatch = lines[0].match(/^\s*(\d+)\./);
       const ordered = Boolean(firstMatch);
@@ -107,7 +98,10 @@ function markdownToTipTapDocument(markdown: string) {
 
   return {
     type: 'doc',
-    content: content.length > 0 ? content : [{ type: 'paragraph', content: textContent(markdown) }],
+    content:
+      content.length > 0
+        ? content
+        : [{ type: 'paragraph', content: textContent(markdown) }],
   };
 }
 
@@ -257,7 +251,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      const { fileName, groupId, maxCharacters, storagePath, wsId } =
+      let { fileName, groupId, maxCharacters, storagePath, wsId, fileId } =
         parsedBody.data;
 
       // Require teach workspace access consistent with other Teach routes
@@ -270,6 +264,41 @@ export const POST = withSessionAuth(
 
       const normalizedWsId = access.normalizedWsId;
       const sbAdmin = access.sbAdmin as TypedSupabaseClient;
+
+      // Resolve file path/name from storage.objects by fileId if provided
+      if (fileId) {
+        const { data: storageObject, error: storageObjectError } = await sbAdmin
+          .schema('storage')
+          .from('objects')
+          .select('name, metadata')
+          .eq('id', fileId)
+          .single();
+
+        if (storageObjectError || !storageObject) {
+          return NextResponse.json(
+            { error: 'Storage object not found' },
+            { status: 404 }
+          );
+        }
+
+        if (!storageObject.name) {
+          return NextResponse.json(
+            { error: 'Invalid storage object name' },
+            { status: 400 }
+          );
+        }
+
+        storagePath = storageObject.name;
+        fileName = storageObject.name.split('/').pop() || 'file';
+      }
+
+      if (!storagePath) {
+        return NextResponse.json(
+          { error: 'Storage path or file ID is required' },
+          { status: 400 }
+        );
+      }
+
       const sanitizedStoragePath = sanitizePath(storagePath);
 
       if (
@@ -425,12 +454,12 @@ export const POST = withSessionAuth(
       // 9. Insert modules
       const moduleInsertPayload: TablesInsert<'workspace_course_modules'>[] =
         object.modules.map((mod, index) => {
-          // Prefer explicit TipTap content, support markdown strings, or sections array.
+          // Prioritize sections array if present, otherwise fall back to explicit content.
           let tiptapContent: any;
-          if ((mod as any).content) {
-            tiptapContent = normalizeContentToTipTap((mod as any).content);
-          } else if ((mod as any).sections) {
+          if ((mod as any).sections && (mod as any).sections.length > 0) {
             tiptapContent = sectionsToTipTapDoc((mod as any).sections as any[]);
+          } else if ((mod as any).content) {
+            tiptapContent = normalizeContentToTipTap((mod as any).content);
           } else {
             tiptapContent = { type: 'doc', content: [] };
           }

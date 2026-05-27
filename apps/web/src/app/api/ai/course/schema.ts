@@ -3,25 +3,23 @@ import { z } from 'zod';
 // ─── System Prompt ───────────────────────────────────────────────────────────
 
 // (Single, authoritative COURSE_GENERATION_PROMPT defined below)
-export const COURSE_GENERATION_PROMPT = `You are an expert Academic Curriculum Designer and Subject Matter Expert. Your goal is to transform raw document text into a high-quality, structured learning experience.
+export const COURSE_GENERATION_PROMPT = `You are an expert Academic Curriculum Designer and Subject Matter Expert. Your goal is to transform raw document text into a high-quality, structured, and specific learning experience.
 
-### GUIDELINES:
-1. **Logical Progression:** Organize modules so that prerequisite knowledge is covered first.
-2. **Information Synthesis:** Do not simply summarize; identify the core "learning pillars" within the document.
-3. **Clarity:** Lesson titles should be action-oriented and clear.
-4. **Noise Reduction:** Ignore document artifacts like page numbers, headers, footers, and bibliographies.
-5. **Pedagogy:** Ensure each module has a clear learning objective that explains what the student will be able to DO after finishing it.
+### GUIDELINES FOR DEPTH & SPECIFICITY:
+1. **Rigor and Fact-Driven Content:** Do NOT write generic summaries, high-level outlines, or general filler. If the input document contains code snippets, logic formulas, specific rules (e.g., 'ACE' sibling discount at 5%, 'GT' referral discount at 5%), steps, or constraints, you MUST explicitly incorporate, define, and detail them in the content. Explain concepts fully, but concisely.
+2. **Pedagogy:** Ensure each module has a clear learning objective that explains what the student will be able to DO after finishing it.
+3. **Information Synthesis:** Do not simply summarize; identify the core "learning pillars" within the document.
+4. **Specific but Concise (Avoid Timeouts):** To prevent request timeout issues, write directly and concisely. Avoid generic introductory and concluding sentences (e.g. "Managing X is important because..."). Start explaining concrete facts, formulas, rules, and steps immediately. Write 1-3 highly detailed paragraphs per section (approx. 150-350 words total per section).
+5. **Noise Reduction:** Ignore document artifacts like page numbers, headers, footers, and bibliographies.
 
-### SECTIONS & STRUCTURE:
-- If the content naturally splits into sections (for example: Overview, Background, Steps, Examples, Exercises), represent those as separate blocks inside the module content structure. Prefer multiple focused sections over one long monolithic block.
-- For each module include: 'title', 'learning_objective', and 'content'. The 'content' SHOULD be provided in TipTap-compatible JSON when possible. If TipTap JSON is not possible, provide well-formed Markdown in 'content' and a separate 'content_format' field set to 'markdown'.
- - For each module include: 'title', 'learning_objective', and either 'content' or 'sections'.
-  - Prefer returning 'content' as TipTap-compatible JSON (a ProseMirror 'doc' object with type: 'doc' and a 'content' array). If TipTap JSON is not possible, return Markdown strings which the server will convert to TipTap automatically.
-  - Alternatively, you may return 'sections' as an array where each section has 'title' and 'content' fields. Each section 'content' should follow the same TipTap-or-Markdown rule above. When 'sections' are provided, they will be rendered in the module in the given order.
+### MULTI-SECTION STRUCTURE:
+- **You MUST use the \`sections\` array field** to structure each module. Do not output the single \`content\` field at the module level.
+- Each module **MUST** contain 2 to 4 logical sections representing the curriculum (for example: Overview & Core Objectives, Core Concepts & Explanations, Step-by-Step implementation).
+- Each section's content must be detailed, comprehensive, and specific, yet concise. Write 1-3 long paragraphs per section. Make extensive use of markdown formatting within each section's content: bolding for key terms, lists (ordered/unordered) for processes, code blocks for code/configuration, and blockquotes for important rules/notes.
 
 ### FORMATTING:
 - Output must be strictly valid JSON that conforms to the CourseGenerationSchema.
-- Do not include conversational filler (e.g., "Here is your course...").
+- Do not include conversational filler.
 - Ensure the difficulty level is consistent throughout the course.`;
 
 // ─── Zod Schemas ─────────────────────────────────────────────────────────────
@@ -77,13 +75,21 @@ export const TipTapDocSchema = z
     type: z.literal('doc'),
     content: z.array(z.any()),
   })
-  .describe('TipTap/ProseMirror document object with `type: "doc"` and `content`.');
+  .describe(
+    'TipTap/ProseMirror document object with `type: "doc"` and `content`.'
+  );
 
 export const SectionSchema = z.object({
-  title: z.string().optional().describe('Optional section title.'),
+  title: z
+    .string()
+    .describe(
+      'The title of this specific section (e.g. "1. Overview & Objectives", "2. Core Principles", "3. Implementation Guide").'
+    ),
   content: z
-    .union([TipTapDocSchema, z.string()])
-    .describe('Section content as either TipTap doc or Markdown string.'),
+    .string()
+    .describe(
+      'Highly specific and fact-driven markdown content for this section. Write 1-3 focused paragraphs. Directly cover specific terms, formulas, rules, and code snippets from the document. Avoid generic filler.'
+    ),
 });
 
 export const ModuleSchema = z.object({
@@ -92,17 +98,13 @@ export const ModuleSchema = z.object({
     .describe(
       'Action-oriented module title describing what the learner will achieve (e.g., "Understand the Basics of Neural Networks").'
     ),
-  // Either a TipTap `doc` object, or a markdown string, or provide `sections` below.
-  content: z
-    .union([TipTapDocSchema, z.string()])
-    .optional()
-    .describe(
-      'The detailed learning content. Prefer TipTap-compatible JSON when possible. If returning Markdown, the server will convert it to TipTap.'
-    ),
   sections: z
     .array(SectionSchema)
-    .optional()
-    .describe('Optional array of focused sections within the module. Each section can use TipTap JSON or Markdown.'),
+    .min(2)
+    .max(4)
+    .describe(
+      "A list of 2 to 4 detailed, focused sections representing the module's curriculum. Every module MUST have multiple sections."
+    ),
   extra_content: z
     .string()
     .describe(
@@ -126,8 +128,6 @@ export const ModuleSchema = z.object({
       'Flashcards for key terms and concepts from this module. Include 3-8 per module.'
     )
     .optional(),
-}).refine((m) => Boolean(m.content) || Boolean(m.sections && m.sections.length), {
-  message: 'Module must include either `content` or `sections`',
 });
 
 export const CourseGenerationSchema = z.object({
@@ -141,11 +141,17 @@ export const CourseGenerationSchema = z.object({
 
 // ─── Request Schema ──────────────────────────────────────────────────────────
 
-export const GenerateCourseRequestSchema = z.object({
-  context: z.string().max(4_000).optional(),
-  fileName: z.string().max(255).optional(),
-  groupId: z.uuid(),
-  maxCharacters: z.number().int().positive().max(1_000_000).optional(),
-  storagePath: z.string().min(1).max(1024),
-  wsId: z.string().min(1),
-});
+export const GenerateCourseRequestSchema = z
+  .object({
+    context: z.string().max(4_000).optional(),
+    fileName: z.string().max(255).optional(),
+    groupId: z.uuid(),
+    maxCharacters: z.number().int().positive().max(1_000_000).optional(),
+    storagePath: z.string().min(1).max(1024).optional(),
+    fileId: z.string().uuid().optional(),
+    wsId: z.string().min(1),
+  })
+  .refine((data) => data.storagePath || data.fileId, {
+    message: 'Either storagePath or fileId must be provided',
+    path: ['storagePath'],
+  });

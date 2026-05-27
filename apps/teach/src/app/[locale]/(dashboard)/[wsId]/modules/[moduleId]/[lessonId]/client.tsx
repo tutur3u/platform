@@ -10,16 +10,16 @@ import {
   Plus,
   X,
 } from '@tuturuuu/icons';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
+import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
+import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
-import { useCallback, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
 import { useLessonDetail } from './use-lesson-detail';
-import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
-import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
-import { toast } from '@tuturuuu/ui/sonner';
 
 function AttachFilesLoader({
   wsId,
@@ -84,7 +84,9 @@ export function LessonDetailClient({
   // Attach dialog state
   const [showAttachDialog, setShowAttachDialog] = useState(false);
   const [attachFiles, setAttachFiles] = useState<any[] | null>(null);
-  const [selectedPaths, setSelectedPaths] = useState<Record<string, boolean>>({});
+  const [selectedPaths, setSelectedPaths] = useState<Record<string, boolean>>(
+    {}
+  );
   const [attachLoading, setAttachLoading] = useState(false);
 
   // ─── Name editing ───────────────────────────────────────────────────────────
@@ -313,7 +315,7 @@ export function LessonDetailClient({
         </div>
 
         {/* ── YouTube links ─────────────────────────────────────────────────── */}
-        
+
         {/* ── Attach files dialog (modal) ────────────────────────────────────── */}
         {showAttachDialog && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
@@ -330,17 +332,22 @@ export function LessonDetailClient({
               </div>
 
               <div className="mb-3">
-                <p className="text-sm text-muted-foreground">
-                  Select files from the workspace drive to attach to this lesson.
+                <p className="text-muted-foreground text-sm">
+                  Select files from the workspace drive to attach to this
+                  lesson.
                 </p>
               </div>
 
               <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
                 {!attachFiles && (
-                  <div className="p-4 text-sm text-muted-foreground">Loading files…</div>
+                  <div className="p-4 text-muted-foreground text-sm">
+                    Loading files…
+                  </div>
                 )}
                 {attachFiles && attachFiles.length === 0 && (
-                  <div className="p-4 text-sm text-muted-foreground">No files found.</div>
+                  <div className="p-4 text-muted-foreground text-sm">
+                    No files found.
+                  </div>
                 )}
                 {attachFiles?.map((f) => (
                   <label key={f.path} className="flex items-center gap-2 p-2">
@@ -348,16 +355,21 @@ export function LessonDetailClient({
                       type="checkbox"
                       checked={Boolean(selectedPaths[f.path])}
                       onChange={() =>
-                        setSelectedPaths((s) => ({ ...s, [f.path]: !s[f.path] }))
+                        setSelectedPaths((s) => ({
+                          ...s,
+                          [f.path]: !s[f.path],
+                        }))
                       }
                     />
                     <div className="min-w-0 flex-1 text-sm">
-                      <div className="font-medium truncate">{f.name}</div>
-                      <div className="text-xs text-muted-foreground truncate">
+                      <div className="truncate font-medium">{f.name}</div>
+                      <div className="truncate text-muted-foreground text-xs">
                         {f.path}
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground">{f.size ?? ''}</div>
+                    <div className="text-muted-foreground text-xs">
+                      {f.size ?? ''}
+                    </div>
                   </label>
                 ))}
               </div>
@@ -377,26 +389,31 @@ export function LessonDetailClient({
                     const paths = Object.keys(selectedPaths).filter(
                       (p) => selectedPaths[p]
                     );
-                    if (paths.length === 0) return toast.error('Select at least one file');
+                    if (paths.length === 0)
+                      return toast.error('Select at least one file');
                     setAttachLoading(true);
                     try {
                       // Build attachments payload from selected files
-                      const picked = (attachFiles ?? []).filter((f) =>
-                        paths.includes(f.path)
-                      ).map((f) => ({
-                        path: f.path,
-                        fullPath: f.fullPath ?? null,
-                        name: f.name,
-                        size: f.size ?? null,
-                        contentType: f.contentType ?? null,
-                      }));
+                      const picked = (attachFiles ?? [])
+                        .filter((f) => paths.includes(f.path))
+                        .map((f) => ({
+                          path: f.path,
+                          fullPath: f.fullPath ?? null,
+                          name: f.name,
+                          size: f.size ?? null,
+                          contentType: f.contentType ?? null,
+                        }));
 
                       // Merge into existing extra_content.attachments if present
-                      const existing = (lesson as any)?.extra_content?.attachments ?? [];
+                      const existing =
+                        (lesson as any)?.extra_content?.attachments ?? [];
                       const merged = [...existing, ...picked];
 
                       await updateWorkspaceCourseModule(wsId, lessonId, {
-                        extra_content: { ...(lesson as any)?.extra_content, attachments: merged },
+                        extra_content: {
+                          ...(lesson as any)?.extra_content,
+                          attachments: merged,
+                        },
                       });
 
                       toast.success('Files attached');
