@@ -26,6 +26,7 @@ const {
   HIVE_DOCKERFILE_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
+  MEET_REALTIME_DOCKERFILE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
@@ -45,6 +46,7 @@ const {
   validateHiveDbMigrateScript,
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
+  validateMeetRealtimeDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -206,6 +208,23 @@ test('Hive realtime Docker image copies every workspace manifest before frozen i
   assert.match(
     validateHiveRealtimeDockerfile(driftedDockerfileContent).join('\n'),
     /apps\/hive-realtime\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
+  );
+});
+
+test('Meet realtime Docker image installs only shared realtime runtime deps', () => {
+  const dockerfileContent = fs.readFileSync(
+    MEET_REALTIME_DOCKERFILE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(validateMeetRealtimeDockerfile(dockerfileContent), []);
+  assert.match(
+    dockerfileContent,
+    /bun install --frozen-lockfile --production --filter @tuturuuu\/realtime --linker hoisted/u
+  );
+  assert.match(
+    dockerfileContent,
+    /CMD \["bun", "apps\/meet-realtime\/src\/index.ts"\]/u
   );
 });
 
@@ -791,6 +810,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'hive-realtime'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'meet-realtime'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -823,6 +845,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'hive-realtime', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'meet-realtime', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

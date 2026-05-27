@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-19'
+updatedAt: '2026-05-27'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -12,6 +12,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - `apps/web/docker/blue-green-watcher.Dockerfile`
 - `apps/web/docker/cron-runner.Dockerfile`
 - `apps/web/cron.config.json`
+- `apps/meet-realtime/Dockerfile`
 - `docker-compose.web.yml`
 - `docker-compose.web.prod.yml` (Compose `include` entry that merges `docker-compose/compose.web.prod.*.yml` fragments plus shared `secrets` / `volumes`)
 - `scripts/sync-web-crons.js`
@@ -86,7 +87,9 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   `packages/*/package.json` manifest before running any frozen Bun install.
   Adding a new workspace app or package without updating all three lists makes
   Docker-only installs try to rewrite `bun.lock`. `bun check:docker` validates
-  this manifest parity.
+  this manifest parity. `apps/meet-realtime` is intentionally not a workspace
+  package; its Dockerfile installs only `@tuturuuu/realtime` production deps so
+  it does not require `bun.lock` changes when the service source changes.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - By default the Docker container uses the Supabase URL already configured in `.env.local`, falling back to `apps/web/.env.local`. It should stay pointed at the cloud project for normal Tuturuuu work.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
@@ -225,8 +228,9 @@ Blue/green deploy does this:
 5. Builds and runs Hive separately. `hive-db-migrate` gates only
    `hive-blue`/`hive-green` and `hive-realtime`; a migration failure marks
    `hive-migrate` failed and leaves the already promoted web color serving.
-6. Refreshes support services (`markitdown`, `storage-unzip-proxy`, and
-   `web-cron-runner`) after web/Hive target work. Their build step is scoped:
+6. Refreshes support services (`meet-realtime`, `markitdown`,
+   `storage-unzip-proxy`, and `web-cron-runner`) after web/Hive target work.
+   Their build step is scoped:
    ordinary web commits build only `web-blue` or `web-green`, while Hive and
    helper images rebuild only when their source, Dockerfile, compose wiring, or
    shared dependency inputs changed. Image-only services such as `redis`,
@@ -269,6 +273,33 @@ The helper writes support-image input hashes to
 `tmp/docker-web/prod/build-input-hashes.history.json`. Infrastructure
 monitoring reads that history so deployment rows can show which helper images
 were rebuilt and which ones were served from the cached build inputs.
+
+### Meet Realtime
+
+`apps/meet-realtime` is the internal control-plane service for Meet calls,
+webinars, and low-latency broadcast coordination. It is a Bun WebSocket service
+started by production Compose as `meet-realtime` on container port `7816`.
+`web-proxy` exposes `/realtime` for `tumeet.me` and `meet.tuturuuu.com` and
+forwards WebSocket upgrades to that service.
+
+Production meeting logic stays on Tuturuuu infrastructure:
+
+- `apps/web` owns protected meeting APIs, verifies workspace access, and mints
+  short-lived `MEET_REALTIME_TOKEN_SECRET` join tokens.
+- Browsers connect to `wss://meet.tuturuuu.com/realtime?token=...`.
+- `apps/meet-realtime` validates the token, manages ephemeral room presence,
+  chat, stage state, and reconnect resync, then calls Cloudflare Realtime SFU
+  APIs with server-only `CLOUDFLARE_REALTIME_APP_ID` and
+  `CLOUDFLARE_REALTIME_APP_SECRET`.
+- Browser media flows to Cloudflare Realtime SFU. The control WebSocket can
+  reconnect during watcher-managed service refreshes without creating a new
+  meeting record.
+
+Cost controls are part of the signed token contract: camera defaults off,
+video is capped at 720p/24fps, room limits are explicit, and webinar viewers do
+not receive publish scope. Do not add Cloudflare Workers or Durable Objects for
+production Meet room logic; use the internal service and blue/green watcher
+instead.
 
 `scripts/docker-web/env.js` persists generated helper tokens under
 `tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.

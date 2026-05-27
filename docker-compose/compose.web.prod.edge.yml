@@ -11,6 +11,7 @@ services:
     ports:
       - "${DOCKER_WEB_PROXY_HOST_PORT:-7803}:7803"
       - "${DOCKER_HIVE_PROXY_HOST_PORT:-7814}:7814"
+      - "${DOCKER_MEET_REALTIME_PROXY_HOST_PORT:-7816}:7816"
     volumes:
       - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro
 

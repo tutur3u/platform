@@ -1,7 +1,9 @@
 import { match } from '@formatjs/intl-localematcher';
+import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
 import {
   createCentralizedAuthProxy,
   propagateAuthCookies,
+  refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import Negotiator from 'negotiator';
@@ -15,22 +17,46 @@ import { defaultLocale, type Locale, supportedLocales } from './i18n/routing';
 // MFA is disabled because satellite apps delegate auth to the web app.
 // Sessions here are created via cross-app tokens that already require aal2 on web.
 const authProxy = createCentralizedAuthProxy({
+  appSession: { targetApp: 'meet' },
   webAppUrl: TTR_URL,
   publicPaths: PUBLIC_PATHS,
   skipApiRoutes: true,
   mfa: { enabled: false },
 });
+const LOCAL_AUTH_API_PREFIX = '/api/auth/';
 
 export async function proxy(req: NextRequest): Promise<NextResponse> {
   if (req.nextUrl.pathname.startsWith('/api')) {
+    const isLocalAuthApi = req.nextUrl.pathname.startsWith(
+      LOCAL_AUTH_API_PREFIX
+    );
+    const appSessionRefresh = isLocalAuthApi
+      ? null
+      : await refreshAppSessionForRequest(req, {
+          targetApp: 'meet',
+        });
+
+    if (appSessionRefresh && !appSessionRefresh.ok) {
+      return clearSupabaseAuthCookies(
+        req,
+        NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      );
+    }
+
     const guardResponse = await guardApiProxyRequest(req, {
       prefixBase: 'proxy:meet:api',
     });
     if (guardResponse) {
-      return guardResponse;
+      if (appSessionRefresh) {
+        propagateAuthCookies(appSessionRefresh.response, guardResponse);
+      }
+      return clearSupabaseAuthCookies(req, guardResponse);
     }
 
-    return NextResponse.next();
+    return (
+      appSessionRefresh?.response ??
+      clearSupabaseAuthCookies(req, NextResponse.next())
+    );
   }
 
   // Handle authentication and MFA with the centralized middleware

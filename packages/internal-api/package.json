@@ -72,6 +72,11 @@
       "import": "./dist/mail.js",
       "require": "./dist/mail.js"
     },
+    "./meet": {
+      "types": "./dist/meet.d.ts",
+      "import": "./dist/meet.js",
+      "require": "./dist/meet.js"
+    },
     "./mind": {
       "types": "./dist/mind.d.ts",
       "import": "./dist/mind.js",

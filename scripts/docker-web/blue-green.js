@@ -59,6 +59,7 @@ const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive-blue',
   'hive-green',
   'hive-realtime',
+  'meet-realtime',
 ]);
 /** Support sidecars that gate blue/green promotion (Hive warms independently). */
 const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
@@ -73,6 +74,7 @@ const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
 const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'hive',
   'hive-realtime',
+  'meet-realtime',
   'markitdown',
   'storage-unzip-proxy',
   'web-cron-runner',
@@ -107,6 +109,10 @@ const BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS = Object.freeze([
   'packages/realtime/',
   'packages/types/',
 ]);
+const BLUE_GREEN_MEET_REALTIME_BUILD_PATHS = Object.freeze([
+  'apps/meet-realtime/',
+  'packages/realtime/',
+]);
 const BLUE_GREEN_MARKITDOWN_BUILD_PATHS = Object.freeze(['apps/discord/']);
 const BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS = Object.freeze([
   'apps/storage-unzip-proxy/',
@@ -133,6 +139,7 @@ const BLUE_GREEN_MIGRATION_STAGING_PORT_ENV = {
   DOCKER_WEB_BUILDKIT_PORT: '17914',
   DOCKER_WEB_DIRECT_HOST_PORT: '17804',
   DOCKER_HIVE_PROXY_HOST_PORT: '17814',
+  DOCKER_MEET_REALTIME_PROXY_HOST_PORT: '17816',
   DOCKER_WEB_PROXY_HOST_PORT: '17803',
   DOCKER_WEB_REDIS_HOST_PORT: '16379',
   DOCKER_WEB_SERVERLESS_REDIS_HTTP_HOST_PORT: '18079',
@@ -147,6 +154,11 @@ const BLUE_GREEN_PROXY_REQUIRED_HOST_PORTS = Object.freeze([
     containerPort: '7814',
     defaultHostPort: '7814',
     envKey: 'DOCKER_HIVE_PROXY_HOST_PORT',
+  },
+  {
+    containerPort: '7816',
+    defaultHostPort: '7816',
+    envKey: 'DOCKER_MEET_REALTIME_PROXY_HOST_PORT',
   },
 ]);
 
@@ -196,6 +208,7 @@ function getBlueGreenMigrationSourceEnv(env, sourceProjectName) {
     COMPOSE_PROJECT_NAME: sourceProjectName,
     DOCKER_WEB_COMPOSE_PROJECT_NAME: sourceProjectName,
     DOCKER_HIVE_PROXY_HOST_PORT: '7814',
+    DOCKER_MEET_REALTIME_PROXY_HOST_PORT: '7816',
     DOCKER_WEB_PROXY_HOST_PORT: '7803',
   };
 }
@@ -712,7 +725,10 @@ function createBlueGreenDeploymentStages({ buildServices = [], targetColor }) {
     }),
     createBlueGreenStage('support-refresh', 'support', {
       buildServices: supportBuildServices,
-      serviceNames: BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
+      serviceNames: [
+        'meet-realtime',
+        ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+      ].filter(
         (serviceName) =>
           supportBuildServices.length === 0 ||
           supportBuildServices.includes(serviceName)
@@ -815,13 +831,14 @@ function getBlueGreenHiveServiceName(color) {
 }
 
 function getBlueGreenColorScopedSupportServices(color) {
-  return [getBlueGreenHiveServiceName(color), 'hive-realtime'];
+  return [getBlueGreenHiveServiceName(color), 'hive-realtime', 'meet-realtime'];
 }
 
 function getBlueGreenPromotionHealthGateServices(color) {
   return [
     getBlueGreenHiveServiceName(color),
     'hive-realtime',
+    'meet-realtime',
     ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   ];
 }
@@ -988,6 +1005,11 @@ function renderBlueGreenProxyConfig(
     '  server hive-realtime:7815 resolve max_fails=1 fail_timeout=5s;',
     '}',
     '',
+    'upstream meet_realtime_upstream {',
+    '  zone meet_realtime_upstream 64k;',
+    '  server meet-realtime:7816 resolve max_fails=1 fail_timeout=5s;',
+    '}',
+    '',
     'server {',
     '  listen 7803;',
     '  set $platform_project_id "platform";',
@@ -1069,6 +1091,55 @@ function renderBlueGreenProxyConfig(
     '  location / {',
     '    proxy_http_version 1.1;',
     '    proxy_pass http://hive_app_upstream;',
+    '    proxy_set_header Host $http_host;',
+    '    proxy_set_header X-Real-IP $remote_addr;',
+    '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
+    '    proxy_set_header X-Forwarded-Host $http_host;',
+    '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header Upgrade $http_upgrade;',
+    '    proxy_set_header Connection $connection_upgrade;',
+    '  }',
+    '}',
+    '',
+    'server {',
+    '  listen 7803;',
+    '  listen 7816;',
+    '  server_name tumeet.me meet.tuturuuu.com;',
+    '  set $platform_project_id "meet";',
+    '  set $platform_selected_branch "production";',
+    '  set $platform_upstream_service "meet-realtime";',
+    '  client_header_buffer_size 16k;',
+    '  keepalive_timeout 15s;',
+    '  large_client_header_buffers 8 16k;',
+    `  add_header X-Platform-Deployment-Stamp "${deploymentStamp ?? 'unknown'}" always;`,
+    `  add_header X-Platform-Blue-Green-Primary "${webColor}" always;`,
+    `  add_header X-Platform-Blue-Green-Standby "${standbyColor ?? 'none'}" always;`,
+    '',
+    '  location /realtime {',
+    '    proxy_http_version 1.1;',
+    '    proxy_pass http://meet_realtime_upstream;',
+    '    proxy_set_header Host $http_host;',
+    '    proxy_set_header X-Real-IP $remote_addr;',
+    '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
+    '    proxy_set_header X-Forwarded-Host $http_host;',
+    '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '    proxy_set_header Upgrade $http_upgrade;',
+    '    proxy_set_header Connection $connection_upgrade;',
+    '  }',
+    '',
+    '  location /health {',
+    '    proxy_http_version 1.1;',
+    '    proxy_pass http://meet_realtime_upstream/health;',
+    '    proxy_set_header Host $http_host;',
+    '    proxy_set_header X-Real-IP $remote_addr;',
+    '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
+    '    proxy_set_header X-Forwarded-Host $http_host;',
+    '    proxy_set_header X-Forwarded-Proto $scheme;',
+    '  }',
+    '',
+    '  location / {',
+    '    proxy_http_version 1.1;',
+    '    proxy_pass http://web_upstream;',
     '    proxy_set_header Host $http_host;',
     '    proxy_set_header X-Real-IP $remote_addr;',
     '    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;',
@@ -1197,6 +1268,18 @@ function getBlueGreenSupportBuildInputSpecs(targetColor) {
         ...BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS,
       ],
       serviceName: 'hive-realtime',
+    },
+    {
+      paths: [
+        '.dockerignore',
+        'bun.lock',
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        'package.json',
+        'turbo.json',
+        ...BLUE_GREEN_MEET_REALTIME_BUILD_PATHS,
+      ],
+      serviceName: 'meet-realtime',
     },
     {
       paths: [
@@ -1347,6 +1430,14 @@ function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
     )
   ) {
     addService('hive-realtime');
+  }
+
+  if (
+    BLUE_GREEN_MEET_REALTIME_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('meet-realtime');
   }
 
   if (
@@ -2379,7 +2470,10 @@ function getBlueGreenDeploymentServiceGroups(parsed, targetColor) {
     getBlueGreenHiveServiceName(targetColor),
     'hive-realtime',
   ];
-  const supportServices = [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE];
+  const supportServices = [
+    'meet-realtime',
+    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+  ];
 
   if (hasComposeProfile(parsed.composeGlobalArgs, 'redis')) {
     webServices.push('redis', 'serverless-redis-http');
