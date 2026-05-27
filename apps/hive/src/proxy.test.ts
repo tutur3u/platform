@@ -1,5 +1,8 @@
 import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
-import { refreshAppSessionForRequest } from '@tuturuuu/auth/proxy';
+import {
+  consumeVerifyTokenRequest,
+  refreshAppSessionForRequest,
+} from '@tuturuuu/auth/proxy';
 import { guardApiProxyRequest } from '@tuturuuu/utils/api-proxy-guard';
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,6 +13,7 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
+  consumeVerifyTokenRequest: vi.fn(),
   propagateAuthCookies: vi.fn(),
   refreshAppSessionForRequest: vi.fn(),
 }));
@@ -34,6 +38,8 @@ vi.mock('next-intl/navigation', () => ({
 describe('Hive proxy auth cookie cleanup', () => {
   beforeEach(() => {
     vi.mocked(guardApiProxyRequest).mockReset();
+    vi.mocked(consumeVerifyTokenRequest).mockReset();
+    vi.mocked(consumeVerifyTokenRequest).mockResolvedValue(null);
     vi.mocked(refreshAppSessionForRequest).mockReset();
     vi.mocked(refreshAppSessionForRequest).mockResolvedValue({
       claims: {
@@ -94,6 +100,25 @@ describe('Hive proxy auth cookie cleanup', () => {
     expect(response.headers.get('set-cookie')).toContain(
       'sb-resolved-kingfish-21146-auth-token=;'
     );
+  });
+
+  it('consumes verify-token requests before public verifier rendering', async () => {
+    const verifyResponse = NextResponse.redirect(
+      'https://hive.tuturuuu.com/dashboard'
+    );
+    vi.mocked(consumeVerifyTokenRequest).mockResolvedValueOnce(verifyResponse);
+    const request = new NextRequest(
+      'https://hive.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fdashboard'
+    );
+
+    const response = await proxy(request);
+
+    expect(response).toBe(verifyResponse);
+    expect(consumeVerifyTokenRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ locales: expect.any(Array) })
+    );
+    expect(refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
   it('does not redirect unauthenticated users to the internal listener origin', async () => {

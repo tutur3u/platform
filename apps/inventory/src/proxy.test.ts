@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { proxy } from './proxy';
 
 const mocks = vi.hoisted(() => ({
   clearSupabaseAuthCookies: vi.fn(
     (_request: NextRequest, response: NextResponse) => response
   ),
+  consumeVerifyTokenRequest: vi.fn(),
   getAppSessionClaimsFromRequest: vi.fn(),
   guardApiProxyRequest: vi.fn(),
   hasWebAppSessionTokenFromRequest: vi.fn(),
@@ -32,6 +33,9 @@ vi.mock('@tuturuuu/utils/api-proxy-guard', () => ({
 }));
 
 vi.mock('@tuturuuu/auth/proxy', () => ({
+  consumeVerifyTokenRequest: (
+    ...args: Parameters<typeof mocks.consumeVerifyTokenRequest>
+  ) => mocks.consumeVerifyTokenRequest(...args),
   propagateAuthCookies: (
     ...args: Parameters<typeof mocks.propagateAuthCookies>
   ) => mocks.propagateAuthCookies(...args),
@@ -58,8 +62,31 @@ vi.mock('next-intl/navigation', () => ({
 }));
 
 describe('Inventory proxy storefront access', () => {
+  beforeEach(() => {
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(null);
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
+  });
+
+  it('consumes verify-token requests before operator auth redirects', async () => {
+    const verifyResponse = NextResponse.redirect(
+      'https://inventory.tuturuuu.com/dashboard'
+    );
+    mocks.consumeVerifyTokenRequest.mockResolvedValue(verifyResponse);
+    const request = new NextRequest(
+      'https://inventory.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fdashboard'
+    );
+
+    const response = await proxy(request);
+
+    expect(response).toBe(verifyResponse);
+    expect(mocks.consumeVerifyTokenRequest).toHaveBeenCalledWith(
+      request,
+      expect.objectContaining({ locales: expect.any(Array) })
+    );
+    expect(mocks.refreshAppSessionForRequest).not.toHaveBeenCalled();
   });
 
   it('keeps public storefront pages outside the operator auth redirect', async () => {

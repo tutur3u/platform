@@ -11,6 +11,7 @@ import {
   MFA_MOBILE_APPROVAL_KIND,
 } from '../mfa-mobile-approval';
 import {
+  consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
   normalizeAuthRedirectPath,
   resolveCanonicalRequestOrigin,
@@ -79,6 +80,116 @@ describe('auth proxy redirect helpers', () => {
         'https://tuturuuu.com'
       )
     ).toBe('/workspace/demo?tab=mail');
+  });
+
+  describe('consumeVerifyTokenRequest', () => {
+    it('redirects missing-token verifier requests to a safe nextUrl without fetching', async () => {
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'https://calendar.tuturuuu.com/verify-token?nextUrl=%2Fpersonal%3Fview%3Dweek'
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response?.status).toBe(307);
+      expect(response?.headers.get('location')).toBe(
+        'https://calendar.tuturuuu.com/personal?view=week'
+      );
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('falls back for unsafe nextUrl values before redirecting', async () => {
+      const request = new NextRequest(
+        'https://calendar.tuturuuu.com/verify-token?nextUrl=https%3A%2F%2Fevil.test'
+      );
+
+      const response = await consumeVerifyTokenRequest(request, {
+        fallbackPath: '/fallback',
+      });
+
+      expect(response?.headers.get('location')).toBe(
+        'https://calendar.tuturuuu.com/fallback'
+      );
+    });
+
+    it('posts the token to the local verifier and carries verifier cookies onto the redirect', async () => {
+      const headers = new Headers({ 'content-type': 'application/json' });
+      headers.append(
+        'set-cookie',
+        'tuturuuu_app_session=ttr_app_local; Path=/; HttpOnly'
+      );
+      headers.append(
+        'set-cookie',
+        'tuturuuu_web_app_session=ttr_app_web; Path=/; HttpOnly'
+      );
+      const fetchMock = vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            appSessionCreated: true,
+            userId: 'user-1',
+            valid: true,
+          }),
+          { headers, status: 200 }
+        )
+      );
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'https://calendar.tuturuuu.com/verify-token?token=copy-token&nextUrl=%2Fpersonal'
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response?.headers.get('location')).toBe(
+        'https://calendar.tuturuuu.com/personal'
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        new URL('/api/auth/verify-app-token', 'https://calendar.tuturuuu.com'),
+        expect.objectContaining({
+          body: JSON.stringify({ token: 'copy-token' }),
+          method: 'POST',
+        })
+      );
+      const setCookie = response?.headers.get('set-cookie') ?? '';
+      expect(setCookie).toContain('tuturuuu_app_session=ttr_app_local');
+      expect(setCookie).toContain('tuturuuu_web_app_session=ttr_app_web');
+    });
+
+    it('clears stale Supabase cookies and redirects home when verification fails', async () => {
+      vi.stubGlobal(
+        'fetch',
+        vi
+          .fn()
+          .mockResolvedValue(
+            Response.json({ error: 'Invalid token' }, { status: 401 })
+          )
+      );
+      const request = new NextRequest(
+        'https://calendar.tuturuuu.com/verify-token?token=bad-token&nextUrl=%2Fpersonal',
+        {
+          headers: {
+            cookie: 'sb-project-auth-token=stale',
+          },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response?.headers.get('location')).toBe(
+        'https://calendar.tuturuuu.com/'
+      );
+      expect(response?.headers.get('set-cookie')).toContain(
+        'sb-project-auth-token=;'
+      );
+    });
+
+    it('returns null for non verifier paths', async () => {
+      const response = await consumeVerifyTokenRequest(
+        new NextRequest('https://calendar.tuturuuu.com/personal')
+      );
+
+      expect(response).toBeNull();
+    });
   });
 
   it('redirects unauthenticated users through the public origin instead of the internal bind host', async () => {

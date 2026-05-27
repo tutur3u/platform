@@ -104,6 +104,15 @@ Web-issued cookie is the preferred actor for central `apps/web` API auth; the
 local app cookie remains the fallback for routes that cannot verify the Web
 cookie.
 
+Registered app proxies must consume `/verify-token` handoff requests before page
+rendering. Use the shared `consumeVerifyTokenRequest()` helper from
+`@tuturuuu/auth/proxy` so the proxy validates the handoff token through the
+app-local `/api/auth/verify-app-token` route, copies the verifier's
+`Set-Cookie` headers onto the redirect, and sends the browser directly to the
+safe `nextUrl`. The shared React verifier page remains a fallback for runtimes
+where proxy middleware is unavailable; it should not be part of the normal
+registered-app login path.
+
 Registered app proxies must run app-session refresh before page redirects and
 before API proxy guards. When access is close to expiry, or already expired but
 a refresh cookie is still valid, the proxy posts to the app-local
