@@ -106,6 +106,30 @@ test('app-only changes run only that app', () => {
     },
     false
   );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/mail/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-mail.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/mail/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-production-mail.yaml',
+    },
+    true
+  );
+  assertWorkflowDecision(
+    {
+      changedFiles: ['apps/mail/src/app/page.tsx'],
+      rootDir,
+      workflowName: 'vercel-preview-teach.yaml',
+    },
+    false
+  );
 });
 
 test('shared package changes fan out through transitive workspace dependencies', () => {
