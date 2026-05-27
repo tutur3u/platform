@@ -54,6 +54,9 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
     debtLoan.status === 'active' &&
     debtLoan.due_date &&
     new Date(debtLoan.due_date) < new Date();
+  const visibleProgressValue = areNumbersHidden
+    ? 0
+    : debtLoan.progress_percentage;
 
   return (
     <Link href={`/${wsId}${financeHref(`/debts/${debtLoan.id}`)}`}>
@@ -147,9 +150,18 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
           {/* Progress bar */}
           {debtLoan.status === 'active' && (
             <div className="space-y-1">
-              <Progress value={debtLoan.progress_percentage} className="h-2" />
+              <Progress
+                value={visibleProgressValue}
+                className="h-2"
+                indicatorClassName={
+                  areNumbersHidden ? 'bg-muted-foreground/30' : undefined
+                }
+              />
               <p className="text-right text-muted-foreground text-xs">
-                {debtLoan.progress_percentage.toFixed(1)}% {t('completed')}
+                {areNumbersHidden
+                  ? FINANCE_HIDDEN_AMOUNT
+                  : `${debtLoan.progress_percentage.toFixed(1)}%`}{' '}
+                {t('completed')}
               </p>
             </div>
           )}
@@ -161,7 +173,10 @@ export function DebtLoanCard({ debtLoan, wsId, currency }: Props) {
                 <div className="flex items-center gap-1">
                   <Percent className="h-3.5 w-3.5" />
                   <span>
-                    {debtLoan.interest_rate}%/{t('year')}
+                    {areNumbersHidden
+                      ? FINANCE_HIDDEN_AMOUNT
+                      : `${debtLoan.interest_rate}%`}
+                    /{t('year')}
                   </span>
                 </div>
               )}

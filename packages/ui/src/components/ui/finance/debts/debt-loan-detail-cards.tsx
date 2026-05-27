@@ -23,6 +23,9 @@ export function DebtLoanPaymentOverviewCard({
   const t = useTranslations('ws-debt-loan');
   const { isConfidential: areNumbersHidden } =
     useFinanceConfidentialVisibility();
+  const visibleProgressValue = areNumbersHidden
+    ? 0
+    : debtLoan.progress_percentage;
 
   return (
     <Card>
@@ -87,9 +90,18 @@ export function DebtLoanPaymentOverviewCard({
         </div>
 
         <div className="space-y-2">
-          <Progress value={debtLoan.progress_percentage} className="h-3" />
+          <Progress
+            value={visibleProgressValue}
+            className="h-3"
+            indicatorClassName={
+              areNumbersHidden ? 'bg-muted-foreground/30' : undefined
+            }
+          />
           <p className="text-center text-muted-foreground text-sm">
-            {debtLoan.progress_percentage.toFixed(1)}% {t('completed')}
+            {areNumbersHidden
+              ? FINANCE_HIDDEN_AMOUNT
+              : `${debtLoan.progress_percentage.toFixed(1)}%`}{' '}
+            {t('completed')}
           </p>
         </div>
       </CardContent>
@@ -109,6 +121,8 @@ export function DebtLoanDetailsCard({
 }: DebtLoanDetailsCardProps) {
   const t = useTranslations('ws-debt-loan');
   const locale = useLocale();
+  const { isConfidential: areNumbersHidden } =
+    useFinanceConfidentialVisibility();
   const formatDate = (value: string) =>
     new Intl.DateTimeFormat(locale).format(new Date(value));
   const linkedWalletName =
@@ -156,7 +170,10 @@ export function DebtLoanDetailsCard({
                   {t('interest_rate')}:
                 </span>
                 <span className="font-medium">
-                  {debtLoan.interest_rate}%/{t('year')}
+                  {areNumbersHidden
+                    ? FINANCE_HIDDEN_AMOUNT
+                    : `${debtLoan.interest_rate}%`}
+                  /{t('year')}
                   {debtLoan.interest_type && ` (${t(debtLoan.interest_type)})`}
                 </span>
               </div>
