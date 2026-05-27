@@ -294,12 +294,22 @@ Production meeting logic stays on Tuturuuu infrastructure:
 - Browser media flows to Cloudflare Realtime SFU. The control WebSocket can
   reconnect during watcher-managed service refreshes without creating a new
   meeting record.
+- Broadcast streaming stays API-owned by `apps/web`: the meeting host calls
+  `/api/v1/workspaces/:wsId/meetings/:meetingId/stream`, `apps/web` creates or
+  resumes a Cloudflare Stream live input with server-only
+  `CLOUDFLARE_ACCOUNT_ID` plus `CLOUDFLARE_STREAM_API_TOKEN` (or
+  `CLOUDFLARE_API_TOKEN`), stores the live input UID and WHIP/WHEP URLs in
+  `private.meet_stream_live_inputs`, and returns the WHIP publish URL only to
+  the host response. Workspace viewers receive only the WHEP playback URL.
 
 Cost controls are part of the signed token contract: camera defaults off,
 video is capped at 720p/24fps, room limits are explicit, and webinar viewers do
-not receive publish scope. Do not add Cloudflare Workers or Durable Objects for
-production Meet room logic; use the internal service and blue/green watcher
-instead.
+not receive publish scope. Cloudflare Stream live inputs are created with
+recording mode `off` and hidden viewer counts by default; set
+`CLOUDFLARE_STREAM_ALLOWED_ORIGINS` to a comma-separated allowlist when Stream
+playback should be origin-restricted. Do not add Cloudflare Workers or Durable
+Objects for production Meet room logic; use the internal service and
+blue/green watcher instead.
 
 `scripts/docker-web/env.js` persists generated helper tokens under
 `tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.

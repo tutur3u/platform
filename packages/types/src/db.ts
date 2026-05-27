@@ -1539,6 +1539,14 @@ export type WorkspaceEducationAccessRequest =
 
 export type RecordingStatus = Database['public']['Enums']['recording_status'];
 export type RecordingTranscript = Tables<'recording_transcripts'>;
+export type MeetStreamEvent = Tables<
+  { schema: 'private' },
+  'meet_stream_events'
+>;
+export type MeetStreamLiveInput = Tables<
+  { schema: 'private' },
+  'meet_stream_live_inputs'
+>;
 
 export type SupportInquiry = Tables<'support_inquiries'>;
 export type SupportType = Database['public']['Enums']['support_type'];

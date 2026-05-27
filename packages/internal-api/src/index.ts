@@ -588,6 +588,21 @@ export {
 } from './inventory';
 export * from './mail';
 export {
+  type CreateWorkspaceMeetingStreamResponse,
+  createWorkspaceMeetingRealtimeToken,
+  createWorkspaceMeetingStream,
+  getWorkspaceMeetingStream,
+  type MeetRealtimeRole,
+  type MeetRealtimeRoomMode,
+  type UpdateWorkspaceMeetingStreamPayload,
+  type UpdateWorkspaceMeetingStreamResponse,
+  updateWorkspaceMeetingStream,
+  type WorkspaceMeetingRealtimeTokenRequest,
+  type WorkspaceMeetingRealtimeTokenResponse,
+  type WorkspaceMeetingStream,
+  type WorkspaceMeetingStreamResponse,
+} from './meet';
+export {
   applyMindAiPatch,
   archiveMindBoard,
   type CreateMindBoardPayload,

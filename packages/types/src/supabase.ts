@@ -1792,6 +1792,98 @@ export type Database = {
           },
         ];
       };
+      meet_stream_events: {
+        Row: {
+          actor_id: string | null;
+          created_at: string;
+          event_type: string;
+          id: string;
+          meeting_id: string;
+          metadata: Json;
+          stream_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          actor_id?: string | null;
+          created_at?: string;
+          event_type: string;
+          id?: string;
+          meeting_id: string;
+          metadata?: Json;
+          stream_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          actor_id?: string | null;
+          created_at?: string;
+          event_type?: string;
+          id?: string;
+          meeting_id?: string;
+          metadata?: Json;
+          stream_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'meet_stream_events_stream_id_fkey';
+            columns: ['stream_id'];
+            isOneToOne: false;
+            referencedRelation: 'meet_stream_live_inputs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      meet_stream_live_inputs: {
+        Row: {
+          cloudflare_live_input_enabled: boolean;
+          cloudflare_live_input_uid: string;
+          created_at: string;
+          created_by: string | null;
+          ended_at: string | null;
+          id: string;
+          meeting_id: string;
+          metadata: Json;
+          started_at: string | null;
+          status: string;
+          updated_at: string;
+          whep_url: string;
+          whip_url: string;
+          ws_id: string;
+        };
+        Insert: {
+          cloudflare_live_input_enabled?: boolean;
+          cloudflare_live_input_uid: string;
+          created_at?: string;
+          created_by?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          meeting_id: string;
+          metadata?: Json;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          whep_url: string;
+          whip_url: string;
+          ws_id: string;
+        };
+        Update: {
+          cloudflare_live_input_enabled?: boolean;
+          cloudflare_live_input_uid?: string;
+          created_at?: string;
+          created_by?: string | null;
+          ended_at?: string | null;
+          id?: string;
+          meeting_id?: string;
+          metadata?: Json;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          whep_url?: string;
+          whip_url?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       mind_ai_messages: {
         Row: {
           board_id: string | null;
