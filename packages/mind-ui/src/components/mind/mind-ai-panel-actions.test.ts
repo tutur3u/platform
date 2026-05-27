@@ -52,6 +52,28 @@ describe('Mind AI panel actions', () => {
     expect(result.snapshot).toBeNull();
   });
 
+  it('returns a plain graph refresh when layout save fails after applying a patch', async () => {
+    const applied = patchRecord({
+      appliedAt: '2026-05-22T12:00:00.000Z',
+      status: 'applied',
+    });
+    const layoutError = new Error('Layout save failed');
+
+    const result = await applyMindPatchWithLayoutRefresh({
+      applyPatch: async () => ({ patch: applied }),
+      boardId: BOARD_ID,
+      onPatchApplied: vi.fn(),
+      organizeAndSaveBoard: async () => {
+        throw layoutError;
+      },
+      patchId: applied.id,
+      refreshBoardSnapshot: async () => snapshot,
+    });
+
+    expect(result.layoutError).toBe(layoutError);
+    expect(result.snapshot).toBe(snapshot);
+  });
+
   it('returns the organized snapshot after a successful layout refresh', async () => {
     const applied = patchRecord({
       appliedAt: '2026-05-22T12:00:00.000Z',

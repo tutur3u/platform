@@ -1,8 +1,11 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { applyMindAiPatch } from '@tuturuuu/internal-api/mind';
-import type { MindAiPatchRecord } from '@tuturuuu/types/db';
+import {
+  applyMindAiPatch,
+  getMindBoardGraphSnapshot,
+} from '@tuturuuu/internal-api/mind';
+import type { MindAiPatchRecord, MindNode } from '@tuturuuu/types/db';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MindAiInput } from './mind-ai-input';
@@ -26,6 +29,8 @@ import { useMindAiPanelState } from './use-mind-ai-panel-state';
 type Props = {
   boardId?: string | null;
   collapsed?: boolean;
+  nodes?: Pick<MindNode, 'id' | 'title'>[];
+  onGraphSnapshotRefreshed?: () => void;
   onToggleCollapsed: () => void;
   onRetryPatches?: () => void;
   patches?: MindAiPatchRecord[];
@@ -38,6 +43,8 @@ type Props = {
 export function MindAiPanel({
   boardId,
   collapsed,
+  nodes = [],
+  onGraphSnapshotRefreshed,
   onToggleCollapsed,
   onRetryPatches,
   patches = [],
@@ -115,6 +122,8 @@ export function MindAiPanel({
         organizeAndSaveBoard: (targetBoardId) =>
           organizeAndSaveBoard(wsId, targetBoardId),
         patchId,
+        refreshBoardSnapshot: (targetBoardId) =>
+          getMindBoardGraphSnapshot(wsId, targetBoardId),
       });
     },
     onSuccess: (result) => {
@@ -123,6 +132,7 @@ export function MindAiPanel({
           ['mind', 'graph', wsId, result.patch.boardId || boardId],
           result.snapshot
         );
+        onGraphSnapshotRefreshed?.();
       }
 
       if (result.layoutError) {
@@ -155,6 +165,7 @@ export function MindAiPanel({
         ['mind', 'graph', wsId, targetBoardId],
         snapshot
       );
+      onGraphSnapshotRefreshed?.();
       queryClient.invalidateQueries({ queryKey: ['mind', 'boards', wsId] });
       queryClient.invalidateQueries({
         queryKey: ['mind', 'graph', wsId, targetBoardId],
@@ -346,6 +357,7 @@ export function MindAiPanel({
       <MindAiProposalIsland
         applying={applyPatchMutation.isPending}
         fullscreen={fullscreen}
+        nodes={nodes}
         onApplyPatch={(patchId) => applyPatchMutation.mutate(patchId)}
         onDismiss={handleDismissProposal}
         proposal={visibleProposal}

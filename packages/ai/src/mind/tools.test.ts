@@ -6,7 +6,7 @@ import {
   normalizeGeneratedPatchIds,
   orderMindPatchOperationsForApply,
 } from './tools';
-import type { MindBoardSnapshot } from './types';
+import type { MindBoardSnapshot, MindPatchOperation } from './types';
 
 describe('normalizeGeneratedPatchIds', () => {
   it('generates missing node and edge ids and resolves operation-id edge refs', () => {
@@ -253,6 +253,63 @@ describe('coerceMindAiPatch', () => {
       kind: 'update_edge',
     });
   });
+
+  it('recovers edge payloads nested under node and ignores stray enum fields', () => {
+    const patch = coerceMindAiPatch({
+      operations: [
+        {
+          id: 'root_goal',
+          kind: 'create_node',
+          node: {
+            nodeType: 'goal',
+            positionX: 0,
+            positionY: 0,
+            title: 'Shrimp Farming Operations Framework',
+          },
+        },
+        {
+          id: 'finance_cluster',
+          kind: 'create_node',
+          node: {
+            nodeType: 'system,parentNodeId:',
+            positionX: 320,
+            positionY: 0,
+            title: 'Finance & Sales',
+          },
+        },
+        {
+          id: 'edge_root_finance',
+          kind: 'create_edge',
+          node: {
+            edge: {
+              edgeType: 'contains',
+              sourceNodeId: 'root_goal',
+              targetNodeId: 'finance_cluster',
+            },
+          },
+        },
+      ],
+      summary: 'Initialize shrimp finance plan.',
+    });
+
+    expect('issues' in patch).toBe(false);
+    if ('issues' in patch) throw new Error('Unexpected coercion failure');
+
+    expect(patch.operations[1]).toMatchObject({
+      kind: 'create_node',
+      node: {
+        nodeType: 'system',
+      },
+    });
+    expect(patch.operations[2]).toMatchObject({
+      edge: {
+        edgeType: 'contains',
+        sourceNodeId: 'root_goal',
+        targetNodeId: 'finance_cluster',
+      },
+      kind: 'create_edge',
+    });
+  });
 });
 
 describe('propose_mind_patch reference validation', () => {
@@ -317,6 +374,89 @@ describe('propose_mind_patch reference validation', () => {
 
     expect(createNode.node.id).toMatch(UUID_PATTERN);
     expect(createEdge.edge.targetNodeId).toBe(createNode.node.id);
+  });
+
+  it('allows tool-shaped nested edge payloads when checking graph health', async () => {
+    const callbacks = createCallbacks();
+    const tools = createMindStreamTools(
+      {
+        boardId: BOARD_ID,
+        threadId: THREAD_ID,
+        userId: USER_ID,
+        writeMode: 'review',
+        wsId: WS_ID,
+      },
+      callbacks
+    );
+    const proposePatchTool = getToolExecute(tools.propose_mind_patch);
+
+    const result = await proposePatchTool({
+      boardId: BOARD_ID,
+      patch: {
+        operations: [
+          {
+            id: 'root_goal',
+            kind: 'create_node',
+            node: {
+              id: 'root_goal',
+              nodeType: 'goal',
+              positionX: 0,
+              positionY: 0,
+              title: 'Shrimp Farming Operations Framework',
+            },
+          },
+          {
+            id: 'finance_cluster',
+            kind: 'create_node',
+            node: {
+              id: 'finance_cluster',
+              nodeType: 'system,parentNodeId:',
+              positionX: 320,
+              positionY: 0,
+              title: 'Finance & Sales',
+            },
+          },
+          {
+            id: 'edge_root_finance',
+            kind: 'create_edge',
+            node: {
+              edge: {
+                edgeType: 'contains',
+                sourceNodeId: 'root_goal',
+                targetNodeId: 'finance_cluster',
+              },
+            },
+          },
+        ],
+        summary: 'Initialize shrimp finance plan.',
+      },
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(callbacks.createPatch).toHaveBeenCalledTimes(1);
+
+    const createdOperations = (callbacks.createPatch.mock.calls[0]?.[0].patch
+      ?.operations ?? []) as MindPatchOperation[];
+    const createNode = createdOperations.find((operation) => {
+      if (operation.kind !== 'create_node') return false;
+      return operation.node.title === 'Finance & Sales';
+    });
+    const createEdge = createdOperations.find(
+      (operation) => operation.kind === 'create_edge'
+    );
+
+    expect(createNode).toMatchObject({
+      kind: 'create_node',
+      node: {
+        nodeType: 'system',
+      },
+    });
+    expect(createEdge).toMatchObject({
+      edge: {
+        edgeType: 'contains',
+      },
+      kind: 'create_edge',
+    });
   });
 
   it('rejects drafts that update or delete missing graph entities', async () => {

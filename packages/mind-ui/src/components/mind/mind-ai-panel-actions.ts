@@ -28,12 +28,14 @@ export async function applyMindPatchWithLayoutRefresh({
   onPatchApplied,
   organizeAndSaveBoard,
   patchId,
+  refreshBoardSnapshot,
 }: {
   applyPatch: (patchId: string) => Promise<{ patch: MindAiPatchRecord }>;
   boardId?: string | null;
   onPatchApplied: (patch: MindAiPatchRecord) => void;
   organizeAndSaveBoard: (boardId: string) => Promise<MindBoardSnapshot>;
   patchId: string;
+  refreshBoardSnapshot?: (boardId: string) => Promise<MindBoardSnapshot>;
 }): Promise<{
   layoutError: Error | null;
   patch: MindAiPatchRecord;
@@ -58,11 +60,15 @@ export async function applyMindPatchWithLayoutRefresh({
       snapshot: await organizeAndSaveBoard(targetBoardId),
     };
   } catch (error) {
+    const snapshot = refreshBoardSnapshot
+      ? await refreshBoardSnapshot(targetBoardId).catch(() => null)
+      : null;
+
     return {
       layoutError:
         error instanceof Error ? error : new Error('Layout refresh failed'),
       patch: response.patch,
-      snapshot: null,
+      snapshot,
     };
   }
 }

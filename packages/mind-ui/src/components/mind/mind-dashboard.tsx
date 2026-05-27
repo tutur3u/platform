@@ -49,6 +49,7 @@ export function MindDashboard({
     id: string;
     prompt: string;
   } | null>(null);
+  const [snapshotRefreshVersion, setSnapshotRefreshVersion] = useState(0);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const boardsQuery = useQuery({
     queryFn: () => listMindBoards({ workspaceId: wsId }),
@@ -202,6 +203,7 @@ export function MindDashboard({
           saving={saveGraphMutation.isPending}
           selectedTags={selectedTags}
           snapshot={snapshot}
+          snapshotRefreshVersion={snapshotRefreshVersion}
         />
       ) : (
         <CanvasLoadingState />
@@ -209,6 +211,10 @@ export function MindDashboard({
       <MindAiPanel
         boardId={activeBoardId}
         collapsed={!aiOpen}
+        nodes={snapshot?.nodes ?? []}
+        onGraphSnapshotRefreshed={() =>
+          setSnapshotRefreshVersion((value) => value + 1)
+        }
         onToggleCollapsed={() => setAiOpen((value) => !value)}
         onRetryPatches={() => void patchesQuery.refetch()}
         patches={patches}

@@ -1,7 +1,7 @@
 'use client';
 
 import { GitMerge, ListChecks, Sparkles, X } from '@tuturuuu/icons';
-import type { MindAiPatchRecord } from '@tuturuuu/types/db';
+import type { MindAiPatchRecord, MindNode } from '@tuturuuu/types/db';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { cn } from '@tuturuuu/utils/format';
@@ -22,6 +22,7 @@ export type MindAiProposal = {
 type Props = {
   applying?: boolean;
   fullscreen?: boolean;
+  nodes?: Pick<MindNode, 'id' | 'title'>[];
   proposal: MindAiProposal | null;
   onApplyPatch: (patchId: string) => void;
   onDismiss: (proposalId: string) => void;
@@ -30,6 +31,7 @@ type Props = {
 export function MindAiProposalIsland({
   applying,
   fullscreen,
+  nodes = [],
   proposal,
   onApplyPatch,
   onDismiss,
@@ -106,6 +108,7 @@ export function MindAiProposalIsland({
         {proposal.patch ? (
           <MindAiPatchDraftCard
             applying={applying}
+            nodes={nodes}
             onApplyPatch={onApplyPatch}
             patch={proposal.patch}
             showApplyAction={false}
