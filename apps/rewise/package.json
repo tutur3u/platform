@@ -73,7 +73,7 @@
   "devDependencies": {
     "@next/bundle-analyzer": "^16.2.6",
     "@tailwindcss/postcss": "^4.3.0",
-    "@tanstack/react-query-devtools": "^5.100.11",
+    "@tanstack/react-query-devtools": "^5.100.14",
     "@testing-library/react": "^16.3.2",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/js-cookie": "^3.0.6",

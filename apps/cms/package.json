@@ -63,7 +63,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.0",
-    "@tanstack/react-query-devtools": "^5.100.11",
+    "@tanstack/react-query-devtools": "^5.100.14",
     "@tuturuuu/typescript-config": "workspace:*",
     "@types/negotiator": "^0.6.4",
     "@types/node": "^25.9.1",
