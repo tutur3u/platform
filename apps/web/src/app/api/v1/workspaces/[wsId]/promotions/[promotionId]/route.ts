@@ -81,7 +81,8 @@ export async function PUT(req: Request, { params }: Params) {
     .update({
       ...updateData,
     })
-    .eq('id', promotionId);
+    .eq('id', promotionId)
+    .eq('ws_id', permissions.wsId);
 
   if (error) {
     serverLogger.error('Error updating promotion:', error);
@@ -115,7 +116,8 @@ export async function DELETE(req: Request, { params }: Params) {
   const { error } = await supabase
     .from('workspace_promotions')
     .delete()
-    .eq('id', promotionId);
+    .eq('id', promotionId)
+    .eq('ws_id', permissions.wsId);
 
   if (error) {
     serverLogger.error('Error deleting promotion:', error);
