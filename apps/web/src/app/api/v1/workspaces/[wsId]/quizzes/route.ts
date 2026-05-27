@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
+import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -46,8 +46,9 @@ export const GET = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -71,7 +72,7 @@ export const GET = withSessionAuth(
 
     const moduleId = request.nextUrl.searchParams.get('moduleId')?.trim();
 
-    const queryBuilder = context.supabase
+    const queryBuilder = access.sbAdmin
       .from('workspace_quizzes')
       .select(
         'id, question, type, content, answer, created_at, quiz_options(id, value, is_correct, explanation)',
@@ -81,7 +82,7 @@ export const GET = withSessionAuth(
       .order('created_at', { ascending: false });
 
     if (moduleId) {
-      const { data: moduleQuizzes, error: mqErr } = await context.supabase
+      const { data: moduleQuizzes, error: mqErr } = await access.sbAdmin
         .from('course_module_quizzes')
         .select('quiz_id')
         .eq('module_id', moduleId);
@@ -129,7 +130,10 @@ export const GET = withSessionAuth(
       pageSize,
     });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 120 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 120 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );
 
 export const POST = withSessionAuth(
@@ -146,8 +150,9 @@ export const POST = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -182,7 +187,7 @@ export const POST = withSessionAuth(
         if (quiz.answer !== undefined) updateData.answer = quiz.answer;
 
         if (quiz.id != null) {
-          const { error: updateErr } = await context.supabase
+          const { error: updateErr } = await access.sbAdmin
             .from('workspace_quizzes')
             .update(updateData)
             .eq('id', quiz.id)
@@ -198,7 +203,7 @@ export const POST = withSessionAuth(
           if (quiz.content !== undefined) insertData.content = quiz.content;
           if (quiz.answer !== undefined) insertData.answer = quiz.answer;
 
-          const { data: inserted, error: insertErr } = await context.supabase
+          const { data: inserted, error: insertErr } = await access.sbAdmin
             .from('workspace_quizzes')
             .insert(insertData)
             .select('id')
@@ -208,7 +213,7 @@ export const POST = withSessionAuth(
         }
 
         if (moduleId != null) {
-          const { error: moduleError } = await context.supabase
+          const { error: moduleError } = await access.sbAdmin
             .from('course_module_quizzes')
             .insert({
               module_id: moduleId,
@@ -220,7 +225,7 @@ export const POST = withSessionAuth(
         }
 
         if (setId != null) {
-          const { error: setError } = await context.supabase
+          const { error: setError } = await access.sbAdmin
             .from('quiz_set_quizzes')
             .insert({
               set_id: setId,
@@ -231,7 +236,7 @@ export const POST = withSessionAuth(
           }
         }
 
-        const { error: deleteOptionsError } = await context.supabase
+        const { error: deleteOptionsError } = await access.sbAdmin
           .from('quiz_options')
           .delete()
           .eq('quiz_id', quizId);
@@ -245,7 +250,7 @@ export const POST = withSessionAuth(
             explanation: option.explanation ?? null,
           }));
 
-          const { error: insertOptionsError } = await context.supabase
+          const { error: insertOptionsError } = await access.sbAdmin
             .from('quiz_options')
             .insert(optionsPayload);
           if (insertOptionsError) throw insertOptionsError;
@@ -263,5 +268,8 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );

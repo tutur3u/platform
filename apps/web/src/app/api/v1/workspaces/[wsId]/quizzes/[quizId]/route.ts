@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
+import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
   quizId: z.guid(),
@@ -39,8 +39,9 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -71,7 +72,7 @@ export const PUT = withSessionAuth(
     if (parsedBody.data.answer !== undefined)
       updateData.answer = parsedBody.data.answer;
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
       .update(updateData)
       .eq('id', parsedParams.data.quizId)
@@ -91,7 +92,7 @@ export const PUT = withSessionAuth(
       return NextResponse.json({ message: 'Quiz not found' }, { status: 404 });
     }
 
-    const { error: deleteOptionsError } = await context.supabase
+    const { error: deleteOptionsError } = await access.sbAdmin
       .from('quiz_options')
       .delete()
       .eq('quiz_id', parsedParams.data.quizId);
@@ -108,7 +109,7 @@ export const PUT = withSessionAuth(
       parsedBody.data.quiz_options != null &&
       parsedBody.data.quiz_options.length > 0
     ) {
-      const { error: insertOptionsError } = await context.supabase
+      const { error: insertOptionsError } = await access.sbAdmin
         .from('quiz_options')
         .insert(
           parsedBody.data.quiz_options.map((option) => ({
@@ -130,7 +131,10 @@ export const PUT = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );
 
 export const DELETE = withSessionAuth(
@@ -149,13 +153,14 @@ export const DELETE = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
       .delete()
       .eq('id', parsedParams.data.quizId)
@@ -177,5 +182,8 @@ export const DELETE = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );
