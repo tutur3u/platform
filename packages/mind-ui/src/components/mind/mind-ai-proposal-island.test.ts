@@ -1,8 +1,14 @@
 import type { MindAiPatchRecord } from '@tuturuuu/types/db';
 import type { UIMessage } from 'ai';
 import { describe, expect, it } from 'vitest';
-import { getLatestMindAiProposal } from './mind-ai-proposal-island';
-import { getToolArtifacts } from './mind-ai-tool-activity';
+import {
+  getLatestMindAiProposal,
+  getMindAiProposalPartType,
+} from './mind-ai-proposal-island';
+import {
+  getMindToolFailureReason,
+  getToolArtifacts,
+} from './mind-ai-tool-activity';
 
 describe('Mind AI proposal consolidation', () => {
   it('combines a generated plan and draft patch into one proposal', () => {
@@ -32,6 +38,20 @@ describe('Mind AI proposal consolidation', () => {
       }),
     ]);
   });
+
+  it('distinguishes render-only plans from applyable draft proposals', () => {
+    expect(getMindAiProposalPartType(renderOnlyMessage())).toBe('plan');
+    expect(getMindAiProposalPartType(proposalMessage())).toBe('draft');
+  });
+
+  it('surfaces unsuccessful tool outputs as failure reasons', () => {
+    const message = failedPatchMessage();
+
+    expect(getMindAiProposalPartType(message)).toBe('plan');
+    expect(getMindToolFailureReason(message.parts[1]!)).toContain(
+      'Patch draft was not applyable'
+    );
+  });
 });
 
 function proposalMessage(): UIMessage {
@@ -50,6 +70,48 @@ function proposalMessage(): UIMessage {
         output: {
           ok: true,
           patch: patchRecord(),
+        },
+        state: 'output-available',
+        toolCallId: 'patch-call',
+        type: 'tool-propose_mind_patch',
+      },
+    ],
+    role: 'assistant',
+  } as unknown as UIMessage;
+}
+
+function renderOnlyMessage(): UIMessage {
+  return {
+    id: 'message-visual',
+    parts: [
+      {
+        input: {},
+        output: { ok: true, spec: visual },
+        state: 'output-available',
+        toolCallId: PLAN_CALL_ID,
+        type: 'tool-render_mind_ui',
+      },
+    ],
+    role: 'assistant',
+  } as unknown as UIMessage;
+}
+
+function failedPatchMessage(): UIMessage {
+  return {
+    id: 'message-failed-patch',
+    parts: [
+      {
+        input: {},
+        output: { ok: true, spec: visual },
+        state: 'output-available',
+        toolCallId: PLAN_CALL_ID,
+        type: 'tool-render_mind_ui',
+      },
+      {
+        input: {},
+        output: {
+          ok: false,
+          reason: 'Patch draft was not applyable: invalid edge reference',
         },
         state: 'output-available',
         toolCallId: 'patch-call',

@@ -27,9 +27,11 @@ type Props = {
   boardId?: string | null;
   collapsed?: boolean;
   onToggleCollapsed: () => void;
+  onRetryPatches?: () => void;
   patches?: MindAiPatchRecord[];
   patchesError?: string | null;
   queuedPrompt?: { id: string; prompt: string } | null;
+  retryingPatches?: boolean;
   wsId: string;
 };
 
@@ -37,9 +39,11 @@ export function MindAiPanel({
   boardId,
   collapsed,
   onToggleCollapsed,
+  onRetryPatches,
   patches = [],
   patchesError,
   queuedPrompt,
+  retryingPatches,
   wsId,
 }: Props) {
   const t = useTranslations('mind');
@@ -330,9 +334,11 @@ export function MindAiPanel({
               ? () => layoutRetryMutation.mutate(layoutRefreshBoardId)
               : undefined
           }
+          onRetryPatches={onRetryPatches}
           patches={patches}
           patchesError={patchesError}
           retryingLayoutRefresh={layoutRetryMutation.isPending}
+          retryingPatches={retryingPatches}
           status={status}
           visibleError={visibleError}
         />

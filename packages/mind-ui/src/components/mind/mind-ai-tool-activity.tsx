@@ -369,7 +369,9 @@ function ToolPartRow({
         ? CircleAlert
         : LoaderCircle;
   const state = getToolDebugValue(item.part, 'state');
-  const errorText = getToolDebugValue(item.part, 'errorText');
+  const errorText =
+    getToolDebugValue(item.part, 'errorText') ??
+    getMindToolFailureReason(item.part);
   const toolCallId = getToolDebugValue(item.part, 'toolCallId');
 
   return (
@@ -499,6 +501,7 @@ function getToolStatus(part: MessagePart, isStreaming: boolean): ToolStatus {
     type?: unknown;
   };
   if (typeof record.errorText === 'string' && record.errorText) return 'error';
+  if (getMindToolFailureReason(part)) return 'error';
   if (record.state === 'output-error' || record.state === 'output-denied') {
     return 'error';
   }
@@ -510,4 +513,20 @@ function getToolStatus(part: MessagePart, isStreaming: boolean): ToolStatus {
 function getToolDebugValue(part: MessagePart, key: string) {
   const value = (part as Record<string, unknown>)[key];
   return typeof value === 'string' && value ? value : null;
+}
+
+export function getMindToolFailureReason(part: UIMessage['parts'][number]) {
+  const output = getToolOutput(part);
+  if (!isRecord(output) || output.ok !== false) return null;
+
+  for (const key of ['reason', 'error', 'message', 'warning']) {
+    const value = output[key];
+    if (typeof value === 'string' && value.trim()) return value.trim();
+  }
+
+  return 'Tool returned an unsuccessful result.';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
 }

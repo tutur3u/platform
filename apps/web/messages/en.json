@@ -8575,6 +8575,7 @@
       "draft": "Draft",
       "empty": "Ask Mind to expand the graph, consolidate duplicate plans, or turn rough ideas into structured patches.",
       "errorTitle": "Could not complete",
+      "generatedPlanInTools": "Generated planning view is available below. No applyable draft was created yet.",
       "generatedUi": "Generated view",
       "hideProposal": "Hide proposal",
       "implement": "Implement",

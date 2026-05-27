@@ -210,9 +210,11 @@ export function MindDashboard({
         boardId={activeBoardId}
         collapsed={!aiOpen}
         onToggleCollapsed={() => setAiOpen((value) => !value)}
+        onRetryPatches={() => void patchesQuery.refetch()}
         patches={patches}
         patchesError={patchesQuery.isError ? t('ai.patchLoadError') : null}
         queuedPrompt={queuedAiPrompt}
+        retryingPatches={patchesQuery.isFetching}
         wsId={wsId}
       />
     </MindShell>

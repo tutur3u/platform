@@ -197,12 +197,21 @@ export function getLatestMindAiProposal(
 }
 
 export function hasMindAiProposalPart(message: UIMessage) {
-  return message.parts.some((part) => {
+  return getMindAiProposalPartType(message) !== null;
+}
+
+export function getMindAiProposalPartType(message: UIMessage) {
+  let hasVisual = false;
+
+  const hasPatch = message.parts.some((part) => {
     const name = getToolName(part);
     if (name === 'render_mind_ui') {
-      return Boolean(
-        resolveMindRenderUiSpec(getToolOutput(part) ?? getToolRawInput(part))
-      );
+      hasVisual =
+        hasVisual ||
+        Boolean(
+          resolveMindRenderUiSpec(getToolOutput(part) ?? getToolRawInput(part))
+        );
+      return false;
     }
 
     if (name === 'propose_mind_patch') {
@@ -211,6 +220,10 @@ export function hasMindAiProposalPart(message: UIMessage) {
 
     return false;
   });
+
+  if (hasPatch) return 'draft';
+  if (hasVisual) return 'plan';
+  return null;
 }
 
 function getToolName(part: MessagePart) {

@@ -6,7 +6,7 @@ import { cn } from '@tuturuuu/utils/format';
 import type { UIMessage } from 'ai';
 import { useTranslations } from 'next-intl';
 import { MindAiMessageActions } from './mind-ai-message-actions';
-import { hasMindAiProposalPart } from './mind-ai-proposal-island';
+import { getMindAiProposalPartType } from './mind-ai-proposal-island';
 import { MindAiReasoning } from './mind-ai-reasoning';
 import {
   type MindAiArtifactItem,
@@ -46,7 +46,7 @@ export function MindAiMessage({
     .map((part) => (part.type === 'text' ? part.text : ''))
     .filter(Boolean)
     .join('\n');
-  const hasProposal = !isUser && hasMindAiProposalPart(message);
+  const proposalPartType = !isUser ? getMindAiProposalPartType(message) : null;
 
   return (
     <article
@@ -60,9 +60,13 @@ export function MindAiMessage({
             isUser ? 'bg-primary text-primary-foreground' : 'bg-card/90'
           )}
         >
-          {hasProposal ? (
+          {proposalPartType ? (
             <p className="text-muted-foreground text-xs leading-5">
-              {t('ai.artifactsInTools')}
+              {t(
+                proposalPartType === 'draft'
+                  ? 'ai.artifactsInTools'
+                  : 'ai.generatedPlanInTools'
+              )}
             </p>
           ) : text ? (
             isUser ? (

@@ -18,9 +18,11 @@ type Props = {
   onApplyPatch?: (patchId: string) => void;
   onOpenArtifact?: (artifact: MindAiArtifactItem) => void;
   onRetryLayoutRefresh?: () => void;
+  onRetryPatches?: () => void;
   patchesError?: string | null;
   patches: MindBoardSnapshotResponse['patches'];
   layoutRefreshError?: string | null;
+  retryingPatches?: boolean;
   retryingLayoutRefresh?: boolean;
   status: string;
   visibleError: string | null;
@@ -36,12 +38,14 @@ export function MindAiPanelContent({
   patches,
   patchesError,
   retryingLayoutRefresh,
+  retryingPatches,
   status,
   visibleError,
   onApplyPatch,
   onOpenArtifact,
   onPickPrompt,
   onRetryLayoutRefresh,
+  onRetryPatches,
 }: Props) {
   const t = useTranslations('mind');
   const isEmpty =
@@ -76,6 +80,26 @@ export function MindAiPanelContent({
       )}
       {patchesError ? (
         <MindAiAlert
+          action={
+            onRetryPatches ? (
+              <Button
+                className="h-7 gap-1.5 px-2 text-xs"
+                disabled={retryingPatches}
+                onClick={onRetryPatches}
+                size="sm"
+                type="button"
+                variant="outline"
+              >
+                <RefreshCw
+                  className={cn(
+                    'h-3.5 w-3.5',
+                    retryingPatches && 'animate-spin'
+                  )}
+                />
+                {t('actions.retry')}
+              </Button>
+            ) : null
+          }
           description={patchesError}
           title={t('ai.patchLoadErrorTitle')}
           variant="warning"
