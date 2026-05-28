@@ -45,12 +45,13 @@ const availableModules = [
   'workspace-user-status-changes',
 
   // TUTURUUU-RELATED MODULES (Inventory) - after users
-  // Order matters: warehouses, product-categories, product-units first (no FKs to other inventory tables)
+  // Order matters: warehouses, product-categories, product-units, manufacturers first (no FKs to products)
   // Then packages (workspace_products) which inventory-products references
   // Then inventory-products, batches, batch-products
   'warehouses',
   'product-categories',
   'product-units',
+  'inventory-manufacturers',
   'inventory-suppliers',
   'packages',
   'inventory-products',
@@ -294,6 +295,11 @@ export const generateModules = (): ModulePackage[] => {
 
       case 'inventory-suppliers':
         // Inventory suppliers - 1:1 sync, Tuturuuu mode only
+        baseModule.tuturuuuOnly = true;
+        break;
+
+      case 'inventory-manufacturers':
+        // Inventory manufacturers - 1:1 sync, Tuturuuu mode only
         baseModule.tuturuuuOnly = true;
         break;
 

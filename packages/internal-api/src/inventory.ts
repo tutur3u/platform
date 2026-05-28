@@ -140,6 +140,7 @@ export type InventoryProductSummary = {
   category?: string | null;
   id: string;
   inventory?: Array<Record<string, unknown>>;
+  manufacturer_id?: string | null;
   manufacturer?: string | null;
   min_amount?: number | null;
   name: string;
@@ -147,6 +148,14 @@ export type InventoryProductSummary = {
   stock?: Array<Record<string, unknown>>;
   unit?: string | null;
   warehouse?: string | null;
+};
+
+export type InventoryManufacturer = {
+  id: string;
+  ws_id: string;
+  name: string;
+  created_at?: string | null;
+  updated_at?: string | null;
 };
 
 export type InventorySaleSummary = {
@@ -193,10 +202,17 @@ export type InventoryCheckoutListQuery = {
 
 export type InventoryCatalogListQuery = {
   categoryId?: string;
+  manufacturerId?: string;
   page?: number;
   pageSize?: number;
   q?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
   status?: 'active' | 'archived' | 'all';
+};
+
+export type InventoryManufacturerPayload = {
+  name: string;
 };
 
 export type InventoryOffsetListQuery = {
@@ -338,6 +354,17 @@ export function listInventoryProducts(
   });
 }
 
+export function listInventoryManufacturers(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{
+    data: InventoryManufacturer[];
+  }>(workspaceInventoryPath(wsId, '/manufacturers'), {
+    cache: 'no-store',
+  });
+}
+
 export function listInventorySales(
   wsId: string,
   query?: InventoryOffsetListQuery,
@@ -375,6 +402,57 @@ export function createInventoryStorefront(
       body: JSON.stringify(payload),
       headers: jsonHeaders(options?.defaultHeaders),
       method: 'POST',
+    }
+  );
+}
+
+export function createInventoryManufacturer(
+  wsId: string,
+  payload: InventoryManufacturerPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryManufacturer }>(
+    workspaceInventoryPath(wsId, '/manufacturers'),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'POST',
+    }
+  );
+}
+
+export function updateInventoryManufacturer(
+  wsId: string,
+  manufacturerId: string,
+  payload: Partial<InventoryManufacturerPayload>,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ data: InventoryManufacturer }>(
+    workspaceInventoryPath(
+      wsId,
+      `/manufacturers/${encodePathSegment(manufacturerId)}`
+    ),
+    {
+      body: JSON.stringify(payload),
+      headers: jsonHeaders(options?.defaultHeaders),
+      method: 'PATCH',
+    }
+  );
+}
+
+export function deleteInventoryManufacturer(
+  wsId: string,
+  manufacturerId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<{ message: string }>(
+    workspaceInventoryPath(
+      wsId,
+      `/manufacturers/${encodePathSegment(manufacturerId)}`
+    ),
+    {
+      headers: options?.defaultHeaders,
+      method: 'DELETE',
     }
   );
 }

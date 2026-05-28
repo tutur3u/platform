@@ -10121,6 +10121,59 @@ export type Database = {
           },
         ];
       };
+      inventory_manufacturers: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'inventory_manufacturers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_manufacturers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'entity_limit_source__workspaces';
+            referencedColumns: ['personal_ws_id'];
+          },
+          {
+            foreignKeyName: 'inventory_manufacturers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_link_counts';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'inventory_manufacturers_ws_id_fkey';
+            columns: ['ws_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspaces';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       inventory_owners: {
         Row: {
           archived: boolean;
@@ -26545,7 +26598,7 @@ export type Database = {
           description: string | null;
           finance_category_id: string | null;
           id: string;
-          manufacturer: string | null;
+          manufacturer_id: string | null;
           name: string | null;
           owner_id: string;
           usage: string | null;
@@ -26560,7 +26613,7 @@ export type Database = {
           description?: string | null;
           finance_category_id?: string | null;
           id?: string;
-          manufacturer?: string | null;
+          manufacturer_id?: string | null;
           name?: string | null;
           owner_id: string;
           usage?: string | null;
@@ -26575,7 +26628,7 @@ export type Database = {
           description?: string | null;
           finance_category_id?: string | null;
           id?: string;
-          manufacturer?: string | null;
+          manufacturer_id?: string | null;
           name?: string | null;
           owner_id?: string;
           usage?: string | null;
@@ -26629,6 +26682,13 @@ export type Database = {
             columns: ['finance_category_id'];
             isOneToOne: false;
             referencedRelation: 'transaction_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'workspace_products_manufacturer_id_fkey';
+            columns: ['manufacturer_id'];
+            isOneToOne: false;
+            referencedRelation: 'inventory_manufacturers';
             referencedColumns: ['id'];
           },
           {
@@ -27015,27 +27075,36 @@ export type Database = {
       };
       workspace_quizzes: {
         Row: {
+          answer: Json | null;
+          content: Json | null;
           created_at: string;
           id: string;
           instruction: Json | null;
           question: string;
           score: number;
+          type: string;
           ws_id: string;
         };
         Insert: {
+          answer?: Json | null;
+          content?: Json | null;
           created_at?: string;
           id?: string;
           instruction?: Json | null;
           question: string;
           score?: number;
+          type?: string;
           ws_id: string;
         };
         Update: {
+          answer?: Json | null;
+          content?: Json | null;
           created_at?: string;
           id?: string;
           instruction?: Json | null;
           question?: string;
           score?: number;
+          type?: string;
           ws_id?: string;
         };
         Relationships: [

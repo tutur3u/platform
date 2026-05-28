@@ -1,7 +1,7 @@
 ---
 title: 'Inventory'
 description: 'How inventory.tuturuuu.com is wired as the inventory satellite app, operator console, public storefront, checkout reservation, and audit operations surface.'
-updatedAt: '2026-05-20'
+updatedAt: '2026-05-28'
 ---
 
 Inventory lives in `apps/inventory` and runs locally through Portless at
@@ -59,8 +59,8 @@ The package `dev` script runs Portless. For direct port debugging, run
 
 Inventory starts with workspace-scoped surfaces for:
 
-- product catalog categorization by type, owner, talent, supplier, channel, and
-  fulfillment policy
+- product catalog categorization by type, owner, manufacturer, talent,
+  supplier, channel, and fulfillment policy
 - stock movement and reservation ledgers
 - bundle and promotion availability controls
 - checkout fee visibility for processing fees, Tuturuuu platform fees,
@@ -86,6 +86,14 @@ part of the contract. Protected workspace routes must authenticate and normalize
 the workspace with the request-scoped client before any private-table read or
 write, then use server-only database access or service-role RPCs behind
 `apps/web`.
+
+Manufacturers are a normalized workspace setup entity in
+`public.inventory_manufacturers`, matching the supplier-style management model.
+Products store only `workspace_products.manufacturer_id`; API responses may
+still include `manufacturer` as a joined display name for older clients. Legacy
+imports that send package/product manufacturer text should upsert the trimmed
+name into `inventory_manufacturers`, assign the resulting `manufacturer_id`, and
+avoid writing manufacturer text back to `workspace_products`.
 
 Bundle components are a workspace-scoped stock contract. When creating or
 updating a bundle, every component's product, unit, warehouse, and stock row

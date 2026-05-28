@@ -19,6 +19,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { normalizeInventoryPrice } from './currency';
 import {
   useProductCategories,
+  useProductManufacturers,
   useProductUnits,
   useProductWarehouses,
   useWorkspaceProduct,
@@ -76,6 +77,10 @@ export function ProductQuickDialog({
     enabled: isOpen,
   });
 
+  const { data: manufacturers = [] } = useProductManufacturers(wsId, {
+    enabled: isOpen,
+  });
+
   const { data: warehouses = [] } = useProductWarehouses(wsId, {
     enabled: isOpen,
   });
@@ -124,7 +129,7 @@ export function ProductQuickDialog({
     resolver: zodResolver(EditProductSchema),
     defaultValues: {
       name: displayProduct?.name || '',
-      manufacturer: displayProduct?.manufacturer || '',
+      manufacturer_id: displayProduct?.manufacturer_id || '',
       description: displayProduct?.description || '',
       usage: displayProduct?.usage || '',
       category_id: displayProduct?.category_id || '',
@@ -141,7 +146,7 @@ export function ProductQuickDialog({
       setHasUnlimitedStock(isUnlimited);
       editForm.reset({
         name: displayProduct.name || '',
-        manufacturer: displayProduct.manufacturer || '',
+        manufacturer_id: displayProduct.manufacturer_id || '',
         description: displayProduct.description || '',
         usage: displayProduct.usage || '',
         category_id: displayProduct.category_id || '',
@@ -204,8 +209,10 @@ export function ProductQuickDialog({
         productPayload.name = data.name;
         hasProductChanges = true;
       }
-      if (data.manufacturer !== (displayProduct.manufacturer || '')) {
-        productPayload.manufacturer = data.manufacturer;
+      if (
+        (data.manufacturer_id || '') !== (displayProduct.manufacturer_id || '')
+      ) {
+        productPayload.manufacturer_id = data.manufacturer_id || null;
         hasProductChanges = true;
       }
       if (data.description !== (displayProduct.description || '')) {
@@ -414,6 +421,7 @@ export function ProductQuickDialog({
                 product={displayProduct}
                 form={editForm}
                 categories={categories}
+                manufacturers={manufacturers}
                 onSave={handleEditSave}
                 onDelete={() => setShowDeleteDialog(true)}
                 isSaving={isSaving}

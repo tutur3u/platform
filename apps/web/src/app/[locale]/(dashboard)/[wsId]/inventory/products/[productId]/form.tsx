@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { Check, ChevronsUpDown, Plus, Trash } from '@tuturuuu/icons';
+import type { InventoryManufacturer } from '@tuturuuu/internal-api';
 import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -19,6 +20,13 @@ import {
   CommandSeparator,
 } from '@tuturuuu/ui/command';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
 import {
   Form,
   FormControl,
@@ -41,6 +49,7 @@ import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import * as z from 'zod';
 import { ProductCategoryForm } from '../../categories/form';
+import { ProductManufacturerForm } from '../../manufacturers/form';
 import { ProductUnitForm } from '../../units/form';
 import { ProductWarehouseForm } from '../../warehouses/form';
 import { normalizeInventoryPrice } from '../currency';
@@ -58,7 +67,7 @@ const FormSchema = z
   .object({
     id: z.string().optional(),
     name: z.string().min(1).max(255),
-    manufacturer: z.string().optional(),
+    manufacturer_id: z.string().nullable().optional(),
     description: z.string().optional(),
     usage: z.string().optional(),
     category_id: z.string(),
@@ -94,6 +103,7 @@ interface Props {
   currency: string;
   data?: z.output<typeof FormSchema>;
   categories: ProductCategory[];
+  manufacturers: InventoryManufacturer[];
   owners: InventoryOwner[];
   financeCategories: TransactionCategory[];
   warehouses: ProductWarehouse[];
@@ -110,6 +120,7 @@ export function ProductForm({
   currency,
   data,
   categories,
+  manufacturers,
   owners,
   financeCategories,
   warehouses,
@@ -126,8 +137,11 @@ export function ProductForm({
 
   const [loading, setLoading] = useState(false);
   const [showCategoryDialog, setCategoryDialog] = useState(false);
+  const [showManufacturerDialog, setManufacturerDialog] = useState(false);
   const [showWarehouseDialog, setWarehouseDialog] = useState(false);
   const [showUnitDialog, setUnitDialog] = useState(false);
+  const [availableManufacturers, setAvailableManufacturers] =
+    useState(manufacturers);
   const [hasUnlimitedStock, setHasUnlimitedStock] = useState(
     (data?.inventory || []).some((item) => item.amount === null)
   );
@@ -140,7 +154,7 @@ export function ProductForm({
       category_id: data?.category_id ?? categories[0]?.id ?? '',
       owner_id: data?.owner_id ?? owners[0]?.id ?? '',
       finance_category_id: data?.finance_category_id ?? '',
-      manufacturer: data?.manufacturer ?? '',
+      manufacturer_id: data?.manufacturer_id ?? '',
       description: data?.description ?? '',
       usage: data?.usage ?? '',
       inventory:
@@ -249,7 +263,7 @@ export function ProductForm({
       // For new products, send all data
       let productPayload: any = {
         name: formData.name,
-        manufacturer: formData.manufacturer,
+        manufacturer_id: formData.manufacturer_id || null,
         description: formData.description,
         usage: formData.usage,
         category_id: formData.category_id,
@@ -275,8 +289,8 @@ export function ProductForm({
           hasProductChanges = true;
         }
 
-        if (formData.manufacturer !== (data.manufacturer || '')) {
-          productPayload.manufacturer = formData.manufacturer;
+        if ((formData.manufacturer_id || '') !== (data.manufacturer_id || '')) {
+          productPayload.manufacturer_id = formData.manufacturer_id || null;
           hasProductChanges = true;
         }
 
@@ -409,7 +423,7 @@ export function ProductForm({
       if (!data?.id) {
         form.reset({
           name: '',
-          manufacturer: '',
+          manufacturer_id: '',
           description: '',
           usage: '',
           category_id: categories[0]?.id ?? '',
@@ -471,20 +485,99 @@ export function ProductForm({
 
                   <FormField
                     control={form.control}
-                    name="manufacturer"
+                    name="manufacturer_id"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
                           {t('ws-inventory-products.form.manufacturer')}
                         </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder={t(
-                              'ws-inventory-products.form.manufacturer'
-                            )}
-                            {...field}
-                          />
-                        </FormControl>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                              >
+                                {field.value
+                                  ? availableManufacturers.find(
+                                      (manufacturer) =>
+                                        manufacturer.id === field.value
+                                    )?.name
+                                  : t('ws-inventory-manufacturers.none')}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="p-0">
+                            <Command>
+                              <CommandInput
+                                placeholder={t(
+                                  'ws-inventory-manufacturers.search'
+                                )}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  {t('ws-inventory-manufacturers.empty_search')}
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  <CommandItem
+                                    value="none"
+                                    onSelect={() =>
+                                      form.setValue('manufacturer_id', '', {
+                                        shouldDirty: true,
+                                      })
+                                    }
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        !field.value
+                                          ? 'opacity-100'
+                                          : 'opacity-0'
+                                      )}
+                                    />
+                                    {t('ws-inventory-manufacturers.none')}
+                                  </CommandItem>
+                                  <CommandItem
+                                    onSelect={() => setManufacturerDialog(true)}
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    {t('ws-inventory-manufacturers.create')}
+                                  </CommandItem>
+                                </CommandGroup>
+                                <CommandSeparator />
+                                <CommandGroup>
+                                  {availableManufacturers.map(
+                                    (manufacturer) => (
+                                      <CommandItem
+                                        value={manufacturer.name}
+                                        key={manufacturer.id}
+                                        onSelect={() => {
+                                          form.setValue(
+                                            'manufacturer_id',
+                                            manufacturer.id,
+                                            { shouldDirty: true }
+                                          );
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            'mr-2 h-4 w-4',
+                                            manufacturer.id === field.value
+                                              ? 'opacity-100'
+                                              : 'opacity-0'
+                                          )}
+                                        />
+                                        {manufacturer.name}
+                                      </CommandItem>
+                                    )
+                                  )}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -1103,10 +1196,9 @@ export function ProductForm({
       </Form>
 
       <ModifiableDialogTrigger
-        data={data}
         open={showCategoryDialog}
         title={t('ws-product-categories.create')}
-        editDescription={t('ws-product-categories.create_description')}
+        createDescription={t('ws-product-categories.create_description')}
         setOpen={setCategoryDialog}
         form={
           <ProductCategoryForm
@@ -1117,11 +1209,42 @@ export function ProductForm({
         }
       />
 
+      <Dialog
+        open={showManufacturerDialog}
+        onOpenChange={setManufacturerDialog}
+      >
+        <DialogContent onOpenAutoFocus={(event) => event.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>{t('ws-inventory-manufacturers.create')}</DialogTitle>
+            <DialogDescription>
+              {t('ws-inventory-manufacturers.create_description')}
+            </DialogDescription>
+          </DialogHeader>
+          <ProductManufacturerForm
+            wsId={wsId}
+            canCreateInventory={canCreateInventory}
+            canUpdateInventory={canUpdateInventory}
+            onFinish={(manufacturer) => {
+              setAvailableManufacturers((current) =>
+                current.some((item) => item.id === manufacturer.id)
+                  ? current
+                  : [...current, manufacturer].sort((a, b) =>
+                      a.name.localeCompare(b.name)
+                    )
+              );
+              form.setValue('manufacturer_id', manufacturer.id, {
+                shouldDirty: true,
+              });
+              setManufacturerDialog(false);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       <ModifiableDialogTrigger
-        data={data}
         open={showWarehouseDialog}
         title={t('ws-product-warehouses.create')}
-        editDescription={t('ws-product-warehouses.create_description')}
+        createDescription={t('ws-product-warehouses.create_description')}
         setOpen={setWarehouseDialog}
         form={
           <ProductWarehouseForm
@@ -1133,10 +1256,9 @@ export function ProductForm({
       />
 
       <ModifiableDialogTrigger
-        data={data}
         open={showUnitDialog}
         title={t('ws-inventory-units.create')}
-        editDescription={t('ws-inventory-units.create_description')}
+        createDescription={t('ws-inventory-units.create_description')}
         setOpen={setUnitDialog}
         form={
           <ProductUnitForm

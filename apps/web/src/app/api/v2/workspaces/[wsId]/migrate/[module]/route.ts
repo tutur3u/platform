@@ -11,6 +11,7 @@ interface Params {
 const MODULE_TABLE_MAP: Record<string, string> = {
   // Inventory tables
   'inventory-products': 'inventory_products',
+  'inventory-manufacturers': 'inventory_manufacturers',
   'inventory-suppliers': 'inventory_suppliers',
   'inventory-batches': 'inventory_batches',
   'inventory-batch-products': 'inventory_batch_products',
@@ -78,6 +79,7 @@ const MODULE_TABLE_MAP: Record<string, string> = {
 const TABLES_WITH_WS_ID: Set<string> = new Set([
   // Inventory tables
   'inventory_suppliers',
+  'inventory_manufacturers',
   'inventory_warehouses',
   'product_categories',
   'inventory_units',

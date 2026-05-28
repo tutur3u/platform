@@ -12,7 +12,7 @@ class InventoryRepository {
     required String categoryId,
     required String ownerId,
     required List<InventoryStockEntry> inventory,
-    String? manufacturer,
+    String? manufacturerId,
     String? description,
     String? usage,
     String? financeCategoryId,
@@ -21,7 +21,7 @@ class InventoryRepository {
       'name': name,
       'category_id': categoryId,
       'owner_id': ownerId,
-      if (manufacturer != null) 'manufacturer': manufacturer,
+      'manufacturer_id': manufacturerId,
       if (description != null) 'description': description,
       if (usage != null) 'usage': usage,
       if (financeCategoryId != null) 'finance_category_id': financeCategoryId,
@@ -78,6 +78,7 @@ class InventoryRepository {
     return {
       'id': json['id'],
       'name': json['name'],
+      'manufacturer_id': json['manufacturer_id'],
       'manufacturer': json['manufacturer'],
       'description': json['description'],
       'usage': json['usage'],
@@ -138,7 +139,7 @@ class InventoryRepository {
     required String categoryId,
     required String ownerId,
     required List<InventoryStockEntry> inventory,
-    String? manufacturer,
+    String? manufacturerId,
     String? description,
     String? usage,
     String? financeCategoryId,
@@ -150,7 +151,7 @@ class InventoryRepository {
         categoryId: categoryId,
         ownerId: ownerId,
         inventory: inventory,
-        manufacturer: manufacturer,
+        manufacturerId: manufacturerId,
         description: description,
         usage: usage,
         financeCategoryId: financeCategoryId,
@@ -165,7 +166,7 @@ class InventoryRepository {
     required String categoryId,
     required String ownerId,
     required List<InventoryStockEntry> inventory,
-    String? manufacturer,
+    String? manufacturerId,
     String? description,
     String? usage,
     String? financeCategoryId,
@@ -177,7 +178,7 @@ class InventoryRepository {
         categoryId: categoryId,
         ownerId: ownerId,
         inventory: inventory,
-        manufacturer: manufacturer,
+        manufacturerId: manufacturerId,
         description: description,
         usage: usage,
         financeCategoryId: financeCategoryId,
@@ -205,9 +206,19 @@ class InventoryRepository {
   }
 
   Future<void> createOwner(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.owners(wsId), {
-      'name': name,
-    });
+    await _api.postJson(InventoryEndpoints.owners(wsId), {'name': name});
+  }
+
+  Future<List<InventoryLookupItem>> getManufacturers(String wsId) async {
+    final response = await _api.getJson(InventoryEndpoints.manufacturers(wsId));
+    return (response['data'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventoryLookupItem.fromJson)
+        .toList(growable: false);
+  }
+
+  Future<void> createManufacturer(String wsId, String name) async {
+    await _api.postJson(InventoryEndpoints.manufacturers(wsId), {'name': name});
   }
 
   Future<List<InventoryLookupItem>> getProductCategories(String wsId) async {
@@ -237,9 +248,7 @@ class InventoryRepository {
   }
 
   Future<void> createProductUnit(String wsId, String name) async {
-    await _api.postJson(InventoryEndpoints.productUnits(wsId), {
-      'name': name,
-    });
+    await _api.postJson(InventoryEndpoints.productUnits(wsId), {'name': name});
   }
 
   Future<List<InventoryLookupItem>> getProductWarehouses(String wsId) async {
@@ -259,11 +268,7 @@ class InventoryRepository {
   }
 
   Future<({List<InventorySaleSummary> data, int count, bool realtimeEnabled})>
-  getSales(
-    String wsId, {
-    int limit = 20,
-    int offset = 0,
-  }) async {
+  getSales(String wsId, {int limit = 20, int offset = 0}) async {
     final response = await _api.getJson(
       InventoryEndpoints.sales(wsId, limit: limit, offset: offset),
     );

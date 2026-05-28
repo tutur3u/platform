@@ -1,6 +1,7 @@
 export interface Product {
   archived?: boolean;
   id: string;
+  manufacturer_id?: string | null;
   name?: string;
   manufacturer?: string;
   description?: string;
@@ -68,6 +69,7 @@ export interface Product2 {
   archived?: boolean;
   id: string;
   name: string;
+  manufacturer_id?: string | null;
   manufacturer?: string;
   description?: string;
   usage?: string;

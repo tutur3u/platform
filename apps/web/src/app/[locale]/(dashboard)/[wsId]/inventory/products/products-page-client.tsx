@@ -103,6 +103,13 @@ export function ProductsPageClient({
     })
   );
 
+  const [manufacturerId, setManufacturerId] = useQueryState(
+    'manufacturerId',
+    parseAsString.withOptions({
+      shallow: true,
+    })
+  );
+
   const [status, setStatus] = useQueryState(
     'status',
     parseAsStringLiteral(productStatusValues)
@@ -116,6 +123,7 @@ export function ProductsPageClient({
     wsId,
     {
       categoryId: categoryId || undefined,
+      manufacturerId: manufacturerId || undefined,
       q,
       page,
       pageSize,
@@ -126,6 +134,7 @@ export function ProductsPageClient({
     {
       initialData:
         !categoryId &&
+        !manufacturerId &&
         !q &&
         page === 1 &&
         pageSize === 10 &&
@@ -188,6 +197,7 @@ export function ProductsPageClient({
 
   const handleResetParams = useCallback(() => {
     setCategoryId(null);
+    setManufacturerId(null);
     setQ(null);
     setPage(null);
     setPageSize(null);
@@ -196,6 +206,7 @@ export function ProductsPageClient({
     setSortOrder(null);
   }, [
     setCategoryId,
+    setManufacturerId,
     setPage,
     setPageSize,
     setQ,
@@ -229,9 +240,14 @@ export function ProductsPageClient({
           <ProductsFilters
             wsId={wsId}
             categoryId={categoryId || undefined}
+            manufacturerId={manufacturerId || undefined}
             status={status}
             onCategoryChange={(value) => {
               setCategoryId(value || null);
+              setPage(1);
+            }}
+            onManufacturerChange={(value) => {
+              setManufacturerId(value || null);
               setPage(1);
             }}
             onStatusChange={(value) => {
@@ -242,6 +258,7 @@ export function ProductsPageClient({
         }
         isFiltered={
           Boolean(categoryId) ||
+          Boolean(manufacturerId) ||
           Boolean(q) ||
           status !== 'active' ||
           Boolean(sortBy) ||
@@ -273,6 +290,7 @@ export function ProductsPageClient({
             wsId={wsId}
             q={q || undefined}
             categoryId={categoryId || undefined}
+            manufacturerId={manufacturerId || undefined}
             status={status}
             sortBy={sortBy || undefined}
             sortOrder={sortOrder || undefined}

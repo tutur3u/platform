@@ -867,6 +867,7 @@
         "category": "Category",
         "item": "Item",
         "location": "Location",
+        "manufacturer": "Manufacturer",
         "owner": "Owner",
         "stock": "Stock"
       },

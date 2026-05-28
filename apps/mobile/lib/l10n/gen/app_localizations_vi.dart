@@ -3156,6 +3156,9 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryAddCategory => 'Thêm danh mục';
 
   @override
+  String get inventoryAddManufacturer => 'Thêm nhà sản xuất';
+
+  @override
   String get inventoryAddOwner => 'Thêm chủ sở hữu';
 
   @override
@@ -3317,6 +3320,12 @@ class AppLocalizationsVi extends AppLocalizations {
   String get inventoryManageLabel => 'Quản lý';
 
   @override
+  String get inventoryManageManufacturers => 'Nhà sản xuất';
+
+  @override
+  String get inventoryManageManufacturersSubtitle => 'Chuẩn hóa nhà sản xuất để lọc và báo cáo sản phẩm.';
+
+  @override
   String get inventoryManageNameRequired => 'Hãy nhập tên.';
 
   @override
@@ -3345,6 +3354,9 @@ class AppLocalizationsVi extends AppLocalizations {
 
   @override
   String get inventoryNoLinkedFinanceCategory => 'Chưa liên kết danh mục tài chính';
+
+  @override
+  String get inventoryNoLinkedManufacturer => 'Không có nhà sản xuất';
 
   @override
   String get inventoryNoLowStockProducts => 'Hiện chưa có sản phẩm sắp hết hàng.';

@@ -183,7 +183,7 @@ export const packagesMapping = (wsId: string, data: any[]) =>
               : i?.type === 'EVENT'
                 ? '9bc7ee58-537a-4ff4-9a8f-ee10a875568c'
                 : undefined,
-    manufacturer: i?.manufacturer,
+    manufacturer_name: i?.manufacturer,
     ws_id: wsId,
     creator_id: i?.creator_id,
     created_at: i?.created_at,

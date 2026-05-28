@@ -12,10 +12,7 @@ DateTime? _asDateTime(dynamic value) {
 }
 
 class InventoryLookupItem extends Equatable {
-  const InventoryLookupItem({
-    required this.id,
-    required this.name,
-  });
+  const InventoryLookupItem({required this.id, required this.name});
 
   factory InventoryLookupItem.fromJson(Map<String, dynamic> json) =>
       InventoryLookupItem(
@@ -142,6 +139,7 @@ class InventoryProduct extends Equatable {
     required this.wsId,
     required this.inventory,
     this.name,
+    this.manufacturerId,
     this.manufacturer,
     this.description,
     this.usage,
@@ -157,6 +155,7 @@ class InventoryProduct extends Equatable {
       InventoryProduct(
         id: json['id'] as String,
         name: json['name'] as String?,
+        manufacturerId: json['manufacturer_id'] as String?,
         manufacturer: json['manufacturer'] as String?,
         description: json['description'] as String?,
         usage: json['usage'] as String?,
@@ -183,6 +182,7 @@ class InventoryProduct extends Equatable {
 
   final String id;
   final String? name;
+  final String? manufacturerId;
   final String? manufacturer;
   final String? description;
   final String? usage;
@@ -201,6 +201,7 @@ class InventoryProduct extends Equatable {
   List<Object?> get props => [
     id,
     name,
+    manufacturerId,
     manufacturer,
     description,
     usage,
@@ -398,44 +399,44 @@ class InventoryOverview extends Equatable {
     required this.categoryBreakdown,
   });
 
-  factory InventoryOverview.fromJson(Map<String, dynamic> json) =>
-      InventoryOverview(
-        realtimeEnabled: json['realtime_enabled'] as bool? ?? false,
-        totals: InventoryOverviewTotals.fromJson(
-          json['totals'] as Map<String, dynamic>? ?? const <String, dynamic>{},
-        ),
-        lowStockProducts:
-            (json['low_stock_products'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(InventoryLowStockProduct.fromJson)
-                .toList(growable: false),
-        recentSales:
-            (json['recent_sales'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(InventoryRecentSale.fromJson)
-                .toList(growable: false),
-        ownerBreakdown:
-            (json['owner_breakdown'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(
-                  (item) => InventoryBreakdownEntry.fromJson(
-                    item,
-                    labelKey: 'owner_name',
-                    idKey: 'owner_id',
-                  ),
-                )
-                .toList(growable: false),
-        categoryBreakdown:
-            (json['category_breakdown'] as List<dynamic>? ?? const <dynamic>[])
-                .whereType<Map<String, dynamic>>()
-                .map(
-                  (item) => InventoryBreakdownEntry.fromJson(
-                    item,
-                    labelKey: 'category_name',
-                  ),
-                )
-                .toList(growable: false),
-      );
+  factory InventoryOverview.fromJson(
+    Map<String, dynamic> json,
+  ) => InventoryOverview(
+    realtimeEnabled: json['realtime_enabled'] as bool? ?? false,
+    totals: InventoryOverviewTotals.fromJson(
+      json['totals'] as Map<String, dynamic>? ?? const <String, dynamic>{},
+    ),
+    lowStockProducts:
+        (json['low_stock_products'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(InventoryLowStockProduct.fromJson)
+            .toList(growable: false),
+    recentSales: (json['recent_sales'] as List<dynamic>? ?? const <dynamic>[])
+        .whereType<Map<String, dynamic>>()
+        .map(InventoryRecentSale.fromJson)
+        .toList(growable: false),
+    ownerBreakdown:
+        (json['owner_breakdown'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(
+              (item) => InventoryBreakdownEntry.fromJson(
+                item,
+                labelKey: 'owner_name',
+                idKey: 'owner_id',
+              ),
+            )
+            .toList(growable: false),
+    categoryBreakdown:
+        (json['category_breakdown'] as List<dynamic>? ?? const <dynamic>[])
+            .whereType<Map<String, dynamic>>()
+            .map(
+              (item) => InventoryBreakdownEntry.fromJson(
+                item,
+                labelKey: 'category_name',
+              ),
+            )
+            .toList(growable: false),
+  );
 
   final bool realtimeEnabled;
   final InventoryOverviewTotals totals;

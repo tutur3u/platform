@@ -9740,6 +9740,7 @@
   "workspace-inventory-tabs": {
     "batches": "Batches",
     "categories": "Categories",
+    "manufacturers": "Manufacturers",
     "overview": "Overview",
     "products": "Products",
     "promotions": "Promotions",
@@ -10754,6 +10755,22 @@
     "plural": "Categories",
     "singular": "Category"
   },
+  "ws-inventory-manufacturers": {
+    "create": "Create manufacturer",
+    "create_description": "Create a new manufacturer",
+    "description": "Manufacturers are setup entities used to normalize inventory product information.",
+    "edit": "Edit manufacturer",
+    "edit_description": "Update manufacturer",
+    "empty_search": "No manufacturer found.",
+    "failed_create_manufacturer": "Failed to create manufacturer",
+    "failed_delete_manufacturer": "Failed to delete manufacturer",
+    "failed_update_manufacturer": "Failed to update manufacturer",
+    "none": "No manufacturer",
+    "placeholder": "Enter manufacturer name",
+    "plural": "Manufacturers",
+    "search": "Search manufacturers...",
+    "singular": "Manufacturer"
+  },
   "ws-inventory-products": {
     "buttons": {
       "add_stock_entry": "Add Stock Entry",
@@ -10773,6 +10790,9 @@
     },
     "failed_delete_product": "Failed to delete product",
     "failed_save_product": "Failed when saving product",
+    "filters": {
+      "manufacturer": "Manufacturer"
+    },
     "form": {
       "add_warehouse": "Add warehouse",
       "amount": "Amount",
@@ -11697,6 +11717,7 @@
     "inventory_access_denied_description": "You don't have permission to view inventory.",
     "inventory_batches_access_denied_description": "You don't have permission to view inventory batches.",
     "inventory_categories_access_denied_description": "You don't have permission to view inventory categories.",
+    "inventory_manufacturers_access_denied_description": "You don't have permission to view inventory manufacturers.",
     "inventory_products_access_denied_description": "You don't have permission to view inventory products.",
     "inventory_promotions_access_denied_description": "You don't have permission to view inventory promotions.",
     "inventory_suppliers_access_denied_description": "You don't have permission to view inventory suppliers.",

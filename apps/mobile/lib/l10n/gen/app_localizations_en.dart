@@ -3180,6 +3180,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryAddCategory => 'Add category';
 
   @override
+  String get inventoryAddManufacturer => 'Add manufacturer';
+
+  @override
   String get inventoryAddOwner => 'Add owner';
 
   @override
@@ -3341,6 +3344,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get inventoryManageLabel => 'Manage';
 
   @override
+  String get inventoryManageManufacturers => 'Manufacturers';
+
+  @override
+  String get inventoryManageManufacturersSubtitle => 'Normalize product makers for filtering and reporting.';
+
+  @override
   String get inventoryManageNameRequired => 'Enter a name.';
 
   @override
@@ -3369,6 +3378,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get inventoryNoLinkedFinanceCategory => 'No linked finance category';
+
+  @override
+  String get inventoryNoLinkedManufacturer => 'No manufacturer';
 
   @override
   String get inventoryNoLowStockProducts => 'No low-stock products right now.';

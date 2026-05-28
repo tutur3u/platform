@@ -1,8 +1,24 @@
-import { Eye, Loader2, Save, Trash } from '@tuturuuu/icons';
+import {
+  Check,
+  ChevronsUpDown,
+  Eye,
+  Loader2,
+  Save,
+  Trash,
+} from '@tuturuuu/icons';
+import type { InventoryManufacturer } from '@tuturuuu/internal-api';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@tuturuuu/ui/command';
 import {
   Form,
   FormControl,
@@ -12,6 +28,7 @@ import {
   FormMessage,
 } from '@tuturuuu/ui/form';
 import { Input } from '@tuturuuu/ui/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
 import {
   Select,
   SelectContent,
@@ -20,6 +37,7 @@ import {
   SelectValue,
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import type { UseFormReturn } from 'react-hook-form';
@@ -29,6 +47,7 @@ interface Props {
   product: Product;
   form: UseFormReturn<EditProductFormValues>;
   categories: ProductCategory[];
+  manufacturers: InventoryManufacturer[];
   onSave: (data: EditProductFormValues) => void;
   onDelete: () => void;
   isSaving: boolean;
@@ -41,6 +60,7 @@ export function ProductEditTab({
   product,
   form,
   categories,
+  manufacturers,
   onSave,
   onDelete,
   isSaving,
@@ -102,20 +122,86 @@ export function ProductEditTab({
                 />
                 <FormField
                   control={form.control}
-                  name="manufacturer"
+                  name="manufacturer_id"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
                         {t('ws-inventory-products.form.manufacturer')}
                       </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t(
-                            'ws-inventory-products.placeholders.enter_manufacturer'
-                          )}
-                          {...field}
-                        />
-                      </FormControl>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              className="w-full justify-between"
+                            >
+                              {field.value
+                                ? manufacturers.find(
+                                    (manufacturer) =>
+                                      manufacturer.id === field.value
+                                  )?.name
+                                : t('ws-inventory-manufacturers.none')}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0">
+                          <Command>
+                            <CommandInput
+                              placeholder={t(
+                                'ws-inventory-manufacturers.search'
+                              )}
+                            />
+                            <CommandList>
+                              <CommandEmpty>
+                                {t('ws-inventory-manufacturers.empty_search')}
+                              </CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value="none"
+                                  onSelect={() =>
+                                    form.setValue('manufacturer_id', '', {
+                                      shouldDirty: true,
+                                    })
+                                  }
+                                >
+                                  <Check
+                                    className={cn(
+                                      'mr-2 h-4 w-4',
+                                      !field.value ? 'opacity-100' : 'opacity-0'
+                                    )}
+                                  />
+                                  {t('ws-inventory-manufacturers.none')}
+                                </CommandItem>
+                                {manufacturers.map((manufacturer) => (
+                                  <CommandItem
+                                    value={manufacturer.name}
+                                    key={manufacturer.id}
+                                    onSelect={() =>
+                                      form.setValue(
+                                        'manufacturer_id',
+                                        manufacturer.id,
+                                        { shouldDirty: true }
+                                      )
+                                    }
+                                  >
+                                    <Check
+                                      className={cn(
+                                        'mr-2 h-4 w-4',
+                                        manufacturer.id === field.value
+                                          ? 'opacity-100'
+                                          : 'opacity-0'
+                                      )}
+                                    />
+                                    {manufacturer.name}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}

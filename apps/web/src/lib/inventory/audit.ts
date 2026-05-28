@@ -22,6 +22,7 @@ export interface InventoryAuditLogInput {
     | 'stock'
     | 'category'
     | 'unit'
+    | 'manufacturer'
     | 'warehouse'
     | 'sale';
   entityId?: string | null;

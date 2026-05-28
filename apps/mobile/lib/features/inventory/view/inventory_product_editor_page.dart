@@ -54,7 +54,6 @@ class _InventoryProductEditorPageState
   late final FinanceRepository _financeRepository;
   late final SettingsRepository _settingsRepository;
   late final TextEditingController _nameController;
-  late final TextEditingController _manufacturerController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _usageController;
 
@@ -62,6 +61,7 @@ class _InventoryProductEditorPageState
   bool _saving = false;
 
   String? _categoryId;
+  String? _manufacturerId;
   String? _ownerId;
   String? _financeCategoryId;
 
@@ -71,6 +71,7 @@ class _InventoryProductEditorPageState
   String? _ownerError;
 
   List<InventoryLookupItem> _categories = const [];
+  List<InventoryLookupItem> _manufacturers = const [];
   List<InventoryOwner> _owners = const [];
   List<InventoryLookupItem> _units = const [];
   List<InventoryLookupItem> _warehouses = const [];
@@ -87,7 +88,6 @@ class _InventoryProductEditorPageState
     _financeRepository = widget.financeRepository ?? FinanceRepository();
     _settingsRepository = widget.settingsRepository ?? SettingsRepository();
     _nameController = TextEditingController();
-    _manufacturerController = TextEditingController();
     _descriptionController = TextEditingController();
     _usageController = TextEditingController();
     unawaited(_load());
@@ -96,7 +96,6 @@ class _InventoryProductEditorPageState
   @override
   void dispose() {
     _nameController.dispose();
-    _manufacturerController.dispose();
     _descriptionController.dispose();
     _usageController.dispose();
     for (final row in _rows) {
@@ -117,6 +116,7 @@ class _InventoryProductEditorPageState
     try {
       final results = await Future.wait<dynamic>([
         _inventoryRepository.getProductCategories(wsId),
+        _inventoryRepository.getManufacturers(wsId),
         _inventoryRepository.getOwners(wsId),
         _inventoryRepository.getProductUnits(wsId),
         _inventoryRepository.getProductWarehouses(wsId),
@@ -128,15 +128,16 @@ class _InventoryProductEditorPageState
       ]);
 
       final categories = results[0] as List<InventoryLookupItem>;
-      final owners = results[1] as List<InventoryOwner>;
-      final units = results[2] as List<InventoryLookupItem>;
-      final warehouses = results[3] as List<InventoryLookupItem>;
-      final financeCategories = results[4] as List<TransactionCategory>;
-      final product = results[5] as InventoryProduct?;
+      final manufacturers = results[1] as List<InventoryLookupItem>;
+      final owners = results[2] as List<InventoryOwner>;
+      final units = results[3] as List<InventoryLookupItem>;
+      final warehouses = results[4] as List<InventoryLookupItem>;
+      final financeCategories = results[5] as List<TransactionCategory>;
+      final product = results[6] as InventoryProduct?;
 
       if (product != null) {
         _nameController.text = product.name ?? '';
-        _manufacturerController.text = product.manufacturer ?? '';
+        _manufacturerId = product.manufacturerId;
         _descriptionController.text = product.description ?? '';
         _usageController.text = product.usage ?? '';
         _categoryId = product.categoryId;
@@ -171,6 +172,7 @@ class _InventoryProductEditorPageState
       if (!mounted) return;
       setState(() {
         _categories = categories;
+        _manufacturers = manufacturers;
         _owners = owners;
         _units = units;
         _warehouses = warehouses;
@@ -268,6 +270,47 @@ class _InventoryProductEditorPageState
     });
   }
 
+  Future<void> _pickManufacturer() async {
+    final selectedId = await _pickManufacturerOption(
+      title: context.l10n.inventoryProductManufacturer,
+      currentId: _manufacturerId,
+      items: _manufacturers,
+    );
+    if (!mounted || selectedId == null) return;
+
+    if (selectedId == '__create__') {
+      await _createManufacturerFromPicker();
+      return;
+    }
+
+    setState(() {
+      _manufacturerId = selectedId == '__none__' ? null : selectedId;
+      _formError = null;
+    });
+  }
+
+  Future<void> _createManufacturerFromPicker() async {
+    final wsId = _wsId;
+    if (wsId == null) return;
+
+    final name = await _promptLookupName(
+      title: context.l10n.inventoryAddManufacturer,
+      confirmLabel: context.l10n.inventoryAddManufacturer,
+    );
+    if (!mounted || name == null || name.trim().isEmpty) return;
+
+    await _inventoryRepository.createManufacturer(wsId, name.trim());
+    final manufacturers = await _inventoryRepository.getManufacturers(wsId);
+    if (!mounted) return;
+
+    final created = manufacturers.where((item) => item.name == name.trim());
+    setState(() {
+      _manufacturers = manufacturers;
+      _manufacturerId = created.isEmpty ? null : created.first.id;
+      _formError = null;
+    });
+  }
+
   Future<String?> _pickLookupOption({
     required String title,
     required String? currentId,
@@ -291,6 +334,76 @@ class _InventoryProductEditorPageState
         ),
       ),
     );
+  }
+
+  Future<String?> _pickManufacturerOption({
+    required String title,
+    required String? currentId,
+    required List<InventoryLookupItem> items,
+  }) {
+    return showFinanceModal<String>(
+      context: context,
+      builder: (context) => FinanceModalScaffold(
+        title: title,
+        child: ListView(
+          children: [
+            FinancePickerTile(
+              title: context.l10n.inventoryNoLinkedManufacturer,
+              isSelected: currentId == null,
+              onTap: () => Navigator.of(context).pop('__none__'),
+            ),
+            const shad.Gap(8),
+            FinancePickerTile(
+              title: context.l10n.inventoryAddManufacturer,
+              onTap: () => Navigator.of(context).pop('__create__'),
+            ),
+            const shad.Gap(8),
+            ...items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: FinancePickerTile(
+                  title: item.name,
+                  isSelected: item.id == currentId,
+                  onTap: () => Navigator.of(context).pop(item.id),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<String?> _promptLookupName({
+    required String title,
+    required String confirmLabel,
+  }) async {
+    final controller = TextEditingController();
+    final result = await showFinanceModal<String>(
+      context: context,
+      builder: (context) => FinanceModalScaffold(
+        title: title,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: controller,
+              autofocus: true,
+              onSubmitted: (_) =>
+                  Navigator.of(context).pop(controller.text.trim()),
+            ),
+            const shad.Gap(16),
+            shad.PrimaryButton(
+              onPressed: () =>
+                  Navigator.of(context).pop(controller.text.trim()),
+              child: Text(confirmLabel),
+            ),
+          ],
+        ),
+      ),
+    );
+    controller.dispose();
+    return result;
   }
 
   Future<String?> _pickOwnerOption({
@@ -455,7 +568,6 @@ class _InventoryProductEditorPageState
     setState(() => _saving = true);
     try {
       final name = _nameController.text.trim();
-      final manufacturer = _manufacturerController.text.trim();
       final description = _descriptionController.text.trim();
       final usage = _usageController.text.trim();
 
@@ -466,7 +578,7 @@ class _InventoryProductEditorPageState
           categoryId: _categoryId!,
           ownerId: _ownerId!,
           inventory: entries,
-          manufacturer: manufacturer.isEmpty ? null : manufacturer,
+          manufacturerId: _manufacturerId,
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,
           financeCategoryId: _financeCategoryId,
@@ -479,7 +591,7 @@ class _InventoryProductEditorPageState
           categoryId: _categoryId!,
           ownerId: _ownerId!,
           inventory: entries,
-          manufacturer: manufacturer.isEmpty ? null : manufacturer,
+          manufacturerId: _manufacturerId,
           description: description.isEmpty ? null : description,
           usage: usage.isEmpty ? null : usage,
           financeCategoryId: _financeCategoryId,
@@ -610,11 +722,12 @@ class _InventoryProductEditorPageState
                         onTap: _pickFinanceCategory,
                       ),
                       const shad.Gap(12),
-                      _InventoryTextInputCard(
+                      _InventorySelectorCard(
                         label: l10n.inventoryProductManufacturer,
-                        controller: _manufacturerController,
-                        placeholder: l10n.inventoryProductManufacturer,
-                        onChanged: (_) => setState(() {}),
+                        title: _selectedManufacturer?.name,
+                        placeholder: l10n.inventoryNoLinkedManufacturer,
+                        icon: Icons.factory_outlined,
+                        onTap: _pickManufacturer,
                       ),
                     ],
                   ),
@@ -716,6 +829,8 @@ class _InventoryProductEditorPageState
         _selectedOwner!.name.trim(),
       if (_selectedCategory?.name.trim().isNotEmpty ?? false)
         _selectedCategory!.name.trim(),
+      if (_selectedManufacturer?.name.trim().isNotEmpty ?? false)
+        _selectedManufacturer!.name.trim(),
     ];
     return parts.join(' • ');
   }
@@ -723,6 +838,13 @@ class _InventoryProductEditorPageState
   InventoryLookupItem? get _selectedCategory {
     for (final item in _categories) {
       if (item.id == _categoryId) return item;
+    }
+    return null;
+  }
+
+  InventoryLookupItem? get _selectedManufacturer {
+    for (final item in _manufacturers) {
+      if (item.id == _manufacturerId) return item;
     }
     return null;
   }
@@ -993,15 +1115,12 @@ class _InventorySectionCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
-              if (action != null) ...[
-                const shad.Gap(12),
-                action!,
-              ],
+              if (action != null) ...[const shad.Gap(12), action!],
             ],
           ),
           const shad.Gap(10),
@@ -1059,11 +1178,7 @@ class _InventorySelectorCard extends StatelessWidget {
                 ),
               ),
               const shad.Gap(10),
-              Icon(
-                Icons.expand_more_rounded,
-                size: 18,
-                color: palette.accent,
-              ),
+              Icon(Icons.expand_more_rounded, size: 18, color: palette.accent),
             ],
           ),
         ),
@@ -1297,9 +1412,9 @@ class _InventoryStockRowCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${context.l10n.inventoryProductInventory} ${index + 1}',
-                  style: shad.Theme.of(context).typography.small.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: shad.Theme.of(
+                    context,
+                  ).typography.small.copyWith(fontWeight: FontWeight.w800),
                 ),
               ),
               if (price != null)

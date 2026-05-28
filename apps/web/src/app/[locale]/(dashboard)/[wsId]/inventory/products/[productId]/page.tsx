@@ -1,3 +1,4 @@
+import type { InventoryManufacturer } from '@tuturuuu/internal-api';
 import {
   createAdminClient,
   createClient,
@@ -75,6 +76,7 @@ export default async function WorkspaceProductsPage({ params }: Props) {
                 canViewStockQuantity,
               });
         const categories = await getCategories(wsId);
+        const manufacturers = await getManufacturers(wsId);
         const owners = await getOwners(wsId);
         const financeCategories = await getFinanceCategories(wsId);
         const warehouses = await getWarehouses(wsId);
@@ -94,6 +96,7 @@ export default async function WorkspaceProductsPage({ params }: Props) {
               wsId={wsId}
               data={data}
               categories={categories}
+              manufacturers={manufacturers}
               owners={owners}
               financeCategories={financeCategories}
               warehouses={warehouses}
@@ -128,7 +131,7 @@ async function getData(
     const { data, error } = await supabase
       .from('workspace_products')
       .select(
-        '*, inventory_products(*), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
+        '*, inventory_products(*), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
       )
       .eq('ws_id', wsId)
       .eq('id', productId)
@@ -141,7 +144,7 @@ async function getData(
     const { data, error } = await supabase
       .from('workspace_products')
       .select(
-        '*, inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
+        '*, inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
       )
       .eq('ws_id', wsId)
       .eq('id', productId)
@@ -157,7 +160,7 @@ async function getData(
   return {
     id: rawProduct.id,
     name: rawProduct.name ?? '',
-    manufacturer: rawProduct.manufacturer ?? undefined,
+    manufacturer_id: rawProduct.manufacturer_id ?? undefined,
     description: rawProduct.description ?? undefined,
     usage: rawProduct.usage ?? undefined,
     category_id: rawProduct.category_id ?? '',
@@ -173,6 +176,18 @@ async function getData(
         }))
       : [],
   };
+}
+
+async function getManufacturers(wsId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from('inventory_manufacturers')
+    .select('*')
+    .eq('ws_id', wsId)
+    .order('name');
+
+  if (error) throw error;
+  return (data ?? []) as InventoryManufacturer[];
 }
 
 async function getCategories(wsId: string) {

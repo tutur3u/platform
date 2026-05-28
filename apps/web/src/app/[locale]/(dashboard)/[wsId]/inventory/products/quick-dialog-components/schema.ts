@@ -11,7 +11,7 @@ const InventorySchema = z.object({
 export const EditProductSchema = z
   .object({
     name: z.string().min(1, 'Product name is required'),
-    manufacturer: z.string().optional(),
+    manufacturer_id: z.string().nullable().optional(),
     description: z.string().optional(),
     usage: z.string().optional(),
     category_id: z.string().optional(),

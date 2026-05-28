@@ -6157,6 +6157,12 @@ abstract class AppLocalizations {
   /// **'Add category'**
   String get inventoryAddCategory;
 
+  /// No description provided for @inventoryAddManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'Add manufacturer'**
+  String get inventoryAddManufacturer;
+
   /// No description provided for @inventoryAddOwner.
   ///
   /// In en, this message translates to:
@@ -6475,6 +6481,18 @@ abstract class AppLocalizations {
   /// **'Manage'**
   String get inventoryManageLabel;
 
+  /// No description provided for @inventoryManageManufacturers.
+  ///
+  /// In en, this message translates to:
+  /// **'Manufacturers'**
+  String get inventoryManageManufacturers;
+
+  /// No description provided for @inventoryManageManufacturersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Normalize product makers for filtering and reporting.'**
+  String get inventoryManageManufacturersSubtitle;
+
   /// No description provided for @inventoryManageNameRequired.
   ///
   /// In en, this message translates to:
@@ -6534,6 +6552,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No linked finance category'**
   String get inventoryNoLinkedFinanceCategory;
+
+  /// No description provided for @inventoryNoLinkedManufacturer.
+  ///
+  /// In en, this message translates to:
+  /// **'No manufacturer'**
+  String get inventoryNoLinkedManufacturer;
 
   /// No description provided for @inventoryNoLowStockProducts.
   ///

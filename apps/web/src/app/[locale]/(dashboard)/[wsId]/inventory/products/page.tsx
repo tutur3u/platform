@@ -30,6 +30,7 @@ interface Props {
   }>;
   searchParams: Promise<{
     categoryId?: string;
+    manufacturerId?: string;
     q: string;
     page: string;
     pageSize: string;
@@ -124,6 +125,7 @@ async function getInitialData(
   wsId: string,
   {
     categoryId,
+    manufacturerId,
     q,
     page = '1',
     pageSize = '10',
@@ -132,6 +134,7 @@ async function getInitialData(
     sortOrder,
   }: {
     categoryId?: string;
+    manufacturerId?: string;
     q?: string;
     page?: string;
     pageSize?: string;
@@ -159,7 +162,7 @@ async function getInitialData(
     let query = supabase
       .from('workspace_products')
       .select(
-        '*, product_categories(name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
+        '*, product_categories(name), inventory_manufacturers(id, name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
         {
           count: 'exact',
         }
@@ -169,13 +172,21 @@ async function getInitialData(
     if (status === 'active') query = query.filter('archived', 'eq', 'false');
     if (status === 'archived') query = query.filter('archived', 'eq', 'true');
     if (categoryId) query = query.eq('category_id', categoryId);
+    if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
     if (q) query = query.ilike('name', `%${q}%`);
     query = query.range(start, end).limit(parsedSize);
 
     if (sortBy && sortOrder) {
-      query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
-        ascending: sortOrder === 'asc',
-      });
+      if (sortBy === 'manufacturer') {
+        query = query.order('name', {
+          referencedTable: 'inventory_manufacturers',
+          ascending: sortOrder === 'asc',
+        });
+      } else {
+        query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
+          ascending: sortOrder === 'asc',
+        });
+      }
     } else {
       query = query.order('created_at', { ascending: false });
     }
@@ -191,21 +202,32 @@ async function getInitialData(
   } else {
     let query = supabase
       .from('workspace_products')
-      .select('*, product_categories(name)', {
-        count: 'exact',
-      })
+      .select(
+        '*, product_categories(name), inventory_manufacturers(id, name)',
+        {
+          count: 'exact',
+        }
+      )
       .eq('ws_id', wsId);
 
     if (status === 'active') query = query.filter('archived', 'eq', 'false');
     if (status === 'archived') query = query.filter('archived', 'eq', 'true');
     if (categoryId) query = query.eq('category_id', categoryId);
+    if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
     if (q) query = query.ilike('name', `%${q}%`);
     query = query.range(start, end).limit(parsedSize);
 
     if (sortBy && sortOrder) {
-      query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
-        ascending: sortOrder === 'asc',
-      });
+      if (sortBy === 'manufacturer') {
+        query = query.order('name', {
+          referencedTable: 'inventory_manufacturers',
+          ascending: sortOrder === 'asc',
+        });
+      } else {
+        query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
+          ascending: sortOrder === 'asc',
+        });
+      }
     } else {
       query = query.order('created_at', { ascending: false });
     }
@@ -229,7 +251,8 @@ async function getInitialData(
       archived: product.archived ?? false,
       id: item.id,
       name: item.name,
-      manufacturer: item.manufacturer,
+      manufacturer_id: item.manufacturer_id,
+      manufacturer: item.inventory_manufacturers?.name ?? null,
       description: item.description,
       usage: item.usage,
       unit: canViewStockQuantity

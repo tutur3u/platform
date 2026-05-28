@@ -18,6 +18,7 @@ import {
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),
+  manufacturerId: z.guid().optional(),
   q: z.string().max(MAX_SEARCH_LENGTH).default(''),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce
@@ -78,8 +79,16 @@ export async function GET(request: Request, { params }: Params) {
         { status: 400 }
       );
     }
-    const { categoryId, q, page, pageSize, status, sortBy, sortOrder } =
-      parsed.data;
+    const {
+      categoryId,
+      manufacturerId,
+      q,
+      page,
+      pageSize,
+      status,
+      sortBy,
+      sortOrder,
+    } = parsed.data;
 
     const start = (page - 1) * pageSize;
     const end = page * pageSize - 1;
@@ -91,7 +100,7 @@ export async function GET(request: Request, { params }: Params) {
       let query = sbAdmin
         .from('workspace_products')
         .select(
-          'id, name, manufacturer, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
+          'id, name, manufacturer_id, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
           {
             count: 'exact',
           }
@@ -101,12 +110,20 @@ export async function GET(request: Request, { params }: Params) {
       if (status === 'active') query = query.filter('archived', 'eq', 'false');
       if (status === 'archived') query = query.filter('archived', 'eq', 'true');
       if (categoryId) query = query.eq('category_id', categoryId);
+      if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
       if (q) query = query.ilike('name', `%${q}%`);
       query = query.range(start, end);
 
       // Apply sorting - default to created_at desc for consistent ordering
       if (sortBy && sortOrder) {
-        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+        if (sortBy === 'manufacturer') {
+          query = query.order('name', {
+            referencedTable: 'inventory_manufacturers',
+            ascending: sortOrder === 'asc',
+          });
+        } else {
+          query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+        }
       } else {
         query = query.order('created_at', { ascending: false });
       }
@@ -123,7 +140,7 @@ export async function GET(request: Request, { params }: Params) {
       let query = sbAdmin
         .from('workspace_products')
         .select(
-          'id, name, manufacturer, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)',
+          'id, name, manufacturer_id, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)',
           {
             count: 'exact',
           }
@@ -133,12 +150,20 @@ export async function GET(request: Request, { params }: Params) {
       if (status === 'active') query = query.filter('archived', 'eq', 'false');
       if (status === 'archived') query = query.filter('archived', 'eq', 'true');
       if (categoryId) query = query.eq('category_id', categoryId);
+      if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
       if (q) query = query.ilike('name', `%${q}%`);
       query = query.range(start, end);
 
       // Apply sorting - default to created_at desc for consistent ordering
       if (sortBy && sortOrder) {
-        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+        if (sortBy === 'manufacturer') {
+          query = query.order('name', {
+            referencedTable: 'inventory_manufacturers',
+            ascending: sortOrder === 'asc',
+          });
+        } else {
+          query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+        }
       } else {
         query = query.order('created_at', { ascending: false });
       }
@@ -175,14 +200,19 @@ export async function GET(request: Request, { params }: Params) {
     };
 
     const data = (rawData ?? []).map((item) => {
-      const product = item as RawInventoryProduct & { archived?: boolean };
+      const product = item as RawInventoryProduct & {
+        archived?: boolean;
+        inventory_manufacturers?: { id: string; name: string | null } | null;
+        manufacturer_id?: string | null;
+      };
       const primaryInventory = selectPrimaryInventory(item.inventory_products);
 
       return {
         archived: product.archived ?? false,
         id: item.id,
         name: item.name,
-        manufacturer: item.manufacturer,
+        manufacturer_id: product.manufacturer_id ?? null,
+        manufacturer: product.inventory_manufacturers?.name ?? null,
         description: item.description,
         usage: item.usage,
         unit: canViewStockQuantity

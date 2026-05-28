@@ -5,6 +5,10 @@ export type InventoryWarehouse = Pick<
   'id' | 'name'
 >;
 export type InventoryUnit = Pick<Tables<'inventory_units'>, 'id' | 'name'>;
+export type InventoryManufacturer = Pick<
+  Tables<'inventory_manufacturers'>,
+  'id' | 'name'
+>;
 export type InventoryProduct = Pick<
   Tables<'inventory_products'>,
   'amount' | 'min_amount' | 'price' | 'warehouse_id' | 'unit_id' | 'created_at'
@@ -34,6 +38,7 @@ export type ProductStockChange = Pick<
 };
 export type RawInventoryProduct = Tables<'workspace_products'> & {
   product_categories?: InventoryProductCategory | null;
+  inventory_manufacturers?: InventoryManufacturer | null;
   inventory_owners?: InventoryOwnerRelation | null;
   transaction_categories?: InventoryFinanceCategoryRelation | null;
   inventory_products?: InventoryProduct[] | null;
@@ -42,6 +47,7 @@ export type RawInventoryProductWithChanges = Tables<'workspace_products'> & {
   inventory_products?: InventoryProduct[] | null;
   product_stock_changes?: ProductStockChange[] | null;
   product_categories?: InventoryProductCategory | null;
+  inventory_manufacturers?: InventoryManufacturer | null;
   inventory_owners?: InventoryOwnerRelation | null;
   transaction_categories?: InventoryFinanceCategoryRelation | null;
 };

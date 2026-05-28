@@ -11,7 +11,7 @@ import {
   canViewInventoryCatalog,
 } from '@/lib/inventory/permissions';
 
-const UnitSchema = z.object({
+const ManufacturerSchema = z.object({
   name: z.string().trim().min(1).max(MAX_NAME_LENGTH),
 });
 
@@ -30,27 +30,24 @@ export async function GET(req: Request, { params }: Params) {
   const { permissions, wsId } = authorization.value;
 
   if (!canViewInventoryCatalog(permissions)) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions to view inventory' },
-      { status: 403 }
-    );
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
   const { data, error } = await sbAdmin
-    .from('inventory_units')
+    .from('inventory_manufacturers')
     .select('*')
     .eq('ws_id', wsId)
     .order('name');
 
   if (error) {
-    serverLogger.error('Error fetching product units', error);
+    serverLogger.error('Error fetching inventory manufacturers', error);
     return NextResponse.json(
-      { message: 'Error fetching product units' },
+      { message: 'Failed to fetch inventory manufacturers' },
       { status: 500 }
     );
   }
 
-  return NextResponse.json(data ?? []);
+  return NextResponse.json({ data: data ?? [] });
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -62,13 +59,10 @@ export async function POST(req: Request, { params }: Params) {
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
-    return NextResponse.json(
-      { message: 'Insufficient permissions to create units' },
-      { status: 403 }
-    );
+    return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 
-  const parsed = UnitSchema.safeParse(await req.json());
+  const parsed = ManufacturerSchema.safeParse(await req.json());
   if (!parsed.success) {
     return NextResponse.json(
       { message: 'Invalid request body', errors: parsed.error.issues },
@@ -77,7 +71,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { data, error } = await sbAdmin
-    .from('inventory_units')
+    .from('inventory_manufacturers')
     .insert({
       ...parsed.data,
       ws_id: wsId,
@@ -86,24 +80,24 @@ export async function POST(req: Request, { params }: Params) {
     .single();
 
   if (error) {
-    serverLogger.error('Error creating product unit', error);
+    serverLogger.error('Error creating inventory manufacturer', error);
     return NextResponse.json(
-      { message: 'Error creating product unit' },
-      { status: 500 }
+      { message: 'Failed to create inventory manufacturer' },
+      { status: error.code === '23505' ? 409 : 500 }
     );
   }
 
   await createInventoryAuditLog(sbAdmin, {
     wsId,
     eventKind: 'created',
-    entityKind: 'unit',
+    entityKind: 'manufacturer',
     entityId: data.id,
     entityLabel: data.name,
-    summary: `Created unit ${data.name}`,
+    summary: `Created manufacturer ${data.name}`,
     changedFields: ['name'],
     after: data,
     actor: await getInventoryActorContext(req, wsId),
   });
 
-  return NextResponse.json({ message: 'success', data });
+  return NextResponse.json({ data });
 }

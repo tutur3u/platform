@@ -9,6 +9,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { validateWorkspaceApiKey } from '@/lib/workspace-api-key';
 
 interface Params {
@@ -53,7 +54,7 @@ async function getDataWithApiKey({
   const { data, error } = response;
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace product count', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }
@@ -98,7 +99,7 @@ async function getDataFromSession({
     .single();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching workspace product count', error);
     return NextResponse.json(
       { message: 'Error fetching workspace users' },
       { status: 500 }

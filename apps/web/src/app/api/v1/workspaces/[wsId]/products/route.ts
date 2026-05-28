@@ -1,9 +1,9 @@
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import {
   MAX_LONG_TEXT_LENGTH,
   MAX_MEDIUM_TEXT_LENGTH,
@@ -15,11 +15,13 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
 } from '@/lib/inventory/access';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
+import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
 import {
   canAdjustInventoryStock,
   canManageInventoryCatalog,
@@ -36,7 +38,8 @@ const InventoryItemSchema = z.object({
 
 export const ProductCreateSchema = z.object({
   name: z.string().min(1).max(MAX_NAME_LENGTH),
-  manufacturer: z.string().max(MAX_NAME_LENGTH).optional(),
+  manufacturer_id: z.guid().nullable().optional(),
+  manufacturer: z.string().max(MAX_NAME_LENGTH).nullable().optional(),
   description: z.string().max(MAX_LONG_TEXT_LENGTH).optional(),
   usage: z.string().max(MAX_MEDIUM_TEXT_LENGTH).optional(),
   category_id: z.guid(),
@@ -198,7 +201,20 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { inventory, owner_id, ...data } = parsed.data;
+  const { inventory, owner_id, manufacturer, manufacturer_id, ...data } =
+    parsed.data;
+  const resolvedManufacturer = await resolveProductManufacturerId({
+    sbAdmin,
+    wsId,
+    manufacturerId: manufacturer_id,
+    legacyManufacturerName: manufacturer,
+  });
+  if (!resolvedManufacturer.ok) {
+    return NextResponse.json(
+      { message: resolvedManufacturer.message },
+      { status: 400 }
+    );
+  }
   const resolvedOwnerId =
     owner_id ??
     (await resolveDefaultOwnerId({
@@ -233,14 +249,16 @@ export async function POST(req: Request, { params }: Params) {
     .insert({
       ...data,
       owner_id: resolvedOwnerId,
+      manufacturer_id: resolvedManufacturer.manufacturerId ?? null,
       ws_id: wsId,
     })
-    .select('id, name, owner_id, finance_category_id, category_id')
+    .select(
+      'id, name, owner_id, finance_category_id, category_id, manufacturer_id'
+    )
     .single();
 
   if (product.error) {
-    // TODO: logging
-    console.log(product.error);
+    serverLogger.error('Error creating product', product.error);
     return NextResponse.json(
       { message: 'Error creating product' },
       { status: 500 }
@@ -264,7 +282,7 @@ export async function POST(req: Request, { params }: Params) {
     );
 
     if (error) {
-      console.log(error);
+      serverLogger.error('Error creating inventory for product', error);
       return NextResponse.json(
         { message: 'Error creating inventory' },
         { status: 500 }
@@ -298,7 +316,7 @@ export async function POST(req: Request, { params }: Params) {
           .from('product_stock_changes')
           .insert(stockChanges);
         if (stockChangeError) {
-          console.error('Error logging stock changes', stockChangeError);
+          serverLogger.error('Error logging stock changes', stockChangeError);
         }
       }
     }
@@ -315,11 +333,13 @@ export async function POST(req: Request, { params }: Params) {
       'name',
       'category_id',
       'owner_id',
+      ...(resolvedManufacturer.manufacturerId ? ['manufacturer_id'] : []),
       ...(data.finance_category_id ? ['finance_category_id'] : []),
       ...(inventory.length > 0 ? ['inventory'] : []),
     ],
     after: {
       ...data,
+      manufacturer_id: resolvedManufacturer.manufacturerId ?? null,
       inventory,
     },
     actor: {

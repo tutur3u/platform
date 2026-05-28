@@ -20,6 +20,11 @@ class _MockWorkspaceCubit extends MockCubit<WorkspaceState>
 
 class _FakeInventoryRepository extends InventoryRepository {
   @override
+  Future<List<InventoryLookupItem>> getManufacturers(String wsId) async {
+    return const [InventoryLookupItem(id: 'manufacturer_1', name: 'Acme')];
+  }
+
+  @override
   Future<List<InventoryLookupItem>> getProductCategories(String wsId) async {
     return const [
       InventoryLookupItem(id: 'category_1', name: 'Tea'),
@@ -37,16 +42,12 @@ class _FakeInventoryRepository extends InventoryRepository {
 
   @override
   Future<List<InventoryLookupItem>> getProductUnits(String wsId) async {
-    return const [
-      InventoryLookupItem(id: 'unit_1', name: 'Cup'),
-    ];
+    return const [InventoryLookupItem(id: 'unit_1', name: 'Cup')];
   }
 
   @override
   Future<List<InventoryLookupItem>> getProductWarehouses(String wsId) async {
-    return const [
-      InventoryLookupItem(id: 'warehouse_1', name: 'Front booth'),
-    ];
+    return const [InventoryLookupItem(id: 'warehouse_1', name: 'Front booth')];
   }
 }
 
@@ -69,10 +70,7 @@ void main() {
     late _FakeFinanceRepository financeRepository;
     late SettingsRepository settingsRepository;
 
-    const workspace = Workspace(
-      id: 'ws_1',
-      name: 'Booth',
-    );
+    const workspace = Workspace(id: 'ws_1', name: 'Booth');
     const workspaceState = WorkspaceState(
       status: WorkspaceStatus.loaded,
       workspaces: [workspace],
@@ -98,27 +96,24 @@ void main() {
       settingsRepository = SettingsRepository();
     });
 
-    testWidgets(
-      'hydrates remembered selections for a faster create flow',
-      (
-        tester,
-      ) async {
-        await tester.pumpApp(
-          BlocProvider<WorkspaceCubit>.value(
-            value: workspaceCubit,
-            child: InventoryProductEditorPage(
-              inventoryRepository: inventoryRepository,
-              financeRepository: financeRepository,
-              settingsRepository: settingsRepository,
-            ),
+    testWidgets('hydrates remembered selections for a faster create flow', (
+      tester,
+    ) async {
+      await tester.pumpApp(
+        BlocProvider<WorkspaceCubit>.value(
+          value: workspaceCubit,
+          child: InventoryProductEditorPage(
+            inventoryRepository: inventoryRepository,
+            financeRepository: financeRepository,
+            settingsRepository: settingsRepository,
           ),
-        );
-        await tester.pumpAndSettle();
+        ),
+      );
+      await tester.pumpAndSettle();
 
-        expect(find.text('Bob'), findsWidgets);
-        expect(find.text('Coffee'), findsWidgets);
-        expect(find.text('Special drinks'), findsWidgets);
-      },
-    );
+      expect(find.text('Bob'), findsWidgets);
+      expect(find.text('Coffee'), findsWidgets);
+      expect(find.text('Special drinks'), findsWidgets);
+    });
   });
 }

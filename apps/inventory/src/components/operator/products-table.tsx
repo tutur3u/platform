@@ -23,6 +23,7 @@ export function ProductsTable({
         <thead className="bg-dynamic-surface text-muted-foreground text-xs">
           <tr>
             <th className="p-3">{t('columns.item')}</th>
+            <th className="p-3">{t('columns.manufacturer')}</th>
             <th className="p-3">{t('columns.category')}</th>
             <th className="p-3">{t('columns.owner')}</th>
             <th className="p-3">{t('columns.stock')}</th>
@@ -43,6 +44,9 @@ export function ProductsTable({
             return (
               <tr className="border-border border-t" key={row.id}>
                 <td className="p-3 font-medium">{row.name}</td>
+                <td className="p-3 text-muted-foreground">
+                  {row.manufacturer ?? '-'}
+                </td>
                 <td className="p-3 text-muted-foreground">
                   {row.category ?? '-'}
                 </td>

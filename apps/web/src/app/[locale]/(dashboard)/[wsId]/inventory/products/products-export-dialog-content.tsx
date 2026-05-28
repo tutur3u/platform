@@ -19,6 +19,7 @@ import { fetchWorkspaceProducts, type ProductStatusFilter } from './hooks';
 interface ProductsExportDialogContentProps {
   categoryId?: string;
   currency: string;
+  manufacturerId?: string;
   q?: string;
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
@@ -74,6 +75,7 @@ function getPriceSummary(product: Product, currency: string) {
 export function ProductsExportDialogContent({
   categoryId,
   currency,
+  manufacturerId,
   q,
   sortBy,
   sortOrder,
@@ -95,6 +97,7 @@ export function ProductsExportDialogContent({
       while (products.length < total) {
         const response = await fetchWorkspaceProducts(wsId, {
           categoryId,
+          manufacturerId,
           q,
           page: nextPage,
           pageSize,

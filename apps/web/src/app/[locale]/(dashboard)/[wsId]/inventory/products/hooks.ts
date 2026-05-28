@@ -1,4 +1,9 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import {
+  type InventoryManufacturer,
+  listInventoryManufacturers,
+  listInventoryProducts,
+} from '@tuturuuu/internal-api';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -9,6 +14,7 @@ export type ProductStatusFilter = (typeof productStatusValues)[number];
 
 export interface ProductsParams {
   categoryId?: string;
+  manufacturerId?: string;
   q?: string;
   page?: number;
   pageSize?: number;
@@ -28,6 +34,7 @@ export async function fetchWorkspaceProducts(
 ): Promise<ProductsResponse> {
   const {
     categoryId,
+    manufacturerId,
     q = '',
     page = 1,
     pageSize = 10,
@@ -36,27 +43,18 @@ export async function fetchWorkspaceProducts(
     sortOrder,
   } = params;
 
-  const searchParams = new URLSearchParams();
+  const response = await listInventoryProducts(wsId, {
+    categoryId,
+    manufacturerId,
+    q,
+    page,
+    pageSize,
+    sortBy,
+    sortOrder,
+    status,
+  });
 
-  if (categoryId) searchParams.set('categoryId', categoryId);
-  if (q) searchParams.set('q', q);
-  searchParams.set('page', String(page));
-  searchParams.set('pageSize', String(pageSize));
-  searchParams.set('status', status);
-  if (sortBy) searchParams.set('sortBy', sortBy);
-  if (sortOrder) searchParams.set('sortOrder', sortOrder);
-
-  const response = await fetch(
-    `/api/v1/workspaces/${wsId}/inventory/products?${searchParams.toString()}`,
-    { cache: 'no-store' }
-  );
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch workspace products');
-  }
-
-  const json = await response.json();
-  return json as ProductsResponse;
+  return response as ProductsResponse;
 }
 
 export function useWorkspaceProducts(
@@ -69,6 +67,7 @@ export function useWorkspaceProducts(
 ) {
   const {
     categoryId,
+    manufacturerId,
     q = '',
     page = 1,
     pageSize = 10,
@@ -81,11 +80,21 @@ export function useWorkspaceProducts(
     queryKey: [
       'workspace-products',
       wsId,
-      { categoryId, q, page, pageSize, status, sortBy, sortOrder },
+      {
+        categoryId,
+        manufacturerId,
+        q,
+        page,
+        pageSize,
+        status,
+        sortBy,
+        sortOrder,
+      },
     ],
     queryFn: () =>
       fetchWorkspaceProducts(wsId, {
         categoryId,
+        manufacturerId,
         q,
         page,
         pageSize,
@@ -98,6 +107,24 @@ export function useWorkspaceProducts(
     placeholderData: keepPreviousData,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useProductManufacturers(
+  wsId: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['product-manufacturers', wsId],
+    queryFn: async (): Promise<InventoryManufacturer[]> => {
+      const response = await listInventoryManufacturers(wsId);
+      return response.data;
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 

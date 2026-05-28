@@ -9789,6 +9789,7 @@
   "workspace-inventory-tabs": {
     "batches": "Lô hàng",
     "categories": "Danh mục",
+    "manufacturers": "Nhà sản xuất",
     "overview": "Tổng quan",
     "products": "Sản phẩm",
     "promotions": "Mã giảm giá",
@@ -10816,6 +10817,22 @@
     "plural": "Danh mục sản phẩm",
     "singular": "Danh mục sản phẩm"
   },
+  "ws-inventory-manufacturers": {
+    "create": "Tạo nhà sản xuất",
+    "create_description": "Tạo nhà sản xuất mới",
+    "description": "Nhà sản xuất là thực thể thiết lập dùng để chuẩn hóa thông tin sản phẩm trong kho.",
+    "edit": "Sửa nhà sản xuất",
+    "edit_description": "Cập nhật nhà sản xuất",
+    "empty_search": "Không tìm thấy nhà sản xuất.",
+    "failed_create_manufacturer": "Không thể tạo nhà sản xuất",
+    "failed_delete_manufacturer": "Không thể xóa nhà sản xuất",
+    "failed_update_manufacturer": "Không thể cập nhật nhà sản xuất",
+    "none": "Không có nhà sản xuất",
+    "placeholder": "Nhập tên nhà sản xuất",
+    "plural": "Nhà sản xuất",
+    "search": "Tìm nhà sản xuất...",
+    "singular": "Nhà sản xuất"
+  },
   "ws-inventory-products": {
     "buttons": {
       "add_stock_entry": "Thêm mục kho",
@@ -10835,6 +10852,9 @@
     },
     "failed_delete_product": "Đã có lỗi xảy ra khi xóa sản phẩm",
     "failed_save_product": "Đã có lỗi xảy ra khi lưu sản phẩm",
+    "filters": {
+      "manufacturer": "Nhà sản xuất"
+    },
     "form": {
       "add_warehouse": "Thêm kho hàng",
       "amount": "Số lượng",
@@ -11766,6 +11786,7 @@
     "inventory_access_denied_description": "Bạn không có quyền xem kho.",
     "inventory_batches_access_denied_description": "Bạn không có quyền xem lô hàng.",
     "inventory_categories_access_denied_description": "Bạn không có quyền xem danh mục kho.",
+    "inventory_manufacturers_access_denied_description": "Bạn không có quyền xem nhà sản xuất trong kho.",
     "inventory_products_access_denied_description": "Bạn không có quyền xem sản phẩm kho.",
     "inventory_promotions_access_denied_description": "Bạn không có quyền xem khuyến mãi kho.",
     "inventory_suppliers_access_denied_description": "Bạn không có quyền xem nhà cung cấp kho.",

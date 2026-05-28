@@ -9,6 +9,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -64,7 +65,7 @@ export async function GET(request: Request, { params }: Params) {
     const { data, error } = await sbAdmin
       .from('workspace_products')
       .select(
-        `id, name, description, manufacturer, category_id, owner_id, finance_category_id, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
+        `id, name, description, manufacturer_id, category_id, owner_id, finance_category_id, inventory_manufacturers(id, name), product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
       )
       .filter('archived', 'eq', 'false')
       .eq('ws_id', wsId)
@@ -77,9 +78,20 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    const products = (data ?? []).map((product) => {
+      const normalizedProduct = product as typeof product & {
+        inventory_manufacturers?: { id: string; name: string | null } | null;
+      };
+
+      return {
+        ...product,
+        manufacturer: normalizedProduct.inventory_manufacturers?.name ?? null,
+      };
+    });
+
+    return NextResponse.json({ data: products });
   } catch (error) {
-    console.error('Error fetching product options:', error);
+    serverLogger.error('Error fetching product options:', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

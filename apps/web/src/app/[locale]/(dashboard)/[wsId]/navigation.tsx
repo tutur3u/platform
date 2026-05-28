@@ -925,6 +925,12 @@ export async function WorkspaceNavigationLinks({
               disabled: withoutPermission('view_inventory'),
             },
             {
+              title: t('workspace-inventory-tabs.manufacturers'),
+              href: `/${personalOrWsId}/inventory/manufacturers`,
+              icon: <Blocks className="h-5 w-5" />,
+              disabled: withoutPermission('view_inventory'),
+            },
+            {
               title: t('workspace-inventory-tabs.suppliers'),
               href: `/${personalOrWsId}/inventory/suppliers`,
               icon: <Truck className="h-5 w-5" />,

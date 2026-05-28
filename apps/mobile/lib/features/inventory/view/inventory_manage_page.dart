@@ -62,6 +62,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
   Future<_InventoryManageData> _loadData(String wsId) async {
     final results = await Future.wait<dynamic>([
       _inventoryRepository.getOwners(wsId),
+      _inventoryRepository.getManufacturers(wsId),
       _inventoryRepository.getProductCategories(wsId),
       _inventoryRepository.getProductUnits(wsId),
       _inventoryRepository.getProductWarehouses(wsId),
@@ -71,12 +72,13 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 
     return _InventoryManageData(
       owners: results[0] as List<InventoryOwner>,
-      productCategories: results[1] as List<InventoryLookupItem>,
-      units: results[2] as List<InventoryLookupItem>,
-      warehouses: results[3] as List<InventoryLookupItem>,
-      financeCategories: results[4] as List<TransactionCategory>,
+      manufacturers: results[1] as List<InventoryLookupItem>,
+      productCategories: results[2] as List<InventoryLookupItem>,
+      units: results[3] as List<InventoryLookupItem>,
+      warehouses: results[4] as List<InventoryLookupItem>,
+      financeCategories: results[5] as List<TransactionCategory>,
       canManageSetup: canManageInventorySetup(
-        results[5] as WorkspacePermissions,
+        results[6] as WorkspacePermissions,
       ),
     );
   }
@@ -91,6 +93,12 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
     final wsId = _wsId;
     if (wsId == null || name.isEmpty) return;
     await _inventoryRepository.createProductCategory(wsId, name);
+  }
+
+  Future<void> _createManufacturer(String name) async {
+    final wsId = _wsId;
+    if (wsId == null || name.isEmpty) return;
+    await _inventoryRepository.createManufacturer(wsId, name);
   }
 
   Future<void> _createUnit(String name) async {
@@ -190,6 +198,11 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                           icon: Icons.category_outlined,
                         ),
                         InventoryMetricTile(
+                          label: l10n.inventoryManageManufacturers,
+                          value: '${data.manufacturers.length}',
+                          icon: Icons.factory_outlined,
+                        ),
+                        InventoryMetricTile(
                           label: l10n.inventoryManageWarehouses,
                           value: '${data.warehouses.length}',
                           icon: Icons.warehouse_outlined,
@@ -237,6 +250,22 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
                       ),
                       child: _ChipWrap(
                         labels: data.productCategories
+                            .map((item) => item.name)
+                            .toList(growable: false),
+                      ),
+                    ),
+                    const shad.Gap(16),
+                    _ManageSection(
+                      title: l10n.inventoryManageManufacturers,
+                      actionLabel: l10n.inventoryAddManufacturer,
+                      canManage: data.canManageSetup,
+                      onSubmit: () => _showCreateDialog(
+                        title: l10n.inventoryAddManufacturer,
+                        confirmLabel: l10n.inventoryAddManufacturer,
+                        onConfirm: _createManufacturer,
+                      ),
+                      child: _ChipWrap(
+                        labels: data.manufacturers
                             .map((item) => item.name)
                             .toList(growable: false),
                       ),
@@ -307,6 +336,7 @@ class _InventoryManagePageState extends State<InventoryManagePage> {
 class _InventoryManageData {
   const _InventoryManageData({
     required this.owners,
+    required this.manufacturers,
     required this.productCategories,
     required this.units,
     required this.warehouses,
@@ -315,6 +345,7 @@ class _InventoryManageData {
   });
 
   final List<InventoryOwner> owners;
+  final List<InventoryLookupItem> manufacturers;
   final List<InventoryLookupItem> productCategories;
   final List<InventoryLookupItem> units;
   final List<InventoryLookupItem> warehouses;
@@ -445,11 +476,7 @@ class _CreateManageItemDialogState extends State<_CreateManageItemDialog> {
       if (!mounted) {
         return;
       }
-      showInventoryToast(
-        context,
-        error.toString(),
-        destructive: true,
-      );
+      showInventoryToast(context, error.toString(), destructive: true);
     } finally {
       if (mounted) {
         setState(() => _saving = false);
@@ -473,11 +500,7 @@ class _ChipWrap extends StatelessWidget {
       spacing: 8,
       runSpacing: 8,
       children: labels
-          .map(
-            (label) => Chip(
-              label: Text(label),
-            ),
-          )
+          .map((label) => Chip(label: Text(label)))
           .toList(growable: false),
     );
   }

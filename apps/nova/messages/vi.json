@@ -2975,6 +2975,7 @@
   "workspace-inventory-tabs": {
     "batches": "Lô hàng",
     "categories": "Danh mục",
+    "manufacturers": "Nhà sản xuất",
     "overview": "Tổng quan",
     "products": "Sản phẩm",
     "promotions": "Mã giảm giá",
@@ -3370,10 +3371,29 @@
     "plural": "Danh mục sản phẩm",
     "singular": "Danh mục sản phẩm"
   },
+  "ws-inventory-manufacturers": {
+    "create": "Tạo nhà sản xuất",
+    "create_description": "Tạo nhà sản xuất mới",
+    "description": "Nhà sản xuất là thực thể thiết lập dùng để chuẩn hóa thông tin sản phẩm trong kho.",
+    "edit": "Sửa nhà sản xuất",
+    "edit_description": "Cập nhật nhà sản xuất",
+    "empty_search": "Không tìm thấy nhà sản xuất.",
+    "failed_create_manufacturer": "Không thể tạo nhà sản xuất",
+    "failed_delete_manufacturer": "Không thể xóa nhà sản xuất",
+    "failed_update_manufacturer": "Không thể cập nhật nhà sản xuất",
+    "none": "Không có nhà sản xuất",
+    "placeholder": "Nhập tên nhà sản xuất",
+    "plural": "Nhà sản xuất",
+    "search": "Tìm nhà sản xuất...",
+    "singular": "Nhà sản xuất"
+  },
   "ws-inventory-products": {
     "create": "Tạo sản phẩm",
     "create_description": "Tạo một sản phẩm mới",
     "description": "Sản phẩm được sử dụng dưới dạng loại mặt hàng riêng lẻ mà bạn có trong kho của mình và có thể được sử dụng để liên kết với hóa đơn.",
+    "filters": {
+      "manufacturer": "Nhà sản xuất"
+    },
     "form": {
       "add_warehouse": "Thêm kho hàng",
       "amount": "Số lượng",
@@ -3619,6 +3639,7 @@
     "export_users_data": "Cho phép xuất dữ liệu người dùng",
     "export_users_data_description": "Cho phép thành viên xuất dữ liệu người dùng ảo được tạo trong không gian làm việc của bạn.",
     "infrastructure": "Cơ sở hạ tầng",
+    "inventory_manufacturers_access_denied_description": "Bạn không có quyền xem nhà sản xuất trong kho.",
     "manage_calendar": "Quản lý lịch",
     "manage_calendar_description": "Cho phép thành viên xem, tạo, chỉnh sửa và xóa sự kiện trong lịch không gian làm việc.",
     "manage_default_permissions": "Quản lý quyền mặc định",

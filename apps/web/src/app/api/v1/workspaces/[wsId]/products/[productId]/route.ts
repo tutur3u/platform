@@ -13,6 +13,7 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   inventoryNotFoundResponse,
   isInventoryEnabled,
@@ -22,6 +23,7 @@ import {
   createInventoryAuditLog,
   diffInventoryAuditFields,
 } from '@/lib/inventory/audit';
+import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
 import {
   canAdjustInventoryStock,
   canManageInventoryCatalog,
@@ -127,8 +129,8 @@ export async function GET(req: Request, { params }: Params) {
   const canViewStockQuantity = canViewInventoryStock(permissions);
 
   const selectFields = canViewStockQuantity
-    ? '*, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
-    : '*, product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)';
+    ? '*, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
+    : '*, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)';
 
   const { data, error } = await sbAdmin
     .from('workspace_products')
@@ -138,7 +140,7 @@ export async function GET(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    console.error('Error fetching product:', error);
+    serverLogger.error('Error fetching product:', error);
     return NextResponse.json(
       { message: 'Error fetching product' },
       { status: 500 }
@@ -152,13 +154,16 @@ export async function GET(req: Request, { params }: Params) {
   const item = data as unknown as RawInventoryProductWithChanges;
   const product = item as RawInventoryProductWithChanges & {
     archived?: boolean;
+    inventory_manufacturers?: { id: string; name: string | null } | null;
+    manufacturer_id?: string | null;
   };
 
   const formattedProduct = {
     archived: product.archived ?? false,
     id: item.id,
     name: item.name,
-    manufacturer: item.manufacturer,
+    manufacturer_id: product.manufacturer_id ?? null,
+    manufacturer: product.inventory_manufacturers?.name ?? null,
     description: item.description,
     usage: item.usage,
     unit: canViewStockQuantity
@@ -256,9 +261,24 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const canUpdateStockQuantity = canAdjustInventoryStock(permissions);
-  const { inventory, ...data } = (await req.json()) as Product2 & {
-    inventory?: ProductInventory[];
-  };
+  const { inventory, manufacturer, manufacturer_id, ...data } =
+    (await req.json()) as Product2 & {
+      inventory?: ProductInventory[];
+      manufacturer_id?: string | null;
+      manufacturer?: string | null;
+    };
+  const resolvedManufacturer = await resolveProductManufacturerId({
+    sbAdmin,
+    wsId,
+    manufacturerId: manufacturer_id,
+    legacyManufacturerName: manufacturer,
+  });
+  if (!resolvedManufacturer.ok) {
+    return NextResponse.json(
+      { message: resolvedManufacturer.message },
+      { status: 400 }
+    );
+  }
   const relationError = await validateProductRelations({
     sbAdmin,
     wsId,
@@ -273,7 +293,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { data: existingProduct, error: existingProductError } = await sbAdmin
     .from('workspace_products')
     .select(
-      'id, name, category_id, owner_id, finance_category_id, manufacturer, description, usage'
+      'id, name, category_id, owner_id, finance_category_id, manufacturer_id, inventory_manufacturers(id, name), description, usage'
     )
     .eq('id', productId)
     .eq('ws_id', wsId)
@@ -291,18 +311,22 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Update product details
+  const updateData = {
+    ...data,
+    ...(resolvedManufacturer.manufacturerId !== undefined
+      ? { manufacturer_id: resolvedManufacturer.manufacturerId }
+      : {}),
+  };
   const product = await sbAdmin
     .from('workspace_products')
-    .update({
-      ...data,
-    })
+    .update(updateData)
     .select('id')
     .eq('id', productId)
     .eq('ws_id', wsId)
     .maybeSingle();
 
   if (product.error) {
-    console.log(product.error);
+    serverLogger.error('Error updating product', product.error);
     return NextResponse.json(
       { message: 'Error updating product' },
       { status: 500 }
@@ -328,7 +352,10 @@ export async function PATCH(req: Request, { params }: Params) {
       .eq('product_id', productId);
 
     if (deleteError) {
-      console.log(deleteError);
+      serverLogger.error(
+        'Error deleting existing product inventory',
+        deleteError
+      );
       return NextResponse.json(
         { message: 'Error updating inventory' },
         { status: 500 }
@@ -346,7 +373,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
 
     if (insertError) {
-      console.log(insertError);
+      serverLogger.error('Error inserting product inventory', insertError);
       return NextResponse.json(
         { message: 'Error updating inventory' },
         { status: 500 }
@@ -357,7 +384,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const actor = await getInventoryActorContext(req, wsId);
   const before = {
     name: existingProduct.name,
-    manufacturer: existingProduct.manufacturer,
+    manufacturer_id: existingProduct.manufacturer_id,
     description: existingProduct.description,
     usage: existingProduct.usage,
     category_id: existingProduct.category_id,
@@ -365,13 +392,19 @@ export async function PATCH(req: Request, { params }: Params) {
     finance_category_id: existingProduct.finance_category_id,
   };
   const after = {
-    name: data.name,
-    manufacturer: data.manufacturer,
-    description: data.description,
-    usage: data.usage,
-    category_id: data.category_id,
-    owner_id: data.owner_id,
-    finance_category_id: data.finance_category_id ?? null,
+    name: data.name ?? existingProduct.name,
+    manufacturer_id:
+      resolvedManufacturer.manufacturerId === undefined
+        ? existingProduct.manufacturer_id
+        : resolvedManufacturer.manufacturerId,
+    description: data.description ?? existingProduct.description,
+    usage: data.usage ?? existingProduct.usage,
+    category_id: data.category_id ?? existingProduct.category_id,
+    owner_id: data.owner_id ?? existingProduct.owner_id,
+    finance_category_id:
+      data.finance_category_id === undefined
+        ? existingProduct.finance_category_id
+        : data.finance_category_id,
     ...(inventory ? { inventory } : {}),
   };
   await createInventoryAuditLog(sbAdmin, {
@@ -427,7 +460,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (productError) {
-    console.error('Error fetching product for deletion:', productError);
+    serverLogger.error('Error fetching product for deletion:', productError);
     return NextResponse.json(
       { message: 'Error deleting workspace product' },
       { status: 500 }
@@ -447,7 +480,7 @@ export async function DELETE(req: Request, { params }: Params) {
     .maybeSingle();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error deleting workspace product', error);
     return NextResponse.json(
       { message: 'Error deleting workspace product' },
       { status: 500 }

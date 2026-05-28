@@ -130,11 +130,7 @@ abstract final class WorkspaceSettingsEndpoints {
   static String inviteMember(String wsId) =>
       '/api/workspaces/$wsId/members/invite';
 
-  static String members(
-    String wsId, {
-    String? userId,
-    String? email,
-  }) {
+  static String members(String wsId, {String? userId, String? email}) {
     final params = <String, String>{};
     if (userId != null && userId.isNotEmpty) {
       params['id'] = userId;
@@ -258,11 +254,7 @@ abstract final class InventoryEndpoints {
   static String sale(String wsId, String saleId) =>
       '/api/v1/workspaces/$wsId/inventory/sales/$saleId';
 
-  static String auditLogs(
-    String wsId, {
-    int? limit,
-    int? offset,
-  }) {
+  static String auditLogs(String wsId, {int? limit, int? offset}) {
     final params = <String, String>{};
     if (limit != null) {
       params['limit'] = '$limit';
@@ -281,6 +273,9 @@ abstract final class InventoryEndpoints {
 
   static String productCategories(String wsId) =>
       '/api/v1/workspaces/$wsId/product-categories';
+
+  static String manufacturers(String wsId) =>
+      '/api/v1/workspaces/$wsId/inventory/manufacturers';
 
   static String productUnits(String wsId) =>
       '/api/v1/workspaces/$wsId/product-units';
@@ -576,10 +571,7 @@ abstract final class CrmEndpoints {
     int? offset,
     int? limit,
   }) {
-    final params = <String, String>{
-      'start': start,
-      'end': end,
-    };
+    final params = <String, String>{'start': start, 'end': end};
     if (eventKind != null && eventKind.isNotEmpty) {
       params['eventKind'] = eventKind;
     }
