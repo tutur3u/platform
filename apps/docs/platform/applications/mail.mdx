@@ -36,6 +36,9 @@ For local SNS fixture tests, set `MAIL_SES_SNS_SIGNATURE_VERIFICATION=disabled`.
 - Keep generated public assets such as `/manifest.webmanifest`, `/sw.js`, and
   Serwist worker files out of the auth proxy matcher. Redirecting those files to
   central Web login breaks standalone Mail startup and PWA registration.
+- Keep `apps/mail/src/proxy.ts` `config.matcher` entries as inline string
+  literals. Next.js statically parses proxy matcher config during Vercel builds
+  and rejects imported constants even when they resolve to strings.
 
 ## CI and deployment
 

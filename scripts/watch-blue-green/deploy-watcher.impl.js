@@ -1904,8 +1904,7 @@ async function runDetachedCommitFullBlueGreenDeploy({
         deployCommand,
         env: {
           ...(env ?? process.env),
-          PLATFORM_BUILD_REF_NAME:
-            env?.PLATFORM_BUILD_REF_NAME ?? targetBranch,
+          PLATFORM_BUILD_REF_NAME: env?.PLATFORM_BUILD_REF_NAME ?? targetBranch,
         },
         fsImpl,
         latestCommit: deployCommit,

@@ -2486,7 +2486,7 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args, options = {}) => {
+  const runCommand = async (command, args, _options = {}) => {
     calls.push([command, args]);
 
     if (args.includes('ps') && args.at(-1) === 'web') {
@@ -2723,7 +2723,7 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
   );
   writeBlueGreenActiveColor('blue', paths);
 
-  const runCommand = async (command, args, options = {}) => {
+  const runCommand = async (command, args, _options = {}) => {
     const key = `${command} ${args.join(' ')}`;
     calls.push(key);
 

@@ -753,19 +753,11 @@ function createBlueGreenBuildMetadataEnv({
 
   setDefaultEnvValue(env, 'PLATFORM_BUILD_BUILT_AT', builtAt);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_HASH', commitHash);
-  setDefaultEnvValue(
-    env,
-    'PLATFORM_BUILD_COMMIT_SHORT_HASH',
-    commitShortHash
-  );
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_SHORT_HASH', commitShortHash);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_MESSAGE', commitMessage);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_REF_NAME', resolvedRefName);
   setDefaultEnvValue(env, 'PLATFORM_BUILD_ENVIRONMENT', environment);
-  setDefaultEnvValue(
-    env,
-    'PLATFORM_BUILD_DEPLOYMENT_STAMP',
-    deploymentStamp
-  );
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_DEPLOYMENT_STAMP', deploymentStamp);
   setDefaultEnvValue(
     env,
     'PLATFORM_BUILD_DEPLOYMENT_URL',

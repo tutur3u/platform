@@ -176,7 +176,7 @@ function getCopiedRelativePaths(stageContent) {
 }
 
 function getDockerEnvReferenceSnippet(envName) {
-  return '${' + envName + '}';
+  return `\${${envName}}`;
 }
 
 function validatePlatformBuildMetadataDockerStage({
@@ -641,7 +641,7 @@ function validateDockerProdCompose(composeContent) {
   const errors = [];
   const platformBuildMetadataBuildArgSnippets =
     PLATFORM_BUILD_METADATA_ENV_NAMES.map(
-      (envName) => `      ${envName}: ${'${' + envName + ':-}'}`
+      (envName) => `      ${envName}: \${${envName}:-}`
     );
   const platformBuildMetadataEnvironmentSnippets =
     PLATFORM_BUILD_METADATA_ENV_NAMES.map((envName) => `    - ${envName}`);

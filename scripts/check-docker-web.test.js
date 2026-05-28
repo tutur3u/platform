@@ -463,7 +463,7 @@ test('validateDockerfile reports missing version badge metadata env wiring', () 
     .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
     .replaceAll('ARG PLATFORM_BUILD_COMMIT_HASH=\n', '')
     .replaceAll(
-      'ENV PLATFORM_BUILD_COMMIT_HASH=${PLATFORM_BUILD_COMMIT_HASH}\n',
+      /ENV PLATFORM_BUILD_COMMIT_HASH=\$\{PLATFORM_BUILD_COMMIT_HASH\}\n/gu,
       ''
     );
   const fileDependencyPaths = listFileDependencyPaths();
@@ -598,7 +598,7 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
 test('validateDockerProdCompose reports missing version badge metadata env wiring', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
     .replace(
-      '      PLATFORM_BUILD_COMMIT_HASH: ${PLATFORM_BUILD_COMMIT_HASH:-}\n',
+      / {6}PLATFORM_BUILD_COMMIT_HASH: \$\{PLATFORM_BUILD_COMMIT_HASH:-\}\n/u,
       ''
     )
     .replace('    - PLATFORM_BUILD_COMMIT_HASH\n', '');
@@ -855,7 +855,7 @@ test('validateNativeWebRunnerDockerfile reports missing version badge metadata e
     .readFileSync(NATIVE_WEB_RUNNER_DOCKERFILE_PATH, 'utf8')
     .replace('ARG PLATFORM_BUILD_COMMIT_HASH=\n', '')
     .replace(
-      'ENV PLATFORM_BUILD_COMMIT_HASH=${PLATFORM_BUILD_COMMIT_HASH}\n',
+      /ENV PLATFORM_BUILD_COMMIT_HASH=\$\{PLATFORM_BUILD_COMMIT_HASH\}\n/u,
       ''
     );
   const dockerignoreContent = fs.readFileSync(
