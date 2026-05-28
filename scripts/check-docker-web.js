@@ -43,6 +43,20 @@ const CRON_RUNNER_DOCKERFILE_PATH = path.join(
   'docker',
   'cron-runner.Dockerfile'
 );
+const NATIVE_WEB_RUNNER_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'docker',
+  'native-runner.Dockerfile'
+);
+const NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'web',
+  'docker',
+  'native-runner.Dockerfile.dockerignore'
+);
 const MARKITDOWN_DOCKERFILE_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -53,6 +67,10 @@ const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
   'docker-compose.web.prod.yml'
+);
+const DOCKER_BAKE_WEB_PROD_PATH = path.join(
+  ROOT_DIR,
+  'docker-bake.web.prod.hcl'
 );
 const WORKSPACE_DIRS = ['apps', 'packages'];
 const PACKAGE_JSON_DEPENDENCY_FIELDS = [
@@ -354,14 +372,10 @@ function validateDockerfile({
       !builderStage.includes('ARG DOCKER_WEB_REACT_COMPILER=0') ||
       !/ENV DOCKER_WEB_REACT_COMPILER=\$\{DOCKER_WEB_REACT_COMPILER\}/u.test(
         builderStage
-      ) ||
-      !builderStage.includes('ARG DOCKER_WEB_WEBPACK_BUILD_WORKER=1') ||
-      !/ENV DOCKER_WEB_WEBPACK_BUILD_WORKER=\$\{DOCKER_WEB_WEBPACK_BUILD_WORKER\}/u.test(
-        builderStage
       )
     ) {
       errors.push(
-        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, React Compiler, and Webpack build worker build args.'
+        'apps/web/Dockerfile builder stage must expose Docker build memory, app-only, next build engine, heap, and React Compiler build args.'
       );
     }
 
@@ -602,10 +616,6 @@ function validateDockerProdCompose(composeContent) {
     '      DOCKER_WEB_REACT_COMPILER: ' +
       '${' +
       'DOCKER_WEB_REACT_COMPILER:-0' +
-      '}',
-    '      DOCKER_WEB_WEBPACK_BUILD_WORKER: ' +
-      '${' +
-      'DOCKER_WEB_WEBPACK_BUILD_WORKER:-1' +
       '}',
     '  web:',
     '  web-blue:',
@@ -864,6 +874,25 @@ function validateDockerProdCompose(composeContent) {
   return errors;
 }
 
+function validateDockerBakeFile(bakeContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'target "_platform_local" {\n  output = ["type=docker"]\n}',
+    'group "blue-green-support" {\n  targets = ["meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
+    'target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]\n}',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!bakeContent.includes(snippet)) {
+      errors.push(
+        `docker-bake.web.prod.hcl is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateWatcherDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
@@ -897,6 +926,51 @@ function validateCronRunnerDockerfile(dockerfileContent) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/web/docker/cron-runner.Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateNativeWebRunnerDockerfile(
+  dockerfileContent,
+  dockerignoreContent
+) {
+  const errors = [];
+  const dockerfileSnippets = [
+    'FROM node:24-bookworm-slim AS runner',
+    'COPY --chown=nextjs:nodejs apps/web/.next/standalone ./',
+    'COPY --chown=nextjs:nodejs apps/web/.next/static ./apps/web/.next/static',
+    'COPY --chown=nextjs:nodejs apps/web/docker/prod-entrypoint.js ./apps/web/docker/prod-entrypoint.js',
+    'CMD ["node", "apps/web/docker/prod-entrypoint.js"]',
+  ];
+  const dockerignoreSnippets = [
+    '**',
+    '!apps/web/.next/standalone/**',
+    '!apps/web/.next/static/**',
+    '!apps/web/docker/prod-entrypoint.js',
+    '!apps/web/public/**',
+  ];
+
+  for (const snippet of dockerfileSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/web/docker/native-runner.Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  if (/bun\s+run\s+build|next\s+build/u.test(dockerfileContent)) {
+    errors.push(
+      'apps/web/docker/native-runner.Dockerfile must only package prebuilt native artifacts, not run a build.'
+    );
+  }
+
+  for (const snippet of dockerignoreSnippets) {
+    if (!dockerignoreContent.includes(snippet)) {
+      errors.push(
+        `apps/web/docker/native-runner.Dockerfile.dockerignore is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -999,8 +1073,21 @@ function validateHiveRealtimeDockerfile(
   return errors;
 }
 
-function validateMeetRealtimeDockerfile(dockerfileContent) {
-  const errors = [];
+function validateMeetRealtimeDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/meet-realtime/Dockerfile',
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+  ];
   const depsStage = getStageContent(dockerfileContent, 'deps');
   const runnerStage = getStageContent(dockerfileContent, 'runner');
 
@@ -1087,6 +1174,10 @@ function checkDockerWebSetup({
     'utf8'
   ),
   prodComposeContent = readDockerProdComposeMergedText(rootDir, fsImpl),
+  dockerBakeContent = fsImpl.readFileSync(
+    path.join(rootDir, 'docker-bake.web.prod.hcl'),
+    'utf8'
+  ),
   watcherDockerfileContent = fsImpl.readFileSync(
     path.join(
       rootDir,
@@ -1099,6 +1190,20 @@ function checkDockerWebSetup({
   ),
   cronRunnerDockerfileContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'web', 'docker', 'cron-runner.Dockerfile'),
+    'utf8'
+  ),
+  nativeWebRunnerDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'web', 'docker', 'native-runner.Dockerfile'),
+    'utf8'
+  ),
+  nativeWebRunnerDockerignoreContent = fsImpl.readFileSync(
+    path.join(
+      rootDir,
+      'apps',
+      'web',
+      'docker',
+      'native-runner.Dockerfile.dockerignore'
+    ),
     'utf8'
   ),
   dockerignoreContent = fsImpl.readFileSync(
@@ -1136,9 +1241,14 @@ function checkDockerWebSetup({
     }),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
+    ...validateDockerBakeFile(dockerBakeContent),
     ...validateDockerignore(dockerignoreContent),
     ...validateWatcherDockerfile(watcherDockerfileContent),
     ...validateCronRunnerDockerfile(cronRunnerDockerfileContent),
+    ...validateNativeWebRunnerDockerfile(
+      nativeWebRunnerDockerfileContent,
+      nativeWebRunnerDockerignoreContent
+    ),
     ...validateMarkitdownDockerfile(markitdownDockerfileContent),
     ...validateHiveDockerfile(hiveDockerfileContent, {
       fileDependencyPaths,
@@ -1148,7 +1258,10 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
-    ...validateMeetRealtimeDockerfile(meetRealtimeDockerfileContent),
+    ...validateMeetRealtimeDockerfile(meetRealtimeDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
     ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
@@ -1180,7 +1293,10 @@ module.exports = {
   MEET_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
+  NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
+  NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   DOCKERIGNORE_PATH,
+  DOCKER_BAKE_WEB_PROD_PATH,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
   WEB_DOCKERFILE_PATH,
@@ -1192,6 +1308,7 @@ module.exports = {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
+  validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
   validateDockerfile,
@@ -1202,5 +1319,6 @@ module.exports = {
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateMeetRealtimeDockerfile,
+  validateNativeWebRunnerDockerfile,
   validateWatcherDockerfile,
 };

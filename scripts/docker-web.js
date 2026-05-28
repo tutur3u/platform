@@ -100,6 +100,7 @@ const {
 } = require('./watch-blue-green/build-lock.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
+const DATABASE_DIR = path.join(ROOT_DIR, 'apps', 'database');
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
   10 * 1024 * 1024 * 1024;
@@ -270,6 +271,38 @@ function applyLowMemoryBuildkitRestartEnv(composeEnv, parsed) {
   return {
     ...composeEnv,
     DOCKER_WEB_BUILDKIT_RESTART_BEFORE_BUILD: '1',
+  };
+}
+
+function getSupabaseStartExcludeArgs(env = {}) {
+  const rawValue = env.DOCKER_WEB_SUPABASE_START_EXCLUDE;
+
+  if (typeof rawValue !== 'string' || rawValue.trim().length === 0) {
+    return [];
+  }
+
+  return rawValue
+    .split(',')
+    .map((serviceName) => serviceName.trim())
+    .filter(Boolean)
+    .flatMap((serviceName) => ['--exclude', serviceName]);
+}
+
+function getSupabaseStartCommand(env = {}) {
+  const excludeArgs = getSupabaseStartExcludeArgs(env);
+
+  if (excludeArgs.length === 0) {
+    return {
+      args: ['sb:start'],
+      command: 'bun',
+      cwd: ROOT_DIR,
+    };
+  }
+
+  return {
+    args: ['supabase', 'start', ...excludeArgs],
+    command: 'bun',
+    cwd: DATABASE_DIR,
   };
 }
 
@@ -818,11 +851,17 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     });
 
     if (parsed.withSupabase) {
-      await runChecked('bun', ['sb:start'], {
-        env,
-        fsImpl,
-        runCommand: run,
-      });
+      const supabaseStartCommand = getSupabaseStartCommand(env);
+      await runChecked(
+        supabaseStartCommand.command,
+        supabaseStartCommand.args,
+        {
+          cwd: supabaseStartCommand.cwd,
+          env,
+          fsImpl,
+          runCommand: run,
+        }
+      );
     }
 
     if (parsed.resetSupabase) {

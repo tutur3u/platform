@@ -1,0 +1,16 @@
+**
+
+!apps/
+!apps/web/
+!apps/web/.next/
+!apps/web/.next/standalone/
+!apps/web/.next/standalone/**
+!apps/web/.next/static/
+!apps/web/.next/static/**
+!apps/web/cron.config.json
+!apps/web/docker/
+!apps/web/docker/coolify-env.js
+!apps/web/docker/prod-entrypoint.js
+!apps/web/docker/request-tracker.js
+!apps/web/public/
+!apps/web/public/**

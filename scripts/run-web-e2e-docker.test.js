@@ -10,7 +10,6 @@ const {
   LOCAL_E2E_SUPABASE_URL,
 } = require('./e2e-local-environment.js');
 const {
-  applyLocalE2EBuildDefaults,
   ensureLocalE2EEnvFile,
   getDockerMemoryLimit,
   getE2EComposeProjectName,
@@ -107,39 +106,6 @@ test('shouldKeepStack supports explicit local debugging opt-in', () => {
   assert.equal(shouldKeepStack({}), false);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: '1' }), true);
   assert.equal(shouldKeepStack({ E2E_KEEP_DOCKER_STACK: 'true' }), true);
-});
-
-test('applyLocalE2EBuildDefaults uses webpack on low-memory Docker Desktop hosts', () => {
-  const lowMemoryDefaults = applyLocalE2EBuildDefaults({
-    DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(9364279296),
-  });
-
-  assert.equal(lowMemoryDefaults.DOCKER_WEB_NEXT_BUILD_ENGINE, 'webpack');
-  assert.equal(lowMemoryDefaults.DOCKER_WEB_WEBPACK_BUILD_WORKER, '0');
-
-  const explicitLowMemoryDefaults = applyLocalE2EBuildDefaults({
-    DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(9364279296),
-    DOCKER_WEB_NEXT_BUILD_ENGINE: 'turbopack',
-    DOCKER_WEB_WEBPACK_BUILD_WORKER: '1',
-  });
-
-  assert.equal(
-    explicitLowMemoryDefaults.DOCKER_WEB_NEXT_BUILD_ENGINE,
-    'turbopack'
-  );
-  assert.equal(explicitLowMemoryDefaults.DOCKER_WEB_WEBPACK_BUILD_WORKER, '1');
-  assert.equal(
-    applyLocalE2EBuildDefaults({
-      DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(16 * 1024 * 1024 * 1024),
-    }).DOCKER_WEB_NEXT_BUILD_ENGINE,
-    undefined
-  );
-  assert.equal(
-    applyLocalE2EBuildDefaults({
-      DOCKER_WEB_DOCKER_MEMORY_LIMIT: String(16 * 1024 * 1024 * 1024),
-    }).DOCKER_WEB_WEBPACK_BUILD_WORKER,
-    undefined
-  );
 });
 
 test('getDockerMemoryLimit reads Docker Desktop memory when available', async () => {

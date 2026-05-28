@@ -170,7 +170,7 @@ async function handleSfuMessage(
 async function handleMessage(
   ws: MeetWebSocket,
   raw: string,
-  sfuClient: SfuClient
+  getSfuClient: () => SfuClient
 ) {
   let parsedJson: unknown;
   try {
@@ -265,13 +265,17 @@ async function handleMessage(
     return;
   }
 
-  await handleSfuMessage(ws, message, sfuClient);
+  await handleSfuMessage(ws, message, getSfuClient());
 }
 
 export function createMeetRealtimeServer(
   options: MeetRealtimeServerOptions = {}
 ) {
-  const sfuClient = options.sfuClient ?? new CloudflareSfuClient();
+  let sfuClient = options.sfuClient;
+  const getSfuClient = () => {
+    sfuClient ??= new CloudflareSfuClient();
+    return sfuClient;
+  };
 
   setInterval(() => {
     for (const roomId of rooms.keys()) {
@@ -315,7 +319,7 @@ export function createMeetRealtimeServer(
         publishPresence(ws.data.token.roomId);
       },
       message(ws, message) {
-        handleMessage(ws, String(message), sfuClient).catch((error) => {
+        handleMessage(ws, String(message), getSfuClient).catch((error) => {
           send(ws, {
             error: error instanceof Error ? error.message : 'unknown_error',
             type: 'error',

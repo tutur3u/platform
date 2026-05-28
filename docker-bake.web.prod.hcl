@@ -35,7 +35,7 @@ group "blue-green-hive-realtime" {
 }
 
 group "blue-green-support" {
-  targets = ["markitdown", "storage-unzip-proxy", "web-cron-runner"]
+  targets = ["meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]
 }
 
 target "web-blue" {
@@ -61,6 +61,11 @@ target "hive-green" {
 target "hive-realtime" {
   inherits = ["_platform_local"]
   tags = ["${COMPOSE_PROJECT_NAME}-hive-realtime"]
+}
+
+target "meet-realtime" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]
 }
 
 target "markitdown" {

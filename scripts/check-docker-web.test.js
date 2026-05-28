@@ -21,12 +21,15 @@ const {
 
 const {
   CRON_RUNNER_DOCKERFILE_PATH,
+  DOCKER_BAKE_WEB_PROD_PATH,
   DOCKERIGNORE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   MEET_REALTIME_DOCKERFILE_PATH,
+  NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
+  NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
   ROOT_DIR,
   WATCHER_DOCKERFILE_PATH,
   WEB_COMPOSE_FILE_PATH,
@@ -38,6 +41,7 @@ const {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateDockerCompose,
+  validateDockerBakeFile,
   validateDockerProdCompose,
   validateDockerignore,
   validateDockerfile,
@@ -47,6 +51,7 @@ const {
   validateHiveRealtimeDockerfile,
   validateMarkitdownDockerfile,
   validateMeetRealtimeDockerfile,
+  validateNativeWebRunnerDockerfile,
   validateWatcherDockerfile,
 } = require('./check-docker-web.js');
 
@@ -211,13 +216,21 @@ test('Hive realtime Docker image copies every workspace manifest before frozen i
   );
 });
 
-test('Meet realtime Docker image installs only shared realtime runtime deps', () => {
+test('Meet realtime Docker image copies every workspace manifest before frozen install', () => {
   const dockerfileContent = fs.readFileSync(
     MEET_REALTIME_DOCKERFILE_PATH,
     'utf8'
   );
+  const driftedDockerfileContent = dockerfileContent.replace(
+    'COPY apps/inventory/package.json ./apps/inventory/package.json\n',
+    ''
+  );
 
   assert.deepEqual(validateMeetRealtimeDockerfile(dockerfileContent), []);
+  assert.match(
+    validateMeetRealtimeDockerfile(driftedDockerfileContent).join('\n'),
+    /apps\/meet-realtime\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
+  );
   assert.match(
     dockerfileContent,
     /bun install --frozen-lockfile --production --filter @tuturuuu\/realtime --linker hoisted/u
@@ -250,7 +263,7 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
 
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '8g' }),
-    7168
+    4096
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({ DOCKER_WEB_BUILD_MEMORY: '10g' }),
@@ -281,7 +294,7 @@ test('Docker web build heap auto-scales from Docker memory buckets', () => {
       DOCKER_WEB_BUILD_MEMORY: '16g',
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: '8g',
     }),
-    7168
+    4096
   );
   assert.equal(
     getAutoDockerNodeMaxOldSpaceSizeMb({
@@ -498,6 +511,26 @@ test('validateDockerProdCompose accepts the current production compose file', ()
   assert.deepEqual(validateDockerProdCompose(composeContent), []);
 });
 
+test('validateDockerBakeFile accepts the current production bake file', () => {
+  const bakeContent = fs.readFileSync(DOCKER_BAKE_WEB_PROD_PATH, 'utf8');
+
+  assert.deepEqual(validateDockerBakeFile(bakeContent), []);
+});
+
+test('validateDockerBakeFile reports missing meet realtime image loading target', () => {
+  const bakeContent = fs
+    .readFileSync(DOCKER_BAKE_WEB_PROD_PATH, 'utf8')
+    .replace(
+      'target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]\n}\n\n',
+      ''
+    );
+
+  const errors = validateDockerBakeFile(bakeContent).join('\n');
+
+  assert.match(errors, /target "meet-realtime"/);
+  assert.match(errors, /\$\{COMPOSE_PROJECT_NAME\}-meet-realtime/);
+});
+
 test('validateDockerProdCompose reports missing Docker web build args', () => {
   const composeContent = readDockerProdComposeMergedText(ROOT_DIR).replace(
     [
@@ -526,10 +559,6 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
         '{' +
         'DOCKER_WEB_REACT_COMPILER:-0' +
         '}',
-      '      DOCKER_WEB_WEBPACK_BUILD_WORKER: $' +
-        '{' +
-        'DOCKER_WEB_WEBPACK_BUILD_WORKER:-1' +
-        '}',
       '',
     ].join('\n'),
     ''
@@ -543,7 +572,6 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
   assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
-  assert.match(errors, /DOCKER_WEB_WEBPACK_BUILD_WORKER/);
 });
 
 test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
@@ -753,6 +781,22 @@ test('validateCronRunnerDockerfile accepts the current cron runner Dockerfile', 
   assert.deepEqual(validateCronRunnerDockerfile(dockerfileContent), []);
 });
 
+test('validateNativeWebRunnerDockerfile accepts the native runtime image files', () => {
+  const dockerfileContent = fs.readFileSync(
+    NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
+    'utf8'
+  );
+  const dockerignoreContent = fs.readFileSync(
+    NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
+    'utf8'
+  );
+
+  assert.deepEqual(
+    validateNativeWebRunnerDockerfile(dockerfileContent, dockerignoreContent),
+    []
+  );
+});
+
 test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(MARKITDOWN_DOCKERFILE_PATH, 'utf8');
 
@@ -832,6 +876,20 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       'FROM scratch\n'
     );
     fs.writeFileSync(
+      path.join(tempDir, 'apps', 'web', 'docker', 'native-runner.Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(
+        tempDir,
+        'apps',
+        'web',
+        'docker',
+        'native-runner.Dockerfile.dockerignore'
+      ),
+      ''
+    );
+    fs.writeFileSync(
       path.join(tempDir, 'apps', 'discord', 'Dockerfile.markitdown'),
       'FROM scratch\n'
     );
@@ -859,6 +917,7 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
       path.join(tempDir, 'docker-compose.web.prod.yml'),
       'services:\n'
     );
+    fs.writeFileSync(path.join(tempDir, 'docker-bake.web.prod.hcl'), '');
     fs.writeFileSync(path.join(tempDir, '.dockerignore'), '');
 
     const errors = checkDockerWebSetup({
