@@ -1,5 +1,6 @@
 'use client';
 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   ArrowLeft,
   BookOpen,
@@ -10,13 +11,34 @@ import {
   Plus,
   X,
 } from '@tuturuuu/icons';
+import { updateWorkspaceCourseModule } from '@tuturuuu/internal-api/education';
+import { listWorkspaceUserGroupStorageFiles } from '@tuturuuu/internal-api/storage';
 import type { JSONContent } from '@tuturuuu/types/tiptap';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@tuturuuu/ui/dialog';
+import { toast } from '@tuturuuu/ui/sonner';
 import { RichTextEditor } from '@tuturuuu/ui/text-editor/editor';
 import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useCallback, useRef, useState } from 'react';
 import { LessonSkeleton, SaveStatus, YoutubeRow } from './lesson-components';
-import { useLessonDetail } from './use-lesson-detail';
+import LessonQuizzesSection from './quizzes-section';
+import { lessonQueryKey, useLessonDetail } from './use-lesson-detail';
+
+type AttachFile = {
+  contentType?: string | null;
+  fullPath?: string | null;
+  name: string;
+  path: string;
+  size?: number | null;
+};
 
 // ─── Main client component ────────────────────────────────────────────────────
 
@@ -31,6 +53,8 @@ export function LessonDetailClient({
   wsId: string;
   workspaceName: string | null;
 }) {
+  const queryClient = useQueryClient();
+  const t = useTranslations('teachModules.lesson');
   const {
     lesson,
     isLoading,
@@ -50,6 +74,21 @@ export function LessonDetailClient({
   const [addingYoutube, setAddingYoutube] = useState(false);
   const [youtubeDraft, setYoutubeDraft] = useState('');
   const skipNameBlurRef = useRef(false);
+  // Attach dialog state
+  const [showAttachDialog, setShowAttachDialog] = useState(false);
+  const [selectedPaths, setSelectedPaths] = useState<Record<string, boolean>>(
+    {}
+  );
+  const [attachLoading, setAttachLoading] = useState(false);
+  const attachFilesQuery = useQuery({
+    enabled: showAttachDialog,
+    queryFn: async () =>
+      (await listWorkspaceUserGroupStorageFiles(
+        wsId,
+        courseId
+      )) as AttachFile[],
+    queryKey: ['teach-lesson-attach-files', wsId, courseId] as const,
+  });
 
   // ─── Name editing ───────────────────────────────────────────────────────────
 
@@ -152,6 +191,16 @@ export function LessonDetailClient({
 
         <div className="ml-auto flex items-center gap-3">
           <SaveStatus isSaving={isSaving} />
+
+          {/* Attach files button */}
+          <button
+            className="inline-flex items-center gap-1.5 border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)] transition hover:-translate-y-0.5 hover:shadow-[3px_3px_0_var(--border)]"
+            onClick={() => setShowAttachDialog(true)}
+            type="button"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {t('attachFiles')}
+          </button>
 
           {/* Published toggle */}
           <button
@@ -259,6 +308,145 @@ export function LessonDetailClient({
         </div>
 
         {/* ── YouTube links ─────────────────────────────────────────────────── */}
+
+        {/* ── Attach files dialog (modal) ────────────────────────────────────── */}
+        <Dialog
+          open={showAttachDialog}
+          onOpenChange={(open) => {
+            setShowAttachDialog(open);
+            if (!open) setSelectedPaths({});
+          }}
+        >
+          <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{t('attachFiles')}</DialogTitle>
+              <DialogDescription>
+                {t('attachFilesDescription')}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="max-h-72 overflow-auto border-2 border-border bg-card p-2">
+              {attachFilesQuery.isLoading && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('loadingFiles')}
+                </div>
+              )}
+              {attachFilesQuery.isError && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('loadFilesError')}
+                </div>
+              )}
+              {attachFilesQuery.data?.length === 0 && (
+                <div className="p-4 text-muted-foreground text-sm">
+                  {t('noFilesFound')}
+                </div>
+              )}
+              {attachFilesQuery.data?.map((file) => (
+                <label
+                  key={file.fullPath ?? file.path}
+                  className="flex items-center gap-2 p-2"
+                >
+                  <input
+                    type="checkbox"
+                    checked={Boolean(selectedPaths[file.path])}
+                    onChange={() =>
+                      setSelectedPaths((selected) => ({
+                        ...selected,
+                        [file.path]: !selected[file.path],
+                      }))
+                    }
+                  />
+                  <div className="min-w-0 flex-1 text-sm">
+                    <div className="truncate font-medium">{file.name}</div>
+                    <div className="truncate text-muted-foreground text-xs">
+                      {file.path}
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground text-xs">
+                    {file.size ?? ''}
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <DialogFooter>
+              <button
+                className="border-2 border-border bg-card px-3 py-1.5 font-bold text-sm shadow-[2px_2px_0_var(--border)]"
+                onClick={() => setShowAttachDialog(false)}
+                type="button"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                className="border-2 border-border bg-primary px-3 py-1.5 font-bold text-primary-foreground text-sm shadow-[2px_2px_0_var(--border)] disabled:opacity-40"
+                disabled={attachLoading}
+                onClick={async () => {
+                  const paths = Object.keys(selectedPaths).filter(
+                    (path) => selectedPaths[path]
+                  );
+                  if (paths.length === 0) {
+                    return toast.error(t('selectAtLeastOneFile'));
+                  }
+
+                  setAttachLoading(true);
+                  try {
+                    const picked = (attachFilesQuery.data ?? [])
+                      .filter((file) => paths.includes(file.path))
+                      .map((file) => ({
+                        contentType: file.contentType ?? null,
+                        fullPath: file.fullPath ?? null,
+                        name: file.name,
+                        path: file.path,
+                        size: file.size ?? null,
+                      }));
+
+                    const existing =
+                      (lesson as any)?.extra_content?.attachments ?? [];
+                    const merged = Array.from(
+                      new Map(
+                        [...existing, ...picked].map((file) => [
+                          file.fullPath ?? file.path,
+                          file,
+                        ])
+                      ).values()
+                    );
+                    const nextExtraContent = {
+                      ...(lesson as any)?.extra_content,
+                      attachments: merged,
+                    };
+
+                    await updateWorkspaceCourseModule(wsId, lessonId, {
+                      extra_content: nextExtraContent,
+                    });
+                    queryClient.setQueryData(
+                      lessonQueryKey(wsId, courseId),
+                      (modules: any[] | undefined) =>
+                        modules?.map((module) =>
+                          module.id === lessonId
+                            ? {
+                                ...module,
+                                extra_content: nextExtraContent,
+                              }
+                            : module
+                        )
+                    );
+
+                    toast.success(t('filesAttached'));
+                    setShowAttachDialog(false);
+                  } catch (err) {
+                    toast.error(t('attachFailed'));
+                    void err;
+                  } finally {
+                    setAttachLoading(false);
+                  }
+                }}
+                type="button"
+              >
+                {t('attachSelected')}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         <section className="mt-6 space-y-3">
           <div className="flex items-center justify-between gap-4">
             <h2 className="font-black text-lg">YouTube Videos</h2>
@@ -323,6 +511,8 @@ export function LessonDetailClient({
             </div>
           )}
         </section>
+
+        <LessonQuizzesSection wsId={wsId} lessonId={lessonId} />
       </div>
     </main>
   );

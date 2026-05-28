@@ -64,6 +64,19 @@ describe('Teach proxy local auth API guard', () => {
     vi.clearAllMocks();
   });
 
+  it('keeps public routes working when accept-language contains only wildcard tokens', async () => {
+    const request = new NextRequest('https://teach.tuturuuu.com/login', {
+      headers: {
+        'accept-language': '*',
+      },
+    });
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('x-middleware-next')).toBe('1');
+    expect(response.status).toBe(200);
+  });
+
   it('consumes verify-token requests before rendering the public verifier page', async () => {
     const verifyResponse = NextResponse.redirect(
       'https://teach.tuturuuu.com/dashboard'

@@ -140,6 +140,7 @@
     "workspaceFallback": "Workspace giáo dục"
   },
   "teachModules": {
+    "addSection": "Thêm mục",
     "aiGenerate": {
       "actions": {
         "cancel": "Hủy",
@@ -150,6 +151,11 @@
         "uploadFile": "Tải tệp lên"
       },
       "description": "Tải lên tệp PDF, Word hoặc văn bản. AI sẽ tạo module có cấu trúc, câu hỏi kiểm tra và flashcard.",
+      "context": {
+        "hint": "Không bắt buộc. Hãy thêm trình độ lớp học, mục tiêu học tập hoặc các ràng buộc mà AI nên tuân theo.",
+        "label": "Ngữ cảnh giảng dạy",
+        "placeholder": "Ví dụ: Tập trung vào giải thích cho người mới bắt đầu và thêm câu hỏi ôn tập sau mỗi module."
+      },
       "dropzone": {
         "description": "PDF, Word (.docx), hoặc văn bản thuần · tối đa {maxSize} MB",
         "title": "Thả tệp vào đây hoặc bấm để chọn"
@@ -187,6 +193,18 @@
       "saved": "Đã lưu",
       "saving": "Đang lưu..."
     },
+    "lesson": {
+      "attachFailed": "Không thể đính kèm tệp",
+      "attachFiles": "Đính kèm tệp",
+      "attachFilesDescription": "Chọn tệp từ drive workspace để đính kèm vào bài học này.",
+      "attachSelected": "Đính kèm tệp đã chọn",
+      "cancel": "Hủy",
+      "filesAttached": "Đã đính kèm tệp",
+      "loadFilesError": "Không thể tải danh sách tệp.",
+      "loadingFiles": "Đang tải tệp…",
+      "noFilesFound": "Không tìm thấy tệp.",
+      "selectAtLeastOneFile": "Vui lòng chọn ít nhất một tệp"
+    },
     "loadError": "Không tải được khóa học. Vui lòng thử lại.",
     "modules": "Module",
     "noCourses": "Chưa có khóa học. Hãy tạo khóa học nháp đầu tiên ngay trong Teach.",
@@ -197,6 +215,25 @@
     "published": "Đã xuất bản",
     "remaining": "Còn lại",
     "reviewCourse": "Xem lại khóa học",
+    "storage": {
+      "actions": {
+        "close": "Đóng",
+        "refresh": "Tải lại"
+      },
+      "button": "Lưu trữ",
+      "description": "Xem các tệp và thư mục đã tải lên cho nhóm khóa học này.",
+      "empty": "Chưa có tệp nào được tải lên.",
+      "error": "Không tải được dữ liệu lưu trữ đã tải lên.",
+      "generateWithAi": "Tạo module bằng AI",
+      "kinds": {
+        "file": "Tệp",
+        "folder": "Thư mục"
+      },
+      "loading": "Đang tải dữ liệu lưu trữ đã tải lên...",
+      "size": "Dung lượng",
+      "title": "Lưu trữ khóa học",
+      "updatedAt": "Cập nhật"
+    },
     "title": "Module khóa học",
     "totalModules": "tổng module",
     "unpublish": "Hủy xuất bản",
@@ -423,5 +460,41 @@
     "title": "Thông tin phiên bản",
     "trigger_label": "Mở thông tin phiên bản",
     "version": "Phiên bản"
+  },
+  "ws-quizzes": {
+    "add_item": "Thêm mục",
+    "add_pair": "Thêm cặp",
+    "answer": "Câu trả lời",
+    "content": "Nội dung",
+    "correct_answer": "Đáp án đúng",
+    "create": "Tạo câu hỏi",
+    "create_description": "Tạo câu hỏi mới",
+    "create_manually": "Tạo thủ công",
+    "description": "Quản lý bộ câu hỏi trắc nghiệm trong không gian làm việc của bạn với nhiều loại câu hỏi phục vụ học tập.",
+    "edit": "Chỉnh sửa câu hỏi",
+    "edit_description": "Chỉnh sửa câu hỏi hiện có",
+    "false": "Sai",
+    "empty_module": "Chưa có câu hỏi trắc nghiệm nào cho module này.",
+    "generation_accepted": "Các bộ câu hỏi do AI tạo ra đã được chấp nhận!",
+    "generation_error": "Đã xảy ra lỗi khi tạo bộ câu hỏi.",
+    "left_item": "Mục bên trái",
+    "load_error": "Không thể tải câu hỏi trắc nghiệm. Vui lòng thử lại.",
+    "manual_create": "Tạo câu hỏi thủ công",
+    "matching": "Ghép đôi",
+    "matching_pairs": "Các cặp ghép đôi",
+    "multiple_choice": "Trắc nghiệm nhiều lựa chọn",
+    "multiple_choice_min_options": "Vui lòng thêm ít nhất hai lựa chọn không trống trước khi lưu.",
+    "order": "Thứ tự",
+    "ordering": "Sắp xếp thứ tự",
+    "ordering_items": "Các mục sắp xếp",
+    "plural": "Câu hỏi trắc nghiệm",
+    "question": "Câu hỏi",
+    "question_required": "Vui lòng nhập câu hỏi",
+    "question_type": "Loại câu hỏi",
+    "right_item": "Mục bên phải",
+    "singular": "Câu hỏi",
+    "true": "Đúng",
+    "true_false": "Đúng / Sai",
+    "type": "Loại"
   }
 }

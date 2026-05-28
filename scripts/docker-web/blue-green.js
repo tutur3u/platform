@@ -1745,13 +1745,58 @@ async function buildBlueGreenServices({
   composeFile,
   composeGlobalArgs = [],
   env,
+  rootDir = ROOT_DIR,
   runCommand: run,
   services,
 }) {
   const timeoutMs = getBlueGreenBuildTimeoutMs(env);
   const buildServiceBatches = getBlueGreenBuildServiceBatches(services, env);
+  const useNativeWebBuild = isNativeWebBuildEnabled(env);
+  let nativeWebArtifactsBuilt = false;
+
+  const buildNativeWebServices = async (
+    webServices,
+    { noCache = false } = {}
+  ) => {
+    if (webServices.length === 0) {
+      return;
+    }
+
+    if (!nativeWebArtifactsBuilt) {
+      await buildNativeWebArtifacts({ env, rootDir, runCommand: run });
+      nativeWebArtifactsBuilt = true;
+    }
+
+    await buildNativeWebRuntimeImages({
+      composeGlobalArgs,
+      env,
+      noCache,
+      rootDir,
+      runCommand: run,
+      services: webServices,
+    });
+  };
+
   const runBuildBatches = async ({ noCache = false } = {}) => {
     for (const serviceBatch of buildServiceBatches) {
+      const nativeWebServices = useNativeWebBuild
+        ? serviceBatch.filter(
+            (serviceName) =>
+              serviceName === 'web-blue' || serviceName === 'web-green'
+          )
+        : [];
+      const dockerBuildServices = nativeWebServices.length
+        ? serviceBatch.filter(
+            (serviceName) => !nativeWebServices.includes(serviceName)
+          )
+        : serviceBatch;
+
+      await buildNativeWebServices(nativeWebServices, { noCache });
+
+      if (dockerBuildServices.length === 0) {
+        continue;
+      }
+
       const args =
         buildStrategy === 'bake'
           ? getBlueGreenBuildxBakeArgs({
@@ -1759,14 +1804,14 @@ async function buildBlueGreenServices({
               composeFile,
               env,
               noCache,
-              serviceBatch,
+              serviceBatch: dockerBuildServices,
             })
           : getComposeCommandArgs(
               composeFile,
               composeGlobalArgs,
               'build',
               ...(noCache ? ['--no-cache'] : []),
-              ...serviceBatch
+              ...dockerBuildServices
             );
 
       await runChecked('docker', args, {
@@ -1957,6 +2002,142 @@ function getBlueGreenBuildServiceBatches(services, env) {
   }
 
   return [services];
+}
+
+function isTruthyEnvValue(value) {
+  return /^(1|true|yes|on)$/iu.test(String(value ?? '').trim());
+}
+
+function isNativeWebBuildEnabled(env = {}) {
+  return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
+}
+
+function getComposeProjectNameFromGlobalArgs(composeGlobalArgs = []) {
+  for (let index = 0; index < composeGlobalArgs.length; index += 1) {
+    const arg = composeGlobalArgs[index];
+
+    if (arg === '-p' || arg === '--project-name') {
+      const value = composeGlobalArgs[index + 1];
+
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    if (typeof arg === 'string' && arg.startsWith('--project-name=')) {
+      const value = arg.slice('--project-name='.length).trim();
+
+      if (value.length > 0) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getBlueGreenWebServiceImageTag(serviceName, envOrOptions = {}) {
+  const env =
+    typeof envOrOptions.env === 'object' && envOrOptions.env !== null
+      ? envOrOptions.env
+      : envOrOptions;
+  const composeGlobalArgs = Array.isArray(envOrOptions.composeGlobalArgs)
+    ? envOrOptions.composeGlobalArgs
+    : [];
+  const projectName =
+    getComposeProjectNameFromGlobalArgs(composeGlobalArgs) ||
+    env.COMPOSE_PROJECT_NAME ||
+    getDockerWebComposeProjectName({ baseEnv: env });
+
+  return `${projectName}-${serviceName}`;
+}
+
+function getNativeWebRunnerDockerfile(rootDir = ROOT_DIR) {
+  return path.join(
+    rootDir,
+    'apps',
+    'web',
+    'docker',
+    'native-runner.Dockerfile'
+  );
+}
+
+function resolveNativeWebBuildEnvFile(env = {}, rootDir = ROOT_DIR) {
+  const envFilePath =
+    env.DOCKER_WEB_NATIVE_BUILD_ENV_FILE || env.DOCKER_WEB_ENV_FILE;
+
+  if (!envFilePath) {
+    return null;
+  }
+
+  return path.isAbsolute(envFilePath)
+    ? envFilePath
+    : path.join(rootDir, envFilePath);
+}
+
+async function buildNativeWebArtifacts({
+  env = {},
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+}) {
+  const envFilePath = resolveNativeWebBuildEnvFile(env, rootDir);
+  const args = [
+    'run',
+    ...(envFilePath ? ['--env-file', envFilePath] : []),
+    'build:web:docker',
+  ];
+
+  await runChecked('bun', args, {
+    cwd: rootDir,
+    env: {
+      ...env,
+      CI: env.CI ?? '1',
+      DOCKER_WEB_BUILD_MEMORY:
+        env.DOCKER_WEB_NATIVE_BUILD_MEMORY ??
+        env.DOCKER_WEB_BUILD_MEMORY ??
+        '12g',
+      DOCKER_WEB_DOCKER_MEMORY_LIMIT: env.DOCKER_WEB_NATIVE_BUILD_MEMORY ?? '',
+      DOCKER_WEB_STANDALONE: '1',
+      NEXT_TELEMETRY_DISABLED: env.NEXT_TELEMETRY_DISABLED ?? '1',
+      NODE_ENV: 'production',
+    },
+    runCommand: run,
+    timeoutMs: getBlueGreenBuildTimeoutMs(env),
+  });
+}
+
+async function buildNativeWebRuntimeImages({
+  composeGlobalArgs = [],
+  env = {},
+  noCache = false,
+  rootDir = ROOT_DIR,
+  runCommand: run = runCommand,
+  services,
+}) {
+  for (const serviceName of services) {
+    const builderName = env.BUILDX_BUILDER || env.DOCKER_WEB_BUILD_BUILDER_NAME;
+
+    await runChecked(
+      'docker',
+      [
+        'buildx',
+        'build',
+        ...(builderName ? ['--builder', builderName] : []),
+        '--load',
+        ...(noCache ? ['--no-cache'] : []),
+        '--file',
+        getNativeWebRunnerDockerfile(rootDir),
+        '--tag',
+        getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
+        rootDir,
+      ],
+      {
+        env,
+        runCommand: run,
+        timeoutMs: getBlueGreenBuildTimeoutMs(env),
+      }
+    );
+  }
 }
 
 function getBlueGreenBakeFile(rootDir = ROOT_DIR) {
@@ -3597,6 +3778,8 @@ module.exports = {
   BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   buildBlueGreenServices,
+  buildNativeWebArtifacts,
+  buildNativeWebRuntimeImages,
   clearBlueGreenRuntime,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,
@@ -3620,8 +3803,10 @@ module.exports = {
   readBlueGreenSupportBuildHashes,
   getBlueGreenServiceName,
   getBlueGreenServiceDrainStatus,
+  getBlueGreenWebServiceImageTag,
   getNextBlueGreenColor,
   isBlueGreenColor,
+  isNativeWebBuildEnabled,
   readBlueGreenActiveColor,
   readBlueGreenProxyActiveColor,
   readBlueGreenTargetState,

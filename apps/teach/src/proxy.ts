@@ -31,9 +31,38 @@ function getPreferredLocale(request: NextRequest): Locale {
     return cookieLocale as Locale;
   }
 
-  const headers = Object.fromEntries(request.headers.entries());
-  const languages = new Negotiator({ headers }).languages();
-  return match(languages, supportedLocales, defaultLocale) as Locale;
+  const headers = {
+    'accept-language': request.headers.get('accept-language') ?? defaultLocale,
+  };
+  const languages = new Negotiator({ headers })
+    .languages()
+    .flatMap((language) => {
+      if (!language || language === '*') {
+        return [];
+      }
+
+      try {
+        const [canonicalLocale] = Intl.getCanonicalLocales(language);
+
+        return canonicalLocale ? [canonicalLocale] : [];
+      } catch {
+        return [];
+      }
+    });
+
+  try {
+    const matchedLocale = match(
+      languages.length > 0 ? languages : [defaultLocale],
+      supportedLocales,
+      defaultLocale
+    );
+
+    return supportedLocales.includes(matchedLocale as Locale)
+      ? (matchedLocale as Locale)
+      : defaultLocale;
+  } catch {
+    return defaultLocale;
+  }
 }
 
 function stripLocale(pathname: string) {

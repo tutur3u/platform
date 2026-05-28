@@ -140,6 +140,7 @@
     "workspaceFallback": "Education workspace"
   },
   "teachModules": {
+    "addSection": "Add section",
     "aiGenerate": {
       "actions": {
         "cancel": "Cancel",
@@ -150,6 +151,11 @@
         "uploadFile": "Upload file"
       },
       "description": "Upload a PDF, Word document, or text file. AI will create structured modules, quizzes, and flashcards.",
+      "context": {
+        "hint": "Optional. Add the class level, learning goals, or any constraints the AI should follow.",
+        "label": "Teacher context",
+        "placeholder": "For example: Focus on beginner-friendly explanations and include review questions after each module."
+      },
       "dropzone": {
         "description": "PDF, Word (.docx), or plain text · max {maxSize} MB",
         "title": "Drop a file here or click to browse"
@@ -187,6 +193,18 @@
       "saved": "Saved",
       "saving": "Saving..."
     },
+    "lesson": {
+      "attachFailed": "Failed to attach files",
+      "attachFiles": "Attach files",
+      "attachFilesDescription": "Select files from the workspace drive to attach to this lesson.",
+      "attachSelected": "Attach selected",
+      "cancel": "Cancel",
+      "filesAttached": "Files attached",
+      "loadFilesError": "Failed to load files.",
+      "loadingFiles": "Loading files…",
+      "noFilesFound": "No files found.",
+      "selectAtLeastOneFile": "Select at least one file"
+    },
     "loadError": "Failed to load courses. Please try again.",
     "modules": "Modules",
     "noCourses": "No courses found. Create the first draft course here in Teach.",
@@ -197,6 +215,25 @@
     "published": "Published",
     "remaining": "Remaining",
     "reviewCourse": "Review course",
+    "storage": {
+      "actions": {
+        "close": "Close",
+        "refresh": "Refresh"
+      },
+      "button": "Storage",
+      "description": "View uploaded files and folders for this course group.",
+      "empty": "No uploaded files yet.",
+      "error": "Failed to load uploaded storage.",
+      "generateWithAi": "Generate modules with AI",
+      "kinds": {
+        "file": "File",
+        "folder": "Folder"
+      },
+      "loading": "Loading uploaded storage...",
+      "size": "Size",
+      "title": "Course storage",
+      "updatedAt": "Updated"
+    },
     "title": "Course Modules",
     "totalModules": "total modules",
     "unpublish": "Unpublish",
@@ -423,5 +460,41 @@
     "title": "Version details",
     "trigger_label": "Open version details",
     "version": "Version"
+  },
+  "ws-quizzes": {
+    "add_item": "Add Item",
+    "add_pair": "Add Pair",
+    "answer": "Answer",
+    "content": "Content",
+    "correct_answer": "Correct Answer",
+    "create": "Create quiz",
+    "create_description": "Create a new quiz",
+    "create_manually": "Create Manually",
+    "description": "Manage quizzes in your workspace across multiple question types for learning purposes.",
+    "edit": "Edit quiz",
+    "edit_description": "Edit an existing quiz",
+    "false": "False",
+    "generation_accepted": "AI-generated quizzes are accepted!",
+    "empty_module": "No quizzes created for this module yet.",
+    "generation_error": "An error has occurred when generating quizzes.",
+    "left_item": "Left Item",
+    "load_error": "Failed to load quizzes. Please try again.",
+    "manual_create": "Manually Create Quiz",
+    "matching": "Matching",
+    "matching_pairs": "Matching Pairs",
+    "multiple_choice": "Multiple Choice",
+    "multiple_choice_min_options": "Add at least two non-empty options before saving.",
+    "order": "Order",
+    "ordering": "Ordering",
+    "ordering_items": "Ordering Items",
+    "plural": "Quizzes",
+    "question": "Question",
+    "question_required": "Question is required",
+    "question_type": "Question Type",
+    "right_item": "Right Item",
+    "singular": "Quiz",
+    "true": "True",
+    "true_false": "True / False",
+    "type": "Type"
   }
 }

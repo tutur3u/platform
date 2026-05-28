@@ -16,6 +16,7 @@ export type TeachAccessResult =
   | {
       normalizedWsId: string;
       sbAdmin: TypedSupabaseClient;
+      userId: string;
     }
   | NextResponse;
 
@@ -70,6 +71,7 @@ export async function requireTeachWorkspaceAccess({
     sbAdmin: (await createAdminClient({
       noCookie: true,
     })) as TypedSupabaseClient,
+    userId: context.user.id,
   };
 }
 

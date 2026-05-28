@@ -19,12 +19,23 @@ export interface CurrentUserAIWhitelistStatus {
   enabled: boolean;
 }
 
-export interface GenerateWorkspaceCourseModulesFromStoragePayload {
-  fileName?: string;
+type GenerateWorkspaceCourseModulesSource =
+  | {
+      fileId: string;
+      fileName?: string;
+      storagePath?: string;
+    }
+  | {
+      fileId?: string;
+      fileName?: string;
+      storagePath: string;
+    };
+
+export type GenerateWorkspaceCourseModulesFromStoragePayload = {
+  context?: string;
   groupId: string;
   maxCharacters?: number;
-  storagePath: string;
-}
+} & GenerateWorkspaceCourseModulesSource;
 
 export interface GeneratedWorkspaceCourseModule {
   id: string;

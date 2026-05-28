@@ -21,7 +21,6 @@ const WEB_DIR = path.join(ROOT_DIR, 'apps', 'web');
 const DEFAULT_ENV_FILE = path.join(ROOT_DIR, 'tmp', 'e2e', 'web.env');
 const DEFAULT_HEALTH_URL = 'http://localhost:7803/login';
 const E2E_COMPOSE_PROJECT_PREFIX = 'ttr-e2e-';
-const LOW_DOCKER_MEMORY_LIMIT_BYTES = 10 * 1024 * 1024 * 1024;
 
 function getDockerWebUpArgs(envFilePath, env = process.env) {
   return [
@@ -220,33 +219,6 @@ async function getDockerMemoryLimit({
   }
 }
 
-function applyLocalE2EBuildDefaults(env) {
-  const dockerMemoryLimit = Number.parseInt(
-    String(env.DOCKER_WEB_DOCKER_MEMORY_LIMIT ?? '').trim(),
-    10
-  );
-
-  if (
-    Number.isFinite(dockerMemoryLimit) &&
-    dockerMemoryLimit > 0 &&
-    dockerMemoryLimit < LOW_DOCKER_MEMORY_LIMIT_BYTES
-  ) {
-    const nextEnv = { ...env };
-
-    if (!nextEnv.DOCKER_WEB_NEXT_BUILD_ENGINE) {
-      nextEnv.DOCKER_WEB_NEXT_BUILD_ENGINE = 'webpack';
-    }
-
-    if (!nextEnv.DOCKER_WEB_WEBPACK_BUILD_WORKER) {
-      nextEnv.DOCKER_WEB_WEBPACK_BUILD_WORKER = '0';
-    }
-
-    return nextEnv;
-  }
-
-  return env;
-}
-
 async function removeE2EProjectImages({
   env,
   projectName = getE2EComposeProjectName(env),
@@ -298,6 +270,10 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
     [WATCHER_CONTAINER_ENV]: '1',
     DOCKER_WEB_BUILDKIT_PRUNE_AFTER_BUILD:
       process.env.E2E_DOCKER_BUILDKIT_PRUNE_AFTER_BUILD ?? '1',
+    DOCKER_WEB_SUPABASE_START_EXCLUDE:
+      process.env.DOCKER_WEB_SUPABASE_START_EXCLUDE ??
+      process.env.E2E_SUPABASE_START_EXCLUDE ??
+      'edge-runtime',
   };
   const dockerMemoryLimit = await getDockerMemoryLimit({
     env,
@@ -310,8 +286,6 @@ async function runWebE2E(playwrightArgs = process.argv.slice(2), options = {}) {
       DOCKER_WEB_DOCKER_MEMORY_LIMIT: dockerMemoryLimit,
     };
   }
-
-  env = applyLocalE2EBuildDefaults(env);
 
   assertSafeE2EEnvironment(env);
 
@@ -373,7 +347,6 @@ module.exports = {
   DEFAULT_ENV_FILE,
   DEFAULT_HEALTH_URL,
   E2E_COMPOSE_PROJECT_PREFIX,
-  applyLocalE2EBuildDefaults,
   ensureLocalE2EEnvFile,
   getDockerMemoryLimit,
   getE2EComposeProjectName,

@@ -1,7 +1,7 @@
 'use client';
 
 import { Pencil, Trash, X } from '@tuturuuu/icons';
-import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api/education';
+import { deleteWorkspaceQuiz } from '@tuturuuu/internal-api';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,7 @@ import {
 } from '@tuturuuu/ui/alert-dialog';
 import { Button } from '@tuturuuu/ui/button';
 import { Separator } from '@tuturuuu/ui/separator';
+import { toast } from '@tuturuuu/ui/sonner';
 import { cn } from '@tuturuuu/utils/format';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -25,6 +26,11 @@ type MultipleChoiceOptionView = {
   explanation: string | null;
   id: string;
   isCorrect: boolean;
+  value: string;
+};
+
+type ContentMultipleChoiceOption = {
+  index: number;
   value: string;
 };
 
@@ -45,14 +51,22 @@ function getLegacyMultipleChoiceData(quiz: any) {
 }
 
 function getMultipleChoiceOptions(quiz: any): MultipleChoiceOptionView[] {
-  const contentOptions = Array.isArray(quiz?.content?.options)
-    ? quiz.content.options.filter(
-        (option: unknown) => typeof option === 'string'
-      )
+  const contentOptions: ContentMultipleChoiceOption[] = Array.isArray(
+    quiz?.content?.options
+  )
+    ? quiz.content.options
+        .map((option: unknown, index: number) =>
+          typeof option === 'string' ? { index, value: option } : null
+        )
+        .filter(
+          (
+            option: ContentMultipleChoiceOption | null
+          ): option is ContentMultipleChoiceOption => option != null
+        )
     : [];
 
   if (contentOptions.length > 0) {
-    return contentOptions.map((value: string, index: number) => ({
+    return contentOptions.map(({ index, value }) => ({
       explanation: null,
       id: `content-${index}`,
       isCorrect: quiz?.answer?.correctIndex === index,
@@ -111,9 +125,10 @@ export default function ClientQuizzes({
   const onDelete = async (id: string) => {
     try {
       await deleteWorkspaceQuiz(wsId, id);
+      toast.success(t('common.success'));
       router.refresh();
     } catch (error) {
-      console.log(error);
+      toast.error(error instanceof Error ? error.message : String(error));
     }
   };
 

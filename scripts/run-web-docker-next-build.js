@@ -32,7 +32,6 @@ const DEFAULT_NEXT_APP_ONLY = true;
 const NEXT_BUILD_ENGINES = new Map([
   ['turbopack', '--turbopack'],
   ['turbo', '--turbopack'],
-  ['webpack', '--webpack'],
 ]);
 
 function parseMemoryToMb(value) {
@@ -80,6 +79,14 @@ function getAutoDockerNodeMaxOldSpaceSizeMb(env) {
     dockerMemoryMb && buildMemoryMb
       ? Math.min(dockerMemoryMb, buildMemoryMb)
       : (dockerMemoryMb ?? buildMemoryMb);
+
+  if (
+    availableMemoryMb &&
+    availableMemoryMb < SMALL_DOCKER_MEMORY_THRESHOLD_MB
+  ) {
+    return MIN_NODE_MAX_OLD_SPACE_SIZE_MB;
+  }
+
   const buildHeapBudgetMb = availableMemoryMb
     ? availableMemoryMb - DOCKER_MEMORY_RESERVE_MB
     : null;

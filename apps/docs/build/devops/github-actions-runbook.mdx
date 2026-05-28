@@ -60,6 +60,7 @@ is ambiguous without a manifest or source path.
 - `vercel-preview-cms.yaml`
 - `vercel-preview-finance.yaml`
 - `vercel-preview-inventory.yaml`
+- `vercel-preview-mail.yaml`
 - `vercel-preview-meet.yaml`
 - `vercel-preview-nova.yaml`
 - `vercel-preview-qr.yaml`
@@ -91,6 +92,13 @@ QR uses the same pattern:
 - production workflow: `vercel-production-qr.yaml`
 - project secret: `VERCEL_QR_PROJECT_ID`
 - environments: `vercel-preview-qr` and `vercel-production-qr`
+
+Mail uses the same pattern:
+
+- preview workflow: `vercel-preview-mail.yaml`
+- production workflow: `vercel-production-mail.yaml`
+- project secret: `VERCEL_MAIL_PROJECT_ID`
+- environments: `vercel-preview-mail` and `vercel-production-mail`
 
 These workflows:
 

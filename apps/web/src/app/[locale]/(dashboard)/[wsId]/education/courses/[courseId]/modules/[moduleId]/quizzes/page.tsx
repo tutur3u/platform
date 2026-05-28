@@ -5,7 +5,6 @@ import { Separator } from '@tuturuuu/ui/separator';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { resolveRouteWorkspace } from '@/lib/resolve-route-workspace';
-import QuizForm from '../../../../../quizzes/form';
 import AIQuizzes from './client-ai';
 import ClientQuizzes from './client-quizzes';
 
@@ -23,7 +22,7 @@ interface Props {
 }
 
 export default async function ModuleQuizzesPage({ params }: Props) {
-  const { wsId: routeWsId, moduleId } = await params;
+  const { wsId: routeWsId, courseId, moduleId } = await params;
   const { resolvedWsId } = await resolveRouteWorkspace(routeWsId);
   const t = await getTranslations();
   const quizzes = await getQuizzes(moduleId);
@@ -41,9 +40,9 @@ export default async function ModuleQuizzesPage({ params }: Props) {
         }
         pluralTitle={t('ws-quizzes.plural')}
         singularTitle={t('ws-quizzes.singular')}
-        createTitle={t('ws-quizzes.create')}
+        createTitle={t('ws-quizzes.create_manually')}
         createDescription={t('ws-quizzes.create_description')}
-        form={<QuizForm wsId={resolvedWsId} moduleId={moduleId} />}
+        href={`/${routeWsId}/education/courses/${courseId}/modules/${moduleId}/quizzes/new`}
       />
 
       <div className="grid gap-4 md:grid-cols-2">

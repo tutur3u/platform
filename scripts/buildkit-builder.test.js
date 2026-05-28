@@ -16,6 +16,7 @@ const {
   getBuildkitPaths,
   getBuilderConfigFingerprint,
   getDockerMemoryLimitBytes,
+  isBunTarballExtractionError,
   LEGACY_BUILDER_NAMES,
   normalizeBuilderConfig,
   parseMemoryToBytes,
@@ -177,6 +178,25 @@ test('shouldStopBuildkitAfterBuild defaults on and accepts explicit opt-out', ()
     shouldStopBuildkitAfterBuild({
       DOCKER_WEB_BUILDKIT_STOP_AFTER_BUILD: ' off ',
     }),
+    false
+  );
+});
+
+test('isBunTarballExtractionError detects truncated Bun install failures', () => {
+  assert.equal(
+    isBunTarballExtractionError(
+      new Error(
+        [
+          'RUN --mount=type=cache bun install --frozen-lockfile',
+          '3173 packages installed [64.38s]',
+          'Failed to install 1 package',
+        ].join('\n')
+      )
+    ),
+    true
+  );
+  assert.equal(
+    isBunTarballExtractionError(new Error('lockfile had changes')),
     false
   );
 });
@@ -760,7 +780,6 @@ test('production Docker root scripts keep the default build caps', () => {
     /DOCKER_WEB_STATIC_GENERATION_MAX_CONCURRENCY'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/
   );
   assert.match(webNextConfig, /DOCKER_WEB_NEXT_BUILD_CPUS/);
-  assert.match(webNextConfig, /DOCKER_WEB_WEBPACK_BUILD_WORKER/);
   assert.match(
     webNextConfig,
     /DOCKER_WEB_NEXT_BUILD_CPUS'[\s\S]*isDockerStandaloneBuild \? 4 : undefined/

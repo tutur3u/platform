@@ -5,7 +5,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 
 const withNextIntl = createNextIntlPlugin();
 
-const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const IS_DEPLOYED_ENVIRONMENT =
   process.env.VERCEL === '1' ||
   process.env.VERCEL_ENV === 'preview' ||
@@ -29,7 +28,7 @@ const WEB_APP_URL = trimTrailingSlashes(
     process.env.NEXT_PUBLIC_APP_URL ||
     (IS_DEPLOYED_ENVIRONMENT
       ? 'https://tuturuuu.com'
-      : getLocalInternalAppUrl('platform', `http://localhost:${CENTRAL_PORT}`))
+      : getLocalInternalAppUrl('platform', `https://tuturuuu.localhost`))
 );
 
 const nextConfig: NextConfig = {

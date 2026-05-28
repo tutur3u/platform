@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const RouteParamsSchema = z.object({
   quizId: z.guid(),
@@ -14,10 +15,19 @@ const QuizOptionSchema = z.object({
   is_correct: z.boolean(),
   explanation: z.string().trim().max(2000).nullable().optional(),
 });
+const QuizTypeSchema = z.enum([
+  'true_false',
+  'multiple_choice',
+  'matching',
+  'ordering',
+]);
 
 const QuizUpdateSchema = z.object({
   question: z.string().trim().min(1).max(4000),
-  quiz_options: z.array(QuizOptionSchema).min(2),
+  quiz_options: z.array(QuizOptionSchema).optional(),
+  type: QuizTypeSchema.optional(),
+  content: z.any().optional(),
+  answer: z.any().optional(),
 });
 
 export const PUT = withSessionAuth(
@@ -36,8 +46,9 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -60,16 +71,28 @@ export const PUT = withSessionAuth(
       );
     }
 
-    const { data, error } = await context.supabase
+    const updateData: any = { question: parsedBody.data.question };
+    if (parsedBody.data.type !== undefined)
+      updateData.type = parsedBody.data.type;
+    if (parsedBody.data.content !== undefined)
+      updateData.content = parsedBody.data.content;
+    if (parsedBody.data.answer !== undefined)
+      updateData.answer = parsedBody.data.answer;
+
+    const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
-      .update({ question: parsedBody.data.question })
+      .update(updateData)
       .eq('id', parsedParams.data.quizId)
       .eq('ws_id', access.normalizedWsId)
       .select('id')
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to update workspace quiz', error);
+      serverLogger.error('Failed to update workspace quiz', {
+        error,
+        quizId: parsedParams.data.quizId,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error updating workspace quiz' },
         { status: 500 }
@@ -80,41 +103,56 @@ export const PUT = withSessionAuth(
       return NextResponse.json({ message: 'Quiz not found' }, { status: 404 });
     }
 
-    const { error: deleteOptionsError } = await context.supabase
-      .from('quiz_options')
-      .delete()
-      .eq('quiz_id', parsedParams.data.quizId);
+    if (parsedBody.data.quiz_options !== undefined) {
+      const { error: deleteOptionsError } = await access.sbAdmin
+        .from('quiz_options')
+        .delete()
+        .eq('quiz_id', parsedParams.data.quizId);
 
-    if (deleteOptionsError) {
-      console.error('Failed to reset quiz options', deleteOptionsError);
-      return NextResponse.json(
-        { message: 'Error updating workspace quiz options' },
-        { status: 500 }
-      );
-    }
+      if (deleteOptionsError) {
+        serverLogger.error('Failed to reset quiz options', {
+          error: deleteOptionsError,
+          quizId: parsedParams.data.quizId,
+          wsId: access.normalizedWsId,
+        });
+        return NextResponse.json(
+          { message: 'Error updating workspace quiz options' },
+          { status: 500 }
+        );
+      }
 
-    const { error: insertOptionsError } = await context.supabase
-      .from('quiz_options')
-      .insert(
-        parsedBody.data.quiz_options.map((option) => ({
-          quiz_id: parsedParams.data.quizId,
-          value: option.value,
-          is_correct: option.is_correct,
-          explanation: option.explanation ?? null,
-        }))
-      );
+      if (parsedBody.data.quiz_options.length > 0) {
+        const { error: insertOptionsError } = await access.sbAdmin
+          .from('quiz_options')
+          .insert(
+            parsedBody.data.quiz_options.map((option) => ({
+              quiz_id: parsedParams.data.quizId,
+              value: option.value,
+              is_correct: option.is_correct,
+              explanation: option.explanation ?? null,
+            }))
+          );
 
-    if (insertOptionsError) {
-      console.error('Failed to insert quiz options', insertOptionsError);
-      return NextResponse.json(
-        { message: 'Error updating workspace quiz options' },
-        { status: 500 }
-      );
+        if (insertOptionsError) {
+          serverLogger.error('Failed to insert quiz options', {
+            error: insertOptionsError,
+            quizId: parsedParams.data.quizId,
+            wsId: access.normalizedWsId,
+          });
+          return NextResponse.json(
+            { message: 'Error updating workspace quiz options' },
+            { status: 500 }
+          );
+        }
+      }
     }
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );
 
 export const DELETE = withSessionAuth(
@@ -133,13 +171,14 @@ export const DELETE = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
 
-    const { data, error } = await context.supabase
+    const { data, error } = await access.sbAdmin
       .from('workspace_quizzes')
       .delete()
       .eq('id', parsedParams.data.quizId)
@@ -148,7 +187,11 @@ export const DELETE = withSessionAuth(
       .maybeSingle();
 
     if (error) {
-      console.error('Failed to delete workspace quiz', error);
+      serverLogger.error('Failed to delete workspace quiz', {
+        error,
+        quizId: parsedParams.data.quizId,
+        wsId: access.normalizedWsId,
+      });
       return NextResponse.json(
         { message: 'Error deleting workspace quiz' },
         { status: 500 }
@@ -161,5 +204,8 @@ export const DELETE = withSessionAuth(
 
     return NextResponse.json({ message: 'success' });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );

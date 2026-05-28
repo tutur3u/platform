@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => {
-  const requireEducationWorkspaceAccess = vi.fn();
+type RouteMocks = ReturnType<typeof createRouteMocks>;
+
+let mocks: RouteMocks;
+
+function createRouteMocks() {
+  const requireTeachWorkspaceAccess = vi.fn();
 
   const quizzesBuilder: Record<string, any> = Promise.resolve({
     data: [
@@ -28,12 +32,32 @@ const mocks = vi.hoisted(() => {
   quizzesBuilder.order = vi.fn(() => quizzesBuilder);
   quizzesBuilder.range = vi.fn(() => quizzesBuilder);
 
+  const updateQuizBuilder: Record<string, any> = {};
+  updateQuizBuilder.eq = vi.fn(() => updateQuizBuilder);
+  updateQuizBuilder.select = vi.fn(() => updateQuizBuilder);
+  updateQuizBuilder.maybeSingle = vi.fn();
+
+  const workspaceQuizzesTable = {
+    select: vi.fn(() => quizzesBuilder),
+    update: vi.fn(() => updateQuizBuilder),
+  };
+
+  const deleteQuizOptionsBuilder: Record<string, any> = {};
+  deleteQuizOptionsBuilder.eq = vi.fn(async () => ({ error: null }));
+
+  const quizOptionsTable = {
+    delete: vi.fn(() => deleteQuizOptionsBuilder),
+    insert: vi.fn(async () => ({ error: null })),
+  };
+
   const sessionSupabase = {
     from: vi.fn((table: string) => {
       if (table === 'workspace_quizzes') {
-        return {
-          select: vi.fn(() => quizzesBuilder),
-        };
+        return workspaceQuizzesTable;
+      }
+
+      if (table === 'quiz_options') {
+        return quizOptionsTable;
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -41,11 +65,15 @@ const mocks = vi.hoisted(() => {
   };
 
   return {
-    requireEducationWorkspaceAccess,
+    requireTeachWorkspaceAccess,
+    deleteQuizOptionsBuilder,
+    quizOptionsTable,
     quizzesBuilder,
     sessionSupabase,
+    updateQuizBuilder,
+    workspaceQuizzesTable,
   };
-});
+}
 
 vi.mock('@/lib/api-auth', () => ({
   withSessionAuth:
@@ -70,25 +98,29 @@ vi.mock('@/lib/api-auth', () => ({
       ),
 }));
 
-vi.mock('@/lib/education/access', () => ({
-  requireEducationWorkspaceAccess: (
-    ...args: Parameters<typeof mocks.requireEducationWorkspaceAccess>
-  ) => mocks.requireEducationWorkspaceAccess(...args),
+vi.mock('@/lib/teach/api', () => ({
+  requireTeachWorkspaceAccess: (
+    ...args: Parameters<typeof mocks.requireTeachWorkspaceAccess>
+  ) => mocks.requireTeachWorkspaceAccess(...args),
 }));
 
 describe('workspace quizzes route', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
-    mocks.requireEducationWorkspaceAccess.mockResolvedValue({
+    mocks = createRouteMocks();
+    mocks.requireTeachWorkspaceAccess.mockResolvedValue({
       normalizedWsId: '00000000-0000-0000-0000-000000000001',
       ok: true,
-      sbAdmin: {},
+      sbAdmin: mocks.sessionSupabase,
+    });
+    mocks.updateQuizBuilder.maybeSingle.mockResolvedValue({
+      data: { id: '00000000-0000-0000-0000-000000000002' },
+      error: null,
     });
   });
 
   it('returns 403 before disclosing answer keys when education access is denied', async () => {
-    mocks.requireEducationWorkspaceAccess.mockResolvedValue(
+    mocks.requireTeachWorkspaceAccess.mockResolvedValue(
       NextResponse.json(
         { message: 'Insufficient permissions' },
         { status: 403 }
@@ -131,5 +163,78 @@ describe('workspace quizzes route', () => {
       'ws_id',
       '00000000-0000-0000-0000-000000000001'
     );
+  });
+
+  it('does not reset quiz options when update payload omits options', async () => {
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/quizzes/route'
+    );
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/quizzes', {
+        method: 'POST',
+        body: JSON.stringify({
+          quizzes: [
+            {
+              id: '00000000-0000-0000-0000-000000000002',
+              question: 'Updated question?',
+              type: 'multiple_choice',
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    expect(mocks.workspaceQuizzesTable.update).toHaveBeenCalledWith({
+      question: 'Updated question?',
+      type: 'multiple_choice',
+    });
+    expect(mocks.updateQuizBuilder.eq).toHaveBeenCalledWith(
+      'ws_id',
+      '00000000-0000-0000-0000-000000000001'
+    );
+    expect(mocks.quizOptionsTable.delete).not.toHaveBeenCalled();
+    expect(mocks.quizOptionsTable.insert).not.toHaveBeenCalled();
+  });
+
+  it('does not update quiz relations when the quiz is outside the workspace', async () => {
+    mocks.updateQuizBuilder.maybeSingle.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+
+    const { POST } = await import(
+      '@/app/api/v1/workspaces/[wsId]/quizzes/route'
+    );
+
+    const response = await POST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/quizzes', {
+        method: 'POST',
+        body: JSON.stringify({
+          quizzes: [
+            {
+              id: '00000000-0000-0000-0000-000000000003',
+              question: 'Cross-workspace question?',
+              quiz_options: [
+                {
+                  value: 'Answer',
+                  is_correct: true,
+                },
+              ],
+            },
+          ],
+        }),
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(404);
+    await expect(response.json()).resolves.toEqual({
+      message: 'Quiz not found',
+    });
+    expect(mocks.quizOptionsTable.delete).not.toHaveBeenCalled();
+    expect(mocks.quizOptionsTable.insert).not.toHaveBeenCalled();
   });
 });

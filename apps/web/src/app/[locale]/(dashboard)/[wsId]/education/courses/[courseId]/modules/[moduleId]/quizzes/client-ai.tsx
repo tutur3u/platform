@@ -39,7 +39,7 @@ export default function AIQuizzes({
         .map((quiz) => {
           const question = quiz?.question?.trim() ?? '';
           const quizOptions = (quiz?.quiz_options ?? []).reduce<
-            UpsertWorkspaceQuizPayload['quiz_options']
+            NonNullable<UpsertWorkspaceQuizPayload['quiz_options']>
           >((acc, option) => {
             if (!option || typeof option.value !== 'string') return acc;
             if (option.value.trim().length === 0) return acc;
@@ -62,7 +62,10 @@ export default function AIQuizzes({
           };
         })
         .filter(
-          (quiz) => quiz.question.length > 0 && quiz.quiz_options.length >= 2
+          (quiz) =>
+            quiz.question.length > 0 &&
+            (quiz.quiz_options?.length ?? 0) >= 2 &&
+            quiz.quiz_options?.some((option) => option.is_correct)
         );
 
       if (quizzes.length === 0) {

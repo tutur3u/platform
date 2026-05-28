@@ -273,6 +273,38 @@ function applyLowMemoryBuildkitRestartEnv(composeEnv, parsed) {
   };
 }
 
+function getSupabaseStartExcludeArgs(env = {}) {
+  const rawValue = env.DOCKER_WEB_SUPABASE_START_EXCLUDE;
+
+  if (typeof rawValue !== 'string' || rawValue.trim().length === 0) {
+    return [];
+  }
+
+  return rawValue
+    .split(',')
+    .map((serviceName) => serviceName.trim())
+    .filter(Boolean)
+    .flatMap((serviceName) => ['--exclude', serviceName]);
+}
+
+function getSupabaseStartCommand(env = {}) {
+  const excludeArgs = getSupabaseStartExcludeArgs(env);
+
+  if (excludeArgs.length === 0) {
+    return {
+      args: ['sb:start'],
+      command: 'bun',
+      cwd: ROOT_DIR,
+    };
+  }
+
+  return {
+    args: ['sb:start', '--', ...excludeArgs],
+    command: 'bun',
+    cwd: ROOT_DIR,
+  };
+}
+
 function parseArgs(argv) {
   const args = [...argv];
   const action = args.shift() ?? 'up';
@@ -351,6 +383,29 @@ function parseArgs(argv) {
 
       composeGlobalArgs.push(arg, value);
       index += 1;
+      continue;
+    }
+
+    if (arg === '-p' || arg === '--project-name') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error(`Expected a project name after ${arg}.`);
+      }
+
+      composeGlobalArgs.push(arg, value);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--project-name=')) {
+      const value = arg.slice('--project-name='.length).trim();
+
+      if (!value) {
+        throw new Error('Expected a project name after --project-name=.');
+      }
+
+      composeGlobalArgs.push(arg);
       continue;
     }
 
@@ -818,11 +873,17 @@ async function runDockerWebWorkflow(parsed, options = {}) {
     });
 
     if (parsed.withSupabase) {
-      await runChecked('bun', ['sb:start'], {
-        env,
-        fsImpl,
-        runCommand: run,
-      });
+      const supabaseStartCommand = getSupabaseStartCommand(env);
+      await runChecked(
+        supabaseStartCommand.command,
+        supabaseStartCommand.args,
+        {
+          cwd: supabaseStartCommand.cwd,
+          env,
+          fsImpl,
+          runCommand: run,
+        }
+      );
     }
 
     if (parsed.resetSupabase) {

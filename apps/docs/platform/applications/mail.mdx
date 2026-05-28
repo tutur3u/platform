@@ -33,3 +33,32 @@ For local SNS fixture tests, set `MAIL_SES_SNS_SIGNATURE_VERIFICATION=disabled`.
 - Keep new mail route access checks in `apps/web`; do not add direct client Supabase reads in `apps/mail`.
 - Use `packages/internal-api/src/mail.ts` for client helpers and TanStack Query in the app UI.
 - Unknown inbound recipients are retained as `quarantined` jobs for administrator review instead of being delivered to a user inbox.
+
+## CI and deployment
+
+Mail has dedicated Vercel workflows:
+
+- `.github/workflows/vercel-preview-mail.yaml`
+- `.github/workflows/vercel-production-mail.yaml`
+
+Both workflows are registered in `tuturuuu.ts` and use the shared
+`ci-check.yml` switchboard. They require environment-scoped Vercel credentials
+plus `VERCEL_MAIL_PROJECT_ID`; production Supabase and SES values should live in
+the Vercel project environment rather than GitHub Actions.
+
+The preview workflow builds and deploys prebuilt artifacts through Vercel CLI.
+The production workflow also uses workflow concurrency so stale production runs
+are canceled instead of deploying after a newer production commit is pushed.
+
+Deployment credentials must stay environment-scoped in GitHub Actions. The
+preview job is bound to the `vercel-preview-mail` GitHub Environment, and the
+production job is bound to `vercel-production-mail`. Store `VERCEL_TOKEN`,
+`VERCEL_ORG_ID`, and `VERCEL_MAIL_PROJECT_ID` in those environments instead of
+repository-wide or organization-wide secrets. Do not add `TURBO_TOKEN`,
+`TURBO_TEAM`, production Supabase service keys, or SES credentials to
+workflow-level `env`; Mail deploys should rely on Vercel project environment
+variables pulled by `vercel pull`. Manual production dispatch is only valid from
+`refs/heads/production`.
+
+`apps/mail/vercel.json` disables Vercel Git deployments and GitHub integration
+so preview and production deploys only happen through the CI workflows.

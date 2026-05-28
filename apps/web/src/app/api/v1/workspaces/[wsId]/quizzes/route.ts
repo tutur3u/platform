@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { requireEducationWorkspaceAccess } from '@/lib/education/access';
+import { requireTeachWorkspaceAccess } from '@/lib/teach/api';
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -16,11 +16,20 @@ const QuizOptionSchema = z.object({
   is_correct: z.boolean(),
   explanation: z.string().trim().max(2000).nullable().optional(),
 });
+const QuizTypeSchema = z.enum([
+  'true_false',
+  'multiple_choice',
+  'matching',
+  'ordering',
+]);
 
 const QuizPayloadSchema = z.object({
   id: z.guid().optional(),
   question: z.string().trim().min(1).max(4000),
-  quiz_options: z.array(QuizOptionSchema).min(2),
+  quiz_options: z.array(QuizOptionSchema).optional(),
+  type: QuizTypeSchema.optional(),
+  content: z.any().optional(),
+  answer: z.any().optional(),
 });
 
 const QuizCreateSchema = z.object({
@@ -43,8 +52,9 @@ export const GET = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -66,14 +76,42 @@ export const GET = withSessionAuth(
       MAX_PAGE_SIZE
     );
 
-    const queryBuilder = context.supabase
+    const moduleId = request.nextUrl.searchParams.get('moduleId')?.trim();
+
+    const queryBuilder = access.sbAdmin
       .from('workspace_quizzes')
       .select(
-        'id, question, created_at, quiz_options(id, value, is_correct, explanation)',
+        'id, question, type, content, answer, created_at, quiz_options(id, value, is_correct, explanation)',
         { count: 'exact' }
       )
       .eq('ws_id', access.normalizedWsId)
       .order('created_at', { ascending: false });
+
+    if (moduleId) {
+      const { data: moduleQuizzes, error: mqErr } = await access.sbAdmin
+        .from('course_module_quizzes')
+        .select('quiz_id')
+        .eq('module_id', moduleId);
+
+      if (mqErr) {
+        console.error('Failed to fetch course module quizzes', mqErr);
+        return NextResponse.json(
+          { message: 'Error fetching course module quizzes' },
+          { status: 500 }
+        );
+      }
+
+      const quizIds = (moduleQuizzes ?? []).map((mq) => mq.quiz_id);
+      if (quizIds.length === 0) {
+        return NextResponse.json({
+          data: [],
+          count: 0,
+          page,
+          pageSize,
+        });
+      }
+      queryBuilder.in('id', quizIds);
+    }
 
     if ((q?.length ?? 0) > 0) {
       queryBuilder.ilike('question', `%${q}%`);
@@ -98,7 +136,10 @@ export const GET = withSessionAuth(
       pageSize,
     });
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 120 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 120 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );
 
 export const POST = withSessionAuth(
@@ -115,8 +156,9 @@ export const POST = withSessionAuth(
       );
     }
 
-    const access = await requireEducationWorkspaceAccess({
+    const access = await requireTeachWorkspaceAccess({
       context,
+      permission: 'update_user_groups',
       wsId: parsedParams.data.wsId,
     });
     if (access instanceof NextResponse) return access;
@@ -145,21 +187,39 @@ export const POST = withSessionAuth(
       for (const quiz of quizzes) {
         let quizId: string;
 
+        const updateData: any = { question: quiz.question };
+        if (quiz.type !== undefined) updateData.type = quiz.type;
+        if (quiz.content !== undefined) updateData.content = quiz.content;
+        if (quiz.answer !== undefined) updateData.answer = quiz.answer;
+
         if (quiz.id != null) {
-          const { error: updateErr } = await context.supabase
+          const { data: updated, error: updateErr } = await access.sbAdmin
             .from('workspace_quizzes')
-            .update({ question: quiz.question })
+            .update(updateData)
             .eq('id', quiz.id)
-            .eq('ws_id', access.normalizedWsId);
+            .eq('ws_id', access.normalizedWsId)
+            .select('id')
+            .maybeSingle();
           if (updateErr) throw updateErr;
-          quizId = quiz.id;
+          if (!updated) {
+            return NextResponse.json(
+              { message: 'Quiz not found' },
+              { status: 404 }
+            );
+          }
+          quizId = updated.id;
         } else {
-          const { data: inserted, error: insertErr } = await context.supabase
+          const insertData: any = {
+            question: quiz.question,
+            ws_id: access.normalizedWsId,
+          };
+          if (quiz.type !== undefined) insertData.type = quiz.type;
+          if (quiz.content !== undefined) insertData.content = quiz.content;
+          if (quiz.answer !== undefined) insertData.answer = quiz.answer;
+
+          const { data: inserted, error: insertErr } = await access.sbAdmin
             .from('workspace_quizzes')
-            .insert({
-              question: quiz.question,
-              ws_id: access.normalizedWsId,
-            })
+            .insert(insertData)
             .select('id')
             .single();
           if (insertErr) throw insertErr;
@@ -167,7 +227,7 @@ export const POST = withSessionAuth(
         }
 
         if (moduleId != null) {
-          const { error: moduleError } = await context.supabase
+          const { error: moduleError } = await access.sbAdmin
             .from('course_module_quizzes')
             .insert({
               module_id: moduleId,
@@ -179,7 +239,7 @@ export const POST = withSessionAuth(
         }
 
         if (setId != null) {
-          const { error: setError } = await context.supabase
+          const { error: setError } = await access.sbAdmin
             .from('quiz_set_quizzes')
             .insert({
               set_id: setId,
@@ -190,23 +250,27 @@ export const POST = withSessionAuth(
           }
         }
 
-        const { error: deleteOptionsError } = await context.supabase
-          .from('quiz_options')
-          .delete()
-          .eq('quiz_id', quizId);
-        if (deleteOptionsError) throw deleteOptionsError;
+        if (quiz.quiz_options !== undefined) {
+          const { error: deleteOptionsError } = await access.sbAdmin
+            .from('quiz_options')
+            .delete()
+            .eq('quiz_id', quizId);
+          if (deleteOptionsError) throw deleteOptionsError;
 
-        const optionsPayload = quiz.quiz_options.map((option) => ({
-          quiz_id: quizId,
-          value: option.value,
-          is_correct: option.is_correct,
-          explanation: option.explanation ?? null,
-        }));
+          if (quiz.quiz_options.length > 0) {
+            const optionsPayload = quiz.quiz_options.map((option) => ({
+              quiz_id: quizId,
+              value: option.value,
+              is_correct: option.is_correct,
+              explanation: option.explanation ?? null,
+            }));
 
-        const { error: insertOptionsError } = await context.supabase
-          .from('quiz_options')
-          .insert(optionsPayload);
-        if (insertOptionsError) throw insertOptionsError;
+            const { error: insertOptionsError } = await access.sbAdmin
+              .from('quiz_options')
+              .insert(optionsPayload);
+            if (insertOptionsError) throw insertOptionsError;
+          }
+        }
       }
 
       return NextResponse.json({
@@ -220,5 +284,8 @@ export const POST = withSessionAuth(
       );
     }
   },
-  { rateLimit: { windowMs: 60000, maxRequests: 60 } }
+  {
+    rateLimit: { windowMs: 60000, maxRequests: 60 },
+    allowAppSessionAuth: { targetApp: 'teach' },
+  }
 );

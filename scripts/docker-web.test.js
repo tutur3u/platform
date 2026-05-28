@@ -49,8 +49,10 @@ const {
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
+  getBlueGreenWebServiceImageTag,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
+  isNativeWebBuildEnabled,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
   testBlueGreenHiveProxyRouting,
@@ -350,6 +352,23 @@ test('parseArgs enables cloudflared as an explicit Docker profile', () => {
     'serverless-redis-http',
     CLOUDFLARED_SERVICE,
   ]);
+});
+
+test('parseArgs keeps compose project names in global args', () => {
+  assert.deepEqual(
+    parseArgs(['up', '--project-name', 'custom-project']).composeGlobalArgs,
+    ['--project-name', 'custom-project', '--profile', 'redis']
+  );
+  assert.deepEqual(
+    parseArgs(['up', '-p', 'short-project', '--without-redis'])
+      .composeGlobalArgs,
+    ['-p', 'short-project']
+  );
+  assert.deepEqual(
+    parseArgs(['up', '--project-name=inline-project', '--without-redis'])
+      .composeGlobalArgs,
+    ['--project-name=inline-project']
+  );
 });
 
 test('parseArgs accepts build resource throttling flags', () => {
@@ -1638,6 +1657,129 @@ test('buildBlueGreenServices can build Compose targets with Buildx Bake', async 
   ]);
 });
 
+test('buildBlueGreenServices can package host-built web artifacts', async () => {
+  const calls = [];
+  const env = {
+    BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+    COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+    DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
+    DOCKER_WEB_NATIVE_BUILD: '1',
+  };
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['-p', 'explicit-project'],
+    env,
+    runCommand: async (command, args, options = {}) => {
+      calls.push([command, args, options.cwd, options.env]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green'],
+  });
+
+  assert.equal(isNativeWebBuildEnabled(env), true);
+  assert.equal(
+    getBlueGreenWebServiceImageTag('web-green', {
+      composeGlobalArgs: ['-p', 'explicit-project'],
+      env,
+    }),
+    'explicit-project-web-green'
+  );
+  assert.deepEqual(
+    calls.map(([command, args, cwd]) => [command, args, cwd]),
+    [
+      [
+        'bun',
+        [
+          'run',
+          '--env-file',
+          path.join(path.resolve(__dirname, '..'), 'tmp', 'e2e', 'web.env'),
+          'build:web:docker',
+        ],
+        path.resolve(__dirname, '..'),
+      ],
+      [
+        'docker',
+        [
+          'buildx',
+          'build',
+          '--builder',
+          DEFAULT_BUILDER_NAME,
+          '--load',
+          '--file',
+          path.join(
+            path.resolve(__dirname, '..'),
+            'apps',
+            'web',
+            'docker',
+            'native-runner.Dockerfile'
+          ),
+          '--tag',
+          'explicit-project-web-green',
+          path.resolve(__dirname, '..'),
+        ],
+        undefined,
+      ],
+    ]
+  );
+  assert.equal(calls[0][3].DOCKER_WEB_STANDALONE, '1');
+  assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '12g');
+  assert.equal(calls[0][3].DOCKER_WEB_DOCKER_MEMORY_LIMIT, '');
+});
+
+test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
+  const calls = [];
+
+  await buildBlueGreenServices({
+    buildStrategy: 'bake',
+    composeFile: PROD_COMPOSE_FILE,
+    env: {
+      COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+      DOCKER_WEB_NATIVE_BUILD: '1',
+    },
+    runCommand: async (command, args) => {
+      calls.push([command, args]);
+
+      return { code: 0, signal: null, stderr: '', stdout: '' };
+    },
+    services: ['web-green', 'hive-green'],
+  });
+
+  assert.deepEqual(
+    calls.filter(([command]) => command === 'docker').map(([, args]) => args),
+    [
+      [
+        'buildx',
+        'build',
+        '--load',
+        '--file',
+        path.join(
+          path.resolve(__dirname, '..'),
+          'apps',
+          'web',
+          'docker',
+          'native-runner.Dockerfile'
+        ),
+        '--tag',
+        'ttr-e2e-local-test-web-green',
+        path.resolve(__dirname, '..'),
+      ],
+      getBlueGreenBuildxBakeArgs({
+        bakeFile: path.resolve(__dirname, '..', 'docker-bake.web.prod.hcl'),
+        composeFile: PROD_COMPOSE_FILE,
+        env: {
+          COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
+          DOCKER_WEB_NATIVE_BUILD: '1',
+        },
+        noCache: false,
+        serviceBatch: ['hive-green'],
+      }),
+    ]
+  );
+});
+
 test('buildBlueGreenServices restarts BuildKit when low-memory restart is requested', async () => {
   const calls = [];
 
@@ -1957,6 +2099,36 @@ test('runDockerWebWorkflow starts and resets Supabase before Docker when request
         '--build',
         '--remove-orphans',
       ],
+    ],
+  ]);
+});
+
+test('runDockerWebWorkflow can exclude Supabase services during start', async () => {
+  const calls = [];
+  const fsStub = createFsStub({
+    envFileContent: 'NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co',
+  });
+  const runCommand = async (command, args, options = {}) => {
+    calls.push([command, args, options.cwd]);
+    return { code: 0, signal: null, stderr: '', stdout: '' };
+  };
+
+  await runDockerWebWorkflow(parseArgs(['up', '--with-supabase']), {
+    env: {
+      DOCKER_WEB_SUPABASE_START_EXCLUDE: 'edge-runtime, functions',
+      PATH: 'test-path',
+    },
+    fsImpl: fsStub,
+    runCommand,
+  });
+
+  assert.deepEqual(calls.slice(0, 3), [
+    ['docker', ['compose', 'version'], undefined],
+    ['docker', ['info', '--format', '{{json .MemTotal}}'], undefined],
+    [
+      'bun',
+      ['sb:start', '--', '--exclude', 'edge-runtime', '--exclude', 'functions'],
+      path.resolve(__dirname, '..'),
     ],
   ]);
 });

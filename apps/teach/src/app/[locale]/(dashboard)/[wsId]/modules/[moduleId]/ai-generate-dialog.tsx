@@ -9,6 +9,7 @@ import {
   Upload,
   X,
 } from '@tuturuuu/icons';
+import { Textarea } from '@tuturuuu/ui/textarea';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useRef, useState } from 'react';
@@ -26,6 +27,7 @@ const ACCEPTED_FILE_EXTENSIONS = ['.pdf', '.docx', '.doc', '.txt', '.md'];
 const ACCEPTED_EXTENSIONS = ACCEPTED_FILE_EXTENSIONS.join(',');
 const MAX_SIZE_MB = 50;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
+const MAX_CONTEXT_LENGTH = 4000;
 
 function formatBytes(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -54,6 +56,7 @@ export function AiGenerateDialog({
   const t = useTranslations('teachModules.aiGenerate');
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [context, setContext] = useState('');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [fileError, setFileError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,7 +110,9 @@ export function AiGenerateDialog({
   function handleGenerate() {
     if (!file || mutation.isPending) return;
     setUploadProgress(0);
+    const trimmedContext = context.trim();
     mutation.mutate({
+      context: trimmedContext || undefined,
       file,
       onProgress: (pct: number) => setUploadProgress(pct),
     });
@@ -206,6 +211,23 @@ export function AiGenerateDialog({
           {/* ── Idle / error state ────────────────────────────────────────── */}
           {!isDone && !isActive && (
             <>
+              <div className="space-y-2">
+                <label className="font-bold text-sm" htmlFor="ai-context">
+                  {t('context.label')}
+                </label>
+                <Textarea
+                  id="ai-context"
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  placeholder={t('context.placeholder')}
+                  maxLength={MAX_CONTEXT_LENGTH}
+                  className="min-h-28 resize-y border-2 border-border bg-background shadow-[2px_2px_0_var(--border)]"
+                />
+                <p className="text-muted-foreground text-xs">
+                  {t('context.hint')}
+                </p>
+              </div>
+
               {/* Drop zone */}
               <div
                 className={cn(
