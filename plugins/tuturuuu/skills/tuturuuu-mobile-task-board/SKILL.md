@@ -8,6 +8,8 @@ description: Tuturuuu Flutter mobile task-board workflow guidance. Use when Code
 ## Start Here
 
 Read `references/task-board-reference.md` before editing. It captures the known file map, UX semantics, and verification flow for this area.
+Read `references/mobile-patterns.md` when the work needs the broader mobile
+pattern catalog that was split out of root `AGENTS.md`.
 
 If the user asks to commit mobile work, combine this skill with
 `$tuturuuu-commit`. Keep a user-visible mobile behavior, its tests,

@@ -22,11 +22,26 @@ type VersionBadgeSettingProps = {
   canManage: boolean;
 };
 
-function DetailRow({ label, value }: { label: string; value: string }) {
+function DetailRow({
+  label,
+  value,
+  valueClassName,
+}: {
+  label: string;
+  value: string;
+  valueClassName?: string;
+}) {
   return (
-    <div className="grid grid-cols-[7rem_1fr] gap-3 text-xs">
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 text-xs">
       <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 break-words font-mono text-foreground">{value}</dd>
+      <dd
+        className={cn(
+          'min-w-0 whitespace-pre-wrap break-words font-mono text-foreground [overflow-wrap:anywhere]',
+          valueClassName
+        )}
+      >
+        {value}
+      </dd>
     </div>
   );
 }
@@ -42,12 +57,14 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
     return null;
   }
 
-  const details = [
+  const sourceDetails = [
     [t('app'), release.appName],
     [t('version'), release.version],
     [t('commit'), release.shortCommitHash],
     [t('commit_hash'), release.commitHash],
     [t('commit_message'), release.commitMessage],
+  ] as const;
+  const deploymentDetails = [
     [t('ref'), release.refName],
     [t('environment'), release.environment],
     [t('deployment_time'), release.builtAt],
@@ -69,17 +86,45 @@ export function VersionBadge({ className, release }: VersionBadgeProps) {
           v{release.version}
         </button>
       </HoverCardTrigger>
-      <HoverCardContent align="end" className="w-80 max-w-[calc(100vw-1rem)]">
-        <div className="space-y-3">
-          <div>
-            <p className="font-semibold text-sm">{t('title')}</p>
-            <p className="text-muted-foreground text-xs">{t('description')}</p>
+      <HoverCardContent
+        align="end"
+        className="w-[24rem] max-w-[calc(100vw-1rem)] p-0"
+      >
+        <div className="overflow-hidden rounded-md">
+          <div className="border-border/70 border-b bg-muted/30 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-sm">{t('title')}</p>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  {t('description')}
+                </p>
+              </div>
+              <span className="shrink-0 rounded-md border border-border/70 bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
+                v{release.version}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="min-w-0 max-w-full rounded-md border border-border/70 bg-background px-2 py-1 font-mono text-foreground text-xs">
+                {release.shortCommitHash}
+              </span>
+              <span className="min-w-0 max-w-full rounded-md border border-border/70 bg-background px-2 py-1 font-mono text-muted-foreground text-xs">
+                {release.environment}
+              </span>
+            </div>
           </div>
-          <dl className="space-y-2">
-            {details.map(([label, value]) => (
-              <DetailRow key={label} label={label} value={value} />
-            ))}
-          </dl>
+          <div className="space-y-3 p-4">
+            <dl className="space-y-2">
+              {sourceDetails.map(([label, value]) => (
+                <DetailRow key={label} label={label} value={value} />
+              ))}
+            </dl>
+            <div className="border-border/70 border-t" />
+            <dl className="space-y-2">
+              {deploymentDetails.map(([label, value]) => (
+                <DetailRow key={label} label={label} value={value} />
+              ))}
+            </dl>
+          </div>
         </div>
       </HoverCardContent>
     </HoverCard>

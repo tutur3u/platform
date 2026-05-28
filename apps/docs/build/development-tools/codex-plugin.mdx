@@ -64,6 +64,9 @@ codex plugin marketplace add ./
   plugin behavior, validation scripts, docs runbooks, helper scripts, and
   durable workflow learnings that should benefit future Tuturuuu contributors
   and assistants.
+- `$tuturuuu-web-release`: `apps/web` release badge metadata, blue/green
+  runtime snapshot fallback, `PLATFORM_BUILD_*` precedence, and
+  `TUTURUUU_PLATFORM_VERSION` bump guidance for every authored platform commit.
 - `$tuturuuu-mobile-task-board`: Flutter mobile task-board guidance for task
   dates, overdue behavior, task detail routing, description mode, assignee
   flows, and mobile version bump checks.
@@ -90,6 +93,7 @@ The CI check currently verifies:
 - natural default prompt examples for the invokable skills, written as short
   user requests instead of visible `$skill` commands
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
+- dedicated prompt coverage for web release badge metadata
 - scoped commit workflow coverage for explicit commit requests
 - repo marketplace metadata at `.agents/plugins/marketplace.json`
 - skill folder and frontmatter naming parity
@@ -128,6 +132,23 @@ ask the human partner to arbitrate. They should never format, stage, or fix
 unrelated dirty files simply because a repo-wide check or commit hook reports
 them.
 
+## AGENTS.md Split
+
+Root `AGENTS.md` is intentionally a compact hard-policy index. Detailed
+implementation gotchas and composable patterns live in focused Tuturuuu skill
+references instead:
+
+- web/API/shared UI patterns in `$tuturuuu-platform`
+- release badge/version metadata in `$tuturuuu-web-release`
+- database/API/storage patterns in `$tuturuuu-database`
+- CI/root-script/tooling patterns in `$tuturuuu-development-tooling`
+- Docker blue/green watcher patterns in `$tuturuuu-ci-docs`
+- mobile task-board and overlay patterns in `$tuturuuu-mobile-task-board`
+
+When a session reveals durable knowledge, update the narrowest matching skill
+reference and docs page. Add to root `AGENTS.md` only when the rule is a
+cross-cutting hard mandate that agents must see before skill loading.
+
 ## Validate The Plugin
 
 Run the local validator after changing the plugin manifest or its skills:
@@ -146,6 +167,7 @@ python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-tasks
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli-finance
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-development-tooling
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-web-release
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-mobile-task-board
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-database
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-ci-docs
@@ -171,6 +193,8 @@ library.
   workflow that should be loaded immediately.
 - Keep shared-worktree coordination guidance aligned across `AGENTS.md`, the
   Agent Operating Manual, and `$tuturuuu-agent-coordination`.
+- Keep platform release/version guidance aligned across `AGENTS.md`,
+  `$tuturuuu-web-release`, and the Web Docker Deployment runbook.
 - Add marketplace metadata only when deciding where the plugin should be
   installed from: repo-local `.agents/plugins/marketplace.json` or home-local
   `~/.agents/plugins/marketplace.json`.

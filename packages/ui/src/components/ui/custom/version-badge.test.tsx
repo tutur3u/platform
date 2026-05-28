@@ -60,8 +60,8 @@ describe('VersionBadge', () => {
 
     render(<VersionBadge release={release} />);
 
-    expect(screen.getByText('v0.1.0')).toBeInTheDocument();
-    expect(screen.getByText('abcdef1')).toBeInTheDocument();
+    expect(screen.getAllByText('v0.1.0')).toHaveLength(2);
+    expect(screen.getAllByText('abcdef1')).toHaveLength(2);
     expect(screen.getByText('feat: ship version badge')).toBeInTheDocument();
     expect(screen.getByText('2026-05-27T10:00:00.000Z')).toBeInTheDocument();
   });

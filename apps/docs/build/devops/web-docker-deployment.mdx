@@ -296,6 +296,21 @@ context. The account-gated badge reads those runtime values before falling back
 to generated Vercel/GitHub metadata, so on-prem watcher deployments show the
 served commit instead of `local` / `Unknown`.
 
+If those `PLATFORM_BUILD_*` values are missing or blank in a self-hosted
+runtime, `apps/web` falls back to the mounted blue/green snapshot before using
+generated/local defaults. The resolver reads only lightweight snapshot files:
+`prod/target-state.json`, `prod/active-color`, `prod/deployment-stamp`,
+`watch/blue-green-auto-deploy.status.json`, and
+`watch/blue-green-auto-deploy.history.json` under
+`PLATFORM_BLUE_GREEN_MONITORING_DIR`, with local `tmp/docker-web` candidates for
+development. Selection prefers `targets.web` for the active color, then an
+active deployment row, then the latest successful row for the active color, then
+the latest successful row overall. `commitSubject` becomes the badge commit
+message, millisecond deployment timestamps become ISO deployment times, and the
+runtime deployment stamp file supplies the displayed deployment stamp. The
+resolver does not invent deployment URL, ref, or environment from color or
+commit data alone.
+
 The helper writes support-image input hashes to
 `tmp/docker-web/prod/build-input-hashes.json` and keeps recent decisions in
 `tmp/docker-web/prod/build-input-hashes.history.json`. Infrastructure

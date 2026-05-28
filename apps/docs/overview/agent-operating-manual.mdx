@@ -4,7 +4,7 @@ description: 'Field guide summarizing the AGENTS.md policies for autonomous cont
 updatedAt: '2026-05-15'
 ---
 
-This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth—this guide exists to make the most important expectations discoverable inside the docs site.
+This page distills the canonical rules defined in [AGENTS.md](https://github.com/tutur3u/platform/blob/main/AGENTS.md). Treat the original document as the source of truth. The root file is now a hard-policy index; detailed reusable implementation patterns live in the repo-local Tuturuuu Codex plugin skills under `plugins/tuturuuu/skills/*/references/`.
 
 ## Core Principles
 
@@ -14,6 +14,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 - **Security first** – Never surface secret values. Reference environment variables by name and keep sensitive flows audited.
 - **Document intent** – When behaviour changes, update tests and docs alongside the code so the platform stays explainable.
 - **Human-in-the-loop** – Escalate when work exceeds the documented boundaries (e.g., major refactors, new third-party services, complex data backfills).
+- **Focused knowledge** – Add durable gotchas to the narrowest plugin skill reference instead of expanding the root operating manual by default.
 
 ## Capability Matrix
 
@@ -35,6 +36,7 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 4. Avoid committing noisy logs; add diagnostics only when they materially aid debugging.
 5. Never commit credentials, tokens, destructive migrations, or unrelated worktree changes.
 6. Do not stage, rename, delete, or format unknown dirty/untracked files; treat them as human-owned or other-agent-owned until confirmed.
+7. Bump `TUTURUUU_PLATFORM_VERSION` once for every authored platform commit and update its test expectation. This is the version shown by the account-gated web version badge.
 
 ## Escalate When…
 
@@ -51,6 +53,17 @@ This page distills the canonical rules defined in [AGENTS.md](https://github.com
 - **Supabase migration** – run `bun sb:new`, author additive SQL, request user to apply and regenerate types via `bun sb:typegen`, commit regenerated files together.
 
 See AGENTS.md §4 for full step-by-step instructions across all workflows.
+
+## Focused Skill References
+
+Use the repo-local Tuturuuu Codex plugin for detailed pattern catalogs:
+
+- `$tuturuuu-platform` for web/API/shared UI patterns.
+- `$tuturuuu-web-release` for version badge metadata, `PLATFORM_BUILD_*`, and `TUTURUUU_PLATFORM_VERSION` bumps.
+- `$tuturuuu-database` for Supabase, protected-table API, and storage patterns.
+- `$tuturuuu-ci-docs` for docs, CI, and Docker blue/green deployment runbooks.
+- `$tuturuuu-development-tooling` for root scripts, plugin validation, and CI/tooling behavior.
+- `$tuturuuu-mobile-task-board` for Flutter mobile task-board and mobile UX patterns.
 
 ## Collaboration Protocol
 

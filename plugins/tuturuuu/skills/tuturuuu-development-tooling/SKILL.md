@@ -19,6 +19,10 @@ Every development-tooling change should ask:
 - Could another agent be editing the same worktree, and does the coordination
   protocol need a note or update?
 
+Read `references/ci-tooling-patterns.md` when the work changes root scripts,
+formatting behavior, repo checks, CI validation, or plugin maintenance rules
+that used to live in the root operating manual.
+
 ## Incremental Improvement Standard
 
 When touching Tuturuuu tooling, make the smallest useful improvement that helps

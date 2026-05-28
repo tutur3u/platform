@@ -8,6 +8,8 @@ description: Tuturuuu Supabase and database workflow guidance. Use when Codex ch
 ## Core Workflow
 
 Read `references/database-checklist.md` before changing schema, RLS, storage, or generated DB types.
+Read `references/database-api-patterns.md` when the work needs the longer
+database/API pattern catalog that was split out of root `AGENTS.md`.
 
 Keep migrations additive when possible. Prepare migrations for the user to apply; do not run production push commands. Use runtime/API fallbacks when rollout order can vary across environments.
 

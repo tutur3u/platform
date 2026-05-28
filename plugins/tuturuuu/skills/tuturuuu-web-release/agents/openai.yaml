@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Web Release"
+  short_description: "Keep apps/web release metadata and badge versioning correct"
+  default_prompt: "Fix this platform release badge metadata and run the checks it needs."

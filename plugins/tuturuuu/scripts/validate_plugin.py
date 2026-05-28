@@ -36,6 +36,10 @@ PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-development-tooling": re.compile(
         r"\b(development workflow|tooling|future agents?)\b", re.IGNORECASE
     ),
+    "tuturuuu-web-release": re.compile(
+        r"\b(release badge|version badge|release metadata|web release)\b",
+        re.IGNORECASE,
+    ),
     "tuturuuu-mobile-task-board": re.compile(
         r"\b(flutter|mobile|task-board|task board)\b", re.IGNORECASE
     ),

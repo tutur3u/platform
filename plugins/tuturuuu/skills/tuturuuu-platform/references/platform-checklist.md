@@ -18,6 +18,8 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - Check for existing helpers in `packages/internal-api`, `packages/types`, `packages/ui`, and app-local utilities.
 - Identify whether the change affects user-facing copy, route navigation, database schema, generated types, docs, or mobile localization.
 - Identify whether the task revealed a durable workflow learning that belongs in `apps/docs`, a Tuturuuu plugin skill, a reference checklist, a validation script, or a helper script.
+- If the session will create an authored platform commit, plan a matching
+  `TUTURUUU_PLATFORM_VERSION` bump unless the change is being abandoned.
 
 ## Web And Shared Code
 
@@ -51,6 +53,8 @@ Use this checklist before and after code changes in the current Tuturuuu platfor
 - Run `bun check` for TypeScript, JavaScript, root script, or repo config changes.
 - Update `apps/docs` for durable workflow, deployment, architecture, debugging, or operations knowledge.
 - Update the Tuturuuu plugin when agent-facing CLI, validation, setup, or workflow knowledge changes.
+- Keep the displayed platform badge version bumped for every authored platform
+  commit by updating `TUTURUUU_PLATFORM_VERSION` and its test expectation.
 - If you created a coordination note, update it with final status, verification,
   and risks. Archive it before the final response when the status is `done` and
   no active handoff needs it in the top-level directory.

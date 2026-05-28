@@ -39,6 +39,10 @@ Prefer existing patterns over new abstractions. Search with `rg` before introduc
 
 Read `references/platform-checklist.md` for the compact checklist before making code changes. Use it to catch translation, navigation, docs, and verification follow-through that are easy to miss.
 
+Read `references/platform-patterns.md` when the work touches broad `apps/web`,
+shared UI, API boundaries, translations/navigation, or dense admin UX patterns
+that used to live in the root operating manual.
+
 Use the more focused plugin skills when they match the task:
 
 - `$tuturuuu-database` for Supabase schema, RLS, API write, storage, or generated type changes.
@@ -50,6 +54,8 @@ Use the more focused plugin skills when they match the task:
   notes, archived context, overlapping edits, handoffs, and path-scoped staging
   safety.
 - `$tuturuuu-development-tooling` for Codex plugin, skill, validation, docs, scripts, and durable agent workflow improvements.
+- `$tuturuuu-web-release` for `apps/web` release metadata, version badge,
+  `TUTURUUU_PLATFORM_VERSION`, or blue/green release snapshot fallback work.
 - `$tuturuuu-mobile-task-board` for Flutter task-board date, routing, assignee, detail, or version bump work.
 - `$tuturuuu-review-comments` for fetching, fixing, resolving, and reporting unresolved GitHub PR review threads.
 

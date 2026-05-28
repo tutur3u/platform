@@ -1,6 +1,6 @@
 import { PLATFORM_BUILD_METADATA } from './generated/platform-build-metadata';
 
-export const TUTURUUU_PLATFORM_VERSION = '0.1.0';
+export const TUTURUUU_PLATFORM_VERSION = '0.1.1';
 
 export type PlatformBuildMetadataInput = {
   builtAt?: string | null;
@@ -29,7 +29,7 @@ export type PlatformReleaseInfo = PlatformBuildMetadata & {
   version: string;
 };
 
-type PlatformBuildRuntimeEnv = Partial<
+export type PlatformBuildRuntimeEnv = Partial<
   Record<
     | 'PLATFORM_BUILD_BUILT_AT'
     | 'PLATFORM_BUILD_COMMIT_HASH'

@@ -12,6 +12,9 @@ For CI changes, inspect the existing workflow family before adding a new file. M
 For docs changes, update the MDX page and `apps/docs/docs.json` together when adding a new page. A page that is not in `docs.json` is not discoverable in the docs site.
 
 Read `references/ci-docs-checklist.md` for the compact checklist before editing CI or docs.
+Read `references/blue-green-patterns.md` when CI/docs work touches Docker web
+deployment, blue/green watcher behavior, BuildKit, monitoring, or deployment
+runbooks that used to live in root `AGENTS.md`.
 
 If the user asks to commit the finished work, route to `$tuturuuu-commit` and
 keep docs, CI, and validator changes split only when they are independently
