@@ -1,13 +1,12 @@
 'use client';
 
-import { AlertTriangle, FileText, Loader2, Paperclip } from '@tuturuuu/icons';
-import type {
-  TopicAnnouncementAttachmentDraft,
-  TopicAnnouncementContact,
-} from '@tuturuuu/internal-api';
+import { AlertTriangle, Loader2, Paperclip } from '@tuturuuu/icons';
+import type { TopicAnnouncementContact } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { useTranslations } from 'next-intl';
 import type { ReactNode } from 'react';
+import { AnnouncementAttachmentPreview } from './announcement-attachment-preview';
+import type { PreviewableTopicAnnouncementAttachment } from './announcement-attachment-types';
 
 function formatBytes(value: number) {
   if (value >= 1024 * 1024) return `${(value / (1024 * 1024)).toFixed(1)} MB`;
@@ -20,7 +19,7 @@ export function TopicAnnouncementPreviewSidebar({
   contacts,
   subject,
 }: {
-  attachments: TopicAnnouncementAttachmentDraft[];
+  attachments: PreviewableTopicAnnouncementAttachment[];
   contacts: TopicAnnouncementContact[];
   subject: string;
 }) {
@@ -63,8 +62,11 @@ export function TopicAnnouncementPreviewSidebar({
                 className="rounded-md border bg-background p-2 text-sm"
                 key={attachment.storagePath}
               >
+                <AnnouncementAttachmentPreview
+                  attachment={attachment}
+                  className="mb-2"
+                />
                 <div className="flex min-w-0 items-center gap-2">
-                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
                   <span className="truncate font-medium">
                     {attachment.fileName}
                   </span>

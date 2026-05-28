@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { FileText, Loader2, Paperclip, Upload, X } from '@tuturuuu/icons';
+import { Loader2, Paperclip, Upload, X } from '@tuturuuu/icons';
 import type { TopicAnnouncementAttachmentDraft } from '@tuturuuu/internal-api';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
@@ -9,7 +9,12 @@ import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { AnnouncementAttachmentPreview } from './announcement-attachment-preview';
+import {
+  canPreviewTopicAnnouncementAttachment,
+  type PreviewableTopicAnnouncementAttachment,
+} from './announcement-attachment-types';
 import {
   ANNOUNCEMENT_ATTACHMENT_ACCEPT,
   ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES,
@@ -18,9 +23,9 @@ import {
 } from './announcement-form-state';
 
 interface Props {
-  attachments: TopicAnnouncementAttachmentDraft[];
+  attachments: PreviewableTopicAnnouncementAttachment[];
   disabled: boolean;
-  onChange: (attachments: TopicAnnouncementAttachmentDraft[]) => void;
+  onChange: (attachments: PreviewableTopicAnnouncementAttachment[]) => void;
   onUploadAttachment: (file: File) => Promise<TopicAnnouncementAttachmentDraft>;
 }
 
@@ -61,6 +66,7 @@ export function AnnouncementAttachmentsField({
 }: Props) {
   const t = useTranslations('ws-topic-announcements');
   const [error, setError] = useState<string | null>(null);
+  const previewUrlsRef = useRef(new Set<string>());
   const totalBytes = useMemo(
     () =>
       attachments.reduce(
@@ -73,6 +79,31 @@ export function AnnouncementAttachmentsField({
     mutationFn: onUploadAttachment,
   });
   const isUploading = uploadMutation.isPending;
+
+  useEffect(() => {
+    const activePreviewUrls = new Set(
+      attachments.flatMap((attachment) =>
+        attachment.previewUrl ? [attachment.previewUrl] : []
+      )
+    );
+
+    for (const previewUrl of previewUrlsRef.current) {
+      if (!activePreviewUrls.has(previewUrl)) {
+        URL.revokeObjectURL?.(previewUrl);
+        previewUrlsRef.current.delete(previewUrl);
+      }
+    }
+  }, [attachments]);
+
+  useEffect(
+    () => () => {
+      for (const previewUrl of previewUrlsRef.current) {
+        URL.revokeObjectURL?.(previewUrl);
+      }
+      previewUrlsRef.current.clear();
+    },
+    []
+  );
 
   const uploadFiles = async (files: FileList | null) => {
     setError(null);
@@ -103,9 +134,24 @@ export function AnnouncementAttachmentsField({
     }
 
     try {
-      const uploaded: TopicAnnouncementAttachmentDraft[] = [];
+      const uploaded: PreviewableTopicAnnouncementAttachment[] = [];
       for (const file of nextFiles) {
-        uploaded.push(await uploadMutation.mutateAsync(file));
+        const attachment = await uploadMutation.mutateAsync(file);
+        const previewUrl =
+          canPreviewTopicAnnouncementAttachment(file) &&
+          typeof URL !== 'undefined' &&
+          typeof URL.createObjectURL === 'function'
+            ? URL.createObjectURL(file)
+            : undefined;
+
+        if (previewUrl) {
+          previewUrlsRef.current.add(previewUrl);
+        }
+
+        uploaded.push({
+          ...attachment,
+          ...(previewUrl ? { previewUrl } : {}),
+        });
       }
       onChange([...attachments, ...uploaded]);
     } catch (uploadError) {
@@ -182,7 +228,10 @@ export function AnnouncementAttachmentsField({
               key={`${attachment.storagePath}-${attachment.fileName}`}
             >
               <div className="flex min-w-0 items-center gap-2">
-                <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                <AnnouncementAttachmentPreview
+                  attachment={attachment}
+                  compact
+                />
                 <div className="min-w-0">
                   <p className="truncate font-medium text-sm">
                     {attachment.fileName}
@@ -195,13 +244,17 @@ export function AnnouncementAttachmentsField({
               <Button
                 aria-label={t('attachments_remove')}
                 disabled={disabled || isUploading}
-                onClick={() =>
+                onClick={() => {
+                  if (attachment.previewUrl) {
+                    URL.revokeObjectURL?.(attachment.previewUrl);
+                    previewUrlsRef.current.delete(attachment.previewUrl);
+                  }
                   onChange(
                     attachments.filter(
                       (item) => item.storagePath !== attachment.storagePath
                     )
-                  )
-                }
+                  );
+                }}
                 size="icon"
                 type="button"
                 variant="ghost"

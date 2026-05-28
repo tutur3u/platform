@@ -1,8 +1,9 @@
 import type {
-  TopicAnnouncementAttachmentDraft,
   TopicAnnouncementPayload,
   TopicAnnouncementRecord,
 } from '@tuturuuu/internal-api';
+import type { PreviewableTopicAnnouncementAttachment } from './announcement-attachment-types';
+import { toTopicAnnouncementAttachmentDraft } from './announcement-attachment-types';
 import { NO_GROUP, NO_TEMPLATE } from './topic-announcements-form-constants';
 
 export const MAX_ANNOUNCEMENT_ATTACHMENTS = 5;
@@ -27,7 +28,7 @@ export const ANNOUNCEMENT_STEPS = [
 export const DELIVERY_MODES = ['draft', 'send', 'schedule'] as const;
 
 export const INITIAL_ANNOUNCEMENT_FORM = {
-  attachmentDrafts: [] as TopicAnnouncementAttachmentDraft[],
+  attachmentDrafts: [] as PreviewableTopicAnnouncementAttachment[],
   classLabel: '',
   contactIds: [] as string[],
   dayLabel: '',
@@ -50,7 +51,9 @@ export function buildTopicAnnouncementPayload(
   form: AnnouncementFormValues
 ): TopicAnnouncementPayload {
   return {
-    attachmentDrafts: form.attachmentDrafts,
+    attachmentDrafts: form.attachmentDrafts.map(
+      toTopicAnnouncementAttachmentDraft
+    ),
     classLabel: form.classLabel || null,
     contactIds: form.contactIds,
     dayLabel: form.dayLabel || null,

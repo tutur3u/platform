@@ -1,3 +1,5 @@
+import { normalizeTopicAnnouncementAttachmentFileName } from './topic-announcement-attachments';
+
 export function htmlEscape(value: string) {
   return value
     .replaceAll('&', '&amp;')
@@ -75,7 +77,7 @@ function renderAttachmentRows(
         .map(
           (attachment) => `
             <div style="margin-top:8px;border-top:1px solid #e2e8f0;padding-top:8px">
-              <p style="margin:0;color:#111827;font-size:14px;line-height:20px;font-weight:600">${htmlEscape(attachment.fileName)}</p>
+              <p style="margin:0;color:#111827;font-size:14px;line-height:20px;font-weight:600">${htmlEscape(normalizeTopicAnnouncementAttachmentFileName(attachment.fileName))}</p>
               <p style="margin:2px 0 0 0;color:#64748b;font-size:12px;line-height:18px">${htmlEscape(formatBytes(attachment.sizeBytes))}${attachment.contentType ? ` &middot; ${htmlEscape(attachment.contentType)}` : ''}</p>
             </div>
           `
@@ -118,10 +120,12 @@ export function renderTopicAnnouncementEmail({
     .join('\n');
   const body = announcement.body || announcement.topic;
   const safeWorkspaceName = workspaceName || 'your workspace team';
+  const safetyNotice =
+    'This message and any attachments were added by a member of the workspace whose emails you verified. They may contain spam or unexpected content. Tuturuuu has not scanned this email or its attachments, so only proceed at your own risk.';
   const attachmentText = attachments
     .map(
       (attachment) =>
-        `- ${attachment.fileName} (${formatBytes(attachment.sizeBytes)})`
+        `- ${normalizeTopicAnnouncementAttachmentFileName(attachment.fileName)} (${formatBytes(attachment.sizeBytes)})`
     )
     .join('\n');
 
@@ -158,7 +162,7 @@ export function renderTopicAnnouncementEmail({
                     </div>
                     <div style="border-top:1px solid #e5e7eb;background:#f8fafc;padding:18px 28px">
                       <p style="margin:0;color:#475569;font-size:13px;line-height:20px">Sent by <strong style="color:#0f172a">${htmlEscape(safeWorkspaceName)}</strong>.</p>
-                      <p style="margin:6px 0 0 0;color:#94a3b8;font-size:12px;line-height:18px">This message was prepared by your workspace team. Reply to the sender if you need changes or clarification.</p>
+                      <p style="margin:6px 0 0 0;color:#94a3b8;font-size:12px;line-height:18px">${htmlEscape(safetyNotice)}</p>
                     </div>
                   </td>
                 </tr>
@@ -171,6 +175,6 @@ export function renderTopicAnnouncementEmail({
   </body>
 </html>`,
     subject: announcement.title,
-    text: `Hello,\n\n${body}\n\n${detailText ? `${detailText}\n\n` : ''}${attachmentText ? `Attachments:\n${attachmentText}\n\n` : ''}Sent by ${safeWorkspaceName}.`,
+    text: `Hello,\n\n${body}\n\n${detailText ? `${detailText}\n\n` : ''}${attachmentText ? `Attachments:\n${attachmentText}\n\n` : ''}Sent by ${safeWorkspaceName}.\n\n${safetyNotice}`,
   };
 }

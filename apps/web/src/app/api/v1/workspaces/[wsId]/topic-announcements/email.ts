@@ -8,6 +8,7 @@ import {
 import { extractIPFromHeaders } from '@tuturuuu/utils/abuse-protection';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 import {
   htmlEscape,
   renderTopicAnnouncementEmail,
@@ -210,6 +211,9 @@ export async function sendTopicAnnouncement({
 
   for (const attachment of (attachmentRows ??
     []) as TopicAnnouncementAttachmentEmailRow[]) {
+    const fileName = normalizeTopicAnnouncementAttachmentFileName(
+      attachment.file_name
+    );
     const downloaded = await downloadWorkspaceStorageObjectForProvider(
       normalizedWsId,
       attachment.storage_provider,
@@ -218,11 +222,11 @@ export async function sendTopicAnnouncement({
     attachments.push({
       contentType: attachment.content_type,
       data: downloaded.buffer,
-      filename: attachment.file_name,
+      filename: fileName,
     });
     attachmentMetadata.push({
       contentType: attachment.content_type,
-      fileName: attachment.file_name,
+      fileName,
       sizeBytes: Number(attachment.size_bytes),
     });
   }

@@ -295,7 +295,8 @@ describe('topic announcement email helpers', () => {
               data: [
                 {
                   content_type: 'application/pdf',
-                  file_name: 'lesson-plan.pdf',
+                  file_name:
+                    '1314c279-8f86-4674-83e4-811190d22166-lesson-plan.pdf',
                   size_bytes: 4,
                   storage_path: 'topic-announcements/a/lesson-plan.pdf',
                   storage_provider: 'supabase',

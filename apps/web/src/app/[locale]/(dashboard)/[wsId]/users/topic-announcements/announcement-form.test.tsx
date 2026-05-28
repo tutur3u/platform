@@ -132,58 +132,82 @@ describe('AnnouncementForm', () => {
   });
 
   it('uploads media attachments and includes them in the reviewed draft payload', async () => {
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    const createObjectURL = vi.fn(() => 'blob:lesson-preview');
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, 'createObjectURL', {
+      configurable: true,
+      value: createObjectURL,
+    });
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      configurable: true,
+      value: revokeObjectURL,
+    });
     const onUploadAttachment = vi.fn().mockResolvedValue({
-      contentType: 'application/pdf',
-      fileName: 'lesson-plan.pdf',
+      contentType: 'image/png',
+      fileName: 'lesson-preview.png',
       sizeBytes: 1234,
-      storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
+      storagePath: 'topic-announcements/drafts/lesson-preview.png',
       storageProvider: 'supabase',
     });
-    const props = renderForm({ onUploadAttachment });
+    try {
+      const props = renderForm({ onUploadAttachment });
 
-    fireEvent.change(screen.getByLabelText('announcement_title'), {
-      target: { value: 'Unit 3 speaking practice' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'next' }));
+      fireEvent.change(screen.getByLabelText('announcement_title'), {
+        target: { value: 'Unit 3 speaking practice' },
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'next' }));
 
-    fireEvent.change(screen.getByLabelText('topic_primary_label'), {
-      target: { value: 'Practice speaking about weekend plans.' },
-    });
-    fireEvent.change(screen.getByLabelText('attachments_upload_label'), {
-      target: {
-        files: [
-          new File(['%PDF'], 'lesson-plan.pdf', {
-            type: 'application/pdf',
-          }),
-        ],
-      },
-    });
-
-    await waitFor(() =>
-      expect(screen.getByText('lesson-plan.pdf')).toBeInTheDocument()
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'next' }));
-    fireEvent.click(screen.getByRole('checkbox'));
-    fireEvent.click(screen.getByRole('button', { name: 'next' }));
-    fireEvent.click(
-      screen.getByRole('button', { name: 'announcement_submit_draft' })
-    );
-
-    await waitFor(() =>
-      expect(props.onCreate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          attachmentDrafts: [
-            {
-              contentType: 'application/pdf',
-              fileName: 'lesson-plan.pdf',
-              sizeBytes: 1234,
-              storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
-              storageProvider: 'supabase',
-            },
+      fireEvent.change(screen.getByLabelText('topic_primary_label'), {
+        target: { value: 'Practice speaking about weekend plans.' },
+      });
+      fireEvent.change(screen.getByLabelText('attachments_upload_label'), {
+        target: {
+          files: [
+            new File(['image'], 'lesson-preview.png', {
+              type: 'image/png',
+            }),
           ],
-        })
-      )
-    );
+        },
+      });
+
+      const previewImage = await screen.findByRole('img', {
+        name: 'lesson-preview.png',
+      });
+      expect(previewImage).toHaveAttribute('src', 'blob:lesson-preview');
+      fireEvent.click(screen.getByRole('button', { name: 'next' }));
+      fireEvent.click(screen.getByRole('checkbox'));
+      fireEvent.click(screen.getByRole('button', { name: 'next' }));
+      fireEvent.click(
+        screen.getByRole('button', { name: 'announcement_submit_draft' })
+      );
+
+      await waitFor(() =>
+        expect(props.onCreate).toHaveBeenCalledWith(
+          expect.objectContaining({
+            attachmentDrafts: [
+              {
+                contentType: 'image/png',
+                fileName: 'lesson-preview.png',
+                sizeBytes: 1234,
+                storagePath: 'topic-announcements/drafts/lesson-preview.png',
+                storageProvider: 'supabase',
+              },
+            ],
+          })
+        )
+      );
+    } finally {
+      Object.defineProperty(URL, 'createObjectURL', {
+        configurable: true,
+        value: originalCreateObjectURL,
+      });
+      Object.defineProperty(URL, 'revokeObjectURL', {
+        configurable: true,
+        value: originalRevokeObjectURL,
+      });
+    }
   });
 
   it('creates and sends from the final delivery step', async () => {

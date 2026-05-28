@@ -3,7 +3,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Loader2, Mail } from '@tuturuuu/icons';
 import type {
-  TopicAnnouncementAttachmentDraft,
   TopicAnnouncementContact,
   TopicAnnouncementPayload,
 } from '@tuturuuu/internal-api';
@@ -20,13 +19,15 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { useTranslations } from 'next-intl';
 import { EmailHtmlViewer } from '@/components/email/email-html-viewer';
+import type { PreviewableTopicAnnouncementAttachment } from './announcement-attachment-types';
+import { toTopicAnnouncementAttachmentDraft } from './announcement-attachment-types';
 import {
   TopicAnnouncementPreviewSidebar,
   TopicAnnouncementPreviewState,
 } from './topic-announcement-email-preview-parts';
 
 export interface TopicAnnouncementPreviewData {
-  attachments: TopicAnnouncementAttachmentDraft[];
+  attachments: PreviewableTopicAnnouncementAttachment[];
   body?: string | null;
   class_label?: string | null;
   contacts: TopicAnnouncementContact[];
@@ -54,7 +55,9 @@ export function buildTopicAnnouncementPreviewPayload(
   announcement: TopicAnnouncementPreviewData
 ): TopicAnnouncementPayload {
   return {
-    attachmentDrafts: announcement.attachments,
+    attachmentDrafts: announcement.attachments.map(
+      toTopicAnnouncementAttachmentDraft
+    ),
     body: announcement.body ?? '',
     classLabel: announcement.class_label ?? null,
     contactIds: announcement.contacts.map((contact) => contact.id),

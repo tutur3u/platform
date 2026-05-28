@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { serializeTopicAnnouncementContacts } from './shared';
+import {
+  serializeTopicAnnouncementAttachment,
+  serializeTopicAnnouncementContacts,
+} from './shared';
 
 vi.mock('server-only', () => ({}));
 
@@ -12,6 +15,21 @@ function verificationQuery(data: unknown[]) {
 }
 
 describe('serializeTopicAnnouncementContacts', () => {
+  it('normalizes generated UUID prefixes from attachment display names', () => {
+    expect(
+      serializeTopicAnnouncementAttachment({
+        content_type: 'application/pdf',
+        created_at: '2026-05-19T00:00:00.000Z',
+        file_name: '1314c279-8f86-4674-83e4-811190d22166-USK_PLAN.pdf',
+        id: 'attachment-1',
+        size_bytes: 1234,
+        storage_path:
+          'topic-announcements/attachments/1314c279-8f86-4674-83e4-811190d22166-USK_PLAN.pdf',
+        storage_provider: 'supabase',
+      }).fileName
+    ).toBe('USK_PLAN.pdf');
+  });
+
   it('attaches verification status for announcement recipients', async () => {
     const sbAdmin = {
       from: vi.fn(() =>

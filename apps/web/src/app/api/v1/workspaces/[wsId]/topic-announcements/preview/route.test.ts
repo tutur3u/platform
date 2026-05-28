@@ -67,7 +67,7 @@ describe('topic announcement preview route', () => {
         attachmentDrafts: [
           {
             contentType: 'application/pdf',
-            fileName: 'lesson-plan.pdf',
+            fileName: '1314c279-8f86-4674-83e4-811190d22166-lesson-plan.pdf',
             sizeBytes: 1234,
             storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
             storageProvider: 'supabase',
@@ -111,8 +111,19 @@ describe('topic announcement preview route', () => {
     expect(json.data.html).toContain('Demo Workspace');
     expect(json.data.html).toContain('Practice &lt;speaking&gt;');
     expect(json.data.html).toContain('lesson-plan.pdf');
+    expect(json.data.html).not.toContain(
+      '1314c279-8f86-4674-83e4-811190d22166'
+    );
     expect(json.data.text).toContain('Attachments:');
-    expect(json.data.attachments).toHaveLength(1);
+    expect(json.data.attachments).toEqual([
+      {
+        contentType: 'application/pdf',
+        fileName: 'lesson-plan.pdf',
+        sizeBytes: 1234,
+        storagePath: 'topic-announcements/drafts/lesson-plan.pdf',
+        storageProvider: 'supabase',
+      },
+    ]);
   });
 
   it('rejects invalid preview payloads', async () => {

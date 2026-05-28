@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
-import { uploadTopicAnnouncementAttachment } from './topic-announcements';
+import {
+  normalizeTopicAnnouncementAttachmentFileName,
+  uploadTopicAnnouncementAttachment,
+} from './topic-announcements';
 
 function createJsonResponse(payload: unknown) {
   return {
@@ -12,22 +15,34 @@ function createJsonResponse(payload: unknown) {
 }
 
 describe('topic announcement upload helpers', () => {
+  it('normalizes generated UUID filename prefixes for display', () => {
+    expect(
+      normalizeTopicAnnouncementAttachmentFileName(
+        '1314c279-8f86-4674-83e4-811190d22166-USK_PLAN.pdf'
+      )
+    ).toBe('USK_PLAN.pdf');
+    expect(
+      normalizeTopicAnnouncementAttachmentFileName('lesson-plan.pdf')
+    ).toBe('lesson-plan.pdf');
+  });
+
   it('uploads attachments through central workspace signed-upload URLs', async () => {
     const file = new File(['%PDF'], 'lesson-plan.pdf', {
       type: 'application/pdf',
     });
+    const generatedFilename =
+      '1314c279-8f86-4674-83e4-811190d22166-lesson-plan.pdf';
     const fetchMock = vi
       .fn()
       .mockResolvedValueOnce(
         createJsonResponse({
           contentType: 'application/pdf',
-          filename: 'lesson-plan.pdf',
-          fullPath:
-            'ws-1/topic-announcements/attachments/upload-id-lesson-plan.pdf',
+          filename: generatedFilename,
+          fullPath: `ws-1/topic-announcements/attachments/${generatedFilename}`,
           headers: {
             'x-upload-target': 'topic-announcements',
           },
-          path: 'topic-announcements/attachments/upload-id-lesson-plan.pdf',
+          path: `topic-announcements/attachments/${generatedFilename}`,
           provider: 'r2',
           signedUrl: 'https://storage.example.com/signed-upload',
           token: 'upload-token',
@@ -98,8 +113,7 @@ describe('topic announcement upload helpers', () => {
         contentType: 'application/pdf',
         fileName: 'lesson-plan.pdf',
         sizeBytes: file.size,
-        storagePath:
-          'topic-announcements/attachments/upload-id-lesson-plan.pdf',
+        storagePath: `topic-announcements/attachments/${generatedFilename}`,
         storageProvider: 'r2',
       },
     });

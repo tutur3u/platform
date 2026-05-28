@@ -10,6 +10,7 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 import { TOPIC_ANNOUNCEMENTS_SECRET } from '@/lib/topic-announcements';
 import { getContactVerificationStatuses } from './email';
 
@@ -100,7 +101,9 @@ export function serializeTopicAnnouncementAttachment(
   return {
     contentType: attachment.content_type,
     createdAt: attachment.created_at,
-    fileName: attachment.file_name,
+    fileName: normalizeTopicAnnouncementAttachmentFileName(
+      attachment.file_name
+    ),
     id: attachment.id,
     sizeBytes: Number(attachment.size_bytes),
     storagePath: attachment.storage_path,
@@ -128,7 +131,9 @@ export async function insertTopicAnnouncementAttachmentDrafts({
       announcement_id: announcementId,
       content_type: attachment.contentType,
       created_by: actorUserId,
-      file_name: attachment.fileName,
+      file_name: normalizeTopicAnnouncementAttachmentFileName(
+        attachment.fileName
+      ),
       size_bytes: attachment.sizeBytes,
       storage_path: attachment.storagePath,
       storage_provider: attachment.storageProvider,

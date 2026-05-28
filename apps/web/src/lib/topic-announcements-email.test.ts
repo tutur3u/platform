@@ -37,7 +37,7 @@ describe('renderTopicAnnouncementEmail', () => {
       attachments: [
         {
           contentType: 'application/pdf',
-          fileName: 'lesson-plan.pdf',
+          fileName: '1314c279-8f86-4674-83e4-811190d22166-lesson-plan.pdf',
           sizeBytes: 1536,
         },
       ],
@@ -48,12 +48,15 @@ describe('renderTopicAnnouncementEmail', () => {
     expect(email.html).toContain('16:30 - 18:00');
     expect(email.html).toContain('CENTER 1');
     expect(email.html).toContain('lesson-plan.pdf');
+    expect(email.html).not.toContain('1314c279-8f86-4674-83e4-811190d22166');
     expect(email.html).toContain('Demo Workspace');
+    expect(email.html).toContain('Tuturuuu has not scanned this email');
     expect(email.html).not.toContain('Tuturuuu Topic Announcement');
     expect(email.html).not.toContain('through Tuturuuu');
     expect(email.text).toContain('Class: HUONG-EGET1');
     expect(email.text).toContain('Attachments:\n- lesson-plan.pdf (2 KB)');
     expect(email.text).toContain('Sent by Demo Workspace.');
+    expect(email.text).toContain('only proceed at your own risk');
   });
 
   it('falls back to a neutral workspace label', () => {
@@ -70,5 +73,8 @@ describe('renderTopicAnnouncementEmail', () => {
       'Sent by <strong style="color:#0f172a">your workspace team</strong>'
     );
     expect(email.text).toContain('Sent by your workspace team.');
+    expect(email.text).toContain(
+      'This message and any attachments were added by a member of the workspace'
+    );
   });
 });

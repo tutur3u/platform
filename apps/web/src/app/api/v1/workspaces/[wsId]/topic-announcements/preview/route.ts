@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 import { renderTopicAnnouncementEmail } from '@/lib/topic-announcements-email';
 import {
   resolveTopicAnnouncementsAccess,
@@ -62,6 +63,10 @@ export async function POST(request: Request, { params }: Params) {
     .eq('id', normalizedWsId)
     .maybeSingle();
   if (workspaceError) throw workspaceError;
+  const attachments = payload.attachmentDrafts.map((attachment) => ({
+    ...attachment,
+    fileName: normalizeTopicAnnouncementAttachmentFileName(attachment.fileName),
+  }));
 
   const content = renderTopicAnnouncementEmail({
     announcement: {
@@ -76,14 +81,14 @@ export async function POST(request: Request, { params }: Params) {
       title: payload.title,
       topic: payload.topic,
     },
-    attachments: payload.attachmentDrafts,
+    attachments,
     workspaceName: workspace?.name ?? null,
   });
 
   return NextResponse.json({
     data: {
       ...content,
-      attachments: payload.attachmentDrafts,
+      attachments,
     },
   });
 }
