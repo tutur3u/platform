@@ -94,9 +94,6 @@ apps/mobile/android/.gradle/**
 apps/mobile/build
 apps/mobile/build/
 apps/mobile/build/**
-apps/backend/target
-apps/backend/target/
-apps/backend/target/**
 apps/web/playwright-report
 apps/web/test-results
 apps/web/.next

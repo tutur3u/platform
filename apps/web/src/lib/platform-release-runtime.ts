@@ -17,16 +17,40 @@ type RuntimeCandidate = PlatformBuildMetadataInput & {
   status?: string | null;
 };
 
-type WebPlatformReleaseInfoOptions = {
-  cwd?: string;
-  env?: PlatformBuildRuntimeEnv & {
+type WebPlatformReleaseRuntimeEnv = PlatformBuildRuntimeEnv &
+  Partial<Record<string, string | null | undefined>> & {
     PLATFORM_BLUE_GREEN_MONITORING_DIR?: string | null | undefined;
   };
+
+type WebPlatformReleaseInfoOptions = {
+  cwd?: string;
+  env?: WebPlatformReleaseRuntimeEnv;
   fsImpl?: FsLike;
   monitoringDir?: string | null;
 };
 
 const MONITORING_DIR_ENV = 'PLATFORM_BLUE_GREEN_MONITORING_DIR';
+
+function getProcessRuntimeEnv(): WebPlatformReleaseRuntimeEnv {
+  if (typeof process === 'undefined') {
+    return {};
+  }
+
+  return {
+    PLATFORM_BLUE_GREEN_MONITORING_DIR:
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR,
+    PLATFORM_BUILD_BUILT_AT: process.env.PLATFORM_BUILD_BUILT_AT,
+    PLATFORM_BUILD_COMMIT_HASH: process.env.PLATFORM_BUILD_COMMIT_HASH,
+    PLATFORM_BUILD_COMMIT_MESSAGE: process.env.PLATFORM_BUILD_COMMIT_MESSAGE,
+    PLATFORM_BUILD_COMMIT_SHORT_HASH:
+      process.env.PLATFORM_BUILD_COMMIT_SHORT_HASH,
+    PLATFORM_BUILD_DEPLOYMENT_STAMP:
+      process.env.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+    PLATFORM_BUILD_DEPLOYMENT_URL: process.env.PLATFORM_BUILD_DEPLOYMENT_URL,
+    PLATFORM_BUILD_ENVIRONMENT: process.env.PLATFORM_BUILD_ENVIRONMENT,
+    PLATFORM_BUILD_REF_NAME: process.env.PLATFORM_BUILD_REF_NAME,
+  };
+}
 
 function cleanString(value: unknown) {
   return typeof value === 'string' && value.trim().length > 0
@@ -91,7 +115,7 @@ function readTextFile(filePath: string, fsImpl: FsLike) {
 
 function resolveMonitoringDir({
   cwd = process.cwd(),
-  env = process.env,
+  env = getProcessRuntimeEnv(),
   fsImpl = fs,
   monitoringDir,
 }: WebPlatformReleaseInfoOptions) {
@@ -108,7 +132,7 @@ function resolveMonitoringDir({
 }
 
 function readExplicitRuntimeMetadata(
-  env: WebPlatformReleaseInfoOptions['env'] = process.env
+  env: WebPlatformReleaseInfoOptions['env'] = getProcessRuntimeEnv()
 ): PlatformBuildMetadataInput {
   return {
     builtAt: cleanString(env.PLATFORM_BUILD_BUILT_AT),
@@ -312,7 +336,7 @@ export function getWebPlatformReleaseInfo(
   appName: string,
   options: WebPlatformReleaseInfoOptions = {}
 ): PlatformReleaseInfo {
-  const env = options.env ?? process.env;
+  const env = options.env ?? getProcessRuntimeEnv();
   const base = getPlatformReleaseInfo(appName, env);
   const explicit = readExplicitRuntimeMetadata(env);
   const runtime = readBlueGreenRuntimeMetadata({ ...options, env });

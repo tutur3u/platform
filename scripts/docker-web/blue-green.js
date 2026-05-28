@@ -73,6 +73,7 @@ const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
 ]);
 /** Support sidecars that gate blue/green promotion (Hive warms independently). */
 const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
+  'backend',
   'markitdown',
   'storage-unzip-proxy',
   'web-cron-runner',
@@ -82,6 +83,7 @@ const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
   ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
 ]);
 const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
+  'backend',
   'hive',
   'hive-realtime',
   'meet-realtime',
@@ -119,6 +121,7 @@ const BLUE_GREEN_HIVE_REALTIME_BUILD_PATHS = Object.freeze([
   'packages/realtime/',
   'packages/types/',
 ]);
+const BLUE_GREEN_BACKEND_BUILD_PATHS = Object.freeze(['apps/backend/']);
 const BLUE_GREEN_MEET_REALTIME_BUILD_PATHS = Object.freeze([
   'apps/meet-realtime/',
   'packages/realtime/',
@@ -1352,6 +1355,15 @@ function getBlueGreenSupportBuildInputSpecs(targetColor) {
     {
       paths: [
         '.dockerignore',
+        'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        ...BLUE_GREEN_BACKEND_BUILD_PATHS,
+      ],
+      serviceName: 'backend',
+    },
+    {
+      paths: [
+        '.dockerignore',
         'bun.lock',
         'docker-compose.web.prod.yml',
         'docker-compose/compose.web.prod.sidecars.yml',
@@ -1534,6 +1546,14 @@ function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
     )
   ) {
     addService('hive-realtime');
+  }
+
+  if (
+    BLUE_GREEN_BACKEND_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('backend');
   }
 
   if (

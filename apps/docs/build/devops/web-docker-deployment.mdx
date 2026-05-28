@@ -1,7 +1,7 @@
 ---
-title: 'Web Docker Deployment'
-description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-28'
+title: "Web Docker Deployment"
+description: "Run the web app in Docker for development, production, and blue/green self-hosted rollout."
+updatedAt: "2026-05-28"
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -12,6 +12,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - `apps/web/docker/blue-green-watcher.Dockerfile`
 - `apps/web/docker/cron-runner.Dockerfile`
 - `apps/web/cron.config.json`
+- `apps/backend/Dockerfile`
 - `apps/meet-realtime/Dockerfile`
 - `docker-compose.web.yml`
 - `docker-compose.web.prod.yml` (Compose `include` entry that merges `docker-compose/compose.web.prod.*.yml` fragments plus shared `secrets` / `volumes`)
@@ -22,49 +23,49 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 
 ## Supported Commands
 
-| Command | Purpose |
-| --- | --- |
-| `bun dev:web:docker` | Run the web dev workflow inside Docker |
-| `bun devx:web:docker` | Explicitly start local Supabase, then the Docker dev workflow |
-| `bun devrs:web:docker` | Explicitly start and reset local Supabase, then the Docker dev workflow |
-| `bun dev:web:docker:down` | Stop the Docker dev workflow |
-| `bun serve:web:docker` | Build and run the production web image in-place |
-| `bun serve:web:docker:bg` | Blue/green production deploy with health-checked cutover |
-| `bun serve:web:docker:bg:watch` | Recreate the watcher container, then tail its live logs while it polls the tracked branch and auto-runs blue/green after a successful fast-forward pull |
-| `bun serve:web:docker:down` | Stop the production Docker stack |
-| `bun serve:web:docker:bg:down` | Stop the blue/green stack and clear local runtime state |
-| `bun test:e2e` / `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright |
-| `bun check:docker` | Validate Dockerfile and compose parity rules |
+| Command                                    | Purpose                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bun dev:web:docker`                       | Run the web dev workflow inside Docker                                                                                                                  |
+| `bun devx:web:docker`                      | Explicitly start local Supabase, then the Docker dev workflow                                                                                           |
+| `bun devrs:web:docker`                     | Explicitly start and reset local Supabase, then the Docker dev workflow                                                                                 |
+| `bun dev:web:docker:down`                  | Stop the Docker dev workflow                                                                                                                            |
+| `bun serve:web:docker`                     | Build and run the production web image in-place                                                                                                         |
+| `bun serve:web:docker:bg`                  | Blue/green production deploy with health-checked cutover                                                                                                |
+| `bun serve:web:docker:bg:watch`            | Recreate the watcher container, then tail its live logs while it polls the tracked branch and auto-runs blue/green after a successful fast-forward pull |
+| `bun serve:web:docker:down`                | Stop the production Docker stack                                                                                                                        |
+| `bun serve:web:docker:bg:down`             | Stop the blue/green stack and clear local runtime state                                                                                                 |
+| `bun test:e2e` / `bun test:e2e:web:docker` | Start local Supabase, reset it, run the production blue/green Docker web stack, then run Playwright                                                     |
+| `bun check:docker`                         | Validate Dockerfile and compose parity rules                                                                                                            |
 
 ## Flags And Implicit Mappings
 
-| Flag | Meaning |
-| --- | --- |
-| `--without-redis` | Disable the bundled Redis profile and skip Docker-injected Redis env |
-| `--with-cloudflared` | Enable the bundled Cloudflare Tunnel container profile |
-| `--with-supabase` | Start local Supabase before the Docker web flow |
-| `--reset-supabase` | Start and reset local Supabase before the Docker web flow |
-| `--env-file tmp/e2e/web.env` | Use an explicit Docker web env file for build secrets and runtime env files |
-| `--mode prod` | Use the production compose file instead of the dev stack |
-| `--strategy blue-green` | Use blue/green production deployment instead of in-place replacement |
-| `--profile redis` | Explicitly enable the Redis profile when calling the helper directly |
-| `--profile cloudflared` | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly |
-| `--build-memory 4g` | Run builds through a capped Buildx builder with a memory ceiling |
-| `--build-cpus 4` | Run builds through a capped Buildx builder with an approximate CPU limit |
-| `--build-max-parallelism 2` | Limit concurrent BuildKit solve steps for lower build pressure |
-| `--build-builder-name tuturuuu` | Override the throttled Buildx builder name |
-| `--resume-if-running` | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
-| `--replace-existing` | If another watcher PID already holds the lock, stop it and take over |
-| `--if-locked &lt;fail|resume|replace&gt;` | Explicit lock-conflict policy for the watcher |
+| Flag                            | Meaning                                                                                     |
+| ------------------------------- | ------------------------------------------------------------------------------------------- | ------------ | --------------------------------------------- |
+| `--without-redis`               | Disable the bundled Redis profile and skip Docker-injected Redis env                        |
+| `--with-cloudflared`            | Enable the bundled Cloudflare Tunnel container profile                                      |
+| `--with-supabase`               | Start local Supabase before the Docker web flow                                             |
+| `--reset-supabase`              | Start and reset local Supabase before the Docker web flow                                   |
+| `--env-file tmp/e2e/web.env`    | Use an explicit Docker web env file for build secrets and runtime env files                 |
+| `--mode prod`                   | Use the production compose file instead of the dev stack                                    |
+| `--strategy blue-green`         | Use blue/green production deployment instead of in-place replacement                        |
+| `--profile redis`               | Explicitly enable the Redis profile when calling the helper directly                        |
+| `--profile cloudflared`         | Explicitly enable the Cloudflare Tunnel profile when calling the helper directly            |
+| `--build-memory 4g`             | Run builds through a capped Buildx builder with a memory ceiling                            |
+| `--build-cpus 4`                | Run builds through a capped Buildx builder with an approximate CPU limit                    |
+| `--build-max-parallelism 2`     | Limit concurrent BuildKit solve steps for lower build pressure                              |
+| `--build-builder-name tuturuuu` | Override the throttled Buildx builder name                                                  |
+| `--resume-if-running`           | If another watcher PID already holds the lock, mirror its live dashboard instead of failing |
+| `--replace-existing`            | If another watcher PID already holds the lock, stop it and take over                        |
+| `--if-locked &lt;fail           | resume                                                                                      | replace&gt;` | Explicit lock-conflict policy for the watcher |
 
-| Command | Implicit flags |
-| --- | --- |
-| `bun dev:web:docker` | none |
-| `bun devx:web:docker` | `--with-supabase` |
-| `bun devrs:web:docker` | `--reset-supabase` |
-| `bun serve:web:docker` | `--mode prod` |
-| `bun serve:web:docker:bg` | `--mode prod --strategy blue-green` |
-| `bun dev:web:docker -- --without-redis` | `--without-redis` |
+| Command                                 | Implicit flags                      |
+| --------------------------------------- | ----------------------------------- |
+| `bun dev:web:docker`                    | none                                |
+| `bun devx:web:docker`                   | `--with-supabase`                   |
+| `bun devrs:web:docker`                  | `--reset-supabase`                  |
+| `bun serve:web:docker`                  | `--mode prod`                       |
+| `bun serve:web:docker:bg`               | `--mode prod --strategy blue-green` |
+| `bun dev:web:docker -- --without-redis` | `--without-redis`                   |
 
 ## Runtime Requirements
 
@@ -87,13 +88,17 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   `packages/*/package.json` manifest before running any frozen Bun install.
   Adding a new workspace app or package without updating all three lists makes
   Docker-only installs try to rewrite `bun.lock`. `bun check:docker` validates
-  this manifest parity. `apps/meet-realtime` is intentionally not a workspace
-  package; its Dockerfile installs only `@tuturuuu/realtime` production deps so
-  it does not require `bun.lock` changes when the service source changes.
+  this manifest parity. `apps/backend` is an independent Go module, and
+  `apps/meet-realtime` is intentionally not a workspace package; their
+  Dockerfiles do not require `bun.lock` changes when service source changes.
 - The Docker web flow does not start local Supabase unless you explicitly choose `bun devx:web:docker` or `bun devrs:web:docker`.
 - By default the Docker container uses the Supabase URL already configured in `.env.local`, falling back to `apps/web/.env.local`. It should stay pointed at the cloud project for normal Tuturuuu work.
 - If that configured URL explicitly points at host-run local Supabase, the helper rewrites the server-side Supabase URL to `host.docker.internal` while leaving `NEXT_PUBLIC_SUPABASE_URL` alone for browsers.
 - Dockerized web commands auto-enable the local Redis companion stack and inject `UPSTASH_REDIS_REST_URL` plus a generated `UPSTASH_REDIS_REST_TOKEN` into the web container.
+- Dockerized production commands generate `BACKEND_INTERNAL_TOKEN` when one is
+  not provided and inject `BACKEND_INTERNAL_URL=http://backend:7820` for the
+  Go backend service. Dev Compose uses the same internal URL with a local
+  fallback token.
 
 ## Dockerized E2E
 
@@ -245,7 +250,7 @@ Blue/green deploy does this:
 5. Builds and runs Hive separately. `hive-db-migrate` gates only
    `hive-blue`/`hive-green` and `hive-realtime`; a migration failure marks
    `hive-migrate` failed and leaves the already promoted web color serving.
-6. Refreshes support services (`meet-realtime`, `markitdown`,
+6. Refreshes support services (`backend`, `meet-realtime`, `markitdown`,
    `storage-unzip-proxy`, and `web-cron-runner`) after web/Hive target work.
    Their build step is scoped:
    ordinary web commits build only `web-blue` or `web-green`, while Hive and
@@ -254,6 +259,7 @@ Blue/green deploy does this:
    `serverless-redis-http`, `web-proxy`, and `cloudflared` are never passed to
    Bake.
 7. Injects Docker-internal helper URLs into `apps/web`:
+   `BACKEND_INTERNAL_URL=http://backend:7820`,
    `MARKITDOWN_ENDPOINT_URL=http://markitdown:8000/markitdown`,
    `DISCORD_APP_DEPLOYMENT_URL=http://markitdown:8000`,
    `DRIVE_AUTO_EXTRACT_PROXY_URL=http://storage-unzip-proxy:8788/extract`,
@@ -268,15 +274,15 @@ Blue/green deploy does this:
    inside the existing or freshly recreated proxy only after the new color is
    healthy.
 10. Immediately verifies the proxy can serve the internal
-   `/__platform/drain-status` endpoint through the newly promoted color before
-   marking the new color active. This avoids false deployment failures from
-   public API middleware or rate limits.
+    `/__platform/drain-status` endpoint through the newly promoted color before
+    marking the new color active. This avoids false deployment failures from
+    public API middleware or rate limits.
 11. Polls an internal drain-status endpoint on the old color and waits until it
-   has no in-flight HTTP work left before demoting it to standby. This keeps
-   long-running server actions, route handlers, and other open requests from
-   being cut off mid-flight.
+    has no in-flight HTTP work left before demoting it to standby. This keeps
+    long-running server actions, route handlers, and other open requests from
+    being cut off mid-flight.
 12. Falls back to the short fixed drain window only when the old image predates
-   the drain-status endpoint and cannot report its active requests yet.
+    the drain-status endpoint and cannot report its active requests yet.
 13. Keeps the demoted color online as a warm nginx backup target instead of
     removing it immediately, so stale keepalive workers and Cloudflare Tunnel
     connections can still fail over cleanly during the post-promotion window.
@@ -724,7 +730,7 @@ deployment kind, and a re-entrant token for nested helper calls).
   window with `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS`; set it to `0` only when an
   operator explicitly wants to disable watcher-side build termination.
 - The **`apps/web` Dockerfile `deps` stage** retries `bun install
-  --frozen-lockfile` up to three times with a Bun cache scrub between attempts.
+--frozen-lockfile` up to three times with a Bun cache scrub between attempts.
   If the build still exits with `bun install --frozen-lockfile` **exit code 1**
   after a `git pull`, regenerate `bun.lock` in a development checkout, commit
   the reviewed lockfile update, and deploy that commit. Do not let the
@@ -896,9 +902,9 @@ How it works:
   `bun apps/hive-realtime/src/index.ts` runtime can resolve top-level production
   packages such as `postgres` and `@tuturuuu/realtime`. Keep `.dockerignore`
   explicit about recursive generated directories such as `**/.next/**`,
-  `tmp/**`, `apps/mobile/build/**`, and `apps/backend/target/**`; otherwise
-  previous local builds can be copied into the next Docker context and inflate
-  small sidecar images by several gigabytes.
+  `tmp/**`, and `apps/mobile/build/**`; otherwise previous local builds can be
+  copied into the next Docker context and inflate small sidecar images by
+  several gigabytes.
 
 Operational notes:
 
@@ -1060,16 +1066,16 @@ Behavior:
    watcher operation.
 9. Skips pulls if the worktree is dirty.
 10. Uses `git pull --ff-only` only when the local branch is strictly behind the
-   locked upstream.
+    locked upstream.
 11. Runs `bun install --frozen-lockfile` automatically after every successful
-   fast-forward pull so installed dependencies match the reviewed `bun.lock`
-   before the deploy handoff continues. The watcher does not run `bun upgrade`
-   or a non-frozen install on the production host.
+    fast-forward pull so installed dependencies match the reviewed `bun.lock`
+    before the deploy handoff continues. The watcher does not run `bun upgrade`
+    or a non-frozen install on the production host.
 12. Treats any dirty `bun.lock` as a blocking worktree change. Lockfile updates
     must be reviewed and committed before the watcher can continue polling or
     deploying.
 13. Runs `bun serve:web:docker:bg` automatically after a successful fast-forward
-   pull.
+    pull.
 14. Polls imported Infrastructure projects from log-drain Postgres, synchronizes enabled public GitHub projects into `tmp/docker-web/projects/<projectId>/repo`, deploys them through generated Next.js compose files under the shared `tuturuuu` Compose project, and merges hostname routes into the central nginx proxy.
     The imported-project and manual deployment queue cadence is independent
     from the normal Git polling interval, so a watcher configured with a long
@@ -1084,32 +1090,32 @@ Behavior:
     project build is already active, the project poll is deferred instead of
     starting a second Docker build.
 15. If watcher runtime code such as `scripts/watch-blue-green-deploy.js`,
-   `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
-   in the pulled revision, the current watcher does not deploy from the old
-   process. It releases its lock, spawns a replacement watcher with the same
-   CLI args, and exits first.
-15. The replacement watcher refreshes the live `web-proxy` nginx config and
-   workers in place if blue/green is already serving traffic, verifies proxy
-   routing through `/__platform/drain-status`, and only then starts the new
-   blue/green build/promotion.
-14. If compose or helper-image wiring changed, including
+    `scripts/docker-web/blue-green.js`, or `scripts/docker-web/env.js` changed
+    in the pulled revision, the current watcher does not deploy from the old
+    process. It releases its lock, spawns a replacement watcher with the same
+    CLI args, and exits first.
+16. The replacement watcher refreshes the live `web-proxy` nginx config and
+    workers in place if blue/green is already serving traffic, verifies proxy
+    routing through `/__platform/drain-status`, and only then starts the new
+    blue/green build/promotion.
+17. If compose or helper-image wiring changed, including
     `docker-compose.web.prod.yml`, Hive service files, MarkItDown service files,
     `apps/storage-unzip-proxy` package/source files, or
     `apps/web/docker/cron-runner*`, the containerized watcher recreates its own
     compose service before the pending deploy handoff. The deploy then includes
     only the affected buildable helper images in the blue/green build command
     instead of rebuilding every service on every commit.
-15. Retries recoverable Git command failures instead of exiting. The first retry
+18. Retries recoverable Git command failures instead of exiting. The first retry
     waits 1 minute, then the watcher backs off exponentially on consecutive Git
     failures up to a 15 minute ceiling.
-16. Caps deployment attempts at 3 failures per commit. A recovered pending
+19. Caps deployment attempts at 3 failures per commit. A recovered pending
     handoff failure is recorded, the pending request is cleared, and the
     watcher keeps polling; once the cap is reached, that commit reports
     `retry-limited` until a new commit is available or an operator pins a
     different deployment.
-17. Stops immediately if the checked-out branch changes while the watcher is
+20. Stops immediately if the checked-out branch changes while the watcher is
     running.
-18. If another watcher already owns the lock, a new invocation can fail with
+21. If another watcher already owns the lock, a new invocation can fail with
     guidance, mirror the active watcher with `--resume-if-running`, or replace
     it with `--replace-existing`.
 
@@ -1167,7 +1173,7 @@ Operational notes for the containerized watcher:
   daemon or container failure.
 - A stale status snapshot is tolerated while the snapshot already shows an
   active `building` or `deploying` deployment. During a long `docker compose
-  build`, the watcher child is intentionally busy inside the deploy command and
+build`, the watcher child is intentionally busy inside the deploy command and
   may not rewrite the status file until the command exits. The wrapper keeps the
   child alive until `DOCKER_WEB_WATCHER_BUILD_TIMEOUT_MS` plus a short grace
   window, then treats the stale snapshot as unhealthy.
@@ -1230,7 +1236,7 @@ Dashboard details:
   Supabase URL.
   **Deploy coordination:** `scripts/docker-web/blue-green.js` still builds every
   prod service in one pass, but runtime services come up before proxy handoff:
-  first the target `web-{color}`, MarkItDown, storage-unzip-proxy,
+  first the target `web-{color}`, backend, MarkItDown, storage-unzip-proxy,
   `web-cron-runner`, and (when enabled) Redis, then `hive-{color}` and
   `hive-realtime`. If `web-proxy` or `cloudflared` must be bootstrapped or
   recreated for host-port changes, they start only after the target web and Hive
@@ -1522,7 +1528,7 @@ Recovery path:
   `https://hive.tuturuuu.com/~recover-browser-state` for Hive.
 - That route is public and bypasses auth/onboarding middleware.
 - It responds with `Clear-Site-Data: "cache", "cookies", "storage",
-  "executionContexts"` and explicitly expires all Supabase auth cookie variants
+"executionContexts"` and explicitly expires all Supabase auth cookie variants
   for the current host before redirecting the browser back to
   `/login?browserStateReset=1`.
 
@@ -1572,6 +1578,7 @@ Operational notes:
 - `docker compose -f docker-compose.web.prod.yml config`
 - `docker compose -f docker-compose.web.prod.yml --profile redis config`
 - `docker compose -f docker-compose.web.prod.yml --profile cloudflared config`
+- `docker build -f apps/backend/Dockerfile .`
 - `docker build --target dev -f apps/web/Dockerfile .`
 - `docker build --target runner --secret id=web_env,src=.env.local -f apps/web/Dockerfile .`
 

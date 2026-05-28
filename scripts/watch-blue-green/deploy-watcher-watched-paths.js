@@ -17,6 +17,7 @@ const SELF_WATCHED_FILES = [
 
 const CONTAINER_REFRESH_WATCHED_FILES = [
   ...listProdComposeWatchedRelativePaths(ROOT_DIR),
+  'apps/backend/',
   'apps/discord/Dockerfile.markitdown',
   'apps/discord/local_server.py',
   'apps/discord/markitdown_service.py',

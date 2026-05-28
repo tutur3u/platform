@@ -20,6 +20,7 @@ const {
 } = require('./run-web-docker-next-build.js');
 
 const {
+  BACKEND_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
   DOCKERIGNORE_PATH,
@@ -40,6 +41,7 @@ const {
   getStageContent,
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
+  validateBackendDockerfile,
   validateDockerCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,
@@ -108,6 +110,12 @@ test('validateDockerignore accepts the current Docker context excludes', () => {
   const dockerignoreContent = fs.readFileSync(DOCKERIGNORE_PATH, 'utf8');
 
   assert.deepEqual(validateDockerignore(dockerignoreContent), []);
+});
+
+test('validateBackendDockerfile accepts the current backend Dockerfile', () => {
+  const dockerfileContent = fs.readFileSync(BACKEND_DOCKERFILE_PATH, 'utf8');
+
+  assert.deepEqual(validateBackendDockerfile(dockerfileContent), []);
 });
 
 test('validateDockerignore reports generated app artifacts in the context', () => {
@@ -916,6 +924,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'web', 'docker'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'backend'), {
+      recursive: true,
+    });
     fs.mkdirSync(path.join(tempDir, 'apps', 'discord'), {
       recursive: true,
     });
@@ -934,6 +945,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'backend', 'Dockerfile'),
+      'FROM scratch\n'
     );
     fs.writeFileSync(
       path.join(

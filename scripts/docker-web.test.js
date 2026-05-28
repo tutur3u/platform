@@ -13,11 +13,13 @@ const {
   COMPOSE_FILE,
   DEFAULT_BLUE_GREEN_BUILD_TIMEOUT_MS,
   DEFAULT_BUILDER_NAME,
+  DOCKER_BACKEND_INTERNAL_URL,
   DOCKER_HOST_ALIAS,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
   DOCKER_MARKITDOWN_SERVICE_URL,
   DOCKER_PRONUNCIATION_ASSESSOR_URL,
   DOCKER_STORAGE_UNZIP_PROXY_URL,
+  DOCKER_WEB_BACKEND_TOKEN_FILE,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
@@ -193,6 +195,7 @@ test('getBlueGreenDeploymentBuildServices scopes support image builds to changed
     }),
     [
       'web-green',
+      'backend',
       'hive-green',
       'hive-realtime',
       'meet-realtime',
@@ -876,6 +879,8 @@ test('getComposeEnvironment injects blue-green support service URLs when request
     });
 
     assert.equal(env.DISCORD_APP_DEPLOYMENT_URL, DOCKER_MARKITDOWN_SERVICE_URL);
+    assert.equal(env.BACKEND_INTERNAL_URL, DOCKER_BACKEND_INTERNAL_URL);
+    assert.match(env.BACKEND_INTERNAL_TOKEN, /^[a-f0-9]{64}$/u);
     assert.match(env.CRON_SECRET, /^[a-f0-9]{64}$/u);
     assert.equal(env.MARKITDOWN_ENDPOINT_URL, DOCKER_MARKITDOWN_ENDPOINT_URL);
     assert.match(env.MARKITDOWN_ENDPOINT_SECRET, /^[a-f0-9]{64}$/u);
@@ -894,6 +899,20 @@ test('getComposeEnvironment injects blue-green support service URLs when request
     );
     assert.equal(env.INTERNAL_WEB_API_ORIGIN, 'http://web-proxy:7803');
     assert.equal(env.SUPABASE_URL, `http://${DOCKER_HOST_ALIAS}:8001/`);
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(
+            tempDir,
+            'tmp',
+            'docker-web',
+            path.basename(DOCKER_WEB_BACKEND_TOKEN_FILE)
+          ),
+          'utf8'
+        )
+        .trim(),
+      env.BACKEND_INTERNAL_TOKEN
+    );
     assert.equal(
       fs
         .readFileSync(

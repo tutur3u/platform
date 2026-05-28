@@ -5,10 +5,13 @@ on:
     paths:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
+      - "apps/backend/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
+      - "docker-bake.web.prod.hcl"
+      - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
       - "package.json"
@@ -16,17 +19,22 @@ on:
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
       - "scripts/docker-web.js"
+      - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   push:
     branches: ["main", "production"]
     paths:
       - ".dockerignore"
       - ".github/workflows/docker-setup-check.yaml"
+      - "apps/backend/**"
       - "apps/*/package.json"
       - "apps/storage-unzip-proxy/Dockerfile"
       - "apps/web/Dockerfile"
       - "bun.lock"
+      - "docker-bake.web.prod.hcl"
+      - "docker-compose/compose.web.prod.*.yml"
       - "docker-compose.web.prod.yml"
       - "docker-compose.web.yml"
       - "package.json"
@@ -34,7 +42,9 @@ on:
       - "scripts/check-docker-web.js"
       - "scripts/check-docker-web.test.js"
       - "scripts/docker-web.js"
+      - "scripts/docker-web/**/*.js"
       - "scripts/docker-web.test.js"
+      - "scripts/watch-blue-green/**/*.js"
       - "turbo.json"
   workflow_dispatch:
 
@@ -100,3 +110,6 @@ jobs:
 
       - name: Build storage unzip proxy image
         run: docker build -f apps/storage-unzip-proxy/Dockerfile apps/storage-unzip-proxy
+
+      - name: Build backend image
+        run: docker build -f apps/backend/Dockerfile .

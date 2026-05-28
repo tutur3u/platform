@@ -7,6 +7,12 @@ const ROOT_DIR = path.resolve(__dirname, '..');
 const {
   readDockerProdComposeMergedText,
 } = require('./docker-web/prod-compose-include.js');
+const BACKEND_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'backend',
+  'Dockerfile'
+);
 const WEB_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'web', 'Dockerfile');
 const HIVE_DOCKERFILE_PATH = path.join(ROOT_DIR, 'apps', 'hive', 'Dockerfile');
 const HIVE_REALTIME_DOCKERFILE_PATH = path.join(
@@ -103,7 +109,6 @@ const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   'apps/mobile/.dart_tool/**',
   'apps/mobile/build',
   'apps/mobile/build/**',
-  'apps/backend/target/**',
 ];
 
 function listWorkspacePackageJsonPaths(rootDir = ROOT_DIR, fsImpl = fs) {
@@ -562,6 +567,12 @@ function validateDockerCompose(
     '      - ./tmp/docker-web/buildkit/buildkitd.toml:/etc/buildkit/buildkitd.toml:ro',
     '  platform-buildkit-state:',
     '  web:',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
     '      target: dev',
     '      - .:/workspace\n      - platform-bun-install:/root/.bun/install/cache',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -612,10 +623,18 @@ function validateDockerCompose(
     '      - ./apps/hive/db:/hive-db:ro',
     '  hive-ollama:',
     '    profiles: ["hive-ollama"]',
+    '  backend:',
+    '      dockerfile: apps/backend/Dockerfile',
+    '      - BACKEND_ENV=development',
+    '      - BACKEND_INTERNAL_TOKEN=${' +
+      'BACKEND_INTERNAL_TOKEN:-platform-local-backend-token' +
+      '}',
+    '      - PORT=7820',
+    '      test: ["CMD", "/app/backend", "healthcheck"]',
     '  platform-hive-postgres:',
     '  platform-hive-ollama:',
     'http://127.0.0.1:7815/health',
-    '        "$' + '{' + 'CLOUDFLARED_TOKEN:-' + '}",',
+    '"' + '${' + 'CLOUDFLARED_TOKEN:-' + '}"',
   ];
 
   for (const packageWorkspaceDir of packageWorkspaceDirs) {
@@ -689,6 +708,7 @@ function validateDockerProdCompose(composeContent) {
     '  web-cron-runner:',
     '  cloudflared:',
     'x-hive-service: &hive-service',
+    '  backend:',
     '  hive-blue:',
     '  hive-green:',
     '  hive-realtime:',
@@ -701,6 +721,7 @@ function validateDockerProdCompose(composeContent) {
     '  web-proxy:',
     '      dockerfile: Dockerfile.markitdown',
     '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
+    '      dockerfile: apps/backend/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
@@ -781,12 +802,18 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7815/health',
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
+    '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
     'wget -q -O - --header="Authorization: Bearer $$SRH_TOKEN" --header="Content-Type: application/json" --post-data=\'\'["PING"]\'\' http://127.0.0.1:80/ | grep -q \'\'"PONG"\'\'',
     "ps | grep -q '[w]atch-blue-green-deploy.js'",
     "ps | grep -q '[w]atch-web-crons.js'",
     '      - ../tmp/docker-web/prod/nginx.conf:/etc/nginx/conf.d/default.conf:ro',
     '      required: false',
+    '    - BACKEND_INTERNAL_TOKEN',
+    '    - BACKEND_INTERNAL_URL=${' +
+      'BACKEND_INTERNAL_URL:-http://backend:7820' +
+      '}',
     '    - DISCORD_APP_DEPLOYMENT_URL',
     '    - DRIVE_AUTO_EXTRACT_PROXY_TOKEN',
     '    - DRIVE_AUTO_EXTRACT_PROXY_URL',
@@ -944,7 +971,8 @@ function validateDockerBakeFile(bakeContent) {
   const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
-    'group "blue-green-support" {\n  targets = ["meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
+    'group "blue-green-support" {\n  targets = ["backend", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
+    `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
   ];
 
@@ -952,6 +980,30 @@ function validateDockerBakeFile(bakeContent) {
     if (!bakeContent.includes(snippet)) {
       errors.push(
         `docker-bake.web.prod.hcl is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
+function validateBackendDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'FROM golang:1.26.3-alpine AS builder',
+    'COPY apps/backend/go.mod ./apps/backend/go.mod',
+    'RUN go mod download',
+    'RUN CGO_ENABLED=0 GOOS=linux go build -trimpath -ldflags="-s -w" -o /out/backend ./cmd/backend',
+    'FROM gcr.io/distroless/static-debian12:nonroot AS runner',
+    'HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 CMD ["/app/backend", "healthcheck"]',
+    'USER nonroot:nonroot',
+    'CMD ["/app/backend"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/backend/Dockerfile is missing the expected snippet: ${snippet}`
       );
     }
   }
@@ -1247,6 +1299,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'web', 'Dockerfile'),
     'utf8'
   ),
+  backendDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'backend', 'Dockerfile'),
+    'utf8'
+  ),
   composeContent = fsImpl.readFileSync(
     path.join(rootDir, 'docker-compose.web.yml'),
     'utf8'
@@ -1317,6 +1373,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateBackendDockerfile(backendDockerfileContent),
     ...validateDockerCompose(composeContent, { workspacePackageJsonPaths }),
     ...validateDockerProdCompose(prodComposeContent),
     ...validateDockerBakeFile(dockerBakeContent),
@@ -1365,6 +1422,7 @@ if (require.main === module) {
 
 module.exports = {
   ROOT_DIR,
+  BACKEND_DOCKERFILE_PATH,
   HIVE_DOCKERFILE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
@@ -1385,6 +1443,7 @@ module.exports = {
   getStageContent,
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
+  validateBackendDockerfile,
   validateDockerCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,

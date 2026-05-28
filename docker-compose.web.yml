@@ -10,7 +10,15 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-buildkit-1
     cpus: ${DOCKER_WEB_BUILD_CPUS:-4}
     healthcheck:
-      test: ["CMD", "buildctl", "--addr", "tcp://127.0.0.1:1234", "debug", "workers"]
+      test:
+        [
+          "CMD",
+          "buildctl",
+          "--addr",
+          "tcp://127.0.0.1:1234",
+          "debug",
+          "workers",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -35,6 +43,8 @@ services:
       - path: .env.local
         required: false
     environment:
+      - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
+      - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
       - CHOKIDAR_INTERVAL=1000
       - CHOKIDAR_USEPOLLING=1
       - HOSTNAME=0.0.0.0
@@ -134,6 +144,29 @@ services:
       log-drain-postgres:
         condition: service_healthy
 
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - BACKEND_ENV=development
+      - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
+      - PORT=7820
+    healthcheck:
+      test: ["CMD", "/app/backend", "healthcheck"]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    ports:
+      - "7820:7820"
+
   hive-realtime:
     build:
       context: .
@@ -149,7 +182,11 @@ services:
       - HIVE_REALTIME_TOKEN_SECRET
       - PORT=7815
     healthcheck:
-      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7815/health').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://127.0.0.1:7815/health'').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 5s
@@ -188,7 +225,11 @@ services:
       - PORT=7814
       - SUPABASE_SERVER_URL
     healthcheck:
-      test: ["CMD-SHELL", "bun -e \"fetch('http://127.0.0.1:7814/login').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))\""]
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://127.0.0.1:7814/login'').then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 10s
@@ -213,7 +254,8 @@ services:
       POSTGRES_PASSWORD: platform_log_drain
       POSTGRES_USER: platform_log_drain
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U platform_log_drain -d platform_log_drain"]
+      test:
+        ["CMD-SHELL", "pg_isready -U platform_log_drain -d platform_log_drain"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -272,13 +314,7 @@ services:
   cloudflared:
     profiles: ["cloudflared"]
     command:
-      [
-        "tunnel",
-        "--no-autoupdate",
-        "run",
-        "--token",
-        "${CLOUDFLARED_TOKEN:-}",
-      ]
+      ["tunnel", "--no-autoupdate", "run", "--token", "${CLOUDFLARED_TOKEN:-}"]
     depends_on:
       web:
         condition: service_started
@@ -349,7 +385,11 @@ services:
     ports:
       - "8010:8010"
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8010/health', timeout=3).read()\" || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://127.0.0.1:8010/health'', timeout=3).read()" || exit 1',
+        ]
       interval: 30s
       timeout: 5s
       start_period: 120s

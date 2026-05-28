@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-05-27"
+updatedAt: "2026-05-28"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -131,9 +131,12 @@ type verification.
 ### Docker automation
 
 - `docker-setup-check.yaml`
+- `go-backend.yml`
 
-This is the workflow to watch whenever Docker files, compose files, or Docker helper
-scripts change.
+`docker-setup-check.yaml` is the workflow to watch whenever Docker files,
+compose files, or Docker helper scripts change. `go-backend.yml` owns the
+`apps/backend` Go service checks: formatting, module download, `go vet`, tests,
+binary build, and Docker image build.
 
 ### Quality and security
 

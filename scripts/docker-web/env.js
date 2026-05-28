@@ -10,6 +10,10 @@ const DOCKER_WEB_REDIS_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'redis-token'
 );
+const DOCKER_WEB_BACKEND_TOKEN_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'backend-token'
+);
 const DOCKER_WEB_MARKITDOWN_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'markitdown-token'
@@ -37,6 +41,7 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
   'http://storage-unzip-proxy:8788/extract';
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
+const DOCKER_BACKEND_INTERNAL_URL = 'http://backend:7820';
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
 const DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV =
@@ -329,6 +334,14 @@ function getComposeEnvironment({
   }
 
   if (withSupportServices) {
+    const dockerBackendRuntime = getDockerBackendRuntime({
+      baseEnv,
+      fsImpl,
+      rootDir,
+    });
+    composeEnv.BACKEND_INTERNAL_TOKEN = dockerBackendRuntime.token;
+    composeEnv.BACKEND_INTERNAL_URL = dockerBackendRuntime.url;
+
     const dockerCronRuntime = getDockerCronRuntime({
       baseEnv,
       fsImpl,
@@ -452,6 +465,7 @@ function ensureProductionRedisToken(
 
 function getDockerWebRuntimePaths(rootDir = ROOT_DIR) {
   return {
+    backendTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'backend-token'),
     cronTokenFile: path.join(rootDir, 'tmp', 'docker-web', 'cron-token'),
     markitdownTokenFile: path.join(
       rootDir,
@@ -579,6 +593,35 @@ function getDockerCronRuntime({
   return { secret };
 }
 
+function getDockerBackendRuntime({
+  baseEnv = process.env,
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const paths = getDockerWebRuntimePaths(rootDir);
+  const envToken = getFirstNonBlank([
+    baseEnv.DOCKER_BACKEND_INTERNAL_TOKEN,
+    baseEnv.BACKEND_INTERNAL_TOKEN,
+  ]);
+  const token =
+    envToken ??
+    getPersistedDockerToken(paths.backendTokenFile, fsImpl) ??
+    generateDockerServiceToken();
+
+  if (token !== envToken) {
+    writeDockerToken(token, paths.backendTokenFile, paths, fsImpl);
+  }
+
+  return {
+    token,
+    url:
+      getFirstNonBlank([
+        baseEnv.DOCKER_BACKEND_INTERNAL_URL,
+        baseEnv.BACKEND_INTERNAL_URL,
+      ]) ?? DOCKER_BACKEND_INTERNAL_URL,
+  };
+}
+
 function getDockerMarkitdownRuntime({
   baseEnv = process.env,
   fsImpl = fs,
@@ -651,12 +694,14 @@ function getDockerStorageUnzipRuntime({
 
 module.exports = {
   DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME,
+  DOCKER_BACKEND_INTERNAL_URL,
   DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV,
   DOCKER_MARKITDOWN_ENDPOINT_URL,
   DOCKER_MARKITDOWN_SERVICE_URL,
   DOCKER_PRONUNCIATION_ASSESSOR_URL,
   DOCKER_REDIS_SERVICE_URL,
   DOCKER_STORAGE_UNZIP_PROXY_URL,
+  DOCKER_WEB_BACKEND_TOKEN_FILE,
   DOCKER_WEB_CRON_TOKEN_FILE,
   DOCKER_WEB_MARKITDOWN_TOKEN_FILE,
   DOCKER_WEB_REDIS_TOKEN_FILE,
@@ -677,6 +722,7 @@ module.exports = {
   getComposeFragmentEnvFileValues,
   getDefaultComposeProjectName,
   getDockerWebComposeProjectName,
+  getDockerBackendRuntime,
   getDockerCloudflaredRuntime,
   getDockerCronRuntime,
   getDockerMarkitdownRuntime,
