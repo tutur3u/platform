@@ -1,7 +1,7 @@
 ---
 title: 'Web Docker Deployment'
 description: 'Run the web app in Docker for development, production, and blue/green self-hosted rollout.'
-updatedAt: '2026-05-27'
+updatedAt: '2026-05-28'
 ---
 
 This is the operational guide for the Docker-based `apps/web` runtime.
@@ -284,6 +284,17 @@ Blue/green deploy does this:
     minutes, the watcher automatically rebuilds that stale standby in place so
     both colors converge on the latest checked-out code without flipping the
     active port or promoting traffic again.
+
+During blue/green deploys, the watcher supplies the version badge metadata via
+`PLATFORM_BUILD_*` variables for both Docker image builds and runtime
+containers. It infers `PLATFORM_BUILD_COMMIT_HASH`,
+`PLATFORM_BUILD_COMMIT_SHORT_HASH`, `PLATFORM_BUILD_COMMIT_MESSAGE`,
+`PLATFORM_BUILD_REF_NAME`, `PLATFORM_BUILD_ENVIRONMENT`,
+`PLATFORM_BUILD_BUILT_AT`, `PLATFORM_BUILD_DEPLOYMENT_URL`, and
+`PLATFORM_BUILD_DEPLOYMENT_STAMP` from the current checkout plus the deployment
+context. The account-gated badge reads those runtime values before falling back
+to generated Vercel/GitHub metadata, so on-prem watcher deployments show the
+served commit instead of `local` / `Unknown`.
 
 The helper writes support-image input hashes to
 `tmp/docker-web/prod/build-input-hashes.json` and keeps recent decisions in

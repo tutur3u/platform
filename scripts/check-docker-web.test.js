@@ -458,6 +458,26 @@ test('validateDockerfile reports a drifted internal healthcheck path', () => {
   );
 });
 
+test('validateDockerfile reports missing version badge metadata env wiring', () => {
+  const dockerfileContent = fs
+    .readFileSync(WEB_DOCKERFILE_PATH, 'utf8')
+    .replaceAll('ARG PLATFORM_BUILD_COMMIT_HASH=\n', '')
+    .replaceAll(
+      'ENV PLATFORM_BUILD_COMMIT_HASH=${PLATFORM_BUILD_COMMIT_HASH}\n',
+      ''
+    );
+  const fileDependencyPaths = listFileDependencyPaths();
+  const workspacePackageJsonPaths = listWorkspacePackageJsonPaths();
+
+  const errors = validateDockerfile({
+    dockerfileContent,
+    fileDependencyPaths,
+    workspacePackageJsonPaths,
+  });
+
+  assert.match(errors.join('\n'), /PLATFORM_BUILD_COMMIT_HASH/);
+});
+
 test('validateDockerCompose accepts the current compose file', () => {
   const composeContent = fs.readFileSync(WEB_COMPOSE_FILE_PATH, 'utf8');
 
@@ -573,6 +593,19 @@ test('validateDockerProdCompose reports missing Docker web build args', () => {
   assert.match(errors, /DOCKER_WEB_NEXT_BUILD_ENGINE/);
   assert.match(errors, /DOCKER_WEB_NODE_MAX_OLD_SPACE_SIZE/);
   assert.match(errors, /DOCKER_WEB_REACT_COMPILER/);
+});
+
+test('validateDockerProdCompose reports missing version badge metadata env wiring', () => {
+  const composeContent = readDockerProdComposeMergedText(ROOT_DIR)
+    .replace(
+      '      PLATFORM_BUILD_COMMIT_HASH: ${PLATFORM_BUILD_COMMIT_HASH:-}\n',
+      ''
+    )
+    .replace('    - PLATFORM_BUILD_COMMIT_HASH\n', '');
+
+  const errors = validateDockerProdCompose(composeContent).join('\n');
+
+  assert.match(errors, /PLATFORM_BUILD_COMMIT_HASH/);
 });
 
 test('validateDockerProdCompose rejects public Redis mappings and fallback token', () => {
@@ -815,6 +848,27 @@ test('validateNativeWebRunnerDockerfile reports missing runtime file copies', ()
   ).join('\n');
 
   assert.match(errors, /request-tracker\.js/);
+});
+
+test('validateNativeWebRunnerDockerfile reports missing version badge metadata env wiring', () => {
+  const dockerfileContent = fs
+    .readFileSync(NATIVE_WEB_RUNNER_DOCKERFILE_PATH, 'utf8')
+    .replace('ARG PLATFORM_BUILD_COMMIT_HASH=\n', '')
+    .replace(
+      'ENV PLATFORM_BUILD_COMMIT_HASH=${PLATFORM_BUILD_COMMIT_HASH}\n',
+      ''
+    );
+  const dockerignoreContent = fs.readFileSync(
+    NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
+    'utf8'
+  );
+
+  const errors = validateNativeWebRunnerDockerfile(
+    dockerfileContent,
+    dockerignoreContent
+  ).join('\n');
+
+  assert.match(errors, /PLATFORM_BUILD_COMMIT_HASH/);
 });
 
 test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', () => {

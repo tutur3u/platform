@@ -80,6 +80,16 @@ const PACKAGE_JSON_DEPENDENCY_FIELDS = [
 ];
 const DRAIN_STATUS_HEALTHCHECK_PATTERN =
   /fetch\(`http:\/\/127\.0\.0\.1:\$\{process\.env\.PORT \|\| 7803\}\/__platform\/drain-status`\)/;
+const PLATFORM_BUILD_METADATA_ENV_NAMES = Object.freeze([
+  'PLATFORM_BUILD_BUILT_AT',
+  'PLATFORM_BUILD_COMMIT_HASH',
+  'PLATFORM_BUILD_COMMIT_MESSAGE',
+  'PLATFORM_BUILD_COMMIT_SHORT_HASH',
+  'PLATFORM_BUILD_DEPLOYMENT_STAMP',
+  'PLATFORM_BUILD_DEPLOYMENT_URL',
+  'PLATFORM_BUILD_ENVIRONMENT',
+  'PLATFORM_BUILD_REF_NAME',
+]);
 const DOCKER_CONTEXT_ARTIFACT_IGNORE_PATTERNS = [
   '**/.next',
   '**/.next/**',
@@ -163,6 +173,35 @@ function getCopiedRelativePaths(stageContent) {
 
       return match[1];
     });
+}
+
+function getDockerEnvReferenceSnippet(envName) {
+  return '${' + envName + '}';
+}
+
+function validatePlatformBuildMetadataDockerStage({
+  dockerfileLabel,
+  stageContent,
+  stageName,
+}) {
+  const errors = [];
+
+  for (const envName of PLATFORM_BUILD_METADATA_ENV_NAMES) {
+    const requiredSnippets = [
+      `ARG ${envName}=`,
+      `ENV ${envName}=${getDockerEnvReferenceSnippet(envName)}`,
+    ];
+
+    for (const snippet of requiredSnippets) {
+      if (!stageContent.includes(snippet)) {
+        errors.push(
+          `${dockerfileLabel} ${stageName} stage must expose ${snippet} for version badge metadata.`
+        );
+      }
+    }
+  }
+
+  return errors;
 }
 
 function listFileDependencyPaths(rootDir = ROOT_DIR, fsImpl = fs) {
@@ -398,6 +437,24 @@ function validateDockerfile({
         'apps/web/Dockerfile builder stage must cache /workspace/apps/web/.next/cache during the production build.'
       );
     }
+
+    errors.push(
+      ...validatePlatformBuildMetadataDockerStage({
+        dockerfileLabel: 'apps/web/Dockerfile',
+        stageContent: builderStage,
+        stageName: 'builder',
+      })
+    );
+  }
+
+  if (runnerStage) {
+    errors.push(
+      ...validatePlatformBuildMetadataDockerStage({
+        dockerfileLabel: 'apps/web/Dockerfile',
+        stageContent: runnerStage,
+        stageName: 'runner',
+      })
+    );
   }
 
   if (!DRAIN_STATUS_HEALTHCHECK_PATTERN.test(runnerStage ?? '')) {
@@ -582,6 +639,12 @@ function validateDockerCompose(
 
 function validateDockerProdCompose(composeContent) {
   const errors = [];
+  const platformBuildMetadataBuildArgSnippets =
+    PLATFORM_BUILD_METADATA_ENV_NAMES.map(
+      (envName) => `      ${envName}: ${'${' + envName + ':-}'}`
+    );
+  const platformBuildMetadataEnvironmentSnippets =
+    PLATFORM_BUILD_METADATA_ENV_NAMES.map((envName) => `    - ${envName}`);
   const requiredSnippets = [
     'path: docker-compose/compose.web.prod.log-drain.yml',
     'path: docker-compose/compose.web.prod.buildkit.yml',
@@ -617,6 +680,7 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'DOCKER_WEB_REACT_COMPILER:-0' +
       '}',
+    ...platformBuildMetadataBuildArgSnippets,
     '  web:',
     '  web-blue:',
     '  web-green:',
@@ -742,6 +806,7 @@ function validateDockerProdCompose(composeContent) {
     '    - MARKITDOWN_ENDPOINT_SECRET',
     '    - MARKITDOWN_ENDPOINT_URL',
     '    - PLATFORM_BLUE_GREEN_COLOR',
+    ...platformBuildMetadataEnvironmentSnippets,
     '    - PLATFORM_BLUE_GREEN_CONTROL_DIR=/app/runtime/docker-web-control',
     '    - PLATFORM_BLUE_GREEN_MONITORING_DIR=/app/runtime/docker-web',
     '    - PLATFORM_DEPLOYMENT_STAMP',
@@ -941,6 +1006,10 @@ function validateNativeWebRunnerDockerfile(
   const errors = [];
   const dockerfileSnippets = [
     'FROM node:24-bookworm-slim AS runner',
+    ...PLATFORM_BUILD_METADATA_ENV_NAMES.flatMap((envName) => [
+      `ARG ${envName}=`,
+      `ENV ${envName}=${getDockerEnvReferenceSnippet(envName)}`,
+    ]),
     'COPY --chown=nextjs:nodejs apps/web/.next/standalone ./',
     'COPY --chown=nextjs:nodejs apps/web/.next/static ./apps/web/.next/static',
     'COPY --chown=nextjs:nodejs apps/web/docker/coolify-env.js ./apps/web/docker/coolify-env.js',

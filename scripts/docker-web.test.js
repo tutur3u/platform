@@ -1664,6 +1664,14 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
     COMPOSE_PROJECT_NAME: 'ttr-e2e-local-test',
     DOCKER_WEB_ENV_FILE: 'tmp/e2e/web.env',
     DOCKER_WEB_NATIVE_BUILD: '1',
+    PLATFORM_BUILD_BUILT_AT: '2026-05-28T06:00:00.000Z',
+    PLATFORM_BUILD_COMMIT_HASH: 'native-commit',
+    PLATFORM_BUILD_COMMIT_MESSAGE: 'Native web metadata',
+    PLATFORM_BUILD_COMMIT_SHORT_HASH: 'native',
+    PLATFORM_BUILD_DEPLOYMENT_STAMP: '2026-05-28T06-00-00Z',
+    PLATFORM_BUILD_DEPLOYMENT_URL: 'https://tuturuuu.com',
+    PLATFORM_BUILD_ENVIRONMENT: 'production',
+    PLATFORM_BUILD_REF_NAME: 'production',
   };
 
   await buildBlueGreenServices({
@@ -1708,6 +1716,22 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
           '--builder',
           DEFAULT_BUILDER_NAME,
           '--load',
+          '--build-arg',
+          'PLATFORM_BUILD_BUILT_AT=2026-05-28T06:00:00.000Z',
+          '--build-arg',
+          'PLATFORM_BUILD_COMMIT_HASH=native-commit',
+          '--build-arg',
+          'PLATFORM_BUILD_COMMIT_MESSAGE=Native web metadata',
+          '--build-arg',
+          'PLATFORM_BUILD_COMMIT_SHORT_HASH=native',
+          '--build-arg',
+          'PLATFORM_BUILD_DEPLOYMENT_STAMP=2026-05-28T06-00-00Z',
+          '--build-arg',
+          'PLATFORM_BUILD_DEPLOYMENT_URL=https://tuturuuu.com',
+          '--build-arg',
+          'PLATFORM_BUILD_ENVIRONMENT=production',
+          '--build-arg',
+          'PLATFORM_BUILD_REF_NAME=production',
           '--file',
           path.join(
             path.resolve(__dirname, '..'),
@@ -1727,6 +1751,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   assert.equal(calls[0][3].DOCKER_WEB_STANDALONE, '1');
   assert.equal(calls[0][3].DOCKER_WEB_BUILD_MEMORY, '12g');
   assert.equal(calls[0][3].DOCKER_WEB_DOCKER_MEMORY_LIMIT, '');
+  assert.equal(calls[0][3].PLATFORM_BUILD_COMMIT_HASH, 'native-commit');
 });
 
 test('buildBlueGreenServices only diverts web services to native artifact builds', async () => {
@@ -2461,7 +2486,7 @@ test('runDockerWebWorkflow does not recursively start watcher from watcher deplo
     'NEXT_PUBLIC_SUPABASE_URL=http://localhost:8001\n'
   );
 
-  const runCommand = async (command, args) => {
+  const runCommand = async (command, args, options = {}) => {
     calls.push([command, args]);
 
     if (args.includes('ps') && args.at(-1) === 'web') {
@@ -2698,7 +2723,7 @@ test('runBlueGreenProdWorkflow does not clear a blue-green lane before a failed 
   );
   writeBlueGreenActiveColor('blue', paths);
 
-  const runCommand = async (command, args) => {
+  const runCommand = async (command, args, options = {}) => {
     const key = `${command} ${args.join(' ')}`;
     calls.push(key);
 
@@ -2857,7 +2882,7 @@ test('runBlueGreenProdWorkflow keeps a promoted web lane when Hive migration fai
     stdout,
   });
 
-  const runCommand = async (command, args) => {
+  const runCommand = async (command, args, options = {}) => {
     const key = `${command} ${args.join(' ')}`;
     calls.push(key);
 
@@ -2914,6 +2939,29 @@ test('runBlueGreenProdWorkflow keeps a promoted web lane when Hive migration fai
     }
 
     if (args.includes('build')) {
+      if (args.includes('web-green')) {
+        assert.equal(options.env.PLATFORM_BUILD_COMMIT_HASH, 'commit-green');
+        assert.equal(options.env.PLATFORM_BUILD_COMMIT_SHORT_HASH, 'green');
+        assert.equal(
+          options.env.PLATFORM_BUILD_COMMIT_MESSAGE,
+          'Promote web before Hive'
+        );
+        assert.equal(options.env.PLATFORM_BUILD_REF_NAME, 'production');
+        assert.equal(options.env.PLATFORM_BUILD_ENVIRONMENT, 'production');
+        assert.equal(
+          options.env.PLATFORM_BUILD_DEPLOYMENT_URL,
+          'https://tuturuuu.com'
+        );
+        assert.equal(
+          options.env.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+          options.env.PLATFORM_DEPLOYMENT_STAMP
+        );
+        assert.match(
+          options.env.PLATFORM_BUILD_BUILT_AT,
+          /^\d{4}-\d{2}-\d{2}T/u
+        );
+      }
+
       return resultFor('');
     }
 
@@ -2977,10 +3025,15 @@ test('runBlueGreenProdWorkflow keeps a promoted web lane when Hive migration fai
           {
             drainPollMs: 0,
             drainTimeoutMs: 5_000,
-            env: { BUILDX_BUILDER: DEFAULT_BUILDER_NAME, PATH: 'test-path' },
+            env: {
+              BUILDX_BUILDER: DEFAULT_BUILDER_NAME,
+              PATH: 'test-path',
+              WEB_APP_URL: 'https://tuturuuu.com',
+            },
             envFilePath,
             latestCommit: {
               hash: 'commit-green',
+              refName: 'production',
               shortHash: 'green',
               subject: 'Promote web before Hive',
             },

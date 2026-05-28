@@ -119,15 +119,36 @@ async function getCurrentGitCommitMetadata({
       }
     );
     const [hash, shortHash, subject] = result.stdout.trim().split('\n');
+    let refName = env?.PLATFORM_BUILD_REF_NAME || env?.GITHUB_REF_NAME || null;
+
+    if (!refName) {
+      try {
+        const branchResult = await runChecked(
+          'git',
+          ['branch', '--show-current'],
+          {
+            env,
+            runCommand: run,
+            stdio: 'pipe',
+          }
+        );
+
+        refName = branchResult.stdout.trim() || null;
+      } catch {
+        refName = null;
+      }
+    }
 
     return {
       hash: hash || null,
+      refName,
       shortHash: shortHash || null,
       subject: subject || null,
     };
   } catch {
     return {
       hash: null,
+      refName: env?.PLATFORM_BUILD_REF_NAME || env?.GITHUB_REF_NAME || null,
       shortHash: null,
       subject: null,
     };

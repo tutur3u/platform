@@ -54,6 +54,16 @@ const BLUE_GREEN_DRAIN_TIMEOUT_MS = 5 * 60_000;
 const BLUE_GREEN_PROXY_SERVICE = 'web-proxy';
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const HIVE_DB_MIGRATE_SERVICE = 'hive-db-migrate';
+const PLATFORM_BUILD_METADATA_ENV_NAMES = Object.freeze([
+  'PLATFORM_BUILD_BUILT_AT',
+  'PLATFORM_BUILD_COMMIT_HASH',
+  'PLATFORM_BUILD_COMMIT_MESSAGE',
+  'PLATFORM_BUILD_COMMIT_SHORT_HASH',
+  'PLATFORM_BUILD_DEPLOYMENT_STAMP',
+  'PLATFORM_BUILD_DEPLOYMENT_URL',
+  'PLATFORM_BUILD_ENVIRONMENT',
+  'PLATFORM_BUILD_REF_NAME',
+]);
 /** Started after the core web/support services so Hive can warm independently. */
 const BLUE_GREEN_DEFERRED_SUPPORT_SERVICES = Object.freeze([
   'hive-blue',
@@ -669,6 +679,108 @@ function generateBlueGreenDeploymentStamp(date = new Date()) {
     .toISOString()
     .replace(/\.\d{3}Z$/u, 'Z')
     .replace(/[:.]/gu, '-');
+}
+
+function cleanEnvString(value) {
+  const trimmed = typeof value === 'string' ? value.trim() : '';
+  return trimmed || null;
+}
+
+function normalizeBuildMetadataUrl(value) {
+  const url = cleanEnvString(value);
+
+  if (!url) {
+    return null;
+  }
+
+  return /^https?:\/\//iu.test(url) ? url : `https://${url}`;
+}
+
+function setDefaultEnvValue(env, name, value) {
+  if (cleanEnvString(env[name])) {
+    return;
+  }
+
+  const cleanedValue = cleanEnvString(value);
+
+  if (cleanedValue) {
+    env[name] = cleanedValue;
+  }
+}
+
+function resolveLatestCommitValue(commit, primaryKey, fallbackKey) {
+  return (
+    cleanEnvString(commit?.[primaryKey]) ??
+    cleanEnvString(commit?.[fallbackKey])
+  );
+}
+
+function createBlueGreenBuildMetadataEnv({
+  baseEnv = {},
+  builtAt = new Date().toISOString(),
+  deploymentStamp,
+  environment = 'production',
+  latestCommit = null,
+  refName = null,
+} = {}) {
+  const env = { ...baseEnv };
+  const commitHash = resolveLatestCommitValue(
+    latestCommit,
+    'hash',
+    'commitHash'
+  );
+  const commitShortHash = resolveLatestCommitValue(
+    latestCommit,
+    'shortHash',
+    'commitShortHash'
+  );
+  const commitMessage = resolveLatestCommitValue(
+    latestCommit,
+    'subject',
+    'commitSubject'
+  );
+  const resolvedRefName =
+    cleanEnvString(refName) ??
+    cleanEnvString(latestCommit?.refName) ??
+    cleanEnvString(env.GITHUB_REF_NAME) ??
+    cleanEnvString(env.VERCEL_GIT_COMMIT_REF);
+  const resolvedDeploymentUrl = normalizeBuildMetadataUrl(
+    env.PLATFORM_BUILD_DEPLOYMENT_URL ??
+      env.NEXT_PUBLIC_WEB_APP_URL ??
+      env.NEXT_PUBLIC_APP_URL ??
+      env.WEB_APP_URL
+  );
+
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_BUILT_AT', builtAt);
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_HASH', commitHash);
+  setDefaultEnvValue(
+    env,
+    'PLATFORM_BUILD_COMMIT_SHORT_HASH',
+    commitShortHash
+  );
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_COMMIT_MESSAGE', commitMessage);
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_REF_NAME', resolvedRefName);
+  setDefaultEnvValue(env, 'PLATFORM_BUILD_ENVIRONMENT', environment);
+  setDefaultEnvValue(
+    env,
+    'PLATFORM_BUILD_DEPLOYMENT_STAMP',
+    deploymentStamp
+  );
+  setDefaultEnvValue(
+    env,
+    'PLATFORM_BUILD_DEPLOYMENT_URL',
+    resolvedDeploymentUrl
+  );
+
+  return env;
+}
+
+function getPlatformBuildMetadataBuildArgs(env = {}) {
+  return PLATFORM_BUILD_METADATA_ENV_NAMES.flatMap((name) => {
+    const value = cleanEnvString(env[name]);
+
+    return value ? ['--build-arg', `${name}=${value}`] : [];
+  });
 }
 
 function createBlueGreenStage(id, target, overrides = {}) {
@@ -2125,6 +2237,7 @@ async function buildNativeWebRuntimeImages({
         ...(builderName ? ['--builder', builderName] : []),
         '--load',
         ...(noCache ? ['--no-cache'] : []),
+        ...getPlatformBuildMetadataBuildArgs(env),
         '--file',
         getNativeWebRunnerDockerfile(rootDir),
         '--tag',
@@ -2801,11 +2914,15 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       ? (previousTargetState.targets.web.standbyColor ??
         getNextBlueGreenColor(targetColor))
       : activeColor;
-  const targetEnv = {
-    ...env,
-    PLATFORM_BLUE_GREEN_COLOR: targetColor,
-    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
-  };
+  const targetEnv = createBlueGreenBuildMetadataEnv({
+    baseEnv: {
+      ...env,
+      PLATFORM_BLUE_GREEN_COLOR: targetColor,
+      PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+    },
+    deploymentStamp,
+    latestCommit: options.latestCommit,
+  });
   const bakeFile =
     options.bakeFile ?? getBlueGreenBakeFile(options.rootDir ?? ROOT_DIR);
   const buildStrategy = options.buildStrategy ?? 'compose';
@@ -3373,11 +3490,15 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     readBlueGreenDeploymentStamp(paths, fsImpl) ??
     options.deploymentStamp ??
     generateBlueGreenDeploymentStamp();
-  const standbyEnv = {
-    ...env,
-    PLATFORM_BLUE_GREEN_COLOR: standbyColor,
-    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
-  };
+  const standbyEnv = createBlueGreenBuildMetadataEnv({
+    baseEnv: {
+      ...env,
+      PLATFORM_BLUE_GREEN_COLOR: standbyColor,
+      PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+    },
+    deploymentStamp,
+    latestCommit: options.latestCommit,
+  });
   const standbyServices = getBlueGreenProdServicesWithProxyOption(
     parsed,
     standbyColor,
@@ -3570,16 +3691,24 @@ async function runBlueGreenCachedRecoveryWorkflow(parsed, options = {}) {
     generateBlueGreenDeploymentStamp();
   const activeServiceName = getBlueGreenServiceName(activeColor);
   const standbyServiceName = getBlueGreenServiceName(standbyColor);
-  const activeEnv = {
-    ...env,
-    PLATFORM_BLUE_GREEN_COLOR: activeColor,
-    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
-  };
-  const standbyEnv = {
-    ...env,
-    PLATFORM_BLUE_GREEN_COLOR: standbyColor,
-    PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
-  };
+  const activeEnv = createBlueGreenBuildMetadataEnv({
+    baseEnv: {
+      ...env,
+      PLATFORM_BLUE_GREEN_COLOR: activeColor,
+      PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+    },
+    deploymentStamp,
+    latestCommit: options.latestCommit,
+  });
+  const standbyEnv = createBlueGreenBuildMetadataEnv({
+    baseEnv: {
+      ...env,
+      PLATFORM_BLUE_GREEN_COLOR: standbyColor,
+      PLATFORM_DEPLOYMENT_STAMP: deploymentStamp,
+    },
+    deploymentStamp,
+    latestCommit: options.latestCommit,
+  });
   const activeServices = [
     BLUE_GREEN_PROXY_SERVICE,
     activeServiceName,
@@ -3781,6 +3910,7 @@ module.exports = {
   buildNativeWebArtifacts,
   buildNativeWebRuntimeImages,
   clearBlueGreenRuntime,
+  createBlueGreenBuildMetadataEnv,
   ensureBlueGreenRuntime,
   generateBlueGreenDeploymentStamp,
   getBlueGreenBakeFile,

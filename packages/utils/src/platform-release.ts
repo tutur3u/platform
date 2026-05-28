@@ -29,6 +29,20 @@ export type PlatformReleaseInfo = PlatformBuildMetadata & {
   version: string;
 };
 
+type PlatformBuildRuntimeEnv = Partial<
+  Record<
+    | 'PLATFORM_BUILD_BUILT_AT'
+    | 'PLATFORM_BUILD_COMMIT_HASH'
+    | 'PLATFORM_BUILD_COMMIT_MESSAGE'
+    | 'PLATFORM_BUILD_COMMIT_SHORT_HASH'
+    | 'PLATFORM_BUILD_DEPLOYMENT_STAMP'
+    | 'PLATFORM_BUILD_DEPLOYMENT_URL'
+    | 'PLATFORM_BUILD_ENVIRONMENT'
+    | 'PLATFORM_BUILD_REF_NAME',
+    string | null | undefined
+  >
+>;
+
 function cleanString(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -36,6 +50,66 @@ function cleanString(value: string | null | undefined) {
 
 function normalizeOptionalString(value: string | null | undefined) {
   return cleanString(value);
+}
+
+function normalizeUrl(value: string | null | undefined) {
+  const url = cleanString(value);
+
+  if (!url) {
+    return null;
+  }
+
+  return /^https?:\/\//iu.test(url) ? url : `https://${url}`;
+}
+
+function readRuntimePlatformBuildMetadata(
+  env: PlatformBuildRuntimeEnv
+): PlatformBuildMetadataInput {
+  return {
+    builtAt: cleanString(env.PLATFORM_BUILD_BUILT_AT),
+    commitHash: cleanString(env.PLATFORM_BUILD_COMMIT_HASH),
+    commitMessage: cleanString(env.PLATFORM_BUILD_COMMIT_MESSAGE),
+    deploymentStamp: cleanString(env.PLATFORM_BUILD_DEPLOYMENT_STAMP),
+    deploymentUrl: normalizeUrl(env.PLATFORM_BUILD_DEPLOYMENT_URL),
+    environment: cleanString(env.PLATFORM_BUILD_ENVIRONMENT),
+    refName: cleanString(env.PLATFORM_BUILD_REF_NAME),
+    shortCommitHash: cleanString(env.PLATFORM_BUILD_COMMIT_SHORT_HASH),
+  };
+}
+
+function getRuntimeEnv(): PlatformBuildRuntimeEnv {
+  if (typeof process === 'undefined') {
+    return {};
+  }
+
+  return {
+    PLATFORM_BUILD_BUILT_AT: process.env.PLATFORM_BUILD_BUILT_AT,
+    PLATFORM_BUILD_COMMIT_HASH: process.env.PLATFORM_BUILD_COMMIT_HASH,
+    PLATFORM_BUILD_COMMIT_MESSAGE: process.env.PLATFORM_BUILD_COMMIT_MESSAGE,
+    PLATFORM_BUILD_COMMIT_SHORT_HASH:
+      process.env.PLATFORM_BUILD_COMMIT_SHORT_HASH,
+    PLATFORM_BUILD_DEPLOYMENT_STAMP:
+      process.env.PLATFORM_BUILD_DEPLOYMENT_STAMP,
+    PLATFORM_BUILD_DEPLOYMENT_URL: process.env.PLATFORM_BUILD_DEPLOYMENT_URL,
+    PLATFORM_BUILD_ENVIRONMENT: process.env.PLATFORM_BUILD_ENVIRONMENT,
+    PLATFORM_BUILD_REF_NAME: process.env.PLATFORM_BUILD_REF_NAME,
+  };
+}
+
+function mergePlatformBuildMetadata(
+  generated: PlatformBuildMetadataInput,
+  runtime: PlatformBuildMetadataInput
+): PlatformBuildMetadataInput {
+  return {
+    builtAt: runtime.builtAt ?? generated.builtAt,
+    commitHash: runtime.commitHash ?? generated.commitHash,
+    commitMessage: runtime.commitMessage ?? generated.commitMessage,
+    deploymentStamp: runtime.deploymentStamp ?? generated.deploymentStamp,
+    deploymentUrl: runtime.deploymentUrl ?? generated.deploymentUrl,
+    environment: runtime.environment ?? generated.environment,
+    refName: runtime.refName ?? generated.refName,
+    shortCommitHash: runtime.shortCommitHash ?? generated.shortCommitHash,
+  };
 }
 
 export function normalizePlatformBuildMetadata(
@@ -51,7 +125,7 @@ export function normalizePlatformBuildMetadata(
     commitHash,
     commitMessage: cleanString(input.commitMessage) ?? 'Unknown',
     deploymentStamp: normalizeOptionalString(input.deploymentStamp),
-    deploymentUrl: normalizeOptionalString(input.deploymentUrl),
+    deploymentUrl: normalizeUrl(input.deploymentUrl),
     environment: cleanString(input.environment) ?? 'local',
     refName: cleanString(input.refName) ?? 'local',
     shortCommitHash,
@@ -62,9 +136,19 @@ export const TUTURUUU_PLATFORM_BUILD_METADATA = normalizePlatformBuildMetadata(
   PLATFORM_BUILD_METADATA
 );
 
-export function getPlatformReleaseInfo(appName: string): PlatformReleaseInfo {
+export function getPlatformReleaseInfo(
+  appName: string,
+  env: PlatformBuildRuntimeEnv = getRuntimeEnv()
+): PlatformReleaseInfo {
+  const metadata = normalizePlatformBuildMetadata(
+    mergePlatformBuildMetadata(
+      PLATFORM_BUILD_METADATA,
+      readRuntimePlatformBuildMetadata(env)
+    )
+  );
+
   return {
-    ...TUTURUUU_PLATFORM_BUILD_METADATA,
+    ...metadata,
     appName,
     version: TUTURUUU_PLATFORM_VERSION,
   };

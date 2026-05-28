@@ -1902,7 +1902,11 @@ async function runDetachedCommitFullBlueGreenDeploy({
       await runBlueGreenDeploy({
         deploymentKind,
         deployCommand,
-        env,
+        env: {
+          ...(env ?? process.env),
+          PLATFORM_BUILD_REF_NAME:
+            env?.PLATFORM_BUILD_REF_NAME ?? targetBranch,
+        },
         fsImpl,
         latestCommit: deployCommit,
         now,
@@ -2236,15 +2240,27 @@ async function runBlueGreenDeploy({
   clearDeploymentStagesHandoff(paths.deploymentStagesFile, fsImpl);
 
   try {
-    const timeoutMs = getDeploymentBuildTimeoutMs(env ?? process.env);
+    const baseEnv = env ?? process.env;
+    const timeoutMs = getDeploymentBuildTimeoutMs(baseEnv);
+    const deploymentEnv = {
+      ...baseEnv,
+      ...(deploymentKind ? { [DEPLOYMENT_KIND_ENV]: deploymentKind } : {}),
+      ...(latestCommit?.hash && !baseEnv.PLATFORM_BUILD_COMMIT_HASH
+        ? { PLATFORM_BUILD_COMMIT_HASH: latestCommit.hash }
+        : {}),
+      ...(latestCommit?.shortHash && !baseEnv.PLATFORM_BUILD_COMMIT_SHORT_HASH
+        ? { PLATFORM_BUILD_COMMIT_SHORT_HASH: latestCommit.shortHash }
+        : {}),
+      ...(latestCommit?.subject && !baseEnv.PLATFORM_BUILD_COMMIT_MESSAGE
+        ? { PLATFORM_BUILD_COMMIT_MESSAGE: latestCommit.subject }
+        : {}),
+      [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
+      [DEPLOYMENT_STAGES_FILE_ENV]: paths.deploymentStagesFile,
+      [SKIP_WATCH_HISTORY_ENV]: '1',
+    };
+
     await runChecked(command, args, {
-      env: {
-        ...(env ?? process.env),
-        ...(deploymentKind ? { [DEPLOYMENT_KIND_ENV]: deploymentKind } : {}),
-        [DEPLOYMENT_BUILD_LOCK_TOKEN_ENV]: heldLock.token,
-        [DEPLOYMENT_STAGES_FILE_ENV]: paths.deploymentStagesFile,
-        [SKIP_WATCH_HISTORY_ENV]: '1',
-      },
+      env: deploymentEnv,
       runCommand: run,
       stdio: 'pipe',
       teeOutput: true,
