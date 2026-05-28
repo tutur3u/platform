@@ -2,13 +2,16 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { CalendarDays, Palette, PanelLeft, User } from '@tuturuuu/icons';
+import { listCalendarConnections } from '@tuturuuu/internal-api/calendar';
 import { getWorkspace } from '@tuturuuu/internal-api/workspaces';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
+import CalendarConnectionsUnified from '@tuturuuu/ui/calendar-app/components/calendar-connections-unified';
 import { AppearanceSettings } from '@tuturuuu/ui/custom/settings/appearance-settings';
 import { LunarCalendarSettings } from '@tuturuuu/ui/custom/settings/lunar-calendar-settings';
 import SharedSidebarSettings from '@tuturuuu/ui/custom/settings/sidebar-settings';
 import { SettingsDialogShell } from '@tuturuuu/ui/custom/settings-dialog-shell';
 import { SettingItemTab } from '@tuturuuu/ui/custom/settings-item-tab';
+import { CalendarSyncProvider } from '@tuturuuu/ui/hooks/use-calendar-sync';
 import { useUserBooleanConfig } from '@tuturuuu/ui/hooks/use-user-config';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { useTranslations } from 'next-intl';
@@ -45,6 +48,19 @@ export function SettingsDialog({
     staleTime: 5 * 60 * 1000,
   });
 
+  const { data: calendarConnections = [] } = useQuery({
+    queryKey: ['calendar-connections', wsId],
+    queryFn: async () => {
+      if (!wsId) return [];
+      return listCalendarConnections(wsId);
+    },
+    enabled: !!wsId,
+    staleTime: 5 * 60 * 1000,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
   // Calendar is the primary group — expanded by default, listed first.
   // All other groups are collapsed by default.
   const calendarLabel = t('settings.calendar.title');
@@ -60,6 +76,17 @@ export function SettingsDialog({
           description: t('settings.calendar.general_description'),
           keywords: ['Calendar', 'General', 'Lunar'],
         },
+        ...(wsId
+          ? [
+              {
+                name: 'calendar_integrations',
+                label: t('settings.calendar.integrations'),
+                icon: CalendarDays,
+                description: t('settings.calendar.integrations_description'),
+                keywords: ['Calendar', 'Integrations', 'Google', 'Outlook'],
+              },
+            ]
+          : []),
       ],
     },
     {
@@ -107,6 +134,17 @@ export function SettingsDialog({
         <div className="h-full">
           <LunarCalendarSettings />
         </div>
+      )}
+
+      {activeTab === 'calendar_integrations' && wsId && (
+        <CalendarSyncProvider
+          wsId={wsId}
+          initialCalendarConnections={calendarConnections}
+        >
+          <div className="h-full">
+            <CalendarConnectionsUnified wsId={wsId} />
+          </div>
+        </CalendarSyncProvider>
       )}
 
       {activeTab === 'profile' && user && (

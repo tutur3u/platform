@@ -75,3 +75,25 @@ When adding new Calendar UI that needs protected data, update the shared
 Calendar component or helper first, then wire both host wrappers in the same
 change. Prefer a central `apps/web` API route and a `packages/internal-api`
 helper instead of host-local product API forks or direct client Supabase reads.
+
+## Calendar OAuth And Connections
+
+Google Calendar OAuth is Web-owned even when the user starts from the
+standalone Calendar app. The `/api/v1/calendar/auth` route in `apps/web` must
+build its Google callback URL from a browser-safe Web origin and ignore wildcard
+listener addresses such as `0.0.0.0` or `::`. If no safe configured Web origin
+is available, the fallback origin is `https://tuturuuu.com`.
+
+After Google returns to the callback, the flow always sends the user to the
+central Web Calendar page at
+`https://tuturuuu.com/{wsId}/calendar?provider=google&connected=true`. Valid
+local development callback URLs such as
+`http://localhost:7803/api/v1/calendar/auth/callback` may still be configured
+through `GOOGLE_REDIRECT_URI`, but wildcard listener URLs must never be emitted
+as Google `redirect_uri` values or browser redirects.
+
+Standalone `apps/calendar` also exposes the shared Calendar connections manager
+inside its settings dialog under Calendar -> Integrations. It should fetch the
+initial connection state through `@tuturuuu/internal-api/calendar` and render the
+shared Calendar connections UI inside `CalendarSyncProvider` rather than
+forking host-local connection controls.

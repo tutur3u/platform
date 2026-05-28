@@ -3,6 +3,10 @@ import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-se
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { performFullSyncForWorkspace } from '@tuturuuu/trigger';
 import { NextResponse } from 'next/server';
+import {
+  buildGoogleCalendarPostAuthRedirectUrl,
+  resolveGoogleCalendarOAuthRedirectUri,
+} from '@/lib/calendar/google-oauth-urls';
 
 export async function GET(request: Request) {
   console.log('🔍 [DEBUG] OAuth callback route called');
@@ -31,7 +35,7 @@ export async function GET(request: Request) {
   const auth = new OAuth2Client({
     clientId: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    redirectUri: process.env.GOOGLE_REDIRECT_URI,
+    redirectUri: resolveGoogleCalendarOAuthRedirectUri(request),
   });
 
   try {
@@ -333,7 +337,7 @@ export async function GET(request: Request) {
     console.log('🔍 [DEBUG] Redirecting to calendar page...');
     // Redirect to the calendar page with success indicator
     return NextResponse.redirect(
-      new URL(`/${wsId}/calendar?provider=google&connected=true`, request.url),
+      buildGoogleCalendarPostAuthRedirectUrl(request, wsId),
       302
     );
   } catch (error) {

@@ -1,4 +1,4 @@
-import type { TaskWithScheduling } from '@tuturuuu/types';
+import type { CalendarConnection, TaskWithScheduling } from '@tuturuuu/types';
 import type { CalendarEvent } from '@tuturuuu/types/primitives/calendar-event';
 import type { InternalApiClientOptions } from './client';
 import { encodePathSegment, getInternalApiClient } from './client';
@@ -84,6 +84,26 @@ export interface HabitScheduleHistoryResponse {
 export interface HabitSkipPayload {
   occurrenceDate: string;
   sourceEventId?: string | null;
+}
+
+export interface CalendarConnectionsResponse {
+  connections: CalendarConnection[];
+}
+
+export async function listCalendarConnections(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const response = await client.json<CalendarConnectionsResponse>(
+    '/api/v1/calendar/connections',
+    {
+      query: { wsId },
+      cache: 'no-store',
+    }
+  );
+
+  return response.connections ?? [];
 }
 
 export async function updateWorkspaceCalendarEvent(
