@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { LogoTitle } from "@tuturuuu/ui/custom/logo-title";
-import { TuturuuLogo } from "@tuturuuu/ui/custom/tuturuuu-logo";
-import { ROOT_WORKSPACE_ID } from "@tuturuuu/utils/constants";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { type ReactNode, Suspense } from "react";
-import type { WorkspaceSelectRenderer } from "./sidebar-structure-utils";
+import { LogoTitle } from '@tuturuuu/ui/custom/logo-title';
+import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
+import { type ReactNode, Suspense } from 'react';
+import type { WorkspaceSelectRenderer } from './sidebar-structure-utils';
 
 interface SidebarStructureMobileHeaderProps {
   brandHref: string;
@@ -29,7 +29,7 @@ export function SidebarStructureMobileHeader({
     <>
       {mobileBrand ?? (
         <Link
-          aria-label={t("common.home")}
+          aria-label={t('common.home')}
           className="flex flex-none items-center gap-2"
           href={brandHref}
         >
@@ -55,6 +55,7 @@ interface SidebarStructureHeaderProps {
   collapsedBrand?: ReactNode;
   isCollapsed: boolean;
   linkBrand?: boolean;
+  showBrandOnRoot?: boolean;
   stackWorkspaceSelect?: boolean;
   workspaceSelect: WorkspaceSelectRenderer;
   wsId: string;
@@ -66,6 +67,7 @@ export function SidebarStructureHeader({
   collapsedBrand,
   isCollapsed,
   linkBrand = true,
+  showBrandOnRoot = false,
   stackWorkspaceSelect = false,
   workspaceSelect,
   wsId,
@@ -81,7 +83,7 @@ export function SidebarStructureHeader({
   if (isCollapsed) {
     return (
       <Link
-        aria-label={t("common.home")}
+        aria-label={t('common.home')}
         className="flex flex-none items-center justify-center"
         href={brandHref}
       >
@@ -93,9 +95,9 @@ export function SidebarStructureHeader({
   }
 
   const brandNode =
-    wsId === ROOT_WORKSPACE_ID ? null : linkBrand ? (
+    wsId === ROOT_WORKSPACE_ID && !showBrandOnRoot ? null : linkBrand ? (
       <Link
-        aria-label={t("common.home")}
+        aria-label={t('common.home')}
         className="flex min-w-0 flex-none items-center gap-2"
         href={brandHref}
       >

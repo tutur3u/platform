@@ -4,7 +4,7 @@ import { ChevronLeft, ChevronRight, Menu, X } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
 import { TooltipProvider } from '@tuturuuu/ui/tooltip';
 import { cn } from '@tuturuuu/utils/format';
-import { type ReactNode, useEffect } from 'react';
+import { type CSSProperties, type ReactNode, useEffect } from 'react';
 
 interface StructureProps {
   isCollapsed: boolean;
@@ -21,6 +21,10 @@ interface StructureProps {
   children: ReactNode;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  sidebarCollapsedWidth?: string;
+  sidebarExpandedWidth?: string;
+  sidebarHeaderClassName?: string;
+  sidebarHeaderHeight?: string;
 }
 
 export function Structure({
@@ -38,7 +42,19 @@ export function Structure({
   children,
   onMouseEnter,
   onMouseLeave,
+  sidebarCollapsedWidth = '4rem',
+  sidebarExpandedWidth = '16rem',
+  sidebarHeaderClassName,
+  sidebarHeaderHeight,
 }: StructureProps) {
+  const sidebarStyle = {
+    '--sidebar-collapsed-width': sidebarCollapsedWidth,
+    '--sidebar-expanded-width': sidebarExpandedWidth,
+    ...(sidebarHeaderHeight
+      ? { '--sidebar-header-height': sidebarHeaderHeight }
+      : {}),
+  } as CSSProperties;
+
   // Lock body scroll when sidebar is open on mobile
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -93,18 +109,22 @@ export function Structure({
             className={cn(
               'group fixed top-0 right-0 left-auto z-50 flex h-dvh flex-col overflow-hidden border-l backdrop-blur-lg transition-all duration-300 ease-in-out md:left-0 md:z-20 md:border-r md:border-l-0',
               isCollapsed
-                ? 'w-16 bg-background/50 max-md:w-0'
-                : 'w-64 bg-background max-sm:w-full',
+                ? 'w-[var(--sidebar-collapsed-width)] bg-background/50 max-md:w-0'
+                : 'w-[var(--sidebar-expanded-width)] bg-background max-sm:w-full',
               isCollapsed && 'max-md:translate-x-full',
               overlayOnExpand && !isCollapsed && 'md:z-40'
             )}
             onMouseEnter={onMouseEnter}
             onMouseLeave={onMouseLeave}
+            style={sidebarStyle}
           >
             <div
               className={cn(
-                'flex min-h-12 items-center p-2 md:px-0',
-                isCollapsed ? 'justify-center' : 'py-1'
+                sidebarHeaderHeight
+                  ? 'flex h-[var(--sidebar-header-height)] shrink-0 items-center p-2 md:px-0'
+                  : 'flex min-h-12 items-center p-2 md:px-0',
+                isCollapsed ? 'justify-center' : 'py-1',
+                sidebarHeaderClassName
               )}
             >
               <div
@@ -115,7 +135,8 @@ export function Structure({
               >
                 <div
                   className={cn(
-                    'flex w-full items-center justify-between gap-2'
+                    'flex w-full items-center gap-2',
+                    isCollapsed ? 'justify-center' : 'justify-between'
                   )}
                 >
                   {sidebarHeader}
@@ -174,8 +195,11 @@ export function Structure({
           <main
             className={cn(
               'relative flex h-full min-h-screen flex-col overflow-x-clip overflow-y-visible transition-all duration-300 ease-in-out',
-              isCollapsed || overlayOnExpand ? 'md:pl-16' : 'md:pl-64'
+              isCollapsed || overlayOnExpand
+                ? 'md:pl-[var(--sidebar-collapsed-width)]'
+                : 'md:pl-[var(--sidebar-expanded-width)]'
             )}
+            style={sidebarStyle}
           >
             {header && <div className="mb-4 hidden md:block">{header}</div>}
             <div className="safe-bottom relative h-full w-full p-2 pt-17 pl-2 md:p-4 md:pt-4">

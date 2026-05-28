@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { Bot, Hash, MessageCircle } from "@tuturuuu/icons";
-import { Button } from "@tuturuuu/ui/button";
-import { cn } from "@tuturuuu/utils/format";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useTranslations } from "next-intl";
-import type { ReactNode } from "react";
+import { Bot, Hash, MessageCircle } from '@tuturuuu/icons';
+import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
+import type { ReactNode } from 'react';
 
-type Scope = "personal" | "workspaces";
+type Scope = 'personal' | 'workspaces';
 
 const scopes: {
   icon: ReactNode;
   id: Scope;
-  subtitleKey: "scope_personal_subtitle" | "scope_workspaces_subtitle";
-  titleKey: "scope_personal" | "scope_workspaces";
+  subtitleKey: 'scope_personal_subtitle' | 'scope_workspaces_subtitle';
+  titleKey: 'scope_personal' | 'scope_workspaces';
 }[] = [
   {
     icon: <MessageCircle className="size-4" />,
-    id: "personal",
-    subtitleKey: "scope_personal_subtitle",
-    titleKey: "scope_personal",
+    id: 'personal',
+    subtitleKey: 'scope_personal_subtitle',
+    titleKey: 'scope_personal',
   },
   {
     icon: (
@@ -28,28 +28,28 @@ const scopes: {
         <Bot className="size-3.5" />
       </span>
     ),
-    id: "workspaces",
-    subtitleKey: "scope_workspaces_subtitle",
-    titleKey: "scope_workspaces",
+    id: 'workspaces',
+    subtitleKey: 'scope_workspaces_subtitle',
+    titleKey: 'scope_workspaces',
   },
 ];
 
 export function ChatScopeTabs() {
-  const t = useTranslations("chat");
+  const t = useTranslations('chat');
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeScope =
-    searchParams.get("scope") === "workspaces" ? "workspaces" : "personal";
+    searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
 
   function setScope(scope: Scope) {
     const nextParams = new URLSearchParams(searchParams.toString());
-    nextParams.set("scope", scope);
-    nextParams.delete("conversationId");
+    nextParams.set('scope', scope);
+    nextParams.delete('conversationId');
     const nextQuery = nextParams.toString();
     window.history.replaceState(
       null,
-      "",
-      nextQuery ? `${pathname}?${nextQuery}` : pathname,
+      '',
+      nextQuery ? `${pathname}?${nextQuery}` : pathname
     );
   }
 
@@ -62,11 +62,11 @@ export function ChatScopeTabs() {
           <Button
             aria-label={`${t(scope.titleKey)} (${t(scope.subtitleKey)})`}
             className={cn(
-              "h-9 min-w-0 rounded-sm px-2 text-sm transition-[background-color,color,flex-basis,width]",
-              active ? "flex-1 justify-start gap-2" : "w-9 flex-none px-0",
+              'h-9 min-w-0 rounded-sm px-2 text-sm transition-[background-color,color,flex-basis,width]',
+              active ? 'flex-1 justify-start gap-2' : 'w-9 flex-none px-0',
               active
-                ? "bg-background text-foreground shadow-xs"
-                : "bg-transparent text-muted-foreground hover:bg-background/60",
+                ? 'bg-background text-foreground shadow-xs'
+                : 'bg-transparent text-muted-foreground hover:bg-background/60'
             )}
             key={scope.id}
             onClick={() => setScope(scope.id)}
@@ -76,7 +76,7 @@ export function ChatScopeTabs() {
             variant="ghost"
           >
             {scope.icon}
-            <span className={cn("truncate", !active && "sr-only")}>
+            <span className={cn('truncate', !active && 'sr-only')}>
               {t(scope.titleKey)}
             </span>
           </Button>
@@ -88,5 +88,5 @@ export function ChatScopeTabs() {
 
 export function useChatScope() {
   const searchParams = useSearchParams();
-  return searchParams.get("scope") === "workspaces" ? "workspaces" : "personal";
+  return searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
 }

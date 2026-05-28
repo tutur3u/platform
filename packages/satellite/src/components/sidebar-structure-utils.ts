@@ -3,6 +3,7 @@ import type { Dispatch, ReactNode, SetStateAction } from 'react';
 
 export type SidebarStructureRenderProps = {
   closeOnMobile?: () => void;
+  expandSidebar?: () => void;
   isCollapsed: boolean;
   setIsCollapsed?: Dispatch<SetStateAction<boolean>>;
 };

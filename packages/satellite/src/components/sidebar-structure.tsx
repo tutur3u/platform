@@ -1,33 +1,33 @@
-"use client";
+'use client';
 
-import { ArrowLeft } from "@tuturuuu/icons";
-import type { NavLink } from "@tuturuuu/ui/custom/navigation";
-import { SidebarFooterActions } from "@tuturuuu/ui/custom/sidebar-footer-actions";
-import { Structure as BaseStructure } from "@tuturuuu/ui/custom/structure";
-import { setCookie } from "cookies-next";
-import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { ArrowLeft } from '@tuturuuu/icons';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { SidebarFooterActions } from '@tuturuuu/ui/custom/sidebar-footer-actions';
+import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
+import { setCookie } from 'cookies-next';
+import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import {
   type ReactNode,
   useCallback,
   useEffect,
   useMemo,
   useState,
-} from "react";
-import { SIDEBAR_COLLAPSED_COOKIE_NAME } from "../constants/common";
-import { useSidebar } from "../context/sidebar-context";
-import { SidebarStructureContent } from "./sidebar-structure-content";
+} from 'react';
+import { SIDEBAR_COLLAPSED_COOKIE_NAME } from '../constants/common';
+import { useSidebar } from '../context/sidebar-context';
+import { SidebarStructureContent } from './sidebar-structure-content';
 import {
   SidebarStructureHeader,
   SidebarStructureMobileHeader,
-} from "./sidebar-structure-header";
+} from './sidebar-structure-header';
 import {
   findActiveNavigation,
   getFilteredLinks,
   getNavigationMatches,
   type NavigationState,
   type WorkspaceSelectRenderer,
-} from "./sidebar-structure-utils";
+} from './sidebar-structure-utils';
 
 export interface SidebarStructureProps {
   actions: ReactNode;
@@ -42,19 +42,24 @@ export interface SidebarStructureProps {
   links: (NavLink | null)[];
   mobileBrand?: ReactNode;
   mobileHeaderDivider?: boolean;
+  sidebarCollapsedWidth?: string;
   sidebarContentAfter?: ReactNode | WorkspaceSelectRenderer;
+  sidebarExpandedWidth?: string;
+  sidebarHeaderClassName?: string;
+  sidebarHeaderHeight?: string;
   upgradeExternal?: boolean;
   upgradeHref?: string;
   userPopover: ReactNode;
   workspace: { tier?: string | null } | null;
   workspaceSelect: WorkspaceSelectRenderer;
   wsId: string;
+  showBrandOnRoot?: boolean;
 }
 
 export function SidebarStructure({
   actions,
   brand,
-  brandHref = "/",
+  brandHref = '/',
   collapsedBrand,
   linkBrand = true,
   childContainerClassName,
@@ -63,7 +68,12 @@ export function SidebarStructure({
   links,
   mobileBrand,
   mobileHeaderDivider = true,
+  sidebarCollapsedWidth,
   sidebarContentAfter,
+  sidebarExpandedWidth,
+  sidebarHeaderClassName,
+  sidebarHeaderHeight,
+  showBrandOnRoot = false,
   stackWorkspaceSelect = false,
   upgradeExternal = false,
   upgradeHref,
@@ -75,7 +85,6 @@ export function SidebarStructure({
   const t = useTranslations();
   const pathname = usePathname();
   const { behavior, handleBehaviorChange } = useSidebar();
-  const [initialized, setInitialized] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const [navState, setNavState] = useState<NavigationState>(() => {
     const activeNavigation = findActiveNavigation({
@@ -85,16 +94,15 @@ export function SidebarStructure({
     return (
       activeNavigation ?? {
         currentLinks: links,
-        direction: "forward",
+        direction: 'forward',
         history: [],
         titleHistory: [],
       }
     );
   });
 
-  useEffect(() => setInitialized(true), []);
   useEffect(() => {
-    setIsCollapsed(behavior === "collapsed" || behavior === "hover");
+    setIsCollapsed(behavior === 'collapsed' || behavior === 'hover');
   }, [behavior]);
 
   useEffect(() => {
@@ -108,7 +116,7 @@ export function SidebarStructure({
       if (prevState.history.length > 0) {
         return {
           currentLinks: links,
-          direction: "backward",
+          direction: 'backward',
           history: [],
           titleHistory: [],
         };
@@ -127,15 +135,15 @@ export function SidebarStructure({
           const newHistory = prevState.history.slice(0, -1);
           return {
             currentLinks: prevState.history.at(-1) ?? links,
-            direction: "backward",
+            direction: 'backward',
             history: newHistory,
             titleHistory: prevState.titleHistory.slice(0, -1),
           };
         });
       },
-      title: t("common.back"),
+      title: t('common.back'),
     }),
-    [links, t],
+    [links, t]
   );
 
   const handleToggle = () => {
@@ -143,21 +151,30 @@ export function SidebarStructure({
     setIsCollapsed(newCollapsed);
     setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, newCollapsed);
 
-    if (behavior === "expanded" && newCollapsed) {
-      handleBehaviorChange("collapsed");
-    } else if (behavior === "collapsed" && !newCollapsed) {
-      handleBehaviorChange("expanded");
+    if (behavior === 'expanded' && newCollapsed) {
+      handleBehaviorChange('collapsed');
+    } else if (behavior === 'collapsed' && !newCollapsed) {
+      handleBehaviorChange('expanded');
     }
   };
+
+  const expandSidebar = useCallback(() => {
+    setIsCollapsed(false);
+    setCookie(SIDEBAR_COLLAPSED_COOKIE_NAME, false);
+
+    if (behavior !== 'expanded') {
+      handleBehaviorChange('expanded');
+    }
+  }, [behavior, handleBehaviorChange]);
 
   const hasOpenDialogs = useCallback(
     () =>
       document.querySelector('[data-state="open"][role="dialog"]') !== null ||
       document.querySelector('[data-state="open"][role="alertdialog"]') !==
         null,
-    [],
+    []
   );
-  const isHoverMode = behavior === "hover";
+  const isHoverMode = behavior === 'hover';
   const onMouseEnter = isHoverMode
     ? () => {
         if (!hasOpenDialogs()) setIsCollapsed(false);
@@ -182,11 +199,14 @@ export function SidebarStructure({
   })[0];
   const currentTitle = navState.titleHistory.at(-1);
   const extraContent =
-    typeof sidebarContentAfter === "function"
-      ? sidebarContentAfter({ closeOnMobile, isCollapsed, setIsCollapsed })
+    typeof sidebarContentAfter === 'function'
+      ? sidebarContentAfter({
+          closeOnMobile,
+          expandSidebar,
+          isCollapsed,
+          setIsCollapsed,
+        })
       : sidebarContentAfter;
-
-  if (!initialized) return null;
 
   return (
     <BaseStructure
@@ -194,14 +214,14 @@ export function SidebarStructure({
       feedbackButton={
         <SidebarFooterActions
           isCollapsed={isCollapsed}
-          showUpgrade={!workspace?.tier || workspace.tier === "FREE"}
+          showUpgrade={!workspace?.tier || workspace.tier === 'FREE'}
           upgradeExternal={upgradeExternal}
           upgradeHref={upgradeHref}
           wsId={wsId}
         />
       }
       header={null}
-      hideSizeToggle={behavior === "hover"}
+      hideSizeToggle={behavior === 'hover'}
       isCollapsed={isCollapsed}
       mobileHeader={
         <SidebarStructureMobileHeader
@@ -214,7 +234,11 @@ export function SidebarStructure({
       }
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
-      overlayOnExpand={behavior === "hover"}
+      overlayOnExpand={behavior === 'hover'}
+      sidebarCollapsedWidth={sidebarCollapsedWidth}
+      sidebarExpandedWidth={sidebarExpandedWidth}
+      sidebarHeaderClassName={sidebarHeaderClassName}
+      sidebarHeaderHeight={sidebarHeaderHeight}
       setIsCollapsed={handleToggle}
       sidebarContent={
         <SidebarStructureContent
@@ -236,6 +260,7 @@ export function SidebarStructure({
           collapsedBrand={collapsedBrand}
           isCollapsed={isCollapsed}
           linkBrand={linkBrand}
+          showBrandOnRoot={showBrandOnRoot}
           stackWorkspaceSelect={stackWorkspaceSelect}
           workspaceSelect={workspaceSelect}
           wsId={wsId}
