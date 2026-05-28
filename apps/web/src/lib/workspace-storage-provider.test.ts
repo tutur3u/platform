@@ -167,8 +167,11 @@ describe('workspace storage provider', () => {
         size: 123,
       })
     ).resolves.toMatchObject({
+      contentType: 'application/zip',
+      filename: 'build.zip',
       fullPath: 'ws-1/games/mine/build.zip',
       path: 'games/mine/build.zip',
+      provider: 'supabase',
       signedUrl: 'https://storage.example.com/upload',
       token: 'upload-token',
     });

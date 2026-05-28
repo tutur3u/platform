@@ -1,0 +1,257 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+const mocks = vi.hoisted(() => ({
+  canAccessFinanceTransactionStoragePath: vi.fn(),
+  createWorkspaceStorageUploadPayload: vi.fn(),
+  generateRandomUUID: vi.fn(() => 'upload-id'),
+  logWorkspaceStorageRouteError: vi.fn(),
+  resolveTopicAnnouncementsAccess: vi.fn(),
+  resolveWorkspaceStorageRouteAuth: vi.fn(),
+}));
+
+vi.mock('@tuturuuu/utils/uuid-helper', () => ({
+  generateRandomUUID: mocks.generateRandomUUID,
+}));
+
+vi.mock('@/lib/finance-transaction-storage-access', () => ({
+  canAccessFinanceTransactionStoragePath:
+    mocks.canAccessFinanceTransactionStoragePath,
+}));
+
+vi.mock('@/lib/workspace-storage-provider', () => ({
+  createWorkspaceStorageUploadPayload:
+    mocks.createWorkspaceStorageUploadPayload,
+  WorkspaceStorageError: class WorkspaceStorageError extends Error {
+    constructor(
+      message: string,
+      public readonly status = 500
+    ) {
+      super(message);
+    }
+  },
+}));
+
+vi.mock('../../topic-announcements/shared', () => ({
+  resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
+  TOPIC_ANNOUNCEMENT_ATTACHMENT_CONTENT_TYPES: [
+    'application/pdf',
+    'image/gif',
+    'image/jpeg',
+    'image/png',
+    'image/webp',
+  ],
+  TOPIC_ANNOUNCEMENT_MAX_ATTACHMENT_BYTES: 10 * 1024 * 1024,
+}));
+
+vi.mock('../route-auth', () => ({
+  logWorkspaceStorageRouteError: mocks.logWorkspaceStorageRouteError,
+  resolveWorkspaceStorageRouteAuth: mocks.resolveWorkspaceStorageRouteAuth,
+}));
+
+function permissions({
+  manageDrive = false,
+  manageExternalProjects = false,
+}: {
+  manageDrive?: boolean;
+  manageExternalProjects?: boolean;
+} = {}) {
+  return {
+    containsPermission: (permission: string) =>
+      permission === 'manage_external_projects' && manageExternalProjects,
+    withoutPermission: (permission: string) =>
+      permission === 'manage_drive' ? !manageDrive : true,
+  };
+}
+
+function setupAuth() {
+  mocks.resolveWorkspaceStorageRouteAuth.mockResolvedValue({
+    ok: true,
+    context: {
+      normalizedWsId: 'workspace-1',
+      permissions: permissions(),
+      user: { id: 'user-1' },
+      userId: 'user-1',
+    },
+  });
+  mocks.canAccessFinanceTransactionStoragePath.mockResolvedValue(false);
+  mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+    context: {
+      normalizedWsId: 'workspace-1',
+    },
+  });
+  mocks.createWorkspaceStorageUploadPayload.mockResolvedValue({
+    contentType: 'application/pdf',
+    filename: 'lesson-plan.pdf',
+    fullPath:
+      'workspace-1/topic-announcements/attachments/upload-id-lesson-plan.pdf',
+    headers: {
+      'x-upload-target': 'topic-announcements',
+    },
+    path: 'topic-announcements/attachments/upload-id-lesson-plan.pdf',
+    provider: 'r2',
+    signedUrl: 'https://storage.example.com/upload',
+    token: 'upload-token',
+  });
+}
+
+async function postUploadUrl(payload: Record<string, unknown>) {
+  const { POST } = await import('./route');
+  return POST(
+    new Request(
+      'http://localhost/api/v1/workspaces/workspace-1/storage/upload-url',
+      {
+        body: JSON.stringify(payload),
+        method: 'POST',
+      }
+    ),
+    {
+      params: Promise.resolve({ wsId: 'workspace-1' }),
+    }
+  );
+}
+
+describe('workspace storage upload-url route', () => {
+  beforeEach(() => {
+    vi.resetModules();
+    mocks.canAccessFinanceTransactionStoragePath.mockReset();
+    mocks.createWorkspaceStorageUploadPayload.mockReset();
+    mocks.generateRandomUUID.mockClear();
+    mocks.logWorkspaceStorageRouteError.mockReset();
+    mocks.resolveTopicAnnouncementsAccess.mockReset();
+    mocks.resolveWorkspaceStorageRouteAuth.mockReset();
+    setupAuth();
+  });
+
+  it('creates signed upload URLs for Topic Announcement attachments through the central route', async () => {
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      fullPath:
+        'workspace-1/topic-announcements/attachments/upload-id-lesson-plan.pdf',
+      headers: {
+        'x-upload-target': 'topic-announcements',
+      },
+      path: 'topic-announcements/attachments/upload-id-lesson-plan.pdf',
+      provider: 'r2',
+      signedUrl: 'https://storage.example.com/upload',
+      token: 'upload-token',
+    });
+    expect(mocks.resolveTopicAnnouncementsAccess).toHaveBeenCalledWith(
+      expect.any(Request),
+      'workspace-1',
+      { requireManage: true }
+    );
+    expect(mocks.createWorkspaceStorageUploadPayload).toHaveBeenCalledWith(
+      'workspace-1',
+      'upload-id-lesson-plan.pdf',
+      {
+        contentType: 'application/pdf',
+        path: 'topic-announcements/attachments',
+        size: 1234,
+        upsert: false,
+      }
+    );
+  });
+
+  it('rejects Topic Announcement uploads when the feature gate is unavailable', async () => {
+    mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+      response: Response.json({ message: 'Not found' }, { status: 404 }),
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects Topic Announcement uploads for personal workspaces', async () => {
+    mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+      response: Response.json({ message: 'Not found' }, { status: 404 }),
+    });
+
+    const response = await postUploadUrl({
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(404);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects Topic Announcement uploads without manage_users access', async () => {
+    mocks.resolveTopicAnnouncementsAccess.mockResolvedValue({
+      response: Response.json(
+        { message: 'Insufficient permissions' },
+        { status: 403 }
+      ),
+    });
+
+    const response = await postUploadUrl({
+      contentType: 'application/pdf',
+      filename: 'lesson-plan.pdf',
+      path: 'topic-announcements/attachments',
+      size: 1234,
+    });
+
+    expect(response.status).toBe(403);
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+
+  it('rejects invalid Topic Announcement attachment metadata before signing', async () => {
+    const cases = [
+      {
+        expectedStatus: 400,
+        payload: {
+          filename: 'lesson-plan.pdf',
+          path: 'topic-announcements/other',
+          size: 1234,
+        },
+      },
+      {
+        expectedStatus: 400,
+        payload: {
+          filename: 'lesson-plan.pdf',
+          path: 'topic-announcements/attachments',
+          size: 0,
+        },
+      },
+      {
+        expectedStatus: 413,
+        payload: {
+          filename: 'lesson-plan.pdf',
+          path: 'topic-announcements/attachments',
+          size: 10 * 1024 * 1024 + 1,
+        },
+      },
+      {
+        expectedStatus: 415,
+        payload: {
+          contentType: 'text/plain',
+          filename: 'notes.txt',
+          path: 'topic-announcements/attachments',
+          size: 1234,
+        },
+      },
+    ];
+
+    for (const { expectedStatus, payload } of cases) {
+      const response = await postUploadUrl(payload);
+      expect(response.status).toBe(expectedStatus);
+    }
+    expect(mocks.createWorkspaceStorageUploadPayload).not.toHaveBeenCalled();
+  });
+});

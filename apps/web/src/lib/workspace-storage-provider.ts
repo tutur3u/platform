@@ -48,6 +48,9 @@ export interface WorkspaceStorageUploadPayload {
   headers?: Record<string, string>;
   path: string;
   fullPath: string;
+  filename: string;
+  contentType?: string;
+  provider: WorkspaceStorageProvider;
 }
 
 export interface WorkspaceStorageOverview {
@@ -1383,6 +1386,9 @@ export async function createWorkspaceStorageUploadPayload(
         ? posix.join(relativePath, sanitizedFilename)
         : sanitizedFilename,
       fullPath,
+      filename: sanitizedFilename,
+      contentType: options?.contentType,
+      provider: WORKSPACE_STORAGE_PROVIDER_R2,
     };
   }
 
@@ -1424,6 +1430,9 @@ export async function createWorkspaceStorageUploadPayload(
       ? posix.join(relativePath, sanitizedFilename)
       : sanitizedFilename,
     fullPath,
+    filename: sanitizedFilename,
+    contentType: options?.contentType,
+    provider: WORKSPACE_STORAGE_PROVIDER_SUPABASE,
   };
 }
 

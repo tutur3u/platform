@@ -8,12 +8,15 @@ import {
   type InternalApiClientOptions,
 } from './client';
 
-interface WorkspaceUploadUrlResponse {
+export interface WorkspaceUploadUrlResponse {
   signedUrl?: string;
   token?: string;
   headers?: Record<string, string>;
   path?: string;
   fullPath?: string;
+  filename?: string;
+  contentType?: string;
+  provider?: 'r2' | 'supabase';
 }
 
 interface WorkspaceStorageShareResponse {
@@ -136,12 +139,15 @@ interface WorkspaceStorageDeleteResponse {
   };
 }
 
-interface SignedUploadPayload {
+export interface SignedUploadPayload {
   signedUrl: string;
   token?: string;
   headers?: Record<string, string>;
   path: string;
   fullPath: string | null;
+  filename?: string;
+  contentType?: string;
+  provider?: 'r2' | 'supabase';
 }
 
 interface WorkspaceUserGroupStorageResponse {
@@ -213,7 +219,7 @@ function uploadFileWithXhr(
   });
 }
 
-async function uploadFileWithSignedUrl(
+export async function uploadFileWithSignedUrl(
   file: File,
   uploadUrlResult: SignedUploadPayload,
   fetchImpl: typeof fetch,
@@ -230,7 +236,8 @@ async function uploadFileWithSignedUrl(
   };
 
   if (!headers['Content-Type']) {
-    headers['Content-Type'] = file.type || 'application/octet-stream';
+    headers['Content-Type'] =
+      uploadUrlResult.contentType || file.type || 'application/octet-stream';
   }
 
   if (uploadUrlResult.token) {
@@ -304,13 +311,25 @@ function parseSignedUploadPayload(payload: WorkspaceUploadUrlResponse) {
     throw new Error('Missing upload URL payload');
   }
 
-  return {
+  const result: SignedUploadPayload = {
     signedUrl: payload.signedUrl,
     token: payload.token,
     headers: payload.headers,
     path: payload.path,
     fullPath: payload.fullPath ?? null,
-  } satisfies SignedUploadPayload;
+  };
+
+  if (payload.filename) {
+    result.filename = payload.filename;
+  }
+  if (payload.contentType) {
+    result.contentType = payload.contentType;
+  }
+  if (payload.provider) {
+    result.provider = payload.provider;
+  }
+
+  return result;
 }
 
 export async function uploadWorkspaceStorageFile(
@@ -478,6 +497,7 @@ export async function createWorkspaceStorageUploadUrl(
     path?: string;
     upsert?: boolean;
     size?: number;
+    contentType?: string;
   },
   clientOptions?: InternalApiClientOptions
 ) {
@@ -494,6 +514,7 @@ export async function createWorkspaceStorageUploadUrl(
         path: options?.path,
         upsert: options?.upsert,
         size: options?.size,
+        contentType: options?.contentType,
       }),
       cache: 'no-store',
     }

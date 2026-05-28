@@ -120,4 +120,5 @@ Topic Announcements live under Users and are gated by the workspace secret `ENAB
 - Delivery APIs must check the workspace secret, `manage_users`, `send_user_group_post_emails`, recipient verification, and workspace ownership before sending.
 - If a contact email changes, previous verification records for the old email must no longer satisfy delivery checks.
 - Linked-account auto-confirm checks must join through `workspace_members` for the contact workspace. Do not treat a confirmed Tuturuuu account as sufficient unless that platform user belongs to the same workspace as the linked virtual user.
+- Attachment uploads must prepare signed upload URLs through the central workspace storage route, then upload bytes directly to the active storage provider. Do not stream attachment bytes through Topic Announcement-specific Next.js routes.
 - Attachment rows keep workspace, announcement, storage path, content type, and size metadata. Email delivery downloads the stored files and switches to raw MIME only when attachments exist; regular no-attachment messages should keep the standard SES `SendEmailCommand` path.

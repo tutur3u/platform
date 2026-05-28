@@ -4,6 +4,10 @@ import {
   type InternalApiClientOptions,
   type InternalApiQuery,
 } from './client';
+import {
+  createWorkspaceStorageUploadUrl,
+  uploadFileWithSignedUrl,
+} from './storage';
 
 export type TopicAnnouncementVerificationStatus =
   | 'linked_confirmed_account'
@@ -185,6 +189,9 @@ function basePath(workspaceId: string) {
   return `/api/v1/workspaces/${encodePathSegment(workspaceId)}/topic-announcements`;
 }
 
+const TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH =
+  'topic-announcements/attachments';
+
 export async function listTopicAnnouncementContacts(
   workspaceId: string,
   params: InternalApiQuery = {},
@@ -316,17 +323,35 @@ export async function uploadTopicAnnouncementAttachment(
   file: File,
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  const formData = new FormData();
-  formData.append('file', file);
-
-  return client.json<{ data: TopicAnnouncementAttachmentDraft }>(
-    `${basePath(workspaceId)}/attachments/upload`,
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
+  const uploadUrlResult = await createWorkspaceStorageUploadUrl(
+    workspaceId,
+    file.name,
     {
-      body: formData,
-      method: 'POST',
-    }
+      contentType: file.type || undefined,
+      path: TOPIC_ANNOUNCEMENT_ATTACHMENT_UPLOAD_PATH,
+      size: file.size,
+      upsert: false,
+    },
+    options
   );
+
+  await uploadFileWithSignedUrl(file, uploadUrlResult, fetchImpl);
+
+  const contentType = (uploadUrlResult.contentType ||
+    file.type) as TopicAnnouncementAttachmentContentType;
+  const storageProvider: TopicAnnouncementAttachmentStorageProvider =
+    uploadUrlResult.provider ?? 'supabase';
+
+  return {
+    data: {
+      contentType,
+      fileName: uploadUrlResult.filename ?? file.name,
+      sizeBytes: file.size,
+      storagePath: uploadUrlResult.path,
+      storageProvider,
+    },
+  };
 }
 
 export async function deleteTopicAnnouncementAttachment(
