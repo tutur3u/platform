@@ -100,7 +100,6 @@ const {
 } = require('./watch-blue-green/build-lock.js');
 
 const ROOT_DIR = path.resolve(__dirname, '..');
-const DATABASE_DIR = path.join(ROOT_DIR, 'apps', 'database');
 const CLOUDFLARED_SERVICE = 'cloudflared';
 const LOW_DOCKER_MEMORY_BUILDKIT_RESTART_THRESHOLD_BYTES =
   10 * 1024 * 1024 * 1024;
@@ -300,9 +299,9 @@ function getSupabaseStartCommand(env = {}) {
   }
 
   return {
-    args: ['supabase', 'start', ...excludeArgs],
+    args: ['sb:start', '--', ...excludeArgs],
     command: 'bun',
-    cwd: DATABASE_DIR,
+    cwd: ROOT_DIR,
   };
 }
 
@@ -384,6 +383,29 @@ function parseArgs(argv) {
 
       composeGlobalArgs.push(arg, value);
       index += 1;
+      continue;
+    }
+
+    if (arg === '-p' || arg === '--project-name') {
+      const value = args[index + 1];
+
+      if (!value) {
+        throw new Error(`Expected a project name after ${arg}.`);
+      }
+
+      composeGlobalArgs.push(arg, value);
+      index += 1;
+      continue;
+    }
+
+    if (arg.startsWith('--project-name=')) {
+      const value = arg.slice('--project-name='.length).trim();
+
+      if (!value) {
+        throw new Error('Expected a project name after --project-name=.');
+      }
+
+      composeGlobalArgs.push(arg);
       continue;
     }
 

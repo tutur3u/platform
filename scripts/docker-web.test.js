@@ -354,6 +354,23 @@ test('parseArgs enables cloudflared as an explicit Docker profile', () => {
   ]);
 });
 
+test('parseArgs keeps compose project names in global args', () => {
+  assert.deepEqual(
+    parseArgs(['up', '--project-name', 'custom-project']).composeGlobalArgs,
+    ['--project-name', 'custom-project', '--profile', 'redis']
+  );
+  assert.deepEqual(
+    parseArgs(['up', '-p', 'short-project', '--without-redis'])
+      .composeGlobalArgs,
+    ['-p', 'short-project']
+  );
+  assert.deepEqual(
+    parseArgs(['up', '--project-name=inline-project', '--without-redis'])
+      .composeGlobalArgs,
+    ['--project-name=inline-project']
+  );
+});
+
 test('parseArgs accepts build resource throttling flags', () => {
   assert.deepEqual(
     parseArgs([
@@ -1652,6 +1669,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
   await buildBlueGreenServices({
     buildStrategy: 'bake',
     composeFile: PROD_COMPOSE_FILE,
+    composeGlobalArgs: ['-p', 'explicit-project'],
     env,
     runCommand: async (command, args, options = {}) => {
       calls.push([command, args, options.cwd, options.env]);
@@ -1663,8 +1681,11 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
 
   assert.equal(isNativeWebBuildEnabled(env), true);
   assert.equal(
-    getBlueGreenWebServiceImageTag('web-green', env),
-    'ttr-e2e-local-test-web-green'
+    getBlueGreenWebServiceImageTag('web-green', {
+      composeGlobalArgs: ['-p', 'explicit-project'],
+      env,
+    }),
+    'explicit-project-web-green'
   );
   assert.deepEqual(
     calls.map(([command, args, cwd]) => [command, args, cwd]),
@@ -1696,7 +1717,7 @@ test('buildBlueGreenServices can package host-built web artifacts', async () => 
             'native-runner.Dockerfile'
           ),
           '--tag',
-          'ttr-e2e-local-test-web-green',
+          'explicit-project-web-green',
           path.resolve(__dirname, '..'),
         ],
         undefined,
@@ -2106,15 +2127,8 @@ test('runDockerWebWorkflow can exclude Supabase services during start', async ()
     ['docker', ['info', '--format', '{{json .MemTotal}}'], undefined],
     [
       'bun',
-      [
-        'supabase',
-        'start',
-        '--exclude',
-        'edge-runtime',
-        '--exclude',
-        'functions',
-      ],
-      path.join(path.resolve(__dirname, '..'), 'apps', 'database'),
+      ['sb:start', '--', '--exclude', 'edge-runtime', '--exclude', 'functions'],
+      path.resolve(__dirname, '..'),
     ],
   ]);
 });

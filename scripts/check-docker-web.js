@@ -943,14 +943,22 @@ function validateNativeWebRunnerDockerfile(
     'FROM node:24-bookworm-slim AS runner',
     'COPY --chown=nextjs:nodejs apps/web/.next/standalone ./',
     'COPY --chown=nextjs:nodejs apps/web/.next/static ./apps/web/.next/static',
+    'COPY --chown=nextjs:nodejs apps/web/docker/coolify-env.js ./apps/web/docker/coolify-env.js',
     'COPY --chown=nextjs:nodejs apps/web/docker/prod-entrypoint.js ./apps/web/docker/prod-entrypoint.js',
+    'COPY --chown=nextjs:nodejs apps/web/docker/request-tracker.js ./apps/web/docker/request-tracker.js',
+    'COPY --chown=nextjs:nodejs apps/web/cron.config.json ./apps/web/cron.config.json',
+    'COPY --chown=nextjs:nodejs apps/web/public ./apps/web/public',
+    'HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3',
     'CMD ["node", "apps/web/docker/prod-entrypoint.js"]',
   ];
   const dockerignoreSnippets = [
     '**',
     '!apps/web/.next/standalone/**',
     '!apps/web/.next/static/**',
+    '!apps/web/cron.config.json',
+    '!apps/web/docker/coolify-env.js',
     '!apps/web/docker/prod-entrypoint.js',
+    '!apps/web/docker/request-tracker.js',
     '!apps/web/public/**',
   ];
 

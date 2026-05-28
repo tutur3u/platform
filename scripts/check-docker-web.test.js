@@ -798,6 +798,25 @@ test('validateNativeWebRunnerDockerfile accepts the native runtime image files',
   );
 });
 
+test('validateNativeWebRunnerDockerfile reports missing runtime file copies', () => {
+  const dockerfileContent = fs
+    .readFileSync(NATIVE_WEB_RUNNER_DOCKERFILE_PATH, 'utf8')
+    .replace(
+      'COPY --chown=nextjs:nodejs apps/web/docker/request-tracker.js ./apps/web/docker/request-tracker.js\n',
+      ''
+    );
+  const dockerignoreContent = fs
+    .readFileSync(NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH, 'utf8')
+    .replace('!apps/web/docker/request-tracker.js\n', '');
+
+  const errors = validateNativeWebRunnerDockerfile(
+    dockerfileContent,
+    dockerignoreContent
+  ).join('\n');
+
+  assert.match(errors, /request-tracker\.js/);
+});
+
 test('validateMarkitdownDockerfile accepts the current MarkItDown Dockerfile', () => {
   const dockerfileContent = fs.readFileSync(MARKITDOWN_DOCKERFILE_PATH, 'utf8');
 

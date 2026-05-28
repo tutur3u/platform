@@ -1768,6 +1768,7 @@ async function buildBlueGreenServices({
     }
 
     await buildNativeWebRuntimeImages({
+      composeGlobalArgs,
       env,
       noCache,
       rootDir,
@@ -2011,8 +2012,40 @@ function isNativeWebBuildEnabled(env = {}) {
   return isTruthyEnvValue(env.DOCKER_WEB_NATIVE_BUILD);
 }
 
-function getBlueGreenWebServiceImageTag(serviceName, env = {}) {
+function getComposeProjectNameFromGlobalArgs(composeGlobalArgs = []) {
+  for (let index = 0; index < composeGlobalArgs.length; index += 1) {
+    const arg = composeGlobalArgs[index];
+
+    if (arg === '-p' || arg === '--project-name') {
+      const value = composeGlobalArgs[index + 1];
+
+      if (typeof value === 'string' && value.trim().length > 0) {
+        return value.trim();
+      }
+    }
+
+    if (typeof arg === 'string' && arg.startsWith('--project-name=')) {
+      const value = arg.slice('--project-name='.length).trim();
+
+      if (value.length > 0) {
+        return value;
+      }
+    }
+  }
+
+  return null;
+}
+
+function getBlueGreenWebServiceImageTag(serviceName, envOrOptions = {}) {
+  const env =
+    typeof envOrOptions.env === 'object' && envOrOptions.env !== null
+      ? envOrOptions.env
+      : envOrOptions;
+  const composeGlobalArgs = Array.isArray(envOrOptions.composeGlobalArgs)
+    ? envOrOptions.composeGlobalArgs
+    : [];
   const projectName =
+    getComposeProjectNameFromGlobalArgs(composeGlobalArgs) ||
     env.COMPOSE_PROJECT_NAME ||
     getDockerWebComposeProjectName({ baseEnv: env });
 
@@ -2074,6 +2107,7 @@ async function buildNativeWebArtifacts({
 }
 
 async function buildNativeWebRuntimeImages({
+  composeGlobalArgs = [],
   env = {},
   noCache = false,
   rootDir = ROOT_DIR,
@@ -2094,7 +2128,7 @@ async function buildNativeWebRuntimeImages({
         '--file',
         getNativeWebRunnerDockerfile(rootDir),
         '--tag',
-        getBlueGreenWebServiceImageTag(serviceName, env),
+        getBlueGreenWebServiceImageTag(serviceName, { composeGlobalArgs, env }),
         rootDir,
       ],
       {
