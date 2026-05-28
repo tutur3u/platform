@@ -11,20 +11,24 @@ import { formatChatDate } from './utils';
 
 interface MessageListProps {
   currentUserId: string;
+  isAgentTyping?: boolean;
   isLoading?: boolean;
   messages: ChatMessage[];
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   readOnly?: boolean;
+  wsId: string;
 }
 
 export function MessageList({
   currentUserId,
+  isAgentTyping,
   isLoading,
   messages,
   onOpenAttachment,
   onToggleReaction,
   readOnly,
+  wsId,
 }: MessageListProps) {
   const t = useTranslations('chat');
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -42,7 +46,7 @@ export function MessageList({
     );
   }
 
-  if (messages.length === 0) {
+  if (messages.length === 0 && !isAgentTyping) {
     return (
       <div className="flex min-h-0 flex-1 items-center justify-center p-8 text-center">
         <div className="max-w-sm">
@@ -75,17 +79,70 @@ export function MessageList({
                   </Badge>
                 </div>
               )}
-              <MessageBubble
-                currentUserId={currentUserId}
-                message={message}
-                onOpenAttachment={onOpenAttachment}
-                onToggleReaction={readOnly ? undefined : onToggleReaction}
-              />
+              {message.kind === 'system' ? (
+                <MessageSystemEvent message={message} />
+              ) : (
+                <MessageBubble
+                  currentUserId={currentUserId}
+                  message={message}
+                  onOpenAttachment={onOpenAttachment}
+                  onToggleReaction={readOnly ? undefined : onToggleReaction}
+                  wsId={wsId}
+                />
+              )}
             </div>
           );
         })}
+        {isAgentTyping ? <AgentTypingIndicator /> : null}
         <div ref={bottomRef} />
       </div>
     </ScrollArea>
+  );
+}
+
+function AgentTypingIndicator() {
+  const t = useTranslations('chat');
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground">
+        <LoaderCircle className="size-4 animate-spin" />
+      </div>
+      <div className="rounded-md border bg-muted/40 px-3 py-2 text-muted-foreground text-sm">
+        <span className="sr-only">{t('agent_typing')}</span>
+        <span aria-hidden="true" className="flex items-center gap-1">
+          <span className="size-1.5 animate-pulse rounded-full bg-current" />
+          <span className="size-1.5 animate-pulse rounded-full bg-current delay-150" />
+          <span className="size-1.5 animate-pulse rounded-full bg-current delay-300" />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function MessageSystemEvent({ message }: { message: ChatMessage }) {
+  const t = useTranslations('chat');
+  const metadata = message.metadata;
+  const eventType =
+    typeof metadata.eventType === 'string' ? metadata.eventType : null;
+  const actorName = message.sender?.displayName ?? t('unknown_sender');
+
+  let label = message.content || t('system_event_generic');
+
+  if (eventType === 'conversation.renamed') {
+    const title = typeof metadata.title === 'string' ? metadata.title : '';
+    label = title
+      ? t('system_event_conversation_renamed', { actorName, title })
+      : t('system_event_conversation_updated', { actorName });
+  } else if (eventType === 'conversation.description_updated') {
+    label = t('system_event_conversation_updated', { actorName });
+  }
+
+  return (
+    <div className="flex justify-center px-4">
+      <span className="rounded-full border bg-muted/40 px-3 py-1 text-muted-foreground text-xs">
+        {label}
+      </span>
+    </div>
   );
 }

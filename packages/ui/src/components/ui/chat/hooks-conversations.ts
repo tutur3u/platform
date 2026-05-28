@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type ChatConversation,
   type CreateChatConversationPayload,
@@ -10,13 +10,16 @@ import {
   markWorkspaceChatConversationRead,
   type UpdateChatConversationPayload,
   updateWorkspaceChatConversation,
-} from "@tuturuuu/internal-api";
-import { chatQueryKeys } from "./query-keys";
+} from '@tuturuuu/internal-api';
+import { chatQueryKeys } from './query-keys';
 
-export function useChatConversations(wsId: string) {
+export function useChatConversations(
+  wsId: string,
+  archived: 'active' | 'all' | 'archived' = 'active'
+) {
   return useQuery({
-    queryFn: () => listWorkspaceChatConversations(wsId),
-    queryKey: chatQueryKeys.conversations(wsId),
+    queryFn: () => listWorkspaceChatConversations(wsId, { archived }),
+    queryKey: chatQueryKeys.conversations(wsId, archived),
     staleTime: 15_000,
   });
 }
@@ -29,16 +32,16 @@ export function useCreateChatConversation(wsId: string) {
       createWorkspaceChatConversation(wsId, payload),
     onSuccess: ({ conversation }) => {
       queryClient.setQueryData<ChatConversation[]>(
-        chatQueryKeys.conversations(wsId),
+        chatQueryKeys.conversations(wsId, 'active'),
         (current = []) => {
           const withoutDuplicate = current.filter(
-            (item) => item.id !== conversation.id,
+            (item) => item.id !== conversation.id
           );
           return [conversation, ...withoutDuplicate];
-        },
+        }
       );
       queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(wsId),
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
       });
     },
   });
@@ -52,12 +55,12 @@ export function useDeleteChatConversation(wsId: string) {
       deleteWorkspaceChatConversation(wsId, conversationId),
     onSuccess: ({ result }) => {
       queryClient.setQueryData<ChatConversation[]>(
-        chatQueryKeys.conversations(wsId),
+        chatQueryKeys.conversations(wsId, 'active'),
         (current = []) =>
-          current.filter((item) => item.id !== result.conversationId),
+          current.filter((item) => item.id !== result.conversationId)
       );
       queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(wsId),
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
       });
     },
   });
@@ -76,14 +79,14 @@ export function useUpdateChatConversation(wsId: string) {
     }) => updateWorkspaceChatConversation(wsId, conversationId, payload),
     onSuccess: ({ conversation }) => {
       queryClient.setQueryData<ChatConversation[]>(
-        chatQueryKeys.conversations(wsId),
+        chatQueryKeys.conversations(wsId, 'active'),
         (current = []) =>
           current.map((item) =>
-            item.id === conversation.id ? conversation : item,
-          ),
+            item.id === conversation.id ? conversation : item
+          )
       );
       queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(wsId),
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
       });
     },
   });
@@ -101,7 +104,7 @@ export function useMarkChatConversationRead({
   return useMutation({
     mutationFn: (messageId?: string | null) => {
       if (!conversationId) {
-        throw new Error("Conversation is required");
+        throw new Error('Conversation is required');
       }
 
       return markWorkspaceChatConversationRead(wsId, conversationId, {
@@ -110,11 +113,11 @@ export function useMarkChatConversationRead({
     },
     onSuccess: ({ conversation }) => {
       queryClient.setQueryData<ChatConversation[]>(
-        chatQueryKeys.conversations(wsId),
+        chatQueryKeys.conversations(wsId, 'active'),
         (current = []) =>
           current.map((item) =>
-            item.id === conversation.id ? conversation : item,
-          ),
+            item.id === conversation.id ? conversation : item
+          )
       );
     },
   });

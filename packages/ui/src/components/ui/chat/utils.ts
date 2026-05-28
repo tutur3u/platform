@@ -6,8 +6,15 @@ import type {
 } from '@tuturuuu/internal-api';
 
 export type ChatConversationScope = 'personal' | 'workspaces';
+export type ChatConversationArchiveFilter = 'active' | 'all' | 'archived';
 
 export const DEFAULT_CHAT_SCOPE: ChatConversationScope = 'personal';
+export const CHAT_CONVERSATION_TYPE_FILTERS = [
+  'direct',
+  'group',
+  'channel',
+  'ai',
+] as const satisfies ChatConversationType[];
 
 export function normalizeChatConversationScope(
   scope?: string | null
@@ -23,6 +30,18 @@ export function getChatConversationScope(
     : 'workspaces';
 }
 
+export function isChatConversation(value: unknown): value is ChatConversation {
+  const conversation = value as Partial<ChatConversation> | null | undefined;
+
+  return Boolean(
+    conversation?.id &&
+      (conversation.type === 'direct' ||
+        conversation.type === 'group' ||
+        conversation.type === 'channel' ||
+        conversation.type === 'ai')
+  );
+}
+
 export function getChatConversationTypesForScope(
   scope: ChatConversationScope
 ): ChatConversationType[] {
@@ -34,8 +53,33 @@ export function filterChatConversationsByScope(
   scope: ChatConversationScope
 ) {
   return conversations.filter(
-    (conversation) => getChatConversationScope(conversation) === scope
+    (conversation) =>
+      isChatConversation(conversation) &&
+      getChatConversationScope(conversation) === scope
   );
+}
+
+export function filterChatConversations({
+  archiveFilter = 'active',
+  conversations,
+  scope,
+  types,
+}: {
+  archiveFilter?: ChatConversationArchiveFilter;
+  conversations: ChatConversation[];
+  scope: ChatConversationScope;
+  types?: ChatConversationType[];
+}) {
+  const typeSet = new Set(types ?? getChatConversationTypesForScope(scope));
+
+  return conversations.filter((conversation) => {
+    if (!isChatConversation(conversation)) return false;
+    if (getChatConversationScope(conversation) !== scope) return false;
+    if (!typeSet.has(conversation.type)) return false;
+    if (archiveFilter === 'active') return !conversation.archivedAt;
+    if (archiveFilter === 'archived') return Boolean(conversation.archivedAt);
+    return true;
+  });
 }
 
 export function getChatInitials(profile?: ChatUserProfile | string | null) {
@@ -119,7 +163,9 @@ export function isReadOnlyChatConversation(
   conversation?: Pick<ChatConversation, 'metadata'> | null
 ) {
   return (
-    conversation?.metadata?.source === 'ai-agent' &&
+    (conversation?.metadata?.source === 'ai-agent' ||
+      conversation?.metadata?.source === 'ai-chat' ||
+      conversation?.metadata?.source === 'legacy-ai-chat') &&
     conversation.metadata.readOnly === true
   );
 }
@@ -129,6 +175,7 @@ export interface ChatPreviewLabels {
   message?: string;
   messageDeleted?: string;
   noMessagesYet?: string;
+  systemEvent?: string;
 }
 
 export function getLastMessagePreview(
@@ -137,6 +184,8 @@ export function getLastMessagePreview(
 ) {
   if (!message) return labels.noMessagesYet ?? '';
   if (message.deletedAt) return labels.messageDeleted ?? '';
+  if (message.kind === 'system')
+    return labels.systemEvent ?? labels.message ?? '';
   if (message.content.trim()) return message.content.trim();
   if (message.attachments.length > 0) {
     return message.attachments[0]?.filename ?? labels.attachment ?? '';

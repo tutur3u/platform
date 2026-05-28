@@ -6,19 +6,33 @@ import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
+import { Popover, PopoverContent, PopoverTrigger } from '../popover';
 import { MessageAttachmentButton } from './message-attachment-button';
+import { MessageLinkPreviews, MessageText } from './message-links';
+import { MessageMarkdown } from './message-markdown';
 import { formatChatTime, getChatInitials } from './utils';
+
+const REACTION_OPTIONS = [
+  '\u{1F44D}',
+  '\u{2764}\u{FE0F}',
+  '\u{1F602}',
+  '\u{1F389}',
+  '\u{1F64F}',
+  '\u{1F440}',
+] as const;
 
 export function MessageBubble({
   currentUserId,
   message,
   onOpenAttachment,
   onToggleReaction,
+  wsId,
 }: {
   currentUserId: string;
   message: ChatMessage;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  wsId: string;
 }) {
   const t = useTranslations('chat');
   const isOwnMessage = message.senderId === currentUserId;
@@ -66,6 +80,7 @@ export function MessageBubble({
           isOwnMessage={isOwnMessage}
           message={message}
           onOpenAttachment={onOpenAttachment}
+          wsId={wsId}
         />
         <ReactionBar message={message} onToggleReaction={onToggleReaction} />
       </div>
@@ -98,10 +113,12 @@ function MessageContent({
   isOwnMessage,
   message,
   onOpenAttachment,
+  wsId,
 }: {
   isOwnMessage: boolean;
   message: ChatMessage;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
+  wsId: string;
 }) {
   const t = useTranslations('chat');
 
@@ -121,7 +138,22 @@ function MessageContent({
       ) : (
         <>
           {message.content && (
-            <p className="whitespace-pre-wrap break-words">{message.content}</p>
+            <>
+              {message.kind === 'assistant' ? (
+                <MessageMarkdown
+                  isAnimating={message.metadata?.streaming === true}
+                  text={message.content}
+                />
+              ) : (
+                <MessageText content={message.content} />
+              )}
+              <MessageLinkPreviews
+                content={message.content}
+                conversationId={message.conversationId}
+                isOwnMessage={isOwnMessage}
+                wsId={wsId}
+              />
+            </>
           )}
           {message.attachments.length > 0 && (
             <div className="mt-2 grid gap-2">
@@ -130,6 +162,7 @@ function MessageContent({
                   attachment={attachment}
                   key={attachment.id}
                   onOpenAttachment={onOpenAttachment}
+                  wsId={wsId}
                 />
               ))}
             </div>
@@ -165,16 +198,36 @@ function ReactionBar({
           <span>{reaction.count}</span>
         </Button>
       ))}
-      <Button
-        aria-label={t('react_to_message')}
-        className="size-7 rounded-full"
-        onClick={() => onToggleReaction?.(message.id, '+1')}
-        size="icon"
-        type="button"
-        variant="ghost"
-      >
-        <SmilePlus className="size-3.5" />
-      </Button>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            aria-label={t('react_to_message')}
+            className="size-7 rounded-full"
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <SmilePlus className="size-3.5" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="end" className="w-auto p-1">
+          <div className="grid grid-cols-6 gap-1">
+            {REACTION_OPTIONS.map((emoji) => (
+              <Button
+                aria-label={t('add_reaction', { reaction: emoji })}
+                className="size-9 rounded-md text-lg"
+                key={emoji}
+                onClick={() => onToggleReaction(message.id, emoji)}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                {emoji}
+              </Button>
+            ))}
+          </div>
+        </PopoverContent>
+      </Popover>
     </div>
   );
 }

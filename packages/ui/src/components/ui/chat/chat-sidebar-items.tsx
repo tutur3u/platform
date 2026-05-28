@@ -34,11 +34,15 @@ export function ConversationRow({
     group: t('group_chat'),
   });
   const readOnly = isReadOnlyChatConversation(conversation);
+  const isAiConversation = conversation.type === 'ai';
 
   return (
     <button
       className={cn(
-        'flex w-full items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-accent',
+        'grid w-full min-w-0 items-center gap-3 overflow-hidden rounded-md px-2 py-2 text-left transition-colors hover:bg-accent',
+        isAiConversation
+          ? 'grid-cols-[2.25rem_minmax(0,1fr)]'
+          : 'grid-cols-[2.25rem_minmax(0,1fr)_3rem]',
         isSelected && 'bg-accent'
       )}
       onClick={() => onSelectConversation(conversation.id)}
@@ -49,31 +53,38 @@ export function ConversationRow({
         currentUserId={currentUserId}
         title={title}
       />
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-2">
-          <span className="truncate font-medium text-sm">{title}</span>
-          {conversation.aiEnabled && (
-            <Badge className="h-5" variant="secondary">
+      <span className="min-w-0 overflow-hidden">
+        <span className="flex min-w-0 items-center gap-2">
+          <span className="line-clamp-1 min-w-0 flex-1 break-all font-medium text-sm">
+            {title}
+          </span>
+          {conversation.aiEnabled && !isAiConversation && (
+            <Badge className="h-5 shrink-0" variant="secondary">
               <Bot className="size-3" />
               {t('ai_badge')}
             </Badge>
           )}
-          {readOnly && (
-            <Badge className="h-5" variant="outline">
+          {readOnly && !isAiConversation && (
+            <Badge className="h-5 shrink-0" variant="outline">
               {t('read_only_badge')}
             </Badge>
           )}
         </span>
-        <span className="mt-0.5 block truncate text-muted-foreground text-xs">
-          {getLastMessagePreview(conversation.latestMessage, {
-            attachment: t('attachment'),
-            message: t('message'),
-            messageDeleted: t('message_deleted'),
-            noMessagesYet: t('no_messages_yet'),
-          })}
-        </span>
+        {!isAiConversation && (
+          <span className="mt-0.5 line-clamp-1 break-all text-muted-foreground text-xs">
+            {getLastMessagePreview(conversation.latestMessage, {
+              attachment: t('attachment'),
+              message: t('message'),
+              messageDeleted: t('message_deleted'),
+              noMessagesYet: t('no_messages_yet'),
+              systemEvent: t('system_event'),
+            })}
+          </span>
+        )}
       </span>
-      <ConversationUnreadState conversation={conversation} />
+      {!isAiConversation && (
+        <ConversationUnreadState conversation={conversation} />
+      )}
     </button>
   );
 }
@@ -166,8 +177,8 @@ function ConversationUnreadState({
   conversation: ChatConversation;
 }) {
   return (
-    <span className="flex shrink-0 flex-col items-end gap-1">
-      <span className="text-[11px] text-muted-foreground">
+    <span className="flex w-12 shrink-0 flex-col items-end gap-1 overflow-hidden">
+      <span className="max-w-full truncate text-[11px] text-muted-foreground">
         {conversation.latestMessage
           ? formatChatTime(conversation.latestMessage.createdAt)
           : formatChatTime(conversation.updatedAt)}

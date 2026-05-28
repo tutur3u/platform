@@ -5,8 +5,8 @@ import type { ChatFriendRequest } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
-import { getChatInitials } from './utils';
 import { useChatFriendRequests, useRespondChatFriendRequest } from './hooks';
+import { getChatInitials } from './utils';
 
 interface FriendRequestsPanelProps {
   currentUserId: string;

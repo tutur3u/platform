@@ -5,6 +5,7 @@ import {
   createWorkspaceChatFriendRequest,
   listWorkspaceChatFriendRequests,
   respondWorkspaceChatFriendRequest,
+  revokeWorkspaceChatFriendRequest,
 } from '@tuturuuu/internal-api';
 import { chatQueryKeys } from './query-keys';
 
@@ -27,7 +28,7 @@ export function useCreateChatFriendRequest(wsId: string) {
         queryKey: chatQueryKeys.friendRequests(wsId),
       });
       queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(wsId),
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
       });
     },
   });
@@ -49,7 +50,24 @@ export function useRespondChatFriendRequest(wsId: string) {
         queryKey: chatQueryKeys.friendRequests(wsId),
       });
       queryClient.invalidateQueries({
-        queryKey: chatQueryKeys.conversations(wsId),
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
+      });
+    },
+  });
+}
+
+export function useRevokeChatFriendRequest(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (requestId: string) =>
+      revokeWorkspaceChatFriendRequest(wsId, requestId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: chatQueryKeys.friendRequests(wsId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
       });
     },
   });

@@ -3,4 +3,5 @@ export * from './hooks-conversations';
 export * from './hooks-directory';
 export * from './hooks-friends';
 export * from './hooks-messages';
+export * from './hooks-shared-content';
 export * from './query-keys';

@@ -4,11 +4,13 @@ import { LoaderCircle, Paperclip, Send, Upload, X } from '@tuturuuu/icons';
 import type { ChatAttachmentDraft } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type FormEvent, useRef, useState } from 'react';
+import { type ClipboardEvent, type FormEvent, useRef, useState } from 'react';
 import { Button } from '../button';
 import { toast } from '../sonner';
 import { Textarea } from '../textarea';
 import { formatFileSize } from './utils';
+
+const MAX_COMPOSER_ATTACHMENTS = 20;
 
 interface MessageComposerProps {
   disabled?: boolean;
@@ -41,21 +43,37 @@ export function MessageComposer({
     event.preventDefault();
     if (!canSend || busy) return;
 
-    await onSend({
-      attachments,
-      content: content.trim(),
-    });
+    const draftContent = content.trim();
+    const draftAttachments = attachments;
+
     setContent('');
     setAttachments([]);
+
+    try {
+      await onSend({
+        attachments: draftAttachments,
+        content: draftContent,
+      });
+    } catch {
+      setContent(draftContent);
+      setAttachments(draftAttachments);
+    }
   }
 
-  async function handleFiles(files: FileList | null) {
-    if (!files?.length) return;
+  async function handleFileCandidates(files: File[]) {
+    if (disabled || files.length === 0) return;
 
-    setUploadingCount((count) => count + files.length);
+    const remainingSlots = Math.max(
+      MAX_COMPOSER_ATTACHMENTS - attachments.length,
+      0
+    );
+    const nextFiles = files.slice(0, remainingSlots);
+    if (nextFiles.length === 0) return;
+
+    setUploadingCount((count) => count + nextFiles.length);
     const uploaded: ChatAttachmentDraft[] = [];
 
-    for (const file of Array.from(files)) {
+    for (const file of nextFiles) {
       try {
         uploaded.push(await onUploadFile(file));
       } catch {
@@ -71,6 +89,33 @@ export function MessageComposer({
 
     if (inputRef.current) {
       inputRef.current.value = '';
+    }
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    await handleFileCandidates(Array.from(files));
+  }
+
+  function handlePaste(event: ClipboardEvent<HTMLTextAreaElement>) {
+    if (disabled) return;
+
+    const clipboardData = event.clipboardData;
+    const candidates: File[] = [];
+
+    for (const item of Array.from(clipboardData.items)) {
+      if (item.kind !== 'file') continue;
+
+      const file = item.getAsFile();
+      if (file) candidates.push(file);
+    }
+
+    if (candidates.length === 0) return;
+
+    void handleFileCandidates(candidates);
+
+    if (!clipboardData.getData('text/plain')) {
+      event.preventDefault();
     }
   }
 
@@ -144,6 +189,7 @@ export function MessageComposer({
               event.currentTarget.form?.requestSubmit();
             }
           }}
+          onPaste={handlePaste}
           placeholder={t('message_placeholder')}
           value={content}
         />

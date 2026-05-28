@@ -3,8 +3,8 @@ import { describe, expect, it } from 'vitest';
 import {
   filterChatConversationsByScope,
   formatFileSize,
-  getChatInitials,
   getChatConversationTypesForScope,
+  getChatInitials,
   getConversationTitle,
   getLastMessagePreview,
   isReadOnlyChatConversation,
