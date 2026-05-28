@@ -34,7 +34,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
         with:
           fetch-depth: 2
-          persist-credentials: false
+          persist-credentials: true
 
       - name: Check for newer commits
         id: check_commits
