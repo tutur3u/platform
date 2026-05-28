@@ -5,6 +5,7 @@ import {
   getChatInitials,
   getConversationTitle,
   getLastMessagePreview,
+  isReadOnlyChatConversation,
 } from './utils';
 
 const baseMessage: ChatMessage = {
@@ -127,5 +128,21 @@ describe('chat utils', () => {
   it('formats file sizes for attachment rows', () => {
     expect(formatFileSize(0)).toBe('0 B');
     expect(formatFileSize(2048)).toBe('2.0 KB');
+  });
+
+  it('recognizes read-only virtual AI agent conversations', () => {
+    expect(
+      isReadOnlyChatConversation(
+        conversation({
+          metadata: {
+            readOnly: true,
+            source: 'ai-agent',
+          },
+        })
+      )
+    ).toBe(true);
+    expect(isReadOnlyChatConversation(conversation({ metadata: {} }))).toBe(
+      false
+    );
   });
 });

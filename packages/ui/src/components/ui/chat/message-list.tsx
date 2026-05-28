@@ -15,6 +15,7 @@ interface MessageListProps {
   messages: ChatMessage[];
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
+  readOnly?: boolean;
 }
 
 export function MessageList({
@@ -23,6 +24,7 @@ export function MessageList({
   messages,
   onOpenAttachment,
   onToggleReaction,
+  readOnly,
 }: MessageListProps) {
   const t = useTranslations('chat');
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -77,7 +79,7 @@ export function MessageList({
                 currentUserId={currentUserId}
                 message={message}
                 onOpenAttachment={onOpenAttachment}
-                onToggleReaction={onToggleReaction}
+                onToggleReaction={readOnly ? undefined : onToggleReaction}
               />
             </div>
           );

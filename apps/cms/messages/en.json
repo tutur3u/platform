@@ -2084,6 +2084,7 @@
     "updates": "updates"
   },
   "chat": {
+    "agent_channel": "Agent channel",
     "ai_badge": "AI",
     "archive": "Archive",
     "assistant_name": "Mira",
@@ -2122,6 +2123,8 @@
     "private_by_default": "Private schema by default",
     "private_schema_status": "Private chat",
     "react_to_message": "React to message",
+    "read_only_badge": "Read-only",
+    "read_only_conversation": "This agent channel is discoverable here, but messages are read-only. Manage it from Infrastructure > AI Agents.",
     "remove_attachment": "Remove attachment",
     "search": "Search",
     "search_placeholder": "Search messages",

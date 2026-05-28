@@ -7,6 +7,7 @@ import type {
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
+import { Badge } from '../badge';
 import { toast } from '../sonner';
 import { ChatSidebar } from './chat-sidebar';
 import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
@@ -23,7 +24,7 @@ import {
 } from './hooks';
 import { MessageComposer } from './message-composer';
 import { MessageList } from './message-list';
-import { getConversationTitle } from './utils';
+import { getConversationTitle, isReadOnlyChatConversation } from './utils';
 
 interface ChatWorkspaceProps {
   className?: string;
@@ -54,11 +55,16 @@ export function ChatWorkspace({
     [conversations, selectedConversationId]
   );
   const activeConversationId = selectedConversation?.id ?? null;
+  const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
   const messagesQuery = useChatMessages({
-    conversationId: activeConversationId,
+    conversationId: selectedReadOnly ? null : activeConversationId,
     wsId,
   });
-  const messages = messagesQuery.data ?? [];
+  const messages = selectedReadOnly
+    ? selectedConversation?.latestMessage
+      ? [selectedConversation.latestMessage]
+      : []
+    : (messagesQuery.data ?? []);
   const sendMessage = useSendChatMessage({
     conversationId: activeConversationId,
     wsId,
@@ -86,9 +92,15 @@ export function ChatWorkspace({
   const latestMessageId = messages.at(-1)?.id ?? null;
 
   useEffect(() => {
+    if (selectedReadOnly) return;
     if (!activeConversationId || !latestMessageId) return;
     markConversationRead(latestMessageId);
-  }, [activeConversationId, latestMessageId, markConversationRead]);
+  }, [
+    activeConversationId,
+    latestMessageId,
+    markConversationRead,
+    selectedReadOnly,
+  ]);
 
   const selectedTitle = selectedConversation
     ? getConversationTitle(selectedConversation, currentUserId, {
@@ -157,17 +169,30 @@ export function ChatWorkspace({
               isLoading={messagesQuery.isLoading}
               messages={messages}
               onOpenAttachment={handleOpenAttachment}
-              onToggleReaction={(messageId, emoji) =>
-                toggleReaction.mutate({ emoji, messageId })
+              onToggleReaction={
+                selectedReadOnly
+                  ? undefined
+                  : (messageId, emoji) =>
+                      toggleReaction.mutate({ emoji, messageId })
               }
+              readOnly={selectedReadOnly}
             />
-            <MessageComposer
-              disabled={!activeConversationId}
-              isSending={sendMessage.isPending}
-              isUploading={uploadAttachment.isPending}
-              onSend={handleSend}
-              onUploadFile={(file) => uploadAttachment.mutateAsync(file)}
-            />
+            {selectedReadOnly ? (
+              <div className="flex items-center justify-between gap-3 border-t bg-muted/25 px-4 py-3 text-sm">
+                <span className="text-muted-foreground">
+                  {t('read_only_conversation')}
+                </span>
+                <Badge variant="secondary">{t('agent_channel')}</Badge>
+              </div>
+            ) : (
+              <MessageComposer
+                disabled={!activeConversationId}
+                isSending={sendMessage.isPending}
+                isUploading={uploadAttachment.isPending}
+                onSend={handleSend}
+                onUploadFile={(file) => uploadAttachment.mutateAsync(file)}
+              />
+            )}
           </>
         ) : (
           <EmptyConversationState onCreate={() => setCreateOpen(true)} />

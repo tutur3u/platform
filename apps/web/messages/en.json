@@ -626,15 +626,22 @@
   },
   "ai-agents-settings": {
     "actions": {
+      "cancel": "Cancel",
+      "clear": "Clear",
       "copy": "Copy",
+      "copy_webhook": "Copy webhook URL",
       "create": "Create agent",
       "deploy": "Deploy",
       "dismiss": "Dismiss",
+      "hide": "Hide",
       "link_identity": "Link user",
       "pause": "Pause",
+      "replace": "Replace",
       "rotate_zalo_secret": "Rotate Zalo secret",
       "save": "Save",
-      "test": "Test"
+      "show": "Show",
+      "test": "Test",
+      "undo": "Undo"
     },
     "channels": {
       "discord": "Discord",
@@ -652,6 +659,7 @@
       "display_name": "Display name",
       "enabled": "Enabled",
       "instructions": "Instructions",
+      "last_event": "Last event",
       "model": "Model",
       "name": "Name",
       "platform_user_id": "Tuturuuu user ID",
@@ -666,6 +674,7 @@
       "title": "Zalo identity links"
     },
     "messages": {
+      "copy_error": "Copy failed",
       "copy_success": "Secret copied",
       "deploy_error": "Deploy failed",
       "deploy_success": "Agent channel deployed",
@@ -687,6 +696,7 @@
       "title": "Registered agents"
     },
     "secret": {
+      "cleared_on_save": "Cleared on save",
       "configured": "Ends in {suffix}",
       "description": "Store this {name} value for {channelId}. It is shown once.",
       "missing": "Missing",
@@ -699,9 +709,15 @@
       "draft": "Draft",
       "enabled": "Enabled",
       "error": "Error",
+      "never": "Never",
       "paused": "Paused"
     },
-    "title": "AI Agents"
+    "title": "AI Agents",
+    "workspace": {
+      "empty": "No workspaces found.",
+      "search_placeholder": "Search workspace by name or ID...",
+      "select": "Select workspace"
+    }
   },
   "ai-credits": {
     "beta": "Beta",
@@ -3219,6 +3235,7 @@
     "updates": "updates"
   },
   "chat": {
+    "agent_channel": "Agent channel",
     "ai_badge": "AI",
     "archive": "Archive",
     "assistant_name": "Mira",
@@ -3257,6 +3274,8 @@
     "private_by_default": "Private schema by default",
     "private_schema_status": "Private chat",
     "react_to_message": "React to message",
+    "read_only_badge": "Read-only",
+    "read_only_conversation": "This agent channel is discoverable here, but messages are read-only. Manage it from Infrastructure > AI Agents.",
     "remove_attachment": "Remove attachment",
     "search": "Search",
     "search_placeholder": "Search messages",

@@ -19,10 +19,23 @@ Deploying an agent enables an `apps/web` webhook endpoint:
 Chat SDK runtime through `@tuturuuu/ai/chat-sdk`, and runs the response loop with
 AI SDK `ToolLoopAgent`.
 
-Production deployments require a root secret named
-`AI_AGENT_CHAT_SDK_STATE_REDIS_URL`. Local development may use the Chat SDK
-memory state adapter, but production must use Redis so thread subscriptions,
-dedupe, and locks survive cold starts and multiple instances.
+Production deployments use Redis so thread subscriptions, dedupe, and locks
+survive cold starts and multiple instances. Runtime resolution checks, in order:
+
+1. Root workspace secret `AI_AGENT_CHAT_SDK_STATE_REDIS_URL`.
+2. Environment variables `AI_AGENT_CHAT_SDK_STATE_REDIS_URL`, `REDIS_URL`, or
+   `DOCKER_WEB_REDIS_URL`.
+3. The bundled blue/green Docker Redis service at `redis://redis:6379` when a
+   blue/green runtime mount or Docker SRH URL is present.
+
+Local development may use the Chat SDK memory state adapter when no durable
+Redis runtime is configured.
+
+Webhook URLs are generated from the canonical public platform origin, not the
+incoming request host. Set `AI_AGENT_WEBHOOK_ORIGIN` for an explicit override;
+otherwise `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`,
+`PLATFORM_BUILD_DEPLOYMENT_URL`, and production fallback `https://tuturuuu.com`
+are used before local request-origin fallback.
 
 ## Secret Namespace
 
@@ -39,6 +52,15 @@ AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId>
 
 Admin APIs redact channel secrets. One-time generated values are shown only
 after rotation.
+
+## Chat Discovery
+
+The shared chat UI displays enabled AI-agent channels as read-only virtual
+conversations in the internal root workspace. These entries are discoverable in
+`apps/web` and the standalone `apps/chat` app, but they do not create private
+chat rows in v1 and cannot be used for sending messages or reactions. Operators
+manage credentials, deployment, and webhook URLs from Infrastructure > AI
+Agents.
 
 ## Discord And Zalo Setup
 

@@ -81,6 +81,15 @@ export function formatFileSize(size?: number | null) {
   return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
+export function isReadOnlyChatConversation(
+  conversation?: Pick<ChatConversation, 'metadata'> | null
+) {
+  return (
+    conversation?.metadata?.source === 'ai-agent' &&
+    conversation.metadata.readOnly === true
+  );
+}
+
 export interface ChatPreviewLabels {
   attachment?: string;
   message?: string;

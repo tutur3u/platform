@@ -1595,6 +1595,7 @@
     "updates": "cập nhật"
   },
   "chat": {
+    "agent_channel": "Kênh agent",
     "ai_badge": "AI",
     "archive": "Lưu trữ",
     "assistant_name": "Mira",
@@ -1633,6 +1634,8 @@
     "private_by_default": "Mặc định dùng schema riêng tư",
     "private_schema_status": "Chat riêng tư",
     "react_to_message": "Thả phản ứng",
+    "read_only_badge": "Chỉ đọc",
+    "read_only_conversation": "Kênh agent này có thể xem tại đây, nhưng tin nhắn ở chế độ chỉ đọc. Quản lý trong Hạ tầng > AI Agents.",
     "remove_attachment": "Gỡ tệp đính kèm",
     "search": "Tìm kiếm",
     "search_placeholder": "Tìm tin nhắn",

@@ -1,9 +1,10 @@
 'use client';
 
-import { FlaskConical, Pause, Play, RotateCw } from '@tuturuuu/icons';
+import { Copy, FlaskConical, Pause, Play, RotateCw } from '@tuturuuu/icons';
 import type { AiAgentDefinition } from '@tuturuuu/internal-api/infrastructure';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
+import { toast } from '@tuturuuu/ui/sonner';
 import { useTranslations } from 'next-intl';
 
 export function AgentOperations({
@@ -41,6 +42,32 @@ export function AgentOperations({
               {channel.enabled ? t('status.enabled') : t('status.disabled')}
             </Badge>
           </div>
+          {channel.webhookUrl ? (
+            <div className="flex min-w-0 items-center gap-2 rounded-md border border-border bg-muted/30 px-2 py-1.5">
+              <code className="min-w-0 flex-1 truncate font-mono text-xs">
+                {channel.webhookUrl}
+              </code>
+              <Button
+                aria-label={t('actions.copy_webhook')}
+                className="h-7 w-7"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(
+                      channel.webhookUrl ?? ''
+                    );
+                    toast.success(t('messages.copy_success'));
+                  } catch {
+                    toast.error(t('messages.copy_error'));
+                  }
+                }}
+                size="icon"
+                type="button"
+                variant="ghost"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          ) : null}
           <div className="flex flex-wrap gap-2">
             <Button
               disabled={isPending}
@@ -85,6 +112,12 @@ export function AgentOperations({
             ) : null}
           </div>
           <div className="grid gap-2 text-sm">
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">
+                {t('fields.last_event')}
+              </span>
+              <span>{channel.lastEventAt ?? t('status.never')}</span>
+            </div>
             {channel.secrets.map((secret) => (
               <div className="flex justify-between gap-3" key={secret.name}>
                 <span className="text-muted-foreground">{secret.name}</span>

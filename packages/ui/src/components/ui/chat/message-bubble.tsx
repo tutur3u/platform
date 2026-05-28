@@ -149,7 +149,7 @@ function ReactionBar({
 }) {
   const t = useTranslations('chat');
 
-  if (message.deletedAt) return null;
+  if (message.deletedAt || !onToggleReaction) return null;
 
   return (
     <div className="flex flex-wrap items-center gap-1 opacity-100 md:opacity-80 md:transition-opacity md:group-hover:opacity-100">

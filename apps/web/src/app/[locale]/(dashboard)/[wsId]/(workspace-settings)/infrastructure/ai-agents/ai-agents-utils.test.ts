@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildAgentPayload } from './ai-agents-utils';
+import { buildAgentPayload, SECRET_CLEAR_VALUE } from './ai-agents-utils';
 
 describe('AI agent settings payload builder', () => {
   it('builds Discord and Zalo channel payloads from the dense admin form', () => {
@@ -52,6 +52,27 @@ describe('AI agent settings payload builder', () => {
       id: 'support',
       instructions: 'Help users.',
       name: 'Support Agent',
+    });
+  });
+
+  it('keeps blank secrets unchanged and sends the clear sentinel as null', () => {
+    const formData = new FormData();
+    formData.set('id', 'support');
+    formData.set('name', 'Support Agent');
+    formData.set('workspaceId', 'workspace-1');
+    formData.set('discordDisplayName', 'Discord');
+    formData.set('discordEnabled', 'on');
+    formData.set('discordApplicationId', SECRET_CLEAR_VALUE);
+    formData.set('discordPublicKey', '');
+    formData.set('discordBotToken', 'new-token');
+    formData.set('zaloDisplayName', 'Zalo');
+
+    const payload = buildAgentPayload(formData);
+
+    expect(payload.channels?.[0]?.secrets).toMatchObject({
+      applicationId: null,
+      botToken: 'new-token',
+      publicKey: undefined,
     });
   });
 });

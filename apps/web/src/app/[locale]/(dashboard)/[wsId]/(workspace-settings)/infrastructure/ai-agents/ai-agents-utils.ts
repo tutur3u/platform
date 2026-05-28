@@ -6,6 +6,7 @@ import type {
 
 export const QUERY_KEY = ['infrastructure', 'ai-agents'];
 export const DEFAULT_MODEL = 'google/gemini-3.1-flash-lite';
+export const SECRET_CLEAR_VALUE = '__tuturuuu_clear_secret__';
 export const TOOL_ALLOWLIST = [
   'get_workspace_context',
   'list_workspace_members',
@@ -48,6 +49,9 @@ function splitLines(value: FormDataEntryValue | null) {
 
 function channelSecret(formData: FormData, key: string) {
   const value = String(formData.get(key) ?? '').trim();
+  if (value === SECRET_CLEAR_VALUE) {
+    return null;
+  }
   return value ? value : undefined;
 }
 

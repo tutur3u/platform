@@ -9,13 +9,16 @@ import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Label } from '@tuturuuu/ui/label';
 import { Switch } from '@tuturuuu/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
 import { Textarea } from '@tuturuuu/ui/textarea';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import { buildAgentPayload, DEFAULT_MODEL } from './ai-agents-utils';
 import {
   DiscordChannelFields,
   ZaloChannelFields,
 } from './channel-config-fields';
+import { WorkspacePicker } from './workspace-picker';
 
 export function AgentForm({
   agent,
@@ -34,7 +37,7 @@ export function AgentForm({
 
   return (
     <form
-      className="space-y-4 rounded-lg border border-border bg-card p-4"
+      className="space-y-5 rounded-lg border border-border bg-card p-4"
       onSubmit={(event) => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -43,7 +46,7 @@ export function AgentForm({
         );
       }}
     >
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)]">
         <div className="space-y-2">
           <Label htmlFor={agent ? `${agent.id}-name` : 'new-name'}>
             {t('fields.name')}
@@ -55,6 +58,15 @@ export function AgentForm({
             required
           />
         </div>
+        <WorkspacePicker
+          defaultValue={
+            discord?.workspaceId || zalo?.workspaceId || ROOT_WORKSPACE_ID
+          }
+          id={agent ? `${agent.id}-workspaceId` : 'new-workspaceId'}
+        />
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(16rem,0.45fr)]">
         <div className="space-y-2">
           <Label htmlFor={agent ? `${agent.id}-id` : 'new-id'}>
             {t('fields.agent_id')}
@@ -69,22 +81,6 @@ export function AgentForm({
           />
         </div>
         <div className="space-y-2">
-          <Label
-            htmlFor={agent ? `${agent.id}-workspaceId` : 'new-workspaceId'}
-          >
-            {t('fields.workspace_id')}
-          </Label>
-          <Input
-            defaultValue={discord?.workspaceId || zalo?.workspaceId || ''}
-            id={agent ? `${agent.id}-workspaceId` : 'new-workspaceId'}
-            name="workspaceId"
-            required
-          />
-        </div>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
           <Label htmlFor={agent ? `${agent.id}-modelId` : 'new-modelId'}>
             {t('fields.model')}
           </Label>
@@ -95,16 +91,17 @@ export function AgentForm({
             required
           />
         </div>
-        <div className="flex items-center gap-3 pt-7">
-          <Switch
-            defaultChecked={agent?.enabled ?? true}
-            id={agent ? `${agent.id}-enabled` : 'new-enabled'}
-            name="enabled"
-          />
-          <Label htmlFor={agent ? `${agent.id}-enabled` : 'new-enabled'}>
-            {t('fields.enabled')}
-          </Label>
-        </div>
+      </div>
+
+      <div className="flex items-center gap-3 rounded-md border border-border bg-background px-3 py-2">
+        <Switch
+          defaultChecked={agent?.enabled ?? true}
+          id={agent ? `${agent.id}-enabled` : 'new-enabled'}
+          name="enabled"
+        />
+        <Label htmlFor={agent ? `${agent.id}-enabled` : 'new-enabled'}>
+          {t('fields.enabled')}
+        </Label>
       </div>
 
       <div className="space-y-2">
@@ -121,10 +118,18 @@ export function AgentForm({
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <DiscordChannelFields agentId={agent?.id} channel={discord} />
-        <ZaloChannelFields agentId={agent?.id} channel={zalo} />
-      </div>
+      <Tabs defaultValue="discord">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="discord">{t('channels.discord')}</TabsTrigger>
+          <TabsTrigger value="zalo">{t('channels.zalo')}</TabsTrigger>
+        </TabsList>
+        <TabsContent className="mt-4" forceMount value="discord">
+          <DiscordChannelFields agentId={agent?.id} channel={discord} />
+        </TabsContent>
+        <TabsContent className="mt-4" forceMount value="zalo">
+          <ZaloChannelFields agentId={agent?.id} channel={zalo} />
+        </TabsContent>
+      </Tabs>
 
       <div className="flex justify-end">
         <Button disabled={isPending} type="submit">

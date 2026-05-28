@@ -13,6 +13,7 @@ import { useTranslations } from 'next-intl';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { Separator } from '../separator';
+import { isReadOnlyChatConversation } from './utils';
 
 export function ChatHeader({
   conversation,
@@ -26,6 +27,7 @@ export function ChatHeader({
   title: string;
 }) {
   const t = useTranslations('chat');
+  const readOnly = isReadOnlyChatConversation(conversation);
   const otherMembers =
     conversation?.members.filter((member) => member.userId !== currentUserId) ??
     [];
@@ -44,6 +46,7 @@ export function ChatHeader({
           {conversation?.type === 'channel' && (
             <Badge variant="outline">{t('channel_badge')}</Badge>
           )}
+          {readOnly && <Badge variant="outline">{t('read_only_badge')}</Badge>}
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-muted-foreground text-xs">
           <ShieldCheck className="size-3.5" />

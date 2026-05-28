@@ -626,15 +626,22 @@
   },
   "ai-agents-settings": {
     "actions": {
+      "cancel": "Hủy",
+      "clear": "Xóa",
       "copy": "Sao chép",
+      "copy_webhook": "Sao chép URL webhook",
       "create": "Tạo agent",
       "deploy": "Triển khai",
       "dismiss": "Đóng",
+      "hide": "Ẩn",
       "link_identity": "Liên kết người dùng",
       "pause": "Tạm dừng",
+      "replace": "Thay thế",
       "rotate_zalo_secret": "Xoay bí mật Zalo",
       "save": "Lưu",
-      "test": "Kiểm tra"
+      "show": "Hiện",
+      "test": "Kiểm tra",
+      "undo": "Hoàn tác"
     },
     "channels": {
       "discord": "Discord",
@@ -652,6 +659,7 @@
       "display_name": "Tên hiển thị",
       "enabled": "Bật",
       "instructions": "Chỉ dẫn",
+      "last_event": "Sự kiện cuối",
       "model": "Mô hình",
       "name": "Tên",
       "platform_user_id": "ID người dùng Tuturuuu",
@@ -666,6 +674,7 @@
       "title": "Liên kết danh tính Zalo"
     },
     "messages": {
+      "copy_error": "Sao chép thất bại",
       "copy_success": "Đã sao chép bí mật",
       "deploy_error": "Triển khai thất bại",
       "deploy_success": "Đã triển khai kênh agent",
@@ -687,6 +696,7 @@
       "title": "Agent đã đăng ký"
     },
     "secret": {
+      "cleared_on_save": "Sẽ xóa khi lưu",
       "configured": "Kết thúc bằng {suffix}",
       "description": "Lưu giá trị {name} này cho {channelId}. Giá trị chỉ hiển thị một lần.",
       "missing": "Thiếu",
@@ -699,9 +709,15 @@
       "draft": "Nháp",
       "enabled": "Đang bật",
       "error": "Lỗi",
+      "never": "Chưa có",
       "paused": "Tạm dừng"
     },
-    "title": "AI Agents"
+    "title": "AI Agents",
+    "workspace": {
+      "empty": "Không tìm thấy không gian.",
+      "search_placeholder": "Tìm không gian theo tên hoặc ID...",
+      "select": "Chọn không gian"
+    }
   },
   "ai-credits": {
     "beta": "Beta",
@@ -3219,6 +3235,7 @@
     "updates": "cập nhật"
   },
   "chat": {
+    "agent_channel": "Kênh agent",
     "ai_badge": "AI",
     "archive": "Lưu trữ",
     "assistant_name": "Mira",
@@ -3257,6 +3274,8 @@
     "private_by_default": "Mặc định dùng schema riêng tư",
     "private_schema_status": "Chat riêng tư",
     "react_to_message": "Thả phản ứng",
+    "read_only_badge": "Chỉ đọc",
+    "read_only_conversation": "Kênh agent này có thể xem tại đây, nhưng tin nhắn ở chế độ chỉ đọc. Quản lý trong Hạ tầng > AI Agents.",
     "remove_attachment": "Gỡ tệp đính kèm",
     "search": "Tìm kiếm",
     "search_placeholder": "Tìm tin nhắn",

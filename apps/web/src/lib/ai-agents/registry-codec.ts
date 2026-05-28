@@ -320,9 +320,10 @@ export function buildAgentDefinitions(
               .sort()
               .map((name) => secretDescriptor(name, secrets.get(name))),
             status: channelMeta.status ?? 'draft',
-            webhookUrl:
-              channelMeta.webhookUrl ||
-              buildWebhookUrl({ adapter, channelId, origin }),
+            webhookUrl: origin
+              ? buildWebhookUrl({ adapter, channelId, origin })
+              : channelMeta.webhookUrl ||
+                buildWebhookUrl({ adapter, channelId, origin }),
             workspaceId: channelMeta.workspaceId || ROOT_WORKSPACE_ID,
             discordGuildId: channelMeta.discordGuildId ?? null,
             zaloOfficialAccountId: channelMeta.zaloOfficialAccountId ?? null,

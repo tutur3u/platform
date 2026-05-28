@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { listRootAiAgentDiscoveryConversations } from '@/lib/chat/agent-discovery';
 import {
   type ChatConversation,
   callPrivateChatRpc,
@@ -34,15 +35,19 @@ export const GET = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
-      const conversations = await callPrivateChatRpc<ChatConversation[]>(
-        'chat_list_conversations',
-        {
+      const [conversations, aiAgentConversations] = await Promise.all([
+        callPrivateChatRpc<ChatConversation[]>('chat_list_conversations', {
           p_actor_user_id: auth.user.id,
           p_ws_id: context.context.normalizedWsId,
-        }
-      );
+        }),
+        listRootAiAgentDiscoveryConversations({
+          wsId: context.context.normalizedWsId,
+        }),
+      ]);
 
-      return NextResponse.json({ conversations: conversations ?? [] });
+      return NextResponse.json({
+        conversations: [...(conversations ?? []), ...aiAgentConversations],
+      });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat conversations');
     }

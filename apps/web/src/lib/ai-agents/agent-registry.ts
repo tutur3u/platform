@@ -14,6 +14,10 @@ import {
   stringifyField,
 } from './registry-codec';
 import {
+  resolveAiAgentRedisUrl,
+  resolveAiAgentWebhookOrigin,
+} from './runtime-config';
+import {
   AI_AGENT_REDIS_SECRET,
   AI_AGENT_REGISTRY_PREFIX,
   type AiAgentAdapter,
@@ -35,7 +39,7 @@ export async function listAiAgents({
 } = {}) {
   return buildAgentDefinitions(
     await readSecretRows({ db, prefix: AI_AGENT_REGISTRY_PREFIX }),
-    origin
+    resolveAiAgentWebhookOrigin({ requestOrigin: origin })
   );
 }
 
@@ -134,7 +138,8 @@ export async function deployAiAgentChannel({
   db?: TypedSupabaseClient;
   origin?: string | null;
 }): Promise<AiAgentDeployResult> {
-  const agent = await getAiAgentById({ agentId, db, origin });
+  const webhookOrigin = resolveAiAgentWebhookOrigin({ requestOrigin: origin });
+  const agent = await getAiAgentById({ agentId, db, origin: webhookOrigin });
   const channel = agent?.channels.find(
     (candidate) => candidate.id === assertId(channelId, 'channel_id')
   );
@@ -146,7 +151,9 @@ export async function deployAiAgentChannel({
   const missing = channel.secrets
     .filter((secret) => !secret.configured)
     .map((secret) => secret.name);
-  const redisConfigured = await getRootSecretValue(AI_AGENT_REDIS_SECRET, db);
+  const redisConfigured = resolveAiAgentRedisUrl({
+    rootSecret: await getRootSecretValue(AI_AGENT_REDIS_SECRET, db),
+  });
   if (!DEV_MODE && !redisConfigured) {
     missing.push(AI_AGENT_REDIS_SECRET);
   }
@@ -154,7 +161,7 @@ export async function deployAiAgentChannel({
   const webhookUrl = buildWebhookUrl({
     adapter: channel.adapter,
     channelId: channel.id,
-    origin,
+    origin: webhookOrigin,
   });
   const ok = missing.length === 0;
   await updateChannelMeta({
@@ -169,7 +176,11 @@ export async function deployAiAgentChannel({
     },
   });
 
-  const updated = await getAiAgentById({ agentId, db, origin });
+  const updated = await getAiAgentById({
+    agentId,
+    db,
+    origin: webhookOrigin,
+  });
   const updatedChannel =
     updated?.channels.find((candidate) => candidate.id === channel.id) ??
     channel;

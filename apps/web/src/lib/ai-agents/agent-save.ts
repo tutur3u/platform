@@ -19,6 +19,7 @@ import {
   splitLongValue,
   stringifyField,
 } from './registry-codec';
+import { resolveAiAgentWebhookOrigin } from './runtime-config';
 import type {
   AiAgentChannelConfig,
   SaveAiAgentChannelInput,
@@ -71,6 +72,7 @@ export async function saveAiAgent({
 }) {
   const agentId = assertId(payload.id, 'agent_id');
   const now = new Date().toISOString();
+  const webhookOrigin = resolveAiAgentWebhookOrigin({ requestOrigin: origin });
   const existing = await getAiAgentById({ agentId, db, origin });
   const existingChannelMap = new Map(
     existing?.channels.map((channel) => [channel.id, channel]) ?? []
@@ -154,7 +156,7 @@ export async function saveAiAgent({
         webhookUrl: buildWebhookUrl({
           adapter: channel.adapter,
           channelId: channel.id,
-          origin,
+          origin: webhookOrigin,
         }),
       }),
     });
@@ -174,7 +176,11 @@ export async function saveAiAgent({
 
     for (const secretName of secretNames) {
       const submitted = input?.secrets?.[secretName];
-      if (submitted === undefined || submitted === null || submitted === '') {
+      if (submitted === null) {
+        continue;
+      }
+
+      if (submitted === undefined || submitted === '') {
         if (priorSecrets.has(secretName)) {
           const existingValue = existingRows.find(
             (row) =>
@@ -203,7 +209,7 @@ export async function saveAiAgent({
 
   await replaceSecretRows({ db, names: existingNames, rows });
 
-  const saved = await getAiAgentById({ agentId, db, origin });
+  const saved = await getAiAgentById({ agentId, db, origin: webhookOrigin });
   if (!saved) {
     throw new Error('agent_save_failed');
   }

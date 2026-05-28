@@ -19,6 +19,7 @@ import {
   markAiAgentChannelEvent,
   resolveZaloIdentity,
 } from './registry';
+import { resolveAiAgentRedisUrl } from './runtime-config';
 import {
   AI_AGENT_ALLOWED_TOOLS,
   AI_AGENT_REDIS_SECRET,
@@ -231,9 +232,17 @@ export async function createAiAgentChatRuntime({
     agentId: agent.id,
     channelId: channel.id,
   });
-  const redisUrl = (await getRootSecretValue(AI_AGENT_REDIS_SECRET))?.trim();
+  const redisUrl = resolveAiAgentRedisUrl({
+    rootSecret: await getRootSecretValue(AI_AGENT_REDIS_SECRET),
+  });
   const state = redisUrl
-    ? { config: { url: redisUrl }, id: 'redis' as const }
+    ? {
+        config: {
+          keyPrefix: `ai-agents:${channel.id}`,
+          url: redisUrl,
+        },
+        id: 'redis' as const,
+      }
     : DEV_MODE
       ? ('memory' as const)
       : null;

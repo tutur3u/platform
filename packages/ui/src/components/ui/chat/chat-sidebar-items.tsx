@@ -11,6 +11,7 @@ import {
   getChatInitials,
   getConversationTitle,
   getLastMessagePreview,
+  isReadOnlyChatConversation,
 } from './utils';
 
 export function ConversationRow({
@@ -32,6 +33,7 @@ export function ConversationRow({
     direct: t('direct_message'),
     group: t('group_chat'),
   });
+  const readOnly = isReadOnlyChatConversation(conversation);
 
   return (
     <button
@@ -54,6 +56,11 @@ export function ConversationRow({
             <Badge className="h-5" variant="secondary">
               <Bot className="size-3" />
               {t('ai_badge')}
+            </Badge>
+          )}
+          {readOnly && (
+            <Badge className="h-5" variant="outline">
+              {t('read_only_badge')}
             </Badge>
           )}
         </span>
