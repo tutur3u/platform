@@ -1,5 +1,5 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
