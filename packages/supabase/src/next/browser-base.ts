@@ -5,6 +5,13 @@ import { checkEnvVariables } from './common';
 
 const { url, key } = checkEnvVariables({ useSecretKey: false });
 const BROWSER_CLIENT_CACHE_KEY = '__tuturuuu_supabase_browser_client__';
+const BROWSER_AUTH_OPTIONS = {
+  auth: {
+    experimental: {
+      passkey: true,
+    },
+  },
+} as const;
 
 type BrowserClientCache = typeof globalThis & {
   [BROWSER_CLIENT_CACHE_KEY]?: SupabaseClient<Database>;
@@ -14,7 +21,11 @@ function getOrCreateBrowserClient(): SupabaseClient<Database> {
   const cache = globalThis as BrowserClientCache;
 
   if (!cache[BROWSER_CLIENT_CACHE_KEY]) {
-    cache[BROWSER_CLIENT_CACHE_KEY] = createBrowserClient<Database>(url, key);
+    cache[BROWSER_CLIENT_CACHE_KEY] = createBrowserClient<Database>(
+      url,
+      key,
+      BROWSER_AUTH_OPTIONS
+    );
   }
 
   return cache[BROWSER_CLIENT_CACHE_KEY];
@@ -31,7 +42,7 @@ export function createBaseDynamicBrowserClient(): SupabaseClient<any> {
 export async function createBaseClientWithSession<T = Database>(
   session: Session
 ): Promise<SupabaseClient<T>> {
-  const client = createBrowserClient<T>(url, key);
+  const client = createBrowserClient<T>(url, key, BROWSER_AUTH_OPTIONS);
 
   const { data, error } = await client.auth.setSession({
     access_token: session.access_token,

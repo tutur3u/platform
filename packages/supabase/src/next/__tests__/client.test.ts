@@ -29,6 +29,14 @@ vi.mock('../realtime-log-provider', () => ({
   realtimeLogger: vi.fn(),
 }));
 
+const browserAuthOptions = {
+  auth: {
+    experimental: {
+      passkey: true,
+    },
+  },
+};
+
 describe('Supabase Client', () => {
   const mockSetSession = vi.fn();
   const mockSchemaFrom = vi.fn((table: string) => ({
@@ -83,7 +91,8 @@ describe('Supabase Client', () => {
 
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'test-key'
+        'test-key',
+        browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(() => client.from('mira_accessories')).toThrow(
@@ -127,7 +136,8 @@ describe('Supabase Client', () => {
 
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'test-key'
+        'test-key',
+        browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
       expect(() => client.from('workspace_calendars')).toThrow(
@@ -158,7 +168,8 @@ describe('Supabase Client', () => {
 
       expect(createBrowserClient).toHaveBeenCalledWith(
         'https://test.supabase.co',
-        'test-key'
+        'test-key',
+        browserAuthOptions
       );
       expect(mockSetSession).toHaveBeenCalledWith({
         access_token: 'test-access-token',

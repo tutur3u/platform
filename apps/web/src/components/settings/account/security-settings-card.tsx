@@ -20,16 +20,19 @@ import { Separator } from '@tuturuuu/ui/separator';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import MFAMethodList from './mfa-method-list';
+import PasskeysSettings from './passkeys-settings';
 import ResetPasswordDialog from './reset-password-dialog';
 
 interface SecuritySettingsCardProps {
   user: WorkspaceUser | null;
   className?: string;
+  onOpenSessions?: () => void;
 }
 
 export default function SecuritySettingsCard({
   user,
   className,
+  onOpenSessions,
 }: SecuritySettingsCardProps) {
   const t = useTranslations('settings-account');
 
@@ -182,6 +185,17 @@ export default function SecuritySettingsCard({
 
           <Separator />
 
+          {/* Passkeys */}
+          <SettingItemTab
+            title={t('passkeys-title')}
+            description={t('passkeys-description')}
+            icon={<KeyRound className="h-4 w-4" />}
+          >
+            <PasskeysSettings />
+          </SettingItemTab>
+
+          <Separator />
+
           {/* Two-Factor Authentication */}
           <SettingItemTab
             title={t('two-factor-authentication')}
@@ -201,11 +215,14 @@ export default function SecuritySettingsCard({
             })}
             icon={<Eye className="h-4 w-4" />}
           >
-            <Button variant="outline" size="sm" asChild>
-              <Link href="/settings/account/sessions">
-                <Eye className="mr-2 h-4 w-4" />
-                {t('view-sessions')}
-              </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={onOpenSessions}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {t('view-sessions')}
             </Button>
           </SettingItemTab>
         </div>

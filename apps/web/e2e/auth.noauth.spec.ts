@@ -31,6 +31,35 @@ test.describe('Authentication (unauthenticated)', () => {
     await expect(continueButton).toBeVisible({ timeout: 10_000 });
   });
 
+  test('login page exposes passkey sign-in with a graceful unsupported-browser error', async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, 'PublicKeyCredential', {
+        configurable: true,
+        value: undefined,
+      });
+    });
+
+    await page.goto(`/${DEFAULT_LOCALE}/login`, {
+      waitUntil: 'domcontentloaded',
+    });
+
+    const passkeyButton = page.getByRole('button', {
+      name: /continue with passkey/i,
+    });
+    await expect(passkeyButton).toBeVisible({ timeout: 30_000 });
+
+    await passkeyButton.click();
+
+    await expect(page.getByText('Passkey sign-in failed')).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const bodyText = await page.locator('body').textContent();
+    expect(bodyText).not.toContain('Internal Server Error');
+  });
+
   test('root page is accessible to unauthenticated users (marketing page)', async ({
     page,
   }) => {

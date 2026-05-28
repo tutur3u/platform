@@ -66,6 +66,7 @@ import { InternalAppAccountConfirmation } from './internal-app-account-confirmat
 import { InvalidReturnUrlWarning } from './invalid-return-url-warning';
 import { LoginQrCard } from './login-qr-card';
 import { completeVerifiedMfaSignIn } from './mfa-navigation';
+import { PasskeyLoginButton } from './passkey-login-button';
 import { SocialLoginButton } from './social-login-button';
 
 const CAPTCHA_ERROR_RETRY_DELAY = 3000;
@@ -658,7 +659,7 @@ export default function LoginForm() {
   }, [prepareReturnAppConfirmation, processNextUrl, supabase.auth, totpForm]);
 
   const completePrimarySignIn = useCallback(
-    async (source: 'otp' | 'password' | 'qr') => {
+    async (source: 'otp' | 'passkey' | 'password' | 'qr') => {
       router.refresh();
 
       if (await needsMFA()) {
@@ -1776,6 +1777,13 @@ export default function LoginForm() {
                       ) : null}
                     </form>
                   </Form>
+
+                  <LoginMethodSeparator label={t('login.or')} />
+
+                  <PasskeyLoginButton
+                    disabled={loading}
+                    onAuthenticated={() => completePrimarySignIn('passkey')}
+                  />
 
                   <LoginMethodSeparator label={t('login.or')} />
 

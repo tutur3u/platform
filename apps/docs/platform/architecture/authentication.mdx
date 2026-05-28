@@ -183,6 +183,35 @@ to the callback route. Do not default to bespoke HMAC-signed state blobs when th
 server only needs to confirm that the callback matches the browser session that
 initiated the flow.
 
+### Passkeys
+
+Passkeys use Supabase Auth's experimental WebAuthn APIs. Browser clients created
+through `@tuturuuu/supabase/next/auth-browser` must pass
+`auth.experimental.passkey: true`; otherwise Supabase rejects
+`auth.signInWithPasskey()`, `auth.registerPasskey()`, and
+`auth.passkey.*` calls.
+
+`apps/web` owns passkey UX:
+
+1. The public login form exposes an explicit "Continue with passkey" action so
+   users can open the browser passkey picker without relying only on autofill.
+2. Account Security in the apps/web settings dialog owns passkey registration,
+   rename, and delete actions. Do not add separate passkey settings pages.
+3. Satellite apps should continue to route user authentication through apps/web
+   cross-app auth. Passkeys are bound to the relying party domain, so the central
+   apps/web origin remains the authority for Tuturuuu account passkeys.
+
+Production Supabase Auth must have passkeys enabled with these relying party
+settings:
+
+- Relying Party Display Name: `Tuturuuu`
+- Relying Party ID: `tuturuuu.com`
+- Relying Party Origins: `https://tuturuuu.com`
+
+Local development can exercise unsupported-browser and UI paths without a
+registered credential. Real WebAuthn ceremonies require a secure origin; use
+`localhost` or HTTPS when testing real registration and sign-in flows.
+
 ### Web QR Session Handoff
 
 QR-based session handoff must never be a public login bootstrap. An

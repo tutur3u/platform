@@ -8,15 +8,17 @@ import SecuritySettingsCard from './security-settings-card';
 interface SecuritySettingsProps {
   user: WorkspaceUser;
   linkedProvider?: string;
+  onOpenSessions?: () => void;
 }
 
 export default function SecuritySettings({
   user,
   linkedProvider,
+  onOpenSessions,
 }: SecuritySettingsProps) {
   return (
     <div className="space-y-8">
-      <SecuritySettingsCard user={user} />
+      <SecuritySettingsCard user={user} onOpenSessions={onOpenSessions} />
       <Separator />
       <LinkedIdentitiesCard linkedProvider={linkedProvider} />
     </div>

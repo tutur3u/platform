@@ -702,7 +702,11 @@ export function SettingsDialog({
 
         {activeTab === 'security' && user && (
           <div className="h-full">
-            <SecuritySettings user={user} linkedProvider={linkedProvider} />
+            <SecuritySettings
+              user={user}
+              linkedProvider={linkedProvider}
+              onOpenSessions={() => setActiveTab('sessions')}
+            />
           </div>
         )}
 
