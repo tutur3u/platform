@@ -16,11 +16,14 @@ Stripe Connect, checkout, and audit mutations behind `apps/web` so provider
 secrets, bot protection, request logging, and Observability stay centralized.
 Workspace-scoped Inventory APIs in `apps/web` must authorize through
 `authorizeInventoryWorkspace`, which accepts the Inventory app-session cookie
-and then performs membership, inventory enablement, and permission checks. Do
-not use `resolveAuthenticatedSessionUser`, `supabase.auth.getUser()`, or
-request-scoped Supabase clients as the primary auth gate for these routes,
-because the satellite clears local Supabase cookies and forwards app-session
-cookies instead.
+and then performs workspace membership and permission checks. Authenticated
+dashboard and workspace API access is permission-driven; do not hide these
+routes behind the `ENABLE_INVENTORY` workspace config. Keep public storefront
+delivery separate, since published storefront behavior may still apply
+storefront-specific rollout gates. Do not use `resolveAuthenticatedSessionUser`,
+`supabase.auth.getUser()`, or request-scoped Supabase clients as the primary auth
+gate for these routes, because the satellite clears local Supabase cookies and
+forwards app-session cookies instead.
 The operator console uses the same collapsible Tuturuuu satellite workspace
 structure as the Tasks, Finance, Calendar, and CMS apps: dashboard layouts should
 keep server work to auth/workspace gating, then render client-side views backed
@@ -94,6 +97,9 @@ still include `manufacturer` as a joined display name for older clients. Legacy
 imports that send package/product manufacturer text should upsert the trimmed
 name into `inventory_manufacturers`, assign the resulting `manufacturer_id`, and
 avoid writing manufacturer text back to `workspace_products`.
+The `20260528042237_first_class_inventory_manufacturers.sql` migration must be
+present before production manufacturer pages or APIs can rely on that table and
+the `workspace_products.manufacturer_id` foreign key.
 
 Bundle components are a workspace-scoped stock contract. When creating or
 updating a bundle, every component's product, unit, warehouse, and stock row

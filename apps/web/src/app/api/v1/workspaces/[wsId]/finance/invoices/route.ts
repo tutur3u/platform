@@ -15,10 +15,6 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { canCreateInventorySales } from '@/lib/inventory/permissions';
@@ -222,10 +218,6 @@ export async function GET(request: Request, { params }: Params) {
     const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
     const supabase = sbAdmin;
 
-    if (!(await isInventoryEnabled(wsId))) {
-      return inventoryNotFoundResponse();
-    }
-
     const { containsPermission } = permissions;
     const canViewInvoices = containsPermission('view_invoices');
 
@@ -405,10 +397,6 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
-
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
 
   if (!canCreateInventorySales(permissions)) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });

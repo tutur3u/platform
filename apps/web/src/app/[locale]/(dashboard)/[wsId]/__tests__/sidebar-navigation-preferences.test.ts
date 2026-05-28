@@ -160,6 +160,40 @@ describe('sidebar navigation preferences', () => {
     expect(result.normalizedConfig.hidden).toEqual(['forms']);
   });
 
+  it('keeps a hidden external Mail app link archived on matching local paths', () => {
+    const result = applySidebarNavigationPreferences(
+      [
+        {
+          id: 'dashboard',
+          title: 'Dashboard',
+          href: '/personal',
+          preferenceLocked: true,
+          preferencePlacement: 'root',
+        },
+        {
+          id: 'mail',
+          title: 'Mail',
+          href: 'https://mail.tuturuuu.com/personal',
+          external: true,
+        },
+      ],
+      {
+        hidden: ['mail'],
+      },
+      {
+        pathname: '/personal',
+      }
+    );
+
+    expect(visibleIds(result.links)).toEqual(['dashboard']);
+    expect(result.archivedLinks.map((link) => link.id)).toEqual(['mail']);
+    expect(
+      result.links.some(
+        (link) => link?.id === 'mail' || link?.preferenceHiddenActive
+      )
+    ).toBe(false);
+  });
+
   it('keeps More tools available when all More children are archived', () => {
     const result = applySidebarNavigationPreferences(links, {
       hidden: ['forms', 'users', 'inventory'],

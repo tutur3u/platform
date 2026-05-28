@@ -1,6 +1,14 @@
 import { NextResponse } from 'next/server';
-import { isInventoryEnabled } from '@/lib/inventory/access';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
+import {
+  canManageInventorySetup,
+  canViewInventoryAnalytics,
+  canViewInventoryAuditLogs,
+  canViewInventoryCatalog,
+  canViewInventoryDashboard,
+  canViewInventorySales,
+  canViewInventoryStock,
+} from '@/lib/inventory/permissions';
 
 interface Params {
   params: Promise<{
@@ -16,7 +24,16 @@ export async function GET(req: Request, { params }: Params) {
 
   if (!authorization.ok) return authorization.response;
 
+  const { permissions } = authorization.value;
+
   return NextResponse.json({
-    enabled: await isInventoryEnabled(authorization.value.wsId),
+    enabled:
+      canViewInventoryDashboard(permissions) ||
+      canViewInventoryCatalog(permissions) ||
+      canManageInventorySetup(permissions) ||
+      canViewInventoryStock(permissions) ||
+      canViewInventorySales(permissions) ||
+      canViewInventoryAnalytics(permissions) ||
+      canViewInventoryAuditLogs(permissions),
   });
 }

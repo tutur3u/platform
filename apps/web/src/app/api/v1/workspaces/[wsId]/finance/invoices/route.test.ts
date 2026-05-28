@@ -6,7 +6,6 @@ const mocks = {
   getPermissions: vi.fn(),
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
-  isInventoryEnabled: vi.fn(),
   normalizeWorkspaceId: vi.fn(),
   sessionSupabase: {
     auth: {
@@ -40,13 +39,6 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => mocks.normalizeWorkspaceId(...args),
 }));
 
-vi.mock('@/lib/inventory/access', () => ({
-  inventoryNotFoundResponse: () =>
-    Response.json({ message: 'Inventory not found' }, { status: 404 }),
-  isInventoryEnabled: (...args: Parameters<typeof mocks.isInventoryEnabled>) =>
-    mocks.isInventoryEnabled(...args),
-}));
-
 vi.mock('@/lib/inventory/permissions', () => ({
   canCreateInventorySales: (
     ...args: Parameters<typeof mocks.canCreateInventorySales>
@@ -66,7 +58,6 @@ describe('invoice create route', () => {
     mocks.normalizeWorkspaceId.mockResolvedValue(
       '00000000-0000-0000-0000-000000000000'
     );
-    mocks.isInventoryEnabled.mockResolvedValue(true);
     mocks.canCreateInventorySales.mockReturnValue(true);
     mocks.getWorkspaceConfig.mockResolvedValue(null);
     mocks.getPermissions.mockResolvedValue(withPermissions([]));

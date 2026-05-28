@@ -10,10 +10,6 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
 import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
 
 interface Params {
@@ -51,10 +47,6 @@ export async function GET(request: Request, { params }: Params) {
 
     if (!membership.ok) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
-    }
-
-    if (!(await isInventoryEnabled(wsId))) {
-      return inventoryNotFoundResponse();
     }
 
     const permissions = await getPermissions({ wsId, request });

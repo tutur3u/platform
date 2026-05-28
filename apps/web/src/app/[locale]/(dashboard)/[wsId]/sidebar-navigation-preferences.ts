@@ -112,9 +112,13 @@ function cleanSeparators(items: (NavLink | null)[]): (NavLink | null)[] {
   return result;
 }
 
+function isAbsoluteHttpUrl(value: string): boolean {
+  return /^https?:\/\//iu.test(value);
+}
+
 function normalizePath(value: string): string {
   const path = (() => {
-    if (/^https?:\/\//iu.test(value)) {
+    if (isAbsoluteHttpUrl(value)) {
       try {
         return new URL(value).pathname;
       } catch {
@@ -132,8 +136,25 @@ function normalizePath(value: string): string {
   return withoutTrailingSlash || '/';
 }
 
-function matchesTarget(pathname: string, target?: string, matchExact = false) {
+function matchesTarget(
+  pathname: string,
+  target?: string,
+  matchExact = false,
+  external = false
+) {
   if (!target) return false;
+
+  if (isAbsoluteHttpUrl(target)) {
+    if (!isAbsoluteHttpUrl(pathname)) return false;
+
+    try {
+      const currentUrl = new URL(pathname);
+      const targetUrl = new URL(target);
+      if (currentUrl.origin !== targetUrl.origin || external) return false;
+    } catch {
+      return false;
+    }
+  }
 
   const currentPath = normalizePath(pathname);
   const targetPath = normalizePath(target);
@@ -150,7 +171,7 @@ function matchesLinkPath(link: NavLink, pathname?: string): boolean {
 
   if (
     [link.href, ...(link.aliases ?? [])].some((target) =>
-      matchesTarget(pathname, target, link.matchExact)
+      matchesTarget(pathname, target, link.matchExact, link.external)
     )
   ) {
     return true;

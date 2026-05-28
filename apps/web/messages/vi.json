@@ -15912,6 +15912,7 @@
     "description": "Đơn vị tính được sử dụng để đo lường các sản phẩm tồn kho.",
     "failed_create_unit": "Đã có lỗi xảy ra khi tạo đơn vị",
     "failed_delete_unit": "Đã có lỗi xảy ra khi xóa đơn vị",
+    "failed_update_unit": "Đã có lỗi xảy ra khi cập nhật đơn vị",
     "placeholder": "Chọn đơn vị tính",
     "plural": "Đơn vị tính",
     "singular": "Đơn vị tính",

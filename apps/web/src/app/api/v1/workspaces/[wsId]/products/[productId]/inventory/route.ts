@@ -11,10 +11,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
 import { getStockChangeAmount } from '@/lib/inventory/stock-change';
 
 const InventoryItemSchema = z.object({
@@ -73,9 +69,6 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
 
   const parsed = BodySchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -187,9 +180,6 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
 
   const { user } = await resolveAuthenticatedSessionUser(supabase);
   if (!user) {
@@ -489,11 +479,6 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
-  const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
-
   // Get inventory for this product
   const { data: inventory, error } = await supabase
     .from('inventory_products')
@@ -529,9 +514,6 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
 
   // Check worksapce product exists
   const { data: product, error: productError } = await sbAdmin

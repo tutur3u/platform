@@ -434,8 +434,24 @@ describe('product routes', () => {
     expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
   });
 
-  it('returns 404 when inventory is disabled for get product', async () => {
+  it('does not feature-flag gate product detail access', async () => {
     vi.mocked(verifySecret).mockResolvedValueOnce(false);
+    mocks.productMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'product-1',
+        name: 'Product',
+        manufacturer: null,
+        description: null,
+        usage: null,
+        inventory_products: [],
+        product_categories: { name: 'Category' },
+        product_stock_changes: [],
+        category_id: 'category-1',
+        ws_id: 'normalized-ws',
+        created_at: '2026-03-18T00:00:00.000Z',
+      },
+      error: null,
+    });
 
     const { GET } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/route'
@@ -449,12 +465,16 @@ describe('product routes', () => {
       }
     );
 
-    expect(response.status).toBe(404);
-    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
   });
 
-  it('returns 404 when inventory is disabled for create product', async () => {
+  it('does not feature-flag gate product creation', async () => {
     vi.mocked(verifySecret).mockResolvedValueOnce(false);
+    mocks.productInsertSingle.mockResolvedValue({
+      data: { id: 'product-1' },
+      error: null,
+    });
 
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/route'
@@ -476,12 +496,16 @@ describe('product routes', () => {
       }
     );
 
-    expect(response.status).toBe(404);
-    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
   });
 
-  it('returns 404 when inventory is disabled for add inventory', async () => {
+  it('does not feature-flag gate inventory additions', async () => {
     vi.mocked(verifySecret).mockResolvedValueOnce(false);
+    mocks.productMaybeSingle.mockResolvedValue({
+      data: { id: 'product-1' },
+      error: null,
+    });
 
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
@@ -512,12 +536,38 @@ describe('product routes', () => {
       }
     );
 
-    expect(response.status).toBe(404);
-    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+    expect(mocks.inventoryInsert).toHaveBeenCalled();
   });
 
-  it('returns 404 when inventory is disabled for update inventory', async () => {
+  it('does not feature-flag gate inventory updates', async () => {
     vi.mocked(verifySecret).mockResolvedValueOnce(false);
+    mocks.productMaybeSingle.mockResolvedValue({
+      data: { id: 'product-1' },
+      error: null,
+    });
+    mocks.inventorySelectEq.mockResolvedValue({
+      data: [
+        {
+          product_id: 'product-1',
+          warehouse_id: '11111111-1111-4111-8111-111111111111',
+          unit_id: '22222222-2222-4222-8222-222222222222',
+          amount: 3,
+          min_amount: 1,
+          price: 10,
+        },
+      ],
+      error: null,
+    });
+
+    const finalUpdateEq = vi.fn().mockResolvedValue({ error: null });
+    const firstUpdateEq = vi.fn().mockReturnValue({
+      eq: finalUpdateEq,
+    });
+    mocks.inventoryUpdateEq.mockReturnValue({
+      eq: firstUpdateEq,
+    });
 
     const { PATCH } = await import(
       '@/app/api/v1/workspaces/[wsId]/products/[productId]/inventory/route'
@@ -548,7 +598,8 @@ describe('product routes', () => {
       }
     );
 
-    expect(response.status).toBe(404);
-    expect(mocks.adminSupabase.from).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('inventory_products');
   });
 });

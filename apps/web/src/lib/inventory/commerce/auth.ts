@@ -71,7 +71,7 @@ export async function authorizeInventoryWorkspace(
   }
 
   if (
-    options.requireInventoryEnabled !== false &&
+    options.requireInventoryEnabled === true &&
     !(await isInventoryEnabled(wsId))
   ) {
     return { ok: false, response: inventoryNotFoundResponse() };

@@ -8,6 +8,10 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  canManageInventorySetup,
+  canViewInventoryCatalog,
+} from '@/lib/inventory/permissions';
 import { productUnitColumns } from './columns';
 import { ProductUnitForm } from './form';
 
@@ -40,9 +44,12 @@ export default async function WorkspaceUnitsPage({
           wsId,
         });
         if (!permissions) notFound();
-        const { containsPermission } = permissions;
 
-        if (!containsPermission('view_inventory')) {
+        const canViewSetup =
+          canViewInventoryCatalog(permissions) ||
+          canManageInventorySetup(permissions);
+
+        if (!canViewSetup) {
           return (
             <div className="flex h-full items-center justify-center">
               <div className="text-center">
@@ -57,9 +64,10 @@ export default async function WorkspaceUnitsPage({
           );
         }
 
-        const canCreateInventory = containsPermission('create_inventory');
-        const canUpdateInventory = containsPermission('update_inventory');
-        const canDeleteInventory = containsPermission('delete_inventory');
+        const canManageSetup = canManageInventorySetup(permissions);
+        const canCreateInventory = canManageSetup;
+        const canUpdateInventory = canManageSetup;
+        const canDeleteInventory = canManageSetup;
 
         const { data, count } = await getData(wsId, await searchParams);
 

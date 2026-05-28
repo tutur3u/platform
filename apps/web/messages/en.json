@@ -15912,6 +15912,7 @@
     "description": "Units are used to measure inventory products.",
     "failed_create_unit": "Failed to create unit",
     "failed_delete_unit": "Failed to delete unit",
+    "failed_update_unit": "Failed to update unit",
     "placeholder": "Choose a unit",
     "plural": "Units",
     "singular": "Unit",

@@ -16,10 +16,6 @@ import {
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
-import {
-  inventoryNotFoundResponse,
-  isInventoryEnabled,
-} from '@/lib/inventory/access';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { resolveProductManufacturerId } from '@/lib/inventory/manufacturers';
 import {
@@ -176,9 +172,6 @@ export async function POST(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
   const wsId = await normalizeWorkspaceId(id, supabase);
-  if (!(await isInventoryEnabled(wsId))) {
-    return inventoryNotFoundResponse();
-  }
 
   // Validate request body
   const parsed = ProductCreateSchema.safeParse(await req.json());

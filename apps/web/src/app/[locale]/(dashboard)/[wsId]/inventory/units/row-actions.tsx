@@ -2,6 +2,7 @@
 
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
+import { deleteInventoryUnit } from '@tuturuuu/internal-api';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import { Button } from '@tuturuuu/ui/button';
 import ModifiableDialogTrigger from '@tuturuuu/ui/custom/modifiable-dialog-trigger';
@@ -40,18 +41,11 @@ export function ProductUnitRowActions({
       return;
     }
 
-    const res = await fetch(
-      `/api/v1/workspaces/${data.ws_id}/product-units/${data.id}`,
-      {
-        method: 'DELETE',
-      }
-    );
-
-    if (res.ok) {
+    try {
+      await deleteInventoryUnit(data.ws_id, data.id);
       router.refresh();
-    } else {
-      const data = await res.json();
-      toast.error(data.message || t('ws-inventory-units.failed_delete_unit'));
+    } catch {
+      toast.error(t('ws-inventory-units.failed_delete_unit'));
     }
   };
 

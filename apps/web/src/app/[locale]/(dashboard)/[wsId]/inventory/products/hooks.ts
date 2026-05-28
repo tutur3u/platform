@@ -3,6 +3,7 @@ import {
   type InventoryManufacturer,
   listInventoryManufacturers,
   listInventoryProducts,
+  listInventoryUnits,
 } from '@tuturuuu/internal-api';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
@@ -221,16 +222,8 @@ export function useProductUnits(
   return useQuery({
     queryKey: ['product-units', wsId],
     queryFn: async (): Promise<ProductUnit[]> => {
-      const response = await fetch(`/api/v1/workspaces/${wsId}/product-units`, {
-        cache: 'no-store',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch product units');
-      }
-
-      const json = await response.json();
-      return json as ProductUnit[];
+      const units = await listInventoryUnits(wsId);
+      return units as ProductUnit[];
     },
     enabled: options?.enabled !== false,
     staleTime: 5 * 60 * 1000, // 5 minutes

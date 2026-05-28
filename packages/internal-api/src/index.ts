@@ -572,6 +572,8 @@ export type {
   InventoryStorefrontListQuery,
   InventoryStorefrontPayload,
   InventoryStorefrontStatus,
+  InventoryUnit,
+  InventoryUnitPayload,
 } from './inventory';
 export {
   createInventoryBundle,
@@ -579,7 +581,9 @@ export {
   createInventoryManufacturer,
   createInventoryStorefront,
   createInventoryStorefrontListing,
+  createInventoryUnit,
   deleteInventoryManufacturer,
+  deleteInventoryUnit,
   getInventoryOverview,
   getInventoryPublicOrder,
   getInventoryPublicStorefront,
@@ -591,9 +595,11 @@ export {
   listInventorySales,
   listInventoryStorefrontListings,
   listInventoryStorefronts,
+  listInventoryUnits,
   updateInventoryBundle,
   updateInventoryManufacturer,
   updateInventoryStorefront,
+  updateInventoryUnit,
 } from './inventory';
 export * from './mail';
 export {

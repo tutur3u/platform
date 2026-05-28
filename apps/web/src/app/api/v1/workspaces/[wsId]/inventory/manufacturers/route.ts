@@ -29,7 +29,10 @@ export async function GET(req: Request, { params }: Params) {
   const sbAdmin = await createAdminClient();
   const { permissions, wsId } = authorization.value;
 
-  if (!canViewInventoryCatalog(permissions)) {
+  if (
+    !canViewInventoryCatalog(permissions) &&
+    !canManageInventorySetup(permissions)
+  ) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
   }
 

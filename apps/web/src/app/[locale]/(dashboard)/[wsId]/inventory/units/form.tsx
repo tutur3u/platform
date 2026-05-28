@@ -1,5 +1,10 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
+import {
+  createInventoryUnit,
+  updateInventoryUnit,
+} from '@tuturuuu/internal-api';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -42,6 +47,7 @@ export function ProductUnitForm({
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm({
@@ -68,27 +74,28 @@ export function ProductUnitForm({
       return;
     }
 
-    const res = await fetch(
-      data?.id
-        ? `/api/v1/workspaces/${wsId}/product-units/${data.id}`
-        : `/api/v1/workspaces/${wsId}/product-units`,
-      {
-        method: data?.id ? 'PUT' : 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: data.name,
-        }),
-      }
-    );
+    try {
+      await (data?.id
+        ? updateInventoryUnit(wsId, data.id, {
+            name: data.name,
+          })
+        : createInventoryUnit(wsId, {
+            name: data.name,
+          }));
 
-    if (res.ok) {
+      await queryClient.invalidateQueries({
+        queryKey: ['product-units', wsId],
+      });
       onFinish?.(data);
       router.refresh();
-    } else {
+    } catch {
+      toast.error(
+        data?.id
+          ? t('ws-inventory-units.failed_update_unit')
+          : t('ws-inventory-units.failed_create_unit')
+      );
+    } finally {
       setLoading(false);
-      toast.error(t('ws-inventory-units.failed_create_unit'));
     }
   }
 
