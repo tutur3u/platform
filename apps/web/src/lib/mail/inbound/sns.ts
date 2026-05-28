@@ -1,6 +1,11 @@
 import { createVerify } from 'node:crypto';
 import type { SesNotification, SnsEnvelope } from './types';
 
+const SNS_SIGNING_CERT_HOST_REGEX =
+  /^sns\.[a-z0-9-]+\.amazonaws\.com(?:\.cn)?$/iu;
+const SNS_SIGNING_CERT_PATH_REGEX =
+  /^\/SimpleNotificationService-[A-Za-z0-9]+\.pem$/u;
+
 function getSigningPayload(envelope: SnsEnvelope) {
   const entries =
     envelope.Type === 'SubscriptionConfirmation'
@@ -31,11 +36,19 @@ function getSigningPayload(envelope: SnsEnvelope) {
 function isTrustedSigningCertUrl(value: string) {
   try {
     const url = new URL(value);
+    const isTrustedSnsHost =
+      url.hostname === 'sns.amazonaws.com' ||
+      SNS_SIGNING_CERT_HOST_REGEX.test(url.hostname);
+
     return (
       url.protocol === 'https:' &&
-      (url.hostname === 'sns.amazonaws.com' ||
-        url.hostname.endsWith('.amazonaws.com')) &&
-      url.pathname.endsWith('.pem')
+      url.username === '' &&
+      url.password === '' &&
+      url.port === '' &&
+      url.search === '' &&
+      url.hash === '' &&
+      isTrustedSnsHost &&
+      SNS_SIGNING_CERT_PATH_REGEX.test(url.pathname)
     );
   } catch {
     return false;
