@@ -1139,6 +1139,7 @@
     "export-content": "Please choose file type to export",
     "faq": "Frequently Asked Questions",
     "features": "Features",
+    "feedback": "Feedback",
     "file-name": "File Name",
     "file-type": "File Type",
     "filter": "Filter",
@@ -1172,6 +1173,9 @@
     "inventory": "Inventory",
     "inventory-description": "Streamline inventory control and stock management.",
     "invite_users": "Invite Users",
+    "join_workspace": "Join Workspace",
+    "join_workspace_by_slug_description": "Enter the workspace name or link to open its join page.",
+    "join_workspace_success": "Successfully joined workspace",
     "language": "Language",
     "last_saved": "Last saved: {time}",
     "learn_more": "Learn more",
@@ -1274,6 +1278,7 @@
     "retry_save": "Retry saving",
     "return": "Return",
     "rewise-description": "Access a wide-range of enterprise AI-powered tools.",
+    "root": "Root",
     "row(s)": "row(s)",
     "rows-per-page": "Rows per page",
     "save": "Save",
@@ -1337,6 +1342,7 @@
     "unsaved-changes": "You have unsaved changes.",
     "untitled": "Untitled",
     "updating": "Updating...",
+    "upgrade": "Upgrade",
     "upload": "Upload",
     "uploaded": "Uploaded",
     "uploading": "Uploading",
@@ -1361,6 +1367,8 @@
     "workspace_creation_failed": "Failed to create workspace. Please try again.",
     "workspace_limit_reached": "Workspace Limit Reached",
     "workspace_name": "Workspace Name",
+    "workspace_slug": "Workspace link",
+    "workspace_slug_placeholder": "your-team",
     "workspaces": "Workspaces",
     "write_something": "Write something",
     "year_old": "year old",
@@ -3280,6 +3288,11 @@
         "use_cases_title": "Solutions For Every Level"
       }
     }
+  },
+  "meet_workspace": {
+    "meetings_description": "Review and manage workspace meeting rooms from the central platform.",
+    "meetings_title": "Meetings",
+    "open_platform_meetings": "Open meetings"
   },
   "meet-together": {
     "agenda": "Agenda",

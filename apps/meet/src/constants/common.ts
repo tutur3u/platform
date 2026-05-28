@@ -6,6 +6,8 @@ import { supportedLocales } from '@/i18n/routing';
 export {
   LOCALE_COOKIE_NAME,
   SHOW_TAILWIND_INDICATOR,
+  SIDEBAR_BEHAVIOR_COOKIE_NAME,
+  SIDEBAR_COLLAPSED_COOKIE_NAME,
   THEME_COOKIE_NAME,
 } from '@tuturuuu/satellite/constants';
 

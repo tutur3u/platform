@@ -198,6 +198,19 @@ export function WorkspaceSelect({
     },
   });
 
+  const getWorkspaceLandingPath = (nextSlug: string) => {
+    if (resolveNextPathname) {
+      return resolveNextPathname({
+        currentPathname: pathname || `/${wsId}`,
+        nextSlug,
+      });
+    }
+
+    return customRedirectSuffix
+      ? `/${nextSlug}/${customRedirectSuffix}`
+      : `/${nextSlug}`;
+  };
+
   async function onSubmit(formData: z.infer<typeof FormSchema>) {
     if (disableCreateNewWorkspace) return;
     setLoading(true);
@@ -216,8 +229,7 @@ export function WorkspaceSelect({
 
         const { id } = await res.json();
 
-        if (customRedirectSuffix) router.push(`/${id}/${customRedirectSuffix}`);
-        else router.push(`/${id}`);
+        router.push(getWorkspaceLandingPath(id));
         router.refresh();
 
         setShowNewWorkspaceDialog(false);
@@ -367,7 +379,7 @@ export function WorkspaceSelect({
       void queryClient.invalidateQueries({ queryKey: ['user-workspaces'] });
       void queryClient.invalidateQueries({ queryKey: ['workspace-user'] });
 
-      router.push(`/${slug}`);
+      router.push(getWorkspaceLandingPath(slug));
     } catch (error) {
       console.error('Error accepting workspace invite:', error);
       const message =

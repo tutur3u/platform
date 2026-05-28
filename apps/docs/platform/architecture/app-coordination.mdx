@@ -271,6 +271,25 @@ shared TanStack Query client. Public or gateway-only apps such as `apps/qr` and
 `apps/apps` should use the same provider re-export so theme toggles and shared
 UI chrome behave consistently even when the app does not own workspace auth.
 
+Workspace sidebar apps should keep an app-local `structure.tsx` file, but that
+file should be a thin wrapper around
+`@tuturuuu/satellite/sidebar-structure`. The shared structure owns the
+collapsible sidebar behavior, `SidebarProvider` cookies, workspace switcher
+placement, mobile header, footer actions, hover expansion, back navigation, and
+user-nav slots. App wrappers should only provide app-specific navigation links,
+workspace-select routing, billing URL shape, or small brand/content additions
+such as Mind boards and Rewise branding. This applies to workspace product apps
+such as Calendar, CMS, Drive, Finance, Inventory, Mind, Rewise, Tasks, Track,
+Mail, Chat, and Meet. Learn and Teach intentionally keep their
+education-specific shells.
+
+Meet has a public `/:planId` route surface, so workspace-scoped Meet routes must
+live under `/workspace/:wsId` instead of `/:wsId`. Use
+`/workspace/:wsId/plans` for Meet Together plans and
+`/workspace/:wsId/meetings` for meeting-room operations, with
+`/workspace/:wsId` redirecting to the plans route. Keep public plan-detail URLs
+on the root plan-id surface.
+
 For server-side workspace picker data, do not call
 `@tuturuuu/ui/lib/workspace-actions` from satellite apps. That helper expects
 Supabase Auth cookies on the app host and returns empty lists when only

@@ -1,0 +1,105 @@
+'use client';
+
+import { Nav } from '@tuturuuu/ui/custom/nav';
+import type { NavLink } from '@tuturuuu/ui/custom/navigation';
+import { cn } from '@tuturuuu/utils/format';
+import type { Dispatch, ReactNode, SetStateAction } from 'react';
+import type { NavigationState } from './sidebar-structure-utils';
+
+interface SidebarStructureContentProps {
+  backButton: NavLink;
+  currentTitle?: string;
+  extraContent?: ReactNode;
+  filteredCurrentLinks: (NavLink | null)[];
+  isCollapsed: boolean;
+  navState: NavigationState;
+  setIsCollapsed: Dispatch<SetStateAction<boolean>>;
+  setNavState: Dispatch<SetStateAction<NavigationState>>;
+  wsId: string;
+}
+
+export function SidebarStructureContent({
+  backButton,
+  currentTitle,
+  extraContent,
+  filteredCurrentLinks,
+  isCollapsed,
+  navState,
+  setIsCollapsed,
+  setNavState,
+  wsId,
+}: SidebarStructureContentProps) {
+  const handleSubMenuClick = (
+    newLinks: (NavLink | null)[],
+    parentTitle: string
+  ) => {
+    setNavState((prevState) => ({
+      currentLinks: newLinks,
+      direction: 'forward',
+      history: [...prevState.history, prevState.currentLinks],
+      titleHistory: [...prevState.titleHistory, parentTitle],
+    }));
+  };
+
+  const closeOnMobile = () => {
+    if (window.innerWidth < 768) setIsCollapsed(true);
+  };
+
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <div
+        key={navState.history.length}
+        className={cn(
+          'min-h-0 flex-1 transition-transform duration-300 ease-in-out',
+          navState.direction === 'forward'
+            ? 'slide-in-from-right animate-in'
+            : 'slide-in-from-left animate-in'
+        )}
+      >
+        {navState.history.length === 0 ? (
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="scrollbar-none min-h-0 overflow-y-auto">
+              <Nav
+                isCollapsed={isCollapsed}
+                links={filteredCurrentLinks}
+                onClick={closeOnMobile}
+                onSubMenuClick={handleSubMenuClick}
+                wsId={wsId}
+              />
+            </div>
+            {extraContent}
+          </div>
+        ) : (
+          <>
+            <Nav
+              isCollapsed={isCollapsed}
+              links={[backButton]}
+              onClick={() => null}
+              onSubMenuClick={() => null}
+              wsId={wsId}
+            />
+            {!isCollapsed && currentTitle ? (
+              <div className="p-2 pt-0">
+                <h2 className="line-clamp-1 px-2 font-semibold text-muted-foreground text-sm uppercase tracking-wide">
+                  {currentTitle}
+                </h2>
+              </div>
+            ) : null}
+            {!isCollapsed ? <div className="mx-4 my-1 border-b" /> : null}
+            {filteredCurrentLinks.length > 0 ? (
+              <div className="scrollbar-none min-h-0 overflow-y-auto">
+                <Nav
+                  isCollapsed={isCollapsed}
+                  links={filteredCurrentLinks}
+                  onClick={closeOnMobile}
+                  onSubMenuClick={handleSubMenuClick}
+                  wsId={wsId}
+                />
+              </div>
+            ) : null}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
