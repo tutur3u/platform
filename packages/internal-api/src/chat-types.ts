@@ -1,5 +1,5 @@
-export type ChatConversationType = "ai" | "channel" | "direct" | "group";
-export type ChatMessageKind = "assistant" | "system" | "user";
+export type ChatConversationType = 'ai' | 'channel' | 'direct' | 'group';
+export type ChatMessageKind = 'assistant' | 'system' | 'user';
 
 export interface ChatUserProfile {
   avatarUrl: string | null;
@@ -8,7 +8,7 @@ export interface ChatUserProfile {
   id: string;
 }
 
-export type ChatFriendRequestStatus = "accepted" | "declined" | "pending";
+export type ChatFriendRequestStatus = 'accepted' | 'declined' | 'pending';
 
 export interface ChatFriendRequest {
   createdAt: string;
@@ -36,7 +36,7 @@ export interface ChatConversationMember {
   lastReadAt: string | null;
   mutedAt: string | null;
   pinnedAt: string | null;
-  role: "admin" | "assistant" | "member" | "owner";
+  role: 'admin' | 'assistant' | 'member' | 'owner';
   user: ChatUserProfile;
   userId: string;
 }
@@ -87,6 +87,29 @@ export interface ChatMessage {
   updatedAt: string | null;
 }
 
+export interface ChatLinkPreview {
+  description: string | null;
+  error?: string | null;
+  imageUrl: string | null;
+  siteName: string | null;
+  title: string | null;
+  url: string;
+}
+
+export interface ChatSharedLink {
+  conversationId: string;
+  createdAt: string;
+  messageId: string;
+  sender: ChatUserProfile | null;
+  url: string;
+}
+
+export interface ChatSharedContent {
+  files: ChatAttachment[];
+  links: ChatSharedLink[];
+  photos: ChatAttachment[];
+}
+
 export interface ChatConversation {
   aiEnabled: boolean;
   archivedAt: string | null;
@@ -119,7 +142,7 @@ export interface CreateChatConversationPayload {
 
 export interface DeleteChatConversationResult {
   conversationId: string;
-  mode: "archived" | "left";
+  mode: 'archived' | 'left';
   type: ChatConversationType;
 }
 
@@ -133,6 +156,38 @@ export interface SendChatMessagePayload {
   content: string;
   kind?: ChatMessageKind;
   replyToMessageId?: string | null;
+}
+
+export interface SendChatMessageResult {
+  message: ChatMessage;
+  messages?: ChatMessage[];
+}
+
+export type ChatMessageStreamEvent =
+  | {
+      message: ChatMessage;
+      type: 'message';
+    }
+  | {
+      delta: string;
+      type: 'assistant_delta';
+    }
+  | {
+      messages: ChatMessage[];
+      type: 'messages';
+    }
+  | {
+      type: 'done';
+    }
+  | {
+      message: string;
+      type: 'error';
+    };
+
+export interface SendChatMessageStreamHandlers {
+  onAssistantDelta?: (delta: string) => void;
+  onMessage?: (message: ChatMessage) => void;
+  onMessages?: (messages: ChatMessage[]) => void;
 }
 
 export interface WorkspaceChatChannel {

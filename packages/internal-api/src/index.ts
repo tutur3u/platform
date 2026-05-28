@@ -10,13 +10,16 @@ export {
   type GenerateWorkspaceCourseModulesFromStoragePayload,
   type GenerateWorkspaceCourseModulesFromStorageResponse,
   generateWorkspaceCourseModulesFromStorage,
+  getAiChatUploadContentType,
   getCurrentUserAIWhitelistStatus,
   listCurrentUserAiChats,
   listWorkspaceAiModelFavorites,
   toggleWorkspaceAiModelFavorite,
+  type UploadAiChatFilePayload,
   updateAiChat,
+  uploadAiChatFile,
   uploadToAiChatSignedUrl,
-} from "./ai";
+} from './ai';
 export {
   type ApproveMfaMobileApprovalPayload,
   type ApproveMfaMobileApprovalResponse,
@@ -38,7 +41,7 @@ export {
   type VerifyOtpPayload,
   type VerifyOtpResponse,
   verifyOtpWithInternalApi,
-} from "./auth";
+} from './auth';
 export {
   applyWorkspaceCalendarSchedule,
   createWorkspaceCalendarEvent,
@@ -59,7 +62,7 @@ export {
   updateWorkspaceCalendarEvent,
   type WorkspaceCalendarEventCreatePayload,
   type WorkspaceCalendarEventUpdatePayload,
-} from "./calendar";
+} from './calendar';
 export type {
   ChatAttachment,
   ChatAttachmentDraft,
@@ -67,52 +70,62 @@ export type {
   ChatConversationMember,
   ChatConversationType,
   ChatFriendRequest,
-  ChatFriendRequests,
   ChatFriendRequestStatus,
+  ChatFriendRequests,
+  ChatLinkPreview,
   ChatMessage,
   ChatMessageKind,
+  ChatMessageStreamEvent,
   ChatReactionSummary,
+  ChatSharedContent,
+  ChatSharedLink,
   ChatUserProfile,
   CreateChatConversationPayload,
   DeleteChatConversationResult,
   SendChatMessagePayload,
+  SendChatMessageResult,
+  SendChatMessageStreamHandlers,
   UpdateChatConversationPayload,
   WorkspaceChatChannel,
   WorkspaceChatMessage,
   WorkspaceChatParticipant,
-} from "./chat";
+} from './chat';
 export {
-  createWorkspaceChatFriendRequest,
   createWorkspaceChatChannel,
   createWorkspaceChatConversation,
+  createWorkspaceChatFriendRequest,
   createWorkspaceChatMessage,
-  deleteWorkspaceChatMessage,
   deleteWorkspaceChatConversation,
+  deleteWorkspaceChatMessage,
   deleteWorkspaceChatTyping,
   editWorkspaceChatMessage,
   getWorkspaceChatAttachmentSignedUrl,
-  listWorkspaceChatFriendRequests,
+  getWorkspaceChatLinkPreviews,
+  getWorkspaceChatSharedContent,
   listWorkspaceChatChannels,
   listWorkspaceChatConversationMessages,
   listWorkspaceChatConversations,
+  listWorkspaceChatFriendRequests,
   listWorkspaceChatMessages,
   listWorkspaceChatParticipants,
   markWorkspaceChatConversationRead,
   respondWorkspaceChatFriendRequest,
+  revokeWorkspaceChatFriendRequest,
   searchWorkspaceChatDirectory,
   searchWorkspaceChatMessages,
   sendWorkspaceChatMessage,
+  sendWorkspaceChatMessageStream,
   toggleWorkspaceChatReaction,
   updateWorkspaceChatConversation,
   uploadWorkspaceChatAttachment,
   upsertWorkspaceChatParticipant,
   upsertWorkspaceChatTyping,
-} from "./chat";
+} from './chat';
 export type {
   InternalApiClientOptions,
   InternalApiFetchInit,
   InternalApiQuery,
-} from "./client";
+} from './client';
 export {
   createInternalApiClient,
   getConfiguredInternalApiBaseUrl,
@@ -120,7 +133,7 @@ export {
   internalApiClient,
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
-} from "./client";
+} from './client';
 export type {
   CreateWorkspaceQuizPayload,
   ListWorkspaceCoursesParams,
@@ -157,7 +170,7 @@ export type {
   ValseaVoiceGradeWord,
   WorkspaceCourseListItem,
   WorkspaceEducationAttemptListQuery,
-} from "./education";
+} from './education';
 export {
   archiveWorkspaceCourse,
   createWorkspaceCourse,
@@ -197,11 +210,11 @@ export {
   updateWorkspaceQuizSet,
   uploadValseaClassroomAudioToDrive,
   validateValseaClassroomApiKey,
-} from "./education";
+} from './education';
 export type {
   WorkspaceExternalProjectWebglPackageArtifact,
   WorkspaceExternalProjectWebglPackageFinalizeResponse,
-} from "./external-projects";
+} from './external-projects';
 export {
   bulkUpdateWorkspaceExternalProjectEntries,
   createCanonicalExternalProject,
@@ -238,7 +251,7 @@ export {
   updateWorkspaceExternalProjectFieldDefinition,
   uploadWorkspaceExternalProjectAssetFile,
   uploadWorkspaceExternalProjectWebglPackageFile,
-} from "./external-projects";
+} from './external-projects';
 export type {
   CreateFinanceInvoicePayload,
   CreateSubscriptionFinanceInvoicePayload,
@@ -294,7 +307,7 @@ export type {
   WalletPayload,
   WalletRoleAccessPayload,
   WalletRoleViewingWindowPayload,
-} from "./finance";
+} from './finance';
 export {
   addWalletRoleAccess,
   createBudget,
@@ -364,7 +377,7 @@ export {
   updateWallet,
   updateWalletInterestConfig,
   updateWalletRoleAccess,
-} from "./finance";
+} from './finance';
 export {
   createWorkspaceHabitTracker,
   createWorkspaceHabitTrackerEntry,
@@ -376,7 +389,7 @@ export {
   listWorkspaceHabitTrackers,
   updateWorkspaceHabitTracker,
   updateWorkspaceHabitTrackerEntry,
-} from "./habit-trackers";
+} from './habit-trackers';
 export type {
   HiveAccessRequest,
   HiveAccessRequestApprovalPayload,
@@ -426,7 +439,7 @@ export type {
   HiveWorldData,
   HiveWorldEvent,
   HiveWorldEventPayload,
-} from "./hive";
+} from './hive';
 export {
   approveHiveAccessRequest,
   createHiveMindSimulation,
@@ -460,7 +473,7 @@ export {
   updateHiveServer,
   updateHiveServerSettings,
   upsertHiveMember,
-} from "./hive";
+} from './hive';
 export {
   type AbuseActivitySignal,
   type AbuseChallengeStatus,
@@ -546,13 +559,13 @@ export {
   updateAIWhitelistEmail,
   updateBlueGreenDockerRecoverySettings,
   updateMobileVersionPolicies,
-} from "./infrastructure";
+} from './infrastructure';
 export {
   listInquiryMediaUrls,
   type UpdateInquiryPayload,
   type UpdateInquiryResponse,
   updateInquiry,
-} from "./inquiries";
+} from './inquiries';
 export type {
   InventoryAuditLogSummary,
   InventoryBundle,
@@ -584,7 +597,7 @@ export type {
   InventoryStorefrontStatus,
   InventoryUnit,
   InventoryUnitPayload,
-} from "./inventory";
+} from './inventory';
 export {
   createInventoryBundle,
   createInventoryCheckoutSession,
@@ -610,8 +623,8 @@ export {
   updateInventoryManufacturer,
   updateInventoryStorefront,
   updateInventoryUnit,
-} from "./inventory";
-export * from "./mail";
+} from './inventory';
+export * from './mail';
 export {
   type CreateWorkspaceMeetingStreamResponse,
   createWorkspaceMeetingRealtimeToken,
@@ -626,7 +639,7 @@ export {
   type WorkspaceMeetingRealtimeTokenResponse,
   type WorkspaceMeetingStream,
   type WorkspaceMeetingStreamResponse,
-} from "./meet";
+} from './meet';
 export {
   applyMindAiPatch,
   archiveMindBoard,
@@ -644,14 +657,14 @@ export {
   searchMindNodes,
   type UpdateMindBoardPayload,
   updateMindBoard,
-} from "./mind";
-export { getCurrentUserNovaTeam } from "./nova";
+} from './mind';
+export { getCurrentUserNovaTeam } from './nova';
 export {
   forceSendWorkspacePostEmail,
   type GetWorkspacePostsQuery,
   type GetWorkspacePostsResponse,
   getWorkspacePosts,
-} from "./posts";
+} from './posts';
 export {
   type CreatedWorkspacePromotion,
   createWorkspacePromotion,
@@ -666,7 +679,7 @@ export {
   type WorkspaceReferralSettingsPayload,
   type WorkspaceUserLinkedPromotion,
   type WorkspaceUserReferralDiscount,
-} from "./promotions";
+} from './promotions';
 export {
   type CreateReportUploadUrlPayload,
   type CreateReportUploadUrlResponse,
@@ -680,7 +693,7 @@ export {
   type SubmitReportPayload,
   type SubmitReportResponse,
   submitReport,
-} from "./reports";
+} from './reports';
 export {
   addRoleMembers,
   createWorkspaceRole,
@@ -695,7 +708,7 @@ export {
   type WorkspaceRoleDetails,
   type WorkspaceRolePayload,
   type WorkspaceRolePermission,
-} from "./roles";
+} from './roles';
 export {
   checkWorkspacePermission,
   getPostsFilterOptions,
@@ -704,7 +717,7 @@ export {
   getWorkspacePermissionSetupStatus,
   getWorkspacePermissionsSummary,
   updateWorkspaceCalendarHours,
-} from "./settings";
+} from './settings';
 export {
   createWorkspaceStorageFolder,
   createWorkspaceStorageSignedUrl,
@@ -726,7 +739,7 @@ export {
   type WorkspaceStorageExportLinksResponse,
   type WorkspaceStorageListItem,
   type WorkspaceStorageListResponse,
-} from "./storage";
+} from './storage';
 export {
   addWorkspaceTaskLabel,
   type CreateWorkspaceTaskJournalPayload,
@@ -769,11 +782,11 @@ export {
   upsertCurrentUserTaskPersonalPlacement,
   type WorkspaceTaskBoardEstimationConfig,
   type WorkspaceTaskJournalResponse,
-} from "./tasks";
+} from './tasks';
 export {
   type TaskSchedulingUpdatePayload,
   updateTaskSchedulingSettings,
-} from "./tasks-scheduling";
+} from './tasks-scheduling';
 export {
   addWorkspaceCourseMembers,
   createWorkspaceCourseIndicator,
@@ -800,11 +813,11 @@ export {
   type TeachWorkspaceUser,
   updateWorkspaceCourseAttendance,
   updateWorkspaceCourseIndicators,
-} from "./teach";
+} from './teach';
 export {
   getWorkspaceTemplate,
   getWorkspaceTemplateBackgroundUrl,
-} from "./templates";
+} from './templates';
 export {
   createWorkspaceBreakType,
   deleteWorkspaceBreakType,
@@ -814,7 +827,7 @@ export {
   listWorkspaceBreakTypes,
   listWorkspaceTimeTrackingTasks,
   updateWorkspaceBreakType,
-} from "./time-tracking";
+} from './time-tracking';
 export {
   cancelTopicAnnouncementSchedule,
   createTopicAnnouncement,
@@ -853,7 +866,7 @@ export {
   updateTopicAnnouncementContact,
   updateTopicAnnouncementTemplate,
   uploadTopicAnnouncementAttachment,
-} from "./topic-announcements";
+} from './topic-announcements';
 export {
   type CompleteTulearnAssignmentPayload,
   type CourseListItem,
@@ -890,7 +903,7 @@ export {
   type TulearnWorkspaceSummary,
   type UpdateTulearnProfilePayload,
   updateTulearnProfile,
-} from "./tulearn";
+} from './tulearn';
 export {
   createTutoringSession,
   exportTutoringSessions,
@@ -906,13 +919,13 @@ export {
   type TutoringReasonType,
   type TutoringSessionRecord,
   updateTutoringSession,
-} from "./tutoring";
+} from './tutoring';
 export {
   listUserGroupActivityLogs,
   type UserGroupActivityEventResponse,
   type UserGroupActivityLogQuery,
   type UserGroupActivityLogsResponse,
-} from "./user-group-activity";
+} from './user-group-activity';
 export {
   getNextWorkspaceUserGroupsPageParam,
   listAllWorkspaceUserGroups,
@@ -924,7 +937,7 @@ export {
   type WorkspaceUserGroupsPageResponse,
   type WorkspaceUserGroupsParams,
   type WorkspaceUserGroupsResponse,
-} from "./user-groups";
+} from './user-groups';
 export {
   type CurrentUserHiveAccessResponse,
   createCurrentUserAvatarUploadUrl,
@@ -959,13 +972,13 @@ export {
   type WorkspaceUserPlatformLinkRepairResponse,
   type WorkspaceUserPlatformLinkRepairSkippedUser,
   type WorkspaceUserPlatformLinkRepairSkipReason,
-} from "./users";
+} from './users';
 export {
   createWorkspaceUserFeedback,
   deleteWorkspaceUserFeedback,
   listWorkspaceUserFeedbacks,
   updateWorkspaceUserFeedback,
-} from "./users-feedbacks";
+} from './users-feedbacks';
 export {
   DATABASE_AUTO_ADD_NEW_GROUPS_TO_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
   DATABASE_DEFAULT_EXCLUDED_GROUPS_CONFIG_ID,
@@ -979,7 +992,7 @@ export {
   getWorkspaceUsersDatabaseFilterSettings,
   parseWorkspaceConfigIdList,
   updateWorkspaceConfig,
-} from "./workspace-configs";
+} from './workspace-configs';
 export {
   type BackfillWorkspaceUserStatusChangesPayload,
   type BackfillWorkspaceUserStatusChangesResponse,
@@ -988,7 +1001,7 @@ export {
   type WorkspaceUserAuditEventResponse,
   type WorkspaceUserAuditLogQuery,
   type WorkspaceUserAuditLogsResponse,
-} from "./workspace-user-audit";
+} from './workspace-user-audit';
 export {
   acceptWorkspaceInvite,
   declineWorkspaceInvite,
@@ -1003,4 +1016,4 @@ export {
   removeWorkspaceMember,
   updateWorkspace,
   updateWorkspaceMemberProfile,
-} from "./workspaces";
+} from './workspaces';

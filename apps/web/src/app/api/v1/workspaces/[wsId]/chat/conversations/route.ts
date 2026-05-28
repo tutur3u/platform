@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
-import { listRootAiAgentDiscoveryConversations } from '@/lib/chat/agent-discovery';
+import {
+  listAiChatConversations,
+  listRootAiAgentDiscoveryConversations,
+} from '@/lib/chat/agent-discovery';
 import {
   type ChatConversation,
   callPrivateChatRpc,
@@ -26,7 +29,7 @@ const createConversationSchema = z.object({
 });
 
 export const GET = withSessionAuth<RouteParams>(
-  async (_request: NextRequest, auth, params) => {
+  async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
       auth,
       permission: 'view_chat',
@@ -34,19 +37,41 @@ export const GET = withSessionAuth<RouteParams>(
     });
     if (!context.ok) return context.response;
 
+    const url = new URL(request.url);
+    const archivedParam = url.searchParams.get('archived');
+    const archived =
+      archivedParam === 'archived' || archivedParam === 'all'
+        ? archivedParam
+        : 'active';
+
     try {
-      const [conversations, aiAgentConversations] = await Promise.all([
-        callPrivateChatRpc<ChatConversation[]>('chat_list_conversations', {
-          p_actor_user_id: auth.user.id,
-          p_ws_id: context.context.normalizedWsId,
-        }),
-        listRootAiAgentDiscoveryConversations({
-          wsId: context.context.normalizedWsId,
-        }),
-      ]);
+      const [conversations, aiAgentConversations, aiChatConversations] =
+        await Promise.all([
+          callPrivateChatRpc<ChatConversation[]>('chat_list_conversations', {
+            p_actor_user_id: auth.user.id,
+            p_archived: archived,
+            p_ws_id: context.context.normalizedWsId,
+          }),
+          archived === 'active'
+            ? listRootAiAgentDiscoveryConversations({
+                wsId: context.context.normalizedWsId,
+              })
+            : [],
+          archived === 'active'
+            ? listAiChatConversations({
+                supabase: auth.supabase,
+                user: auth.user,
+                wsId: context.context.normalizedWsId,
+              })
+            : [],
+        ]);
 
       return NextResponse.json({
-        conversations: [...(conversations ?? []), ...aiAgentConversations],
+        conversations: [
+          ...(conversations ?? []),
+          ...aiAgentConversations,
+          ...aiChatConversations,
+        ],
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat conversations');
@@ -59,7 +84,7 @@ export const POST = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
       auth,
-      permission: 'create_chat',
+      permission: 'view_chat',
       wsId: params.wsId,
     });
     if (!context.ok) return context.response;

@@ -353,6 +353,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_link_previews: {
+        Row: {
+          description: string | null;
+          error: string | null;
+          failed_at: string | null;
+          fetched_at: string;
+          image_url: string | null;
+          metadata: Json;
+          normalized_url: string;
+          site_name: string | null;
+          title: string | null;
+          url: string;
+        };
+        Insert: {
+          description?: string | null;
+          error?: string | null;
+          failed_at?: string | null;
+          fetched_at?: string;
+          image_url?: string | null;
+          metadata?: Json;
+          normalized_url: string;
+          site_name?: string | null;
+          title?: string | null;
+          url: string;
+        };
+        Update: {
+          description?: string | null;
+          error?: string | null;
+          failed_at?: string | null;
+          fetched_at?: string;
+          image_url?: string | null;
+          metadata?: Json;
+          normalized_url?: string;
+          site_name?: string | null;
+          title?: string | null;
+          url?: string;
+        };
+        Relationships: [];
+      };
       chat_message_attachments: {
         Row: {
           content_type: string | null;
@@ -3534,10 +3573,16 @@ export type Database = {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: boolean;
       };
-      chat_list_conversations: {
-        Args: { p_actor_user_id: string; p_ws_id: string };
-        Returns: Json;
-      };
+      chat_list_conversations:
+        | { Args: { p_actor_user_id: string; p_ws_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_actor_user_id: string;
+              p_archived?: string;
+              p_ws_id: string;
+            };
+            Returns: Json;
+          };
       chat_list_friend_requests: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: Json;
@@ -3548,6 +3593,14 @@ export type Database = {
           p_before?: string;
           p_conversation_id: string;
           p_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_list_shared_content: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
           p_ws_id: string;
         };
         Returns: Json;
@@ -3585,6 +3638,14 @@ export type Database = {
           p_actor_user_id: string;
           p_request_id: string;
           p_status: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_revoke_friend_request: {
+        Args: {
+          p_actor_user_id: string;
+          p_request_id: string;
           p_ws_id: string;
         };
         Returns: Json;

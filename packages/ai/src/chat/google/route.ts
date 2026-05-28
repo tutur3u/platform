@@ -22,7 +22,11 @@ import {
 import { ChatRequestBodySchema, mapToUIMessages } from './chat-request-schema';
 import { systemInstruction } from './default-system-instruction';
 import { prepareMiraToolStep } from './mira-step-preparation';
-import { isInternalTuturuuuAiUser, resolveAiRouteAuth } from './route-auth';
+import {
+  type AiRouteAuthResult,
+  isInternalTuturuuuAiUser,
+  resolveAiRouteAuth,
+} from './route-auth';
 import {
   moveTempFilesToThread,
   resolveChatIdForUser,
@@ -41,6 +45,7 @@ export function createPOST(
     serverAPIKeyFallback?: boolean;
     /** Gateway provider prefix for bare model names (e.g., 'openai', 'anthropic', 'vertex'). Defaults to 'google'. */
     defaultProvider?: string;
+    resolveAuth?: (request: NextRequest) => Promise<AiRouteAuthResult | null>;
   } = {}
 ) {
   const defaultProvider = _options.defaultProvider ?? 'google';
@@ -95,7 +100,8 @@ export function createPOST(
         return new Response('Missing messages', { status: 400 });
       }
 
-      const auth = await resolveAiRouteAuth(req);
+      const auth =
+        (await _options.resolveAuth?.(req)) ?? (await resolveAiRouteAuth(req));
       if (!auth.ok) return auth.response;
       const { supabase, user } = auth;
 

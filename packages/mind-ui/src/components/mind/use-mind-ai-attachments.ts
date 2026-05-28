@@ -1,23 +1,10 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import {
-  createAiChatUploadUrl,
-  deleteAiChatFile,
-  uploadToAiChatSignedUrl,
-} from '@tuturuuu/internal-api';
+import { deleteAiChatFile, uploadAiChatFile } from '@tuturuuu/internal-api';
 import { toast } from '@tuturuuu/ui/sonner';
 import { generateRandomUUID } from '@tuturuuu/utils/uuid-helper';
 import { useCallback, useRef, useState } from 'react';
-
-const OFFICE_MIME_TYPES = new Set([
-  'application/msword',
-  'application/vnd.ms-excel',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-]);
 
 export type MindChatFile = {
   file: File;
@@ -26,12 +13,6 @@ export type MindChatFile = {
   status: 'error' | 'uploaded' | 'uploading';
   storagePath: string | null;
 };
-
-function getUploadContentType(file: File) {
-  const mime = file.type.toLowerCase();
-  if (OFFICE_MIME_TYPES.has(mime)) return 'application/octet-stream';
-  return mime || 'application/octet-stream';
-}
 
 export function useMindAiAttachments({
   getUploadFailedMessage,
@@ -48,32 +29,11 @@ export function useMindAiAttachments({
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
-      const upload = await createAiChatUploadUrl({
+      const upload = await uploadAiChatFile({
         chatId: threadId,
-        filename: file.name,
-        wsId,
-      });
-      const contentType = getUploadContentType(file);
-      let response = await uploadToAiChatSignedUrl({
-        contentType,
         file,
-        signedUrl: upload.signedUrl,
-        token: upload.token,
+        workspaceId: wsId,
       });
-
-      if (!response.ok && contentType !== 'application/octet-stream') {
-        response = await uploadToAiChatSignedUrl({
-          contentType: 'application/octet-stream',
-          file,
-          forceBinaryBlob: true,
-          signedUrl: upload.signedUrl,
-          token: upload.token,
-        });
-      }
-
-      if (!response.ok) {
-        throw new Error(await response.text().catch(() => 'Upload failed'));
-      }
 
       return upload.path;
     },

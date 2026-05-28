@@ -62,3 +62,30 @@ export const PATCH = withSessionAuth<RouteParams>(
   },
   { allowAppSessionAuth: true }
 );
+
+export const DELETE = withSessionAuth<RouteParams>(
+  async (_request: NextRequest, auth, params) => {
+    const context = await resolveChatRouteContext({
+      auth,
+      permission: 'view_chat',
+      wsId: params.wsId,
+    });
+    if (!context.ok) return context.response;
+
+    try {
+      const friendRequest = await callPrivateChatRpc<ChatFriendRequest>(
+        'chat_revoke_friend_request',
+        {
+          p_actor_user_id: auth.user.id,
+          p_request_id: params.requestId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
+
+      return NextResponse.json({ request: friendRequest });
+    } catch (error) {
+      return chatRpcErrorResponse(error, 'Failed to revoke friend request');
+    }
+  },
+  { allowAppSessionAuth: true }
+);

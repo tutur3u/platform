@@ -1,4 +1,5 @@
 import type { AIModelUI } from '@tuturuuu/types';
+import type { ChatAttachmentDraft } from './chat-types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -76,6 +77,21 @@ export interface AiChatFileMutationResponse {
   path: string | null;
 }
 
+export interface UploadAiChatFilePayload {
+  chatId?: string;
+  file: File;
+  workspaceId: string;
+}
+
+const OFFICE_MIME_TYPES = new Set([
+  'application/vnd.ms-excel',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+]);
+
 type GatewayModelRow = {
   context_window?: number | null;
   description?: string | null;
@@ -133,6 +149,12 @@ export async function createAiChatUploadUrl(
   });
 }
 
+export function getAiChatUploadContentType(file: File): string {
+  const mime = file.type.toLowerCase();
+  if (OFFICE_MIME_TYPES.has(mime)) return 'application/octet-stream';
+  return mime || 'application/octet-stream';
+}
+
 export async function deleteAiChatFile(
   payload: DeleteAiChatFilePayload,
   options?: InternalApiClientOptions
@@ -148,23 +170,27 @@ export async function deleteAiChatFile(
   });
 }
 
-export async function uploadToAiChatSignedUrl({
-  contentType,
-  file,
-  forceBinaryBlob = false,
-  signedUrl,
-  token,
-}: {
-  contentType: string;
-  file: File;
-  forceBinaryBlob?: boolean;
-  signedUrl: string;
-  token: string;
-}) {
+export async function uploadToAiChatSignedUrl(
+  {
+    contentType,
+    file,
+    forceBinaryBlob = false,
+    signedUrl,
+    token,
+  }: {
+    contentType: string;
+    file: File;
+    forceBinaryBlob?: boolean;
+    signedUrl: string;
+    token: string;
+  },
+  options?: Pick<InternalApiClientOptions, 'fetch'>
+) {
   const shouldUseBlob =
     forceBinaryBlob || contentType === 'application/octet-stream';
+  const fetchImpl = options?.fetch ?? globalThis.fetch;
 
-  return fetch(signedUrl, {
+  return fetchImpl(signedUrl, {
     body: shouldUseBlob ? file.slice(0, file.size, contentType) : file,
     headers: {
       Authorization: `Bearer ${token}`,
@@ -172,6 +198,65 @@ export async function uploadToAiChatSignedUrl({
     },
     method: 'PUT',
   });
+}
+
+export async function uploadAiChatFile(
+  { chatId, file, workspaceId }: UploadAiChatFilePayload,
+  options?: InternalApiClientOptions
+): Promise<ChatAttachmentDraft> {
+  const { path, signedUrl, token } = await createAiChatUploadUrl(
+    {
+      chatId,
+      filename: file.name,
+      wsId: workspaceId,
+    },
+    options
+  );
+
+  const tryUpload = async (contentType: string, forceBinaryBlob = false) =>
+    uploadToAiChatSignedUrl(
+      {
+        contentType,
+        file,
+        forceBinaryBlob,
+        signedUrl,
+        token,
+      },
+      { fetch: options?.fetch }
+    );
+
+  const preferredContentType = getAiChatUploadContentType(file);
+  let response = await tryUpload(preferredContentType);
+  let errorText = '';
+
+  if (!response.ok) {
+    errorText = await response.text().catch(() => '');
+
+    if (
+      preferredContentType !== 'application/octet-stream' &&
+      /unsupported mime type/i.test(errorText)
+    ) {
+      errorText = '';
+      response = await tryUpload('application/octet-stream', true);
+    }
+  }
+
+  if (!response.ok) {
+    if (!errorText) {
+      errorText = await response.text().catch(() => '');
+    }
+
+    throw new Error(errorText || `Upload failed (${response.status})`);
+  }
+
+  return {
+    contentType: file.type || preferredContentType,
+    filename: file.name,
+    fullPath: path,
+    path,
+    sizeBytes: file.size,
+    storageWsId: workspaceId,
+  };
 }
 
 export async function listWorkspaceAiModelFavorites(

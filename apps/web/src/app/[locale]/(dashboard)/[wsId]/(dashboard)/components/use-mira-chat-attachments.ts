@@ -9,7 +9,6 @@ import {
   deleteChatFileMutationFn,
   fetchSignedReadUrlsMutationFn,
   uploadChatFileMutationFn,
-  uploadSignedUrlPutMutationFn,
 } from './mira-chat-file-api';
 
 interface UseMiraChatAttachmentsParams {
@@ -35,9 +34,6 @@ export function useMiraChatAttachments({
   const messageAttachmentsRef = useRef(messageAttachments);
   messageAttachmentsRef.current = messageAttachments;
 
-  const uploadSignedUrlPutMutation = useMutation({
-    mutationFn: uploadSignedUrlPutMutationFn,
-  });
   const fetchSignedReadUrlsMutation = useMutation({
     mutationFn: fetchSignedReadUrlsMutationFn,
   });
@@ -55,11 +51,7 @@ export function useMiraChatAttachments({
       wsId: string;
       chatId: string | undefined;
       file: File;
-    }) =>
-      uploadChatFileMutationFn({
-        ...args,
-        uploadViaSignedPut: uploadSignedUrlPutMutation.mutateAsync,
-      }),
+    }) => uploadChatFileMutationFn(args),
   });
 
   const handleFilesSelected = useCallback(
