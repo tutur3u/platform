@@ -876,10 +876,11 @@ function validateDockerProdCompose(composeContent) {
 
 function validateDockerBakeFile(bakeContent) {
   const errors = [];
+  const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
     'group "blue-green-support" {\n  targets = ["meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
-    'target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]\n}',
+    `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
   ];
 
   for (const snippet of requiredSnippets) {

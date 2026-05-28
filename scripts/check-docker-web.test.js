@@ -518,10 +518,11 @@ test('validateDockerBakeFile accepts the current production bake file', () => {
 });
 
 test('validateDockerBakeFile reports missing meet realtime image loading target', () => {
+  const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const bakeContent = fs
     .readFileSync(DOCKER_BAKE_WEB_PROD_PATH, 'utf8')
     .replace(
-      'target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]\n}\n\n',
+      `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}\n\n`,
       ''
     );
 
