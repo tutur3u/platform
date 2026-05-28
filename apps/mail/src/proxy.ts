@@ -5,6 +5,7 @@ import {
   hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
   getRequestHeadersWithResponseCookies,
   normalizeAuthRedirectPath,
@@ -75,6 +76,13 @@ export async function proxy(req: NextRequest): Promise<NextResponse> {
       appSessionRefresh?.response ??
       clearSupabaseAuthCookies(req, NextResponse.next())
     );
+  }
+
+  const verifyTokenResponse = await consumeVerifyTokenRequest(req, {
+    locales: supportedLocales,
+  });
+  if (verifyTokenResponse) {
+    return verifyTokenResponse;
   }
 
   const authRes = await authProxy(req);

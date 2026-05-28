@@ -41,6 +41,34 @@ const satelliteAppApiRoots = [
   'apps/mind/src/app/api',
 ];
 
+const registeredSatelliteApps = [
+  'calendar',
+  'tasks',
+  'mail',
+  'learn',
+  'teach',
+  'inventory',
+  'chat',
+  'mind',
+  'hive',
+  'drive',
+  'finance',
+  'cms',
+  'rewise',
+  'track',
+  'nova',
+  'meet',
+] as const;
+
+const coordinatedCookieApps = [
+  'learn',
+  'teach',
+  'inventory',
+  'chat',
+  'mind',
+  'hive',
+] as const;
+
 const allowedSatelliteLocalApiRoutes = new Set([
   'apps/learn/src/app/api/auth/logout/route.ts',
   'apps/learn/src/app/api/auth/refresh-app-session/route.ts',
@@ -174,18 +202,42 @@ describe('satellite app-session route inventory', () => {
   });
 
   it('keeps satellite token verifiers on the central Web verifier path', () => {
-    for (const file of [
-      'apps/learn/src/app/api/auth/verify-app-token/route.ts',
-      'apps/teach/src/app/api/auth/verify-app-token/route.ts',
-      'apps/chat/src/app/api/auth/verify-app-token/route.ts',
-      'apps/inventory/src/app/api/auth/verify-app-token/route.ts',
-      'apps/mail/src/app/api/auth/verify-app-token/route.ts',
-      'apps/mind/src/app/api/auth/verify-app-token/route.ts',
-    ]) {
+    for (const app of registeredSatelliteApps) {
+      const file = `apps/${app}/src/app/api/auth/verify-app-token/route.ts`;
       const source = readFileSync(resolve(repoRoot, file), 'utf8');
 
-      expect(source, file).toContain('import { WEB_APP_URL }');
-      expect(source, file).toContain('verificationBaseUrl: WEB_APP_URL');
+      expect(source, file).toMatch(/import \{ (?:TTR_URL|WEB_APP_URL) \}/u);
+      expect(source, file).toMatch(
+        /verificationBaseUrl:\s*(?:TTR_URL|WEB_APP_URL)/u
+      );
+    }
+  });
+
+  it('keeps registered satellite apps on local token refresh and proxy handoff wiring', () => {
+    for (const app of registeredSatelliteApps) {
+      const refreshFile = `apps/${app}/src/app/api/auth/refresh-app-session/route.ts`;
+      const refreshSource = readFileSync(
+        resolve(repoRoot, refreshFile),
+        'utf8'
+      );
+      const proxyFile = `apps/${app}/src/proxy.ts`;
+      const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
+
+      expect(refreshSource, refreshFile).toContain('createRefreshPOST');
+      expect(refreshSource, refreshFile).toMatch(
+        /verificationBaseUrl:\s*(?:TTR_URL|WEB_APP_URL)/u
+      );
+      expect(proxySource, proxyFile).toContain('consumeVerifyTokenRequest');
+      expect(proxySource, proxyFile).toContain('refreshAppSessionForRequest');
+    }
+  });
+
+  it('keeps coordinated-cookie apps refreshing missing Web sessions locally', () => {
+    for (const app of coordinatedCookieApps) {
+      const proxyFile = `apps/${app}/src/proxy.ts`;
+      const proxySource = readFileSync(resolve(repoRoot, proxyFile), 'utf8');
+
+      expect(proxySource, proxyFile).toContain('requireWebAppSession: true');
     }
   });
 

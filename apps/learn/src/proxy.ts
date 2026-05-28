@@ -131,6 +131,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
+      requireWebAppSession: true,
       targetApp: 'learn',
     });
     const requestWithRefresh = {

@@ -1,6 +1,7 @@
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
@@ -109,6 +110,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
+      requireWebAppSession: true,
       targetApp: 'mind',
     });
     const requestWithRefresh = {
@@ -121,8 +123,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       : getAppSessionClaimsFromRequest(requestWithRefresh, {
           targetApp: 'mind',
         });
+    const hasWebAppSession =
+      hasWebAppSessionTokenFromRequest(requestWithRefresh);
 
-    if (!appSession) {
+    if (!appSession || !hasWebAppSession) {
       const url = createMindPublicUrl('/login', request);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);

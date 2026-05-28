@@ -24,6 +24,15 @@ app authenticates through the cross-app session target `chat`; `apps/web`
 accepts that target only on the chat API surface and still performs normal
 request-scoped user validation before protected work.
 
+Chat consumes `/verify-token` in the proxy before rendering pages. The verifier
+sets both the Chat-local app-session cookie and the Web-issued app-session
+cookie pair used by forwarded central APIs. Protected Chat routes require both
+cookies; if an older local-only cookie is present, Chat sends the user through
+the local `/login` recovery path so the platform handoff refreshes the full
+cookie pair. Access-token refresh must stay same-origin through
+`/api/auth/refresh-app-session` instead of sending the browser back to
+`apps/web` while a valid refresh cookie exists.
+
 Chat routes must follow this order:
 
 1. Authenticate the request user or app-session user.

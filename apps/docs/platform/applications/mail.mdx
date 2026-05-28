@@ -13,6 +13,12 @@ description: SES-backed team mailbox app for exact @tuturuuu.com accounts.
 - Outbound messages use `@tuturuuu/email-service` with the selected mailbox address as the source.
 - Inbound messages use SES Email Receiving with S3 raw-message storage and SNS notifications. The webhook stores an idempotent inbound job, fetches raw MIME from S3, mirrors sanitized bodies and attachment metadata, and quarantines unknown recipients.
 
+Mail consumes `/verify-token` in the proxy before centralized auth handling so
+local Portless handoffs set cookies on `mail.tuturuuu.localhost`. The app keeps
+token refresh same-origin through `/api/auth/refresh-app-session`; a valid
+refresh cookie should rotate the Mail-local and Web-issued app-session cookies
+without sending the browser back through `apps/web` login.
+
 ## SES Receiving Setup
 
 Do not change DNS from code or migrations. The current public MX for `tuturuuu.com` is Google-routed, so real `@tuturuuu.com` receiving requires an explicit staged MX cutover or a pilot subdomain first.

@@ -1,3 +1,4 @@
+import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import { clearSupabaseAuthCookies } from '@tuturuuu/auth/app-session';
 import {
   consumeVerifyTokenRequest,
@@ -34,6 +35,22 @@ vi.mock('next-intl/navigation', () => ({
     useRouter: () => ({}),
   }),
 }));
+
+function appSessionClaims(): AppCoordinationTokenClaims {
+  return {
+    aud: 'tuturuuu-api',
+    email: 'local@tuturuuu.com',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: Math.floor(Date.now() / 1000),
+    iss: 'tuturuuu',
+    jti: 'jti',
+    origin_app: 'web',
+    scopes: ['internal-app:session'],
+    sub: '00000000-0000-0000-0000-000000000001',
+    target_app: 'hive',
+    typ: 'app_coordination',
+  };
+}
 
 describe('Hive proxy auth cookie cleanup', () => {
   beforeEach(() => {
@@ -134,6 +151,41 @@ describe('Hive proxy auth cookie cleanup', () => {
     expect(response.headers.get('location')).toBe(
       'https://hive.tuturuuu.localhost/login?next=%2Fdashboard'
     );
+  });
+
+  it('sends stale local-only app sessions back through the local login recovery path', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    const response = await proxy(
+      new NextRequest('https://hive.tuturuuu.localhost/dashboard')
+    );
+
+    expect(response.headers.get('location')).toBe(
+      'https://hive.tuturuuu.localhost/login?next=%2Fdashboard'
+    );
+  });
+
+  it('allows protected pages when both local and Web app-session cookies are present', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    const response = await proxy(
+      new NextRequest('https://hive.tuturuuu.localhost/dashboard', {
+        headers: {
+          cookie: 'tuturuuu_web_app_session=ttr_app_web',
+        },
+      })
+    );
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 
   it('keeps generic API guard coverage for Hive product APIs', async () => {

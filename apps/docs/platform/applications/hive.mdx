@@ -9,9 +9,14 @@ inside `apps/web` under `/api/v1/hive/*`.
 
 Hive consumes cross-app login tokens through `/verify-token`. That verifier
 posts the handoff token to `/api/auth/verify-app-token`, trusts the returned
-HttpOnly `tuturuuu_app_session` cookie, and then redirects to the requested
-Hive path. It must not create or refresh a Hive-domain Supabase Auth session.
-Hive local logout is intentionally app-local: `/api/auth/logout` clears
+HttpOnly app-session cookies, and then redirects to the requested Hive path.
+Protected routes require both the Hive-local app-session cookie and the
+Web-issued app-session cookie used for forwarded central APIs. If only the
+Hive-local cookie remains, Hive sends the browser through local `/login` to
+recover the full cookie pair. Expired access tokens should rotate through
+same-origin `/api/auth/refresh-app-session` while refresh cookies remain valid.
+Hive must not create or refresh a Hive-domain Supabase Auth session. Hive local
+logout is intentionally app-local: `/api/auth/logout` clears
 `tuturuuu_app_session`, expires stale Supabase Auth cookies on the Hive host, and
 redirects browser form submissions back to `/login`. Keep that route outside the
 generic API proxy guard path so logout does not wait on product API rate-limit

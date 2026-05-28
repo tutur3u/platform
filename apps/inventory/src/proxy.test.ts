@@ -124,6 +124,7 @@ describe('Inventory proxy storefront access', () => {
       'https://inventory.tuturuuu.com/login?next=%2Fpersonal%2Fcatalog'
     );
     expect(mocks.refreshAppSessionForRequest).toHaveBeenCalledWith(request, {
+      requireWebAppSession: true,
       targetApp: 'inventory',
     });
   });

@@ -14,6 +14,14 @@ handoff through `/verify-token`, stores a host-local `tuturuuu_app_session`
 cookie for the `mind` app target, and keeps workspace data behind membership
 checks. Mind must not create a local Supabase Auth session.
 
+Mind consumes `/verify-token` in the proxy and requires the coordinated cookie
+pair on protected routes: the Mind-local app-session cookie for route guards and
+the Web-issued app-session cookie for forwarded central APIs. If only the
+Mind-local cookie remains, route users through local `/login` to refresh the
+pair. Expired access tokens should rotate through
+`/api/auth/refresh-app-session` on the Mind origin while refresh cookies are
+valid.
+
 Mind AI also follows the shared AI credit contract instead of an employee-only
 allowlist. The `/api/ai/mind` route resolves the selected personal or workspace
 credit source, checks the caller's membership for workspace credits, preflights

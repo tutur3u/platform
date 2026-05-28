@@ -409,6 +409,7 @@ export async function refreshAppSessionForRequest(
   req: NextRequest,
   options: {
     now?: Date;
+    requireWebAppSession?: boolean;
     refreshPath?: string;
     targetApp: AppName | string;
   }
@@ -418,18 +419,23 @@ export async function refreshAppSessionForRequest(
     now,
     targetApp: options.targetApp,
   });
-  const accessToken =
-    getWebAppSessionTokenFromRequest(req) ?? getAppSessionTokenFromRequest(req);
+  const webAccessToken = getWebAppSessionTokenFromRequest(req);
+  const accessToken = webAccessToken ?? getAppSessionTokenFromRequest(req);
   const refreshToken =
     getWebAppSessionRefreshTokenFromRequest(req) ??
     getAppSessionRefreshTokenFromRequest(req);
+  const shouldRefreshMissingWebSession =
+    options.requireWebAppSession && !webAccessToken && Boolean(refreshToken);
 
   if (verification.ok) {
     const earlySeconds = getAppSessionRefreshEarlySeconds(verification.claims);
     const secondsUntilExpiry =
       verification.claims.exp - Math.floor(now.getTime() / 1000);
 
-    if (!refreshToken || secondsUntilExpiry > earlySeconds) {
+    if (
+      !refreshToken ||
+      (secondsUntilExpiry > earlySeconds && !shouldRefreshMissingWebSession)
+    ) {
       return {
         claims: verification.claims,
         ok: true,

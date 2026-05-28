@@ -1,4 +1,7 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { ArrowRight, Bot, Box, Radio, ShieldCheck } from '@tuturuuu/icons';
 import { headers } from 'next/headers';
 import Image from 'next/image';
@@ -16,14 +19,18 @@ type Props = {
 export default async function LoginPage({ searchParams }: Props) {
   const params = await searchParams;
   const t = await getTranslations('auth');
+  const requestHeaders = await headers();
   const appSession = getAppSessionClaimsFromRequest(
-    { headers: await headers() },
+    { headers: requestHeaders },
     { targetApp: 'hive' }
   );
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
+    headers: requestHeaders,
+  });
 
   const nextPath = params.next?.startsWith('/') ? params.next : '/';
 
-  if (appSession) {
+  if (appSession && hasWebAppSession) {
     redirect(nextPath);
   }
 

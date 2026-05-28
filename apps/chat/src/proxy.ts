@@ -1,8 +1,10 @@
 import {
   clearSupabaseAuthCookies,
   getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
 } from '@tuturuuu/auth/app-session';
 import {
+  consumeVerifyTokenRequest,
   propagateAuthCookies,
   refreshAppSessionForRequest,
 } from '@tuturuuu/auth/proxy';
@@ -94,6 +96,13 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
     return clearSupabaseAuthCookies(request, canonicalLocaleRedirect);
   }
 
+  const verifyTokenResponse = await consumeVerifyTokenRequest(request, {
+    locales: supportedLocales,
+  });
+  if (verifyTokenResponse) {
+    return verifyTokenResponse;
+  }
+
   const unlocalizedPath = stripLocale(request.nextUrl.pathname);
   const isPublicPath =
     unlocalizedPath.startsWith('/login') ||
@@ -101,6 +110,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
 
   if (!isPublicPath) {
     const appSessionRefresh = await refreshAppSessionForRequest(request, {
+      requireWebAppSession: true,
       targetApp: 'chat',
     });
     const requestWithRefresh = {
@@ -113,8 +123,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
       : getAppSessionClaimsFromRequest(requestWithRefresh, {
           targetApp: 'chat',
         });
+    const hasWebAppSession =
+      hasWebAppSessionTokenFromRequest(requestWithRefresh);
 
-    if (!appSession) {
+    if (!appSession || !hasWebAppSession) {
       const url = createChatPublicUrl('/login', request);
       const next = getNextValue(request);
       if (next) url.searchParams.set('next', next);

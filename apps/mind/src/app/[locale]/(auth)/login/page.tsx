@@ -1,4 +1,7 @@
-import { getAppSessionClaimsFromRequest } from '@tuturuuu/auth/app-session';
+import {
+  getAppSessionClaimsFromRequest,
+  hasWebAppSessionTokenFromRequest,
+} from '@tuturuuu/auth/app-session';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { BASE_URL, WEB_APP_URL } from '@/constants/common';
@@ -22,8 +25,11 @@ export default async function LoginPage({
     { headers: requestHeaders },
     { targetApp: 'mind' }
   );
+  const hasWebAppSession = hasWebAppSessionTokenFromRequest({
+    headers: requestHeaders,
+  });
 
-  if (appSession && !shouldRefreshCrossAppSession) {
+  if (appSession && hasWebAppSession && !shouldRefreshCrossAppSession) {
     redirect(nextPath);
   }
 

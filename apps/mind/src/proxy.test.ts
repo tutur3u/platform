@@ -1,3 +1,4 @@
+import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
 import {
   consumeVerifyTokenRequest,
   refreshAppSessionForRequest,
@@ -34,6 +35,22 @@ vi.mock('next-intl/navigation', () => ({
   }),
 }));
 
+function appSessionClaims(): AppCoordinationTokenClaims {
+  return {
+    aud: 'tuturuuu-api',
+    email: 'local@tuturuuu.com',
+    exp: Math.floor(Date.now() / 1000) + 3600,
+    iat: Math.floor(Date.now() / 1000),
+    iss: 'tuturuuu',
+    jti: 'jti',
+    origin_app: 'web',
+    scopes: ['internal-app:session'],
+    sub: '00000000-0000-0000-0000-000000000001',
+    target_app: 'mind',
+    typ: 'app_coordination',
+  };
+}
+
 describe('Mind proxy verify-token handoff', () => {
   beforeEach(() => {
     vi.mocked(guardApiProxyRequest).mockReset();
@@ -60,5 +77,43 @@ describe('Mind proxy verify-token handoff', () => {
     );
     expect(refreshAppSessionForRequest).not.toHaveBeenCalled();
     expect(guardApiProxyRequest).not.toHaveBeenCalled();
+  });
+
+  it('sends stale local-only app sessions back through the local login recovery path', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    const request = new NextRequest('https://mind.tuturuuu.localhost/personal');
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBe(
+      'https://mind.tuturuuu.localhost/login?next=%2Fpersonal'
+    );
+  });
+
+  it('allows protected pages when both local and Web app-session cookies are present', async () => {
+    vi.mocked(refreshAppSessionForRequest).mockResolvedValueOnce({
+      claims: appSessionClaims(),
+      ok: true,
+      refreshed: false,
+      response: NextResponse.next(),
+    });
+    const request = new NextRequest(
+      'https://mind.tuturuuu.localhost/personal',
+      {
+        headers: {
+          cookie: 'tuturuuu_web_app_session=ttr_app_web',
+        },
+      }
+    );
+
+    const response = await proxy(request);
+
+    expect(response.headers.get('location')).toBeNull();
+    expect(response.headers.get('x-middleware-next')).toBe('1');
   });
 });

@@ -5,6 +5,7 @@ import {
   APP_SESSION_REFRESH_COOKIE_NAME,
   createAppSessionToken,
   createAppSessionTokenPair,
+  WEB_APP_SESSION_COOKIE_NAME,
 } from '../app-session';
 import {
   MFA_MOBILE_APPROVAL_COOKIE_NAME,
@@ -14,6 +15,7 @@ import {
   consumeVerifyTokenRequest,
   createCentralizedAuthProxy,
   normalizeAuthRedirectPath,
+  refreshAppSessionForRequest,
   resolveCanonicalRequestOrigin,
 } from './index';
 
@@ -403,6 +405,75 @@ describe('auth proxy redirect helpers', () => {
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('set-cookie')).toContain(
       `${APP_SESSION_COOKIE_NAME}=ttr_app_`
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL('/api/auth/refresh-app-session', 'https://learn.tuturuuu.com'),
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('refreshes locally when a coordinated app is missing the Web-issued access cookie', async () => {
+    const oldSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 3600,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+    const newSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:01:00.000Z'),
+      }
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ appSessionCreated: true }), {
+        headers: [
+          [
+            'set-cookie',
+            `${APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+          ],
+          [
+            'set-cookie',
+            `${WEB_APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+          ],
+        ],
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    const request = new NextRequest('https://learn.tuturuuu.com/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+        ].join('; '),
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      now: new Date('2026-01-01T00:01:00.000Z'),
+      requireWebAppSession: true,
+      targetApp: 'learn',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.refreshed).toBe(true);
+    expect(result.ok && result.requestHeaders?.get('cookie')).toContain(
+      `${WEB_APP_SESSION_COOKIE_NAME}=ttr_app_`
     );
     expect(fetchMock).toHaveBeenCalledWith(
       new URL('/api/auth/refresh-app-session', 'https://learn.tuturuuu.com'),
