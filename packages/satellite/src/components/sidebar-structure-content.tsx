@@ -58,7 +58,12 @@ export function SidebarStructureContent({
       >
         {navState.history.length === 0 ? (
           <div className="flex h-full min-h-0 flex-col">
-            <div className="scrollbar-none min-h-0 overflow-y-auto">
+            <div
+              className={cn(
+                'scrollbar-none overflow-y-auto',
+                extraContent ? 'shrink-0' : 'min-h-0 flex-1'
+              )}
+            >
               <Nav
                 isCollapsed={isCollapsed}
                 links={filteredCurrentLinks}
@@ -67,7 +72,11 @@ export function SidebarStructureContent({
                 wsId={wsId}
               />
             </div>
-            {extraContent}
+            {extraContent ? (
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                {extraContent}
+              </div>
+            ) : null}
           </div>
         ) : (
           <>

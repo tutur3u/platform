@@ -2,6 +2,7 @@
 
 import { LoaderCircle, MessageCircle, Plus, Search } from '@tuturuuu/icons';
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
+import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
 import { Button } from '../button';
 import { Input } from '../input';
@@ -9,25 +10,31 @@ import { ScrollArea } from '../scroll-area';
 import { ConversationRow, SearchResultList } from './chat-sidebar-items';
 
 interface ChatSidebarProps {
+  className?: string;
   conversations: ChatConversation[];
   currentUserId: string;
+  embedded?: boolean;
   isLoading?: boolean;
   onCreateConversation: () => void;
   onSearchChange: (value: string) => void;
   onSelectConversation: (conversationId: string) => void;
   searchResults: ChatMessage[];
+  showTitle?: boolean;
   searchValue: string;
   selectedConversationId?: string | null;
 }
 
 export function ChatSidebar({
+  className,
   conversations,
   currentUserId,
+  embedded = false,
   isLoading,
   onCreateConversation,
   onSearchChange,
   onSelectConversation,
   searchResults,
+  showTitle = true,
   searchValue,
   selectedConversationId,
 }: ChatSidebarProps) {
@@ -35,33 +42,50 @@ export function ChatSidebar({
   const showSearchResults = searchValue.trim().length >= 2;
 
   return (
-    <aside className="flex min-h-0 w-full flex-col border-r bg-background md:w-[22rem]">
+    <aside
+      className={cn(
+        'flex min-h-0 w-full flex-col bg-background',
+        embedded
+          ? 'min-h-0 flex-1 border-foreground/10 border-t'
+          : 'border-r md:w-[22rem]',
+        className
+      )}
+    >
       <div className="border-b p-3">
-        <div className="flex items-center justify-between gap-2">
-          <div>
+        {showTitle ? (
+          <div className="mb-3 flex items-center justify-between gap-2">
             <h2 className="font-semibold text-base">{t('title')}</h2>
-            <p className="text-muted-foreground text-xs">
-              {t('private_by_default')}
-            </p>
+            <Button
+              aria-label={t('new_conversation')}
+              onClick={onCreateConversation}
+              size="icon"
+              type="button"
+            >
+              <Plus className="size-4" />
+            </Button>
           </div>
-          <Button
-            aria-label={t('new_conversation')}
-            onClick={onCreateConversation}
-            size="icon"
-            type="button"
-          >
-            <Plus className="size-4" />
-          </Button>
-        </div>
+        ) : null}
 
-        <div className="relative mt-3">
-          <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            className="pl-9"
-            onChange={(event) => onSearchChange(event.target.value)}
-            placeholder={t('search_placeholder')}
-            value={searchValue}
-          />
+        <div className="flex items-center gap-2">
+          <div className="relative min-w-0 flex-1">
+            <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              className="pl-9"
+              onChange={(event) => onSearchChange(event.target.value)}
+              placeholder={t('search_placeholder')}
+              value={searchValue}
+            />
+          </div>
+          {!showTitle ? (
+            <Button
+              aria-label={t('new_conversation')}
+              onClick={onCreateConversation}
+              size="icon"
+              type="button"
+            >
+              <Plus className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </div>
 

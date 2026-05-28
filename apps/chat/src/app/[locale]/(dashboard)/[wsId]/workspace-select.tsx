@@ -18,6 +18,7 @@ export function WorkspaceSelect({
     <SharedWorkspaceSelect
       customRedirectSuffix={customRedirectSuffix}
       disableCreateNewWorkspace={disableCreateNewWorkspace}
+      fallbackLogoUrl="/media/logos/transparent.png"
       fetchWorkspaces={fetchWorkspaces}
       hideLeading={hideLeading}
       wsId={wsId}

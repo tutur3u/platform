@@ -47,12 +47,14 @@ describe('workspace API route app-session bridge', () => {
       allowAppSessionAuth: {
         targetApp: [
           'calendar',
+          'chat',
           'cms',
           'drive',
           'finance',
           'hive',
           'inventory',
           'learn',
+          'mail',
           'mind',
           'mira',
           'nova',
@@ -88,12 +90,14 @@ describe('workspace API route app-session bridge', () => {
       allowAppSessionAuth: {
         targetApp: [
           'calendar',
+          'chat',
           'cms',
           'drive',
           'finance',
           'hive',
           'inventory',
           'learn',
+          'mail',
           'mind',
           'mira',
           'nova',
@@ -110,12 +114,14 @@ describe('workspace API route app-session bridge', () => {
       allowAppSessionAuth: {
         targetApp: [
           'calendar',
+          'chat',
           'cms',
           'drive',
           'finance',
           'hive',
           'inventory',
           'learn',
+          'mail',
           'mind',
           'mira',
           'nova',

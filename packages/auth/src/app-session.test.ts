@@ -68,6 +68,29 @@ describe('app-session JWTs', () => {
     }
   });
 
+  it('uses a development-only secret when satellite apps have no explicit local signing secret', () => {
+    vi.stubEnv('APP_COORDINATION_TOKEN_SECRET', '');
+    vi.stubEnv('SUPABASE_SECRET_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_KEY', '');
+    vi.stubEnv('SUPABASE_SERVICE_ROLE_KEY', '');
+    vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', '');
+
+    const { token } = createAppSessionToken({
+      email: 'agent@example.com',
+      targetApp: 'chat',
+      userId: 'user-1',
+    });
+
+    const verification = verifyAppSessionToken(token, {
+      targetApp: 'chat',
+    });
+
+    expect(verification.ok).toBe(true);
+    if (verification.ok) {
+      expect(verification.claims.sub).toBe('user-1');
+    }
+  });
+
   it('always includes the app-session scope when custom scopes are added', () => {
     const { claims } = createAppSessionToken({
       scopes: ['custom:scope'],

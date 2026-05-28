@@ -1,11 +1,14 @@
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { describe, expect, it } from 'vitest';
 import {
+  filterChatConversationsByScope,
   formatFileSize,
   getChatInitials,
+  getChatConversationTypesForScope,
   getConversationTitle,
   getLastMessagePreview,
   isReadOnlyChatConversation,
+  normalizeChatConversationScope,
 } from './utils';
 
 const baseMessage: ChatMessage = {
@@ -104,6 +107,7 @@ describe('chat utils', () => {
               id: 'attachment-1',
               messageId: 'message-1',
               sizeBytes: 1024,
+              storageWsId: 'workspace-1',
               storagePath: 'chats/conversation-1/notes.txt',
               uploaderId: 'user-1',
             },
@@ -144,5 +148,35 @@ describe('chat utils', () => {
     expect(isReadOnlyChatConversation(conversation({ metadata: {} }))).toBe(
       false
     );
+  });
+
+  it('splits personal and workspace conversation scopes', () => {
+    const direct = conversation({ id: 'direct-1', type: 'direct' });
+    const group = conversation({ id: 'group-1', type: 'group' });
+    const channel = conversation({ id: 'channel-1', type: 'channel' });
+    const ai = conversation({ id: 'ai-1', type: 'ai' });
+
+    expect(normalizeChatConversationScope('workspaces')).toBe('workspaces');
+    expect(normalizeChatConversationScope('unknown')).toBe('personal');
+    expect(getChatConversationTypesForScope('personal')).toEqual([
+      'direct',
+      'group',
+    ]);
+    expect(getChatConversationTypesForScope('workspaces')).toEqual([
+      'channel',
+      'ai',
+    ]);
+    expect(
+      filterChatConversationsByScope(
+        [direct, group, channel, ai],
+        'personal'
+      ).map((item) => item.id)
+    ).toEqual(['direct-1', 'group-1']);
+    expect(
+      filterChatConversationsByScope(
+        [direct, group, channel, ai],
+        'workspaces'
+      ).map((item) => item.id)
+    ).toEqual(['channel-1', 'ai-1']);
   });
 });

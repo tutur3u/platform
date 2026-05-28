@@ -3,11 +3,13 @@
     "affected-product-required": "Affected Product *",
     "back": "Back",
     "cancel": "Cancel",
+    "close": "Close",
     "collapsed": "Collapsed",
     "continue": "Continue",
     "create_new_workspace": "Create New Workspace",
     "create_workspace": "Create Workspace",
     "create_workspace_description": "Add a new workspace to easily manage everything that matters to you, and collaborate with your team as you go.",
+    "create_workspace_upgrade_notice": "Workspaces are created with a free tier by default. You can upgrade your plan in the workspace billing page after creation.",
     "dark": "Dark",
     "dashboard": "Dashboard",
     "error": "Error",
@@ -83,6 +85,12 @@
     "title": "Tuturuuu Mail",
     "to": "To",
     "trash": "Trash"
+  },
+  "nav-upgrade-dialog": {
+    "contact_support": "If you require immediate access to this feature, please contact our support team.",
+    "description": "The {feature} feature requires a {tier} plan or higher.",
+    "rollout_notice": "Please note that paid subscriptions are slowly rolling out and are currently unavailable. We appreciate your patience as we work to make this available to everyone.",
+    "title": "{tier} Plan Required"
   },
   "notifications": {
     "archive": "Archive",

@@ -56,6 +56,7 @@ export default async function Layout({ children, params }: LayoutProps) {
             <NavbarActions />
           </Suspense>
         }
+        currentUserId={user.id}
         defaultCollapsed={defaultCollapsed}
         links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
         userPopover={

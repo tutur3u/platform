@@ -777,11 +777,15 @@ describe('withSessionAuth', () => {
     ).toEqual({ targetApp: 'mail' });
   });
 
-  it('should accept Inventory app-session auth for current-user bootstrap APIs', async () => {
+  it.each([
+    'chat',
+    'inventory',
+    'mail',
+  ] as const)('should accept %s app-session auth for current-user bootstrap APIs', async (targetApp) => {
     const { token } = createAppSessionToken({
-      email: 'inventory@example.com',
-      targetApp: 'inventory',
-      userId: 'inventory-user-1',
+      email: `${targetApp}@example.com`,
+      targetApp,
+      userId: `${targetApp}-user-1`,
     });
     const request = new Request(
       'http://localhost:3000/api/v1/users/me/default-workspace',
@@ -800,11 +804,13 @@ describe('withSessionAuth', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       await expect(result.supabase.auth.getUser()).resolves.toEqual({
-        data: { user: expect.objectContaining({ id: 'inventory-user-1' }) },
+        data: {
+          user: expect.objectContaining({ id: `${targetApp}-user-1` }),
+        },
         error: null,
       });
-      expect(result.user.id).toBe('inventory-user-1');
-      expect(result.user.email).toBe('inventory@example.com');
+      expect(result.user.id).toBe(`${targetApp}-user-1`);
+      expect(result.user.email).toBe(`${targetApp}@example.com`);
       expect(result.supabase).toBe(mockAdminClient);
     }
     expect(mockGetUser).not.toHaveBeenCalled();

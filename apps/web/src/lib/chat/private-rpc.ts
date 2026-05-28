@@ -21,6 +21,26 @@ export interface ChatUserProfile {
   id: string;
 }
 
+export type ChatFriendRequestStatus = 'accepted' | 'declined' | 'pending';
+
+export interface ChatFriendRequest {
+  createdAt: string;
+  id: string;
+  recipient: ChatUserProfile;
+  recipientUserId: string;
+  requester: ChatUserProfile;
+  requesterUserId: string;
+  respondedAt: string | null;
+  status: ChatFriendRequestStatus;
+  updatedAt: string;
+}
+
+export interface ChatFriendRequests {
+  accepted: ChatFriendRequest[];
+  incoming: ChatFriendRequest[];
+  outgoing: ChatFriendRequest[];
+}
+
 export interface ChatConversationMember {
   archivedAt: string | null;
   conversationId: string;
@@ -43,6 +63,7 @@ export interface ChatAttachment {
   id: string;
   messageId: string | null;
   sizeBytes: number | null;
+  storageWsId: string | null;
   storagePath: string;
   uploaderId: string | null;
 }
@@ -88,10 +109,17 @@ export interface ChatConversation {
   wsId: string;
 }
 
+export interface ChatConversationDeleteResult {
+  conversationId: string;
+  mode: 'archived' | 'left';
+  type: ChatConversationType;
+}
+
 export interface ChatPreparedAttachment {
   conversationId: string;
   maxSizeBytes: number;
   pathPrefix: string;
+  storageWsId: string;
 }
 
 export interface ChatRouteContext {

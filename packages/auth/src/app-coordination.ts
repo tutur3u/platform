@@ -4,6 +4,8 @@ const TOKEN_PREFIX = 'ttr_app_';
 const TOKEN_ISSUER = 'tuturuuu';
 const TOKEN_AUDIENCE = 'tuturuuu-api';
 const DEFAULT_EXPIRES_IN_SECONDS = 8 * 60 * 60;
+const LOCAL_DEVELOPMENT_SECRET =
+  'tuturuuu-local-development-app-coordination-secret';
 
 export type AppCoordinationTokenClaims = {
   aud: typeof TOKEN_AUDIENCE;
@@ -52,6 +54,10 @@ function getSecretCandidates(explicitSecret?: string) {
   const secrets = candidates
     .map((value) => value?.trim())
     .filter((value): value is string => Boolean(value));
+
+  if (secrets.length === 0 && process.env.NODE_ENV !== 'production') {
+    return [LOCAL_DEVELOPMENT_SECRET];
+  }
 
   if (secrets.length === 0) {
     throw new Error(

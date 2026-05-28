@@ -103,13 +103,13 @@ export function Structure({
           >
             <div
               className={cn(
-                'flex h-12 items-center p-2 md:px-0',
+                'flex min-h-12 items-center p-2 md:px-0',
                 isCollapsed ? 'justify-center' : 'py-1'
               )}
             >
               <div
                 className={cn(
-                  'flex h-13 w-full items-center md:px-2',
+                  'flex min-h-13 w-full items-center md:px-2',
                   isCollapsed ? 'justify-center' : ''
                 )}
               >

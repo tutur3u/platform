@@ -74,7 +74,7 @@ export const POST = withSessionAuth<RouteParams>(
 
       const filenameWithSuffix = `${generateRandomUUID()}-${sanitizedFilename}`;
       const uploadPayload = await createWorkspaceStorageUploadPayload(
-        context.context.normalizedWsId,
+        prepared.storageWsId,
         filenameWithSuffix,
         {
           path: prepared.pathPrefix,
@@ -90,6 +90,7 @@ export const POST = withSessionAuth<RouteParams>(
           fullPath: uploadPayload.fullPath,
           path: uploadPayload.path,
           sizeBytes: parsed.data.sizeBytes ?? null,
+          storageWsId: prepared.storageWsId,
         },
         headers: uploadPayload.headers,
         maxSizeBytes: prepared.maxSizeBytes,

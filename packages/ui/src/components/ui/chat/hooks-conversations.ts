@@ -1,14 +1,17 @@
-'use client';
+"use client";
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   type ChatConversation,
   type CreateChatConversationPayload,
   createWorkspaceChatConversation,
+  deleteWorkspaceChatConversation,
   listWorkspaceChatConversations,
   markWorkspaceChatConversationRead,
-} from '@tuturuuu/internal-api';
-import { chatQueryKeys } from './query-keys';
+  type UpdateChatConversationPayload,
+  updateWorkspaceChatConversation,
+} from "@tuturuuu/internal-api";
+import { chatQueryKeys } from "./query-keys";
 
 export function useChatConversations(wsId: string) {
   return useQuery({
@@ -29,10 +32,55 @@ export function useCreateChatConversation(wsId: string) {
         chatQueryKeys.conversations(wsId),
         (current = []) => {
           const withoutDuplicate = current.filter(
-            (item) => item.id !== conversation.id
+            (item) => item.id !== conversation.id,
           );
           return [conversation, ...withoutDuplicate];
-        }
+        },
+      );
+      queryClient.invalidateQueries({
+        queryKey: chatQueryKeys.conversations(wsId),
+      });
+    },
+  });
+}
+
+export function useDeleteChatConversation(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      deleteWorkspaceChatConversation(wsId, conversationId),
+    onSuccess: ({ result }) => {
+      queryClient.setQueryData<ChatConversation[]>(
+        chatQueryKeys.conversations(wsId),
+        (current = []) =>
+          current.filter((item) => item.id !== result.conversationId),
+      );
+      queryClient.invalidateQueries({
+        queryKey: chatQueryKeys.conversations(wsId),
+      });
+    },
+  });
+}
+
+export function useUpdateChatConversation(wsId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      conversationId,
+      payload,
+    }: {
+      conversationId: string;
+      payload: UpdateChatConversationPayload;
+    }) => updateWorkspaceChatConversation(wsId, conversationId, payload),
+    onSuccess: ({ conversation }) => {
+      queryClient.setQueryData<ChatConversation[]>(
+        chatQueryKeys.conversations(wsId),
+        (current = []) =>
+          current.map((item) =>
+            item.id === conversation.id ? conversation : item,
+          ),
       );
       queryClient.invalidateQueries({
         queryKey: chatQueryKeys.conversations(wsId),
@@ -53,7 +101,7 @@ export function useMarkChatConversationRead({
   return useMutation({
     mutationFn: (messageId?: string | null) => {
       if (!conversationId) {
-        throw new Error('Conversation is required');
+        throw new Error("Conversation is required");
       }
 
       return markWorkspaceChatConversationRead(wsId, conversationId, {
@@ -65,8 +113,8 @@ export function useMarkChatConversationRead({
         chatQueryKeys.conversations(wsId),
         (current = []) =>
           current.map((item) =>
-            item.id === conversation.id ? conversation : item
-          )
+            item.id === conversation.id ? conversation : item,
+          ),
       );
     },
   });

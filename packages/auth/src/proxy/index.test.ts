@@ -19,6 +19,13 @@ import {
   resolveCanonicalRequestOrigin,
 } from './index';
 
+function getMiddlewareRequestHeader(
+  response: NextResponse,
+  headerName: string
+) {
+  return response.headers.get(`x-middleware-request-${headerName}`);
+}
+
 const mocks = vi.hoisted(() => ({
   createAdminClient: vi.fn(),
   createClient: vi.fn(),
@@ -41,6 +48,7 @@ describe('auth proxy redirect helpers', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.unstubAllGlobals();
+    vi.stubEnv('PORT', '');
     vi.stubEnv('TUTURUUU_APP_COORDINATION_SECRET', 'test-secret');
     mocks.updateSession.mockResolvedValue({
       claims: null,
@@ -155,6 +163,40 @@ describe('auth proxy redirect helpers', () => {
       const setCookie = response?.headers.get('set-cookie') ?? '';
       expect(setCookie).toContain('tuturuuu_app_session=ttr_app_local');
       expect(setCookie).toContain('tuturuuu_web_app_session=ttr_app_web');
+    });
+
+    it('lets the client verifier page handle Portless verify-token requests', async () => {
+      vi.stubEnv('PORT', '4725');
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'https://chat.tuturuuu.localhost/verify-token?token=copy-token&nextUrl=%2Fpersonal'
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('detects Portless verify-token requests from forwarded hosts', async () => {
+      vi.stubEnv('PORT', '4725');
+      const fetchMock = vi.fn();
+      vi.stubGlobal('fetch', fetchMock);
+      const request = new NextRequest(
+        'http://127.0.0.1:4725/verify-token?token=copy-token&nextUrl=%2Fpersonal',
+        {
+          headers: {
+            'x-forwarded-host': 'chat.tuturuuu.localhost',
+            'x-forwarded-proto': 'https',
+          },
+        }
+      );
+
+      const response = await consumeVerifyTokenRequest(request);
+
+      expect(response).toBeNull();
+      expect(fetchMock).not.toHaveBeenCalled();
     });
 
     it('clears stale Supabase cookies and redirects home when verification fails', async () => {
@@ -346,6 +388,9 @@ describe('auth proxy redirect helpers', () => {
     const response = await authProxy(request);
 
     expect(response.headers.get('location')).toBeNull();
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toBe(
+      `Bearer ${token}`
+    );
     expect(mocks.updateSession).not.toHaveBeenCalled();
   });
 
@@ -405,6 +450,9 @@ describe('auth proxy redirect helpers', () => {
     expect(response.headers.get('location')).toBeNull();
     expect(response.headers.get('set-cookie')).toContain(
       `${APP_SESSION_COOKIE_NAME}=ttr_app_`
+    );
+    expect(getMiddlewareRequestHeader(response, 'authorization')).toBe(
+      `Bearer ${newSession.access.token}`
     );
     expect(fetchMock).toHaveBeenCalledWith(
       new URL('/api/auth/refresh-app-session', 'https://learn.tuturuuu.com'),
@@ -475,8 +523,132 @@ describe('auth proxy redirect helpers', () => {
     expect(result.ok && result.requestHeaders?.get('cookie')).toContain(
       `${WEB_APP_SESSION_COOKIE_NAME}=ttr_app_`
     );
+    expect(result.ok && result.requestHeaders?.get('authorization')).toBe(
+      `Bearer ${newSession.access.token}`
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       new URL('/api/auth/refresh-app-session', 'https://learn.tuturuuu.com'),
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('uses the local HTTP app port for Portless app-session refresh self-fetches', async () => {
+    vi.stubEnv('PORT', '7812');
+    const oldSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 1,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+    const newSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+      }
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ appSessionCreated: true }), {
+        headers: {
+          'set-cookie': `${APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+        },
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const request = new NextRequest(
+      'https://learn.tuturuuu.localhost/dashboard',
+      {
+        headers: {
+          cookie: [
+            `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+            `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+          ].join('; '),
+        },
+      }
+    );
+
+    const result = await refreshAppSessionForRequest(request, {
+      now: new Date('2026-01-01T00:00:02.000Z'),
+      targetApp: 'learn',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.refreshed).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL('/api/auth/refresh-app-session', 'http://127.0.0.1:7812'),
+      expect.objectContaining({
+        method: 'POST',
+      })
+    );
+  });
+
+  it('uses the local HTTP app port for forwarded Portless refresh self-fetches', async () => {
+    vi.stubEnv('PORT', '7812');
+    const oldSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:00.000Z'),
+        policy: {
+          internalAppAccessTtlSeconds: 1,
+          internalAppRefreshEarlySeconds: 120,
+          internalAppRefreshTtlSeconds: 86_400,
+        },
+      }
+    );
+    const newSession = createAppSessionTokenPair(
+      {
+        targetApp: 'learn',
+        userId: 'user-1',
+      },
+      {
+        now: new Date('2026-01-01T00:00:02.000Z'),
+      }
+    );
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ appSessionCreated: true }), {
+        headers: {
+          'set-cookie': `${APP_SESSION_COOKIE_NAME}=${newSession.access.token}; Path=/; HttpOnly`,
+        },
+        status: 200,
+      })
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const request = new NextRequest('http://127.0.0.1:7812/dashboard', {
+      headers: {
+        cookie: [
+          `${APP_SESSION_COOKIE_NAME}=${oldSession.access.token}`,
+          `${APP_SESSION_REFRESH_COOKIE_NAME}=${oldSession.refresh.token}`,
+        ].join('; '),
+        'x-forwarded-host': 'learn.tuturuuu.localhost',
+        'x-forwarded-proto': 'https',
+      },
+    });
+
+    const result = await refreshAppSessionForRequest(request, {
+      now: new Date('2026-01-01T00:00:02.000Z'),
+      targetApp: 'learn',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.ok && result.refreshed).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(
+      new URL('/api/auth/refresh-app-session', 'http://127.0.0.1:7812'),
       expect.objectContaining({
         method: 'POST',
       })

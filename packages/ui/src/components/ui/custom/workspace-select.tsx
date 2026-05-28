@@ -51,7 +51,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '../dialog';
 import {
   Form,
@@ -73,35 +72,52 @@ const JoinWorkspaceByHandleFormSchema = z.object({
   handle: workspaceHandleSchema,
 });
 
+function resolveWorkspaceAvatarUrl(
+  avatarUrl: string | null | undefined,
+  fallbackLogoUrl: string
+) {
+  return avatarUrl === TUTURUUU_LOGO_URL ? fallbackLogoUrl : avatarUrl;
+}
+
 function WorkspaceIcon({
   name,
   avatarUrl,
   className,
+  fallbackLogoUrl = TUTURUUU_LOGO_URL,
 }: {
   name?: string | null;
   avatarUrl?: string | null;
   className?: string;
+  fallbackLogoUrl?: string;
 }) {
+  const resolvedAvatarUrl = resolveWorkspaceAvatarUrl(
+    avatarUrl,
+    fallbackLogoUrl
+  );
+
   return (
     <Avatar
       className={cn(
         'h-5 w-5 flex-none',
-        avatarUrl ? 'rounded-xs' : 'rounded-sm',
+        resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm',
         className
       )}
     >
       <AvatarImage
         src={
-          avatarUrl ||
+          resolvedAvatarUrl ||
           (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
         }
         alt={name || 'Workspace'}
-        className={avatarUrl ? 'rounded-xs' : 'rounded-sm'}
+        className={resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'}
       />
       <AvatarFallback
-        className={cn('text-xs', avatarUrl ? 'rounded-xs' : 'rounded-sm')}
+        className={cn(
+          'text-xs',
+          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
+        )}
       >
-        <AvatarImage src={TUTURUUU_LOGO_URL} />
+        <AvatarImage src={fallbackLogoUrl} />
         {name ? getInitials(name) : '?'}
       </AvatarFallback>
     </Avatar>
@@ -117,6 +133,7 @@ export function WorkspaceSelect({
   additionalFormFields,
   showTierBadges = true,
   createWorkspaceDescription,
+  fallbackLogoUrl = TUTURUUU_LOGO_URL,
   resolveNextPathname,
 }: {
   wsId: string;
@@ -127,6 +144,7 @@ export function WorkspaceSelect({
   additionalFormFields?: ReactNode;
   showTierBadges?: boolean;
   createWorkspaceDescription?: ReactNode;
+  fallbackLogoUrl?: string;
   resolveNextPathname?: (context: {
     currentPathname: string;
     nextSlug: string;
@@ -279,7 +297,11 @@ export function WorkspaceSelect({
           id: rootWorkspace.id,
           label: rootWorkspace.name || t('common.root'),
           value: ROOT_WORKSPACE_ID,
-          avatarUrl: rootWorkspace.avatar_url || TUTURUUU_LOGO_URL,
+          avatarUrl:
+            resolveWorkspaceAvatarUrl(
+              rootWorkspace.avatar_url,
+              fallbackLogoUrl
+            ) || fallbackLogoUrl,
           tier: rootWorkspace.tier as
             | 'FREE'
             | 'PLUS'
@@ -297,7 +319,10 @@ export function WorkspaceSelect({
           id: personalWorkspace.id,
           label: personalWorkspace.name || 'Personal',
           value: PERSONAL_WORKSPACE_SLUG,
-          avatarUrl: personalWorkspace.avatar_url,
+          avatarUrl: resolveWorkspaceAvatarUrl(
+            personalWorkspace.avatar_url,
+            fallbackLogoUrl
+          ),
           tier: personalWorkspace.tier as
             | 'FREE'
             | 'PLUS'
@@ -319,7 +344,10 @@ export function WorkspaceSelect({
           }),
           // Signal creator-owned workspaces for UI
           isCreator: workspace?.created_by_me === true,
-          avatarUrl: workspace.avatar_url,
+          avatarUrl: resolveWorkspaceAvatarUrl(
+            workspace.avatar_url,
+            fallbackLogoUrl
+          ),
           tier: workspace.tier || null,
         })
       ),
@@ -480,11 +508,15 @@ export function WorkspaceSelect({
               disabled={!workspaces || workspaces.length === 0}
             >
               <WorkspaceIcon
+                fallbackLogoUrl={fallbackLogoUrl}
                 name={workspace?.name}
                 avatarUrl={
-                  workspace?.avatar_url ||
+                  resolveWorkspaceAvatarUrl(
+                    workspace?.avatar_url,
+                    fallbackLogoUrl
+                  ) ||
                   (workspace?.id === ROOT_WORKSPACE_ID
-                    ? TUTURUUU_LOGO_URL
+                    ? fallbackLogoUrl
                     : undefined)
                 }
               />
@@ -562,6 +594,7 @@ export function WorkspaceSelect({
                             disabled={!team}
                           >
                             <WorkspaceIcon
+                              fallbackLogoUrl={fallbackLogoUrl}
                               name={team.label}
                               avatarUrl={team.avatarUrl}
                             />
@@ -654,37 +687,38 @@ export function WorkspaceSelect({
                 ))}
               </CommandList>
               <CommandSeparator />
-              <CommandGroup>
+              <CommandGroup
+                className={cn(
+                  'grid gap-2',
+                  disableCreateNewWorkspace ? 'grid-cols-1' : 'grid-cols-2'
+                )}
+              >
+                {!disableCreateNewWorkspace && (
+                  <CommandItem
+                    className="justify-center"
+                    disabled={disableCreateNewWorkspace}
+                    onSelect={() => {
+                      setOpen(false);
+                      setShowNewWorkspaceDialog(true);
+                    }}
+                  >
+                    <PlusCircle className="h-5 w-5" />
+                    <span className="truncate">
+                      {t('common.create_new_workspace')}
+                    </span>
+                  </CommandItem>
+                )}
                 <CommandItem
+                  className="justify-center"
                   onSelect={() => {
                     setOpen(false);
                     setShowJoinWorkspaceDialog(true);
                   }}
                 >
                   <Link className="h-5 w-5" />
-                  {t('common.join_workspace')}
+                  <span className="truncate">{t('common.join_workspace')}</span>
                 </CommandItem>
               </CommandGroup>
-
-              {!disableCreateNewWorkspace && (
-                <>
-                  <CommandSeparator />
-                  <DialogTrigger asChild>
-                    <CommandGroup>
-                      <CommandItem
-                        onSelect={() => {
-                          setOpen(false);
-                          setShowNewWorkspaceDialog(true);
-                        }}
-                        disabled={disableCreateNewWorkspace}
-                      >
-                        <PlusCircle className="h-5 w-5" />
-                        {t('common.create_new_workspace')}
-                      </CommandItem>
-                    </CommandGroup>
-                  </DialogTrigger>
-                </>
-              )}
             </Command>
           </PopoverContent>
         </Popover>

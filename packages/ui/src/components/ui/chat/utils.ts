@@ -1,8 +1,42 @@
 import type {
   ChatConversation,
+  ChatConversationType,
   ChatMessage,
   ChatUserProfile,
 } from '@tuturuuu/internal-api';
+
+export type ChatConversationScope = 'personal' | 'workspaces';
+
+export const DEFAULT_CHAT_SCOPE: ChatConversationScope = 'personal';
+
+export function normalizeChatConversationScope(
+  scope?: string | null
+): ChatConversationScope {
+  return scope === 'workspaces' ? 'workspaces' : 'personal';
+}
+
+export function getChatConversationScope(
+  conversation: Pick<ChatConversation, 'type'>
+): ChatConversationScope {
+  return conversation.type === 'direct' || conversation.type === 'group'
+    ? 'personal'
+    : 'workspaces';
+}
+
+export function getChatConversationTypesForScope(
+  scope: ChatConversationScope
+): ChatConversationType[] {
+  return scope === 'personal' ? ['direct', 'group'] : ['channel', 'ai'];
+}
+
+export function filterChatConversationsByScope(
+  conversations: ChatConversation[],
+  scope: ChatConversationScope
+) {
+  return conversations.filter(
+    (conversation) => getChatConversationScope(conversation) === scope
+  );
+}
 
 export function getChatInitials(profile?: ChatUserProfile | string | null) {
   const label =

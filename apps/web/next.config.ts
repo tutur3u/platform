@@ -59,6 +59,7 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: [
     '@tuturuuu/ai',
+    '@tuturuuu/auth',
     '@tuturuuu/ui',
     '@tuturuuu/types',
     '@tuturuuu/utils',

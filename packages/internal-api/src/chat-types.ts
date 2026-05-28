@@ -1,11 +1,31 @@
-export type ChatConversationType = 'ai' | 'channel' | 'direct' | 'group';
-export type ChatMessageKind = 'assistant' | 'system' | 'user';
+export type ChatConversationType = "ai" | "channel" | "direct" | "group";
+export type ChatMessageKind = "assistant" | "system" | "user";
 
 export interface ChatUserProfile {
   avatarUrl: string | null;
   displayName: string;
   handle: string | null;
   id: string;
+}
+
+export type ChatFriendRequestStatus = "accepted" | "declined" | "pending";
+
+export interface ChatFriendRequest {
+  createdAt: string;
+  id: string;
+  recipient: ChatUserProfile;
+  recipientUserId: string;
+  requester: ChatUserProfile;
+  requesterUserId: string;
+  respondedAt: string | null;
+  status: ChatFriendRequestStatus;
+  updatedAt: string;
+}
+
+export interface ChatFriendRequests {
+  accepted: ChatFriendRequest[];
+  incoming: ChatFriendRequest[];
+  outgoing: ChatFriendRequest[];
 }
 
 export interface ChatConversationMember {
@@ -16,7 +36,7 @@ export interface ChatConversationMember {
   lastReadAt: string | null;
   mutedAt: string | null;
   pinnedAt: string | null;
-  role: 'admin' | 'assistant' | 'member' | 'owner';
+  role: "admin" | "assistant" | "member" | "owner";
   user: ChatUserProfile;
   userId: string;
 }
@@ -30,6 +50,7 @@ export interface ChatAttachment {
   id: string;
   messageId: string | null;
   sizeBytes: number | null;
+  storageWsId: string | null;
   storagePath: string;
   uploaderId: string | null;
 }
@@ -40,6 +61,7 @@ export interface ChatAttachmentDraft {
   fullPath: string | null;
   path: string;
   sizeBytes: number | null;
+  storageWsId?: string | null;
 }
 
 export interface ChatReactionSummary {
@@ -93,6 +115,17 @@ export interface CreateChatConversationPayload {
   systemPrompt?: string | null;
   title?: string | null;
   type: ChatConversationType;
+}
+
+export interface DeleteChatConversationResult {
+  conversationId: string;
+  mode: "archived" | "left";
+  type: ChatConversationType;
+}
+
+export interface UpdateChatConversationPayload {
+  description?: string | null;
+  title?: string | null;
 }
 
 export interface SendChatMessagePayload {

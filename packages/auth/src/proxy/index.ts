@@ -277,12 +277,85 @@ function createNextResponseWithRequestHeaders(headers?: Headers) {
     : NextResponse.next();
 }
 
+function getAppSessionAuthorizationHeader(headers: Headers) {
+  const token =
+    getWebAppSessionTokenFromRequest({ headers }) ??
+    getAppSessionTokenFromRequest({ headers });
+
+  return token ? `Bearer ${token}` : null;
+}
+
+function getRequestHeadersWithAppSessionAuthorization(req: NextRequest) {
+  const headers = new Headers(req.headers);
+  const authorization = getAppSessionAuthorizationHeader(headers);
+
+  if (authorization) {
+    headers.set('authorization', authorization);
+  }
+
+  return headers;
+}
+
 type ConsumeVerifyTokenRequestOptions = {
   fallbackPath?: string;
   locales?: readonly string[];
   verifyApiPath?: string;
   verifyPath?: string;
 };
+
+function isTuturuuuLocalhost(hostname: string) {
+  return (
+    hostname === 'tuturuuu.localhost' ||
+    hostname.endsWith('.tuturuuu.localhost')
+  );
+}
+
+function getRequestHostnames(req: NextRequest) {
+  return [
+    req.nextUrl.hostname,
+    extractForwardedHeaderValue(req.headers.get('host')),
+    extractForwardedHeaderValue(req.headers.get('x-forwarded-host')),
+  ].flatMap((host) => {
+    if (!host) {
+      return [];
+    }
+
+    try {
+      return [new URL(`http://${host}`).hostname];
+    } catch {
+      return [];
+    }
+  });
+}
+
+function isTuturuuuLocalhostRequest(req: NextRequest) {
+  return getRequestHostnames(req).some(isTuturuuuLocalhost);
+}
+
+function getLocalPortlessAuthApiUrl(req: NextRequest, apiPath: string) {
+  const port = process.env.PORT?.trim();
+
+  if (
+    process.env.NODE_ENV === 'production' ||
+    !port ||
+    !/^\d+$/u.test(port) ||
+    !isTuturuuuLocalhostRequest(req)
+  ) {
+    return null;
+  }
+
+  return new URL(apiPath, `http://127.0.0.1:${port}`);
+}
+
+function getAuthApiUrl(req: NextRequest, apiPath: string) {
+  return getLocalPortlessAuthApiUrl(req, apiPath) ?? new URL(apiPath, req.url);
+}
+
+function shouldUseClientVerifyTokenFlow(req: NextRequest) {
+  return (
+    process.env.NODE_ENV !== 'production' && isTuturuuuLocalhostRequest(req)
+  );
+}
 
 function matchesVerifyTokenPath(
   pathname: string,
@@ -340,6 +413,10 @@ export async function consumeVerifyTokenRequest(
     return null;
   }
 
+  if (shouldUseClientVerifyTokenFlow(req)) {
+    return null;
+  }
+
   const fallbackPath = options.fallbackPath ?? '/';
   const nextPath = normalizeAuthRedirectPath(
     req.nextUrl.searchParams.get('nextUrl'),
@@ -355,9 +432,9 @@ export async function consumeVerifyTokenRequest(
     );
   }
 
-  const verifyUrl = new URL(
-    options.verifyApiPath ?? '/api/auth/verify-app-token',
-    req.nextUrl.origin
+  const verifyUrl = getAuthApiUrl(
+    req,
+    options.verifyApiPath ?? '/api/auth/verify-app-token'
   );
   const verifyResponse = await fetch(verifyUrl, {
     body: JSON.stringify({ token }),
@@ -442,7 +519,9 @@ export async function refreshAppSessionForRequest(
         refreshed: false,
         response: clearSupabaseAuthCookies(
           req,
-          createNextResponseWithRequestHeaders()
+          createNextResponseWithRequestHeaders(
+            getRequestHeadersWithAppSessionAuthorization(req)
+          )
         ),
       };
     }
@@ -450,9 +529,9 @@ export async function refreshAppSessionForRequest(
     return verification;
   }
 
-  const refreshUrl = new URL(
-    options.refreshPath ?? '/api/auth/refresh-app-session',
-    req.nextUrl.origin
+  const refreshUrl = getAuthApiUrl(
+    req,
+    options.refreshPath ?? '/api/auth/refresh-app-session'
   );
   const refreshResponse = await fetch(refreshUrl, {
     body: JSON.stringify({ accessToken, refreshToken }),
@@ -472,7 +551,9 @@ export async function refreshAppSessionForRequest(
         refreshed: false,
         response: clearSupabaseAuthCookies(
           req,
-          createNextResponseWithRequestHeaders()
+          createNextResponseWithRequestHeaders(
+            getRequestHeadersWithAppSessionAuthorization(req)
+          )
         ),
       };
     }
@@ -494,6 +575,11 @@ export async function refreshAppSessionForRequest(
     requestHeaders.set('cookie', nextCookieHeader);
   } else {
     requestHeaders.delete('cookie');
+  }
+
+  const authorization = getAppSessionAuthorizationHeader(requestHeaders);
+  if (authorization) {
+    requestHeaders.set('authorization', authorization);
   }
 
   const refreshedVerification = verifyAppSessionRequest(

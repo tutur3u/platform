@@ -323,6 +323,36 @@ export type Database = {
         };
         Relationships: [];
       };
+      chat_friend_requests: {
+        Row: {
+          created_at: string;
+          id: string;
+          recipient_user_id: string;
+          requester_user_id: string;
+          responded_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          recipient_user_id: string;
+          requester_user_id: string;
+          responded_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          recipient_user_id?: string;
+          requester_user_id?: string;
+          responded_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       chat_message_attachments: {
         Row: {
           content_type: string | null;
@@ -336,6 +366,7 @@ export type Database = {
           metadata: Json;
           size_bytes: number | null;
           storage_path: string;
+          storage_ws_id: string | null;
           uploader_id: string | null;
         };
         Insert: {
@@ -350,6 +381,7 @@ export type Database = {
           metadata?: Json;
           size_bytes?: number | null;
           storage_path: string;
+          storage_ws_id?: string | null;
           uploader_id?: string | null;
         };
         Update: {
@@ -364,6 +396,7 @@ export type Database = {
           metadata?: Json;
           size_bytes?: number | null;
           storage_path?: string;
+          storage_ws_id?: string | null;
           uploader_id?: string | null;
         };
         Relationships: [
@@ -3394,6 +3427,10 @@ export type Database = {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: boolean;
       };
+      chat_assert_can_invite_user: {
+        Args: { p_actor_user_id: string; p_target_user_id: string };
+        Returns: undefined;
+      };
       chat_assert_workspace_member: {
         Args: { p_user_id: string; p_ws_id: string };
         Returns: undefined;
@@ -3412,12 +3449,36 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_attachment_storage_workspace_id: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_type: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
+      chat_can_invite_user: {
+        Args: { p_actor_user_id: string; p_target_user_id: string };
+        Returns: boolean;
+      };
       chat_conversation_json: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: Json;
       };
       chat_create_conversation: {
         Args: { p_actor_user_id: string; p_input: Json; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_create_friend_request_by_email: {
+        Args: { p_actor_user_id: string; p_email: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_delete_conversation: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_ws_id: string;
+        };
         Returns: Json;
       };
       chat_delete_message: {
@@ -3448,6 +3509,10 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_friend_request_json: {
+        Args: { p_request_id: string; p_ws_id: string };
+        Returns: Json;
+      };
       chat_get_attachment: {
         Args: {
           p_actor_user_id: string;
@@ -3465,7 +3530,15 @@ export type Database = {
         };
         Returns: Json;
       };
+      chat_is_actor_personal_workspace: {
+        Args: { p_actor_user_id: string; p_ws_id: string };
+        Returns: boolean;
+      };
       chat_list_conversations: {
+        Args: { p_actor_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      chat_list_friend_requests: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: Json;
       };
@@ -3503,6 +3576,15 @@ export type Database = {
           p_conversation_id: string;
           p_filename: string;
           p_size_bytes?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_respond_friend_request: {
+        Args: {
+          p_actor_user_id: string;
+          p_request_id: string;
+          p_status: string;
           p_ws_id: string;
         };
         Returns: Json;
@@ -3555,6 +3637,23 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: Json;
+      };
+      chat_update_conversation: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_input: Json;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      chat_users_are_friends: {
+        Args: { p_actor_user_id: string; p_target_user_id: string };
+        Returns: boolean;
+      };
+      chat_users_share_workspace: {
+        Args: { p_actor_user_id: string; p_target_user_id: string };
+        Returns: boolean;
       };
       clamp_abuse_score: { Args: { p_value: number }; Returns: number };
       cleanup_rate_limits: { Args: { p_retention?: string }; Returns: number };

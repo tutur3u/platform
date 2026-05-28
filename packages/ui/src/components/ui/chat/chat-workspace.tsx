@@ -1,61 +1,96 @@
-'use client';
+"use client";
 
 import type {
   ChatAttachment,
   ChatAttachmentDraft,
-} from '@tuturuuu/internal-api';
-import { cn } from '@tuturuuu/utils/format';
-import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState } from 'react';
-import { Badge } from '../badge';
-import { toast } from '../sonner';
-import { ChatSidebar } from './chat-sidebar';
-import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
-import { CreateConversationDialog } from './create-conversation-dialog';
+  ChatConversation,
+} from "@tuturuuu/internal-api";
+import { cn } from "@tuturuuu/utils/format";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
+import { Badge } from "../badge";
+import { toast } from "../sonner";
+import { ChatSidebar } from "./chat-sidebar";
+import { ChatHeader, EmptyConversationState } from "./chat-workspace-header";
+import { CreateConversationDialog } from "./create-conversation-dialog";
 import {
   useChatConversations,
+  useDeleteChatConversation,
   useChatMessageSearch,
   useChatMessages,
   useMarkChatConversationRead,
   useOpenChatAttachment,
   useSendChatMessage,
   useToggleChatReaction,
+  useUpdateChatConversation,
   useUploadChatAttachment,
-} from './hooks';
-import { MessageComposer } from './message-composer';
-import { MessageList } from './message-list';
-import { getConversationTitle, isReadOnlyChatConversation } from './utils';
+} from "./hooks";
+import { MessageComposer } from "./message-composer";
+import { MessageList } from "./message-list";
+import {
+  type ChatConversationScope,
+  filterChatConversationsByScope,
+  getChatConversationTypesForScope,
+  getConversationTitle,
+  isReadOnlyChatConversation,
+  normalizeChatConversationScope,
+} from "./utils";
 
 interface ChatWorkspaceProps {
   className?: string;
+  defaultConversationScope?: ChatConversationScope;
   currentUserId: string;
-  variant?: 'standalone' | 'web';
+  showSidebar?: boolean;
+  variant?: "standalone" | "web";
   wsId: string;
 }
 
 export function ChatWorkspace({
   className,
+  defaultConversationScope,
   currentUserId,
-  variant = 'web',
+  showSidebar = true,
+  variant = "web",
   wsId,
 }: ChatWorkspaceProps) {
-  const t = useTranslations('chat');
-  const [selectedConversationId, setSelectedConversationId] = useState<
-    string | null
-  >(null);
-  const [searchValue, setSearchValue] = useState('');
+  const t = useTranslations("chat");
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [searchValue, setSearchValue] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const conversationsQuery = useChatConversations(wsId);
-  const conversations = conversationsQuery.data ?? [];
+  const allConversations = conversationsQuery.data ?? [];
+  const requestedScope = searchParams.get("scope");
+  const conversationScope =
+    requestedScope || defaultConversationScope
+      ? normalizeChatConversationScope(
+          requestedScope ?? defaultConversationScope,
+        )
+      : null;
+  const conversations = conversationScope
+    ? filterChatConversationsByScope(allConversations, conversationScope)
+    : allConversations;
+  const conversationIds = useMemo(
+    () => new Set(conversations.map((conversation) => conversation.id)),
+    [conversations],
+  );
+  const selectedConversationId = searchParams.get("conversationId");
   const selectedConversation = useMemo(
     () =>
-      conversations.find((item) => item.id === selectedConversationId) ??
+      (selectedConversationId && conversationIds.has(selectedConversationId)
+        ? conversations.find((item) => item.id === selectedConversationId)
+        : null) ??
       conversations[0] ??
       null,
-    [conversations, selectedConversationId]
+    [conversationIds, conversations, selectedConversationId],
   );
   const activeConversationId = selectedConversation?.id ?? null;
   const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
+  const selectedMembership =
+    selectedConversation?.members.some(
+      (member) => member.userId === currentUserId,
+    ) ?? false;
   const messagesQuery = useChatMessages({
     conversationId: selectedReadOnly ? null : activeConversationId,
     wsId,
@@ -69,6 +104,8 @@ export function ChatWorkspace({
     conversationId: activeConversationId,
     wsId,
   });
+  const deleteConversation = useDeleteChatConversation(wsId);
+  const updateConversation = useUpdateChatConversation(wsId);
   const uploadAttachment = useUploadChatAttachment({
     conversationId: activeConversationId,
     wsId,
@@ -89,28 +126,34 @@ export function ChatWorkspace({
     query: searchValue,
     wsId,
   });
+  const searchResults = (searchQuery.data ?? []).filter(
+    (message) =>
+      !conversationScope || conversationIds.has(message.conversationId),
+  );
   const latestMessageId = messages.at(-1)?.id ?? null;
 
   useEffect(() => {
     if (selectedReadOnly) return;
+    if (!selectedMembership) return;
     if (!activeConversationId || !latestMessageId) return;
     markConversationRead(latestMessageId);
   }, [
     activeConversationId,
     latestMessageId,
     markConversationRead,
+    selectedMembership,
     selectedReadOnly,
   ]);
 
   const selectedTitle = selectedConversation
     ? getConversationTitle(selectedConversation, currentUserId, {
-        ai: t('assistant_name'),
-        channel: t('untitled_channel'),
-        chat: t('untitled_chat'),
-        direct: t('direct_message'),
-        group: t('group_chat'),
+        ai: t("assistant_name"),
+        channel: t("untitled_channel"),
+        chat: t("untitled_chat"),
+        direct: t("direct_message"),
+        group: t("group_chat"),
       })
-    : t('title');
+    : t("title");
 
   async function handleSend(payload: {
     attachments: ChatAttachmentDraft[];
@@ -122,7 +165,7 @@ export function ChatWorkspace({
         content: payload.content,
       });
     } catch {
-      toast.error(t('message_send_failed'));
+      toast.error(t("message_send_failed"));
     }
   }
 
@@ -130,35 +173,92 @@ export function ChatWorkspace({
     try {
       await openAttachment.mutateAsync(attachment.id);
     } catch {
-      toast.error(t('attachment_open_failed'));
+      toast.error(t("attachment_open_failed"));
+    }
+  }
+
+  function selectConversation(conversationId: string) {
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set("conversationId", conversationId);
+    const nextQuery = nextParams.toString();
+    window.history.replaceState(
+      null,
+      "",
+      nextQuery ? `${pathname}?${nextQuery}` : pathname,
+    );
+  }
+
+  function handleCreated(conversation: ChatConversation) {
+    selectConversation(conversation.id);
+  }
+
+  async function handleDeleteConversation() {
+    if (!selectedConversation) return;
+
+    try {
+      await deleteConversation.mutateAsync(selectedConversation.id);
+      const nextParams = new URLSearchParams(searchParams.toString());
+      nextParams.delete("conversationId");
+      const nextQuery = nextParams.toString();
+      window.history.replaceState(
+        null,
+        "",
+        nextQuery ? `${pathname}?${nextQuery}` : pathname,
+      );
+      toast.success(t("conversation_deleted"));
+    } catch {
+      toast.error(t("conversation_delete_failed"));
+    }
+  }
+
+  async function handleUpdateConversation(payload: {
+    description?: string | null;
+    title?: string | null;
+  }) {
+    if (!selectedConversation) return;
+
+    try {
+      await updateConversation.mutateAsync({
+        conversationId: selectedConversation.id,
+        payload,
+      });
+      toast.success(t("conversation_updated"));
+    } catch {
+      toast.error(t("conversation_update_failed"));
     }
   }
 
   return (
     <section
       className={cn(
-        'flex min-h-[calc(100vh-9rem)] overflow-hidden rounded-md border bg-background text-foreground',
-        variant === 'standalone' && 'min-h-screen rounded-none border-0',
-        className
+        "flex h-full min-h-[calc(100vh-9rem)] overflow-hidden rounded-md border bg-background text-foreground",
+        variant === "standalone" && "min-h-dvh rounded-none border-0",
+        className,
       )}
     >
-      <ChatSidebar
-        conversations={conversations}
-        currentUserId={currentUserId}
-        isLoading={conversationsQuery.isLoading}
-        onCreateConversation={() => setCreateOpen(true)}
-        onSearchChange={setSearchValue}
-        onSelectConversation={setSelectedConversationId}
-        searchResults={searchQuery.data ?? []}
-        searchValue={searchValue}
-        selectedConversationId={activeConversationId}
-      />
+      {showSidebar ? (
+        <ChatSidebar
+          conversations={conversations}
+          currentUserId={currentUserId}
+          isLoading={conversationsQuery.isLoading}
+          onCreateConversation={() => setCreateOpen(true)}
+          onSearchChange={setSearchValue}
+          onSelectConversation={selectConversation}
+          searchResults={searchResults}
+          searchValue={searchValue}
+          selectedConversationId={activeConversationId}
+        />
+      ) : null}
 
       <div className="flex min-w-0 flex-1 flex-col">
         <ChatHeader
           conversation={selectedConversation}
           currentUserId={currentUserId}
+          isDeletingConversation={deleteConversation.isPending}
           isFetching={messagesQuery.isFetching}
+          isUpdatingConversation={updateConversation.isPending}
+          onDeleteConversation={handleDeleteConversation}
+          onUpdateConversation={handleUpdateConversation}
           title={selectedTitle}
         />
 
@@ -180,9 +280,9 @@ export function ChatWorkspace({
             {selectedReadOnly ? (
               <div className="flex items-center justify-between gap-3 border-t bg-muted/25 px-4 py-3 text-sm">
                 <span className="text-muted-foreground">
-                  {t('read_only_conversation')}
+                  {t("read_only_conversation")}
                 </span>
-                <Badge variant="secondary">{t('agent_channel')}</Badge>
+                <Badge variant="secondary">{t("agent_channel")}</Badge>
               </div>
             ) : (
               <MessageComposer
@@ -200,8 +300,19 @@ export function ChatWorkspace({
       </div>
 
       <CreateConversationDialog
+        allowedTypes={
+          conversationScope
+            ? getChatConversationTypesForScope(conversationScope)
+            : undefined
+        }
+        conversationScope={conversationScope ?? undefined}
+        defaultType={
+          conversationScope
+            ? getChatConversationTypesForScope(conversationScope)[0]
+            : undefined
+        }
         currentUserId={currentUserId}
-        onCreated={(conversation) => setSelectedConversationId(conversation.id)}
+        onCreated={handleCreated}
         onOpenChange={setCreateOpen}
         open={createOpen}
         wsId={wsId}

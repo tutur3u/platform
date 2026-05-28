@@ -15,10 +15,14 @@ export default async function ChatWorkspacePage({
   if (!workspace?.joined) redirect('/');
 
   return (
-    <ChatWorkspace
-      currentUserId={user.id}
-      variant="standalone"
-      wsId={workspace.id}
-    />
+    <div className="-m-2 h-[calc(100dvh-4.25rem)] md:-m-4 md:h-dvh">
+      <ChatWorkspace
+        currentUserId={user.id}
+        defaultConversationScope="personal"
+        showSidebar={false}
+        variant="standalone"
+        wsId={workspace.id}
+      />
+    </div>
   );
 }

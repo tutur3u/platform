@@ -1,30 +1,42 @@
 'use client';
 
-import { LoaderCircle, Search, X } from '@tuturuuu/icons';
+import { LoaderCircle, Search, UserPlus, X } from '@tuturuuu/icons';
 import type { ChatUserProfile } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
+import { Button } from '../button';
 import { Input } from '../input';
 import { getChatInitials } from './utils';
 
 export function DirectoryUserPicker({
+  canCreateFriendRequest,
   directoryQuery,
   filteredUsers,
   isFetching,
+  isCreatingFriendRequest,
   onDirectoryQueryChange,
+  onCreateFriendRequest,
   onRemoveUser,
   onSelectUser,
   selectedUsers,
 }: {
+  canCreateFriendRequest?: boolean;
   directoryQuery: string;
   filteredUsers: ChatUserProfile[];
   isFetching?: boolean;
+  isCreatingFriendRequest?: boolean;
   onDirectoryQueryChange: (value: string) => void;
+  onCreateFriendRequest?: (email: string) => void;
   onRemoveUser: (userId: string) => void;
   onSelectUser: (user: ChatUserProfile) => void;
   selectedUsers: ChatUserProfile[];
 }) {
   const t = useTranslations('chat');
+  const normalizedEmail = directoryQuery.trim().toLowerCase();
+  const showFriendRequestAction =
+    canCreateFriendRequest &&
+    normalizedEmail.includes('@') &&
+    filteredUsers.length === 0;
 
   return (
     <div className="min-h-0 rounded-md border">
@@ -72,6 +84,25 @@ export function DirectoryUserPicker({
           </div>
         )}
       </div>
+
+      {showFriendRequestAction ? (
+        <div className="border-t p-2">
+          <Button
+            className="w-full justify-start"
+            disabled={isCreatingFriendRequest}
+            onClick={() => onCreateFriendRequest?.(normalizedEmail)}
+            type="button"
+            variant="outline"
+          >
+            {isCreatingFriendRequest ? (
+              <LoaderCircle className="size-4 animate-spin" />
+            ) : (
+              <UserPlus className="size-4" />
+            )}
+            {t('add_friend_by_email')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

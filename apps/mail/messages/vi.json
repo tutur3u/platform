@@ -3,11 +3,13 @@
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "back": "Quay lại",
     "cancel": "Hủy",
+    "close": "Đóng",
     "collapsed": "Thu nhỏ",
     "continue": "Tiếp tục",
     "create_new_workspace": "Tạo không gian mới",
     "create_workspace": "Tạo không gian làm việc",
     "create_workspace_description": "Thêm một không gian làm việc mới để dễ dàng quản lý mọi thứ thiết yếu, và hợp tác với đội của bạn một cách hiệu quả.",
+    "create_workspace_upgrade_notice": "Các không gian làm việc được tạo với gói miễn phí theo mặc định. Bạn có thể nâng cấp gói của mình trong trang thanh toán của không gian làm việc sau khi tạo.",
     "dark": "Tối",
     "dashboard": "Bảng điều khiển",
     "error": "Lỗi",
@@ -83,6 +85,12 @@
     "title": "Tuturuuu Mail",
     "to": "Đến",
     "trash": "Thùng rác"
+  },
+  "nav-upgrade-dialog": {
+    "contact_support": "Nếu bạn cần truy cập ngay vào tính năng này, vui lòng liên hệ với đội ngũ hỗ trợ của chúng tôi.",
+    "description": "Tính năng {feature} yêu cầu gói {tier} hoặc cao hơn.",
+    "rollout_notice": "Xin lưu ý rằng các gói đăng ký trả phí đang được triển khai dần dần và hiện tại chưa khả dụng. Chúng tôi đánh giá cao sự kiên nhẫn của bạn khi chúng tôi làm việc để cung cấp tính năng này cho tất cả mọi người.",
+    "title": "Yêu cầu Gói {tier}"
   },
   "notifications": {
     "archive": "Lưu trữ",

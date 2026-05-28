@@ -38,7 +38,7 @@ export const GET = withSessionAuth<RouteParams>(
       );
 
       const signedUrl = await createWorkspaceStorageSignedReadUrl(
-        context.context.normalizedWsId,
+        attachment.storageWsId ?? context.context.normalizedWsId,
         attachment.storagePath,
         {
           requireExists: true,

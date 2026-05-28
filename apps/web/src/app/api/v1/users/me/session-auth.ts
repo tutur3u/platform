@@ -2,12 +2,14 @@ import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 
 const CURRENT_USER_APP_SESSION_TARGETS = [
   'calendar',
+  'chat',
   'cms',
   'drive',
   'finance',
   'hive',
   'inventory',
   'learn',
+  'mail',
   'mind',
   'mira',
   'nova',

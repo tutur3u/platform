@@ -285,12 +285,12 @@ function createAppSessionResponse(
   const hasValidWebAppSessionRefreshExpiry =
     webAppSessionRefreshExpiresAt &&
     !Number.isNaN(webAppSessionRefreshExpiresAt.getTime());
-  const localAppSessionExpiresAt = hasValidWebAppSessionExpiry
-    ? webAppSessionExpiresAt
-    : new Date(localAppSession.access.claims.exp * 1000);
-  const localAppSessionRefreshExpiresAt = hasValidWebAppSessionRefreshExpiry
-    ? webAppSessionRefreshExpiresAt
-    : new Date(localAppSession.refresh.claims.exp * 1000);
+  const localAppSessionExpiresAt = new Date(
+    localAppSession.access.claims.exp * 1000
+  );
+  const localAppSessionRefreshExpiresAt = new Date(
+    localAppSession.refresh.claims.exp * 1000
+  );
 
   const response = NextResponse.json({
     appSessionCreated: true,
