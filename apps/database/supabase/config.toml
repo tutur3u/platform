@@ -91,6 +91,14 @@ enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
 enable_manual_linking = true
 
+[auth.passkey]
+enabled = true
+
+[auth.webauthn]
+rp_display_name = "Tuturuuu"
+rp_id = "tuturuuu.localhost"
+rp_origins = ["https://tuturuuu.localhost"]
+
 [auth.email]
 # Allow/disallow new user signups via email to your project.
 enable_signup = true

@@ -208,9 +208,19 @@ settings:
 - Relying Party ID: `tuturuuu.com`
 - Relying Party Origins: `https://tuturuuu.com`
 
-Local development can exercise unsupported-browser and UI paths without a
-registered credential. Real WebAuthn ceremonies require a secure origin; use
-`localhost` or HTTPS when testing real registration and sign-in flows.
+Local Supabase Auth must also enable passkeys in
+`apps/database/supabase/config.toml`. The committed local config uses the
+Portless apps/web origin:
+
+- Relying Party Display Name: `Tuturuuu`
+- Relying Party ID: `tuturuuu.localhost`
+- Relying Party Origins: `https://tuturuuu.localhost`
+
+Restart local Supabase after changing this config; the Auth service reads these
+settings on startup. Real WebAuthn ceremonies require a secure origin, so test
+registration and sign-in from `https://tuturuuu.localhost`. UI-only and
+unsupported-browser paths can still be exercised without registering a
+credential.
 
 ### Web QR Session Handoff
 
