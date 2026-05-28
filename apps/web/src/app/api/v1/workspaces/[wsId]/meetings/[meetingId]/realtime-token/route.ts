@@ -1,4 +1,7 @@
-import type { MeetRealtimeRole } from '@tuturuuu/realtime/meet';
+import type {
+  MeetRealtimeRole,
+  MeetRealtimeRoomMode,
+} from '@tuturuuu/realtime/meet';
 import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
@@ -35,15 +38,25 @@ function resolveRequestedRole({
   isCreator: boolean;
   requestedRole?: MeetRealtimeRole;
 }) {
-  if (requestedRole === 'host' && !isCreator) {
-    return null;
+  if (!isCreator) {
+    return 'viewer';
   }
 
-  if (requestedRole) {
-    return requestedRole;
+  return requestedRole ?? 'host';
+}
+
+function resolveRequestedMode({
+  isCreator,
+  requestedMode,
+}: {
+  isCreator: boolean;
+  requestedMode: MeetRealtimeRoomMode;
+}) {
+  if (!isCreator) {
+    return 'webinar';
   }
 
-  return isCreator ? 'host' : 'speaker';
+  return requestedMode;
 }
 
 async function parseRequestBody(request: Request) {
@@ -110,22 +123,20 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: 'Meeting not found' }, { status: 404 });
     }
 
+    const isCreator = meeting.creator_id === auth.user.id;
     const role = resolveRequestedRole({
-      isCreator: meeting.creator_id === auth.user.id,
+      isCreator,
       requestedRole: body.role,
     });
-
-    if (!role) {
-      return NextResponse.json(
-        { error: 'Only the meeting host can request host controls' },
-        { status: 403 }
-      );
-    }
+    const mode = resolveRequestedMode({
+      isCreator,
+      requestedMode: body.mode,
+    });
 
     const signed = signMeetJoinToken({
       displayName: getDisplayName(auth.user),
       meetingId,
-      mode: body.mode,
+      mode,
       role,
       userId: auth.user.id,
       wsId,
