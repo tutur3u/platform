@@ -1,4 +1,3 @@
-import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import NavbarActions from '@tuturuuu/satellite/navbar-actions';
 import { SidebarProvider } from '@tuturuuu/satellite/sidebar-context';
 import { UserNav } from '@tuturuuu/satellite/user-nav';
@@ -7,14 +6,11 @@ import {
   parseSidebarBehavior,
 } from '@tuturuuu/satellite/workspace-layout-helpers';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
-import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
-import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { cookies, headers } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { type ReactNode, Suspense } from 'react';
 import { getNavigationLinks } from './navigation';
 import { Structure } from './structure';
+import { getMeetWorkspaceContext } from './workspace-context';
 
 interface LayoutProps {
   children: ReactNode;
@@ -24,25 +20,9 @@ interface LayoutProps {
 }
 
 export default async function Layout({ children, params }: LayoutProps) {
-  const { wsId: id } = await params;
-  const user = getAppSessionUserFromRequest(
-    { headers: await headers() },
-    { targetApp: 'mail' }
-  );
-
-  if (!user?.id) redirect('/login');
-  if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');
-
-  const workspace = await getWorkspace(id, { useAdmin: true, user });
-
-  if (!workspace) redirect('/onboarding');
-  if (!workspace.joined) redirect('/');
-
-  const wsId = workspace.id;
-  const workspaceSlug = toWorkspaceSlug(wsId, {
-    personal: !!workspace.personal,
-  });
-  const cookieStore = await cookies();
+  const [{ wsId: id }, cookieStore] = await Promise.all([params, cookies()]);
+  const { user, workspace, workspaceSlug, wsId } =
+    await getMeetWorkspaceContext(id);
   const sidebarBehavior = parseSidebarBehavior(cookieStore);
   const defaultCollapsed = getSidebarCollapsedState(
     cookieStore,
@@ -63,7 +43,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           </Suspense>
         }
         defaultCollapsed={defaultCollapsed}
-        links={await getNavigationLinks({ personalOrWsId: workspaceSlug })}
+        links={await getNavigationLinks({ workspaceSlug })}
         userPopover={
           <Suspense
             key={user.id}

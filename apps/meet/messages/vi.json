@@ -1139,6 +1139,7 @@
     "export-content": "Xin hãy chọn định dạng thư mục",
     "faq": "Câu hỏi thường gặp",
     "features": "Các tính năng",
+    "feedback": "Phản hồi",
     "file-name": "Tên tệp",
     "file-type": "Loại tệp",
     "filter": "Lọc",
@@ -1172,6 +1173,9 @@
     "inventory": "Quản kho",
     "inventory-description": "Hợp lý hóa việc kiểm soát hàng tồn kho và quản lý hàng tồn kho.",
     "invite_users": "Mời người dùng",
+    "join_workspace": "Tham gia không gian làm việc",
+    "join_workspace_by_slug_description": "Nhập tên hoặc liên kết không gian làm việc để mở trang tham gia.",
+    "join_workspace_success": "Đã tham gia không gian làm việc thành công",
     "language": "Ngôn ngữ",
     "last_saved": "Lần lưu cuối: {time}",
     "learn_more": "Tìm hiểu thêm",
@@ -1274,6 +1278,7 @@
     "retry_save": "Thử lưu lại",
     "return": "Quay lại",
     "rewise-description": "Truy cập một loạt các công cụ hỗ trợ AI dành cho doanh nghiệp.",
+    "root": "Root",
     "row(s)": "dòng",
     "rows-per-page": "Dòng mỗi trang",
     "save": "Lưu",
@@ -1337,6 +1342,7 @@
     "unsaved-changes": "Bạn có thay đổi chưa được lưu.",
     "untitled": "Chưa đặt tên",
     "updating": "Đang cập nhật...",
+    "upgrade": "Nâng cấp",
     "upload": "Tải lên",
     "uploaded": "Đã tải lên",
     "uploading": "Đang tải lên",
@@ -1361,6 +1367,8 @@
     "workspace_creation_failed": "Không thể tạo không gian làm việc. Vui lòng thử lại.",
     "workspace_limit_reached": "Đã đạt giới hạn không gian làm việc",
     "workspace_name": "Tên không gian làm việc",
+    "workspace_slug": "Liên kết không gian làm việc",
+    "workspace_slug_placeholder": "ten-nhom-cua-ban",
     "workspaces": "Không gian làm việc",
     "write_something": "Hãy viết gì đó...",
     "year_old": "tuổi",
@@ -3280,6 +3288,11 @@
         "use_cases_title": "Giải pháp cho mọi cấp độ"
       }
     }
+  },
+  "meet_workspace": {
+    "meetings_description": "Xem và quản lý phòng họp của không gian làm việc từ nền tảng trung tâm.",
+    "meetings_title": "Các cuộc họp",
+    "open_platform_meetings": "Mở cuộc họp"
   },
   "meet-together": {
     "agenda": "Nội dung cuộc họp",

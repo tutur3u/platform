@@ -1,6 +1,9 @@
+import { getAppSessionUserFromRequest } from '@tuturuuu/auth/app-session';
 import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { getWorkspace } from '@tuturuuu/utils/workspace-helper';
-import { notFound } from 'next/navigation';
+import { headers } from 'next/headers';
+import { notFound, redirect } from 'next/navigation';
 import { MailAppClient } from './mail-client';
 
 interface PageProps {
@@ -11,7 +14,15 @@ interface PageProps {
 
 export default async function MailPage({ params }: PageProps) {
   const { wsId: id } = await params;
-  const workspace = await getWorkspace(id, { useAdmin: true });
+  const user = getAppSessionUserFromRequest(
+    { headers: await headers() },
+    { targetApp: 'mail' }
+  );
+
+  if (!user?.id) redirect('/login');
+  if (!isExactTuturuuuDotComEmail(user.email)) redirect('/not-available');
+
+  const workspace = await getWorkspace(id, { useAdmin: true, user });
 
   if (!workspace?.joined) notFound();
 

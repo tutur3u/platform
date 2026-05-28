@@ -1,6 +1,7 @@
-// Shared constants
-// Shared constants
-
+export {
+  SidebarStructure,
+  type SidebarStructureProps,
+} from './components/sidebar-structure';
 export { SatelliteWorkspaceShell } from './components/workspace-shell';
 export {
   LOCALE_COOKIE_NAME,
@@ -8,8 +9,6 @@ export {
   SIDEBAR_COLLAPSED_COOKIE_NAME,
   THEME_COOKIE_NAME,
 } from './constants/common';
-// Re-export sidebar context
-// Re-export sidebar context
 export {
   SIDEBAR_BEHAVIOR_COOKIE_NAME as SIDEBAR_BEHAVIOR_COOKIE,
   type SidebarBehavior,
@@ -17,8 +16,6 @@ export {
   SidebarProvider,
   useSidebar,
 } from './context/sidebar-context';
-// Shared i18n
-// Shared i18n
 export {
   defaultLocale,
   Link,
@@ -31,8 +28,6 @@ export {
 } from './i18n/routing';
 export { DASHBOARD_EMBED_SHELL_CLASSNAME } from './utils/dashboard-embed-shell';
 
-// Utility helpers
-// Utility helpers
 export {
   getSidebarCollapsedState,
   parseSidebarBehavior,
