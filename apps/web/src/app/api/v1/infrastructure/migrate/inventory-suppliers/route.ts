@@ -21,6 +21,7 @@ export async function GET(req: Request) {
 
   const result = await batchFetch({
     table: 'inventory_suppliers',
+    schema: 'private',
     wsId,
     offset,
     limit,
@@ -35,6 +36,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
     table: 'inventory_suppliers',
+    schema: 'private',
     data: json?.data || [],
     onConflict: 'id',
   });

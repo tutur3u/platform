@@ -53,13 +53,13 @@ async function listBundleComponents(wsId: string, bundleIds: string[]) {
     join public.workspace_products product
       on product.id = component.product_id
       and product.ws_id = ${wsId}
-    join public.inventory_units unit
+    join private.inventory_units unit
       on unit.id = component.unit_id
       and unit.ws_id = ${wsId}
-    join public.inventory_warehouses warehouse
+    join private.inventory_warehouses warehouse
       on warehouse.id = component.warehouse_id
       and warehouse.ws_id = ${wsId}
-    join public.inventory_products stock
+    join private.inventory_products stock
       on stock.product_id = product.id
       and stock.unit_id = unit.id
       and stock.warehouse_id = warehouse.id
@@ -123,13 +123,13 @@ export async function listBundles(
     left join public.workspace_products product
       on product.id = component.product_id
       and product.ws_id = bundle.ws_id
-    left join public.inventory_units unit
+    left join private.inventory_units unit
       on unit.id = component.unit_id
       and unit.ws_id = bundle.ws_id
-    left join public.inventory_warehouses warehouse
+    left join private.inventory_warehouses warehouse
       on warehouse.id = component.warehouse_id
       and warehouse.ws_id = bundle.ws_id
-    left join public.inventory_products stock
+    left join private.inventory_products stock
       on stock.product_id = product.id
       and stock.unit_id = unit.id
       and stock.warehouse_id = warehouse.id
@@ -181,12 +181,12 @@ async function assertComponentTargets(
   for (const component of components) {
     const [row] = await sql<{ product_id: string }[]>`
       select stock.product_id
-      from public.inventory_products stock
+      from private.inventory_products stock
       join public.workspace_products product
         on product.id = stock.product_id
-      join public.inventory_units unit
+      join private.inventory_units unit
         on unit.id = stock.unit_id
-      join public.inventory_warehouses warehouse
+      join private.inventory_warehouses warehouse
         on warehouse.id = stock.warehouse_id
       where product.ws_id = ${wsId}
         and unit.ws_id = ${wsId}

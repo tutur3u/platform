@@ -39,22 +39,25 @@ export async function createInventoryAuditLog(
   sbAdmin: TypedSupabaseClient,
   input: InventoryAuditLogInput
 ) {
-  const { error } = await sbAdmin.from('inventory_audit_logs').insert([
-    {
-      ws_id: input.wsId,
-      event_kind: input.eventKind,
-      entity_kind: input.entityKind,
-      entity_id: input.entityId ?? null,
-      entity_label: input.entityLabel ?? null,
-      summary: input.summary,
-      changed_fields: input.changedFields ?? [],
-      before: (input.before ?? null) as Json,
-      after: (input.after ?? null) as Json,
-      actor_auth_uid: input.actor?.authUserId ?? null,
-      actor_workspace_user_id: input.actor?.workspaceUserId ?? null,
-      source: input.source ?? 'live',
-    },
-  ]);
+  const { error } = await sbAdmin
+    .schema('private')
+    .from('inventory_audit_logs')
+    .insert([
+      {
+        ws_id: input.wsId,
+        event_kind: input.eventKind,
+        entity_kind: input.entityKind,
+        entity_id: input.entityId ?? null,
+        entity_label: input.entityLabel ?? null,
+        summary: input.summary,
+        changed_fields: input.changedFields ?? [],
+        before: (input.before ?? null) as Json,
+        after: (input.after ?? null) as Json,
+        actor_auth_uid: input.actor?.authUserId ?? null,
+        actor_workspace_user_id: input.actor?.workspaceUserId ?? null,
+        source: input.source ?? 'live',
+      },
+    ]);
 
   if (error) {
     serverLogger.error('Failed to create inventory audit log', error);

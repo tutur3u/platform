@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -25,16 +26,17 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
   const data = await req.json();
 
-  const { error } = await supabase
+  const { error } = await inventory
     .from('inventory_suppliers')
     .update(data)
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error updating product supplier', error);
     return NextResponse.json(
       { message: 'Error updating product category' },
       { status: 500 }
@@ -60,15 +62,16 @@ export async function DELETE(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
 
-  const { error } = await supabase
+  const { error } = await inventory
     .from('inventory_suppliers')
     .delete()
-    .eq('id', id);
+    .eq('id', id)
+    .eq('ws_id', wsId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error deleting product supplier', error);
     return NextResponse.json(
       { message: 'Error deleting product category' },
       { status: 500 }

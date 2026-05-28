@@ -27,6 +27,7 @@ export async function GET(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (
@@ -39,7 +40,7 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_units')
     .select('*')
     .eq('ws_id', wsId)
@@ -62,6 +63,7 @@ export async function POST(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -79,7 +81,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_units')
     .insert({
       ...parsed.data,

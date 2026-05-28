@@ -28,6 +28,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -42,7 +43,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const { data: existing, error: existingError } = await sbAdmin
+  const { data: existing, error: existingError } = await inventory
     .from('inventory_manufacturers')
     .select('*')
     .eq('id', manufacturerId)
@@ -67,7 +68,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_manufacturers')
     .update({
       ...parsed.data,
@@ -108,6 +109,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -141,7 +143,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_manufacturers')
     .delete()
     .eq('id', manufacturerId)

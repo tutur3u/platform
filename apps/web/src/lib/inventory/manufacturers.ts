@@ -22,12 +22,14 @@ export async function resolveProductManufacturerId({
   manufacturerId?: string | null;
   legacyManufacturerName?: string | null;
 }): Promise<ManufacturerIdResolution> {
+  const inventory = sbAdmin.schema('private');
+
   if (manufacturerId !== undefined) {
     if (manufacturerId === null || manufacturerId === '') {
       return { ok: true, manufacturerId: null };
     }
 
-    const { data, error } = await sbAdmin
+    const { data, error } = await inventory
       .from('inventory_manufacturers')
       .select('id')
       .eq('id', manufacturerId)
@@ -58,7 +60,7 @@ export async function resolveProductManufacturerId({
     return { ok: false, message: 'Invalid inventory manufacturer' };
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_manufacturers')
     .upsert(
       {

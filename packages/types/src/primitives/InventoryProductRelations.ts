@@ -1,16 +1,22 @@
-import type { Tables } from '../supabase';
+import type { Database, Tables } from '../supabase';
+
+type PrivateTable<TableName extends keyof Database['private']['Tables']> =
+  Tables<{ schema: 'private' }, TableName>;
 
 export type InventoryWarehouse = Pick<
-  Tables<'inventory_warehouses'>,
+  PrivateTable<'inventory_warehouses'>,
   'id' | 'name'
 >;
-export type InventoryUnit = Pick<Tables<'inventory_units'>, 'id' | 'name'>;
+export type InventoryUnit = Pick<
+  PrivateTable<'inventory_units'>,
+  'id' | 'name'
+>;
 export type InventoryManufacturer = Pick<
-  Tables<'inventory_manufacturers'>,
+  PrivateTable<'inventory_manufacturers'>,
   'id' | 'name'
 >;
 export type InventoryProduct = Pick<
-  Tables<'inventory_products'>,
+  PrivateTable<'inventory_products'>,
   'amount' | 'min_amount' | 'price' | 'warehouse_id' | 'unit_id' | 'created_at'
 > & {
   inventory_warehouses: InventoryWarehouse | null;
@@ -18,7 +24,7 @@ export type InventoryProduct = Pick<
 };
 type InventoryProductCategory = Pick<Tables<'product_categories'>, 'name'>;
 type InventoryOwnerRelation = Pick<
-  Tables<'inventory_owners'>,
+  PrivateTable<'inventory_owners'>,
   'id' | 'name' | 'avatar_url' | 'linked_workspace_user_id'
 >;
 type InventoryFinanceCategoryRelation = Pick<

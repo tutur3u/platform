@@ -30,6 +30,7 @@ export async function PATCH(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -44,7 +45,7 @@ export async function PATCH(req: Request, { params }: Params) {
     );
   }
 
-  const { data: existing, error: existingError } = await sbAdmin
+  const { data: existing, error: existingError } = await inventory
     .from('inventory_owners')
     .select('*')
     .eq('id', ownerId)
@@ -62,7 +63,7 @@ export async function PATCH(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Owner not found' }, { status: 404 });
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_owners')
     .update({
       ...parsed.data,
@@ -111,6 +112,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -138,7 +140,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_owners')
     .delete()
     .eq('id', ownerId)

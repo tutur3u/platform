@@ -1,4 +1,4 @@
-import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
@@ -6,6 +6,15 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const BATCH_SIZE = 100;
 const FETCH_LIMIT = 500;
+
+function resolveSchemaClient(
+  admin: TypedSupabaseClient,
+  schema: 'private' | 'public'
+) {
+  return (schema === 'private'
+    ? admin.schema('private')
+    : admin) as unknown as TypedSupabaseClient;
+}
 
 /**
  * Security check for infrastructure migration routes.
@@ -41,6 +50,7 @@ interface BatchFetchOptions {
   wsId: string;
   offset?: number;
   limit?: number;
+  schema?: 'private' | 'public';
   wsColumn?: string;
   supabase?: TypedSupabaseClient | Promise<TypedSupabaseClient>;
 }
@@ -50,11 +60,13 @@ export async function batchFetch({
   wsId,
   offset = 0,
   limit = FETCH_LIMIT,
+  schema = 'public',
   wsColumn = 'ws_id',
   supabase: providedSupabase,
 }: BatchFetchOptions) {
-  const supabase =
+  const admin =
     (await providedSupabase) ?? (await createAdminClient({ noCookie: true }));
+  const supabase = resolveSchemaClient(admin, schema);
 
   const { data, error, count } = await supabase
     .from(table as 'workspace_users')
@@ -92,6 +104,7 @@ export function createFetchResponse(
 interface BatchUpsertOptions {
   table: string;
   data: unknown[];
+  schema?: 'private' | 'public';
   onConflict?: string;
   ignoreDuplicates?: boolean;
   supabase?: TypedSupabaseClient | Promise<TypedSupabaseClient>;
@@ -108,12 +121,14 @@ interface BatchUpsertResult {
 export async function batchUpsert({
   table,
   data,
+  schema = 'public',
   onConflict,
   ignoreDuplicates = false,
   supabase: providedSupabase,
 }: BatchUpsertOptions): Promise<BatchUpsertResult> {
-  const supabase =
+  const admin =
     (await providedSupabase) ?? (await createAdminClient({ noCookie: true }));
+  const supabase = resolveSchemaClient(admin, schema);
   const errors: unknown[] = [];
   let successCount = 0;
 

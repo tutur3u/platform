@@ -18,13 +18,15 @@ export async function GET(req: Request) {
     return Response.json({ error: 'ws_id is required' }, { status: 400 });
   }
 
-  const supabase = await createAdminClient({ noCookie: true });
+  const inventory = (await createAdminClient({ noCookie: true })).schema(
+    'private'
+  );
 
   // inventory_batch_products doesn't have ws_id
   // Need to join: batch_products -> batches -> warehouses.ws_id
 
   // First get all warehouse IDs for this workspace
-  const { data: warehouses, error: warehouseError } = await supabase
+  const { data: warehouses, error: warehouseError } = await inventory
     .from('inventory_warehouses')
     .select('id')
     .eq('ws_id', wsId);
@@ -43,7 +45,7 @@ export async function GET(req: Request) {
   }
 
   // Get all batch IDs for these warehouses
-  const { data: batches, error: batchError } = await supabase
+  const { data: batches, error: batchError } = await inventory
     .from('inventory_batches')
     .select('id')
     .in('warehouse_id', warehouseIds);
@@ -62,7 +64,7 @@ export async function GET(req: Request) {
   }
 
   // Count total records
-  const { count: totalCount, error: countError } = await supabase
+  const { count: totalCount, error: countError } = await inventory
     .from('inventory_batch_products')
     .select('*', { count: 'exact', head: true })
     .in('batch_id', batchIds);
@@ -75,7 +77,7 @@ export async function GET(req: Request) {
   }
 
   // Fetch paginated data
-  const { data, error } = await supabase
+  const { data, error } = await inventory
     .from('inventory_batch_products')
     .select('*')
     .in('batch_id', batchIds)
@@ -102,6 +104,7 @@ export async function PUT(req: Request) {
   // Composite key: (batch_id, product_id, unit_id)
   const result = await batchUpsert({
     table: 'inventory_batch_products',
+    schema: 'private',
     data: json?.data || [],
     onConflict: 'batch_id,product_id,unit_id',
   });

@@ -1,9 +1,9 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -17,7 +17,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error, count } = await supabase
+  const { data, error, count } = await inventory
     .from('inventory_units')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)

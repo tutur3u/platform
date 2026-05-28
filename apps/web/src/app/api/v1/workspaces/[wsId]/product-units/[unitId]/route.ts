@@ -28,6 +28,7 @@ export async function PUT(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -45,7 +46,7 @@ export async function PUT(req: Request, { params }: Params) {
     );
   }
 
-  const { data: existing, error: existingError } = await sbAdmin
+  const { data: existing, error: existingError } = await inventory
     .from('inventory_units')
     .select('*')
     .eq('id', unitId)
@@ -64,7 +65,7 @@ export async function PUT(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unit not found' }, { status: 404 });
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await inventory
     .from('inventory_units')
     .update(parsed.data)
     .eq('id', unitId)
@@ -102,6 +103,7 @@ export async function DELETE(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canManageInventorySetup(permissions)) {
@@ -111,7 +113,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { data: existing, error: existingError } = await sbAdmin
+  const { data: existing, error: existingError } = await inventory
     .from('inventory_units')
     .select('*')
     .eq('id', unitId)
@@ -133,7 +135,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unit not found' }, { status: 404 });
   }
 
-  const { data: linkedProducts, error: linkedProductsError } = await sbAdmin
+  const { data: linkedProducts, error: linkedProductsError } = await inventory
     .from('inventory_products')
     .select('product_id')
     .eq('unit_id', unitId)
@@ -157,7 +159,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await sbAdmin
+  const { error } = await inventory
     .from('inventory_units')
     .delete()
     .eq('id', unitId)

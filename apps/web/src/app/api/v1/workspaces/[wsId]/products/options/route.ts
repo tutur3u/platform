@@ -11,6 +11,7 @@ import {
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { canViewInventoryCatalog } from '@/lib/inventory/permissions';
+import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 
 interface Params {
   params: Promise<{
@@ -54,21 +55,15 @@ export async function GET(request: Request, { params }: Params) {
       return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
     }
 
-    const { data, error } = await sbAdmin
-      .from('workspace_products')
-      .select(
-        `id, name, description, manufacturer_id, category_id, owner_id, finance_category_id, inventory_manufacturers(id, name), product_categories(name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_units!inventory_products_unit_id_fkey(id, name), inventory_warehouses!inventory_products_warehouse_id_fkey(id, name))`
-      )
-      .filter('archived', 'eq', 'false')
-      .eq('ws_id', wsId)
-      .order('name');
-
-    if (error) {
-      return NextResponse.json(
-        { message: 'Failed to fetch available products' },
-        { status: 500 }
-      );
-    }
+    const { data } = await getInventoryCatalogProducts({
+      includeStock: true,
+      limit: 10_000,
+      sbAdmin,
+      sortBy: 'name',
+      sortOrder: 'asc',
+      status: 'active',
+      wsId,
+    });
 
     const products = (data ?? []).map((product) => {
       const normalizedProduct = product as typeof product & {

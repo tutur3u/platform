@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(7);
+select plan(11);
 
 select ok(
   to_regclass('public.inventory_storefronts') is null,
@@ -14,6 +14,44 @@ select ok(
 select ok(
   to_regclass('private.inventory_storefronts') is not null,
   'inventory storefronts are created in the private schema'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'inventory_products',
+      'inventory_suppliers',
+      'inventory_units',
+      'inventory_warehouses',
+      'inventory_batches',
+      'inventory_batch_products',
+      'inventory_owners',
+      'inventory_audit_logs',
+      'inventory_manufacturers'
+    ]) as table_name
+    where to_regclass(format('public.%I', table_name)) is not null
+  ),
+  'core inventory data tables are not exposed in the public schema'
+);
+
+select ok(
+  not exists (
+    select 1
+    from unnest(array[
+      'inventory_products',
+      'inventory_suppliers',
+      'inventory_units',
+      'inventory_warehouses',
+      'inventory_batches',
+      'inventory_batch_products',
+      'inventory_owners',
+      'inventory_audit_logs',
+      'inventory_manufacturers'
+    ]) as table_name
+    where to_regclass(format('private.%I', table_name)) is null
+  ),
+  'core inventory data tables exist in the private schema'
 );
 
 select ok(
@@ -29,6 +67,16 @@ select ok(
 select ok(
   has_table_privilege('service_role', 'private.inventory_storefronts', 'select'),
   'service role can select private inventory storefronts'
+);
+
+select ok(
+  not has_table_privilege('authenticated', 'private.inventory_products', 'select'),
+  'authenticated cannot select private inventory products'
+);
+
+select ok(
+  has_table_privilege('service_role', 'private.inventory_products', 'select'),
+  'service role can select private inventory products'
 );
 
 select ok(

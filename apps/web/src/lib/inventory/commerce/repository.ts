@@ -214,13 +214,13 @@ export async function listStorefrontListings(
         else null
       end as available_quantity
     from private.inventory_storefront_listings listing
-    left join public.inventory_products stock
+    left join private.inventory_products stock
       on stock.product_id = listing.product_id
       and stock.unit_id = listing.unit_id
       and stock.warehouse_id = listing.warehouse_id
-    left join public.inventory_units unit
+    left join private.inventory_units unit
       on unit.id = listing.unit_id
-    left join public.inventory_warehouses warehouse
+    left join private.inventory_warehouses warehouse
       on warehouse.id = listing.warehouse_id
     where listing.ws_id = ${wsId}
       and listing.storefront_id = ${storefrontId}
@@ -241,7 +241,7 @@ async function assertListingTarget(
     const [row] = await sql<{ id: string }[]>`
       select product.id
       from public.workspace_products product
-      join public.inventory_products stock
+      join private.inventory_products stock
         on stock.product_id = product.id
       where product.ws_id = ${wsId}
         and product.id = ${payload.productId ?? null}

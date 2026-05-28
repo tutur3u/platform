@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -9,11 +10,11 @@ interface Params {
 }
 
 export async function PUT(req: Request, { params }: Params) {
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
   const data = await req.json();
   const { wsId } = await params;
 
-  const { error } = await supabase
+  const { error } = await inventory
     .from('inventory_units')
     .upsert(
       (data?.units || []).map((c: ProductCategory) => ({
@@ -24,7 +25,7 @@ export async function PUT(req: Request, { params }: Params) {
     .eq('id', data.id);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error migrating product units', error);
     return NextResponse.json(
       { message: 'Error migrating product units' },
       { status: 500 }

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => {
   const stockChangesInsert = vi.fn();
   const relationMaybeSingle = vi.fn();
   const inventoryAuditInsert = vi.fn();
+  const inventoryCatalogRpc = vi.fn();
 
   const sessionSupabase = {
     auth: {
@@ -85,93 +86,111 @@ const mocks = vi.hoisted(() => {
     }),
   };
 
-  const adminSupabase = {
-    from: vi.fn((table: string) => {
-      if (table === 'workspace_products') {
-        return {
-          select: vi.fn((fields: string) => {
-            if (fields === 'count()') {
-              return {
-                filter: vi.fn().mockReturnValue({
-                  eq: vi.fn().mockReturnValue({
-                    single: productCountSingle,
-                  }),
-                }),
-              };
-            }
-
+  const adminFrom = vi.fn((table: string) => {
+    if (table === 'workspace_products') {
+      return {
+        select: vi.fn((fields: string) => {
+          if (fields === 'count()') {
             return {
-              eq: vi.fn().mockReturnValue({
+              filter: vi.fn().mockReturnValue({
                 eq: vi.fn().mockReturnValue({
-                  maybeSingle: productMaybeSingle,
+                  single: productCountSingle,
                 }),
               }),
             };
-          }),
-          insert: vi.fn().mockReturnValue({
-            select: vi.fn().mockReturnValue({
-              single: productInsertSingle,
-            }),
-          }),
-        };
-      }
+          }
 
-      if (table === 'inventory_products') {
-        return {
-          insert: inventoryInsert,
-          select: vi.fn(() => ({
-            eq: inventorySelectEq,
-          })),
-          delete: vi.fn(() => ({
-            eq: inventoryDeleteEq,
-          })),
-          update: vi.fn(() => ({
-            eq: inventoryUpdateEq,
-          })),
-        };
-      }
-
-      if (table === 'workspace_user_linked_users') {
-        return {
-          select: vi.fn().mockReturnValue({
+          return {
             eq: vi.fn().mockReturnValue({
               eq: vi.fn().mockReturnValue({
-                single: vi.fn().mockResolvedValue({ data: null, error: null }),
+                maybeSingle: productMaybeSingle,
               }),
             }),
-          }),
-        };
-      }
-
-      if (table === 'product_stock_changes') {
-        return {
-          insert: stockChangesInsert,
-        };
-      }
-
-      if (table === 'inventory_audit_logs') {
-        return {
-          insert: inventoryAuditInsert,
-        };
-      }
-
-      if (
-        table === 'product_categories' ||
-        table === 'inventory_owners' ||
-        table === 'transaction_categories'
-      ) {
-        return {
+          };
+        }),
+        insert: vi.fn().mockReturnValue({
           select: vi.fn().mockReturnValue({
+            single: productInsertSingle,
+          }),
+        }),
+      };
+    }
+
+    if (table === 'inventory_products') {
+      return {
+        insert: inventoryInsert,
+        select: vi.fn(() => ({
+          eq: inventorySelectEq,
+        })),
+        delete: vi.fn(() => ({
+          eq: inventoryDeleteEq,
+        })),
+        update: vi.fn(() => ({
+          eq: inventoryUpdateEq,
+        })),
+      };
+    }
+
+    if (table === 'workspace_user_linked_users') {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
-              eq: vi.fn().mockReturnValue({
-                maybeSingle: relationMaybeSingle,
-              }),
+              single: vi.fn().mockResolvedValue({ data: null, error: null }),
             }),
           }),
-        };
+        }),
+      };
+    }
+
+    if (table === 'product_stock_changes') {
+      return {
+        insert: stockChangesInsert,
+      };
+    }
+
+    if (table === 'inventory_audit_logs') {
+      return {
+        insert: inventoryAuditInsert,
+      };
+    }
+
+    if (
+      table === 'product_categories' ||
+      table === 'inventory_owners' ||
+      table === 'transaction_categories'
+    ) {
+      return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: relationMaybeSingle,
+            }),
+          }),
+        }),
+      };
+    }
+
+    throw new Error(`Unexpected admin table: ${table}`);
+  });
+
+  const privateSupabase = {
+    from: adminFrom,
+    rpc: vi.fn((fnName: string, args: Record<string, unknown>) => {
+      if (fnName === 'get_inventory_catalog_products') {
+        return inventoryCatalogRpc(args);
       }
 
-      throw new Error(`Unexpected admin table: ${table}`);
+      throw new Error(`Unexpected private RPC: ${fnName}`);
+    }),
+  };
+
+  const adminSupabase = {
+    from: adminFrom,
+    schema: vi.fn((schema: string) => {
+      if (schema === 'private') return privateSupabase;
+
+      throw new Error(`Unexpected admin schema: ${schema}`);
     }),
   };
 
@@ -189,6 +208,8 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminSupabase,
+    privateSupabase,
+    inventoryCatalogRpc,
     inventoryInsert,
     inventoryDeleteEq,
     inventoryDeleteWarehouseEq,
@@ -215,6 +236,8 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   normalizeWorkspaceId: vi.fn(() => Promise.resolve('normalized-ws')),
   verifySecret: vi.fn(() => Promise.resolve(true)),
 }));
+
+vi.mock('server-only', () => ({}));
 
 vi.mock('next/headers', () => ({
   headers: vi.fn(() => Promise.resolve(new Headers())),
@@ -243,12 +266,22 @@ describe('product routes', () => {
       data: { id: 'relation-id' },
       error: null,
     });
+    mocks.inventoryCatalogRpc.mockImplementation(async () => {
+      const result = await mocks.productMaybeSingle();
+      if (!result?.data) return { data: [], error: result?.error ?? null };
+
+      return {
+        data: [{ product: result.data, total_count: 1 }],
+        error: result.error ?? null,
+      };
+    });
   });
 
-  it('loads product details from workspace_products with the admin client', async () => {
+  it('loads product details through the private inventory catalog RPC', async () => {
+    const productId = '11111111-1111-4111-8111-111111111111';
     mocks.productMaybeSingle.mockResolvedValue({
       data: {
-        id: 'product-1',
+        id: productId,
         name: 'Product',
         manufacturer: null,
         description: null,
@@ -268,15 +301,21 @@ describe('product routes', () => {
     );
     const response = await GET(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1'
+        `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
       ),
       {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+        params: Promise.resolve({ wsId: 'ws-1', productId }),
       }
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'get_inventory_catalog_products',
+      expect.objectContaining({
+        p_product_id: productId,
+        p_ws_id: 'normalized-ws',
+      })
+    );
   });
 
   it('creates products through the admin client', async () => {
@@ -435,10 +474,11 @@ describe('product routes', () => {
   });
 
   it('does not feature-flag gate product detail access', async () => {
+    const productId = '11111111-1111-4111-8111-111111111111';
     vi.mocked(verifySecret).mockResolvedValueOnce(false);
     mocks.productMaybeSingle.mockResolvedValue({
       data: {
-        id: 'product-1',
+        id: productId,
         name: 'Product',
         manufacturer: null,
         description: null,
@@ -458,15 +498,21 @@ describe('product routes', () => {
     );
     const response = await GET(
       new NextRequest(
-        'http://localhost/api/v1/workspaces/ws-1/products/product-1'
+        `http://localhost/api/v1/workspaces/ws-1/products/${productId}`
       ),
       {
-        params: Promise.resolve({ wsId: 'ws-1', productId: 'product-1' }),
+        params: Promise.resolve({ wsId: 'ws-1', productId }),
       }
     );
 
     expect(response.status).toBe(200);
-    expect(mocks.adminSupabase.from).toHaveBeenCalledWith('workspace_products');
+    expect(mocks.privateSupabase.rpc).toHaveBeenCalledWith(
+      'get_inventory_catalog_products',
+      expect.objectContaining({
+        p_product_id: productId,
+        p_ws_id: 'normalized-ws',
+      })
+    );
   });
 
   it('does not feature-flag gate product creation', async () => {

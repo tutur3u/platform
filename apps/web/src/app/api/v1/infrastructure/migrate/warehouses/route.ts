@@ -11,6 +11,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
     table: 'inventory_warehouses',
+    schema: 'private',
     data: json?.data || [],
   });
   return createMigrationResponse(result, 'warehouses');

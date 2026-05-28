@@ -1,14 +1,4 @@
-import type { InventoryManufacturer } from '@tuturuuu/internal-api';
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
-import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
-import type { RawInventoryProduct } from '@tuturuuu/types/primitives/InventoryProductRelations';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
-import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
-import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -16,6 +6,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import {
+  getInventoryCatalogProducts,
+  getInventoryProductFormOptions,
+} from '@/lib/inventory/product-rpc';
 import { getWorkspaceConfig } from '@/lib/workspace-helper';
 import { ProductForm } from './form';
 
@@ -66,21 +60,16 @@ export default async function WorkspaceProductsPage({ params }: Props) {
         const canUpdateStockQuantity = containsPermission(
           'update_stock_quantity'
         );
-        const currency =
-          (await getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY')) || 'USD';
-
-        const data =
+        const [currencyConfig, data, options] = await Promise.all([
+          getWorkspaceConfig(wsId, 'DEFAULT_CURRENCY'),
           productId === 'new'
-            ? undefined
-            : await getData(wsId, productId, {
+            ? Promise.resolve(undefined)
+            : getData(wsId, productId, {
                 canViewStockQuantity,
-              });
-        const categories = await getCategories(wsId);
-        const manufacturers = await getManufacturers(wsId);
-        const owners = await getOwners(wsId);
-        const financeCategories = await getFinanceCategories(wsId);
-        const warehouses = await getWarehouses(wsId);
-        const units = await getUnits(wsId);
+              }),
+          getProductFormOptions(wsId),
+        ]);
+        const currency = currencyConfig || 'USD';
 
         return (
           <>
@@ -95,12 +84,12 @@ export default async function WorkspaceProductsPage({ params }: Props) {
             <ProductForm
               wsId={wsId}
               data={data}
-              categories={categories}
-              manufacturers={manufacturers}
-              owners={owners}
-              financeCategories={financeCategories}
-              warehouses={warehouses}
-              units={units}
+              categories={options.categories}
+              manufacturers={options.manufacturers}
+              owners={options.owners}
+              financeCategories={options.financeCategories}
+              warehouses={options.warehouses}
+              units={options.units}
               canCreateInventory={canCreateInventory}
               canUpdateInventory={canUpdateInventory}
               canViewStockQuantity={canViewStockQuantity}
@@ -124,36 +113,15 @@ async function getData(
   }
 ) {
   const supabase = await createAdminClient();
-
-  let rawProduct: RawInventoryProduct | null = null;
-
-  if (canViewStockQuantity) {
-    const { data, error } = await supabase
-      .from('workspace_products')
-      .select(
-        '*, inventory_products(*), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
-      )
-      .eq('ws_id', wsId)
-      .eq('id', productId)
-      .single()
-      .returns<RawInventoryProduct>();
-
-    if (error) throw error;
-    rawProduct = data;
-  } else {
-    const { data, error } = await supabase
-      .from('workspace_products')
-      .select(
-        '*, inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)'
-      )
-      .eq('ws_id', wsId)
-      .eq('id', productId)
-      .single()
-      .returns<RawInventoryProduct>();
-
-    if (error) throw error;
-    rawProduct = data;
-  }
+  const { data } = await getInventoryCatalogProducts({
+    includeStock: canViewStockQuantity,
+    limit: 1,
+    productId,
+    sbAdmin: supabase,
+    status: 'all',
+    wsId,
+  });
+  const rawProduct = data[0] ?? null;
 
   if (!rawProduct) return undefined;
 
@@ -178,81 +146,7 @@ async function getData(
   };
 }
 
-async function getManufacturers(wsId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('inventory_manufacturers')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('name');
-
-  if (error) throw error;
-  return (data ?? []) as InventoryManufacturer[];
-}
-
-async function getCategories(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('product_categories')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductCategory[];
-}
-
-async function getOwners(wsId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('inventory_owners')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('archived')
-    .order('name');
-
-  if (error) throw error;
-  return (data ?? []) as InventoryOwner[];
-}
-
-async function getFinanceCategories(wsId: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('transaction_categories')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('name');
-
-  if (error) throw error;
-  return (data ?? []) as TransactionCategory[];
-}
-
-async function getWarehouses(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('inventory_warehouses')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductWarehouse[];
-}
-
-async function getUnits(wsId: string) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('inventory_units')
-    .select('*')
-    .eq('ws_id', wsId);
-
-  const { data, error } = await queryBuilder;
-  if (error) throw error;
-
-  return data as ProductUnit[];
+async function getProductFormOptions(wsId: string) {
+  const supabase = await createAdminClient();
+  return getInventoryProductFormOptions({ sbAdmin: supabase, wsId });
 }

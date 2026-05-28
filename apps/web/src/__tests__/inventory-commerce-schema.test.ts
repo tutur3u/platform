@@ -18,6 +18,10 @@ const checkoutScopeMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260519234600_harden_inventory_checkout_bundle_scope.sql'
 );
+const inventoryPrivateMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260528141100_move_inventory_tables_private.sql'
+);
 const bundleRepositoryPath = resolve(
   repoRoot,
   'apps/web/src/lib/inventory/commerce/bundles.ts'
@@ -130,11 +134,40 @@ describe('inventory commerce migration contract', () => {
     for (const source of [bundleSource, publicStorefrontSource]) {
       expect(source).toContain('join public.workspace_products product');
       expect(source).toMatch(/and product\.ws_id = \$\{wsId\}/);
-      expect(source).toContain('join public.inventory_units unit');
+      expect(source).toContain('join private.inventory_units unit');
       expect(source).toMatch(/and unit\.ws_id = \$\{wsId\}/);
-      expect(source).toContain('join public.inventory_warehouses warehouse');
+      expect(source).toContain('join private.inventory_warehouses warehouse');
       expect(source).toMatch(/and warehouse\.ws_id = \$\{wsId\}/);
-      expect(source).toContain('join public.inventory_products stock');
+      expect(source).toContain('join private.inventory_products stock');
     }
+  });
+
+  it('moves core inventory stock tables to the private schema', () => {
+    const source = readFileSync(inventoryPrivateMigrationPath, 'utf8');
+
+    for (const table of [
+      'inventory_products',
+      'inventory_suppliers',
+      'inventory_units',
+      'inventory_warehouses',
+      'inventory_batches',
+      'inventory_batch_products',
+      'inventory_owners',
+      'inventory_audit_logs',
+      'inventory_manufacturers',
+    ]) {
+      expect(source).toContain(`'${table}'`);
+      expect(source).toContain(
+        `alter table if exists private.${table} enable row level security`
+      );
+      expect(source).toContain(`private.${table}`);
+    }
+
+    expect(source).toContain('grant all on table');
+    expect(source).toContain('to service_role');
+    expect(source).toContain(
+      "execute format('alter table public.%I set schema private'"
+    );
+    expect(source).toContain('private.inventory_products inventory');
   });
 });

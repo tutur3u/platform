@@ -1,11 +1,12 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import StatisticCard from '@/components/cards/StatisticCard';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const supabase = (await createAdminClient()).schema('private');
   const t = await getTranslations();
 
   const permissions = await getPermissions({
@@ -24,8 +25,7 @@ export default async function SuppliersStatistics({ wsId }: { wsId: string }) {
     .eq('ws_id', wsId);
 
   if (error) {
-    console.error('Error fetching workspace suppliers:', error);
-    return null;
+    serverLogger.error('Error fetching workspace suppliers count', error);
   }
 
   return (

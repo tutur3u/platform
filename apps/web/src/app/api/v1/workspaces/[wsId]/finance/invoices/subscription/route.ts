@@ -317,6 +317,7 @@ export async function POST(req: Request, { params }: Params) {
 
     const unitIds = productValues.map((product) => product.unit_id);
     const { data: unitsData, error: unitsError } = await sbAdmin
+      .schema('private')
       .from('inventory_units')
       .select('name, id')
       .in('id', unitIds)

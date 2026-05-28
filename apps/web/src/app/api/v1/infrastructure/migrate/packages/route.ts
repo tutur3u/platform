@@ -44,6 +44,7 @@ export async function PUT(req: Request) {
   if (manufacturers.length > 0) {
     const manufacturerResult = await batchUpsert({
       table: 'inventory_manufacturers',
+      schema: 'private',
       data: manufacturers,
       onConflict: 'ws_id,name',
       supabase,
@@ -67,6 +68,7 @@ export async function PUT(req: Request) {
 
   if (workspaceIds.length > 0 && manufacturerNames.length > 0) {
     const { data, error } = await supabase
+      .schema('private')
       .from('inventory_manufacturers')
       .select('id, ws_id, name')
       .in('ws_id', workspaceIds)

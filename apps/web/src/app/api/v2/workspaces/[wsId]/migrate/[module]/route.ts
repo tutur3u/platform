@@ -107,6 +107,16 @@ const TABLES_WITH_WS_ID: Set<string> = new Set([
   'workspace_configs',
 ]);
 
+const PRIVATE_INVENTORY_TABLES: Set<string> = new Set([
+  'inventory_products',
+  'inventory_manufacturers',
+  'inventory_suppliers',
+  'inventory_batches',
+  'inventory_batch_products',
+  'inventory_warehouses',
+  'inventory_units',
+]);
+
 // Tables without workspace scoping (global lookup tables)
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
@@ -125,13 +135,17 @@ const MODULE_RPC_MAP: Record<string, string> = {
 // PostgREST/Supabase has limits on query size
 const MAX_IN_BATCH_SIZE = 500;
 const ID_FETCH_PAGE_SIZE = 1000;
+type SupabaseQueryClient = Pick<
+  Awaited<ReturnType<typeof createDynamicAdminClient>>,
+  'from'
+>;
 
 /**
  * Helper to batch .in() queries for large ID arrays
  * Supabase/PostgREST has limits on .in() clause size
  */
 async function batchedInQuery<T>(
-  supabase: Awaited<ReturnType<typeof createDynamicAdminClient>>,
+  supabase: SupabaseQueryClient,
   tableName: string,
   columnName: string,
   ids: string[],
@@ -279,6 +293,12 @@ export const GET = withApiAuth<Params>(
 
     // Use admin client for SDK API routes
     const supabase = await createDynamicAdminClient();
+    const privateInventory = supabase.schema(
+      'private'
+    ) as unknown as SupabaseQueryClient;
+    const tableClient = PRIVATE_INVENTORY_TABLES.has(tableName)
+      ? privateInventory
+      : supabase;
 
     // Handle global tables (no workspace scoping needed)
     if (GLOBAL_TABLES.has(tableName)) {
@@ -485,8 +505,8 @@ export const GET = withApiAuth<Params>(
     // inventory_batch_products needs two-level join (batch -> warehouse)
     if (tableName === 'inventory_batch_products') {
       // First get warehouse IDs
-      const { data: warehouses, error: warehouseError } = await supabase
-        .from('inventory_warehouses')
+      const { data: warehouses, error: warehouseError } = await privateInventory
+        .from('inventory_warehouses' as 'workspace_users')
         .select('id')
         .eq('ws_id', wsId);
 
@@ -510,8 +530,8 @@ export const GET = withApiAuth<Params>(
       const batchIds: string[] = [];
       for (let i = 0; i < warehouseIds.length; i += MAX_IN_BATCH_SIZE) {
         const batchWarehouseIds = warehouseIds.slice(i, i + MAX_IN_BATCH_SIZE);
-        const { data: batches, error: batchError } = await supabase
-          .from('inventory_batches')
+        const { data: batches, error: batchError } = await privateInventory
+          .from('inventory_batches' as 'workspace_users')
           .select('id')
           .in('warehouse_id', batchWarehouseIds);
 
@@ -538,7 +558,7 @@ export const GET = withApiAuth<Params>(
         data,
         error,
       } = await batchedInQuery(
-        supabase,
+        privateInventory,
         'inventory_batch_products',
         'batch_id',
         batchIds,
@@ -924,7 +944,10 @@ export const GET = withApiAuth<Params>(
     if (joinConfig) {
       // For tables without ws_id, query via join with parent table
       // First get parent IDs that belong to this workspace
-      const { data: parentData, error: parentError } = await supabase
+      const parentClient = PRIVATE_INVENTORY_TABLES.has(joinConfig.parentTable)
+        ? privateInventory
+        : supabase;
+      const { data: parentData, error: parentError } = await parentClient
         .from(joinConfig.parentTable as 'workspace_user_groups')
         .select('id')
         .eq('ws_id', wsId);
@@ -957,7 +980,7 @@ export const GET = withApiAuth<Params>(
         data,
         error,
       } = await batchedInQuery(
-        supabase,
+        tableClient,
         tableName,
         joinConfig.joinColumn,
         parentIds,
@@ -993,7 +1016,7 @@ export const GET = withApiAuth<Params>(
     }
 
     // First get total count
-    const { count: totalCount, error: countError } = await supabase
+    const { count: totalCount, error: countError } = await tableClient
       .from(tableName as 'workspace_users')
       .select('*', { count: 'exact', head: true })
       .eq('ws_id', wsId);
@@ -1009,7 +1032,7 @@ export const GET = withApiAuth<Params>(
     }
 
     // Fetch paginated data
-    const { data, error } = await supabase
+    const { data, error } = await tableClient
       .from(tableName as 'workspace_users')
       .select('*')
       .eq('ws_id', wsId)

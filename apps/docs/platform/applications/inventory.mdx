@@ -90,16 +90,23 @@ the workspace with the request-scoped client before any private-table read or
 write, then use server-only database access or service-role RPCs behind
 `apps/web`.
 
-Manufacturers are a normalized workspace setup entity in
-`public.inventory_manufacturers`, matching the supplier-style management model.
-Products store only `workspace_products.manufacturer_id`; API responses may
-still include `manufacturer` as a joined display name for older clients. Legacy
-imports that send package/product manufacturer text should upsert the trimmed
-name into `inventory_manufacturers`, assign the resulting `manufacturer_id`, and
+Core stock and setup data lives in private inventory tables:
+`private.inventory_products`, `private.inventory_units`,
+`private.inventory_warehouses`, `private.inventory_suppliers`,
+`private.inventory_batches`, `private.inventory_batch_products`,
+`private.inventory_owners`, `private.inventory_audit_logs`, and
+`private.inventory_manufacturers`. Dashboard pages and APIs should access them
+through server-owned `apps/web` routes. Prefer private-schema RPCs for product
+catalog, low-stock, and other repeated join-heavy reads; call them with
+`createAdminClient().schema('private').rpc(...)` from server code.
+
+Manufacturers are a normalized workspace setup entity matching the
+supplier-style management model. Products store only
+`workspace_products.manufacturer_id`; API responses may still include
+`manufacturer` as a display name for older clients. Legacy imports that send
+package/product manufacturer text should upsert the trimmed name into
+`private.inventory_manufacturers`, assign the resulting `manufacturer_id`, and
 avoid writing manufacturer text back to `workspace_products`.
-The `20260528042237_first_class_inventory_manufacturers.sql` migration must be
-present before production manufacturer pages or APIs can rely on that table and
-the `workspace_products.manufacturer_id` foreign key.
 
 Bundle components are a workspace-scoped stock contract. When creating or
 updating a bundle, every component's product, unit, warehouse, and stock row

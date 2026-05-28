@@ -1,5 +1,5 @@
 import type { InventoryManufacturer } from '@tuturuuu/internal-api';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
@@ -124,7 +124,7 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = (await createAdminClient()).schema('private');
 
   const queryBuilder = supabase
     .from('inventory_manufacturers')

@@ -86,6 +86,7 @@ const validateProductRelations = async ({
   ownerId: string;
   financeCategoryId?: string | null;
 }) => {
+  const inventory = sbAdmin.schema('private');
   const [categoryResult, ownerResult, financeCategoryResult] =
     await Promise.all([
       sbAdmin
@@ -94,7 +95,7 @@ const validateProductRelations = async ({
         .eq('id', categoryId)
         .eq('ws_id', wsId)
         .maybeSingle(),
-      sbAdmin
+      inventory
         .from('inventory_owners')
         .select('id')
         .eq('id', ownerId)
@@ -154,6 +155,7 @@ const resolveDefaultOwnerId = async ({
   wsId: string;
 }) => {
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('inventory_owners')
     .select('id')
     .eq('ws_id', wsId)
@@ -171,6 +173,7 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Validate request body
@@ -267,7 +270,7 @@ export async function POST(req: Request, { params }: Params) {
       );
     }
 
-    const { error } = await sbAdmin.from('inventory_products').insert(
+    const { error } = await inventoryClient.from('inventory_products').insert(
       inventory.map((item) => ({
         ...item,
         product_id: product.data.id,

@@ -42,7 +42,7 @@ values
   )
 on conflict (id) do nothing;
 
-insert into public.inventory_owners (id, ws_id, name)
+insert into private.inventory_owners (id, ws_id, name)
 values
   (
     '00000000-0000-4000-8000-000000000351',
@@ -74,7 +74,7 @@ values
   )
 on conflict (id) do nothing;
 
-insert into public.inventory_units (id, name, ws_id)
+insert into private.inventory_units (id, name, ws_id)
 values
   (
     '00000000-0000-4000-8000-000000000501',
@@ -88,7 +88,7 @@ values
   )
 on conflict (id) do nothing;
 
-insert into public.inventory_warehouses (id, name, ws_id)
+insert into private.inventory_warehouses (id, name, ws_id)
 values
   (
     '00000000-0000-4000-8000-000000000601',
@@ -102,7 +102,7 @@ values
   )
 on conflict (id) do nothing;
 
-insert into public.inventory_products (
+insert into private.inventory_products (
   product_id,
   unit_id,
   warehouse_id,

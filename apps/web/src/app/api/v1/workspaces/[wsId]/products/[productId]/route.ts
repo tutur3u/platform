@@ -26,6 +26,7 @@ import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
+import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 
 const RouteParamsSchema = z.object({
   wsId: z.string().max(MAX_NAME_LENGTH).min(1),
@@ -52,6 +53,8 @@ const validateProductRelations = async ({
   ownerId?: string | null;
   financeCategoryId?: string | null;
 }) => {
+  const inventory = sbAdmin.schema('private');
+
   if (categoryId) {
     const { data, error } = await sbAdmin
       .from('product_categories')
@@ -66,7 +69,7 @@ const validateProductRelations = async ({
   }
 
   if (ownerId) {
-    const { data, error } = await sbAdmin
+    const { data, error } = await inventory
       .from('inventory_owners')
       .select('id')
       .eq('id', ownerId)
@@ -121,18 +124,18 @@ export async function GET(req: Request, { params }: Params) {
 
   const canViewStockQuantity = canViewInventoryStock(permissions);
 
-  const selectFields = canViewStockQuantity
-    ? '*, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email), warehouse:inventory_warehouses!product_stock_changes_warehouse_id_fkey(id, name))'
-    : '*, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)';
-
-  const { data, error } = await sbAdmin
-    .from('workspace_products')
-    .select(selectFields)
-    .eq('ws_id', wsId)
-    .eq('id', productId)
-    .maybeSingle();
-
-  if (error) {
+  let item: RawInventoryProductWithChanges | null = null;
+  try {
+    const result = await getInventoryCatalogProducts({
+      includeStock: canViewStockQuantity,
+      limit: 1,
+      productId,
+      sbAdmin,
+      status: 'all',
+      wsId,
+    });
+    item = result.data[0] ?? null;
+  } catch (error) {
     serverLogger.error('Error fetching product:', error);
     return NextResponse.json(
       { message: 'Error fetching product' },
@@ -140,11 +143,10 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  if (!data) {
+  if (!item) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  const item = data as unknown as RawInventoryProductWithChanges;
   const product = item as RawInventoryProductWithChanges & {
     archived?: boolean;
     inventory_manufacturers?: { id: string; name: string | null } | null;
@@ -236,6 +238,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { wsId: id, productId } = parsedParams.data;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   // Check permissions
@@ -283,7 +286,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { data: existingProduct, error: existingProductError } = await sbAdmin
     .from('workspace_products')
     .select(
-      'id, name, category_id, owner_id, finance_category_id, manufacturer_id, inventory_manufacturers(id, name), description, usage'
+      'id, name, category_id, owner_id, finance_category_id, manufacturer_id, description, usage'
     )
     .eq('id', productId)
     .eq('ws_id', wsId)
@@ -336,7 +339,7 @@ export async function PATCH(req: Request, { params }: Params) {
       );
     }
     // First, delete existing inventory for this product
-    const { error: deleteError } = await sbAdmin
+    const { error: deleteError } = await inventoryClient
       .from('inventory_products')
       .delete()
       .eq('product_id', productId);
@@ -353,7 +356,7 @@ export async function PATCH(req: Request, { params }: Params) {
     }
 
     // Then insert the new inventory
-    const { error: insertError } = await sbAdmin
+    const { error: insertError } = await inventoryClient
       .from('inventory_products')
       .insert(
         inventory.map((item) => ({

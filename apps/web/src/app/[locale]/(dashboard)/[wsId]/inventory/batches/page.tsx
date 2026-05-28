@@ -1,4 +1,4 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
@@ -9,6 +9,7 @@ import { getTranslations } from 'next-intl/server';
 import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { batchColumns } from '@/data/columns/batches';
+import { getInventoryBatches } from '@/lib/inventory/product-rpc';
 
 export const metadata: Metadata = {
   title: 'Batches',
@@ -99,39 +100,24 @@ async function getData(
     pageSize = '10',
   }: { q?: string; page?: string; pageSize?: string }
 ) {
-  const supabase = await createClient();
+  const supabase = await createAdminClient();
 
-  const queryBuilder = supabase
-    .from('inventory_batches')
-    .select(
-      '*, inventory_warehouses!inner(name, ws_id), inventory_suppliers(name)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('inventory_warehouses.ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
+  let start = 0;
+  let limit = 10;
   if (page && pageSize) {
     const parsedPage = parseInt(page, 10);
     const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
+    start = (parsedPage - 1) * parsedSize;
+    limit = parsedSize;
   }
 
-  const { data: rawData, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  const data = rawData.map(
-    ({ inventory_warehouses, inventory_suppliers, ...rest }) => ({
-      ...rest,
-      ws_id: inventory_warehouses?.ws_id,
-      warehouse: inventory_warehouses?.name,
-      supplier: inventory_suppliers?.name,
-    })
-  );
+  const { data, count } = await getInventoryBatches({
+    limit,
+    offset: start,
+    sbAdmin: supabase,
+    search: q,
+    wsId,
+  });
 
   return { data, count } as { data: ProductBatch[]; count: number };
 }

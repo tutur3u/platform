@@ -43,11 +43,13 @@ function createInsertClient(row: Record<string, unknown>) {
   const select = vi.fn(() => ({ single }));
   const insert = vi.fn(() => ({ select }));
   const from = vi.fn(() => ({ insert }));
+  const schema = vi.fn(() => ({ from }));
 
   return {
-    client: { from },
+    client: { schema },
     from,
     insert,
+    schema,
     select,
     single,
   };
@@ -95,6 +97,7 @@ describe('inventory manufacturers API route', () => {
       expect.any(Request),
       'personal'
     );
+    expect(insertClient.schema).toHaveBeenCalledWith('private');
     expect(insertClient.from).toHaveBeenCalledWith('inventory_manufacturers');
     expect(insertClient.insert).toHaveBeenCalledWith({
       name: 'Acme',

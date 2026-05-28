@@ -14,6 +14,7 @@ import {
   canUpdateInventorySales,
   canViewInventorySales,
 } from '@/lib/inventory/permissions';
+import { getInventorySale } from '@/lib/inventory/sales-rpc';
 
 interface Params {
   params: Promise<{
@@ -98,16 +99,17 @@ async function loadSale(
   wsId: string,
   saleId: string
 ) {
-  const { data, error } = await sbAdmin
-    .from('finance_invoices')
-    .select(
-      'id, notice, note, paid_amount, created_at, completed_at, wallet_id, category_id, customer_id, creator_id, platform_creator_id, transaction_id, wallet:workspace_wallets(name), category:transaction_categories(name), customer:workspace_users!finance_invoices_customer_id_fkey(id, full_name, display_name), creator:workspace_users!finance_invoices_creator_id_fkey(id, full_name, display_name), platform_creator:users!finance_invoices_platform_creator_id_fkey(id, display_name), linked_transaction:wallet_transactions!finance_invoices_transaction_id_fkey(id, taken_at), finance_invoice_products!inner(amount, price, owner_id, owner_name, product_id, product_name, product_unit, unit_id, warehouse_id, warehouse)'
-    )
-    .eq('ws_id', wsId)
-    .eq('id', saleId)
-    .maybeSingle();
+  try {
+    const data = await getInventorySale<SaleInvoiceRow>({
+      saleId,
+      sbAdmin,
+      wsId,
+    });
 
-  return { data, error };
+    return { data, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 }
 
 function normalizeSaleDetail(data: SaleInvoiceRow) {
@@ -304,20 +306,21 @@ async function buildUpdatedInvoiceProducts(
   const warehouseIds = [
     ...new Set(productValues.map((product) => product.warehouse_id)),
   ];
+  const inventory = sbAdmin.schema('private');
 
   const [productsResult, unitsResult, warehousesResult] = await Promise.all([
     sbAdmin
       .from('workspace_products')
-      .select('id, name, owner_id, inventory_owners(name), finance_category_id')
+      .select('id, name, owner_id, finance_category_id')
       .in('id', productIds)
       .eq('ws_id', wsId)
       .eq('archived', false),
-    sbAdmin
+    inventory
       .from('inventory_units')
       .select('id, name')
       .in('id', unitIds)
       .eq('ws_id', wsId),
-    sbAdmin
+    inventory
       .from('inventory_warehouses')
       .select('id, name')
       .in('id', warehouseIds)
@@ -361,15 +364,34 @@ async function buildUpdatedInvoiceProducts(
     };
   }
 
+  const ownerIds = [
+    ...new Set(
+      (productsResult.data ?? [])
+        .map((row) => row.owner_id)
+        .filter((value): value is string => !!value)
+    ),
+  ];
+  const { data: ownersData, error: ownersError } =
+    ownerIds.length > 0
+      ? await inventory
+          .from('inventory_owners')
+          .select('id, name')
+          .in('id', ownerIds)
+          .eq('ws_id', wsId)
+      : { data: [], error: null };
+
+  if (ownersError) {
+    throw new Error('Failed to validate inventory owners');
+  }
+
   const productInfoById = new Map(
     (productsResult.data ?? []).map((row) => [
       row.id,
       {
         name: row.name ?? '',
         ownerId: row.owner_id ?? null,
-        ownerName: Array.isArray(row.inventory_owners)
-          ? (row.inventory_owners[0]?.name ?? '')
-          : (row.inventory_owners?.name ?? ''),
+        ownerName:
+          ownersData?.find((owner) => owner.id === row.owner_id)?.name ?? '',
       },
     ])
   );

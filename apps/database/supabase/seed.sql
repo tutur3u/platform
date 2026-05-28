@@ -667,7 +667,7 @@ values
 
 -- Populate inventory units
 insert into
-    public.inventory_units (id, name, ws_id)
+    private.inventory_units (id, name, ws_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -757,7 +757,7 @@ values
 
 -- Populate inventory owners
 insert into
-    public.inventory_owners (id, ws_id, name)
+    private.inventory_owners (id, ws_id, name)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -767,7 +767,7 @@ values
 
 -- Populate inventory manufacturers
 insert into
-    public.inventory_manufacturers (id, ws_id, name)
+    private.inventory_manufacturers (id, ws_id, name)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -889,7 +889,7 @@ values
 
 -- Populate inventory suppliers
 insert into
-    public.inventory_suppliers (id, name, ws_id)
+    private.inventory_suppliers (id, name, ws_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -909,7 +909,7 @@ values
 
 -- Populate inventory warehouses
 insert into
-    public.inventory_warehouses (id, name, ws_id)
+    private.inventory_warehouses (id, name, ws_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -924,7 +924,7 @@ values
 
 -- Populate inventory products
 insert into
-    public.inventory_products (
+    private.inventory_products (
         product_id,
         unit_id,
         warehouse_id,
@@ -984,7 +984,7 @@ values
 
 -- Populate inventory batches
 insert into
-    public.inventory_batches (
+    private.inventory_batches (
         id,
         warehouse_id,
         supplier_id,
@@ -1009,7 +1009,7 @@ values
 
 -- Populate inventory batch products
 insert into
-    public.inventory_batch_products (
+    private.inventory_batch_products (
         batch_id,
         product_id,
         unit_id,

@@ -470,7 +470,7 @@ export async function POST(req: Request, { params }: Params) {
     ];
     const { data: productRows, error: productRowsError } = await sbAdmin
       .from('workspace_products')
-      .select('id, name, owner_id, finance_category_id, inventory_owners(name)')
+      .select('id, name, owner_id, finance_category_id')
       .in('id', uniqueProductIds)
       .eq('ws_id', wsId)
       .filter('archived', 'eq', 'false');
@@ -632,7 +632,7 @@ export async function POST(req: Request, { params }: Params) {
     const productValues = Array.from(productMap.values());
     const { data: productsData, error: productsError } = await sbAdmin
       .from('workspace_products')
-      .select('name, id, owner_id, inventory_owners(name)')
+      .select('name, id, owner_id')
       .in(
         'id',
         productValues.map((product) => product.product_id)
@@ -652,13 +652,47 @@ export async function POST(req: Request, { params }: Params) {
     }
 
     const unitIds = productValues.map((product) => product.unit_id);
+    const ownerIds = [
+      ...new Set(
+        (productsData ?? [])
+          .map((product) => product.owner_id)
+          .filter((value): value is string => !!value)
+      ),
+    ];
+    const inventory = sbAdmin.schema('private');
 
     // Get unit from inventory_units
-    const { data: unitsData, error: unitsError } = await sbAdmin
-      .from('inventory_units')
-      .select('name, id')
-      .in('id', unitIds)
-      .eq('ws_id', wsId);
+    const [
+      { data: unitsData, error: unitsError },
+      { data: ownersData, error: ownersError },
+    ] = await Promise.all([
+      inventory
+        .from('inventory_units')
+        .select('name, id')
+        .in('id', unitIds)
+        .eq('ws_id', wsId),
+      ownerIds.length > 0
+        ? inventory
+            .from('inventory_owners')
+            .select('id, name')
+            .in('id', ownerIds)
+            .eq('ws_id', wsId)
+        : Promise.resolve({ data: [], error: null }),
+    ]);
+
+    if (ownersError) {
+      serverLogger.error(
+        'Error getting inventory owners information:',
+        ownersError
+      );
+      return NextResponse.json(
+        {
+          message: 'Error getting inventory owners information',
+          details: ownersError.message,
+        },
+        { status: 500 }
+      );
+    }
 
     if (unitsError) {
       serverLogger.error('Error getting units information:', unitsError);
@@ -677,9 +711,8 @@ export async function POST(req: Request, { params }: Params) {
         {
           name: row.name ?? '',
           ownerId: row.owner_id ?? null,
-          ownerName: Array.isArray(row.inventory_owners)
-            ? (row.inventory_owners[0]?.name ?? '')
-            : (row.inventory_owners?.name ?? ''),
+          ownerName:
+            ownersData?.find((owner) => owner.id === row.owner_id)?.name ?? '',
         },
       ])
     );

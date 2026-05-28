@@ -15,6 +15,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 import { getWorkspaceConfig } from '@/lib/workspace-helper';
 import { ProductsPageClient } from './products-page-client';
 
@@ -153,94 +154,20 @@ async function getInitialData(
   const parsedPage = parseInt(page || '1', 10);
   const parsedSize = parseInt(pageSize || '10', 10);
   const start = (parsedPage - 1) * parsedSize;
-  const end = parsedPage * parsedSize - 1;
 
-  let rawData: RawInventoryProductWithChanges[] | null = null;
-  let count: number | null = null;
-
-  if (canViewStockQuantity) {
-    let query = supabase
-      .from('workspace_products')
-      .select(
-        '*, product_categories(name), inventory_manufacturers(id, name), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, unit_id, warehouse_id, inventory_warehouses!inventory_products_warehouse_id_fkey(name), inventory_units!inventory_products_unit_id_fkey(name)), product_stock_changes!product_stock_changes_product_id_fkey(amount, created_at, beneficiary:workspace_users!product_stock_changes_beneficiary_id_fkey(full_name, email), creator:workspace_users!product_stock_changes_creator_id_fkey(full_name, email))',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId);
-
-    if (status === 'active') query = query.filter('archived', 'eq', 'false');
-    if (status === 'archived') query = query.filter('archived', 'eq', 'true');
-    if (categoryId) query = query.eq('category_id', categoryId);
-    if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
-    if (q) query = query.ilike('name', `%${q}%`);
-    query = query.range(start, end).limit(parsedSize);
-
-    if (sortBy && sortOrder) {
-      if (sortBy === 'manufacturer') {
-        query = query.order('name', {
-          referencedTable: 'inventory_manufacturers',
-          ascending: sortOrder === 'asc',
-        });
-      } else {
-        query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
-          ascending: sortOrder === 'asc',
-        });
-      }
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    const {
-      data,
-      error,
-      count: fetchedCount,
-    } = await query.overrideTypes<RawInventoryProductWithChanges[]>();
-    if (error) throw error;
-    rawData = data;
-    count = fetchedCount;
-  } else {
-    let query = supabase
-      .from('workspace_products')
-      .select(
-        '*, product_categories(name), inventory_manufacturers(id, name)',
-        {
-          count: 'exact',
-        }
-      )
-      .eq('ws_id', wsId);
-
-    if (status === 'active') query = query.filter('archived', 'eq', 'false');
-    if (status === 'archived') query = query.filter('archived', 'eq', 'true');
-    if (categoryId) query = query.eq('category_id', categoryId);
-    if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
-    if (q) query = query.ilike('name', `%${q}%`);
-    query = query.range(start, end).limit(parsedSize);
-
-    if (sortBy && sortOrder) {
-      if (sortBy === 'manufacturer') {
-        query = query.order('name', {
-          referencedTable: 'inventory_manufacturers',
-          ascending: sortOrder === 'asc',
-        });
-      } else {
-        query = query.order(sortBy as keyof RawInventoryProductWithChanges, {
-          ascending: sortOrder === 'asc',
-        });
-      }
-    } else {
-      query = query.order('created_at', { ascending: false });
-    }
-
-    const {
-      data,
-      error,
-      count: fetchedCount,
-    } = await query.overrideTypes<RawInventoryProductWithChanges[]>();
-    if (error) throw error;
-    rawData = data;
-    count = fetchedCount;
-  }
+  const { data: rawData, count } = await getInventoryCatalogProducts({
+    categoryId,
+    includeStock: canViewStockQuantity,
+    limit: parsedSize,
+    manufacturerId,
+    offset: start,
+    sbAdmin: supabase,
+    search: q,
+    sortBy,
+    sortOrder,
+    status,
+    wsId,
+  });
 
   const data = (rawData || []).map((item: RawInventoryProductWithChanges) => {
     const product = item as RawInventoryProductWithChanges & {

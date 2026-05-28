@@ -11,6 +11,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const result = await batchUpsert({
     table: 'inventory_products',
+    schema: 'private',
     data: json?.data || [],
     onConflict: 'product_id,unit_id,warehouse_id',
   });

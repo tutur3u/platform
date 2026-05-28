@@ -563,28 +563,32 @@ export async function deleteTransaction(
   }
 
   if (inventorySaleAuditPayload) {
-    await sbAdmin.from('inventory_audit_logs').insert([
-      {
-        ws_id: normalizedWsId,
-        event_kind: 'updated',
-        entity_kind: 'sale',
-        entity_id: inventorySaleAuditPayload.invoiceId,
-        entity_label: inventorySaleAuditPayload.entityLabel,
-        summary: `Removed linked finance transaction for sale ${inventorySaleAuditPayload.entityLabel}`,
-        changed_fields: ['transaction_id', 'transaction_missing'],
-        before: {
-          transaction_id: transactionId,
-          transaction_missing: false,
+    await sbAdmin
+      .schema('private')
+      .from('inventory_audit_logs')
+      .insert([
+        {
+          ws_id: normalizedWsId,
+          event_kind: 'updated',
+          entity_kind: 'sale',
+          entity_id: inventorySaleAuditPayload.invoiceId,
+          entity_label: inventorySaleAuditPayload.entityLabel,
+          summary: `Removed linked finance transaction for sale ${inventorySaleAuditPayload.entityLabel}`,
+          changed_fields: ['transaction_id', 'transaction_missing'],
+          before: {
+            transaction_id: transactionId,
+            transaction_missing: false,
+          },
+          after: {
+            transaction_id: null,
+            transaction_missing: true,
+          },
+          actor_auth_uid: inventorySaleAuditPayload.actorAuthUid,
+          actor_workspace_user_id:
+            inventorySaleAuditPayload.actorWorkspaceUserId,
+          source: 'live',
         },
-        after: {
-          transaction_id: null,
-          transaction_missing: true,
-        },
-        actor_auth_uid: inventorySaleAuditPayload.actorAuthUid,
-        actor_workspace_user_id: inventorySaleAuditPayload.actorWorkspaceUserId,
-        source: 'live',
-      },
-    ]);
+      ]);
   }
 
   return NextResponse.json({ message: 'success' });

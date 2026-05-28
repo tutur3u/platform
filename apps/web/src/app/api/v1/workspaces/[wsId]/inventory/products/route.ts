@@ -15,6 +15,7 @@ import {
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
+import { getInventoryCatalogProducts } from '@/lib/inventory/product-rpc';
 
 const SearchParamsSchema = z.object({
   categoryId: z.guid().optional(),
@@ -91,92 +92,19 @@ export async function GET(request: Request, { params }: Params) {
     } = parsed.data;
 
     const start = (page - 1) * pageSize;
-    const end = page * pageSize - 1;
-
-    let rawData: RawInventoryProduct[] | null = null;
-    let count: number | null = null;
-
-    if (canViewStockQuantity) {
-      let query = sbAdmin
-        .from('workspace_products')
-        .select(
-          'id, name, manufacturer_id, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon), inventory_products!inventory_products_product_id_fkey(amount, min_amount, price, warehouse_id, unit_id, created_at, inventory_warehouses!inventory_products_warehouse_id_fkey(id, name), inventory_units!inventory_products_unit_id_fkey(id, name))',
-          {
-            count: 'exact',
-          }
-        )
-        .eq('ws_id', wsId);
-
-      if (status === 'active') query = query.filter('archived', 'eq', 'false');
-      if (status === 'archived') query = query.filter('archived', 'eq', 'true');
-      if (categoryId) query = query.eq('category_id', categoryId);
-      if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
-      if (q) query = query.ilike('name', `%${q}%`);
-      query = query.range(start, end);
-
-      // Apply sorting - default to created_at desc for consistent ordering
-      if (sortBy && sortOrder) {
-        if (sortBy === 'manufacturer') {
-          query = query.order('name', {
-            referencedTable: 'inventory_manufacturers',
-            ascending: sortOrder === 'asc',
-          });
-        } else {
-          query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-        }
-      } else {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      const {
-        data,
-        error,
-        count: fetchedCount,
-      } = await query.overrideTypes<RawInventoryProduct[]>();
-      if (error) throw error;
-      rawData = data;
-      count = fetchedCount;
-    } else {
-      let query = sbAdmin
-        .from('workspace_products')
-        .select(
-          'id, name, manufacturer_id, description, usage, category_id, owner_id, finance_category_id, created_at, ws_id, product_categories(name), inventory_manufacturers(id, name), inventory_owners(id, name, avatar_url, linked_workspace_user_id), transaction_categories(id, name, color, icon)',
-          {
-            count: 'exact',
-          }
-        )
-        .eq('ws_id', wsId);
-
-      if (status === 'active') query = query.filter('archived', 'eq', 'false');
-      if (status === 'archived') query = query.filter('archived', 'eq', 'true');
-      if (categoryId) query = query.eq('category_id', categoryId);
-      if (manufacturerId) query = query.eq('manufacturer_id', manufacturerId);
-      if (q) query = query.ilike('name', `%${q}%`);
-      query = query.range(start, end);
-
-      // Apply sorting - default to created_at desc for consistent ordering
-      if (sortBy && sortOrder) {
-        if (sortBy === 'manufacturer') {
-          query = query.order('name', {
-            referencedTable: 'inventory_manufacturers',
-            ascending: sortOrder === 'asc',
-          });
-        } else {
-          query = query.order(sortBy, { ascending: sortOrder === 'asc' });
-        }
-      } else {
-        query = query.order('created_at', { ascending: false });
-      }
-
-      const {
-        data,
-        error,
-        count: fetchedCount,
-      } = await query.overrideTypes<RawInventoryProduct[]>();
-      if (error) throw error;
-      rawData = data;
-      count = fetchedCount;
-    }
+    const { data: rawData, count } = await getInventoryCatalogProducts({
+      categoryId,
+      includeStock: canViewStockQuantity,
+      limit: pageSize,
+      manufacturerId,
+      offset: start,
+      sbAdmin,
+      search: q,
+      sortBy,
+      sortOrder,
+      status,
+      wsId,
+    });
 
     const selectPrimaryInventory = (
       inventories: InventoryProduct[] | null | undefined

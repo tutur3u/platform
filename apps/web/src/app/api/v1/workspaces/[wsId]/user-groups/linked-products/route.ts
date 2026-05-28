@@ -41,12 +41,11 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { data, error } = await sbAdmin
-    .from('user_group_linked_products')
-    .select(
-      'group_id, workspace_user_groups!inner(name), workspace_products(id, name, product_categories(name)), inventory_units(name, id), warehouse_id'
-    )
-    .eq('workspace_user_groups.ws_id', wsId)
-    .in('group_id', groupIds);
+    .schema('private')
+    .rpc('get_user_group_linked_products_with_units', {
+      p_group_ids: groupIds,
+      p_ws_id: wsId,
+    });
 
   if (error) {
     serverLogger.error('Error fetching multi-group linked products:', error);
@@ -56,5 +55,9 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json({ items: data ?? [] });
+  const items = ((data ?? []) as Array<{ item: unknown | null }>)
+    .map((row) => row.item)
+    .filter(Boolean);
+
+  return NextResponse.json({ items });
 }

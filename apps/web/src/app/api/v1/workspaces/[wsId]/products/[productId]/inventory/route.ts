@@ -54,6 +54,7 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
 
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
@@ -115,7 +116,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   // Insert inventory items
-  const { error } = await sbAdmin.from('inventory_products').insert(
+  const { error } = await inventoryClient.from('inventory_products').insert(
     inventory.map((item) => ({
       ...item,
       product_id: productId,
@@ -165,6 +166,7 @@ export async function PATCH(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
 
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
@@ -219,7 +221,7 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   // Get existing inventory to compare
-  const { data: existingInventory, error: fetchError } = await sbAdmin
+  const { data: existingInventory, error: fetchError } = await inventoryClient
     .from('inventory_products')
     .select('*')
     .eq('product_id', productId);
@@ -263,7 +265,7 @@ export async function PATCH(req: Request, { params }: Params) {
       }
     }
 
-    const { error: deleteError } = await sbAdmin
+    const { error: deleteError } = await inventoryClient
       .from('inventory_products')
       .delete()
       .eq('product_id', productId);
@@ -340,7 +342,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }
       }
 
-      const { error: deleteError } = await sbAdmin
+      const { error: deleteError } = await inventoryClient
         .from('inventory_products')
         .delete()
         .eq('product_id', productId)
@@ -362,7 +364,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
   // Perform insertions
   if (toInsert.length > 0) {
-    const { error: insertError } = await sbAdmin
+    const { error: insertError } = await inventoryClient
       .from('inventory_products')
       .insert(
         toInsert.map((item) => ({
@@ -433,7 +435,7 @@ export async function PATCH(req: Request, { params }: Params) {
         }
       }
 
-      const { error: updateError } = await sbAdmin
+      const { error: updateError } = await inventoryClient
         .from('inventory_products')
         .update({
           amount: item.amount,
@@ -470,6 +472,8 @@ export async function PATCH(req: Request, { params }: Params) {
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
+  const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
   const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -479,8 +483,20 @@ export async function GET(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
   }
 
+  const wsId = await normalizeWorkspaceId(id, supabase);
+  const { data: product, error: productError } = await sbAdmin
+    .from('workspace_products')
+    .select('id')
+    .eq('id', productId)
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (productError || !product) {
+    return NextResponse.json({ message: 'Product not found' }, { status: 404 });
+  }
+
   // Get inventory for this product
-  const { data: inventory, error } = await supabase
+  const { data: inventory, error } = await inventoryClient
     .from('inventory_products')
     .select('*')
     .eq('product_id', productId);
@@ -500,6 +516,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const { wsId: id, productId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const inventoryClient = sbAdmin.schema('private');
   // Check permissions
   const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
@@ -527,7 +544,7 @@ export async function DELETE(req: Request, { params }: Params) {
     return NextResponse.json({ message: 'Product not found' }, { status: 404 });
   }
 
-  const { data: existingInventory, error: fetchError } = await sbAdmin
+  const { data: existingInventory, error: fetchError } = await inventoryClient
     .from('inventory_products')
     .select('*')
     .eq('product_id', productId);
@@ -577,7 +594,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   // Delete all inventory for this product
-  const { error } = await sbAdmin
+  const { error } = await inventoryClient
     .from('inventory_products')
     .delete()
     .eq('product_id', productId);

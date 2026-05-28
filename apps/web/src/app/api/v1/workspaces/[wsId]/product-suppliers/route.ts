@@ -1,6 +1,7 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -24,16 +25,16 @@ export async function GET(_: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
 
-  const { data, error } = await supabase
+  const { data, error } = await inventory
     .from('inventory_suppliers')
     .select('*')
     .eq('ws_id', id)
     .single();
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching product suppliers', error);
     return NextResponse.json(
       { message: 'Error fetching workspace user groups' },
       { status: 500 }
@@ -59,16 +60,16 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const supabase = await createClient();
+  const inventory = (await createAdminClient()).schema('private');
   const data = await req.json();
 
-  const { error } = await supabase.from('inventory_suppliers').insert({
+  const { error } = await inventory.from('inventory_suppliers').insert({
     ...data,
     ws_id: id,
   });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating product supplier', error);
     return NextResponse.json(
       { message: 'Error creating workspace user group' },
       { status: 500 }

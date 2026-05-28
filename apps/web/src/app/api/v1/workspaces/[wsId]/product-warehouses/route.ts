@@ -1,9 +1,13 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
 import {
   getPermissions,
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface Params {
   params: Promise<{
@@ -28,13 +32,15 @@ export async function GET(req: Request, { params }: Params) {
       { status: 403 }
     );
   }
-  const { data, error } = await supabase
+  const inventory = (await createAdminClient()).schema('private');
+
+  const { data, error } = await inventory
     .from('inventory_warehouses')
     .select('*')
     .eq('ws_id', wsId);
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching product warehouses', error);
     return NextResponse.json(
       { message: 'Error fetching product warehouses' },
       { status: 500 }
@@ -63,13 +69,15 @@ export async function POST(req: Request, { params }: Params) {
   }
   const data = await req.json();
 
-  const { error } = await supabase.from('inventory_warehouses').insert({
+  const inventory = (await createAdminClient()).schema('private');
+
+  const { error } = await inventory.from('inventory_warehouses').insert({
     ...data,
     ws_id: wsId,
   });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating product warehouse', error);
     return NextResponse.json(
       { message: 'Internal server error' },
       { status: 500 }

@@ -86,6 +86,7 @@ export async function GET(req: Request, { params }: Params) {
   if (!authorization.ok) return authorization.response;
 
   const sbAdmin = await createAdminClient();
+  const inventory = sbAdmin.schema('private');
   const { permissions, wsId } = authorization.value;
 
   if (!canViewInventoryAuditLogs(permissions)) {
@@ -103,7 +104,7 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { limit, offset, entityKind, eventKind } = parsed.data;
-  let query = sbAdmin
+  let query = inventory
     .from('inventory_audit_logs')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)

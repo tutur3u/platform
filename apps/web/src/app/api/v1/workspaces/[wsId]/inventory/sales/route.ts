@@ -5,6 +5,7 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import { canViewInventorySales } from '@/lib/inventory/permissions';
 import { isInventoryRealtimeEnabled } from '@/lib/inventory/realtime';
+import { getInventorySales } from '@/lib/inventory/sales-rpc';
 
 const SearchParamsSchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).default(50),
@@ -16,6 +17,22 @@ interface Params {
     wsId: string;
   }>;
 }
+
+type InventorySaleListItem = {
+  category_name: string | null;
+  completed_at: string | null;
+  created_at: string | null;
+  creator_name: string | null;
+  customer_name: string | null;
+  id: string;
+  items_count: number;
+  note: string | null;
+  notice: string | null;
+  owners: string[];
+  paid_amount: number;
+  total_quantity: number;
+  wallet_name: string | null;
+};
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
@@ -40,72 +57,31 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { limit, offset } = parsed.data;
-  const [invoicesResult, realtimeEnabled] = await Promise.all([
-    sbAdmin
-      .from('finance_invoices')
-      .select(
-        'id, notice, note, paid_amount, created_at, completed_at, wallet:workspace_wallets(name), category:transaction_categories(name), customer:workspace_users!finance_invoices_customer_id_fkey(full_name), creator:workspace_users!finance_invoices_creator_id_fkey(full_name), platform_creator:users!finance_invoices_platform_creator_id_fkey(display_name), finance_invoice_products!inner(amount, price, owner_id, owner_name, product_id, product_name)',
-        { count: 'exact' }
-      )
-      .eq('ws_id', wsId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1),
+  const [salesResult, realtimeEnabled] = await Promise.all([
+    getInventorySales<InventorySaleListItem>({
+      limit,
+      offset,
+      sbAdmin,
+      wsId,
+    })
+      .then((data) => ({ data, error: null }))
+      .catch((error) => ({ data: null, error })),
     isInventoryRealtimeEnabled(wsId),
   ]);
 
-  if (invoicesResult.error) {
-    serverLogger.error('Error fetching inventory sales', invoicesResult.error);
+  if (salesResult.error) {
+    serverLogger.error('Error fetching inventory sales', salesResult.error);
     return NextResponse.json(
       { message: 'Failed to fetch inventory sales' },
       { status: 500 }
     );
   }
 
-  const data = (invoicesResult.data ?? []).map((invoice) => {
-    const wallet = Array.isArray(invoice.wallet)
-      ? invoice.wallet[0]
-      : invoice.wallet;
-    const category = Array.isArray(invoice.category)
-      ? invoice.category[0]
-      : invoice.category;
-    const customer = Array.isArray(invoice.customer)
-      ? invoice.customer[0]
-      : invoice.customer;
-    const creator = Array.isArray(invoice.creator)
-      ? invoice.creator[0]
-      : invoice.creator;
-    const platformCreator = Array.isArray(invoice.platform_creator)
-      ? invoice.platform_creator[0]
-      : invoice.platform_creator;
-    const lines = Array.isArray(invoice.finance_invoice_products)
-      ? invoice.finance_invoice_products
-      : [];
-
-    return {
-      id: invoice.id,
-      notice: invoice.notice,
-      note: invoice.note,
-      paid_amount: invoice.paid_amount,
-      created_at: invoice.created_at,
-      completed_at: invoice.completed_at,
-      wallet_name: wallet?.name ?? null,
-      category_name: category?.name ?? null,
-      customer_name: customer?.full_name ?? null,
-      creator_name: creator?.full_name ?? platformCreator?.display_name ?? null,
-      items_count: lines.length,
-      total_quantity: lines.reduce(
-        (sum, line) => sum + Number(line.amount ?? 0),
-        0
-      ),
-      owners: [
-        ...new Set(lines.map((line) => line.owner_name ?? 'Unassigned')),
-      ],
-    };
-  });
+  const data = salesResult.data?.data ?? [];
 
   return NextResponse.json({
     data,
-    count: invoicesResult.count ?? data.length,
+    count: salesResult.data?.count ?? data.length,
     realtime_enabled: realtimeEnabled,
   });
 }
