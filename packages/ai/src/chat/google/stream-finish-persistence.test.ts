@@ -137,4 +137,73 @@ describe('stream finish persistence', () => {
       })
     );
   });
+
+  it('retries with compact metadata when the rollout still has strict metadata limits', async () => {
+    const single = vi
+      .fn()
+      .mockResolvedValueOnce({
+        data: null,
+        error: {
+          code: '22001',
+          message:
+            'PAYLOAD_FIELD_BYTES_EXCEEDED: ai_chat_messages.metadata exceeds 16384 bytes',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: { id: 'assistant-message-3' },
+        error: null,
+      });
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({ single }),
+    });
+    const sbAdmin = {
+      from: vi.fn().mockReturnValue({ insert }),
+    };
+
+    await persistAssistantResponse({
+      chatId: 'chat-1',
+      effectiveSource: 'Mira',
+      model: 'google/gemini-3-flash',
+      response: {
+        finishReason: 'stop',
+        steps: [
+          {
+            toolCalls: [
+              {
+                input: { text: 'x'.repeat(20_000) },
+                toolCallId: 'qr-1',
+                toolName: 'create_qr_code',
+              },
+            ],
+            toolResults: [
+              {
+                output: { dataUrl: 'data:image/png;base64,'.repeat(2000) },
+                toolCallId: 'qr-1',
+                toolName: 'create_qr_code',
+              },
+            ],
+            usage: { inputTokens: 10, outputTokens: 4 },
+          },
+        ],
+        text: 'Here is the QR code.',
+      },
+      sbAdmin,
+      userId: 'user-1',
+      wsId: 'workspace-1',
+    });
+
+    expect(insert).toHaveBeenCalledTimes(2);
+    expect(insert.mock.calls[1]?.[0]).toEqual(
+      expect.objectContaining({
+        metadata: expect.objectContaining({
+          ai: expect.objectContaining({ metadataCompacted: true }),
+          toolCallCount: 1,
+          toolResultCount: 1,
+        }),
+      })
+    );
+    expect(mocks.deductAiCredits).toHaveBeenCalledWith(
+      expect.objectContaining({ chatMessageId: 'assistant-message-3' })
+    );
+  });
 });

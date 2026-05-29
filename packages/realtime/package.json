@@ -11,6 +11,8 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "exports": {
+    "./chat": "./src/chat/index.ts",
+    "./chat/token": "./src/chat/token.ts",
     ".": "./src/index.ts",
     "./hive": "./src/hive/index.ts",
     "./meet": "./src/meet/index.ts",

@@ -7,6 +7,7 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 
 type RouteParams = {
   conversationId: string;
@@ -56,6 +57,14 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      await publishChatRealtimeEvent({
+        actorUserId: auth.user.id,
+        conversationId: message.conversationId,
+        message,
+        type: 'reaction.updated',
+        wsId: context.context.normalizedWsId,
+      });
 
       return NextResponse.json({ message });
     } catch (error) {

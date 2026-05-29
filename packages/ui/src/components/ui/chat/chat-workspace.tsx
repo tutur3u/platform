@@ -24,6 +24,7 @@ import {
   useChatConversations,
   useChatMessageSearch,
   useChatMessages,
+  useChatRealtime,
   useDeleteChatConversation,
   useDeleteChatMessage,
   useMarkChatConversationRead,
@@ -167,6 +168,8 @@ export function ChatWorkspace({
     ? latestMessageId
     : null;
   const detailsOpen = Boolean(sharedContentOpen && activeConversationId);
+
+  useChatRealtime(wsId);
 
   useEffect(() => {
     if (selectedReadOnly) return;

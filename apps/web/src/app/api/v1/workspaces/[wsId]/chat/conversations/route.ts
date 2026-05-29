@@ -11,6 +11,7 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 
 type RouteParams = {
   wsId: string;
@@ -27,6 +28,55 @@ const createConversationSchema = z.object({
   title: z.string().trim().max(255).nullable().optional(),
   type: z.enum(['direct', 'group', 'channel', 'ai']).default('channel'),
 });
+
+async function listNativeChatConversations({
+  actorUserId,
+  archived,
+  wsId,
+}: {
+  actorUserId: string;
+  archived: 'active' | 'all' | 'archived';
+  wsId: string;
+}) {
+  try {
+    return await callPrivateChatRpc<ChatConversation[]>(
+      'chat_list_conversations',
+      {
+        p_actor_user_id: actorUserId,
+        p_archived: archived,
+        p_ws_id: wsId,
+      }
+    );
+  } catch (error) {
+    if (!isMissingArchivedChatListRpc(error)) {
+      throw error;
+    }
+
+    if (archived === 'archived') {
+      return [];
+    }
+
+    return await callPrivateChatRpc<ChatConversation[]>(
+      'chat_list_conversations',
+      {
+        p_actor_user_id: actorUserId,
+        p_ws_id: wsId,
+      }
+    );
+  }
+}
+
+function isMissingArchivedChatListRpc(error: unknown) {
+  const rpcError = error as { code?: string; message?: string };
+  const message = rpcError.message ?? '';
+
+  return (
+    rpcError.code === 'PGRST202' ||
+    rpcError.code === '42883' ||
+    (/chat_list_conversations/u.test(message) &&
+      (/p_archived/u.test(message) || /schema cache/u.test(message)))
+  );
+}
 
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
@@ -47,10 +97,10 @@ export const GET = withSessionAuth<RouteParams>(
     try {
       const [conversations, aiAgentConversations, aiChatConversations] =
         await Promise.all([
-          callPrivateChatRpc<ChatConversation[]>('chat_list_conversations', {
-            p_actor_user_id: auth.user.id,
-            p_archived: archived,
-            p_ws_id: context.context.normalizedWsId,
+          listNativeChatConversations({
+            actorUserId: auth.user.id,
+            archived,
+            wsId: context.context.normalizedWsId,
           }),
           archived === 'active'
             ? listRootAiAgentDiscoveryConversations({
@@ -115,6 +165,14 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      await publishChatRealtimeEvent({
+        actorUserId: auth.user.id,
+        conversation,
+        conversationId: conversation.id,
+        type: 'conversation.created',
+        wsId: context.context.normalizedWsId,
+      });
 
       return NextResponse.json({ conversation }, { status: 201 });
     } catch (error) {

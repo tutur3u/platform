@@ -27,6 +27,12 @@ const MEET_REALTIME_DOCKERFILE_PATH = path.join(
   'meet-realtime',
   'Dockerfile'
 );
+const CHAT_REALTIME_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'chat-realtime',
+  'Dockerfile'
+);
 const HIVE_DB_MIGRATE_SCRIPT_PATH = path.join(
   ROOT_DIR,
   'apps',
@@ -573,6 +579,10 @@ function validateDockerCompose(
     '      - BACKEND_INTERNAL_URL=${' +
       'BACKEND_INTERNAL_URL:-http://backend:7820' +
       '}',
+    '      - CHAT_REALTIME_INTERNAL_URL=${' +
+      'CHAT_REALTIME_INTERNAL_URL:-http://chat-realtime:7817' +
+      '}',
+    '      - CHAT_REALTIME_TOKEN_SECRET',
     '      target: dev',
     '      - .:/workspace\n      - platform-bun-install:/root/.bun/install/cache',
     '      - platform-bun-install:/root/.bun/install/cache',
@@ -631,6 +641,9 @@ function validateDockerCompose(
       '}',
     '      - PORT=7820',
     '      test: ["CMD", "/app/backend", "healthcheck"]',
+    '  chat-realtime:',
+    '      dockerfile: apps/chat-realtime/Dockerfile',
+    'http://127.0.0.1:7817/health',
     '  platform-hive-postgres:',
     '  platform-hive-ollama:',
     'http://127.0.0.1:7815/health',
@@ -709,6 +722,7 @@ function validateDockerProdCompose(composeContent) {
     '  cloudflared:',
     'x-hive-service: &hive-service',
     '  backend:',
+    '  chat-realtime:',
     '  hive-blue:',
     '  hive-green:',
     '  hive-realtime:',
@@ -722,6 +736,7 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: Dockerfile.markitdown',
     '    dockerfile: apps/hive/Dockerfile\n    target: runner\n    secrets:\n      - web_env',
     '      dockerfile: apps/backend/Dockerfile',
+    '      dockerfile: apps/chat-realtime/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
@@ -971,8 +986,9 @@ function validateDockerBakeFile(bakeContent) {
   const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
-    'group "blue-green-support" {\n  targets = ["backend", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
+    'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
     `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
+    `target "chat-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-chat-realtime"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
   ];
 
@@ -1252,6 +1268,55 @@ function validateMeetRealtimeDockerfile(
   return errors;
 }
 
+function validateChatRealtimeDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/chat-realtime/Dockerfile',
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+  ];
+  const depsStage = getStageContent(dockerfileContent, 'deps');
+  const runnerStage = getStageContent(dockerfileContent, 'runner');
+
+  if (!depsStage) {
+    errors.push('apps/chat-realtime/Dockerfile is missing the deps stage.');
+  }
+
+  if (!runnerStage) {
+    errors.push('apps/chat-realtime/Dockerfile is missing the runner stage.');
+  }
+
+  const requiredSnippets = [
+    'COPY package.json bun.lock turbo.json ./',
+    'COPY scripts/install-git-hooks.js ./scripts/install-git-hooks.js',
+    'COPY packages/realtime/package.json ./packages/realtime/package.json',
+    '--mount=type=cache,id=platform-chat-realtime-bun-install,target=/root/.bun/install/cache',
+    'bun install --frozen-lockfile --production --filter @tuturuuu/realtime --linker hoisted',
+    'COPY --from=deps /workspace/node_modules ./node_modules',
+    'COPY packages/realtime ./packages/realtime',
+    'COPY apps/chat-realtime/src ./apps/chat-realtime/src',
+    'CMD ["bun", "apps/chat-realtime/src/index.ts"]',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/chat-realtime/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function validateHiveDbMigrateScript(scriptContent) {
   const errors = [];
   const requiredSnippets = [
@@ -1360,6 +1425,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'meet-realtime', 'Dockerfile'),
     'utf8'
   ),
+  chatRealtimeDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'chat-realtime', 'Dockerfile'),
+    'utf8'
+  ),
   hiveDbMigrateScriptContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'hive', 'db', 'migrate-forward.sh'),
     'utf8'
@@ -1397,6 +1466,10 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateChatRealtimeDockerfile(chatRealtimeDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
     ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
@@ -1427,6 +1500,7 @@ module.exports = {
   HIVE_DB_MIGRATE_SCRIPT_PATH,
   HIVE_REALTIME_DOCKERFILE_PATH,
   MEET_REALTIME_DOCKERFILE_PATH,
+  CHAT_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
@@ -1444,6 +1518,7 @@ module.exports = {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateBackendDockerfile,
+  validateChatRealtimeDockerfile,
   validateDockerCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,

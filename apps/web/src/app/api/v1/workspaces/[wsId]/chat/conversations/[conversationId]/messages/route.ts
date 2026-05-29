@@ -17,6 +17,7 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   downloadWorkspaceStorageObjectForProvider,
@@ -152,6 +153,14 @@ export const POST = withSessionAuth<RouteParams>(
       );
 
       if (parsed.data.kind === 'user') {
+        await publishChatRealtimeEvent({
+          actorUserId: auth.user.id,
+          conversationId: message.conversationId,
+          message,
+          type: 'message.created',
+          wsId: context.context.normalizedWsId,
+        });
+
         const conversation = await callPrivateChatRpc<ChatConversation>(
           'chat_get_conversation',
           {
@@ -179,6 +188,11 @@ export const POST = withSessionAuth<RouteParams>(
             request,
             userMessage: message,
           });
+          await publishChatRealtimeMessages({
+            actorUserId: auth.user.id,
+            messages: assistantMessages,
+            wsId: context.context.normalizedWsId,
+          });
 
           return NextResponse.json(
             {
@@ -188,6 +202,16 @@ export const POST = withSessionAuth<RouteParams>(
             { status: 201 }
           );
         }
+      }
+
+      if (parsed.data.kind !== 'user') {
+        await publishChatRealtimeEvent({
+          actorUserId: auth.user.id,
+          conversationId: message.conversationId,
+          message,
+          type: 'message.created',
+          wsId: context.context.normalizedWsId,
+        });
       }
 
       return NextResponse.json(
@@ -226,6 +250,28 @@ type AiAssistantMessageRow = {
   prompt_tokens: number | null;
 };
 
+async function publishChatRealtimeMessages({
+  actorUserId,
+  messages,
+  wsId,
+}: {
+  actorUserId: string;
+  messages: ChatMessage[];
+  wsId: string;
+}) {
+  await Promise.all(
+    messages.map((message) =>
+      publishChatRealtimeEvent({
+        actorUserId,
+        conversationId: message.conversationId,
+        message,
+        type: 'message.created',
+        wsId,
+      })
+    )
+  );
+}
+
 function wantsChatMessageStream(request: NextRequest) {
   return (
     request.headers.get('accept')?.includes('application/x-ndjson') ?? false
@@ -254,7 +300,6 @@ function streamNativeAiConversationResponse({
       };
 
       write({ message: userMessage, type: 'message' });
-
       try {
         const assistantMessages = await sendNativeAiConversationMessages({
           auth,
@@ -266,6 +311,11 @@ function streamNativeAiConversationResponse({
           userMessage,
         });
 
+        await publishChatRealtimeMessages({
+          actorUserId: auth.user.id,
+          messages: assistantMessages,
+          wsId: context.normalizedWsId,
+        });
         write({ messages: assistantMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {
@@ -425,6 +475,12 @@ async function sendAiChatMessage({
     );
   }
 
+  await publishChatRealtimeMessages({
+    actorUserId: auth.user.id,
+    messages: newMessages,
+    wsId: context.normalizedWsId,
+  });
+
   return NextResponse.json({ message, messages: newMessages }, { status: 201 });
 }
 
@@ -472,6 +528,11 @@ function streamAiChatMessageResponse({
           return;
         }
 
+        await publishChatRealtimeMessages({
+          actorUserId: auth.user.id,
+          messages: newMessages,
+          wsId,
+        });
         write({ messages: newMessages, type: 'messages' });
         write({ type: 'done' });
       } catch (error) {

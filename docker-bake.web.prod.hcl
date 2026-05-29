@@ -35,7 +35,7 @@ group "blue-green-hive-realtime" {
 }
 
 group "blue-green-support" {
-  targets = ["backend", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]
+  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]
 }
 
 target "web-blue" {
@@ -66,6 +66,11 @@ target "hive-realtime" {
 target "meet-realtime" {
   inherits = ["_platform_local"]
   tags = ["${COMPOSE_PROJECT_NAME}-meet-realtime"]
+}
+
+target "chat-realtime" {
+  inherits = ["_platform_local"]
+  tags = ["${COMPOSE_PROJECT_NAME}-chat-realtime"]
 }
 
 target "backend" {

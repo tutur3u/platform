@@ -85,7 +85,7 @@ type InsertedMessage = {
 
 type InsertResult = PromiseLike<{
   data: InsertedMessage | null;
-  error: { message: string } | null;
+  error: { code?: string; message: string } | null;
 }>;
 
 type AdminClientLike = {
@@ -397,6 +397,169 @@ function readString(value: unknown) {
   return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
+function truncateString(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value;
+  return `${value.slice(0, Math.max(0, maxLength - 14))}... [truncated]`;
+}
+
+function compactJsonValue(value: unknown, maxLength = 400): unknown {
+  if (typeof value === 'string') return truncateString(value, maxLength);
+  if (value === null || typeof value !== 'object') return value;
+
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized.length <= maxLength) return value;
+    return {
+      truncated: true,
+      preview: truncateString(serialized, maxLength),
+    };
+  } catch {
+    return { truncated: true, preview: '[unserializable]' };
+  }
+}
+
+function compactAiMessagePart(part: Record<string, unknown>) {
+  const type = readString(part.type) ?? 'unknown';
+
+  if (type === 'text' || type === 'reasoning') {
+    return {
+      ...part,
+      text:
+        typeof part.text === 'string'
+          ? truncateString(part.text, 4000)
+          : part.text,
+    };
+  }
+
+  if (type === 'dynamic-tool') {
+    return {
+      type,
+      toolName: part.toolName,
+      toolCallId: part.toolCallId,
+      state: part.state,
+      input: compactJsonValue(part.input),
+      output: compactJsonValue(part.output),
+      errorText:
+        typeof part.errorText === 'string'
+          ? truncateString(part.errorText, 1200)
+          : part.errorText,
+    };
+  }
+
+  return compactJsonValue(part, 1200);
+}
+
+function isPayloadMetadataLimitError(error: {
+  code?: string;
+  message: string;
+}) {
+  return (
+    error.code === '22001' &&
+    /PAYLOAD_FIELD_BYTES_EXCEEDED: ai_chat_messages\.metadata/u.test(
+      error.message
+    )
+  );
+}
+
+function buildAssistantMessageMetadata({
+  allToolCalls,
+  allToolResults,
+  cachedInputTokens,
+  cachedOutputTokens,
+  effectiveSource,
+  inputTokens,
+  model,
+  observabilityContext,
+  outputTokens,
+  parts,
+  reasoningText,
+  reasoningTokens,
+  response,
+  serializedSources,
+}: {
+  allToolCalls: ToolCallLike[];
+  allToolResults: ToolResultLike[];
+  cachedInputTokens: number;
+  cachedOutputTokens: number;
+  effectiveSource: 'Mira' | 'Rewise';
+  inputTokens: number;
+  model: string;
+  observabilityContext?: unknown;
+  outputTokens: number;
+  parts: Record<string, unknown>[];
+  reasoningText: string;
+  reasoningTokens: number;
+  response: StreamFinishResponseLike;
+  serializedSources: ReturnType<typeof collectSerializableSources>;
+}) {
+  return {
+    source: effectiveSource,
+    ai: {
+      finishReason: response.finishReason,
+      model,
+      observability: {
+        contextBreakdown: observabilityContext ?? [],
+      },
+      parts,
+      usage: {
+        cachedInputTokens,
+        cachedOutputTokens,
+        inputTokens,
+        outputTokens,
+        reasoningTokens,
+      },
+    },
+    ...(reasoningText ? { reasoning: reasoningText } : {}),
+    ...(allToolCalls.length
+      ? { toolCalls: structuredClone(allToolCalls) }
+      : {}),
+    ...(allToolResults.length
+      ? { toolResults: structuredClone(allToolResults) }
+      : {}),
+    ...(serializedSources.length ? { sources: serializedSources } : {}),
+  };
+}
+
+function compactAssistantMessageMetadata(
+  metadata: ReturnType<typeof buildAssistantMessageMetadata>
+) {
+  const ai = metadata.ai;
+  return {
+    source: metadata.source,
+    ai: {
+      finishReason: ai.finishReason,
+      metadataCompacted: true,
+      model: ai.model,
+      observability: {
+        contextBreakdown: Array.isArray(ai.observability.contextBreakdown)
+          ? ai.observability.contextBreakdown.slice(-20)
+          : [],
+      },
+      omittedPartCount: Math.max(0, ai.parts.length - 8),
+      parts: ai.parts
+        .slice(0, 8)
+        .map((part) =>
+          part && typeof part === 'object' && !Array.isArray(part)
+            ? compactAiMessagePart(part as Record<string, unknown>)
+            : part
+        ),
+      usage: ai.usage,
+    },
+    ...(typeof metadata.reasoning === 'string'
+      ? { reasoning: truncateString(metadata.reasoning, 3000) }
+      : {}),
+    ...(Array.isArray(metadata.sources)
+      ? { sources: metadata.sources.slice(0, 20) }
+      : {}),
+    toolCallCount: Array.isArray(metadata.toolCalls)
+      ? metadata.toolCalls.length
+      : 0,
+    toolResultCount: Array.isArray(metadata.toolResults)
+      ? metadata.toolResults.length
+      : 0,
+  };
+}
+
 export async function persistAssistantResponse({
   response,
   sbAdmin,
@@ -436,49 +599,56 @@ export async function persistAssistantResponse({
     serializedSources,
   });
 
-  const { data: messageData, error } = await sbAdmin
+  const metadata = buildAssistantMessageMetadata({
+    allToolCalls,
+    allToolResults,
+    cachedInputTokens,
+    cachedOutputTokens,
+    effectiveSource,
+    inputTokens,
+    model,
+    observabilityContext,
+    outputTokens,
+    parts,
+    reasoningText,
+    reasoningTokens,
+    response,
+    serializedSources,
+  });
+
+  const insertPayload = {
+    chat_id: chatId,
+    creator_id: userId,
+    content: response.text || '',
+    role: 'ASSISTANT',
+    model: (model.includes('/')
+      ? model.split('/').pop()!
+      : model
+    ).toLowerCase(),
+    finish_reason: response.finishReason,
+    prompt_tokens: inputTokens,
+    completion_tokens: outputTokens,
+    metadata,
+  };
+
+  let { data: messageData, error } = await sbAdmin
     .from('ai_chat_messages')
-    .insert({
-      chat_id: chatId,
-      creator_id: userId,
-      content: response.text || '',
-      role: 'ASSISTANT',
-      model: (model.includes('/')
-        ? model.split('/').pop()!
-        : model
-      ).toLowerCase(),
-      finish_reason: response.finishReason,
-      prompt_tokens: inputTokens,
-      completion_tokens: outputTokens,
-      metadata: {
-        source: effectiveSource,
-        ai: {
-          finishReason: response.finishReason,
-          model,
-          observability: {
-            contextBreakdown: observabilityContext ?? [],
-          },
-          parts,
-          usage: {
-            cachedInputTokens,
-            cachedOutputTokens,
-            inputTokens,
-            outputTokens,
-            reasoningTokens,
-          },
-        },
-        ...(reasoningText ? { reasoning: reasoningText } : {}),
-        ...(allToolCalls.length
-          ? { toolCalls: structuredClone(allToolCalls) }
-          : {}),
-        ...(allToolResults.length
-          ? { toolResults: structuredClone(allToolResults) }
-          : {}),
-        ...(serializedSources.length ? { sources: serializedSources } : {}),
-      },
-    })
+    .insert(insertPayload)
     .select('id')
     .single();
+
+  if (error && isPayloadMetadataLimitError(error)) {
+    const retry = await sbAdmin
+      .from('ai_chat_messages')
+      .insert({
+        ...insertPayload,
+        metadata: compactAssistantMessageMetadata(metadata),
+      })
+      .select('id')
+      .single();
+    messageData = retry.data;
+    error = retry.error;
+  }
 
   if (error) {
     console.log('ERROR ORIGIN: ROOT COMPLETION');

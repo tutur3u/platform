@@ -1,0 +1,37 @@
+---
+title: Chat Realtime Runbook
+description: Operating notes for the internal Chat realtime sidecar and web API proxy.
+updatedAt: "2026-05-29"
+---
+
+Chat realtime lives in `apps/chat-realtime`. It is an internal Bun SSE service
+used by `apps/web` for workspace chat fanout. Browser clients never connect to
+the sidecar directly; they subscribe to
+`/api/v1/workspaces/:wsId/chat/realtime`, and `apps/web` verifies membership,
+mints a short-lived internal token, connects to the sidecar, and forwards SSE
+events back through the normal web origin.
+
+## Required Environment
+
+- `CHAT_REALTIME_TOKEN_SECRET`: preferred shared HMAC secret used by `apps/web`
+  and `apps/chat-realtime`. If unset, both fall back to the platform Supabase
+  service secret. Production should set this explicitly when rotating realtime
+  credentials independently.
+- `CHAT_REALTIME_INTERNAL_URL`: Docker-internal origin for `apps/web`, normally
+  `http://chat-realtime:7817`. Local non-Docker `bun dev` defaults to
+  `http://localhost:7817`.
+
+No Cloudflare tunnel port is required for Chat realtime. The public route is the
+existing `apps/web` API path, which keeps authorization, cookies, app-session
+auth, and deployment topology owned by the web container.
+
+## Blue/Green Deployment
+
+`docker-compose.web.prod.yml` includes `chat-realtime` as a support sidecar
+managed by the blue/green watcher. The sidecar exposes only port `7817` inside
+the Compose network. `apps/web` publishes committed chat mutations to
+`POST /publish`; clients receive them via the proxied SSE stream.
+
+If Chat realtime is unavailable, chat mutations still succeed. The web API logs
+the publish failure and clients continue to recover through normal query
+refetching and reconnects.

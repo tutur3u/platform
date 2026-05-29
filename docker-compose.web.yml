@@ -45,6 +45,8 @@ services:
     environment:
       - BACKEND_INTERNAL_TOKEN=${BACKEND_INTERNAL_TOKEN:-platform-local-backend-token}
       - BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL:-http://backend:7820}
+      - CHAT_REALTIME_INTERNAL_URL=${CHAT_REALTIME_INTERNAL_URL:-http://chat-realtime:7817}
+      - CHAT_REALTIME_TOKEN_SECRET
       - CHOKIDAR_INTERVAL=1000
       - CHOKIDAR_USEPOLLING=1
       - HOSTNAME=0.0.0.0
@@ -166,6 +168,36 @@ services:
     init: true
     ports:
       - "7820:7820"
+
+  chat-realtime:
+    build:
+      context: .
+      dockerfile: apps/chat-realtime/Dockerfile
+    command: ["bun", "--watch", "apps/chat-realtime/src/index.ts"]
+    env_file:
+      - path: apps/web/.env.local
+        required: false
+      - path: .env.local
+        required: false
+    environment:
+      - CHAT_REALTIME_TOKEN_SECRET
+      - PORT=7817
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://127.0.0.1:7817/health'').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    ports:
+      - "7817:7817"
+    volumes:
+      - .:/workspace
+      - platform-web-node_modules:/workspace/node_modules
 
   hive-realtime:
     build:

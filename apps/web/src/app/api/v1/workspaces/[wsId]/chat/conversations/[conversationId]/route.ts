@@ -12,6 +12,7 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
+import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
 
 type RouteParams = {
   conversationId: string;
@@ -61,6 +62,14 @@ export const PATCH = withSessionAuth<RouteParams>(
         }
       );
 
+      await publishChatRealtimeEvent({
+        actorUserId: auth.user.id,
+        conversation,
+        conversationId: conversation.id,
+        type: 'conversation.updated',
+        wsId: context.context.normalizedWsId,
+      });
+
       return NextResponse.json({ conversation });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to update conversation');
@@ -93,6 +102,14 @@ export const DELETE = withSessionAuth<RouteParams>(
           );
         }
 
+        await publishChatRealtimeEvent({
+          actorUserId: auth.user.id,
+          conversationId: params.conversationId,
+          result,
+          type: 'conversation.deleted',
+          wsId: context.context.normalizedWsId,
+        });
+
         return NextResponse.json({ result });
       }
 
@@ -104,6 +121,14 @@ export const DELETE = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+
+      await publishChatRealtimeEvent({
+        actorUserId: auth.user.id,
+        conversationId: params.conversationId,
+        result,
+        type: 'conversation.deleted',
+        wsId: context.context.normalizedWsId,
+      });
 
       return NextResponse.json({ result });
     } catch (error) {

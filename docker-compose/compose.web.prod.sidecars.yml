@@ -154,6 +154,34 @@ services:
       retries: 3
     init: true
 
+  chat-realtime:
+    build:
+      context: ..
+      dockerfile: apps/chat-realtime/Dockerfile
+    env_file:
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+        required: false
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+        required: false
+    environment:
+      - CHAT_REALTIME_TOKEN_SECRET
+      - NODE_ENV=production
+      - PORT=7817
+    expose:
+      - "7817"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'bun -e "fetch(''http://127.0.0.1:7817/health'').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 5s
+      retries: 3
+    init: true
+    restart: unless-stopped
+
   hive-realtime:
     build:
       context: ..

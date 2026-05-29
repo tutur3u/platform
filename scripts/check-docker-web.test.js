@@ -22,6 +22,7 @@ const {
 const {
   BACKEND_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
+  CHAT_REALTIME_DOCKERFILE_PATH,
   DOCKER_BAKE_WEB_PROD_PATH,
   DOCKERIGNORE_PATH,
   HIVE_DB_MIGRATE_SCRIPT_PATH,
@@ -42,6 +43,7 @@ const {
   listFileDependencyPaths,
   listWorkspacePackageJsonPaths,
   validateBackendDockerfile,
+  validateChatRealtimeDockerfile,
   validateDockerCompose,
   validateDockerBakeFile,
   validateDockerProdCompose,
@@ -246,6 +248,31 @@ test('Meet realtime Docker image copies every workspace manifest before frozen i
   assert.match(
     dockerfileContent,
     /CMD \["bun", "apps\/meet-realtime\/src\/index.ts"\]/u
+  );
+});
+
+test('Chat realtime Docker image copies every workspace manifest before frozen install', () => {
+  const dockerfileContent = fs.readFileSync(
+    CHAT_REALTIME_DOCKERFILE_PATH,
+    'utf8'
+  );
+  const driftedDockerfileContent = dockerfileContent.replace(
+    'COPY apps/inventory/package.json ./apps/inventory/package.json\n',
+    ''
+  );
+
+  assert.deepEqual(validateChatRealtimeDockerfile(dockerfileContent), []);
+  assert.match(
+    validateChatRealtimeDockerfile(driftedDockerfileContent).join('\n'),
+    /apps\/chat-realtime\/Dockerfile deps stage is missing workspace package manifests: apps\/inventory\/package\.json/
+  );
+  assert.match(
+    dockerfileContent,
+    /bun install --frozen-lockfile --production --filter @tuturuuu\/realtime --linker hoisted/u
+  );
+  assert.match(
+    dockerfileContent,
+    /CMD \["bun", "apps\/chat-realtime\/src\/index.ts"\]/u
   );
 });
 
@@ -927,6 +954,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'backend'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'chat-realtime'), {
+      recursive: true,
+    });
     fs.mkdirSync(path.join(tempDir, 'apps', 'discord'), {
       recursive: true,
     });
@@ -948,6 +978,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'backend', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'chat-realtime', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(
