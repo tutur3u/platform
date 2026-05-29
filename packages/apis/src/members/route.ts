@@ -283,8 +283,8 @@ async function revokeSeatFromMember(
 
   // No active subscription or not seat-based
   if (
-    !subscription?.workspace_subscription_products ||
-    subscription.workspace_subscription_products.pricing_model !== 'seat_based'
+    subscription?.workspace_subscription_products?.pricing_model !==
+    'seat_based'
   ) {
     return; // Skip for non-seat-based subscriptions
   }

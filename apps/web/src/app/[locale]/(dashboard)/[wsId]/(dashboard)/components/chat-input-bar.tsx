@@ -162,7 +162,7 @@ export default function ChatInputBar({
 
       for (let i = 0; i < clipboardData.items.length; i++) {
         const item = clipboardData.items[i];
-        if (!item || item.kind !== 'file') continue;
+        if (item?.kind !== 'file') continue;
 
         const file = item.getAsFile();
         if (file) candidates.push(file);

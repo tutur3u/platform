@@ -67,7 +67,7 @@ export async function GET(_request: Request, { params }: Params) {
     );
   }
 
-  if (!data || data.status !== 'pending') {
+  if (data?.status !== 'pending') {
     return htmlPage(
       'Verification link unavailable',
       'This verification link is invalid or has already been used.',

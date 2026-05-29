@@ -187,7 +187,7 @@ export async function requireMailboxAccess(
     throw new Error(`Failed to load mailbox: ${mailboxError.message}`);
   }
 
-  if (!mailbox || mailbox.status !== 'active') {
+  if (mailbox?.status !== 'active') {
     return null;
   }
 

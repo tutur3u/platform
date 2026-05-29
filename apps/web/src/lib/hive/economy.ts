@@ -295,7 +295,7 @@ export async function acceptHiveTradeOffer(input: {
       for update
     `;
 
-    if (!trade || trade.status !== 'open') {
+    if (trade?.status !== 'open') {
       throw new Error('Trade offer is not open');
     }
 

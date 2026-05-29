@@ -90,8 +90,7 @@ export async function assignSeatToMember(
 
   // No active subscription or not seat-based
   if (
-    !subscription ||
-    subscription.workspace_subscription_products.pricing_model !== 'seat_based'
+    subscription?.workspace_subscription_products.pricing_model !== 'seat_based'
   ) {
     return { required: false };
   }
@@ -144,8 +143,7 @@ export async function revokeSeatFromMember(
 
   // No active subscription or not seat-based
   if (
-    !subscription ||
-    subscription.workspace_subscription_products.pricing_model !== 'seat_based'
+    subscription?.workspace_subscription_products.pricing_model !== 'seat_based'
   ) {
     return; // Skip for non-seat-based subscriptions
   }

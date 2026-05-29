@@ -385,7 +385,7 @@ export const Mention = Node.create({
                   if (typeof position !== 'number') return;
 
                   const currentNode = editor.state.doc.nodeAt(position);
-                  if (!currentNode || currentNode.type.name !== 'mention') {
+                  if (currentNode?.type.name !== 'mention') {
                     return;
                   }
 

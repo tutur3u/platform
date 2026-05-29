@@ -502,7 +502,7 @@ export function TransactionForm({
     }) => {
       const body = await createTransfer(wsId, payload);
 
-      if (!body || body.message !== 'success') {
+      if (body?.message !== 'success') {
         throw new Error(
           body?.message ||
             t('transaction-data-table.error_creating_transaction')
@@ -532,7 +532,7 @@ export function TransactionForm({
     }) => {
       const body = await updateTransfer(wsId, payload);
 
-      if (!body || body.message !== 'success') {
+      if (body?.message !== 'success') {
         throw new Error(
           body?.message ||
             t('transaction-data-table.error_creating_transaction')
@@ -562,7 +562,7 @@ export function TransactionForm({
         ? await updateTransaction(wsId, id, transactionPayload)
         : await createTransaction(wsId, transactionPayload);
 
-      if (!body || body.message !== 'success') {
+      if (body?.message !== 'success') {
         throw new Error(
           body?.message ||
             t('transaction-data-table.error_creating_transaction')

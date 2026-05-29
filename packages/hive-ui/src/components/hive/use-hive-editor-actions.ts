@@ -182,7 +182,7 @@ export function useHiveEditorActions({
   };
 
   const rotateSelection = () => {
-    if (!selection || selection.kind !== 'object') return;
+    if (selection?.kind !== 'object') return;
     persistWorld(
       rotateObject(world, selection.id),
       'object.update',

@@ -168,11 +168,7 @@ async function validateDefaultModels(args: {
   const languageModel = byId.get(defaultLanguageModel);
   const imageModel = byId.get(defaultImageModel);
 
-  if (
-    !languageModel ||
-    languageModel.type !== 'language' ||
-    !languageModel.is_enabled
-  ) {
+  if (languageModel?.type !== 'language' || !languageModel.is_enabled) {
     return NextResponse.json(
       {
         error:
@@ -182,7 +178,7 @@ async function validateDefaultModels(args: {
     );
   }
 
-  if (!imageModel || imageModel.type !== 'image' || !imageModel.is_enabled) {
+  if (imageModel?.type !== 'image' || !imageModel.is_enabled) {
     return NextResponse.json(
       { error: 'Default image model must reference an enabled image model.' },
       { status: 400 }

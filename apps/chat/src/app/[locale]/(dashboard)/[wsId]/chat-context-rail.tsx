@@ -6,7 +6,7 @@ import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
-import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
+import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -37,7 +37,7 @@ export function ChatContextRail({
     queryKey: ['chat-workspaces'],
     queryFn: fetchWorkspaces,
   });
-  const workspaces = workspacesQuery.data ?? [];
+  const workspaces = orderWorkspaces(workspacesQuery.data ?? []);
   const personalWorkspace = workspaces.find((workspace) => workspace.personal);
 
   function navigate(nextWorkspace: InternalApiWorkspaceSummary, scope: string) {
@@ -84,7 +84,7 @@ export function ChatContextRail({
   return (
     <nav
       className={cn(
-        'flex shrink-0 flex-col items-center gap-2 bg-muted/20 px-2 py-3',
+        'scrollbar-none flex h-full min-h-0 shrink-0 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden overscroll-contain bg-muted/20 px-2 py-3',
         collapsed ? 'w-full' : 'w-14 border-r'
       )}
     >
@@ -112,6 +112,21 @@ export function ChatContextRail({
       )}
     </nav>
   );
+}
+
+function getWorkspaceRank(workspace: InternalApiWorkspaceSummary) {
+  if (workspace.id === ROOT_WORKSPACE_ID) return 0;
+  if (workspace.personal) return 1;
+  return 2;
+}
+
+function orderWorkspaces(workspaces: InternalApiWorkspaceSummary[]) {
+  return [...workspaces].sort((left, right) => {
+    const rankDelta = getWorkspaceRank(left) - getWorkspaceRank(right);
+    if (rankDelta !== 0) return rankDelta;
+
+    return (left.name || '').localeCompare(right.name || '');
+  });
 }
 
 function RailButton({

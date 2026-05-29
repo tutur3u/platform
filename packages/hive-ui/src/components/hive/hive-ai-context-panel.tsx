@@ -6,6 +6,7 @@ import type {
   HiveCreditSource,
   HiveServerSettings,
 } from '@tuturuuu/internal-api/hive';
+import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Input } from '@tuturuuu/ui/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@tuturuuu/ui/popover';
@@ -20,6 +21,7 @@ import {
 } from '@tuturuuu/ui/select';
 import { Switch } from '@tuturuuu/ui/switch';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { useTranslations } from 'next-intl';
 import type { HiveServer } from '../../engine/types';
 import type { HiveAiContextState } from './use-hive-ai-context';
@@ -32,6 +34,29 @@ type HiveAiContextPanelProps = {
 };
 
 type GroupedModels = Record<string, HiveAiContextState['models']>;
+
+function getWorkspaceRank(
+  workspace: InternalApiWorkspaceSummary,
+  personalWorkspaceId: string | null
+) {
+  if (workspace.id === ROOT_WORKSPACE_ID) return 0;
+  if (workspace.personal || workspace.id === personalWorkspaceId) return 1;
+  return 2;
+}
+
+function orderWorkspaces(
+  workspaces: InternalApiWorkspaceSummary[],
+  personalWorkspaceId: string | null
+) {
+  return [...workspaces].sort((left, right) => {
+    const rankDelta =
+      getWorkspaceRank(left, personalWorkspaceId) -
+      getWorkspaceRank(right, personalWorkspaceId);
+    if (rankDelta !== 0) return rankDelta;
+
+    return (left.name || '').localeCompare(right.name || '');
+  });
+}
 
 function formatCredits(value: number | null | undefined) {
   if (value == null) return '0';
@@ -115,6 +140,10 @@ function AiContextSelectorGrid({
   groupedModels: GroupedModels;
 }) {
   const t = useTranslations('studio.ai');
+  const orderedWorkspaces = orderWorkspaces(
+    aiContext.workspaces,
+    aiContext.personalWorkspaceId
+  );
 
   return (
     <div className="grid gap-2 sm:grid-cols-2">
@@ -133,8 +162,8 @@ function AiContextSelectorGrid({
               <SelectValue placeholder={t('workspace')} />
             </div>
           </SelectTrigger>
-          <SelectContent>
-            {aiContext.workspaces.map((workspace) => (
+          <SelectContent className="max-h-[min(22rem,calc(100dvh-9rem))] overflow-y-auto">
+            {orderedWorkspaces.map((workspace) => (
               <SelectItem key={workspace.id} value={workspace.id}>
                 {workspace.name}
               </SelectItem>
@@ -345,7 +374,7 @@ export function HiveAiContextPanel({
       />
       <PopoverContent
         align="end"
-        className="data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 w-[min(26rem,calc(100vw-2rem))] rounded-xl border-border/80 bg-background/95 p-3 shadow-2xl backdrop-blur-xl"
+        className="data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 max-h-[min(34rem,calc(100dvh-6rem))] w-[min(26rem,calc(100vw-2rem))] overflow-y-auto rounded-xl border-border/80 bg-background/95 p-3 shadow-2xl backdrop-blur-xl"
         sideOffset={8}
       >
         <div className="space-y-3">

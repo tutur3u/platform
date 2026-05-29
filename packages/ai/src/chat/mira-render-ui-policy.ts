@@ -239,7 +239,7 @@ export function shouldForceRenderUiForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
 
@@ -262,7 +262,7 @@ export function shouldForceGoogleSearchForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
@@ -303,7 +303,7 @@ export function shouldUseParallelChecksForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
@@ -328,7 +328,7 @@ export function shouldPreferMarkdownTablesForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
@@ -353,7 +353,7 @@ export function shouldResolveWorkspaceContextForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;
@@ -372,7 +372,7 @@ export function shouldForceWorkspaceMembersForLatestUserMessage(
 ): boolean {
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
-    if (!message || message.role !== 'user') continue;
+    if (message?.role !== 'user') continue;
 
     const text = extractTextFromUserMessage(message).toLowerCase();
     if (!text) return false;

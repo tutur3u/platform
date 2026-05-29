@@ -48,7 +48,10 @@ export function HiveServerSelect({
           </span>
         </div>
       </SelectTrigger>
-      <SelectContent align="end" className="min-w-56">
+      <SelectContent
+        align="end"
+        className="max-h-[min(22rem,calc(100dvh-7rem))] min-w-56 overflow-y-auto"
+      >
         {servers.map((item) => (
           <SelectItem key={item.id} value={item.id}>
             <span className="min-w-0">
