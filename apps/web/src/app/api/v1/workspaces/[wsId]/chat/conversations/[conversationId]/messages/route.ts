@@ -10,6 +10,14 @@ import {
   listAiChatMessages,
 } from '@/lib/chat/agent-discovery';
 import {
+  isChatAiSettingsSchemaCacheError,
+  mapNativeChatAiSettingsRow,
+  NATIVE_CHAT_AI_SETTINGS_FULL_SELECT,
+  NATIVE_CHAT_AI_SETTINGS_LEGACY_SELECT,
+  type NativeChatAiSettings,
+  serializeChatAiSettingsDbError,
+} from '@/lib/chat/ai-settings';
+import {
   type ChatConversation,
   type ChatMessage,
   type ChatRouteContext,
@@ -230,16 +238,6 @@ type UiMessageForAi = {
   role: 'assistant' | 'system' | 'user';
   parts: { text: string; type: 'text' }[];
 };
-
-type NativeAiSettings = {
-  credit_source: 'personal' | 'workspace';
-  credit_ws_id: string | null;
-  model_id: string | null;
-  system_prompt: string | null;
-  thinking_mode: 'fast' | 'thinking';
-};
-
-type NativeAiSettingsRow = Partial<NativeAiSettings> | null;
 
 type AiAssistantMessageRow = {
   completion_tokens: number | null;
@@ -916,38 +914,45 @@ function shouldForwardAiStreamPart(chunk: Record<string, unknown>) {
 
 async function getNativeAiSettings(conversationId: string) {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = (await sbAdmin
+  const fullResult = (await sbAdmin
     .schema('private')
     .from('chat_conversation_ai_settings')
-    .select(
-      'model_id, system_prompt, thinking_mode, credit_source, credit_ws_id'
-    )
+    .select(NATIVE_CHAT_AI_SETTINGS_FULL_SELECT)
     .eq('conversation_id', conversationId)
     .maybeSingle()) as {
-    data: NativeAiSettingsRow;
+    data: Partial<NativeChatAiSettings> | null;
     error: { message?: string } | null;
   };
+  let data = fullResult.data;
+  let error = fullResult.error;
 
-  if (error) {
-    serverLogger.error('Failed to load native Chat AI settings', error);
+  if (error && isChatAiSettingsSchemaCacheError(error)) {
+    serverLogger.warn('Native Chat AI settings schema cache stale on read', {
+      conversationId,
+      error: serializeChatAiSettingsDbError(error),
+    });
+
+    const legacyResult = (await sbAdmin
+      .schema('private')
+      .from('chat_conversation_ai_settings')
+      .select(NATIVE_CHAT_AI_SETTINGS_LEGACY_SELECT)
+      .eq('conversation_id', conversationId)
+      .maybeSingle()) as {
+      data: Partial<NativeChatAiSettings> | null;
+      error: { message?: string } | null;
+    };
+    data = legacyResult.data;
+    error = legacyResult.error;
   }
 
-  return {
-    credit_source:
-      data && 'credit_source' in data && data.credit_source === 'personal'
-        ? 'personal'
-        : 'workspace',
-    credit_ws_id:
-      data && 'credit_ws_id' in data && typeof data.credit_ws_id === 'string'
-        ? data.credit_ws_id
-        : null,
-    model_id: data?.model_id ?? null,
-    system_prompt: data?.system_prompt ?? null,
-    thinking_mode:
-      data && 'thinking_mode' in data && data.thinking_mode === 'thinking'
-        ? 'thinking'
-        : 'fast',
-  } satisfies NativeAiSettings;
+  if (error) {
+    serverLogger.error('Failed to load native Chat AI settings', {
+      conversationId,
+      error: serializeChatAiSettingsDbError(error),
+    });
+  }
+
+  return mapNativeChatAiSettingsRow(data);
 }
 
 async function ensureNativeAiShadowChat({

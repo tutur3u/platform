@@ -1,7 +1,7 @@
 ---
 title: 'Database Schema Overview'
 description: 'Complete reference for the Tuturuuu platform database schema'
-updatedAt: '2026-05-23'
+updatedAt: '2026-05-29'
 ---
 
 The Tuturuuu platform uses Supabase (PostgreSQL) with a comprehensive multi-tenant architecture. This document provides an overview of the database schema, organized by domain.
@@ -22,6 +22,20 @@ The database implements **workspace-based multi-tenancy** where:
 2. **Audit Trails**: Many tables include `created_at` and `updated_at` timestamps
 3. **Soft Deletes**: Critical tables support soft deletion patterns
 4. **Hierarchical Structures**: Support for nested organizational structures (tasks, calendars, etc.)
+
+### Private Schema Operations
+
+Private tables and RPCs used by `apps/web` are exposed to server-side Supabase
+clients through PostgREST's configured private schema. After production
+migrations add private tables, RPC signatures, or columns that the app reads
+through `.schema('private')`, reload the PostgREST schema cache:
+
+```sql
+notify pgrst, 'reload schema';
+```
+
+Local Supabase restarts usually refresh this cache automatically, so stale-cache
+failures can appear only in production after otherwise successful migrations.
 
 ## Schema Domains
 

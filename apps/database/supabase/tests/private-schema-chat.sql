@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(48);
+select plan(51);
 
 select ok(
   to_regclass('private.chat_conversations') is not null,
@@ -34,6 +34,27 @@ select ok(
 select ok(
   to_regclass('private.chat_conversation_ai_settings') is not null,
   'chat AI settings live in the private schema'
+);
+
+select has_column(
+  'private',
+  'chat_conversation_ai_settings',
+  'thinking_mode',
+  'chat AI settings include thinking mode'
+);
+
+select has_column(
+  'private',
+  'chat_conversation_ai_settings',
+  'credit_source',
+  'chat AI settings include credit source'
+);
+
+select has_column(
+  'private',
+  'chat_conversation_ai_settings',
+  'credit_ws_id',
+  'chat AI settings include credit workspace id'
 );
 
 select ok(

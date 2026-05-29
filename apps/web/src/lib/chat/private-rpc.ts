@@ -192,10 +192,22 @@ export function getChatRpcErrorStatus(error: unknown) {
 
 export function chatRpcErrorResponse(error: unknown, fallback: string) {
   const status = getChatRpcErrorStatus(error);
-  const rpcError = error as { code?: string; message?: string };
+  const rpcError = error as {
+    code?: string;
+    details?: string;
+    hint?: string;
+    message?: string;
+  };
 
   if (status >= 500) {
-    serverLogger.error(fallback, error);
+    serverLogger.error(fallback, {
+      error: {
+        code: rpcError.code,
+        details: rpcError.details,
+        hint: rpcError.hint,
+        message: rpcError.message,
+      },
+    });
   }
 
   return NextResponse.json(

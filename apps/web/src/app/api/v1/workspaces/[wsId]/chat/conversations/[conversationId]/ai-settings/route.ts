@@ -7,6 +7,19 @@ import {
   isAiChatConversationId,
 } from '@/lib/chat/agent-discovery';
 import {
+  buildFullChatAiSettingsUpdatePayload,
+  buildLegacyChatAiSettingsUpdatePayload,
+  CHAT_AI_SETTINGS_FULL_SELECT,
+  CHAT_AI_SETTINGS_LEGACY_SELECT,
+  type ChatAiSettingsRow,
+  ChatAiSettingsSchemaCacheStaleError,
+  hasNewChatAiSettingsPatchFields,
+  isChatAiSettingsSchemaCacheError,
+  mapChatAiSettingsRow,
+  normalizeAiModelId,
+  serializeChatAiSettingsDbError,
+} from '@/lib/chat/ai-settings';
+import {
   type ChatConversation,
   callPrivateChatRpc,
   chatRpcErrorResponse,
@@ -17,18 +30,6 @@ import { serverLogger } from '@/lib/infrastructure/log-drain';
 type RouteParams = {
   conversationId: string;
   wsId: string;
-};
-
-type AiSettingsRow = {
-  auto_reply?: boolean | null;
-  conversation_id?: string | null;
-  credit_source?: 'personal' | 'workspace' | null;
-  credit_ws_id?: string | null;
-  enabled?: boolean | null;
-  model_id?: string | null;
-  system_prompt?: string | null;
-  thinking_mode?: 'fast' | 'thinking' | null;
-  updated_at?: string | null;
 };
 
 const updateSettingsSchema = z.object({
@@ -174,6 +175,17 @@ export const PATCH = withSessionAuth<RouteParams>(
 
       return NextResponse.json({ settings });
     } catch (error) {
+      if (error instanceof ChatAiSettingsSchemaCacheStaleError) {
+        return NextResponse.json(
+          {
+            code: error.code,
+            message:
+              'Chat AI settings schema is still reloading. Try again shortly.',
+          },
+          { headers: { 'Retry-After': '10' }, status: 503 }
+        );
+      }
+
       return chatRpcErrorResponse(error, 'Failed to update AI chat settings');
     }
   },
@@ -207,26 +219,42 @@ async function getNativeAiSettings({
   personalWorkspaceId: string | null;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = await sbAdmin
+  const fullResult = await sbAdmin
     .schema('private')
     .from('chat_conversation_ai_settings')
-    .select(
-      'conversation_id, model_id, system_prompt, auto_reply, enabled, thinking_mode, credit_source, credit_ws_id, updated_at'
-    )
+    .select(CHAT_AI_SETTINGS_FULL_SELECT)
     .eq('conversation_id', conversationId)
     .maybeSingle();
+  let data = fullResult.data as unknown as ChatAiSettingsRow | null;
+  let error = fullResult.error;
+
+  if (error && isChatAiSettingsSchemaCacheError(error)) {
+    serverLogger.warn('Chat AI settings schema cache stale on read', {
+      conversationId,
+      error: serializeChatAiSettingsDbError(error),
+    });
+
+    const legacyResult = await sbAdmin
+      .schema('private')
+      .from('chat_conversation_ai_settings')
+      .select(CHAT_AI_SETTINGS_LEGACY_SELECT)
+      .eq('conversation_id', conversationId)
+      .maybeSingle();
+    data = legacyResult.data as unknown as ChatAiSettingsRow | null;
+    error = legacyResult.error;
+  }
 
   if (error) {
     serverLogger.error('Failed to load native AI chat settings', {
       conversationId,
-      error,
+      error: serializeChatAiSettingsDbError(error),
     });
   }
 
-  return mapSettingsRow({
+  return mapChatAiSettingsRow({
     conversationId,
     personalWorkspaceId,
-    row: data as unknown as AiSettingsRow | null,
+    row: data,
   });
 }
 
@@ -240,38 +268,53 @@ async function updateNativeAiSettings({
   personalWorkspaceId: string | null;
 }) {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const updatePayload = {
-    ...(payload.creditSource !== undefined
-      ? { credit_source: payload.creditSource }
-      : {}),
-    ...(payload.creditWsId !== undefined
-      ? { credit_ws_id: payload.creditWsId }
-      : {}),
-    ...(payload.modelId !== undefined ? { model_id: payload.modelId } : {}),
-    ...(payload.systemPrompt !== undefined
-      ? { system_prompt: payload.systemPrompt }
-      : {}),
-    ...(payload.thinkingMode !== undefined
-      ? { thinking_mode: payload.thinkingMode }
-      : {}),
-  };
+  const updatePayload = buildFullChatAiSettingsUpdatePayload(payload);
 
-  const { data, error } = await sbAdmin
+  const fullResult = await sbAdmin
     .schema('private')
     .from('chat_conversation_ai_settings')
     .update(updatePayload as never)
     .eq('conversation_id', conversationId)
-    .select(
-      'conversation_id, model_id, system_prompt, auto_reply, enabled, thinking_mode, credit_source, credit_ws_id, updated_at'
-    )
+    .select(CHAT_AI_SETTINGS_FULL_SELECT)
     .maybeSingle();
+
+  let data = fullResult.data as unknown as ChatAiSettingsRow | null;
+  let error = fullResult.error;
+
+  if (error && isChatAiSettingsSchemaCacheError(error)) {
+    serverLogger.warn('Chat AI settings schema cache stale on update', {
+      conversationId,
+      error: serializeChatAiSettingsDbError(error),
+      payloadFields: Object.keys(updatePayload),
+    });
+
+    if (hasNewChatAiSettingsPatchFields(payload)) {
+      throw new ChatAiSettingsSchemaCacheStaleError();
+    }
+
+    const legacyPayload = buildLegacyChatAiSettingsUpdatePayload(payload);
+
+    if (Object.keys(legacyPayload).length === 0) {
+      return getNativeAiSettings({ conversationId, personalWorkspaceId });
+    }
+
+    const legacyResult = await sbAdmin
+      .schema('private')
+      .from('chat_conversation_ai_settings')
+      .update(legacyPayload as never)
+      .eq('conversation_id', conversationId)
+      .select(CHAT_AI_SETTINGS_LEGACY_SELECT)
+      .maybeSingle();
+    data = legacyResult.data as unknown as ChatAiSettingsRow | null;
+    error = legacyResult.error;
+  }
 
   if (error) throw error;
 
-  return mapSettingsRow({
+  return mapChatAiSettingsRow({
     conversationId,
     personalWorkspaceId,
-    row: data as unknown as AiSettingsRow | null,
+    row: data,
   });
 }
 
@@ -337,33 +380,4 @@ async function updateAiChatSettings({
   }
 
   return getAiChatSettings({ conversationId, personalWorkspaceId, userId });
-}
-
-function mapSettingsRow({
-  conversationId,
-  personalWorkspaceId,
-  row,
-}: {
-  conversationId: string;
-  personalWorkspaceId: string | null;
-  row: AiSettingsRow | null;
-}) {
-  return {
-    autoReply: row?.auto_reply ?? true,
-    conversationId,
-    creditSource: row?.credit_source ?? 'workspace',
-    creditWsId: row?.credit_ws_id ?? null,
-    enabled: row?.enabled ?? true,
-    modelId: normalizeAiModelId(row?.model_id ?? null),
-    personalWorkspaceId,
-    systemPrompt: row?.system_prompt ?? null,
-    thinkingMode: row?.thinking_mode ?? 'fast',
-    updatedAt: row?.updated_at ?? null,
-  };
-}
-
-function normalizeAiModelId(modelId?: string | null) {
-  if (!modelId?.trim()) return 'google/gemini-3-flash';
-  const trimmed = modelId.trim();
-  return trimmed.includes('/') ? trimmed : `google/${trimmed}`;
 }
