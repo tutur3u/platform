@@ -1,5 +1,9 @@
 export const chatQueryKeys = {
   all: (wsId: string) => ['chat', wsId] as const,
+  aiObservability: (wsId: string, conversationId: string) =>
+    [...chatQueryKeys.all(wsId), 'ai-observability', conversationId] as const,
+  aiSettings: (wsId: string, conversationId: string) =>
+    [...chatQueryKeys.all(wsId), 'ai-settings', conversationId] as const,
   attachmentUrl: (wsId: string, conversationId: string, attachmentId: string) =>
     [
       ...chatQueryKeys.all(wsId),

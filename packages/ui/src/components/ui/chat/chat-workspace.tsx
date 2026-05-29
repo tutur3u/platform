@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { toast } from '../sonner';
+import { ChatAiDetailsSidebar } from './chat-ai-details-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
 import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
@@ -106,7 +107,7 @@ export function ChatWorkspace({
   const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
   const selectedAiConversation = selectedConversation?.type === 'ai';
   const selectedVirtualReadOnly =
-    selectedConversation?.metadata.source === 'ai-agent';
+    selectedConversation?.metadata.source === 'ai-agent' && selectedReadOnly;
   const selectedMembership =
     selectedConversation?.members.some(
       (member) => member.userId === currentUserId
@@ -156,6 +157,9 @@ export function ChatWorkspace({
       )
   );
   const latestMessageId = messages.at(-1)?.id ?? null;
+  const detailsOpen = Boolean(
+    sharedContentOpen && activeConversationId && !selectedVirtualReadOnly
+  );
 
   useEffect(() => {
     if (selectedReadOnly) return;
@@ -366,12 +370,21 @@ export function ChatWorkspace({
         )}
       </div>
 
-      <ChatSharedContentSidebar
-        conversationId={activeConversationId}
-        onOpenAttachment={handleOpenAttachment}
-        open={Boolean(sharedContentOpen && activeConversationId)}
-        wsId={wsId}
-      />
+      {selectedAiConversation && !selectedVirtualReadOnly ? (
+        <ChatAiDetailsSidebar
+          conversationId={activeConversationId}
+          onOpenAttachment={handleOpenAttachment}
+          open={detailsOpen}
+          wsId={wsId}
+        />
+      ) : (
+        <ChatSharedContentSidebar
+          conversationId={activeConversationId}
+          onOpenAttachment={handleOpenAttachment}
+          open={detailsOpen}
+          wsId={wsId}
+        />
+      )}
 
       <CreateConversationDialog
         allowedTypes={

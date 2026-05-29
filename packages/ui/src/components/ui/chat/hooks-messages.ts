@@ -82,9 +82,24 @@ export function useSendChatMessage({
             })
         );
       };
+      const appendAssistantPart = (part: Record<string, unknown>) => {
+        queryClient.setQueriesData<ChatMessage[]>(
+          {
+            queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
+          },
+          (current = []) =>
+            appendStreamingAssistantMessage({
+              conversationId,
+              current,
+              messageId: assistantStreamId,
+              part,
+            })
+        );
+      };
 
       return sendWorkspaceChatMessageStream(wsId, conversationId, payload, {
         onAssistantDelta: appendAssistantDelta,
+        onAssistantPart: appendAssistantPart,
         onMessages: (messages) => {
           queryClient.setQueriesData<ChatMessage[]>(
             {
@@ -339,11 +354,13 @@ function appendStreamingAssistantMessage({
   conversationId,
   current,
   messageId,
+  part,
 }: {
-  contentDelta: string;
+  contentDelta?: string;
   conversationId: string;
   current: ChatMessage[];
   messageId: string;
+  part?: Record<string, unknown>;
 }) {
   const existingIndex = current.findIndex(
     (message) => message.id === messageId
@@ -351,21 +368,31 @@ function appendStreamingAssistantMessage({
   if (existingIndex >= 0) {
     return current.map((message, index) =>
       index === existingIndex
-        ? { ...message, content: `${message.content}${contentDelta}` }
+        ? {
+            ...message,
+            content: `${message.content}${contentDelta ?? ''}`,
+            metadata: part
+              ? appendStreamingAssistantPart(message.metadata, part)
+              : message.metadata,
+          }
         : message
     );
   }
 
   const streamingMessage: ChatMessage = {
     attachments: [],
-    content: contentDelta,
+    content: contentDelta ?? '',
     conversationId,
     createdAt: new Date().toISOString(),
     deletedAt: null,
     editedAt: null,
     id: messageId,
     kind: 'assistant',
-    metadata: { optimistic: true, streaming: true },
+    metadata: {
+      optimistic: true,
+      streaming: true,
+      ...(part ? { ai: { parts: [part] } } : {}),
+    },
     reactions: [],
     replyToMessageId: null,
     sender: null,
@@ -374,4 +401,144 @@ function appendStreamingAssistantMessage({
   };
 
   return [...current, streamingMessage];
+}
+
+function appendStreamingAssistantPart(
+  metadata: Record<string, unknown>,
+  part: Record<string, unknown>
+) {
+  const ai = readRecord(metadata.ai);
+  const parts = Array.isArray(ai?.parts)
+    ? (ai.parts as Record<string, unknown>[])
+    : [];
+  const nextParts = mergeStreamingPart(parts, part);
+
+  return {
+    ...metadata,
+    ai: {
+      ...(ai ?? {}),
+      parts: nextParts,
+    },
+  };
+}
+
+function mergeStreamingPart(
+  parts: Record<string, unknown>[],
+  part: Record<string, unknown>
+) {
+  const normalizedPart = normalizeStreamingPart(part);
+
+  if (part.type === 'reasoning' && typeof part.text === 'string') {
+    const last = parts.at(-1);
+    if (last?.type === 'reasoning' && typeof last.text === 'string') {
+      return [
+        ...parts.slice(0, -1),
+        { ...last, text: `${last.text}${part.text}` },
+      ];
+    }
+  }
+
+  const toolCallId = readString(normalizedPart.toolCallId);
+  if (!toolCallId) return [...parts, normalizedPart];
+
+  const existingIndex = parts.findIndex(
+    (item) => readString(item.toolCallId) === toolCallId
+  );
+  if (existingIndex < 0) return [...parts, normalizedPart];
+
+  const existing = parts[existingIndex]!;
+  const merged = mergeToolPart(existing, normalizedPart);
+  return [
+    ...parts.slice(0, existingIndex),
+    merged,
+    ...parts.slice(existingIndex + 1),
+  ];
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function normalizeStreamingPart(part: Record<string, unknown>) {
+  const type = readString(part.type);
+
+  if (type === 'tool-input-start') {
+    return {
+      ...part,
+      type: 'dynamic-tool',
+      state: 'input-streaming',
+    };
+  }
+
+  if (type === 'tool-input-delta') {
+    return {
+      ...part,
+      inputTextDelta: part.inputTextDelta,
+      type: 'dynamic-tool',
+      state: 'input-streaming',
+    };
+  }
+
+  if (type === 'tool-input-available') {
+    return {
+      ...part,
+      type: 'dynamic-tool',
+      state: 'input-available',
+    };
+  }
+
+  if (type === 'tool-input-error') {
+    return {
+      ...part,
+      type: 'dynamic-tool',
+      state: 'output-error',
+    };
+  }
+
+  if (type === 'tool-output-available') {
+    return {
+      ...part,
+      type: 'dynamic-tool',
+      state: part.preliminary ? 'output-streaming' : 'output-available',
+    };
+  }
+
+  if (type === 'tool-output-error' || type === 'tool-output-denied') {
+    return {
+      ...part,
+      type: 'dynamic-tool',
+      state: 'output-error',
+    };
+  }
+
+  return part;
+}
+
+function mergeToolPart(
+  existing: Record<string, unknown>,
+  incoming: Record<string, unknown>
+) {
+  const existingInput = existing.input;
+  const incomingInput = incoming.input;
+  const inputTextDelta = readString(incoming.inputTextDelta);
+  const mergedInput =
+    incomingInput ??
+    (inputTextDelta
+      ? `${typeof existingInput === 'string' ? existingInput : ''}${inputTextDelta}`
+      : existingInput);
+
+  return {
+    ...existing,
+    ...incoming,
+    input: mergedInput,
+    toolName: incoming.toolName ?? existing.toolName,
+    output: incoming.output ?? existing.output,
+    errorText: incoming.errorText ?? existing.errorText,
+  };
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }

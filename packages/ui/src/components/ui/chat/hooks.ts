@@ -1,3 +1,4 @@
+export * from './hooks-ai';
 export * from './hooks-attachments';
 export * from './hooks-conversations';
 export * from './hooks-directory';

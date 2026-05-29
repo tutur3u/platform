@@ -7,9 +7,10 @@ import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
 import { Popover, PopoverContent, PopoverTrigger } from '../popover';
+import { AiMessageParts } from './ai-message-parts';
+import { getAiMessagePartsFromMetadata } from './ai-message-render-utils';
 import { MessageAttachmentButton } from './message-attachment-button';
 import { MessageLinkPreviews, MessageText } from './message-links';
-import { MessageMarkdown } from './message-markdown';
 import { formatChatTime, getChatInitials } from './utils';
 
 const REACTION_OPTIONS = [
@@ -121,6 +122,7 @@ function MessageContent({
   wsId: string;
 }) {
   const t = useTranslations('chat');
+  const aiParts = getAiMessagePartsFromMetadata(message.metadata);
 
   return (
     <div
@@ -137,12 +139,13 @@ function MessageContent({
         </span>
       ) : (
         <>
-          {message.content && (
+          {(message.content || aiParts?.length) && (
             <>
               {message.kind === 'assistant' ? (
-                <MessageMarkdown
-                  isAnimating={message.metadata?.streaming === true}
-                  text={message.content}
+                <AiMessageParts
+                  isStreaming={message.metadata?.streaming === true}
+                  parts={aiParts}
+                  textFallback={message.content}
                 />
               ) : (
                 <MessageText content={message.content} />
