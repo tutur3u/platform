@@ -30,7 +30,7 @@
     "script": "dev:app"
   },
   "dependencies": {
-    "@formatjs/intl-localematcher": "^0.8.8",
+    "@formatjs/intl-localematcher": "^0.8.9",
     "@json-render/core": "^0.19.0",
     "@json-render/react": "^0.19.0",
     "@streamdown/cjk": "^1.0.3",

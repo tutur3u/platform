@@ -15,7 +15,7 @@
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@formatjs/intl-localematcher": "^0.8.8",
+    "@formatjs/intl-localematcher": "^0.8.9",
     "@gsap/react": "^2.1.2",
     "@tanstack/react-query": "^5.100.11",
     "@tuturuuu/auth": "workspace:*",

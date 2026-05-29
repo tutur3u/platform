@@ -1,13 +1,13 @@
 {
   "name": "tutur3u",
   "devDependencies": {
-    "@biomejs/biome": "^2.4.15",
+    "@biomejs/biome": "^2.4.16",
     "@lingual/i18n-check": "0.9.5",
     "@tuturuuu/typescript-config": "workspace:*",
-    "@typescript/native-preview": "^7.0.0-dev.20260522.1",
+    "@typescript/native-preview": "^7.0.0-dev.20260527.2",
     "@vitest/coverage-v8": "^4.1.7",
-    "lucide-static": "^1.16.0",
-    "portless": "^0.13.0",
+    "lucide-static": "^1.17.0",
+    "portless": "^0.13.1",
     "turbo": "^2.9.14",
     "typescript": "^6.0.3",
     "vite": "^8.0.14",
