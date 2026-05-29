@@ -1781,8 +1781,12 @@ export default function LoginForm() {
                   <LoginMethodSeparator label={t('login.or')} />
 
                   <PasskeyLoginButton
+                    captchaToken={captchaToken}
+                    canRenderTurnstile={turnstileClientState.canRenderWidget}
                     disabled={loading}
                     onAuthenticated={() => completePrimarySignIn('passkey')}
+                    onCaptchaReset={resetCaptcha}
+                    requiresTurnstile={turnstileClientState.isRequired}
                   />
 
                   <LoginMethodSeparator label={t('login.or')} />

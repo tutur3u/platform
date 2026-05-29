@@ -53,7 +53,81 @@ describe('PasskeyLoginButton', () => {
 
     await waitFor(() => {
       expect(mockSignInWithPasskey).toHaveBeenCalledTimes(1);
+      expect(mockSignInWithPasskey).toHaveBeenCalledWith();
       expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('passes a captcha token to passkey sign-in when Turnstile is required', async () => {
+    const onAuthenticated = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <PasskeyLoginButton
+        captchaToken="captcha-token"
+        canRenderTurnstile
+        onAuthenticated={onAuthenticated}
+        requiresTurnstile
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    await waitFor(() => {
+      expect(mockSignInWithPasskey).toHaveBeenCalledWith({
+        options: {
+          captchaToken: 'captcha-token',
+        },
+      });
+      expect(onAuthenticated).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('disables passkey sign-in when required Turnstile verification is missing', () => {
+    const onAuthenticated = vi.fn();
+
+    render(
+      <PasskeyLoginButton
+        canRenderTurnstile
+        onAuthenticated={onAuthenticated}
+        requiresTurnstile
+      />
+    );
+
+    expect(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    ).toBeDisabled();
+  });
+
+  it('resets Turnstile after a passkey sign-in error', async () => {
+    const onAuthenticated = vi.fn();
+    const onCaptchaReset = vi.fn();
+    mockSignInWithPasskey.mockResolvedValue({
+      data: null,
+      error: { message: 'captcha protection: request disallowed' },
+    });
+
+    render(
+      <PasskeyLoginButton
+        captchaToken="captcha-token"
+        canRenderTurnstile
+        onAuthenticated={onAuthenticated}
+        onCaptchaReset={onCaptchaReset}
+        requiresTurnstile
+      />
+    );
+
+    fireEvent.click(
+      screen.getByRole('button', { name: /continue with passkey/i })
+    );
+
+    await waitFor(() => {
+      expect(mockToastError).toHaveBeenCalledWith('Passkey sign-in failed', {
+        description: 'captcha protection: request disallowed',
+      });
+      expect(onCaptchaReset).toHaveBeenCalledTimes(1);
+      expect(onAuthenticated).not.toHaveBeenCalled();
     });
   });
 
