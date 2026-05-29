@@ -4,7 +4,13 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { consumeStream, smoothStream, stepCountIs, streamText } from 'ai';
+import {
+  consumeStream,
+  type ModelMessage,
+  smoothStream,
+  stepCountIs,
+  streamText,
+} from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import {
   PlanModelResolutionError,
@@ -37,9 +43,51 @@ import {
   prepareProcessedMessages,
 } from './route-message-preparation';
 import { prepareMiraRuntime } from './route-mira-runtime';
-import { persistAssistantResponse } from './stream-finish-persistence';
+import {
+  buildAbortedStreamFinishResponse,
+  persistAssistantResponse,
+} from './stream-finish-persistence';
 
 type ThinkingMode = 'fast' | 'thinking';
+
+function splitSystemMessages(messages: ModelMessage[]) {
+  const systemMessages: string[] = [];
+  const nonSystemMessages: ModelMessage[] = [];
+
+  for (const message of messages) {
+    if (message.role === 'system') {
+      const systemMessage = getTextContent(message.content);
+      if (systemMessage) systemMessages.push(systemMessage);
+      continue;
+    }
+
+    nonSystemMessages.push(message);
+  }
+
+  return {
+    messages: nonSystemMessages,
+    system: systemMessages.join('\n\n').trim(),
+  };
+}
+
+function getTextContent(content: ModelMessage['content']) {
+  if (typeof content === 'string') return content.trim();
+  if (!Array.isArray(content)) return '';
+
+  return content
+    .map((part) => (part.type === 'text' ? part.text.trim() : ''))
+    .filter(Boolean)
+    .join('\n')
+    .trim();
+}
+
+function mergeSystemInstructions(...instructions: Array<string | null>) {
+  return instructions
+    .map((instruction) => instruction?.trim())
+    .filter(Boolean)
+    .join('\n\n');
+}
+
 export function createPOST(
   _options: {
     serverAPIKeyFallback?: boolean;
@@ -340,6 +388,7 @@ export function createPOST(
         return preparedMessages.error;
       }
       const { processedMessages } = preparedMessages;
+      const promptMessages = splitSystemMessages(processedMessages);
 
       const persistUserMessageError = await persistLatestUserMessage({
         processedMessages,
@@ -408,18 +457,25 @@ export function createPOST(
               },
             }
         : {};
-      const forceRenderUi =
-        shouldForceRenderUiForLatestUserMessage(processedMessages);
-      const forceGoogleSearch =
-        shouldForceGoogleSearchForLatestUserMessage(processedMessages);
+      const forceRenderUi = shouldForceRenderUiForLatestUserMessage(
+        promptMessages.messages
+      );
+      const forceGoogleSearch = shouldForceGoogleSearchForLatestUserMessage(
+        promptMessages.messages
+      );
       const preferMarkdownTables =
-        shouldPreferMarkdownTablesForLatestUserMessage(processedMessages);
+        shouldPreferMarkdownTablesForLatestUserMessage(promptMessages.messages);
       const needsWorkspaceContextResolution =
-        shouldResolveWorkspaceContextForLatestUserMessage(processedMessages);
+        shouldResolveWorkspaceContextForLatestUserMessage(
+          promptMessages.messages
+        );
       const needsWorkspaceMembersTool =
-        shouldForceWorkspaceMembersForLatestUserMessage(processedMessages);
-      const needsParallelChecks =
-        shouldUseParallelChecksForLatestUserMessage(processedMessages);
+        shouldForceWorkspaceMembersForLatestUserMessage(
+          promptMessages.messages
+        );
+      const needsParallelChecks = shouldUseParallelChecksForLatestUserMessage(
+        promptMessages.messages
+      );
 
       // Provider-native Google Search tool for non-Mira mode.
       const googleSearchTool = {
@@ -444,13 +500,34 @@ export function createPOST(
         });
       };
 
+      let assistantResponsePersisted = false;
+      const persistChatAssistantResponse = async (
+        response: Parameters<typeof persistAssistantResponse>[0]['response']
+      ) => {
+        if (assistantResponsePersisted) return;
+        assistantResponsePersisted = true;
+        await persistAssistantResponse({
+          response,
+          sbAdmin,
+          chatId,
+          userId: user.id,
+          model: resolvedModelId,
+          effectiveSource,
+          wsId: billingWsId ?? normalizedWsId ?? undefined,
+          observabilityContext,
+        });
+      };
+
       const result = streamText({
         abortSignal: req.signal,
         experimental_transform: smoothStream({ delayInMs: null }),
+        maxRetries: 0,
         model: resolvedGatewayModel,
-        messages: processedMessages,
-        system:
+        messages: promptMessages.messages,
+        system: mergeSystemInstructions(
           isMiraMode && miraSystemPrompt ? miraSystemPrompt : systemInstruction,
+          promptMessages.system
+        ),
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),
         ...(miraTools
           ? {
@@ -510,17 +587,14 @@ export function createPOST(
             ],
           },
         },
-        onFinish: async (response) =>
-          persistAssistantResponse({
-            response,
-            sbAdmin,
-            chatId,
-            userId: user.id,
-            model: resolvedModelId,
-            effectiveSource,
-            wsId: billingWsId ?? normalizedWsId ?? undefined,
-            observabilityContext,
-          }),
+        onAbort: async ({ steps }) =>
+          persistChatAssistantResponse(buildAbortedStreamFinishResponse(steps)),
+        onFinish: persistChatAssistantResponse,
+        timeout: {
+          chunkMs: 20_000,
+          stepMs: 45_000,
+          totalMs: 120_000,
+        },
       });
 
       // Per https://ai-sdk.dev/docs/advanced/stopping-streams: consumeSseStream ensures

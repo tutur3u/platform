@@ -4,6 +4,7 @@ import type { AIChat } from '@tuturuuu/types';
 
 export default function TypesPage() {
   const aiChatInstance: AIChat = {
+    archived_at: null,
     id: '1',
     title: 'Gemini 2.0 Flash 001',
     model: 'gemini-2.0-flash-001',

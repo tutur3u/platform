@@ -2,6 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  deleteAiChatMessage,
+  isAiChatConversationId,
+} from '@/lib/chat/agent-discovery';
+import {
   type ChatMessage,
   callPrivateChatRpc,
   chatRpcErrorResponse,
@@ -75,6 +79,24 @@ export const DELETE = withSessionAuth<RouteParams>(
     if (!context.ok) return context.response;
 
     try {
+      if (isAiChatConversationId(params.conversationId)) {
+        const message = await deleteAiChatMessage({
+          conversationId: params.conversationId,
+          messageId: params.messageId,
+          supabase: auth.supabase,
+          user: auth.user,
+        });
+
+        if (!message) {
+          return NextResponse.json(
+            { message: 'Message not found' },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ message });
+      }
+
       const message = await callPrivateChatRpc<ChatMessage>(
         'chat_delete_message',
         {

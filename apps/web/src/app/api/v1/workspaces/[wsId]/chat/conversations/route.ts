@@ -57,13 +57,12 @@ export const GET = withSessionAuth<RouteParams>(
                 wsId: context.context.normalizedWsId,
               })
             : [],
-          archived === 'active'
-            ? listAiChatConversations({
-                supabase: auth.supabase,
-                user: auth.user,
-                wsId: context.context.normalizedWsId,
-              })
-            : [],
+          listAiChatConversations({
+            archived,
+            supabase: auth.supabase,
+            user: auth.user,
+            wsId: context.context.normalizedWsId,
+          }),
         ]);
 
       return NextResponse.json({

@@ -66,6 +66,7 @@ export const GET = withSessionAuth<RouteParams>(
           conversationId: params.conversationId,
           supabase: auth.supabase,
           user: auth.user,
+          wsId: context.context.normalizedWsId,
         });
 
         if (!messages) {
@@ -126,6 +127,7 @@ export const POST = withSessionAuth<RouteParams>(
 
     if (isAiChatConversationId(params.conversationId)) {
       return sendAiChatMessage({
+        attachments: parsed.data.attachments ?? [],
         auth,
         content: parsed.data.content,
         context: context.context,
@@ -288,6 +290,7 @@ function streamNativeAiConversationResponse({
 }
 
 async function sendAiChatMessage({
+  attachments,
   auth,
   content,
   context,
@@ -295,6 +298,7 @@ async function sendAiChatMessage({
   request,
   stream,
 }: {
+  attachments: z.infer<typeof attachmentSchema>[];
   auth: SessionAuthContext;
   content: string;
   context: ChatRouteContext;
@@ -304,12 +308,14 @@ async function sendAiChatMessage({
 }) {
   const chatId = getAiChatId(conversationId);
   const trimmedContent = content.trim();
+  const messageContent =
+    trimmedContent || getAiChatAttachmentPlaceholderContent(attachments);
 
   if (!chatId) {
     return NextResponse.json({ message: 'Chat not found' }, { status: 404 });
   }
 
-  if (!trimmedContent) {
+  if (!messageContent) {
     return NextResponse.json(
       { message: 'Message content is required' },
       { status: 400 }
@@ -318,7 +324,7 @@ async function sendAiChatMessage({
 
   const { data: chat, error } = await auth.supabase
     .from('ai_chats')
-    .select('id,model')
+    .select('id,model,title')
     .eq('id', chatId)
     .eq('creator_id', auth.user.id)
     .maybeSingle();
@@ -340,15 +346,25 @@ async function sendAiChatMessage({
       conversationId,
       supabase: auth.supabase,
       user: auth.user,
+      wsId: context.normalizedWsId,
     })) ?? [];
   const previousMessageIds = new Set(
     previousMessages.map((message) => message.id)
   );
 
+  await maybeAutoRenameAiChat({
+    chatId: chat.id,
+    currentTitle:
+      'title' in chat && typeof chat.title === 'string' ? chat.title : null,
+    firstMessageContent: messageContent,
+    previousMessages,
+    supabase: auth.supabase,
+  });
+
   const aiMessages = toAiChatUiMessages(previousMessages);
   aiMessages.push({
     id: randomUUID(),
-    parts: [{ text: trimmedContent, type: 'text' }],
+    parts: [{ text: messageContent, type: 'text' }],
     role: 'user',
   });
 
@@ -380,6 +396,7 @@ async function sendAiChatMessage({
       auth,
       conversationId,
       previousMessageIds,
+      wsId: context.normalizedWsId,
     });
   }
 
@@ -390,6 +407,7 @@ async function sendAiChatMessage({
       conversationId,
       supabase: auth.supabase,
       user: auth.user,
+      wsId: context.normalizedWsId,
     })) ?? [];
   const newMessages = latestMessages.filter(
     (item) => !previousMessageIds.has(item.id)
@@ -415,11 +433,13 @@ function streamAiChatMessageResponse({
   auth,
   conversationId,
   previousMessageIds,
+  wsId,
 }: {
   aiResponse: Response;
   auth: SessionAuthContext;
   conversationId: string;
   previousMessageIds: Set<string>;
+  wsId: string;
 }) {
   const encoder = new TextEncoder();
 
@@ -441,6 +461,7 @@ function streamAiChatMessageResponse({
             conversationId,
             supabase: auth.supabase,
             user: auth.user,
+            wsId,
           })) ?? [];
         const newMessages = latestMessages.filter(
           (item) => !previousMessageIds.has(item.id)
@@ -521,6 +542,15 @@ async function sendNativeAiConversationMessages({
       supabase: auth.supabase,
     }),
   ]);
+
+  await maybeAutoRenameNativeAiConversation({
+    auth,
+    context,
+    conversation,
+    firstMessageContent: userMessage.content,
+    messages: privateMessages ?? [],
+  });
+
   const aiMessages = toNativeAiUiMessages(
     privateMessages ?? [],
     settings.system_prompt
@@ -639,6 +669,114 @@ async function copyChatAttachmentsToAiResources({
       }
     })
   );
+}
+
+async function maybeAutoRenameAiChat({
+  chatId,
+  currentTitle,
+  firstMessageContent,
+  previousMessages,
+  supabase,
+}: {
+  chatId: string;
+  currentTitle: string | null;
+  firstMessageContent: string;
+  previousMessages: ChatMessage[];
+  supabase: SessionAuthContext['supabase'];
+}) {
+  if (previousMessages.some((message) => message.kind === 'user')) return;
+  if (!shouldAutoRenameAiTitle(currentTitle)) return;
+
+  const title = deriveAiChatTitle(firstMessageContent);
+  if (!title) return;
+
+  const { error } = await supabase
+    .from('ai_chats')
+    .update({ title })
+    .eq('id', chatId);
+
+  if (error) {
+    serverLogger.error('Failed to auto-rename AI chat', { chatId, error });
+  }
+}
+
+async function maybeAutoRenameNativeAiConversation({
+  auth,
+  context,
+  conversation,
+  firstMessageContent,
+  messages,
+}: {
+  auth: SessionAuthContext;
+  context: ChatRouteContext;
+  conversation: ChatConversation;
+  firstMessageContent: string;
+  messages: ChatMessage[];
+}) {
+  if (conversation.type !== 'ai') return;
+  if (messages.filter((message) => message.kind === 'user').length !== 1) {
+    return;
+  }
+  if (!shouldAutoRenameAiTitle(conversation.title)) return;
+
+  const title = deriveAiChatTitle(firstMessageContent);
+  if (!title) return;
+
+  try {
+    await callPrivateChatRpc<ChatConversation>('chat_update_conversation', {
+      p_actor_user_id: auth.user.id,
+      p_conversation_id: conversation.id,
+      p_input: { title },
+      p_ws_id: context.normalizedWsId,
+    });
+  } catch (error) {
+    serverLogger.error('Failed to auto-rename native Chat AI conversation', {
+      conversationId: conversation.id,
+      error,
+    });
+  }
+}
+
+function shouldAutoRenameAiTitle(title?: string | null) {
+  const normalized = title?.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === 'mira' ||
+    normalized === 'new chat' ||
+    normalized === 'new ai chat' ||
+    normalized === 'untitled chat' ||
+    normalized === 'ai agent'
+  );
+}
+
+function deriveAiChatTitle(content: string) {
+  const cleaned = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && !/^\[(?:image attached|file:.+)\]$/iu.test(line))
+    .join(' ')
+    .replace(/\s+/gu, ' ')
+    .trim();
+
+  if (!cleaned) return null;
+  if (cleaned.length <= 64) return cleaned;
+
+  const truncated = cleaned.slice(0, 64);
+  const lastSpace = truncated.lastIndexOf(' ');
+  return `${(lastSpace > 24 ? truncated.slice(0, lastSpace) : truncated).trim()}...`;
+}
+
+function getAiChatAttachmentPlaceholderContent(
+  attachments: z.infer<typeof attachmentSchema>[]
+) {
+  return attachments
+    .map((attachment) =>
+      attachment.contentType?.startsWith('image/')
+        ? '[Image attached]'
+        : `[File: ${attachment.filename}]`
+    )
+    .join('\n')
+    .trim();
 }
 
 async function consumeAiResponseTextDeltas(

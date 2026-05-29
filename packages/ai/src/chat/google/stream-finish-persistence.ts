@@ -51,11 +51,12 @@ type SourceLike = {
 };
 
 type StepLike = {
-  toolCalls?: ToolCallLike[];
-  toolResults?: ToolResultLike[];
+  text?: string;
+  toolCalls?: ReadonlyArray<ToolCallLike>;
+  toolResults?: ReadonlyArray<ToolResultLike>;
   usage?: UsageLike;
   providerMetadata?: ProviderMetadataLike;
-  sources?: unknown[];
+  sources?: ReadonlyArray<unknown>;
   reasoningText?: string;
 };
 
@@ -186,13 +187,34 @@ function getCachedTokenCount(
 }
 
 function collectSerializableSources(response: StreamFinishResponseLike) {
-  if (!response.sources?.length) return [];
+  const sources = [
+    ...(response.sources ?? []),
+    ...(response.steps ?? []).flatMap((step) =>
+      (step.sources ?? []).filter((source): source is SourceLike =>
+        Boolean(
+          source &&
+            typeof source === 'object' &&
+            'url' in source &&
+            typeof source.url === 'string'
+        )
+      )
+    ),
+  ];
 
-  return response.sources.map((source) => ({
-    sourceId: source.sourceId,
-    url: source.url,
-    title: source.title,
-  }));
+  if (!sources.length) return [];
+
+  const seen = new Set<string>();
+  return sources
+    .map((source) => ({
+      sourceId: source.sourceId,
+      url: source.url,
+      title: source.title,
+    }))
+    .filter((source) => {
+      if (!source.url || seen.has(source.url)) return false;
+      seen.add(source.url);
+      return true;
+    });
 }
 
 function logGoogleSearchDebug(response: StreamFinishResponseLike): void {
@@ -288,9 +310,9 @@ function collectUiMessageParts({
       type: 'dynamic-tool',
       toolName: toolCall.toolName ?? matchingResult?.toolName ?? 'tool',
       toolCallId: toolCallId ?? randomUUID(),
-      state: matchingResult ? 'output-available' : 'input-available',
+      state: 'output-available',
       input: extractToolInput(toolCall),
-      ...(matchingResult ? { output: extractToolOutput(matchingResult) } : {}),
+      output: matchingResult ? extractToolOutput(matchingResult) : null,
     });
   }
 
@@ -322,6 +344,45 @@ function collectUiMessageParts({
   }
 
   return parts;
+}
+
+export function buildAbortedStreamFinishResponse(
+  steps: ReadonlyArray<StepLike>
+): StreamFinishResponseLike {
+  return {
+    finishReason: 'abort',
+    steps: [...steps],
+    text: steps
+      .map((step) => step.text)
+      .filter((text): text is string => Boolean(text?.trim()))
+      .join('\n\n'),
+    totalUsage: sumStepUsage(steps),
+    sources: steps.flatMap((step) =>
+      (step.sources ?? []).filter((source): source is SourceLike =>
+        Boolean(
+          source &&
+            typeof source === 'object' &&
+            'url' in source &&
+            typeof source.url === 'string'
+        )
+      )
+    ),
+  };
+}
+
+function sumStepUsage(steps: ReadonlyArray<StepLike>): UsageLike {
+  return steps.reduce<UsageLike>(
+    (total, step) => {
+      const usage = step.usage ?? {};
+      total.inputTokens = (total.inputTokens ?? 0) + (usage.inputTokens ?? 0);
+      total.outputTokens =
+        (total.outputTokens ?? 0) + (usage.outputTokens ?? 0);
+      total.reasoningTokens =
+        (total.reasoningTokens ?? 0) + (usage.reasoningTokens ?? 0);
+      return total;
+    },
+    { inputTokens: 0, outputTokens: 0, reasoningTokens: 0 }
+  );
 }
 
 function extractToolInput(toolCall: ToolCallLike) {

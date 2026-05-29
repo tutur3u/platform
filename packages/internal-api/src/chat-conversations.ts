@@ -30,6 +30,7 @@ import {
 } from './client';
 
 const AI_CHAT_CONVERSATION_PREFIXES = ['ai-chat-', 'legacy-ai-'] as const;
+const AI_CHAT_FILE_ATTACHMENT_PREFIX = 'ai-file:';
 
 export async function listWorkspaceChatConversations(
   workspaceId: string,
@@ -588,6 +589,26 @@ export async function getWorkspaceChatAttachmentSignedUrl(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
+  const aiChatFilePath = decodeAiChatFileAttachmentPath(attachmentId);
+
+  if (getAiChatResourceIdFromConversationId(conversationId) && aiChatFilePath) {
+    const payload = await client.json<{
+      urls: { path: string; signedUrl: string | null }[];
+    }>('/api/ai/chat/signed-read-url', {
+      body: JSON.stringify({ paths: [aiChatFilePath] }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    });
+    const signedUrl = payload.urls?.[0]?.signedUrl;
+
+    if (!signedUrl) {
+      throw new Error('Attachment URL is unavailable');
+    }
+
+    return signedUrl;
+  }
+
   const payload = await client.json<{ signedUrl: string }>(
     `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
       conversationId
@@ -595,4 +616,16 @@ export async function getWorkspaceChatAttachmentSignedUrl(
     { cache: 'no-store' }
   );
   return payload.signedUrl;
+}
+
+function decodeAiChatFileAttachmentPath(attachmentId: string) {
+  if (!attachmentId.startsWith(AI_CHAT_FILE_ATTACHMENT_PREFIX)) return null;
+
+  try {
+    return decodeURIComponent(
+      attachmentId.slice(AI_CHAT_FILE_ATTACHMENT_PREFIX.length)
+    );
+  } catch {
+    return null;
+  }
 }

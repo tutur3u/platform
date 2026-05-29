@@ -3,7 +3,9 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const DeleteFileRequestSchema = z.object({
   wsId: z.string().min(1),
@@ -45,9 +47,9 @@ export const POST = withSessionAuth(
       });
 
       if (membership.error === 'membership_lookup_failed') {
-        console.error(
-          'Error validating workspace membership for delete-file:',
-          membership.error
+        serverLogger.error(
+          'Error validating workspace membership for delete-file',
+          { error: membership.error, wsId }
         );
         return NextResponse.json(
           { message: 'Failed to verify workspace access' },
@@ -66,7 +68,10 @@ export const POST = withSessionAuth(
       const { error } = await sbAdmin.storage.from('workspaces').remove([path]);
 
       if (error) {
-        console.error('Error deleting chat file from storage:', error);
+        serverLogger.error('Error deleting chat file from storage', {
+          error,
+          path,
+        });
         return NextResponse.json(
           { message: 'Failed to delete file' },
           { status: 500 }
@@ -82,7 +87,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      console.error('Unexpected error in chat delete-file:', err);
+      serverLogger.error('Unexpected error in chat delete-file', err);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
@@ -91,7 +96,7 @@ export const POST = withSessionAuth(
   },
   {
     allowAiTempAuth: true,
-    allowAppSessionAuth: { targetApp: 'mind' },
+    allowAppSessionAuth: { targetApp: AI_CHAT_FILE_APP_SESSION_TARGETS },
     rateLimit: { windowMs: 60000, maxRequests: 120 },
   }
 );

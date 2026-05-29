@@ -4774,6 +4774,7 @@ export type Database = {
       };
       ai_chats: {
         Row: {
+          archived_at: string | null;
           created_at: string;
           creator_id: string | null;
           id: string;
@@ -4785,6 +4786,7 @@ export type Database = {
           title: string | null;
         };
         Insert: {
+          archived_at?: string | null;
           created_at?: string;
           creator_id?: string | null;
           id?: string;
@@ -4796,6 +4798,7 @@ export type Database = {
           title?: string | null;
         };
         Update: {
+          archived_at?: string | null;
           created_at?: string;
           creator_id?: string | null;
           id?: string;

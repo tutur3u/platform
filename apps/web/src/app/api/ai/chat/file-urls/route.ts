@@ -3,7 +3,9 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { normalizeWorkspaceId } from '@/lib/workspace-helper';
+import { AI_CHAT_FILE_APP_SESSION_TARGETS } from '../_lib/session-targets';
 
 const FileUrlsRequestSchema = z.object({
   wsId: z.string().min(1),
@@ -43,9 +45,9 @@ export const POST = withSessionAuth(
       });
 
       if (membership.error === 'membership_lookup_failed') {
-        console.error(
-          'Error validating workspace membership for file-urls:',
-          membership.error
+        serverLogger.error(
+          'Error validating workspace membership for file-urls',
+          { error: membership.error, wsId }
         );
         return NextResponse.json(
           { message: 'Failed to verify workspace access' },
@@ -72,7 +74,10 @@ export const POST = withSessionAuth(
         });
 
       if (listError) {
-        console.error('Error listing chat files:', listError);
+        serverLogger.error('Error listing chat files', {
+          error: listError,
+          storagePath,
+        });
         return NextResponse.json(
           { message: 'Failed to list files' },
           { status: 500 }
@@ -100,7 +105,10 @@ export const POST = withSessionAuth(
         .createSignedUrls(filePaths, SIGNED_URL_EXPIRY_SECONDS);
 
       if (signError) {
-        console.error('Error creating signed read URLs:', signError);
+        serverLogger.error('Error creating signed read URLs', {
+          error: signError,
+          fileCount: filePaths.length,
+        });
         return NextResponse.json(
           { message: 'Failed to generate file URLs' },
           { status: 500 }
@@ -139,7 +147,7 @@ export const POST = withSessionAuth(
         );
       }
 
-      console.error('Unexpected error in chat file-urls:', err);
+      serverLogger.error('Unexpected error in chat file-urls', err);
       return NextResponse.json(
         { message: 'Internal server error' },
         { status: 500 }
@@ -148,7 +156,7 @@ export const POST = withSessionAuth(
   },
   {
     allowAiTempAuth: true,
-    allowAppSessionAuth: { targetApp: 'mind' },
+    allowAppSessionAuth: { targetApp: AI_CHAT_FILE_APP_SESSION_TARGETS },
     rateLimitKind: 'read',
   }
 );

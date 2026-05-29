@@ -65,13 +65,17 @@ describe('Mind chat file routes', () => {
     });
   });
 
+  const appSessionAuthOptions = {
+    allowAppSessionAuth: { targetApp: ['mind', 'chat'] },
+  };
+
   it.each<[string, () => Promise<unknown>, Record<string, unknown>]>([
     [
       'upload-url',
       () => import('@/app/api/ai/chat/upload-url/route'),
       {
         allowAiTempAuth: true,
-        allowAppSessionAuth: { targetApp: 'mind' },
+        ...appSessionAuthOptions,
         rateLimit: { windowMs: 60000, maxRequests: 60 },
       },
     ],
@@ -80,7 +84,7 @@ describe('Mind chat file routes', () => {
       () => import('@/app/api/ai/chat/delete-file/route'),
       {
         allowAiTempAuth: true,
-        allowAppSessionAuth: { targetApp: 'mind' },
+        ...appSessionAuthOptions,
         rateLimit: { windowMs: 60000, maxRequests: 120 },
       },
     ],
@@ -89,11 +93,11 @@ describe('Mind chat file routes', () => {
       () => import('@/app/api/ai/chat/file-urls/route'),
       {
         allowAiTempAuth: true,
-        allowAppSessionAuth: { targetApp: 'mind' },
+        ...appSessionAuthOptions,
         rateLimitKind: 'read',
       },
     ],
-  ])('accepts Mind app-session auth for %s', async (_, loadRoute, expectedOptions) => {
+  ])('accepts Mind and Chat app-session auth for %s', async (_, loadRoute, expectedOptions) => {
     await loadRoute();
 
     expect(mocks.withSessionAuth).toHaveBeenCalledWith(

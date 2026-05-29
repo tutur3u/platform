@@ -75,11 +75,22 @@ function toPngBytes(dataUrl: string): Uint8Array {
   return Uint8Array.from(Buffer.from(base64, 'base64'));
 }
 
+function readQrValue(args: Record<string, unknown>): string {
+  for (const key of ['value', 'text', 'url', 'content', 'payload']) {
+    const value = args[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return '';
+}
+
 export async function executeCreateQrCode(
   args: Record<string, unknown>,
   ctx: MiraToolContext
 ): Promise<unknown> {
-  const rawValue = typeof args.value === 'string' ? args.value.trim() : '';
+  const rawValue = readQrValue(args);
   if (!rawValue) {
     return {
       success: false,

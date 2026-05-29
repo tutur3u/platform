@@ -1,9 +1,17 @@
 import 'server-only';
 
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { listAiAgents } from '@/lib/ai-agents/registry';
 import type { SessionAuthContext } from '@/lib/api-auth';
+import {
+  extractLinks,
+  isPhotoAttachment,
+  listAiChatAttachmentsByMessage,
+  sanitizeAiChatMessageContent,
+} from './ai-chat-files';
 import type {
+  ChatAttachment,
   ChatConversation,
   ChatMessage,
   ChatUserProfile,
@@ -13,6 +21,7 @@ const AI_CHAT_CONVERSATION_PREFIX = 'ai-chat-';
 const AI_CHAT_COMPAT_CONVERSATION_PREFIX = 'legacy-ai-';
 
 type AiChatRow = {
+  archived_at: string | null;
   created_at: string;
   creator_id: string | null;
   id: string;
@@ -162,25 +171,47 @@ export function getAiChatId(conversationId: string) {
 }
 
 export async function listAiChatConversations({
+  archived = 'active',
   supabase,
   user,
   wsId,
 }: {
+  archived?: 'active' | 'all' | 'archived';
   supabase: SessionAuthContext['supabase'];
   user: SessionAuthContext['user'];
   wsId: string;
 }): Promise<ChatConversation[]> {
-  const { data: chats, error } = await supabase
+  const personalWorkspaceId = await getUserPersonalWorkspaceId({
+    supabase,
+    userId: user.id,
+  });
+
+  if (!personalWorkspaceId || wsId !== personalWorkspaceId) {
+    return [];
+  }
+
+  let query = supabase
     .from('ai_chats')
-    .select('id,title,created_at,creator_id,is_public,model,pinned,summary')
+    .select(
+      'id,title,created_at,creator_id,is_public,model,pinned,summary,archived_at'
+    )
     .eq('creator_id', user.id)
     .order('pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(50);
 
+  if (archived === 'active') {
+    query = query.is('archived_at', null);
+  } else if (archived === 'archived') {
+    query = query.not('archived_at', 'is', null);
+  }
+
+  const { data: chats, error } = await query;
+
   if (error || !chats?.length) return [];
 
-  const chatRows = chats as AiChatRow[];
+  const chatRows = await filterNativeChatShadowRows(chats as AiChatRow[]);
+  if (chatRows.length === 0) return [];
   const { data: latestMessages } = await supabase
     .from('ai_chat_messages')
     .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
@@ -205,7 +236,7 @@ export async function listAiChatConversations({
 
     return {
       aiEnabled: true,
-      archivedAt: null,
+      archivedAt: chat.archived_at,
       createdAt: chat.created_at,
       createdBy: chat.creator_id,
       description: chat.summary,
@@ -237,14 +268,45 @@ export async function listAiChatConversations({
   });
 }
 
+export async function archiveAiChatConversation({
+  conversationId,
+  supabase,
+  userId,
+}: {
+  conversationId: string;
+  supabase: SessionAuthContext['supabase'];
+  userId: string;
+}) {
+  const chatId = getAiChatId(conversationId);
+  if (!chatId) return null;
+
+  const { data, error } = await supabase
+    .from('ai_chats')
+    .update({ archived_at: new Date().toISOString() })
+    .eq('id', chatId)
+    .eq('creator_id', userId)
+    .select('id')
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return {
+    conversationId,
+    mode: 'archived' as const,
+    type: 'ai' as const,
+  };
+}
+
 export async function listAiChatMessages({
   conversationId,
   supabase,
   user,
+  wsId,
 }: {
   conversationId: string;
   supabase: SessionAuthContext['supabase'];
   user: SessionAuthContext['user'];
+  wsId: string;
 }): Promise<ChatMessage[] | null> {
   const chatId = getAiChatId(conversationId);
   if (!chatId) return null;
@@ -267,15 +329,113 @@ export async function listAiChatMessages({
   if (error) return [];
 
   const sender = getAiChatUserProfile(user);
+  const messageRows = (messages ?? []) as AiChatMessageRow[];
+  const attachmentsByMessageId = await listAiChatAttachmentsByMessage({
+    chatId,
+    conversationId,
+    messages: messageRows,
+    supabase,
+    userId: user.id,
+    wsId,
+  });
 
-  return ((messages ?? []) as AiChatMessageRow[]).map((message) =>
+  return messageRows.map((message) =>
     toAiChatMessage({
+      attachments: attachmentsByMessageId.get(message.id) ?? [],
       conversationId,
       message,
       sender,
       userId: user.id,
     })
   );
+}
+
+export async function listAiChatSharedContent({
+  conversationId,
+  supabase,
+  user,
+  wsId,
+}: {
+  conversationId: string;
+  supabase: SessionAuthContext['supabase'];
+  user: SessionAuthContext['user'];
+  wsId: string;
+}) {
+  const messages = await listAiChatMessages({
+    conversationId,
+    supabase,
+    user,
+    wsId,
+  });
+  if (!messages) return null;
+
+  const attachments = messages.flatMap((message) => message.attachments);
+  const photos = attachments.filter((attachment) =>
+    isPhotoAttachment(attachment)
+  );
+  const files = attachments.filter(
+    (attachment) => !isPhotoAttachment(attachment)
+  );
+  const links = messages.flatMap((message) =>
+    extractLinks(message.content).map((url) => ({
+      conversationId,
+      createdAt: message.createdAt,
+      messageId: message.id,
+      sender: message.sender,
+      url,
+    }))
+  );
+
+  return { files, links, photos };
+}
+
+export async function deleteAiChatMessage({
+  conversationId,
+  messageId,
+  supabase,
+  user,
+}: {
+  conversationId: string;
+  messageId: string;
+  supabase: SessionAuthContext['supabase'];
+  user: SessionAuthContext['user'];
+}): Promise<ChatMessage | null> {
+  const chatId = getAiChatId(conversationId);
+  if (!chatId) return null;
+
+  const { data: chat, error: chatError } = await supabase
+    .from('ai_chats')
+    .select('id')
+    .eq('id', chatId)
+    .eq('creator_id', user.id)
+    .maybeSingle();
+
+  if (chatError || !chat) return null;
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data: deleted, error } = await sbAdmin
+    .from('ai_chat_messages')
+    .delete()
+    .eq('id', messageId)
+    .eq('chat_id', chatId)
+    .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
+    .maybeSingle();
+
+  if (error || !deleted) return null;
+
+  const message = toAiChatMessage({
+    conversationId,
+    message: deleted as AiChatMessageRow,
+    sender: getAiChatUserProfile(user),
+    userId: user.id,
+  });
+
+  return {
+    ...message,
+    attachments: [],
+    content: '',
+    deletedAt: new Date().toISOString(),
+  };
 }
 
 export async function canAccessAiChatConversation({
@@ -320,11 +480,13 @@ function toAiChatConversationId(chatId: string) {
 }
 
 function toAiChatMessage({
+  attachments = [],
   conversationId,
   message,
   sender,
   userId,
 }: {
+  attachments?: ChatAttachment[];
   conversationId: string;
   message: AiChatMessageRow;
   sender: ChatUserProfile;
@@ -333,8 +495,8 @@ function toAiChatMessage({
   const isUserMessage = message.role.toLowerCase() === 'user';
 
   return {
-    attachments: [],
-    content: message.content ?? '',
+    attachments,
+    content: sanitizeAiChatMessageContent(message.content ?? '', attachments),
     conversationId,
     createdAt: message.created_at,
     deletedAt: null,
@@ -354,6 +516,47 @@ function toAiChatMessage({
     senderId: isUserMessage ? (message.creator_id ?? userId) : null,
     updatedAt: null,
   };
+}
+
+async function getUserPersonalWorkspaceId({
+  supabase,
+  userId,
+}: {
+  supabase: SessionAuthContext['supabase'];
+  userId: string;
+}) {
+  const { data, error } = await supabase
+    .from('workspaces')
+    .select('id')
+    .eq('creator_id', userId)
+    .eq('personal', true)
+    .eq('deleted', false)
+    .maybeSingle();
+
+  if (error) return null;
+  return typeof data?.id === 'string' ? data.id : null;
+}
+
+async function filterNativeChatShadowRows(chatRows: AiChatRow[]) {
+  if (chatRows.length === 0) return chatRows;
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { data, error } = (await sbAdmin
+    .schema('private')
+    .from('chat_conversations')
+    .select('id')
+    .in(
+      'id',
+      chatRows.map((chat) => chat.id)
+    )) as {
+    data: { id: string }[] | null;
+    error: { message?: string } | null;
+  };
+
+  if (error || !data?.length) return chatRows;
+
+  const nativeConversationIds = new Set(data.map((row) => row.id));
+  return chatRows.filter((chat) => !nativeConversationIds.has(chat.id));
 }
 
 function getAiChatMessageKind(role: string): ChatMessage['kind'] {

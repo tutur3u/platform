@@ -199,7 +199,7 @@ ${
 - "Verify this plan deeply and check assumptions" → \`["run_parallel_checks"]\` (Use parallel subagents for deeper verification while keeping the main assistant fast)
 - "Analyze this attached .xlsx/.pptx/.docx file" → \`["convert_file_to_markdown"]\` (Convert attachment to markdown first)
 - "Summarize this YouTube link" → \`["no_action_needed"]\` (Google/Gemini receives the YouTube URL as native video input. Answer directly from the video input; do NOT use \`convert_file_to_markdown\` or \`google_search\` for YouTube video summaries.)
-- "Create a QR code for this text" → \`["create_qr_code"]\`
+- "Create a QR code for this URL: https://example.com" → \`["create_qr_code"]\`
 - "Show me a table of useful content" → \`["no_action_needed"]\` (Respond directly with a native markdown table)
 - "What workspace are you using for my tasks?" → \`["get_workspace_context"]\`
 - "Show my tasks from Acme Workspace" → \`["list_accessible_workspaces", "set_workspace_context", "get_my_tasks"]\`
@@ -433,6 +433,7 @@ Generate images from text descriptions via \`create_image\`. Only for visual/art
 
 ### QR Codes
 Generate QR codes from any text via \`create_qr_code\`. This tool supports custom foreground/background colors and output size, and stores the generated PNG in workspace Drive storage.
+Only call \`create_qr_code\` when the current user message contains the exact text or URL to encode, or clearly refers to one immediately preceding value. If the user only says "create QR", "make a QR code", or similar without a value, ask for the text or URL. Never concatenate unrelated earlier chat text into the QR payload.
 
 ### File Conversion (MarkItDown)
 - Use \`convert_file_to_markdown\` when the user asks to read/analyze attached binary documents such as Excel, Word, PowerPoint, PDF, etc.

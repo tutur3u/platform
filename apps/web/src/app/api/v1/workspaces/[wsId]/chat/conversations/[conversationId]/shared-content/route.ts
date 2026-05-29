@@ -3,6 +3,7 @@ import { withSessionAuth } from '@/lib/api-auth';
 import {
   canAccessAiChatConversation,
   isAiChatConversationId,
+  listAiChatSharedContent,
 } from '@/lib/chat/agent-discovery';
 import {
   callPrivateChatRpc,
@@ -39,9 +40,21 @@ export const GET = withSessionAuth<RouteParams>(
           );
         }
 
-        return NextResponse.json({
-          sharedContent: { files: [], links: [], photos: [] },
+        const sharedContent = await listAiChatSharedContent({
+          conversationId: params.conversationId,
+          supabase: auth.supabase,
+          user: auth.user,
+          wsId: context.context.normalizedWsId,
         });
+
+        if (!sharedContent) {
+          return NextResponse.json(
+            { message: 'Chat not found' },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ sharedContent });
       }
 
       const sharedContent = await callPrivateChatRpc(

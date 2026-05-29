@@ -6,6 +6,7 @@ const hexColorSchema = z
   .trim()
   .regex(/^#(?:[0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
   .optional();
+const qrPayloadSchema = z.string().trim().min(1).max(4096);
 
 export const imageToolDefinitions = {
   create_image: tool({
@@ -29,37 +30,45 @@ export const imageToolDefinitions = {
   create_qr_code: tool({
     description:
       'Generate a QR code image from any text payload and save it to workspace Drive storage.',
-    inputSchema: z.object({
-      value: z
-        .string()
-        .trim()
-        .min(1)
-        .max(4096)
-        .describe('Text content to encode into the QR code'),
-      foregroundColor: hexColorSchema.describe(
-        'QR foreground color in hex, e.g. #000000'
-      ),
-      backgroundColor: hexColorSchema.describe(
-        'QR background color in hex, e.g. #FFFFFF'
-      ),
-      size: z
-        .number()
-        .int()
-        .min(128)
-        .max(2048)
-        .optional()
-        .describe('Image width/height in pixels (default 512)'),
-      fileName: z
-        .string()
-        .trim()
-        .min(1)
-        .max(120)
-        .regex(
-          /^[A-Za-z0-9._ -]+$/,
-          'Filename may only include letters, numbers, spaces, dot, underscore, and hyphen.'
-        )
-        .optional()
-        .describe('Optional desired filename for download and storage'),
-    }),
+    inputSchema: z
+      .object({
+        value: qrPayloadSchema
+          .optional()
+          .describe('Text content to encode into the QR code'),
+        text: qrPayloadSchema
+          .optional()
+          .describe('Alias for value when the user provides plain text'),
+        url: qrPayloadSchema
+          .optional()
+          .describe('Alias for value when the user provides a URL'),
+        foregroundColor: hexColorSchema.describe(
+          'QR foreground color in hex, e.g. #000000'
+        ),
+        backgroundColor: hexColorSchema.describe(
+          'QR background color in hex, e.g. #FFFFFF'
+        ),
+        size: z
+          .number()
+          .int()
+          .min(128)
+          .max(2048)
+          .optional()
+          .describe('Image width/height in pixels (default 512)'),
+        fileName: z
+          .string()
+          .trim()
+          .min(1)
+          .max(120)
+          .regex(
+            /^[A-Za-z0-9._ -]+$/,
+            'Filename may only include letters, numbers, spaces, dot, underscore, and hyphen.'
+          )
+          .optional()
+          .describe('Optional desired filename for download and storage'),
+      })
+      .refine((input) => input.value || input.text || input.url, {
+        message: 'Provide value, text, or url to encode into the QR code.',
+        path: ['value'],
+      }),
   }),
 } as const;
