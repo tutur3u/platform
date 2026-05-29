@@ -1,5 +1,7 @@
 export type ChatConversationType = 'ai' | 'channel' | 'direct' | 'group';
 export type ChatMessageKind = 'assistant' | 'system' | 'user';
+export type ChatAiCreditSource = 'personal' | 'workspace';
+export type ChatAiThinkingMode = 'fast' | 'thinking';
 
 export interface ChatUserProfile {
   avatarUrl: string | null;
@@ -110,6 +112,67 @@ export interface ChatSharedContent {
   photos: ChatAttachment[];
 }
 
+export interface ChatAiSettings {
+  autoReply: boolean;
+  conversationId: string;
+  creditSource: ChatAiCreditSource;
+  creditWsId: string | null;
+  enabled: boolean;
+  modelId: string | null;
+  personalWorkspaceId: string | null;
+  systemPrompt: string | null;
+  thinkingMode: ChatAiThinkingMode;
+  updatedAt: string | null;
+}
+
+export interface UpdateChatAiSettingsPayload {
+  creditSource?: ChatAiCreditSource;
+  creditWsId?: string | null;
+  modelId?: string | null;
+  systemPrompt?: string | null;
+  thinkingMode?: ChatAiThinkingMode;
+}
+
+export interface ChatAiTokenUsage {
+  cachedInputTokens: number;
+  cachedOutputTokens: number;
+  costUsd: number;
+  imageInputCount: number;
+  imageOutputCount: number;
+  inputTokens: number;
+  outputTokens: number;
+  reasoningTokens: number;
+  searchCount: number;
+  totalTokens: number;
+}
+
+export interface ChatAiContextBreakdownEntry {
+  chars: number;
+  id: string;
+  kind: ChatMessageKind;
+  label: string;
+  tokensEstimate: number;
+}
+
+export interface ChatAiMessageUsage {
+  contentPreview: string;
+  contextBreakdown: ChatAiContextBreakdownEntry[];
+  createdAt: string;
+  exact: boolean;
+  id: string;
+  model: string | null;
+  role: string;
+  usage: ChatAiTokenUsage;
+}
+
+export interface ChatAiObservability {
+  contextBreakdown: ChatAiContextBreakdownEntry[];
+  messages: ChatAiMessageUsage[];
+  totals: ChatAiTokenUsage & {
+    messageCount: number;
+  };
+}
+
 export interface ChatConversation {
   aiEnabled: boolean;
   archivedAt: string | null;
@@ -173,6 +236,10 @@ export type ChatMessageStreamEvent =
       type: 'assistant_delta';
     }
   | {
+      part: Record<string, unknown>;
+      type: 'assistant_part';
+    }
+  | {
       messages: ChatMessage[];
       type: 'messages';
     }
@@ -186,6 +253,7 @@ export type ChatMessageStreamEvent =
 
 export interface SendChatMessageStreamHandlers {
   onAssistantDelta?: (delta: string) => void;
+  onAssistantPart?: (part: Record<string, unknown>) => void;
   onMessage?: (message: ChatMessage) => void;
   onMessages?: (messages: ChatMessage[]) => void;
 }

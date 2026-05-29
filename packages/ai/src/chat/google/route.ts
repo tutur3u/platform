@@ -90,6 +90,7 @@ export function createPOST(
         thinkingMode: rawThinkingMode,
         creditSource: requestedCreditSourceRaw,
         creditWsId: rawCreditWsId,
+        observabilityContext,
         taskBoardContext,
       } = parsedBody.data;
       const thinkingMode: ThinkingMode =
@@ -377,6 +378,7 @@ export function createPOST(
         workspaceContextId,
         creditWsId: billingWsId ?? normalizedWsId ?? undefined,
         request: req,
+        user,
         userId: user.id,
         chatId,
         supabase,
@@ -517,6 +519,7 @@ export function createPOST(
             model: resolvedModelId,
             effectiveSource,
             wsId: billingWsId ?? normalizedWsId ?? undefined,
+            observabilityContext,
           }),
       });
 

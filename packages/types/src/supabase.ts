@@ -192,30 +192,39 @@ export type Database = {
           auto_reply: boolean;
           conversation_id: string;
           created_at: string;
+          credit_source: string;
+          credit_ws_id: string | null;
           enabled: boolean;
           metadata: Json;
           model_id: string | null;
           system_prompt: string | null;
+          thinking_mode: string;
           updated_at: string;
         };
         Insert: {
           auto_reply?: boolean;
           conversation_id: string;
           created_at?: string;
+          credit_source?: string;
+          credit_ws_id?: string | null;
           enabled?: boolean;
           metadata?: Json;
           model_id?: string | null;
           system_prompt?: string | null;
+          thinking_mode?: string;
           updated_at?: string;
         };
         Update: {
           auto_reply?: boolean;
           conversation_id?: string;
           created_at?: string;
+          credit_source?: string;
+          credit_ws_id?: string | null;
           enabled?: boolean;
           metadata?: Json;
           model_id?: string | null;
           system_prompt?: string | null;
+          thinking_mode?: string;
           updated_at?: string;
         };
         Relationships: [

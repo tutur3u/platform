@@ -5,6 +5,8 @@ import {
   uploadFileWithSignedUrl,
 } from './chat-internal';
 import type {
+  ChatAiObservability,
+  ChatAiSettings,
   ChatConversation,
   ChatFriendRequest,
   ChatFriendRequests,
@@ -18,6 +20,7 @@ import type {
   SendChatMessagePayload,
   SendChatMessageResult,
   SendChatMessageStreamHandlers,
+  UpdateChatAiSettingsPayload,
   UpdateChatConversationPayload,
 } from './chat-types';
 import {
@@ -192,6 +195,8 @@ export async function sendWorkspaceChatMessageStream(
       handlers.onMessage?.(event.message);
     } else if (event.type === 'assistant_delta') {
       handlers.onAssistantDelta?.(event.delta);
+    } else if (event.type === 'assistant_part') {
+      handlers.onAssistantPart?.(event.part);
     } else if (event.type === 'messages') {
       messages.push(...event.messages);
       handlers.onMessages?.(event.messages);
@@ -341,6 +346,56 @@ export async function getWorkspaceChatSharedContent(
     links: payload.sharedContent?.links ?? [],
     photos: payload.sharedContent?.photos ?? [],
   };
+}
+
+export async function getWorkspaceChatAiSettings(
+  workspaceId: string,
+  conversationId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{ settings: ChatAiSettings }>(
+    `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
+      conversationId
+    )}/ai-settings`,
+    { cache: 'no-store' }
+  );
+  return payload.settings;
+}
+
+export async function updateWorkspaceChatAiSettings(
+  workspaceId: string,
+  conversationId: string,
+  payload: UpdateChatAiSettingsPayload,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ settings: ChatAiSettings }>(
+    `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
+      conversationId
+    )}/ai-settings`,
+    {
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'PATCH',
+    }
+  );
+}
+
+export async function getWorkspaceChatAiObservability(
+  workspaceId: string,
+  conversationId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{ observability: ChatAiObservability }>(
+    `${chatBasePath(workspaceId)}/conversations/${encodePathSegment(
+      conversationId
+    )}/ai-observability`,
+    { cache: 'no-store' }
+  );
+  return payload.observability;
 }
 
 export async function searchWorkspaceChatDirectory(

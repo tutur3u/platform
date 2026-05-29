@@ -24,6 +24,10 @@ type PrepareMiraRuntimeParams = {
   workspaceContextId?: string;
   creditWsId?: string;
   request: NextRequest;
+  user?: {
+    email?: string | null;
+    id: string;
+  };
   userId: string;
   chatId: string;
   supabase: SupabaseClientLike;
@@ -95,6 +99,7 @@ export async function prepareMiraRuntime({
   workspaceContextId,
   creditWsId,
   request,
+  user,
   userId,
   chatId,
   supabase,
@@ -140,7 +145,7 @@ export async function prepareMiraRuntime({
   try {
     const permissionsResult = (await getPermissions({
       wsId: resolvedWorkspaceContext.wsId,
-      request,
+      ...(user ? { user } : { request }),
     })) as PermissionResultLike | null;
     if (permissionsResult?.withoutPermission) {
       withoutPermission = permissionsResult.withoutPermission;

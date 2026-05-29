@@ -206,8 +206,22 @@ type UiMessageForAi = {
 };
 
 type NativeAiSettings = {
+  credit_source: 'personal' | 'workspace';
+  credit_ws_id: string | null;
   model_id: string | null;
   system_prompt: string | null;
+  thinking_mode: 'fast' | 'thinking';
+};
+
+type NativeAiSettingsRow = Partial<NativeAiSettings> | null;
+
+type AiAssistantMessageRow = {
+  completion_tokens: number | null;
+  content: string | null;
+  id: string;
+  metadata: unknown;
+  model: string | null;
+  prompt_tokens: number | null;
 };
 
 function wantsChatMessageStream(request: NextRequest) {
@@ -245,6 +259,7 @@ function streamNativeAiConversationResponse({
           context,
           conversation,
           onDelta: (delta) => write({ delta, type: 'assistant_delta' }),
+          onPart: (part) => write({ part, type: 'assistant_part' }),
           request,
           userMessage,
         });
@@ -339,10 +354,14 @@ async function sendAiChatMessage({
 
   const aiResponse = await callAiChatRoute({
     chatId: chat.id,
+    creditSource: 'workspace',
+    creditWsId: context.normalizedWsId,
     messages: aiMessages,
     model: normalizeAiChatModel(chat.model),
+    observabilityContext: buildNativeAiObservabilityContext(previousMessages),
     request,
     supabase: auth.supabase,
+    thinkingMode: 'fast',
     user: auth.user,
     wsId: context.normalizedWsId,
   });
@@ -411,8 +430,10 @@ function streamAiChatMessageResponse({
       };
 
       try {
-        await consumeAiResponseTextDeltas(aiResponse, (delta) =>
-          write({ delta, type: 'assistant_delta' })
+        await consumeAiResponseTextDeltas(
+          aiResponse,
+          (delta) => write({ delta, type: 'assistant_delta' }),
+          (part) => write({ part, type: 'assistant_part' })
         );
 
         const latestMessages =
@@ -458,6 +479,7 @@ async function sendNativeAiConversationMessages({
   context,
   conversation,
   onDelta,
+  onPart,
   request,
   userMessage,
 }: {
@@ -465,6 +487,7 @@ async function sendNativeAiConversationMessages({
   context: ChatRouteContext;
   conversation: ChatConversation;
   onDelta?: (delta: string) => void;
+  onPart?: (part: Record<string, unknown>) => void;
   request: NextRequest;
   userMessage: ChatMessage;
 }) {
@@ -505,10 +528,19 @@ async function sendNativeAiConversationMessages({
 
   const aiResponse = await callAiChatRoute({
     chatId: conversation.id,
+    creditSource: settings.credit_source,
+    creditWsId:
+      settings.credit_source === 'personal'
+        ? (settings.credit_ws_id ?? undefined)
+        : (settings.credit_ws_id ?? context.normalizedWsId),
     messages: aiMessages,
     model: normalizeNativeAiModel(settings.model_id),
+    observabilityContext: buildNativeAiObservabilityContext(
+      privateMessages ?? []
+    ),
     request,
     supabase: auth.supabase,
+    thinkingMode: settings.thinking_mode,
     user: auth.user,
     wsId: context.normalizedWsId,
   });
@@ -523,36 +555,44 @@ async function sendNativeAiConversationMessages({
     throw new Error(errorText || 'Failed to send AI chat message');
   }
 
-  await consumeAiResponseTextDeltas(aiResponse, onDelta);
+  await consumeAiResponseTextDeltas(aiResponse, onDelta, onPart);
 
-  const assistantContent = await getLatestNewAiAssistantContent({
+  const assistantResponse = await getLatestNewAiAssistantMessage({
     chatId: conversation.id,
     knownMessageIds: existingAiMessages,
     supabase: auth.supabase,
   });
 
-  if (!assistantContent) {
+  if (!assistantResponse?.content?.trim()) {
     serverLogger.error('Native Chat AI response was not saved', {
       conversationId: conversation.id,
     });
     throw new Error('AI response was not saved');
   }
 
-  const assistantParts = splitAiAssistantContent(assistantContent);
+  const assistantParts = splitAiAssistantContent(assistantResponse.content);
   const assistantMessages: ChatMessage[] = [];
 
-  for (const content of assistantParts) {
-    assistantMessages.push(
-      await callPrivateChatRpc<ChatMessage>('chat_send_message', {
-        p_actor_user_id: auth.user.id,
-        p_attachments: [],
-        p_content: content,
-        p_conversation_id: conversation.id,
-        p_kind: 'assistant',
-        p_reply_to_message_id: null,
-        p_ws_id: context.normalizedWsId,
-      })
-    );
+  for (let index = 0; index < assistantParts.length; index++) {
+    const content = assistantParts[index]!;
+    const message = await callPrivateChatRpc<ChatMessage>('chat_send_message', {
+      p_actor_user_id: auth.user.id,
+      p_attachments: [],
+      p_content: content,
+      p_conversation_id: conversation.id,
+      p_kind: 'assistant',
+      p_reply_to_message_id: null,
+      p_ws_id: context.normalizedWsId,
+    });
+    const metadata = await updateNativeAssistantMessageMetadata({
+      aiMessage: assistantResponse,
+      content,
+      messageId: message.id,
+      splitIndex: index,
+      splitTotal: assistantParts.length,
+    });
+
+    assistantMessages.push(metadata ? { ...message, metadata } : message);
   }
 
   return assistantMessages;
@@ -603,7 +643,8 @@ async function copyChatAttachmentsToAiResources({
 
 async function consumeAiResponseTextDeltas(
   response: Response,
-  onDelta?: (delta: string) => void
+  onDelta?: (delta: string) => void,
+  onPart?: (part: Record<string, unknown>) => void
 ) {
   if (!response.body) return;
 
@@ -619,19 +660,20 @@ async function consumeAiResponseTextDeltas(
       buffer = events.pop() ?? '';
 
       for (const event of events) {
-        emitAiTextDeltaFromSseEvent(event, onDelta);
+        emitAiTextDeltaFromSseEvent(event, onDelta, onPart);
       }
     }
 
     if (done) break;
   }
 
-  emitAiTextDeltaFromSseEvent(buffer, onDelta);
+  emitAiTextDeltaFromSseEvent(buffer, onDelta, onPart);
 }
 
 function emitAiTextDeltaFromSseEvent(
   event: string,
-  onDelta?: (delta: string) => void
+  onDelta?: (delta: string) => void,
+  onPart?: (part: Record<string, unknown>) => void
 ) {
   if (!event.trim()) return;
 
@@ -645,9 +687,16 @@ function emitAiTextDeltaFromSseEvent(
   if (!data || data === '[DONE]') return;
 
   try {
-    const chunk = JSON.parse(data) as { delta?: unknown; type?: unknown };
+    const chunk = JSON.parse(data) as Record<string, unknown>;
     if (chunk.type === 'text-delta' && typeof chunk.delta === 'string') {
       onDelta?.(chunk.delta);
+    } else if (
+      chunk.type === 'reasoning-delta' &&
+      typeof chunk.delta === 'string'
+    ) {
+      onPart?.({ type: 'reasoning', text: chunk.delta, streaming: true });
+    } else if (shouldForwardAiStreamPart(chunk)) {
+      onPart?.(chunk);
     }
   } catch {
     // Ignore malformed stream chunks from upstream; the AI route still owns
@@ -655,22 +704,50 @@ function emitAiTextDeltaFromSseEvent(
   }
 }
 
+function shouldForwardAiStreamPart(chunk: Record<string, unknown>) {
+  const type = typeof chunk.type === 'string' ? chunk.type : '';
+  return (
+    type === 'source-url' ||
+    type === 'dynamic-tool' ||
+    type.startsWith('tool-') ||
+    type.endsWith('-tool-call') ||
+    type.endsWith('-tool-result')
+  );
+}
+
 async function getNativeAiSettings(conversationId: string) {
   const sbAdmin = await createAdminClient({ noCookie: true });
-  const { data, error } = await sbAdmin
+  const { data, error } = (await sbAdmin
     .schema('private')
     .from('chat_conversation_ai_settings')
-    .select('model_id, system_prompt')
+    .select(
+      'model_id, system_prompt, thinking_mode, credit_source, credit_ws_id'
+    )
     .eq('conversation_id', conversationId)
-    .maybeSingle();
+    .maybeSingle()) as {
+    data: NativeAiSettingsRow;
+    error: { message?: string } | null;
+  };
 
   if (error) {
     serverLogger.error('Failed to load native Chat AI settings', error);
   }
 
   return {
+    credit_source:
+      data && 'credit_source' in data && data.credit_source === 'personal'
+        ? 'personal'
+        : 'workspace',
+    credit_ws_id:
+      data && 'credit_ws_id' in data && typeof data.credit_ws_id === 'string'
+        ? data.credit_ws_id
+        : null,
     model_id: data?.model_id ?? null,
     system_prompt: data?.system_prompt ?? null,
+    thinking_mode:
+      data && 'thinking_mode' in data && data.thinking_mode === 'thinking'
+        ? 'thinking'
+        : 'fast',
   } satisfies NativeAiSettings;
 }
 
@@ -723,7 +800,7 @@ async function listExistingAiMessageIds({
   return new Set((data ?? []).map((message) => message.id));
 }
 
-async function getLatestNewAiAssistantContent({
+async function getLatestNewAiAssistantMessage({
   chatId,
   knownMessageIds,
   supabase,
@@ -734,7 +811,7 @@ async function getLatestNewAiAssistantContent({
 }) {
   const { data, error } = await supabase
     .from('ai_chat_messages')
-    .select('id, content')
+    .select('id, content, metadata, model, prompt_tokens, completion_tokens')
     .eq('chat_id', chatId)
     .eq('role', 'ASSISTANT')
     .order('created_at', { ascending: false })
@@ -749,10 +826,114 @@ async function getLatestNewAiAssistantContent({
   }
 
   return (
-    data
-      ?.find((message) => !knownMessageIds.has(message.id))
-      ?.content?.trim() || null
+    ((data as AiAssistantMessageRow[] | null) ?? []).find(
+      (message) => !knownMessageIds.has(message.id)
+    ) ?? null
   );
+}
+
+async function updateNativeAssistantMessageMetadata({
+  aiMessage,
+  content,
+  messageId,
+  splitIndex,
+  splitTotal,
+}: {
+  aiMessage: AiAssistantMessageRow;
+  content: string;
+  messageId: string;
+  splitIndex: number;
+  splitTotal: number;
+}) {
+  const metadata = buildNativeAssistantMessageMetadata({
+    aiMessage,
+    content,
+    splitIndex,
+    splitTotal,
+  });
+
+  const sbAdmin = await createAdminClient({ noCookie: true });
+  const { error } = await sbAdmin
+    .schema('private')
+    .from('chat_messages')
+    .update({ metadata } as never)
+    .eq('id', messageId);
+
+  if (error) {
+    serverLogger.error('Failed to attach native Chat AI metadata', {
+      aiMessageId: aiMessage.id,
+      error,
+      messageId,
+    });
+    return null;
+  }
+
+  return metadata;
+}
+
+function buildNativeAssistantMessageMetadata({
+  aiMessage,
+  content,
+  splitIndex,
+  splitTotal,
+}: {
+  aiMessage: AiAssistantMessageRow;
+  content: string;
+  splitIndex: number;
+  splitTotal: number;
+}) {
+  const rootMetadata = readRecord(aiMessage.metadata) ?? {};
+  const aiMetadata = readRecord(rootMetadata.ai) ?? {};
+  const originalParts = Array.isArray(aiMetadata.parts)
+    ? (aiMetadata.parts as Record<string, unknown>[])
+    : [];
+  const nonTextParts = originalParts.filter(
+    (part) => readString(part.type) !== 'text'
+  );
+  const parts =
+    splitTotal === 1 && originalParts.length > 0
+      ? originalParts
+      : [
+          { type: 'text', text: content },
+          ...(splitIndex === 0 ? nonTextParts : []),
+        ];
+
+  return {
+    source: 'native-ai-chat',
+    ai: {
+      ...aiMetadata,
+      aiChatMessageId: aiMessage.id,
+      parts,
+      split: {
+        index: splitIndex,
+        total: splitTotal,
+      },
+      usage: {
+        ...(readRecord(aiMetadata.usage) ?? {}),
+        inputTokens: aiMessage.prompt_tokens ?? 0,
+        outputTokens: aiMessage.completion_tokens ?? 0,
+      },
+    },
+  };
+}
+
+function buildNativeAiObservabilityContext(messages: ChatMessage[]) {
+  return messages.slice(-20).map((message) => {
+    const chars = message.content.length;
+
+    return {
+      chars,
+      id: message.id,
+      kind: message.kind,
+      label:
+        message.kind === 'assistant'
+          ? 'Assistant message'
+          : message.kind === 'system'
+            ? 'System message'
+            : 'User message',
+      tokensEstimate: Math.ceil(chars / 4),
+    };
+  });
 }
 
 function splitAiAssistantContent(content: string) {
@@ -841,18 +1022,26 @@ function withAiMessageSplitInstruction(messages: UiMessageForAi[]) {
 
 async function callAiChatRoute({
   chatId,
+  creditSource,
+  creditWsId,
   messages,
   model,
+  observabilityContext,
   request,
   supabase,
+  thinkingMode,
   user,
   wsId,
 }: {
   chatId: string;
+  creditSource: 'personal' | 'workspace';
+  creditWsId?: string;
   messages: UiMessageForAi[];
   model: string;
+  observabilityContext?: Record<string, unknown>[];
   request: NextRequest;
   supabase: SessionAuthContext['supabase'];
+  thinkingMode: 'fast' | 'thinking';
   user: SessionAuthContext['user'];
   wsId: string;
 }) {
@@ -862,18 +1051,19 @@ async function callAiChatRoute({
 
   const aiRequest = new NextRequest(request.url, {
     body: JSON.stringify({
-      creditSource: 'workspace',
-      creditWsId: wsId,
+      creditSource,
       id: chatId,
       isMiraMode: true,
       messages,
       model,
+      observabilityContext,
+      thinkingMode,
       workspaceContextId: wsId,
       wsId,
+      ...(creditWsId ? { creditWsId } : {}),
     }),
     headers,
     method: 'POST',
-    signal: request.signal,
   });
 
   return createAiChatPost({
@@ -884,6 +1074,16 @@ async function callAiChatRoute({
       user,
     }),
   })(aiRequest);
+}
+
+function readRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
 }
 
 function normalizeAiChatModel(model: string | null) {

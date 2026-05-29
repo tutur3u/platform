@@ -53,6 +53,7 @@ export const ChatRequestBodySchema = z.object({
   thinkingMode: z.enum(['thinking', 'fast']).optional(),
   creditSource: z.enum(['personal', 'workspace']).optional(),
   creditWsId: z.string().trim().min(1).max(MAX_ID_LENGTH).optional(),
+  observabilityContext: z.array(z.record(z.string(), z.unknown())).optional(),
   taskBoardContext: TaskBoardContextSchema.optional(),
 });
 
@@ -83,45 +84,14 @@ function mapToUIMessageParts(
       continue;
     }
 
-    if (part.type === 'reasoning' && typeof part.text === 'string') {
-      mappedParts.push({ type: 'reasoning', text: part.text });
-      continue;
-    }
-
-    if (part.type === 'step-start') {
-      mappedParts.push({ type: 'step-start' as const });
-      continue;
-    }
-
     if (
       part.type === 'dynamic-tool' &&
       typeof part.toolName === 'string' &&
       typeof part.toolCallId === 'string'
     ) {
       mappedParts.push({
-        type: 'dynamic-tool' as const,
-        toolName: part.toolName,
-        toolCallId: part.toolCallId,
-        state: 'output-available' as const,
-        input: part.input ?? {},
-        output: part.output ?? null,
-        ...(typeof part.title === 'string' ? { title: part.title } : {}),
-        ...(typeof part.providerExecuted === 'boolean'
-          ? { providerExecuted: part.providerExecuted }
-          : {}),
-        ...(part.callProviderMetadata !== undefined
-          ? {
-              callProviderMetadata: part.callProviderMetadata as NonNullable<
-                UIMessage['parts'][number] & {
-                  type: 'dynamic-tool';
-                  state: 'output-available';
-                }
-              >['callProviderMetadata'],
-            }
-          : {}),
-        ...(typeof part.preliminary === 'boolean'
-          ? { preliminary: part.preliminary }
-          : {}),
+        type: 'text',
+        text: serializeToolPartForModelContext(part),
       });
       continue;
     }
@@ -133,15 +103,34 @@ function mapToUIMessageParts(
       isValidHttpUrl(part.url)
     ) {
       mappedParts.push({
-        type: 'source-url' as const,
-        sourceId: part.sourceId,
-        url: part.url,
-        ...(typeof part.title === 'string' ? { title: part.title } : {}),
-      } as UIMessage['parts'][number]);
+        type: 'text',
+        text: `Source: ${
+          typeof part.title === 'string' ? `${part.title} ` : ''
+        }${part.url}`,
+      });
     }
   }
 
   return mappedParts;
+}
+
+function serializeToolPartForModelContext(part: Record<string, unknown>) {
+  const sections = [
+    `Tool result: ${part.toolName}`,
+    part.input === undefined ? null : `Input: ${safeStringify(part.input)}`,
+    part.output === undefined ? null : `Output: ${safeStringify(part.output)}`,
+    typeof part.errorText === 'string' ? `Error: ${part.errorText}` : null,
+  ].filter(Boolean);
+
+  return sections.join('\n');
+}
+
+function safeStringify(value: unknown) {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return String(value);
+  }
 }
 
 export function mapToUIMessages(

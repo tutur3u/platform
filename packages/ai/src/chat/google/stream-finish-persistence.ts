@@ -1,9 +1,24 @@
+import { randomUUID } from 'node:crypto';
 import { deductAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import type { CreditDeductionResult } from '../../credits/types';
 
 type UsageLike = {
   inputTokens?: number;
+  inputTokenDetails?: {
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+    cachedTokens?: number;
+    noCacheTokens?: number;
+  };
   outputTokens?: number;
+  outputTokenDetails?: {
+    cacheReadTokens?: number;
+    cacheWriteTokens?: number;
+    cachedTokens?: number;
+    noCacheTokens?: number;
+    reasoningTokens?: number;
+    textTokens?: number;
+  };
   reasoningTokens?: number;
 };
 
@@ -20,10 +35,14 @@ type ProviderMetadataLike = {
 };
 
 type ToolCallLike = {
+  toolCallId?: string;
   toolName?: string;
 } & Record<string, unknown>;
 
-type ToolResultLike = Record<string, unknown>;
+type ToolResultLike = {
+  toolCallId?: string;
+  toolName?: string;
+} & Record<string, unknown>;
 
 type SourceLike = {
   sourceId?: string;
@@ -52,6 +71,8 @@ type StreamFinishResponseLike = {
 };
 
 type UsageTotals = {
+  cachedInputTokens: number;
+  cachedOutputTokens: number;
   inputTokens: number;
   outputTokens: number;
   reasoningTokens: number;
@@ -83,6 +104,7 @@ type PersistAssistantResponseParams = {
   userId: string;
   model: string;
   effectiveSource: 'Mira' | 'Rewise';
+  observabilityContext?: unknown;
   wsId?: string;
 };
 
@@ -103,6 +125,8 @@ function collectReasoningText(response: StreamFinishResponseLike): string {
 
 function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
   const usage = response.totalUsage ?? response.usage ?? {};
+  let cachedInputTokens = getCachedTokenCount(usage.inputTokenDetails);
+  let cachedOutputTokens = getCachedTokenCount(usage.outputTokenDetails);
   let inputTokens = usage.inputTokens ?? 0;
   let outputTokens = usage.outputTokens ?? 0;
   let reasoningTokens = usage.reasoningTokens ?? 0;
@@ -111,6 +135,8 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
     let stepInputSum = 0;
     let stepOutputSum = 0;
     let stepReasoningSum = 0;
+    let stepCachedInputSum = 0;
+    let stepCachedOutputSum = 0;
 
     for (const step of response.steps ?? []) {
       const stepUsage = step.usage;
@@ -119,6 +145,8 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
       stepInputSum += stepUsage.inputTokens ?? 0;
       stepOutputSum += stepUsage.outputTokens ?? 0;
       stepReasoningSum += stepUsage.reasoningTokens ?? 0;
+      stepCachedInputSum += getCachedTokenCount(stepUsage.inputTokenDetails);
+      stepCachedOutputSum += getCachedTokenCount(stepUsage.outputTokenDetails);
     }
 
     if (inputTokens === 0) {
@@ -130,9 +158,31 @@ function collectUsageTotals(response: StreamFinishResponseLike): UsageTotals {
     if (reasoningTokens === 0) {
       reasoningTokens = stepReasoningSum;
     }
+    if (cachedInputTokens === 0) {
+      cachedInputTokens = stepCachedInputSum;
+    }
+    if (cachedOutputTokens === 0) {
+      cachedOutputTokens = stepCachedOutputSum;
+    }
   }
 
-  return { inputTokens, outputTokens, reasoningTokens };
+  return {
+    cachedInputTokens,
+    cachedOutputTokens,
+    inputTokens,
+    outputTokens,
+    reasoningTokens,
+  };
+}
+
+function getCachedTokenCount(
+  details: UsageLike['inputTokenDetails'] | UsageLike['outputTokenDetails']
+) {
+  if (!details) return 0;
+  return (
+    details.cachedTokens ??
+    (details.cacheReadTokens ?? 0) + (details.cacheWriteTokens ?? 0)
+  );
 }
 
 function collectSerializableSources(response: StreamFinishResponseLike) {
@@ -205,6 +255,87 @@ function countGoogleSearchQueries(
   return 0;
 }
 
+function collectUiMessageParts({
+  allToolCalls,
+  allToolResults,
+  reasoningText,
+  response,
+  serializedSources,
+}: {
+  allToolCalls: ToolCallLike[];
+  allToolResults: ToolResultLike[];
+  reasoningText: string;
+  response: StreamFinishResponseLike;
+  serializedSources: ReturnType<typeof collectSerializableSources>;
+}) {
+  const parts: Record<string, unknown>[] = [];
+
+  if (response.text) {
+    parts.push({ type: 'text', text: response.text });
+  }
+
+  if (reasoningText) {
+    parts.push({ type: 'reasoning', text: reasoningText });
+  }
+
+  for (const toolCall of allToolCalls) {
+    const toolCallId =
+      toolCall.toolCallId ?? readString(toolCall.toolCallId) ?? undefined;
+    const matchingResult = allToolResults.find(
+      (result) => toolCallId && readString(result.toolCallId) === toolCallId
+    );
+    parts.push({
+      type: 'dynamic-tool',
+      toolName: toolCall.toolName ?? matchingResult?.toolName ?? 'tool',
+      toolCallId: toolCallId ?? randomUUID(),
+      state: matchingResult ? 'output-available' : 'input-available',
+      input: extractToolInput(toolCall),
+      ...(matchingResult ? { output: extractToolOutput(matchingResult) } : {}),
+    });
+  }
+
+  for (const toolResult of allToolResults) {
+    const hasCall = allToolCalls.some(
+      (toolCall) =>
+        readString(toolCall.toolCallId) &&
+        readString(toolCall.toolCallId) === readString(toolResult.toolCallId)
+    );
+    if (hasCall) continue;
+
+    parts.push({
+      type: 'dynamic-tool',
+      toolName: toolResult.toolName ?? 'tool',
+      toolCallId: toolResult.toolCallId ?? randomUUID(),
+      state: 'output-available',
+      output: extractToolOutput(toolResult),
+    });
+  }
+
+  for (const source of serializedSources) {
+    if (!source.url) continue;
+    parts.push({
+      type: 'source-url',
+      sourceId: source.sourceId ?? source.url,
+      title: source.title,
+      url: source.url,
+    });
+  }
+
+  return parts;
+}
+
+function extractToolInput(toolCall: ToolCallLike) {
+  return toolCall.input ?? toolCall.args ?? toolCall.arguments ?? {};
+}
+
+function extractToolOutput(toolResult: ToolResultLike) {
+  return toolResult.output ?? toolResult.result ?? toolResult;
+}
+
+function readString(value: unknown) {
+  return typeof value === 'string' && value.trim() ? value.trim() : null;
+}
+
 export async function persistAssistantResponse({
   response,
   sbAdmin,
@@ -212,6 +343,7 @@ export async function persistAssistantResponse({
   userId,
   model,
   effectiveSource,
+  observabilityContext,
   wsId,
 }: PersistAssistantResponseParams): Promise<void> {
   const steps = response.steps ?? [];
@@ -227,9 +359,21 @@ export async function persistAssistantResponse({
   }
 
   const reasoningText = collectReasoningText(response);
-  const { inputTokens, outputTokens, reasoningTokens } =
-    collectUsageTotals(response);
+  const {
+    cachedInputTokens,
+    cachedOutputTokens,
+    inputTokens,
+    outputTokens,
+    reasoningTokens,
+  } = collectUsageTotals(response);
   const serializedSources = collectSerializableSources(response);
+  const parts = collectUiMessageParts({
+    allToolCalls,
+    allToolResults,
+    reasoningText,
+    response,
+    serializedSources,
+  });
 
   const { data: messageData, error } = await sbAdmin
     .from('ai_chat_messages')
@@ -247,6 +391,21 @@ export async function persistAssistantResponse({
       completion_tokens: outputTokens,
       metadata: {
         source: effectiveSource,
+        ai: {
+          finishReason: response.finishReason,
+          model,
+          observability: {
+            contextBreakdown: observabilityContext ?? [],
+          },
+          parts,
+          usage: {
+            cachedInputTokens,
+            cachedOutputTokens,
+            inputTokens,
+            outputTokens,
+            reasoningTokens,
+          },
+        },
         ...(reasoningText ? { reasoning: reasoningText } : {}),
         ...(allToolCalls.length
           ? { toolCalls: structuredClone(allToolCalls) }
