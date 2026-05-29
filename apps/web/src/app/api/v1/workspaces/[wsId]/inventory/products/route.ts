@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
+  canCreateInventorySales,
   canViewInventoryCatalog,
   canViewInventoryStock,
 } from '@/lib/inventory/permissions';
@@ -57,8 +58,11 @@ export async function GET(request: Request, { params }: Params) {
     if (!authorization.ok) return authorization.response;
 
     const { permissions, wsId } = authorization.value;
-    const canViewInventory = canViewInventoryCatalog(permissions);
-    const canViewStockQuantity = canViewInventoryStock(permissions);
+    const canCreateSales = canCreateInventorySales(permissions);
+    const canViewInventory =
+      canViewInventoryCatalog(permissions) || canCreateSales;
+    const canViewStockQuantity =
+      canViewInventoryStock(permissions) || canCreateSales;
 
     if (!canViewInventory) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });

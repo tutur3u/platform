@@ -3,6 +3,7 @@ import { z } from 'zod';
 import {
   type FinanceRouteAuthContext,
   getFinanceRouteContext,
+  hasAnyFinancePermission,
 } from '../../request-access';
 
 interface Params {
@@ -31,9 +32,13 @@ export async function GET(
   }
 
   const { normalizedWsId, permissions, sbAdmin } = access.context;
-  const { withoutPermission } = permissions;
 
-  if (withoutPermission('view_transactions')) {
+  if (
+    !hasAnyFinancePermission(permissions, [
+      'view_transactions',
+      'create_invoices',
+    ])
+  ) {
     return NextResponse.json(
       { message: 'Insufficient permissions' },
       { status: 403 }

@@ -35,10 +35,42 @@ interface CreateSubscriptionInvoiceRequest {
   wallet_id: string;
   promotion_id?: string;
   products: InvoiceProduct[];
-  category_id: string;
+  category_id?: string;
   frontend_subtotal?: number;
   frontend_discount_amount?: number;
   frontend_total?: number;
+}
+
+export function resolveSubscriptionInvoiceCategoryId({
+  linkedCategoryIds,
+  requestedCategoryId,
+}: {
+  linkedCategoryIds: string[];
+  requestedCategoryId?: string | null;
+}):
+  | { categoryId: string; error?: never }
+  | { categoryId?: never; error: string } {
+  const trimmedRequestedCategoryId = requestedCategoryId?.trim();
+  if (trimmedRequestedCategoryId) {
+    return { categoryId: trimmedRequestedCategoryId };
+  }
+
+  const uniqueLinkedCategoryIds = [
+    ...new Set(linkedCategoryIds.filter(Boolean)),
+  ];
+
+  if (uniqueLinkedCategoryIds.length === 1 && uniqueLinkedCategoryIds[0]) {
+    return { categoryId: uniqueLinkedCategoryIds[0] };
+  }
+
+  if (uniqueLinkedCategoryIds.length > 1) {
+    return {
+      error:
+        'This cart contains products with different linked finance categories. Please choose a category override.',
+    };
+  }
+
+  return { error: 'Missing required field: category_id' };
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -94,13 +126,12 @@ export async function POST(req: Request, { params }: Params) {
       !selected_month ||
       !products ||
       products.length === 0 ||
-      !wallet_id ||
-      !category_id
+      !wallet_id
     ) {
       return NextResponse.json(
         {
           message:
-            'Missing required fields: customer_id, group_id(s), selected_month, products, wallet_id, and category_id',
+            'Missing required fields: customer_id, group_id(s), selected_month, products, and wallet_id',
         },
         { status: 400 }
       );
@@ -133,6 +164,59 @@ export async function POST(req: Request, { params }: Params) {
           { status: 403 }
         );
       }
+    }
+
+    const uniqueProductIds = [
+      ...new Set(products.map((product) => product.product_id)),
+    ];
+    const { data: productRows, error: productRowsError } = await sbAdmin
+      .from('workspace_products')
+      .select('id, finance_category_id')
+      .in('id', uniqueProductIds)
+      .eq('ws_id', wsId)
+      .filter('archived', 'eq', 'false');
+
+    if (productRowsError) {
+      return NextResponse.json(
+        { message: 'Failed to validate sold products' },
+        { status: 500 }
+      );
+    }
+
+    if ((productRows ?? []).length !== uniqueProductIds.length) {
+      return NextResponse.json(
+        { message: 'One or more sold products are invalid' },
+        { status: 400 }
+      );
+    }
+
+    const resolvedCategory = resolveSubscriptionInvoiceCategoryId({
+      linkedCategoryIds: (productRows ?? [])
+        .map((row) => row.finance_category_id)
+        .filter((value): value is string => !!value),
+      requestedCategoryId: category_id,
+    });
+
+    if ('error' in resolvedCategory) {
+      return NextResponse.json(
+        { message: resolvedCategory.error },
+        { status: 400 }
+      );
+    }
+
+    const resolvedCategoryId = resolvedCategory.categoryId;
+    const { data: categoryCheck, error: categoryCheckError } = await sbAdmin
+      .from('transaction_categories')
+      .select('id')
+      .eq('id', resolvedCategoryId)
+      .eq('ws_id', wsId)
+      .maybeSingle();
+
+    if (categoryCheckError || !categoryCheck) {
+      return NextResponse.json(
+        { message: 'Invalid invoice category' },
+        { status: 400 }
+      );
     }
 
     // Calculate values through the private database RPC
@@ -201,7 +285,7 @@ export async function POST(req: Request, { params }: Params) {
       note: notes,
       notice: content,
       wallet_id,
-      category_id,
+      category_id: resolvedCategoryId,
       completed_at: new Date().toISOString(),
       valid_until: validUntil.toISOString(),
       paid_amount: roundedTotal,

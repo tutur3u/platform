@@ -91,6 +91,35 @@ describe('subscription invoice create route', () => {
     });
   });
 
+  it('resolves a missing invoice category from a single linked product category', async () => {
+    const { resolveSubscriptionInvoiceCategoryId } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'
+    );
+
+    expect(
+      resolveSubscriptionInvoiceCategoryId({
+        linkedCategoryIds: ['category-1', 'category-1'],
+        requestedCategoryId: undefined,
+      })
+    ).toEqual({ categoryId: 'category-1' });
+  });
+
+  it('requires a category override when linked product categories are mixed', async () => {
+    const { resolveSubscriptionInvoiceCategoryId } = await import(
+      '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'
+    );
+
+    expect(
+      resolveSubscriptionInvoiceCategoryId({
+        linkedCategoryIds: ['category-1', 'category-2'],
+        requestedCategoryId: undefined,
+      })
+    ).toEqual({
+      error:
+        'This cart contains products with different linked finance categories. Please choose a category override.',
+    });
+  });
+
   it('rejects non-default wallets on create without wallet override permissions', async () => {
     const { POST } = await import(
       '@/app/api/v1/workspaces/[wsId]/finance/invoices/subscription/route'

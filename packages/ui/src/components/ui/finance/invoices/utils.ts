@@ -39,6 +39,31 @@ type SubscriptionAttendanceDisplayData = {
   attendanceRate: number;
 };
 
+type FinanceCategoryLinkedItem = {
+  product?: {
+    finance_category_id?: string | null;
+  } | null;
+};
+
+export const getLinkedFinanceCategorySelection = (
+  items: FinanceCategoryLinkedItem[]
+) => {
+  const linkedCategoryIds = [
+    ...new Set(
+      items
+        .map((item) => item.product?.finance_category_id)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ];
+
+  return {
+    categoryId:
+      linkedCategoryIds.length === 1 ? (linkedCategoryIds[0] ?? null) : null,
+    hasMixedCategories: linkedCategoryIds.length > 1,
+    hasSingleCategory: linkedCategoryIds.length === 1,
+  };
+};
+
 const MONTH_VALUE_PATTERN = /^(\d{4})-(\d{2})$/;
 const DATE_VALUE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 

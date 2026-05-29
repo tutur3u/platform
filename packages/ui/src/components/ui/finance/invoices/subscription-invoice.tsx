@@ -59,6 +59,7 @@ import {
   getBillableAttendanceRecords,
   getBillableSessionsForGroups,
   getGroupsDateRange,
+  getLinkedFinanceCategorySelection,
   getMonthStartDate,
   getSubscriptionAttendanceDisplayData,
 } from './utils';
@@ -433,6 +434,21 @@ export function SubscriptionInvoice({
   });
 
   const subtotal = useInvoiceSubtotal(subscriptionSelectedProducts);
+  const linkedFinanceCategorySelection = useMemo(
+    () => getLinkedFinanceCategorySelection(subscriptionSelectedProducts),
+    [subscriptionSelectedProducts]
+  );
+
+  useEffect(() => {
+    if (linkedFinanceCategorySelection.categoryId) {
+      setSelectedCategoryId(linkedFinanceCategorySelection.categoryId);
+      return;
+    }
+
+    if (linkedFinanceCategorySelection.hasMixedCategories) {
+      setSelectedCategoryId('');
+    }
+  }, [linkedFinanceCategorySelection]);
 
   useBestPromotionSelection({
     enabled: true,

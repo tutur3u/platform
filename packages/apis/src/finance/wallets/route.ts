@@ -1,4 +1,6 @@
 import type { Wallet } from '@tuturuuu/types/primitives/Wallet';
+import { canSetAnyFinanceWalletOnCreate } from '@tuturuuu/utils/finance';
+import { getWorkspaceConfig } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import {
   type FinanceRouteAuthContext,
@@ -29,9 +31,17 @@ export async function GET(
 
   // Check if user has manage_finance permission
   const hasManageFinance = !withoutPermission('manage_finance');
+  const hasCreateInvoices = !withoutPermission('create_invoices');
+  const defaultInvoiceWalletId = hasCreateInvoices
+    ? await getWorkspaceConfig(normalizedWsId, 'default_wallet_id')
+    : null;
+  const canReadAllWalletsForInvoiceCreation =
+    hasCreateInvoices &&
+    (!defaultInvoiceWalletId || canSetAnyFinanceWalletOnCreate(permissions));
 
-  if (hasManageFinance) {
-    // User has full access - return all wallets
+  if (hasManageFinance || canReadAllWalletsForInvoiceCreation) {
+    // Invoice creators need wallet choices when there is no default wallet or
+    // their role can override the default during creation.
     const { data, error } = await sbAdmin
       .from('workspace_wallets')
       .select('*, credit_wallets(limit, statement_date, payment_date)')
@@ -50,6 +60,9 @@ export async function GET(
   }
 
   // User doesn't have manage_finance - check wallet whitelist
+  const defaultInvoiceWalletIds = defaultInvoiceWalletId
+    ? [defaultInvoiceWalletId]
+    : [];
 
   // Get user's role IDs
   const { data: userRoles, error: rolesError } = await sbAdmin
@@ -67,7 +80,26 @@ export async function GET(
   }
 
   if (!userRoles || userRoles.length === 0) {
-    return NextResponse.json([]);
+    if (defaultInvoiceWalletIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    const { data: wallets, error: walletsError } = await sbAdmin
+      .from('workspace_wallets')
+      .select('*, credit_wallets(limit, statement_date, payment_date)')
+      .eq('ws_id', normalizedWsId)
+      .in('id', defaultInvoiceWalletIds)
+      .order('name', { ascending: true });
+
+    if (walletsError) {
+      console.log(walletsError);
+      return NextResponse.json(
+        { message: 'Error fetching wallet details' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(flattenWalletCreditList(wallets ?? []));
   }
 
   const roleIds = userRoles.map((r) => r.role_id);
@@ -86,12 +118,20 @@ export async function GET(
     );
   }
 
-  if (!whitelistData || whitelistData.length === 0) {
+  if (
+    (!whitelistData || whitelistData.length === 0) &&
+    defaultInvoiceWalletIds.length === 0
+  ) {
     return NextResponse.json([]);
   }
 
   // Get unique wallet IDs
-  const walletIds = [...new Set(whitelistData.map((item) => item.wallet_id))];
+  const walletIds = [
+    ...new Set([
+      ...(whitelistData ?? []).map((item) => item.wallet_id),
+      ...defaultInvoiceWalletIds,
+    ]),
+  ];
 
   // Fetch wallet details
   const { data: wallets, error: walletsError } = await sbAdmin
@@ -137,7 +177,7 @@ export async function GET(
     }
   };
 
-  const walletMap = whitelistData.reduce((acc, item) => {
+  const walletMap = (whitelistData ?? []).reduce((acc, item) => {
     const existing = acc.get(item.wallet_id);
     if (!existing) {
       acc.set(item.wallet_id, {

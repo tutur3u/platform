@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getBillableAttendanceRecords,
   getBillableSessionsForGroups,
+  getLinkedFinanceCategorySelection,
   getSubscriptionAttendanceDisplayData,
   type UserGroup,
 } from './utils';
@@ -131,5 +132,34 @@ describe('subscription invoice attendance display data', () => {
     });
     expect(result.totalSessions).toBe(2);
     expect(result.attendanceRate).toBe(50);
+  });
+});
+
+describe('linked finance category selection', () => {
+  it('returns the single linked finance category across selected products', () => {
+    expect(
+      getLinkedFinanceCategorySelection([
+        { product: { finance_category_id: 'category-1' } },
+        { product: { finance_category_id: 'category-1' } },
+        { product: { finance_category_id: null } },
+      ])
+    ).toEqual({
+      categoryId: 'category-1',
+      hasMixedCategories: false,
+      hasSingleCategory: true,
+    });
+  });
+
+  it('marks mixed linked finance categories for manual selection', () => {
+    expect(
+      getLinkedFinanceCategorySelection([
+        { product: { finance_category_id: 'category-1' } },
+        { product: { finance_category_id: 'category-2' } },
+      ])
+    ).toEqual({
+      categoryId: null,
+      hasMixedCategories: true,
+      hasSingleCategory: false,
+    });
   });
 });

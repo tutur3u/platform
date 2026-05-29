@@ -23,7 +23,10 @@ export async function GET(req: Request, { params }: Params) {
 
   const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
 
-  if (permissions.withoutPermission('view_user_groups')) {
+  if (
+    permissions.withoutPermission('view_user_groups') &&
+    permissions.withoutPermission('create_invoices')
+  ) {
     return NextResponse.json(
       { message: 'Insufficient permissions to view linked products' },
       { status: 403 }
