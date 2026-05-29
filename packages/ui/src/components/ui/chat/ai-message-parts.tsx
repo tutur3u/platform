@@ -16,7 +16,11 @@ import {
   normalizeAiMessageParts,
   readString,
 } from './ai-message-render-utils';
-import { type AiPartLabels, ToolPart } from './ai-message-tool-part';
+import {
+  type AiPartLabels,
+  isAiToolPart,
+  ToolGroup,
+} from './ai-message-tool-part';
 
 export type { AiMessagePart } from './ai-message-render-utils';
 
@@ -36,27 +40,37 @@ export function AiMessageParts({
     () => normalizeAiMessageParts(parts, textFallback),
     [parts, textFallback]
   );
+  const labels = {
+    completed: t('ai_tool_completed'),
+    failed: t('ai_tool_failed'),
+    input: t('ai_tool_input'),
+    output: t('ai_tool_output'),
+    running: t('ai_tool_running'),
+    thinking: t('ai_thinking_mode'),
+    thought: t('ai_thought'),
+  };
+  const contentParts = normalizedParts.filter((part) => !isAiToolPart(part));
+  const toolParts = normalizedParts.filter(isAiToolPart);
 
   if (normalizedParts.length === 0) return null;
 
   return (
     <div className={cn('flex min-w-0 max-w-full flex-col gap-2', className)}>
-      {normalizedParts.map((part, index) => (
+      {contentParts.map((part, index) => (
         <AiPartRenderer
           isStreaming={Boolean(isStreaming)}
           key={getPartKey(part, index)}
-          labels={{
-            completed: t('ai_tool_completed'),
-            failed: t('ai_tool_failed'),
-            input: t('ai_tool_input'),
-            output: t('ai_tool_output'),
-            running: t('ai_tool_running'),
-            thinking: t('ai_thinking_mode'),
-            thought: t('ai_thought'),
-          }}
+          labels={labels}
           part={part}
         />
       ))}
+      {toolParts.length > 0 && (
+        <ToolGroup
+          isStreaming={Boolean(isStreaming)}
+          labels={labels}
+          parts={toolParts}
+        />
+      )}
     </div>
   );
 }
@@ -93,10 +107,6 @@ function AiPartRenderer({
 
   if (type === 'source-url') {
     return <SourceUrlPart part={part} />;
-  }
-
-  if (type === 'dynamic-tool' || type?.startsWith('tool-')) {
-    return <ToolPart labels={labels} part={part} />;
   }
 
   return null;

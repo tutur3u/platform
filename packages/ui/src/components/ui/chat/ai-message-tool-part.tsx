@@ -3,7 +3,7 @@
 import { Renderer, VisibilityProvider } from '@json-render/react';
 import { Check, ChevronRight, LoaderCircle, X } from '@tuturuuu/icons';
 import { cn } from '@tuturuuu/utils/format';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { chatAiRegistry } from './ai-message-render-registry';
 import {
   type AiMessagePart,
@@ -13,6 +13,15 @@ import {
   readToolNameFromType,
   resolveRenderUiSpecFromOutput,
 } from './ai-message-render-utils';
+import {
+  dedupeToolParts,
+  getToolPartKey,
+  getToolPartStatus,
+  readSelectedTools,
+  summarizeToolParts,
+} from './ai-message-tool-utils';
+
+export { isAiToolPart } from './ai-message-tool-utils';
 
 export type AiPartLabels = {
   completed: string;
@@ -24,10 +33,78 @@ export type AiPartLabels = {
   thought: string;
 };
 
+export function ToolGroup({
+  isStreaming,
+  labels,
+  parts,
+}: {
+  isStreaming: boolean;
+  labels: AiPartLabels;
+  parts: AiMessagePart[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const toolParts = useMemo(() => dedupeToolParts(parts), [parts]);
+  if (toolParts.length === 0) return null;
+
+  const summary = summarizeToolParts(toolParts, isStreaming);
+  const latestToolName =
+    humanizeToolName(summary.latestToolName ?? 'Tool') ||
+    humanizeToolName('Tool');
+
+  return (
+    <div className="rounded-md border bg-muted/20 text-xs">
+      <button
+        className="flex w-full min-w-0 items-center gap-2 px-2.5 py-1.5 text-left"
+        onClick={() => setExpanded((value) => !value)}
+        type="button"
+      >
+        <ToolStatusIcon
+          isError={summary.failedCount > 0 && summary.runningCount === 0}
+          isRunning={summary.runningCount > 0}
+        />
+        <span className="min-w-0 truncate font-medium">{latestToolName}</span>
+        <span className="shrink-0 text-muted-foreground">
+          {summary.successCount} {labels.completed}
+        </span>
+        {summary.failedCount > 0 && (
+          <span className="shrink-0 text-dynamic-red">
+            {summary.failedCount} {labels.failed}
+          </span>
+        )}
+        {summary.runningCount > 0 && (
+          <span className="shrink-0 text-muted-foreground">
+            {summary.runningCount} {labels.running}
+          </span>
+        )}
+        <ChevronRight
+          className={cn(
+            'ml-auto size-3 shrink-0 text-muted-foreground transition-transform',
+            expanded && 'rotate-90'
+          )}
+        />
+      </button>
+      {expanded && (
+        <div className="flex flex-col gap-1 border-t p-1.5">
+          {toolParts.map((part, index) => (
+            <ToolPart
+              isStreaming={isStreaming}
+              key={getToolPartKey(part, index)}
+              labels={labels}
+              part={part}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ToolPart({
+  isStreaming,
   labels,
   part,
 }: {
+  isStreaming: boolean;
   labels: AiPartLabels;
   part: AiMessagePart;
 }) {
@@ -35,15 +112,8 @@ export function ToolPart({
   const [activeTab, setActiveTab] = useState<'input' | 'output'>('output');
   const toolName =
     readString(part.toolName) ?? readToolNameFromType(part) ?? 'Tool';
-  const state = readString(part.state);
   const output = part.output;
-  const isRunning = state
-    ? !['output-available', 'output-error'].includes(state)
-    : output === undefined && !readString(part.errorText);
-  const isError =
-    state === 'output-error' ||
-    Boolean(readString(part.errorText)) ||
-    hasLogicalToolError(output);
+  const { isError, isRunning } = getToolPartStatus(part, isStreaming);
   const spec =
     toolName === 'render_ui' ? resolveRenderUiSpecFromOutput(output) : null;
   const selectedTools = readSelectedTools(output);
@@ -116,18 +186,6 @@ export function ToolPart({
           />
         )}
       </button>
-      {selectedTools.length > 0 && (
-        <div className="flex flex-wrap gap-1 px-2.5 pb-1.5">
-          {selectedTools.map((selectedTool) => (
-            <span
-              className="rounded-sm border bg-background px-1.5 py-0.5 text-muted-foreground"
-              key={selectedTool}
-            >
-              {humanizeToolName(selectedTool)}
-            </span>
-          ))}
-        </div>
-      )}
       {expanded && canExpand && (
         <ToolDetails
           activeTab={activeTab}
@@ -140,19 +198,6 @@ export function ToolPart({
       )}
     </div>
   );
-}
-
-function readSelectedTools(output: unknown) {
-  if (!output || typeof output !== 'object' || Array.isArray(output)) {
-    return [];
-  }
-
-  const selectedTools = (output as { selectedTools?: unknown }).selectedTools;
-  return Array.isArray(selectedTools)
-    ? selectedTools.filter(
-        (tool): tool is string => typeof tool === 'string' && tool.trim() !== ''
-      )
-    : [];
 }
 
 function ToolStatusIcon({
@@ -245,18 +290,5 @@ function ToolDetailTab({
     >
       {label}
     </button>
-  );
-}
-
-function hasLogicalToolError(output: unknown) {
-  if (!output || typeof output !== 'object' || Array.isArray(output)) {
-    return false;
-  }
-
-  const record = output as Record<string, unknown>;
-  return (
-    record.ok === false ||
-    record.success === false ||
-    typeof record.error === 'string'
   );
 }
