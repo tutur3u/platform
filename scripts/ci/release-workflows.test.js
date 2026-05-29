@@ -110,11 +110,20 @@ test('CI workflows use main instead of retired staging branch filters', () => {
 });
 
 test('E2E workflow frees runner disk before loading cached Docker images', () => {
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),
+    'utf8'
+  );
   const e2eJob = readWorkflowJobBlock('e2e-tests.yaml', 'e2e');
   const cleanupIndex = e2eJob.indexOf('Free runner disk for Dockerized E2E');
   const restoreIndex = e2eJob.indexOf('Restore cached Docker images');
   const loadIndex = e2eJob.indexOf('Load cached Docker images');
 
+  assert.match(
+    workflow,
+    /\n {2}push:\n {4}branches-ignore:\n {6}- production\n/
+  );
+  assert.match(e2eJob, /github\.ref != 'refs\/heads\/production'/);
   assert.notEqual(cleanupIndex, -1);
   assert.notEqual(restoreIndex, -1);
   assert.notEqual(loadIndex, -1);

@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-05-27"
+updatedAt: "2026-05-29"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -23,6 +23,9 @@ This page explains how Tuturuuu moves from code to running environments.
 
 - Preview workflows are named `vercel-preview-<app>.yaml`.
 - They trigger on non-`production` pushes, including `main`.
+- `e2e-tests.yaml` also runs only on non-`production` pushes; production
+  promotion relies on the already-green validation before the branch is
+  promoted plus the production deployment gates below.
 - Each workflow checks whether a newer commit exists on the same branch before spending time on install/build/deploy.
 - Each deploy job is bound to a `vercel-preview-<app>` GitHub Environment and
   introduces Vercel credentials only after dependency installation.
@@ -52,7 +55,7 @@ This page explains how Tuturuuu moves from code to running environments.
 - Browser apps share one platform version from
   `packages/utils/src/platform-release.ts`; do not read visible app versions
   from individual app `package.json` files.
-- The current shared browser app version is `0.1.0`.
+- The current shared browser app version is `0.1.25`.
 - Every Vercel browser app workflow runs
   `bun run --silent scripts/ci/generate-build-metadata.ts` before
   `vercel build`. The generated metadata includes the commit hash, short hash,
