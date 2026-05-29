@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -21,6 +21,10 @@ const checkoutScopeMigrationPath = resolve(
 const inventoryPrivateMigrationPath = resolve(
   repoRoot,
   'apps/database/supabase/migrations/20260528141100_move_inventory_tables_private.sql'
+);
+const invoicePrivateRpcRepairMigrationPath = resolve(
+  repoRoot,
+  'apps/database/supabase/migrations/20260529182005_repair_private_invoice_value_rpc.sql'
 );
 const bundleRepositoryPath = resolve(
   repoRoot,
@@ -169,5 +173,24 @@ describe('inventory commerce migration contract', () => {
       "execute format('alter table public.%I set schema private'"
     );
     expect(source).toContain('private.inventory_products inventory');
+  });
+
+  it('repairs private invoice value calculation metadata after inventory table moves', () => {
+    expect(existsSync(invoicePrivateRpcRepairMigrationPath)).toBe(true);
+
+    const source = readFileSync(invoicePrivateRpcRepairMigrationPath, 'utf8');
+
+    expect(source).toContain(
+      'create or replace function private.calculate_invoice_values'
+    );
+    expect(source).toContain('join private.inventory_products inventory');
+    expect(source).not.toContain('join public.inventory_products inventory');
+    expect(source).toContain(
+      'revoke all on function private.calculate_invoice_values'
+    );
+    expect(source).toContain(
+      'grant execute on function private.calculate_invoice_values'
+    );
+    expect(source).toContain("notify pgrst, 'reload schema'");
   });
 });
