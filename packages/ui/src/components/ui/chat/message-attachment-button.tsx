@@ -33,7 +33,7 @@ export function MessageAttachmentButton({
   const signedUrl = signedUrlQuery.data;
 
   return (
-    <div className="overflow-hidden rounded-md border bg-background/70">
+    <div className="min-w-0 max-w-full overflow-hidden rounded-md border bg-background/70">
       {previewType !== 'file' ? (
         <AttachmentPreview
           attachment={attachment}
@@ -52,15 +52,18 @@ export function MessageAttachmentButton({
       />
       <button
         className={cn(
-          'flex w-full min-w-0 items-center gap-2 px-2 py-2 text-left transition-colors hover:bg-accent',
+          'flex w-full min-w-0 items-center gap-2 overflow-hidden px-2 py-2 text-left transition-colors hover:bg-accent',
           previewType !== 'file' && 'border-t bg-muted/20'
         )}
         onClick={() => onOpenAttachment?.(attachment)}
         type="button"
       >
         <FileText className="size-4 shrink-0 text-muted-foreground" />
-        <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium">
+        <span className="min-w-0 flex-1 overflow-hidden">
+          <span
+            className="block truncate font-medium"
+            title={attachment.filename}
+          >
             {attachment.filename}
           </span>
           <span className="block text-muted-foreground text-xs">

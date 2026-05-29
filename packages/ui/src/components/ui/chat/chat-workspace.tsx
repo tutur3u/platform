@@ -13,6 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge } from '../badge';
 import { Button } from '../button';
 import { toast } from '../sonner';
+import { ChatAgentDetailsSidebar } from './chat-agent-details-sidebar';
 import { ChatAiDetailsSidebar } from './chat-ai-details-sidebar';
 import { ChatSharedContentSidebar } from './chat-shared-content-sidebar';
 import { ChatConversationFilterMenu, ChatSidebar } from './chat-sidebar';
@@ -24,6 +25,7 @@ import {
   useChatMessageSearch,
   useChatMessages,
   useDeleteChatConversation,
+  useDeleteChatMessage,
   useMarkChatConversationRead,
   useOpenChatAttachment,
   useSendChatMessage,
@@ -141,6 +143,10 @@ export function ChatWorkspace({
     conversationId: activeConversationId,
     wsId,
   });
+  const deleteMessage = useDeleteChatMessage({
+    conversationId: activeConversationId,
+    wsId,
+  });
   const { mutate: markConversationRead } = useMarkChatConversationRead({
     conversationId: activeConversationId,
     wsId,
@@ -157,18 +163,19 @@ export function ChatWorkspace({
       )
   );
   const latestMessageId = messages.at(-1)?.id ?? null;
-  const detailsOpen = Boolean(
-    sharedContentOpen && activeConversationId && !selectedVirtualReadOnly
-  );
+  const latestPersistedMessageId = isPostgresUuid(latestMessageId)
+    ? latestMessageId
+    : null;
+  const detailsOpen = Boolean(sharedContentOpen && activeConversationId);
 
   useEffect(() => {
     if (selectedReadOnly) return;
     if (!selectedMembership) return;
-    if (!activeConversationId || !latestMessageId) return;
-    markConversationRead(latestMessageId);
+    if (!activeConversationId || !latestPersistedMessageId) return;
+    markConversationRead(latestPersistedMessageId);
   }, [
     activeConversationId,
-    latestMessageId,
+    latestPersistedMessageId,
     markConversationRead,
     selectedMembership,
     selectedReadOnly,
@@ -204,6 +211,15 @@ export function ChatWorkspace({
       await openAttachment.mutateAsync(attachment.id);
     } catch {
       toast.error(t('attachment_open_failed'));
+    }
+  }
+
+  async function handleDeleteMessage(messageId: string) {
+    try {
+      await deleteMessage.mutateAsync(messageId);
+      toast.success(t('message_deleted_success'));
+    } catch {
+      toast.error(t('message_delete_failed'));
     }
   }
 
@@ -246,9 +262,9 @@ export function ChatWorkspace({
         '',
         nextQuery ? `${pathname}?${nextQuery}` : pathname
       );
-      toast.success(t('conversation_deleted'));
+      toast.success(t('conversation_archived'));
     } catch {
-      toast.error(t('conversation_delete_failed'));
+      toast.error(t('conversation_archive_failed'));
     }
   }
 
@@ -338,6 +354,7 @@ export function ChatWorkspace({
               isLoading={messagesQuery.isLoading}
               isAgentTyping={selectedAiConversation && sendMessage.isPending}
               messages={messages}
+              onDeleteMessage={handleDeleteMessage}
               onOpenAttachment={handleOpenAttachment}
               onToggleReaction={
                 selectedReadOnly || selectedAiConversation
@@ -370,7 +387,12 @@ export function ChatWorkspace({
         )}
       </div>
 
-      {selectedAiConversation && !selectedVirtualReadOnly ? (
+      {selectedVirtualReadOnly ? (
+        <ChatAgentDetailsSidebar
+          conversation={selectedConversation}
+          open={detailsOpen}
+        />
+      ) : selectedAiConversation ? (
         <ChatAiDetailsSidebar
           conversationId={activeConversationId}
           onOpenAttachment={handleOpenAttachment}
@@ -406,4 +428,11 @@ export function ChatWorkspace({
       />
     </section>
   );
+}
+
+const POSTGRES_UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
+
+function isPostgresUuid(value: string | null): value is string {
+  return Boolean(value && POSTGRES_UUID_PATTERN.test(value));
 }

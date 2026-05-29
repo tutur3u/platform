@@ -62,7 +62,7 @@ export function ChatSharedContentSidebar({
   if (!open) return null;
 
   return (
-    <aside className="hidden w-80 shrink-0 border-l bg-background md:flex md:flex-col">
+    <aside className="hidden w-80 min-w-0 shrink-0 overflow-hidden border-l bg-background md:flex md:flex-col">
       <div className="border-b p-3">
         <h2 className="font-semibold text-sm">{t('shared')}</h2>
         <div className="mt-3 grid grid-cols-3 gap-1 rounded-md border bg-muted/30 p-1">
@@ -133,10 +133,10 @@ function SharedLinkList({
   }
 
   return (
-    <div className="space-y-1 p-2">
+    <div className="max-w-full space-y-1 overflow-hidden p-2">
       {links.map((link) => (
         <a
-          className="block rounded-md border bg-muted/20 p-3 transition-colors hover:bg-accent"
+          className="block min-w-0 max-w-full overflow-hidden rounded-md border bg-muted/20 p-3 transition-colors hover:bg-accent"
           href={link.url}
           key={`${link.messageId}-${link.url}`}
           rel="noreferrer noopener"
@@ -171,10 +171,10 @@ function AttachmentList({
   }
 
   return (
-    <div className="space-y-1 p-2">
+    <div className="max-w-full space-y-1 overflow-hidden p-2">
       {attachments.map((attachment) => (
         <button
-          className="flex w-full items-center gap-3 rounded-md border bg-muted/20 p-3 text-left transition-colors hover:bg-accent"
+          className="flex w-full min-w-0 items-center gap-3 overflow-hidden rounded-md border bg-muted/20 p-3 text-left transition-colors hover:bg-accent"
           key={attachment.id}
           onClick={() => onOpenAttachment?.(attachment)}
           type="button"
@@ -182,8 +182,11 @@ function AttachmentList({
           <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-background">
             {icon}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-medium text-sm">
+          <span className="min-w-0 flex-1 overflow-hidden">
+            <span
+              className="block truncate font-medium text-sm"
+              title={attachment.filename}
+            >
               {attachment.filename}
             </span>
             <span className="block text-muted-foreground text-xs">

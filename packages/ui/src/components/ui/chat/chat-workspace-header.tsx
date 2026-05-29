@@ -1,13 +1,13 @@
 'use client';
 
 import {
+  Archive,
   Bot,
   CheckCircle2,
   Edit,
   LoaderCircle,
   MessageCircle,
   PanelRight,
-  Trash2,
   Users,
 } from '@tuturuuu/icons';
 import type {
@@ -30,7 +30,7 @@ import {
 } from '../alert-dialog';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
-import { Button, buttonVariants } from '../button';
+import { Button } from '../button';
 import {
   Dialog,
   DialogContent,
@@ -83,8 +83,8 @@ export function ChatHeader({
     [];
   const canDelete = Boolean(conversation && !readOnly && onDeleteConversation);
   const canRename = Boolean(conversation && !readOnly && onUpdateConversation);
-  const deleteLabel = getDeleteLabel(t, conversation);
-  const deleteDescription = getDeleteDescription({
+  const deleteLabel = getArchiveLabel(t, conversation);
+  const deleteDescription = getArchiveDescription({
     actorRole: actorMember?.role,
     conversation,
     t,
@@ -228,7 +228,7 @@ export function ChatHeader({
                 type="button"
                 variant="ghost"
               >
-                <Trash2 className="size-4" />
+                <Archive className="size-4" />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent>
@@ -243,7 +243,6 @@ export function ChatHeader({
                   {t('cancel')}
                 </AlertDialogCancel>
                 <AlertDialogAction
-                  className={buttonVariants({ variant: 'destructive' })}
                   disabled={isDeletingConversation}
                   onClick={(event) => {
                     event.preventDefault();
@@ -254,9 +253,9 @@ export function ChatHeader({
                   {isDeletingConversation ? (
                     <LoaderCircle className="size-4 animate-spin" />
                   ) : (
-                    <Trash2 className="size-4" />
+                    <Archive className="size-4" />
                   )}
-                  {t('delete_confirm')}
+                  {t('archive_confirm')}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -337,17 +336,17 @@ function MemberRow({
   );
 }
 
-function getDeleteLabel(
+function getArchiveLabel(
   t: ReturnType<typeof useTranslations>,
   conversation: ChatConversation | null
 ) {
-  if (conversation?.type === 'group') return t('delete_group');
-  if (conversation?.type === 'channel') return t('delete_channel');
-  if (conversation?.type === 'ai') return t('delete_agent');
-  return t('delete_chat');
+  if (conversation?.type === 'group') return t('archive_group');
+  if (conversation?.type === 'channel') return t('archive_channel');
+  if (conversation?.type === 'ai') return t('archive_agent');
+  return t('archive_chat');
 }
 
-function getDeleteDescription({
+function getArchiveDescription({
   actorRole,
   conversation,
   t,
@@ -357,18 +356,18 @@ function getDeleteDescription({
   t: ReturnType<typeof useTranslations>;
 }) {
   if (conversation?.type === 'group' && actorRole === 'owner') {
-    return t('delete_group_owner_warning');
+    return t('archive_group_owner_warning');
   }
 
   if (conversation?.type === 'group') {
-    return t('delete_group_warning');
+    return t('archive_group_warning');
   }
 
   if (conversation?.type === 'channel' || conversation?.type === 'ai') {
-    return t('delete_workspace_conversation_warning');
+    return t('archive_workspace_conversation_warning');
   }
 
-  return t('delete_chat_warning');
+  return t('archive_chat_warning');
 }
 
 export function EmptyConversationState({ onCreate }: { onCreate: () => void }) {

@@ -125,11 +125,13 @@ export function MessageComposer({
         <div className="mb-2 flex flex-wrap gap-2">
           {attachments.map((attachment) => (
             <div
-              className="flex max-w-full items-center gap-2 rounded-md border bg-muted/40 px-2 py-1 text-sm"
+              className="flex min-w-0 max-w-full items-center gap-2 overflow-hidden rounded-md border bg-muted/40 px-2 py-1 text-sm"
               key={attachment.path}
             >
               <Upload className="size-4 shrink-0 text-muted-foreground" />
-              <span className="min-w-0 truncate">{attachment.filename}</span>
+              <span className="min-w-0 truncate" title={attachment.filename}>
+                {attachment.filename}
+              </span>
               {attachment.sizeBytes ? (
                 <span className="shrink-0 text-muted-foreground text-xs">
                   {formatFileSize(attachment.sizeBytes)}

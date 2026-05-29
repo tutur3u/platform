@@ -42,7 +42,9 @@ export function AiMessageParts({
   );
   const labels = {
     completed: t('ai_tool_completed'),
+    downloadQrCode: t('download_qr_code'),
     failed: t('ai_tool_failed'),
+    generatedQrCode: t('generated_qr_code'),
     input: t('ai_tool_input'),
     output: t('ai_tool_output'),
     running: t('ai_tool_running'),

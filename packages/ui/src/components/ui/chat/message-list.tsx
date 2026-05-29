@@ -14,6 +14,7 @@ interface MessageListProps {
   isAgentTyping?: boolean;
   isLoading?: boolean;
   messages: ChatMessage[];
+  onDeleteMessage?: (messageId: string) => void;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   readOnly?: boolean;
@@ -25,6 +26,7 @@ export function MessageList({
   isAgentTyping,
   isLoading,
   messages,
+  onDeleteMessage,
   onOpenAttachment,
   onToggleReaction,
   readOnly,
@@ -85,6 +87,7 @@ export function MessageList({
                 <MessageBubble
                   currentUserId={currentUserId}
                   message={message}
+                  onDeleteMessage={readOnly ? undefined : onDeleteMessage}
                   onOpenAttachment={onOpenAttachment}
                   onToggleReaction={readOnly ? undefined : onToggleReaction}
                   wsId={wsId}

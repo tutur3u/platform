@@ -1,9 +1,16 @@
 'use client';
 
 import { Renderer, VisibilityProvider } from '@json-render/react';
-import { Check, ChevronRight, LoaderCircle, X } from '@tuturuuu/icons';
-import { cn } from '@tuturuuu/utils/format';
+import {
+  Check,
+  ChevronRight,
+  Download,
+  LoaderCircle,
+  X,
+} from '@tuturuuu/icons';
+import { cn, isValidHttpUrl } from '@tuturuuu/utils/format';
 import { useMemo, useState } from 'react';
+import { Dialog, DialogContent, DialogTitle } from '../dialog';
 import { chatAiRegistry } from './ai-message-render-registry';
 import {
   type AiMessagePart,
@@ -25,7 +32,9 @@ export { isAiToolPart } from './ai-message-tool-utils';
 
 export type AiPartLabels = {
   completed: string;
+  downloadQrCode: string;
   failed: string;
+  generatedQrCode: string;
   input: string;
   output: string;
   running: string;
@@ -117,6 +126,8 @@ export function ToolPart({
   const spec =
     toolName === 'render_ui' ? resolveRenderUiSpecFromOutput(output) : null;
   const selectedTools = readSelectedTools(output);
+  const qrCode =
+    toolName === 'create_qr_code' ? parseQrCodeOutput(output) : null;
   const hasInput = part.input !== undefined && part.input !== null;
   const hasOutput = output !== undefined || part.errorText !== undefined;
   const canExpand = hasInput || hasOutput;
@@ -144,6 +155,10 @@ export function ToolPart({
         </VisibilityProvider>
       </div>
     );
+  }
+
+  if (qrCode && !isError) {
+    return <QrCodeToolResult labels={labels} qrCode={qrCode} />;
   }
 
   return (
@@ -198,6 +213,130 @@ export function ToolPart({
       )}
     </div>
   );
+}
+
+function QrCodeToolResult({
+  labels,
+  qrCode,
+}: {
+  labels: AiPartLabels;
+  qrCode: ParsedQrCodeOutput;
+}) {
+  const [previewOpen, setPreviewOpen] = useState(false);
+
+  return (
+    <div className="rounded-md border bg-muted/20 p-2 text-xs">
+      <div className="mb-2 flex items-center gap-1.5">
+        <Check className="size-3.5 text-dynamic-green" />
+        <span className="font-medium">{labels.generatedQrCode}</span>
+        <span className="text-muted-foreground">{labels.completed}</span>
+      </div>
+      <button
+        aria-label={labels.generatedQrCode}
+        className="block overflow-hidden rounded-md border bg-background"
+        onClick={() => setPreviewOpen(true)}
+        type="button"
+      >
+        {/* biome-ignore lint/performance/noImgElement: signed tool output image URL */}
+        <img
+          alt={labels.generatedQrCode}
+          className="max-h-56 w-full object-contain p-3"
+          src={qrCode.previewUrl}
+        />
+      </button>
+      <a
+        className="mt-2 inline-flex items-center gap-1.5 rounded-md border bg-background px-2 py-1 font-medium hover:bg-accent"
+        download={qrCode.fileName}
+        href={qrCode.downloadUrl}
+        rel="noreferrer noopener"
+        target="_blank"
+      >
+        <Download className="size-3.5" />
+        {labels.downloadQrCode}
+      </a>
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-h-[95vh] max-w-[95vw] border-0 bg-black/95 p-0">
+          <DialogTitle className="sr-only">
+            {labels.generatedQrCode}
+          </DialogTitle>
+          <div className="flex min-h-[50vh] items-center justify-center p-4">
+            {/* biome-ignore lint/performance/noImgElement: signed tool output image URL */}
+            <img
+              alt={labels.generatedQrCode}
+              className="max-h-[90vh] max-w-full object-contain"
+              src={qrCode.previewUrl}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+type ParsedQrCodeOutput = {
+  downloadUrl: string;
+  fileName?: string;
+  previewUrl: string;
+};
+
+function parseQrCodeOutput(output: unknown): ParsedQrCodeOutput | null {
+  const candidates = collectOutputRecords(output);
+
+  for (const record of candidates) {
+    const success = record.success;
+    if (success === false || record.ok === false) continue;
+
+    const previewUrl = readString(record.qrCodeUrl) ?? readString(record.url);
+    const downloadUrl = readString(record.downloadUrl) ?? previewUrl;
+    if (
+      previewUrl &&
+      downloadUrl &&
+      isValidHttpUrl(previewUrl) &&
+      isValidHttpUrl(downloadUrl)
+    ) {
+      return {
+        downloadUrl,
+        fileName: readString(record.fileName) ?? undefined,
+        previewUrl,
+      };
+    }
+  }
+
+  return null;
+}
+
+function collectOutputRecords(output: unknown) {
+  const records: Record<string, unknown>[] = [];
+  const queue = [output];
+  const seen = new WeakSet<object>();
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    if (typeof current === 'string') {
+      try {
+        queue.push(JSON.parse(current) as unknown);
+      } catch {
+        continue;
+      }
+      continue;
+    }
+
+    if (!current || typeof current !== 'object' || Array.isArray(current)) {
+      continue;
+    }
+
+    if (seen.has(current)) continue;
+    seen.add(current);
+
+    const record = current as Record<string, unknown>;
+    records.push(record);
+
+    for (const key of ['data', 'output', 'payload', 'result']) {
+      if (key in record) queue.push(record[key]);
+    }
+  }
+
+  return records;
 }
 
 function ToolStatusIcon({

@@ -1,6 +1,18 @@
 'use client';
 
-import { FileText, ImageIcon, Link2, LoaderCircle } from '@tuturuuu/icons';
+import {
+  Brain,
+  Coins,
+  Database,
+  FileText,
+  Gauge,
+  ImageIcon,
+  Link2,
+  LoaderCircle,
+  MessageSquare,
+  WalletCards,
+  Zap,
+} from '@tuturuuu/icons';
 import type {
   ChatAiCreditSource,
   ChatAiObservability,
@@ -51,7 +63,7 @@ export function SettingsPanel({
 
   return (
     <div className="space-y-4">
-      <Field label={t('ai_model')}>
+      <Field icon={<Brain className="size-4" />} label={t('ai_model')}>
         <Select value={settings.modelId ?? ''} onValueChange={onModelChange}>
           <SelectTrigger>
             <SelectValue placeholder={t('ai_model_placeholder')} />
@@ -66,7 +78,10 @@ export function SettingsPanel({
         </Select>
       </Field>
 
-      <Field label={t('ai_credit_source')}>
+      <Field
+        icon={<WalletCards className="size-4" />}
+        label={t('ai_credit_source')}
+      >
         <ChatAiCreditSourcePicker
           onChange={onCreditSourceChange}
           sources={creditSources}
@@ -75,7 +90,7 @@ export function SettingsPanel({
         />
       </Field>
 
-      <Field label={t('ai_response_mode')}>
+      <Field icon={<Gauge className="size-4" />} label={t('ai_response_mode')}>
         <Select
           value={settings.thinkingMode}
           onValueChange={(value) =>
@@ -117,15 +132,22 @@ export function UsagePanel({
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-2">
         <Metric
+          icon={<Zap className="size-3.5" />}
           label={t('ai_total_tokens')}
           value={formatNumber(totals.totalTokens)}
         />
         <Metric
+          icon={<Coins className="size-3.5" />}
           label={t('ai_total_cost')}
           value={`$${totals.costUsd.toFixed(6)}`}
         />
-        <Metric label={t('ai_messages')} value={String(totals.messageCount)} />
         <Metric
+          icon={<MessageSquare className="size-3.5" />}
+          label={t('ai_messages')}
+          value={String(totals.messageCount)}
+        />
+        <Metric
+          icon={<Database className="size-3.5" />}
           label={t('ai_cached_tokens')}
           value={formatNumber(
             totals.cachedInputTokens + totals.cachedOutputTokens
@@ -204,7 +226,7 @@ export function UsagePanel({
                     {message.exact ? t('ai_exact') : t('ai_estimated')}
                   </span>
                 </div>
-                <div className="mt-2 grid grid-cols-2 gap-1.5 text-muted-foreground">
+                <div className="mt-2 flex flex-wrap gap-1.5 text-muted-foreground">
                   <TokenChip
                     label={t('ai_input_tokens')}
                     value={formatNumber(message.usage.inputTokens)}
@@ -296,14 +318,17 @@ export function SharedPanel({
                   ))
                 : (section.items as ChatAttachment[]).map((attachment) => (
                     <button
-                      className="flex w-full items-center gap-2 rounded-md border bg-muted/20 p-2 text-left text-xs hover:bg-accent"
+                      className="flex w-full min-w-0 items-center gap-2 overflow-hidden rounded-md border bg-muted/20 p-2 text-left text-xs hover:bg-accent"
                       key={attachment.id}
                       onClick={() => onOpenAttachment?.(attachment)}
                       type="button"
                     >
                       {section.icon}
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-medium">
+                      <span className="min-w-0 flex-1 overflow-hidden">
+                        <span
+                          className="block truncate font-medium"
+                          title={attachment.filename}
+                        >
                           {attachment.filename}
                         </span>
                         <span className="block text-muted-foreground">
@@ -320,19 +345,41 @@ export function SharedPanel({
   );
 }
 
-function Field({ children, label }: { children: ReactNode; label: string }) {
+function Field({
+  children,
+  icon,
+  label,
+}: {
+  children: ReactNode;
+  icon?: ReactNode;
+  label: string;
+}) {
   return (
-    <label className="block space-y-2">
-      <span className="font-medium text-sm">{label}</span>
+    <div className="rounded-md border bg-muted/20 p-2.5">
+      <span className="mb-2 flex items-center gap-2 font-medium text-sm">
+        {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+        {label}
+      </span>
       {children}
-    </label>
+    </div>
   );
 }
 
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({
+  icon,
+  label,
+  value,
+}: {
+  icon?: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="min-w-0 rounded-md border bg-muted/20 p-2">
-      <div className="truncate text-muted-foreground text-xs">{label}</div>
+      <div className="flex min-w-0 items-center gap-1.5 text-muted-foreground text-xs">
+        {icon}
+        <span className="truncate">{label}</span>
+      </div>
       <div className="mt-1 truncate font-semibold text-sm tabular-nums">
         {value}
       </div>
