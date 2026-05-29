@@ -126,6 +126,18 @@ export const wrapRequestClientForProxyOnlyTables = <
 
         return (schemaName: string) => {
           const userSchemaClient = userSchema.call(target, schemaName);
+          const adminSchemaClient =
+            typeof adminSchema === 'function'
+              ? adminSchema.call(adminClient, schemaName)
+              : adminClient;
+
+          if (
+            schemaName === 'private' &&
+            adminSchemaClient &&
+            typeof adminSchemaClient === 'object'
+          ) {
+            return adminSchemaClient;
+          }
 
           if (
             schemaName !== 'public' ||
@@ -134,11 +146,6 @@ export const wrapRequestClientForProxyOnlyTables = <
           ) {
             return userSchemaClient;
           }
-
-          const adminSchemaClient =
-            typeof adminSchema === 'function'
-              ? adminSchema.call(adminClient, schemaName)
-              : adminClient;
 
           return wrapRequestClientForProxyOnlyTables(
             userSchemaClient as TableAwareClient,

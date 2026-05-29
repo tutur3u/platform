@@ -34,20 +34,20 @@ describe('Supabase Server Client', () => {
       .mockReturnValue([{ name: 'test-cookie', value: 'test-value' }]),
     set: vi.fn(),
   };
-  const mockUserSchemaFrom = vi.fn((table: string) => ({
+  const mockUserSchemaFrom = vi.fn((schema: string, table: string) => ({
     client: 'user',
-    schema: 'public',
+    schema,
     table,
   }));
-  const mockAdminSchemaFrom = vi.fn((table: string) => ({
+  const mockAdminSchemaFrom = vi.fn((schema: string, table: string) => ({
     client: 'admin',
-    schema: 'public',
+    schema,
     table,
   }));
   const mockUserClient = {
     from: vi.fn((table: string) => ({ client: 'user', table })),
-    schema: vi.fn(() => ({
-      from: mockUserSchemaFrom,
+    schema: vi.fn((schema: string) => ({
+      from: (table: string) => mockUserSchemaFrom(schema, table),
     })),
     auth: {
       getUser: vi.fn(),
@@ -55,8 +55,8 @@ describe('Supabase Server Client', () => {
   };
   const mockAdminClient = {
     from: vi.fn((table: string) => ({ client: 'admin', table })),
-    schema: vi.fn(() => ({
-      from: mockAdminSchemaFrom,
+    schema: vi.fn((schema: string) => ({
+      from: (table: string) => mockAdminSchemaFrom(schema, table),
     })),
     auth: {
       getUser: vi.fn(),
@@ -275,6 +275,11 @@ describe('Supabase Server Client', () => {
         schema: 'public',
         table: 'mira_accessories',
       });
+      expect(client.schema('private').from('inventory_units')).toEqual({
+        client: 'admin',
+        schema: 'private',
+        table: 'inventory_units',
+      });
     });
 
     it('should not pass Tuturuuu app-session JWTs to Supabase as Bearer auth', async () => {
@@ -325,6 +330,11 @@ describe('Supabase Server Client', () => {
       expect(client.from('workspace_tutoring_sessions')).toEqual({
         client: 'admin',
         table: 'workspace_tutoring_sessions',
+      });
+      expect(client.schema('private').from('inventory_units')).toEqual({
+        client: 'admin',
+        schema: 'private',
+        table: 'inventory_units',
       });
     });
 
@@ -401,6 +411,11 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         schema: 'public',
         table: 'mira_accessories',
+      });
+      expect(client.schema('private').from('inventory_units')).toEqual({
+        client: 'admin',
+        schema: 'private',
+        table: 'inventory_units',
       });
     });
   });
