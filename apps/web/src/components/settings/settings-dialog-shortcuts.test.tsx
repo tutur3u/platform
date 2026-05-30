@@ -6,7 +6,8 @@ import { SettingsDialogHost } from '../../app/[locale]/settings-dialog-host';
 import UserNavClient from '../../app/[locale]/user-nav-client';
 import { useSettingsDialogShortcut } from './use-settings-dialog-shortcut';
 
-const { setSettingsQueryMock } = vi.hoisted(() => ({
+const { globalCommandLauncherMock, setSettingsQueryMock } = vi.hoisted(() => ({
+  globalCommandLauncherMock: vi.fn(),
   setSettingsQueryMock: vi.fn(),
 }));
 
@@ -36,7 +37,10 @@ vi.mock('@tanstack/react-query', () => ({
 }));
 
 vi.mock('@tuturuuu/satellite/command-launcher', () => ({
-  GlobalCommandLauncher: () => null,
+  GlobalCommandLauncher: (props: unknown) => {
+    globalCommandLauncherMock(props);
+    return null;
+  },
   openGlobalCommandLauncher: vi.fn(),
 }));
 
@@ -274,5 +278,25 @@ describe('settings dialog shortcut', () => {
     fireEvent.keyDown(window, { ctrlKey: true, key: ',' });
 
     expectSettingsQueryOpened();
+  });
+
+  it('only mounts one command launcher when the secondary user nav disables it', () => {
+    render(
+      <>
+        <UserNavClient
+          locale="en"
+          renderCommandLauncher={false}
+          renderSettingsDialog={false}
+          user={user as any}
+        />
+        <UserNavClient
+          locale="en"
+          renderSettingsDialog={false}
+          user={user as any}
+        />
+      </>
+    );
+
+    expect(globalCommandLauncherMock).toHaveBeenCalledTimes(1);
   });
 });

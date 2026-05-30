@@ -4,10 +4,12 @@ import { UserNav } from './user-nav';
 
 export function UserNavWrapper({
   hideMetadata = false,
+  renderCommandLauncher = true,
   renderSettingsDialog = true,
   navLinks = [],
 }: {
   hideMetadata?: boolean;
+  renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
   navLinks?: (NavLink | null)[];
 }) {
@@ -19,6 +21,7 @@ export function UserNavWrapper({
     >
       <UserNav
         hideMetadata={hideMetadata}
+        renderCommandLauncher={renderCommandLauncher}
         renderSettingsDialog={renderSettingsDialog}
         navLinks={navLinks}
       />

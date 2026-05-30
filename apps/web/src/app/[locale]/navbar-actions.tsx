@@ -11,9 +11,11 @@ import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
   hideMetadata = false,
+  renderCommandLauncher = true,
   renderSettingsDialog = true,
 }: {
   hideMetadata?: boolean;
+  renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
 }) {
   const t = await getTranslations();
@@ -31,6 +33,7 @@ export default async function NavbarActions({
               <div className="flex-1">
                 <UserNavWrapper
                   hideMetadata={hideMetadata}
+                  renderCommandLauncher={renderCommandLauncher}
                   renderSettingsDialog={renderSettingsDialog}
                 />
               </div>

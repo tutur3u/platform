@@ -70,6 +70,7 @@ export default function UserNavClient({
   locale,
   hideMetadata = false,
   workspace,
+  renderCommandLauncher = true,
   renderSettingsDialog = true,
   navLinks = [],
 }: {
@@ -77,6 +78,7 @@ export default function UserNavClient({
   locale: string | undefined;
   hideMetadata?: boolean;
   workspace?: Workspace | null;
+  renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
   navLinks?: (NavLink | null)[];
 }) {
@@ -177,22 +179,24 @@ export default function UserNavClient({
 
   return (
     <>
-      <GlobalCommandLauncher
-        currentApp="platform"
-        currentWorkspaceId={wsId}
-        extraSections={({ onClose, query, setQuery }) => (
-          <PlatformCommandExtraSections
-            navLinks={navLinks}
-            onApplySearch={setQuery}
-            onClose={onClose}
-            query={query}
-            workspaceId={wsId}
-            workspaceName={(workspace ?? resolvedWorkspace)?.name}
-          />
-        )}
-        navItems={commandNavItems}
-        workspacePathResolver={resolvePlatformWorkspacePath}
-      />
+      {renderCommandLauncher && (
+        <GlobalCommandLauncher
+          currentApp="platform"
+          currentWorkspaceId={wsId}
+          extraSections={({ onClose, query, setQuery }) => (
+            <PlatformCommandExtraSections
+              navLinks={navLinks}
+              onApplySearch={setQuery}
+              onClose={onClose}
+              query={query}
+              workspaceId={wsId}
+              workspaceName={(workspace ?? resolvedWorkspace)?.name}
+            />
+          )}
+          navItems={commandNavItems}
+          workspacePathResolver={resolvePlatformWorkspacePath}
+        />
+      )}
       {user && renderSettingsDialog && (
         <Dialog
           open={requestedSettingsOpen}

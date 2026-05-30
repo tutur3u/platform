@@ -222,7 +222,10 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions renderSettingsDialog={false} />
+            <NavbarActions
+              renderCommandLauncher={false}
+              renderSettingsDialog={false}
+            />
           </Suspense>
         }
         userPopover={

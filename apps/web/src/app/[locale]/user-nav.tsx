@@ -8,11 +8,13 @@ import UserNavClient from './user-nav-client';
 export async function UserNav({
   hideMetadata = false,
   workspace,
+  renderCommandLauncher = true,
   renderSettingsDialog = true,
   navLinks = [],
 }: {
   hideMetadata?: boolean;
   workspace?: Workspace | null;
+  renderCommandLauncher?: boolean;
   renderSettingsDialog?: boolean;
   navLinks?: (NavLink | null)[];
 }) {
@@ -26,6 +28,7 @@ export async function UserNav({
       locale={currentLocale}
       hideMetadata={hideMetadata}
       workspace={workspace}
+      renderCommandLauncher={renderCommandLauncher}
       renderSettingsDialog={renderSettingsDialog}
       navLinks={navLinks}
     />
