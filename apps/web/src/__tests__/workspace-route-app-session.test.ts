@@ -83,6 +83,24 @@ describe('workspace API route app-session bridge', () => {
     });
   });
 
+  it('passes workspace search params into the workspace summary loader', async () => {
+    const route = await import('@/app/api/v1/workspaces/route');
+    const request = new NextRequest(
+      'http://localhost/api/v1/workspaces?q=alpha&limit=25'
+    );
+    const response = await route.GET(request);
+
+    expect(response.status).toBe(200);
+    expect(mocks.fetchWorkspaceSummaries).toHaveBeenCalledWith({
+      limit: 25,
+      query: 'alpha',
+      request,
+      requireAuth: true,
+      supabase: mocks.supabase,
+      userId: 'user-1',
+    });
+  });
+
   it('allows internal app-session auth on legacy workspace GET, PUT, and DELETE', async () => {
     await import('@/app/api/workspaces/[wsId]/route');
 

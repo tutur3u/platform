@@ -5,6 +5,7 @@ import {
   resolveInternalApiUrl,
   withForwardedInternalApiAuth,
 } from './client';
+import { listWorkspaces } from './workspaces';
 
 describe('resolveInternalApiUrl', () => {
   afterEach(() => {
@@ -112,6 +113,51 @@ describe('createInternalApiClient', () => {
       'ABUSE_CHALLENGE_REQUIRED'
     );
     expect((captured as InternalApiError).status).toBe(403);
+  });
+});
+
+describe('workspace API helpers', () => {
+  it('builds searchable workspace-list URLs while preserving client options', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+
+    await listWorkspaces(
+      { limit: 25, q: 'alpha' },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces?limit=25&q=alpha',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+  });
+
+  it('keeps legacy listWorkspaces(options) calls compatible', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => [],
+    });
+
+    await listWorkspaces({
+      baseUrl: 'https://internal.example.com',
+      fetch: fetchMock as unknown as typeof fetch,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces',
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
   });
 });
 

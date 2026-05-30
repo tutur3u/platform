@@ -46,6 +46,10 @@ export const GET = withSessionAuth<RouteParams>(
           });
 
           if (!response.ok || !response.body) {
+            serverLogger.error('Chat realtime upstream unavailable', {
+              status: response.status,
+              wsId: context.context.normalizedWsId,
+            });
             controller.enqueue(
               encoder.encode(
                 `event: message\ndata: ${JSON.stringify({
@@ -66,10 +70,18 @@ export const GET = withSessionAuth<RouteParams>(
           }
         } catch (error) {
           if (!abort.signal.aborted) {
-            serverLogger.error('Chat realtime stream failed', {
-              error,
+            serverLogger.error('Chat realtime stream failed', error);
+            serverLogger.error('Chat realtime stream context', {
               wsId: context.context.normalizedWsId,
             });
+            controller.enqueue(
+              encoder.encode(
+                `event: message\ndata: ${JSON.stringify({
+                  type: 'error',
+                  error: 'realtime_unavailable',
+                })}\n\n`
+              )
+            );
           }
         } finally {
           request.signal.removeEventListener('abort', close);

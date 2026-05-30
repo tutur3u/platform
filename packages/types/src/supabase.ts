@@ -3591,16 +3591,16 @@ export type Database = {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: boolean;
       };
-      chat_list_conversations:
-        | { Args: { p_actor_user_id: string; p_ws_id: string }; Returns: Json }
-        | {
-            Args: {
-              p_actor_user_id: string;
-              p_archived?: string;
-              p_ws_id: string;
-            };
-            Returns: Json;
-          };
+      chat_list_conversations: {
+        Args: {
+          p_actor_user_id: string;
+          p_archived?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
       chat_list_friend_requests: {
         Args: { p_actor_user_id: string; p_ws_id: string };
         Returns: Json;

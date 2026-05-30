@@ -16,6 +16,19 @@ type InternalApiErrorPayload = {
   message?: string;
 };
 
+export type ListWorkspacesParams = {
+  limit?: number;
+  q?: string;
+};
+
+function isInternalApiClientOptions(
+  value: InternalApiClientOptions | ListWorkspacesParams | undefined
+): value is InternalApiClientOptions {
+  if (!value || typeof value !== 'object') return false;
+
+  return 'baseUrl' in value || 'defaultHeaders' in value || 'fetch' in value;
+}
+
 async function parseAndThrowInternalApiError(
   response: Response
 ): Promise<never> {
@@ -35,10 +48,30 @@ async function parseAndThrowInternalApiError(
   throw error;
 }
 
-export async function listWorkspaces(options?: InternalApiClientOptions) {
+export async function listWorkspaces(
+  options?: InternalApiClientOptions
+): Promise<InternalApiWorkspaceSummary[]>;
+export async function listWorkspaces(
+  params?: ListWorkspacesParams,
+  options?: InternalApiClientOptions
+): Promise<InternalApiWorkspaceSummary[]>;
+export async function listWorkspaces(
+  paramsOrOptions?: InternalApiClientOptions | ListWorkspacesParams,
+  maybeOptions?: InternalApiClientOptions
+) {
+  const params = isInternalApiClientOptions(paramsOrOptions)
+    ? undefined
+    : paramsOrOptions;
+  const options = isInternalApiClientOptions(paramsOrOptions)
+    ? paramsOrOptions
+    : maybeOptions;
   const client = getInternalApiClient(options);
   return client.json<InternalApiWorkspaceSummary[]>('/api/v1/workspaces', {
     cache: 'no-store',
+    query: {
+      limit: params?.limit,
+      q: params?.q?.trim() || undefined,
+    },
   });
 }
 

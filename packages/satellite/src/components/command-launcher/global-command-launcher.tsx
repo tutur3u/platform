@@ -44,6 +44,7 @@ import { usePathname } from 'next/navigation';
 import {
   type ReactNode,
   useCallback,
+  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -162,6 +163,8 @@ const APP_SEARCH_ITEMS: readonly LaunchableApp[] = LAUNCHABLE_APPS.map(
     subtitle: app.productionUrl,
   })
 );
+const REMOTE_WORKSPACE_SEARCH_LIMIT = 50;
+const VISIBLE_WORKSPACE_SEARCH_LIMIT = 20;
 
 function workspaceToSearchItem(
   workspace: LauncherWorkspace
@@ -216,6 +219,23 @@ function getMatchContext<T extends { title: string }>(
   return `${labels.match}: ${result.matchedText}`;
 }
 
+function mergeWorkspaces(
+  localWorkspaces: readonly LauncherWorkspace[],
+  remoteWorkspaces: readonly LauncherWorkspace[]
+) {
+  const byId = new Map<string, LauncherWorkspace>();
+
+  for (const workspace of localWorkspaces) {
+    byId.set(workspace.id, workspace);
+  }
+
+  for (const workspace of remoteWorkspaces) {
+    byId.set(workspace.id, workspace);
+  }
+
+  return [...byId.values()];
+}
+
 export function GlobalCommandLauncher({
   currentApp,
   currentWorkspaceId,
@@ -229,6 +249,8 @@ export function GlobalCommandLauncher({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const trimmedQuery = trimQuery(query);
+  const deferredWorkspaceQuery = useDeferredValue(trimmedQuery);
 
   const closeLauncher = useCallback(() => setOpen(false), []);
 
@@ -286,6 +308,31 @@ export function GlobalCommandLauncher({
   });
 
   const launcherWorkspaces = workspaces as LauncherWorkspace[];
+  const { data: remoteWorkspaces = [], isFetching: isSearchingWorkspaces } =
+    useQuery({
+      enabled: open && deferredWorkspaceQuery.length > 0,
+      queryFn: () =>
+        listWorkspaces({
+          limit: REMOTE_WORKSPACE_SEARCH_LIMIT,
+          q: deferredWorkspaceQuery,
+        }),
+      queryKey: [
+        'global-command-launcher',
+        'workspaces',
+        'search',
+        deferredWorkspaceQuery,
+      ],
+      retry: false,
+      staleTime: 30_000,
+    });
+  const searchableWorkspaces = useMemo(
+    () =>
+      mergeWorkspaces(
+        launcherWorkspaces,
+        remoteWorkspaces as LauncherWorkspace[]
+      ),
+    [launcherWorkspaces, remoteWorkspaces]
+  );
   const currentWorkspace = useMemo(
     () =>
       launcherWorkspaces.find((workspace) =>
@@ -294,7 +341,6 @@ export function GlobalCommandLauncher({
     [currentWorkspaceId, launcherWorkspaces, pathname]
   );
 
-  const trimmedQuery = trimQuery(query);
   const appResults = useMemo(
     () =>
       searchIntent(APP_SEARCH_ITEMS, trimmedQuery, {
@@ -305,13 +351,13 @@ export function GlobalCommandLauncher({
   const workspaceResults = useMemo(
     () =>
       searchIntent(
-        launcherWorkspaces.map(workspaceToSearchItem),
+        searchableWorkspaces.map(workspaceToSearchItem),
         trimmedQuery,
         {
-          limit: trimmedQuery ? 8 : 10,
+          limit: trimmedQuery ? VISIBLE_WORKSPACE_SEARCH_LIMIT : 10,
         }
       ),
-    [launcherWorkspaces, trimmedQuery]
+    [searchableWorkspaces, trimmedQuery]
   );
   const navigationResults = useMemo(
     () =>
@@ -424,7 +470,7 @@ export function GlobalCommandLauncher({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         aria-label={labels.title}
-        className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(1040px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-lg border bg-background p-0 shadow-2xl sm:max-w-[min(1040px,96vw)]"
+        className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(760px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-lg border bg-background p-0 shadow-2xl sm:max-w-[min(760px,96vw)]"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">
@@ -432,7 +478,7 @@ export function GlobalCommandLauncher({
           <DialogDescription>{labels.searchHint}</DialogDescription>
         </DialogHeader>
         <Command
-          className="grid h-full min-h-0 rounded-none border-none bg-background md:grid-cols-[minmax(0,1fr)_18rem]"
+          className="h-full min-h-0 rounded-none border-none bg-background"
           shouldFilter={false}
         >
           <div className="flex min-h-0 flex-col overflow-hidden">
@@ -467,10 +513,11 @@ export function GlobalCommandLauncher({
               )}
 
               {(isLoadingWorkspaces ||
+                isSearchingWorkspaces ||
                 workspaceError ||
                 workspaceResults.length > 0) && (
                 <CommandGroup heading={labels.workspaces}>
-                  {isLoadingWorkspaces && (
+                  {(isLoadingWorkspaces || isSearchingWorkspaces) && (
                     <CommandItem disabled value="loading-workspaces">
                       <Loader2 className="size-4 animate-spin" />
                       <span>{labels.loadingWorkspaces}</span>
@@ -515,51 +562,15 @@ export function GlobalCommandLauncher({
 
               {renderedExtraSections}
 
-              {!hasResults && !isLoadingWorkspaces && (
-                <div className="py-8">
-                  <EmptyState labels={labels} query={trimmedQuery} />
-                </div>
-              )}
+              {!hasResults &&
+                !isLoadingWorkspaces &&
+                !isSearchingWorkspaces && (
+                  <div className="py-8">
+                    <EmptyState labels={labels} query={trimmedQuery} />
+                  </div>
+                )}
             </CommandList>
-
-            <div className="border-t bg-muted/30 px-3 py-2 text-muted-foreground text-xs">
-              <div className="flex items-center justify-between gap-3">
-                <span className="truncate">{labels.searchHint}</span>
-                <div className="hidden shrink-0 items-center gap-3 sm:flex">
-                  <KeyboardHint label={labels.navigate} value="↑↓" />
-                  <KeyboardHint label={labels.select} value="↵" />
-                  <KeyboardHint label={labels.close} value="Esc" />
-                </div>
-              </div>
-            </div>
           </div>
-
-          <aside className="hidden min-h-0 overflow-y-auto border-l bg-muted/20 p-4 md:flex md:flex-col">
-            <div className="space-y-5">
-              <div>
-                <p className="text-muted-foreground text-xs uppercase">
-                  {labels.currentApp}
-                </p>
-                <p className="mt-1 font-medium">
-                  {LAUNCHABLE_APPS.find((app) => app.slug === currentApp)
-                    ?.title ?? currentApp}
-                </p>
-              </div>
-              <div>
-                <p className="text-muted-foreground text-xs uppercase">
-                  {labels.currentWorkspace}
-                </p>
-                <p className="mt-1 line-clamp-2 font-medium">
-                  {currentWorkspace?.name ?? labels.empty}
-                </p>
-              </div>
-              <div className="rounded-lg border bg-background/80 p-3">
-                <p className="text-muted-foreground text-sm leading-6">
-                  {labels.searchHint}
-                </p>
-              </div>
-            </div>
-          </aside>
         </Command>
       </DialogContent>
     </Dialog>
@@ -723,17 +734,6 @@ function EmptyState({
         </p>
       </div>
     </div>
-  );
-}
-
-function KeyboardHint({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <kbd className="pointer-events-none inline-flex h-5 min-w-5 select-none items-center justify-center rounded border bg-background px-1 font-medium font-mono text-[10px]">
-        {value}
-      </kbd>
-      <span>{label}</span>
-    </span>
   );
 }
 

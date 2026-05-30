@@ -287,4 +287,55 @@ describe('fetchWorkspaceSummaries', () => {
       'app-session-user'
     );
   });
+
+  it('ranks workspace summaries with fuzzy search and applies the requested limit', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [
+        {
+          id: 'alpha-ws',
+          name: 'Alpha Workspace',
+          personal: false,
+          avatar_url: null,
+          logo_url: null,
+          creator_id: 'owner-2',
+          workspace_members: [{ user_id: 'user-1' }],
+          workspace_subscriptions: [],
+        },
+        {
+          id: 'zeta-ws',
+          name: 'Zeta Operations',
+          personal: false,
+          avatar_url: null,
+          logo_url: null,
+          creator_id: 'owner-3',
+          workspace_members: [{ user_id: 'user-1' }],
+          workspace_subscriptions: [],
+        },
+        {
+          id: 'beta-ws',
+          name: 'Beta Support',
+          personal: false,
+          avatar_url: null,
+          logo_url: null,
+          creator_id: 'owner-4',
+          workspace_members: [{ user_id: 'user-1' }],
+          workspace_subscriptions: [],
+        },
+      ],
+      error: null,
+    });
+
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+
+    await expect(
+      fetchWorkspaceSummaries({ limit: 1, query: 'zeta' })
+    ).resolves.toEqual([
+      expect.objectContaining({
+        id: 'zeta-ws',
+        name: 'Zeta Operations',
+      }),
+    ]);
+  });
 });

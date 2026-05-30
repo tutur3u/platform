@@ -23,7 +23,7 @@ vi.stubGlobal('ResizeObserver', ResizeObserverMock);
 Element.prototype.scrollIntoView = vi.fn();
 
 vi.mock('@tuturuuu/internal-api', () => ({
-  listWorkspaces: () => listWorkspaces(),
+  listWorkspaces: (...args: unknown[]) => listWorkspaces(...args),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -116,6 +116,24 @@ describe('GlobalCommandLauncher', () => {
     );
   });
 
+  it('does not render the visible helper footer or current context panel', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
+
+    const searchHints = screen.getAllByText(
+      'Type a workspace, app, page, acronym, or close spelling.'
+    );
+    expect(searchHints.every((node) => node.closest('.sr-only'))).toBe(true);
+    expect(screen.queryByText('navigate')).toBeNull();
+    expect(screen.queryByText('select')).toBeNull();
+    expect(screen.queryByText('close')).toBeNull();
+    expect(screen.queryByText('Current app')).toBeNull();
+    expect(screen.queryByText('Current workspace')).toBeNull();
+  });
+
   it('filters apps, workspaces, and navigation with the shared matcher', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     renderLauncher();
@@ -133,6 +151,36 @@ describe('GlobalCommandLauncher', () => {
 
     fireEvent.change(input, { target: { value: 'project boards' } });
     expect(await screen.findByText('Task Boards')).toBeTruthy();
+  });
+
+  it('queries workspace search results beyond the initially loaded workspaces', async () => {
+    const remoteWorkspace = {
+      access_type: 'owner',
+      created_by_me: false,
+      guest_landing_path: null,
+      id: 'zeta-workspace',
+      name: 'Zeta Workspace',
+      personal: false,
+    };
+    listWorkspaces.mockImplementation((params?: { q?: string }) =>
+      Promise.resolve(params?.q ? [remoteWorkspace] : workspaces.slice(0, 1))
+    );
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    const input = await screen.findByPlaceholderText(
+      'Search apps, workspaces, and pages...'
+    );
+
+    fireEvent.change(input, { target: { value: 'zeta' } });
+
+    expect(await screen.findByText('Zeta Workspace')).toBeTruthy();
+    await waitFor(() =>
+      expect(listWorkspaces).toHaveBeenCalledWith({
+        limit: 50,
+        q: 'zeta',
+      })
+    );
   });
 
   it('shows empty state', async () => {
@@ -187,6 +235,7 @@ describe('GlobalCommandLauncher', () => {
     expect(dialogContent?.className).toContain(
       'grid-rows-[auto_minmax(0,1fr)]'
     );
+    expect(dialogContent?.className).toContain('w-[min(760px,96vw)]');
     expect(dialogContent?.className).toContain('overflow-hidden');
     expect(commandList?.className).toContain('min-h-0');
     expect(commandList?.className).toContain('flex-1');

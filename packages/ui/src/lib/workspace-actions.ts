@@ -10,8 +10,11 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
+import { searchIntent } from '@tuturuuu/utils/search';
 
 const WORKSPACE_SUMMARY_UNAUTHORIZED = 'WORKSPACE_SUMMARY_UNAUTHORIZED';
+const DEFAULT_WORKSPACE_SEARCH_LIMIT = 50;
+const MAX_WORKSPACE_SEARCH_LIMIT = 100;
 
 function normalizeWorkspaceTier(
   tier: string | null | undefined
@@ -64,12 +67,78 @@ function resolveWorkspaceTier(workspace: {
   return null;
 }
 
+function normalizeWorkspaceSearchLimit(limit: number | undefined) {
+  if (!Number.isFinite(limit)) return undefined;
+
+  return Math.min(
+    MAX_WORKSPACE_SEARCH_LIMIT,
+    Math.max(1, Math.trunc(limit as number))
+  );
+}
+
+function workspaceSummarySearchCandidate(
+  workspace: InternalApiWorkspaceSummary
+) {
+  const accessType = workspace.access_type ?? null;
+
+  return {
+    aliases: [
+      workspace.id,
+      workspace.personal ? 'personal' : '',
+      accessType === 'guest' ? 'guest' : '',
+      workspace.guest_landing_path ?? '',
+    ].filter(Boolean),
+    keywords: [
+      workspace.personal ? 'personal' : '',
+      accessType === 'guest' ? 'guest' : '',
+      workspace.created_by_me ? 'created by me' : '',
+    ].filter(Boolean),
+    summary: workspace,
+    subtitle: workspace.id,
+    title: workspace.name || workspace.id,
+  };
+}
+
+function applyWorkspaceSummarySearch(
+  summaries: InternalApiWorkspaceSummary[],
+  {
+    limit,
+    query,
+  }: {
+    limit?: number;
+    query?: string;
+  }
+) {
+  const normalizedLimit = normalizeWorkspaceSearchLimit(limit);
+  const trimmedQuery = query?.trim() ?? '';
+
+  if (trimmedQuery) {
+    return searchIntent(
+      summaries.map(workspaceSummarySearchCandidate),
+      trimmedQuery,
+      {
+        limit: normalizedLimit ?? DEFAULT_WORKSPACE_SEARCH_LIMIT,
+      }
+    ).map((result) => result.item.summary);
+  }
+
+  if (normalizedLimit) {
+    return summaries.slice(0, normalizedLimit);
+  }
+
+  return summaries;
+}
+
 export async function fetchWorkspaceSummaries({
+  limit,
+  query,
   requireAuth = false,
   request,
   supabase: providedSupabase,
   userId: providedUserId,
 }: {
+  limit?: number;
+  query?: string;
   requireAuth?: boolean;
   request?: Pick<Request, 'headers'>;
   supabase?: TypedSupabaseClient;
@@ -298,12 +367,14 @@ export async function fetchWorkspaceSummaries({
     };
   });
 
-  return [
+  const summaries = [
     ...memberSummaries,
     ...[...guestWorkspaceById.values()].map(
       ({ guestBoardIds: _, ...workspace }) => workspace
     ),
   ];
+
+  return applyWorkspaceSummarySearch(summaries, { limit, query });
 }
 
 export async function fetchWorkspaces() {

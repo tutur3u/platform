@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(52);
+select plan(55);
 
 select ok(
   to_regclass('private.chat_conversations') is not null,
@@ -186,9 +186,26 @@ select ok(
 );
 
 select ok(
+  to_regprocedure('private.chat_list_conversations(uuid, uuid)') is null,
+  'legacy two-argument chat_list_conversations overload is absent'
+);
+
+select ok(
+  to_regprocedure('private.chat_list_conversations(uuid, uuid, text)') is null,
+  'legacy archived chat_list_conversations overload is absent'
+);
+
+select ok(
+  to_regprocedure(
+    'private.chat_list_conversations(uuid, uuid, text, integer, integer)'
+  ) is not null,
+  'current paginated chat_list_conversations signature exists'
+);
+
+select ok(
   not has_function_privilege(
     'authenticated',
-    'private.chat_list_conversations(uuid, uuid)',
+    'private.chat_list_conversations(uuid, uuid, text, integer, integer)',
     'execute'
   ),
   'authenticated cannot execute chat_list_conversations directly'
@@ -260,7 +277,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'private.chat_list_conversations(uuid, uuid)',
+    'private.chat_list_conversations(uuid, uuid, text, integer, integer)',
     'execute'
   ),
   'service role can execute chat_list_conversations'
