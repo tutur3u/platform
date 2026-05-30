@@ -1,6 +1,7 @@
 import type { Workspace } from '@tuturuuu/types';
 import { getCurrentUser } from '@tuturuuu/utils/user-helper';
 import { cookies as c } from 'next/headers';
+import type { NavLink } from '@/components/navigation';
 import { LOCALE_COOKIE_NAME } from '@/constants/common';
 import UserNavClient from './user-nav-client';
 
@@ -8,10 +9,12 @@ export async function UserNav({
   hideMetadata = false,
   workspace,
   renderSettingsDialog = true,
+  navLinks = [],
 }: {
   hideMetadata?: boolean;
   workspace?: Workspace | null;
   renderSettingsDialog?: boolean;
+  navLinks?: (NavLink | null)[];
 }) {
   const cookies = await c();
   const user = await getCurrentUser();
@@ -24,6 +27,7 @@ export async function UserNav({
       hideMetadata={hideMetadata}
       workspace={workspace}
       renderSettingsDialog={renderSettingsDialog}
+      navLinks={navLinks}
     />
   );
 }

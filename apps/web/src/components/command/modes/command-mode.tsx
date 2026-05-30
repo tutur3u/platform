@@ -11,12 +11,18 @@ import {
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import * as React from 'react';
 import type { NavLink } from '@/components/navigation';
+import { CommandActionPanel } from '../action-panel';
 import { AddTaskForm } from '../add-task-form';
 import { NavigationSection } from '../sections/navigation-section';
+import { ProductActionsSection } from '../sections/product-actions-section';
 import { QuickActionsSection } from '../sections/quick-actions-section';
 import { RecentSection } from '../sections/recent-section';
 import { TaskSection } from '../sections/task-section';
 import { WorkspaceSection } from '../sections/workspace-section';
+import {
+  buildCommandActions,
+  type CommandAction,
+} from '../utils/command-actions';
 import { addRecentSearch, clearAllRecent } from '../utils/recent-items';
 import { useNavigationData } from '../utils/use-navigation-data';
 import { useTaskSearch } from '../utils/use-task-search';
@@ -33,10 +39,16 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
   const [showTaskForm, setShowTaskForm] = React.useState(false);
   const [defaultTaskName, setDefaultTaskName] = React.useState('');
   const [recentRefreshKey, setRecentRefreshKey] = React.useState(0);
+  const [selectedAction, setSelectedAction] =
+    React.useState<CommandAction | null>(null);
   const { modKey } = usePlatform();
 
   // Prepare navigation data
   const flattenedNav = useNavigationData(navLinks);
+  const commandActions = React.useMemo(
+    () => buildCommandActions(flattenedNav),
+    [flattenedNav]
+  );
 
   // Search tasks
   const { tasks, isLoading: isLoadingTasks } = useTaskSearch(
@@ -113,10 +125,18 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
     setDefaultTaskName('');
   };
 
+  const handleClosePalette = () => {
+    setSelectedAction(null);
+    onClose();
+  };
+
   // Calculate result counts for display
   const hasQuery = query.trim().length > 0;
   const totalResults =
-    flattenedNav.length + (tasks?.length || 0) + (workspaces?.length || 0);
+    flattenedNav.length +
+    commandActions.length +
+    (tasks?.length || 0) +
+    (workspaces?.length || 0);
 
   // Show task form if in task creation mode
   if (showTaskForm && wsId) {
@@ -134,6 +154,17 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
           />
         </div>
       </div>
+    );
+  }
+
+  if (selectedAction && wsId) {
+    return (
+      <CommandActionPanel
+        action={selectedAction}
+        wsId={wsId}
+        onBack={() => setSelectedAction(null)}
+        onClose={handleClosePalette}
+      />
     );
   }
 
@@ -228,6 +259,14 @@ export function CommandMode({ wsId, navLinks, onClose }: CommandModeProps) {
 
           {/* Quick Actions (shown when no query) */}
           <QuickActionsSection query={query} onSelect={onClose} />
+
+          {/* Product Smart Actions */}
+          <ProductActionsSection
+            navItems={flattenedNav}
+            query={query}
+            onOpenAction={setSelectedAction}
+            onSelect={onClose}
+          />
 
           {/* Workspace Results */}
           <WorkspaceSection

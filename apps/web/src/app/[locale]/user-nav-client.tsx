@@ -41,6 +41,7 @@ import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
 import { useContext, useState } from 'react';
 import { AccountSwitcherModal } from '@/components/account-switcher';
 import { CommandPalette } from '@/components/command';
+import type { NavLink } from '@/components/navigation';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
@@ -62,12 +63,14 @@ export default function UserNavClient({
   hideMetadata = false,
   workspace,
   renderSettingsDialog = true,
+  navLinks = [],
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
   workspace?: Workspace | null;
   renderSettingsDialog?: boolean;
+  navLinks?: (NavLink | null)[];
 }) {
   const t = useTranslations();
   const params = useParams();
@@ -142,6 +145,7 @@ export default function UserNavClient({
         <CommandPalette
           open={commandPaletteOpen}
           setOpen={setCommandPaletteOpen}
+          navLinks={navLinks}
         />
       )}
       {user && renderSettingsDialog && (

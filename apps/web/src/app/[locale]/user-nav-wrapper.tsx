@@ -1,12 +1,15 @@
 import { Suspense } from 'react';
+import type { NavLink } from '@/components/navigation';
 import { UserNav } from './user-nav';
 
 export function UserNavWrapper({
   hideMetadata = false,
   renderSettingsDialog = true,
+  navLinks = [],
 }: {
   hideMetadata?: boolean;
   renderSettingsDialog?: boolean;
+  navLinks?: (NavLink | null)[];
 }) {
   return (
     <Suspense
@@ -17,6 +20,7 @@ export function UserNavWrapper({
       <UserNav
         hideMetadata={hideMetadata}
         renderSettingsDialog={renderSettingsDialog}
+        navLinks={navLinks}
       />
     </Suspense>
   );

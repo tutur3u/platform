@@ -165,6 +165,13 @@ export default async function Layout({ children, params }: LayoutProps) {
       />
     );
 
+  const navigationLinks = await WorkspaceNavigationLinks({
+    wsId,
+    personalOrWsId: workspaceSlug,
+    isPersonal: !!workspace.personal,
+    isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
+  });
+
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
       <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
@@ -186,14 +193,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         user={user}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
-        links={
-          await WorkspaceNavigationLinks({
-            wsId,
-            personalOrWsId: workspaceSlug,
-            isPersonal: !!workspace.personal,
-            isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
-          })
-        }
+        links={navigationLinks}
         actions={
           <Suspense
             key={user.id}
@@ -215,6 +215,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               hideMetadata
               workspace={workspace}
               renderSettingsDialog={false}
+              navLinks={navigationLinks}
             />
           </Suspense>
         }

@@ -66,7 +66,15 @@ export function NavigationSection({
     addRecentPage(item.href, item.title);
 
     // Navigate
-    router.push(item.href);
+    if (item.external) {
+      if (item.newTab) {
+        window.open(item.href, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.assign(item.href);
+      }
+    } else {
+      router.push(item.href);
+    }
 
     // Close command palette
     onSelect?.();
