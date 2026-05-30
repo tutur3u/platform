@@ -10,6 +10,7 @@ import {
 import { validateAiTempAuthRequest } from '@tuturuuu/utils/ai-temp-auth';
 import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
+import { normalizeStableModelId } from '../../../credits/model-mapping';
 import {
   isInternalTuturuuuAiUser,
   resolveSupabaseSessionUser,
@@ -229,8 +230,10 @@ export function createPOST(options: CreatePostOptions = {}) {
 
       // Store bare model name for DB compatibility (ai_models FK)
       const resolvedModel = model
-        ? (model.includes('/') ? model.split('/').pop()! : model).toLowerCase()
-        : 'gemini-2.5-flash-lite';
+        ? normalizeStableModelId(
+            model.includes('/') ? model.split('/').pop()! : model
+          ).toLowerCase()
+        : TITLE_MODEL;
 
       const { data: chat, error: chatError } = await supabase
         .from('ai_chats')

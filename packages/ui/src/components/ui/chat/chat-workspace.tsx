@@ -21,12 +21,14 @@ import { ChatHeader, EmptyConversationState } from './chat-workspace-header';
 import { CreateConversationDialog } from './create-conversation-dialog';
 import { FriendRequestsButton } from './friend-requests-button';
 import {
-  useChatConversations,
+  flattenChatConversationPages,
+  flattenChatMessagePages,
   useChatMessageSearch,
-  useChatMessages,
   useChatRealtime,
   useDeleteChatConversation,
   useDeleteChatMessage,
+  useInfiniteChatConversations,
+  useInfiniteChatMessages,
   useMarkChatConversationRead,
   useOpenChatAttachment,
   useSendChatMessage,
@@ -75,8 +77,13 @@ export function ChatWorkspace({
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
-  const conversationsQuery = useChatConversations(wsId, archiveFilter);
-  const allConversations = conversationsQuery.data ?? [];
+  const conversationsQuery = useInfiniteChatConversations({
+    archived: archiveFilter,
+    wsId,
+  });
+  const allConversations = flattenChatConversationPages(
+    conversationsQuery.data
+  );
   const requestedScope = searchParams.get('scope');
   const conversationScope =
     requestedScope || defaultConversationScope
@@ -115,7 +122,7 @@ export function ChatWorkspace({
     selectedConversation?.members.some(
       (member) => member.userId === currentUserId
     ) ?? false;
-  const messagesQuery = useChatMessages({
+  const messagesQuery = useInfiniteChatMessages({
     conversationId: selectedVirtualReadOnly ? null : activeConversationId,
     wsId,
   });
@@ -123,7 +130,7 @@ export function ChatWorkspace({
     ? selectedConversation?.latestMessage
       ? [selectedConversation.latestMessage]
       : []
-    : (messagesQuery.data ?? []);
+    : flattenChatMessagePages(messagesQuery.data);
   const sendMessage = useSendChatMessage({
     conversationId: activeConversationId,
     currentUserId,
@@ -258,20 +265,52 @@ export function ChatWorkspace({
 
   async function handleDeleteConversation() {
     if (!selectedConversation) return;
+    await archiveConversation(selectedConversation.id, true);
+  }
 
+  async function handleArchiveConversation(conversationId: string) {
+    await archiveConversation(
+      conversationId,
+      conversationId === activeConversationId
+    );
+  }
+
+  async function archiveConversation(
+    conversationId: string,
+    clearSelection: boolean
+  ) {
     try {
-      await deleteConversation.mutateAsync(selectedConversation.id);
-      const nextParams = new URLSearchParams(searchParams.toString());
-      nextParams.delete('conversationId');
-      const nextQuery = nextParams.toString();
-      window.history.replaceState(
-        null,
-        '',
-        nextQuery ? `${pathname}?${nextQuery}` : pathname
-      );
+      await deleteConversation.mutateAsync(conversationId);
+      if (clearSelection) {
+        const nextParams = new URLSearchParams(searchParams.toString());
+        nextParams.delete('conversationId');
+        const nextQuery = nextParams.toString();
+        window.history.replaceState(
+          null,
+          '',
+          nextQuery ? `${pathname}?${nextQuery}` : pathname
+        );
+      }
       toast.success(t('conversation_archived'));
     } catch {
       toast.error(t('conversation_archive_failed'));
+    }
+  }
+
+  async function handlePinConversation(
+    conversationId: string,
+    pinned: boolean
+  ) {
+    try {
+      await updateConversation.mutateAsync({
+        conversationId,
+        payload: { pinned },
+      });
+      toast.success(
+        pinned ? t('conversation_pinned') : t('conversation_unpinned')
+      );
+    } catch {
+      toast.error(t('conversation_update_failed'));
     }
   }
 
@@ -328,7 +367,12 @@ export function ChatWorkspace({
               <FriendRequestsButton currentUserId={currentUserId} wsId={wsId} />
             ) : null
           }
+          hasMoreConversations={conversationsQuery.hasNextPage}
           isLoading={conversationsQuery.isLoading}
+          isFetchingMoreConversations={conversationsQuery.isFetchingNextPage}
+          onArchiveConversation={handleArchiveConversation}
+          onLoadMoreConversations={() => conversationsQuery.fetchNextPage()}
+          onPinConversation={handlePinConversation}
           onSearchChange={setSearchValue}
           onSelectConversation={selectConversation}
           searchResults={searchResults}
@@ -358,10 +402,13 @@ export function ChatWorkspace({
           <>
             <MessageList
               currentUserId={currentUserId}
+              hasMoreMessages={messagesQuery.hasNextPage}
               isLoading={messagesQuery.isLoading}
+              isLoadingMoreMessages={messagesQuery.isFetchingNextPage}
               isAgentTyping={selectedAiConversation && sendMessage.isPending}
               messages={messages}
               onDeleteMessage={handleDeleteMessage}
+              onLoadMoreMessages={() => messagesQuery.fetchNextPage()}
               onOpenAttachment={handleOpenAttachment}
               onToggleReaction={
                 selectedReadOnly || selectedAiConversation

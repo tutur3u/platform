@@ -176,7 +176,9 @@ describe('GlobalCommandLauncher', () => {
     openGlobalCommandLauncher();
     await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
 
-    const dialogContent = document.querySelector('[data-slot="dialog-content"]');
+    const dialogContent = document.querySelector(
+      '[data-slot="dialog-content"]'
+    );
     const commandList = document.querySelector('[data-slot="command-list"]');
 
     expect(dialogContent?.className).toContain(

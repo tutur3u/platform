@@ -1,7 +1,9 @@
 'use client';
 
 import {
+  type InfiniteData,
   type QueryClient,
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
@@ -19,9 +21,18 @@ import {
 } from '@tuturuuu/internal-api';
 import { chatQueryKeys } from './query-keys';
 
+const DEFAULT_CHAT_MESSAGES_LIMIT = 80;
+
+export interface ChatMessagesPage {
+  hasMore: boolean;
+  limit: number;
+  messages: ChatMessage[];
+  nextBefore: string | null;
+}
+
 export function useChatMessages({
   conversationId,
-  limit = 80,
+  limit = DEFAULT_CHAT_MESSAGES_LIMIT,
   wsId,
 }: {
   conversationId?: string | null;
@@ -37,6 +48,51 @@ export function useChatMessages({
     queryKey: chatQueryKeys.messages(wsId, conversationId ?? 'none', limit),
     staleTime: 5_000,
   });
+}
+
+export function useInfiniteChatMessages({
+  conversationId,
+  limit = DEFAULT_CHAT_MESSAGES_LIMIT,
+  wsId,
+}: {
+  conversationId?: string | null;
+  limit?: number;
+  wsId: string;
+}) {
+  return useInfiniteQuery<
+    ChatMessagesPage,
+    Error,
+    InfiniteData<ChatMessagesPage>,
+    ReturnType<typeof chatQueryKeys.messagesInfinite>,
+    string | null
+  >({
+    enabled: Boolean(conversationId),
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? (lastPage.nextBefore ?? undefined) : undefined,
+    initialPageParam: null as string | null,
+    queryFn: async ({ pageParam }) => {
+      const messages = await listWorkspaceChatConversationMessages(
+        wsId,
+        conversationId ?? '',
+        {
+          before: pageParam ?? undefined,
+          limit,
+        }
+      );
+
+      return createChatMessagesPage(messages, limit);
+    },
+    queryKey: chatQueryKeys.messagesInfinite(
+      wsId,
+      conversationId ?? 'none',
+      limit
+    ),
+    staleTime: 5_000,
+  });
+}
+
+export function flattenChatMessagePages(data?: InfiniteData<ChatMessagesPage>) {
+  return [...(data?.pages ?? [])].reverse().flatMap((page) => page.messages);
 }
 
 export function useSendChatMessage({
@@ -69,31 +125,23 @@ export function useSendChatMessage({
 
       const assistantStreamId = createOptimisticId('assistant');
       const appendAssistantDelta = (delta: string) => {
-        queryClient.setQueriesData<ChatMessage[]>(
-          {
-            queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
-          },
-          (current = []) =>
-            appendStreamingAssistantMessage({
-              contentDelta: delta,
-              conversationId,
-              current,
-              messageId: assistantStreamId,
-            })
+        patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+          appendStreamingAssistantMessage({
+            contentDelta: delta,
+            conversationId,
+            current,
+            messageId: assistantStreamId,
+          })
         );
       };
       const appendAssistantPart = (part: Record<string, unknown>) => {
-        queryClient.setQueriesData<ChatMessage[]>(
-          {
-            queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
-          },
-          (current = []) =>
-            appendStreamingAssistantMessage({
-              conversationId,
-              current,
-              messageId: assistantStreamId,
-              part,
-            })
+        patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+          appendStreamingAssistantMessage({
+            conversationId,
+            current,
+            messageId: assistantStreamId,
+            part,
+          })
         );
       };
 
@@ -101,19 +149,11 @@ export function useSendChatMessage({
         onAssistantDelta: appendAssistantDelta,
         onAssistantPart: appendAssistantPart,
         onMessages: (messages) => {
-          queryClient.setQueriesData<ChatMessage[]>(
-            {
-              queryKey: [
-                ...chatQueryKeys.all(wsId),
-                'messages',
-                conversationId,
-              ],
-            },
-            (current = []) =>
-              mergeCachedMessages(
-                current.filter((item) => item.id !== assistantStreamId),
-                messages
-              )
+          patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+            mergeCachedMessages(
+              current.filter((item) => item.id !== assistantStreamId),
+              messages
+            )
           );
         },
       });
@@ -154,11 +194,15 @@ export function useSendChatMessage({
       await queryClient.cancelQueries({
         queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
       });
-      queryClient.setQueriesData<ChatMessage[]>(
-        {
-          queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
-        },
-        (current = []) => mergeCachedMessages(current, [optimisticMessage])
+      await queryClient.cancelQueries({
+        queryKey: [
+          ...chatQueryKeys.all(wsId),
+          'messages-infinite',
+          conversationId,
+        ],
+      });
+      patchCachedMessages(queryClient, wsId, conversationId, (current) =>
+        mergeCachedMessages(current, [optimisticMessage])
       );
 
       return { conversationId, optimisticId };
@@ -166,15 +210,11 @@ export function useSendChatMessage({
     onError: (_error, _payload, context) => {
       if (!context?.conversationId || !context.optimisticId) return;
 
-      queryClient.setQueriesData<ChatMessage[]>(
-        {
-          queryKey: [
-            ...chatQueryKeys.all(wsId),
-            'messages',
-            context.conversationId,
-          ],
-        },
-        (current = []) =>
+      patchCachedMessages(
+        queryClient,
+        wsId,
+        context.conversationId,
+        (current) =>
           current.filter(
             (message) =>
               message.id !== context.optimisticId &&
@@ -192,26 +232,18 @@ export function useSendChatMessage({
       const targetConversationId =
         context?.conversationId ?? message.conversationId;
 
-      queryClient.setQueriesData<ChatMessage[]>(
-        {
-          queryKey: [
-            ...chatQueryKeys.all(wsId),
-            'messages',
-            targetConversationId,
-          ],
-        },
-        (current = []) =>
-          mergeCachedMessages(
-            current.filter(
-              (item) =>
-                item.id !== context?.optimisticId &&
-                !(
-                  result.assistantError &&
-                  isOptimisticStreamingAssistantMessage(item)
-                )
-            ),
-            messages
-          )
+      patchCachedMessages(queryClient, wsId, targetConversationId, (current) =>
+        mergeCachedMessages(
+          current.filter(
+            (item) =>
+              item.id !== context?.optimisticId &&
+              !(
+                result.assistantError &&
+                isOptimisticStreamingAssistantMessage(item)
+              )
+          ),
+          messages
+        )
       );
       queryClient.invalidateQueries({
         queryKey: [...chatQueryKeys.all(wsId), 'conversations'],
@@ -220,6 +252,13 @@ export function useSendChatMessage({
         queryKey: [
           ...chatQueryKeys.all(wsId),
           'messages',
+          message.conversationId,
+        ],
+      });
+      queryClient.invalidateQueries({
+        queryKey: [
+          ...chatQueryKeys.all(wsId),
+          'messages-infinite',
           message.conversationId,
         ],
       });
@@ -309,16 +348,46 @@ function patchCachedMessage(
   wsId: string,
   message: ChatMessage
 ) {
+  patchCachedMessages(queryClient, wsId, message.conversationId, (current) =>
+    current.map((item) => (item.id === message.id ? message : item))
+  );
+}
+
+function patchCachedMessages(
+  queryClient: QueryClient,
+  wsId: string,
+  conversationId: string,
+  updater: (messages: ChatMessage[]) => ChatMessage[]
+) {
   queryClient.setQueriesData<ChatMessage[]>(
+    {
+      queryKey: [...chatQueryKeys.all(wsId), 'messages', conversationId],
+    },
+    (current = []) => updater(current)
+  );
+  queryClient.setQueriesData<InfiniteData<ChatMessagesPage>>(
     {
       queryKey: [
         ...chatQueryKeys.all(wsId),
-        'messages',
-        message.conversationId,
+        'messages-infinite',
+        conversationId,
       ],
     },
-    (current = []) =>
-      current.map((item) => (item.id === message.id ? message : item))
+    (current) => {
+      if (!current) return current;
+
+      const limit = current.pages[0]?.limit ?? DEFAULT_CHAT_MESSAGES_LIMIT;
+      return {
+        ...current,
+        pageParams: [null],
+        pages: [
+          createChatMessagesPage(
+            updater(flattenChatMessagePages(current)),
+            limit
+          ),
+        ],
+      };
+    }
   );
 }
 
@@ -343,10 +412,16 @@ function isOptimisticStreamingAssistantMessage(message: ChatMessage) {
   );
 }
 
-function mergeCachedMessages(
+export function mergeCachedMessages(
   current: ChatMessage[],
   incomingMessages: ChatMessage[]
 ) {
+  const originalOrder = new Map(
+    current.map((message, index) => [message.id, index] as const)
+  );
+  const incomingOrder = new Map(
+    incomingMessages.map((message, index) => [message.id, index] as const)
+  );
   const next = [...current];
 
   for (const incoming of incomingMessages) {
@@ -361,7 +436,80 @@ function mergeCachedMessages(
     }
   }
 
-  return next;
+  return next.sort((a, b) =>
+    compareMessages(a, b, originalOrder, incomingOrder)
+  );
+}
+
+function createChatMessagesPage(
+  messages: ChatMessage[],
+  limit: number
+): ChatMessagesPage {
+  return {
+    hasMore: messages.length >= limit,
+    limit,
+    messages,
+    nextBefore: messages[0]?.createdAt ?? null,
+  };
+}
+
+function compareMessages(
+  a: ChatMessage,
+  b: ChatMessage,
+  originalOrder: Map<string, number>,
+  incomingOrder: Map<string, number>
+) {
+  const optimisticChatDiff = compareOptimisticChatMessages(a, b, incomingOrder);
+  if (optimisticChatDiff !== 0) return optimisticChatDiff;
+
+  const createdDiff = readMessageTimestamp(a) - readMessageTimestamp(b);
+  if (createdDiff !== 0) return createdDiff;
+
+  const incomingDiff =
+    readMessageOrder(a, incomingOrder) - readMessageOrder(b, incomingOrder);
+  if (incomingDiff !== 0) return incomingDiff;
+
+  return (
+    readMessageOrder(a, originalOrder) - readMessageOrder(b, originalOrder)
+  );
+}
+
+function compareOptimisticChatMessages(
+  a: ChatMessage,
+  b: ChatMessage,
+  incomingOrder: Map<string, number>
+) {
+  const aRank = getOptimisticChatRank(a, incomingOrder);
+  const bRank = getOptimisticChatRank(b, incomingOrder);
+  if (aRank === null || bRank === null) return 0;
+  return aRank - bRank;
+}
+
+function getOptimisticChatRank(
+  message: ChatMessage,
+  incomingOrder: Map<string, number>
+) {
+  if (message.kind === 'user' && message.metadata?.optimistic === true) {
+    return 0;
+  }
+
+  if (
+    message.kind === 'assistant' &&
+    (incomingOrder.has(message.id) || message.metadata?.optimistic === true)
+  ) {
+    return 1;
+  }
+
+  return null;
+}
+
+function readMessageTimestamp(message: ChatMessage) {
+  const timestamp = Date.parse(message.createdAt);
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function readMessageOrder(message: ChatMessage, order: Map<string, number>) {
+  return order.get(message.id) ?? Number.MAX_SAFE_INTEGER;
 }
 
 function appendStreamingAssistantMessage({

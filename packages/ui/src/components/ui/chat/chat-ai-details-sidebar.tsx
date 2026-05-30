@@ -8,6 +8,7 @@ import {
   type UpdateChatAiSettingsPayload,
 } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
+import { useEffect, useRef } from 'react';
 import { useAiCredits } from '../../../hooks/use-ai-credits';
 import { ScrollArea } from '../scroll-area';
 import { toast } from '../sonner';
@@ -18,6 +19,7 @@ import {
   SharedPanel,
   UsagePanel,
 } from './chat-ai-details-panels';
+import { resolveFallbackChatAiModelId } from './chat-ai-models';
 import {
   useChatAiObservability,
   useChatAiSettings,
@@ -62,6 +64,8 @@ export function ChatAiDetailsSidebar({
     staleTime: 60_000,
   });
   const settings = settingsQuery.data;
+  const models = modelsQuery.data ?? [];
+  const autoSelectionKeyRef = useRef<string | null>(null);
   const personalCreditWsId = settings?.personalWorkspaceId ?? 'personal';
   const workspaceCredits = useAiCredits(open ? wsId : undefined);
   const personalCredits = useAiCredits(open ? personalCreditWsId : undefined);
@@ -75,6 +79,36 @@ export function ChatAiDetailsSidebar({
       toast.error(t('ai_settings_failed'));
     }
   }
+
+  useEffect(() => {
+    if (
+      !open ||
+      !settings ||
+      modelsQuery.isLoading ||
+      updateSettings.isPending
+    ) {
+      return;
+    }
+
+    const fallbackModelId = resolveFallbackChatAiModelId({
+      currentModelId: settings.modelId,
+      models,
+    });
+    if (!fallbackModelId) return;
+
+    const autoSelectionKey = `${settings.conversationId}:${settings.modelId ?? 'none'}:${fallbackModelId}`;
+    if (autoSelectionKeyRef.current === autoSelectionKey) return;
+    autoSelectionKeyRef.current = autoSelectionKey;
+
+    updateSettings.mutate({ modelId: fallbackModelId });
+  }, [
+    models,
+    modelsQuery.isLoading,
+    open,
+    settings,
+    updateSettings,
+    updateSettings.isPending,
+  ]);
 
   if (!open) return null;
 
@@ -122,7 +156,7 @@ export function ChatAiDetailsSidebar({
                 },
               }}
               isLoading={settingsQuery.isLoading}
-              models={modelsQuery.data ?? []}
+              models={models}
               onCreditSourceChange={(creditSource) =>
                 patchSettings({
                   creditSource,

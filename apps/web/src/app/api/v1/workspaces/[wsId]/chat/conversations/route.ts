@@ -35,10 +35,14 @@ const createConversationSchema = z.object({
 async function listNativeChatConversations({
   actorUserId,
   archived,
+  limit,
+  offset,
   wsId,
 }: {
   actorUserId: string;
   archived: 'active' | 'all' | 'archived';
+  limit?: number | null;
+  offset?: number | null;
   wsId: string;
 }) {
   try {
@@ -47,6 +51,8 @@ async function listNativeChatConversations({
       {
         p_actor_user_id: actorUserId,
         p_archived: archived,
+        p_limit: limit ?? null,
+        p_offset: offset ?? 0,
         p_ws_id: wsId,
       }
     );
@@ -81,6 +87,22 @@ function isMissingArchivedChatListRpc(error: unknown) {
   );
 }
 
+function readPagination(url: URL) {
+  const limitParam = url.searchParams.get('limit');
+  const offsetParam = url.searchParams.get('offset');
+  const isPaginated = limitParam !== null || offsetParam !== null;
+  const parsedLimit = Number(limitParam ?? 40);
+  const parsedOffset = Number(offsetParam ?? 0);
+  const limit = Number.isFinite(parsedLimit)
+    ? Math.min(Math.max(Math.trunc(parsedLimit), 1), 100)
+    : 40;
+  const offset = Number.isFinite(parsedOffset)
+    ? Math.max(Math.trunc(parsedOffset), 0)
+    : 0;
+
+  return { isPaginated, limit, offset };
+}
+
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
     const context = await resolveChatRouteContext({
@@ -96,6 +118,7 @@ export const GET = withSessionAuth<RouteParams>(
       archivedParam === 'archived' || archivedParam === 'all'
         ? archivedParam
         : 'active';
+    const pagination = readPagination(url);
 
     try {
       const [conversations, aiAgentConversations, aiChatConversations] =
@@ -103,6 +126,10 @@ export const GET = withSessionAuth<RouteParams>(
           listNativeChatConversations({
             actorUserId: auth.user.id,
             archived,
+            limit: pagination.isPaginated
+              ? pagination.offset + pagination.limit + 1
+              : null,
+            offset: 0,
             wsId: context.context.normalizedWsId,
           }),
           archived === 'active'
@@ -118,12 +145,26 @@ export const GET = withSessionAuth<RouteParams>(
           }),
         ]);
 
+      const allConversations = [
+        ...(conversations ?? []),
+        ...aiAgentConversations,
+        ...aiChatConversations,
+      ];
+      const pageConversations = pagination.isPaginated
+        ? allConversations.slice(
+            pagination.offset,
+            pagination.offset + pagination.limit
+          )
+        : allConversations;
+      const nextOffset =
+        pagination.isPaginated &&
+        allConversations.length > pagination.offset + pagination.limit
+          ? pagination.offset + pagination.limit
+          : null;
+
       return NextResponse.json({
-        conversations: [
-          ...(conversations ?? []),
-          ...aiAgentConversations,
-          ...aiChatConversations,
-        ],
+        conversations: pageConversations,
+        nextOffset,
       });
     } catch (error) {
       return chatRpcErrorResponse(error, 'Failed to load chat conversations');

@@ -12,19 +12,19 @@ import { z } from 'zod';
 const PLAN_DEFAULT_MODELS = {
   ENTERPRISE: {
     default_image_model: 'google/imagen-4.0-generate-001',
-    default_language_model: 'google/gemini-2.5-flash-lite',
+    default_language_model: 'google/gemini-3.1-flash-lite',
   },
   FREE: {
     default_image_model: 'google/imagen-4.0-fast-generate-001',
-    default_language_model: 'google/gemini-2.5-flash-lite',
+    default_language_model: 'google/gemini-3.1-flash-lite',
   },
   PLUS: {
     default_image_model: 'google/imagen-4.0-generate-001',
-    default_language_model: 'google/gemini-2.5-flash-lite',
+    default_language_model: 'google/gemini-3.1-flash-lite',
   },
   PRO: {
     default_image_model: 'google/imagen-4.0-generate-001',
-    default_language_model: 'google/gemini-2.5-flash-lite',
+    default_language_model: 'google/gemini-3.1-flash-lite',
   },
 } as const;
 

@@ -1,12 +1,20 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type InfiniteData,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import {
   type ChatConversation,
+  type ChatConversationPage,
   type CreateChatConversationPayload,
   createWorkspaceChatConversation,
   deleteWorkspaceChatConversation,
   listWorkspaceChatConversations,
+  listWorkspaceChatConversationsPage,
   markWorkspaceChatConversationRead,
   type UpdateChatConversationPayload,
   updateWorkspaceChatConversation,
@@ -22,6 +30,41 @@ export function useChatConversations(
     queryKey: chatQueryKeys.conversations(wsId, archived),
     staleTime: 15_000,
   });
+}
+
+export function useInfiniteChatConversations({
+  archived = 'active',
+  limit = 40,
+  wsId,
+}: {
+  archived?: 'active' | 'all' | 'archived';
+  limit?: number;
+  wsId: string;
+}) {
+  return useInfiniteQuery<
+    ChatConversationPage,
+    Error,
+    InfiniteData<ChatConversationPage>,
+    ReturnType<typeof chatQueryKeys.conversationsInfinite>,
+    number
+  >({
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      listWorkspaceChatConversationsPage(wsId, {
+        archived,
+        limit,
+        offset: pageParam,
+      }),
+    queryKey: chatQueryKeys.conversationsInfinite(wsId, archived, limit),
+    staleTime: 15_000,
+  });
+}
+
+export function flattenChatConversationPages(
+  data?: InfiniteData<ChatConversationPage>
+) {
+  return data?.pages.flatMap((page) => page.conversations) ?? [];
 }
 
 export function useCreateChatConversation(wsId: string) {

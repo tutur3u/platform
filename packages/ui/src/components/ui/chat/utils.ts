@@ -126,6 +126,22 @@ export function getConversationTitle(
   return fallback?.chat ?? 'Untitled chat';
 }
 
+export function getCurrentChatConversationMember(
+  conversation: ChatConversation,
+  currentUserId: string
+) {
+  return conversation.members.find((member) => member.userId === currentUserId);
+}
+
+export function isChatConversationPinned(
+  conversation: ChatConversation,
+  currentUserId: string
+) {
+  return Boolean(
+    getCurrentChatConversationMember(conversation, currentUserId)?.pinnedAt
+  );
+}
+
 export function formatChatTime(value?: string | null) {
   if (!value) return '';
 

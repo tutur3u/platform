@@ -68,7 +68,7 @@ describe('chat AI settings helpers', () => {
       creditSource: 'workspace',
       creditWsId: null,
       enabled: false,
-      modelId: 'google/gemini-3-flash',
+      modelId: 'google/gemini-3.1-flash-lite',
       personalWorkspaceId: 'personal-1',
       systemPrompt: 'Be concise',
       thinkingMode: 'fast',
@@ -93,7 +93,7 @@ describe('chat AI settings helpers', () => {
     const patch = {
       creditSource: 'personal' as const,
       creditWsId: '00000000-0000-4000-8000-000000000001',
-      modelId: 'google/gemini-3-flash',
+      modelId: 'google/gemini-3.1-flash-lite',
       systemPrompt: null,
       thinkingMode: 'thinking' as const,
     };
@@ -101,12 +101,12 @@ describe('chat AI settings helpers', () => {
     expect(buildFullChatAiSettingsUpdatePayload(patch)).toEqual({
       credit_source: 'personal',
       credit_ws_id: '00000000-0000-4000-8000-000000000001',
-      model_id: 'google/gemini-3-flash',
+      model_id: 'google/gemini-3.1-flash-lite',
       system_prompt: null,
       thinking_mode: 'thinking',
     });
     expect(buildLegacyChatAiSettingsUpdatePayload(patch)).toEqual({
-      model_id: 'google/gemini-3-flash',
+      model_id: 'google/gemini-3.1-flash-lite',
       system_prompt: null,
     });
     expect(hasNewChatAiSettingsPatchFields(patch)).toBe(true);
@@ -114,8 +114,10 @@ describe('chat AI settings helpers', () => {
   });
 
   it('normalizes bare Google model IDs', () => {
-    expect(normalizeAiModelId('gemini-3-flash')).toBe('google/gemini-3-flash');
+    expect(normalizeAiModelId('gemini-3-flash')).toBe(
+      'google/gemini-3.1-flash-lite'
+    );
     expect(normalizeAiModelId('openai/gpt-5')).toBe('openai/gpt-5');
-    expect(normalizeAiModelId(null)).toBe('google/gemini-3-flash');
+    expect(normalizeAiModelId(null)).toBe('google/gemini-3.1-flash-lite');
   });
 });

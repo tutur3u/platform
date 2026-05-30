@@ -12,6 +12,7 @@ import {
   streamText,
 } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import { normalizeStableModelId } from '../../credits/model-mapping';
 import {
   PlanModelResolutionError,
   resolvePlanModel,
@@ -307,9 +308,9 @@ export function createPOST(
           });
           resolvedModelId = resolvedPlanModel.modelId;
         } else if (model) {
-          resolvedModelId = model.includes('/')
-            ? model
-            : `${defaultProvider}/${model}`;
+          resolvedModelId = normalizeStableModelId(
+            model.includes('/') ? model : `${defaultProvider}/${model}`
+          );
         } else {
           return NextResponse.json(
             {

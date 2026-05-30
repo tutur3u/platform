@@ -1,5 +1,6 @@
 'use client';
 
+import { useVirtualizer } from '@tanstack/react-virtual';
 import {
   Bot,
   Funnel,
@@ -12,7 +13,7 @@ import {
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { type ReactNode, useState } from 'react';
+import { type ReactNode, type UIEvent, useMemo, useRef, useState } from 'react';
 import { Button } from '../button';
 import {
   DropdownMenu,
@@ -23,7 +24,6 @@ import {
   DropdownMenuTrigger,
 } from '../dropdown-menu';
 import { Input } from '../input';
-import { ScrollArea } from '../scroll-area';
 import { ConversationRow, SearchResultList } from './chat-sidebar-items';
 import type {
   ChatConversationArchiveFilter,
@@ -39,7 +39,12 @@ interface ChatSidebarProps {
   embedded?: boolean;
   filters?: ReactNode;
   headerActions?: ReactNode;
+  hasMoreConversations?: boolean;
   isLoading?: boolean;
+  isFetchingMoreConversations?: boolean;
+  onArchiveConversation?: (conversationId: string) => void;
+  onLoadMoreConversations?: () => Promise<unknown> | undefined;
+  onPinConversation?: (conversationId: string, pinned: boolean) => void;
   onSearchChange: (value: string) => void;
   onSelectConversation: (conversationId: string) => void;
   searchResults: ChatMessage[];
@@ -59,7 +64,12 @@ export function ChatSidebar({
   embedded = false,
   filters,
   headerActions,
+  hasMoreConversations,
   isLoading,
+  isFetchingMoreConversations,
+  onArchiveConversation,
+  onLoadMoreConversations,
+  onPinConversation,
   onSearchChange,
   onSelectConversation,
   searchResults,
@@ -120,7 +130,7 @@ export function ChatSidebar({
         </div>
       ) : null}
 
-      <ScrollArea className="min-h-0 flex-1">
+      <div className="min-h-0 flex-1 overflow-hidden">
         {isLoading ? (
           <div className="flex items-center justify-center p-6 text-muted-foreground text-sm">
             <LoaderCircle className="mr-2 size-4 animate-spin" />
@@ -135,6 +145,11 @@ export function ChatSidebar({
           <ConversationGroups
             conversations={conversations}
             currentUserId={currentUserId}
+            hasMoreConversations={hasMoreConversations}
+            isFetchingMoreConversations={isFetchingMoreConversations}
+            onArchiveConversation={onArchiveConversation}
+            onLoadMoreConversations={onLoadMoreConversations}
+            onPinConversation={onPinConversation}
             onSelectConversation={onSelectConversation}
             archiveFilter={archiveFilter}
             scope={scope}
@@ -151,15 +166,26 @@ export function ChatSidebar({
             </p>
           </div>
         )}
-      </ScrollArea>
+      </div>
     </aside>
   );
 }
+
+type ConversationListItem =
+  | { key: string; label: string; type: 'archive-label' }
+  | { key: string; label: string; type: 'group-label' }
+  | { conversation: ChatConversation; key: string; type: 'conversation' }
+  | { key: string; type: 'loader' };
 
 function ConversationGroups({
   archiveFilter,
   conversations,
   currentUserId,
+  hasMoreConversations,
+  isFetchingMoreConversations,
+  onArchiveConversation,
+  onLoadMoreConversations,
+  onPinConversation,
   onSelectConversation,
   scope,
   selectedConversationId,
@@ -167,75 +193,163 @@ function ConversationGroups({
   archiveFilter: ChatConversationArchiveFilter;
   conversations: ChatConversation[];
   currentUserId: string;
+  hasMoreConversations?: boolean;
+  isFetchingMoreConversations?: boolean;
+  onArchiveConversation?: (conversationId: string) => void;
+  onLoadMoreConversations?: () => Promise<unknown> | undefined;
+  onPinConversation?: (conversationId: string, pinned: boolean) => void;
   onSelectConversation: (conversationId: string) => void;
   scope?: ChatConversationScope;
   selectedConversationId?: string | null;
 }) {
   const t = useTranslations('chat');
-  const groups =
-    scope === 'workspaces'
-      ? [
-          {
-            conversations: conversations.filter(
-              (conversation) => conversation.type === 'channel'
-            ),
-            label: t('channels'),
-          },
-          {
-            conversations: conversations.filter(
-              (conversation) => conversation.type === 'ai'
-            ),
-            label: t('ai_agents'),
-          },
-        ]
-      : scope === 'personal'
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const groups = useMemo(
+    () =>
+      scope === 'workspaces'
         ? [
             {
               conversations: conversations.filter(
-                (conversation) => conversation.type === 'direct'
+                (conversation) => conversation.type === 'channel'
               ),
-              label: t('direct_messages'),
+              label: t('channels'),
             },
             {
               conversations: conversations.filter(
-                (conversation) => conversation.type === 'group'
+                (conversation) => conversation.type === 'ai'
               ),
-              label: t('groups'),
+              label: t('ai_agents'),
             },
           ]
-        : [{ conversations, label: null }];
+        : scope === 'personal'
+          ? [
+              {
+                conversations: conversations.filter(
+                  (conversation) => conversation.type === 'direct'
+                ),
+                label: t('direct_messages'),
+              },
+              {
+                conversations: conversations.filter(
+                  (conversation) => conversation.type === 'group'
+                ),
+                label: t('groups'),
+              },
+            ]
+          : [{ conversations, label: null }],
+    [conversations, scope, t]
+  );
+  const items = useMemo<ConversationListItem[]>(() => {
+    const next: ConversationListItem[] = [];
+    if (archiveFilter !== 'active') {
+      next.push({
+        key: 'archive-label',
+        label:
+          archiveFilter === 'archived'
+            ? t('showing_archived_chats')
+            : t('showing_all_chats'),
+        type: 'archive-label',
+      });
+    }
+
+    for (const [index, group] of groups.entries()) {
+      if (group.conversations.length === 0) continue;
+      if (group.label) {
+        next.push({
+          key: `group-${group.label}-${index}`,
+          label: group.label,
+          type: 'group-label',
+        });
+      }
+
+      for (const conversation of group.conversations) {
+        next.push({
+          conversation,
+          key: conversation.id,
+          type: 'conversation',
+        });
+      }
+    }
+
+    if (hasMoreConversations) next.push({ key: 'loader', type: 'loader' });
+    return next;
+  }, [archiveFilter, groups, hasMoreConversations, t]);
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    estimateSize: (index) => {
+      const item = items[index];
+      if (item?.type === 'conversation') return 66;
+      if (item?.type === 'loader') return 44;
+      return 28;
+    },
+    getItemKey: (index) => items[index]?.key ?? index,
+    getScrollElement: () => parentRef.current,
+    overscan: 8,
+  });
+  const virtualItems = virtualizer.getVirtualItems();
+
+  function maybeLoadMore(event: UIEvent<HTMLDivElement>) {
+    if (!(hasMoreConversations && onLoadMoreConversations)) return;
+    if (isFetchingMoreConversations) return;
+
+    const target = event.currentTarget;
+    const distanceToEnd =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (distanceToEnd < 180) {
+      void onLoadMoreConversations();
+    }
+  }
 
   return (
-    <div className="space-y-3 p-2">
-      {archiveFilter !== 'active' ? (
-        <p className="px-2 text-muted-foreground text-xs">
-          {archiveFilter === 'archived'
-            ? t('showing_archived_chats')
-            : t('showing_all_chats')}
-        </p>
-      ) : null}
-      {groups.map((group, index) => {
-        if (group.conversations.length === 0) return null;
+    <div
+      className="h-full overflow-y-auto overflow-x-hidden overscroll-contain p-2"
+      onScroll={maybeLoadMore}
+      ref={parentRef}
+    >
+      <div
+        className="relative"
+        style={{ height: `${virtualizer.getTotalSize()}px` }}
+      >
+        {virtualItems.map((virtualItem) => {
+          const item = items[virtualItem.index];
+          if (!item) return null;
 
-        return (
-          <section className="space-y-1" key={group.label ?? index}>
-            {group.label ? (
-              <h3 className="px-2 font-medium text-muted-foreground text-xs uppercase">
-                {group.label}
-              </h3>
-            ) : null}
-            {group.conversations.map((conversation) => (
-              <ConversationRow
-                conversation={conversation}
-                currentUserId={currentUserId}
-                isSelected={conversation.id === selectedConversationId}
-                key={conversation.id}
-                onSelectConversation={onSelectConversation}
-              />
-            ))}
-          </section>
-        );
-      })}
+          return (
+            <div
+              className="absolute inset-x-0 top-0"
+              data-index={virtualItem.index}
+              key={virtualItem.key}
+              ref={virtualizer.measureElement}
+              style={{ transform: `translateY(${virtualItem.start}px)` }}
+            >
+              {item.type === 'archive-label' ? (
+                <p className="px-2 py-1 text-muted-foreground text-xs">
+                  {item.label}
+                </p>
+              ) : item.type === 'group-label' ? (
+                <h3 className="px-2 py-1 font-medium text-muted-foreground text-xs uppercase">
+                  {item.label}
+                </h3>
+              ) : item.type === 'loader' ? (
+                <div className="flex items-center justify-center py-2 text-muted-foreground text-xs">
+                  <LoaderCircle className="mr-2 size-3.5 animate-spin" />
+                  {t('loading_conversations')}
+                </div>
+              ) : (
+                <ConversationRow
+                  conversation={item.conversation}
+                  currentUserId={currentUserId}
+                  isSelected={item.conversation.id === selectedConversationId}
+                  onArchiveConversation={onArchiveConversation}
+                  onPinConversation={onPinConversation}
+                  onSelectConversation={onSelectConversation}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

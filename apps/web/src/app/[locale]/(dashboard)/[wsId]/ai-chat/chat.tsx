@@ -30,8 +30,8 @@ export interface ChatProps extends React.ComponentProps<'div'> {
 }
 
 const DEFAULT_MODEL: AIModelUI = {
-  value: 'google/gemini-3-flash',
-  label: 'gemini-3-flash',
+  value: 'google/gemini-3.1-flash-lite',
+  label: 'gemini-3.1-flash-lite',
   provider: 'google',
 };
 
@@ -75,7 +75,7 @@ export default function Chat({
     transport: new DefaultChatTransport({
       api:
         chat?.model || model?.value
-          ? `/api/ai/chat/${extractProvider(chat?.model ?? model?.value ?? 'google/gemini-2.5-flash')}`
+          ? `/api/ai/chat/${extractProvider(chat?.model ?? model?.value ?? 'google/gemini-3.1-flash-lite')}`
           : undefined,
       credentials: 'include',
       headers: { 'Custom-Header': 'value' },

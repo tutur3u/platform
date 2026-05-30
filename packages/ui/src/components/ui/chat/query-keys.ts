@@ -13,6 +13,14 @@ export const chatQueryKeys = {
     ] as const,
   conversations: (wsId: string, archived = 'active') =>
     [...chatQueryKeys.all(wsId), 'conversations', archived] as const,
+  conversationsInfinite: (wsId: string, archived = 'active', limit = 40) =>
+    [
+      ...chatQueryKeys.all(wsId),
+      'conversations',
+      archived,
+      'infinite',
+      limit,
+    ] as const,
   directory: (wsId: string, query: string) =>
     [...chatQueryKeys.all(wsId), 'directory', query] as const,
   friendRequests: (wsId: string) =>
@@ -26,6 +34,13 @@ export const chatQueryKeys = {
     ] as const,
   messages: (wsId: string, conversationId: string, limit: number) =>
     [...chatQueryKeys.all(wsId), 'messages', conversationId, limit] as const,
+  messagesInfinite: (wsId: string, conversationId: string, limit: number) =>
+    [
+      ...chatQueryKeys.all(wsId),
+      'messages-infinite',
+      conversationId,
+      limit,
+    ] as const,
   search: (wsId: string, query: string) =>
     [...chatQueryKeys.all(wsId), 'search', query] as const,
   sharedContent: (wsId: string, conversationId: string) =>

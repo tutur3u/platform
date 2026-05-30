@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const mocks = vi.hoisted(() => ({
+const mocks = {
   auth: {
     supabase: null as unknown,
     user: { id: 'user-1' },
@@ -8,11 +8,12 @@ const mocks = vi.hoisted(() => ({
   callPrivateChatRpc: vi.fn(),
   createAdminClient: vi.fn(),
   createAiChatPost: vi.fn(),
+  aiRouteBodies: [] as unknown[],
   publishChatRealtimeEvent: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
   serverWarn: vi.fn(),
-}));
+};
 
 vi.mock('@tuturuuu/ai/chat/google/route', () => ({
   createPOST: (...args: Parameters<typeof mocks.createAiChatPost>) =>
@@ -186,7 +187,8 @@ function createSupabaseMock() {
 }
 
 function mockNativeAiRoute() {
-  mocks.createAiChatPost.mockReturnValue(async () => {
+  mocks.createAiChatPost.mockReturnValue(async (request: Request) => {
+    mocks.aiRouteBodies.push(await request.json());
     return new Response(
       'data: {"type":"text-delta","delta":"hi there"}\n\ndata: [DONE]\n\n',
       {
@@ -206,8 +208,8 @@ function mockRouteContext() {
 
 describe('native AI chat message route', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
+    mocks.aiRouteBodies.length = 0;
     mocks.auth.supabase = createSupabaseMock();
     mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
     mockNativeAiRoute();
@@ -232,6 +234,11 @@ describe('native AI chat message route', () => {
     });
 
     expect(response.status).toBe(201);
+    expect(mocks.aiRouteBodies).toContainEqual(
+      expect.objectContaining({
+        model: 'google/gemini-3.1-flash-lite',
+      })
+    );
     await expect(response.json()).resolves.toMatchObject({
       message: assistantMessage,
       messages: [userMessage, assistantMessage],

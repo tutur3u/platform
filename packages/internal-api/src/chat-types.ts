@@ -191,6 +191,11 @@ export interface ChatConversation {
   wsId: string;
 }
 
+export interface ChatConversationPage {
+  conversations: ChatConversation[];
+  nextOffset: number | null;
+}
+
 export interface CreateChatConversationPayload {
   aiEnabled?: boolean;
   autoReply?: boolean;
@@ -211,6 +216,7 @@ export interface DeleteChatConversationResult {
 
 export interface UpdateChatConversationPayload {
   description?: string | null;
+  pinned?: boolean;
   title?: string | null;
 }
 

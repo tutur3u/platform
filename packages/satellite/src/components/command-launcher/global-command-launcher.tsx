@@ -446,7 +446,7 @@ export function GlobalCommandLauncher({
               />
             </div>
 
-            <CommandList className="min-h-0 max-h-none flex-1 overflow-y-auto p-2">
+            <CommandList className="max-h-none min-h-0 flex-1 overflow-y-auto p-2">
               <CommandEmpty>
                 <EmptyState labels={labels} query={trimmedQuery} />
               </CommandEmpty>

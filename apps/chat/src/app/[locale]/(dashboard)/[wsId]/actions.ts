@@ -17,3 +17,27 @@ export async function fetchWorkspaces() {
         : workspace.avatar_url,
   }));
 }
+
+export async function fetchWorkspacesPage({
+  limit = 40,
+  offset = 0,
+}: {
+  limit?: number;
+  offset?: number;
+} = {}) {
+  const normalizedLimit = Math.min(Math.max(Math.trunc(limit), 1), 100);
+  const normalizedOffset = Math.max(Math.trunc(offset), 0);
+  const workspaces = await fetchWorkspaces();
+  const nextOffset =
+    workspaces.length > normalizedOffset + normalizedLimit
+      ? normalizedOffset + normalizedLimit
+      : null;
+
+  return {
+    nextOffset,
+    workspaces: workspaces.slice(
+      normalizedOffset,
+      normalizedOffset + normalizedLimit
+    ),
+  };
+}

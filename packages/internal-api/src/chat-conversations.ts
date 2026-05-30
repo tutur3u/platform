@@ -8,6 +8,7 @@ import type {
   ChatAiObservability,
   ChatAiSettings,
   ChatConversation,
+  ChatConversationPage,
   ChatFriendRequest,
   ChatFriendRequests,
   ChatLinkPreview,
@@ -34,18 +35,52 @@ const AI_CHAT_FILE_ATTACHMENT_PREFIX = 'ai-file:';
 
 export async function listWorkspaceChatConversations(
   workspaceId: string,
-  params?: { archived?: 'active' | 'all' | 'archived' },
+  params?: {
+    archived?: 'active' | 'all' | 'archived';
+    limit?: number;
+    offset?: number;
+  },
   options?: InternalApiClientOptions
 ) {
-  const client = getInternalApiClient(options);
-  const payload = await client.json<{ conversations: ChatConversation[] }>(
-    `${chatBasePath(workspaceId)}/conversations`,
-    { cache: 'no-store', query: { archived: params?.archived } }
+  const page = await listWorkspaceChatConversationsPage(
+    workspaceId,
+    params,
+    options
   );
-  return (payload.conversations ?? []).filter(
+  return page.conversations;
+}
+
+export async function listWorkspaceChatConversationsPage(
+  workspaceId: string,
+  params?: {
+    archived?: 'active' | 'all' | 'archived';
+    limit?: number;
+    offset?: number;
+  },
+  options?: InternalApiClientOptions
+): Promise<ChatConversationPage> {
+  const client = getInternalApiClient(options);
+  const payload = await client.json<{
+    conversations: ChatConversation[];
+    nextOffset?: number | null;
+  }>(`${chatBasePath(workspaceId)}/conversations`, {
+    cache: 'no-store',
+    query: {
+      archived: params?.archived,
+      limit: params?.limit,
+      offset: params?.offset,
+    },
+  });
+  const conversations = (payload.conversations ?? []).filter(
     (conversation): conversation is ChatConversation =>
       Boolean(conversation?.id && conversation.type)
   );
+
+  return {
+    conversations,
+    nextOffset:
+      typeof payload.nextOffset === 'number' ? payload.nextOffset : null,
+  };
 }
 
 export async function createWorkspaceChatConversation(

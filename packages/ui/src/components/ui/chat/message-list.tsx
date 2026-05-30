@@ -1,43 +1,151 @@
 'use client';
 
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
 import { useTranslations } from 'next-intl';
-import { useEffect, useRef } from 'react';
+import {
+  type UIEvent,
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from 'react';
 import { Badge } from '../badge';
-import { ScrollArea } from '../scroll-area';
+import { Button } from '../button';
 import { MessageBubble } from './message-bubble';
 import { formatChatDate } from './utils';
 
 interface MessageListProps {
   currentUserId: string;
+  hasMoreMessages?: boolean;
   isAgentTyping?: boolean;
   isLoading?: boolean;
+  isLoadingMoreMessages?: boolean;
   messages: ChatMessage[];
   onDeleteMessage?: (messageId: string) => void;
+  onLoadMoreMessages?: () => Promise<unknown> | undefined;
   onOpenAttachment?: (attachment: ChatAttachment) => void;
   onToggleReaction?: (messageId: string, emoji: string) => void;
   readOnly?: boolean;
   wsId: string;
 }
 
+type MessageListItem =
+  | { key: string; type: 'history' }
+  | { key: string; message: ChatMessage; showDate: boolean; type: 'message' }
+  | { key: string; type: 'typing' };
+
 export function MessageList({
   currentUserId,
+  hasMoreMessages,
   isAgentTyping,
   isLoading,
+  isLoadingMoreMessages,
   messages,
   onDeleteMessage,
+  onLoadMoreMessages,
   onOpenAttachment,
   onToggleReaction,
   readOnly,
   wsId,
 }: MessageListProps) {
   const t = useTranslations('chat');
-  const bottomRef = useRef<HTMLDivElement | null>(null);
+  const parentRef = useRef<HTMLDivElement | null>(null);
+  const historyScrollHeightRef = useRef<number | null>(null);
+  const previousConversationIdRef = useRef<string | null>(null);
+  const previousOldestMessageIdRef = useRef<string | null>(null);
+  const shouldStickToBottomRef = useRef(true);
+  const conversationId = messages[0]?.conversationId ?? null;
+  const oldestMessageId = messages[0]?.id ?? null;
+  const items = useMemo<MessageListItem[]>(() => {
+    const next: MessageListItem[] = [];
+    if (hasMoreMessages) next.push({ key: 'history', type: 'history' });
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: 'end' });
+    messages.forEach((message, index) => {
+      const previous = messages[index - 1];
+      next.push({
+        key: message.id,
+        message,
+        showDate:
+          !previous ||
+          formatChatDate(previous.createdAt) !==
+            formatChatDate(message.createdAt),
+        type: 'message',
+      });
+    });
+
+    if (isAgentTyping) next.push({ key: 'typing', type: 'typing' });
+    return next;
+  }, [hasMoreMessages, isAgentTyping, messages]);
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    estimateSize: (index) => {
+      const item = items[index];
+      if (item?.type === 'history') return 48;
+      if (item?.type === 'typing') return 56;
+      return item?.showDate ? 124 : 92;
+    },
+    getItemKey: (index) => items[index]?.key ?? index,
+    getScrollElement: () => parentRef.current,
+    overscan: 8,
   });
+  const virtualItems = virtualizer.getVirtualItems();
+
+  const loadOlderMessages = useCallback(() => {
+    if (!(hasMoreMessages && onLoadMoreMessages)) return;
+    if (isLoadingMoreMessages) return;
+
+    historyScrollHeightRef.current = parentRef.current?.scrollHeight ?? null;
+    void onLoadMoreMessages();
+  }, [hasMoreMessages, isLoadingMoreMessages, onLoadMoreMessages]);
+
+  function handleScroll(event: UIEvent<HTMLDivElement>) {
+    const target = event.currentTarget;
+    const distanceToBottom =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+    shouldStickToBottomRef.current = distanceToBottom < 180;
+
+    if (target.scrollTop < 160) {
+      loadOlderMessages();
+    }
+  }
+
+  useLayoutEffect(() => {
+    const parent = parentRef.current;
+    if (!parent || !oldestMessageId) return;
+
+    const previousOldestMessageId = previousOldestMessageIdRef.current;
+    if (
+      historyScrollHeightRef.current !== null &&
+      previousOldestMessageId &&
+      previousOldestMessageId !== oldestMessageId
+    ) {
+      const delta = parent.scrollHeight - historyScrollHeightRef.current;
+      parent.scrollTop += delta;
+      historyScrollHeightRef.current = null;
+    }
+
+    previousOldestMessageIdRef.current = oldestMessageId;
+  }, [oldestMessageId]);
+
+  useLayoutEffect(() => {
+    if (items.length === 0) return;
+
+    const conversationChanged =
+      conversationId !== previousConversationIdRef.current;
+    if (conversationChanged) {
+      previousConversationIdRef.current = conversationId;
+      shouldStickToBottomRef.current = true;
+    }
+
+    if (historyScrollHeightRef.current !== null) return;
+    if (!(conversationChanged || shouldStickToBottomRef.current)) return;
+
+    requestAnimationFrame(() => {
+      virtualizer.scrollToIndex(items.length - 1, { align: 'end' });
+    });
+  }, [conversationId, items.length, virtualizer]);
 
   if (isLoading) {
     return (
@@ -63,43 +171,102 @@ export function MessageList({
   }
 
   return (
-    <ScrollArea className="min-h-0 flex-1">
-      <div className="space-y-5 p-4">
-        {messages.map((message, index) => {
-          const previous = messages[index - 1];
-          const showDate =
-            !previous ||
-            formatChatDate(previous.createdAt) !==
-              formatChatDate(message.createdAt);
+    <div
+      className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+      onScroll={handleScroll}
+      ref={parentRef}
+    >
+      <div
+        className="relative w-full"
+        style={{ height: `${virtualizer.getTotalSize()}px` }}
+      >
+        {virtualItems.map((virtualItem) => {
+          const item = items[virtualItem.index];
+          if (!item) return null;
 
           return (
-            <div key={message.id}>
-              {showDate && (
-                <div className="mb-4 flex justify-center">
-                  <Badge variant="outline">
-                    {formatChatDate(message.createdAt)}
-                  </Badge>
+            <div
+              className="absolute inset-x-0 top-0 px-4 py-2"
+              data-index={virtualItem.index}
+              key={virtualItem.key}
+              ref={virtualizer.measureElement}
+              style={{ transform: `translateY(${virtualItem.start}px)` }}
+            >
+              {item.type === 'history' ? (
+                <div className="flex justify-center">
+                  <Button
+                    disabled={isLoadingMoreMessages}
+                    onClick={loadOlderMessages}
+                    size="sm"
+                    type="button"
+                    variant="outline"
+                  >
+                    {isLoadingMoreMessages ? (
+                      <LoaderCircle className="mr-2 size-3.5 animate-spin" />
+                    ) : null}
+                    {isLoadingMoreMessages
+                      ? t('loading_older_messages')
+                      : t('load_older_messages')}
+                  </Button>
                 </div>
-              )}
-              {message.kind === 'system' ? (
-                <MessageSystemEvent message={message} />
+              ) : item.type === 'typing' ? (
+                <AgentTypingIndicator />
               ) : (
-                <MessageBubble
+                <MessageRow
                   currentUserId={currentUserId}
-                  message={message}
+                  message={item.message}
                   onDeleteMessage={readOnly ? undefined : onDeleteMessage}
                   onOpenAttachment={onOpenAttachment}
                   onToggleReaction={readOnly ? undefined : onToggleReaction}
+                  showDate={item.showDate}
                   wsId={wsId}
                 />
               )}
             </div>
           );
         })}
-        {isAgentTyping ? <AgentTypingIndicator /> : null}
-        <div ref={bottomRef} />
       </div>
-    </ScrollArea>
+    </div>
+  );
+}
+
+function MessageRow({
+  currentUserId,
+  message,
+  onDeleteMessage,
+  onOpenAttachment,
+  onToggleReaction,
+  showDate,
+  wsId,
+}: {
+  currentUserId: string;
+  message: ChatMessage;
+  onDeleteMessage?: (messageId: string) => void;
+  onOpenAttachment?: (attachment: ChatAttachment) => void;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
+  showDate: boolean;
+  wsId: string;
+}) {
+  return (
+    <div>
+      {showDate ? (
+        <div className="mb-4 flex justify-center">
+          <Badge variant="outline">{formatChatDate(message.createdAt)}</Badge>
+        </div>
+      ) : null}
+      {message.kind === 'system' ? (
+        <MessageSystemEvent message={message} />
+      ) : (
+        <MessageBubble
+          currentUserId={currentUserId}
+          message={message}
+          onDeleteMessage={onDeleteMessage}
+          onOpenAttachment={onOpenAttachment}
+          onToggleReaction={onToggleReaction}
+          wsId={wsId}
+        />
+      )}
+    </div>
   );
 }
 

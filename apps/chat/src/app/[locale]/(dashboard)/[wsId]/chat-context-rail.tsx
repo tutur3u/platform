@@ -1,6 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { type InfiniteData, useInfiniteQuery } from '@tanstack/react-query';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -12,14 +13,19 @@ import { cn } from '@tuturuuu/utils/format';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
-import { fetchWorkspaces } from './actions';
+import { type ReactNode, type UIEvent, useMemo, useRef } from 'react';
+import { fetchWorkspacesPage } from './actions';
 
 interface ChatContextRailProps {
   closeOnMobile?: () => void;
   collapsed?: boolean;
   onExpand?: () => void;
   wsId: string;
+}
+
+interface ChatWorkspacesPage {
+  nextOffset: number | null;
+  workspaces: InternalApiWorkspaceSummary[];
 }
 
 export function ChatContextRail({
@@ -32,14 +38,53 @@ export function ChatContextRail({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const railScrollRef = useRef<HTMLDivElement | null>(null);
   const activeScope =
     searchParams.get('scope') === 'workspaces' ? 'workspaces' : 'personal';
-  const workspacesQuery = useQuery({
-    queryKey: ['chat-workspaces'],
-    queryFn: fetchWorkspaces,
+  const workspacesQuery = useInfiniteQuery<
+    ChatWorkspacesPage,
+    Error,
+    InfiniteData<ChatWorkspacesPage>,
+    readonly ['chat-workspaces', 'infinite'],
+    number
+  >({
+    getNextPageParam: (lastPage) => lastPage.nextOffset ?? undefined,
+    initialPageParam: 0,
+    queryKey: ['chat-workspaces', 'infinite'] as const,
+    queryFn: ({ pageParam }) =>
+      fetchWorkspacesPage({ limit: 48, offset: pageParam }),
   });
-  const workspaces = orderWorkspaces(workspacesQuery.data ?? []);
+  const workspaces = useMemo(
+    () =>
+      orderWorkspaces(
+        workspacesQuery.data?.pages.flatMap((page) => page.workspaces) ?? []
+      ),
+    [workspacesQuery.data]
+  );
   const personalWorkspace = workspaces.find((workspace) => workspace.personal);
+  const workspaceCount =
+    workspaces.length + (workspacesQuery.hasNextPage ? 1 : 0);
+  const workspaceVirtualizer = useVirtualizer({
+    count: workspaceCount,
+    estimateSize: () => 48,
+    getItemKey: (index) => workspaces[index]?.id ?? 'loader',
+    getScrollElement: () => railScrollRef.current,
+    overscan: 8,
+  });
+  const virtualWorkspaces = workspaceVirtualizer.getVirtualItems();
+
+  function maybeLoadMoreWorkspaces(event: UIEvent<HTMLDivElement>) {
+    if (!workspacesQuery.hasNextPage || workspacesQuery.isFetchingNextPage) {
+      return;
+    }
+
+    const target = event.currentTarget;
+    const distanceToEnd =
+      target.scrollHeight - target.scrollTop - target.clientHeight;
+    if (distanceToEnd < 160) {
+      void workspacesQuery.fetchNextPage();
+    }
+  }
 
   function navigate(nextWorkspace: InternalApiWorkspaceSummary, scope: string) {
     if (collapsed) onExpand?.();
@@ -85,7 +130,7 @@ export function ChatContextRail({
   return (
     <nav
       className={cn(
-        'scrollbar-none flex h-full min-h-0 shrink-0 flex-col items-center gap-2 overflow-y-auto overflow-x-hidden overscroll-contain bg-muted/20 px-2 py-3',
+        'flex h-full min-h-0 shrink-0 flex-col items-center gap-2 overflow-hidden bg-muted/20 px-2 py-3',
         collapsed ? 'w-full' : 'w-14 border-r'
       )}
     >
@@ -99,17 +144,49 @@ export function ChatContextRail({
 
       <div className="my-1 h-px w-8 bg-border" />
 
-      {workspacesQuery.isLoading ? (
+      {workspacesQuery.isLoading && workspaces.length === 0 ? (
         <LoaderCircle className="mt-2 size-4 animate-spin text-muted-foreground" />
       ) : (
-        workspaces.map((workspace) => (
-          <WorkspaceRailButton
-            active={activeScope === 'workspaces' && workspace.id === wsId}
-            key={workspace.id}
-            onClick={() => navigate(workspace, 'workspaces')}
-            workspace={workspace}
-          />
-        ))
+        <div
+          className="scrollbar-none min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden overscroll-contain"
+          onScroll={maybeLoadMoreWorkspaces}
+          ref={railScrollRef}
+        >
+          <div
+            className="relative w-full"
+            style={{ height: `${workspaceVirtualizer.getTotalSize()}px` }}
+          >
+            {virtualWorkspaces.map((virtualWorkspace) => {
+              const workspace = workspaces[virtualWorkspace.index];
+
+              return (
+                <div
+                  className="absolute inset-x-0 top-0 flex justify-center"
+                  data-index={virtualWorkspace.index}
+                  key={virtualWorkspace.key}
+                  ref={workspaceVirtualizer.measureElement}
+                  style={{
+                    transform: `translateY(${virtualWorkspace.start}px)`,
+                  }}
+                >
+                  {workspace ? (
+                    <WorkspaceRailButton
+                      active={
+                        activeScope === 'workspaces' && workspace.id === wsId
+                      }
+                      onClick={() => navigate(workspace, 'workspaces')}
+                      workspace={workspace}
+                    />
+                  ) : (
+                    <div className="flex size-10 items-center justify-center">
+                      <LoaderCircle className="size-4 animate-spin text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
     </nav>
   );

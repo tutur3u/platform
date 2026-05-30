@@ -1,3 +1,8 @@
+import {
+  GEMINI_31_FLASH_LITE_GATEWAY_MODEL,
+  resolveGatewayModelId,
+} from '@tuturuuu/ai/credits/model-mapping';
+
 export const CHAT_AI_SETTINGS_FULL_SELECT =
   'conversation_id, model_id, system_prompt, auto_reply, enabled, thinking_mode, credit_source, credit_ws_id, updated_at';
 
@@ -158,9 +163,8 @@ export function mapNativeChatAiSettingsRow(
 }
 
 export function normalizeAiModelId(modelId?: string | null) {
-  if (!modelId?.trim()) return 'google/gemini-3-flash';
-  const trimmed = modelId.trim();
-  return trimmed.includes('/') ? trimmed : `google/${trimmed}`;
+  if (!modelId?.trim()) return GEMINI_31_FLASH_LITE_GATEWAY_MODEL;
+  return resolveGatewayModelId(modelId.trim());
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

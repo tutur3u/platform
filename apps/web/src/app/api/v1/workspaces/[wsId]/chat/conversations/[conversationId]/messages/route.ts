@@ -1,5 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
+import {
+  GEMINI_31_FLASH_LITE_GATEWAY_MODEL,
+  resolveGatewayModelId,
+} from '@tuturuuu/ai/credits/model-mapping';
 import type { ChatRealtimeAudience } from '@tuturuuu/realtime/chat';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
@@ -79,7 +83,9 @@ export const GET = withSessionAuth<RouteParams>(
     try {
       if (isAiChatConversationId(params.conversationId)) {
         const messages = await listAiChatMessages({
+          before: before || null,
           conversationId: params.conversationId,
+          limit: Number.isFinite(limit) ? limit : 60,
           supabase: auth.supabase,
           user: auth.user,
           wsId: context.context.normalizedWsId,
@@ -1314,13 +1320,11 @@ function readString(value: unknown) {
 }
 
 function normalizeAiChatModel(model: string | null) {
-  if (!model?.trim()) return 'google/gemini-3-flash';
-  const trimmed = model.trim();
-  return trimmed.includes('/') ? trimmed : `google/${trimmed}`;
+  if (!model?.trim()) return GEMINI_31_FLASH_LITE_GATEWAY_MODEL;
+  return resolveGatewayModelId(model.trim());
 }
 
 function normalizeNativeAiModel(model: string | null) {
-  if (!model?.trim()) return 'google/gemini-3-flash';
-  const trimmed = model.trim();
-  return trimmed.includes('/') ? trimmed : `google/${trimmed}`;
+  if (!model?.trim()) return GEMINI_31_FLASH_LITE_GATEWAY_MODEL;
+  return resolveGatewayModelId(model.trim());
 }

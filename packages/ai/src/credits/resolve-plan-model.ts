@@ -56,7 +56,7 @@ function getFallbackPlanModelId(
   capability: PlanModelCapability
 ) {
   if (capability === 'language') {
-    return 'google/gemini-2.5-flash-lite';
+    return 'google/gemini-3.1-flash-lite';
   }
 
   switch (tier) {

@@ -25,7 +25,7 @@ function getFallbackDefaultModels(tier: ProductTier) {
       tier === 'FREE'
         ? 'google/imagen-4.0-fast-generate-001'
         : 'google/imagen-4.0-generate-001',
-    defaultLanguageModel: 'google/gemini-2.5-flash-lite',
+    defaultLanguageModel: 'google/gemini-3.1-flash-lite',
   };
 }
 

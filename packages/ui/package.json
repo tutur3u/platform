@@ -356,6 +356,10 @@
       "types": "./src/components/ui/custom/sidebar-footer-actions.tsx",
       "import": "./src/components/ui/custom/sidebar-footer-actions.tsx"
     },
+    "./custom/structure": {
+      "types": "./src/components/ui/custom/structure.tsx",
+      "import": "./src/components/ui/custom/structure.tsx"
+    },
     "./custom/settings-dialog-shell": {
       "types": "./src/components/ui/custom/settings-dialog-shell.tsx",
       "import": "./src/components/ui/custom/settings-dialog-shell.tsx"

@@ -298,12 +298,16 @@ export async function archiveAiChatConversation({
 }
 
 export async function listAiChatMessages({
+  before,
   conversationId,
+  limit = 80,
   supabase,
   user,
   wsId,
 }: {
+  before?: string | null;
   conversationId: string;
+  limit?: number;
   supabase: SessionAuthContext['supabase'];
   user: SessionAuthContext['user'];
   wsId: string;
@@ -320,16 +324,23 @@ export async function listAiChatMessages({
 
   if (chatError || !chat) return null;
 
-  const { data: messages, error } = await supabase
+  const messagesQuery = supabase
     .from('ai_chat_messages')
     .select('id,chat_id,content,created_at,creator_id,metadata,model,role,type')
     .eq('chat_id', chatId)
-    .order('created_at', { ascending: true });
+    .order('created_at', { ascending: false })
+    .limit(Math.min(Math.max(limit, 1), 100));
+
+  if (before) {
+    messagesQuery.lt('created_at', before);
+  }
+
+  const { data: messages, error } = await messagesQuery;
 
   if (error) return [];
 
   const sender = getAiChatUserProfile(user);
-  const messageRows = (messages ?? []) as AiChatMessageRow[];
+  const messageRows = [...((messages ?? []) as AiChatMessageRow[])].reverse();
   const attachmentsByMessageId = await listAiChatAttachmentsByMessage({
     chatId,
     conversationId,

@@ -25,6 +25,7 @@ type RouteParams = {
 
 const updateConversationSchema = z.object({
   description: z.string().trim().max(2000).nullable().optional(),
+  pinned: z.boolean().optional(),
   title: z.string().trim().max(255).nullable().optional(),
 });
 

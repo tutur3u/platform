@@ -1,53 +1,6 @@
-/**
- * @vitest-environment jsdom
- */
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderHook } from '@testing-library/react';
 import type { ChatMessage } from '@tuturuuu/internal-api';
-import type { ReactNode } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { useSendChatMessage } from './hooks-messages';
-import { chatQueryKeys } from './query-keys';
-
-const mocks = vi.hoisted(() => ({
-  deleteWorkspaceChatMessage: vi.fn(),
-  editWorkspaceChatMessage: vi.fn(),
-  listWorkspaceChatConversationMessages: vi.fn(),
-  sendWorkspaceChatMessage: vi.fn(),
-  sendWorkspaceChatMessageStream: vi.fn(),
-  toggleWorkspaceChatReaction: vi.fn(),
-}));
-
-vi.mock('@tuturuuu/internal-api', () => ({
-  deleteWorkspaceChatMessage: (
-    ...args: Parameters<typeof mocks.deleteWorkspaceChatMessage>
-  ) => mocks.deleteWorkspaceChatMessage(...args),
-  editWorkspaceChatMessage: (
-    ...args: Parameters<typeof mocks.editWorkspaceChatMessage>
-  ) => mocks.editWorkspaceChatMessage(...args),
-  listWorkspaceChatConversationMessages: (
-    ...args: Parameters<typeof mocks.listWorkspaceChatConversationMessages>
-  ) => mocks.listWorkspaceChatConversationMessages(...args),
-  sendWorkspaceChatMessage: (
-    ...args: Parameters<typeof mocks.sendWorkspaceChatMessage>
-  ) => mocks.sendWorkspaceChatMessage(...args),
-  sendWorkspaceChatMessageStream: (
-    ...args: Parameters<typeof mocks.sendWorkspaceChatMessageStream>
-  ) => mocks.sendWorkspaceChatMessageStream(...args),
-  toggleWorkspaceChatReaction: (
-    ...args: Parameters<typeof mocks.toggleWorkspaceChatReaction>
-  ) => mocks.toggleWorkspaceChatReaction(...args),
-}));
-
-function createQueryClient() {
-  return new QueryClient({
-    defaultOptions: {
-      mutations: { retry: false },
-      queries: { retry: false },
-    },
-  });
-}
+import { describe, expect, it } from 'vitest';
+import { mergeCachedMessages } from './hooks-messages';
 
 function createMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   return {
@@ -69,51 +22,46 @@ function createMessage(overrides: Partial<ChatMessage> = {}): ChatMessage {
   };
 }
 
-describe('useSendChatMessage', () => {
-  afterEach(() => {
-    vi.clearAllMocks();
+describe('mergeCachedMessages', () => {
+  it('keeps a pending user message above the incoming assistant response', () => {
+    const optimisticUserMessage = createMessage({
+      createdAt: '2026-05-30T07:00:02.000Z',
+      id: 'optimistic-user',
+      metadata: { optimistic: true },
+    });
+    const assistantMessage = createMessage({
+      content: 'hi there',
+      createdAt: '2026-05-30T07:00:01.000Z',
+      id: 'message-assistant',
+      kind: 'assistant',
+      senderId: null,
+    });
+
+    expect(
+      mergeCachedMessages([optimisticUserMessage], [assistantMessage]).map(
+        ({ id }) => id
+      )
+    ).toEqual(['optimistic-user', 'message-assistant']);
   });
 
-  it('keeps the saved user message and clears the temporary assistant when native AI fails', async () => {
-    const queryClient = createQueryClient();
-    const userMessage = createMessage();
-    const messagesKey = chatQueryKeys.messages(
-      'workspace-1',
-      'conversation-1',
-      80
-    );
+  it('uses persisted timestamps once the saved user message arrives', () => {
+    const userMessage = createMessage({
+      createdAt: '2026-05-30T07:00:00.000Z',
+      id: 'message-user',
+    });
+    const assistantMessage = createMessage({
+      content: 'hi there',
+      createdAt: '2026-05-30T07:00:01.000Z',
+      id: 'message-assistant',
+      kind: 'assistant',
+      senderId: null,
+    });
 
-    queryClient.setQueryData<ChatMessage[]>(messagesKey, []);
-    mocks.sendWorkspaceChatMessageStream.mockImplementation(
-      async (_workspaceId, _conversationId, _payload, handlers) => {
-        handlers.onAssistantDelta?.('partial assistant response');
-
-        return {
-          assistantError: 'Assistant response failed. Your message was saved.',
-          message: userMessage,
-          messages: [userMessage],
-        };
-      }
-    );
-
-    const wrapper = ({ children }: { children: ReactNode }) => (
-      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-    );
-    const { result } = renderHook(
-      () =>
-        useSendChatMessage({
-          conversationId: 'conversation-1',
-          currentUserId: 'user-1',
-          streamAssistant: true,
-          wsId: 'workspace-1',
-        }),
-      { wrapper }
-    );
-
-    await result.current.mutateAsync({ content: 'hello' });
-
-    expect(queryClient.getQueryData<ChatMessage[]>(messagesKey)).toEqual([
-      userMessage,
-    ]);
+    expect(
+      mergeCachedMessages(
+        [assistantMessage],
+        [userMessage, assistantMessage]
+      ).map(({ id }) => id)
+    ).toEqual(['message-user', 'message-assistant']);
   });
 });

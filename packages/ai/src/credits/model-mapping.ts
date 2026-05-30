@@ -11,6 +11,8 @@ export const GEMINI_31_FLASH_LITE_PREVIEW_MODEL =
   'gemini-3.1-flash-lite-preview';
 export const GEMINI_31_FLASH_LITE_PREVIEW_GATEWAY_MODEL =
   'google/gemini-3.1-flash-lite-preview';
+export const GEMINI_3_FLASH_MODEL = 'gemini-3-flash';
+export const GEMINI_3_FLASH_GATEWAY_MODEL = 'google/gemini-3-flash';
 
 /** Normalize retired model aliases to the current stable model ids. */
 export function normalizeStableModelId(modelId: string): string {
@@ -20,7 +22,10 @@ export function normalizeStableModelId(modelId: string): string {
   const bareModelId =
     slashIndex === -1 ? modelId : modelId.slice(slashIndex + 1);
 
-  if (bareModelId === GEMINI_31_FLASH_LITE_PREVIEW_MODEL) {
+  if (
+    bareModelId === GEMINI_31_FLASH_LITE_PREVIEW_MODEL ||
+    bareModelId === GEMINI_3_FLASH_MODEL
+  ) {
     return `${providerPrefix}${GEMINI_31_FLASH_LITE_MODEL}`;
   }
 

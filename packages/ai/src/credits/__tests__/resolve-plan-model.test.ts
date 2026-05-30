@@ -101,6 +101,31 @@ describe('selectEffectivePlanModel', () => {
     expect(result.source).toBe('requested');
   });
 
+  it('normalizes invalid Gemini 3 Flash allocation values', () => {
+    const result = selectEffectivePlanModel({
+      allocation: {
+        ...baseAllocation,
+        allowed_models: ['google/gemini-3-flash'],
+        default_language_model: 'google/gemini-3-flash',
+      },
+      capability: 'language',
+      modelsById: new Map([
+        [
+          'google/gemini-3.1-flash-lite',
+          {
+            id: 'google/gemini-3.1-flash-lite',
+            is_enabled: true,
+            type: 'language',
+          },
+        ],
+      ]),
+      requestedModel: 'google/gemini-3-flash',
+    });
+
+    expect(result.modelId).toBe('google/gemini-3.1-flash-lite');
+    expect(result.source).toBe('requested');
+  });
+
   it('falls back to the image default for invalid requested image model', () => {
     const result = selectEffectivePlanModel({
       allocation: baseAllocation,
@@ -165,15 +190,15 @@ describe('selectEffectivePlanModel', () => {
     const result = selectEffectivePlanModel({
       allocation: {
         ...baseAllocation,
-        allowed_models: ['google/gemini-2.5-flash-lite'],
+        allowed_models: ['google/gemini-3.1-flash-lite'],
         default_language_model: null,
       },
       capability: 'language',
       modelsById: new Map([
         [
-          'google/gemini-2.5-flash-lite',
+          'google/gemini-3.1-flash-lite',
           {
-            id: 'google/gemini-2.5-flash-lite',
+            id: 'google/gemini-3.1-flash-lite',
             is_enabled: true,
             type: 'language',
           },
@@ -189,7 +214,7 @@ describe('selectEffectivePlanModel', () => {
       ]),
     });
 
-    expect(result.modelId).toBe('google/gemini-2.5-flash-lite');
+    expect(result.modelId).toBe('google/gemini-3.1-flash-lite');
     expect(result.source).toBe('plan_default');
   });
 });

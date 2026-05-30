@@ -88,10 +88,22 @@ describe('model-mapping', () => {
       ).toBe('google/gemini-3.1-flash-lite');
     });
 
+    it('maps the invalid Gemini 3 Flash alias to Gemini 3.1 Flash Lite', () => {
+      expect(normalizeStableModelId('gemini-3-flash')).toBe(
+        'gemini-3.1-flash-lite'
+      );
+      expect(normalizeStableModelId('google/gemini-3-flash')).toBe(
+        'google/gemini-3.1-flash-lite'
+      );
+    });
+
     it('preserves provider prefixes and unrelated preview models', () => {
       expect(
         normalizeStableModelId('google-vertex/gemini-3.1-flash-lite-preview')
       ).toBe('google-vertex/gemini-3.1-flash-lite');
+      expect(normalizeStableModelId('google-vertex/gemini-3-flash')).toBe(
+        'google-vertex/gemini-3.1-flash-lite'
+      );
       expect(normalizeStableModelId('gemini-3.1-flash-live-preview')).toBe(
         'gemini-3.1-flash-live-preview'
       );
