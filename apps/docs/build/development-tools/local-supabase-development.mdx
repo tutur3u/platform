@@ -120,10 +120,12 @@ There are two approaches to modifying the database schema:
 For more control, you can create empty migration files and populate them manually:
 
 ```bash
-bun sb:new
+bun sb:new add_custom_function
 ```
 
-This creates a new empty migration file in `apps/database/supabase/migrations` that you can edit to include your desired schema changes.
+This creates a new empty migration file in `apps/database/supabase/migrations`
+using the provided migration name. If you omit the name, the helper uses
+`new_migration`.
 
 ### Applying Migrations
 
