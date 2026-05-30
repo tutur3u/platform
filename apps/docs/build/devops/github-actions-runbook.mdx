@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-05-28"
+updatedAt: "2026-05-30"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -205,7 +205,7 @@ from skipped intermediate runs still queue the correct Vercel workflow.
 ### Prerequisite guards
 
 - `supabase-staging.yaml` requires a successful `main` preview trigger unless manually dispatched.
-- `supabase-production.yaml` checks both the latest production Vercel result and the latest `main`-driven staging migration result before running.
+- `supabase-production.yaml` checks both the latest production Vercel result and a completed successful `main` staging migration for the same commit before running.
 
 ### Mobile iOS native assets
 

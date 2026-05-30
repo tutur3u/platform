@@ -108,11 +108,13 @@ jobs:
                 echo "::notice::Skipping production migration because no main staging migration was found for $TARGET_SHA."
               elif [ "$STAGING_BRANCH" != "main" ]; then
                 echo "::notice::Skipping production migration because the matching staging migration ran on '$STAGING_BRANCH'."
-              elif [ "$STAGING_CONCLUSION" = "success" ] || [ "$STAGING_CONCLUSION" = "skipped" ]; then
+              elif [ "$STAGING_STATUS" != "completed" ]; then
+                echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA is '$STAGING_STATUS', not completed."
+              elif [ "$STAGING_CONCLUSION" != "success" ]; then
+                echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA has conclusion '$STAGING_CONCLUSION'."
+              else
                 echo "Production deployment and staging migration are bound to $TARGET_SHA. Proceeding with migration."
                 SHOULD_DEPLOY=true
-              else
-                echo "::notice::Skipping production migration because the staging migration for $TARGET_SHA has conclusion '$STAGING_CONCLUSION'."
               fi
             fi
           fi

@@ -141,7 +141,7 @@ test('E2E workflow frees runner disk before loading cached Docker images', () =>
   assert.match(e2eJob, /\/opt\/hostedtoolcache\/CodeQL/u);
 });
 
-test('Supabase production migration is bound to production deployment and staged SHA', () => {
+test('Supabase production migration requires production deployment and successful staged SHA', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'supabase-production.yaml'),
     'utf8'
@@ -187,6 +187,13 @@ test('Supabase production migration is bound to production deployment and staged
     /supabase-staging\.yaml\/runs\?branch=main&head_sha=\$TARGET_SHA&per_page=1/
   );
   assert.match(evaluateJob, /STAGING_SHA" != "\$TARGET_SHA"/);
+  assert.match(evaluateJob, /STAGING_STATUS" != "completed"/);
+  assert.match(evaluateJob, /STAGING_CONCLUSION" != "success"/);
+  assert.doesNotMatch(
+    evaluateJob,
+    /STAGING_CONCLUSION" = "skipped"/,
+    'production migration must not accept skipped staging migration runs'
+  );
   assert.match(
     evaluateJob,
     /Production deployment and staging migration are bound to \$TARGET_SHA/

@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-05-29"
+updatedAt: "2026-05-30"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -55,7 +55,7 @@ This page explains how Tuturuuu moves from code to running environments.
 - Browser apps share one platform version from
   `packages/utils/src/platform-release.ts`; do not read visible app versions
   from individual app `package.json` files.
-- The current shared browser app version is `0.1.25`.
+- The current shared browser app version is `0.1.32`.
 - Every Vercel browser app workflow runs
   `bun run --silent scripts/ci/generate-build-metadata.ts` before
   `vercel build`. The generated metadata includes the commit hash, short hash,
@@ -78,8 +78,8 @@ This page explains how Tuturuuu moves from code to running environments.
    do not trigger production migrations.
 2. The production Vercel deployment for the target commit must have concluded
    successfully on `production`.
-3. The `main` staging migration for the same target commit must have concluded
-   `success` or `skipped`.
+3. The `main` staging migration for the same target commit must have completed
+   with a `success` conclusion.
 4. A manual dispatch can still be used when an operator explicitly wants to run
    it, but the dispatch must select the `production` branch and still satisfy
    the same production-deployment and staging-migration SHA checks.
@@ -121,5 +121,5 @@ health-checked before the proxy is reloaded.
 - Do not assume staging and production migrations are interchangeable; they are gated differently.
 - Do not trigger production Supabase migration from `main`; the production gate
   requires the same commit to have both a successful production deployment and a
-  successful or skipped `main` staging migration.
+  completed successful `main` staging migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.
