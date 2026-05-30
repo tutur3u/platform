@@ -67,10 +67,10 @@ export function MetricCard({
   } satisfies Record<MetricTone, string>;
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-background/75 p-4 shadow-sm">
+    <div className="rounded-lg border border-border/70 bg-background/75 p-4">
       <div
         className={cn(
-          'mb-3 inline-flex h-9 w-9 items-center justify-center rounded-full border',
+          'mb-3 inline-flex h-9 w-9 items-center justify-center rounded-md border',
           toneClassNames[tone]
         )}
       >
@@ -90,8 +90,8 @@ export function EmptyPanel({
   title: string;
 }) {
   return (
-    <div className="rounded-xl border border-dynamic-blue/25 border-dashed bg-dynamic-blue/5 px-4 py-10 text-center">
-      <div className="font-medium text-dynamic-blue">{title}</div>
+    <div className="rounded-lg border border-border/70 border-dashed bg-background/60 px-4 py-8 text-center">
+      <div className="font-medium">{title}</div>
       <div className="mx-auto mt-2 max-w-xl text-muted-foreground text-sm leading-6">
         {description}
       </div>
@@ -106,7 +106,7 @@ export function WorkspaceStatusBadge({ enabled }: { enabled: boolean }) {
     <Badge
       variant="outline"
       className={cn(
-        'rounded-full',
+        'rounded-md',
         enabled
           ? 'border-dynamic-green/30 bg-dynamic-green/10 text-dynamic-green'
           : 'border-dynamic-orange/30 bg-dynamic-orange/10 text-dynamic-orange'
@@ -133,10 +133,10 @@ export function WorkspaceSummaryButton({
     <button
       type="button"
       className={cn(
-        'group w-full rounded-2xl border p-4 text-left transition',
+        'group w-full rounded-lg border p-3 text-left transition-colors',
         isSelected
-          ? 'border-dynamic-blue/40 bg-dynamic-blue/10 shadow-sm ring-1 ring-dynamic-blue/20'
-          : 'border-border/70 bg-background/80 hover:border-dynamic-blue/30 hover:bg-dynamic-blue/5'
+          ? 'border-foreground/25 bg-foreground text-background ring-1 ring-foreground/10'
+          : 'border-border/70 bg-background/80 hover:border-foreground/20 hover:bg-background'
       )}
       onClick={onClick}
     >
@@ -150,21 +150,31 @@ export function WorkspaceSummaryButton({
             {workspace.personal ? (
               <Badge
                 variant="secondary"
-                className="rounded-full bg-dynamic-purple/10 text-dynamic-purple"
+                className="rounded-md bg-background/80 text-foreground"
               >
                 {t('common.personal_account')}
               </Badge>
             ) : null}
           </div>
-          <div className="text-muted-foreground text-sm">
+          <div
+            className={cn(
+              'text-sm',
+              isSelected ? 'text-background/70' : 'text-muted-foreground'
+            )}
+          >
             {workspace.binding.canonical_project?.display_name ??
               workspace.binding.canonical_id ??
               tRoot('unbound_label')}
           </div>
         </div>
 
-        <div className="shrink-0 space-y-2 text-right text-muted-foreground text-xs">
-          <div className="font-medium text-dynamic-blue">
+        <div
+          className={cn(
+            'shrink-0 space-y-2 text-right text-xs',
+            isSelected ? 'text-background/70' : 'text-muted-foreground'
+          )}
+        >
+          <div className="font-medium">
             {workspace.binding.adapter
               ? formatCanonicalToken(workspace.binding.adapter)
               : tRoot('unbound_label')}
@@ -199,16 +209,16 @@ export function ProjectRegistryCard({
   const deliveryProfileJson = tryParseJson(deliveryProfileText);
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-background/35 p-4">
+    <div className="rounded-lg border border-border/70 bg-background/55 p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-2">
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="rounded-full">
+            <Badge variant="secondary" className="rounded-md">
               {formatCanonicalToken(project.adapter)}
             </Badge>
             <Badge
               variant={isActive ? 'default' : 'outline'}
-              className="rounded-full"
+              className="rounded-md"
             >
               {isActive ? tRoot('active_label') : tRoot('inactive_label')}
             </Badge>
@@ -224,7 +234,7 @@ export function ProjectRegistryCard({
 
         <Button
           variant="outline"
-          className="border-dynamic-blue/25 text-dynamic-blue hover:bg-dynamic-blue/10"
+          className="border-border/70 hover:bg-background"
           onClick={onPrepareBinding}
         >
           <Link className="mr-2 h-4 w-4" />
@@ -268,7 +278,7 @@ export function ProjectRegistryCard({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-dynamic-green/20 bg-dynamic-green/5 p-4">
+          <div className="rounded-lg border border-border/70 bg-background/70 p-4">
             <div className="mb-2 text-muted-foreground text-xs uppercase">
               {tRoot('recommended_collections_label')}
             </div>
@@ -277,7 +287,7 @@ export function ProjectRegistryCard({
                 <Badge
                   key={collection}
                   variant="secondary"
-                  className="rounded-full"
+                  className="rounded-md"
                 >
                   {formatCanonicalToken(collection)}
                 </Badge>
@@ -297,7 +307,7 @@ export function ProjectRegistryCard({
           </div>
 
           <Button
-            className="w-full gap-2 bg-dynamic-green text-white hover:bg-dynamic-green/90"
+            className="w-full gap-2"
             onClick={() =>
               deliveryProfileJson &&
               onSave(displayName, isActive, deliveryProfileJson)

@@ -286,16 +286,16 @@ export function RootExternalProjectsAdminClient({
     !selectedWorkspace?.binding.canonical_id || bindMutation.isPending;
 
   return (
-    <div className="space-y-6 pb-8">
-      <section className="overflow-hidden rounded-3xl border border-dynamic-blue/20 bg-linear-to-br from-dynamic-blue/10 via-background to-dynamic-green/10 shadow-sm">
-        <div className="grid gap-6 p-6 xl:grid-cols-[1.1fr_0.9fr] xl:p-8">
+    <div className="space-y-5 pb-8">
+      <section className="rounded-lg border border-border/70 bg-card/80">
+        <div className="grid gap-5 p-5 xl:grid-cols-[1fr_1.1fr]">
           <div className="space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-dynamic-blue/20 bg-background/70 px-3 py-1 text-dynamic-blue text-xs uppercase">
+            <div className="inline-flex items-center gap-2 rounded-md border border-border/70 bg-background/70 px-3 py-1 text-muted-foreground text-xs">
               <Sparkles className="h-3.5 w-3.5" />
               {tRoot('overview_title')}
             </div>
             <div className="space-y-2">
-              <h1 className="max-w-2xl font-semibold text-3xl">
+              <h1 className="max-w-2xl text-balance font-semibold text-3xl">
                 {tRoot('registry_title')}
               </h1>
               <p className="max-w-2xl text-muted-foreground text-sm leading-6">
@@ -333,8 +333,8 @@ export function RootExternalProjectsAdminClient({
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[0.82fr_1.18fr]">
-        <div className="space-y-6">
+      <div className="grid gap-5 xl:grid-cols-[0.82fr_1.18fr]">
+        <div className="space-y-5">
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
@@ -408,10 +408,10 @@ export function RootExternalProjectsAdminClient({
             </CardContent>
           </Card>
 
-          <Card className="border-dynamic-orange/20 bg-dynamic-orange/5 shadow-none">
+          <Card className="border-border/70 bg-card/80 shadow-none">
             <CardHeader>
               <div className="flex items-start gap-3">
-                <div className="rounded-full border border-dynamic-orange/25 bg-dynamic-orange/10 p-2 text-dynamic-orange">
+                <div className="rounded-md border border-border/70 bg-background/80 p-2 text-muted-foreground">
                   <Plus className="h-4 w-4" />
                 </div>
                 <div className="space-y-1">
@@ -460,7 +460,7 @@ export function RootExternalProjectsAdminClient({
                     <button
                       key={workspace.id}
                       type="button"
-                      className="group flex w-full items-center justify-between gap-4 rounded-2xl border border-border/70 bg-background/90 p-4 text-left transition hover:border-dynamic-orange/35 hover:bg-dynamic-orange/5"
+                      className="group grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-4 rounded-lg border border-border/70 bg-background/80 p-3 text-left transition-colors hover:border-foreground/20 hover:bg-background"
                       onClick={() =>
                         selectWorkspace({
                           preferFirstActiveProject: true,
@@ -479,7 +479,7 @@ export function RootExternalProjectsAdminClient({
                           {workspace.id}
                         </div>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2 text-dynamic-orange text-sm">
+                      <div className="flex shrink-0 items-center gap-2 text-muted-foreground text-sm transition-colors group-hover:text-foreground">
                         {tRoot('select_to_bind_action')}
                         <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                       </div>
@@ -491,11 +491,11 @@ export function RootExternalProjectsAdminClient({
           </Card>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           <Card className="border-border/70 bg-card/95 shadow-none">
             <CardHeader>
               <div className="flex items-start gap-3">
-                <div className="rounded-full border border-dynamic-blue/25 bg-dynamic-blue/10 p-2 text-dynamic-blue">
+                <div className="rounded-md border border-border/70 bg-background/80 p-2 text-muted-foreground">
                   <Activity className="h-4 w-4" />
                 </div>
                 <div className="space-y-1">
@@ -515,7 +515,7 @@ export function RootExternalProjectsAdminClient({
               ) : (
                 <>
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-2xl border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                    <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                       <div className="text-muted-foreground text-xs uppercase">
                         {t('common.workspace')}
                       </div>
@@ -529,7 +529,7 @@ export function RootExternalProjectsAdminClient({
                         {selectedWorkspace.id}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-dynamic-green/20 bg-dynamic-green/5 p-4">
+                    <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                       <div className="text-muted-foreground text-xs uppercase">
                         {tRoot('binding_preview_label')}
                       </div>
@@ -547,7 +547,7 @@ export function RootExternalProjectsAdminClient({
                           : tRoot('unbound_label')}
                       </div>
                     </div>
-                    <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/5 p-4">
+                    <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                       <div className="text-muted-foreground text-xs uppercase">
                         {tRoot('last_changed_label')}
                       </div>
@@ -603,7 +603,7 @@ export function RootExternalProjectsAdminClient({
                     </div>
 
                     <div className="space-y-4">
-                      <div className="rounded-2xl border border-dynamic-blue/20 bg-dynamic-blue/5 p-4">
+                      <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                         <div className="mb-2 text-muted-foreground text-xs uppercase">
                           {tRoot('binding_preview_label')}
                         </div>
@@ -631,7 +631,7 @@ export function RootExternalProjectsAdminClient({
                       </div>
 
                       <Button
-                        className="w-full gap-2 bg-dynamic-blue text-white hover:bg-dynamic-blue/90"
+                        className="w-full gap-2"
                         disabled={bindDisabled}
                         onClick={() => bindMutation.mutate()}
                       >
@@ -758,7 +758,7 @@ export function RootExternalProjectsAdminClient({
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid gap-6 xl:grid-cols-[0.38fr_0.62fr]">
-            <div className="rounded-2xl border border-dynamic-purple/20 bg-dynamic-purple/5 p-5">
+            <div className="rounded-lg border border-border/70 bg-background/65 p-4">
               <div className="space-y-4">
                 <div className="space-y-1">
                   <div className="font-medium">{tRoot('create_title')}</div>
@@ -853,7 +853,7 @@ export function RootExternalProjectsAdminClient({
                   </div>
 
                   <Button
-                    className="gap-2 bg-dynamic-purple text-white hover:bg-dynamic-purple/90"
+                    className="gap-2"
                     disabled={createDisabled}
                     onClick={() => createProjectMutation.mutate()}
                   >

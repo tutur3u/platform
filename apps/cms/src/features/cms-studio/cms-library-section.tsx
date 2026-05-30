@@ -2,6 +2,7 @@
 
 import { FolderSync, Layers2, Plus, Settings2 } from '@tuturuuu/icons';
 import { Button } from '@tuturuuu/ui/button';
+import { cn } from '@tuturuuu/utils/format';
 import { CmsContentModelSection } from './cms-content-model-section';
 import { CmsEntriesGallery } from './cms-entries-gallery';
 import { CmsLibraryCommandCenter } from './cms-library-command-center';
@@ -161,96 +162,131 @@ export function CmsLibrarySection({
         strings={strings}
       />
 
-      <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_280px]">
-        <aside className="rounded-lg border border-border/70 bg-card/95 p-3">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-medium text-sm">
-              {strings.collectionsMetricLabel}
-            </h2>
-            <Button size="sm" variant="outline" onClick={onCreateCollection}>
-              <Layers2 className="mr-2 h-4 w-4" />
-              {strings.createCollectionAction}
-            </Button>
-          </div>
-          <div className="mt-3 space-y-1">
-            {collections.map((collection) => {
-              const entryCount = entries.filter(
-                (entry) => entry.collection_id === collection.id
-              ).length;
+      <div className="grid gap-4 xl:grid-cols-[280px_minmax(0,1fr)]">
+        <aside className="space-y-3">
+          <section className="rounded-lg border border-border/70 bg-card/80">
+            <div className="flex items-center justify-between gap-3 border-border/70 border-b px-3 py-3">
+              <div>
+                <h2 className="font-medium text-sm">
+                  {strings.collectionsMetricLabel}
+                </h2>
+                <p className="mt-0.5 text-muted-foreground text-xs">
+                  {collections.length} {strings.collectionsLabel}
+                </p>
+              </div>
+              <Button
+                size="icon"
+                variant="outline"
+                className="size-8 rounded-md"
+                onClick={onCreateCollection}
+              >
+                <Layers2 className="h-4 w-4" />
+                <span className="sr-only">
+                  {strings.createCollectionAction}
+                </span>
+              </Button>
+            </div>
 
-              return (
-                <button
-                  key={collection.id}
-                  type="button"
-                  className={[
-                    'flex w-full items-center justify-between gap-3 rounded-lg border px-3 py-2 text-left text-sm transition',
-                    activeCollection?.id === collection.id
-                      ? 'border-foreground/20 bg-foreground text-background'
-                      : 'border-border/70 bg-background/60 hover:bg-muted',
-                  ].join(' ')}
-                  onClick={() => onSelectCollection(collection.id)}
+            <div className="max-h-[52rem] overflow-auto p-2">
+              {collections.map((collection) => {
+                const entryCount = entries.filter(
+                  (entry) => entry.collection_id === collection.id
+                ).length;
+
+                return (
+                  <button
+                    key={collection.id}
+                    type="button"
+                    className={cn(
+                      'grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-md border px-3 py-2 text-left text-sm transition-colors',
+                      activeCollection?.id === collection.id
+                        ? 'border-foreground/25 bg-foreground text-background'
+                        : 'border-transparent hover:border-border/70 hover:bg-background/80'
+                    )}
+                    onClick={() => onSelectCollection(collection.id)}
+                  >
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {collection.title}
+                      </span>
+                      <span
+                        className={cn(
+                          'mt-0.5 block truncate text-xs',
+                          activeCollection?.id === collection.id
+                            ? 'text-background/70'
+                            : 'text-muted-foreground'
+                        )}
+                      >
+                        {collection.slug}
+                      </span>
+                    </span>
+                    <span className="shrink-0 rounded-sm border border-current/20 px-1.5 py-0.5 text-xs tabular-nums">
+                      {entryCount}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-border/70 bg-card/80 p-3">
+            <div>
+              <h2 className="font-medium text-sm">{strings.settingsTab}</h2>
+              <p className="mt-1 line-clamp-2 text-muted-foreground text-sm">
+                {activeCollection?.title ?? strings.collectionFallbackLabel}
+              </p>
+            </div>
+
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
+                <div className="font-semibold tabular-nums">
+                  {activeCollectionEntryCount}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {strings.entriesMetricLabel}
+                </div>
+              </div>
+              <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
+                <div className="font-semibold tabular-nums">
+                  {activeFieldCount}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  {strings.fieldsMetricLabel}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2">
+              <Button onClick={onCreateEntry}>
+                <Plus className="mr-2 h-4 w-4" />
+                {strings.createEntryAction}
+              </Button>
+              {activeCollection ? (
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenCollection(activeCollection.id)}
                 >
-                  <span className="min-w-0 truncate">{collection.title}</span>
-                  <span className="shrink-0 text-xs tabular-nums">
-                    {entryCount}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </aside>
-
-        <main className="min-w-0">{activeContent}</main>
-
-        <aside className="space-y-3 rounded-lg border border-border/70 bg-card/95 p-3">
-          <div>
-            <h2 className="font-medium text-sm">{strings.settingsTab}</h2>
-            <p className="mt-1 text-muted-foreground text-sm">
-              {activeCollection?.title ?? strings.collectionFallbackLabel}
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
-              <div className="font-semibold tabular-nums">
-                {activeCollectionEntryCount}
-              </div>
-              <div className="text-muted-foreground text-xs">
-                {strings.entriesMetricLabel}
-              </div>
-            </div>
-            <div className="rounded-lg border border-border/70 bg-background/70 px-3 py-2">
-              <div className="font-semibold tabular-nums">
-                {activeFieldCount}
-              </div>
-              <div className="text-muted-foreground text-xs">
-                {strings.fieldsMetricLabel}
-              </div>
-            </div>
-          </div>
-          <div className="grid gap-2">
-            <Button onClick={onCreateEntry}>
-              <Plus className="mr-2 h-4 w-4" />
-              {strings.createEntryAction}
-            </Button>
-            {activeCollection ? (
+                  <Settings2 className="mr-2 h-4 w-4" />
+                  {strings.editCollectionAction}
+                </Button>
+              ) : null}
               <Button
                 variant="outline"
-                onClick={() => onOpenCollection(activeCollection.id)}
+                disabled={importPending}
+                onClick={onImport}
               >
-                <Settings2 className="mr-2 h-4 w-4" />
-                {strings.editCollectionAction}
+                <FolderSync className="mr-2 h-4 w-4" />
+                {strings.importAction}
               </Button>
-            ) : null}
-            <Button
-              variant="outline"
-              disabled={importPending}
-              onClick={onImport}
-            >
-              <FolderSync className="mr-2 h-4 w-4" />
-              {strings.importAction}
-            </Button>
-          </div>
+            </div>
+          </section>
         </aside>
+
+        <main className="min-w-0">
+          <div className="rounded-lg border border-border/70 bg-background/35 p-3">
+            {activeContent}
+          </div>
+        </main>
       </div>
     </div>
   );

@@ -178,6 +178,10 @@
       "types": "./src/components/ui/form.tsx",
       "import": "./src/components/ui/form.tsx"
     },
+    "./sheet": {
+      "types": "./src/components/ui/sheet.tsx",
+      "import": "./src/components/ui/sheet.tsx"
+    },
     "./hooks/use-board-actions": "./src/hooks/use-board-actions.ts",
     "./hooks/*": "./src/hooks/*.ts",
     "./hooks/time-blocking-provider": "./src/hooks/time-blocking-provider.tsx",
