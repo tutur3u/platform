@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
@@ -36,6 +37,7 @@ export function PromotionRowActions({
 }: PromotionRowActionsProps) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [open, setOpen] = useState(false);
 
@@ -55,6 +57,9 @@ export function PromotionRowActions({
     );
 
     if (res.ok) {
+      await queryClient.invalidateQueries({
+        queryKey: ['inventory-table', 'promotions', promotion.ws_id],
+      });
       router.refresh();
     } else {
       const data = await res.json();
@@ -86,6 +91,9 @@ export function PromotionRowActions({
               data={promotion}
               canUpdateInventory={canUpdateInventory}
               onFinish={() => {
+                queryClient.invalidateQueries({
+                  queryKey: ['inventory-table', 'promotions', promotion.ws_id],
+                });
                 setOpen(false);
               }}
             />

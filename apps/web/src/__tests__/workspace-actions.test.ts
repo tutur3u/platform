@@ -6,6 +6,23 @@ const mocks = vi.hoisted(() => {
   const workspacesEq = vi.fn();
   const usersMaybeSingle = vi.fn();
   const privateDetailsMaybeSingle = vi.fn();
+  const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
+
+  function createThenableQuery(result: { data: unknown; error: unknown }) {
+    const query = {
+      eq: vi.fn(() => query),
+      is: vi.fn(() => query),
+      select: vi.fn(() => query),
+    };
+    Object.defineProperty(query, 'then', {
+      value: (
+        resolve: (value: { data: unknown; error: unknown }) => unknown,
+        reject?: (reason: unknown) => unknown
+      ) => Promise.resolve(result).then(resolve, reject),
+    });
+
+    return query;
+  }
 
   const sessionSupabase = {
     auth: {
@@ -38,15 +55,21 @@ const mocks = vi.hoisted(() => {
 
   const adminSupabase = {
     from: vi.fn((table: string) => {
-      if (table !== 'workspaces') {
-        throw new Error(`Unexpected admin table: ${table}`);
+      if (table === 'workspaces') {
+        return {
+          select: vi.fn(() => ({
+            eq: workspacesEq,
+          })),
+        };
       }
 
-      return {
-        select: vi.fn(() => ({
-          eq: workspacesEq,
-        })),
-      };
+      if (table === 'task_board_shares') {
+        return createThenableQuery(
+          taskBoardShareResults.shift() ?? { data: [], error: null }
+        );
+      }
+
+      throw new Error(`Unexpected admin table: ${table}`);
     }),
   };
 
@@ -55,6 +78,7 @@ const mocks = vi.hoisted(() => {
     getUser,
     privateDetailsMaybeSingle,
     sessionSupabase,
+    taskBoardShareResults,
     usersMaybeSingle,
     workspacesEq,
   };
@@ -69,6 +93,7 @@ describe('fetchWorkspaceSummaries', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    mocks.taskBoardShareResults.length = 0;
     mocks.getUser.mockResolvedValue({
       data: {
         user: {
@@ -147,6 +172,7 @@ describe('fetchWorkspaceSummaries', () => {
 
     expect(workspaces).toEqual([
       expect.objectContaining({
+        access_type: 'member',
         id: 'personal-ws',
         name: 'Alex Nguyen',
         avatar_url: 'https://example.com/alex.png',
@@ -154,10 +180,66 @@ describe('fetchWorkspaceSummaries', () => {
         created_by_me: true,
       }),
       expect.objectContaining({
+        access_type: 'member',
         id: 'team-ws',
         name: 'Product',
         tier: 'PRO',
         created_by_me: false,
+      }),
+    ]);
+  });
+
+  it('includes direct board guest workspaces without adding them as member workspaces', async () => {
+    mocks.workspacesEq.mockResolvedValue({
+      data: [],
+      error: null,
+    });
+    mocks.taskBoardShareResults.push(
+      {
+        data: [
+          {
+            board_id: 'board-1',
+            permission: 'edit',
+            workspace_boards: {
+              id: 'board-1',
+              ws_id: 'guest-ws',
+              workspaces: {
+                id: 'guest-ws',
+                name: 'Shared workspace',
+                personal: false,
+                avatar_url: null,
+                logo_url: null,
+                creator_id: 'owner-1',
+                workspace_subscriptions: [
+                  {
+                    created_at: '2026-03-10T00:00:00.000Z',
+                    status: 'active',
+                    workspace_subscription_products: { tier: 'PRO' },
+                  },
+                ],
+              },
+            },
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null }
+    );
+
+    const { fetchWorkspaceSummaries } = await import(
+      '@tuturuuu/ui/lib/workspace-actions'
+    );
+
+    await expect(fetchWorkspaceSummaries()).resolves.toEqual([
+      expect.objectContaining({
+        access_type: 'guest',
+        guest_board_count: 1,
+        guest_highest_permission: 'edit',
+        guest_landing_path: '/tasks/boards/board-1',
+        guest_products: ['tasks'],
+        id: 'guest-ws',
+        name: 'Shared workspace',
+        tier: 'PRO',
       }),
     ]);
   });

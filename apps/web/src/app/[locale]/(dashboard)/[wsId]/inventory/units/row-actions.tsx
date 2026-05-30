@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import { deleteInventoryUnit } from '@tuturuuu/internal-api';
@@ -33,6 +34,7 @@ export function ProductUnitRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
 
   const deleteData = async () => {
@@ -43,6 +45,17 @@ export function ProductUnitRowActions({
 
     try {
       await deleteInventoryUnit(data.ws_id, data.id);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'units', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['product-units', data.ws_id],
+        }),
+      ]);
       router.refresh();
     } catch {
       toast.error(t('ws-inventory-units.failed_delete_unit'));

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import {
@@ -34,6 +35,7 @@ export function ProductManufacturerRowActions({
 }: Props) {
   const t = useTranslations();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
   const [showEditDialog, setShowEditDialog] = useState(false);
 
@@ -47,6 +49,17 @@ export function ProductManufacturerRowActions({
 
     try {
       await deleteInventoryManufacturer(data.ws_id, data.id);
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'manufacturers', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['product-manufacturers', data.ws_id],
+        }),
+      ]);
       router.refresh();
     } catch {
       toast.error(t('ws-inventory-manufacturers.failed_delete_manufacturer'));

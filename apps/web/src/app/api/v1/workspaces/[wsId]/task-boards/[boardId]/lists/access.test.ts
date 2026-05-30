@@ -8,6 +8,24 @@ const normalizeWorkspaceIdMock = vi.fn();
 const verifyAppSessionRequestMock = vi.fn();
 const verifyCliAccessTokenMock = vi.fn();
 const verifyWorkspaceMembershipTypeMock = vi.fn();
+const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
+
+function createThenableQuery(result: { data: unknown; error: unknown }) {
+  const query = {
+    eq: vi.fn(() => query),
+    in: vi.fn(() => query),
+    is: vi.fn(() => query),
+    select: vi.fn(() => query),
+  };
+  Object.defineProperty(query, 'then', {
+    value: (
+      resolve: (value: { data: unknown; error: unknown }) => unknown,
+      reject?: (reason: unknown) => unknown
+    ) => Promise.resolve(result).then(resolve, reject),
+  });
+
+  return query;
+}
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
   attachSupabaseAuthUser: (supabase: unknown) => supabase,
@@ -70,6 +88,7 @@ describe('task board list access', () => {
     normalizeWorkspaceIdMock.mockResolvedValue(
       '00000000-0000-4000-8000-000000000123'
     );
+    taskBoardShareResults.length = 0;
 
     const personalWorkspaceQuery = {
       eq: vi.fn(),
@@ -103,6 +122,12 @@ describe('task board list access', () => {
         return {
           select: vi.fn(() => boardQuery),
         };
+      }
+
+      if (table === 'task_board_shares') {
+        return createThenableQuery(
+          taskBoardShareResults.shift() ?? { data: [], error: null }
+        );
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -169,5 +194,89 @@ describe('task board list access', () => {
       expect.any(NextRequest),
       { targetApp: ['calendar', 'tasks'] }
     );
+  });
+
+  it('allows a directly shared board guest to read lists', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: false });
+    taskBoardShareResults.push(
+      { data: [], error: null },
+      {
+        data: [
+          {
+            id: '00000000-0000-4000-8000-000000000777',
+            board_id: '00000000-0000-4000-8000-000000000456',
+            permission: 'view',
+            shared_with_email: 'agent@example.com',
+            workspace_boards: {
+              id: '00000000-0000-4000-8000-000000000456',
+              ws_id: '00000000-0000-4000-8000-000000000123',
+            },
+          },
+        ],
+        error: null,
+      }
+    );
+
+    const access = await requireBoardAccess(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards/00000000-0000-4000-8000-000000000456/lists',
+        {
+          headers: {
+            Authorization: 'Bearer ttr_app_access',
+          },
+        }
+      ),
+      {
+        boardId: '00000000-0000-4000-8000-000000000456',
+        wsId: 'personal',
+      }
+    );
+
+    expect('error' in access).toBe(false);
+    expect(access).toMatchObject({
+      access: { mode: 'guest', permission: 'view' },
+    });
+  });
+
+  it('rejects view-only board guests when list mutation requires edit', async () => {
+    verifyWorkspaceMembershipTypeMock.mockResolvedValue({ ok: false });
+    taskBoardShareResults.push(
+      { data: [], error: null },
+      {
+        data: [
+          {
+            id: '00000000-0000-4000-8000-000000000777',
+            board_id: '00000000-0000-4000-8000-000000000456',
+            permission: 'view',
+            shared_with_email: 'agent@example.com',
+            workspace_boards: {
+              id: '00000000-0000-4000-8000-000000000456',
+              ws_id: '00000000-0000-4000-8000-000000000123',
+            },
+          },
+        ],
+        error: null,
+      }
+    );
+
+    const access = await requireBoardAccess(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards/00000000-0000-4000-8000-000000000456/lists',
+        {
+          headers: {
+            Authorization: 'Bearer ttr_app_access',
+          },
+        }
+      ),
+      {
+        boardId: '00000000-0000-4000-8000-000000000456',
+        wsId: 'personal',
+      },
+      { requiredPermission: 'edit' }
+    );
+
+    expect(access).toMatchObject({
+      error: expect.objectContaining({ status: 403 }),
+    });
   });
 });

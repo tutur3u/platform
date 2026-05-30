@@ -1,3 +1,7 @@
+import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   normalizeWorkspaceId,
@@ -41,17 +45,25 @@ export const GET = withSessionAuth<WorkspaceParams>(
         );
       }
 
-      if (!memberCheck.ok) {
+      const sbAdmin = await createAdminClient({ noCookie: true });
+      const guestShares = memberCheck.ok
+        ? []
+        : await loadTaskBoardGuestSharesForWorkspace({
+            sbAdmin,
+            user,
+            workspaceId: wsId,
+          });
+      const guestSummary = summarizeTaskBoardGuestShares(guestShares);
+
+      if (!memberCheck.ok && guestSummary.boardCount === 0) {
         return NextResponse.json(
           { error: "You don't have access to this workspace" },
           { status: 403 }
         );
       }
 
-      const sbAdmin = await createAdminClient({ noCookie: true });
-
       // Fetch boards with their lists
-      const { data, error } = await sbAdmin
+      let query = sbAdmin
         .from('workspace_boards')
         .select(
           `
@@ -71,6 +83,12 @@ export const GET = withSessionAuth<WorkspaceParams>(
         .eq('ws_id', wsId)
         .is('deleted_at', null)
         .order('created_at', { ascending: false });
+
+      if (!memberCheck.ok) {
+        query = query.in('id', guestSummary.boardIds);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         serverLogger.error('Supabase error:', error);

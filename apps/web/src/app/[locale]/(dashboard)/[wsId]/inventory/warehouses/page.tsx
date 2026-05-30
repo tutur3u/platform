@@ -1,13 +1,11 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { InventoryDataTableClient } from '../_components/inventory-data-table-client';
 import { productWarehouseColumns } from './columns';
 import { ProductWarehouseForm } from './form';
 
@@ -21,17 +19,9 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
 }
 
-export default async function WorkspaceWarehousesPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceWarehousesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -62,8 +52,6 @@ export default async function WorkspaceWarehousesPage({
         const canUpdateInventory = containsPermission('update_inventory');
         const canDeleteInventory = containsPermission('delete_inventory');
 
-        const { data, count } = await getData(wsId, await searchParams);
-
         return (
           <>
             <FeatureSummary
@@ -85,11 +73,11 @@ export default async function WorkspaceWarehousesPage({
               }
             />
             <Separator className="my-4" />
-            <CustomDataTable
-              data={data}
+            <InventoryDataTableClient
+              resource="warehouses"
+              wsId={wsId}
               columnGenerator={productWarehouseColumns}
               namespace="basic-data-table"
-              count={count}
               extraData={{
                 canDeleteInventory,
                 canUpdateInventory,
@@ -104,37 +92,4 @@ export default async function WorkspaceWarehousesPage({
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = (await createAdminClient()).schema('private');
-
-  const queryBuilder = supabase
-    .from('inventory_warehouses')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: ProductWarehouse[]; count: number };
 }

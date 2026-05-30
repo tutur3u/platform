@@ -8,6 +8,11 @@ import {
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@/lib/inventory/api-list-query';
 
 interface Params {
   params: Promise<{
@@ -19,6 +24,15 @@ export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const supabase = await createClient(req);
   const wsId = await normalizeWorkspaceId(id, supabase);
+  const shouldPaginate = shouldReturnPaginatedInventoryList(req);
+  const parsedQuery = parseInventoryApiListQuery(req);
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
 
   // Check permissions
   const permissions = await getPermissions({ wsId, request: req });
@@ -34,10 +48,19 @@ export async function GET(req: Request, { params }: Params) {
   }
   const inventory = (await createAdminClient()).schema('private');
 
-  const { data, error } = await inventory
+  const query = inventory
     .from('inventory_warehouses')
-    .select('*')
+    .select('*', { count: shouldPaginate ? 'exact' : undefined })
     .eq('ws_id', wsId);
+
+  const { q, page, pageSize } = parsedQuery.data;
+  if (q) query.ilike('name', `%${q}%`);
+  if (shouldPaginate) {
+    const { start, end } = getInventoryApiListRange({ page, pageSize });
+    query.range(start, end);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     serverLogger.error('Error fetching product warehouses', error);
@@ -45,6 +68,10 @@ export async function GET(req: Request, { params }: Params) {
       { message: 'Error fetching product warehouses' },
       { status: 500 }
     );
+  }
+
+  if (shouldPaginate) {
+    return NextResponse.json({ count: count ?? 0, data: data ?? [] });
   }
 
   return NextResponse.json(data);

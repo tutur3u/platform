@@ -1,4 +1,8 @@
 import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
+import {
   Archive,
   BadgeDollarSign,
   Banknote,
@@ -209,7 +213,44 @@ export async function WorkspaceNavigationLinks({
         )
       : Promise.resolve(null),
   ]);
-  if (!workspacePermissions) notFound();
+  if (!workspacePermissions) {
+    if (!user) notFound();
+
+    const sbAdmin = await createAdminClient({ noCookie: true });
+    const guestShares = await loadTaskBoardGuestSharesForWorkspace({
+      sbAdmin,
+      user,
+      workspaceId: resolvedWorkspaceId,
+    });
+    const guestSummary = summarizeTaskBoardGuestShares(guestShares);
+
+    if (guestSummary.boardCount === 0) notFound();
+
+    const sidebarSections = {
+      core: t('sidebar_sections.core'),
+    };
+
+    return [
+      {
+        id: 'tasks',
+        title: t('sidebar_tabs.tasks'),
+        href: `/${personalOrWsId}/tasks/boards`,
+        aliases: [`/${personalOrWsId}/tasks/boards`],
+        icon: <CheckCircle2 className="h-5 w-5" />,
+        experimental: 'beta',
+        preferencePlacement: 'root',
+        preferenceSectionLabel: sidebarSections.core,
+        children: [
+          {
+            title: t('sidebar_tabs.boards'),
+            href: `/${personalOrWsId}/tasks/boards`,
+            icon: <SquareKanban className="h-4 w-4" />,
+            matchExact: true,
+          },
+        ],
+      },
+    ] satisfies NavLink[];
+  }
 
   const hasHiveAccess =
     hiveAccessResult !== null &&

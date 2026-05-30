@@ -149,6 +149,11 @@ export const projectColumns = ({
   {
     id: 'actions',
     header: ({ column }) => <DataTableColumnHeader t={t} column={column} />,
-    cell: ({ row }) => <BoardActions board={row.original} />,
+    cell: ({ row }) => (
+      <BoardActions
+        board={row.original}
+        canManageBoards={extraData?.canManageBoards !== false}
+      />
+    ),
   },
 ];

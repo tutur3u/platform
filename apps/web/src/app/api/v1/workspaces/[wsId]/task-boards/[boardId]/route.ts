@@ -4,6 +4,7 @@ import {
 } from '@tuturuuu/apis/tu-do/board/boardId/route';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from './lists/access';
 
 const paramsSchema = z.object({
@@ -43,6 +44,9 @@ export async function GET(
 
     const normalizedBoard = {
       ...board,
+      access_type: access.access.mode,
+      guest_permission:
+        access.access.mode === 'guest' ? access.access.permission : null,
       task_lists: (board.task_lists ?? []).sort((a, b) => {
         const positionDelta = (a.position ?? 0) - (b.position ?? 0);
         if (positionDelta !== 0) return positionDelta;
@@ -62,7 +66,7 @@ export async function GET(
       );
     }
 
-    console.error('Error fetching task board:', error);
+    serverLogger.error('Error fetching task board:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

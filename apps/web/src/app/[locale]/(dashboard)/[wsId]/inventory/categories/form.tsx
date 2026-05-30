@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -42,6 +43,7 @@ export function ProductCategoryForm({
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm({
@@ -84,6 +86,17 @@ export function ProductCategoryForm({
     );
 
     if (res.ok) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'categories', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['product-categories', wsId],
+        }),
+      ]);
       onFinish?.(data);
       router.refresh();
     } else {

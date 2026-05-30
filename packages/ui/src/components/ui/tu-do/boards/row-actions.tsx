@@ -8,6 +8,7 @@ import {
   Ellipsis,
   Eye,
   RotateCcw,
+  Share2,
   Trash2,
 } from '@tuturuuu/icons';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
@@ -35,14 +36,20 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { SaveAsTemplateDialog } from '../templates/save-as-template-dialog';
+import { BoardShareDialog } from './board-share-dialog';
 import { TaskBoardForm } from './form';
 
 interface BoardActionsProps {
   board: WorkspaceTaskBoard;
+  canManageBoards?: boolean;
   wsId?: string;
 }
 
-export function BoardActions({ board, wsId }: BoardActionsProps) {
+export function BoardActions({
+  board,
+  canManageBoards = true,
+  wsId,
+}: BoardActionsProps) {
   const t = useTranslations();
   const data = board;
   const {
@@ -61,6 +68,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
   const [showRestoreDialog, setShowRestoreDialog] = useState(false);
   const [showArchiveDialog, setShowArchiveDialog] = useState(false);
   const [showUnarchiveDialog, setShowUnarchiveDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [showSaveAsTemplateDialog, setShowSaveAsTemplateDialog] =
     useState(false);
 
@@ -68,6 +76,7 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
   // React Query will automatically refetch and update the UI
 
   if (!data.id || !data.ws_id) return null;
+  if (!canManageBoards) return null;
 
   return (
     <>
@@ -146,6 +155,16 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
                 <DropdownMenuItem
                   onClick={(e) => {
                     e.stopPropagation();
+                    setShowShareDialog(true);
+                  }}
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  {t('ws-task-boards.share.action')}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setShowEditDialog(true);
                   }}
                 >
@@ -205,6 +224,12 @@ export function BoardActions({ board, wsId }: BoardActionsProps) {
           board={data}
           open={showSaveAsTemplateDialog}
           onOpenChange={setShowSaveAsTemplateDialog}
+        />
+        <BoardShareDialog
+          board={data}
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          wsId={wsId || data.ws_id}
         />
       </div>
 

@@ -1,4 +1,8 @@
 import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
+import {
   attachSupabaseAuthUser,
   createAppSessionUser,
   getAppSessionTokenFromRequest,
@@ -169,7 +173,16 @@ export async function GET(req: Request, { params }: Params) {
       );
     }
 
-    if (!memberCheck.ok) {
+    const guestShares = memberCheck.ok
+      ? []
+      : await loadTaskBoardGuestSharesForWorkspace({
+          sbAdmin,
+          user: auth.user,
+          workspaceId: wsId,
+        });
+    const guestSummary = summarizeTaskBoardGuestShares(guestShares);
+
+    if (!memberCheck.ok && guestSummary.boardCount === 0) {
       return NextResponse.json(
         { error: 'Workspace access denied' },
         { status: 403 }
@@ -184,17 +197,19 @@ export async function GET(req: Request, { params }: Params) {
     const pageSize = searchParams.pageSize;
     const status = searchParams.status;
 
-    try {
-      await ensureDefaultPersonalTaskBoard({
-        sbAdmin,
-        userId: auth.user.id,
-        wsId,
-      });
-    } catch (error) {
-      serverLogger.error(
-        'Failed to ensure default personal task board:',
-        error
-      );
+    if (memberCheck.ok) {
+      try {
+        await ensureDefaultPersonalTaskBoard({
+          sbAdmin,
+          userId: auth.user.id,
+          wsId,
+        });
+      } catch (error) {
+        serverLogger.error(
+          'Failed to ensure default personal task board:',
+          error
+        );
+      }
     }
 
     const boardsQuery = sbAdmin
@@ -214,6 +229,10 @@ export async function GET(req: Request, { params }: Params) {
       boardsQuery.not('archived_at', 'is', null).is('deleted_at', null);
     } else if (status === 'deleted') {
       boardsQuery.not('deleted_at', 'is', null);
+    }
+
+    if (!memberCheck.ok) {
+      boardsQuery.in('id', guestSummary.boardIds);
     }
 
     if (page !== undefined && pageSize !== undefined) {
@@ -302,13 +321,27 @@ export async function GET(req: Request, { params }: Params) {
         (taskCountsByList[list.id] ?? 0);
     }
 
+    const guestPermissionByBoardId = new Map(
+      guestShares.map((share) => [share.board_id, share.permission] as const)
+    );
     const boards = data.map((board) => ({
       ...board,
       list_count: listCountsByBoard[board.id] ?? 0,
       task_count: taskCountsByBoard[board.id] ?? 0,
+      access_type: memberCheck.ok ? 'member' : 'guest',
+      guest_permission: memberCheck.ok
+        ? null
+        : (guestPermissionByBoardId.get(board.id) ?? 'view'),
     }));
 
-    return NextResponse.json({ boards, count: count ?? boards.length });
+    return NextResponse.json({
+      boards,
+      count: count ?? boards.length,
+      access_type: memberCheck.ok ? 'member' : 'guest',
+      guest_highest_permission: memberCheck.ok
+        ? null
+        : guestSummary.highestPermission,
+    });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -1,13 +1,11 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
-import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
+import { InventoryDataTableClient } from '../_components/inventory-data-table-client';
 import { productCategoryColumns } from './columns';
 import { ProductCategoryForm } from './form';
 export const metadata: Metadata = {
@@ -20,16 +18,10 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
 }
 
 export default async function WorkspaceProductCategoriesPage({
   params,
-  searchParams,
 }: Props) {
   return (
     <WorkspaceWrapper params={params}>
@@ -61,8 +53,6 @@ export default async function WorkspaceProductCategoriesPage({
         const canUpdateInventory = containsPermission('update_inventory');
         const canDeleteInventory = containsPermission('delete_inventory');
 
-        const { data, count } = await getData(wsId, await searchParams);
-
         return (
           <>
             <FeatureSummary
@@ -84,11 +74,11 @@ export default async function WorkspaceProductCategoriesPage({
               }
             />
             <Separator className="my-4" />
-            <CustomDataTable
-              data={data}
+            <InventoryDataTableClient
+              resource="categories"
+              wsId={wsId}
               columnGenerator={productCategoryColumns}
               namespace="transaction-category-data-table"
-              count={count}
               extraData={{
                 canUpdateInventory,
                 canDeleteInventory,
@@ -103,37 +93,4 @@ export default async function WorkspaceProductCategoriesPage({
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = await createClient();
-
-  const queryBuilder = supabase
-    .from('product_categories')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder;
-  if (error) throw error;
-
-  return { data, count } as { data: ProductCategory[]; count: number };
 }

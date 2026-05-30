@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
@@ -32,6 +33,7 @@ export function ProductSupplierRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
 
   const deleteData = async () => {
@@ -48,6 +50,9 @@ export function ProductSupplierRowActions({
     );
 
     if (res.ok) {
+      await queryClient.invalidateQueries({
+        queryKey: ['inventory-table', 'suppliers', data.ws_id],
+      });
       router.refresh();
     } else {
       const data = await res.json();

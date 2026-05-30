@@ -15,6 +15,32 @@ interface Params {
   params: Promise<{ wsId: string }>;
 }
 
+export async function GET(request: Request, { params }: Params) {
+  const supabase = await createClient(request);
+  const { wsId } = await params;
+  const permissions = await getPermissions({ wsId, request });
+
+  if (!permissions || permissions.withoutPermission('view_inventory')) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 403 });
+  }
+
+  const { data, error } = await supabase
+    .from('workspace_settings')
+    .select('*')
+    .eq('ws_id', wsId)
+    .maybeSingle();
+
+  if (error) {
+    serverLogger.error('Failed to fetch workspace referral settings:', error);
+    return NextResponse.json(
+      { message: 'Failed to fetch referral settings' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ data });
+}
+
 export async function PUT(request: Request, { params }: Params) {
   const supabase = await createClient(request);
   const { wsId } = await params;

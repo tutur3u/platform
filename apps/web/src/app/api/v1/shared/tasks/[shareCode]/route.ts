@@ -11,6 +11,7 @@ import {
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 interface SharedTaskParams {
   shareCode: string;
@@ -118,7 +119,14 @@ export async function GET(
         supabase: adminClient,
       });
 
-      isWorkspaceMember = Boolean(memberCheck);
+      if (memberCheck.error === 'membership_lookup_failed') {
+        return NextResponse.json(
+          { error: 'Failed to verify workspace access' },
+          { status: 500 }
+        );
+      }
+
+      isWorkspaceMember = memberCheck.ok;
     }
 
     const { data: userPrivateDetails } = await adminClient
@@ -352,7 +360,7 @@ export async function GET(
           })) || [],
     });
   } catch (error) {
-    console.error('Error in GET /shared/tasks/[shareCode]:', error);
+    serverLogger.error('Error in GET /shared/tasks/[shareCode]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -534,7 +542,7 @@ export async function PATCH(
       .single();
 
     if (updateError) {
-      console.error('Error updating task:', updateError);
+      serverLogger.error('Error updating task:', updateError);
       return NextResponse.json(
         { error: 'Failed to update task' },
         { status: 500 }
@@ -543,7 +551,7 @@ export async function PATCH(
 
     return NextResponse.json({ task: updatedTask });
   } catch (error) {
-    console.error('Error in PATCH /shared/tasks/[shareCode]:', error);
+    serverLogger.error('Error in PATCH /shared/tasks/[shareCode]:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

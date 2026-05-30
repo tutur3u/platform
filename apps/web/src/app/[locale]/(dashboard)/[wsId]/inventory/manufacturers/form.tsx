@@ -88,6 +88,14 @@ export function ProductManufacturerForm({
       await queryClient.invalidateQueries({
         queryKey: ['product-manufacturers', wsId],
       });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'manufacturers', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', wsId],
+        }),
+      ]);
       onFinish?.(response.data);
       router.refresh();
     } catch {

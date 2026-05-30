@@ -87,18 +87,21 @@ export default function WorkspaceProjectsClientPage({
       }),
     enabled: Boolean(resolvedWsId),
   });
+  const isGuestBoardAccess = boardsPayload?.access_type === 'guest';
 
   useEffect(() => {
     if (
       resolvedWsId &&
       !isPermissionLoading &&
       !isWorkspaceUserLoading &&
-      canManageProjects === false
+      canManageProjects === false &&
+      !isGuestBoardAccess
     ) {
       router.replace(`/${resolvedWsId}`);
     }
   }, [
     canManageProjects,
+    isGuestBoardAccess,
     isPermissionLoading,
     isWorkspaceUserLoading,
     resolvedWsId,
@@ -108,17 +111,22 @@ export default function WorkspaceProjectsClientPage({
   if (
     isWorkspacePending ||
     isWorkspaceUserLoading ||
-    isPermissionLoading ||
+    (isPermissionLoading && !isGuestBoardAccess) ||
     isBoardsPending
   ) {
     return <BoardsListSkeleton />;
   }
 
-  if (canManageProjects === false) {
+  if (canManageProjects === false && !isGuestBoardAccess) {
     return null;
   }
 
-  if (workspaceError || permissionQuery.error || boardsError || !resolvedWsId) {
+  if (
+    workspaceError ||
+    (!isGuestBoardAccess && permissionQuery.error) ||
+    boardsError ||
+    !resolvedWsId
+  ) {
     return (
       <div className="rounded-lg border bg-muted/30 p-6 text-muted-foreground text-sm">
         {t('common.error')}
@@ -144,7 +152,7 @@ export default function WorkspaceProjectsClientPage({
           description={t('ws-task-boards.description')}
           createTitle={t('ws-task-boards.create')}
           createDescription={t('ws-task-boards.create_description')}
-          action={createButton}
+          action={canManageProjects ? createButton : undefined}
         />
       ) : (
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -156,16 +164,18 @@ export default function WorkspaceProjectsClientPage({
               {t('ws-task-boards.description')}
             </p>
           </div>
-          {createButton}
+          {canManageProjects ? createButton : null}
         </div>
       )}
 
       {showSeparator && <Separator />}
 
-      <QuickCreateBoardDialog
-        wsId={resolvedWsId}
-        openWhenEmpty={q.trim() === '' && (boardsPayload?.count ?? 0) === 0}
-      />
+      {canManageProjects ? (
+        <QuickCreateBoardDialog
+          wsId={resolvedWsId}
+          openWhenEmpty={q.trim() === '' && (boardsPayload?.count ?? 0) === 0}
+        />
+      ) : null}
       <EnhancedBoardsView wsId={resolvedWsId} />
     </div>
   );

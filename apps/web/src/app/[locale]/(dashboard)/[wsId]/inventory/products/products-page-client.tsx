@@ -13,18 +13,22 @@ import {
 } from 'nuqs';
 import { useCallback, useState } from 'react';
 import { productColumns } from './columns';
-import { productStatusValues, useWorkspaceProducts } from './hooks';
+import {
+  productStatusValues,
+  useWorkspaceCurrency,
+  useWorkspaceProducts,
+} from './hooks';
 import { ProductsExportDialogContent } from './products-export-dialog-content';
 import { ProductsFilters } from './products-filters';
 import { ProductQuickDialog } from './quick-dialog';
 
 interface Props {
-  initialData: {
+  initialData?: {
     data: Product[];
     count: number;
   };
   wsId: string;
-  currency: string;
+  currency?: string;
   canUpdateInventory: boolean;
   canDeleteInventory: boolean;
   canViewStockQuantity: boolean;
@@ -54,6 +58,8 @@ export function ProductsPageClient({
 }: Props) {
   const t = useTranslations();
   const queryClient = useQueryClient();
+  const currencyQuery = useWorkspaceCurrency(wsId);
+  const resolvedCurrency = currencyQuery.data || currency || 'USD';
 
   const [selectedProductId, setSelectedProductId] = useState<
     string | undefined
@@ -277,7 +283,7 @@ export function ProductsPageClient({
           canUpdateInventory,
           canDeleteInventory,
           canViewStockQuantity,
-          currency,
+          currency: resolvedCurrency,
         }}
         defaultVisibility={{
           id: false,
@@ -294,7 +300,7 @@ export function ProductsPageClient({
             status={status}
             sortBy={sortBy || undefined}
             sortOrder={sortOrder || undefined}
-            currency={currency}
+            currency={resolvedCurrency}
           />
         }
         onRefresh={() => {
@@ -313,7 +319,7 @@ export function ProductsPageClient({
         canDeleteInventory={canDeleteInventory}
         canViewStockQuantity={canViewStockQuantity}
         canUpdateStockQuantity={canUpdateStockQuantity}
-        currency={currency}
+        currency={resolvedCurrency}
       />
     </div>
   );

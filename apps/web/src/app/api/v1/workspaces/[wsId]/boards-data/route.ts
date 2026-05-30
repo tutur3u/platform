@@ -1,3 +1,7 @@
+import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import type { WorkspaceTaskBoard } from '@tuturuuu/types';
 import {
@@ -8,6 +12,7 @@ import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper'
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { ensureDefaultPersonalTaskBoard } from '@/lib/tasks/default-personal-task-board';
 
 const TASKS_APP_SESSION_AUTH = {
@@ -46,23 +51,36 @@ export const GET = withSessionAuth<{ wsId: string }>(
         );
       }
 
-      if (!memberCheck.ok) {
+      const sbAdmin = await createAdminClient();
+      const guestShares = memberCheck.ok
+        ? []
+        : await loadTaskBoardGuestSharesForWorkspace({
+            sbAdmin,
+            user,
+            workspaceId: wsId,
+          });
+      const guestSummary = summarizeTaskBoardGuestShares(guestShares);
+
+      if (!memberCheck.ok && guestSummary.boardCount === 0) {
         return NextResponse.json(
           { error: "You don't have access to this workspace" },
           { status: 403 }
         );
       }
 
-      const sbAdmin = await createAdminClient();
-
-      try {
-        await ensureDefaultPersonalTaskBoard({
-          sbAdmin,
-          userId: user.id,
-          wsId,
-        });
-      } catch (error) {
-        console.error('Failed to ensure default personal task board:', error);
+      if (memberCheck.ok) {
+        try {
+          await ensureDefaultPersonalTaskBoard({
+            sbAdmin,
+            userId: user.id,
+            wsId,
+          });
+        } catch (error) {
+          serverLogger.error(
+            'Failed to ensure default personal task board:',
+            error
+          );
+        }
       }
 
       // Build the main query for boards
@@ -74,6 +92,10 @@ export const GET = withSessionAuth<{ wsId: string }>(
         .order('created_at', { ascending: false });
 
       if (q) queryBuilder.ilike('name', `%${q}%`);
+
+      if (!memberCheck.ok) {
+        queryBuilder.in('id', guestSummary.boardIds);
+      }
 
       const parsedPage = parseInt(page, 10);
       const parsedSize = parseInt(pageSize, 10);
@@ -120,6 +142,11 @@ export const GET = withSessionAuth<{ wsId: string }>(
       // Group data by board
       const boardsWithData = boards.map((board) => ({
         ...board,
+        access_type: memberCheck.ok ? 'member' : 'guest',
+        guest_permission: memberCheck.ok
+          ? null
+          : (guestShares.find((share) => share.board_id === board.id)
+              ?.permission ?? 'view'),
         task_lists: (taskLists || [])
           .filter((list) => list.board_id === board.id)
           .map((list) => ({
@@ -128,9 +155,16 @@ export const GET = withSessionAuth<{ wsId: string }>(
           })),
       })) as WorkspaceTaskBoard[];
 
-      return NextResponse.json({ data: boardsWithData, count });
+      return NextResponse.json({
+        data: boardsWithData,
+        count,
+        access_type: memberCheck.ok ? 'member' : 'guest',
+        guest_highest_permission: memberCheck.ok
+          ? null
+          : guestSummary.highestPermission,
+      });
     } catch (error) {
-      console.error('Error fetching boards data:', error);
+      serverLogger.error('Error fetching boards data:', error);
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }

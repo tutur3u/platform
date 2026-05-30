@@ -53,6 +53,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
 
   const data = queryData?.data || [];
   const count = queryData?.count || 0;
+  const canManageBoards = queryData?.access_type !== 'guest';
 
   const safeData = useMemo(() => data || [], [data]);
 
@@ -312,7 +313,11 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
                         </div>
                       </button>
 
-                      <BoardCardActions wsId={wsId} board={board} />
+                      <BoardCardActions
+                        wsId={wsId}
+                        board={board}
+                        canManageBoards={canManageBoards}
+                      />
                     </div>
                   </div>
                 );
@@ -328,7 +333,7 @@ export function EnhancedBoardsView({ wsId }: EnhancedBoardsViewProps) {
             data={filteredData}
             count={hasActiveFilters ? filteredData.length : count}
             hideToolbar={true}
-            extraData={{ tasksHref }}
+            extraData={{ tasksHref, canManageBoards }}
             defaultVisibility={{
               id: false,
               created_at: false,

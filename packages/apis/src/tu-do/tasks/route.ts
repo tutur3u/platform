@@ -31,6 +31,10 @@ import {
 import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-description';
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  canEditTaskBoardAccess,
+  resolveTaskBoardAccess,
+} from '../board-access';
 import { generateTaskEmbedding } from './generate-task-embedding';
 import {
   buildTaskRelationshipSummary,
@@ -626,6 +630,10 @@ export async function handleTaskRouteGET(
       userId: user.id,
       wsId,
     });
+    const sbAdmin = await createAdminClient();
+    const url = new URL(request.url);
+    const boardId = url.searchParams.get('boardId');
+    const listId = url.searchParams.get('listId');
 
     const memberCheck = await verifyWorkspaceMembershipType({
       wsId: normalizedWorkspaceId,
@@ -640,16 +648,28 @@ export async function handleTaskRouteGET(
       );
     }
 
+    let isGuestBoardAccess = false;
+
     if (!memberCheck.ok) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
+      if (!boardId && !listId) {
+        return NextResponse.json(
+          { error: 'Workspace access denied' },
+          { status: 403 }
+        );
+      }
+
+      const boardAccess = await resolveTaskBoardAccess({
+        boardId,
+        listId,
+        sbAdmin,
+        supabase,
+        user,
+        wsId: normalizedWorkspaceId,
+      });
+
+      if ('error' in boardAccess) return boardAccess.error;
+      isGuestBoardAccess = boardAccess.access.mode === 'guest';
     }
-
-    const sbAdmin = await createAdminClient();
-
-    const url = new URL(request.url);
 
     const parsedLimit = Number.parseInt(
       url.searchParams.get('limit') ?? '',
@@ -666,14 +686,12 @@ export async function handleTaskRouteGET(
     );
     const offset =
       Number.isFinite(parsedOffset) && parsedOffset >= 0 ? parsedOffset : 0;
-    const boardId = url.searchParams.get('boardId');
-    const listId = url.searchParams.get('listId');
     const searchQuery = url.searchParams.get('q')?.trim();
     const identifierQuery = url.searchParams.get('identifier')?.trim();
     const includeRelationshipSummaryParam = url.searchParams.get(
       'includeRelationshipSummary'
     );
-    const includeRelationshipSummary =
+    let includeRelationshipSummary =
       includeRelationshipSummaryParam !== 'false';
     const includeDeletedParam = url.searchParams.get('includeDeleted');
     const includeDeletedMode =
@@ -723,6 +741,22 @@ export async function handleTaskRouteGET(
 
     const forTimeTracking = url.searchParams.get('forTimeTracking') === 'true';
 
+    if (isGuestBoardAccess) {
+      if (
+        sourceScope !== 'all_visible' ||
+        sourceWorkspaceIds.length > 0 ||
+        sourceBoardIds.length > 0 ||
+        forTimeTracking
+      ) {
+        return NextResponse.json(
+          { error: 'Workspace access denied' },
+          { status: 403 }
+        );
+      }
+
+      includeRelationshipSummary = false;
+    }
+
     const { data: workspaceRow, error: workspaceError } = await sbAdmin
       .from('workspaces')
       .select('personal')
@@ -742,6 +776,7 @@ export async function handleTaskRouteGET(
 
     if (
       includeCount &&
+      memberCheck.ok &&
       isPersonalWorkspace &&
       !forTimeTracking &&
       personalExternalCountBoardId
@@ -1113,6 +1148,7 @@ export async function handleTaskRouteGET(
 
     if (
       isPersonalWorkspace &&
+      memberCheck.ok &&
       !forTimeTracking &&
       sourceScope === 'all_visible' &&
       (boardId || listId || virtualStagingBoardId)
@@ -1580,13 +1616,6 @@ export async function handleTaskRoutePOST(
       );
     }
 
-    if (!memberCheck.ok) {
-      return NextResponse.json(
-        { error: 'Workspace access denied' },
-        { status: 403 }
-      );
-    }
-
     const body = CreateTaskSchema.parse(await request.json());
     const {
       name,
@@ -1648,6 +1677,36 @@ export async function handleTaskRoutePOST(
 
     if (!listRow || listRow.workspace_boards?.ws_id !== normalizedWorkspaceId) {
       return NextResponse.json({ error: 'List not found' }, { status: 404 });
+    }
+
+    if (!memberCheck.ok) {
+      const boardAccess = await resolveTaskBoardAccess({
+        listId,
+        requiredPermission: 'edit',
+        sbAdmin,
+        supabase,
+        user,
+        wsId: normalizedWorkspaceId,
+      });
+
+      if ('error' in boardAccess) return boardAccess.error;
+      if (!canEditTaskBoardAccess(boardAccess.access)) {
+        return NextResponse.json(
+          { error: "You don't have permission to perform this operation" },
+          { status: 403 }
+        );
+      }
+
+      if (
+        (normalizedAssigneeIds?.length ?? 0) > 0 ||
+        (normalizedLabelIds?.length ?? 0) > 0 ||
+        (normalizedProjectIds?.length ?? 0) > 0
+      ) {
+        return NextResponse.json(
+          { error: 'Guests cannot assign workspace-only task resources' },
+          { status: 403 }
+        );
+      }
     }
 
     if (listRow.deleted) {

@@ -1,15 +1,12 @@
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
-import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import { batchColumns } from '@/data/columns/batches';
-import { getInventoryBatches } from '@/lib/inventory/product-rpc';
+import { InventoryDataTableClient } from '../_components/inventory-data-table-client';
 
 export const metadata: Metadata = {
   title: 'Batches',
@@ -21,17 +18,9 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
 }
 
-export default async function WorkspaceBatchesPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceBatchesPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -62,8 +51,6 @@ export default async function WorkspaceBatchesPage({
         // const canUpdateInventory = containsPermission('update_inventory');
         // const canDeleteInventory = containsPermission('delete_inventory');
 
-        const { data, count } = await getData(wsId, await searchParams);
-
         return (
           <>
             <FeatureSummary
@@ -75,11 +62,11 @@ export default async function WorkspaceBatchesPage({
               // form={<BatchForm wsId={wsId} />}
             />
             <Separator className="my-4" />
-            <CustomDataTable
-              data={data}
+            <InventoryDataTableClient
+              resource="batches"
+              wsId={wsId}
               columnGenerator={batchColumns}
               namespace="batch-data-table"
-              count={count}
               defaultVisibility={{
                 id: false,
                 created_at: false,
@@ -90,34 +77,4 @@ export default async function WorkspaceBatchesPage({
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = await createAdminClient();
-
-  let start = 0;
-  let limit = 10;
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    start = (parsedPage - 1) * parsedSize;
-    limit = parsedSize;
-  }
-
-  const { data, count } = await getInventoryBatches({
-    limit,
-    offset: start,
-    sbAdmin: supabase,
-    search: q,
-    wsId,
-  });
-
-  return { data, count } as { data: ProductBatch[]; count: number };
 }

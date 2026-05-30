@@ -135,6 +135,36 @@ export function formatChatTime(value?: string | null) {
   }).format(new Date(value));
 }
 
+export function formatChatRelativeTime(value?: string | null) {
+  if (!value) return '';
+
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return '';
+
+  const diff = time - Date.now();
+  const abs = Math.abs(diff);
+
+  if (abs < 60_000) return 'now';
+
+  const units: Array<[string, number]> = [
+    ['y', 31_536_000_000],
+    ['mo', 2_592_000_000],
+    ['w', 604_800_000],
+    ['d', 86_400_000],
+    ['h', 3_600_000],
+    ['m', 60_000],
+  ];
+
+  for (const [label, size] of units) {
+    if (abs >= size) {
+      const count = Math.max(1, Math.round(abs / size));
+      return diff > 0 ? `in ${count}${label}` : `${count}${label}`;
+    }
+  }
+
+  return 'now';
+}
+
 export function formatChatDate(value?: string | null) {
   if (!value) return '';
 

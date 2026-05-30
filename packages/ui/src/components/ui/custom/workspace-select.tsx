@@ -98,7 +98,7 @@ function WorkspaceIcon({
   return (
     <Avatar
       className={cn(
-        'h-5 w-5 flex-none',
+        'h-5 max-h-5 min-h-5 w-5 min-w-5 max-w-5 flex-none overflow-hidden',
         resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm',
         className
       )}
@@ -109,15 +109,21 @@ function WorkspaceIcon({
           (name ? `https://avatar.vercel.sh/${name}.png` : undefined)
         }
         alt={name || 'Workspace'}
-        className={resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'}
+        className={cn(
+          'h-full w-full object-cover',
+          resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
+        )}
       />
       <AvatarFallback
         className={cn(
-          'text-xs',
+          'h-full w-full text-xs',
           resolvedAvatarUrl ? 'rounded-xs' : 'rounded-sm'
         )}
       >
-        <AvatarImage src={fallbackLogoUrl} />
+        <AvatarImage
+          className="h-full w-full object-cover"
+          src={fallbackLogoUrl}
+        />
         {name ? getInitials(name) : '?'}
       </AvatarFallback>
     </Avatar>
@@ -282,11 +288,21 @@ export function WorkspaceSelect({
     }
   }
 
-  const personalWorkspace = workspaces?.find((ws) => ws?.personal === true);
-  const rootWorkspace = workspaces?.find((ws) => ws?.id === ROOT_WORKSPACE_ID);
+  const personalWorkspace = workspaces?.find(
+    (ws) => ws?.personal === true && ws.access_type !== 'guest'
+  );
+  const rootWorkspace = workspaces?.find(
+    (ws) => ws?.id === ROOT_WORKSPACE_ID && ws.access_type !== 'guest'
+  );
   const nonPersonalWorkspaces =
-    workspaces?.filter((ws) => !ws?.personal && ws?.id !== ROOT_WORKSPACE_ID) ||
-    [];
+    workspaces?.filter(
+      (ws) =>
+        !ws?.personal &&
+        ws?.id !== ROOT_WORKSPACE_ID &&
+        ws.access_type !== 'guest'
+    ) || [];
+  const guestWorkspaces =
+    workspaces?.filter((ws) => ws.access_type === 'guest') || [];
 
   const groups = [
     rootWorkspace && {
@@ -352,6 +368,27 @@ export function WorkspaceSelect({
         })
       ),
     },
+    guestWorkspaces.length > 0 && {
+      id: 'guest-workspaces',
+      label: t('common.guest_workspaces'),
+      teams: guestWorkspaces.map((workspace: InternalApiWorkspaceSummary) => ({
+        id: workspace.id,
+        label: workspace.name || 'Untitled',
+        value: toWorkspaceSlug(workspace.id, {
+          personal: workspace?.personal,
+        }),
+        accessType: 'guest' as const,
+        avatarUrl: resolveWorkspaceAvatarUrl(
+          workspace.avatar_url,
+          fallbackLogoUrl
+        ),
+        guestBoardCount: workspace.guest_board_count ?? 0,
+        guestLandingPath: workspace.guest_landing_path ?? '/tasks/boards',
+        guestProducts: workspace.guest_products ?? ['tasks'],
+        guestPermission: workspace.guest_highest_permission ?? 'view',
+        tier: workspace.tier || null,
+      })),
+    },
   ].filter(Boolean) as {
     id: string;
     label: string;
@@ -361,18 +398,29 @@ export function WorkspaceSelect({
       value: string | undefined;
       isCreator?: boolean;
       avatarUrl?: string | null;
+      accessType?: 'member' | 'guest';
+      guestBoardCount?: number;
+      guestLandingPath?: string | null;
+      guestPermission?: 'view' | 'edit' | null;
+      guestProducts?: Array<'tasks'>;
       tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
       isRoot?: boolean;
     }[];
   }[];
 
   const onValueChange = (nextSlug: string) => {
-    let newPathname = pathname
-      ? (resolveNextPathname?.({
-          currentPathname: pathname,
-          nextSlug,
-        }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
-      : undefined;
+    const selectedTeam = groups
+      .flatMap((group) => group.teams)
+      .find((team) => team.value === nextSlug);
+    let newPathname =
+      selectedTeam?.accessType === 'guest' && selectedTeam.guestLandingPath
+        ? `/${nextSlug}${selectedTeam.guestLandingPath}`
+        : pathname
+          ? (resolveNextPathname?.({
+              currentPathname: pathname,
+              nextSlug,
+            }) ?? pathname.replace(/^\/[^/]+/, `/${nextSlug}`))
+          : undefined;
     if (newPathname) {
       // Regex to match a UUID at the end of the string, with or without dashes
       const uuidRegex =
@@ -568,6 +616,11 @@ export function WorkspaceSelect({
                         value: string | undefined;
                         isCreator?: boolean;
                         avatarUrl?: string | null;
+                        accessType?: 'member' | 'guest';
+                        guestBoardCount?: number;
+                        guestLandingPath?: string | null;
+                        guestPermission?: 'view' | 'edit' | null;
+                        guestProducts?: Array<'tasks'>;
                         tier?: 'FREE' | 'PLUS' | 'PRO' | 'ENTERPRISE' | null;
                         isRoot?: boolean;
                       }) => {
@@ -620,56 +673,74 @@ export function WorkspaceSelect({
                                   {team.tier || 'FREE'}
                                 </Badge>
                               )}
+                              {team.accessType === 'guest' && (
+                                <>
+                                  <Badge
+                                    variant="outline"
+                                    className="h-4 shrink-0 border-dynamic-green/50 bg-dynamic-green/10 px-1 py-0 font-medium text-[10px] text-dynamic-green"
+                                  >
+                                    {t('common.guest_access')}
+                                  </Badge>
+                                  <Badge
+                                    variant="outline"
+                                    className="h-4 shrink-0 border-dynamic-blue/50 bg-dynamic-blue/10 px-1 py-0 font-medium text-[10px] text-dynamic-blue"
+                                  >
+                                    {t('common.tasks_only')}
+                                  </Badge>
+                                </>
+                              )}
                             </div>
                             <div className="flex shrink-0 items-center gap-0.5">
-                              <Button
-                                type="button"
-                                variant={
-                                  isDefaultWorkspace ? 'secondary' : 'ghost'
-                                }
-                                size="xs"
-                                className={cn(
-                                  'h-6 w-6 shrink-0 rounded-sm p-0',
-                                  isDefaultWorkspace &&
-                                    'bg-dynamic-amber/12 text-dynamic-amber hover:bg-dynamic-amber/18 hover:text-dynamic-amber'
-                                )}
-                                aria-label="Default workspace"
-                                title="Default workspace"
-                                disabled={
-                                  isDefaultWorkspace ||
-                                  isUpdatingDefaultWorkspace ||
-                                  updateDefaultWorkspaceMutation.isPending
-                                }
-                                onMouseDown={(event) => {
-                                  event.preventDefault();
-                                }}
-                                onClick={(event) => {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-
-                                  if (
-                                    isDefaultWorkspace ||
-                                    isUpdatingDefaultWorkspace
-                                  ) {
-                                    return;
+                              {team.accessType !== 'guest' && (
+                                <Button
+                                  type="button"
+                                  variant={
+                                    isDefaultWorkspace ? 'secondary' : 'ghost'
                                   }
+                                  size="xs"
+                                  className={cn(
+                                    'h-6 w-6 shrink-0 rounded-sm p-0',
+                                    isDefaultWorkspace &&
+                                      'bg-dynamic-amber/12 text-dynamic-amber hover:bg-dynamic-amber/18 hover:text-dynamic-amber'
+                                  )}
+                                  aria-label="Default workspace"
+                                  title="Default workspace"
+                                  disabled={
+                                    isDefaultWorkspace ||
+                                    isUpdatingDefaultWorkspace ||
+                                    updateDefaultWorkspaceMutation.isPending
+                                  }
+                                  onMouseDown={(event) => {
+                                    event.preventDefault();
+                                  }}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    event.stopPropagation();
 
-                                  updateDefaultWorkspaceMutation.mutate(
-                                    team.id
-                                  );
-                                }}
-                              >
-                                {isUpdatingDefaultWorkspace ? (
-                                  <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                  <Star
-                                    className={cn(
-                                      'h-3 w-3',
-                                      isDefaultWorkspace && 'fill-current'
-                                    )}
-                                  />
-                                )}
-                              </Button>
+                                    if (
+                                      isDefaultWorkspace ||
+                                      isUpdatingDefaultWorkspace
+                                    ) {
+                                      return;
+                                    }
+
+                                    updateDefaultWorkspaceMutation.mutate(
+                                      team.id
+                                    );
+                                  }}
+                                >
+                                  {isUpdatingDefaultWorkspace ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <Star
+                                      className={cn(
+                                        'h-3 w-3',
+                                        isDefaultWorkspace && 'fill-current'
+                                      )}
+                                    />
+                                  )}
+                                </Button>
+                              )}
                               <CheckIcon
                                 className={cn(
                                   'h-3.5 w-3.5 shrink-0',

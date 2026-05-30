@@ -57,6 +57,12 @@ export function BoardClient({
     staleTime: 5 * 60 * 1000,
   });
   const boardWorkspaceId = board?.ws_id ?? workspace.id;
+  const canManageBoard =
+    (
+      board as
+        | (WorkspaceTaskBoard & { access_type?: 'member' | 'guest' })
+        | undefined
+    )?.access_type !== 'guest';
   const lists = useMemo(
     () =>
       (board as (WorkspaceTaskBoard & { task_lists?: TaskList[] }) | undefined)
@@ -254,6 +260,7 @@ export function BoardClient({
           lists={lists}
           workspaceLabels={workspaceLabels}
           currentUserId={currentUserId}
+          canManageBoard={canManageBoard}
         />
       </ProgressiveLoaderProvider>
     </BoardBroadcastProvider>

@@ -4,6 +4,12 @@ import {
   normalizeWorkspaceId,
 } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@/lib/inventory/api-list-query';
 
 interface Params {
   params: Promise<{
@@ -15,6 +21,16 @@ export async function GET(req: Request, { params }: Params) {
   const supabase = await createClient(req);
   const { wsId: id } = await params;
   const wsId = await normalizeWorkspaceId(id, supabase);
+  const shouldPaginate = shouldReturnPaginatedInventoryList(req);
+
+  const parsedQuery = parseInventoryApiListQuery(req);
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
+
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
@@ -27,17 +43,30 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await supabase
+  const query = supabase
     .from('product_categories')
-    .select('*')
+    .select('*', { count: shouldPaginate ? 'exact' : undefined })
     .eq('ws_id', wsId);
 
+  const { q, page, pageSize } = parsedQuery.data;
+  if (q) query.ilike('name', `%${q}%`);
+  if (shouldPaginate) {
+    const { start, end } = getInventoryApiListRange({ page, pageSize });
+    query.range(start, end);
+  }
+
+  const { data, error, count } = await query;
+
   if (error) {
-    console.log(error);
+    serverLogger.error('Error fetching product categories', error);
     return NextResponse.json(
       { message: 'Error fetching product categories' },
       { status: 500 }
     );
+  }
+
+  if (shouldPaginate) {
+    return NextResponse.json({ count: count ?? 0, data: data ?? [] });
   }
 
   return NextResponse.json(data);
@@ -67,7 +96,7 @@ export async function POST(req: Request, { params }: Params) {
   });
 
   if (error) {
-    console.log(error);
+    serverLogger.error('Error creating inventory category', error);
     return NextResponse.json(
       { message: 'Error creating inventory category' },
       { status: 500 }

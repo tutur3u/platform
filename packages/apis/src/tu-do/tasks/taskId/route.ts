@@ -19,6 +19,11 @@ import { deriveTaskDescriptionYjsState } from '@tuturuuu/utils/yjs-task-descript
 import { type NextRequest, NextResponse } from 'next/server';
 import { ZodError } from 'zod';
 import {
+  resolveTaskBoardAccess,
+  type TaskBoardAccess,
+  type TaskBoardGuestPermission,
+} from '../../board-access';
+import {
   loadPersonalTaskMetadata,
   replacePersonalTaskLabels,
   replacePersonalTaskProjects,
@@ -51,6 +56,7 @@ type TaskWorkspaceAccess =
   | {
       supabase: TypedSupabaseClient;
       taskId: string;
+      access: TaskBoardAccess;
       user: SupabaseUser;
       wsId: string;
     }
@@ -90,7 +96,11 @@ async function resolveTaskRequestAuth(
 async function requireWorkspaceAccess(
   request: NextRequest,
   rawParams: unknown,
-  authContext?: TaskDetailRouteAuthContext
+  authContext?: TaskDetailRouteAuthContext,
+  options: {
+    memberOnly?: boolean;
+    requiredPermission?: TaskBoardGuestPermission;
+  } = {}
 ): Promise<TaskWorkspaceAccess> {
   const { wsId: rawWsId, taskId } = paramsSchema.parse(rawParams);
   const resolvedAuth = await resolveTaskRequestAuth(request, authContext);
@@ -115,7 +125,17 @@ async function requireWorkspaceAccess(
     };
   }
 
-  if (!memberCheck.ok) {
+  if (memberCheck.ok) {
+    return {
+      access: { mode: 'member', permission: 'edit' },
+      supabase,
+      user,
+      wsId,
+      taskId,
+    };
+  }
+
+  if (options.memberOnly) {
     return {
       error: NextResponse.json(
         { error: 'Workspace access denied' },
@@ -124,7 +144,31 @@ async function requireWorkspaceAccess(
     };
   }
 
-  return { supabase, user, wsId, taskId };
+  const sbAdmin = await createAdminClient();
+  const boardAccess = await resolveTaskBoardAccess({
+    requiredPermission: options.requiredPermission ?? 'view',
+    sbAdmin,
+    supabase,
+    taskId,
+    user,
+    wsId,
+  });
+
+  if ('error' in boardAccess) return boardAccess;
+
+  if (boardAccess.wsId !== wsId) {
+    return {
+      error: NextResponse.json({ error: 'Task not found' }, { status: 404 }),
+    };
+  }
+
+  return {
+    access: boardAccess.access,
+    supabase,
+    user,
+    wsId,
+    taskId,
+  };
 }
 
 async function getWorkspaceTask(
@@ -599,7 +643,9 @@ export async function handleTaskDetailRoutePUT(
   auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params, auth);
+    const access = await requireWorkspaceAccess(request, await params, auth, {
+      requiredPermission: 'edit',
+    });
     if ('error' in access) return access.error;
 
     const { user, wsId, taskId } = access;
@@ -698,12 +744,28 @@ export async function handleTaskDetailRoutePUT(
       });
     }
 
+    const isGuestBoardAccess = access.access.mode === 'guest';
+
+    if (isGuestBoardAccess) {
+      if (
+        body.deleted !== undefined ||
+        (normalizedAssigneeIds?.length ?? 0) > 0 ||
+        (normalizedLabelIds?.length ?? 0) > 0 ||
+        (normalizedProjectIds?.length ?? 0) > 0
+      ) {
+        return NextResponse.json(
+          { error: 'Guests cannot update workspace-only task resources' },
+          { status: 403 }
+        );
+      }
+    }
+
     let targetListStatus: string | null = null;
 
     if (body.list_id) {
       const { data: listCheck, error: listError } = await sbAdmin
         .from('task_lists')
-        .select('id, status, workspace_boards!inner(ws_id)')
+        .select('id, board_id, status, workspace_boards!inner(ws_id)')
         .eq('id', body.list_id)
         .eq('workspace_boards.ws_id', wsId)
         .maybeSingle();
@@ -720,6 +782,16 @@ export async function handleTaskDetailRoutePUT(
         return NextResponse.json(
           { error: 'Task list not found' },
           { status: 404 }
+        );
+      }
+
+      if (
+        isGuestBoardAccess &&
+        listCheck.board_id !== task.task_lists?.board_id
+      ) {
+        return NextResponse.json(
+          { error: 'Guests cannot move tasks outside the shared board' },
+          { status: 403 }
         );
       }
 
@@ -1015,7 +1087,9 @@ export async function handleTaskDetailRouteDELETE(
   auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params, auth);
+    const access = await requireWorkspaceAccess(request, await params, auth, {
+      memberOnly: true,
+    });
     if ('error' in access) return access.error;
 
     const { wsId, taskId } = access;
@@ -1100,7 +1174,9 @@ export async function handleTaskDetailRoutePATCH(
   auth?: TaskDetailRouteAuthContext
 ) {
   try {
-    const access = await requireWorkspaceAccess(request, await params, auth);
+    const access = await requireWorkspaceAccess(request, await params, auth, {
+      memberOnly: true,
+    });
     if ('error' in access) return access.error;
 
     const { user, wsId, taskId } = access;

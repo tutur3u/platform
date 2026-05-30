@@ -1,10 +1,15 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import {
+  getInventoryProduct,
+  getInventoryProductFormOptions,
   type InventoryManufacturer,
   listInventoryManufacturers,
+  listInventoryProductCategories,
   listInventoryProducts,
   listInventoryUnits,
-} from '@tuturuuu/internal-api';
+  listInventoryWarehouses,
+} from '@tuturuuu/internal-api/inventory';
+import { getOptionalWorkspaceConfig } from '@tuturuuu/internal-api/workspace-configs';
 import type { Product } from '@tuturuuu/types/primitives/Product';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
 import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
@@ -140,22 +145,38 @@ export function useWorkspaceProduct(
     queryKey: ['workspace-product', wsId, productId],
     queryFn: async (): Promise<Product> => {
       if (!productId) throw new Error('Product ID is required');
-
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/products/${productId}`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch product');
-      }
-
-      const json = await response.json();
-      return json as Product;
+      return getInventoryProduct(wsId, productId);
     },
     enabled: options?.enabled !== false && !!productId,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+export function useInventoryProductFormOptions(
+  wsId: string,
+  options?: {
+    enabled?: boolean;
+  }
+) {
+  return useQuery({
+    queryKey: ['inventory-product-form-options', wsId],
+    queryFn: () => getInventoryProductFormOptions(wsId),
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+}
+
+export function useWorkspaceCurrency(wsId: string) {
+  return useQuery({
+    queryKey: ['workspace-config', wsId, 'DEFAULT_CURRENCY'],
+    queryFn: async () => {
+      const config = await getOptionalWorkspaceConfig(wsId, 'DEFAULT_CURRENCY');
+      return config?.value || 'USD';
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -168,17 +189,10 @@ export function useProductCategories(
   return useQuery({
     queryKey: ['product-categories', wsId],
     queryFn: async (): Promise<ProductCategory[]> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/product-categories`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch product categories');
-      }
-
-      const json = await response.json();
-      return json as ProductCategory[];
+      const response = await listInventoryProductCategories(wsId, {
+        pageSize: 1000,
+      });
+      return response.data as ProductCategory[];
     },
     enabled: options?.enabled !== false,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -195,17 +209,10 @@ export function useProductWarehouses(
   return useQuery({
     queryKey: ['product-warehouses', wsId],
     queryFn: async (): Promise<ProductWarehouse[]> => {
-      const response = await fetch(
-        `/api/v1/workspaces/${wsId}/product-warehouses`,
-        { cache: 'no-store' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch product warehouses');
-      }
-
-      const json = await response.json();
-      return json as ProductWarehouse[];
+      const response = await listInventoryWarehouses(wsId, {
+        pageSize: 1000,
+      });
+      return response.data as ProductWarehouse[];
     },
     enabled: options?.enabled !== false,
     staleTime: 5 * 60 * 1000, // 5 minutes

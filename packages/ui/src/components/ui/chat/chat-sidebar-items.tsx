@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Badge } from '../badge';
 import {
-  formatChatTime,
+  formatChatRelativeTime,
   getChatInitials,
   getConversationTitle,
   getLastMessagePreview,
@@ -40,9 +40,7 @@ export function ConversationRow({
     <button
       className={cn(
         'grid w-full min-w-0 items-center gap-3 overflow-hidden rounded-md px-2 py-2 text-left transition-colors hover:bg-accent',
-        isAiConversation
-          ? 'grid-cols-[2.25rem_minmax(0,1fr)]'
-          : 'grid-cols-[2.25rem_minmax(0,1fr)_3rem]',
+        'grid-cols-[2.25rem_minmax(0,1fr)_3.5rem]',
         isSelected && 'bg-accent'
       )}
       onClick={() => onSelectConversation(conversation.id)}
@@ -70,21 +68,17 @@ export function ConversationRow({
             </Badge>
           )}
         </span>
-        {!isAiConversation && (
-          <span className="mt-0.5 line-clamp-1 break-all text-muted-foreground text-xs">
-            {getLastMessagePreview(conversation.latestMessage, {
-              attachment: t('attachment'),
-              message: t('message'),
-              messageDeleted: t('message_deleted'),
-              noMessagesYet: t('no_messages_yet'),
-              systemEvent: t('system_event'),
-            })}
-          </span>
-        )}
+        <span className="mt-0.5 line-clamp-1 break-all text-muted-foreground text-xs">
+          {getLastMessagePreview(conversation.latestMessage, {
+            attachment: t('attachment'),
+            message: t('message'),
+            messageDeleted: t('message_deleted'),
+            noMessagesYet: t('no_messages_yet'),
+            systemEvent: t('system_event'),
+          })}
+        </span>
       </span>
-      {!isAiConversation && (
-        <ConversationUnreadState conversation={conversation} />
-      )}
+      <ConversationUnreadState conversation={conversation} />
     </button>
   );
 }
@@ -179,9 +173,9 @@ function ConversationUnreadState({
   return (
     <span className="flex w-12 shrink-0 flex-col items-end gap-1 overflow-hidden">
       <span className="max-w-full truncate text-[11px] text-muted-foreground">
-        {conversation.latestMessage
-          ? formatChatTime(conversation.latestMessage.createdAt)
-          : formatChatTime(conversation.updatedAt)}
+        {formatChatRelativeTime(
+          conversation.latestMessage?.createdAt ?? conversation.updatedAt
+        )}
       </span>
       {conversation.unreadCount > 0 && (
         <Badge className="h-5 min-w-5 px-1.5">{conversation.unreadCount}</Badge>

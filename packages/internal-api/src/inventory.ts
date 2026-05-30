@@ -1,3 +1,12 @@
+import type { InventoryOwner } from '@tuturuuu/types/primitives/InventoryOwner';
+import type { Product } from '@tuturuuu/types/primitives/Product';
+import type { ProductBatch } from '@tuturuuu/types/primitives/ProductBatch';
+import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
+import type { ProductPromotion } from '@tuturuuu/types/primitives/ProductPromotion';
+import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
+import type { ProductUnit } from '@tuturuuu/types/primitives/ProductUnit';
+import type { ProductWarehouse } from '@tuturuuu/types/primitives/ProductWarehouse';
+import type { TransactionCategory } from '@tuturuuu/types/primitives/TransactionCategory';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -219,6 +228,12 @@ export type InventoryCatalogListQuery = {
   status?: 'active' | 'archived' | 'all';
 };
 
+export type InventoryNamedListQuery = {
+  q?: string;
+  page?: number;
+  pageSize?: number;
+};
+
 export type InventoryManufacturerPayload = {
   name: string;
 };
@@ -292,6 +307,26 @@ export type InventoryListResponse<T> = {
   count: number;
 };
 
+export type InventoryProductFormOptionsResponse = {
+  categories: ProductCategory[];
+  financeCategories: TransactionCategory[];
+  manufacturers: InventoryManufacturer[];
+  owners: InventoryOwner[];
+  units: ProductUnit[];
+  warehouses: ProductWarehouse[];
+};
+
+export type InventoryStatisticsResponse = {
+  batches: number;
+  categories: number;
+  inventoryProducts: number;
+  products: number;
+  promotions: number;
+  suppliers: number;
+  units: number;
+  warehouses: number;
+};
+
 export type InventoryPublicStorefrontResponse = {
   storefront: InventoryStorefront;
   listings: InventoryStorefrontListing[];
@@ -304,6 +339,10 @@ export type InventoryCheckoutResponse = {
 
 function workspaceInventoryPath(wsId: string, suffix: string) {
   return `/api/v1/workspaces/${encodePathSegment(wsId)}/inventory${suffix}`;
+}
+
+function workspacePath(wsId: string, suffix: string) {
+  return `/api/v1/workspaces/${encodePathSegment(wsId)}${suffix}`;
 }
 
 function workspaceProductUnitsPath(wsId: string, suffix = '') {
@@ -334,6 +373,13 @@ function jsonHeaders(headers?: HeadersInit) {
   return nextHeaders;
 }
 
+function paginatedQuery(query?: InventoryNamedListQuery) {
+  return asQuery({
+    ...query,
+    response: 'paginated',
+  });
+}
+
 export function listInventoryStorefronts(
   wsId: string,
   query?: InventoryStorefrontListQuery,
@@ -347,12 +393,45 @@ export function listInventoryStorefronts(
   });
 }
 
+export function getInventoryStatistics(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryStatisticsResponse>(
+    workspaceInventoryPath(wsId, '/statistics'),
+    { cache: 'no-store' }
+  );
+}
+
 export function getInventoryOverview(
   wsId: string,
   options?: InternalApiClientOptions
 ) {
   return getInternalApiClient(options).json<InventoryOverviewResponse>(
     workspaceInventoryPath(wsId, '/overview'),
+    { cache: 'no-store' }
+  );
+}
+
+export function getInventoryProduct(
+  wsId: string,
+  productId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<Product>(
+    workspacePath(wsId, `/products/${encodePathSegment(productId)}`),
+    { cache: 'no-store' }
+  );
+}
+
+export function getInventoryProductFormOptions(
+  wsId: string,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(
+    options
+  ).json<InventoryProductFormOptionsResponse>(
+    workspaceInventoryPath(wsId, '/product-form-options'),
     { cache: 'no-store' }
   );
 }
@@ -370,6 +449,75 @@ export function listInventoryProducts(
   });
 }
 
+export function listInventoryProductCategories(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<ProductCategory>
+  >(workspacePath(wsId, '/product-categories'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
+export function listInventoryWarehouses(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<ProductWarehouse>
+  >(workspacePath(wsId, '/product-warehouses'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
+export function listInventorySuppliers(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<ProductSupplier>
+  >(workspacePath(wsId, '/product-suppliers'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
+export function listInventoryBatches(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<ProductBatch>
+  >(workspaceInventoryPath(wsId, '/batches'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
+export function listInventoryPromotions(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<ProductPromotion>
+  >(workspacePath(wsId, '/promotions'), {
+    cache: 'no-store',
+    query: asQuery({
+      ...query,
+      inventoryOnly: true,
+      response: 'paginated',
+    }),
+  });
+}
+
 export function listInventoryManufacturers(
   wsId: string,
   options?: InternalApiClientOptions
@@ -381,6 +529,19 @@ export function listInventoryManufacturers(
   });
 }
 
+export function listInventoryManufacturersPage(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    InventoryListResponse<InventoryManufacturer>
+  >(workspaceInventoryPath(wsId, '/manufacturers'), {
+    cache: 'no-store',
+    query: paginatedQuery(query),
+  });
+}
+
 export function listInventoryUnits(
   wsId: string,
   options?: InternalApiClientOptions
@@ -389,6 +550,20 @@ export function listInventoryUnits(
     workspaceProductUnitsPath(wsId),
     {
       cache: 'no-store',
+    }
+  );
+}
+
+export function listInventoryUnitsPage(
+  wsId: string,
+  query?: InventoryNamedListQuery,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<InventoryListResponse<ProductUnit>>(
+    workspaceProductUnitsPath(wsId),
+    {
+      cache: 'no-store',
+      query: paginatedQuery(query),
     }
   );
 }

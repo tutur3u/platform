@@ -369,8 +369,13 @@ export type InternalApiWorkspaceSummary = Pick<
   Workspace,
   'id' | 'name' | 'personal' | 'avatar_url' | 'logo_url'
 > & {
+  access_type?: 'member' | 'guest';
   tier?: Database['public']['Enums']['workspace_product_tier'] | null;
   created_by_me?: boolean;
+  guest_board_count?: number;
+  guest_highest_permission?: 'view' | 'edit' | null;
+  guest_landing_path?: string | null;
+  guest_products?: Array<'tasks'>;
 };
 export type InternalApiWorkspaceMember = Pick<
   WorkspaceUser,
@@ -389,6 +394,11 @@ export type InternalApiWorkspaceDefaultPermission = {
   enabled: boolean;
 };
 export type InternalApiEnhancedWorkspaceMember = PrimitiveUser & {
+  direct_board_guest?: boolean;
+  guest_access_type?: 'task_board';
+  guest_board_count?: number;
+  guest_board_names?: string[];
+  guest_highest_permission?: 'view' | 'edit' | null;
   is_creator: boolean;
   roles: InternalApiWorkspaceMemberRole[];
   default_permissions: InternalApiWorkspaceDefaultPermission[];

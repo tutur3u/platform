@@ -1,7 +1,8 @@
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   filterChatConversationsByScope,
+  formatChatRelativeTime,
   formatFileSize,
   getChatConversationTypesForScope,
   getChatInitials,
@@ -132,6 +133,20 @@ describe('chat utils', () => {
   it('formats file sizes for attachment rows', () => {
     expect(formatFileSize(0)).toBe('0 B');
     expect(formatFileSize(2048)).toBe('2.0 KB');
+  });
+
+  it('formats compact relative chat timestamps', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-05-27T12:00:00.000Z'));
+
+      expect(formatChatRelativeTime('2026-05-27T12:00:00.000Z')).toBe('now');
+      expect(formatChatRelativeTime('2026-05-27T11:55:00.000Z')).toBe('5m');
+      expect(formatChatRelativeTime('2026-05-27T10:00:00.000Z')).toBe('2h');
+      expect(formatChatRelativeTime('2026-05-28T12:00:00.000Z')).toBe('in 1d');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('recognizes read-only virtual AI agent conversations', () => {

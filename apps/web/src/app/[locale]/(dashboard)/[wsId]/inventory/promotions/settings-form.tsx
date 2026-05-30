@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceReferralSettings } from '@tuturuuu/internal-api/promotions';
 import type { Database } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
@@ -62,6 +62,7 @@ export default function WorkspaceSettingsForm({
   const [promotionOptions, setPromotionOptions] = useState<ComboboxOptions[]>(
     []
   );
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const row = Array.isArray(data) ? data[0] : data;
@@ -90,6 +91,9 @@ export default function WorkspaceSettingsForm({
     },
     onSuccess: () => {
       toast.success(t('common.success'));
+      queryClient.invalidateQueries({
+        queryKey: ['inventory-referral-settings', wsId],
+      });
       router.refresh();
     },
     onError: () => {

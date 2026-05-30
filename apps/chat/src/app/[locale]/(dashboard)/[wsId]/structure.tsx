@@ -131,7 +131,7 @@ export function Structure({
         ) : (
           <div className="flex min-h-0 flex-1 overflow-hidden">
             <ChatContextRail closeOnMobile={closeOnMobile} wsId={wsId} />
-            <div className="min-w-0 flex-1">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
               <ChatSidebarPanel
                 archiveFilter={archiveFilter}
                 closeOnMobile={closeOnMobile}

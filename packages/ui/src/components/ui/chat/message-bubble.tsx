@@ -12,6 +12,7 @@ import {
 import type { ChatAttachment, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
 import { Button } from '../button';
 import {
@@ -312,11 +313,12 @@ function ReactionBar({
   onToggleReaction?: (messageId: string, emoji: string) => void;
 }) {
   const t = useTranslations('chat');
+  const [open, setOpen] = useState(false);
 
   if (message.deletedAt || !onToggleReaction) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-1 opacity-100 md:opacity-80 md:transition-opacity md:group-hover:opacity-100">
+    <div className="flex flex-wrap items-center gap-1">
       {message.reactions.map((reaction) => (
         <Button
           className="h-7 gap-1 rounded-full px-2 text-xs"
@@ -329,11 +331,14 @@ function ReactionBar({
           <span>{reaction.count}</span>
         </Button>
       ))}
-      <Popover>
+      <Popover onOpenChange={setOpen} open={open}>
         <PopoverTrigger asChild>
           <Button
             aria-label={t('react_to_message')}
-            className="size-7 rounded-full"
+            className={cn(
+              'pointer-events-none size-7 rounded-full opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100',
+              open && 'pointer-events-auto opacity-100'
+            )}
             size="icon"
             type="button"
             variant="ghost"
@@ -348,7 +353,10 @@ function ReactionBar({
                 aria-label={t('add_reaction', { reaction: emoji })}
                 className="size-9 rounded-md text-lg"
                 key={emoji}
-                onClick={() => onToggleReaction(message.id, emoji)}
+                onClick={() => {
+                  onToggleReaction(message.id, emoji);
+                  setOpen(false);
+                }}
                 size="icon"
                 type="button"
                 variant="ghost"

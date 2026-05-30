@@ -7,6 +7,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@/lib/inventory/api-list-query';
 
 const PromotionSchema = z
   .object({
@@ -36,6 +41,16 @@ interface Params {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: rawWsId } = await params;
+  const shouldPaginate = shouldReturnPaginatedInventoryList(req);
+  const parsedQuery = parseInventoryApiListQuery(req);
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
+
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
@@ -47,14 +62,28 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const { searchParams } = new URL(req.url);
+  const inventoryOnly = searchParams.get('inventoryOnly') === 'true';
 
-  const { data, error } = await sbAdmin
+  const query = sbAdmin
     .from('workspace_promotions')
     .select(
-      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses'
+      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id, created_at',
+      { count: shouldPaginate ? 'exact' : undefined }
     )
-    .eq('ws_id', wsId)
-    .order('code', { ascending: true });
+    .eq('ws_id', wsId);
+
+  const { q, page, pageSize } = parsedQuery.data;
+  if (inventoryOnly) query.neq('promo_type', 'REFERRAL');
+  if (q) query.ilike('name', `%${q}%`);
+  if (shouldPaginate) {
+    const { start, end } = getInventoryApiListRange({ page, pageSize });
+    query.range(start, end);
+  }
+
+  const { data, error, count } = await query.order('code', {
+    ascending: true,
+  });
 
   if (error) {
     serverLogger.error('Error fetching promotions:', error);
@@ -62,6 +91,10 @@ export async function GET(req: Request, { params }: Params) {
       { message: 'Error fetching promotions' },
       { status: 500 }
     );
+  }
+
+  if (shouldPaginate) {
+    return NextResponse.json({ count: count ?? 0, data: data ?? [] });
   }
 
   return NextResponse.json(data ?? []);

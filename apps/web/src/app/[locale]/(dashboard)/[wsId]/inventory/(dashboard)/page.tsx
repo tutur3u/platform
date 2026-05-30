@@ -2,19 +2,8 @@ import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { Suspense } from 'react';
-import LoadingStatisticCard from '@/components/loading-statistic-card';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
-import {
-  BatchesStatistics,
-  InventoryProductsStatistics,
-  ProductCategoriesStatistics,
-  ProductsStatistics,
-  PromotionsStatistics,
-  SuppliersStatistics,
-  UnitsStatistics,
-  WarehousesStatistics,
-} from '../../(dashboard)/statistics';
+import { InventoryStatisticsClient } from './inventory-statistics-client';
 
 export const metadata: Metadata = {
   title: 'Inventory',
@@ -53,41 +42,7 @@ export default async function InventoryPage({ params }: Props) {
           );
         }
 
-        return (
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <ProductsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <InventoryProductsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <ProductCategoriesStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <BatchesStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <WarehousesStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <UnitsStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <SuppliersStatistics wsId={wsId} />
-            </Suspense>
-
-            <Suspense fallback={<LoadingStatisticCard />}>
-              <PromotionsStatistics wsId={wsId} />
-            </Suspense>
-          </div>
-        );
+        return <InventoryStatisticsClient wsId={wsId} />;
       }}
     </WorkspaceWrapper>
   );

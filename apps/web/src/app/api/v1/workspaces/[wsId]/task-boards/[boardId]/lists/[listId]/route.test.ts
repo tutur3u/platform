@@ -92,7 +92,7 @@ describe('task board lists/[listId] route PATCH', () => {
     });
 
     requireBoardAccessMock.mockResolvedValue({
-      supabase: {
+      sbAdmin: {
         from: fromMock,
       },
       boardId: 'board-1',

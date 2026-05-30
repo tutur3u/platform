@@ -164,6 +164,13 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      if (!message) {
+        return NextResponse.json(
+          { message: 'Chat conversation not found' },
+          { status: 404 }
+        );
+      }
+
       const conversation = await callPrivateChatRpc<ChatConversation>(
         'chat_get_conversation',
         {
@@ -172,6 +179,13 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      if (!conversation) {
+        return NextResponse.json(
+          { message: 'Chat conversation not found' },
+          { status: 404 }
+        );
+      }
+
       const audience = getChatRealtimeAudience(conversation);
 
       if (parsed.data.kind === 'user') {
@@ -195,13 +209,35 @@ export const POST = withSessionAuth<RouteParams>(
             });
           }
 
-          const assistantMessages = await sendNativeAiConversationMessages({
-            auth,
-            context: context.context,
-            conversation,
-            request,
-            userMessage: message,
-          });
+          let assistantMessages: ChatMessage[] = [];
+
+          try {
+            assistantMessages = await sendNativeAiConversationMessages({
+              auth,
+              context: context.context,
+              conversation,
+              request,
+              userMessage: message,
+            });
+          } catch (error) {
+            serverLogger.error(
+              'Native Chat AI response failed after user message was saved',
+              {
+                conversationId: conversation.id,
+                error,
+                userMessageId: message.id,
+              }
+            );
+
+            return NextResponse.json(
+              {
+                message,
+                messages: [message],
+              },
+              { status: 201 }
+            );
+          }
+
           await publishChatRealtimeMessages({
             actorUserId: auth.user.id,
             audience,
@@ -332,8 +368,9 @@ function streamNativeAiConversationResponse({
         serverLogger.error('Failed to stream native Chat AI response', {
           conversationId: conversation.id,
           error,
+          userMessageId: userMessage.id,
         });
-        write({ message: 'Failed to send AI chat message', type: 'error' });
+        write({ type: 'done' });
       } finally {
         controller.close();
       }

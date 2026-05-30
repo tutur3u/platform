@@ -1,4 +1,9 @@
+import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
 import { createPolarClient } from '@tuturuuu/payment/polar/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   MAX_ID_LENGTH,
   MAX_WORKSPACE_NAME_LENGTH,
@@ -36,6 +41,38 @@ export const GET = withSessionAuth<{ wsId: string }>(
       .single();
 
     if (error || !data?.workspace_members[0]?.user_id) {
+      const sbAdmin = await createAdminClient({ noCookie: true });
+      const guestShares = await loadTaskBoardGuestSharesForWorkspace({
+        sbAdmin,
+        user,
+        workspaceId: wsId,
+      });
+      const guestSummary = summarizeTaskBoardGuestShares(guestShares);
+
+      if (guestSummary.boardCount > 0) {
+        const { data: guestWorkspace, error: guestWorkspaceError } =
+          await sbAdmin.from('workspaces').select('*').eq('id', wsId).single();
+
+        if (!guestWorkspaceError && guestWorkspace) {
+          return NextResponse.json(
+            {
+              ...guestWorkspace,
+              access_type: 'guest',
+              guest_board_count: guestSummary.boardCount,
+              guest_highest_permission: guestSummary.highestPermission,
+              guest_landing_path: guestSummary.landingPath,
+              guest_products: ['tasks'],
+            },
+            {
+              headers: {
+                'Cache-Control':
+                  'private, max-age=60, stale-while-revalidate=30',
+              },
+            }
+          );
+        }
+      }
+
       return NextResponse.json(
         { message: 'Error fetching workspaces' },
         { status: 500 }

@@ -1,17 +1,15 @@
-import type { InventoryManufacturer } from '@tuturuuu/internal-api';
-import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import FeatureSummary from '@tuturuuu/ui/custom/feature-summary';
 import { Separator } from '@tuturuuu/ui/separator';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
-import { CustomDataTable } from '@/components/custom-data-table';
 import WorkspaceWrapper from '@/components/workspace-wrapper';
 import {
   canManageInventorySetup,
   canViewInventoryCatalog,
 } from '@/lib/inventory/permissions';
+import { InventoryDataTableClient } from '../_components/inventory-data-table-client';
 import { productManufacturerColumns } from './columns';
 import { ProductManufacturerForm } from './form';
 
@@ -25,17 +23,9 @@ interface Props {
   params: Promise<{
     wsId: string;
   }>;
-  searchParams: Promise<{
-    q: string;
-    page: string;
-    pageSize: string;
-  }>;
 }
 
-export default async function WorkspaceManufacturersPage({
-  params,
-  searchParams,
-}: Props) {
+export default async function WorkspaceManufacturersPage({ params }: Props) {
   return (
     <WorkspaceWrapper params={params}>
       {async ({ wsId }) => {
@@ -72,8 +62,6 @@ export default async function WorkspaceManufacturersPage({
         const canUpdateInventory = canManageSetup;
         const canDeleteInventory = canManageSetup;
 
-        const { data, count } = await getData(wsId, await searchParams);
-
         return (
           <>
             <FeatureSummary
@@ -95,11 +83,11 @@ export default async function WorkspaceManufacturersPage({
               }
             />
             <Separator className="my-4" />
-            <CustomDataTable
-              data={data}
+            <InventoryDataTableClient
+              resource="manufacturers"
+              wsId={wsId}
               columnGenerator={productManufacturerColumns}
               namespace="basic-data-table"
-              count={count}
               extraData={{
                 canDeleteInventory,
                 canUpdateInventory,
@@ -114,37 +102,4 @@ export default async function WorkspaceManufacturersPage({
       }}
     </WorkspaceWrapper>
   );
-}
-
-async function getData(
-  wsId: string,
-  {
-    q,
-    page = '1',
-    pageSize = '10',
-  }: { q?: string; page?: string; pageSize?: string }
-) {
-  const supabase = (await createAdminClient()).schema('private');
-
-  const queryBuilder = supabase
-    .from('inventory_manufacturers')
-    .select('*', {
-      count: 'exact',
-    })
-    .eq('ws_id', wsId);
-
-  if (q) queryBuilder.ilike('name', `%${q}%`);
-
-  if (page && pageSize) {
-    const parsedPage = parseInt(page, 10);
-    const parsedSize = parseInt(pageSize, 10);
-    const start = (parsedPage - 1) * parsedSize;
-    const end = parsedPage * parsedSize;
-    queryBuilder.range(start, end).limit(parsedSize);
-  }
-
-  const { data, error, count } = await queryBuilder.order('name');
-  if (error) throw error;
-
-  return { data, count } as { data: InventoryManufacturer[]; count: number };
 }

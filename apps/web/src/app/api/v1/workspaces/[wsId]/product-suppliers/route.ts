@@ -2,6 +2,11 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@/lib/inventory/api-list-query';
 
 interface Params {
   params: Promise<{
@@ -9,11 +14,20 @@ interface Params {
   }>;
 }
 
-export async function GET(_: Request, { params }: Params) {
+export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
+  const shouldPaginate = shouldReturnPaginatedInventoryList(req);
+  const parsedQuery = parseInventoryApiListQuery(req);
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
 
   // Check permissions
-  const permissions = await getPermissions({ wsId: id });
+  const permissions = await getPermissions({ wsId: id, request: req });
   if (!permissions) {
     return Response.json({ error: 'Not found' }, { status: 404 });
   }
@@ -27,11 +41,19 @@ export async function GET(_: Request, { params }: Params) {
 
   const inventory = (await createAdminClient()).schema('private');
 
-  const { data, error } = await inventory
+  const query = inventory
     .from('inventory_suppliers')
-    .select('*')
-    .eq('ws_id', id)
-    .single();
+    .select('*', { count: shouldPaginate ? 'exact' : undefined })
+    .eq('ws_id', id);
+
+  const { q, page, pageSize } = parsedQuery.data;
+  if (q) query.ilike('name', `%${q}%`);
+  if (shouldPaginate) {
+    const { start, end } = getInventoryApiListRange({ page, pageSize });
+    query.range(start, end);
+  }
+
+  const { data, error, count } = await query;
 
   if (error) {
     serverLogger.error('Error fetching product suppliers', error);
@@ -39,6 +61,10 @@ export async function GET(_: Request, { params }: Params) {
       { message: 'Error fetching workspace user groups' },
       { status: 500 }
     );
+  }
+
+  if (shouldPaginate) {
+    return NextResponse.json({ count: count ?? 0, data: data ?? [] });
   }
 
   return NextResponse.json(data);

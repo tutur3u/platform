@@ -4,6 +4,11 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { getInventoryActorContext } from '@/lib/inventory/actor';
+import {
+  getInventoryApiListRange,
+  parseInventoryApiListQuery,
+  shouldReturnPaginatedInventoryList,
+} from '@/lib/inventory/api-list-query';
 import { createInventoryAuditLog } from '@/lib/inventory/audit';
 import { authorizeInventoryWorkspace } from '@/lib/inventory/commerce/auth';
 import {
@@ -25,6 +30,15 @@ export async function GET(req: Request, { params }: Params) {
   const { wsId: id } = await params;
   const authorization = await authorizeInventoryWorkspace(req, id);
   if (!authorization.ok) return authorization.response;
+  const shouldPaginate = shouldReturnPaginatedInventoryList(req);
+  const parsedQuery = parseInventoryApiListQuery(req);
+
+  if (!parsedQuery.success) {
+    return NextResponse.json(
+      { message: 'Invalid query parameters' },
+      { status: 400 }
+    );
+  }
 
   const sbAdmin = await createAdminClient();
   const inventory = sbAdmin.schema('private');
@@ -40,11 +54,19 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  const { data, error } = await inventory
+  const query = inventory
     .from('inventory_units')
-    .select('*')
-    .eq('ws_id', wsId)
-    .order('name');
+    .select('*', { count: shouldPaginate ? 'exact' : undefined })
+    .eq('ws_id', wsId);
+
+  const { q, page, pageSize } = parsedQuery.data;
+  if (q) query.ilike('name', `%${q}%`);
+  if (shouldPaginate) {
+    const { start, end } = getInventoryApiListRange({ page, pageSize });
+    query.range(start, end);
+  }
+
+  const { data, error, count } = await query.order('name');
 
   if (error) {
     serverLogger.error('Error fetching product units', error);
@@ -52,6 +74,10 @@ export async function GET(req: Request, { params }: Params) {
       { message: 'Error fetching product units' },
       { status: 500 }
     );
+  }
+
+  if (shouldPaginate) {
+    return NextResponse.json({ count: count ?? 0, data: data ?? [] });
   }
 
   return NextResponse.json(data ?? []);

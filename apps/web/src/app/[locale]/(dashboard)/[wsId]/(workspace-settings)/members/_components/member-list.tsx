@@ -17,6 +17,11 @@ interface Props {
   workspace?: Workspace | null;
   members: (User & {
     workspace_member_type?: 'MEMBER' | 'GUEST' | null;
+    direct_board_guest?: boolean;
+    guest_access_type?: 'task_board';
+    guest_board_count?: number;
+    guest_board_names?: string[];
+    guest_highest_permission?: 'view' | 'edit' | null;
     is_creator?: boolean;
     roles?: Array<{
       id: string;
@@ -119,7 +124,16 @@ export default function MemberList({
             )}
             {member.workspace_member_type === 'GUEST' && (
               <Badge className="h-5 border-foreground/20 bg-foreground/5 px-1.5 text-foreground/80 text-xs">
-                {t('guest_badge')}
+                {member.direct_board_guest
+                  ? t('direct_board_guest_badge')
+                  : t('guest_badge')}
+              </Badge>
+            )}
+            {member.direct_board_guest && (
+              <Badge className="h-5 border-dynamic-blue/50 bg-dynamic-blue/10 px-1.5 text-dynamic-blue text-xs">
+                {member.guest_highest_permission === 'edit'
+                  ? t('board_guest_can_edit')
+                  : t('board_guest_can_view')}
               </Badge>
             )}
             {member.roles?.map((role) => (
@@ -144,7 +158,7 @@ export default function MemberList({
         </div>
       </div>
 
-      {workspace && (
+      {workspace && !member.direct_board_guest && (
         <div className="absolute top-4 right-4 flex gap-2">
           <MemberSettingsButton
             workspace={workspace}
@@ -152,6 +166,33 @@ export default function MemberList({
             currentUser={currentUser}
             canManageMembers={canManageMembers}
           />
+        </div>
+      )}
+
+      {member.direct_board_guest && (
+        <div className="mt-3 rounded-md border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-sm">
+          <div className="font-medium text-dynamic-blue">
+            {t('direct_board_guest_scope_title')}
+          </div>
+          <p className="mt-1 text-foreground/70">
+            {t('direct_board_guest_scope_description', {
+              count: member.guest_board_count ?? 0,
+            })}
+          </p>
+          {member.guest_board_names && member.guest_board_names.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1">
+              {member.guest_board_names.slice(0, 4).map((name) => (
+                <Badge key={name} variant="outline" className="text-xs">
+                  {name}
+                </Badge>
+              ))}
+              {member.guest_board_names.length > 4 && (
+                <Badge variant="outline" className="text-xs">
+                  +{member.guest_board_names.length - 4}
+                </Badge>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -188,12 +229,15 @@ export default function MemberList({
       </div>
 
       {/* Permission Breakdown - only show for non-pending members */}
-      {!member?.pending && workspace && member.id && (
-        <MemberPermissionBreakdown
-          wsId={workspace.id}
-          member={member as typeof member & { id: string }}
-        />
-      )}
+      {!member?.pending &&
+        workspace &&
+        member.id &&
+        !member.direct_board_guest && (
+          <MemberPermissionBreakdown
+            wsId={workspace.id}
+            member={member as typeof member & { id: string }}
+          />
+        )}
     </div>
   ));
 

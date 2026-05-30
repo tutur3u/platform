@@ -86,6 +86,14 @@ export function ProductUnitForm({
       await queryClient.invalidateQueries({
         queryKey: ['product-units', wsId],
       });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'units', wsId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', wsId],
+        }),
+      ]);
       onFinish?.(data);
       router.refresh();
     } catch {

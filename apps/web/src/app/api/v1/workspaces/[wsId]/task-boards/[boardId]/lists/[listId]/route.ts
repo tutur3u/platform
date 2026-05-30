@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from '../access';
 import { type SupportedColor, supportedColorSchema } from '../schema';
 
@@ -56,10 +57,12 @@ export async function PATCH(
   }: { params: Promise<{ wsId: string; boardId: string; listId: string }> }
 ) {
   try {
-    const access = await requireBoardAccess(request, await params);
+    const access = await requireBoardAccess(request, await params, {
+      requiredPermission: 'edit',
+    });
     if ('error' in access) return access.error;
 
-    const { supabase, boardId } = access;
+    const { sbAdmin, boardId } = access;
     if (!('listId' in access) || !access.listId) {
       return NextResponse.json(
         { error: 'Task list not found' },
@@ -68,7 +71,7 @@ export async function PATCH(
     }
     const listId = access.listId;
 
-    const { data: currentList, error: currentListError } = await supabase
+    const { data: currentList, error: currentListError } = await sbAdmin
       .from('task_lists')
       .select('status, deleted')
       .eq('id', listId)
@@ -121,7 +124,7 @@ export async function PATCH(
       updates.deleted = body.deleted;
     }
 
-    const { data: list, error } = await supabase
+    const { data: list, error } = await sbAdmin
       .from('task_lists')
       .update(updates)
       .eq('id', listId)
@@ -156,7 +159,7 @@ export async function PATCH(
       );
     }
 
-    console.error('Error updating task list:', error);
+    serverLogger.error('Error updating task list:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

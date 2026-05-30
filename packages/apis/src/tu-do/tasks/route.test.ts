@@ -65,7 +65,6 @@ const mocks = vi.hoisted(() => {
       }),
       maybeSingle: vi.fn(async () => result),
     };
-
     Object.defineProperty(query, 'then', {
       value: (
         resolve: (value: QueryResult) => unknown,
@@ -696,5 +695,122 @@ describe('workspace task route personal external loading', () => {
     expect(response.status).toBe(200);
     const payload = await response.json();
     expect(payload.count).toBe(2);
+  });
+
+  it('rejects external source filters for direct board guests', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
+    queueResult(mocks.adminQueues, 'workspace_boards', {
+      data: { id: PERSONAL_BOARD_ID, ws_id: PERSONAL_WS_ID },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'task_board_shares', {
+      data: [
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          board_id: PERSONAL_BOARD_ID,
+          permission: 'view',
+          shared_with_user_id: USER_ID,
+          workspace_boards: {
+            id: PERSONAL_BOARD_ID,
+            ws_id: PERSONAL_WS_ID,
+          },
+        },
+      ],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'task_board_shares', {
+      data: [],
+      error: null,
+    });
+
+    const { handleTaskRouteGET } = await import('./route.js');
+    const response = await handleTaskRouteGET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&sourceScope=current_board`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) },
+      {
+        supabase: mocks.memberClient as never,
+        user: {
+          email: 'guest@example.com',
+          id: USER_ID,
+        } as never,
+      }
+    );
+
+    expect(response.status).toBe(403);
+    expect(mocks.adminClient.from).not.toHaveBeenCalledWith('tasks');
+  });
+
+  it('rejects workspace-only resource assignment for direct board guest task creation', async () => {
+    mocks.verifyWorkspaceMembershipType.mockResolvedValue({ ok: false });
+    queueResult(mocks.adminQueues, 'task_lists', {
+      data: {
+        board_id: PERSONAL_BOARD_ID,
+        deleted: false,
+        id: PERSONAL_LIST_ID,
+        status: 'active',
+        workspace_boards: {
+          ws_id: PERSONAL_WS_ID,
+        },
+      },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'task_lists', {
+      data: {
+        board_id: PERSONAL_BOARD_ID,
+        id: PERSONAL_LIST_ID,
+        workspace_boards: {
+          id: PERSONAL_BOARD_ID,
+          ws_id: PERSONAL_WS_ID,
+        },
+      },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'task_board_shares', {
+      data: [
+        {
+          id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+          board_id: PERSONAL_BOARD_ID,
+          permission: 'edit',
+          shared_with_user_id: USER_ID,
+          workspace_boards: {
+            id: PERSONAL_BOARD_ID,
+            ws_id: PERSONAL_WS_ID,
+          },
+        },
+      ],
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'task_board_shares', {
+      data: [],
+      error: null,
+    });
+
+    const { handleTaskRoutePOST } = await import('./route.js');
+    const response = await handleTaskRoutePOST(
+      new NextRequest('http://localhost/api/v1/workspaces/ws-1/tasks', {
+        body: JSON.stringify({
+          label_ids: ['bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'],
+          listId: PERSONAL_LIST_ID,
+          name: 'Guest task',
+        }),
+        method: 'POST',
+      }),
+      { params: Promise.resolve({ wsId: 'ws-1' }) },
+      {
+        supabase: mocks.memberClient as never,
+        user: {
+          email: 'guest@example.com',
+          id: USER_ID,
+        } as never,
+      }
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+      error: 'Guests cannot assign workspace-only task resources',
+    });
+    expect(mocks.adminClient.from).not.toHaveBeenCalledWith('tasks');
   });
 });

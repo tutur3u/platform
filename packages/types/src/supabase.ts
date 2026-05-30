@@ -3505,6 +3505,15 @@ export type Database = {
         };
         Returns: string;
       };
+      chat_can_address_conversation_workspace: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_type: string;
+          p_conversation_ws_id: string;
+          p_request_ws_id: string;
+        };
+        Returns: boolean;
+      };
       chat_can_invite_user: {
         Args: { p_actor_user_id: string; p_target_user_id: string };
         Returns: boolean;
@@ -14780,6 +14789,103 @@ export type Database = {
           {
             foreignKeyName: 'task_assignees_user_id_fkey';
             columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      task_board_shares: {
+        Row: {
+          board_id: string;
+          created_at: string;
+          id: string;
+          permission: Database['public']['Enums']['task_share_permission'];
+          shared_by_user_id: string;
+          shared_with_email: string | null;
+          shared_with_user_id: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          board_id: string;
+          created_at?: string;
+          id?: string;
+          permission?: Database['public']['Enums']['task_share_permission'];
+          shared_by_user_id: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          board_id?: string;
+          created_at?: string;
+          id?: string;
+          permission?: Database['public']['Enums']['task_share_permission'];
+          shared_by_user_id?: string;
+          shared_with_email?: string | null;
+          shared_with_user_id?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'task_board_shares_board_id_fkey';
+            columns: ['board_id'];
+            isOneToOne: false;
+            referencedRelation: 'workspace_boards';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_by_user_id_fkey';
+            columns: ['shared_by_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'task_board_shares_shared_with_user_id_fkey';
+            columns: ['shared_with_user_id'];
             isOneToOne: false;
             referencedRelation: 'users';
             referencedColumns: ['id'];
@@ -33121,6 +33227,10 @@ export type Database = {
         Args: { p_actor_user_id: string };
         Returns: string;
       };
+      get_task_board_workspace_id: {
+        Args: { p_board_id: string };
+        Returns: string;
+      };
       get_task_children: {
         Args: { p_task_id: string };
         Returns: {
@@ -34412,6 +34522,10 @@ export type Database = {
       is_task_accessible: { Args: { _task_id: string }; Returns: boolean };
       is_task_board_member: {
         Args: { _board_id: string; _user_id: string };
+        Returns: boolean;
+      };
+      is_task_board_workspace_member: {
+        Args: { p_board_id: string };
         Returns: boolean;
       };
       is_task_sharing_enabled: {

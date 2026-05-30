@@ -4,9 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const authGetUserMock = vi.fn();
 const workspaceMembersMaybeSingleMock = vi.fn();
 const workspaceMembersEqMock = vi.fn();
-const boardsOrderCreatedAtMock = vi.fn();
-const boardsOrderNameMock = vi.fn();
-const boardsEqMock = vi.fn();
+const boardsQueryCalls: [string, unknown[]][] = [];
+const boardsQueryResult = vi.fn();
 const boardsInsertMock = vi.fn();
 const boardsSelectMock = vi.fn();
 const insertedBoardSelectMock = vi.fn();
@@ -29,6 +28,53 @@ const ensureDefaultPersonalTaskBoardMock = vi.fn();
 const workspacesMaybeSingleMock = vi.fn();
 const workspacesEqMock = vi.fn();
 const workspacesSelectMock = vi.fn();
+const taskBoardShareResults: Array<{ data: unknown; error: unknown }> = [];
+
+function createThenableQuery(result: { data: unknown; error: unknown }) {
+  const query = {
+    calls: [] as [string, unknown[]][],
+    eq: vi.fn((...args: unknown[]) => {
+      query.calls.push(['eq', args]);
+      return query;
+    }),
+    ilike: vi.fn((...args: unknown[]) => {
+      query.calls.push(['ilike', args]);
+      return query;
+    }),
+    in: vi.fn((...args: unknown[]) => {
+      query.calls.push(['in', args]);
+      return query;
+    }),
+    is: vi.fn((...args: unknown[]) => {
+      query.calls.push(['is', args]);
+      return query;
+    }),
+    not: vi.fn((...args: unknown[]) => {
+      query.calls.push(['not', args]);
+      return query;
+    }),
+    order: vi.fn((...args: unknown[]) => {
+      query.calls.push(['order', args]);
+      return query;
+    }),
+    range: vi.fn((...args: unknown[]) => {
+      query.calls.push(['range', args]);
+      return query;
+    }),
+    select: vi.fn((...args: unknown[]) => {
+      query.calls.push(['select', args]);
+      return query;
+    }),
+  };
+  Object.defineProperty(query, 'then', {
+    value: (
+      resolve: (value: { data: unknown; error: unknown }) => unknown,
+      reject?: (reason: unknown) => unknown
+    ) => Promise.resolve(result).then(resolve, reject),
+  });
+
+  return query;
+}
 
 vi.mock('@tuturuuu/auth/app-session', () => ({
   attachSupabaseAuthUser: (supabase: unknown) => supabase,
@@ -93,10 +139,13 @@ describe('task boards route GET', () => {
     getAppSessionTokenFromRequestMock.mockReturnValue(null);
     verifyAppSessionRequestMock.mockReturnValue({ ok: false });
     verifyCliAccessTokenMock.mockReturnValue({ ok: false });
+    taskBoardShareResults.length = 0;
+    boardsQueryCalls.length = 0;
 
     authGetUserMock.mockResolvedValue({
       data: {
         user: {
+          email: 'member@example.com',
           id: '00000000-0000-4000-8000-000000000999',
         },
       },
@@ -121,20 +170,14 @@ describe('task boards route GET', () => {
     });
     workspacesSelectMock.mockReturnValue(workspacesQuery);
 
-    boardsOrderCreatedAtMock.mockResolvedValue({
+    boardsQueryResult.mockReturnValue({
       data: [],
       error: null,
       count: 0,
     });
-    boardsOrderNameMock.mockReturnValue({
-      order: boardsOrderCreatedAtMock,
-      range: vi.fn(),
-    });
-    boardsEqMock.mockReturnValue({
-      order: boardsOrderNameMock,
-    });
     boardsSelectMock.mockReturnValue({
-      eq: boardsEqMock,
+      ...createThenableQuery(boardsQueryResult()),
+      calls: boardsQueryCalls,
     });
     boardsInsertMock.mockReturnValue({
       select: insertedBoardSelectMock,
@@ -185,7 +228,12 @@ describe('task boards route GET', () => {
       if (table === 'workspace_boards') {
         return {
           insert: boardsInsertMock,
-          select: boardsSelectMock,
+          select: (...args: unknown[]) => {
+            const query = createThenableQuery(boardsQueryResult());
+            boardsQueryCalls.push(['select', args]);
+            query.calls = boardsQueryCalls;
+            return query;
+          },
         };
       }
 
@@ -205,6 +253,12 @@ describe('task boards route GET', () => {
         return {
           select: tasksSelectMock,
         };
+      }
+
+      if (table === 'task_board_shares') {
+        return createThenableQuery(
+          taskBoardShareResults.shift() ?? { data: [], error: null }
+        );
       }
 
       throw new Error(`Unexpected table: ${table}`);
@@ -241,6 +295,76 @@ describe('task boards route GET', () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ boards: [], count: 0 });
     expect(getPermissionsMock).not.toHaveBeenCalled();
+  });
+
+  it('lists only directly shared boards for workspace guests', async () => {
+    workspaceMembersMaybeSingleMock.mockResolvedValueOnce({
+      data: null,
+      error: null,
+    });
+    authGetUserMock.mockResolvedValueOnce({
+      data: {
+        user: {
+          email: 'guest@example.com',
+          id: '00000000-0000-4000-8000-000000000999',
+        },
+      },
+      error: null,
+    });
+    const sharedBoard = {
+      id: '00000000-0000-4000-8000-000000000456',
+      name: 'Shared roadmap',
+      ws_id: '00000000-0000-4000-8000-000000000123',
+    };
+    taskBoardShareResults.push(
+      {
+        data: [
+          {
+            id: '00000000-0000-4000-8000-000000000777',
+            board_id: sharedBoard.id,
+            permission: 'view',
+            shared_with_user_id: '00000000-0000-4000-8000-000000000999',
+            workspace_boards: sharedBoard,
+          },
+        ],
+        error: null,
+      },
+      { data: [], error: null }
+    );
+    boardsQueryResult.mockReturnValueOnce({
+      count: 1,
+      data: [sharedBoard],
+      error: null,
+    });
+
+    const response = await GET(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/personal/task-boards?status=active'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'personal',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      access_type: 'guest',
+      boards: [
+        {
+          ...sharedBoard,
+          access_type: 'guest',
+          guest_permission: 'view',
+          list_count: 0,
+          task_count: 0,
+        },
+      ],
+      count: 1,
+      guest_highest_permission: 'view',
+    });
+    expect(ensureDefaultPersonalTaskBoardMock).not.toHaveBeenCalled();
+    expect(boardsQueryCalls).toContainEqual(['in', ['id', [sharedBoard.id]]]);
   });
 
   it('allows CLI app-session tokens to list personal workspace boards', async () => {

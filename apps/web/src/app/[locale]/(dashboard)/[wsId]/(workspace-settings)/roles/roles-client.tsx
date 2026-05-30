@@ -100,6 +100,17 @@ function DefaultPermissionsPanel({
         </div>
       </div>
 
+      {isGuest && (
+        <div className="rounded-md border border-dynamic-blue/20 bg-dynamic-blue/5 p-3 text-sm">
+          <div className="font-medium text-dynamic-blue">
+            {t('ws-roles.direct_board_guests_title')}
+          </div>
+          <p className="mt-1 text-muted-foreground">
+            {t('ws-roles.direct_board_guests_description')}
+          </p>
+        </div>
+      )}
+
       {isLoading || !defaultData ? (
         <div className="rounded-md border border-dashed p-4 text-muted-foreground text-sm">
           {t('common.processing')}

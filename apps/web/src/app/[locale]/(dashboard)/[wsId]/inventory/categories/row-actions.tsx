@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { Row } from '@tanstack/react-table';
 import { Ellipsis } from '@tuturuuu/icons';
 import type { ProductCategory } from '@tuturuuu/types/primitives/ProductCategory';
@@ -32,6 +33,7 @@ export function ProductCategoryRowActions({
   const t = useTranslations();
 
   const router = useRouter();
+  const queryClient = useQueryClient();
   const data = row.original;
 
   const deleteData = async () => {
@@ -48,6 +50,17 @@ export function ProductCategoryRowActions({
     );
 
     if (res.ok) {
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-table', 'categories', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['inventory-product-form-options', data.ws_id],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['product-categories', data.ws_id],
+        }),
+      ]);
       router.refresh();
     } else {
       const data = await res.json();

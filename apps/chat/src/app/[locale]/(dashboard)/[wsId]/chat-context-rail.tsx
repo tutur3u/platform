@@ -5,6 +5,7 @@ import { Hash, LoaderCircle, MessageCircle } from '@tuturuuu/icons';
 import type { InternalApiWorkspaceSummary } from '@tuturuuu/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
 import { Button } from '@tuturuuu/ui/button';
+import { TUTURUUU_LOGO_URL } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@tuturuuu/ui/tooltip';
 import { ROOT_WORKSPACE_ID, toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
@@ -146,7 +147,7 @@ function RailButton({
         <Button
           aria-label={label}
           className={cn(
-            'size-10 rounded-md p-0 transition-colors',
+            'aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 rounded-md p-0 transition-colors',
             active
               ? 'bg-foreground text-background hover:bg-foreground/90'
               : 'bg-background hover:bg-accent'
@@ -173,7 +174,10 @@ function WorkspaceRailButton({
   workspace: InternalApiWorkspaceSummary;
 }) {
   const name = workspace.name || 'Workspace';
-  const avatarUrl = workspace.avatar_url || workspace.logo_url;
+  const avatarUrl =
+    workspace.id === ROOT_WORKSPACE_ID
+      ? TUTURUUU_LOGO_URL
+      : workspace.avatar_url || workspace.logo_url;
 
   return (
     <Tooltip>
@@ -181,7 +185,7 @@ function WorkspaceRailButton({
         <button
           aria-label={name}
           className={cn(
-            'relative flex size-10 items-center justify-center rounded-md border bg-background transition-colors hover:bg-accent',
+            'relative flex aspect-square size-10 max-h-10 min-h-10 min-w-10 max-w-10 shrink-0 items-center justify-center rounded-md border bg-background transition-colors hover:bg-accent',
             active && 'border-foreground bg-accent'
           )}
           onClick={onClick}
@@ -190,8 +194,12 @@ function WorkspaceRailButton({
           {active ? (
             <span className="absolute -left-2 h-6 w-1 rounded-r-full bg-foreground" />
           ) : null}
-          <Avatar className="size-8 rounded-sm">
-            <AvatarImage alt={name} src={avatarUrl ?? undefined} />
+          <Avatar className="aspect-square size-8 rounded-sm">
+            <AvatarImage
+              alt={name}
+              className="h-full w-full rounded-sm object-cover"
+              src={avatarUrl ?? undefined}
+            />
             <AvatarFallback className="rounded-sm">
               {name ? getInitials(name) : <Hash className="size-4" />}
             </AvatarFallback>

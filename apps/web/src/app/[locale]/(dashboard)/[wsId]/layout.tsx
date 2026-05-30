@@ -1,3 +1,7 @@
+import {
+  loadTaskBoardGuestSharesForWorkspace,
+  summarizeTaskBoardGuestShares,
+} from '@tuturuuu/apis/tu-do/board-access';
 import { RealtimeLogProvider } from '@tuturuuu/supabase/next/realtime-log-provider';
 import {
   createAdminClient,
@@ -93,40 +97,55 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   if (!workspace) redirect('/onboarding');
 
+  let isGuestWorkspace = false;
+
   if (!workspace.joined) {
     const sbAdmin = await createAdminClient();
-
-    const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
+    const guestShares = await loadTaskBoardGuestSharesForWorkspace({
       sbAdmin,
-      {
-        workspaceId: workspace.id,
-        userId: user.id,
-        authEmail: user.email?.trim().toLowerCase() ?? null,
-        rpcSupabase: supabase,
-      }
-    );
-
-    if (!canShowWorkspaceInviteForNonMember(inviteEligibility)) {
-      redirect('/onboarding');
-    }
-
-    const { allowGuestSelfJoin } = inviteEligibility;
-
-    const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
-      logo_url: workspace.logo_url,
-      avatar_url: workspace.avatar_url,
+      user: {
+        email: user.email ?? undefined,
+        id: user.id,
+      },
+      workspaceId: workspace.id,
     });
+    const guestSummary = summarizeTaskBoardGuestShares(guestShares);
 
-    return (
-      <InvitationCard
-        workspace={{
-          ...workspace,
-          logo_url: branding.logo_url,
-          avatar_url: branding.avatar_url,
-        }}
-        allowGuestSelfJoin={allowGuestSelfJoin}
-      />
-    );
+    if (guestSummary.boardCount > 0) {
+      isGuestWorkspace = true;
+    } else {
+      const inviteEligibility = await getWorkspaceNonMemberInviteEligibility(
+        sbAdmin,
+        {
+          workspaceId: workspace.id,
+          userId: user.id,
+          authEmail: user.email?.trim().toLowerCase() ?? null,
+          rpcSupabase: supabase,
+        }
+      );
+
+      if (!canShowWorkspaceInviteForNonMember(inviteEligibility)) {
+        redirect('/onboarding');
+      }
+
+      const { allowGuestSelfJoin } = inviteEligibility;
+
+      const branding = await resolveWorkspaceBrandingUrlsForNext(sbAdmin, {
+        logo_url: workspace.logo_url,
+        avatar_url: workspace.avatar_url,
+      });
+
+      return (
+        <InvitationCard
+          workspace={{
+            ...workspace,
+            logo_url: branding.logo_url,
+            avatar_url: branding.avatar_url,
+          }}
+          allowGuestSelfJoin={allowGuestSelfJoin}
+        />
+      );
+    }
   }
 
   // Personal workspace prompt data
@@ -150,7 +169,7 @@ export default async function Layout({ children, params }: LayoutProps) {
     });
   }
 
-  const SHOW_PERSONAL_WORKSPACE_PROMPT = !existingPersonal;
+  const SHOW_PERSONAL_WORKSPACE_PROMPT = !existingPersonal && !isGuestWorkspace;
 
   if (SHOW_PERSONAL_WORKSPACE_PROMPT && eligibleWorkspaces?.length === 0)
     return (
@@ -174,7 +193,9 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
-      <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
+      {!isGuestWorkspace && (
+        <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
+      )}
       {SHOW_PERSONAL_WORKSPACE_PROMPT && (
         <div className="px-2 pt-2 md:px-4 md:pt-3">
           <PersonalWorkspacePrompt
@@ -224,7 +245,7 @@ export default async function Layout({ children, params }: LayoutProps) {
           <WorkspacePresenceProvider
             wsId={wsId}
             tier={workspace.tier ?? null}
-            enabled={!workspace.personal}
+            enabled={!workspace.personal && !isGuestWorkspace}
           >
             <TaskDialogWrapper
               isPersonalWorkspace={!!workspace.personal}

@@ -78,6 +78,7 @@ interface Props {
   tasks: Task[];
   lists: TaskList[];
   workspaceLabels: WorkspaceLabel[];
+  canManageBoard?: boolean;
   currentUserId?: string;
 }
 
@@ -87,6 +88,7 @@ export function BoardViews({
   board,
   tasks,
   lists,
+  canManageBoard = true,
   currentUserId,
 }: Props) {
   const t = useTranslations('common');
@@ -791,6 +793,7 @@ export function BoardViews({
         onRecycleBinOpen={() => setRecycleBinOpen(true)}
         isMultiSelectMode={isMultiSelectMode}
         setIsMultiSelectMode={setIsMultiSelectMode}
+        hideActions={!canManageBoard}
       />
       <div className="h-full overflow-hidden">{renderView()}</div>
 

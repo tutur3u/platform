@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from './access';
 import { supportedColorSchema } from './schema';
 
@@ -44,8 +45,8 @@ export async function GET(
     const access = await requireBoardAccess(request, await params);
     if ('error' in access) return access.error;
 
-    const { supabase, sbAdmin, boardId } = access;
-    const { data: lists, error } = await supabase
+    const { sbAdmin, boardId } = access;
+    const { data: lists, error } = await sbAdmin
       .from('task_lists')
       .select('id, board_id, name, status, color, position, archived')
       .eq('board_id', boardId)
@@ -100,7 +101,7 @@ export async function GET(
       );
     }
 
-    console.error('Error fetching task lists:', error);
+    serverLogger.error('Error fetching task lists:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -113,7 +114,9 @@ export async function POST(
   { params }: { params: Promise<{ wsId: string; boardId: string }> }
 ) {
   try {
-    const access = await requireBoardAccess(request, await params);
+    const access = await requireBoardAccess(request, await params, {
+      requiredPermission: 'edit',
+    });
     if ('error' in access) return access.error;
 
     const { sbAdmin, boardId } = access;
@@ -146,7 +149,7 @@ export async function POST(
         ? 400
         : 500;
 
-      console.error('Error creating task list via RPC:', error);
+      serverLogger.error('Error creating task list via RPC:', error);
       return NextResponse.json({ error: message }, { status });
     }
 
@@ -169,7 +172,7 @@ export async function POST(
       );
     }
 
-    console.error('Error creating task list:', error);
+    serverLogger.error('Error creating task list:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

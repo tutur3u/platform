@@ -11,6 +11,12 @@ export interface WorkspaceReferralSettingsPayload {
   referral_reward_type: 'REFERRER' | 'RECEIVER' | 'BOTH';
 }
 
+export interface WorkspaceReferralSettings
+  extends WorkspaceReferralSettingsPayload {
+  id?: string;
+  ws_id?: string;
+}
+
 export interface WorkspacePromotion {
   id: string;
   name: string | null;
@@ -151,6 +157,19 @@ export async function updateWorkspaceReferralSettings(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function getWorkspaceReferralSettings(
+  workspaceId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ data: WorkspaceReferralSettings | null }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/promotions/referral-settings`,
+    {
       cache: 'no-store',
     }
   );

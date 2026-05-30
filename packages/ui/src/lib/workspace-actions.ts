@@ -1,6 +1,10 @@
 'use server';
 
 import {
+  normalizeTaskBoardShareEmail,
+  strongestTaskBoardGuestPermission,
+} from '@tuturuuu/apis/tu-do/board-access';
+import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
@@ -130,9 +134,158 @@ export async function fetchWorkspaceSummaries({
     undefined;
 
   const userAvatarUrl = publicProfile?.avatar_url || null;
+  const memberWorkspaceIds = new Set(
+    workspaces.map((workspace) => workspace.id)
+  );
+
+  const guestWorkspaceById = new Map<
+    string,
+    InternalApiWorkspaceSummary & {
+      guestBoardIds: Set<string>;
+    }
+  >();
+  const guestShareRows: Array<{
+    board_id?: string | null;
+    permission?: 'view' | 'edit' | null;
+    workspace_boards?: {
+      id?: string | null;
+      ws_id?: string | null;
+      workspaces?:
+        | {
+            avatar_url?: string | null;
+            creator_id?: string | null;
+            id?: string | null;
+            logo_url?: string | null;
+            name?: string | null;
+            personal?: boolean | null;
+            workspace_subscriptions?: Array<{
+              created_at?: string | null;
+              status?: string | null;
+              workspace_subscription_products?:
+                | { tier?: string | null }
+                | Array<{ tier?: string | null }>
+                | null;
+            }> | null;
+          }
+        | Array<{
+            avatar_url?: string | null;
+            creator_id?: string | null;
+            id?: string | null;
+            logo_url?: string | null;
+            name?: string | null;
+            personal?: boolean | null;
+            workspace_subscriptions?: Array<{
+              created_at?: string | null;
+              status?: string | null;
+              workspace_subscription_products?:
+                | { tier?: string | null }
+                | Array<{ tier?: string | null }>
+                | null;
+            }> | null;
+          }>
+        | null;
+    } | null;
+  }> = [];
+  const guestShareSelect = `
+    board_id,
+    permission,
+    workspace_boards!inner (
+      id,
+      ws_id,
+      deleted_at,
+      workspaces!inner (
+        id,
+        name,
+        personal,
+        avatar_url,
+        logo_url,
+        creator_id,
+        workspace_subscriptions!left (
+          created_at,
+          status,
+          workspace_subscription_products (
+            tier
+          )
+        )
+      )
+    )
+  `;
+
+  const userShareResult = await (sbAdmin as any)
+    .from('task_board_shares')
+    .select(guestShareSelect)
+    .eq('shared_with_user_id', userId)
+    .is('workspace_boards.deleted_at', null);
+  if (!userShareResult.error) {
+    guestShareRows.push(
+      ...((userShareResult.data ?? []) as typeof guestShareRows)
+    );
+  }
+
+  const normalizedEmail = normalizeTaskBoardShareEmail(privateDetails?.email);
+  if (normalizedEmail) {
+    const emailShareResult = await (sbAdmin as any)
+      .from('task_board_shares')
+      .select(guestShareSelect)
+      .eq('shared_with_email', normalizedEmail)
+      .is('workspace_boards.deleted_at', null);
+    if (!emailShareResult.error) {
+      guestShareRows.push(
+        ...((emailShareResult.data ?? []) as typeof guestShareRows)
+      );
+    }
+  }
+
+  for (const share of guestShareRows) {
+    const board = share.workspace_boards;
+    const workspace = Array.isArray(board?.workspaces)
+      ? board?.workspaces[0]
+      : board?.workspaces;
+    const workspaceId = workspace?.id ?? board?.ws_id ?? null;
+    const boardId = share.board_id ?? board?.id ?? null;
+
+    if (
+      !workspaceId ||
+      !boardId ||
+      !share.permission ||
+      memberWorkspaceIds.has(workspaceId)
+    ) {
+      continue;
+    }
+
+    const existing = guestWorkspaceById.get(workspaceId);
+    const guestBoardIds = existing?.guestBoardIds ?? new Set<string>();
+    guestBoardIds.add(boardId);
+
+    guestWorkspaceById.set(workspaceId, {
+      id: workspaceId,
+      name: workspace?.personal
+        ? displayLabel || workspace?.name || 'Personal'
+        : workspace?.name || 'Untitled',
+      personal: workspace?.personal ?? false,
+      avatar_url: workspace?.personal
+        ? userAvatarUrl || workspace?.avatar_url || null
+        : workspace?.avatar_url || null,
+      logo_url: workspace?.logo_url || null,
+      created_by_me: workspace?.creator_id === userId,
+      tier: resolveWorkspaceTier(workspace ?? {}),
+      access_type: 'guest',
+      guest_products: ['tasks'],
+      guest_board_count: guestBoardIds.size,
+      guest_highest_permission: strongestTaskBoardGuestPermission([
+        existing?.guest_highest_permission,
+        share.permission,
+      ]),
+      guest_landing_path:
+        guestBoardIds.size === 1
+          ? `/tasks/boards/${[...guestBoardIds][0]}`
+          : '/tasks/boards',
+      guestBoardIds,
+    });
+  }
 
   // For personal workspaces, override the name and avatar with the user's data
-  return workspaces.map((ws) => {
+  const memberSummaries = workspaces.map((ws) => {
     return {
       id: ws.id,
       name: ws.personal ? displayLabel || ws.name || 'Personal' : ws.name,
@@ -141,8 +294,16 @@ export async function fetchWorkspaceSummaries({
       logo_url: ws.logo_url,
       created_by_me: ws.creator_id === userId,
       tier: resolveWorkspaceTier(ws),
+      access_type: 'member' as const,
     };
   });
+
+  return [
+    ...memberSummaries,
+    ...[...guestWorkspaceById.values()].map(
+      ({ guestBoardIds: _, ...workspace }) => workspace
+    ),
+  ];
 }
 
 export async function fetchWorkspaces() {

@@ -211,6 +211,8 @@ export interface ListWorkspaceTaskBoardsResponse {
 export interface WorkspaceBoardsDataResponse {
   data: WorkspaceTaskBoardDetail[];
   count: number;
+  access_type?: 'member' | 'guest';
+  guest_highest_permission?: 'view' | 'edit' | null;
 }
 
 export type WorkspaceBoardNavigationItem = Pick<
@@ -324,6 +326,26 @@ export interface WorkspaceTaskBoardResponse {
     WorkspaceTaskBoardRow,
     'id' | 'ws_id' | 'name' | 'icon' | 'template_id' | 'created_at'
   >;
+}
+
+export type WorkspaceTaskBoardSharePermission = 'view' | 'edit';
+
+export interface WorkspaceTaskBoardShare {
+  created_at: string | null;
+  email: string | null;
+  id: string;
+  permission: WorkspaceTaskBoardSharePermission;
+  user: {
+    avatar_url: string | null;
+    display_name: string | null;
+    handle: string | null;
+    id: string | null;
+  } | null;
+  user_id: string | null;
+}
+
+export interface WorkspaceTaskBoardSharesResponse {
+  shares: WorkspaceTaskBoardShare[];
 }
 
 export interface CreateWorkspaceTaskListPayload {
@@ -606,6 +628,80 @@ export async function getWorkspaceTaskBoard(
   return client.json<{ board: WorkspaceTaskBoardDetail }>(
     `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}`,
     {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function listWorkspaceTaskBoardShares(
+  workspaceId: string,
+  boardId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<WorkspaceTaskBoardSharesResponse>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
+    {
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function createWorkspaceTaskBoardShare(
+  workspaceId: string,
+  boardId: string,
+  payload: { email: string; permission: WorkspaceTaskBoardSharePermission },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ share: WorkspaceTaskBoardShare }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function updateWorkspaceTaskBoardShare(
+  workspaceId: string,
+  boardId: string,
+  payload: {
+    permission: WorkspaceTaskBoardSharePermission;
+    shareId: string;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ share: WorkspaceTaskBoardShare }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+      cache: 'no-store',
+    }
+  );
+}
+
+export async function deleteWorkspaceTaskBoardShare(
+  workspaceId: string,
+  boardId: string,
+  shareId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+  return client.json<{ success: boolean }>(
+    `/api/v1/workspaces/${encodePathSegment(workspaceId)}/task-boards/${encodePathSegment(boardId)}/shares`,
+    {
+      method: 'DELETE',
+      query: { shareId },
       cache: 'no-store',
     }
   );

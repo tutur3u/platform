@@ -13,6 +13,11 @@ export interface WorkspaceDefaultPermission {
 }
 
 export type EnhancedWorkspaceMember = User & {
+  direct_board_guest?: boolean;
+  guest_access_type?: 'task_board';
+  guest_board_count?: number;
+  guest_board_names?: string[];
+  guest_highest_permission?: 'view' | 'edit' | null;
   is_creator: boolean;
   roles: WorkspaceMemberRole[];
   default_permissions: WorkspaceDefaultPermission[];
@@ -254,7 +259,7 @@ export async function getWorkspaceMembers({
   );
   const defaultPermissions = defaultPermissionsData ?? [];
 
-  return data.map(({ email, type, ...rest }) => {
+  const members = data.map(({ email, type, ...rest }) => {
     const normalizedEmail = normalizeEmail(
       email ?? (rest.id ? privateEmailByUserId.get(rest.id) : null)
     );
@@ -284,4 +289,109 @@ export async function getWorkspaceMembers({
         : workspaceProfileDisplayName,
     };
   });
+
+  if (status === 'joined') {
+    return members;
+  }
+
+  const { data: boardShareRows, error: boardShareError } = await (
+    sbAdmin as any
+  )
+    .from('task_board_shares')
+    .select(
+      'id, shared_with_user_id, shared_with_email, permission, created_at, workspace_boards!inner(id, name, ws_id), users(id, display_name, handle, avatar_url)'
+    )
+    .eq('workspace_boards.ws_id', wsId)
+    .order('created_at', { ascending: false });
+
+  if (boardShareError) throw boardShareError;
+
+  const memberEmails = new Set(
+    members
+      .map((member) => normalizeEmail(member.email))
+      .filter((email): email is string => !!email)
+  );
+  const memberIds = new Set(
+    members.map((member) => member.id).filter((id): id is string => !!id)
+  );
+  const directGuestsByRecipient = new Map<
+    string,
+    EnhancedWorkspaceMember & {
+      first_created_at?: string | null;
+    }
+  >();
+
+  for (const row of (boardShareRows ?? []) as Array<{
+    created_at?: string | null;
+    id: string;
+    permission?: 'view' | 'edit' | null;
+    shared_with_email?: string | null;
+    shared_with_user_id?: string | null;
+    users?: {
+      avatar_url?: string | null;
+      display_name?: string | null;
+      handle?: string | null;
+      id?: string | null;
+    } | null;
+    workspace_boards?: { id?: string | null; name?: string | null } | null;
+  }>) {
+    const email = normalizeEmail(row.shared_with_email);
+    const userId = row.shared_with_user_id ?? row.users?.id ?? null;
+
+    if (
+      (userId && memberIds.has(userId)) ||
+      (email && memberEmails.has(email))
+    ) {
+      continue;
+    }
+
+    if (status === 'invited' && userId) {
+      continue;
+    }
+
+    const recipientKey = userId ? `user:${userId}` : `email:${email}`;
+    if (!recipientKey || recipientKey === 'email:null') continue;
+
+    const previous = directGuestsByRecipient.get(recipientKey);
+    const boardName = row.workspace_boards?.name ?? 'Untitled board';
+    const nextBoardNames = [
+      ...new Set([...(previous?.guest_board_names ?? []), boardName]),
+    ];
+    const highestPermission =
+      previous?.guest_highest_permission === 'edit' || row.permission === 'edit'
+        ? 'edit'
+        : 'view';
+
+    directGuestsByRecipient.set(recipientKey, {
+      id: userId ?? `board-guest:${email}`,
+      user_id: userId ?? undefined,
+      handle: row.users?.handle ?? null,
+      email: hiddenSecrets.has('HIDE_MEMBER_EMAIL') ? null : email,
+      display_name: hiddenSecrets.has('HIDE_MEMBER_NAME')
+        ? null
+        : (row.users?.display_name ?? email ?? 'Board guest'),
+      avatar_url: row.users?.avatar_url ?? null,
+      pending: !userId,
+      created_at: previous?.created_at ?? row.created_at ?? null,
+      workspace_member_type: 'GUEST',
+      direct_board_guest: true,
+      guest_access_type: 'task_board',
+      guest_board_count: nextBoardNames.length,
+      guest_board_names: nextBoardNames,
+      guest_highest_permission: highestPermission,
+      is_creator: false,
+      roles: [],
+      default_permissions: [],
+      workspace_user_id: null,
+      workspace_profile_display_name: null,
+      first_created_at: previous?.first_created_at ?? row.created_at ?? null,
+    } as EnhancedWorkspaceMember & { first_created_at?: string | null });
+  }
+
+  return [
+    ...members,
+    ...[...directGuestsByRecipient.values()].map(
+      ({ first_created_at: _, ...guest }) => guest
+    ),
+  ];
 }

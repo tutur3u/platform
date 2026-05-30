@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import type { ProductSupplier } from '@tuturuuu/types/primitives/ProductSupplier';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -42,6 +43,7 @@ export function ProductSupplierForm({
   const t = useTranslations();
 
   const [loading, setLoading] = useState(false);
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   const form = useForm({
@@ -84,6 +86,9 @@ export function ProductSupplierForm({
     );
 
     if (res.ok) {
+      await queryClient.invalidateQueries({
+        queryKey: ['inventory-table', 'suppliers', wsId],
+      });
       onFinish?.(data);
       router.refresh();
     } else {
