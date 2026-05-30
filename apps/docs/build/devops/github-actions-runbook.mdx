@@ -205,7 +205,10 @@ from skipped intermediate runs still queue the correct Vercel workflow.
 ### Prerequisite guards
 
 - `supabase-staging.yaml` requires a successful `main` preview trigger unless manually dispatched.
-- `supabase-production.yaml` checks both the latest production Vercel result and a completed successful `main` staging migration for the same commit before running.
+- `supabase-production.yaml` runs after production deployment and also
+  re-evaluates after a matching `main` staging migration succeeds. It still
+  checks both the latest production Vercel result and a completed successful
+  staging migration for the same commit before running `supabase db push`.
 
 ### Mobile iOS native assets
 

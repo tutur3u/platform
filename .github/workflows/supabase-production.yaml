@@ -4,10 +4,12 @@ on:
   workflow_run:
     workflows:
       - "Vercel Platform Production Deployment"
+      - "Supabase Staging Migration"
     types:
       - completed
     branches:
       - production
+      - main
   workflow_dispatch:
 
 jobs:
@@ -55,15 +57,26 @@ jobs:
               TARGET_SHA="$CURRENT_SHA"
               echo "Manual dispatch detected on production. Checking production migration prerequisites for $TARGET_SHA."
             fi
-          elif [ "$TRIGGER_WORKFLOW" != "Vercel Platform Production Deployment" ]; then
-            echo "::notice::Skipping production migration because the triggering workflow was '$TRIGGER_WORKFLOW'."
-          elif [ "$TRIGGER_BRANCH" != "production" ]; then
-            echo "::notice::Skipping production migration because the triggering workflow ran on '$TRIGGER_BRANCH' instead of production."
-          elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
-            echo "::notice::Skipping production migration because the triggering workflow concluded with '$TRIGGER_CONCLUSION'."
+          elif [ "$TRIGGER_WORKFLOW" = "Vercel Platform Production Deployment" ]; then
+            if [ "$TRIGGER_BRANCH" != "production" ]; then
+              echo "::notice::Skipping production migration because the production deployment trigger ran on '$TRIGGER_BRANCH' instead of production."
+            elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
+              echo "::notice::Skipping production migration because the production deployment trigger concluded with '$TRIGGER_CONCLUSION'."
+            else
+              TARGET_SHA="$TRIGGER_SHA"
+              echo "Production deployment completed. Checking prerequisites for production migration at $TARGET_SHA..."
+            fi
+          elif [ "$TRIGGER_WORKFLOW" = "Supabase Staging Migration" ]; then
+            if [ "$TRIGGER_BRANCH" != "main" ]; then
+              echo "::notice::Skipping production migration re-evaluation because the staging migration trigger ran on '$TRIGGER_BRANCH' instead of main."
+            elif [ "$TRIGGER_CONCLUSION" != "success" ]; then
+              echo "::notice::Skipping production migration re-evaluation because the staging migration trigger concluded with '$TRIGGER_CONCLUSION'."
+            else
+              TARGET_SHA="$TRIGGER_SHA"
+              echo "Staging migration completed. Re-checking production migration prerequisites for $TARGET_SHA..."
+            fi
           else
-            TARGET_SHA="$TRIGGER_SHA"
-            echo "Checking prerequisites for production migration at $TARGET_SHA..."
+            echo "::notice::Skipping production migration because the triggering workflow was '$TRIGGER_WORKFLOW'."
           fi
 
           if [ -n "$TARGET_SHA" ]; then

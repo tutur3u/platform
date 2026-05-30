@@ -73,9 +73,9 @@ This page explains how Tuturuuu moves from code to running environments.
 
 `supabase-production.yaml` is stricter than staging:
 
-1. It runs automatically only after `Vercel Platform Production Deployment`
-   completes on `production`; `Supabase Staging Migration` completions on `main`
-   do not trigger production migrations.
+1. It re-evaluates automatically after either `Vercel Platform Production
+   Deployment` completes on `production` or `Supabase Staging Migration`
+   completes on `main`.
 2. The production Vercel deployment for the target commit must have concluded
    successfully on `production`.
 3. The `main` staging migration for the same target commit must have completed
@@ -84,10 +84,12 @@ This page explains how Tuturuuu moves from code to running environments.
    it, but the dispatch must select the `production` branch and still satisfy
    the same production-deployment and staging-migration SHA checks.
 
-The production migration job checks out the verified target commit explicitly
-before running `supabase db push`. This keeps production schema changes behind
-application deployment success, staging validation, and branch promotion for the
-same commit.
+The staging-triggered path is an automatic retry for the case where production
+deployment finishes before staging migration does. The production migration job
+still checks out the verified target commit explicitly before running
+`supabase db push`. This keeps production schema changes behind application
+deployment success, staging validation, and branch promotion for the same
+commit.
 
 ## Self-Hosted Web Release Flow
 
@@ -119,7 +121,8 @@ health-checked before the proxy is reloaded.
 
 - Do not push production schema changes directly from a laptop as the normal path.
 - Do not assume staging and production migrations are interchangeable; they are gated differently.
-- Do not trigger production Supabase migration from `main`; the production gate
-  requires the same commit to have both a successful production deployment and a
-  completed successful `main` staging migration.
+- Do not manually dispatch production Supabase migration from `main`; the only
+  valid `main` path is the automatic staging-migration re-evaluation, and the
+  production gate still requires the same commit to have both a successful
+  production deployment and a completed successful `main` staging migration.
 - Do not use the in-place Docker path when you specifically need rebuild-before-restart semantics.
