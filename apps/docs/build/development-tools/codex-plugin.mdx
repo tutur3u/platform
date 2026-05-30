@@ -44,9 +44,10 @@ codex plugin marketplace add ./
 - `$tuturuuu-satellite-app-ux`: standalone app shell guidance for satellite apps
   such as Mail and CMS, including `@tuturuuu/satellite` auth, app-session
   routes, i18n, workspace navigation, permissions, and focused operational UX.
-- `$tuturuuu-e2e-auth-debugging`: local E2E authentication guidance for
-  Playwright, `dev-session`, guest access, onboarding redirects, app-session
-  verification, rate-limit tests, and Docker-backed local auth flows.
+- `$tuturuuu-e2e-auth-debugging`: local E2E authentication guidance for native
+  Playwright patch iteration, `dev-session`, guest access, onboarding
+  redirects, app-session verification, rate-limit tests, and explicit
+  Docker-parity auth checks.
 - `$tuturuuu-commit`: scoped commit workflow guidance for explicit commit,
   commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
   path isolation, hook failure handling, and final commit reporting.
@@ -103,7 +104,7 @@ The CI check currently verifies:
   user requests instead of visible `$skill` commands
 - dedicated prompt coverage for CMS studio and landing-page content management
 - dedicated prompt coverage for satellite app UX and app-session workflows
-- dedicated prompt coverage for local E2E auth and dev-session debugging
+- dedicated prompt coverage for native local E2E auth and dev-session debugging
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
 - dedicated prompt coverage for web release badge metadata
 - scoped commit workflow coverage for explicit commit requests

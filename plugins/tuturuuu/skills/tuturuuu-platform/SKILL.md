@@ -53,8 +53,9 @@ Use the more focused plugin skills when they match the task:
 - `$tuturuuu-satellite-app-ux` for standalone satellite apps such as Mail or
   CMS, including app-session auth, i18n, workspace routes, navigation, and
   focused app shells.
-- `$tuturuuu-e2e-auth-debugging` for Playwright, dev-session, guest-access,
-  onboarding redirect, app-session verification, and local auth E2E failures.
+- `$tuturuuu-e2e-auth-debugging` for native Playwright, dev-session,
+  guest-access, onboarding redirect, app-session verification, and local auth
+  E2E failures.
 - `$tuturuuu-cli` for installing, using, debugging, or publishing the native `ttr` CLI and browser/copy-token login flows.
 - `$tuturuuu-commit` for explicit commit requests, scoped staging, atomic
   Conventional Commits, commit-and-push follow-through, and commit reporting.

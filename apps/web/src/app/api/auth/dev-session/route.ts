@@ -2,12 +2,45 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { checkIfUserExists, validateEmail } from '@tuturuuu/utils/email/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { DEV_MODE } from '@/constants/common';
 import { isLocalE2EAuthRequestAllowed } from '@/lib/auth/local-e2e';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { resetRateLimitMemoryStoreForTests } from '@/lib/rate-limit';
+
+const COMPLETED_ONBOARDING_STEPS = [
+  'welcome',
+  'use_case',
+  'profile',
+  'celebration',
+];
+
+async function completeDevSessionOnboarding(
+  sbAdmin: TypedSupabaseClient,
+  userId: string
+) {
+  return sbAdmin
+    .from('onboarding_progress')
+    .upsert(
+      {
+        user_id: userId,
+        completed_steps: COMPLETED_ONBOARDING_STEPS,
+        current_step: 'celebration',
+        profile_completed: true,
+        tour_completed: false,
+        completed_at: new Date().toISOString(),
+        use_case: 'small_team',
+        flow_type: 'team',
+        invited_emails: [] as string[],
+        notifications_enabled: true,
+      },
+      { onConflict: 'user_id' }
+    )
+    .select('user_id')
+    .single();
+}
 
 export async function POST(request: NextRequest) {
   if (!DEV_MODE && !isLocalE2EAuthRequestAllowed(request)) {
@@ -18,7 +51,8 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { email, locale, resetRateLimits } = await request.json();
+    const { completeOnboarding, email, locale, resetRateLimits } =
+      await request.json();
 
     if (resetRateLimits === true) {
       resetRateLimitMemoryStoreForTests();
@@ -34,8 +68,9 @@ export async function POST(request: NextRequest) {
       locale: normalizedLocale,
       origin: 'TUTURUUU',
     };
-    const sbAdmin = await createAdminClient();
-    const userId = await checkIfUserExists({ email: validatedEmail });
+    const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+    let userId: string | null =
+      (await checkIfUserExists({ email: validatedEmail })) ?? null;
 
     if (userId) {
       const { error: updateError } = await sbAdmin.auth.admin.updateUserById(
@@ -56,11 +91,12 @@ export async function POST(request: NextRequest) {
         );
       }
     } else {
-      const { error: createError } = await sbAdmin.auth.admin.createUser({
-        email: validatedEmail,
-        email_confirm: true,
-        user_metadata: metadata,
-      });
+      const { data: createData, error: createError } =
+        await sbAdmin.auth.admin.createUser({
+          email: validatedEmail,
+          email_confirm: true,
+          user_metadata: metadata,
+        });
 
       if (createError) {
         serverLogger.error(
@@ -69,6 +105,36 @@ export async function POST(request: NextRequest) {
         );
         return NextResponse.json(
           { error: 'Failed to create user' },
+          { status: 500 }
+        );
+      }
+
+      userId = createData.user?.id ?? null;
+    }
+
+    if (completeOnboarding === true) {
+      if (!userId) {
+        serverLogger.error(
+          '[auth/dev-session] Failed to resolve user for onboarding'
+        );
+        return NextResponse.json(
+          { error: 'Failed to complete onboarding' },
+          { status: 500 }
+        );
+      }
+
+      const { error: onboardingError } = await completeDevSessionOnboarding(
+        sbAdmin,
+        userId
+      );
+
+      if (onboardingError) {
+        serverLogger.error(
+          '[auth/dev-session] Failed to complete onboarding:',
+          onboardingError
+        );
+        return NextResponse.json(
+          { error: 'Failed to complete onboarding' },
           { status: 500 }
         );
       }

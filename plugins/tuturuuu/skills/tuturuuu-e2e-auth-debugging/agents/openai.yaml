@@ -1,4 +1,4 @@
 interface:
   display_name: "Tuturuuu E2E Auth Debugging"
-  short_description: "Debug local Playwright auth, dev-session, and guest access"
-  default_prompt: "Debug this local E2E auth redirect and verify the fix."
+  short_description: "Debug native Playwright auth, dev-session, and guest access"
+  default_prompt: "Debug this local E2E auth redirect with native Playwright."

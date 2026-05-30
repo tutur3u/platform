@@ -102,6 +102,7 @@ test.describe('Task board guest access', () => {
         `${origin}/api/auth/dev-session`,
         {
           data: {
+            completeOnboarding: true,
             email: guestEmail,
             locale: DEFAULT_LOCALE,
           },
@@ -173,21 +174,28 @@ test.describe('Task board guest access', () => {
       );
       expect(deniedDeleteResponse.status()).toBe(403);
 
-      await guestPage.goto(
-        `${origin}/${DEFAULT_LOCALE}/${board.ws_id}/tasks/boards/${board.id}`,
-        { waitUntil: 'domcontentloaded' }
+      const guestBoardPath = `/${board.ws_id}/tasks/boards/${board.id}`;
+      const localizedGuestBoardPath = `/${DEFAULT_LOCALE}${guestBoardPath}`;
+      await guestPage.goto(`${origin}${localizedGuestBoardPath}`, {
+        waitUntil: 'domcontentloaded',
+      });
+      await expect(guestPage).toHaveURL(
+        (url) =>
+          url.pathname === guestBoardPath ||
+          url.pathname === localizedGuestBoardPath,
+        { timeout: 30_000 }
       );
       await expect(guestPage.locator('body')).not.toContainText(
         'Board not found'
       );
-      await expect(guestPage.getByText(board.name ?? 'Tasks')).toBeVisible({
-        timeout: 30_000,
-      });
+      await expect(
+        guestPage.getByRole('heading', { name: board.name ?? 'Tasks' })
+      ).toBeVisible({ timeout: 30_000 });
 
       await guestPage
         .getByRole('button', { name: /select a workspace/i })
         .click();
-      await expect(guestPage.getByText('Guest workspaces')).toBeVisible();
+      await expect(guestPage.getByText('Shared with me')).toBeVisible();
       await expect(guestPage.getByText('Guest access')).toBeVisible();
       await expect(guestPage.getByText('Tasks only')).toBeVisible();
     } finally {

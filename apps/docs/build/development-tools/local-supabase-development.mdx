@@ -271,11 +271,22 @@ These accounts are already set up with the necessary data, allowing you to quick
 
 ### Playwright E2E Safety
 
-Web E2E runs must use the local Dockerized Supabase stack. The repo root and
-`apps/web` both route `bun test:e2e` through
-`scripts/run-web-e2e-docker.js`, which writes a temporary `tmp/e2e/web.env`,
-starts and resets local Supabase, runs the production-style Docker web stack,
-and then runs Playwright.
+Web E2E runs must use the local Supabase stack. For local debugging and patch
+iteration, run the web app and Playwright on the native machine so code changes
+are picked up quickly and server logs stay visible.
+
+Avoid `bun test:e2e`, `bun --cwd apps/web test:e2e`, and
+`bun test:e2e:web:docker` as the first local debugging path. Those commands
+route through `scripts/run-web-e2e-docker.js`, which writes
+`tmp/e2e/web.env`, resets local Supabase, builds and runs the production-style
+Docker web stack, and then runs Playwright. Reserve that Dockerized path for
+explicit CI-parity checks or production-Docker runtime bugs.
+
+For the native workflow, start or reset local Supabase with the database package
+scripts, start `apps/web` natively with the local E2E environment, and run the
+focused Playwright spec directly from `apps/web`. Native web server Supabase
+URLs should resolve to `http://127.0.0.1:8001`; `host.docker.internal` is only
+for the Dockerized web stack.
 
 Do not point E2E at a cloud Supabase project. The Playwright global setup fails
 fast if `BASE_URL` is not local or if `NEXT_PUBLIC_SUPABASE_URL`,

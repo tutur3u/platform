@@ -37,6 +37,14 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 
 function mockSuccessfulSession() {
+  const createUser = vi.fn().mockResolvedValue({
+    data: {
+      user: {
+        id: 'new-user-123',
+      },
+    },
+    error: null,
+  });
   const updateUserById = vi.fn().mockResolvedValue({ error: null });
   const generateLink = vi.fn().mockResolvedValue({
     data: {
@@ -54,15 +62,35 @@ function mockSuccessfulSession() {
     },
     error: null,
   });
+  const onboardingBuilder = {
+    single: vi.fn().mockResolvedValue({
+      data: {
+        user_id: 'user-123',
+      },
+      error: null,
+    }),
+    select: vi.fn(),
+    upsert: vi.fn(),
+  };
+  onboardingBuilder.select.mockReturnValue(onboardingBuilder);
+  onboardingBuilder.upsert.mockReturnValue(onboardingBuilder);
+  const from = vi.fn((table: string) => {
+    if (table !== 'onboarding_progress') {
+      throw new Error(`Unexpected table: ${table}`);
+    }
+
+    return onboardingBuilder;
+  });
 
   mocks.createAdminClient.mockResolvedValue({
     auth: {
       admin: {
-        createUser: vi.fn(),
+        createUser,
         generateLink,
         updateUserById,
       },
     },
+    from,
   });
   mocks.createClient.mockResolvedValue({
     auth: {
@@ -70,7 +98,14 @@ function mockSuccessfulSession() {
     },
   });
 
-  return { generateLink, updateUserById, verifyOtp };
+  return {
+    createUser,
+    from,
+    generateLink,
+    onboardingBuilder,
+    updateUserById,
+    verifyOtp,
+  };
 }
 
 function stubLocalE2EEnv(overrides: Record<string, string> = {}) {
@@ -98,7 +133,8 @@ describe('dev-session route', () => {
   });
 
   it('generates and verifies a magic link through the request-bound client', async () => {
-    const { generateLink, updateUserById, verifyOtp } = mockSuccessfulSession();
+    const { from, generateLink, updateUserById, verifyOtp } =
+      mockSuccessfulSession();
 
     const request = new NextRequest('http://localhost/api/auth/dev-session', {
       method: 'POST',
@@ -127,9 +163,86 @@ describe('dev-session route', () => {
       token_hash: 'hashed-token',
       type: 'magiclink',
     });
+    expect(from).not.toHaveBeenCalled();
     expect(mocks.resetRateLimitMemoryStoreForTests).not.toHaveBeenCalled();
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ success: true });
+  });
+
+  it('can complete onboarding for local E2E session users', async () => {
+    const { onboardingBuilder } = mockSuccessfulSession();
+
+    const request = new NextRequest('http://localhost/api/auth/dev-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        completeOnboarding: true,
+        email: 'local@tuturuuu.com',
+        locale: 'en',
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(onboardingBuilder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        completed_steps: ['welcome', 'use_case', 'profile', 'celebration'],
+        current_step: 'celebration',
+        flow_type: 'team',
+        invited_emails: [],
+        notifications_enabled: true,
+        profile_completed: true,
+        tour_completed: false,
+        use_case: 'small_team',
+        user_id: 'user-123',
+      }),
+      { onConflict: 'user_id' }
+    );
+    const [onboardingPayload] = onboardingBuilder.upsert.mock.calls[0] ?? [];
+    expect(onboardingPayload).toEqual(
+      expect.objectContaining({
+        completed_at: expect.any(String),
+      })
+    );
+    expect(onboardingBuilder.select).toHaveBeenCalledWith('user_id');
+    expect(onboardingBuilder.single).toHaveBeenCalledTimes(1);
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ success: true });
+  });
+
+  it('uses the created user id when completing onboarding for new local E2E users', async () => {
+    mocks.checkIfUserExists.mockResolvedValue(null);
+    const { createUser, onboardingBuilder } = mockSuccessfulSession();
+
+    const request = new NextRequest('http://localhost/api/auth/dev-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        completeOnboarding: true,
+        email: 'guest@tuturuuu.com',
+        locale: 'en',
+      }),
+    });
+
+    const { POST } = await import('@/app/api/auth/dev-session/route');
+    const response = await POST(request);
+
+    expect(createUser).toHaveBeenCalledWith({
+      email: 'guest@tuturuuu.com',
+      email_confirm: true,
+      user_metadata: {
+        locale: 'en',
+        origin: 'TUTURUUU',
+      },
+    });
+    expect(onboardingBuilder.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: 'new-user-123',
+      }),
+      { onConflict: 'user_id' }
+    );
+    expect(response.status).toBe(200);
   });
 
   it('can reset the app memory rate-limit store for local E2E setup', async () => {
