@@ -168,7 +168,7 @@ test.describe('Task board guest access', () => {
       createdTaskIds.push(createTaskBody.task!.id!);
 
       const deniedDeleteResponse = await guestPage.request.delete(
-        `${origin}/api/v1/workspaces/${board.ws_id}/tasks/${createdTaskBody.task!.id}`,
+        `${origin}/api/v1/workspaces/${board.ws_id}/tasks/${createTaskBody.task!.id}`,
         { failOnStatusCode: false }
       );
       expect(deniedDeleteResponse.status()).toBe(403);
