@@ -424,7 +424,7 @@ export function GlobalCommandLauncher({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent
         aria-label={labels.title}
-        className="grid max-h-[min(760px,92vh)] w-[min(1040px,96vw)] gap-0 overflow-hidden rounded-lg border bg-background p-0 shadow-2xl sm:max-w-[min(1040px,96vw)]"
+        className="grid h-[min(760px,calc(100dvh-2rem))] max-h-[calc(100dvh-2rem)] w-[min(1040px,96vw)] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden rounded-lg border bg-background p-0 shadow-2xl sm:max-w-[min(1040px,96vw)]"
         showCloseButton={false}
       >
         <DialogHeader className="sr-only">
@@ -432,10 +432,10 @@ export function GlobalCommandLauncher({
           <DialogDescription>{labels.searchHint}</DialogDescription>
         </DialogHeader>
         <Command
-          className="grid h-[min(760px,92vh)] rounded-none border-none bg-background md:grid-cols-[minmax(0,1fr)_18rem]"
+          className="grid h-full min-h-0 rounded-none border-none bg-background md:grid-cols-[minmax(0,1fr)_18rem]"
           shouldFilter={false}
         >
-          <div className="flex min-h-0 flex-col">
+          <div className="flex min-h-0 flex-col overflow-hidden">
             <div className="border-b">
               <CommandInput
                 aria-label={labels.title}
@@ -446,7 +446,7 @@ export function GlobalCommandLauncher({
               />
             </div>
 
-            <CommandList className="max-h-none flex-1 p-2">
+            <CommandList className="min-h-0 max-h-none flex-1 overflow-y-auto p-2">
               <CommandEmpty>
                 <EmptyState labels={labels} query={trimmedQuery} />
               </CommandEmpty>
@@ -534,7 +534,7 @@ export function GlobalCommandLauncher({
             </div>
           </div>
 
-          <aside className="hidden min-h-0 border-l bg-muted/20 p-4 md:flex md:flex-col">
+          <aside className="hidden min-h-0 overflow-y-auto border-l bg-muted/20 p-4 md:flex md:flex-col">
             <div className="space-y-5">
               <div>
                 <p className="text-muted-foreground text-xs uppercase">

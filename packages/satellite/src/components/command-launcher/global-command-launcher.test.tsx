@@ -169,6 +169,28 @@ describe('GlobalCommandLauncher', () => {
     );
   });
 
+  it('keeps long result sets inside the dialog scroll region', async () => {
+    listWorkspaces.mockResolvedValue(workspaces);
+    renderLauncher();
+
+    openGlobalCommandLauncher();
+    await screen.findByPlaceholderText('Search apps, workspaces, and pages...');
+
+    const dialogContent = document.querySelector('[data-slot="dialog-content"]');
+    const commandList = document.querySelector('[data-slot="command-list"]');
+
+    expect(dialogContent?.className).toContain(
+      'h-[min(760px,calc(100dvh-2rem))]'
+    );
+    expect(dialogContent?.className).toContain(
+      'grid-rows-[auto_minmax(0,1fr)]'
+    );
+    expect(dialogContent?.className).toContain('overflow-hidden');
+    expect(commandList?.className).toContain('min-h-0');
+    expect(commandList?.className).toContain('flex-1');
+    expect(commandList?.className).toContain('overflow-y-auto');
+  });
+
   it('navigates through the resolved app URL when a result is selected', async () => {
     listWorkspaces.mockResolvedValue(workspaces);
     const onNavigate = vi.fn();
