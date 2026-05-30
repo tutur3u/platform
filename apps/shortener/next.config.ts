@@ -1,6 +1,9 @@
 import { getLocalInternalAppUrl } from '@tuturuuu/utils/internal-domains';
 import { TUTURUUU_PORTLESS_ALLOWED_DEV_ORIGINS } from '@tuturuuu/utils/portless';
 import type { NextConfig } from 'next';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
 
 const CENTRAL_PORT = process.env.CENTRAL_PORT || 7803;
 const IS_DEPLOYED_ENVIRONMENT =
@@ -57,4 +60,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
