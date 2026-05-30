@@ -1,6 +1,10 @@
 import { getFinanceRouteContext } from '@tuturuuu/apis/finance/request-access';
-import { DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID } from '@tuturuuu/internal-api/workspace-configs';
+import {
+  DATABASE_DEFAULT_INCLUDED_GROUPS_CONFIG_ID,
+  ENABLE_CMS_GAMES_CONFIG_ID,
+} from '@tuturuuu/internal-api/workspace-configs';
 import { NextResponse } from 'next/server';
+import { requireWorkspaceExternalProjectAccess } from '@/lib/external-projects/access';
 import { resolveFinanceRouteAuthContext } from '@/lib/finance-route-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
@@ -18,6 +22,50 @@ interface Params {
 
 export async function PUT(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
+
+  if (id === ENABLE_CMS_GAMES_CONFIG_ID) {
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'manage',
+      request: req,
+      wsId: rawWsId,
+    });
+    if (!access.ok) return access.response;
+
+    const { value } = await req.json();
+    if (value !== undefined && value !== null && typeof value !== 'string') {
+      return NextResponse.json(
+        { message: 'Invalid workspace config value' },
+        { status: 400 }
+      );
+    }
+
+    const { error } = await access.admin
+      .from('workspace_configs')
+      .upsert({
+        id,
+        updated_at: new Date().toISOString(),
+        value: value ?? '',
+        ws_id: access.normalizedWorkspaceId,
+      })
+      .eq('ws_id', access.normalizedWorkspaceId)
+      .eq('id', id);
+
+    if (error) {
+      serverLogger.error('Error upserting CMS workspace config:', error);
+      return NextResponse.json(
+        {
+          message:
+            error.message ||
+            error.details ||
+            'Error upserting workspace config',
+        },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ message: 'success' });
+  }
+
   const access = await getFinanceRouteContext(
     req,
     rawWsId,
@@ -97,6 +145,26 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function GET(req: Request, { params }: Params) {
   const { wsId: rawWsId, configId: id } = await params;
+
+  if (id === ENABLE_CMS_GAMES_CONFIG_ID) {
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request: req,
+      wsId: rawWsId,
+    });
+    if (!access.ok) {
+      return NextResponse.json({}, { status: access.response.status });
+    }
+
+    const value = await getWorkspaceConfig(access.normalizedWorkspaceId, id);
+
+    if (value === null) {
+      return NextResponse.json({}, { status: 404 });
+    }
+
+    return NextResponse.json({ value });
+  }
+
   const access = await getFinanceRouteContext(
     req,
     rawWsId,

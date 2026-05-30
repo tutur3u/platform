@@ -11,14 +11,12 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
-import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type {
   CanonicalExternalProject,
   ExternalProjectAdapterKind,
   ExternalProjectSyncSchema,
   Json,
-  PermissionId,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
 import {
@@ -26,7 +24,6 @@ import {
   ROOT_WORKSPACE_ID,
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
-import { permissions as rolePermissions } from '@tuturuuu/utils/permissions';
 import {
   getPermissions,
   normalizeWorkspaceId,
@@ -466,29 +463,6 @@ function hasWorkspaceExternalProjectPermission(
   return false;
 }
 
-function createPermissionsResult({
-  isCreator,
-  permissions,
-  wsId,
-}: {
-  isCreator: boolean;
-  permissions: PermissionId[];
-  wsId: string;
-}): PermissionsResult {
-  const isAdmin = permissions.includes('admin');
-  const containsPermission = (permission: PermissionId) =>
-    isCreator || isAdmin || permissions.includes(permission);
-
-  return {
-    containsPermission,
-    membershipType: 'MEMBER',
-    permissions,
-    wsId,
-    withoutPermission: (permission: PermissionId) =>
-      !containsPermission(permission),
-  };
-}
-
 function isWorkspaceHandleCandidate(value: string) {
   return /^[a-z0-9](?:[a-z0-9_-]{0,62}[a-z0-9])?$/u.test(value);
 }
@@ -544,7 +518,6 @@ async function normalizeWorkspaceIdForUser({
 }
 
 async function getPermissionsForUserId({
-  admin,
   userId,
   wsId,
 }: {
@@ -552,76 +525,11 @@ async function getPermissionsForUserId({
   userId: string;
   wsId: string;
 }): Promise<PermissionsResult | null> {
-  const { data: membership, error: membershipError } = await admin
-    .from('workspace_members')
-    .select('type')
-    .eq('ws_id', wsId)
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (membershipError || membership?.type !== 'MEMBER') {
-    return null;
-  }
-
-  const permissionsQuery = admin
-    .from('workspace_role_members')
-    .select('workspace_roles!inner(workspace_role_permissions(permission))')
-    .eq('user_id', userId)
-    .eq('workspace_roles.ws_id', wsId)
-    .eq('workspace_roles.workspace_role_permissions.enabled', true);
-
-  const workspaceQuery = admin
-    .from('workspaces')
-    .select('creator_id')
-    .eq('id', wsId)
-    .single();
-
-  const defaultQuery = admin
-    .from('workspace_default_permissions')
-    .select('permission')
-    .eq('ws_id', wsId)
-    .eq('member_type', 'MEMBER')
-    .eq('enabled', true);
-
-  const [permissionsRes, workspaceRes, defaultRes] = await Promise.all([
-    permissionsQuery,
-    workspaceQuery,
-    defaultQuery,
-  ]);
-
-  if (
-    permissionsRes.error ||
-    workspaceRes.error ||
-    defaultRes.error ||
-    !workspaceRes.data
-  ) {
-    return null;
-  }
-
-  const isCreator = workspaceRes.data.creator_id === userId;
-  const rolePermissionIds = permissionsRes.data.flatMap(
-    (membership) =>
-      membership.workspace_roles?.workspace_role_permissions?.map(
-        (permission) => permission.permission
-      ) ?? []
-  );
-  const defaultPermissionIds = defaultRes.data.map(
-    (permission) => permission.permission
-  );
-  const permissions = isCreator
-    ? rolePermissions({
-        user: { id: userId } as SupabaseUser,
-        wsId,
-      }).map(({ id }) => id)
-    : [...new Set([...rolePermissionIds, ...defaultPermissionIds])];
-
-  if (!isCreator && permissions.length === 0) {
-    return null;
-  }
-
-  return createPermissionsResult({
-    isCreator,
-    permissions,
+  return getPermissions({
+    user: {
+      email: null,
+      id: userId,
+    },
     wsId,
   });
 }
