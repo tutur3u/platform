@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { createPOST as createAiChatPost } from '@tuturuuu/ai/chat/google/route';
+import type { ChatRealtimeAudience } from '@tuturuuu/realtime/chat';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
@@ -25,7 +26,11 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import {
+  getChatRealtimeAudience,
+  getChatRealtimeUserAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import {
   downloadWorkspaceStorageObjectForProvider,
@@ -159,24 +164,25 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      const conversation = await callPrivateChatRpc<ChatConversation>(
+        'chat_get_conversation',
+        {
+          p_actor_user_id: auth.user.id,
+          p_conversation_id: params.conversationId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
+      const audience = getChatRealtimeAudience(conversation);
 
       if (parsed.data.kind === 'user') {
         await publishChatRealtimeEvent({
           actorUserId: auth.user.id,
+          audience,
           conversationId: message.conversationId,
           message,
           type: 'message.created',
           wsId: context.context.normalizedWsId,
         });
-
-        const conversation = await callPrivateChatRpc<ChatConversation>(
-          'chat_get_conversation',
-          {
-            p_actor_user_id: auth.user.id,
-            p_conversation_id: params.conversationId,
-            p_ws_id: context.context.normalizedWsId,
-          }
-        );
 
         if (conversation?.type === 'ai') {
           if (wantsChatMessageStream(request)) {
@@ -198,6 +204,7 @@ export const POST = withSessionAuth<RouteParams>(
           });
           await publishChatRealtimeMessages({
             actorUserId: auth.user.id,
+            audience,
             messages: assistantMessages,
             wsId: context.context.normalizedWsId,
           });
@@ -215,6 +222,7 @@ export const POST = withSessionAuth<RouteParams>(
       if (parsed.data.kind !== 'user') {
         await publishChatRealtimeEvent({
           actorUserId: auth.user.id,
+          audience,
           conversationId: message.conversationId,
           message,
           type: 'message.created',
@@ -250,10 +258,12 @@ type AiAssistantMessageRow = {
 
 async function publishChatRealtimeMessages({
   actorUserId,
+  audience,
   messages,
   wsId,
 }: {
   actorUserId: string;
+  audience: ChatRealtimeAudience;
   messages: ChatMessage[];
   wsId: string;
 }) {
@@ -261,6 +271,7 @@ async function publishChatRealtimeMessages({
     messages.map((message) =>
       publishChatRealtimeEvent({
         actorUserId,
+        audience,
         conversationId: message.conversationId,
         message,
         type: 'message.created',
@@ -311,6 +322,7 @@ function streamNativeAiConversationResponse({
 
         await publishChatRealtimeMessages({
           actorUserId: auth.user.id,
+          audience: getChatRealtimeAudience(conversation),
           messages: assistantMessages,
           wsId: context.normalizedWsId,
         });
@@ -475,6 +487,7 @@ async function sendAiChatMessage({
 
   await publishChatRealtimeMessages({
     actorUserId: auth.user.id,
+    audience: getChatRealtimeUserAudience(auth.user.id),
     messages: newMessages,
     wsId: context.normalizedWsId,
   });
@@ -528,6 +541,7 @@ function streamAiChatMessageResponse({
 
         await publishChatRealtimeMessages({
           actorUserId: auth.user.id,
+          audience: getChatRealtimeUserAudience(auth.user.id),
           messages: newMessages,
           wsId,
         });

@@ -4,6 +4,7 @@ import type {
   ChatRealtimeTokenPayload,
 } from '../../../packages/realtime/src/chat';
 import {
+  canReceiveChatRealtimeEvent,
   chatRealtimeEventSchema,
   hasChatRealtimeScope,
 } from '../../../packages/realtime/src/chat';
@@ -51,7 +52,9 @@ function broadcast(event: ChatRealtimeEvent) {
   if (!room) return;
 
   for (const client of room.clients) {
-    send(client, event);
+    if (canReceiveChatRealtimeEvent(event, client.token.userId)) {
+      send(client, event);
+    }
   }
 }
 

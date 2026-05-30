@@ -6,12 +6,17 @@ import {
   isAiChatConversationId,
 } from '@/lib/chat/agent-discovery';
 import {
+  type ChatConversation,
   type ChatMessage,
   callPrivateChatRpc,
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import {
+  getChatRealtimeAudience,
+  getChatRealtimeUserAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 
 type RouteParams = {
   conversationId: string;
@@ -61,9 +66,18 @@ export const PATCH = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      const conversation = await callPrivateChatRpc<ChatConversation>(
+        'chat_get_conversation',
+        {
+          p_actor_user_id: auth.user.id,
+          p_conversation_id: params.conversationId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversationId: message.conversationId,
         message,
         type: 'message.updated',
@@ -105,6 +119,7 @@ export const DELETE = withSessionAuth<RouteParams>(
 
         await publishChatRealtimeEvent({
           actorUserId: auth.user.id,
+          audience: getChatRealtimeUserAudience(auth.user.id),
           conversationId: message.conversationId,
           message,
           type: 'message.deleted',
@@ -123,9 +138,18 @@ export const DELETE = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      const conversation = await callPrivateChatRpc<ChatConversation>(
+        'chat_get_conversation',
+        {
+          p_actor_user_id: auth.user.id,
+          p_conversation_id: params.conversationId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversationId: message.conversationId,
         message,
         type: 'message.deleted',

@@ -32,6 +32,13 @@ managed by the blue/green watcher. The sidecar exposes only port `7817` inside
 the Compose network. `apps/web` publishes committed chat mutations to
 `POST /publish`; clients receive them via the proxied SSE stream.
 
+Every published event must include an explicit `audience`. Channel events use a
+workspace audience, while direct, group, and AI conversation events use a
+user-list audience derived from the authorized conversation members. The sidecar
+keeps workspace rooms for connection management, but it filters each event by
+that audience before sending any full conversation or message payload to a
+client.
+
 If Chat realtime is unavailable, chat mutations still succeed. The web API logs
 the publish failure and clients continue to recover through normal query
 refetching and reconnects.

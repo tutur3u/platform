@@ -12,7 +12,11 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import {
+  getChatRealtimeAudience,
+  getChatRealtimeUserAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 
 type RouteParams = {
   conversationId: string;
@@ -64,6 +68,7 @@ export const PATCH = withSessionAuth<RouteParams>(
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversation,
         conversationId: conversation.id,
         type: 'conversation.updated',
@@ -104,6 +109,7 @@ export const DELETE = withSessionAuth<RouteParams>(
 
         await publishChatRealtimeEvent({
           actorUserId: auth.user.id,
+          audience: getChatRealtimeUserAudience(auth.user.id),
           conversationId: params.conversationId,
           result,
           type: 'conversation.deleted',
@@ -113,6 +119,14 @@ export const DELETE = withSessionAuth<RouteParams>(
         return NextResponse.json({ result });
       }
 
+      const conversation = await callPrivateChatRpc<ChatConversation>(
+        'chat_get_conversation',
+        {
+          p_actor_user_id: auth.user.id,
+          p_conversation_id: params.conversationId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
       const result = await callPrivateChatRpc<ChatConversationDeleteResult>(
         'chat_delete_conversation',
         {
@@ -124,6 +138,7 @@ export const DELETE = withSessionAuth<RouteParams>(
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversationId: params.conversationId,
         result,
         type: 'conversation.deleted',

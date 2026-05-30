@@ -2,12 +2,16 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
+  type ChatConversation,
   type ChatMessage,
   callPrivateChatRpc,
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import {
+  getChatRealtimeAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 
 type RouteParams = {
   conversationId: string;
@@ -57,9 +61,18 @@ export const POST = withSessionAuth<RouteParams>(
           p_ws_id: context.context.normalizedWsId,
         }
       );
+      const conversation = await callPrivateChatRpc<ChatConversation>(
+        'chat_get_conversation',
+        {
+          p_actor_user_id: auth.user.id,
+          p_conversation_id: params.conversationId,
+          p_ws_id: context.context.normalizedWsId,
+        }
+      );
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversationId: message.conversationId,
         message,
         type: 'reaction.updated',

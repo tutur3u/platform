@@ -11,7 +11,10 @@ import {
   chatRpcErrorResponse,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
-import { publishChatRealtimeEvent } from '@/lib/chat/realtime';
+import {
+  getChatRealtimeAudience,
+  publishChatRealtimeEvent,
+} from '@/lib/chat/realtime';
 
 type RouteParams = {
   wsId: string;
@@ -168,6 +171,7 @@ export const POST = withSessionAuth<RouteParams>(
 
       await publishChatRealtimeEvent({
         actorUserId: auth.user.id,
+        audience: getChatRealtimeAudience(conversation),
         conversation,
         conversationId: conversation.id,
         type: 'conversation.created',

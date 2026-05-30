@@ -1,8 +1,12 @@
 import 'server-only';
 
-import type { ChatRealtimeEvent } from '@tuturuuu/realtime/chat';
+import type {
+  ChatRealtimeAudience,
+  ChatRealtimeEvent,
+} from '@tuturuuu/realtime/chat';
 import { chatRealtimeEventSchema } from '@tuturuuu/realtime/chat';
 import { signChatRealtimeToken } from '@tuturuuu/realtime/chat/token';
+import type { ChatConversation } from '@/lib/chat/private-rpc';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const TOKEN_TTL_MS = 10 * 60_000;
@@ -64,6 +68,31 @@ function signChatRealtimeAccess(input: {
   );
 
   return { expiresAt, token };
+}
+
+export function getChatRealtimeAudience(
+  conversation: Pick<ChatConversation, 'createdBy' | 'members' | 'type'>
+): ChatRealtimeAudience {
+  if (conversation.type === 'channel') {
+    return { scope: 'workspace' };
+  }
+
+  const userIds = new Set<string>();
+  for (const member of conversation.members) {
+    userIds.add(member.userId);
+  }
+
+  if (conversation.createdBy) {
+    userIds.add(conversation.createdBy);
+  }
+
+  return { scope: 'users', userIds: [...userIds] };
+}
+
+export function getChatRealtimeUserAudience(
+  userId: string
+): ChatRealtimeAudience {
+  return { scope: 'users', userIds: [userId] };
 }
 
 export function getChatRealtimeSubscribeUrl(input: {
