@@ -38,6 +38,20 @@ function matchesPathPrefix(targetPath: string, pathPrefix: string) {
   return targetPath === pathPrefix || targetPath.startsWith(`${pathPrefix}/`);
 }
 
+function getComparablePath(target?: string) {
+  if (!target) return null;
+
+  try {
+    const base =
+      typeof window === 'undefined'
+        ? 'https://tuturuuu.local'
+        : window.location.origin;
+    return new URL(target, base).pathname;
+  } catch {
+    return target.split(/[?#]/u)[0] || target;
+  }
+}
+
 interface NavLinkProps {
   wsId: string;
   link: NavLinkType;
@@ -63,11 +77,12 @@ export function NavLink({
   const hasActiveChild = (navLinks: (NavLinkType | null)[]): boolean => {
     return (
       navLinks?.some((child) => {
-        const childMatches =
-          child?.href &&
-          (child.matchExact
-            ? pathname === child.href
-            : pathname.startsWith(child.href));
+        const childTargets = [child?.href, ...(child?.aliases ?? [])]
+          .map(getComparablePath)
+          .filter((target): target is string => Boolean(target));
+        const childMatches = childTargets.some((target) =>
+          child?.matchExact ? pathname === target : pathname.startsWith(target)
+        );
 
         if (childMatches) return true;
 
@@ -80,9 +95,13 @@ export function NavLink({
     );
   };
 
+  const activeTargets = [href, ...(link.aliases ?? [])]
+    .map(getComparablePath)
+    .filter((target): target is string => Boolean(target));
   const isActive =
-    (href &&
-      (link.matchExact ? pathname === href : pathname.startsWith(href))) ||
+    activeTargets.some((target) =>
+      link.matchExact ? pathname === target : pathname.startsWith(target)
+    ) ||
     (children && hasActiveChild(children));
 
   const isDisabled = link.disabled || link.tempDisabled;

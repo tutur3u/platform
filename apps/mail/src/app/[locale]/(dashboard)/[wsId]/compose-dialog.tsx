@@ -23,9 +23,18 @@ import {
 } from '@tuturuuu/ui/select';
 import { Textarea } from '@tuturuuu/ui/textarea';
 import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+
+export interface ComposeInitialDraft {
+  bcc?: string;
+  bodyText?: string;
+  cc?: string;
+  subject?: string;
+  to?: string;
+}
 
 interface ComposeDialogProps {
+  initialDraft?: ComposeInitialDraft | null;
   mailboxes: MailMailbox[];
   onOpenChange: (open: boolean) => void;
   onSend: (mailboxId: string, payload: SendMailMessagePayload) => Promise<void>;
@@ -42,6 +51,7 @@ function parseRecipients(value: string) {
 }
 
 export function ComposeDialog({
+  initialDraft,
   mailboxes,
   onOpenChange,
   onSend,
@@ -50,12 +60,15 @@ export function ComposeDialog({
   sending,
 }: ComposeDialogProps) {
   const t = useTranslations('mail');
-  const sendableMailboxes = mailboxes.filter((mailbox) =>
-    ['admin', 'owner', 'sender'].includes(mailbox.role)
+  const sendableMailboxes = useMemo(
+    () =>
+      mailboxes.filter((mailbox) =>
+        ['admin', 'owner', 'sender'].includes(mailbox.role)
+      ),
+    [mailboxes]
   );
-  const [mailboxId, setMailboxId] = useState(
-    selectedMailboxId ?? sendableMailboxes[0]?.id ?? ''
-  );
+  const defaultMailboxId = selectedMailboxId ?? sendableMailboxes[0]?.id ?? '';
+  const [mailboxId, setMailboxId] = useState(defaultMailboxId);
   const [to, setTo] = useState('');
   const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');
@@ -63,11 +76,30 @@ export function ComposeDialog({
   const [bodyText, setBodyText] = useState('');
 
   const activeMailboxId =
-    mailboxId || selectedMailboxId || sendableMailboxes[0]?.id;
+    mailboxId || selectedMailboxId || sendableMailboxes[0]?.id || '';
   const canSend =
     Boolean(activeMailboxId) &&
     parseRecipients(to).length > 0 &&
     bodyText.trim();
+
+  useEffect(() => {
+    if (!open) return;
+
+    setMailboxId(defaultMailboxId);
+    setTo(initialDraft?.to ?? '');
+    setCc(initialDraft?.cc ?? '');
+    setBcc(initialDraft?.bcc ?? '');
+    setSubject(initialDraft?.subject ?? '');
+    setBodyText(initialDraft?.bodyText ?? '');
+  }, [
+    defaultMailboxId,
+    initialDraft?.bcc,
+    initialDraft?.bodyText,
+    initialDraft?.cc,
+    initialDraft?.subject,
+    initialDraft?.to,
+    open,
+  ]);
 
   const reset = () => {
     setTo('');
