@@ -10551,6 +10551,17 @@
       "workspace_navigation_description": "Set the default page for all workspace members when clicking on Finance.",
       "workspace_navigation_title": "Workspace Default"
     },
+    "keyboard_shortcuts": {
+      "close_settings": "Close Settings",
+      "first_section": "First settings section",
+      "global": "Global",
+      "last_section": "Last settings section",
+      "next_section": "Next settings section",
+      "open_settings": "Open Settings",
+      "previous_section": "Previous settings section",
+      "search_settings": "Search settings",
+      "settings_dialog": "Settings dialog"
+    },
     "loading_workspace": "Loading workspace...",
     "manage_settings": "Manage your {label} settings",
     "mira": {
@@ -10594,6 +10605,8 @@
       "forms_autosave": "Auto-save",
       "forms_autosave_description": "Automatically save form edits as you work. Enabled by default.",
       "forms_description": "Form builder preferences",
+      "keyboard_shortcuts": "Keyboard Shortcuts",
+      "keyboard_shortcuts_description": "Review keyboard shortcuts for opening and navigating Settings",
       "navigation": {
         "default_workspace_help": "This is the workspace you see first when you open the app.",
         "default_workspace_label": "Default Workspace",

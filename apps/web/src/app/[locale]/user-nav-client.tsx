@@ -50,6 +50,7 @@ import { PlatformCommandExtraSections } from '@/components/command/platform-extr
 import { flattenNavigation } from '@/components/command/utils/use-navigation-data';
 import type { NavLink } from '@/components/navigation';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
+import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
 import { SidebarContext } from '@/context/sidebar-context';
 import { apiFetch } from '@/lib/api-fetch';
@@ -151,20 +152,28 @@ export default function UserNavClient({
     }
   };
 
-  const openSettingsDialog = (tab?: string) => {
-    void setSettingsQuery(
-      {
-        settingsDialog: 'open',
-        settingsTab: tab ?? null,
-        settingsLinkedProvider: null,
-      },
-      {
-        history: 'replace',
-        shallow: true,
-        scroll: false,
-      }
-    );
-  };
+  const openSettingsDialog = useCallback(
+    (tab?: string) => {
+      void setSettingsQuery(
+        {
+          settingsDialog: 'open',
+          settingsTab: tab ?? null,
+          settingsLinkedProvider: null,
+        },
+        {
+          history: 'replace',
+          shallow: true,
+          scroll: false,
+        }
+      );
+    },
+    [setSettingsQuery]
+  );
+
+  useSettingsDialogShortcut({
+    enabled: Boolean(user && renderSettingsDialog),
+    onOpen: openSettingsDialog,
+  });
 
   return (
     <>

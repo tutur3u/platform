@@ -55,14 +55,15 @@ import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { removeAccents } from '@tuturuuu/utils/text-helper';
 import { useTranslations } from 'next-intl';
-import type { ComponentType, ReactNode } from 'react';
-import { useState } from 'react';
+import type { ComponentType, KeyboardEvent, ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 export interface SettingsNavItem {
   name: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
   description?: string;
+  disabled?: boolean;
   keywords?: string[];
 }
 
@@ -86,8 +87,23 @@ export interface SettingsDialogShellProps {
   primaryGroupLabels?: string[];
   /** Override to expand all accordions (user preference) */
   expandAllAccordions?: boolean;
+  /** Enable dialog-scoped keyboard shortcuts for search and tab navigation */
+  keyboardNavigation?: boolean;
   /** Content to render in the main area */
   children: ReactNode;
+}
+
+function isEditableShortcutTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+
+  const tagName = target.tagName.toLowerCase();
+
+  return (
+    target.isContentEditable ||
+    tagName === 'input' ||
+    tagName === 'textarea' ||
+    tagName === 'select'
+  );
 }
 
 /**
@@ -105,21 +121,30 @@ export function SettingsDialogShell({
   onActiveTabChange,
   primaryGroupLabels,
   expandAllAccordions = false,
+  keyboardNavigation = false,
   children,
 }: SettingsDialogShellProps) {
   const t = useTranslations();
   const { isMac, modKey } = usePlatform();
   const isMobile = useIsMobile();
+  const desktopSearchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const activeGroup = navItems.find((g) =>
-    g.items.some((i) => i.name === activeTab)
+  const allNavItems = useMemo(
+    () => navItems.flatMap((group) => group.items),
+    [navItems]
+  );
+
+  const activeGroup = navItems.find((group) =>
+    group.items.some((item) => item.name === activeTab)
   );
 
   const activeItem =
-    navItems.flatMap((g) => g.items).find((i) => i.name === activeTab) ||
-    navItems[0]?.items[0];
+    allNavItems.find((item) => item.name === activeTab) ||
+    allNavItems.find((item) => !item.disabled) ||
+    allNavItems[0];
 
   const filteredNavItems = navItems
     .map((group) => {
@@ -139,14 +164,120 @@ export function SettingsDialogShell({
     })
     .filter((group) => group.items.length > 0);
 
+  const filteredEnabledItems = filteredNavItems.flatMap((group) =>
+    group.items.filter((item) => !item.disabled)
+  );
+
   const isGroupExpandedByDefault = (groupLabel: string, index: number) => {
     if (expandAllAccordions || searchQuery) return true;
     if (primaryGroupLabels) return primaryGroupLabels.includes(groupLabel);
     return index === 0;
   };
 
+  const focusSearch = useCallback(() => {
+    if (isMobile) {
+      setMobileNavOpen(true);
+      requestAnimationFrame(() => {
+        mobileSearchInputRef.current?.focus();
+      });
+      return;
+    }
+
+    desktopSearchInputRef.current?.focus();
+  }, [isMobile]);
+
+  const changeActiveItem = useCallback(
+    (targetIndex: number) => {
+      const targetItem = filteredEnabledItems[targetIndex];
+      if (targetItem) onActiveTabChange(targetItem.name);
+    },
+    [filteredEnabledItems, onActiveTabChange]
+  );
+
+  const moveActiveItem = useCallback(
+    (direction: 1 | -1) => {
+      if (filteredEnabledItems.length === 0) return;
+
+      const currentIndex = filteredEnabledItems.findIndex(
+        (item) => item.name === activeTab
+      );
+      const nextIndex =
+        currentIndex === -1
+          ? direction === 1
+            ? 0
+            : filteredEnabledItems.length - 1
+          : (currentIndex + direction + filteredEnabledItems.length) %
+            filteredEnabledItems.length;
+
+      changeActiveItem(nextIndex);
+    },
+    [activeTab, changeActiveItem, filteredEnabledItems]
+  );
+
+  const handleKeyboardNavigation = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>) => {
+      if (!keyboardNavigation || event.defaultPrevented) return;
+
+      const key = event.key.toLowerCase();
+      const isModifierSearch =
+        (event.metaKey || event.ctrlKey) && !event.altKey && key === 'f';
+      const isSlashSearch =
+        !event.metaKey && !event.ctrlKey && !event.altKey && event.key === '/';
+
+      if (isModifierSearch || isSlashSearch) {
+        if (isSlashSearch && isEditableShortcutTarget(event.target)) return;
+
+        event.preventDefault();
+        focusSearch();
+        return;
+      }
+
+      if (
+        !event.altKey ||
+        event.metaKey ||
+        event.ctrlKey ||
+        isEditableShortcutTarget(event.target)
+      ) {
+        return;
+      }
+
+      if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        moveActiveItem(1);
+        return;
+      }
+
+      if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        moveActiveItem(-1);
+        return;
+      }
+
+      if (event.key === 'Home') {
+        event.preventDefault();
+        changeActiveItem(0);
+        return;
+      }
+
+      if (event.key === 'End') {
+        event.preventDefault();
+        changeActiveItem(filteredEnabledItems.length - 1);
+      }
+    },
+    [
+      changeActiveItem,
+      filteredEnabledItems.length,
+      focusSearch,
+      keyboardNavigation,
+      moveActiveItem,
+    ]
+  );
+
   return (
-    <DialogContent className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300">
+    <DialogContent
+      className="flex h-[90vh] flex-col overflow-hidden p-0 md:max-h-200 md:max-w-225 lg:max-h-250 lg:max-w-250 xl:max-w-300"
+      onKeyDown={handleKeyboardNavigation}
+    >
       <DialogTitle className="sr-only">{t('common.settings')}</DialogTitle>
       <DialogDescription className="sr-only">
         {t('common.settings')}
@@ -160,6 +291,7 @@ export function SettingsDialogShell({
             <div className="relative mb-2">
               <Search className="absolute top-2.5 left-2 h-4 w-4 text-muted-foreground" />
               <SidebarInput
+                ref={desktopSearchInputRef}
                 placeholder={t('search.search')}
                 className="bg-background pl-8"
                 value={searchQuery}
@@ -196,10 +328,17 @@ export function SettingsDialogShell({
                         {group.items.map((item) => (
                           <SidebarMenuItem key={item.name}>
                             <SidebarMenuButton
+                              disabled={item.disabled}
                               isActive={activeTab === item.name}
-                              onClick={() => onActiveTabChange(item.name)}
+                              onClick={() => {
+                                if (!item.disabled) {
+                                  onActiveTabChange(item.name);
+                                }
+                              }}
                               className={cn(
                                 'h-9 w-full justify-start px-2 transition-colors',
+                                item.disabled &&
+                                  'cursor-not-allowed opacity-50',
                                 activeTab === item.name
                                   ? 'bg-accent font-medium text-accent-foreground'
                                   : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
@@ -249,7 +388,10 @@ export function SettingsDialogShell({
                       </DrawerDescription>
                     </DrawerHeader>
                     <Command className="rounded-none border-0">
-                      <CommandInput placeholder={t('search.search')} />
+                      <CommandInput
+                        ref={mobileSearchInputRef}
+                        placeholder={t('search.search')}
+                      />
                       <CommandList className="max-h-[50vh]">
                         <CommandEmpty>
                           {t('common.no_results_found')}
@@ -258,9 +400,11 @@ export function SettingsDialogShell({
                           <CommandGroup key={group.label} heading={group.label}>
                             {group.items.map((item) => (
                               <CommandItem
+                                disabled={item.disabled}
                                 key={item.name}
                                 value={`${group.label} ${item.label} ${item.keywords?.join(' ') || ''}`}
                                 onSelect={() => {
+                                  if (item.disabled) return;
                                   onActiveTabChange(item.name);
                                   setMobileNavOpen(false);
                                 }}

@@ -17,6 +17,7 @@ import {
   FlaskConical,
   Goal,
   HandCoins,
+  Keyboard,
   Laptop,
   LayoutGrid,
   Paintbrush,
@@ -72,6 +73,7 @@ import InvoiceVisibilitySettings from './finance/invoice-visibility-settings';
 import TransactionDefaultsSettings from './finance/transaction-defaults-settings';
 import { FormsAutosaveSettings } from './forms/forms-autosave-settings';
 import ReferralSettings from './inventory/referral-settings';
+import { KeyboardShortcutsSettings } from './keyboard-shortcuts-settings';
 import { MiraMemorySettings } from './mira/mira-memory-settings';
 import { MiraPersonalitySettings } from './mira/mira-personality-settings';
 import { ReportDefaultTitleSettings } from './reports/report-default-title-settings';
@@ -338,6 +340,13 @@ export function SettingsDialog({
           icon: FileText,
           description: t('settings.preferences.forms_description'),
           keywords: ['Forms', 'Auto-save', 'Form builder'],
+        },
+        {
+          name: 'keyboard_shortcuts',
+          label: t('settings.preferences.keyboard_shortcuts'),
+          icon: Keyboard,
+          description: t('settings.preferences.keyboard_shortcuts_description'),
+          keywords: ['Keyboard', 'Shortcuts', 'Hotkeys'],
         },
       ],
     },
@@ -647,6 +656,7 @@ export function SettingsDialog({
       activeTab={activeTab}
       onActiveTabChange={setActiveTab}
       expandAllAccordions={expandAllAccordions}
+      keyboardNavigation
     >
       <CalendarSettingsWrapper
         wsId={wsId}
@@ -743,6 +753,12 @@ export function SettingsDialog({
         {activeTab === 'notifications' && (
           <div className="h-full">
             <NotificationSettings />
+          </div>
+        )}
+
+        {activeTab === 'keyboard_shortcuts' && (
+          <div className="h-full">
+            <KeyboardShortcutsSettings />
           </div>
         )}
 

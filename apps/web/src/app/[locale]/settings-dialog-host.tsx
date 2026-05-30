@@ -4,7 +4,9 @@ import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Dialog } from '@tuturuuu/ui/dialog';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
+import { useCallback } from 'react';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
+import { useSettingsDialogShortcut } from '@/components/settings/use-settings-dialog-shortcut';
 
 interface SettingsDialogHostProps {
   wsId?: string;
@@ -33,6 +35,26 @@ export function SettingsDialogHost({
   const requestedSettingsOpen = settingsQuery.settingsDialog === 'open';
   const requestedSettingsTab = settingsQuery.settingsTab ?? undefined;
   const linkedProvider = settingsQuery.settingsLinkedProvider ?? undefined;
+
+  const openSettingsDialog = useCallback(() => {
+    void setSettingsQuery(
+      {
+        settingsDialog: 'open',
+        settingsTab: null,
+        settingsLinkedProvider: null,
+      },
+      {
+        history: 'replace',
+        shallow: true,
+        scroll: false,
+      }
+    );
+  }, [setSettingsQuery]);
+
+  useSettingsDialogShortcut({
+    enabled: Boolean(user),
+    onOpen: openSettingsDialog,
+  });
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
