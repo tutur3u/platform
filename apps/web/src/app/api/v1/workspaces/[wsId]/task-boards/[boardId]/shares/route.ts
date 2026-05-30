@@ -43,6 +43,10 @@ type ShareRow = {
   } | null;
 };
 
+type ExistingShareRow = {
+  id: string;
+};
+
 type BoardShareManagerResult =
   | {
       boardId: string;
@@ -52,6 +56,31 @@ type BoardShareManagerResult =
   | {
       error: NextResponse;
     };
+
+type BoardShareManager = Extract<BoardShareManagerResult, { boardId: string }>;
+
+const BOARD_SHARE_SELECT =
+  'id, shared_with_user_id, shared_with_email, permission, created_at, users:shared_with_user_id(id, display_name, handle, avatar_url)';
+
+async function findExistingBoardShare(
+  manager: BoardShareManager,
+  column: 'shared_with_user_id' | 'shared_with_email',
+  value: string
+) {
+  const { data, error } = await (manager.sbAdmin as any)
+    .from('task_board_shares')
+    .select('id')
+    .eq('board_id', manager.boardId)
+    .eq(column, value)
+    .limit(1);
+
+  if (error) return { data: null, error };
+
+  return {
+    data: ((data ?? []) as ExistingShareRow[])[0] ?? null,
+    error: null,
+  };
+}
 
 async function requireBoardShareManager({
   boardId,
@@ -159,9 +188,7 @@ export const GET = withSessionAuth<{ wsId: string; boardId: string }>(
 
       const { data, error } = await (manager.sbAdmin as any)
         .from('task_board_shares')
-        .select(
-          'id, shared_with_user_id, shared_with_email, permission, created_at, users(id, display_name, handle, avatar_url)'
-        )
+        .select(BOARD_SHARE_SELECT)
         .eq('board_id', manager.boardId)
         .order('created_at', { ascending: false });
 
@@ -222,12 +249,11 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
         (targetUser as { user_id?: string | null } | null)?.user_id ?? null;
 
       const existingByUser = targetUserId
-        ? await (manager.sbAdmin as any)
-            .from('task_board_shares')
-            .select('id')
-            .eq('board_id', manager.boardId)
-            .eq('shared_with_user_id', targetUserId)
-            .maybeSingle()
+        ? await findExistingBoardShare(
+            manager,
+            'shared_with_user_id',
+            targetUserId
+          )
         : { data: null, error: null };
 
       if (existingByUser.error) {
@@ -237,12 +263,11 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
         );
       }
 
-      const existingByEmail = await (manager.sbAdmin as any)
-        .from('task_board_shares')
-        .select('id')
-        .eq('board_id', manager.boardId)
-        .eq('shared_with_email', email)
-        .maybeSingle();
+      const existingByEmail = await findExistingBoardShare(
+        manager,
+        'shared_with_email',
+        email
+      );
 
       if (existingByEmail.error) {
         return NextResponse.json(
@@ -270,9 +295,7 @@ export const POST = withSessionAuth<{ wsId: string; boardId: string }>(
         : (manager.sbAdmin as any).from('task_board_shares').insert(payload);
 
       const { data, error } = await query
-        .select(
-          'id, shared_with_user_id, shared_with_email, permission, created_at, users(id, display_name, handle, avatar_url)'
-        )
+        .select(BOARD_SHARE_SELECT)
         .maybeSingle();
 
       if (error || !data) {
@@ -318,9 +341,7 @@ export const PATCH = withSessionAuth<{ wsId: string; boardId: string }>(
         .update({ permission: body.permission })
         .eq('id', body.shareId)
         .eq('board_id', manager.boardId)
-        .select(
-          'id, shared_with_user_id, shared_with_email, permission, created_at, users(id, display_name, handle, avatar_url)'
-        )
+        .select(BOARD_SHARE_SELECT)
         .maybeSingle();
 
       if (error) {
