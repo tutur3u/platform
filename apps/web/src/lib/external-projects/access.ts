@@ -1016,6 +1016,17 @@ async function requireWorkspaceExternalProjectAccessWithAppSession({
   };
 }
 
+function shouldFallbackFromAppSessionToAppToken(
+  access: { ok: true } | { ok: false; response: NextResponse },
+  appCoordinationToken: string | null
+) {
+  return (
+    !access.ok &&
+    access.response.status === 401 &&
+    Boolean(appCoordinationToken)
+  );
+}
+
 export async function requireWorkspaceExternalProjectSetupAccess({
   request,
   wsId,
@@ -1025,16 +1036,26 @@ export async function requireWorkspaceExternalProjectSetupAccess({
 }) {
   const appCoordinationToken = getBearerAppCoordinationToken(request);
 
+  if (getAppSessionTokenFromRequest(request)) {
+    const appSessionAccess =
+      await requireWorkspaceExternalProjectSetupAccessWithAppSession({
+        request,
+        wsId,
+      });
+
+    if (
+      !shouldFallbackFromAppSessionToAppToken(
+        appSessionAccess,
+        appCoordinationToken
+      )
+    ) {
+      return appSessionAccess;
+    }
+  }
+
   if (appCoordinationToken) {
     return requireWorkspaceExternalProjectSetupAccessWithAppToken({
       token: appCoordinationToken,
-      wsId,
-    });
-  }
-
-  if (getAppSessionTokenFromRequest(request)) {
-    return requireWorkspaceExternalProjectSetupAccessWithAppSession({
-      request,
       wsId,
     });
   }
@@ -1092,18 +1113,28 @@ export async function requireWorkspaceExternalProjectAccess({
 }) {
   const appCoordinationToken = getBearerAppCoordinationToken(request);
 
+  if (getAppSessionTokenFromRequest(request)) {
+    const appSessionAccess =
+      await requireWorkspaceExternalProjectAccessWithAppSession({
+        mode,
+        request,
+        wsId,
+      });
+
+    if (
+      !shouldFallbackFromAppSessionToAppToken(
+        appSessionAccess,
+        appCoordinationToken
+      )
+    ) {
+      return appSessionAccess;
+    }
+  }
+
   if (appCoordinationToken) {
     return requireWorkspaceExternalProjectAccessWithAppToken({
       mode,
       token: appCoordinationToken,
-      wsId,
-    });
-  }
-
-  if (getAppSessionTokenFromRequest(request)) {
-    return requireWorkspaceExternalProjectAccessWithAppSession({
-      mode,
-      request,
       wsId,
     });
   }

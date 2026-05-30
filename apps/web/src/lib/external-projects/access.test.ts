@@ -1,17 +1,112 @@
 import type { AppCoordinationTokenClaims } from '@tuturuuu/auth/app-coordination';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { storeMocks } = vi.hoisted(() => ({
+const {
+  appCoordinationMocks,
+  appSessionMocks,
+  storeMocks,
+  supabaseMocks,
+  workspaceMocks,
+} = vi.hoisted(() => ({
+  appCoordinationMocks: {
+    getBearerAppCoordinationToken: vi.fn(),
+    verifyAppCoordinationToken: vi.fn(),
+  },
+  appSessionMocks: {
+    getAppSessionTokenFromRequest: vi.fn(),
+    verifyAppSessionRequest: vi.fn(),
+  },
   storeMocks: {
     upsertWorkspaceExternalProjectFieldDefinitionsFromSchema: vi.fn(),
   },
+  supabaseMocks: {
+    createAdminClient: vi.fn(),
+    createClient: vi.fn(),
+  },
+  workspaceMocks: {
+    getPermissions: vi.fn(),
+    normalizeWorkspaceId: vi.fn(),
+  },
+}));
+
+vi.mock('@tuturuuu/auth/app-coordination', () => ({
+  getBearerAppCoordinationToken:
+    appCoordinationMocks.getBearerAppCoordinationToken,
+  verifyAppCoordinationToken: appCoordinationMocks.verifyAppCoordinationToken,
+}));
+
+vi.mock('@tuturuuu/auth/app-session', () => ({
+  getAppSessionTokenFromRequest: appSessionMocks.getAppSessionTokenFromRequest,
+  verifyAppSessionRequest: appSessionMocks.verifyAppSessionRequest,
+}));
+
+vi.mock('@tuturuuu/supabase/next/server', () => ({
+  createAdminClient: supabaseMocks.createAdminClient,
+  createClient: supabaseMocks.createClient,
+}));
+
+vi.mock('@tuturuuu/utils/workspace-helper', () => ({
+  getPermissions: workspaceMocks.getPermissions,
+  normalizeWorkspaceId: workspaceMocks.normalizeWorkspaceId,
 }));
 
 vi.mock('./store', () => storeMocks);
 
+const cmsAppSessionClaims: AppCoordinationTokenClaims = {
+  aud: 'tuturuuu-api',
+  email: 'editor@example.com',
+  exp: 1_800_000_000,
+  iat: 1_700_000_000,
+  iss: 'tuturuuu',
+  jti: 'cms-session-token',
+  origin_app: 'web',
+  scopes: ['internal-app:session'],
+  sub: '11111111-1111-4111-8111-111111111111',
+  target_app: 'cms',
+  typ: 'app_coordination',
+};
+
+const externalAppTokenClaims: AppCoordinationTokenClaims = {
+  ...cmsAppSessionClaims,
+  jti: 'external-app-token',
+  scopes: ['external-projects:read'],
+  target_app: 'yoola',
+};
+
+const workspaceId = '22222222-2222-4222-8222-222222222222';
+
+function createPermissionsResult(permissions: string[], wsId: string) {
+  const containsPermission = vi.fn(
+    (permission: string) =>
+      permissions.includes('admin') || permissions.includes(permission)
+  );
+
+  return {
+    containsPermission,
+    membershipType: 'MEMBER',
+    permissions,
+    wsId,
+    withoutPermission: (permission: string) => !containsPermission(permission),
+  };
+}
+
+function createAccessRequest(token = 'ttr_app_test') {
+  return new Request(
+    `http://localhost/api/v1/workspaces/${workspaceId}/external-projects`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+}
+
 import {
   appTokenHasRequiredScope,
   ensureWorkspaceExternalProjectStudio,
+  requireWorkspaceExternalProjectAccess,
+  requireWorkspaceExternalProjectSetupAccess,
 } from './access';
 
 const baseClaims: AppCoordinationTokenClaims = {
@@ -164,6 +259,182 @@ function createAdminFixture(canonicalProject: CanonicalProjectFixture) {
     workspaceSecretInsert,
   };
 }
+
+describe('external project access auth dispatch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    workspaceMocks.normalizeWorkspaceId.mockResolvedValue(workspaceId);
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID ? [] : ['publish_external_projects'],
+          wsId
+        )
+    );
+  });
+
+  it('uses a valid CMS app-session bearer before scoped app-token auth', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_cms_session');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(true);
+    if (access.ok) {
+      expect(access.normalizedWorkspaceId).toBe(workspaceId);
+      expect(access.user).toMatchObject({
+        app: 'cms',
+        id: cmsAppSessionClaims.sub,
+      });
+    }
+    expect(appSessionMocks.verifyAppSessionRequest).toHaveBeenCalledWith(
+      request,
+      { targetApp: 'cms' }
+    );
+    expect(
+      appCoordinationMocks.verifyAppCoordinationToken
+    ).not.toHaveBeenCalled();
+  });
+
+  it('falls back to scoped external app-token auth for non-session bearer tokens', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_external');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_external'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'App session missing required scope',
+      ok: false,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: externalAppTokenClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(true);
+    expect(appSessionMocks.verifyAppSessionRequest).toHaveBeenCalledWith(
+      request,
+      { targetApp: 'cms' }
+    );
+    expect(
+      appCoordinationMocks.verifyAppCoordinationToken
+    ).toHaveBeenCalledWith('ttr_app_external');
+  });
+
+  it('returns unauthorized for an invalid app session without falling through to Supabase auth', async () => {
+    const request = createAccessRequest('ttr_app_expired');
+
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(null);
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_expired'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      error: 'Token expired',
+      ok: false,
+    });
+
+    const access = await requireWorkspaceExternalProjectAccess({
+      mode: 'read',
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(false);
+    if (!access.ok) {
+      expect(access.response.status).toBe(401);
+    }
+    expect(supabaseMocks.createClient).not.toHaveBeenCalled();
+  });
+
+  it('uses a valid CMS app-session bearer before app-token auth for setup access', async () => {
+    const fixture = createAdminFixture({
+      adapter: 'yoola',
+      id: 'yoola-main',
+      is_active: true,
+    });
+    const request = createAccessRequest('ttr_app_cms_session');
+
+    supabaseMocks.createAdminClient.mockResolvedValue(fixture.admin);
+    workspaceMocks.getPermissions.mockImplementation(
+      async ({ wsId }: { wsId: string }) =>
+        createPermissionsResult(
+          wsId === ROOT_WORKSPACE_ID ? [] : ['manage_external_projects'],
+          wsId
+        )
+    );
+    appCoordinationMocks.getBearerAppCoordinationToken.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.getAppSessionTokenFromRequest.mockReturnValue(
+      'ttr_app_cms_session'
+    );
+    appSessionMocks.verifyAppSessionRequest.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+    appCoordinationMocks.verifyAppCoordinationToken.mockReturnValue({
+      claims: cmsAppSessionClaims,
+      ok: true,
+    });
+
+    const access = await requireWorkspaceExternalProjectSetupAccess({
+      request,
+      wsId: workspaceId,
+    });
+
+    expect(access.ok).toBe(true);
+    if (access.ok) {
+      expect(access.normalizedWorkspaceId).toBe(workspaceId);
+    }
+    expect(appSessionMocks.verifyAppSessionRequest).toHaveBeenCalledWith(
+      request,
+      { targetApp: 'cms' }
+    );
+    expect(
+      appCoordinationMocks.verifyAppCoordinationToken
+    ).not.toHaveBeenCalled();
+  });
+});
 
 describe('external project setup access', () => {
   beforeEach(() => {
