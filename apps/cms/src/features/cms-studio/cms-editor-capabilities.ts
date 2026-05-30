@@ -7,6 +7,7 @@ import type {
   ExternalProjectStudioData,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
+import { getCmsEditorBlueprintViews } from './cms-editor-blueprints';
 import { isGameLikeCollection } from './cms-games-shared';
 
 type ResolveInput = {
@@ -52,6 +53,7 @@ export function resolveCmsEditorCapabilities({
     return studio.cmsCapabilities;
   }
 
+  const blueprintViews = getCmsEditorBlueprintViews(binding.adapter);
   const collectionViews: CmsEditorCollectionView[] = [
     {
       id: 'all',
@@ -59,6 +61,7 @@ export function resolveCmsEditorCapabilities({
       label: 'All content',
       navigationLabel: 'Library',
     },
+    ...blueprintViews,
     ...collections.map((collection) => ({
       id: `collection:${collection.slug}`,
       collectionSlugs: [collection.slug],
@@ -70,7 +73,7 @@ export function resolveCmsEditorCapabilities({
   ];
 
   if (collections.some(isGameLikeCollection)) {
-    collectionViews.splice(1, 0, {
+    collectionViews.splice(1 + blueprintViews.length, 0, {
       id: 'games',
       collectionSlugs: collections
         .filter(isGameLikeCollection)

@@ -52,10 +52,39 @@ describe('CMS editor capabilities', () => {
 
     expect(capabilities.collectionViews.map((view) => view.id)).toEqual([
       'all',
+      'landing',
+      'portfolio',
       'games',
       'collection:games',
       'collection:gallery',
     ]);
+  });
+
+  it('groups proof-site landing page collections behind one editor view', () => {
+    const capabilities = resolveCmsEditorCapabilities({
+      binding: {
+        ...binding,
+        adapter: 'yoola',
+      },
+      collections: [
+        collection('singleton-sections', 'singleton'),
+        collection('artworks'),
+        collection('lore-capsules'),
+      ],
+      fieldDefinitions: [],
+      studio: null,
+    });
+    const landingView = getCmsEditorCollectionView(capabilities, 'landing');
+
+    expect(
+      collectionMatchesCmsEditorView(
+        collection('singleton-sections', 'singleton'),
+        landingView
+      )
+    ).toBe(true);
+    expect(
+      collectionMatchesCmsEditorView(collection('artworks'), landingView)
+    ).toBe(false);
   });
 
   it('filters collections by the selected capability view', () => {

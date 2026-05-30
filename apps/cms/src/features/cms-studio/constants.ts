@@ -29,11 +29,14 @@ export const DEFAULT_EXTERNAL_PROJECT_COLLECTIONS = {
     'singleton-sections',
   ],
   theguyser: [
+    'site-config',
+    'navigation',
+    'quick-launch',
     'panel-content',
     'awards',
-    'gallery',
     'experience',
     'contact-social',
+    'showreel',
   ],
   shu: [
     'profile',

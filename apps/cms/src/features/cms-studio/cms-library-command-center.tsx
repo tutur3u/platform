@@ -11,10 +11,7 @@ import {
   Settings2,
   Trash2,
 } from '@tuturuuu/icons';
-import type {
-  ExternalProjectCollection,
-  ExternalProjectFieldDefinition,
-} from '@tuturuuu/types';
+import type { ExternalProjectCollection } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -81,26 +78,6 @@ function SectionButton({
   );
 }
 
-function getActiveCollectionFieldCount({
-  activeCollection,
-  fieldDefinitions,
-}: {
-  activeCollection: ExternalProjectCollection | null;
-  fieldDefinitions: ExternalProjectFieldDefinition[];
-}) {
-  if (!activeCollection) {
-    return fieldDefinitions.filter((definition) => definition.is_enabled)
-      .length;
-  }
-
-  return fieldDefinitions.filter(
-    (definition) =>
-      definition.is_enabled &&
-      (definition.collection_id === activeCollection.id ||
-        definition.collection_id === null)
-  ).length;
-}
-
 export function CmsLibraryCommandCenter({
   activeCollection,
   availableEditSections,
@@ -108,7 +85,6 @@ export function CmsLibraryCommandCenter({
   counts,
   createEntryPending,
   editSection,
-  fieldDefinitions,
   importPending,
   onChangeEditSection,
   onCreateCollection,
@@ -127,7 +103,6 @@ export function CmsLibraryCommandCenter({
   counts: CmsLibraryCounts;
   createEntryPending?: boolean;
   editSection: EditSection;
-  fieldDefinitions: ExternalProjectFieldDefinition[];
   importPending: boolean;
   onChangeEditSection: (section: EditSection) => void;
   onCreateCollection: () => void;
@@ -164,10 +139,6 @@ export function CmsLibraryCommandCenter({
       },
     ] satisfies SectionOption[]
   ).filter((option) => availableEditSections.includes(option.value));
-  const activeFieldCount = getActiveCollectionFieldCount({
-    activeCollection,
-    fieldDefinitions,
-  });
   const canShowContentModel = availableEditSections.includes('content-model');
   const canShowWorkflow = availableEditSections.includes('workflow');
   const showEntryTools = editSection === 'entries';
@@ -209,8 +180,8 @@ export function CmsLibraryCommandCenter({
           />
           <MetricPill label={strings.statusDraft} value={counts.drafts} />
           <MetricPill
-            label={strings.fieldsMetricLabel}
-            value={activeFieldCount}
+            label={strings.statusPublished}
+            value={counts.published}
           />
         </div>
       </div>

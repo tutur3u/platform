@@ -27,7 +27,7 @@ export default async function CmsPreviewPage({ params }: Props) {
   return (
     <CmsStudioClient
       binding={access.binding}
-      headerDescription="Review the delivered experience and jump back into the CMS library when content needs changes."
+      headerDescription={t('epm.preview_page_description')}
       initialMode="preview"
       showModeSwitch={false}
       strings={buildCmsStrings(t)}

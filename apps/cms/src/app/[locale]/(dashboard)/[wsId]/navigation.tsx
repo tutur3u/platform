@@ -3,6 +3,7 @@ import {
   FileText,
   Gamepad2,
   LayoutDashboard,
+  PenSquare,
   ShieldUser,
   Users,
 } from '@tuturuuu/icons';
@@ -43,6 +44,12 @@ export async function getNavigationLinks({
       href: `/${personalOrWsId}`,
       icon: <LayoutDashboard className="h-4 w-4" />,
       matchExact: true,
+    },
+    {
+      title: t('external-projects.epm.landing_page_nav_title'),
+      href: `/${personalOrWsId}/landing`,
+      icon: <PenSquare className="h-4 w-4" />,
+      aliases: [`/${personalOrWsId}/landing`],
     },
     {
       title: t('common.library'),

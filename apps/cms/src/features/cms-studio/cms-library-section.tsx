@@ -66,17 +66,17 @@ export function CmsLibrarySection({
   const canShowContentModel = availableEditSections.includes('content-model');
   const canShowWorkflow = availableEditSections.includes('workflow');
   const canShowSettings = availableEditSections.includes('settings');
-  const activeFieldCount = fieldDefinitions.filter(
-    (definition) =>
-      definition.is_enabled &&
-      (!activeCollection ||
-        definition.collection_id === activeCollection.id ||
-        definition.collection_id === null)
-  ).length;
   const activeCollectionEntryCount = activeCollection
     ? entries.filter((entry) => entry.collection_id === activeCollection.id)
         .length
     : entries.length;
+  const activeCollectionPublishedCount = activeCollection
+    ? entries.filter(
+        (entry) =>
+          entry.collection_id === activeCollection.id &&
+          entry.status === 'published'
+      ).length
+    : entries.filter((entry) => entry.status === 'published').length;
   const activeContent =
     editSection === 'entries' && canShowEntries ? (
       <CmsEntriesGallery
@@ -148,7 +148,6 @@ export function CmsLibrarySection({
         counts={counts}
         createEntryPending={createEntryPending}
         editSection={editSection}
-        fieldDefinitions={fieldDefinitions}
         importPending={importPending}
         onChangeEditSection={onChangeEditSection}
         onCreateCollection={onCreateCollection}
@@ -248,10 +247,10 @@ export function CmsLibrarySection({
               </div>
               <div className="rounded-md border border-border/70 bg-background/70 px-3 py-2">
                 <div className="font-semibold tabular-nums">
-                  {activeFieldCount}
+                  {activeCollectionPublishedCount}
                 </div>
                 <div className="text-muted-foreground text-xs">
-                  {strings.fieldsMetricLabel}
+                  {strings.statusPublished}
                 </div>
               </div>
             </div>

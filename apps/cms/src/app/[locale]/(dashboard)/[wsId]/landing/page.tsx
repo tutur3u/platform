@@ -2,7 +2,6 @@ import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { buildCmsStrings } from '@/features/cms-studio/cms-strings';
 import { CmsStudioClient } from '@/features/cms-studio/cms-studio-client';
-import { getCmsGamesEnabled } from '@/lib/cms-games';
 import { getCmsWorkspaceAccess } from '@/lib/external-projects/access';
 
 interface Props {
@@ -12,7 +11,7 @@ interface Props {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }
 
-export default async function CmsLibraryPage({ params, searchParams }: Props) {
+export default async function CmsLandingPage({ params, searchParams }: Props) {
   const { wsId } = await params;
   const resolvedSearchParams = await searchParams;
   const access = await getCmsWorkspaceAccess(wsId);
@@ -25,17 +24,14 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
     redirect('/no-access');
   }
 
-  const cmsGamesEnabled = await getCmsGamesEnabled(
-    access.normalizedWorkspaceId
-  );
   const t = await getTranslations('external-projects');
 
   return (
     <CmsStudioClient
       availableEditSections={['entries', 'workflow']}
       binding={access.binding}
-      cmsGamesEnabled={cmsGamesEnabled}
-      headerDescription={t('epm.library_page_description')}
+      collectionScope="landing"
+      headerDescription={t('epm.landing_page_description')}
       initialEditSection="entries"
       initialEditorEntryId={
         typeof resolvedSearchParams.entryId === 'string'

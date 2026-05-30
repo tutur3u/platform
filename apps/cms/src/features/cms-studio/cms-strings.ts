@@ -1,6 +1,8 @@
 export type CmsStrings = {
   activityTab: string;
   activityFeedTitle: string;
+  advancedDetailsDescription: string;
+  advancedDetailsTitle: string;
   archivedQueue: string;
   archiveAction: string;
   archiveBacklogHint: string;
@@ -307,6 +309,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
   return {
     activityFeedTitle: t('epm.activity_feed_title'),
     activityTab: t('epm.activity_tab'),
+    advancedDetailsDescription: t('epm.advanced_details_description'),
+    advancedDetailsTitle: t('epm.advanced_details_title'),
     archivedQueue: t('epm.archived_queue'),
     archiveAction: t('epm.archive_action'),
     archiveBacklogHint: t('epm.archive_backlog_hint'),

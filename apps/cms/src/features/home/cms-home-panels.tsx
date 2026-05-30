@@ -3,6 +3,7 @@ import type {
   ExternalProjectSummaryCollection,
 } from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
+import { cn } from '@tuturuuu/utils/format';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
@@ -10,32 +11,48 @@ export function formatDateTime(value: string | null | undefined) {
   return value ? new Date(value).toLocaleString() : null;
 }
 
-export function StatTile({
-  action,
-  icon,
+export function HomeActionCard({
+  description,
   href,
+  icon,
+  primary = false,
   title,
-  value,
 }: {
-  action: string;
-  icon: ReactNode;
+  description: string;
   href: string;
+  icon: ReactNode;
+  primary?: boolean;
   title: string;
-  value: number;
 }) {
   return (
     <Link
       href={href}
-      className="group grid min-h-32 grid-cols-[1fr_auto] gap-4 rounded-lg border border-border/70 bg-card/75 p-4 transition-colors hover:border-foreground/25 hover:bg-card"
+      className={cn(
+        'group grid min-h-32 grid-cols-[1fr_auto] gap-4 rounded-lg border p-4 transition-colors',
+        primary
+          ? 'border-foreground/20 bg-foreground text-background hover:bg-foreground/90'
+          : 'border-border/70 bg-card/75 hover:border-foreground/25 hover:bg-card'
+      )}
     >
       <div className="min-w-0">
-        <div className="text-muted-foreground text-sm">{title}</div>
-        <div className="mt-3 font-semibold text-3xl tabular-nums">{value}</div>
-        <div className="mt-3 text-muted-foreground text-xs transition-colors group-hover:text-foreground">
-          {action}
+        <div className="font-semibold text-base">{title}</div>
+        <div
+          className={cn(
+            'mt-2 text-sm leading-6',
+            primary ? 'text-background/75' : 'text-muted-foreground'
+          )}
+        >
+          {description}
         </div>
       </div>
-      <div className="flex size-10 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground">
+      <div
+        className={cn(
+          'flex size-10 items-center justify-center rounded-md border',
+          primary
+            ? 'border-background/20 bg-background/10 text-background'
+            : 'border-border/70 bg-background/80 text-muted-foreground'
+        )}
+      >
         {icon}
       </div>
     </Link>
@@ -102,10 +119,60 @@ export function QueuePanel({
   );
 }
 
+export function CollectionGroup({
+  collections,
+  emptyLabel,
+  hrefForCollection,
+  labels,
+  totalLabel,
+  title,
+}: {
+  collections: ExternalProjectSummaryCollection[];
+  emptyLabel: string;
+  hrefForCollection: (collection: ExternalProjectSummaryCollection) => string;
+  labels: {
+    archived: string;
+    draft: string;
+    enabled: string;
+    published: string;
+    scheduled: string;
+    unbound: string;
+  };
+  totalLabel: string;
+  title: string;
+}) {
+  return (
+    <section className="overflow-hidden rounded-lg border border-border/70 bg-card/75">
+      <div className="flex items-center justify-between gap-3 px-4 py-3">
+        <h2 className="font-semibold">{title}</h2>
+        <Badge variant="outline" className="rounded-md tabular-nums">
+          {collections.length}
+        </Badge>
+      </div>
+      {collections.length > 0 ? (
+        collections.map((collection) => (
+          <CollectionRow
+            key={collection.id}
+            collection={collection}
+            href={hrefForCollection(collection)}
+            labels={labels}
+            totalLabel={totalLabel}
+          />
+        ))
+      ) : (
+        <div className="border-border/60 border-t px-4 py-8 text-muted-foreground text-sm">
+          {emptyLabel}
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function CollectionRow({
   collection,
   href,
   labels,
+  totalLabel,
 }: {
   collection: ExternalProjectSummaryCollection;
   href: string;
@@ -117,6 +184,7 @@ export function CollectionRow({
     scheduled: string;
     unbound: string;
   };
+  totalLabel: string;
 }) {
   return (
     <Link
@@ -133,8 +201,8 @@ export function CollectionRow({
             {collection.isEnabled ? labels.enabled : labels.unbound}
           </Badge>
         </div>
-        <div className="mt-1 truncate text-muted-foreground text-xs">
-          {collection.slug}
+        <div className="mt-1 text-muted-foreground text-xs">
+          {collection.totalEntries} {totalLabel}
         </div>
       </div>
       <div className="grid grid-cols-4 gap-2 text-right text-xs tabular-nums">

@@ -360,14 +360,13 @@ export function EntryDetailSidebar({
 
       <Card className="border-border/70 bg-card/95 shadow-none">
         <CardHeader>
-          <CardTitle>{strings.metadataLabel}</CardTitle>
+          <CardTitle>{strings.advancedDetailsTitle}</CardTitle>
+          <CardDescription>
+            {strings.advancedDetailsDescription}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <Accordion
-            type="multiple"
-            defaultValue={['metadata']}
-            className="space-y-3"
-          >
+          <Accordion type="multiple" className="space-y-3">
             <AccordionItem
               value="metadata"
               className="rounded-[1.1rem] border border-border/70 px-4"

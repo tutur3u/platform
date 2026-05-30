@@ -8,6 +8,7 @@ export function getCmsWorkspaceBasePath(pathname: string) {
       .replace(/\/library\/entries\/[^/]+$/, '')
       .replace(/\/library\/collections\/[^/]+$/, '')
       .replace(/\/library$/, '')
+      .replace(/\/landing$/, '')
       .replace(/\/games$/, '')
       .replace(/\/members$/, '')
       .replace(/\/preview$/, '')
@@ -21,9 +22,17 @@ export function getCmsLibraryPath(pathname: string) {
 }
 
 function getCmsActiveContentPath(pathname: string) {
-  return /\/games$/u.test(stripTrailingSlash(pathname))
-    ? `${getCmsWorkspaceBasePath(pathname)}/games`
-    : getCmsLibraryPath(pathname);
+  const strippedPathname = stripTrailingSlash(pathname);
+
+  if (/\/games$/u.test(strippedPathname)) {
+    return `${getCmsWorkspaceBasePath(pathname)}/games`;
+  }
+
+  if (/\/landing$/u.test(strippedPathname)) {
+    return `${getCmsWorkspaceBasePath(pathname)}/landing`;
+  }
+
+  return getCmsLibraryPath(pathname);
 }
 
 export function getCmsCollectionPath(pathname: string, collectionId: string) {
