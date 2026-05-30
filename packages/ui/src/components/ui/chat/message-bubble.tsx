@@ -65,7 +65,7 @@ export function MessageBubble({
       <ContextMenuTrigger asChild>
         <div
           className={cn(
-            'flex gap-3',
+            'flex w-full gap-3',
             isOwnMessage ? 'justify-end' : 'justify-start'
           )}
         >
@@ -89,7 +89,7 @@ export function MessageBubble({
 
           <div
             className={cn(
-              'group flex max-w-[min(42rem,82%)] flex-col gap-1',
+              'group flex min-w-0 flex-1 flex-col gap-1',
               isOwnMessage && 'items-end'
             )}
           >
@@ -256,7 +256,7 @@ function MessageContent({
   return (
     <div
       className={cn(
-        'rounded-md border px-3 py-2 text-sm leading-6 shadow-xs',
+        'w-full rounded-md border px-3 py-2 text-sm leading-6 shadow-xs',
         isOwnMessage
           ? 'border-dynamic-blue/20 bg-dynamic-blue/10'
           : 'bg-muted/40'

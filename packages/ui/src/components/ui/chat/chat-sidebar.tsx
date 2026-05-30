@@ -173,7 +173,12 @@ export function ChatSidebar({
 
 type ConversationListItem =
   | { key: string; label: string; type: 'archive-label' }
-  | { key: string; label: string; type: 'group-label' }
+  | {
+      key: string;
+      label: string;
+      sectionType: ChatConversation['type'];
+      type: 'group-label';
+    }
   | { conversation: ChatConversation; key: string; type: 'conversation' }
   | { key: string; type: 'loader' };
 
@@ -213,12 +218,14 @@ function ConversationGroups({
                 (conversation) => conversation.type === 'channel'
               ),
               label: t('channels'),
+              sectionType: 'channel' as const,
             },
             {
               conversations: conversations.filter(
                 (conversation) => conversation.type === 'ai'
               ),
               label: t('ai_agents'),
+              sectionType: 'ai' as const,
             },
           ]
         : scope === 'personal'
@@ -228,15 +235,17 @@ function ConversationGroups({
                   (conversation) => conversation.type === 'direct'
                 ),
                 label: t('direct_messages'),
+                sectionType: 'direct' as const,
               },
               {
                 conversations: conversations.filter(
                   (conversation) => conversation.type === 'group'
                 ),
                 label: t('groups'),
+                sectionType: 'group' as const,
               },
             ]
-          : [{ conversations, label: null }],
+          : [{ conversations, label: null, sectionType: 'direct' as const }],
     [conversations, scope, t]
   );
   const items = useMemo<ConversationListItem[]>(() => {
@@ -258,6 +267,7 @@ function ConversationGroups({
         next.push({
           key: `group-${group.label}-${index}`,
           label: group.label,
+          sectionType: group.sectionType,
           type: 'group-label',
         });
       }
@@ -279,9 +289,9 @@ function ConversationGroups({
     count: items.length,
     estimateSize: (index) => {
       const item = items[index];
-      if (item?.type === 'conversation') return 66;
+      if (item?.type === 'conversation') return 36;
       if (item?.type === 'loader') return 44;
-      return 28;
+      return 30;
     },
     getItemKey: (index) => items[index]?.key ?? index,
     getScrollElement: () => parentRef.current,
@@ -328,7 +338,8 @@ function ConversationGroups({
                   {item.label}
                 </p>
               ) : item.type === 'group-label' ? (
-                <h3 className="px-2 py-1 font-medium text-muted-foreground text-xs uppercase">
+                <h3 className="flex items-center gap-1.5 px-2 py-1.5 font-medium text-muted-foreground text-xs uppercase">
+                  <ConversationSectionIcon type={item.sectionType} />
                   {item.label}
                 </h3>
               ) : item.type === 'loader' ? (
@@ -352,6 +363,15 @@ function ConversationGroups({
       </div>
     </div>
   );
+}
+
+function ConversationSectionIcon({ type }: { type: ChatConversation['type'] }) {
+  const className = 'size-3.5 shrink-0';
+
+  if (type === 'channel') return <Hash className={className} />;
+  if (type === 'ai') return <Bot className={className} />;
+  if (type === 'group') return <Users className={className} />;
+  return <MessageCircle className={className} />;
 }
 
 export function ChatConversationFilterMenu({

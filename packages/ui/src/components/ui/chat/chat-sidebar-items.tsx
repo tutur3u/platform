@@ -1,21 +1,12 @@
 'use client';
 
-import { Archive, Bot, Hash, Pin, PinOff, Users } from '@tuturuuu/icons';
+import { Archive, Pin, PinOff } from '@tuturuuu/icons';
 import type { ChatConversation, ChatMessage } from '@tuturuuu/internal-api';
 import { cn } from '@tuturuuu/utils/format';
 import { useTranslations } from 'next-intl';
-import { Avatar, AvatarFallback, AvatarImage } from '../avatar';
-import { Badge } from '../badge';
 import { Button } from '../button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '../tooltip';
-import {
-  formatChatRelativeTime,
-  getChatInitials,
-  getConversationTitle,
-  getLastMessagePreview,
-  isChatConversationPinned,
-  isReadOnlyChatConversation,
-} from './utils';
+import { getConversationTitle, isChatConversationPinned } from './utils';
 
 export function ConversationRow({
   conversation,
@@ -40,57 +31,25 @@ export function ConversationRow({
     direct: t('direct_message'),
     group: t('group_chat'),
   });
-  const readOnly = isReadOnlyChatConversation(conversation);
-  const isAiConversation = conversation.type === 'ai';
   const pinned = isChatConversationPinned(conversation, currentUserId);
 
   return (
     <div
       className={cn(
-        'group grid w-full min-w-0 items-center gap-3 overflow-hidden rounded-md px-2 py-2 text-left transition-colors hover:bg-accent',
-        'grid-cols-[2.25rem_minmax(0,1fr)_3.5rem]',
+        'group grid w-full min-w-0 grid-cols-[minmax(0,1fr)_2rem] items-center gap-1 overflow-hidden rounded-md px-2 py-1 text-left transition-colors hover:bg-accent',
         isSelected && 'bg-accent'
       )}
     >
       <button
-        className="col-span-2 grid min-w-0 grid-cols-[2.25rem_minmax(0,1fr)] items-center gap-3 text-left"
+        className="min-w-0 py-1 text-left"
         onClick={() => onSelectConversation(conversation.id)}
         type="button"
       >
-        <ConversationAvatar
-          conversation={conversation}
-          currentUserId={currentUserId}
-          title={title}
-        />
-        <span className="min-w-0 overflow-hidden">
-          <span className="flex min-w-0 items-center gap-2">
-            <span className="line-clamp-1 min-w-0 flex-1 break-all font-medium text-sm">
-              {title}
-            </span>
-            {conversation.aiEnabled && !isAiConversation && (
-              <Badge className="h-5 shrink-0" variant="secondary">
-                <Bot className="size-3" />
-                {t('ai_badge')}
-              </Badge>
-            )}
-            {readOnly && !isAiConversation && (
-              <Badge className="h-5 shrink-0" variant="outline">
-                {t('read_only_badge')}
-              </Badge>
-            )}
-          </span>
-          <span className="mt-0.5 line-clamp-1 break-all text-muted-foreground text-xs">
-            {getLastMessagePreview(conversation.latestMessage, {
-              attachment: t('attachment'),
-              message: t('message'),
-              messageDeleted: t('message_deleted'),
-              noMessagesYet: t('no_messages_yet'),
-              systemEvent: t('system_event'),
-            })}
-          </span>
+        <span className="block min-w-0 truncate font-medium text-sm leading-5">
+          {title}
         </span>
       </button>
-      <ConversationUnreadState conversation={conversation} pinned={pinned} />
+      <ConversationUnreadState unreadCount={conversation.unreadCount} />
       <ConversationQuickActions
         archived={Boolean(conversation.archivedAt)}
         conversationId={conversation.id}
@@ -140,68 +99,21 @@ export function SearchResultList({
   );
 }
 
-function ConversationAvatar({
-  conversation,
-  currentUserId,
-  title,
-}: {
-  conversation: ChatConversation;
-  currentUserId: string;
-  title: string;
-}) {
-  const otherMember = conversation.members.find(
-    (member) => member.userId !== currentUserId && member.role !== 'assistant'
-  );
-
-  if (conversation.type === 'direct' && otherMember) {
-    return (
-      <Avatar className="size-9">
-        <AvatarImage
-          alt={otherMember.user.displayName}
-          src={otherMember.user.avatarUrl ?? undefined}
-        />
-        <AvatarFallback>
-          {getChatInitials(otherMember.user.displayName)}
-        </AvatarFallback>
-      </Avatar>
-    );
-  }
+function ConversationUnreadState({ unreadCount }: { unreadCount: number }) {
+  const t = useTranslations('chat');
 
   return (
-    <Avatar className="size-9">
-      <AvatarFallback>
-        {conversation.type === 'ai' ? (
-          <Bot className="size-4" />
-        ) : conversation.type === 'channel' ? (
-          <Hash className="size-4" />
-        ) : conversation.type === 'group' ? (
-          <Users className="size-4" />
-        ) : (
-          getChatInitials(title)
-        )}
-      </AvatarFallback>
-    </Avatar>
-  );
-}
-
-function ConversationUnreadState({
-  conversation,
-  pinned,
-}: {
-  conversation: ChatConversation;
-  pinned: boolean;
-}) {
-  return (
-    <span className="flex w-12 shrink-0 flex-col items-end gap-1 overflow-hidden transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
-      <span className="max-w-full truncate text-[11px] text-muted-foreground">
-        {formatChatRelativeTime(
-          conversation.latestMessage?.createdAt ?? conversation.updatedAt
-        )}
-      </span>
-      {conversation.unreadCount > 0 ? (
-        <Badge className="h-5 min-w-5 px-1.5">{conversation.unreadCount}</Badge>
-      ) : pinned ? (
-        <Pin className="size-3.5 text-muted-foreground" />
+    <span className="col-start-2 row-start-1 flex justify-end pr-1 transition-opacity group-focus-within:opacity-0 group-hover:opacity-0">
+      {unreadCount > 0 ? (
+        <>
+          <span className="sr-only">
+            {t('unread_messages_count', { count: unreadCount })}
+          </span>
+          <span
+            aria-hidden="true"
+            className="size-2 rounded-full bg-foreground"
+          />
+        </>
       ) : null}
     </span>
   );
@@ -223,7 +135,7 @@ function ConversationQuickActions({
   const t = useTranslations('chat');
 
   return (
-    <span className="pointer-events-none col-start-3 row-start-1 flex justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
+    <span className="pointer-events-none col-start-2 row-start-1 flex justify-end opacity-0 transition-opacity group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100">
       <span className="flex items-center gap-1">
         {onPinConversation ? (
           <Tooltip>

@@ -1864,6 +1864,7 @@
     "type_group": "Group",
     "unknown_sender": "Unknown sender",
     "unpin_conversation": "Unpin conversation",
+    "unread_messages_count": "{count, plural, one {# unread message} other {# unread messages}}",
     "untitled_channel": "Untitled channel",
     "untitled_chat": "Untitled chat",
     "upload_failed": "Could not upload file"
