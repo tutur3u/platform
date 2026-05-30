@@ -11,8 +11,10 @@ import { UserNavWrapper } from './user-nav-wrapper';
 
 export default async function NavbarActions({
   hideMetadata = false,
+  renderSettingsDialog = true,
 }: {
   hideMetadata?: boolean;
+  renderSettingsDialog?: boolean;
 }) {
   const t = await getTranslations();
   const supabase = await createClient();
@@ -27,7 +29,10 @@ export default async function NavbarActions({
           {sbUser ? (
             <>
               <div className="flex-1">
-                <UserNavWrapper hideMetadata={hideMetadata} />
+                <UserNavWrapper
+                  hideMetadata={hideMetadata}
+                  renderSettingsDialog={renderSettingsDialog}
+                />
               </div>
               <NotificationPopover />
             </>

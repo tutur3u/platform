@@ -24,6 +24,7 @@ import {
 import { SidebarProvider } from '@/context/sidebar-context';
 import { resolveWorkspaceBrandingUrlsForNext } from '@/lib/workspace-branding-image-url';
 import NavbarActions from '../../navbar-actions';
+import { SettingsDialogHost } from '../../settings-dialog-host';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
@@ -166,6 +167,7 @@ export default async function Layout({ children, params }: LayoutProps) {
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
+      <SettingsDialogHost wsId={wsId} user={user} workspace={workspace} />
       {SHOW_PERSONAL_WORKSPACE_PROMPT && (
         <div className="px-2 pt-2 md:px-4 md:pt-3">
           <PersonalWorkspacePrompt
@@ -199,7 +201,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-22 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <NavbarActions />
+            <NavbarActions renderSettingsDialog={false} />
           </Suspense>
         }
         userPopover={
@@ -209,7 +211,11 @@ export default async function Layout({ children, params }: LayoutProps) {
               <div className="h-10 w-10 animate-pulse rounded-lg bg-foreground/5" />
             }
           >
-            <UserNav hideMetadata workspace={workspace} />
+            <UserNav
+              hideMetadata
+              workspace={workspace}
+              renderSettingsDialog={false}
+            />
           </Suspense>
         }
       >

@@ -61,11 +61,13 @@ export default function UserNavClient({
   locale,
   hideMetadata = false,
   workspace,
+  renderSettingsDialog = true,
 }: {
   user: WorkspaceUser | null;
   locale: string | undefined;
   hideMetadata?: boolean;
   workspace?: Workspace | null;
+  renderSettingsDialog?: boolean;
 }) {
   const t = useTranslations();
   const params = useParams();
@@ -142,7 +144,7 @@ export default function UserNavClient({
           setOpen={setCommandPaletteOpen}
         />
       )}
-      {user && (
+      {user && renderSettingsDialog && (
         <Dialog
           open={requestedSettingsOpen}
           onOpenChange={handleSettingsOpenChange}

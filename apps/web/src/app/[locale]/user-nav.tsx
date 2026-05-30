@@ -7,9 +7,11 @@ import UserNavClient from './user-nav-client';
 export async function UserNav({
   hideMetadata = false,
   workspace,
+  renderSettingsDialog = true,
 }: {
   hideMetadata?: boolean;
   workspace?: Workspace | null;
+  renderSettingsDialog?: boolean;
 }) {
   const cookies = await c();
   const user = await getCurrentUser();
@@ -21,6 +23,7 @@ export async function UserNav({
       locale={currentLocale}
       hideMetadata={hideMetadata}
       workspace={workspace}
+      renderSettingsDialog={renderSettingsDialog}
     />
   );
 }
