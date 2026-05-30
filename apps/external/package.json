@@ -28,6 +28,7 @@
     "@tanstack/react-query": "^5.100.11",
     "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/masonry": "^0.4.0",
+    "@tuturuuu/satellite": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/types": "workspace:*",
     "@tuturuuu/ui": "workspace:*",

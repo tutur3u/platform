@@ -496,5 +496,29 @@
     "true": "True",
     "true_false": "True / False",
     "type": "Type"
+  },
+  "command_launcher": {
+    "apps": "Apps",
+    "close": "close",
+    "current": "Current",
+    "current_app": "Current app",
+    "current_workspace": "Current workspace",
+    "empty": "No command found",
+    "empty_description": "Try a workspace, app, page, or a closer spelling.",
+    "error_workspaces": "Could not load workspaces",
+    "guest": "Guest",
+    "loading_workspaces": "Loading workspaces",
+    "match": "Match",
+    "navigate": "navigate",
+    "navigation": "Navigation",
+    "open": "Open",
+    "open_app": "Open app",
+    "open_workspace": "Open workspace",
+    "personal": "Personal",
+    "placeholder": "Search apps, workspaces, and pages...",
+    "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
+    "select": "select",
+    "title": "Command Launcher",
+    "workspaces": "Workspaces"
   }
 }

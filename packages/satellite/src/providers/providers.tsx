@@ -1,3 +1,7 @@
+import {
+  getLaunchableAppByTitle,
+  type LaunchableAppSlug,
+} from '@tuturuuu/utils/launchable-apps';
 import { NextIntlClientProvider } from 'next-intl';
 import { ThemeProvider } from 'next-themes';
 import { type ReactNode, Suspense } from 'react';
@@ -7,10 +11,17 @@ import { ClientProviders } from './client-providers';
 export function Providers({
   appName = 'Tuturuuu App',
   children,
+  currentApp,
 }: {
   appName?: string;
   children: ReactNode;
+  currentApp?: LaunchableAppSlug;
 }) {
+  const launchableApp =
+    currentApp ??
+    getLaunchableAppByTitle(appName)?.slug ??
+    getLaunchableAppByTitle(appName.replace(/^Tuturuuu\s+/i, ''))?.slug;
+
   return (
     <NextIntlClientProvider>
       <ThemeProvider
@@ -27,7 +38,7 @@ export function Providers({
         // see https://github.com/pacocoursey/next-themes?tab=readme-ov-file#using-with-cloudflare-rocket-loader
         // for more details
       >
-        <ClientProviders>
+        <ClientProviders currentApp={launchableApp}>
           {children}
           <Suspense fallback={null}>
             <SatelliteVersionBadge appName={appName} />

@@ -15,6 +15,7 @@ import {
   ListChecks,
   type LucideIcon,
   Mail,
+  MessageSquare,
   Package,
   Presentation,
   QrCodeIcon,
@@ -35,7 +36,9 @@ import {
 } from '@/lib/apps-registry';
 
 const APP_ICONS: Record<GatewayAppSlug, LucideIcon> = {
+  apps: LayoutGrid,
   calendar: CalendarDays,
+  chat: MessageSquare,
   cms: FilePenLine,
   drive: HardDrive,
   external: Blocks,

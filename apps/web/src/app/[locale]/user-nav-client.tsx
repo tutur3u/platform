@@ -14,6 +14,11 @@ import {
   User,
   Users,
 } from '@tuturuuu/icons';
+import {
+  type CommandLauncherNavItem,
+  GlobalCommandLauncher,
+  openGlobalCommandLauncher,
+} from '@tuturuuu/satellite/command-launcher';
 import type { Workspace } from '@tuturuuu/types';
 import type { WorkspaceUser } from '@tuturuuu/types/primitives/WorkspaceUser';
 import { Avatar, AvatarFallback, AvatarImage } from '@tuturuuu/ui/avatar';
@@ -32,15 +37,17 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '@tuturuuu/ui/dropdown-menu';
+import { toWorkspaceSlug } from '@tuturuuu/utils/constants';
 import { cn } from '@tuturuuu/utils/format';
 import { usePlatform } from '@tuturuuu/utils/hooks/use-platform';
 import { getInitials } from '@tuturuuu/utils/name-helper';
 import { useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { parseAsString, parseAsStringLiteral, useQueryStates } from 'nuqs';
-import { useContext, useState } from 'react';
+import { useCallback, useContext, useMemo, useState } from 'react';
 import { AccountSwitcherModal } from '@/components/account-switcher';
-import { CommandPalette } from '@/components/command';
+import { PlatformCommandExtraSections } from '@/components/command/platform-extra-sections';
+import { flattenNavigation } from '@/components/command/utils/use-navigation-data';
 import type { NavLink } from '@/components/navigation';
 import { SettingsDialog } from '@/components/settings/settings-dialog';
 import { useAccountSwitcher } from '@/context/account-switcher-context';
@@ -74,7 +81,6 @@ export default function UserNavClient({
 }) {
   const t = useTranslations();
   const params = useParams();
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [accountSwitcherOpen, setAccountSwitcherOpen] = useState(false);
   const sidebar = useContext(SidebarContext);
   const { accounts } = useAccountSwitcher();
@@ -106,6 +112,27 @@ export default function UserNavClient({
   });
 
   const wsId = workspace?.id ?? resolvedWorkspace?.id;
+  const commandNavItems = useMemo<CommandLauncherNavItem[]>(
+    () =>
+      flattenNavigation(navLinks).map((item) => ({
+        aliases: item.aliases,
+        external: item.external,
+        group: item.productTitle,
+        href: item.href,
+        icon: item.icon,
+        keywords: item.path,
+        subtitle: item.path.join(' / '),
+        title: item.title,
+      })),
+    [navLinks]
+  );
+  const resolvePlatformWorkspacePath = useCallback(
+    (targetWorkspace: { id: string; personal?: boolean | null }) =>
+      `/${locale ?? 'en'}/${toWorkspaceSlug(targetWorkspace.id, {
+        personal: Boolean(targetWorkspace.personal),
+      })}`,
+    [locale]
+  );
 
   const handleSettingsOpenChange = (nextOpen: boolean) => {
     if (!nextOpen) {
@@ -141,13 +168,22 @@ export default function UserNavClient({
 
   return (
     <>
-      {wsId && (
-        <CommandPalette
-          open={commandPaletteOpen}
-          setOpen={setCommandPaletteOpen}
-          navLinks={navLinks}
-        />
-      )}
+      <GlobalCommandLauncher
+        currentApp="platform"
+        currentWorkspaceId={wsId}
+        extraSections={({ onClose, query, setQuery }) => (
+          <PlatformCommandExtraSections
+            navLinks={navLinks}
+            onApplySearch={setQuery}
+            onClose={onClose}
+            query={query}
+            workspaceId={wsId}
+            workspaceName={(workspace ?? resolvedWorkspace)?.name}
+          />
+        )}
+        navItems={commandNavItems}
+        workspacePathResolver={resolvePlatformWorkspacePath}
+      />
       {user && renderSettingsDialog && (
         <Dialog
           open={requestedSettingsOpen}
@@ -231,7 +267,7 @@ export default function UserNavClient({
           <DropdownMenuGroup>
             {wsId && (
               <>
-                <DropdownMenuItem onSelect={() => setCommandPaletteOpen(true)}>
+                <DropdownMenuItem onSelect={openGlobalCommandLauncher}>
                   <Terminal className="h-4 w-4 text-dynamic-blue" />
                   <span>Command Palette</span>
                   <DropdownMenuShortcut>{modKey}K</DropdownMenuShortcut>

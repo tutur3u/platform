@@ -1,4 +1,28 @@
 {
+  "command_launcher": {
+    "apps": "Ứng dụng",
+    "close": "đóng",
+    "current": "Hiện tại",
+    "current_app": "Ứng dụng hiện tại",
+    "current_workspace": "Workspace hiện tại",
+    "empty": "Không tìm thấy lệnh",
+    "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
+    "error_workspaces": "Không thể tải workspace",
+    "guest": "Khách",
+    "loading_workspaces": "Đang tải workspace",
+    "match": "Khớp",
+    "navigate": "di chuyển",
+    "navigation": "Điều hướng",
+    "open": "Mở",
+    "open_app": "Mở ứng dụng",
+    "open_workspace": "Mở workspace",
+    "personal": "Cá nhân",
+    "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "select": "chọn",
+    "title": "Trình mở lệnh",
+    "workspaces": "Workspace"
+  },
   "common": {
     "affected-product-required": "Sản phẩm bị ảnh hưởng *",
     "cancel": "Hủy",

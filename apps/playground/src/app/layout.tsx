@@ -1,4 +1,5 @@
 import '@tuturuuu/ui/globals.css';
+import { Providers } from '@tuturuuu/satellite/providers';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Link from 'next/link';
@@ -28,18 +29,20 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex flex-col gap-4 p-4 md:p-8">
-          <div className="flex gap-4 font-semibold">
-            <Link href="/" className="hover:underline">
-              Home
-            </Link>
-            <Link href="/tool-calling" className="hover:underline">
-              Tool Calling
-            </Link>
+        <Providers appName="Playground">
+          <div className="flex flex-col gap-4 p-4 md:p-8">
+            <div className="flex gap-4 font-semibold">
+              <Link href="/" className="hover:underline">
+                Home
+              </Link>
+              <Link href="/tool-calling" className="hover:underline">
+                Tool Calling
+              </Link>
+            </div>
+            <h1 className="font-bold text-2xl">Playground</h1>
+            {children}
           </div>
-          <h1 className="font-bold text-2xl">Playground</h1>
-          {children}
-        </div>
+        </Providers>
       </body>
     </html>
   );

@@ -14,6 +14,7 @@
     "./user-nav-client": "./src/components/user-nav-client.tsx",
     "./create-user-nav": "./src/components/create-user-nav.tsx",
     "./create-user-nav-client": "./src/components/create-user-nav-client.tsx",
+    "./command-launcher": "./src/components/command-launcher/index.ts",
     "./create-navbar-actions": "./src/components/create-navbar-actions.tsx",
     "./navbar-actions": "./src/components/navbar-actions.tsx",
     "./sidebar-structure": "./src/components/sidebar-structure.tsx",
@@ -34,6 +35,7 @@
   },
   "license": "MIT",
   "scripts": {
+    "test": "vitest run",
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {

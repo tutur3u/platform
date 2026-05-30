@@ -1,8 +1,14 @@
 {
   "appsGateway": {
     "apps": {
+      "apps": {
+        "description": "Gateway trung tâm cho các ứng dụng trình duyệt Tuturuuu."
+      },
       "calendar": {
         "description": "Lịch, lên lịch và lập kế hoạch trong workspace."
+      },
+      "chat": {
+        "description": "Nhắn tin workspace riêng tư, kênh và hội thoại AI."
       },
       "cms": {
         "description": "Vận hành nội dung, schema, xem trước và xuất bản."
@@ -88,6 +94,30 @@
     },
     "subtitle": "Điểm vào trung tâm cho các ứng dụng có route trong monorepo này. Chọn một app tại đây, rồi tiếp tục trên domain canonical của app đó.",
     "title": "Một gateway cho mọi app Tuturuuu."
+  },
+  "command_launcher": {
+    "apps": "Ứng dụng",
+    "close": "đóng",
+    "current": "Hiện tại",
+    "current_app": "Ứng dụng hiện tại",
+    "current_workspace": "Workspace hiện tại",
+    "empty": "Không tìm thấy lệnh",
+    "empty_description": "Thử workspace, ứng dụng, trang hoặc cách viết gần đúng hơn.",
+    "error_workspaces": "Không thể tải workspace",
+    "guest": "Khách",
+    "loading_workspaces": "Đang tải workspace",
+    "match": "Khớp",
+    "navigate": "di chuyển",
+    "navigation": "Điều hướng",
+    "open": "Mở",
+    "open_app": "Mở ứng dụng",
+    "open_workspace": "Mở workspace",
+    "personal": "Cá nhân",
+    "placeholder": "Tìm ứng dụng, workspace và trang...",
+    "search_hint": "Nhập workspace, ứng dụng, trang, chữ viết tắt hoặc cách viết gần đúng.",
+    "select": "chọn",
+    "title": "Trình mở lệnh",
+    "workspaces": "Workspace"
   },
   "finance": {
     "new_debt": "Khoản nợ mới",

@@ -1,4 +1,5 @@
 import '@tuturuuu/ui/globals.css';
+import { Providers } from '@tuturuuu/satellite/providers';
 import { VercelAnalytics } from '@tuturuuu/vercel';
 import type { Metadata } from 'next';
 
@@ -15,7 +16,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {children}
+        <Providers appName="Shortener">{children}</Providers>
         <VercelAnalytics />
       </body>
     </html>

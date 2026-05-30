@@ -1,8 +1,14 @@
 {
   "appsGateway": {
     "apps": {
+      "apps": {
+        "description": "The central gateway for Tuturuuu browser apps."
+      },
       "calendar": {
         "description": "Calendar, scheduling, and workspace planning."
+      },
+      "chat": {
+        "description": "Private workspace messaging, channels, and AI conversations."
       },
       "cms": {
         "description": "Content operations, schemas, previews, and publishing."
@@ -88,6 +94,30 @@
     },
     "subtitle": "A central entrypoint for the routable apps in this monorepo. Choose an app here, then continue on its canonical domain.",
     "title": "One gateway for every Tuturuuu app."
+  },
+  "command_launcher": {
+    "apps": "Apps",
+    "close": "close",
+    "current": "Current",
+    "current_app": "Current app",
+    "current_workspace": "Current workspace",
+    "empty": "No command found",
+    "empty_description": "Try a workspace, app, page, or a closer spelling.",
+    "error_workspaces": "Could not load workspaces",
+    "guest": "Guest",
+    "loading_workspaces": "Loading workspaces",
+    "match": "Match",
+    "navigate": "navigate",
+    "navigation": "Navigation",
+    "open": "Open",
+    "open_app": "Open app",
+    "open_workspace": "Open workspace",
+    "personal": "Personal",
+    "placeholder": "Search apps, workspaces, and pages...",
+    "search_hint": "Type a workspace, app, page, acronym, or close spelling.",
+    "select": "select",
+    "title": "Command Launcher",
+    "workspaces": "Workspaces"
   },
   "finance": {
     "new_debt": "New debt",

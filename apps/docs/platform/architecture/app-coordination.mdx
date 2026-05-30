@@ -278,6 +278,14 @@ shared TanStack Query client. Public or gateway-only apps such as `apps/qr` and
 `apps/apps` should use the same provider re-export so theme toggles and shared
 UI chrome behave consistently even when the app does not own workspace auth.
 
+Every user-facing browser app that should appear in the Apps gateway or the
+global Ctrl/Cmd+K launcher must be registered in
+`packages/utils/src/launchable-apps.ts`. Keep the registry entry current with
+the app title, slug, aliases, category, production URL, Portless/dev origin,
+default path, package root, and workspace path resolver when the app has
+workspace-scoped routes. `apps/apps/src/lib/apps-registry.ts` reads from that
+shared registry so the gateway and launcher do not drift.
+
 Workspace sidebar apps should keep an app-local `structure.tsx` file, but that
 file should be a thin wrapper around
 `@tuturuuu/satellite/sidebar-structure`. The shared structure owns the
