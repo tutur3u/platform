@@ -1,6 +1,6 @@
 begin;
 
-select plan(14);
+select plan(26);
 
 select has_table('public', 'task_board_shares', 'task board share table exists');
 select has_column('public', 'task_board_shares', 'board_id', 'share stores board id');
@@ -19,6 +19,82 @@ select has_index('public', 'task_board_shares', 'task_board_shares_email_unique_
 
 select has_function('public', 'get_task_board_workspace_id', array['uuid'], 'board workspace helper exists');
 select has_function('public', 'is_task_board_workspace_member', array['uuid'], 'board membership helper exists');
+
+select ok(
+  has_table_privilege('authenticated', 'public.task_board_shares', 'select'),
+  'authenticated can select task board shares through RLS'
+);
+
+select ok(
+  has_table_privilege('authenticated', 'public.task_board_shares', 'insert'),
+  'authenticated can insert task board shares through RLS'
+);
+
+select ok(
+  has_table_privilege('authenticated', 'public.task_board_shares', 'update'),
+  'authenticated can update task board shares through RLS'
+);
+
+select ok(
+  has_table_privilege('authenticated', 'public.task_board_shares', 'delete'),
+  'authenticated can delete task board shares through RLS'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.task_board_shares', 'select'),
+  'service role can select task board shares'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.task_board_shares', 'insert'),
+  'service role can insert task board shares'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.task_board_shares', 'update'),
+  'service role can update task board shares'
+);
+
+select ok(
+  has_table_privilege('service_role', 'public.task_board_shares', 'delete'),
+  'service role can delete task board shares'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.get_task_board_workspace_id(uuid)',
+    'execute'
+  ),
+  'authenticated can execute task board workspace helper'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.get_task_board_workspace_id(uuid)',
+    'execute'
+  ),
+  'service role can execute task board workspace helper'
+);
+
+select ok(
+  has_function_privilege(
+    'authenticated',
+    'public.is_task_board_workspace_member(uuid)',
+    'execute'
+  ),
+  'authenticated can execute task board membership helper'
+);
+
+select ok(
+  has_function_privilege(
+    'service_role',
+    'public.is_task_board_workspace_member(uuid)',
+    'execute'
+  ),
+  'service role can execute task board membership helper'
+);
 
 select * from finish();
 
