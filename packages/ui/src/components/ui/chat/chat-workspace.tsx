@@ -199,10 +199,14 @@ export function ChatWorkspace({
     content: string;
   }) {
     try {
-      await sendMessage.mutateAsync({
+      const result = await sendMessage.mutateAsync({
         attachments: payload.attachments,
         content: payload.content,
       });
+
+      if (result.assistantError) {
+        toast.error(t('assistant_response_failed'));
+      }
     } catch (error) {
       toast.error(t('message_send_failed'));
       throw error;

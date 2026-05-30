@@ -184,10 +184,16 @@ export async function sendWorkspaceChatMessageStream(
   const decoder = new TextDecoder();
   const reader = response.body.getReader();
   let buffer = '';
+  let assistantError: string | undefined;
   const processEvent = (event: ChatMessageStreamEvent | null) => {
     if (!event) return;
 
     if (event.type === 'error') {
+      if (messages.length > 0) {
+        assistantError = event.message || 'Assistant response failed';
+        return;
+      }
+
       throw new Error(event.message);
     }
 
@@ -227,7 +233,9 @@ export async function sendWorkspaceChatMessageStream(
     throw new Error('No message was returned');
   }
 
-  return { message, messages };
+  return assistantError
+    ? { assistantError, message, messages }
+    : { message, messages };
 }
 
 export async function editWorkspaceChatMessage(

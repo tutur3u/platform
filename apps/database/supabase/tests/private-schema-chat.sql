@@ -4,7 +4,7 @@ create extension if not exists pgtap with schema extensions;
 
 set local search_path = public, extensions;
 
-select plan(51);
+select plan(52);
 
 select ok(
   to_regclass('private.chat_conversations') is not null,
@@ -390,6 +390,19 @@ select ok(
     'execute'
   ),
   'service role can execute chat_persist_ai_message'
+);
+
+select ok(
+  pg_get_functiondef(
+    'private.chat_persist_ai_message(uuid, uuid, uuid, text, jsonb)'::regprocedure
+  ) not like '%chat_send_message%'
+    and pg_get_functiondef(
+      'private.chat_persist_ai_message(uuid, uuid, uuid, text, jsonb)'::regprocedure
+    ) not like '%manage_chat%'
+    and pg_get_functiondef(
+      'private.chat_persist_ai_message(uuid, uuid, uuid, text, jsonb)'::regprocedure
+    ) like '%type = ''ai''%',
+  'chat_persist_ai_message is the service-owned native AI assistant persist path'
 );
 
 select ok(

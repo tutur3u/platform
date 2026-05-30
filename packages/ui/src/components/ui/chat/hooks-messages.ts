@@ -202,7 +202,14 @@ export function useSendChatMessage({
         },
         (current = []) =>
           mergeCachedMessages(
-            current.filter((item) => item.id !== context?.optimisticId),
+            current.filter(
+              (item) =>
+                item.id !== context?.optimisticId &&
+                !(
+                  result.assistantError &&
+                  isOptimisticStreamingAssistantMessage(item)
+                )
+            ),
             messages
           )
       );
@@ -326,6 +333,14 @@ function createOptimisticId(prefix: string) {
 
 function getSendResultMessages(result: SendChatMessageResult) {
   return result.messages?.length ? result.messages : [result.message];
+}
+
+function isOptimisticStreamingAssistantMessage(message: ChatMessage) {
+  return (
+    message.kind === 'assistant' &&
+    message.metadata?.optimistic === true &&
+    message.metadata?.streaming === true
+  );
 }
 
 function mergeCachedMessages(

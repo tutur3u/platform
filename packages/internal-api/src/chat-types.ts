@@ -222,6 +222,7 @@ export interface SendChatMessagePayload {
 }
 
 export interface SendChatMessageResult {
+  assistantError?: string;
   message: ChatMessage;
   messages?: ChatMessage[];
 }

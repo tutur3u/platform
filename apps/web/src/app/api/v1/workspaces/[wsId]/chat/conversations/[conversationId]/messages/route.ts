@@ -60,6 +60,8 @@ const createMessageSchema = z.object({
 });
 const AI_MESSAGE_SPLIT_DECORATOR = '[[TUTURUUU_CHAT_SPLIT]]';
 const AI_MESSAGE_SPLIT_INSTRUCTION = `When a response would be easier to read as a natural chat, you may split it into multiple messages by putting ${AI_MESSAGE_SPLIT_DECORATOR} on its own line between message parts. Use it sparingly, keep each part self-contained, and never mention the decorator to the user.`;
+const NATIVE_AI_ASSISTANT_ERROR_MESSAGE =
+  'Assistant response failed. Your message was saved.';
 
 export const GET = withSessionAuth<RouteParams>(
   async (request: NextRequest, auth, params) => {
@@ -231,6 +233,7 @@ export const POST = withSessionAuth<RouteParams>(
 
             return NextResponse.json(
               {
+                assistantError: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
                 message,
                 messages: [message],
               },
@@ -369,6 +372,10 @@ function streamNativeAiConversationResponse({
           conversationId: conversation.id,
           error,
           userMessageId: userMessage.id,
+        });
+        write({
+          message: NATIVE_AI_ASSISTANT_ERROR_MESSAGE,
+          type: 'error',
         });
         write({ type: 'done' });
       } finally {
@@ -715,24 +722,28 @@ async function sendNativeAiConversationMessages({
 
   for (let index = 0; index < assistantParts.length; index++) {
     const content = assistantParts[index]!;
-    const message = await callPrivateChatRpc<ChatMessage>('chat_send_message', {
-      p_actor_user_id: auth.user.id,
-      p_attachments: [],
-      p_content: content,
-      p_conversation_id: conversation.id,
-      p_kind: 'assistant',
-      p_reply_to_message_id: null,
-      p_ws_id: context.normalizedWsId,
-    });
-    const metadata = await updateNativeAssistantMessageMetadata({
+    const metadata = buildNativeAssistantMessageMetadata({
       aiMessage: assistantResponse,
       content,
-      messageId: message.id,
       splitIndex: index,
       splitTotal: assistantParts.length,
     });
+    const message = await callPrivateChatRpc<ChatMessage>(
+      'chat_persist_ai_message',
+      {
+        p_actor_user_id: auth.user.id,
+        p_content: content,
+        p_conversation_id: conversation.id,
+        p_metadata: metadata,
+        p_ws_id: context.normalizedWsId,
+      }
+    );
 
-    assistantMessages.push(metadata ? { ...message, metadata } : message);
+    if (!message) {
+      throw new Error('Chat conversation not found');
+    }
+
+    assistantMessages.push(message);
   }
 
   return assistantMessages;
@@ -1085,45 +1096,6 @@ async function getLatestNewAiAssistantMessage({
       (message) => !knownMessageIds.has(message.id)
     ) ?? null
   );
-}
-
-async function updateNativeAssistantMessageMetadata({
-  aiMessage,
-  content,
-  messageId,
-  splitIndex,
-  splitTotal,
-}: {
-  aiMessage: AiAssistantMessageRow;
-  content: string;
-  messageId: string;
-  splitIndex: number;
-  splitTotal: number;
-}) {
-  const metadata = buildNativeAssistantMessageMetadata({
-    aiMessage,
-    content,
-    splitIndex,
-    splitTotal,
-  });
-
-  const sbAdmin = await createAdminClient({ noCookie: true });
-  const { error } = await sbAdmin
-    .schema('private')
-    .from('chat_messages')
-    .update({ metadata } as never)
-    .eq('id', messageId);
-
-  if (error) {
-    serverLogger.error('Failed to attach native Chat AI metadata', {
-      aiMessageId: aiMessage.id,
-      error,
-      messageId,
-    });
-    return null;
-  }
-
-  return metadata;
 }
 
 function buildNativeAssistantMessageMetadata({
