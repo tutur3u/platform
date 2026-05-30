@@ -1,6 +1,10 @@
 begin;
 
-select plan(26);
+create extension if not exists pgtap with schema extensions;
+
+set local search_path = public, extensions;
+
+select plan(27);
 
 select has_table('public', 'task_board_shares', 'task board share table exists');
 select has_column('public', 'task_board_shares', 'board_id', 'share stores board id');
@@ -13,8 +17,27 @@ select col_is_fk('public', 'task_board_shares', 'board_id', 'board id is a forei
 select col_is_fk('public', 'task_board_shares', 'shared_with_user_id', 'recipient user is a foreign key');
 select col_is_fk('public', 'task_board_shares', 'shared_by_user_id', 'sharer user is a foreign key');
 
-select has_check('public', 'task_board_shares', 'task_board_shares_has_recipient', 'share requires a recipient');
-select has_check('public', 'task_board_shares', 'task_board_shares_email_is_normalized', 'share email is normalized');
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'task_board_shares_has_recipient'
+      and conrelid = 'public.task_board_shares'::regclass
+      and contype = 'c'
+  ),
+  'share requires a recipient'
+);
+
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conname = 'task_board_shares_email_is_normalized'
+      and conrelid = 'public.task_board_shares'::regclass
+      and contype = 'c'
+  ),
+  'share email is normalized'
+);
 select has_index('public', 'task_board_shares', 'task_board_shares_email_unique_idx', 'email recipient is unique per board');
 
 select has_function('public', 'get_task_board_workspace_id', array['uuid'], 'board workspace helper exists');
@@ -26,18 +49,29 @@ select ok(
 );
 
 select ok(
-  has_table_privilege('authenticated', 'public.task_board_shares', 'insert'),
-  'authenticated can insert task board shares through RLS'
+  not has_table_privilege('authenticated', 'public.task_board_shares', 'insert'),
+  'authenticated cannot insert task board shares directly'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'public.task_board_shares', 'update'),
-  'authenticated can update task board shares through RLS'
+  not has_table_privilege('authenticated', 'public.task_board_shares', 'update'),
+  'authenticated cannot update task board shares directly'
 );
 
 select ok(
-  has_table_privilege('authenticated', 'public.task_board_shares', 'delete'),
-  'authenticated can delete task board shares through RLS'
+  not has_table_privilege('authenticated', 'public.task_board_shares', 'delete'),
+  'authenticated cannot delete task board shares directly'
+);
+
+select ok(
+  not exists (
+    select 1
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'task_board_shares'
+      and cmd in ('INSERT', 'UPDATE', 'DELETE')
+  ),
+  'task board share writes have no direct authenticated RLS policies'
 );
 
 select ok(
