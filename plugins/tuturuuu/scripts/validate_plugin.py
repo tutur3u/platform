@@ -48,6 +48,18 @@ PROMPT_COVERAGE_PATTERNS = {
     "tuturuuu-review-comments": re.compile(
         r"\b(review comments?|review threads?|pr comments?)\b", re.IGNORECASE
     ),
+    "tuturuuu-cms-studio": re.compile(
+        r"\b(CMS|landing-page|content management|external project)\b",
+        re.IGNORECASE,
+    ),
+    "tuturuuu-satellite-app-ux": re.compile(
+        r"\b(satellite app|app-session|workspace navigation|standalone app)\b",
+        re.IGNORECASE,
+    ),
+    "tuturuuu-e2e-auth-debugging": re.compile(
+        r"\b(E2E auth|dev-session|auth redirect|local E2E)\b",
+        re.IGNORECASE,
+    ),
 }
 
 

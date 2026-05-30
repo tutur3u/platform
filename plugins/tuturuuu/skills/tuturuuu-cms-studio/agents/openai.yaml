@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu CMS Studio"
+  short_description: "Improve CMS and external-project content editing flows"
+  default_prompt: "Revamp this CMS content flow for non-technical editors."

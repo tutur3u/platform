@@ -38,6 +38,15 @@ codex plugin marketplace add ./
   `packages/*`, `apps/database`, `apps/docs`, translations, navigation, and
   verification follow-through, including shared-worktree preflight and scoped
   staging expectations.
+- `$tuturuuu-cms-studio`: CMS and external-project content studio guidance for
+  `apps/cms`, branded project adapters, landing-page content editing, content
+  collections, media workflows, preview delivery, and non-technical editor UX.
+- `$tuturuuu-satellite-app-ux`: standalone app shell guidance for satellite apps
+  such as Mail and CMS, including `@tuturuuu/satellite` auth, app-session
+  routes, i18n, workspace navigation, permissions, and focused operational UX.
+- `$tuturuuu-e2e-auth-debugging`: local E2E authentication guidance for
+  Playwright, `dev-session`, guest access, onboarding redirects, app-session
+  verification, rate-limit tests, and Docker-backed local auth flows.
 - `$tuturuuu-commit`: scoped commit workflow guidance for explicit commit,
   commit-and-push, atomic staging, Conventional Commit subjects, shared-worktree
   path isolation, hook failure handling, and final commit reporting.
@@ -92,6 +101,9 @@ The CI check currently verifies:
 - plugin manifest JSON and interface metadata
 - natural default prompt examples for the invokable skills, written as short
   user requests instead of visible `$skill` commands
+- dedicated prompt coverage for CMS studio and landing-page content management
+- dedicated prompt coverage for satellite app UX and app-session workflows
+- dedicated prompt coverage for local E2E auth and dev-session debugging
 - dedicated prompt coverage for shared-worktree coordination and agent handoff
 - dedicated prompt coverage for web release badge metadata
 - scoped commit workflow coverage for explicit commit requests
@@ -161,6 +173,9 @@ For individual skills, run the Codex skill validator:
 
 ```bash
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-platform
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cms-studio
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-satellite-app-ux
+python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-e2e-auth-debugging
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-commit
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-agent-coordination
 python3 ~/.codex/skills/.system/skill-creator/scripts/quick_validate.py plugins/tuturuuu/skills/tuturuuu-cli

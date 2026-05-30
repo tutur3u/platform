@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuturuuu Satellite App UX"
+  short_description: "Build focused standalone app shells and workspace UX"
+  default_prompt: "Upgrade this satellite app UX and verify the app shell."
