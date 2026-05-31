@@ -265,4 +265,75 @@ describe('ObservabilityDeploymentsPanel', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Current stage: Web Build')).toBeInTheDocument();
   });
+
+  it('does not show a current failure banner for an older failed same-commit attempt', () => {
+    const failedAttempt = createDeployment();
+    const latestSuccessful = {
+      ...createDeployment(),
+      deploymentStamp: 'deploy-success',
+      failureReason: null,
+      stageSummary: {
+        blockedTargets: [],
+        cacheHitCount: 0,
+        failedStageCount: 0,
+        promotedTargets: ['web'],
+        rebuildCount: 0,
+        runningStageCount: 0,
+        skippedStageCount: 0,
+        totalStageCount: 2,
+      },
+      stages: [
+        {
+          buildServices: ['web-green'],
+          color: 'green',
+          durationMs: 1000,
+          failureReason: null,
+          finishedAt: 2000,
+          id: 'web-build',
+          serviceNames: ['web-green'],
+          skippedReason: null,
+          startedAt: 1000,
+          status: 'succeeded',
+          target: 'web',
+        },
+        {
+          buildServices: [],
+          color: 'green',
+          durationMs: 1000,
+          failureReason: null,
+          finishedAt: 3000,
+          id: 'web-promote',
+          serviceNames: ['web-green'],
+          skippedReason: null,
+          startedAt: 2000,
+          status: 'succeeded',
+          target: 'web',
+        },
+      ],
+      status: 'successful',
+    } satisfies ObservabilityDeployment;
+
+    render(
+      <ObservabilityDeploymentsPanel
+        deployments={[latestSuccessful, failedAttempt]}
+        emptyLabel="No deployments"
+        hasMore={false}
+        isFetchingMore={false}
+        isLoading={false}
+        loaded={2}
+        onLoadMore={() => {}}
+        total={2}
+      />
+    );
+
+    expect(
+      screen.queryByText(
+        'Hive Migration failed; Web is already serving abc1234'
+      )
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('Blocked Targets').parentElement).toHaveTextContent(
+      'Blocked Targets0'
+    );
+    expect(screen.getAllByText('Ship staged deployment')).toHaveLength(2);
+  });
 });

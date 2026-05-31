@@ -381,28 +381,119 @@ function getConsoleLogMessage(message) {
   return message;
 }
 
+function getConsoleMessageBraceDelta(message) {
+  let delta = 0;
+  let escaped = false;
+  let quote = null;
+
+  for (const char of message) {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === '\\') {
+      escaped = true;
+      continue;
+    }
+
+    if (quote) {
+      if (char === quote) {
+        quote = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
+
+    if (char === '{' || char === '[' || char === '(') {
+      delta += 1;
+    }
+
+    if (char === '}' || char === ']' || char === ')') {
+      delta -= 1;
+    }
+  }
+
+  return delta;
+}
+
+function normalizeContainerConsoleLogLines(output) {
+  const entries = [];
+  let current = null;
+
+  const pushCurrent = () => {
+    if (current) {
+      entries.push({
+        rawLine: current.rawLines.join('\n'),
+        rawMessage: current.rawMessages.join('\n'),
+        time: current.time,
+      });
+    }
+    current = null;
+  };
+
+  for (const line of output.split('\n').map((item) => item.trimEnd())) {
+    if (!line) {
+      continue;
+    }
+
+    const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\S+) (.*)$/);
+
+    if (!timestampMatch) {
+      if (current) {
+        current.rawLines.push(line);
+        current.rawMessages.push(line);
+      }
+      continue;
+    }
+
+    const [, isoTime, rawMessage] = timestampMatch;
+    const time = Date.parse(isoTime);
+
+    if (!Number.isFinite(time)) {
+      continue;
+    }
+
+    const isContinuation =
+      current &&
+      current.braceDepth > 0 &&
+      time === current.time &&
+      (/^\s/u.test(rawMessage) || /^[}\])]/u.test(rawMessage.trim()));
+
+    if (!isContinuation) {
+      pushCurrent();
+      current = {
+        braceDepth: Math.max(0, getConsoleMessageBraceDelta(rawMessage)),
+        rawLines: [line],
+        rawMessages: [rawMessage],
+        time,
+      };
+      continue;
+    }
+
+    current.rawLines.push(line);
+    current.rawMessages.push(rawMessage);
+    current.braceDepth = Math.max(
+      0,
+      current.braceDepth + getConsoleMessageBraceDelta(rawMessage)
+    );
+  }
+
+  pushCurrent();
+
+  return entries;
+}
+
 function parseContainerConsoleLogEntries(
   output,
   { containerId = null, deploymentColor = null, source = 'route' } = {}
 ) {
-  return output
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .filter(Boolean)
-    .map((line) => {
-      const timestampMatch = line.match(/^(\d{4}-\d{2}-\d{2}T\S+)\s+(.*)$/);
-
-      if (!timestampMatch) {
-        return null;
-      }
-
-      const [, isoTime, rawMessage] = timestampMatch;
-      const time = Date.parse(isoTime);
-
-      if (!Number.isFinite(time)) {
-        return null;
-      }
-
+  return normalizeContainerConsoleLogLines(output)
+    .map(({ rawLine, rawMessage, time }) => {
       const message = getConsoleLogMessage(rawMessage);
 
       return {
@@ -410,7 +501,7 @@ function parseContainerConsoleLogEntries(
         deploymentColor,
         level: getConsoleLogLevel(rawMessage),
         message,
-        rawLine: line,
+        rawLine,
         source,
         time,
       };

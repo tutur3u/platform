@@ -47,6 +47,11 @@ serverLogger.info('Processed job', { jobId });
 serverLogger.error('Job failed', error);
 ```
 
+`serverLogger` mirrors each call to stdout/stderr as one serialized line. Pass
+structured objects directly to the logger, but do not rely on Node's default
+multi-line object printing; the drain and Docker log capture treat one logger
+call as one retained event.
+
 For route or cron handlers, wrap execution with `withRequestLogDrain(...)` or `withCronLogDrain(...)` when the handler should attach logs to a request or cron run id.
 
 The drain is fail-open: if Postgres is unavailable, requests and cron jobs continue normally and logs still go to stdout/stderr.
@@ -78,7 +83,23 @@ For imported projects, the same watcher polls enabled projects from the registry
 
 The revamped monitoring UI reads both the Postgres drain and the pre-drain blue/green files under `tmp/docker-web`. Requests and Logs include retained proxy traffic, watcher logs, and request console lines while deployments are enriched from the watcher snapshot so commit subject, full hash, short hash, stamp, active color, and runtime lane remain visible even before the Postgres drain has a complete history.
 
-Deployment rows are grouped around the git commit identity first, then enriched with deployment stamps, runtime state, build duration, request volume, and errors. This keeps active and standby lanes for the same commit together instead of showing duplicate rows for the same build.
+The Logs tab serves grouped rows. Events with the same request id collapse into
+one expandable row; legacy standalone logs fall back to route, source,
+deployment, and minute bucket grouping. Operators can filter by route, status
+family, source, level, request id, and deployment stamp, then expand a row to
+see the child event timeline, metadata, error stack, client context, and
+deployment context.
+
+Legacy Docker console capture coalesces timestamped continuation lines from the
+same container write before persisting request console logs. This keeps object
+dumps from old route console output attached to one function/request row instead
+of turning every serialized property into a separate log row.
+
+Deployment rows keep historical failed attempts searchable, but failed and
+successful attempts for the same commit are not merged into one current failed
+state. The global deployment failure banner and current blocked-target summary
+come only from the latest active deployment row; older failures remain visible
+inside deployment history rows and filters.
 
 The Requests tab intentionally freezes its result window when opened. New traffic is counted in the background and offered as an explicit "show new" action, while older pages are appended automatically as the operator scrolls. This prevents live traffic from shifting the visible rows during investigation.
 

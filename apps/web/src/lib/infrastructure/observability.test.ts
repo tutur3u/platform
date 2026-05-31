@@ -7,17 +7,24 @@ import {
   getBuildResources,
   parseObservabilityFilters,
   readObservabilityDeployments,
+  readObservabilityLogs,
 } from './observability';
 
 const ORIGINAL_MONITORING_DIR = process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR;
+const ORIGINAL_LOG_DRAIN_ENABLED = process.env.PLATFORM_LOG_DRAIN_ENABLED;
 
 afterEach(() => {
   if (ORIGINAL_MONITORING_DIR === undefined) {
     delete process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR;
-    return;
+  } else {
+    process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = ORIGINAL_MONITORING_DIR;
   }
 
-  process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = ORIGINAL_MONITORING_DIR;
+  if (ORIGINAL_LOG_DRAIN_ENABLED === undefined) {
+    delete process.env.PLATFORM_LOG_DRAIN_ENABLED;
+  } else {
+    process.env.PLATFORM_LOG_DRAIN_ENABLED = ORIGINAL_LOG_DRAIN_ENABLED;
+  }
 });
 
 describe('parseObservabilityFilters', () => {
@@ -48,6 +55,9 @@ describe('parseObservabilityFilters', () => {
         page: '3',
         pageSize: '25',
         q: 'cron failure',
+        deploymentStamp: 'deploy-2026-05-31',
+        requestId: 'req_123',
+        route: '/api/cron/infrastructure/sample-resources?debug=1',
         since: '1710000000000',
         source: 'cron',
         status: '5xx',
@@ -61,6 +71,9 @@ describe('parseObservabilityFilters', () => {
       page: 3,
       pageSize: 25,
       q: 'cron failure',
+      deploymentStamp: 'deploy-2026-05-31',
+      requestId: 'req_123',
+      route: '/api/cron/infrastructure/sample-resources?debug=1',
       since: 1710000000000,
       source: 'cron',
       status: '5xx',
@@ -334,6 +347,176 @@ describe('createResourceSamplingSummary', () => {
   });
 });
 
+describe('readObservabilityLogs', () => {
+  it('groups legacy console logs by request id and exposes route/status facets', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-logs-')
+    );
+    const now = Date.now();
+
+    try {
+      const watchDir = path.join(tempDir, 'watch');
+      const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(watchDir, 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: 2,
+              file: 'requests-1.jsonl',
+              firstRequestAt: now - 20_000,
+              lastRequestAt: now - 10_000,
+            },
+          ],
+          currentChunkCount: 2,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: 2,
+        })
+      );
+      fs.writeFileSync(
+        path.join(requestLogDir, 'requests-1.jsonl'),
+        [
+          {
+            consoleLogs: [
+              {
+                level: 'info',
+                message: 'Sampled infrastructure resources {',
+                source: 'route',
+                time: now - 19_000,
+              },
+              {
+                level: 'info',
+                message: 'activeBuilds: 0,',
+                source: 'route',
+                time: now - 18_000,
+              },
+              {
+                level: 'info',
+                message: 'buildState: idle',
+                source: 'route',
+                time: now - 17_000,
+              },
+            ],
+            deploymentStamp: 'deploy-sample',
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/api/cron/infrastructure/sample-resources?debug=1',
+            requestTimeMs: 24,
+            status: 200,
+            time: now - 20_000,
+          },
+          {
+            consoleLogs: [
+              {
+                level: 'warn',
+                message: 'Health route slow',
+                source: 'route',
+                time: now - 9_000,
+              },
+            ],
+            host: 'tuturuuu.com',
+            isInternal: false,
+            method: 'GET',
+            path: '/api/health',
+            requestTimeMs: 50,
+            status: 503,
+            time: now - 10_000,
+          },
+        ]
+          .map((entry) => JSON.stringify(entry))
+          .join('\n')
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+      process.env.PLATFORM_LOG_DRAIN_ENABLED = 'false';
+
+      const logs = await readObservabilityLogs({
+        pageSize: 10,
+        route: '/api/cron/infrastructure/sample-resources',
+        status: '2xx',
+        timeframeHours: 1,
+      });
+
+      expect(logs.total).toBe(1);
+      expect(logs.items[0]).toMatchObject({
+        deploymentStamp: 'deploy-sample',
+        eventCount: 3,
+        message: 'Sampled infrastructure resources {',
+        route: '/api/cron/infrastructure/sample-resources?debug=1',
+        status: 200,
+      });
+      expect(logs.items[0]?.events.map((event) => event.message)).toEqual([
+        'Sampled infrastructure resources {',
+        'activeBuilds: 0,',
+        'buildState: idle',
+      ]);
+      expect(logs.facets.routes).toContainEqual(
+        expect.objectContaining({
+          count: 3,
+          value: '/api/cron/infrastructure/sample-resources',
+        })
+      );
+      expect(logs.facets.statuses).toContainEqual(
+        expect.objectContaining({ count: 3, value: '2xx' })
+      );
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('uses fallback grouping for standalone watcher events', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-fallback-logs-')
+    );
+    const now = Date.now();
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.logs.json'),
+        JSON.stringify([
+          {
+            deploymentStamp: 'deploy-standalone',
+            level: 'info',
+            message: 'Watcher sampled resources {',
+            time: now - 30_000,
+          },
+          {
+            deploymentStamp: 'deploy-standalone',
+            level: 'info',
+            message: 'buildState: idle',
+            time: now - 29_000,
+          },
+        ])
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+      process.env.PLATFORM_LOG_DRAIN_ENABLED = 'false';
+
+      const logs = await readObservabilityLogs({
+        pageSize: 10,
+        source: 'server',
+        timeframeHours: 1,
+      });
+
+      expect(logs.total).toBe(1);
+      expect(logs.items[0]).toMatchObject({
+        deploymentStamp: 'deploy-standalone',
+        eventCount: 2,
+        message: 'Watcher sampled resources {',
+        requestId: null,
+        source: 'server',
+      });
+      expect(logs.items[0]?.events.map((event) => event.message)).toEqual([
+        'Watcher sampled resources {',
+        'buildState: idle',
+      ]);
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+});
+
 describe('readObservabilityDeployments', () => {
   it('adds support build cache stats to deployment rows', async () => {
     const tempDir = fs.mkdtempSync(
@@ -590,6 +773,107 @@ describe('readObservabilityDeployments', () => {
         ],
         status: 'building',
         synthesizedStages: true,
+      });
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
+  it('keeps an old failed attempt separate from a newer successful same-commit deployment', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-deployment-retry-')
+    );
+
+    try {
+      fs.mkdirSync(path.join(tempDir, 'prod'), { recursive: true });
+      fs.mkdirSync(path.join(tempDir, 'watch'), { recursive: true });
+      fs.writeFileSync(
+        path.join(tempDir, 'watch', 'blue-green-auto-deploy.history.json'),
+        JSON.stringify([
+          {
+            activeColor: 'green',
+            commitHash: '4ba6d3b1d0ff',
+            commitShortHash: '4ba6d3b1d0',
+            commitSubject: 'Ship latest platform',
+            deploymentKind: 'promotion',
+            deploymentStamp: 'deploy-old-failed',
+            failureReason: 'docker buildx bake failed',
+            stages: [
+              {
+                failureReason: 'docker buildx bake failed',
+                id: 'web-build',
+                status: 'failed',
+                target: 'web',
+              },
+            ],
+            startedAt: Date.UTC(2026, 4, 31, 5, 0, 0),
+            status: 'failed',
+          },
+          {
+            activeColor: 'green',
+            commitHash: '4ba6d3b1d0ff',
+            commitShortHash: '4ba6d3b1d0',
+            commitSubject: 'Ship latest platform',
+            deploymentKind: 'promotion',
+            deploymentStamp: 'deploy-new-success',
+            stages: [
+              {
+                id: 'web-build',
+                status: 'succeeded',
+                target: 'web',
+              },
+              {
+                id: 'web-promote',
+                status: 'succeeded',
+                target: 'web',
+              },
+            ],
+            startedAt: Date.UTC(2026, 4, 31, 6, 0, 0),
+            status: 'successful',
+          },
+        ])
+      );
+      fs.writeFileSync(
+        path.join(tempDir, 'prod', 'target-state.json'),
+        JSON.stringify({
+          targets: {
+            hive: {},
+            web: {
+              activeColor: 'green',
+              commitHash: '4ba6d3b1d0ff',
+              commitShortHash: '4ba6d3b1d0',
+              deploymentStamp: 'deploy-new-success',
+              health: 'healthy',
+              lastPromotedAt: Date.UTC(2026, 4, 31, 6, 0, 1),
+            },
+          },
+          version: 1,
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+
+      const deployments = await readObservabilityDeployments({
+        pageSize: 10,
+        projectId: 'test-project',
+      });
+
+      expect(deployments.items).toHaveLength(2);
+      expect(deployments.items[0]).toMatchObject({
+        deploymentStamp: 'deploy-new-success',
+        stageSummary: {
+          blockedTargets: [],
+          failedStageCount: 0,
+        },
+        status: 'successful',
+      });
+      expect(deployments.items[1]).toMatchObject({
+        deploymentStamp: 'deploy-old-failed',
+        failureReason: 'docker buildx bake failed',
+        stageSummary: {
+          blockedTargets: ['web'],
+          failedStageCount: 1,
+        },
+        status: 'failed',
       });
     } finally {
       fs.rmSync(tempDir, { force: true, recursive: true });

@@ -9,6 +9,10 @@ import type {
   ObservabilityCronRun,
   ObservabilityDeployment,
   ObservabilityLogEvent,
+  ObservabilityLogFacet,
+  ObservabilityLogFacets,
+  ObservabilityLogGroup,
+  ObservabilityLogsResult,
   ObservabilityOverview,
   ObservabilityPaginatedResult,
   ObservabilityRequest,
@@ -33,11 +37,14 @@ import {
 } from './observability-deployment-stages';
 
 interface ObservabilityFilters {
+  deploymentStamp?: string | null;
   level?: string | null;
   page?: number;
   pageSize?: number;
   projectId?: string | null;
   q?: string | null;
+  requestId?: string | null;
+  route?: string | null;
   since?: number | null;
   source?: string | null;
   status?: string | null;
@@ -118,11 +125,14 @@ export function parseObservabilityFilters(
   };
 
   return {
+    deploymentStamp: normalize(searchParams.get('deploymentStamp')),
     level: normalize(searchParams.get('level')),
     page: clampPage(searchParams.get('page')),
     pageSize: clampPageSize(searchParams.get('pageSize')),
     projectId: normalize(searchParams.get('projectId')) ?? DEFAULT_PROJECT_ID,
     q: normalize(searchParams.get('q')),
+    requestId: normalize(searchParams.get('requestId')),
+    route: normalize(searchParams.get('route')),
     since: parseTimestampFilter(searchParams.get('since')),
     source: normalize(searchParams.get('source')),
     status: normalize(searchParams.get('status')),
@@ -161,6 +171,10 @@ function statusMatches(
     return true;
   }
 
+  if (filter === 'unknown') {
+    return status == null;
+  }
+
   if (filter === '5xx') {
     return status != null && status >= 500;
   }
@@ -178,6 +192,69 @@ function statusMatches(
   }
 
   return String(status) === filter;
+}
+
+function getStatusFacetValue(status: number | null | undefined) {
+  if (status == null) {
+    return 'unknown';
+  }
+
+  if (status >= 500) {
+    return '5xx';
+  }
+
+  if (status >= 400) {
+    return '4xx';
+  }
+
+  if (status >= 300) {
+    return '3xx';
+  }
+
+  if (status >= 200) {
+    return '2xx';
+  }
+
+  return String(status);
+}
+
+function normalizeRoutePath(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    return new URL(trimmed, 'http://localhost').pathname;
+  } catch {
+    return trimmed.split(/[?#]/u)[0] || trimmed;
+  }
+}
+
+function routeMatches(
+  route: string | null | undefined,
+  filter: string | null | undefined
+) {
+  const normalizedFilter = normalizeRoutePath(filter);
+  if (!normalizedFilter) {
+    return true;
+  }
+
+  return normalizeRoutePath(route) === normalizedFilter;
+}
+
+function deploymentStampMatches(
+  deploymentStamp: string | null | undefined,
+  filter: string | null | undefined
+) {
+  return !filter || deploymentStamp === filter;
+}
+
+function requestIdMatches(
+  requestId: string | null | undefined,
+  filter: string | null | undefined
+) {
+  return !filter || requestId === filter;
 }
 
 async function getSql() {
@@ -365,7 +442,6 @@ function loadLegacyLogs(
   const requestConsoleLogs = readBlueGreenMonitoringRequestArchive({
     page: 1,
     pageSize: 100,
-    q: filters.q ?? undefined,
     status: filters.status ?? undefined,
     timeframeDays: getLegacyTimeframeDays(filters.timeframeHours),
   }).items.flatMap((request) =>
@@ -374,13 +450,20 @@ function loadLegacyLogs(
 
   return [...watcherLogs, ...requestConsoleLogs]
     .filter((log) => log.createdAt >= cutoff)
+    .filter((log) => shouldIncludeTime(log.createdAt, filters))
     .filter((log) => !filters.level || log.level === filters.level)
     .filter((log) => !filters.source || log.source === filters.source)
     .filter((log) => statusMatches(log.status, filters.status))
+    .filter((log) => routeMatches(log.route, filters.route))
+    .filter((log) => requestIdMatches(log.requestId, filters.requestId))
+    .filter((log) =>
+      deploymentStampMatches(log.deploymentStamp, filters.deploymentStamp)
+    )
     .filter((log) =>
       shouldIncludeText(filters.q, [
         log.message,
         log.route,
+        normalizeRoutePath(log.route),
         log.requestId,
         log.deploymentStamp,
       ])
@@ -444,15 +527,28 @@ async function loadRecentLogs(
   const q = filters.q?.trim();
 
   const postgresLogs = rows
+    .filter((row) =>
+      shouldIncludeTime(toMs(row.created_at) ?? Date.now(), filters)
+    )
     .filter((row) => !filters.level || row.level === filters.level)
     .filter((row) => !filters.source || row.source === filters.source)
     .filter((row) => statusMatches(row.status, filters.status))
+    .filter((row) => routeMatches(row.route, filters.route))
+    .filter((row) => requestIdMatches(row.request_id, filters.requestId))
+    .filter((row) =>
+      deploymentStampMatches(row.deployment_stamp, filters.deploymentStamp)
+    )
     .filter(
       (row) =>
         !q ||
         filterText(row.message, q) ||
         filterText(row.route, q) ||
-        filterText(row.request_id, q)
+        filterText(normalizeRoutePath(row.route), q) ||
+        filterText(row.request_id, q) ||
+        filterText(row.deployment_stamp, q) ||
+        filterText(row.source, q) ||
+        filterText(row.level, q) ||
+        filterText(row.status == null ? null : String(row.status), q)
     )
     .map((row) => ({
       createdAt: toMs(row.created_at) ?? Date.now(),
@@ -670,13 +766,181 @@ async function attachRelatedLogsToRequests(
   }));
 }
 
+const LOG_LEVEL_RANK: Record<ObservabilityLogEvent['level'], number> = {
+  debug: 0,
+  info: 1,
+  warn: 2,
+  error: 3,
+};
+
+function getLogGroupKey(log: ObservabilityLogEvent) {
+  if (log.requestId) {
+    return `request:${log.requestId}`;
+  }
+
+  const route = normalizeRoutePath(log.route) ?? log.route ?? log.source;
+  const deployment =
+    log.deploymentStamp ?? log.deploymentColor ?? 'no-deployment';
+  const minuteBucket = Math.floor(log.createdAt / 60_000);
+
+  return `fallback:${log.source}:${route}:${deployment}:${minuteBucket}`;
+}
+
+function getRepresentativeStatus(events: ObservabilityLogEvent[]) {
+  return (
+    events.find((event) => (event.status ?? 0) >= 500)?.status ??
+    events.find((event) => (event.status ?? 0) >= 400)?.status ??
+    events.find((event) => event.status != null)?.status ??
+    null
+  );
+}
+
+function getRepresentativeLevel(events: ObservabilityLogEvent[]) {
+  return events.reduce<ObservabilityLogEvent['level']>(
+    (level, event) =>
+      LOG_LEVEL_RANK[event.level] > LOG_LEVEL_RANK[level] ? event.level : level,
+    'debug'
+  );
+}
+
+function getRepresentativeMessage(events: ObservabilityLogEvent[]) {
+  return (
+    events.find((event) => {
+      const message = event.message.trim();
+      return message && !/^[}\]),;\s]+$/u.test(message);
+    })?.message ??
+    events[0]?.message ??
+    ''
+  );
+}
+
+function groupObservabilityLogs(
+  logs: ObservabilityLogEvent[]
+): ObservabilityLogGroup[] {
+  const groups = new Map<string, ObservabilityLogEvent[]>();
+
+  for (const log of logs) {
+    const key = getLogGroupKey(log);
+    groups.set(key, [...(groups.get(key) ?? []), log]);
+  }
+
+  return [...groups.entries()]
+    .map(([key, groupLogs]) => {
+      const events = [...groupLogs].sort(
+        (left, right) => left.createdAt - right.createdAt
+      );
+      const latest = events[events.length - 1] as ObservabilityLogEvent;
+
+      return {
+        createdAt: latest.createdAt,
+        deploymentColor:
+          latest.deploymentColor ??
+          events.find((event) => event.deploymentColor)?.deploymentColor ??
+          null,
+        deploymentStamp:
+          latest.deploymentStamp ??
+          events.find((event) => event.deploymentStamp)?.deploymentStamp ??
+          null,
+        durationMs:
+          events
+            .map((event) => event.durationMs)
+            .filter((duration): duration is number => duration != null)
+            .sort((left, right) => right - left)[0] ?? null,
+        errorName:
+          latest.errorName ??
+          events.find((event) => event.errorName)?.errorName ??
+          null,
+        errorStack:
+          latest.errorStack ??
+          events.find((event) => event.errorStack)?.errorStack ??
+          null,
+        eventCount: events.length,
+        events,
+        firstEventAt: events[0]?.createdAt ?? latest.createdAt,
+        id: key,
+        ipAddress:
+          latest.ipAddress ??
+          events.find((event) => event.ipAddress)?.ipAddress ??
+          null,
+        level: getRepresentativeLevel(events),
+        message: getRepresentativeMessage(events),
+        metadata: latest.metadata,
+        requestId:
+          latest.requestId ??
+          events.find((event) => event.requestId)?.requestId ??
+          null,
+        route:
+          latest.route ?? events.find((event) => event.route)?.route ?? null,
+        source: latest.source,
+        status: getRepresentativeStatus(events),
+        userAgent:
+          latest.userAgent ??
+          events.find((event) => event.userAgent)?.userAgent ??
+          null,
+      };
+    })
+    .sort((left, right) => right.createdAt - left.createdAt);
+}
+
+function createLogFacet(
+  logs: ObservabilityLogEvent[],
+  getValue: (log: ObservabilityLogEvent) => string | null | undefined
+): ObservabilityLogFacet[] {
+  const counts = new Map<string, { count: number; errorCount: number }>();
+
+  for (const log of logs) {
+    const value = getValue(log);
+    if (!value) {
+      continue;
+    }
+
+    const current = counts.get(value) ?? { count: 0, errorCount: 0 };
+    counts.set(value, {
+      count: current.count + 1,
+      errorCount:
+        current.errorCount + (log.status != null && log.status >= 500 ? 1 : 0),
+    });
+  }
+
+  return [...counts.entries()]
+    .map(([value, entry]) => ({
+      count: entry.count,
+      errorCount: entry.errorCount,
+      value,
+    }))
+    .sort(
+      (left, right) =>
+        right.errorCount - left.errorCount ||
+        right.count - left.count ||
+        left.value.localeCompare(right.value)
+    )
+    .slice(0, 50);
+}
+
+function createLogFacets(
+  logs: ObservabilityLogEvent[]
+): ObservabilityLogFacets {
+  return {
+    levels: createLogFacet(logs, (log) => log.level),
+    routes: createLogFacet(logs, (log) => normalizeRoutePath(log.route)),
+    sources: createLogFacet(logs, (log) => log.source),
+    statuses: createLogFacet(logs, (log) => getStatusFacetValue(log.status)),
+  };
+}
+
 export async function readObservabilityLogs(
   filters: ObservabilityFilters = {}
-) {
-  return paginate(await loadRecentLogs(parseFilterDefaults(filters)), {
+): Promise<ObservabilityLogsResult> {
+  const logs = await loadRecentLogs(parseFilterDefaults(filters));
+  const page = paginate(groupObservabilityLogs(logs), {
     page: clampPage(filters.page),
     pageSize: clampPageSize(filters.pageSize),
   });
+
+  return {
+    ...page,
+    facets: createLogFacets(logs),
+  };
 }
 
 export async function readObservabilityRequests(
@@ -865,7 +1129,15 @@ export async function readObservabilityDeployments(
     activeColor?: string | null;
     commitHash?: string | null;
     deploymentStamp?: string | null;
+    startedAt?: number | null;
+    status?: string | null;
   }) => {
+    if (deployment.status === 'failed') {
+      return deployment.deploymentStamp
+        ? `failed-stamp:${deployment.deploymentStamp}`
+        : `failed:${deployment.commitHash ?? 'unknown'}:${deployment.startedAt ?? 'unknown'}`;
+    }
+
     if (deployment.commitHash) {
       return `commit:${deployment.commitHash}`;
     }
@@ -972,6 +1244,8 @@ export async function readObservabilityDeployments(
       activeColor: deployment.color,
       commitHash: deployment.commitHash,
       deploymentStamp: deployment.deploymentStamp,
+      startedAt: deployment.startedAt,
+      status: deployment.status,
     });
     const current = deployments.get(key);
     deployments.set(

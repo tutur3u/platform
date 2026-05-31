@@ -12,6 +12,7 @@ const {
 const { getWatchPaths } = require('./watch-blue-green/paths.js');
 const {
   MAX_REQUEST_LOG_BYTES_ENV,
+  parseContainerConsoleLogEntries,
   readTelemetryState,
 } = require('./watch-blue-green/telemetry.js');
 
@@ -81,6 +82,29 @@ test('readTelemetryState backfills byte counters for existing request-log chunks
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
+});
+
+test('parseContainerConsoleLogEntries coalesces timestamped multiline object writes', () => {
+  const output = [
+    '2026-05-31T06:10:00.000000000Z Sampled infrastructure resources {',
+    '2026-05-31T06:10:00.000000000Z   activeBuilds: 0,',
+    "2026-05-31T06:10:00.000000000Z   buildState: 'idle'",
+    '2026-05-31T06:10:00.000000000Z }',
+    '2026-05-31T06:10:01.000000000Z Finished sampler',
+  ].join('\n');
+
+  const entries = parseContainerConsoleLogEntries(output, {
+    containerId: 'web-green',
+    deploymentColor: 'green',
+  });
+
+  assert.equal(entries.length, 2);
+  assert.equal(entries[0].containerId, 'web-green');
+  assert.equal(entries[0].deploymentColor, 'green');
+  assert.match(entries[0].message, /^Sampled infrastructure resources \{/);
+  assert.match(entries[0].message, /activeBuilds: 0/);
+  assert.match(entries[0].rawLine, /buildState: 'idle'/);
+  assert.equal(entries[1].message, 'Finished sampler');
 });
 
 test('collectDeploymentTraffic bounds durable request logs by bytes before appending long URIs', async () => {

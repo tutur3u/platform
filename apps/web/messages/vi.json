@@ -2263,6 +2263,48 @@
         "description": "Tìm kiếm trực tiếp log request, cron và server từ internal drain.",
         "title": "Logs"
       },
+      "logs_panel": {
+        "all_levels": "Tất cả cấp độ",
+        "all_routes": "Tất cả tuyến",
+        "all_sources": "Tất cả nguồn",
+        "all_statuses": "Tất cả trạng thái",
+        "chips": {
+          "deployment": "Triển khai {value}",
+          "level": "Cấp độ {value}",
+          "query": "Tìm {value}",
+          "request_id": "Request {value}",
+          "route": "Tuyến {value}",
+          "source": "Nguồn {value}",
+          "status": "Trạng thái {value}"
+        },
+        "clear_filters": "Xóa bộ lọc",
+        "collapse": "Thu gọn nhóm log",
+        "columns": {
+          "deployment": "Triển khai",
+          "level": "Cấp độ",
+          "message": "Thông điệp",
+          "request": "Request",
+          "source": "Nguồn",
+          "status": "Trạng thái",
+          "time": "Thời gian"
+        },
+        "deployment": "Dấu triển khai",
+        "description": "Nhóm theo request trước, rồi theo tuyến, nguồn, triển khai và bucket thời gian cho log cũ.",
+        "error_stack": "Stack lỗi",
+        "event_count": "{count} sự kiện",
+        "event_index": "Sự kiện {index}",
+        "expand": "Mở rộng nhóm log",
+        "first_event": "Sự kiện đầu",
+        "loaded": "{loaded}/{total} nhóm",
+        "metadata": "Metadata",
+        "pause": "Tạm dừng live",
+        "refresh": "Làm mới",
+        "request_id": "Request ID",
+        "resume": "Tiếp tục live",
+        "route": "Tuyến",
+        "search": "Tìm thông điệp, tuyến, request",
+        "title": "Luồng Log Đã Nhóm"
+      },
       "metrics": {
         "cron": "Lượt chạy cron",
         "errors": "Lỗi server",

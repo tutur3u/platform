@@ -93,6 +93,17 @@ function getLatestStageForTarget(
   );
 }
 
+function getTargetStage(
+  deployment: ObservabilityDeployment | null,
+  target: BlueGreenDeploymentTarget
+) {
+  if (!deployment) {
+    return null;
+  }
+
+  return getLatestStageForTarget([deployment], target);
+}
+
 function getCurrentStage(deployment: ObservabilityDeployment) {
   return (
     deployment.stages.find((stage) => stage.status === 'running') ??
@@ -297,27 +308,24 @@ export function ObservabilityDeploymentsPanel({
     deployments.find((deployment) =>
       ['building', 'deploying'].includes(deployment.status)
     ) ?? null;
+  const currentDeployment = activeDeployment ?? latest;
   const activeStage = activeDeployment
     ? getCurrentStage(activeDeployment)
     : null;
-  const failedStage = deployments
-    .flatMap((deployment) => deployment.stages)
-    .find((item) => item.status === 'failed');
+  const failedStage =
+    currentDeployment?.status === 'failed'
+      ? (currentDeployment.stages.find((item) => item.status === 'failed') ??
+        null)
+      : null;
   const webTarget = latest?.targetStates.web ?? null;
   const promotedTargets = new Set(
-    deployments.flatMap((deployment) => deployment.stageSummary.promotedTargets)
+    currentDeployment?.stageSummary.promotedTargets ?? []
   );
   const blockedTargets = new Set(
-    deployments.flatMap((deployment) => deployment.stageSummary.blockedTargets)
+    currentDeployment?.stageSummary.blockedTargets ?? []
   );
-  const cacheHits = deployments.reduce(
-    (sum, deployment) => sum + deployment.stageSummary.cacheHitCount,
-    0
-  );
-  const rebuilds = deployments.reduce(
-    (sum, deployment) => sum + deployment.stageSummary.rebuildCount,
-    0
-  );
+  const cacheHits = currentDeployment?.stageSummary.cacheHitCount ?? 0;
+  const rebuilds = currentDeployment?.stageSummary.rebuildCount ?? 0;
 
   return (
     <div className="space-y-4">
@@ -380,7 +388,7 @@ export function ObservabilityDeploymentsPanel({
             }
             key={item}
             label={targetLabels[item]}
-            lastStage={getLatestStageForTarget(deployments, item)}
+            lastStage={getTargetStage(currentDeployment, item)}
             liveColor={
               item === 'web'
                 ? (latest?.targetStates.web.activeColor ??
@@ -499,12 +507,13 @@ export function ObservabilityDeploymentsPanel({
               return (
                 <div
                   className="p-3"
-                  key={
-                    deployment.commitHash ??
+                  key={`${deployment.status}:${
                     deployment.deploymentStamp ??
+                    deployment.commitHash ??
                     deployment.color ??
+                    deployment.startedAt ??
                     'deployment'
-                  }
+                  }`}
                 >
                   <div className="grid gap-3 lg:grid-cols-[minmax(180px,1fr)_140px_120px] lg:items-start">
                     <div className="min-w-0">

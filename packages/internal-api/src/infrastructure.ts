@@ -1263,6 +1263,46 @@ export interface ObservabilityLogEvent {
   userAgent: string | null;
 }
 
+export interface ObservabilityLogFacet {
+  count: number;
+  errorCount: number;
+  value: string;
+}
+
+export interface ObservabilityLogFacets {
+  levels: ObservabilityLogFacet[];
+  routes: ObservabilityLogFacet[];
+  sources: ObservabilityLogFacet[];
+  statuses: ObservabilityLogFacet[];
+}
+
+export interface ObservabilityLogGroup {
+  createdAt: number;
+  deploymentColor: string | null;
+  deploymentStamp: string | null;
+  durationMs: number | null;
+  errorName: string | null;
+  errorStack: string | null;
+  eventCount: number;
+  events: ObservabilityLogEvent[];
+  firstEventAt: number;
+  id: string;
+  ipAddress: string | null;
+  level: ObservabilityLogLevel;
+  message: string;
+  metadata: Record<string, unknown>;
+  requestId: string | null;
+  route: string | null;
+  source: ObservabilitySource;
+  status: number | null;
+  userAgent: string | null;
+}
+
+export interface ObservabilityLogsResult
+  extends ObservabilityPaginatedResult<ObservabilityLogGroup> {
+  facets: ObservabilityLogFacets;
+}
+
 export interface ObservabilityRequest {
   cronJobId: string | null;
   deploymentColor: string | null;
@@ -1404,11 +1444,14 @@ export interface ObservabilityPaginatedResult<T> {
 }
 
 export interface GetObservabilityParams {
+  deploymentStamp?: string;
   level?: ObservabilityLogLevel | 'all';
   page?: number;
   pageSize?: number;
   projectId?: string;
   q?: string;
+  requestId?: string;
+  route?: string;
   since?: number;
   source?: ObservabilitySource | 'all';
   status?: string;
@@ -2239,6 +2282,18 @@ function appendObservabilitySearchParams(
     searchParams.set('q', params.q);
   }
 
+  if (params?.route && params.route !== 'all') {
+    searchParams.set('route', params.route);
+  }
+
+  if (params?.requestId) {
+    searchParams.set('requestId', params.requestId);
+  }
+
+  if (params?.deploymentStamp) {
+    searchParams.set('deploymentStamp', params.deploymentStamp);
+  }
+
   if (params?.since != null) {
     searchParams.set('since', String(params.since));
   }
@@ -2255,7 +2310,7 @@ function appendObservabilitySearchParams(
     searchParams.set('source', params.source);
   }
 
-  if (params?.status) {
+  if (params?.status && params.status !== 'all') {
     searchParams.set('status', params.status);
   }
 }
@@ -2295,7 +2350,7 @@ export async function getObservabilityLogs(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<ObservabilityPaginatedResult<ObservabilityLogEvent>>(
+  return client.json<ObservabilityLogsResult>(
     getObservabilityPath('logs', params),
     { cache: 'no-store' }
   );

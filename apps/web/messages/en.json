@@ -2263,6 +2263,48 @@
         "description": "Live-search request, cron, and server log events from the internal drain.",
         "title": "Logs"
       },
+      "logs_panel": {
+        "all_levels": "All levels",
+        "all_routes": "All routes",
+        "all_sources": "All sources",
+        "all_statuses": "All statuses",
+        "chips": {
+          "deployment": "Deployment {value}",
+          "level": "Level {value}",
+          "query": "Search {value}",
+          "request_id": "Request {value}",
+          "route": "Route {value}",
+          "source": "Source {value}",
+          "status": "Status {value}"
+        },
+        "clear_filters": "Clear filters",
+        "collapse": "Collapse log group",
+        "columns": {
+          "deployment": "Deployment",
+          "level": "Level",
+          "message": "Message",
+          "request": "Request",
+          "source": "Source",
+          "status": "Status",
+          "time": "Time"
+        },
+        "deployment": "Deployment stamp",
+        "description": "Grouped by request first, then by route, source, deployment, and time bucket for legacy logs.",
+        "error_stack": "Error stack",
+        "event_count": "{count} events",
+        "event_index": "Event {index}",
+        "expand": "Expand log group",
+        "first_event": "First event",
+        "loaded": "{loaded}/{total} groups",
+        "metadata": "Metadata",
+        "pause": "Pause live",
+        "refresh": "Refresh",
+        "request_id": "Request ID",
+        "resume": "Resume live",
+        "route": "Route",
+        "search": "Search messages, routes, requests",
+        "title": "Grouped Log Stream"
+      },
       "metrics": {
         "cron": "Cron Runs",
         "errors": "Server Errors",

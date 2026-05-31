@@ -5,6 +5,7 @@ import {
   deleteAIWhitelistDomain,
   deleteAIWhitelistEmail,
   deployAiAgentChannel,
+  getObservabilityLogs,
   listAIWhitelistDomains,
   listAIWhitelistEmails,
   listAiAgents,
@@ -269,6 +270,54 @@ describe('AI gateway model internal API helpers', () => {
       ],
       pagination: { limit: 25, page: 2, total: 51 },
     });
+  });
+});
+
+describe('observability internal API helpers', () => {
+  it('sends grouped log filters through the apps/web observability API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      createJsonResponse({
+        facets: {
+          levels: [],
+          routes: [],
+          sources: [],
+          statuses: [],
+        },
+        hasNextPage: false,
+        items: [],
+        page: 2,
+        pageSize: 25,
+        total: 0,
+      })
+    );
+
+    await getObservabilityLogs(
+      {
+        deploymentStamp: 'deploy-123',
+        level: 'error',
+        page: 2,
+        pageSize: 25,
+        projectId: 'platform',
+        q: 'sample resources',
+        requestId: 'req-123',
+        route: '/api/cron/infrastructure/sample-resources',
+        source: 'api',
+        status: '2xx',
+        timeframeHours: 6,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/infrastructure/observability/logs?page=2&pageSize=25&projectId=platform&timeframeHours=6&q=sample+resources&route=%2Fapi%2Fcron%2Finfrastructure%2Fsample-resources&requestId=req-123&deploymentStamp=deploy-123&level=error&source=api&status=2xx',
+      expect.objectContaining({
+        cache: 'no-store',
+        headers: expect.any(Headers),
+      })
+    );
   });
 });
 

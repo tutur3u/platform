@@ -760,21 +760,26 @@ function writeServerLog(level: LogDrainLevel, args: unknown[]) {
   captureEvent(createEvent(level, args, { logger: 'serverLogger' }));
 }
 
+function writeOriginalServerLog(level: LogDrainLevel, args: unknown[]) {
+  const line = args.map(serializeArg).join(' ');
+  originalConsole[level](line);
+}
+
 export const serverLogger = {
   debug: (...args: unknown[]) => {
-    originalConsole.debug(...args);
+    writeOriginalServerLog('debug', args);
     writeServerLog('debug', args);
   },
   error: (...args: unknown[]) => {
-    originalConsole.error(...args);
+    writeOriginalServerLog('error', args);
     writeServerLog('error', args);
   },
   info: (...args: unknown[]) => {
-    originalConsole.info(...args);
+    writeOriginalServerLog('info', args);
     writeServerLog('info', args);
   },
   warn: (...args: unknown[]) => {
-    originalConsole.warn(...args);
+    writeOriginalServerLog('warn', args);
     writeServerLog('warn', args);
   },
 };

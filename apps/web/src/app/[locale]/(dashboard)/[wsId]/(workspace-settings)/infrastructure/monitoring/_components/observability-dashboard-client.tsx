@@ -86,6 +86,10 @@ import {
   formatLatencyMs,
 } from './formatters';
 import { ObservabilityDeploymentsPanel } from './observability-deployments-panel';
+import {
+  ObservabilityLogsPanel,
+  type ObservabilityLogsPanelFilters,
+} from './observability-logs-panel';
 import { ObservabilityResourcesPanel } from './observability-resources-panel';
 
 export type ObservabilityDashboardMode =
@@ -929,6 +933,22 @@ export function ObservabilityDashboardClient({
     'source',
     parseAsString.withDefault('all').withOptions({ shallow: true })
   );
+  const [statusFilter, setStatusFilter] = useQueryState(
+    'status',
+    parseAsString.withDefault('all').withOptions({ shallow: true })
+  );
+  const [routeFilter, setRouteFilter] = useQueryState(
+    'route',
+    parseAsString.withDefault('all').withOptions({ shallow: true })
+  );
+  const [requestIdFilter, setRequestIdFilter] = useQueryState(
+    'requestId',
+    parseAsString.withDefault('').withOptions({ shallow: true })
+  );
+  const [deploymentStampFilter, setDeploymentStampFilter] = useQueryState(
+    'deploymentStamp',
+    parseAsString.withDefault('').withOptions({ shallow: true })
+  );
   const [projectId, setProjectId] = useQueryState(
     'project',
     parseAsString.withDefault('platform').withOptions({ shallow: true })
@@ -940,6 +960,7 @@ export function ObservabilityDashboardClient({
   const [projectRepoUrl, setProjectRepoUrl] = useState('');
   const [projectHostnames, setProjectHostnames] = useState('');
   const [projectAppRoot, setProjectAppRoot] = useState('');
+  const [logsPaused, setLogsPaused] = useState(false);
   const [requestFreezeUntil, setRequestFreezeUntil] = useState(() =>
     Date.now()
   );
@@ -949,14 +970,29 @@ export function ObservabilityDashboardClient({
     useState<InfrastructureProject | null>(null);
   const filters: GetObservabilityParams = useMemo(
     () => ({
+      deploymentStamp: deploymentStampFilter || undefined,
       level: level as GetObservabilityParams['level'],
       pageSize,
       projectId,
       q: query || undefined,
+      requestId: requestIdFilter || undefined,
+      route: routeFilter === 'all' ? undefined : routeFilter,
       source: source as GetObservabilityParams['source'],
+      status: statusFilter === 'all' ? undefined : statusFilter,
       timeframeHours,
     }),
-    [level, pageSize, projectId, query, source, timeframeHours]
+    [
+      deploymentStampFilter,
+      level,
+      pageSize,
+      projectId,
+      query,
+      requestIdFilter,
+      routeFilter,
+      source,
+      statusFilter,
+      timeframeHours,
+    ]
   );
   const projectsQuery = useQuery({
     queryFn: () => getInfrastructureProjects(),
@@ -1007,7 +1043,7 @@ export function ObservabilityDashboardClient({
     queryFn: ({ pageParam }) =>
       getObservabilityLogs({ ...filters, page: pageParam }),
     queryKey: ['infrastructure', 'observability', 'logs', filters],
-    refetchInterval: 5_000,
+    refetchInterval: logsPaused ? false : 5_000,
   });
   const requestsQuery = useInfiniteQuery<
     RequestsPage,
@@ -1258,6 +1294,7 @@ export function ObservabilityDashboardClient({
     () => logsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [logsQuery.data]
   );
+  const logFacets = logsQuery.data?.pages[0]?.facets;
   const requests = useMemo(
     () => requestsQuery.data?.pages.flatMap((page) => page.items) ?? [],
     [requestsQuery.data]
@@ -1351,6 +1388,30 @@ export function ObservabilityDashboardClient({
     tone: job.failureCount > 0 ? ('red' as const) : ('green' as const),
     value: job.runCount,
   }));
+  const logPanelFilters: ObservabilityLogsPanelFilters = {
+    deploymentStamp: deploymentStampFilter,
+    level,
+    query,
+    requestId: requestIdFilter,
+    route: routeFilter,
+    source,
+    status: statusFilter,
+  };
+  const setLogPanelFilters = (
+    nextFilters: Partial<ObservabilityLogsPanelFilters>
+  ) => {
+    if (nextFilters.query != null) void setQuery(nextFilters.query);
+    if (nextFilters.level != null) void setLevel(nextFilters.level);
+    if (nextFilters.source != null) void setSource(nextFilters.source);
+    if (nextFilters.status != null) void setStatusFilter(nextFilters.status);
+    if (nextFilters.route != null) void setRouteFilter(nextFilters.route);
+    if (nextFilters.requestId != null) {
+      void setRequestIdFilter(nextFilters.requestId);
+    }
+    if (nextFilters.deploymentStamp != null) {
+      void setDeploymentStampFilter(nextFilters.deploymentStamp);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -2072,36 +2133,25 @@ export function ObservabilityDashboardClient({
         ))}
 
       {mode === 'logs' && (
-        <section className="rounded-lg border border-border bg-background">
-          <div className="grid grid-cols-[140px_72px_90px_minmax(0,1fr)] gap-4 border-border border-b px-4 py-3 text-muted-foreground text-xs">
-            <span>{t('columns.time')}</span>
-            <span>{t('columns.level')}</span>
-            <span>{t('columns.status')}</span>
-            <span>{t('columns.message')}</span>
-          </div>
-          {logsQuery.isLoading ? (
-            <LoadingSkeleton rows={8} />
-          ) : (
-            <VirtualizedList
-              empty={t('empty.logs')}
-              estimateRowHeight={66}
-              hasMore={logsQuery.hasNextPage}
-              isFetchingMore={logsQuery.isFetchingNextPage}
-              items={logs}
-              onEndReached={() => void logsQuery.fetchNextPage()}
-              renderRow={(log) => <LogRow key={log.id} log={log} />}
-            />
-          )}
-          <InfiniteFooter
-            endLabel={infiniteLabels.end}
-            hasMore={logsQuery.hasNextPage}
-            isFetchingMore={logsQuery.isFetchingNextPage}
-            loaded={logs.length}
-            loadingLabel={infiniteLabels.loading}
-            moreLabel={infiniteLabels.more}
-            total={logsTotal}
-          />
-        </section>
+        <ObservabilityLogsPanel
+          emptyLabel={t('empty.logs')}
+          endLabel={infiniteLabels.end}
+          facets={logFacets}
+          filters={logPanelFilters}
+          groups={logs}
+          hasMore={logsQuery.hasNextPage}
+          isFetchingMore={logsQuery.isFetchingNextPage}
+          isLoading={logsQuery.isLoading}
+          isPaused={logsPaused}
+          loaded={logs.length}
+          loadingLabel={infiniteLabels.loading}
+          moreLabel={infiniteLabels.more}
+          onFilterChange={setLogPanelFilters}
+          onLoadMore={() => void logsQuery.fetchNextPage()}
+          onRefresh={() => void logsQuery.refetch()}
+          onTogglePaused={() => setLogsPaused((current) => !current)}
+          total={logsTotal}
+        />
       )}
 
       {mode === 'requests' && (
