@@ -157,6 +157,11 @@ export function DiscordChannelFields({
           name="discordGuildId"
           placeholder={t('fields.discord_guild_id')}
         />
+        <Input
+          defaultValue={channel?.externalChannelId ?? ''}
+          name="discordExternalChannelId"
+          placeholder={t('fields.external_channel_id')}
+        />
         <SensitiveSecretField
           channel={channel}
           label={t('fields.discord_application_id')}
@@ -183,17 +188,31 @@ export function DiscordChannelFields({
         name="discordMentionRoleIds"
         placeholder={t('fields.discord_mentions')}
       />
-      <div className="flex items-center gap-3">
-        <Switch
+      <div className="grid gap-3 sm:grid-cols-3">
+        <ToggleField
           defaultChecked={channel?.enabled ?? true}
           id={agentId ? `${agentId}-discordEnabled` : 'new-discordEnabled'}
+          label={t('fields.channel_enabled')}
           name="discordEnabled"
         />
-        <Label
-          htmlFor={agentId ? `${agentId}-discordEnabled` : 'new-discordEnabled'}
-        >
-          {t('fields.channel_enabled')}
-        </Label>
+        <ToggleField
+          defaultChecked={channel?.autoRespond ?? true}
+          id={
+            agentId ? `${agentId}-discordAutoRespond` : 'new-discordAutoRespond'
+          }
+          label={t('fields.auto_respond')}
+          name="discordAutoRespond"
+        />
+        <ToggleField
+          defaultChecked={channel?.historySyncEnabled ?? true}
+          id={
+            agentId
+              ? `${agentId}-discordHistorySyncEnabled`
+              : 'new-discordHistorySyncEnabled'
+          }
+          label={t('fields.history_sync')}
+          name="discordHistorySyncEnabled"
+        />
       </div>
     </div>
   );
@@ -228,6 +247,11 @@ export function ZaloChannelFields({
           name="zaloOfficialAccountId"
           placeholder={t('fields.zalo_oa_id')}
         />
+        <Input
+          defaultValue={channel?.externalChannelId ?? ''}
+          name="zaloExternalChannelId"
+          placeholder={t('fields.external_channel_id')}
+        />
         <div className="md:col-span-2">
           <SensitiveSecretField
             channel={channel}
@@ -245,16 +269,49 @@ export function ZaloChannelFields({
           />
         </div>
       </div>
-      <div className="flex items-center gap-3">
-        <Switch
+      <div className="grid gap-3 sm:grid-cols-3">
+        <ToggleField
           defaultChecked={channel?.enabled ?? true}
           id={agentId ? `${agentId}-zaloEnabled` : 'new-zaloEnabled'}
+          label={t('fields.channel_enabled')}
           name="zaloEnabled"
         />
-        <Label htmlFor={agentId ? `${agentId}-zaloEnabled` : 'new-zaloEnabled'}>
-          {t('fields.channel_enabled')}
-        </Label>
+        <ToggleField
+          defaultChecked={channel?.autoRespond ?? true}
+          id={agentId ? `${agentId}-zaloAutoRespond` : 'new-zaloAutoRespond'}
+          label={t('fields.auto_respond')}
+          name="zaloAutoRespond"
+        />
+        <ToggleField
+          defaultChecked={channel?.historySyncEnabled ?? true}
+          id={
+            agentId
+              ? `${agentId}-zaloHistorySyncEnabled`
+              : 'new-zaloHistorySyncEnabled'
+          }
+          label={t('fields.history_sync')}
+          name="zaloHistorySyncEnabled"
+        />
       </div>
+    </div>
+  );
+}
+
+function ToggleField({
+  defaultChecked,
+  id,
+  label,
+  name,
+}: {
+  defaultChecked: boolean;
+  id: string;
+  label: string;
+  name: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-md border border-border bg-muted/20 px-3 py-2">
+      <Switch defaultChecked={defaultChecked} id={id} name={name} />
+      <Label htmlFor={id}>{label}</Label>
     </div>
   );
 }

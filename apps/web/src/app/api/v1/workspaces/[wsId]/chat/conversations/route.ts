@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { listAiAgentExternalThreadConversations } from '@/lib/ai-agents/external-chat-mirror';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
   listAiChatConversations,
@@ -121,33 +122,44 @@ export const GET = withSessionAuth<RouteParams>(
     const pagination = readPagination(url);
 
     try {
-      const [conversations, aiAgentConversations, aiChatConversations] =
-        await Promise.all([
-          listNativeChatConversations({
-            actorUserId: auth.user.id,
-            archived,
-            limit: pagination.isPaginated
-              ? pagination.offset + pagination.limit + 1
-              : null,
-            offset: 0,
-            wsId: context.context.normalizedWsId,
-          }),
-          archived === 'active'
-            ? listRootAiAgentDiscoveryConversations({
-                wsId: context.context.normalizedWsId,
-              })
-            : [],
-          listAiChatConversations({
-            archived,
-            supabase: auth.supabase,
-            user: auth.user,
-            wsId: context.context.normalizedWsId,
-          }),
-        ]);
+      const [
+        conversations,
+        aiAgentConversations,
+        aiAgentExternalConversations,
+        aiChatConversations,
+      ] = await Promise.all([
+        listNativeChatConversations({
+          actorUserId: auth.user.id,
+          archived,
+          limit: pagination.isPaginated
+            ? pagination.offset + pagination.limit + 1
+            : null,
+          offset: 0,
+          wsId: context.context.normalizedWsId,
+        }),
+        archived === 'active'
+          ? listRootAiAgentDiscoveryConversations({
+              wsId: context.context.normalizedWsId,
+            })
+          : [],
+        archived === 'active'
+          ? listAiAgentExternalThreadConversations({
+              actorUserId: auth.user.id,
+              wsId: context.context.normalizedWsId,
+            })
+          : [],
+        listAiChatConversations({
+          archived,
+          supabase: auth.supabase,
+          user: auth.user,
+          wsId: context.context.normalizedWsId,
+        }),
+      ]);
 
       const allConversations = [
         ...(conversations ?? []),
         ...aiAgentConversations,
+        ...aiAgentExternalConversations,
         ...aiChatConversations,
       ];
       const pageConversations = pagination.isPaginated

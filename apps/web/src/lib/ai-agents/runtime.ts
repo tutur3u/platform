@@ -1,8 +1,9 @@
 import { google } from '@ai-sdk/google';
 import {
-  type Message as ChatMessage,
   type Thread as ChatThread,
   createChatSdkRuntime,
+  type Message as SdkMessage,
+  type SentMessage as SdkSentMessage,
 } from '@tuturuuu/ai/chat-sdk';
 import {
   createMiraStreamTools,
@@ -13,6 +14,7 @@ import type { PermissionId } from '@tuturuuu/types';
 import { DEV_MODE } from '@tuturuuu/utils/constants';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { stepCountIs, ToolLoopAgent, type ToolSet } from 'ai';
+import { persistAiAgentExternalSdkMessage } from './external-chat-mirror';
 import {
   getChannelSecretValues,
   getRootSecretValue,
@@ -106,7 +108,7 @@ async function resolveMappedPlatformUser({
   message,
 }: {
   channel: AiAgentChannelConfig;
-  message: ChatMessage;
+  message: SdkMessage;
 }): Promise<MappedPlatformUser> {
   if (message.author.isMe || message.author.isBot === true) {
     return { ok: false, reason: 'Bot-originated messages are ignored.' };
@@ -187,14 +189,13 @@ async function respondWithAgent({
 }: {
   agent: AiAgentDefinition;
   channel: AiAgentChannelConfig;
-  message: ChatMessage;
+  message: SdkMessage;
   thread: ChatThread;
-}) {
+}): Promise<SdkSentMessage | null> {
   const mappedUser = await resolveMappedPlatformUser({ channel, message });
 
   if (!mappedUser.ok) {
-    await thread.post(mappedUser.reason);
-    return;
+    return await thread.post(mappedUser.reason);
   }
 
   await thread.startTyping();
@@ -218,7 +219,7 @@ Only use the configured task and calendar tools. If a tool returns a permission 
     prompt: message.text || '[No text content]',
   });
 
-  await thread.post(result.fullStream);
+  return await thread.post(result.fullStream);
 }
 
 export async function createAiAgentChatRuntime({
@@ -262,9 +263,36 @@ export async function createAiAgentChatRuntime({
     userName: channel.displayName || agent.name,
   });
 
-  const handler = async (thread: ChatThread, message: ChatMessage) => {
+  const handler = async (thread: ChatThread, message: SdkMessage) => {
     try {
-      await respondWithAgent({ agent, channel, message, thread });
+      await persistAiAgentExternalSdkMessage({
+        agent,
+        channel,
+        direction: message.author.isMe ? 'outbound' : 'inbound',
+        message,
+        platformUserId: null,
+        thread,
+      });
+
+      if (channel.autoRespond === false) {
+        await markAiAgentChannelEvent({
+          agentId: agent.id,
+          channelId: channel.id,
+        });
+        return;
+      }
+
+      const sent = await respondWithAgent({ agent, channel, message, thread });
+      if (sent) {
+        await persistAiAgentExternalSdkMessage({
+          agent,
+          channel,
+          direction: 'outbound',
+          message: sent,
+          platformUserId: null,
+          thread,
+        });
+      }
       await markAiAgentChannelEvent({
         agentId: agent.id,
         channelId: channel.id,
@@ -277,7 +305,17 @@ export async function createAiAgentChatRuntime({
         channelId: channel.id,
         error: messageText,
       });
-      await thread.post('The Tuturuuu agent could not complete this request.');
+      const sent = await thread.post(
+        'The Tuturuuu agent could not complete this request.'
+      );
+      await persistAiAgentExternalSdkMessage({
+        agent,
+        channel,
+        direction: 'outbound',
+        message: sent,
+        platformUserId: null,
+        thread,
+      });
     }
   };
 

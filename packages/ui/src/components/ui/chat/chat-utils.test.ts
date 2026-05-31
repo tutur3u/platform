@@ -6,10 +6,12 @@ import {
   formatFileSize,
   getChatConversationTypesForScope,
   getChatInitials,
+  getChatSelectionStorageKey,
   getConversationTitle,
   getLastMessagePreview,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
+  resolveChatConversationSelection,
 } from './utils';
 
 const baseMessage: ChatMessage = {
@@ -163,6 +165,16 @@ describe('chat utils', () => {
     expect(isReadOnlyChatConversation(conversation({ metadata: {} }))).toBe(
       false
     );
+    expect(
+      isReadOnlyChatConversation(
+        conversation({
+          metadata: {
+            readOnly: true,
+            source: 'ai-agent-external-thread',
+          },
+        })
+      )
+    ).toBe(true);
   });
 
   it('splits personal and workspace conversation scopes', () => {
@@ -193,5 +205,44 @@ describe('chat utils', () => {
         'workspaces'
       ).map((item) => item.id)
     ).toEqual(['channel-1', 'ai-1']);
+  });
+
+  it('resolves workspace chat selection from requested, stored, then first conversation', () => {
+    const conversationIds = ['first', 'stored', 'requested'];
+
+    expect(
+      resolveChatConversationSelection({
+        conversationIds,
+        requestedConversationId: 'requested',
+        storedConversationId: 'stored',
+      })
+    ).toBe('requested');
+    expect(
+      resolveChatConversationSelection({
+        conversationIds,
+        requestedConversationId: 'missing',
+        storedConversationId: 'stored',
+      })
+    ).toBe('stored');
+    expect(
+      resolveChatConversationSelection({
+        conversationIds,
+        requestedConversationId: null,
+        storedConversationId: 'missing',
+      })
+    ).toBe('first');
+    expect(
+      resolveChatConversationSelection({
+        conversationIds: [],
+        requestedConversationId: 'requested',
+        storedConversationId: 'stored',
+      })
+    ).toBeNull();
+  });
+
+  it('scopes the last selected conversation key by workspace and chat scope', () => {
+    expect(getChatSelectionStorageKey('workspace-1', 'workspaces')).toBe(
+      'tuturuuu.chat.selectedConversation.workspace-1.workspaces'
+    );
   });
 });

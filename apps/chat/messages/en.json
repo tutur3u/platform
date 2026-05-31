@@ -214,7 +214,7 @@
     "private_schema_status": "Private chat",
     "react_to_message": "React to message",
     "read_only_badge": "Read-only",
-    "read_only_conversation": "This agent channel is discoverable here, but messages are read-only. Manage it from Infrastructure > AI Agents.",
+    "read_only_conversation": "External AI-agent messages are mirrored here in read-only mode. Draft and send manual responses from Infrastructure > AI Agents.",
     "remove_attachment": "Remove attachment",
     "rename_conversation": "Rename conversation",
     "rename_conversation_description": "Update the name shown for everyone with access to this conversation.",

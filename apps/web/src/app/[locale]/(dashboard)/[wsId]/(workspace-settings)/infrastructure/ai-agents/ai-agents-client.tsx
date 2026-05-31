@@ -22,6 +22,7 @@ import {
   type OneTimeSecret,
   QUERY_KEY,
 } from './ai-agents-utils';
+import { ExternalChatsConsole } from './external-chats-console';
 import { IdentityLinks } from './identity-links';
 import { SecretPanel } from './secret-panel';
 
@@ -135,6 +136,33 @@ export function AiAgentsClient({ initialData }: { initialData: AiAgentsData }) {
     <div className="space-y-6">
       <SecretPanel secret={secret} setSecret={setSecret} />
 
+      <div className="grid gap-3 md:grid-cols-4">
+        <SummaryMetric label={t('summary.agents')} value={data.agents.length} />
+        <SummaryMetric
+          label={t('summary.channels')}
+          value={data.agents.reduce(
+            (total, agent) => total + agent.channels.length,
+            0
+          )}
+        />
+        <SummaryMetric
+          label={t('summary.deployed')}
+          value={data.agents.reduce(
+            (total, agent) =>
+              total +
+              agent.channels.filter((channel) => channel.status === 'deployed')
+                .length,
+            0
+          )}
+        />
+        <SummaryMetric
+          label={t('summary.identities')}
+          value={data.identities.length}
+        />
+      </div>
+
+      <ExternalChatsConsole agents={data.agents} />
+
       <div className="space-y-3">
         <h2 className="font-semibold text-lg">{t('new_agent.title')}</h2>
         <AgentForm
@@ -191,6 +219,15 @@ export function AiAgentsClient({ initialData }: { initialData: AiAgentsData }) {
           ))
         )}
       </div>
+    </div>
+  );
+}
+
+function SummaryMetric({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="text-muted-foreground text-sm">{label}</div>
+      <div className="font-semibold text-2xl">{value}</div>
     </div>
   );
 }

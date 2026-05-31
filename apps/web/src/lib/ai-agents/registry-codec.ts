@@ -45,7 +45,10 @@ export type ChannelMetaRecord = {
   status?: AiAgentChannelStatus;
   webhookUrl?: string | null;
   workspaceId?: string;
+  autoRespond?: boolean;
   discordGuildId?: string | null;
+  externalChannelId?: string | null;
+  historySyncEnabled?: boolean;
   zaloOfficialAccountId?: string | null;
 };
 
@@ -325,7 +328,10 @@ export function buildAgentDefinitions(
               : channelMeta.webhookUrl ||
                 buildWebhookUrl({ adapter, channelId, origin }),
             workspaceId: channelMeta.workspaceId || ROOT_WORKSPACE_ID,
+            autoRespond: channelMeta.autoRespond ?? true,
             discordGuildId: channelMeta.discordGuildId ?? null,
+            externalChannelId: channelMeta.externalChannelId ?? null,
+            historySyncEnabled: channelMeta.historySyncEnabled ?? true,
             zaloOfficialAccountId: channelMeta.zaloOfficialAccountId ?? null,
           };
         })

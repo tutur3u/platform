@@ -3,6 +3,7 @@ import type {
   AIWhitelistDomain,
   AIWhitelistEmail,
 } from '@tuturuuu/types';
+import type { ChatMessage } from './chat-types';
 import {
   encodePathSegment,
   getInternalApiClient,
@@ -63,7 +64,10 @@ export interface AiAgentChannelConfig {
   status: AiAgentChannelStatus;
   webhookUrl: string | null;
   workspaceId: string;
+  autoRespond?: boolean;
   discordGuildId?: string | null;
+  externalChannelId?: string | null;
+  historySyncEnabled?: boolean;
   zaloOfficialAccountId?: string | null;
 }
 
@@ -91,6 +95,44 @@ export interface AiAgentIdentityLink {
 export interface AiAgentsResponse {
   agents: AiAgentDefinition[];
   identities: AiAgentIdentityLink[];
+}
+
+export interface AiAgentExternalThread {
+  adapter: AiAgentAdapter;
+  agentId: string;
+  channelId: string;
+  conversationId: string;
+  createdAt: string;
+  externalChannelId: string | null;
+  externalThreadId: string;
+  id: string;
+  lastEventAt: string | null;
+  lastSyncedAt: string | null;
+  latestMessage: ChatMessage | null;
+  messageCount: number;
+  metadata: Record<string, unknown>;
+  title: string | null;
+  updatedAt: string;
+  wsId: string;
+}
+
+export interface AiAgentExternalThreadsResponse {
+  threads: AiAgentExternalThread[];
+}
+
+export interface AiAgentExternalMessagesResponse {
+  messages: ChatMessage[];
+}
+
+export interface AiAgentExternalSyncResponse {
+  message: string | null;
+  ok: boolean;
+  synced: number;
+}
+
+export interface AiAgentExternalDraftResponse {
+  draft: string;
+  sourceMessages: number;
 }
 
 export interface InternalAppSessionPolicyOverride {
@@ -220,7 +262,10 @@ export interface SaveAiAgentPayload {
     secrets?: Record<string, string | null | undefined>;
     status?: AiAgentChannelStatus;
     workspaceId: string;
+    autoRespond?: boolean;
     discordGuildId?: string | null;
+    externalChannelId?: string | null;
+    historySyncEnabled?: boolean;
     zaloOfficialAccountId?: string | null;
   }>;
   enabled?: boolean;
@@ -1795,6 +1840,106 @@ export async function saveAiAgentIdentityLink(
       headers: {
         'Content-Type': 'application/json',
       },
+      method: 'POST',
+    }
+  );
+}
+
+export async function listAiAgentExternalThreads(
+  params?: {
+    agentId?: string | null;
+    channelId?: string | null;
+    wsId?: string | null;
+  },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<AiAgentExternalThreadsResponse>(
+    '/api/v1/infrastructure/ai-agents/external-threads',
+    {
+      cache: 'no-store',
+      query: {
+        agentId: params?.agentId ?? undefined,
+        channelId: params?.channelId ?? undefined,
+        wsId: params?.wsId ?? undefined,
+      },
+    }
+  );
+}
+
+export async function listAiAgentExternalMessages(
+  threadId: string,
+  params?: { limit?: number },
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<AiAgentExternalMessagesResponse>(
+    `/api/v1/infrastructure/ai-agents/external-threads/${encodePathSegment(
+      threadId
+    )}/messages`,
+    {
+      cache: 'no-store',
+      query: {
+        limit: params?.limit,
+      },
+    }
+  );
+}
+
+export async function syncAiAgentExternalThread(
+  threadId: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<AiAgentExternalSyncResponse>(
+    `/api/v1/infrastructure/ai-agents/external-threads/${encodePathSegment(
+      threadId
+    )}/sync`,
+    {
+      cache: 'no-store',
+      method: 'POST',
+    }
+  );
+}
+
+export async function draftAiAgentExternalResponse(
+  threadId: string,
+  prompt: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<AiAgentExternalDraftResponse>(
+    `/api/v1/infrastructure/ai-agents/external-threads/${encodePathSegment(
+      threadId
+    )}/draft`,
+    {
+      body: JSON.stringify({ prompt }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+    }
+  );
+}
+
+export async function sendAiAgentExternalResponse(
+  threadId: string,
+  content: string,
+  options?: InternalApiClientOptions
+) {
+  const client = getInternalApiClient(options);
+
+  return client.json<{ message: ChatMessage }>(
+    `/api/v1/infrastructure/ai-agents/external-threads/${encodePathSegment(
+      threadId
+    )}/send`,
+    {
+      body: JSON.stringify({ content }),
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
       method: 'POST',
     }
   );

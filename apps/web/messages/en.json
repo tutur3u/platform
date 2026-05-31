@@ -633,13 +633,17 @@
       "create": "Create agent",
       "deploy": "Deploy",
       "dismiss": "Dismiss",
+      "draft": "Draft",
       "hide": "Hide",
       "link_identity": "Link user",
       "pause": "Pause",
+      "refresh": "Refresh",
       "replace": "Replace",
       "rotate_zalo_secret": "Rotate Zalo secret",
       "save": "Save",
+      "send": "Send",
       "show": "Show",
+      "sync": "Sync",
       "test": "Test",
       "undo": "Undo"
     },
@@ -648,8 +652,19 @@
       "zalo": "Zalo"
     },
     "description": "Manage apps/web-hosted AI agents that receive Discord and Zalo messages, then act through mapped Tuturuuu users.",
+    "external": {
+      "ai_agent": "AI agent",
+      "draft_placeholder": "Draft response",
+      "empty": "No mirrored external threads yet.",
+      "loading_messages": "Loading messages",
+      "message_count": "{count} messages",
+      "no_thread": "No external thread selected",
+      "prompt_placeholder": "Custom prompt for the manual response",
+      "title": "External chats"
+    },
     "fields": {
       "agent_id": "Agent ID",
+      "auto_respond": "Auto respond",
       "channel_enabled": "Channel enabled",
       "discord_application_id": "Discord application ID",
       "discord_bot_token": "Discord bot token",
@@ -658,6 +673,8 @@
       "discord_public_key": "Discord public key",
       "display_name": "Display name",
       "enabled": "Enabled",
+      "external_channel_id": "External channel ID",
+      "history_sync": "History sync",
       "instructions": "Instructions",
       "last_event": "Last event",
       "model": "Model",
@@ -678,6 +695,8 @@
       "copy_success": "Secret copied",
       "deploy_error": "Deploy failed",
       "deploy_success": "Agent channel deployed",
+      "draft_error": "Draft failed",
+      "draft_success": "Draft ready",
       "identity_error": "Identity link failed",
       "identity_success": "Identity linked",
       "pause_error": "Pause failed",
@@ -686,6 +705,10 @@
       "rotate_success": "Secret rotated",
       "save_error": "Agent save failed",
       "save_success": "Agent saved",
+      "send_error": "Manual response failed",
+      "send_success": "Manual response sent",
+      "sync_error": "External sync failed",
+      "sync_success": "External sync complete",
       "test_error": "Test failed"
     },
     "new_agent": {
@@ -711,6 +734,12 @@
       "error": "Error",
       "never": "Never",
       "paused": "Paused"
+    },
+    "summary": {
+      "agents": "Agents",
+      "channels": "Channels",
+      "deployed": "Deployed",
+      "identities": "Identities"
     },
     "title": "AI Agents",
     "workspace": {
@@ -3449,7 +3478,7 @@
     "private_schema_status": "Private chat",
     "react_to_message": "React to message",
     "read_only_badge": "Read-only",
-    "read_only_conversation": "This agent channel is discoverable here, but messages are read-only. Manage it from Infrastructure > AI Agents.",
+    "read_only_conversation": "External AI-agent messages are mirrored here in read-only mode. Draft and send manual responses from Infrastructure > AI Agents.",
     "remove_attachment": "Remove attachment",
     "rename_conversation": "Rename conversation",
     "rename_conversation_description": "Update the name shown for everyone with access to this conversation.",

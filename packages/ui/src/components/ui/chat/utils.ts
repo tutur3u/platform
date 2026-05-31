@@ -210,10 +210,40 @@ export function isReadOnlyChatConversation(
 ) {
   return (
     (conversation?.metadata?.source === 'ai-agent' ||
+      conversation?.metadata?.source === 'ai-agent-external-thread' ||
       conversation?.metadata?.source === 'ai-chat' ||
       conversation?.metadata?.source === 'legacy-ai-chat') &&
     conversation.metadata.readOnly === true
   );
+}
+
+export function getChatSelectionStorageKey(
+  wsId: string,
+  scope: ChatConversationScope
+) {
+  return `tuturuuu.chat.selectedConversation.${wsId}.${scope}`;
+}
+
+export function resolveChatConversationSelection({
+  conversationIds,
+  requestedConversationId,
+  storedConversationId,
+}: {
+  conversationIds: readonly string[];
+  requestedConversationId?: string | null;
+  storedConversationId?: string | null;
+}) {
+  const ids = new Set(conversationIds);
+
+  if (requestedConversationId && ids.has(requestedConversationId)) {
+    return requestedConversationId;
+  }
+
+  if (storedConversationId && ids.has(storedConversationId)) {
+    return storedConversationId;
+  }
+
+  return conversationIds[0] ?? null;
 }
 
 export interface ChatPreviewLabels {

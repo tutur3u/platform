@@ -633,13 +633,17 @@
       "create": "Tạo agent",
       "deploy": "Triển khai",
       "dismiss": "Đóng",
+      "draft": "Soạn nháp",
       "hide": "Ẩn",
       "link_identity": "Liên kết người dùng",
       "pause": "Tạm dừng",
+      "refresh": "Làm mới",
       "replace": "Thay thế",
       "rotate_zalo_secret": "Xoay bí mật Zalo",
       "save": "Lưu",
+      "send": "Gửi",
       "show": "Hiện",
+      "sync": "Đồng bộ",
       "test": "Kiểm tra",
       "undo": "Hoàn tác"
     },
@@ -648,8 +652,19 @@
       "zalo": "Zalo"
     },
     "description": "Quản lý AI agent chạy bằng apps/web để nhận tin nhắn Discord và Zalo, rồi thao tác qua người dùng Tuturuuu đã liên kết.",
+    "external": {
+      "ai_agent": "AI agent",
+      "draft_placeholder": "Nội dung phản hồi nháp",
+      "empty": "Chưa có luồng ngoài nào được đồng bộ.",
+      "loading_messages": "Đang tải tin nhắn",
+      "message_count": "{count} tin nhắn",
+      "no_thread": "Chưa chọn luồng ngoài",
+      "prompt_placeholder": "Prompt tùy chỉnh cho phản hồi thủ công",
+      "title": "Chat bên ngoài"
+    },
     "fields": {
       "agent_id": "ID agent",
+      "auto_respond": "Tự động trả lời",
       "channel_enabled": "Bật kênh",
       "discord_application_id": "ID ứng dụng Discord",
       "discord_bot_token": "Token bot Discord",
@@ -658,6 +673,8 @@
       "discord_public_key": "Public key Discord",
       "display_name": "Tên hiển thị",
       "enabled": "Bật",
+      "external_channel_id": "ID kênh bên ngoài",
+      "history_sync": "Đồng bộ lịch sử",
       "instructions": "Chỉ dẫn",
       "last_event": "Sự kiện cuối",
       "model": "Mô hình",
@@ -678,6 +695,8 @@
       "copy_success": "Đã sao chép bí mật",
       "deploy_error": "Triển khai thất bại",
       "deploy_success": "Đã triển khai kênh agent",
+      "draft_error": "Soạn nháp thất bại",
+      "draft_success": "Đã tạo bản nháp",
       "identity_error": "Liên kết danh tính thất bại",
       "identity_success": "Đã liên kết danh tính",
       "pause_error": "Tạm dừng thất bại",
@@ -686,6 +705,10 @@
       "rotate_success": "Đã xoay bí mật",
       "save_error": "Lưu agent thất bại",
       "save_success": "Đã lưu agent",
+      "send_error": "Gửi phản hồi thủ công thất bại",
+      "send_success": "Đã gửi phản hồi thủ công",
+      "sync_error": "Đồng bộ bên ngoài thất bại",
+      "sync_success": "Đã đồng bộ bên ngoài",
       "test_error": "Kiểm tra thất bại"
     },
     "new_agent": {
@@ -711,6 +734,12 @@
       "error": "Lỗi",
       "never": "Chưa có",
       "paused": "Tạm dừng"
+    },
+    "summary": {
+      "agents": "Agent",
+      "channels": "Kênh",
+      "deployed": "Đã triển khai",
+      "identities": "Danh tính"
     },
     "title": "AI Agents",
     "workspace": {
@@ -3449,7 +3478,7 @@
     "private_schema_status": "Chat riêng tư",
     "react_to_message": "Thả phản ứng",
     "read_only_badge": "Chỉ đọc",
-    "read_only_conversation": "Kênh agent này có thể xem tại đây, nhưng tin nhắn ở chế độ chỉ đọc. Quản lý trong Hạ tầng > AI Agents.",
+    "read_only_conversation": "Tin nhắn AI-agent bên ngoài được đồng bộ ở chế độ chỉ đọc. Soạn nháp và gửi phản hồi thủ công trong Hạ tầng > AI Agents.",
     "remove_attachment": "Gỡ tệp đính kèm",
     "rename_conversation": "Đổi tên cuộc trò chuyện",
     "rename_conversation_description": "Cập nhật tên hiển thị cho mọi người có quyền truy cập cuộc trò chuyện này.",

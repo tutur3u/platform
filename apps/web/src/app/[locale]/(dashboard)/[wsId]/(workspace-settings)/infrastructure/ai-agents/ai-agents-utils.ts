@@ -76,9 +76,13 @@ export function buildAgentPayload(
     channels: [
       {
         adapter: 'discord' as const,
+        autoRespond: formData.get('discordAutoRespond') === 'on',
         displayName:
           String(formData.get('discordDisplayName') ?? '').trim() || 'Discord',
         enabled: formData.get('discordEnabled') === 'on',
+        externalChannelId:
+          String(formData.get('discordExternalChannelId') ?? '').trim() || null,
+        historySyncEnabled: formData.get('discordHistorySyncEnabled') === 'on',
         id: discordChannelId,
         mentionRoleIds: splitLines(formData.get('discordMentionRoleIds')),
         secrets: {
@@ -92,9 +96,13 @@ export function buildAgentPayload(
       },
       {
         adapter: 'zalo' as const,
+        autoRespond: formData.get('zaloAutoRespond') === 'on',
         displayName:
           String(formData.get('zaloDisplayName') ?? '').trim() || 'Zalo',
         enabled: formData.get('zaloEnabled') === 'on',
+        externalChannelId:
+          String(formData.get('zaloExternalChannelId') ?? '').trim() || null,
+        historySyncEnabled: formData.get('zaloHistorySyncEnabled') === 'on',
         id: zaloChannelId,
         secrets: {
           botToken: channelSecret(formData, 'zaloBotToken'),

@@ -30,7 +30,10 @@ const channelSchema = z.object({
     .optional(),
   status: z.enum(['draft', 'deployed', 'error', 'paused']).optional(),
   workspaceId: z.string().trim().min(1).max(128),
+  autoRespond: z.boolean().optional(),
   discordGuildId: z.string().trim().max(128).nullable().optional(),
+  externalChannelId: z.string().trim().max(255).nullable().optional(),
+  historySyncEnabled: z.boolean().optional(),
   zaloOfficialAccountId: z.string().trim().max(128).nullable().optional(),
 });
 

@@ -823,7 +823,12 @@ function splitLines(value: FormDataEntryValue | null) {
 }
 
 function readAgentConversationMetadata(conversation?: ChatConversation | null) {
-  if (conversation?.metadata?.source !== 'ai-agent') return null;
+  if (
+    conversation?.metadata?.source !== 'ai-agent' &&
+    conversation?.metadata?.source !== 'ai-agent-external-thread'
+  ) {
+    return null;
+  }
   const agentId = conversation.metadata.agentId;
   const channelId = conversation.metadata.channelId;
   if (typeof agentId !== 'string' || typeof channelId !== 'string') {

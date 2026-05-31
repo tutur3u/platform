@@ -50,8 +50,13 @@ function normalizeChannelInput(
     status: channel.status ?? existing?.status ?? 'draft',
     webhookUrl: existing?.webhookUrl ?? null,
     workspaceId: channel.workspaceId,
+    autoRespond: channel.autoRespond ?? existing?.autoRespond ?? true,
     discordGuildId:
       channel.discordGuildId?.trim() || existing?.discordGuildId || null,
+    externalChannelId:
+      channel.externalChannelId?.trim() || existing?.externalChannelId || null,
+    historySyncEnabled:
+      channel.historySyncEnabled ?? existing?.historySyncEnabled ?? true,
     zaloOfficialAccountId:
       channel.zaloOfficialAccountId?.trim() ||
       existing?.zaloOfficialAccountId ||
@@ -143,7 +148,10 @@ export async function saveAiAgent({
       status: channel.status,
       webhookUrl: channel.webhookUrl,
       workspaceId: channel.workspaceId,
+      autoRespond: channel.autoRespond ?? true,
       discordGuildId: channel.discordGuildId ?? null,
+      externalChannelId: channel.externalChannelId ?? null,
+      historySyncEnabled: channel.historySyncEnabled ?? true,
       zaloOfficialAccountId: channel.zaloOfficialAccountId ?? null,
     })) ??
     [];
