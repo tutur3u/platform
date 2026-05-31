@@ -2,6 +2,7 @@ import {
   AI_MEMORY_PRODUCTS,
   type AiMemoryProduct,
   listAiMemories,
+  rememberAiMemory,
   resolveAiMemoryScope,
   searchAiMemories,
 } from '@tuturuuu/ai/memory';
@@ -15,6 +16,7 @@ import {
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
 import { type NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 type Params = {
@@ -24,8 +26,16 @@ type Params = {
 function normalizeProduct(value: string | null): AiMemoryProduct {
   return AI_MEMORY_PRODUCTS.includes(value as AiMemoryProduct)
     ? (value as AiMemoryProduct)
-    : 'mira';
+    : 'memories';
 }
+
+const createMemoryItemSchema = z.object({
+  category: z.string().trim().min(1).max(80).optional(),
+  key: z.string().trim().max(160).optional(),
+  product: z.string().trim().optional(),
+  source: z.string().trim().max(120).optional(),
+  value: z.string().trim().min(1).max(16_000),
+});
 
 async function resolveMemoryRequestContext(
   request: NextRequest,
@@ -149,5 +159,72 @@ export async function GET(
     items,
     product,
     total: items.length,
+  });
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<Params> }
+) {
+  const { wsId: rawWsId } = await params;
+  const context = await resolveMemoryRequestContext(request, rawWsId);
+  if (!context.ok) return context.response;
+
+  const parsed = createMemoryItemSchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { details: parsed.error.issues, error: 'Invalid request data' },
+      { status: 400 }
+    );
+  }
+
+  const product = normalizeProduct(parsed.data.product ?? null);
+  const category = parsed.data.category || null;
+  const key = parsed.data.key || null;
+  const source = parsed.data.source || 'memory_explorer';
+  const scope = resolveAiMemoryScope({
+    customId: `memory-explorer-${product}-${Date.now()}`,
+    metadata: { source },
+    product,
+    source,
+    surface: 'memory_explorer',
+    userId: context.user.id,
+    wsId: context.wsId,
+  });
+
+  const result = await rememberAiMemory({
+    category,
+    ignoreSettings: true,
+    key,
+    scope,
+    value: parsed.data.value,
+  });
+
+  if (!result.ok) {
+    serverLogger.error('Failed to create AI memory item', {
+      error: result.error,
+      product,
+      userId: context.user.id,
+      wsId: context.wsId,
+    });
+    return NextResponse.json(
+      { error: 'Failed to create memory item' },
+      { status: 500 }
+    );
+  }
+
+  if (result.skipped) {
+    return NextResponse.json({
+      memory: null,
+      product,
+      reason: result.reason,
+      skipped: true,
+    });
+  }
+
+  return NextResponse.json({
+    memory: result.value,
+    product,
+    skipped: false,
   });
 }

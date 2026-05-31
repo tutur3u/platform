@@ -24,7 +24,7 @@ type Params = {
 function normalizeProduct(value: string | null): AiMemoryProduct {
   return AI_MEMORY_PRODUCTS.includes(value as AiMemoryProduct)
     ? (value as AiMemoryProduct)
-    : 'mira';
+    : 'memories';
 }
 
 async function resolveMemoryRequestContext(
@@ -133,7 +133,7 @@ export async function DELETE(
       p_action: 'delete',
       p_actor_user_id: context.user.id,
       p_memory_id: memoryId,
-      p_metadata: { supermemory: result.value ?? null },
+      p_metadata: { ai_memory: result.value ?? null },
       p_product: product,
       p_user_id: context.user.id,
       p_ws_id: context.wsId,

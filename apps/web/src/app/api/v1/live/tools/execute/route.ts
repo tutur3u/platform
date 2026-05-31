@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { createMeteredTextEmbedding } from '@tuturuuu/ai/embeddings/metered';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -10,7 +10,6 @@ import {
   resolveWorkspaceId,
 } from '@tuturuuu/utils/constants';
 import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
-import { embed } from 'ai';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 
 type ToolCallRequest = {
@@ -146,7 +145,7 @@ export async function POST(req: Request) {
         result = await getMyTasks(normalizedWsId, user.id, args);
         break;
       case 'search_tasks':
-        result = await searchTasks(normalizedWsId, args);
+        result = await searchTasks(normalizedWsId, user.id, args);
         break;
       case 'create_task':
         result = await createTask(normalizedWsId, args);
@@ -389,6 +388,7 @@ async function getMyTasks(
 
 async function searchTasks(
   normalizedWsId: string,
+  userId: string,
   args: Record<string, unknown>
 ) {
   const supabase = await createClient();
@@ -399,21 +399,29 @@ async function searchTasks(
   // Expand query for better semantic matching
   const expandedQuery = expandQuery(query);
 
-  // Generate embedding for the query
-  const { embedding } = await embed({
-    model: google.embedding('gemini-embedding-001'),
-    value: expandedQuery,
-    providerOptions: {
-      google: {
-        taskType: 'RETRIEVAL_QUERY',
-        outputDimensionality: 768,
-      },
+  const embeddingResult = await createMeteredTextEmbedding({
+    metadata: {
+      operation: 'live_tool_task_search',
     },
+    source: 'task_search',
+    taskType: 'RETRIEVAL_QUERY',
+    userId,
+    value: expandedQuery,
+    wsId: normalizedWsId,
   });
+
+  if (!embeddingResult.ok) {
+    return {
+      count: 0,
+      skipped: true,
+      reason: embeddingResult.reason,
+      tasks: [],
+    };
+  }
 
   // Call the hybrid search function
   const { data, error } = await supabase.rpc('match_tasks', {
-    query_embedding: JSON.stringify(embedding),
+    query_embedding: JSON.stringify(embeddingResult.embedding),
     query_text: query,
     match_threshold: matchThreshold,
     match_count: matchCount,

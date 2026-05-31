@@ -1,6 +1,8 @@
-import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { embedMany } from 'ai';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { type NextRequest, NextResponse } from 'next/server';
 import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
@@ -36,12 +38,24 @@ async function handleGET(req: NextRequest) {
   }
 
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Fetch tasks without embeddings (limit to 100 per run to avoid timeout)
     const { data: tasks, error: fetchError } = await supabase
       .from('tasks')
-      .select('id, name, description')
+      .select(
+        `
+        id,
+        name,
+        description,
+        creator_id,
+        task_lists!inner(
+          workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
       .is('embedding', null)
       .is('deleted_at', null)
       .limit(100);
@@ -71,6 +85,8 @@ async function handleGET(req: NextRequest) {
       id: string;
       text: string;
       index: number;
+      userId: string | null;
+      wsId: string | null;
     }> = [];
 
     for (let i = 0; i < tasks.length; i++) {
@@ -95,10 +111,19 @@ async function handleGET(req: NextRequest) {
 
       // Only include tasks with meaningful content
       if (textForEmbedding) {
+        const taskList = Array.isArray(task.task_lists)
+          ? task.task_lists[0]
+          : task.task_lists;
+        const workspaceBoard = Array.isArray(taskList?.workspace_boards)
+          ? taskList?.workspace_boards[0]
+          : taskList?.workspace_boards;
+
         taskData.push({
           id: task.id,
           text: textForEmbedding,
           index: i,
+          userId: task.creator_id,
+          wsId: workspaceBoard?.ws_id ?? null,
         });
       }
     }
@@ -106,6 +131,7 @@ async function handleGET(req: NextRequest) {
     const results = {
       success: 0,
       failed: 0,
+      skipped: 0,
       errors: [] as string[],
     };
 
@@ -119,58 +145,59 @@ async function handleGET(req: NextRequest) {
       });
     }
 
-    try {
-      // Generate embeddings for all tasks in parallel
-      const { embeddings } = await embedMany({
-        model: google.embedding('gemini-embedding-001'),
-        values: taskData.map((t) => t.text),
-        maxParallelCalls: 10,
-        providerOptions: {
-          google: {
-            outputDimensionality: 768,
-            taskType: 'SEMANTIC_SIMILARITY',
-          },
-        },
-      });
-
-      // Update tasks with embeddings in parallel
-      const updatePromises = taskData.map(async (task, idx) => {
-        try {
-          const embedding = embeddings[idx];
-
-          // Validate embedding shape before writing
-          if (!Array.isArray(embedding) || embedding.length !== 768) {
-            results.failed++;
-            results.errors.push(`Task ${task.id}: Invalid embedding shape`);
-            return;
-          }
-
-          const { error: updateError } = await supabase
-            .from('tasks')
-            .update({ embedding: JSON.stringify(embedding) })
-            .eq('id', task.id);
-
-          if (updateError) {
-            results.failed++;
-            results.errors.push(`Task ${task.id}: ${updateError.message}`);
-          } else {
-            results.success++;
-          }
-        } catch (error) {
-          results.failed++;
-          const errorMessage =
-            error instanceof Error ? error.message : 'Unknown error';
-          results.errors.push(`Task ${task.id}: ${errorMessage}`);
+    for (const task of taskData) {
+      try {
+        if (!task.userId || !task.wsId) {
+          results.skipped++;
+          results.errors.push(`Task ${task.id}: Missing billable context`);
+          continue;
         }
-      });
 
-      await Promise.all(updatePromises);
-    } catch (error) {
-      // If batch embedding fails, mark all as failed
-      results.failed = taskData.length;
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      results.errors.push(`Batch embedding failed: ${errorMessage}`);
+        const embeddingResult = await createMeteredTextEmbedding({
+          metadata: {
+            operation: 'cron_task_embedding_generation',
+            taskId: task.id,
+          },
+          source: 'task_embedding',
+          taskType: 'RETRIEVAL_DOCUMENT',
+          userId: task.userId,
+          value: task.text,
+          wsId: task.wsId,
+        });
+
+        if (!embeddingResult.ok) {
+          results.skipped++;
+          results.errors.push(
+            `Task ${task.id}: Skipped ${embeddingResult.reason}`
+          );
+          continue;
+        }
+
+        if (
+          embeddingResult.embedding.length !== GEMINI_EMBEDDING_2_DIMENSIONS
+        ) {
+          results.failed++;
+          results.errors.push(`Task ${task.id}: Invalid embedding shape`);
+          continue;
+        }
+
+        const { error: updateError } = await supabase
+          .from('tasks')
+          .update({ embedding: JSON.stringify(embeddingResult.embedding) })
+          .eq('id', task.id);
+
+        if (updateError) {
+          results.failed++;
+          results.errors.push(`Task ${task.id}: ${updateError.message}`);
+        } else {
+          results.success++;
+        }
+      } catch (error) {
+        results.failed++;
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
+        results.errors.push(`Task ${task.id}: ${errorMessage}`);
+      }
     }
 
     // Add skipped tasks (no content) to failed count
@@ -189,6 +216,7 @@ async function handleGET(req: NextRequest) {
       processed: tasks.length,
       success: results.success,
       failed: results.failed,
+      skipped: results.skipped,
       errors: results.errors.slice(0, 10), // Limit error messages
     });
   } catch (error) {

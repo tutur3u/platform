@@ -133,9 +133,7 @@ const BLUE_GREEN_MARKITDOWN_BUILD_PATHS = Object.freeze(['apps/discord/']);
 const BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS = Object.freeze([
   'apps/storage-unzip-proxy/',
 ]);
-const BLUE_GREEN_SUPERMEMORY_BUILD_PATHS = Object.freeze([
-  'apps/supermemory/Dockerfile',
-]);
+const BLUE_GREEN_SUPERMEMORY_BUILD_PATHS = Object.freeze(['apps/supermemory/']);
 const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'apps/web/docker/cron-runner-entrypoint.js',
   'apps/web/docker/cron-runner.Dockerfile',

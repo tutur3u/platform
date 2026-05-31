@@ -51,6 +51,21 @@ export interface CreateMiraMemoryResponse<TMemory = unknown> {
   memory: TMemory;
 }
 
+export interface CreateWorkspaceAiMemoryItemPayload {
+  category?: string;
+  key?: string;
+  product?: string;
+  source?: string;
+  value: string;
+}
+
+export interface CreateWorkspaceAiMemoryItemResponse<TMemory = unknown> {
+  memory: TMemory | null;
+  product: string;
+  reason?: string;
+  skipped: boolean;
+}
+
 export async function createMiraMemory<TMemory = unknown>(
   wsId: string,
   payload: CreateMiraMemoryPayload,
@@ -114,6 +129,20 @@ export async function listWorkspaceAiMemoryItems(
       },
     }
   );
+}
+
+export async function createWorkspaceAiMemoryItem<TMemory = unknown>(
+  wsId: string,
+  payload: CreateWorkspaceAiMemoryItemPayload,
+  options?: InternalApiClientOptions
+) {
+  return getInternalApiClient(options).json<
+    CreateWorkspaceAiMemoryItemResponse<TMemory>
+  >(`/api/v1/workspaces/${encodePathSegment(wsId)}/ai/memory/items`, {
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'application/json' },
+    method: 'POST',
+  });
 }
 
 export async function deleteWorkspaceAiMemoryItem(

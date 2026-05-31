@@ -1,6 +1,8 @@
-import { google } from '@ai-sdk/google';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { embed } from 'ai';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 
 /**
@@ -9,7 +11,7 @@ import { NextResponse } from 'next/server';
  */
 export async function POST(req: Request) {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Verify webhook secret for security
     const webhookSecret = req.headers.get('x-webhook-secret');
@@ -93,21 +95,60 @@ export async function POST(req: Request) {
       });
     }
 
-    // Generate embedding using Google Gemini
-    const { embedding } = await embed({
-      model: google.embedding('gemini-embedding-001'),
-      value: textForEmbedding,
-      providerOptions: {
-        google: {
-          outputDimensionality: 768,
-          taskType: 'SEMANTIC_SIMILARITY',
-        },
+    const { data: task, error: taskError } = await supabase
+      .from('tasks')
+      .select(
+        `
+        id,
+        creator_id,
+        task_lists!inner(
+          workspace_boards!inner(
+            ws_id
+          )
+        )
+      `
+      )
+      .eq('id', taskId)
+      .maybeSingle();
+
+    const taskList = Array.isArray(task?.task_lists)
+      ? task?.task_lists[0]
+      : task?.task_lists;
+    const workspaceBoard = Array.isArray(taskList?.workspace_boards)
+      ? taskList?.workspace_boards[0]
+      : taskList?.workspace_boards;
+    const taskWsId = workspaceBoard?.ws_id ?? null;
+    const billableUserId = task?.creator_id ?? null;
+
+    if (taskError || !billableUserId || !taskWsId) {
+      return NextResponse.json({
+        message: 'Embedding generation skipped: missing billable context',
+        taskId,
+      });
+    }
+
+    const embeddingResult = await createMeteredTextEmbedding({
+      metadata: {
+        operation: 'webhook_task_embedding_generation',
+        taskId,
       },
+      source: 'task_embedding',
+      taskType: 'RETRIEVAL_DOCUMENT',
+      userId: billableUserId,
+      value: textForEmbedding,
+      wsId: taskWsId,
     });
 
+    if (!embeddingResult.ok) {
+      return NextResponse.json({
+        message: 'Embedding generation skipped',
+        reason: embeddingResult.reason,
+        taskId,
+      });
+    }
+
     // Validate embedding shape before writing
-    if (!Array.isArray(embedding) || embedding.length !== 768) {
-      console.error('Invalid embedding shape:', embedding?.length);
+    if (embeddingResult.embedding.length !== GEMINI_EMBEDDING_2_DIMENSIONS) {
       return NextResponse.json(
         { message: 'Invalid embedding shape', taskId },
         { status: 500 }
@@ -117,7 +158,7 @@ export async function POST(req: Request) {
     // Update task with embedding (pgvector expects number[] not JSON string)
     const { error: updateError } = await supabase
       .from('tasks')
-      .update({ embedding: JSON.stringify(embedding) })
+      .update({ embedding: JSON.stringify(embeddingResult.embedding) })
       .eq('id', taskId);
 
     if (updateError) {

@@ -33,9 +33,9 @@ Redis runtime is configured.
 
 Agent response loops and manual external-chat draft generation use the shared
 Tuturuuu AI memory layer. Memory is scoped to the operator or channel actor plus
-the channel workspace, then stored through self-hosted Supermemory using the
-`ai_agents` product metadata. Do not add agent-specific browser memory calls;
-all recall, writes, and deletes must stay behind the server-owned
+the channel workspace, then stored through the first-party memory sidecar using
+the `ai_agents` product metadata. Do not add agent-specific browser memory
+calls; all recall, writes, and deletes must stay behind the server-owned
 `@tuturuuu/ai/memory` boundary and workspace memory APIs.
 
 Webhook URLs are generated from the canonical public platform origin, not the

@@ -94,7 +94,7 @@ services:
     image: pgvector/pgvector:pg16
     environment:
       POSTGRES_DB: supermemory
-      POSTGRES_PASSWORD: ${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}
+      POSTGRES_PASSWORD: ${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for AI memory Postgres or configure SUPERMEMORY_DATABASE_URL}
       POSTGRES_USER: supermemory
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U supermemory -d supermemory"]
@@ -106,35 +106,37 @@ services:
     volumes:
       - platform-supermemory-postgres:/var/lib/postgresql/data
 
-  supermemory:
-    build:
-      context: ..
-      dockerfile: apps/supermemory/Dockerfile
-      args:
-        SUPERMEMORY_IMAGE: ${SUPERMEMORY_IMAGE:-supermemory-enterprise-self-host:latest}
+  supermemory-db-migrate:
+    image: pgvector/pgvector:pg16
+    command: ["/bin/sh", "/supermemory-db/migrate-forward.sh"]
     env_file:
       - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
         required: false
       - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
         required: false
     environment:
-      - ANTHROPIC_API_KEY
-      - BETTER_AUTH_SECRET
-      - BETTER_AUTH_URL=${SUPERMEMORY_PUBLIC_BASE_URL:-http://supermemory:8787}
-      - CLOUDFLARE_ACCOUNT_ID
-      - CLOUDFLARE_AI_GATEWAY_NAME
-      - CLOUDFLARE_AI_GATEWAY_TOKEN
-      - CLOUDFLARE_API_TOKEN
-      - DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
-      - GEMINI_API_KEY
-      - GROQ_API_KEY
-      - NEXT_PUBLIC_HOST_ID=${SUPERMEMORY_HOST_ID:-tuturuuu-self-host}
+      - SUPERMEMORY_DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for AI memory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
+    depends_on:
+      supermemory-postgres:
+        condition: service_healthy
+    restart: "no"
+    volumes:
+      - ../apps/supermemory/db:/supermemory-db:ro
+
+  supermemory:
+    build:
+      context: ..
+      dockerfile: apps/supermemory/Dockerfile
+    env_file:
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+        required: false
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+        required: false
+    environment:
       - NODE_ENV=production
-      - OPENAI_API_KEY
       - PORT=8787
-      - RESEND_API_KEY
       - SUPERMEMORY_API_KEY
-      - SUPERMEMORY_DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
+      - SUPERMEMORY_DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for AI memory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
     expose:
       - "8787"
     healthcheck:
@@ -150,8 +152,8 @@ services:
     init: true
     restart: unless-stopped
     depends_on:
-      supermemory-postgres:
-        condition: service_healthy
+      supermemory-db-migrate:
+        condition: service_completed_successfully
 
   backend:
     build:

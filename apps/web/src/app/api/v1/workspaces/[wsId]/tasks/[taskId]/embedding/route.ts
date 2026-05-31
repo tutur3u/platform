@@ -1,4 +1,7 @@
-import { google } from '@ai-sdk/google';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -8,7 +11,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
@@ -25,16 +27,6 @@ interface Params {
  */
 export async function POST(request: Request, { params }: Params) {
   try {
-    // Check if API key is available
-    const hasApiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-
-    if (!hasApiKey) {
-      return NextResponse.json(
-        { message: 'Embedding generation unavailable: API key not configured' },
-        { status: 200 }
-      );
-    }
-
     const supabase = await createClient(request);
     const { wsId: rawWsId, taskId } = await params;
 
@@ -123,22 +115,37 @@ export async function POST(request: Request, { params }: Params) {
 
     const textForEmbedding = `${task.name}\n${descriptionText}`.trim();
 
-    // Generate embedding using Google Gemini
-    const { embedding } = await embed({
-      model: google.embedding('gemini-embedding-001'),
-      value: textForEmbedding,
-      providerOptions: {
-        google: {
-          outputDimensionality: 768,
-          taskType: 'SEMANTIC_SIMILARITY',
-        },
+    const result = await createMeteredTextEmbedding({
+      metadata: {
+        operation: 'single_task_embedding_generation',
+        taskId: task.id,
       },
+      source: 'task_embedding',
+      taskType: 'RETRIEVAL_DOCUMENT',
+      userId: user.id,
+      value: textForEmbedding,
+      wsId,
     });
+
+    if (!result.ok) {
+      return NextResponse.json({
+        message: 'Embedding generation skipped',
+        reason: result.reason,
+        taskId: parsedTaskId.data,
+      });
+    }
+
+    if (result.embedding.length !== GEMINI_EMBEDDING_2_DIMENSIONS) {
+      return NextResponse.json(
+        { message: 'Invalid embedding shape', taskId: parsedTaskId.data },
+        { status: 500 }
+      );
+    }
 
     // Update task with embedding
     const { data: updatedTask, error: updateError } = await sbAdmin
       .from('tasks')
-      .update({ embedding: JSON.stringify(embedding) })
+      .update({ embedding: JSON.stringify(result.embedding) })
       .eq('id', task.id)
       .select('id')
       .maybeSingle();

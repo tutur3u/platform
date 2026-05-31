@@ -1,11 +1,13 @@
-import { google } from '@ai-sdk/google';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
 import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
-import { embed } from 'ai';
 
 /**
  * System-wide admin endpoint to generate embeddings for all tasks without embeddings
@@ -27,14 +29,6 @@ export async function POST(req: Request) {
           message: 'Unauthorized - Tuturuuu admin access required',
         }),
         { status: 401 }
-      );
-    }
-
-    // Check if Google AI API key is configured
-    if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      return new Response(
-        JSON.stringify({ message: 'Embedding generation is not configured' }),
-        { status: 503 }
       );
     }
 
@@ -62,6 +56,12 @@ export async function POST(req: Request) {
               id,
               name,
               description,
+              creator_id,
+              task_lists!inner(
+                workspace_boards!inner(
+                  ws_id
+                )
+              ),
               priority,
               labels:task_labels(
                 label:workspace_task_labels(
@@ -112,6 +112,7 @@ export async function POST(req: Request) {
 
           let successCount = 0;
           let failedCount = 0;
+          let skippedCount = 0;
 
           // Process tasks sequentially for better progress tracking
           for (let i = 0; i < tasks.length; i++) {
@@ -205,20 +206,63 @@ export async function POST(req: Request) {
                 continue;
               }
 
-              // Generate embedding
-              const { embedding } = await embed({
-                model: google.embedding('gemini-embedding-001'),
-                value: textForEmbedding,
-                providerOptions: {
-                  google: {
-                    outputDimensionality: 768,
-                    taskType: 'RETRIEVAL_DOCUMENT',
-                  },
+              const taskList = Array.isArray(task.task_lists)
+                ? task.task_lists[0]
+                : task.task_lists;
+              const workspaceBoard = Array.isArray(taskList?.workspace_boards)
+                ? taskList?.workspace_boards[0]
+                : taskList?.workspace_boards;
+              const taskWsId = workspaceBoard?.ws_id ?? null;
+
+              if (!task.creator_id || !taskWsId) {
+                skippedCount++;
+                sendEvent({
+                  type: 'progress',
+                  current: i + 1,
+                  total: tasks.length,
+                  success: successCount,
+                  failed: failedCount,
+                  skipped: skippedCount,
+                  taskId: task.id,
+                  status: 'skipped',
+                  error: 'Missing billable context',
+                });
+                continue;
+              }
+
+              const embeddingResult = await createMeteredTextEmbedding({
+                metadata: {
+                  operation: 'admin_task_embedding_backfill',
+                  taskId: task.id,
                 },
+                source: 'task_embedding',
+                taskType: 'RETRIEVAL_DOCUMENT',
+                userId: task.creator_id,
+                value: textForEmbedding,
+                wsId: taskWsId,
               });
 
+              if (!embeddingResult.ok) {
+                skippedCount++;
+                sendEvent({
+                  type: 'progress',
+                  current: i + 1,
+                  total: tasks.length,
+                  success: successCount,
+                  failed: failedCount,
+                  skipped: skippedCount,
+                  taskId: task.id,
+                  status: 'skipped',
+                  error: `Skipped: ${embeddingResult.reason}`,
+                });
+                continue;
+              }
+
               // Validate embedding shape
-              if (!Array.isArray(embedding) || embedding.length !== 768) {
+              if (
+                embeddingResult.embedding.length !==
+                GEMINI_EMBEDDING_2_DIMENSIONS
+              ) {
                 failedCount++;
                 sendEvent({
                   type: 'progress',
@@ -226,6 +270,7 @@ export async function POST(req: Request) {
                   total: tasks.length,
                   success: successCount,
                   failed: failedCount,
+                  skipped: skippedCount,
                   taskId: task.id,
                   status: 'failed',
                   error: 'Invalid embedding shape',
@@ -236,7 +281,9 @@ export async function POST(req: Request) {
               // Update task with embedding
               const { error: updateError } = await sbAdmin
                 .from('tasks')
-                .update({ embedding: JSON.stringify(embedding) })
+                .update({
+                  embedding: JSON.stringify(embeddingResult.embedding),
+                })
                 .eq('id', task.id);
 
               if (updateError) {
@@ -247,6 +294,7 @@ export async function POST(req: Request) {
                   total: tasks.length,
                   success: successCount,
                   failed: failedCount,
+                  skipped: skippedCount,
                   taskId: task.id,
                   status: 'failed',
                   error: updateError.message,
@@ -259,6 +307,7 @@ export async function POST(req: Request) {
                   total: tasks.length,
                   success: successCount,
                   failed: failedCount,
+                  skipped: skippedCount,
                   taskId: task.id,
                   status: 'success',
                 });
@@ -273,6 +322,7 @@ export async function POST(req: Request) {
                 total: tasks.length,
                 success: successCount,
                 failed: failedCount,
+                skipped: skippedCount,
                 taskId: task.id,
                 status: 'failed',
                 error: errorMessage,
@@ -286,6 +336,7 @@ export async function POST(req: Request) {
             processed: tasks.length,
             success: successCount,
             failed: failedCount,
+            skipped: skippedCount,
           });
 
           controller.close();

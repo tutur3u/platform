@@ -38,6 +38,15 @@ export interface CreditReservationReleaseResult {
   errorCode: string | null;
 }
 
+export interface MeteredEmbeddingReservationResult {
+  success: boolean;
+  reservationId: string | null;
+  creditsReserved: number;
+  costUsd: number;
+  remainingCredits: number;
+  errorCode: string | null;
+}
+
 export interface AiCreditStatus {
   totalAllocated: number;
   totalUsed: number;

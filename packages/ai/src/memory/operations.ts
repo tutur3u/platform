@@ -1,4 +1,8 @@
-import { getSupermemoryClient } from './client';
+import {
+  createMeteredTextEmbedding,
+  shouldDisableMemoryForMeteringReason,
+} from '../embeddings/metered';
+import { getAiMemoryServiceClient } from './client';
 import { getAiMemoryConfig } from './config';
 import { buildProductFilter } from './scope';
 import type {
@@ -28,14 +32,13 @@ function fail<T>(
 
 function requestOptions(timeoutMs: number) {
   return {
-    maxRetries: 1,
     timeout: timeoutMs,
   };
 }
 
-type SupermemoryClient = NonNullable<ReturnType<typeof getSupermemoryClient>>;
+type AiMemoryClient = NonNullable<ReturnType<typeof getAiMemoryServiceClient>>;
 
-type SupermemorySearchResultLike = {
+type AiMemorySearchResultLike = {
   chunk?: string;
   id: string;
   memory?: string;
@@ -44,7 +47,7 @@ type SupermemorySearchResultLike = {
   updatedAt?: string;
 };
 
-type SupermemoryDocumentLike = {
+type AiMemoryDocumentLike = {
   content?: string | null;
   id: string;
   metadata?: unknown;
@@ -56,7 +59,7 @@ type SupermemoryDocumentLike = {
 
 type AiMemoryRuntime<T> =
   | {
-      client: SupermemoryClient;
+      client: AiMemoryClient;
       config: AiMemoryConfig;
       ready: true;
       scope: AiMemoryScope;
@@ -92,7 +95,7 @@ function categoryFilter(category: string) {
 }
 
 function normalizeSearchResult(
-  result: SupermemorySearchResultLike
+  result: AiMemorySearchResultLike
 ): AiMemorySearchResult {
   const metadata = (result.metadata ?? null) as AiMemoryMetadata | null;
   return {
@@ -106,7 +109,7 @@ function normalizeSearchResult(
   };
 }
 
-function normalizeDocument(doc: SupermemoryDocumentLike): AiMemoryDocument {
+function normalizeDocument(doc: AiMemoryDocumentLike): AiMemoryDocument {
   const metadata =
     doc.metadata &&
     typeof doc.metadata === 'object' &&
@@ -140,11 +143,11 @@ async function ensureMemoryRuntime<T>({
   scope: AiMemoryScope | null;
 }): Promise<AiMemoryRuntime<T>> {
   const config = getAiMemoryConfig();
-  const client = getSupermemoryClient(config);
+  const client = getAiMemoryServiceClient(config);
   if (!scope || !config || !client) {
     return {
       ready: false,
-      skip: skipped('supermemory_not_configured', fallback),
+      skip: skipped('ai_memory_service_not_configured', fallback),
     };
   }
 
@@ -164,6 +167,46 @@ async function ensureMemoryRuntime<T>({
   }
 
   return { client, config, ready: true, scope };
+}
+
+async function disableMemoryIfStructuralFailure(
+  scope: AiMemoryScope,
+  reason: string
+) {
+  const { disableAiMemoryForMeteringFailure } = await import('./settings');
+  await disableAiMemoryForMeteringFailure({
+    reason,
+    userId: scope.userId,
+    wsId: scope.wsId,
+  });
+}
+
+async function createMemoryEmbedding({
+  operation,
+  scope,
+  value,
+}: {
+  operation: 'remember' | 'search';
+  scope: AiMemoryScope;
+  value: string;
+}) {
+  const embedding = await createMeteredTextEmbedding({
+    metadata: {
+      operation,
+      product: scope.product,
+    },
+    source: 'ai_memory',
+    taskType: operation === 'search' ? 'RETRIEVAL_QUERY' : 'RETRIEVAL_DOCUMENT',
+    userId: scope.userId,
+    value,
+    wsId: scope.wsId,
+  });
+
+  if (!embedding.ok && shouldDisableMemoryForMeteringReason(embedding)) {
+    await disableMemoryIfStructuralFailure(scope, embedding.reason);
+  }
+
+  return embedding;
 }
 
 export async function rememberAiMemory({
@@ -191,6 +234,15 @@ export async function rememberAiMemory({
 
   try {
     const content = buildMemoryContent({ category, key, value });
+    const meteredEmbedding = await createMemoryEmbedding({
+      operation: 'remember',
+      scope: runtime.scope,
+      value: content,
+    });
+    if (!meteredEmbedding.ok) {
+      return skipped(meteredEmbedding.reason, null);
+    }
+
     const metadata: AiMemoryMetadata = {
       ...runtime.scope.metadata,
       ...(category ? { memoryCategory: category } : {}),
@@ -201,6 +253,7 @@ export async function rememberAiMemory({
         containerTag: runtime.scope.containerTag,
         content,
         customId: runtime.scope.customId,
+        embedding: meteredEmbedding.embedding,
         metadata,
       },
       requestOptions(runtime.config.timeoutMs)
@@ -235,23 +288,35 @@ export async function searchAiMemories({
   if (!runtime.ready) return runtime.skip;
 
   try {
+    const searchQuery =
+      query.trim() || 'user preferences facts conversation history';
+    const meteredEmbedding = await createMemoryEmbedding({
+      operation: 'search',
+      scope: runtime.scope,
+      value: searchQuery,
+    });
+    if (!meteredEmbedding.ok) {
+      return skipped(meteredEmbedding.reason, []);
+    }
+
     const filters = [
       includeProductFilter ? buildProductFilter(runtime.scope.product) : null,
       category ? categoryFilter(category) : null,
     ].filter(Boolean);
-    const response = await runtime.client.search.memories(
+    const response = await runtime.client.searchMemories(
       {
         containerTag: runtime.scope.containerTag,
+        embedding: meteredEmbedding.embedding,
         filters: (filters.length > 1 ? { AND: filters } : filters[0]) as never,
         include: { documents: true, summaries: true },
         limit,
-        q: query.trim() || 'user preferences facts conversation history',
+        q: searchQuery,
         searchMode: 'hybrid',
       },
       requestOptions(runtime.config.timeoutMs)
     );
 
-    const results = response.results as SupermemorySearchResultLike[];
+    const results = response.results as AiMemorySearchResultLike[];
 
     return {
       ok: true,
@@ -291,7 +356,7 @@ export async function listAiMemories({
           ],
         }
       : buildProductFilter(runtime.scope.product);
-    const response = await runtime.client.documents.list(
+    const response = await runtime.client.listDocuments(
       {
         containerTags: [runtime.scope.containerTag],
         filters: filters as never,
@@ -303,7 +368,7 @@ export async function listAiMemories({
       requestOptions(runtime.config.timeoutMs)
     );
 
-    const documents = response.memories as SupermemoryDocumentLike[];
+    const documents = response.memories as AiMemoryDocumentLike[];
 
     return {
       ok: true,
@@ -339,7 +404,7 @@ export async function forgetAiMemory({
 
   try {
     if (memoryId) {
-      const response = await runtime.client.memories.forget(
+      const response = await runtime.client.forgetMemory(
         {
           containerTag: runtime.scope.containerTag,
           id: memoryId,
@@ -367,7 +432,7 @@ export async function forgetAiMemory({
         );
       }
 
-      const response = await runtime.client.memories.forget(
+      const response = await runtime.client.forgetMemory(
         {
           containerTag: runtime.scope.containerTag,
           id: exact.id,

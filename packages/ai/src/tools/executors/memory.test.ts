@@ -45,7 +45,7 @@ describe('Mira memory tool compatibility', () => {
     });
   });
 
-  it('keeps remember tool arguments while writing through Supermemory', async () => {
+  it('keeps remember tool arguments while writing through AI memory', async () => {
     memoryMocks.rememberAiMemory.mockResolvedValue({
       ok: true,
       value: { id: 'memory-1', status: 'queued' },
@@ -78,7 +78,7 @@ describe('Mira memory tool compatibility', () => {
     );
   });
 
-  it('recalls searched memories through Supermemory without changing output shape', async () => {
+  it('recalls searched AI memories without changing output shape', async () => {
     memoryMocks.searchAiMemories.mockResolvedValue({
       ok: true,
       value: [

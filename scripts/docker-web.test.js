@@ -132,7 +132,7 @@ test('blue-green support services honor explicit Supermemory disablement', () =>
   );
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
-      changedFiles: ['apps/supermemory/Dockerfile'],
+      changedFiles: ['apps/supermemory/db/001_schema.sql'],
       env: disabledEnv,
       targetColor: 'green',
     }),

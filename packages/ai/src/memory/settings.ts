@@ -83,3 +83,39 @@ export async function isAiMemoryEnabledForScope(args: {
   const settings = await getAiMemorySettings(args);
   return settings.enabled && settings.productEnabled;
 }
+
+export async function disableAiMemoryForMeteringFailure({
+  db,
+  reason,
+  userId,
+  wsId,
+}: {
+  db?: SupabaseRpcClient;
+  reason: string;
+  userId: string;
+  wsId: string;
+}) {
+  try {
+    const client = db ?? (await createDefaultRpcClient());
+    await client.schema('private').rpc('upsert_ai_memory_settings', {
+      p_actor_user_id: userId,
+      p_enabled: false,
+      p_product_settings: {},
+      p_user_id: userId,
+      p_ws_id: wsId,
+    });
+    await client.schema('private').rpc('record_ai_memory_audit', {
+      p_action: 'settings_update',
+      p_actor_user_id: userId,
+      p_metadata: {
+        disabledBy: 'metered_embedding',
+        reason,
+      },
+      p_product: null,
+      p_user_id: userId,
+      p_ws_id: wsId,
+    });
+  } catch {
+    // Memory settings are fail-open elsewhere; disabling is best effort.
+  }
+}

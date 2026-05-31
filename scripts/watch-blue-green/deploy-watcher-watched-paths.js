@@ -45,7 +45,7 @@ const CONTAINER_REFRESH_WATCHED_FILES = [
   'apps/storage-unzip-proxy/Dockerfile',
   'apps/storage-unzip-proxy/package.json',
   'apps/storage-unzip-proxy/src/server.js',
-  'apps/supermemory/Dockerfile',
+  'apps/supermemory/',
   'apps/web/docker/blue-green-watcher-entrypoint.js',
   'apps/web/docker/blue-green-watcher.Dockerfile',
 ];

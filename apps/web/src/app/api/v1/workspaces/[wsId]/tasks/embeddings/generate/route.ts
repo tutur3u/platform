@@ -1,8 +1,16 @@
-import { google } from '@ai-sdk/google';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
-import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
-import { embed } from 'ai';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -18,7 +26,7 @@ interface Params {
 export async function POST(_: Request, { params }: Params) {
   try {
     const supabase = await createClient();
-    const { wsId } = await params;
+    const { wsId: rawWsId } = await params;
 
     // Check authentication
     const { user } = await resolveAuthenticatedSessionUser(supabase);
@@ -26,6 +34,8 @@ export async function POST(_: Request, { params }: Params) {
     if (!user) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
+
+    const wsId = await normalizeWorkspaceId(rawWsId, supabase);
 
     // Check workspace membership
     const membership = await verifyWorkspaceMembershipType({
@@ -46,7 +56,8 @@ export async function POST(_: Request, { params }: Params) {
     }
 
     // Fetch tasks without embeddings for this workspace
-    const { data: tasks, error: fetchError } = await supabase
+    const sbAdmin = await createAdminClient();
+    const { data: tasks, error: fetchError } = await sbAdmin
       .from('tasks')
       .select(
         `
@@ -89,6 +100,7 @@ export async function POST(_: Request, { params }: Params) {
     const results = {
       success: 0,
       failed: 0,
+      skipped: 0,
       errors: [] as { taskId: string; error: string }[],
     };
 
@@ -121,20 +133,29 @@ export async function POST(_: Request, { params }: Params) {
           continue;
         }
 
-        // Generate embedding
-        const { embedding } = await embed({
-          model: google.embedding('gemini-embedding-001'),
-          value: textForEmbedding,
-          providerOptions: {
-            google: {
-              outputDimensionality: 768,
-              taskType: 'SEMANTIC_SIMILARITY',
-            },
+        const result = await createMeteredTextEmbedding({
+          metadata: {
+            operation: 'workspace_task_embedding_batch',
+            taskId: task.id,
           },
+          source: 'task_embedding',
+          taskType: 'RETRIEVAL_DOCUMENT',
+          userId: user.id,
+          value: textForEmbedding,
+          wsId,
         });
 
+        if (!result.ok) {
+          results.skipped++;
+          results.errors.push({
+            taskId: task.id,
+            error: `Skipped: ${result.reason}`,
+          });
+          continue;
+        }
+
         // Validate embedding shape before writing
-        if (!Array.isArray(embedding) || embedding.length !== 768) {
+        if (result.embedding.length !== GEMINI_EMBEDDING_2_DIMENSIONS) {
           results.failed++;
           results.errors.push({
             taskId: task.id,
@@ -144,9 +165,9 @@ export async function POST(_: Request, { params }: Params) {
         }
 
         // Update task with embedding (pgvector expects number[] not JSON string)
-        const { error: updateError } = await supabase
+        const { error: updateError } = await sbAdmin
           .from('tasks')
-          .update({ embedding: JSON.stringify(embedding) })
+          .update({ embedding: JSON.stringify(result.embedding) })
           .eq('id', task.id);
 
         if (updateError) {
@@ -174,6 +195,7 @@ export async function POST(_: Request, { params }: Params) {
       processed: tasks.length,
       success: results.success,
       failed: results.failed,
+      skipped: results.skipped,
       errors: results.errors.slice(0, 20), // Limit error messages
     });
   } catch (error) {

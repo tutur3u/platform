@@ -1,0 +1,11 @@
+{
+  "name": "@tuturuuu/supermemory",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "bun src/server.js"
+  },
+  "dependencies": {
+    "postgres": "^3.4.9"
+  }
+}

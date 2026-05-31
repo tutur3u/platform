@@ -737,6 +737,7 @@ function validateDockerProdCompose(composeContent) {
     '  hive-db-migrate:',
     '  hive-ollama:',
     '  supermemory-postgres:',
+    '  supermemory-db-migrate:',
     '  supermemory:',
     '  markitdown:',
     '  storage-unzip-proxy:',
@@ -794,9 +795,6 @@ function validateDockerProdCompose(composeContent) {
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
     '      context: ../apps/storage-unzip-proxy',
-    '        SUPERMEMORY_IMAGE: ${' +
-      'SUPERMEMORY_IMAGE:-supermemory-enterprise-self-host:latest' +
-      '}',
     '    - CRON_SECRET',
     '      - CRON_SECRET',
     '      - VERCEL_CRON_SECRET',
@@ -945,14 +943,14 @@ function validateDockerProdCompose(composeContent) {
     '      POSTGRES_DB: supermemory',
     '      POSTGRES_USER: supermemory',
     '      - platform-supermemory-postgres:/var/lib/postgresql/data',
-    '      - DATABASE_URL=${' +
-      'SUPERMEMORY_DATABASE_URL:-postgres://supermemory:$' +
-      '{SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}' +
-      '@supermemory-postgres:5432/supermemory' +
-      '}',
+    '    command: ["/bin/sh", "/supermemory-db/migrate-forward.sh"]',
+    '      supermemory-db-migrate:\n        condition: service_completed_successfully',
+    '      - ../apps/supermemory/db:/supermemory-db:ro',
+    '      - NODE_ENV=production',
+    '      - PORT=8787',
     '      - SUPERMEMORY_DATABASE_URL=${' +
       'SUPERMEMORY_DATABASE_URL:-postgres://supermemory:$' +
-      '{SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}' +
+      '{SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for AI memory Postgres or configure SUPERMEMORY_DATABASE_URL}' +
       '@supermemory-postgres:5432/supermemory' +
       '}',
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
@@ -1013,6 +1011,8 @@ function validateDockerProdCompose(composeContent) {
     '      - ./tmp/docker-web',
     '      - ./apps/',
     '      - .:/workspace',
+    'SUPERMEMORY_IMAGE',
+    'supermemory-enterprise-self-host',
   ];
 
   for (const snippet of forbiddenSnippets) {
@@ -1406,14 +1406,31 @@ function validateHiveDbMigrateScript(scriptContent) {
 function validateSupermemoryDockerfile(dockerfileContent) {
   const errors = [];
   const requiredSnippets = [
-    'ARG SUPERMEMORY_IMAGE=supermemory-enterprise-self-host:latest',
-    'FROM $' + '{SUPERMEMORY_IMAGE}',
+    'FROM oven/bun:1.3.14-alpine AS deps',
+    'COPY apps/supermemory/package.json ./apps/supermemory/package.json',
+    'bun install --frozen-lockfile --production --filter @tuturuuu/supermemory --linker hoisted',
+    'COPY --chown=app:app apps/supermemory/src ./apps/supermemory/src',
+    'CMD ["bun", "apps/supermemory/src/server.js"]',
   ];
 
   for (const snippet of requiredSnippets) {
     if (!dockerfileContent.includes(snippet)) {
       errors.push(
         `apps/supermemory/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  const forbiddenSnippets = [
+    'SUPERMEMORY_IMAGE',
+    'supermemory-enterprise-self-host',
+    'FROM $' + '{SUPERMEMORY_IMAGE}',
+  ];
+
+  for (const snippet of forbiddenSnippets) {
+    if (dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/supermemory/Dockerfile still contains the removed enterprise image contract: ${snippet}`
       );
     }
   }

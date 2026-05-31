@@ -1,6 +1,8 @@
-import { google } from '@ai-sdk/google';
+import {
+  createMeteredTextEmbedding,
+  GEMINI_EMBEDDING_2_DIMENSIONS,
+} from '@tuturuuu/ai/embeddings/metered';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
-import { embed } from 'ai';
 
 /**
  * Extract structured text from TipTap JSON content with better context preservation
@@ -59,6 +61,8 @@ interface GenerateTaskEmbeddingOptions {
   taskName: string;
   taskDescription?: string | null;
   supabase: TypedSupabaseClient;
+  userId?: string | null;
+  wsId?: string | null;
 }
 
 /**
@@ -70,13 +74,9 @@ export async function generateTaskEmbedding({
   taskName,
   taskDescription,
   supabase,
+  userId,
+  wsId,
 }: GenerateTaskEmbeddingOptions): Promise<void> {
-  const hasApiKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY;
-
-  if (!hasApiKey) {
-    return;
-  }
-
   try {
     const { data: taskData, error: fetchError } = await supabase
       .from('tasks')
@@ -85,6 +85,12 @@ export async function generateTaskEmbedding({
         id,
         name,
         description,
+        creator_id,
+        task_lists(
+          workspace_boards(
+            ws_id
+          )
+        ),
         priority,
         labels:task_labels(
           label:workspace_task_labels(
@@ -108,6 +114,18 @@ export async function generateTaskEmbedding({
 
     if (fetchError || !taskData) {
       console.error('Failed to fetch task for embedding:', fetchError);
+      return;
+    }
+
+    const taskList = Array.isArray(taskData.task_lists)
+      ? taskData.task_lists[0]
+      : taskData.task_lists;
+    const workspaceBoard = Array.isArray(taskList?.workspace_boards)
+      ? taskList?.workspace_boards[0]
+      : taskList?.workspace_boards;
+    const taskWsId = wsId ?? workspaceBoard?.ws_id;
+    const billableUserId = userId ?? taskData.creator_id;
+    if (!taskWsId || !billableUserId) {
       return;
     }
 
@@ -172,18 +190,24 @@ export async function generateTaskEmbedding({
       return;
     }
 
-    const { embedding } = await embed({
-      model: google.embedding('gemini-embedding-001'),
-      value: textForEmbedding,
-      providerOptions: {
-        google: {
-          outputDimensionality: 768,
-          taskType: 'RETRIEVAL_DOCUMENT',
-        },
+    const result = await createMeteredTextEmbedding({
+      metadata: {
+        operation: 'task_embedding_generation',
+        taskId,
       },
+      source: 'task_embedding',
+      taskType: 'RETRIEVAL_DOCUMENT',
+      userId: billableUserId,
+      value: textForEmbedding,
+      wsId: taskWsId,
     });
 
-    if (!embedding?.length) {
+    if (!result.ok) {
+      return;
+    }
+
+    const embedding = result.embedding;
+    if (embedding.length !== GEMINI_EMBEDDING_2_DIMENSIONS) {
       return;
     }
 

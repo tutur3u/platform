@@ -1,4 +1,4 @@
-export { getSupermemoryClient } from './client';
+export { getAiMemoryServiceClient, getSupermemoryClient } from './client';
 export { getAiMemoryConfig, isAiMemoryConfigured } from './config';
 export { ingestAiMemoryEvent } from './ingest';
 export { withAiMemory } from './middleware';

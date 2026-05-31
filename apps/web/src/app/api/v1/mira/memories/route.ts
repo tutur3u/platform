@@ -237,7 +237,7 @@ export async function GET(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to load Mira memories from Supermemory', {
+    serverLogger.error('Failed to load Mira AI memories', {
       error: result.error,
       userId: context.userId,
       wsId: context.wsId,
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to save Mira memory to Supermemory', {
+    serverLogger.error('Failed to save Mira AI memory', {
       error: result.error,
       userId: context.userId,
       wsId: context.wsId,
@@ -345,7 +345,7 @@ export async function DELETE(request: NextRequest) {
   });
 
   if (!result.ok) {
-    serverLogger.error('Failed to delete Mira memory from Supermemory', {
+    serverLogger.error('Failed to delete Mira AI memory', {
       error: result.error,
       memoryId: parsed.data.memory_id,
       userId: context.userId,

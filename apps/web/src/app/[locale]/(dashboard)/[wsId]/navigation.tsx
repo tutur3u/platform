@@ -1031,6 +1031,14 @@ export async function WorkspaceNavigationLinks({
               experimental: 'beta',
             },
             {
+              title: t('sidebar_tabs.memories'),
+              href: `/${personalOrWsId}/memories`,
+              icon: <BrainCircuit className="h-5 w-5" />,
+              disabled:
+                !hasSecret('ENABLE_AI', 'true') || withoutPermission('ai_lab'),
+              experimental: 'beta',
+            },
+            {
               title: t('sidebar_tabs.ai_executions'),
               href: `/${personalOrWsId}/ai/executions`,
               icon: <Cctv className="h-5 w-5" />,

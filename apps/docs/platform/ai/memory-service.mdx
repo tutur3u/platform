@@ -1,18 +1,17 @@
 ---
 title: AI Memory Service
-description: How Tuturuuu uses self-hosted Supermemory for cross-product AI memory.
+description: How Tuturuuu uses first-party pgvector memory for cross-product AI memory.
 ---
 
-Tuturuuu AI memory is backed by Supermemory through the server-only
-`@tuturuuu/ai/memory` boundary. Product routes must not call Supermemory from
-the browser and must not create product-specific memory stores.
+Tuturuuu AI memory is backed by an internal Postgres/pgvector sidecar through
+the server-only `@tuturuuu/ai/memory` boundary. Product routes must not call the
+sidecar from the browser and must not create product-specific memory stores.
 
 ## Scope
 
 Memory scope is always `user + workspace`. The shared helper builds a stable
-Supermemory `containerTag` from those two identifiers and stores product,
-surface, route, locale, timezone, conversation, and workspace metadata on each
-write.
+container tag from those two identifiers and stores product, surface, route,
+locale, timezone, conversation, and workspace metadata on each write.
 
 Default recall is cross-product within that `user + workspace` container. Use
 metadata filters only when a route needs a narrower product or surface view.
@@ -23,8 +22,14 @@ Use `withAiMemory` for AI SDK calls when the route has a user and workspace.
 Use `ingestAiMemoryEvent`, `buildAiMemoryContext`, and the Mira-compatible tool
 executors for explicit memory reads and writes.
 
-Reads fail open by default, and writes are best effort. Keep `SUPERMEMORY_FAIL_OPEN=true`
-unless a product explicitly requires strict persistence.
+Reads fail open by default, and writes are best effort. Every embedding used for
+memory add/search is generated through the metered `@tuturuuu/ai` embedding
+helper before the sidecar is called. If credits, pricing, token counting, or
+billable attribution cannot be verified, the memory operation skips before
+calling Google. Structural metering failures disable memory for the user scope.
+
+Keep `SUPERMEMORY_FAIL_OPEN=true` unless a product explicitly requires strict
+persistence.
 
 Required server-side env:
 
@@ -34,20 +39,17 @@ SUPERMEMORY_BASE_URL=http://supermemory:8787
 SUPERMEMORY_API_KEY=...
 SUPERMEMORY_TIMEOUT_MS=1500
 SUPERMEMORY_FAIL_OPEN=true
-SUPERMEMORY_IMAGE=...
 SUPERMEMORY_DATABASE_URL=postgres://...
 ```
 
 For Docker blue/green and watcher deployments, the Docker helper auto-generates
-and injects the internal API key, bundled Postgres password, Better Auth secret,
-database URL, internal base URL, fail-open setting, and timeout. Use
+and injects the internal API key, bundled Postgres password, database URL,
+internal base URL, fail-open setting, and timeout. Use
 `DOCKER_SUPERMEMORY_API_KEY`, `DOCKER_SUPERMEMORY_POSTGRES_PASSWORD`,
-`DOCKER_SUPERMEMORY_DATABASE_URL`,
-`DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET`, or
-`DOCKER_SUPERMEMORY_ENABLED=false` only when an operator needs to override that
-generated runtime. An explicit false value also removes the Supermemory sidecar
-from Docker blue/green support builds and health gates, so local-only test runs
-do not need access to the private enterprise image.
+`DOCKER_SUPERMEMORY_DATABASE_URL`, or `DOCKER_SUPERMEMORY_ENABLED=false` only
+when an operator needs to override that generated runtime. An explicit false
+value also removes the sidecar from Docker blue/green support builds and health
+gates.
 
 `SUPERMEMORY_API_KEY` is internal infrastructure configuration. Never expose it
 through browser-visible env vars or client responses.
@@ -81,18 +83,17 @@ with `legacy_mira` metadata.
 
 ## Self-Hosting
 
-The Docker fleet runs Supermemory as an internal support service. The Compose
-service wraps the official enterprise image through `apps/supermemory/Dockerfile`
-so the blue/green bake file can tag and refresh it alongside other support
-services. The watcher and cron recovery path use the same generated Docker env,
-so recreating `web-blue-green-watcher` does not require manually exporting
-Supermemory secrets.
+The Docker fleet runs the first-party memory sidecar as an internal support
+service named `supermemory` for compatibility with existing base URL, API key,
+watcher, and Compose wiring. The sidecar stores 3072-dimensional
+`gemini-embedding-2` vectors in `extensions.halfvec(3072)` with HNSW cosine
+indexes, plus GIN indexes for metadata and full-text hybrid search. The
+`supermemory-db-migrate` service applies `apps/supermemory/db` schema changes
+before the runtime starts.
 
-Supermemory's enterprise self-hosting package is supplied by Supermemory and is
-documented around Cloudflare Workers. For the Docker fleet, set
-`SUPERMEMORY_IMAGE` to the approved enterprise image or an internal image built
-from that package. Do not fork or vendor the public OSS repository as the
-production source of truth.
+The watcher and cron recovery path use the same generated Docker env, so
+recreating `web-blue-green-watcher` does not require manually exporting memory
+service secrets. There is no `SUPERMEMORY_IMAGE` enterprise-image contract.
 
 Connectors such as Google Drive, OneDrive, and Notion are disabled for the first
 rollout. Product ingestion should persist concise summaries only; do not ingest

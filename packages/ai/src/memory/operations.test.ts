@@ -9,9 +9,12 @@ import { resolveAiMemoryScope } from './scope';
 
 const memoryMocks = vi.hoisted(() => ({
   add: vi.fn(),
+  createMeteredTextEmbedding: vi.fn(),
+  disableAiMemoryForMeteringFailure: vi.fn(),
   documentsList: vi.fn(),
   isAiMemoryEnabledForScope: vi.fn(),
   searchMemories: vi.fn(),
+  shouldDisableMemoryForMeteringReason: vi.fn(),
 }));
 
 vi.mock('./config', () => ({
@@ -25,19 +28,24 @@ vi.mock('./config', () => ({
 }));
 
 vi.mock('./client', () => ({
-  getSupermemoryClient: () => ({
+  getAiMemoryServiceClient: () => ({
     add: memoryMocks.add,
-    documents: {
-      list: memoryMocks.documentsList,
-    },
-    search: {
-      memories: memoryMocks.searchMemories,
-    },
+    forgetMemory: vi.fn(),
+    listDocuments: memoryMocks.documentsList,
+    searchMemories: memoryMocks.searchMemories,
   }),
 }));
 
 vi.mock('./settings', () => ({
+  disableAiMemoryForMeteringFailure:
+    memoryMocks.disableAiMemoryForMeteringFailure,
   isAiMemoryEnabledForScope: memoryMocks.isAiMemoryEnabledForScope,
+}));
+
+vi.mock('../embeddings/metered', () => ({
+  createMeteredTextEmbedding: memoryMocks.createMeteredTextEmbedding,
+  shouldDisableMemoryForMeteringReason:
+    memoryMocks.shouldDisableMemoryForMeteringReason,
 }));
 
 const scope = resolveAiMemoryScope({
@@ -49,9 +57,16 @@ const scope = resolveAiMemoryScope({
   wsId: 'ws-1',
 });
 
-describe('Supermemory operations', () => {
+describe('AI memory operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    memoryMocks.createMeteredTextEmbedding.mockResolvedValue({
+      creditsDeducted: 1,
+      embedding: Array.from({ length: 3072 }, () => 0.1),
+      inputTokens: 8,
+      modelId: 'google/gemini-embedding-2',
+      ok: true,
+    });
     memoryMocks.isAiMemoryEnabledForScope.mockResolvedValue(true);
     memoryMocks.searchMemories.mockResolvedValue({
       results: [
@@ -82,6 +97,7 @@ describe('Supermemory operations', () => {
         containerTag: scope?.containerTag,
         content: '[preference] style: Prefers concise summaries',
         customId: scope?.customId,
+        embedding: expect.arrayContaining([0.1]),
         metadata: expect.objectContaining({
           memoryCategory: 'preference',
           memoryKey: 'style',
@@ -104,6 +120,34 @@ describe('Supermemory operations', () => {
     });
 
     expect(memoryMocks.add).not.toHaveBeenCalled();
+  });
+
+  it('skips writes before the sidecar when metering cannot reserve credits', async () => {
+    memoryMocks.createMeteredTextEmbedding.mockResolvedValue({
+      ok: false,
+      reason: 'reservation_failed',
+      skipped: true,
+      structuralDisable: true,
+    });
+    memoryMocks.shouldDisableMemoryForMeteringReason.mockReturnValue(true);
+
+    await expect(
+      rememberAiMemory({ scope, value: 'do not write for free' })
+    ).resolves.toMatchObject({
+      ok: true,
+      reason: 'reservation_failed',
+      skipped: true,
+      value: null,
+    });
+
+    expect(memoryMocks.add).not.toHaveBeenCalled();
+    expect(memoryMocks.disableAiMemoryForMeteringFailure).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'reservation_failed',
+        userId: 'user-1',
+        wsId: 'ws-1',
+      })
+    );
   });
 
   it('lists documents using the container tag and product filter', async () => {
@@ -145,6 +189,7 @@ describe('Supermemory operations', () => {
 
     expect(memoryMocks.searchMemories).toHaveBeenCalledWith(
       expect.objectContaining({
+        embedding: expect.arrayContaining([0.1]),
         filters: expect.objectContaining({ key: 'product', value: 'mira' }),
       }),
       expect.any(Object)

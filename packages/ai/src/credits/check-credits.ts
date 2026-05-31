@@ -7,13 +7,13 @@ import {
   isAiCreditSnapshotUsable,
   readAiCreditSnapshot,
 } from '@tuturuuu/utils/ai-temp-auth';
-import type { AiFeature, CreditErrorCode } from './constants';
-import { matchesAllowedModel, resolveGatewayModelId } from './model-mapping';
+import type { AiFeature, CreditErrorCode } from './constants.js';
+import { matchesAllowedModel, resolveGatewayModelId } from './model-mapping.js';
 import type {
   CreditCheckResult,
   CreditDeductionResult,
   DeductCreditsParams,
-} from './types';
+} from './types.js';
 
 type DeductAiCreditsRpcRow = {
   success?: boolean;

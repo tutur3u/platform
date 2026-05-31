@@ -18,8 +18,11 @@ export {
 } from './model-mapping';
 export {
   commitFixedAiCreditReservation,
+  commitMeteredEmbeddingCredits,
   releaseFixedAiCreditReservation,
+  releaseMeteredEmbeddingCredits,
   reserveFixedAiCredits,
+  reserveMeteredEmbeddingCredits,
 } from './reservations';
 export {
   type EffectivePlanModel,
@@ -39,4 +42,5 @@ export type {
   CreditReservationResult,
   DeductCreditsParams,
   FeatureAccess,
+  MeteredEmbeddingReservationResult,
 } from './types';

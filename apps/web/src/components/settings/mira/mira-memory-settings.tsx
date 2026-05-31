@@ -52,6 +52,7 @@ const AI_MEMORY_PRODUCT_OPTIONS = [
   'teach',
   'calendar',
   'live_assistant',
+  'memories',
   'object_generation',
   'playground',
   'rewise',

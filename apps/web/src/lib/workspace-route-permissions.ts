@@ -18,6 +18,7 @@ export function getWorkspaceRoutePermissionRequirements(
     case 'crawlers':
     case 'cron':
     case 'datasets':
+    case 'memories':
     case 'models':
     case 'pipelines':
     case 'queues':

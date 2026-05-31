@@ -1,4 +1,4 @@
-import { google } from '@ai-sdk/google';
+import { createMeteredTextEmbedding } from '@tuturuuu/ai/embeddings/metered';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import {
   createAdminClient,
@@ -8,7 +8,6 @@ import {
   normalizeWorkspaceId,
   verifyWorkspaceMembershipType,
 } from '@tuturuuu/utils/workspace-helper';
-import { embed } from 'ai';
 import { NextResponse } from 'next/server';
 
 interface Params {
@@ -121,22 +120,28 @@ export async function POST(req: Request, { params }: Params) {
     // Enhance query with context for better semantic matching
     const enhancedQuery = enhanceSearchQuery(query.trim());
 
-    // Generate embedding for search query using Google Gemini
-    // Use RETRIEVAL_QUERY task type to match RETRIEVAL_DOCUMENT
-    const { embedding } = await embed({
-      model: google.embedding('gemini-embedding-001'),
-      value: enhancedQuery,
-      providerOptions: {
-        google: {
-          outputDimensionality: 768,
-          taskType: 'RETRIEVAL_QUERY', // Optimized for querying documents
-        },
+    const embeddingResult = await createMeteredTextEmbedding({
+      metadata: {
+        operation: 'task_semantic_search',
       },
+      source: 'task_search',
+      taskType: 'RETRIEVAL_QUERY',
+      userId: user.id,
+      value: enhancedQuery,
+      wsId,
     });
+
+    if (!embeddingResult.ok) {
+      return NextResponse.json({
+        message: 'Task semantic search skipped',
+        reason: embeddingResult.reason,
+        tasks: [],
+      });
+    }
 
     // Call the hybrid match_tasks function with both embedding and text
     const { data, error } = await sbAdmin.rpc('match_tasks', {
-      query_embedding: JSON.stringify(embedding),
+      query_embedding: JSON.stringify(embeddingResult.embedding),
       query_text: query.trim(), // Pass original query for full-text search
       match_threshold: matchThreshold,
       match_count: matchCount,

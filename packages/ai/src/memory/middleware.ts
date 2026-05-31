@@ -1,13 +1,10 @@
-import { withSupermemory } from '@supermemory/tools/ai-sdk';
 import type { LanguageModel } from 'ai';
 import { getAiMemoryConfig } from './config';
 import { resolveAiMemoryScope } from './scope';
 import type { AiMemoryModelOptions } from './types';
 
 export async function withAiMemory<TModel extends LanguageModel>({
-  addMemory = 'always',
   customId,
-  mode = 'full',
   model,
   product,
   source,
@@ -34,13 +31,5 @@ export async function withAiMemory<TModel extends LanguageModel>({
   });
   if (!enabled) return model;
 
-  return withSupermemory(model as never, {
-    addMemory,
-    apiKey: config.apiKey,
-    baseUrl: config.baseUrl,
-    containerTag: scope.containerTag,
-    customId: scope.customId,
-    mode,
-    skipMemoryOnError: config.failOpen,
-  }) as TModel;
+  return model;
 }

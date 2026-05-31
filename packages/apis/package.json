@@ -10,11 +10,10 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "@ai-sdk/google": "^3.0.80",
+    "@tuturuuu/ai": "workspace:*",
     "@tuturuuu/payment": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
     "@tuturuuu/utils": "workspace:*",
-    "ai": "^6.0.193",
     "dayjs": "^1.11.20",
     "next": "^16.2.6",
     "react": "^19.2.6",

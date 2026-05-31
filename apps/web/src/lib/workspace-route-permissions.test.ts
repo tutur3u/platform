@@ -25,6 +25,9 @@ describe('workspace route permission mapping', () => {
     expect(getWorkspaceRoutePermissionRequirements(['cron'])).toEqual([
       'ai_lab',
     ]);
+    expect(getWorkspaceRoutePermissionRequirements(['memories'])).toEqual([
+      'ai_lab',
+    ]);
     expect(getWorkspaceRoutePermissionRequirements(['ai', 'spark'])).toEqual([
       'manage_projects',
     ]);

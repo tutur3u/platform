@@ -34,6 +34,7 @@ COPY apps/redis/package.json ./apps/redis/package.json
 COPY apps/rewise/package.json ./apps/rewise/package.json
 COPY apps/shortener/package.json ./apps/shortener/package.json
 COPY apps/storage-unzip-proxy/package.json ./apps/storage-unzip-proxy/package.json
+COPY apps/supermemory/package.json ./apps/supermemory/package.json
 COPY apps/tasks/package.json ./apps/tasks/package.json
 COPY apps/teach/package.json ./apps/teach/package.json
 COPY apps/track/package.json ./apps/track/package.json

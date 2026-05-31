@@ -9,6 +9,7 @@ export const AI_MEMORY_PRODUCTS = [
   'hive',
   'live_assistant',
   'meetings',
+  'memories',
   'mind',
   'mira',
   'native_chat',

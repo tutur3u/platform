@@ -18,6 +18,7 @@ describe('constants', () => {
       expect(AI_FEATURES).toContain('generate');
       expect(AI_FEATURES).toContain('task_journal');
       expect(AI_FEATURES).toContain('email_draft');
+      expect(AI_FEATURES).toContain('embeddings');
     });
 
     it('has at least 4 features', () => {
@@ -30,6 +31,9 @@ describe('constants', () => {
       expect(CREDIT_ERROR_CODES.CREDITS_EXHAUSTED).toBe('CREDITS_EXHAUSTED');
       expect(CREDIT_ERROR_CODES.MODEL_NOT_ALLOWED).toBe('MODEL_NOT_ALLOWED');
       expect(CREDIT_ERROR_CODES.MODEL_DISABLED).toBe('MODEL_DISABLED');
+      expect(CREDIT_ERROR_CODES.MODEL_PRICING_UNAVAILABLE).toBe(
+        'MODEL_PRICING_UNAVAILABLE'
+      );
       expect(CREDIT_ERROR_CODES.FEATURE_NOT_ALLOWED).toBe(
         'FEATURE_NOT_ALLOWED'
       );
@@ -43,8 +47,8 @@ describe('constants', () => {
       );
     });
 
-    it('has exactly 8 error codes', () => {
-      expect(Object.keys(CREDIT_ERROR_CODES)).toHaveLength(8);
+    it('has exactly 9 error codes', () => {
+      expect(Object.keys(CREDIT_ERROR_CODES)).toHaveLength(9);
     });
   });
 });

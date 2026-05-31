@@ -3,11 +3,6 @@ import { withAiMemory } from './middleware';
 
 const memoryMocks = vi.hoisted(() => ({
   isAiMemoryEnabledForScope: vi.fn(),
-  withSupermemory: vi.fn(),
-}));
-
-vi.mock('@supermemory/tools/ai-sdk', () => ({
-  withSupermemory: memoryMocks.withSupermemory,
 }));
 
 vi.mock('./config', () => ({
@@ -29,10 +24,9 @@ describe('withAiMemory', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    memoryMocks.withSupermemory.mockReturnValue({ wrapped: true });
   });
 
-  it('wraps AI SDK models with Supermemory metadata', async () => {
+  it('keeps AI SDK models unchanged when memory is enabled', async () => {
     memoryMocks.isAiMemoryEnabledForScope.mockResolvedValue(true);
 
     await expect(
@@ -45,18 +39,13 @@ describe('withAiMemory', () => {
         userId: 'user-1',
         wsId: 'ws-1',
       })
-    ).resolves.toEqual({ wrapped: true });
+    ).resolves.toBe(model);
 
-    expect(memoryMocks.withSupermemory).toHaveBeenCalledWith(
-      model,
+    expect(memoryMocks.isAiMemoryEnabledForScope).toHaveBeenCalledWith(
       expect.objectContaining({
-        addMemory: 'always',
-        apiKey: 'test-key',
-        baseUrl: 'http://supermemory.internal',
-        containerTag: 'tuturuuu.user.user-1.workspace.ws-1',
-        customId: 'tuturuuu.tasks.task_journal.thread-1',
-        mode: 'full',
-        skipMemoryOnError: true,
+        product: 'tasks',
+        userId: 'user-1',
+        wsId: 'ws-1',
       })
     );
   });
@@ -74,6 +63,12 @@ describe('withAiMemory', () => {
       })
     ).resolves.toBe(model);
 
-    expect(memoryMocks.withSupermemory).not.toHaveBeenCalled();
+    expect(memoryMocks.isAiMemoryEnabledForScope).toHaveBeenCalledWith(
+      expect.objectContaining({
+        product: 'mira',
+        userId: 'user-1',
+        wsId: 'ws-1',
+      })
+    );
   });
 });

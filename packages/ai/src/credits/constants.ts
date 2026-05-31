@@ -8,6 +8,7 @@ export const AI_FEATURES = [
   'task_journal',
   'email_draft',
   'image_generation',
+  'embeddings',
 ] as const;
 
 export type AiFeature = (typeof AI_FEATURES)[number];
@@ -17,6 +18,7 @@ export const CREDIT_ERROR_CODES = {
   CREDITS_EXHAUSTED: 'CREDITS_EXHAUSTED',
   MODEL_NOT_ALLOWED: 'MODEL_NOT_ALLOWED',
   MODEL_DISABLED: 'MODEL_DISABLED',
+  MODEL_PRICING_UNAVAILABLE: 'MODEL_PRICING_UNAVAILABLE',
   FEATURE_NOT_ALLOWED: 'FEATURE_NOT_ALLOWED',
   DAILY_LIMIT_REACHED: 'DAILY_LIMIT_REACHED',
   NO_ALLOCATION: 'NO_ALLOCATION',
