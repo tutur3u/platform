@@ -1,8 +1,4 @@
 export const PROXY_ONLY_PUBLIC_TABLES = [
-  'form_questions',
-  'form_response_answers',
-  'form_sections',
-  'forms',
   'nova_challenge_criteria',
   'nova_challenges',
   'nova_problem_test_cases',

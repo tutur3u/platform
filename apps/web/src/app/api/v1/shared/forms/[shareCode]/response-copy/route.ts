@@ -10,6 +10,7 @@ import {
   hasSentResponseCopyEmail,
   maybeSendResponseCopyEmail,
 } from '@/features/forms/response-copy-email';
+import { getPrivateFormsClient } from '@/features/forms/server';
 
 const responseCopyRequestSchema = z.object({
   responseId: z.guid(),
@@ -19,23 +20,24 @@ const responseCopyRequestSchema = z.object({
 
 async function loadSharedForm(shareCode: string) {
   const adminClient = await createAdminClient();
-  const { data: shareLink } = await adminClient
+  const formsClient = getPrivateFormsClient(adminClient);
+  const { data: shareLink } = await formsClient
     .from('form_share_links')
     .select('id, form_id, active')
     .eq('code', shareCode)
     .maybeSingle();
 
   if (!shareLink?.active) {
-    return { adminClient, shareLink: null, form: null };
+    return { adminClient, formsClient, shareLink: null, form: null };
   }
 
-  const { data: form } = await adminClient
+  const { data: form } = await formsClient
     .from('forms')
     .select('id, title, ws_id, status, open_at, close_at')
     .eq('id', shareLink.form_id)
     .maybeSingle();
 
-  return { adminClient, shareLink, form };
+  return { adminClient, formsClient, shareLink, form };
 }
 
 function isFormAcceptingResponses(form: {
@@ -66,7 +68,8 @@ export async function POST(
 ) {
   try {
     const { shareCode } = await params;
-    const { adminClient, shareLink, form } = await loadSharedForm(shareCode);
+    const { adminClient, formsClient, shareLink, form } =
+      await loadSharedForm(shareCode);
 
     if (!shareLink || !form) {
       return NextResponse.json({ error: 'Form not found' }, { status: 404 });
@@ -103,7 +106,7 @@ export async function POST(
       );
     }
 
-    const { data: response } = await adminClient
+    const { data: response } = await formsClient
       .from('form_responses')
       .select('id, session_id, submitted_at')
       .eq('id', parsed.data.responseId)
@@ -134,7 +137,7 @@ export async function POST(
       );
     }
 
-    const { data: answerRows } = await adminClient
+    const { data: answerRows } = await formsClient
       .from('form_response_answers')
       .select('question_title, answer_text, answer_json')
       .eq('response_id', response.id);

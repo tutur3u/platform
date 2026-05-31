@@ -23,6 +23,42 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'form_logic_rules',
+    select: 'id',
+  },
+  {
+    name: 'form_question_options',
+    select: 'id',
+  },
+  {
+    name: 'form_questions',
+    select: 'id',
+  },
+  {
+    name: 'form_response_answers',
+    select: 'id',
+  },
+  {
+    name: 'form_responses',
+    select: 'id',
+  },
+  {
+    name: 'form_sections',
+    select: 'id',
+  },
+  {
+    name: 'form_sessions',
+    select: 'id',
+  },
+  {
+    name: 'form_share_links',
+    select: 'id',
+  },
+  {
+    name: 'forms',
+    select: 'id',
+  },
+  {
     name: 'mira_accessories',
     select: 'id',
   },

@@ -1155,6 +1155,497 @@ export type Database = {
         };
         Relationships: [];
       };
+      form_logic_rules: {
+        Row: {
+          action_type: string;
+          comparison_value: string | null;
+          created_at: string;
+          form_id: string;
+          id: string;
+          operator: string;
+          priority: number;
+          source_question_id: string | null;
+          source_section_id: string | null;
+          target_section_id: string | null;
+          trigger_type: string;
+        };
+        Insert: {
+          action_type?: string;
+          comparison_value?: string | null;
+          created_at?: string;
+          form_id: string;
+          id?: string;
+          operator?: string;
+          priority?: number;
+          source_question_id?: string | null;
+          source_section_id?: string | null;
+          target_section_id?: string | null;
+          trigger_type?: string;
+        };
+        Update: {
+          action_type?: string;
+          comparison_value?: string | null;
+          created_at?: string;
+          form_id?: string;
+          id?: string;
+          operator?: string;
+          priority?: number;
+          source_question_id?: string | null;
+          source_section_id?: string | null;
+          target_section_id?: string | null;
+          trigger_type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_logic_rules_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_logic_rules_source_question_id_fkey';
+            columns: ['source_question_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_questions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_logic_rules_source_section_id_fkey';
+            columns: ['source_section_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_logic_rules_target_section_id_fkey';
+            columns: ['target_section_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sections';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_question_options: {
+        Row: {
+          id: string;
+          image: Json | null;
+          label: string;
+          position: number;
+          question_id: string;
+          value: string;
+        };
+        Insert: {
+          id?: string;
+          image?: Json | null;
+          label: string;
+          position?: number;
+          question_id: string;
+          value: string;
+        };
+        Update: {
+          id?: string;
+          image?: Json | null;
+          label?: string;
+          position?: number;
+          question_id?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_question_options_question_id_fkey';
+            columns: ['question_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_questions';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_questions: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          form_id: string;
+          id: string;
+          image: Json | null;
+          position: number;
+          required: boolean;
+          section_id: string;
+          settings: Json;
+          title: string;
+          type: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          form_id: string;
+          id?: string;
+          image?: Json | null;
+          position?: number;
+          required?: boolean;
+          section_id: string;
+          settings?: Json;
+          title?: string;
+          type: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          form_id?: string;
+          id?: string;
+          image?: Json | null;
+          position?: number;
+          required?: boolean;
+          section_id?: string;
+          settings?: Json;
+          title?: string;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_questions_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_questions_section_id_fkey';
+            columns: ['section_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sections';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_response_answers: {
+        Row: {
+          answer_json: Json | null;
+          answer_text: string | null;
+          created_at: string;
+          id: string;
+          question_id: string | null;
+          question_title: string;
+          question_type: string;
+          response_id: string;
+        };
+        Insert: {
+          answer_json?: Json | null;
+          answer_text?: string | null;
+          created_at?: string;
+          id?: string;
+          question_id?: string | null;
+          question_title: string;
+          question_type: string;
+          response_id: string;
+        };
+        Update: {
+          answer_json?: Json | null;
+          answer_text?: string | null;
+          created_at?: string;
+          id?: string;
+          question_id?: string | null;
+          question_title?: string;
+          question_type?: string;
+          response_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_response_answers_question_id_fkey';
+            columns: ['question_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_questions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_response_answers_response_id_fkey';
+            columns: ['response_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_responses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_responses: {
+        Row: {
+          completion_state: string;
+          created_at: string;
+          duration_seconds: number | null;
+          form_id: string;
+          id: string;
+          respondent_email: string | null;
+          respondent_user_id: string | null;
+          session_id: string | null;
+          share_link_id: string | null;
+          submitted_at: string;
+        };
+        Insert: {
+          completion_state?: string;
+          created_at?: string;
+          duration_seconds?: number | null;
+          form_id: string;
+          id?: string;
+          respondent_email?: string | null;
+          respondent_user_id?: string | null;
+          session_id?: string | null;
+          share_link_id?: string | null;
+          submitted_at?: string;
+        };
+        Update: {
+          completion_state?: string;
+          created_at?: string;
+          duration_seconds?: number | null;
+          form_id?: string;
+          id?: string;
+          respondent_email?: string | null;
+          respondent_user_id?: string | null;
+          session_id?: string | null;
+          share_link_id?: string | null;
+          submitted_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_responses_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_responses_session_id_fkey';
+            columns: ['session_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sessions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_responses_share_link_id_fkey';
+            columns: ['share_link_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_share_links';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_sections: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          form_id: string;
+          id: string;
+          position: number;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          form_id: string;
+          id?: string;
+          position?: number;
+          title?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          form_id?: string;
+          id?: string;
+          position?: number;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_sections_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_sessions: {
+        Row: {
+          browser: string | null;
+          city: string | null;
+          country: string | null;
+          device_type: string | null;
+          form_id: string;
+          id: string;
+          last_question_id: string | null;
+          last_section_id: string | null;
+          metadata: Json;
+          os: string | null;
+          referrer_domain: string | null;
+          respondent_email: string | null;
+          respondent_user_id: string | null;
+          session_token: string;
+          share_link_id: string | null;
+          started_at: string | null;
+          submitted_at: string | null;
+          viewed_at: string;
+        };
+        Insert: {
+          browser?: string | null;
+          city?: string | null;
+          country?: string | null;
+          device_type?: string | null;
+          form_id: string;
+          id?: string;
+          last_question_id?: string | null;
+          last_section_id?: string | null;
+          metadata?: Json;
+          os?: string | null;
+          referrer_domain?: string | null;
+          respondent_email?: string | null;
+          respondent_user_id?: string | null;
+          session_token: string;
+          share_link_id?: string | null;
+          started_at?: string | null;
+          submitted_at?: string | null;
+          viewed_at?: string;
+        };
+        Update: {
+          browser?: string | null;
+          city?: string | null;
+          country?: string | null;
+          device_type?: string | null;
+          form_id?: string;
+          id?: string;
+          last_question_id?: string | null;
+          last_section_id?: string | null;
+          metadata?: Json;
+          os?: string | null;
+          referrer_domain?: string | null;
+          respondent_email?: string | null;
+          respondent_user_id?: string | null;
+          session_token?: string;
+          share_link_id?: string | null;
+          started_at?: string | null;
+          submitted_at?: string | null;
+          viewed_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_sessions_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: false;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_sessions_last_question_id_fkey';
+            columns: ['last_question_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_questions';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_sessions_last_section_id_fkey';
+            columns: ['last_section_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_sections';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'form_sessions_share_link_id_fkey';
+            columns: ['share_link_id'];
+            isOneToOne: false;
+            referencedRelation: 'form_share_links';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      form_share_links: {
+        Row: {
+          active: boolean;
+          code: string;
+          created_at: string;
+          created_by_user_id: string;
+          form_id: string;
+          id: string;
+        };
+        Insert: {
+          active?: boolean;
+          code: string;
+          created_at?: string;
+          created_by_user_id?: string;
+          form_id: string;
+          id?: string;
+        };
+        Update: {
+          active?: boolean;
+          code?: string;
+          created_at?: string;
+          created_by_user_id?: string;
+          form_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'form_share_links_form_id_fkey';
+            columns: ['form_id'];
+            isOneToOne: true;
+            referencedRelation: 'forms';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      forms: {
+        Row: {
+          access_mode: string;
+          close_at: string | null;
+          closed_at: string | null;
+          created_at: string;
+          creator_id: string;
+          description: string | null;
+          id: string;
+          max_responses: number | null;
+          open_at: string | null;
+          published_at: string | null;
+          settings: Json;
+          status: string;
+          theme: Json;
+          title: string;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          access_mode?: string;
+          close_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          description?: string | null;
+          id?: string;
+          max_responses?: number | null;
+          open_at?: string | null;
+          published_at?: string | null;
+          settings?: Json;
+          status?: string;
+          theme?: Json;
+          title?: string;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          access_mode?: string;
+          close_at?: string | null;
+          closed_at?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          description?: string | null;
+          id?: string;
+          max_responses?: number | null;
+          open_at?: string | null;
+          published_at?: string | null;
+          settings?: Json;
+          status?: string;
+          theme?: Json;
+          title?: string;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       healthcare_diagnoses: {
         Row: {
           created_at: string | null;
@@ -4964,6 +5455,11 @@ export type Database = {
         };
         Returns: Json;
       };
+      can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
+      can_view_form_analytics: {
+        Args: { p_form_id: string };
+        Returns: boolean;
+      };
       chat_actor_can_access_conversation: {
         Args: { p_actor_user_id: string; p_conversation_id: string };
         Returns: boolean;
@@ -5283,6 +5779,19 @@ export type Database = {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
       };
+      form_id_from_question: {
+        Args: { p_question_id: string };
+        Returns: string;
+      };
+      form_id_from_response: {
+        Args: { p_response_id: string };
+        Returns: string;
+      };
+      form_id_from_section: { Args: { p_section_id: string }; Returns: string };
+      form_id_from_share_link: {
+        Args: { p_share_link_id: string };
+        Returns: string;
+      };
       get_ai_memory_settings: {
         Args: { p_product?: string; p_user_id: string; p_ws_id: string };
         Returns: {
@@ -5426,6 +5935,38 @@ export type Database = {
           wallet_count: number;
         }[];
       };
+      get_form_analytics_overview: {
+        Args: { p_form_id: string };
+        Returns: Json;
+      };
+      get_form_matched_response_ids: {
+        Args: { p_form_id: string; p_query?: string };
+        Returns: {
+          response_id: string;
+        }[];
+      };
+      get_form_response_page: {
+        Args: {
+          p_form_id: string;
+          p_page?: number;
+          p_page_size?: number;
+          p_query?: string;
+        };
+        Returns: {
+          created_at: string;
+          id: string;
+          respondent_email: string;
+          respondent_user_id: string;
+          session_id: string;
+          submitted_at: string;
+          total_count: number;
+        }[];
+      };
+      get_form_response_rollups: {
+        Args: { p_form_id: string; p_query?: string };
+        Returns: Json;
+      };
+      get_form_workspace_id: { Args: { p_form_id: string }; Returns: string };
       get_income_expense_chart_summary: {
         Args: {
           _actor_id: string;
@@ -9456,638 +9997,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'finance_invoices_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_logic_rules: {
-        Row: {
-          action_type: string;
-          comparison_value: string | null;
-          created_at: string;
-          form_id: string;
-          id: string;
-          operator: string;
-          priority: number;
-          source_question_id: string | null;
-          source_section_id: string | null;
-          target_section_id: string | null;
-          trigger_type: string;
-        };
-        Insert: {
-          action_type?: string;
-          comparison_value?: string | null;
-          created_at?: string;
-          form_id: string;
-          id?: string;
-          operator?: string;
-          priority?: number;
-          source_question_id?: string | null;
-          source_section_id?: string | null;
-          target_section_id?: string | null;
-          trigger_type?: string;
-        };
-        Update: {
-          action_type?: string;
-          comparison_value?: string | null;
-          created_at?: string;
-          form_id?: string;
-          id?: string;
-          operator?: string;
-          priority?: number;
-          source_question_id?: string | null;
-          source_section_id?: string | null;
-          target_section_id?: string | null;
-          trigger_type?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_logic_rules_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: false;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_logic_rules_source_question_id_fkey';
-            columns: ['source_question_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_questions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_logic_rules_source_section_id_fkey';
-            columns: ['source_section_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_sections';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_logic_rules_target_section_id_fkey';
-            columns: ['target_section_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_sections';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_question_options: {
-        Row: {
-          id: string;
-          image: Json | null;
-          label: string;
-          position: number;
-          question_id: string;
-          value: string;
-        };
-        Insert: {
-          id?: string;
-          image?: Json | null;
-          label: string;
-          position?: number;
-          question_id: string;
-          value: string;
-        };
-        Update: {
-          id?: string;
-          image?: Json | null;
-          label?: string;
-          position?: number;
-          question_id?: string;
-          value?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_question_options_question_id_fkey';
-            columns: ['question_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_questions';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_questions: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          form_id: string;
-          id: string;
-          image: Json | null;
-          position: number;
-          required: boolean;
-          section_id: string;
-          settings: Json;
-          title: string;
-          type: string;
-        };
-        Insert: {
-          created_at?: string;
-          description?: string | null;
-          form_id: string;
-          id?: string;
-          image?: Json | null;
-          position?: number;
-          required?: boolean;
-          section_id: string;
-          settings?: Json;
-          title?: string;
-          type: string;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          form_id?: string;
-          id?: string;
-          image?: Json | null;
-          position?: number;
-          required?: boolean;
-          section_id?: string;
-          settings?: Json;
-          title?: string;
-          type?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_questions_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: false;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_questions_section_id_fkey';
-            columns: ['section_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_sections';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_response_answers: {
-        Row: {
-          answer_json: Json | null;
-          answer_text: string | null;
-          created_at: string;
-          id: string;
-          question_id: string | null;
-          question_title: string;
-          question_type: string;
-          response_id: string;
-        };
-        Insert: {
-          answer_json?: Json | null;
-          answer_text?: string | null;
-          created_at?: string;
-          id?: string;
-          question_id?: string | null;
-          question_title: string;
-          question_type: string;
-          response_id: string;
-        };
-        Update: {
-          answer_json?: Json | null;
-          answer_text?: string | null;
-          created_at?: string;
-          id?: string;
-          question_id?: string | null;
-          question_title?: string;
-          question_type?: string;
-          response_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_response_answers_question_id_fkey';
-            columns: ['question_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_questions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_response_answers_response_id_fkey';
-            columns: ['response_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_responses';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_responses: {
-        Row: {
-          completion_state: string;
-          created_at: string;
-          duration_seconds: number | null;
-          form_id: string;
-          id: string;
-          respondent_email: string | null;
-          respondent_user_id: string | null;
-          session_id: string | null;
-          share_link_id: string | null;
-          submitted_at: string;
-        };
-        Insert: {
-          completion_state?: string;
-          created_at?: string;
-          duration_seconds?: number | null;
-          form_id: string;
-          id?: string;
-          respondent_email?: string | null;
-          respondent_user_id?: string | null;
-          session_id?: string | null;
-          share_link_id?: string | null;
-          submitted_at?: string;
-        };
-        Update: {
-          completion_state?: string;
-          created_at?: string;
-          duration_seconds?: number | null;
-          form_id?: string;
-          id?: string;
-          respondent_email?: string | null;
-          respondent_user_id?: string | null;
-          session_id?: string | null;
-          share_link_id?: string | null;
-          submitted_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_responses_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: false;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_responses_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_responses_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_responses_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_responses_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_responses_session_id_fkey';
-            columns: ['session_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_sessions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_responses_share_link_id_fkey';
-            columns: ['share_link_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_share_links';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_sections: {
-        Row: {
-          created_at: string;
-          description: string | null;
-          form_id: string;
-          id: string;
-          position: number;
-          title: string;
-        };
-        Insert: {
-          created_at?: string;
-          description?: string | null;
-          form_id: string;
-          id?: string;
-          position?: number;
-          title?: string;
-        };
-        Update: {
-          created_at?: string;
-          description?: string | null;
-          form_id?: string;
-          id?: string;
-          position?: number;
-          title?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_sections_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: false;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_sessions: {
-        Row: {
-          browser: string | null;
-          city: string | null;
-          country: string | null;
-          device_type: string | null;
-          form_id: string;
-          id: string;
-          last_question_id: string | null;
-          last_section_id: string | null;
-          metadata: Json;
-          os: string | null;
-          referrer_domain: string | null;
-          respondent_email: string | null;
-          respondent_user_id: string | null;
-          session_token: string;
-          share_link_id: string | null;
-          started_at: string | null;
-          submitted_at: string | null;
-          viewed_at: string;
-        };
-        Insert: {
-          browser?: string | null;
-          city?: string | null;
-          country?: string | null;
-          device_type?: string | null;
-          form_id: string;
-          id?: string;
-          last_question_id?: string | null;
-          last_section_id?: string | null;
-          metadata?: Json;
-          os?: string | null;
-          referrer_domain?: string | null;
-          respondent_email?: string | null;
-          respondent_user_id?: string | null;
-          session_token: string;
-          share_link_id?: string | null;
-          started_at?: string | null;
-          submitted_at?: string | null;
-          viewed_at?: string;
-        };
-        Update: {
-          browser?: string | null;
-          city?: string | null;
-          country?: string | null;
-          device_type?: string | null;
-          form_id?: string;
-          id?: string;
-          last_question_id?: string | null;
-          last_section_id?: string | null;
-          metadata?: Json;
-          os?: string | null;
-          referrer_domain?: string | null;
-          respondent_email?: string | null;
-          respondent_user_id?: string | null;
-          session_token?: string;
-          share_link_id?: string | null;
-          started_at?: string | null;
-          submitted_at?: string | null;
-          viewed_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_sessions_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: false;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_last_question_id_fkey';
-            columns: ['last_question_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_questions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_last_section_id_fkey';
-            columns: ['last_section_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_sections';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_respondent_user_id_fkey';
-            columns: ['respondent_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_sessions_share_link_id_fkey';
-            columns: ['share_link_id'];
-            isOneToOne: false;
-            referencedRelation: 'form_share_links';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      form_share_links: {
-        Row: {
-          active: boolean;
-          code: string;
-          created_at: string;
-          created_by_user_id: string;
-          form_id: string;
-          id: string;
-        };
-        Insert: {
-          active?: boolean;
-          code: string;
-          created_at?: string;
-          created_by_user_id?: string;
-          form_id: string;
-          id?: string;
-        };
-        Update: {
-          active?: boolean;
-          code?: string;
-          created_at?: string;
-          created_by_user_id?: string;
-          form_id?: string;
-          id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'form_share_links_created_by_user_id_fkey';
-            columns: ['created_by_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_share_links_created_by_user_id_fkey';
-            columns: ['created_by_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'form_share_links_created_by_user_id_fkey';
-            columns: ['created_by_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_share_links_created_by_user_id_fkey';
-            columns: ['created_by_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'form_share_links_form_id_fkey';
-            columns: ['form_id'];
-            isOneToOne: true;
-            referencedRelation: 'forms';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      forms: {
-        Row: {
-          access_mode: string;
-          close_at: string | null;
-          closed_at: string | null;
-          created_at: string;
-          creator_id: string;
-          description: string | null;
-          id: string;
-          max_responses: number | null;
-          open_at: string | null;
-          published_at: string | null;
-          settings: Json;
-          status: string;
-          theme: Json;
-          title: string;
-          updated_at: string;
-          ws_id: string;
-        };
-        Insert: {
-          access_mode?: string;
-          close_at?: string | null;
-          closed_at?: string | null;
-          created_at?: string;
-          creator_id?: string;
-          description?: string | null;
-          id?: string;
-          max_responses?: number | null;
-          open_at?: string | null;
-          published_at?: string | null;
-          settings?: Json;
-          status?: string;
-          theme?: Json;
-          title?: string;
-          updated_at?: string;
-          ws_id: string;
-        };
-        Update: {
-          access_mode?: string;
-          close_at?: string | null;
-          closed_at?: string | null;
-          created_at?: string;
-          creator_id?: string;
-          description?: string | null;
-          id?: string;
-          max_responses?: number | null;
-          open_at?: string | null;
-          published_at?: string | null;
-          settings?: Json;
-          status?: string;
-          theme?: Json;
-          title?: string;
-          updated_at?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'forms_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'forms_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'forms_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'forms_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'forms_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'forms_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'forms_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'forms_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -30959,7 +30868,6 @@ export type Database = {
         Returns: number;
       };
       can_create_workspace: { Args: { p_user_id: string }; Returns: boolean };
-      can_manage_form: { Args: { p_form_id: string }; Returns: boolean };
       can_manage_indicator: {
         Args: { p_indicator_id: string };
         Returns: boolean;
@@ -30970,10 +30878,6 @@ export type Database = {
       };
       can_publish_workspace_external_projects: {
         Args: { p_user_id?: string; p_ws_id: string };
-        Returns: boolean;
-      };
-      can_view_form_analytics: {
-        Args: { p_form_id: string };
         Returns: boolean;
       };
       can_view_request_comments: {
@@ -31298,19 +31202,6 @@ export type Database = {
           blocked_pending_group_ids: string[];
           use_attendance_based: boolean;
         }[];
-      };
-      form_id_from_question: {
-        Args: { p_question_id: string };
-        Returns: string;
-      };
-      form_id_from_response: {
-        Args: { p_response_id: string };
-        Returns: string;
-      };
-      form_id_from_section: { Args: { p_section_id: string }; Returns: string };
-      form_id_from_share_link: {
-        Args: { p_share_link_id: string };
-        Returns: string;
       };
       generate_cross_app_token:
         | {
@@ -31854,38 +31745,6 @@ export type Database = {
         }[];
       };
       get_finance_invoices_count: { Args: { ws_id: string }; Returns: number };
-      get_form_analytics_overview: {
-        Args: { p_form_id: string };
-        Returns: Json;
-      };
-      get_form_matched_response_ids: {
-        Args: { p_form_id: string; p_query?: string };
-        Returns: {
-          response_id: string;
-        }[];
-      };
-      get_form_response_page: {
-        Args: {
-          p_form_id: string;
-          p_page?: number;
-          p_page_size?: number;
-          p_query?: string;
-        };
-        Returns: {
-          created_at: string;
-          id: string;
-          respondent_email: string;
-          respondent_user_id: string;
-          session_id: string;
-          submitted_at: string;
-          total_count: number;
-        }[];
-      };
-      get_form_response_rollups: {
-        Args: { p_form_id: string; p_query?: string };
-        Returns: Json;
-      };
-      get_form_workspace_id: { Args: { p_form_id: string }; Returns: string };
       get_group_report_status_summary: {
         Args: { _ws_id: string };
         Returns: {

@@ -10,6 +10,7 @@ import {
 import { FORM_ACCESS_MODE_VALUES } from '@/features/forms/schema';
 import {
   fetchFormDefinition,
+  getPrivateFormsClient,
   getReadOnlyAnswersForResponder,
   getSessionMetadata,
 } from '@/features/forms/server';
@@ -20,6 +21,7 @@ import type {
 
 interface LoadedSharedFormRecord {
   adminClient: any;
+  formsClient: any;
   shareLink: { id: string; form_id: string; active: boolean } | null;
   form: {
     id: string;
@@ -37,7 +39,8 @@ async function loadSharedFormRecord(
   shareCode: string
 ): Promise<LoadedSharedFormRecord> {
   const adminClient = await createAdminClient();
-  const { data: shareLink } = await adminClient
+  const formsClient = getPrivateFormsClient(adminClient);
+  const { data: shareLink } = await formsClient
     .from('form_share_links')
     .select('id, form_id, active')
     .eq('code', shareCode)
@@ -46,6 +49,7 @@ async function loadSharedFormRecord(
   if (!shareLink?.active) {
     return {
       adminClient,
+      formsClient,
       shareLink: null,
       form: null,
       definition: null,
@@ -53,7 +57,7 @@ async function loadSharedFormRecord(
     };
   }
 
-  const { data: form } = await adminClient
+  const { data: form } = await formsClient
     .from('forms')
     .select('*')
     .eq('id', shareLink.form_id)
@@ -65,6 +69,7 @@ async function loadSharedFormRecord(
 
   return {
     adminClient,
+    formsClient,
     shareLink,
     form,
     definition,
@@ -198,8 +203,14 @@ export async function loadSharedFormForPage(
   try {
     const headersList = await headers();
     const headersObj = { headers: headersList };
-    const { adminClient, shareLink, form, definition, accessMode } =
-      await loadSharedFormRecord(shareCode);
+    const {
+      adminClient,
+      formsClient,
+      shareLink,
+      form,
+      definition,
+      accessMode,
+    } = await loadSharedFormRecord(shareCode);
     const resolved = resolveSharedFormBaseResult({
       shareLink,
       form,
@@ -213,7 +224,7 @@ export async function loadSharedFormForPage(
     const responder = await getResponderContext(headersObj, accessMode);
 
     if (definition.settings.oneResponsePerUser && responder.user?.id) {
-      const { data: existingResponse } = await adminClient
+      const { data: existingResponse } = await formsClient
         .from('form_responses')
         .select('id')
         .eq('form_id', form.id)
@@ -260,7 +271,7 @@ export async function loadSharedFormForPage(
 
     const metadata = getSessionMetadata(headersObj);
 
-    const { data: session, error } = await adminClient
+    const { data: session, error } = await formsClient
       .from('form_sessions')
       .insert({
         form_id: form.id,

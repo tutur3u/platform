@@ -5,6 +5,7 @@ import {
 } from '@/features/forms/route-utils';
 import {
   fetchFormDefinition,
+  getPrivateFormsClient,
   listFormResponses,
 } from '@/features/forms/server';
 
@@ -80,7 +81,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Form not found' }, { status: 404 });
     }
 
-    const { data: deletedResponses, error } = await context.adminClient
+    const formsClient = getPrivateFormsClient(context.adminClient);
+    const { data: deletedResponses, error } = await formsClient
       .from('form_responses')
       .delete()
       .eq('form_id', formId)

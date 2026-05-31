@@ -19,23 +19,31 @@ import {
 } from '@/features/forms/schema';
 import {
   fetchFormDefinition,
+  getPrivateFormsClient,
   serializeAnswerForStorage,
   validateSubmittedAnswers,
 } from '@/features/forms/server';
 
 async function loadSharedForm(shareCode: string) {
   const adminClient = await createAdminClient();
-  const { data: shareLink } = await adminClient
+  const formsClient = getPrivateFormsClient(adminClient);
+  const { data: shareLink } = await formsClient
     .from('form_share_links')
     .select('id, form_id, active')
     .eq('code', shareCode)
     .maybeSingle();
 
   if (!shareLink?.active) {
-    return { adminClient, shareLink: null, form: null, definition: null };
+    return {
+      adminClient,
+      formsClient,
+      shareLink: null,
+      form: null,
+      definition: null,
+    };
   }
 
-  const { data: form } = await adminClient
+  const { data: form } = await formsClient
     .from('forms')
     .select('*')
     .eq('id', shareLink.form_id)
@@ -45,7 +53,7 @@ async function loadSharedForm(shareCode: string) {
     ? await fetchFormDefinition(adminClient, form.id)
     : null;
 
-  return { adminClient, shareLink, form, definition };
+  return { adminClient, formsClient, shareLink, form, definition };
 }
 
 function isFormAcceptingResponses(form: {
@@ -175,7 +183,7 @@ export async function POST(
 ) {
   try {
     const { shareCode } = await params;
-    const { adminClient, shareLink, form, definition } =
+    const { adminClient, formsClient, shareLink, form, definition } =
       await loadSharedForm(shareCode);
 
     if (!shareLink || !form || !definition) {
@@ -239,7 +247,7 @@ export async function POST(
       );
     }
 
-    const { data: session } = await adminClient
+    const { data: session } = await formsClient
       .from('form_sessions')
       .select('id, viewed_at, submitted_at')
       .eq('id', parsed.data.sessionId)
@@ -258,7 +266,7 @@ export async function POST(
     }
 
     if (definition.settings.oneResponsePerUser && responder.user?.id) {
-      const { data: existingResponse } = await adminClient
+      const { data: existingResponse } = await formsClient
         .from('form_responses')
         .select('id')
         .eq('form_id', form.id)
@@ -273,7 +281,7 @@ export async function POST(
       }
     }
 
-    const { count } = await adminClient
+    const { count } = await formsClient
       .from('form_responses')
       .select('id', { count: 'exact', head: true })
       .eq('form_id', form.id);
@@ -291,7 +299,7 @@ export async function POST(
       Math.round((now.getTime() - new Date(session.viewed_at).getTime()) / 1000)
     );
 
-    const { data: response, error: responseError } = await adminClient
+    const { data: response, error: responseError } = await formsClient
       .from('form_responses')
       .insert({
         form_id: form.id,
@@ -330,7 +338,7 @@ export async function POST(
       });
 
     if (answerRows.length > 0) {
-      const { error: answersError } = await adminClient
+      const { error: answersError } = await formsClient
         .from('form_response_answers')
         .insert(answerRows);
 
@@ -342,7 +350,7 @@ export async function POST(
     const lastSectionId =
       definition.sections.at(-1)?.id ?? definition.sections[0]?.id ?? null;
 
-    await adminClient
+    await formsClient
       .from('form_sessions')
       .update({
         respondent_user_id: responder.user?.id ?? null,

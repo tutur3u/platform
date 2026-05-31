@@ -6,6 +6,7 @@ import {
 import { formStudioSchema } from '@/features/forms/schema';
 import {
   fetchFormDefinition,
+  getPrivateFormsClient,
   saveFormDefinition,
 } from '@/features/forms/server';
 
@@ -112,7 +113,8 @@ export async function DELETE(
     }
 
     const formId = parseFormIdParam(formIdParam, 'form ID');
-    const { error } = await context.adminClient
+    const formsClient = getPrivateFormsClient(context.adminClient);
+    const { error } = await formsClient
       .from('forms')
       .delete()
       .eq('id', formId)

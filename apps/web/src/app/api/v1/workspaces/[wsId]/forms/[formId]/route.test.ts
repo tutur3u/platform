@@ -27,6 +27,7 @@ vi.mock('@/features/forms/schema', () => ({
 
 vi.mock('@/features/forms/server', () => ({
   fetchFormDefinition: vi.fn(),
+  getPrivateFormsClient: vi.fn((client) => client),
   saveFormDefinition: saveFormDefinitionMock,
 }));
 

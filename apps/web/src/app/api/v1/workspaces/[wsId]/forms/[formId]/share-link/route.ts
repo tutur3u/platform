@@ -3,7 +3,10 @@ import {
   getWorkspaceRouteContext,
   parseFormIdParam,
 } from '@/features/forms/route-utils';
-import { generateFormShareCode } from '@/features/forms/server';
+import {
+  generateFormShareCode,
+  getPrivateFormsClient,
+} from '@/features/forms/server';
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +25,8 @@ export async function GET(
     }
 
     const formId = parseFormIdParam(formIdParam, 'form ID');
-    const existing = await context.adminClient
+    const formsClient = getPrivateFormsClient(context.adminClient);
+    const existing = await formsClient
       .from('form_share_links')
       .select('code, active')
       .eq('form_id', formId)
@@ -32,7 +36,7 @@ export async function GET(
       return NextResponse.json({ shareLink: existing.data });
     }
 
-    const { data, error } = await context.adminClient
+    const { data, error } = await formsClient
       .from('form_share_links')
       .insert({
         form_id: formId,

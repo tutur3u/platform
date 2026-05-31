@@ -25,6 +25,7 @@ vi.mock('@/features/forms/response-copy-email', () => ({
 
 vi.mock('@/features/forms/server', () => ({
   fetchFormDefinition: mockFetchFormDefinition,
+  getPrivateFormsClient: vi.fn((client) => client),
   getReadOnlyAnswersForResponder: mockGetReadOnlyAnswersForResponder,
   getSessionMetadata: mockGetSessionMetadata,
 }));

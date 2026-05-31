@@ -1,4 +1,4 @@
-import type { Tables } from '@tuturuuu/types';
+import type { Database, Tables } from '@tuturuuu/types';
 import type {
   FormLogicRuleInput,
   FormQuestionInput,
@@ -8,15 +8,18 @@ import type {
   FormThemeInput,
 } from './schema';
 
-export type FormRow = Tables<'forms'>;
-export type FormSectionRow = Tables<'form_sections'>;
-export type FormQuestionRow = Tables<'form_questions'>;
-export type FormQuestionOptionRow = Tables<'form_question_options'>;
-export type FormLogicRuleRow = Tables<'form_logic_rules'>;
-export type FormShareLinkRow = Tables<'form_share_links'>;
-export type FormSessionRow = Tables<'form_sessions'>;
-export type FormResponseRow = Tables<'form_responses'>;
-export type FormResponseAnswerRow = Tables<'form_response_answers'>;
+type PrivateTable<TableName extends keyof Database['private']['Tables']> =
+  Tables<{ schema: 'private' }, TableName>;
+
+export type FormRow = PrivateTable<'forms'>;
+export type FormSectionRow = PrivateTable<'form_sections'>;
+export type FormQuestionRow = PrivateTable<'form_questions'>;
+export type FormQuestionOptionRow = PrivateTable<'form_question_options'>;
+export type FormLogicRuleRow = PrivateTable<'form_logic_rules'>;
+export type FormShareLinkRow = PrivateTable<'form_share_links'>;
+export type FormSessionRow = PrivateTable<'form_sessions'>;
+export type FormResponseRow = PrivateTable<'form_responses'>;
+export type FormResponseAnswerRow = PrivateTable<'form_response_answers'>;
 
 export interface FormDefinitionQuestion
   extends Omit<FormQuestionInput, 'options' | 'settings'> {

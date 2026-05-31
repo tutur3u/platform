@@ -2880,7 +2880,7 @@ VALUES
     ('00000000-0000-0000-0000-000000000005', ARRAY['welcome','use_case','profile','celebration'], 'celebration', true, false, NOW(), 'small_team', 'team', ARRAY[]::text[], true);
 
 -- Populate forms demo data
-INSERT INTO public.forms (
+INSERT INTO private.forms (
     id,
     ws_id,
     creator_id,
@@ -2924,7 +2924,7 @@ VALUES
         NOW() - INTERVAL '1 day'
     );
 
-INSERT INTO public.form_sections (
+INSERT INTO private.form_sections (
     id,
     form_id,
     title,
@@ -2958,7 +2958,7 @@ VALUES
         NOW() - INTERVAL '5 days'
     );
 
-INSERT INTO public.form_questions (
+INSERT INTO private.form_questions (
     id,
     form_id,
     section_id,
@@ -3056,7 +3056,7 @@ VALUES
         NOW() - INTERVAL '5 days'
     );
 
-INSERT INTO public.form_question_options (
+INSERT INTO private.form_question_options (
     id,
     question_id,
     label,
@@ -3085,7 +3085,7 @@ VALUES
     ('50000000-0000-0000-0000-000000000319', '50000000-0000-0000-0000-000000000207', 'Manager', 'manager', 1),
     ('50000000-0000-0000-0000-000000000320', '50000000-0000-0000-0000-000000000207', 'Cross-functional contributor', 'cross_functional', 2);
 
-INSERT INTO public.form_share_links (
+INSERT INTO private.form_share_links (
     id,
     form_id,
     code,
@@ -3103,7 +3103,7 @@ VALUES
         NOW() - INTERVAL '10 days'
     );
 
-INSERT INTO public.form_sessions (
+INSERT INTO private.form_sessions (
     id,
     form_id,
     share_link_id,
@@ -3225,7 +3225,7 @@ VALUES
         '{}'::jsonb
     );
 
-INSERT INTO public.form_responses (
+INSERT INTO private.form_responses (
     id,
     form_id,
     share_link_id,
@@ -3275,7 +3275,7 @@ VALUES
         NOW() - INTERVAL '3 days' - INTERVAL '220 minutes'
     );
 
-INSERT INTO public.form_response_answers (
+INSERT INTO private.form_response_answers (
     id,
     response_id,
     question_id,

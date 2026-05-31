@@ -3,6 +3,7 @@ import {
   getWorkspaceRouteContext,
   parseFormIdParam,
 } from '@/features/forms/route-utils';
+import { getPrivateFormsClient } from '@/features/forms/server';
 
 export async function PATCH(
   request: NextRequest,
@@ -25,7 +26,8 @@ export async function PATCH(
     const archived = body.archived === true;
     const nextStatus = archived ? 'closed' : 'draft';
 
-    const { data: updated, error } = await context.adminClient
+    const formsClient = getPrivateFormsClient(context.adminClient);
+    const { data: updated, error } = await formsClient
       .from('forms')
       .update({
         status: nextStatus,

@@ -11,10 +11,6 @@ on commit drop;
 
 insert into proxy_only_public_tables(table_name)
 values
-  ('form_questions'),
-  ('form_response_answers'),
-  ('form_sections'),
-  ('forms'),
   ('nova_challenge_criteria'),
   ('nova_challenges'),
   ('nova_problem_test_cases'),

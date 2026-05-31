@@ -3,7 +3,11 @@ import {
   getWorkspaceRouteContext,
   parseFormIdParam,
 } from '@/features/forms/route-utils';
-import { fetchFormDefinition, getFormAnalytics } from '@/features/forms/server';
+import {
+  fetchFormDefinition,
+  getFormAnalytics,
+  getPrivateFormsClient,
+} from '@/features/forms/server';
 
 export async function GET(
   request: NextRequest,
@@ -67,7 +71,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Form not found' }, { status: 404 });
     }
 
-    const { data: deletedSessions, error } = await context.adminClient
+    const formsClient = getPrivateFormsClient(context.adminClient);
+    const { data: deletedSessions, error } = await formsClient
       .from('form_sessions')
       .delete()
       .eq('form_id', formId)

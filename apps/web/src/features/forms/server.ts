@@ -23,6 +23,7 @@ import type {
   FormAnswerValue,
   FormDefinition,
   FormListItem,
+  FormLogicRuleRow,
   FormQuestionOptionRow,
   FormQuestionRow,
   FormReadOnlyAnswers,
@@ -33,11 +34,26 @@ import type {
   FormResponsesQuestionAnalytics,
   FormRow,
   FormSectionRow,
+  FormSessionRow,
   FormShareLinkRow,
 } from './types';
 import { validateSubmittedAnswers } from './validation';
 
 const DEFAULT_FORM_MEDIA = createDefaultFormStudioInput().theme.coverImage;
+
+type FormsSchemaClient = SupabaseClient<Database> & {
+  from: (table: string) => any;
+  rpc: (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+};
+
+export function getPrivateFormsClient(
+  supabase: SupabaseClient<Database>
+): FormsSchemaClient {
+  return supabase.schema('private') as unknown as FormsSchemaClient;
+}
 
 export function generateFormShareCode(): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
@@ -159,7 +175,7 @@ export function buildFormDefinition({
   sections: FormSectionRow[];
   questions: FormQuestionRow[];
   options: FormQuestionOptionRow[];
-  logicRules: Database['public']['Tables']['form_logic_rules']['Row'][];
+  logicRules: FormLogicRuleRow[];
   shareLink?: FormShareLinkRow | null;
 }): FormDefinition {
   const parsedTheme = parseFormTheme(form.theme);
@@ -330,6 +346,7 @@ async function fetchFormQuestionOptions(
   supabase: SupabaseClient<Database>,
   questionIds: string[]
 ): Promise<FormQuestionOptionRow[]> {
+  const formsClient = getPrivateFormsClient(supabase);
   const options: FormQuestionOptionRow[] = [];
 
   for (let index = 0; index < questionIds.length; index += 500) {
@@ -339,7 +356,7 @@ async function fetchFormQuestionOptions(
       continue;
     }
 
-    const { data } = await supabase
+    const { data } = await formsClient
       .from('form_question_options')
       .select('id, question_id, label, value, image, position')
       .in('question_id', chunk);
@@ -354,6 +371,7 @@ async function fetchResponseAnswersByIds(
   supabase: SupabaseClient<Database>,
   responseIds: string[]
 ): Promise<FormResponseAnswerRow[]> {
+  const formsClient = getPrivateFormsClient(supabase);
   const answers: FormResponseAnswerRow[] = [];
 
   for (let index = 0; index < responseIds.length; index += 500) {
@@ -363,7 +381,7 @@ async function fetchResponseAnswersByIds(
       continue;
     }
 
-    const { data } = await supabase
+    const { data } = await formsClient
       .from('form_response_answers')
       .select('*')
       .in('response_id', chunk);
@@ -378,7 +396,8 @@ export async function fetchFormDefinition(
   supabase: SupabaseClient<Database>,
   formId: string
 ): Promise<FormDefinition | null> {
-  const { data: form } = await supabase
+  const formsClient = getPrivateFormsClient(supabase);
+  const { data: form } = await formsClient
     .from('forms')
     .select('*')
     .eq('id', formId)
@@ -394,26 +413,31 @@ export async function fetchFormDefinition(
     { data: logicRules },
     { data: shareLink },
   ] = await Promise.all([
-    supabase.from('form_sections').select('*').eq('form_id', formId),
-    supabase.from('form_questions').select('*').eq('form_id', formId),
-    supabase.from('form_logic_rules').select('*').eq('form_id', formId),
-    supabase
+    formsClient.from('form_sections').select('*').eq('form_id', formId),
+    formsClient.from('form_questions').select('*').eq('form_id', formId),
+    formsClient.from('form_logic_rules').select('*').eq('form_id', formId),
+    formsClient
       .from('form_share_links')
       .select('*')
       .eq('form_id', formId)
       .maybeSingle(),
   ]);
 
-  const questionIds = (questions ?? []).map((question) => question.id);
+  const formRow = form as FormRow;
+  const sectionRows = (sections ?? []) as FormSectionRow[];
+  const questionRows = (questions ?? []) as FormQuestionRow[];
+  const logicRuleRows = (logicRules ?? []) as FormLogicRuleRow[];
+  const shareLinkRow = shareLink as FormShareLinkRow | null;
+  const questionIds = questionRows.map((question) => question.id);
   const filteredOptions = await fetchFormQuestionOptions(supabase, questionIds);
 
   const definition = buildFormDefinition({
-    form,
-    sections: sections ?? [],
-    questions: questions ?? [],
+    form: formRow,
+    sections: sectionRows,
+    questions: questionRows,
     options: filteredOptions,
-    logicRules: logicRules ?? [],
-    shareLink,
+    logicRules: logicRuleRows,
+    shareLink: shareLinkRow,
   });
 
   return resolveFormDefinitionMedia(supabase, definition);
@@ -443,8 +467,9 @@ export async function saveFormDefinition({
   formId?: string;
   input: FormStudioInput;
 }): Promise<string> {
+  const formsClient = getPrivateFormsClient(supabase);
   const existing = formId
-    ? await supabase.from('forms').select('*').eq('id', formId).maybeSingle()
+    ? await formsClient.from('forms').select('*').eq('id', formId).maybeSingle()
     : { data: null };
   const resolvedFormId = formId ?? createClientUuid();
   const timestamps = buildFormTimestamps(existing.data, input);
@@ -484,7 +509,7 @@ export async function saveFormDefinition({
     closed_at: timestamps.closedAt,
   };
 
-  const { error: formError } = await supabase
+  const { error: formError } = await formsClient
     .from('forms')
     .upsert(upsertPayload);
 
@@ -492,7 +517,7 @@ export async function saveFormDefinition({
     throw new Error(formError.message);
   }
 
-  await supabase
+  await formsClient
     .from('form_logic_rules')
     .delete()
     .eq('form_id', resolvedFormId);
@@ -543,10 +568,16 @@ export async function saveFormDefinition({
     })
   );
 
-  await supabase.from('form_questions').delete().eq('form_id', resolvedFormId);
-  await supabase.from('form_sections').delete().eq('form_id', resolvedFormId);
+  await formsClient
+    .from('form_questions')
+    .delete()
+    .eq('form_id', resolvedFormId);
+  await formsClient
+    .from('form_sections')
+    .delete()
+    .eq('form_id', resolvedFormId);
 
-  const { error: sectionError } = await supabase
+  const { error: sectionError } = await formsClient
     .from('form_sections')
     .insert(sections);
   if (sectionError) {
@@ -554,7 +585,7 @@ export async function saveFormDefinition({
   }
 
   if (questions.length > 0) {
-    const { error: questionError } = await supabase
+    const { error: questionError } = await formsClient
       .from('form_questions')
       .insert(questions);
     if (questionError) {
@@ -583,7 +614,7 @@ export async function saveFormDefinition({
   );
 
   if (options.length > 0) {
-    const { error: optionError } = await supabase
+    const { error: optionError } = await formsClient
       .from('form_question_options')
       .insert(options);
     if (optionError) {
@@ -631,7 +662,7 @@ export async function saveFormDefinition({
   });
 
   if (logicRules.length > 0) {
-    const { error: logicError } = await supabase
+    const { error: logicError } = await formsClient
       .from('form_logic_rules')
       .insert(logicRules);
     if (logicError) {
@@ -648,7 +679,8 @@ export async function listForms(
   workspaceSlug: string,
   query?: string
 ): Promise<FormListItem[]> {
-  let formsQuery = supabase
+  const formsClient = getPrivateFormsClient(supabase);
+  let formsQuery = formsClient
     .from('forms')
     .select('*')
     .eq('ws_id', wsId)
@@ -659,25 +691,32 @@ export async function listForms(
   }
 
   const { data: forms } = await formsQuery;
-  const formIds = (forms ?? []).map((form) => form.id);
+  const formRows = (forms ?? []) as FormRow[];
+  const formIds = formRows.map((form) => form.id);
 
   if (formIds.length === 0) {
     return [];
   }
 
   const [{ data: sessions }, { data: responses }] = await Promise.all([
-    supabase
+    formsClient
       .from('form_sessions')
       .select('form_id, started_at, submitted_at')
       .in('form_id', formIds),
-    supabase.from('form_responses').select('form_id').in('form_id', formIds),
+    formsClient.from('form_responses').select('form_id').in('form_id', formIds),
   ]);
+  const sessionRows = (sessions ?? []) as Array<
+    Pick<FormSessionRow, 'form_id' | 'started_at' | 'submitted_at'>
+  >;
+  const responseRows = (responses ?? []) as Array<
+    Pick<FormResponseRow, 'form_id'>
+  >;
 
-  return (forms ?? []).map((form) => {
-    const formSessions = (sessions ?? []).filter(
-      (session) => session.form_id === form.id
-    );
-    const formResponses = (responses ?? []).filter(
+  return formRows.map((form) => {
+    const formSessions = sessionRows.filter((session) => {
+      return session.form_id === form.id;
+    });
+    const formResponses = responseRows.filter(
       (response) => response.form_id === form.id
     );
     const views = formSessions.length;
@@ -980,7 +1019,7 @@ async function runUntypedRpc<T>(
   fn: string,
   args: Record<string, unknown>
 ): Promise<T | null> {
-  const rpcClient = supabase as unknown as {
+  const rpcClient = getPrivateFormsClient(supabase) as unknown as {
     rpc: (
       name: string,
       params: Record<string, unknown>
@@ -1004,6 +1043,7 @@ async function fetchResponseMetadataByIds(
   const responses: Array<
     Pick<FormResponseRow, 'id' | 'respondent_email' | 'respondent_user_id'>
   > = [];
+  const formsClient = getPrivateFormsClient(supabase);
 
   for (let index = 0; index < responseIds.length; index += 500) {
     const chunk = responseIds.slice(index, index + 500);
@@ -1012,7 +1052,7 @@ async function fetchResponseMetadataByIds(
       continue;
     }
 
-    const { data } = await supabase
+    const { data } = await formsClient
       .from('form_responses')
       .select('id, respondent_email, respondent_user_id')
       .in('id', chunk);
@@ -1122,7 +1162,8 @@ export async function getReadOnlyAnswersForResponder(
     respondentUserId: string;
   }
 ): Promise<FormReadOnlyAnswers> {
-  const { data: response } = await supabase
+  const formsClient = getPrivateFormsClient(supabase);
+  const { data: response } = await formsClient
     .from('form_responses')
     .select('id, session_id, submitted_at')
     .eq('form_id', options.formId)
@@ -1141,14 +1182,16 @@ export async function getReadOnlyAnswersForResponder(
     };
   }
 
-  const { data: answerRows } = await supabase
+  const { data: answerRows } = await formsClient
     .from('form_response_answers')
     .select('*')
     .eq('response_id', response.id);
 
   const resolveStoredQuestion = createStoredAnswerQuestionResolver(form);
 
-  return (answerRows ?? []).reduce<FormReadOnlyAnswers>(
+  const responseAnswerRows = (answerRows ?? []) as FormResponseAnswerRow[];
+
+  return responseAnswerRows.reduce<FormReadOnlyAnswers>(
     (accumulator, answer) => {
       const question = resolveStoredQuestion(answer);
       const rawValue = extractStoredAnswerValue(answer);
