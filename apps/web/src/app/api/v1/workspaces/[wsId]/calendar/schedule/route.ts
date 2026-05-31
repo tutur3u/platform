@@ -44,6 +44,51 @@ interface RouteParams {
   wsId: string;
 }
 
+type SchedulingMetadataRow = {
+  bumped_habits: number | null;
+  events_created: number | null;
+  habits_scheduled: number | null;
+  last_message: string | null;
+  last_scheduled_at: string | null;
+  last_status: string | null;
+  tasks_scheduled: number | null;
+  window_days: number | null;
+};
+
+type UpsertSchedulingMetadataArgs = {
+  p_bumped_habits: number;
+  p_events_created: number;
+  p_habits_scheduled: number;
+  p_message: string;
+  p_status: string;
+  p_tasks_scheduled: number;
+  p_window_days: number;
+  p_ws_id: string;
+};
+
+type PrivateSchedulingClient = {
+  from(table: 'workspace_scheduling_metadata'): {
+    select(columns: '*'): {
+      eq(
+        column: 'ws_id',
+        value: string
+      ): {
+        single(): Promise<{ data: SchedulingMetadataRow | null }>;
+      };
+    };
+  };
+  rpc(
+    fn: 'upsert_scheduling_metadata',
+    args: UpsertSchedulingMetadataArgs
+  ): Promise<{ data: SchedulingMetadataRow | null }>;
+};
+
+function getPrivateSchedulingClient(client: {
+  schema: (schema: 'private') => unknown;
+}) {
+  return client.schema('private') as PrivateSchedulingClient;
+}
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<RouteParams> }
@@ -428,6 +473,7 @@ export async function GET(
 
     let supabase = await createClient();
     const sbAdmin = await createAdminClient();
+    const privateAdmin = getPrivateSchedulingClient(sbAdmin);
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -465,7 +511,7 @@ export async function GET(
     const isPersonalWorkspace = !!wsInfo?.personal;
 
     // Fetch scheduling metadata
-    const { data: metadata } = await sbAdmin
+    const { data: metadata } = await privateAdmin
       .from('workspace_scheduling_metadata')
       .select('*')
       .eq('ws_id', wsId)
@@ -990,7 +1036,9 @@ async function createEventsFromPreview(
   const eventsTotal = resultEvents.length;
 
   try {
-    await supabase.rpc('upsert_scheduling_metadata', {
+    const privateAdmin = getPrivateSchedulingClient(supabase);
+
+    await privateAdmin.rpc('upsert_scheduling_metadata', {
       p_ws_id: wsId,
       p_status:
         warnings.length > 0

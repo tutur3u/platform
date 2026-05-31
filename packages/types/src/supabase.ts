@@ -7,13 +7,118 @@ export type Json =
   | Json[];
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.4';
-  };
   private: {
     Tables: {
+      ai_agent_external_messages: {
+        Row: {
+          author_avatar_url: string | null;
+          author_display_name: string | null;
+          author_external_id: string | null;
+          content: string;
+          created_at: string;
+          direction: string;
+          external_created_at: string;
+          external_message_id: string;
+          id: string;
+          kind: string;
+          metadata: Json;
+          platform_user_id: string | null;
+          raw: Json;
+          thread_id: string;
+          updated_at: string;
+        };
+        Insert: {
+          author_avatar_url?: string | null;
+          author_display_name?: string | null;
+          author_external_id?: string | null;
+          content?: string;
+          created_at?: string;
+          direction: string;
+          external_created_at?: string;
+          external_message_id: string;
+          id?: string;
+          kind?: string;
+          metadata?: Json;
+          platform_user_id?: string | null;
+          raw?: Json;
+          thread_id: string;
+          updated_at?: string;
+        };
+        Update: {
+          author_avatar_url?: string | null;
+          author_display_name?: string | null;
+          author_external_id?: string | null;
+          content?: string;
+          created_at?: string;
+          direction?: string;
+          external_created_at?: string;
+          external_message_id?: string;
+          id?: string;
+          kind?: string;
+          metadata?: Json;
+          platform_user_id?: string | null;
+          raw?: Json;
+          thread_id?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'ai_agent_external_messages_thread_id_fkey';
+            columns: ['thread_id'];
+            isOneToOne: false;
+            referencedRelation: 'ai_agent_external_threads';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      ai_agent_external_threads: {
+        Row: {
+          adapter: string;
+          agent_id: string;
+          channel_id: string;
+          created_at: string;
+          external_channel_id: string | null;
+          external_thread_id: string;
+          id: string;
+          last_event_at: string | null;
+          last_synced_at: string | null;
+          metadata: Json;
+          title: string | null;
+          updated_at: string;
+          ws_id: string;
+        };
+        Insert: {
+          adapter: string;
+          agent_id: string;
+          channel_id: string;
+          created_at?: string;
+          external_channel_id?: string | null;
+          external_thread_id: string;
+          id?: string;
+          last_event_at?: string | null;
+          last_synced_at?: string | null;
+          metadata?: Json;
+          title?: string | null;
+          updated_at?: string;
+          ws_id: string;
+        };
+        Update: {
+          adapter?: string;
+          agent_id?: string;
+          channel_id?: string;
+          created_at?: string;
+          external_channel_id?: string | null;
+          external_thread_id?: string;
+          id?: string;
+          last_event_at?: string | null;
+          last_synced_at?: string | null;
+          metadata?: Json;
+          title?: string | null;
+          updated_at?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       ai_credit_reservations: {
         Row: {
           amount: number;
@@ -61,6 +166,180 @@ export type Database = {
           status?: string;
           updated_at?: string;
           user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      ai_embedding_credit_reservations: {
+        Row: {
+          amount: number;
+          balance_id: string;
+          committed_at: string | null;
+          cost_usd: number;
+          created_at: string;
+          expires_at: string;
+          feature: string;
+          id: string;
+          included_amount: number;
+          input_tokens: number;
+          metadata: Json;
+          model_id: string;
+          payg_amount: number;
+          payg_purchases: Json;
+          released_at: string | null;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          amount: number;
+          balance_id: string;
+          committed_at?: string | null;
+          cost_usd?: number;
+          created_at?: string;
+          expires_at?: string;
+          feature?: string;
+          id?: string;
+          included_amount?: number;
+          input_tokens?: number;
+          metadata?: Json;
+          model_id: string;
+          payg_amount?: number;
+          payg_purchases?: Json;
+          released_at?: string | null;
+          status: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          amount?: number;
+          balance_id?: string;
+          committed_at?: string | null;
+          cost_usd?: number;
+          created_at?: string;
+          expires_at?: string;
+          feature?: string;
+          id?: string;
+          included_amount?: number;
+          input_tokens?: number;
+          metadata?: Json;
+          model_id?: string;
+          payg_amount?: number;
+          payg_purchases?: Json;
+          released_at?: string | null;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      ai_memory_audit: {
+        Row: {
+          action: string;
+          actor_user_id: string | null;
+          created_at: string;
+          id: string;
+          memory_id: string | null;
+          metadata: Json;
+          product: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          action: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          memory_id?: string | null;
+          metadata?: Json;
+          product?: string | null;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          action?: string;
+          actor_user_id?: string | null;
+          created_at?: string;
+          id?: string;
+          memory_id?: string | null;
+          metadata?: Json;
+          product?: string | null;
+          user_id?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      ai_memory_backfill_runs: {
+        Row: {
+          actor_user_id: string | null;
+          created_at: string;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          imported_count: number;
+          skipped_count: number;
+          source: string;
+          started_at: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          imported_count?: number;
+          skipped_count?: number;
+          source?: string;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          actor_user_id?: string | null;
+          created_at?: string;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          imported_count?: number;
+          skipped_count?: number;
+          source?: string;
+          started_at?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      ai_memory_settings: {
+        Row: {
+          created_at: string;
+          enabled: boolean;
+          id: string;
+          product_settings: Json;
+          updated_at: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          product_settings?: Json;
+          updated_at?: string;
+          user_id: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          enabled?: boolean;
+          id?: string;
+          product_settings?: Json;
+          updated_at?: string;
+          user_id?: string;
           ws_id?: string;
         };
         Relationships: [];
@@ -3277,6 +3556,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_scheduling_metadata: {
+        Row: {
+          bumped_habits: number | null;
+          created_at: string | null;
+          events_created: number | null;
+          habits_scheduled: number | null;
+          id: string;
+          last_message: string | null;
+          last_scheduled_at: string | null;
+          last_status: string | null;
+          tasks_scheduled: number | null;
+          updated_at: string | null;
+          window_days: number | null;
+          ws_id: string;
+        };
+        Insert: {
+          bumped_habits?: number | null;
+          created_at?: string | null;
+          events_created?: number | null;
+          habits_scheduled?: number | null;
+          id?: string;
+          last_message?: string | null;
+          last_scheduled_at?: string | null;
+          last_status?: string | null;
+          tasks_scheduled?: number | null;
+          updated_at?: string | null;
+          window_days?: number | null;
+          ws_id: string;
+        };
+        Update: {
+          bumped_habits?: number | null;
+          created_at?: string | null;
+          events_created?: number | null;
+          habits_scheduled?: number | null;
+          id?: string;
+          last_message?: string | null;
+          last_scheduled_at?: string | null;
+          last_status?: string | null;
+          tasks_scheduled?: number | null;
+          updated_at?: string | null;
+          window_days?: number | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_subscription_errors: {
         Row: {
           created_at: string;
@@ -3439,6 +3763,88 @@ export type Database = {
           isOneToOne: false;
           isSetofReturn: true;
         };
+      };
+      ai_agent_external_conversation_id: {
+        Args: { p_thread_id: string };
+        Returns: string;
+      };
+      ai_agent_external_get_thread: {
+        Args: { p_thread_id: string };
+        Returns: Json;
+      };
+      ai_agent_external_list_conversations: {
+        Args: { p_actor_user_id: string; p_ws_id: string };
+        Returns: Json;
+      };
+      ai_agent_external_list_messages: {
+        Args: {
+          p_actor_user_id: string;
+          p_before?: string;
+          p_conversation_id: string;
+          p_limit?: number;
+          p_ws_id: string;
+        };
+        Returns: Json;
+      };
+      ai_agent_external_list_thread_messages: {
+        Args: { p_limit?: number; p_thread_id: string };
+        Returns: Json;
+      };
+      ai_agent_external_list_threads: {
+        Args: { p_agent_id?: string; p_channel_id?: string; p_ws_id?: string };
+        Returns: Json;
+      };
+      ai_agent_external_mark_thread_synced: {
+        Args: { p_thread_id: string };
+        Returns: Json;
+      };
+      ai_agent_external_message_json: {
+        Args: {
+          p_message: Database['private']['Tables']['ai_agent_external_messages']['Row'];
+        };
+        Returns: Json;
+      };
+      ai_agent_external_thread_conversation_json: {
+        Args: {
+          p_thread: Database['private']['Tables']['ai_agent_external_threads']['Row'];
+        };
+        Returns: Json;
+      };
+      ai_agent_external_thread_json: {
+        Args: {
+          p_thread: Database['private']['Tables']['ai_agent_external_threads']['Row'];
+        };
+        Returns: Json;
+      };
+      ai_agent_external_upsert_message: {
+        Args: {
+          p_author_avatar_url?: string;
+          p_author_display_name?: string;
+          p_author_external_id?: string;
+          p_content: string;
+          p_direction: string;
+          p_external_created_at?: string;
+          p_external_message_id: string;
+          p_kind: string;
+          p_metadata?: Json;
+          p_platform_user_id?: string;
+          p_raw?: Json;
+          p_thread_id: string;
+        };
+        Returns: Json;
+      };
+      ai_agent_external_upsert_thread: {
+        Args: {
+          p_adapter: string;
+          p_agent_id: string;
+          p_channel_id: string;
+          p_external_channel_id?: string;
+          p_external_thread_id: string;
+          p_metadata?: Json;
+          p_title?: string;
+          p_ws_id: string;
+        };
+        Returns: Json;
       };
       build_rate_limit_dblink_connstr: { Args: never; Returns: string };
       calculate_invoice_values: {
@@ -3755,6 +4161,23 @@ export type Database = {
         };
         Returns: number;
       };
+      create_ai_memory_backfill_run: {
+        Args: { p_actor_user_id: string };
+        Returns: string;
+      };
+      create_chat_message_push_notification: {
+        Args: {
+          p_actor_user_id: string;
+          p_conversation_id: string;
+          p_data?: Json;
+          p_description?: string;
+          p_message_id: string;
+          p_title: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       detect_wallet_interest_transactions: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
         Returns: Json;
@@ -3766,6 +4189,50 @@ export type Database = {
       finance_credit_cycle_date: {
         Args: { p_anchor_year: number; p_day: number; p_month_offset: number };
         Returns: string;
+      };
+      get_ai_memory_settings: {
+        Args: { p_product?: string; p_user_id: string; p_ws_id: string };
+        Returns: {
+          enabled: boolean;
+          product_enabled: boolean;
+          products: Json;
+        }[];
+      };
+      get_balance_trend: {
+        Args: {
+          _actor_id: string;
+          _end_date?: string;
+          _max_points?: number;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          balance: number;
+          date: string;
+        }[];
+      };
+      get_category_breakdown: {
+        Args: {
+          _actor_id: string;
+          _anchor_to_latest?: boolean;
+          _end_date?: string;
+          _interval?: string;
+          _start_date?: string;
+          _timezone?: string;
+          _transaction_type?: string;
+          _wallet_ids?: string[];
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: {
+          category_color: string;
+          category_icon: string;
+          category_id: string;
+          category_name: string;
+          period: string;
+          total: number;
+        }[];
       };
       get_credit_wallet_summary: {
         Args: { _actor_id: string; _wallet_id: string; _ws_id: string };
@@ -3822,6 +4289,17 @@ export type Database = {
           transaction_count: number;
           wallet_count: number;
         }[];
+      };
+      get_income_expense_chart_summary: {
+        Args: {
+          _actor_id: string;
+          _end_date?: string;
+          _interval?: string;
+          _start_date?: string;
+          _ws_id: string;
+          include_confidential?: boolean;
+        };
+        Returns: Json;
       };
       get_inventory_batches: {
         Args: {
@@ -4124,6 +4602,18 @@ export type Database = {
         Args: { p_retry_after: number };
         Returns: undefined;
       };
+      record_ai_memory_audit: {
+        Args: {
+          p_action: string;
+          p_actor_user_id: string;
+          p_memory_id?: string;
+          p_metadata?: Json;
+          p_product?: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: string;
+      };
       record_rate_limit_attempt: {
         Args: {
           p_db_role: string;
@@ -4145,6 +4635,52 @@ export type Database = {
           allowed: boolean;
           retry_after: number;
         }[];
+      };
+      upsert_ai_memory_settings: {
+        Args: {
+          p_actor_user_id: string;
+          p_enabled: boolean;
+          p_product_settings?: Json;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          enabled: boolean;
+          product_enabled: boolean;
+          products: Json;
+        }[];
+      };
+      upsert_scheduling_metadata: {
+        Args: {
+          p_bumped_habits: number;
+          p_events_created: number;
+          p_habits_scheduled: number;
+          p_message: string;
+          p_status: string;
+          p_tasks_scheduled: number;
+          p_window_days?: number;
+          p_ws_id: string;
+        };
+        Returns: {
+          bumped_habits: number | null;
+          created_at: string | null;
+          events_created: number | null;
+          habits_scheduled: number | null;
+          id: string;
+          last_message: string | null;
+          last_scheduled_at: string | null;
+          last_status: string | null;
+          tasks_scheduled: number | null;
+          updated_at: string | null;
+          window_days: number | null;
+          ws_id: string;
+        };
+        SetofOptions: {
+          from: '*';
+          to: 'workspace_scheduling_metadata';
+          isOneToOne: true;
+          isSetofReturn: false;
+        };
       };
       user_group_activity_action: {
         Args: {
@@ -16755,7 +17291,7 @@ export type Database = {
           description: string | null;
           description_yjs_state: number[] | null;
           display_number: number | null;
-          embedding: string | null;
+          embedding: unknown;
           end_date: string | null;
           estimation_points: number | null;
           fts: unknown;
@@ -16777,7 +17313,7 @@ export type Database = {
           description?: string | null;
           description_yjs_state?: number[] | null;
           display_number?: number | null;
-          embedding?: string | null;
+          embedding?: unknown;
           end_date?: string | null;
           estimation_points?: number | null;
           fts?: unknown;
@@ -16799,7 +17335,7 @@ export type Database = {
           description?: string | null;
           description_yjs_state?: number[] | null;
           display_number?: number | null;
-          embedding?: string | null;
+          embedding?: unknown;
           end_date?: string | null;
           estimation_points?: number | null;
           fts?: unknown;
@@ -27431,80 +27967,6 @@ export type Database = {
           },
         ];
       };
-      workspace_scheduling_metadata: {
-        Row: {
-          bumped_habits: number | null;
-          created_at: string | null;
-          events_created: number | null;
-          habits_scheduled: number | null;
-          id: string;
-          last_message: string | null;
-          last_scheduled_at: string | null;
-          last_status: string | null;
-          tasks_scheduled: number | null;
-          updated_at: string | null;
-          window_days: number | null;
-          ws_id: string;
-        };
-        Insert: {
-          bumped_habits?: number | null;
-          created_at?: string | null;
-          events_created?: number | null;
-          habits_scheduled?: number | null;
-          id?: string;
-          last_message?: string | null;
-          last_scheduled_at?: string | null;
-          last_status?: string | null;
-          tasks_scheduled?: number | null;
-          updated_at?: string | null;
-          window_days?: number | null;
-          ws_id: string;
-        };
-        Update: {
-          bumped_habits?: number | null;
-          created_at?: string | null;
-          events_created?: number | null;
-          habits_scheduled?: number | null;
-          id?: string;
-          last_message?: string | null;
-          last_scheduled_at?: string | null;
-          last_status?: string | null;
-          tasks_scheduled?: number | null;
-          updated_at?: string | null;
-          window_days?: number | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: true;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: true;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: true;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_scheduling_metadata_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: true;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       workspace_secrets: {
         Row: {
           created_at: string;
@@ -29450,7 +29912,36 @@ export type Database = {
           ts?: string | null;
           ws_id?: never;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_challenge_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'nova_user_leaderboard';
+            referencedColumns: ['user_id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'shortened_links_creator_stats';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'record_version_auth_uid_fkey';
+            columns: ['auth_uid'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       calendar_event_participants: {
         Row: {
@@ -31269,6 +31760,10 @@ export type Database = {
         Args: { p_balance_id: string };
         Returns: undefined;
       };
+      _release_expired_embedding_credit_reservations: {
+        Args: { p_balance_id: string };
+        Returns: undefined;
+      };
       _resolve_table_associated_ws_id: {
         Args: { p_new_record: Json; p_target_table: string };
         Returns: {
@@ -31671,6 +32166,15 @@ export type Database = {
       cleanup_qr_login_challenges: { Args: never; Returns: undefined };
       cleanup_role_inconsistencies: { Args: never; Returns: undefined };
       commit_fixed_ai_credit_reservation: {
+        Args: { p_metadata?: Json; p_reservation_id: string };
+        Returns: {
+          credits_deducted: number;
+          error_code: string;
+          remaining_credits: number;
+          success: boolean;
+        }[];
+      };
+      commit_metered_embedding_credits: {
         Args: { p_metadata?: Json; p_reservation_id: string };
         Returns: {
           credits_deducted: number;
@@ -34651,7 +35155,7 @@ export type Database = {
           filter_ws_id?: string;
           match_count?: number;
           match_threshold?: number;
-          query_embedding: string;
+          query_embedding: unknown;
           query_text: string;
         };
         Returns: {
@@ -34954,6 +35458,14 @@ export type Database = {
         Args: { p_checkout_id: string; p_now?: string };
         Returns: undefined;
       };
+      release_metered_embedding_credits: {
+        Args: { p_metadata?: Json; p_reservation_id: string };
+        Returns: {
+          error_code: string;
+          remaining_credits: number;
+          success: boolean;
+        }[];
+      };
       remove_task_label_with_actor: {
         Args: {
           p_actor_user_id?: string;
@@ -34994,6 +35506,25 @@ export type Database = {
           p_ws_id: string;
         };
         Returns: {
+          error_code: string;
+          remaining_credits: number;
+          reservation_id: string;
+          success: boolean;
+        }[];
+      };
+      reserve_metered_embedding_credits: {
+        Args: {
+          p_expires_in_seconds?: number;
+          p_feature?: string;
+          p_input_tokens: number;
+          p_metadata?: Json;
+          p_model_id: string;
+          p_user_id: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          cost_usd: number;
+          credits_reserved: number;
           error_code: string;
           remaining_credits: number;
           reservation_id: string;
@@ -35294,7 +35825,7 @@ export type Database = {
           description: string | null;
           description_yjs_state: number[] | null;
           display_number: number | null;
-          embedding: string | null;
+          embedding: unknown;
           end_date: string | null;
           estimation_points: number | null;
           fts: unknown;
@@ -35335,7 +35866,7 @@ export type Database = {
           description: string | null;
           description_yjs_state: number[] | null;
           display_number: number | null;
-          embedding: string | null;
+          embedding: unknown;
           end_date: string | null;
           estimation_points: number | null;
           fts: unknown;
@@ -35376,7 +35907,7 @@ export type Database = {
           description: string | null;
           description_yjs_state: number[] | null;
           display_number: number | null;
-          embedding: string | null;
+          embedding: unknown;
           end_date: string | null;
           estimation_points: number | null;
           fts: unknown;
@@ -35529,38 +36060,6 @@ export type Database = {
       upsert_realtime_log_aggregations: {
         Args: { p_logs: Json };
         Returns: undefined;
-      };
-      upsert_scheduling_metadata: {
-        Args: {
-          p_bumped_habits: number;
-          p_events_created: number;
-          p_habits_scheduled: number;
-          p_message: string;
-          p_status: string;
-          p_tasks_scheduled: number;
-          p_window_days?: number;
-          p_ws_id: string;
-        };
-        Returns: {
-          bumped_habits: number | null;
-          created_at: string | null;
-          events_created: number | null;
-          habits_scheduled: number | null;
-          id: string;
-          last_message: string | null;
-          last_scheduled_at: string | null;
-          last_status: string | null;
-          tasks_scheduled: number | null;
-          updated_at: string | null;
-          window_days: number | null;
-          ws_id: string;
-        };
-        SetofOptions: {
-          from: '*';
-          to: 'workspace_scheduling_metadata';
-          isOneToOne: true;
-          isSetofReturn: false;
-        };
       };
       upsert_workspace_subscription_error: {
         Args: {
@@ -37809,6 +38308,101 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [];
+      };
+      iceberg_namespaces: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_namespaces_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      iceberg_tables: {
+        Row: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at: string;
+          id: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id: string | null;
+          shard_id: string | null;
+          shard_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          bucket_name: string;
+          catalog_id: string;
+          created_at?: string;
+          id?: string;
+          location: string;
+          name: string;
+          namespace_id: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bucket_name?: string;
+          catalog_id?: string;
+          created_at?: string;
+          id?: string;
+          location?: string;
+          name?: string;
+          namespace_id?: string;
+          remote_table_id?: string | null;
+          shard_id?: string | null;
+          shard_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'iceberg_tables_catalog_id_fkey';
+            columns: ['catalog_id'];
+            isOneToOne: false;
+            referencedRelation: 'buckets_analytics';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'iceberg_tables_namespace_id_fkey';
+            columns: ['namespace_id'];
+            isOneToOne: false;
+            referencedRelation: 'iceberg_namespaces';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       migrations: {
         Row: {
