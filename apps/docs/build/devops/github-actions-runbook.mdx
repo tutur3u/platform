@@ -1,7 +1,7 @@
 ---
 title: "GitHub Actions Runbook"
 description: "How the repository’s automation is organized, gated, and operated."
-updatedAt: "2026-05-30"
+updatedAt: "2026-05-31"
 ---
 
 GitHub Actions is the primary automation plane for Tuturuuu.
@@ -220,6 +220,12 @@ outputs can become stale across simulator/device builds and SDK updates. A stale
 `.dart_tool` cache can leave `NativeAssetsManifest.json` referencing
 `objective_c` while `build/native_assets/ios/` is missing the generated
 framework, which fails the simulator build during Xcode's embed phase.
+
+The workflow explicitly runs `flutter config --no-enable-swift-package-manager`
+after Flutter setup. Keep the iOS CI path on CocoaPods while `image_cropper` and
+`dkimagepickercontroller` resolve incompatible `TOCropViewController` Swift
+package ranges; otherwise Flutter 3.44+ can fail before the simulator build
+with an Xcode package dependency resolution error.
 
 ## Fast Triage Checklist
 

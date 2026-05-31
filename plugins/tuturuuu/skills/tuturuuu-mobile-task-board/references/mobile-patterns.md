@@ -11,6 +11,9 @@ localization changes.
   format Dart and may fail with "No files were processed."
 - Check whether `apps/mobile/pubspec.yaml` needs a version bump for
   user-visible mobile behavior changes.
+- Keep `mobile-build-ios.yaml` on CocoaPods by disabling Flutter Swift Package
+  Manager in CI while `image_cropper` and `dkimagepickercontroller` resolve
+  incompatible `TOCropViewController` Swift package ranges.
 
 ## Overlays And Shell
 
