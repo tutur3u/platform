@@ -15,6 +15,7 @@ abstract final class Routes {
   static const home = '/';
   static const apps = '/apps';
   static const assistant = '/assistant';
+  static const chat = '/chat';
   static const notifications = '/notifications';
   static const notificationsArchive = '/notifications/archive';
   static const profileRoot = '/profile';
@@ -113,6 +114,11 @@ abstract final class Routes {
     ).toString();
   }
 
+  static String chatConversationPath(String conversationId) => Uri(
+    path: chat,
+    queryParameters: {'conversationId': conversationId},
+  ).toString();
+
   static String normalizeLocation(String value) {
     var normalized = value;
     while (normalized.length > 1 && normalized.endsWith('/')) {
@@ -132,6 +138,9 @@ abstract final class Routes {
     }
     if (normalized == finance || normalized.startsWith('$finance/')) {
       return finance;
+    }
+    if (normalized == chat || normalized.startsWith('$chat/')) {
+      return chat;
     }
     if (normalized == education || normalized.startsWith('$education/')) {
       return education;

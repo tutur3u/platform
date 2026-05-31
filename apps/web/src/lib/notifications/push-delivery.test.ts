@@ -55,4 +55,31 @@ describe('push delivery helpers', () => {
       wsId: 'ws-2',
     });
   });
+
+  it('builds chat deep-link payloads for chat message notifications', () => {
+    const notification = {
+      created_at: '2026-05-31T00:00:00.000Z',
+      data: {
+        conversation_id: 'conversation-1',
+        message_id: 'message-1',
+        workspace_id: 'ws-3',
+      },
+      entity_id: 'conversation-1',
+      entity_type: 'chat_conversation',
+      id: 'notification-3',
+      title: 'New chat message',
+      type: 'chat_message',
+      ws_id: 'ws-3',
+      description: 'A teammate sent a message',
+    };
+
+    expect(buildPushOpenTarget(notification)).toBe('chat');
+    expect(buildPushData(notification)).toMatchObject({
+      conversationId: 'conversation-1',
+      messageId: 'message-1',
+      notificationId: 'notification-3',
+      openTarget: 'chat',
+      wsId: 'ws-3',
+    });
+  });
 });

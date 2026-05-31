@@ -914,33 +914,34 @@ class TaskRepository {
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.postJson(
-      '/api/v1/workspaces/$wsId/boards/$boardId/archive',
-      {},
-    );
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
+      'archived': true,
+    });
   }
 
   Future<void> unarchiveTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.deleteJson(
-      '/api/v1/workspaces/$wsId/boards/$boardId/archive',
-    );
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
+      'archived': false,
+    });
   }
 
   Future<void> softDeleteTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.putJson('/api/v1/workspaces/$wsId/boards/$boardId', {});
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
+      'deleted': true,
+    });
   }
 
   Future<void> restoreTaskBoard({
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.patchJson('/api/v1/workspaces/$wsId/boards/$boardId', {
+    await _apiClient.putJson('/api/v1/workspaces/$wsId/task-boards/$boardId', {
       'restore': true,
     });
   }
@@ -949,7 +950,9 @@ class TaskRepository {
     required String wsId,
     required String boardId,
   }) async {
-    await _apiClient.deleteJson('/api/v1/workspaces/$wsId/boards/$boardId');
+    await _apiClient.deleteJson(
+      '/api/v1/workspaces/$wsId/task-boards/$boardId',
+    );
   }
 
   Future<TaskEstimateBoard> updateBoardEstimation({

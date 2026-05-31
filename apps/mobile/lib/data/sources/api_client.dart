@@ -48,6 +48,7 @@ class ApiClient {
   }
 
   Future<Map<String, String>> _getHeaders({
+    String accept = 'application/json',
     String? contentType,
     bool requiresAuth = true,
   }) async {
@@ -79,7 +80,7 @@ class ApiClient {
 
     return {
       if (contentType != null) 'Content-Type': contentType,
-      'Accept': 'application/json',
+      'Accept': accept,
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -246,6 +247,51 @@ class ApiClient {
     );
 
     return _handleResponse(response);
+  }
+
+  Future<http.StreamedResponse> getStream(
+    String path, {
+    String accept = 'application/octet-stream',
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    return _performStreamedRequest(
+      () async {
+        final request = http.Request('GET', url)
+          ..headers.addAll(
+            await _getHeaders(accept: accept, requiresAuth: requiresAuth),
+          );
+        return request.send();
+      },
+      requiresAuth: requiresAuth,
+    );
+  }
+
+  Future<http.StreamedResponse> sendJsonStream(
+    String method,
+    String path,
+    Object? body, {
+    String accept = 'application/octet-stream',
+    bool requiresAuth = true,
+  }) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$path');
+
+    return _performStreamedRequest(
+      () async {
+        final request = http.Request(method, url)
+          ..headers.addAll(
+            await _getHeaders(
+              accept: accept,
+              contentType: 'application/json',
+              requiresAuth: requiresAuth,
+            ),
+          )
+          ..body = jsonEncode(body);
+        return request.send();
+      },
+      requiresAuth: requiresAuth,
+    );
   }
 
   Future<Map<String, dynamic>> sendMultipart(

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/router/routes.dart';
 import 'package:mobile/features/apps/models/app_module.dart';
 import 'package:mobile/features/calendar/view/calendar_page.dart';
+import 'package:mobile/features/chat/view/chat_page.dart';
 import 'package:mobile/features/cms/view/cms_page.dart';
 import 'package:mobile/features/crm/view/crm_page.dart';
 import 'package:mobile/features/documents/view/documents_page.dart';
@@ -29,6 +30,7 @@ class AppRegistry {
 
   static const Set<String> coreModuleIds = {
     'tasks',
+    'chat',
     'calendar',
     'finance',
   };
@@ -64,6 +66,15 @@ class AppRegistry {
       labelBuilder: _labelTasks,
       pageBuilder: _pageTasks,
       miniAppNavItems: _tasksMiniNav,
+      isPinned: true,
+    ),
+    AppModule(
+      id: 'chat',
+      route: Routes.chat,
+      icon: shad.LucideIcons.messagesSquare,
+      labelBuilder: _labelChat,
+      pageBuilder: _pageChat,
+      miniAppNavItems: _chatMiniNav,
       isPinned: true,
     ),
     AppModule(
@@ -217,6 +228,15 @@ class AppRegistry {
       route: Routes.taskPlanning,
       icon: shad.LucideIcons.route,
       labelBuilder: _labelTaskPlanning,
+    ),
+  ];
+
+  static const List<MiniAppNavItem> _chatMiniNav = [
+    MiniAppNavItem(
+      id: 'chat_home',
+      route: Routes.chat,
+      icon: shad.LucideIcons.messagesSquare,
+      labelBuilder: _labelChat,
     ),
   ];
 
@@ -566,6 +586,7 @@ class AppRegistry {
   }
 
   static String _labelTasks(AppLocalizations l10n) => l10n.navTasks;
+  static String _labelChat(AppLocalizations l10n) => l10n.chatTitle;
   static String _labelHabits(AppLocalizations l10n) => l10n.navHabits;
   static String _labelHabitsToday(AppLocalizations l10n) =>
       l10n.habitsTodayLabel;
@@ -617,6 +638,7 @@ class AppRegistry {
       l10n.timerRequestsTitle;
 
   static Widget _pageTasks(BuildContext context) => const TaskListPage();
+  static Widget _pageChat(BuildContext context) => const ChatPage();
   static Widget _pageHabits(BuildContext context) => const HabitsPage();
   static Widget _pageCalendar(BuildContext context) => const CalendarPage();
   static Widget _pageDrive(BuildContext context) => const DrivePage();

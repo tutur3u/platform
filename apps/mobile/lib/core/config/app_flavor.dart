@@ -1,8 +1,7 @@
 enum AppFlavor {
   development,
   staging,
-  production
-  ;
+  production;
 
   String get value => switch (this) {
     AppFlavor.development => 'development',

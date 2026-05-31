@@ -1,9 +1,12 @@
 import {
-  DELETE as deleteBoard,
-  PUT as updateBoard,
+  handleBoardRouteDELETE,
+  handleBoardRoutePUT,
 } from '@tuturuuu/apis/tu-do/board/boardId/route';
+import { getAppSessionTokenFromRequest } from '@tuturuuu/auth/app-session';
+import { CLI_APP_TARGET_APP } from '@tuturuuu/auth/cli-session';
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { withSessionAuth } from '@/lib/api-auth';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { requireBoardAccess } from './lists/access';
 
@@ -11,6 +14,20 @@ const paramsSchema = z.object({
   wsId: z.string().min(1),
   boardId: z.guid(),
 });
+
+type Params = { wsId: string; boardId: string };
+
+const TASK_BOARD_ROUTE_APP_SESSION_AUTH = {
+  targetApp: [CLI_APP_TARGET_APP, 'calendar', 'tasks'],
+} as const;
+
+function createTaskBoardRouteContext(params: Params) {
+  return { params: Promise.resolve(params) };
+}
+
+function isAppSessionRequest(request: Request) {
+  return Boolean(getAppSessionTokenFromRequest(request));
+}
 
 export async function GET(
   request: Request,
@@ -74,5 +91,22 @@ export async function GET(
   }
 }
 
-export const PUT = updateBoard;
-export const DELETE = deleteBoard;
+export const PUT = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleBoardRoutePUT(request, createTaskBoardRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASK_BOARD_ROUTE_APP_SESSION_AUTH }
+);
+
+export const DELETE = withSessionAuth<Params>(
+  (request, { supabase, user }, params) =>
+    handleBoardRouteDELETE(request, createTaskBoardRouteContext(params), {
+      appSession: isAppSessionRequest(request),
+      supabase,
+      user,
+    }),
+  { allowAppSessionAuth: TASK_BOARD_ROUTE_APP_SESSION_AUTH }
+);

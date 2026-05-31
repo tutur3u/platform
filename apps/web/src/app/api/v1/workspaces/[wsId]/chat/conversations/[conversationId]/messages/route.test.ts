@@ -11,6 +11,7 @@ const mocks = {
   createAdminClient: vi.fn(),
   createAiChatPost: vi.fn(),
   aiRouteBodies: [] as unknown[],
+  notifyChatMessageRecipients: vi.fn(),
   publishChatRealtimeEvent: vi.fn(),
   resolveChatRouteContext: vi.fn(),
   serverError: vi.fn(),
@@ -61,6 +62,12 @@ vi.mock('@/lib/chat/private-rpc', () => ({
   resolveChatRouteContext: (
     ...args: Parameters<typeof mocks.resolveChatRouteContext>
   ) => mocks.resolveChatRouteContext(...args),
+}));
+
+vi.mock('@/lib/chat/notifications', () => ({
+  notifyChatMessageRecipients: (
+    ...args: Parameters<typeof mocks.notifyChatMessageRecipients>
+  ) => mocks.notifyChatMessageRecipients(...args),
 }));
 
 vi.mock('@/lib/chat/realtime', () => ({
@@ -214,6 +221,11 @@ describe('native AI chat message route', () => {
     mocks.aiRouteBodies.length = 0;
     mocks.auth.supabase = createSupabaseMock();
     mocks.createAdminClient.mockResolvedValue(createAdminClientMock());
+    mocks.notifyChatMessageRecipients.mockResolvedValue({
+      createdCount: 0,
+      failedCount: 0,
+      recipientCount: 0,
+    });
     mockNativeAiRoute();
     mockRouteContext();
   });
@@ -257,6 +269,12 @@ describe('native AI chat message route', () => {
         p_ws_id: 'workspace-1',
       })
     );
+    expect(mocks.notifyChatMessageRecipients).toHaveBeenCalledWith({
+      actorUserId: 'user-1',
+      conversation,
+      message: userMessage,
+      wsId: 'workspace-1',
+    });
   });
 
   it('returns assistantError when assistant persistence fails after the user message saves', async () => {

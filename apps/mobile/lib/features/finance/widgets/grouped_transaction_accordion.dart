@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart' hide Card;
 import 'package:intl/intl.dart';
-import 'package:lucide_icons/lucide_icons.dart' as lucide;
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:mobile/core/utils/currency_conversion.dart';
 import 'package:mobile/core/utils/currency_formatter.dart';
 import 'package:mobile/data/models/finance/exchange_rate.dart';

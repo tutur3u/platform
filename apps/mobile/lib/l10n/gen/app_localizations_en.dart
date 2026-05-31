@@ -15,6 +15,194 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appTitle => 'Tuturuuu';
 
   @override
+  String get chatAccept => 'Accept';
+
+  @override
+  String get chatAccepted => 'Accepted';
+
+  @override
+  String get chatActive => 'Active';
+
+  @override
+  String get chatAi => 'AI';
+
+  @override
+  String get chatAiModel => 'AI model';
+
+  @override
+  String get chatAiSettings => 'AI settings';
+
+  @override
+  String get chatAll => 'All';
+
+  @override
+  String get chatArchived => 'Archived';
+
+  @override
+  String get chatAttach => 'Attach file';
+
+  @override
+  String get chatChannels => 'Channels';
+
+  @override
+  String get chatConversationDescriptionHint => 'Description';
+
+  @override
+  String get chatConversationTitleHint => 'Conversation title';
+
+  @override
+  String get chatConversationType => 'Conversation type';
+
+  @override
+  String get chatCost => 'Cost';
+
+  @override
+  String get chatCreate => 'Create';
+
+  @override
+  String get chatCreateConversation => 'Create conversation';
+
+  @override
+  String get chatDecline => 'Decline';
+
+  @override
+  String get chatDetails => 'Details';
+
+  @override
+  String get chatDirect => 'Direct';
+
+  @override
+  String get chatDirectory => 'Directory';
+
+  @override
+  String get chatEmailHint => 'Email address';
+
+  @override
+  String get chatFiles => 'Files';
+
+  @override
+  String get chatFriendRequests => 'Friend requests';
+
+  @override
+  String get chatGroups => 'Groups';
+
+  @override
+  String get chatIncoming => 'Incoming';
+
+  @override
+  String get chatLinks => 'Links';
+
+  @override
+  String get chatLoadMore => 'Load more';
+
+  @override
+  String get chatLoading => 'Loading...';
+
+  @override
+  String get chatMembers => 'Members';
+
+  @override
+  String chatMembersCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count members',
+      one: '$count member',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatMessagePlaceholder => 'Message';
+
+  @override
+  String get chatMessagesLoadError => 'Couldn\'t load messages.';
+
+  @override
+  String get chatNew => 'New chat';
+
+  @override
+  String get chatNoAccessDescription => 'You don\'t have permission to view chat in this workspace.';
+
+  @override
+  String get chatNoAccessTitle => 'Chat unavailable';
+
+  @override
+  String get chatNoConversationsDescription => 'Create a conversation or pick one from the directory.';
+
+  @override
+  String get chatNoConversationsTitle => 'No conversations yet';
+
+  @override
+  String get chatNoDirectoryResults => 'No people found.';
+
+  @override
+  String get chatNoMessagesDescription => 'Send the first message to start the conversation.';
+
+  @override
+  String get chatNoMessagesTitle => 'No messages yet';
+
+  @override
+  String get chatNoSearchResults => 'No results found.';
+
+  @override
+  String get chatNoSharedContent => 'No shared content yet.';
+
+  @override
+  String get chatNoWorkspace => 'Select a workspace to use chat.';
+
+  @override
+  String get chatObservability => 'Observability';
+
+  @override
+  String get chatOutgoing => 'Outgoing';
+
+  @override
+  String get chatPersonal => 'Personal';
+
+  @override
+  String get chatPhotos => 'Photos';
+
+  @override
+  String get chatPinned => 'Pinned';
+
+  @override
+  String get chatRetry => 'Retry';
+
+  @override
+  String get chatSaveSettings => 'Save settings';
+
+  @override
+  String get chatSearch => 'Search';
+
+  @override
+  String get chatSearchMessages => 'Search messages';
+
+  @override
+  String get chatSearchPeople => 'Search people';
+
+  @override
+  String get chatSelectParticipants => 'Select participants';
+
+  @override
+  String get chatShared => 'Shared';
+
+  @override
+  String get chatSystemPrompt => 'System prompt';
+
+  @override
+  String get chatTitle => 'Chat';
+
+  @override
+  String get chatTokens => 'Tokens';
+
+  @override
+  String get chatUntitled => 'Untitled chat';
+
+  @override
+  String get chatWorkspace => 'Workspace';
+
+  @override
   String get counterAppBarTitle => 'Counter';
 
   @override

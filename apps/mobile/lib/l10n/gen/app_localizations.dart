@@ -103,6 +103,366 @@ abstract class AppLocalizations {
   /// **'Tuturuuu'**
   String get appTitle;
 
+  /// No description provided for @chatAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get chatAccept;
+
+  /// No description provided for @chatAccepted.
+  ///
+  /// In en, this message translates to:
+  /// **'Accepted'**
+  String get chatAccepted;
+
+  /// No description provided for @chatActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get chatActive;
+
+  /// No description provided for @chatAi.
+  ///
+  /// In en, this message translates to:
+  /// **'AI'**
+  String get chatAi;
+
+  /// No description provided for @chatAiModel.
+  ///
+  /// In en, this message translates to:
+  /// **'AI model'**
+  String get chatAiModel;
+
+  /// No description provided for @chatAiSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'AI settings'**
+  String get chatAiSettings;
+
+  /// No description provided for @chatAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get chatAll;
+
+  /// No description provided for @chatArchived.
+  ///
+  /// In en, this message translates to:
+  /// **'Archived'**
+  String get chatArchived;
+
+  /// No description provided for @chatAttach.
+  ///
+  /// In en, this message translates to:
+  /// **'Attach file'**
+  String get chatAttach;
+
+  /// No description provided for @chatChannels.
+  ///
+  /// In en, this message translates to:
+  /// **'Channels'**
+  String get chatChannels;
+
+  /// No description provided for @chatConversationDescriptionHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get chatConversationDescriptionHint;
+
+  /// No description provided for @chatConversationTitleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation title'**
+  String get chatConversationTitleHint;
+
+  /// No description provided for @chatConversationType.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation type'**
+  String get chatConversationType;
+
+  /// No description provided for @chatCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get chatCost;
+
+  /// No description provided for @chatCreate.
+  ///
+  /// In en, this message translates to:
+  /// **'Create'**
+  String get chatCreate;
+
+  /// No description provided for @chatCreateConversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Create conversation'**
+  String get chatCreateConversation;
+
+  /// No description provided for @chatDecline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get chatDecline;
+
+  /// No description provided for @chatDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get chatDetails;
+
+  /// No description provided for @chatDirect.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct'**
+  String get chatDirect;
+
+  /// No description provided for @chatDirectory.
+  ///
+  /// In en, this message translates to:
+  /// **'Directory'**
+  String get chatDirectory;
+
+  /// No description provided for @chatEmailHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Email address'**
+  String get chatEmailHint;
+
+  /// No description provided for @chatFiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Files'**
+  String get chatFiles;
+
+  /// No description provided for @chatFriendRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get chatFriendRequests;
+
+  /// No description provided for @chatGroups.
+  ///
+  /// In en, this message translates to:
+  /// **'Groups'**
+  String get chatGroups;
+
+  /// No description provided for @chatIncoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Incoming'**
+  String get chatIncoming;
+
+  /// No description provided for @chatLinks.
+  ///
+  /// In en, this message translates to:
+  /// **'Links'**
+  String get chatLinks;
+
+  /// No description provided for @chatLoadMore.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get chatLoadMore;
+
+  /// No description provided for @chatLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get chatLoading;
+
+  /// No description provided for @chatMembers.
+  ///
+  /// In en, this message translates to:
+  /// **'Members'**
+  String get chatMembers;
+
+  /// No description provided for @chatMembersCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, one{{count} member} other{{count} members}}'**
+  String chatMembersCount(num count);
+
+  /// No description provided for @chatMessagePlaceholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get chatMessagePlaceholder;
+
+  /// No description provided for @chatMessagesLoadError.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load messages.'**
+  String get chatMessagesLoadError;
+
+  /// No description provided for @chatNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New chat'**
+  String get chatNew;
+
+  /// No description provided for @chatNoAccessDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have permission to view chat in this workspace.'**
+  String get chatNoAccessDescription;
+
+  /// No description provided for @chatNoAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat unavailable'**
+  String get chatNoAccessTitle;
+
+  /// No description provided for @chatNoConversationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a conversation or pick one from the directory.'**
+  String get chatNoConversationsDescription;
+
+  /// No description provided for @chatNoConversationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No conversations yet'**
+  String get chatNoConversationsTitle;
+
+  /// No description provided for @chatNoDirectoryResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No people found.'**
+  String get chatNoDirectoryResults;
+
+  /// No description provided for @chatNoMessagesDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Send the first message to start the conversation.'**
+  String get chatNoMessagesDescription;
+
+  /// No description provided for @chatNoMessagesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get chatNoMessagesTitle;
+
+  /// No description provided for @chatNoSearchResults.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found.'**
+  String get chatNoSearchResults;
+
+  /// No description provided for @chatNoSharedContent.
+  ///
+  /// In en, this message translates to:
+  /// **'No shared content yet.'**
+  String get chatNoSharedContent;
+
+  /// No description provided for @chatNoWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a workspace to use chat.'**
+  String get chatNoWorkspace;
+
+  /// No description provided for @chatObservability.
+  ///
+  /// In en, this message translates to:
+  /// **'Observability'**
+  String get chatObservability;
+
+  /// No description provided for @chatOutgoing.
+  ///
+  /// In en, this message translates to:
+  /// **'Outgoing'**
+  String get chatOutgoing;
+
+  /// No description provided for @chatPersonal.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal'**
+  String get chatPersonal;
+
+  /// No description provided for @chatPhotos.
+  ///
+  /// In en, this message translates to:
+  /// **'Photos'**
+  String get chatPhotos;
+
+  /// No description provided for @chatPinned.
+  ///
+  /// In en, this message translates to:
+  /// **'Pinned'**
+  String get chatPinned;
+
+  /// No description provided for @chatRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get chatRetry;
+
+  /// No description provided for @chatSaveSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Save settings'**
+  String get chatSaveSettings;
+
+  /// No description provided for @chatSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get chatSearch;
+
+  /// No description provided for @chatSearchMessages.
+  ///
+  /// In en, this message translates to:
+  /// **'Search messages'**
+  String get chatSearchMessages;
+
+  /// No description provided for @chatSearchPeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Search people'**
+  String get chatSearchPeople;
+
+  /// No description provided for @chatSelectParticipants.
+  ///
+  /// In en, this message translates to:
+  /// **'Select participants'**
+  String get chatSelectParticipants;
+
+  /// No description provided for @chatShared.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared'**
+  String get chatShared;
+
+  /// No description provided for @chatSystemPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'System prompt'**
+  String get chatSystemPrompt;
+
+  /// No description provided for @chatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chatTitle;
+
+  /// No description provided for @chatTokens.
+  ///
+  /// In en, this message translates to:
+  /// **'Tokens'**
+  String get chatTokens;
+
+  /// No description provided for @chatUntitled.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled chat'**
+  String get chatUntitled;
+
+  /// No description provided for @chatWorkspace.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace'**
+  String get chatWorkspace;
+
   /// Text shown in the AppBar of the Counter Page
   ///
   /// In en, this message translates to:

@@ -27,6 +27,8 @@ class PushNavigationRequest {
     this.wsId,
     this.entityId,
     this.boardId,
+    this.conversationId,
+    this.messageId,
   });
 
   final String notificationId;
@@ -34,6 +36,8 @@ class PushNavigationRequest {
   final String? wsId;
   final String? entityId;
   final String? boardId;
+  final String? conversationId;
+  final String? messageId;
 
   bool get opensTask =>
       openTarget == 'task' &&
@@ -42,11 +46,18 @@ class PushNavigationRequest {
       boardId != null &&
       boardId!.isNotEmpty;
 
+  bool get opensChat =>
+      openTarget == 'chat' &&
+      conversationId != null &&
+      conversationId!.isNotEmpty;
+
   bool get hasNavigationMetadata =>
       notificationId.isNotEmpty ||
       (wsId != null && wsId!.isNotEmpty) ||
       (entityId != null && entityId!.isNotEmpty) ||
-      (boardId != null && boardId!.isNotEmpty);
+      (boardId != null && boardId!.isNotEmpty) ||
+      (conversationId != null && conversationId!.isNotEmpty) ||
+      (messageId != null && messageId!.isNotEmpty);
 }
 
 class PushNotificationEvent {
@@ -71,6 +82,10 @@ PushNavigationRequest requestFromPushData(Map<String, dynamic> data) {
     wsId: data['wsId'] as String?,
     entityId: data['entityId'] as String?,
     boardId: data['boardId'] as String?,
+    conversationId:
+        data['conversationId'] as String? ??
+        ((data['openTarget'] == 'chat') ? data['entityId'] as String? : null),
+    messageId: data['messageId'] as String?,
   );
 }
 
@@ -85,6 +100,8 @@ String? payloadFromPushRequest(PushNavigationRequest request) {
     'wsId': request.wsId,
     'entityId': request.entityId,
     'boardId': request.boardId,
+    'conversationId': request.conversationId,
+    'messageId': request.messageId,
   });
 }
 

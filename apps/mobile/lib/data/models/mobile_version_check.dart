@@ -1,8 +1,7 @@
 enum MobileUpdateStatus {
   supported,
   updateRecommended,
-  updateRequired
-  ;
+  updateRequired;
 
   static MobileUpdateStatus fromApiValue(String value) {
     switch (value) {

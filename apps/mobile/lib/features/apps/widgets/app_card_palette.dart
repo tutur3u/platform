@@ -108,6 +108,24 @@ AppCardPalette? _paletteForModule(String? moduleId, {required bool isDark}) {
               iconColor: Color(0xFF2D678E),
               textColor: Color(0xFF163347),
             );
+    case 'chat':
+      return isDark
+          ? const AppCardPalette(
+              background: Color(0xFF1B2D2F),
+              border: Color(0xFF4F9092),
+              shadow: Color(0x22101818),
+              iconBackground: Color(0xFF294345),
+              iconColor: Color(0xFFD9F9F7),
+              textColor: Color(0xFFEFFDFC),
+            )
+          : const AppCardPalette(
+              background: Color(0xFFE3F8F5),
+              border: Color(0xFFB7DFDA),
+              shadow: Color(0x3338A397),
+              iconBackground: Color(0xFFFFFFFF),
+              iconColor: Color(0xFF1E716A),
+              textColor: Color(0xFF103533),
+            );
     case 'finance':
       return isDark
           ? const AppCardPalette(

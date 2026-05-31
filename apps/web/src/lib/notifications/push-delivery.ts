@@ -43,13 +43,20 @@ function asOptionalString(value: unknown): string | null {
 
 export function buildPushOpenTarget(
   notification: PushNotificationRecord
-): 'task' | 'inbox' {
+): 'task' | 'chat' | 'inbox' {
   const boardId = asOptionalString(notification.data?.board_id);
+  const conversationId =
+    asOptionalString(notification.data?.conversation_id) ??
+    asOptionalString(notification.data?.conversationId);
   const entityType = asOptionalString(notification.entity_type);
   const entityId = asOptionalString(notification.entity_id);
 
   if (entityType === 'task' && entityId && boardId) {
     return 'task';
+  }
+
+  if (entityType === 'chat_conversation' && (entityId || conversationId)) {
+    return 'chat';
   }
 
   return 'inbox';
@@ -59,6 +66,15 @@ export function buildPushData(
   notification: PushNotificationRecord
 ): Record<string, string> {
   const boardId = asOptionalString(notification.data?.board_id);
+  const conversationId =
+    asOptionalString(notification.data?.conversation_id) ??
+    asOptionalString(notification.data?.conversationId) ??
+    (asOptionalString(notification.entity_type) === 'chat_conversation'
+      ? asOptionalString(notification.entity_id)
+      : null);
+  const messageId =
+    asOptionalString(notification.data?.message_id) ??
+    asOptionalString(notification.data?.messageId);
   const workspaceId =
     asOptionalString(notification.ws_id) ??
     asOptionalString(notification.data?.workspace_id) ??
@@ -73,6 +89,8 @@ export function buildPushData(
     entityType: asOptionalString(notification.entity_type) ?? '',
     entityId: asOptionalString(notification.entity_id) ?? '',
     boardId: boardId ?? '',
+    conversationId: conversationId ?? '',
+    messageId: messageId ?? '',
     openTarget: buildPushOpenTarget(notification),
     createdAt: notification.created_at,
   };

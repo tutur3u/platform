@@ -15,6 +15,194 @@ class AppLocalizationsVi extends AppLocalizations {
   String get appTitle => 'Tuturuuu';
 
   @override
+  String get chatAccept => 'Chấp nhận';
+
+  @override
+  String get chatAccepted => 'Đã chấp nhận';
+
+  @override
+  String get chatActive => 'Đang hoạt động';
+
+  @override
+  String get chatAi => 'AI';
+
+  @override
+  String get chatAiModel => 'Mô hình AI';
+
+  @override
+  String get chatAiSettings => 'Cài đặt AI';
+
+  @override
+  String get chatAll => 'Tất cả';
+
+  @override
+  String get chatArchived => 'Đã lưu trữ';
+
+  @override
+  String get chatAttach => 'Đính kèm tệp';
+
+  @override
+  String get chatChannels => 'Kênh';
+
+  @override
+  String get chatConversationDescriptionHint => 'Mô tả';
+
+  @override
+  String get chatConversationTitleHint => 'Tiêu đề cuộc trò chuyện';
+
+  @override
+  String get chatConversationType => 'Loại cuộc trò chuyện';
+
+  @override
+  String get chatCost => 'Chi phí';
+
+  @override
+  String get chatCreate => 'Tạo';
+
+  @override
+  String get chatCreateConversation => 'Tạo cuộc trò chuyện';
+
+  @override
+  String get chatDecline => 'Từ chối';
+
+  @override
+  String get chatDetails => 'Chi tiết';
+
+  @override
+  String get chatDirect => 'Trực tiếp';
+
+  @override
+  String get chatDirectory => 'Danh bạ';
+
+  @override
+  String get chatEmailHint => 'Địa chỉ email';
+
+  @override
+  String get chatFiles => 'Tệp';
+
+  @override
+  String get chatFriendRequests => 'Lời mời kết bạn';
+
+  @override
+  String get chatGroups => 'Nhóm';
+
+  @override
+  String get chatIncoming => 'Đến';
+
+  @override
+  String get chatLinks => 'Liên kết';
+
+  @override
+  String get chatLoadMore => 'Tải thêm';
+
+  @override
+  String get chatLoading => 'Đang tải...';
+
+  @override
+  String get chatMembers => 'Thành viên';
+
+  @override
+  String chatMembersCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count thành viên',
+      one: '$count thành viên',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get chatMessagePlaceholder => 'Tin nhắn';
+
+  @override
+  String get chatMessagesLoadError => 'Không thể tải tin nhắn.';
+
+  @override
+  String get chatNew => 'Cuộc trò chuyện mới';
+
+  @override
+  String get chatNoAccessDescription => 'Bạn không có quyền xem trò chuyện trong workspace này.';
+
+  @override
+  String get chatNoAccessTitle => 'Không thể dùng trò chuyện';
+
+  @override
+  String get chatNoConversationsDescription => 'Tạo cuộc trò chuyện hoặc chọn một người trong danh bạ.';
+
+  @override
+  String get chatNoConversationsTitle => 'Chưa có cuộc trò chuyện';
+
+  @override
+  String get chatNoDirectoryResults => 'Không tìm thấy người nào.';
+
+  @override
+  String get chatNoMessagesDescription => 'Gửi tin nhắn đầu tiên để bắt đầu cuộc trò chuyện.';
+
+  @override
+  String get chatNoMessagesTitle => 'Chưa có tin nhắn';
+
+  @override
+  String get chatNoSearchResults => 'Không tìm thấy kết quả.';
+
+  @override
+  String get chatNoSharedContent => 'Chưa có nội dung được chia sẻ.';
+
+  @override
+  String get chatNoWorkspace => 'Chọn workspace để dùng trò chuyện.';
+
+  @override
+  String get chatObservability => 'Quan sát';
+
+  @override
+  String get chatOutgoing => 'Đã gửi';
+
+  @override
+  String get chatPersonal => 'Cá nhân';
+
+  @override
+  String get chatPhotos => 'Ảnh';
+
+  @override
+  String get chatPinned => 'Đã ghim';
+
+  @override
+  String get chatRetry => 'Thử lại';
+
+  @override
+  String get chatSaveSettings => 'Lưu cài đặt';
+
+  @override
+  String get chatSearch => 'Tìm kiếm';
+
+  @override
+  String get chatSearchMessages => 'Tìm tin nhắn';
+
+  @override
+  String get chatSearchPeople => 'Tìm người';
+
+  @override
+  String get chatSelectParticipants => 'Chọn người tham gia';
+
+  @override
+  String get chatShared => 'Đã chia sẻ';
+
+  @override
+  String get chatSystemPrompt => 'Prompt hệ thống';
+
+  @override
+  String get chatTitle => 'Trò chuyện';
+
+  @override
+  String get chatTokens => 'Token';
+
+  @override
+  String get chatUntitled => 'Cuộc trò chuyện chưa đặt tên';
+
+  @override
+  String get chatWorkspace => 'Workspace';
+
+  @override
   String get counterAppBarTitle => 'Bộ đếm';
 
   @override

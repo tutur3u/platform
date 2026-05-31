@@ -121,6 +121,7 @@ class _AppsHubPageState extends State<AppsHubPage> {
   List<AppModule> _orderedModules(List<AppModule> modules) {
     const preferredOrder = <String>[
       'tasks',
+      'chat',
       'calendar',
       'finance',
       'timer',

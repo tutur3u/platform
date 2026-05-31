@@ -589,6 +589,15 @@ class _AppState extends State<App> {
       return;
     }
 
+    if (request.opensChat) {
+      _router.go(
+        request.conversationId == null
+            ? Routes.chat
+            : Routes.chatConversationPath(request.conversationId!),
+      );
+      return;
+    }
+
     _router.go(Routes.notifications);
   }
 

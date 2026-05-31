@@ -1,5 +1,5 @@
 import 'package:flutter/widgets.dart';
-import 'package:lucide_icons/lucide_icons.dart' as lucide;
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:mobile/core/icons/platform_icon_data.dart';
 import 'package:mobile/data/models/finance/transaction.dart';
 

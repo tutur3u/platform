@@ -1,6 +1,6 @@
 name: mobile
 description: Tuturuuu Mobile
-version: 0.4.29+70
+version: 0.5.0+71
 publish_to: none
 
 environment:
@@ -50,7 +50,7 @@ dependencies:
   intl: ^0.20.2
   json_annotation: ^4.11.0
   local_auth: ^3.0.1
-  lucide_icons: ^0.257.0
+  lucide_icons_flutter: ^3.1.14+1
   markdown: ^7.3.1
   mime: ^2.0.0
   mobile_scanner: ^7.2.0

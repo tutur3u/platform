@@ -28,6 +28,10 @@ localization changes.
 - Preserve external/personal task semantics when changing board views.
 - Deep links should use the board route contract:
   `/{wsId}/tasks/boards/{boardId}?task={taskId}`.
+- Mobile board management mutations should use the current
+  `/api/v1/workspaces/{wsId}/task-boards/{boardId}` app-session routes for
+  archive, restore, soft delete, and permanent delete. Avoid older board APIs
+  that only accept cookie sessions.
 - Recycle-bin bulk actions should mutate without reloading per task, update
   local drawer state per item, then perform one final reload.
 - Refreshes must prune stale selected task IDs against the currently loaded
@@ -45,3 +49,14 @@ localization changes.
   gutters stay owned by the page.
 - Normalize transfer activity so mirrored transfer rows render once per linked
   pair.
+
+## Chat And Assistant
+
+- Mobile Chat must call `apps/web` chat APIs with app-session Bearer auth; do
+  not read private chat tables or Supabase directly from Flutter.
+- Chat push payloads open `/chat` with `openTarget: "chat"`, `wsId`,
+  `conversationId`, and `messageId`. Route only explicit conversation members;
+  do not broadcast channel notifications to all workspace members.
+- Keep the Assistant center tab, but create new Assistant text conversations as
+  native Chat `type="ai"` conversations and send text through the chat message
+  stream. Live mode remains an explicit Assistant Live entry.

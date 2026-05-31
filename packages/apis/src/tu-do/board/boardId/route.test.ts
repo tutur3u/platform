@@ -32,7 +32,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
   ) => verifyWorkspaceMembershipTypeMock(...args),
 }));
 
-import { PUT } from './route';
+import { type BoardRouteAuthContext, handleBoardRoutePUT, PUT } from './route';
 
 describe('task board boardId route PUT', () => {
   beforeEach(() => {
@@ -100,5 +100,101 @@ describe('task board boardId route PUT', () => {
       code: 'TASK_BOARD_NAME_EXISTS',
       error: 'A task board with this name already exists',
     });
+  });
+
+  it('maps mobile archive, restore, and soft-delete flags onto board metadata', async () => {
+    const response = await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            archived: true,
+            deleted: true,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    expect(updateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        archived_at: expect.any(String),
+        deleted_at: expect.any(String),
+      })
+    );
+
+    await PUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            archived: false,
+            restore: true,
+          }),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      }
+    );
+
+    expect(updateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        archived_at: null,
+        deleted_at: null,
+      })
+    );
+  });
+
+  it('accepts preauthenticated task app-session context for mobile board updates', async () => {
+    const supabase = { from: vi.fn() };
+    const authContext: BoardRouteAuthContext = {
+      appSession: true,
+      supabase: supabase as never,
+      user: { id: 'user-1' } as never,
+    };
+    const response = await handleBoardRoutePUT(
+      new NextRequest(
+        'http://localhost/api/v1/workspaces/ws-1/task-boards/00000000-0000-4000-8000-000000000456',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: 'Mobile Board',
+          }),
+          headers: {
+            Authorization: 'Bearer ttr_app_access',
+            'Content-Type': 'application/json',
+          },
+        }
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+          boardId: '00000000-0000-4000-8000-000000000456',
+        }),
+      },
+      authContext
+    );
+
+    expect(response.status).toBe(200);
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(updateMock).toHaveBeenCalledWith({ name: 'Mobile Board' });
   });
 });

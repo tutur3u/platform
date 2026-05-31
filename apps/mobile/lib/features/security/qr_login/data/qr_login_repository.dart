@@ -11,8 +11,7 @@ enum QrLoginChallengeStatus {
   expired,
   pending,
   rejected,
-  unknown
-  ;
+  unknown;
 
   static QrLoginChallengeStatus fromJson(Object? value) {
     return switch (value?.toString()) {

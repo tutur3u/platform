@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
   getAppSessionTokenFromRequest: vi.fn(),
+  handleBoardRouteDELETE: vi.fn(),
+  handleBoardRoutePUT: vi.fn(),
   handleTaskDetailRouteDELETE: vi.fn(),
   handleTaskDetailRouteGET: vi.fn(),
   handleTaskDetailRoutePATCH: vi.fn(),
@@ -45,6 +47,11 @@ vi.mock('@tuturuuu/apis/tu-do/tasks/route', () => ({
   handleTaskRoutePOST: mocks.handleTaskRoutePOST,
 }));
 
+vi.mock('@tuturuuu/apis/tu-do/board/boardId/route', () => ({
+  handleBoardRouteDELETE: mocks.handleBoardRouteDELETE,
+  handleBoardRoutePUT: mocks.handleBoardRoutePUT,
+}));
+
 vi.mock('@tuturuuu/apis/tu-do/tasks/taskId/route', () => ({
   handleTaskDetailRouteDELETE: mocks.handleTaskDetailRouteDELETE,
   handleTaskDetailRouteGET: mocks.handleTaskDetailRouteGET,
@@ -74,6 +81,8 @@ describe('workspace task API route app-session bridge', () => {
     );
     mocks.handleTaskRouteGET.mockResolvedValue(Response.json({ ok: true }));
     mocks.handleTaskRoutePOST.mockResolvedValue(Response.json({ ok: true }));
+    mocks.handleBoardRouteDELETE.mockResolvedValue(Response.json({ ok: true }));
+    mocks.handleBoardRoutePUT.mockResolvedValue(Response.json({ ok: true }));
     mocks.withSessionAuth.mockImplementation(
       (
         handler: (
@@ -137,6 +146,29 @@ describe('workspace task API route app-session bridge', () => {
       {
         allowAppSessionAuth: {
           targetApp: ['platform', 'tasks'],
+        },
+      }
+    );
+  });
+
+  it('allows platform CLI and Tasks app-session auth on task board mutation routes', async () => {
+    await import('@/app/api/v1/workspaces/[wsId]/task-boards/[boardId]/route');
+
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      1,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
+        },
+      }
+    );
+    expect(mocks.withSessionAuth).toHaveBeenNthCalledWith(
+      2,
+      expect.any(Function),
+      {
+        allowAppSessionAuth: {
+          targetApp: ['platform', 'calendar', 'tasks'],
         },
       }
     );

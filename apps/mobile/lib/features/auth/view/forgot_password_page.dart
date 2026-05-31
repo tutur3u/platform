@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart'
     hide AppBar, FilledButton, Scaffold, TextField;
 import 'package:go_router/go_router.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile/features/auth/widgets/auth_action_button.dart';
 import 'package:mobile/features/auth/widgets/auth_scaffold.dart';
 import 'package:mobile/features/auth/widgets/auth_section_card.dart';

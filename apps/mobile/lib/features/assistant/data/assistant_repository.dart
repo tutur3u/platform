@@ -15,6 +15,9 @@ import 'package:mobile/core/cache/cache_store.dart';
 import 'package:mobile/core/config/api_config.dart';
 import 'package:mobile/data/sources/api_client.dart';
 import 'package:mobile/data/sources/supabase_client.dart';
+import 'package:mobile/features/chat/data/chat_repository.dart';
+import 'package:mobile/features/chat/data/chat_stream_parser.dart';
+import 'package:mobile/features/chat/models/chat_models.dart';
 
 import '../models/assistant_models.dart';
 import 'assistant_stream_parser.dart';
@@ -23,11 +26,24 @@ class AssistantRepository {
   AssistantRepository({
     ApiClient? apiClient,
     http.Client? httpClient,
-  }) : _apiClient = apiClient ?? ApiClient(),
-       _httpClient = httpClient ?? http.Client();
+    ChatRepository? chatRepository,
+  }) : this._(
+         apiClient ?? ApiClient(),
+         httpClient ?? http.Client(),
+         chatRepository,
+       );
+
+  AssistantRepository._(
+    this._apiClient,
+    this._httpClient,
+    ChatRepository? chatRepository,
+  ) : _chatRepository =
+          chatRepository ??
+          ChatRepository(apiClient: _apiClient, httpClient: _httpClient);
 
   final ApiClient _apiClient;
   final http.Client _httpClient;
+  final ChatRepository _chatRepository;
   static final Random _random = Random.secure();
 
   static const _assistantChatCacheTag = 'assistant:chat';
@@ -342,13 +358,38 @@ class AssistantRepository {
   }
 
   Future<List<AssistantChatRecord>> fetchRecentChats({
+    String? wsId,
     int? limit,
     bool forceRefresh = false,
   }) async {
+    if (wsId != null && wsId.isNotEmpty) {
+      try {
+        final page = await _chatRepository.listConversations(
+          wsId,
+          limit: limit ?? 40,
+        );
+        final nativeChats = page.conversations
+            .where(
+              (conversation) => conversation.type == ChatConversationType.ai,
+            )
+            .map(_assistantChatRecordFromConversation)
+            .toList(growable: false);
+        if (nativeChats.isNotEmpty) {
+          return limit == null
+              ? nativeChats
+              : nativeChats.take(limit).toList(growable: false);
+        }
+      } on ApiException {
+        // Fall back to the legacy Assistant history endpoint while older chats
+        // are still being migrated into native Chat conversations.
+      }
+    }
+
     final result = await CacheStore.instance
         .prefetch<List<AssistantChatRecord>>(
           key: _assistantMetadataCacheKey(
             namespace: 'assistant.recent_chats',
+            wsId: wsId,
             params: {'limit': limit?.toString() ?? 'all'},
           ),
           policy: _assistantHistoryCachePolicy,
@@ -394,6 +435,24 @@ class AssistantRepository {
         }
         return cached.data;
       }
+    }
+
+    final nativeRestored = await _restoreNativeChat(
+      wsId: wsId,
+      chatId: chatId,
+    );
+    if (nativeRestored != null) {
+      await CacheStore.instance.write(
+        key: cacheKey,
+        policy: _assistantChatCachePolicy,
+        payload: nativeRestored.toJson(),
+        tags: [
+          _assistantChatCacheTag,
+          'workspace:$wsId',
+          'module:assistant',
+        ],
+      );
+      return nativeRestored;
     }
 
     late final Map<String, dynamic> payload;
@@ -535,33 +594,139 @@ class AssistantRepository {
       ignoreWarmupError(fetchCredits(wsId, forceRefresh: forceRefresh)),
       ignoreWarmupError(fetchGatewayModels(forceRefresh: forceRefresh)),
       ignoreWarmupError(
-        fetchRecentChats(limit: 20, forceRefresh: forceRefresh),
+        fetchRecentChats(wsId: wsId, limit: 20, forceRefresh: forceRefresh),
       ),
     ]);
   }
 
   Future<AssistantChatRecord> createChat({
     required String id,
+    required String wsId,
     required String modelId,
     required String message,
     required String timezone,
   }) async {
-    final response = await _apiClient.postJson('/api/ai/chat/new', {
-      'id': id,
-      'model': modelId,
-      'message': message,
-      'isMiraMode': true,
-      'timezone': timezone,
-    });
-
-    return AssistantChatRecord(
-      id: response['id'] as String,
-      title: response['title'] as String?,
-      model: modelId,
+    final conversation = await _chatRepository.createConversation(
+      wsId,
+      type: ChatConversationType.ai,
+      title: _titleFromPrompt(message),
+      aiEnabled: true,
+      autoReply: true,
+      modelId: modelId,
     );
+    return _assistantChatRecordFromConversation(conversation, modelId: modelId);
   }
 
   Stream<AssistantStreamEvent> streamChat({
+    required String chatId,
+    required String wsId,
+    required String? workspaceContextId,
+    required String modelId,
+    required List<AssistantMessage> messages,
+    required AssistantThinkingMode thinkingMode,
+    required AssistantCreditSource creditSource,
+    required String timezone,
+    List<AssistantAttachment> attachments = const [],
+    String? creditWsId,
+  }) async* {
+    try {
+      await _chatRepository.updateAiSettings(
+        wsId,
+        chatId,
+        creditSource: _chatCreditSource(creditSource),
+        creditWsId: creditWsId,
+        modelId: modelId,
+        thinkingMode: _chatThinkingMode(thinkingMode),
+      );
+
+      var assistantStarted = false;
+      final nativeAttachments = _chatAttachmentDrafts(chatId, attachments);
+      await for (final event in _chatRepository.sendMessageStream(
+        wsId,
+        chatId,
+        content: _latestUserText(messages),
+        attachments: nativeAttachments,
+      )) {
+        if (event is ChatStreamAssistantDeltaEvent) {
+          if (!assistantStarted) {
+            assistantStarted = true;
+            yield AssistantJsonStreamEvent({
+              'type': 'start',
+              'messageId': generateUuid(),
+            });
+          }
+          yield AssistantJsonStreamEvent({
+            'type': 'text-delta',
+            'delta': event.delta,
+          });
+          continue;
+        }
+
+        if (event is ChatStreamAssistantPartEvent) {
+          if (!assistantStarted) {
+            assistantStarted = true;
+            yield AssistantJsonStreamEvent({
+              'type': 'start',
+              'messageId': generateUuid(),
+            });
+          }
+          yield _assistantEventFromChatPart(event.part);
+          continue;
+        }
+
+        if (event is ChatStreamMessagesEvent && !assistantStarted) {
+          final assistantMessages = event.messages.where(
+            (message) => message.kind == ChatMessageKind.assistant,
+          );
+          for (final message in assistantMessages) {
+            yield AssistantJsonStreamEvent({
+              'type': 'start',
+              'messageId': message.id,
+            });
+            if (message.content.isNotEmpty) {
+              yield AssistantJsonStreamEvent({
+                'type': 'text-delta',
+                'delta': message.content,
+              });
+            }
+          }
+          assistantStarted = true;
+          continue;
+        }
+
+        if (event is ChatStreamErrorEvent) {
+          yield AssistantJsonStreamEvent({
+            'type': 'error',
+            'errorText': event.message,
+          });
+          continue;
+        }
+
+        if (event is ChatStreamDoneEvent) {
+          yield const AssistantDoneStreamEvent();
+        }
+      }
+      return;
+    } on ApiException catch (error) {
+      if (error.statusCode != 404 && error.statusCode != 403) {
+        rethrow;
+      }
+    }
+
+    yield* _streamLegacyChat(
+      chatId: chatId,
+      wsId: wsId,
+      workspaceContextId: workspaceContextId,
+      modelId: modelId,
+      messages: messages,
+      thinkingMode: thinkingMode,
+      creditSource: creditSource,
+      timezone: timezone,
+      creditWsId: creditWsId,
+    );
+  }
+
+  Stream<AssistantStreamEvent> _streamLegacyChat({
     required String chatId,
     required String wsId,
     required String? workspaceContextId,
@@ -622,6 +787,27 @@ class AssistantRepository {
     required AssistantFilePickerResult file,
     String? chatId,
   }) async {
+    if (chatId != null && chatId.isNotEmpty) {
+      try {
+        final attachment = await _chatRepository.uploadAttachment(
+          wsId,
+          chatId,
+          file: file.file,
+        );
+        return _assistantAttachmentFromChatAttachment(
+          attachment,
+          fallbackId: file.id,
+          fallbackPath: file.path,
+          fallbackType: file.mimeType,
+          fallbackSize: file.size,
+        );
+      } on ApiException catch (error) {
+        if (error.statusCode != 404 && error.statusCode != 403) {
+          rethrow;
+        }
+      }
+    }
+
     final uploadResponse = await _apiClient.postJson(
       '/api/ai/chat/upload-url',
       {
@@ -724,6 +910,153 @@ class AssistantRepository {
       signedUrlByPath[path] = signedUrl;
     }
     return signedUrlByPath;
+  }
+
+  Future<AssistantRestoredChat?> _restoreNativeChat({
+    required String wsId,
+    required String chatId,
+  }) async {
+    try {
+      final messages = await _chatRepository.listMessages(wsId, chatId);
+      return AssistantRestoredChat(
+        chat: AssistantChatRecord(id: chatId),
+        messages: messages.map(_assistantMessageFromChatMessage).toList(),
+        attachmentsByMessageId: _assistantAttachmentsFromChatMessages(
+          messages,
+        ),
+      );
+    } on ApiException catch (error) {
+      if (error.statusCode == 404 || error.statusCode == 403) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  AssistantChatRecord _assistantChatRecordFromConversation(
+    ChatConversation conversation, {
+    String? modelId,
+  }) {
+    return AssistantChatRecord(
+      id: conversation.id,
+      title: conversation.title,
+      model: modelId ?? conversation.metadata['modelId']?.toString(),
+      createdAt: conversation.createdAt,
+    );
+  }
+
+  AssistantMessage _assistantMessageFromChatMessage(ChatMessage message) {
+    final role = switch (message.kind) {
+      ChatMessageKind.assistant => 'assistant',
+      ChatMessageKind.system => 'system',
+      ChatMessageKind.user => 'user',
+    };
+    return AssistantMessage(
+      id: message.id,
+      role: role,
+      parts: message.content.isEmpty
+          ? const []
+          : [AssistantMessagePart(type: 'text', text: message.content)],
+      createdAt: message.createdAt,
+    );
+  }
+
+  Map<String, List<AssistantAttachment>> _assistantAttachmentsFromChatMessages(
+    List<ChatMessage> messages,
+  ) {
+    final out = <String, List<AssistantAttachment>>{};
+    for (final message in messages) {
+      if (message.attachments.isEmpty) continue;
+      out[message.id] = message.attachments
+          .map(_assistantAttachmentFromChatAttachment)
+          .toList(growable: false);
+    }
+    return out;
+  }
+
+  AssistantAttachment _assistantAttachmentFromChatAttachment(
+    ChatAttachment attachment, {
+    String? fallbackId,
+    String? fallbackPath,
+    String? fallbackType,
+    int? fallbackSize,
+  }) {
+    return AssistantAttachment(
+      id: fallbackId ?? attachment.id,
+      name: attachment.filename,
+      size: attachment.sizeBytes ?? fallbackSize ?? 0,
+      type:
+          attachment.contentType ?? fallbackType ?? 'application/octet-stream',
+      localPath: fallbackPath,
+      storagePath: attachment.storagePath,
+      uploadState: AssistantAttachmentUploadState.uploaded,
+    );
+  }
+
+  List<ChatAttachmentDraft> _chatAttachmentDrafts(
+    String conversationId,
+    List<AssistantAttachment> attachments,
+  ) {
+    return attachments
+        .where((attachment) {
+          final path = attachment.storagePath;
+          return path != null && path.startsWith('chats/$conversationId/');
+        })
+        .map(
+          (attachment) => ChatAttachmentDraft(
+            filename: attachment.name,
+            path: attachment.storagePath!,
+            contentType: attachment.type,
+            sizeBytes: attachment.size,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  AssistantJsonStreamEvent _assistantEventFromChatPart(
+    Map<String, dynamic> part,
+  ) {
+    if (part['type'] == 'reasoning') {
+      return AssistantJsonStreamEvent({
+        'type': 'reasoning-delta',
+        'delta': part['text']?.toString() ?? '',
+      });
+    }
+    return AssistantJsonStreamEvent(part);
+  }
+
+  ChatAiCreditSource _chatCreditSource(AssistantCreditSource source) {
+    return switch (source) {
+      AssistantCreditSource.personal => ChatAiCreditSource.personal,
+      AssistantCreditSource.workspace => ChatAiCreditSource.workspace,
+    };
+  }
+
+  ChatAiThinkingMode _chatThinkingMode(AssistantThinkingMode mode) {
+    return switch (mode) {
+      AssistantThinkingMode.fast => ChatAiThinkingMode.fast,
+      AssistantThinkingMode.thinking => ChatAiThinkingMode.thinking,
+    };
+  }
+
+  String _latestUserText(List<AssistantMessage> messages) {
+    for (final message in messages.reversed) {
+      if (message.role != 'user') continue;
+      final text = message.parts
+          .where((part) => part.type == 'text')
+          .map((part) => part.text ?? '')
+          .join('\n\n')
+          .trim();
+      if (text.isNotEmpty) return text;
+    }
+    return '';
+  }
+
+  String _titleFromPrompt(String message) {
+    final compact = message.trim().replaceAll(RegExp(r'\s+'), ' ');
+    if (compact.isEmpty) return 'Assistant chat';
+    if (compact.length <= 64) return compact;
+    return '${compact.substring(0, 61)}...';
   }
 
   List<AssistantMessage> _restoreMessages(

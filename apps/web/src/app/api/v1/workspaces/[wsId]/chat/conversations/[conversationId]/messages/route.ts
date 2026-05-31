@@ -26,6 +26,7 @@ import {
   type NativeChatAiSettings,
   serializeChatAiSettingsDbError,
 } from '@/lib/chat/ai-settings';
+import { notifyChatMessageRecipients } from '@/lib/chat/notifications';
 import {
   type ChatConversation,
   type ChatMessage,
@@ -236,6 +237,13 @@ export const POST = withSessionAuth<RouteParams>(
           conversationId: message.conversationId,
           message,
           type: 'message.created',
+          wsId: context.context.normalizedWsId,
+        });
+
+        await notifyChatMessageRecipients({
+          actorUserId: auth.user.id,
+          conversation,
+          message,
           wsId: context.context.normalizedWsId,
         });
 

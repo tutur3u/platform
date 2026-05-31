@@ -3,6 +3,8 @@ import {
   createAdminClient,
   createClient,
 } from '@tuturuuu/supabase/next/server';
+import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { Database } from '@tuturuuu/types';
 import {
   normalizeWorkspaceId,
@@ -17,6 +19,21 @@ interface Params {
     boardId: string;
   }>;
 }
+
+export type BoardRouteAuthContext = {
+  appSession?: boolean;
+  sbAdmin?: TypedSupabaseClient;
+  supabase: TypedSupabaseClient;
+  user: SupabaseUser;
+};
+
+type BoardRouteAuth =
+  | {
+      auth: BoardRouteAuthContext;
+    }
+  | {
+      response: NextResponse;
+    };
 
 const paramsSchema = z.object({
   boardId: z.guid(),
@@ -46,23 +63,45 @@ function taskBoardNameExistsResponse() {
   );
 }
 
-export async function PUT(req: Request, { params }: Params) {
+async function resolveBoardRouteAuth(
+  req: Request,
+  auth?: BoardRouteAuthContext
+): Promise<BoardRouteAuth> {
+  if (auth) {
+    return { auth };
+  }
+
+  const supabase = (await createClient(req)) as TypedSupabaseClient;
+  const { user, authError: userError } =
+    await resolveAuthenticatedSessionUser(supabase);
+
+  if (userError || !user) {
+    return {
+      response: NextResponse.json({ message: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  return { auth: { supabase, user } };
+}
+
+export async function handleBoardRoutePUT(
+  req: Request,
+  { params }: Params,
+  authContext?: BoardRouteAuthContext
+) {
   const { wsId: id, boardId } = await params;
   const parsedSchema = paramsSchema.safeParse({ boardId });
   if (!parsedSchema.success) {
     return NextResponse.json({ message: 'Invalid board ID' }, { status: 400 });
   }
-  const supabase = await createClient(req);
+  const authResult = await resolveBoardRouteAuth(req, authContext);
+  if ('response' in authResult) return authResult.response;
+
+  const { auth } = authResult;
+  const { supabase, user } = auth;
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { boardId: parsedBoardId } = parsedSchema.data;
-
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   const member = await verifyWorkspaceMembershipType({
     wsId,
@@ -89,19 +128,29 @@ export async function PUT(req: Request, { params }: Params) {
     icon?: Database['public']['Enums']['platform_icon'] | null;
     ticket_prefix?: string | null;
     archived?: boolean;
+    deleted?: boolean;
+    restore?: boolean;
     group_ids?: string[];
   };
 
-  const { group_ids: _, archived, ...coreData } = data;
+  const { group_ids: _, archived, deleted, restore, ...coreData } = data;
 
   const updateData: Database['public']['Tables']['workspace_boards']['Update'] =
     { ...coreData };
 
+  const now = new Date().toISOString();
   if (archived !== undefined) {
-    updateData.archived_at = archived ? new Date().toISOString() : null;
+    updateData.archived_at = archived ? now : null;
   }
 
-  const sbAdmin = await createAdminClient();
+  if (restore === true) {
+    updateData.deleted_at = null;
+  } else if (deleted === true) {
+    updateData.deleted_at = now;
+  }
+
+  const sbAdmin =
+    auth.sbAdmin ?? ((await createAdminClient()) as TypedSupabaseClient);
 
   const { error } = await sbAdmin
     .from('workspace_boards')
@@ -114,7 +163,6 @@ export async function PUT(req: Request, { params }: Params) {
       return taskBoardNameExistsResponse();
     }
 
-    console.log(error);
     return NextResponse.json(
       { message: 'Error updating workspace board' },
       { status: 500 }
@@ -124,23 +172,28 @@ export async function PUT(req: Request, { params }: Params) {
   return NextResponse.json({ message: 'success' });
 }
 
-export async function DELETE(req: Request, { params }: Params) {
+export async function PUT(req: Request, context: Params) {
+  return handleBoardRoutePUT(req, context);
+}
+
+export async function handleBoardRouteDELETE(
+  req: Request,
+  { params }: Params,
+  authContext?: BoardRouteAuthContext
+) {
   const { wsId: id, boardId } = await params;
   const parsedSchema = paramsSchema.safeParse({ boardId });
   if (!parsedSchema.success) {
     return NextResponse.json({ message: 'Invalid board ID' }, { status: 400 });
   }
-  const supabase = await createClient(req);
+  const authResult = await resolveBoardRouteAuth(req, authContext);
+  if ('response' in authResult) return authResult.response;
+
+  const { auth } = authResult;
+  const { supabase, user } = auth;
   const wsId = await normalizeWorkspaceId(id, supabase);
 
   const { boardId: parsedBoardId } = parsedSchema.data;
-
-  const { user, authError: userError } =
-    await resolveAuthenticatedSessionUser(supabase);
-
-  if (userError || !user) {
-    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-  }
 
   const member = await verifyWorkspaceMembershipType({
     wsId,
@@ -162,7 +215,8 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = await createAdminClient();
+  const sbAdmin =
+    auth.sbAdmin ?? ((await createAdminClient()) as TypedSupabaseClient);
 
   const { error } = await sbAdmin
     .from('workspace_boards')
@@ -171,7 +225,6 @@ export async function DELETE(req: Request, { params }: Params) {
     .eq('ws_id', wsId);
 
   if (error) {
-    console.log(error);
     return NextResponse.json(
       { message: 'Error deleting workspace board' },
       { status: 500 }
@@ -179,4 +232,8 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   return NextResponse.json({ message: 'success' });
+}
+
+export async function DELETE(req: Request, context: Params) {
+  return handleBoardRouteDELETE(req, context);
 }

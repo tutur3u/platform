@@ -93,7 +93,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     try {
       final storedChatId = await _preferences.loadChatId(wsId);
-      final history = await _repository.fetchRecentChats();
+      final history = await _repository.fetchRecentChats(wsId: wsId);
 
       if (storedChatId == null) {
         if (isClosed || workspaceVersion != _workspaceVersion) return;
@@ -173,7 +173,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       return;
     }
 
-    final history = await _repository.fetchRecentChats();
+    final history = await _repository.fetchRecentChats(wsId: wsId);
     if (isClosed) {
       return;
     }
@@ -209,7 +209,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       return;
     }
 
-    final history = await _repository.fetchRecentChats();
+    final history = await _repository.fetchRecentChats(wsId: wsId);
     if (isClosed) {
       return;
     }
@@ -228,7 +228,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   Future<void> refreshHistory() async {
-    final history = await _repository.fetchRecentChats();
+    final history = await _repository.fetchRecentChats(wsId: state.workspaceId);
     emit(state.copyWith(history: history));
   }
 
@@ -547,6 +547,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       if (chat == null || state.storedChatId == null) {
         final created = await _repository.createChat(
           id: chatId,
+          wsId: wsId,
           modelId: modelId,
           message: combined,
           timezone: timezone,
@@ -605,6 +606,7 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
             thinkingMode: thinkingMode,
             creditSource: creditSource,
             timezone: timezone,
+            attachments: attachments,
             creditWsId: creditWsId,
           )
           .listen(
