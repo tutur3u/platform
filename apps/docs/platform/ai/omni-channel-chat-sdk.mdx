@@ -117,3 +117,16 @@ Use the `reader` preset for analysis-only agents, `messenger` for normal
 posting and DM workflows, and `moderator` for destructive operations such as
 editing and deleting messages. Keep approval gates enabled by default for
 visible writes unless the workflow has an explicit unattended execution policy.
+
+## External Chat Mirror
+
+Apps/web AI agents mirror inbound and outbound Discord/Zalo messages through
+server-owned private RPCs. Runtime handlers persist webhook events as soon as
+they arrive, then persist any automatic or manual outbound response after the
+Chat SDK adapter accepts the post.
+
+When an operator clicks sync in Infrastructure > AI Agents, apps/web creates
+the configured Chat SDK runtime, opens the external thread handle, and consumes
+recent `thread.messages` when the adapter supports history fetch. Discord can
+return recent messages with the right bot scopes; Zalo currently behaves as a
+webhook-first adapter, so the mirror is populated by received events.

@@ -1,6 +1,6 @@
 import type { ChatConversation } from '@tuturuuu/internal-api';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ChatSidebar } from './chat-sidebar';
 import { CreateConversationDialog } from './create-conversation-dialog';
 import { useChatConversations, useChatMessageSearch } from './hooks';
@@ -11,7 +11,9 @@ import {
   filterChatConversations,
   filterChatConversationsByScope,
   getChatConversationTypesForScope,
+  getChatSelectionStorageKey,
   normalizeChatConversationScope,
+  resolveChatConversationSelection,
 } from './utils';
 
 interface ChatSidebarPanelProps {
@@ -47,6 +49,10 @@ export function ChatSidebarPanel({
   const [internalCreateOpen, setInternalCreateOpen] = useState(false);
   const [internalArchiveFilter] =
     useState<ChatConversationArchiveFilter>('active');
+  const [storedConversationId, setStoredConversationId] = useState<
+    string | null
+  >(null);
+  const [storedSelectionLoaded, setStoredSelectionLoaded] = useState(false);
   const [internalSelectedTypes] = useState<ChatConversation['type'][]>([
     ...CHAT_CONVERSATION_TYPE_FILTERS,
   ]);
@@ -75,8 +81,8 @@ export function ChatSidebarPanel({
     scope: conversationScope,
     types: selectedTypes,
   });
-  const scopedConversationIds = new Set(
-    scopedConversations.map((conversation) => conversation.id)
+  const scopedConversationIdList = scopedConversations.map(
+    (conversation) => conversation.id
   );
   const scopedSearchResults = (searchQuery.data ?? []).filter((message) =>
     scopeConversations.some(
@@ -84,11 +90,45 @@ export function ChatSidebarPanel({
     )
   );
   const requestedConversationId = searchParams.get('conversationId');
-  const selectedConversationId =
-    requestedConversationId &&
-    scopedConversationIds.has(requestedConversationId)
-      ? requestedConversationId
-      : (scopedConversations[0]?.id ?? null);
+  const selectionStorageKey = getChatSelectionStorageKey(
+    wsId,
+    conversationScope
+  );
+  const selectedConversationId = resolveChatConversationSelection({
+    conversationIds: scopedConversationIdList,
+    requestedConversationId,
+    storedConversationId,
+  });
+
+  useEffect(() => {
+    setStoredSelectionLoaded(false);
+    setStoredConversationId(localStorage.getItem(selectionStorageKey));
+    setStoredSelectionLoaded(true);
+  }, [selectionStorageKey]);
+
+  useEffect(() => {
+    if (!selectedConversationId) return;
+    if (!storedSelectionLoaded && !requestedConversationId) return;
+
+    localStorage.setItem(selectionStorageKey, selectedConversationId);
+    if (requestedConversationId === selectedConversationId) return;
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('conversationId', selectedConversationId);
+    const nextQuery = nextParams.toString();
+    window.history.replaceState(
+      null,
+      '',
+      nextQuery ? `${pathname}?${nextQuery}` : pathname
+    );
+  }, [
+    pathname,
+    requestedConversationId,
+    searchParams,
+    selectedConversationId,
+    selectionStorageKey,
+    storedSelectionLoaded,
+  ]);
 
   function selectConversation(conversationId: string) {
     const nextParams = new URLSearchParams(searchParams.toString());
@@ -99,6 +139,7 @@ export function ChatSidebarPanel({
       '',
       nextQuery ? `${pathname}?${nextQuery}` : pathname
     );
+    localStorage.setItem(selectionStorageKey, conversationId);
     closeOnMobile?.();
   }
 

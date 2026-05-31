@@ -53,7 +53,10 @@ export interface AiAgentChannelConfig {
   status: AiAgentChannelStatus;
   webhookUrl: string | null;
   workspaceId: string;
+  autoRespond?: boolean;
   discordGuildId?: string | null;
+  externalChannelId?: string | null;
+  historySyncEnabled?: boolean;
   zaloOfficialAccountId?: string | null;
 }
 
@@ -79,7 +82,10 @@ export interface SaveAiAgentChannelInput {
   secrets?: Record<string, string | null | undefined>;
   status?: AiAgentChannelStatus;
   workspaceId: string;
+  autoRespond?: boolean;
   discordGuildId?: string | null;
+  externalChannelId?: string | null;
+  historySyncEnabled?: boolean;
   zaloOfficialAccountId?: string | null;
 }
 

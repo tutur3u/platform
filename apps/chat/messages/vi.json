@@ -214,7 +214,7 @@
     "private_schema_status": "Chat riêng tư",
     "react_to_message": "Thả phản ứng",
     "read_only_badge": "Chỉ đọc",
-    "read_only_conversation": "Kênh agent này có thể xem tại đây, nhưng tin nhắn ở chế độ chỉ đọc. Quản lý trong Hạ tầng > AI Agents.",
+    "read_only_conversation": "Tin nhắn AI-agent bên ngoài được đồng bộ ở chế độ chỉ đọc. Soạn nháp và gửi phản hồi thủ công trong Hạ tầng > AI Agents.",
     "remove_attachment": "Gỡ tệp đính kèm",
     "rename_conversation": "Đổi tên cuộc trò chuyện",
     "rename_conversation_description": "Cập nhật tên hiển thị cho mọi người có quyền truy cập cuộc trò chuyện này.",

@@ -37,10 +37,9 @@ otherwise `WEB_APP_URL`, `NEXT_PUBLIC_WEB_APP_URL`, `NEXT_PUBLIC_APP_URL`,
 `PLATFORM_BUILD_DEPLOYMENT_URL`, and production fallback `https://tuturuuu.com`
 are used before local request-origin fallback.
 
-## Secret Namespace
+## Configuration Storage
 
-The module intentionally avoids a database migration in v1. It stores
-configuration under the root workspace:
+Agent configuration stays under root workspace secrets:
 
 ```txt
 AI_AGENT_REGISTRY:<agentId>:meta
@@ -53,14 +52,45 @@ AI_AGENT_IDENTITY:<wsId>:zalo:<oaId>:<zaloUserId>
 Admin APIs redact channel secrets. One-time generated values are shown only
 after rotation.
 
+External chat history is mirrored separately in the `private` schema:
+
+```txt
+private.ai_agent_external_threads
+private.ai_agent_external_messages
+```
+
+Only server-owned `apps/web` routes call the private RPCs for listing,
+syncing, drafting, and sending. Browser clients never read these private tables
+directly.
+
 ## Chat Discovery
 
-The shared chat UI displays enabled AI-agent channels as read-only virtual
-conversations in the internal root workspace. These entries are discoverable in
-`apps/web` and the standalone `apps/chat` app, but they do not create private
-chat rows in v1 and cannot be used for sending messages or reactions. Operators
-manage credentials, deployment, and webhook URLs from Infrastructure > AI
-Agents.
+The shared chat UI displays mirrored external AI-agent threads as read-only AI
+conversations in the workspace selected for the agent channel. This works in
+`apps/web` and the standalone `apps/chat` app. Chat users can inspect mirrored
+history there, while manual response drafting and sending stays in
+Infrastructure > AI Agents.
+
+The root workspace may still show enabled agent channel setup entries so
+operators can jump to channel configuration. Those setup entries are not the
+message mirror; mirrored external threads use `ai-agent-thread-<uuid>`
+conversation IDs.
+
+## Manual Response Console
+
+Infrastructure > AI Agents is the full setup and operations surface:
+
+- Configure Discord and Zalo credentials, workspace mapping, auto-response, and
+  history sync per channel.
+- Inspect mirrored external threads and messages.
+- Trigger an on-demand external history sync when the adapter supports it.
+- Generate a draft with a custom operator prompt and mirrored history context.
+- Send the reviewed draft back to the external platform exactly as edited.
+
+Discord can fetch recent thread/channel history through the Chat SDK adapter
+when the bot token has the required scopes. Zalo history fetch support is
+limited, so Zalo mirrors primarily rely on webhook/runtime events until the
+adapter can fetch historical messages.
 
 ## Discord And Zalo Setup
 

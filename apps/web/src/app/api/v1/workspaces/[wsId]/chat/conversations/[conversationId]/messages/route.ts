@@ -8,6 +8,10 @@ import type { ChatRealtimeAudience } from '@tuturuuu/realtime/chat';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import {
+  isAiAgentExternalConversationId,
+  listAiAgentExternalMessages,
+} from '@/lib/ai-agents/external-chat-mirror';
 import { type SessionAuthContext, withSessionAuth } from '@/lib/api-auth';
 import {
   getAiChatId,
@@ -101,6 +105,25 @@ export const GET = withSessionAuth<RouteParams>(
         return NextResponse.json({ messages });
       }
 
+      if (isAiAgentExternalConversationId(params.conversationId)) {
+        const messages = await listAiAgentExternalMessages({
+          actorUserId: auth.user.id,
+          before: before || null,
+          conversationId: params.conversationId,
+          limit: Number.isFinite(limit) ? limit : 60,
+          wsId: context.context.normalizedWsId,
+        });
+
+        if (!messages) {
+          return NextResponse.json(
+            { message: 'External thread not found' },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ messages });
+      }
+
       const messages = await callPrivateChatRpc<ChatMessage[]>(
         'chat_list_messages',
         {
@@ -157,6 +180,16 @@ export const POST = withSessionAuth<RouteParams>(
         request,
         stream: wantsChatMessageStream(request),
       });
+    }
+
+    if (isAiAgentExternalConversationId(params.conversationId)) {
+      return NextResponse.json(
+        {
+          message:
+            'External AI-agent conversations are read-only here. Send manual responses from Infrastructure > AI Agents.',
+        },
+        { status: 403 }
+      );
     }
 
     try {

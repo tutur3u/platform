@@ -111,7 +111,10 @@ async function updateChannelMeta({
     status: channel.status,
     webhookUrl: channel.webhookUrl,
     workspaceId: channel.workspaceId,
+    autoRespond: channel.autoRespond ?? true,
     discordGuildId: channel.discordGuildId ?? null,
+    externalChannelId: channel.externalChannelId ?? null,
+    historySyncEnabled: channel.historySyncEnabled ?? true,
     zaloOfficialAccountId: channel.zaloOfficialAccountId ?? null,
   };
 

@@ -12,6 +12,9 @@ describe('AI agent settings payload builder', () => {
     formData.set('instructions', 'Help users.');
     formData.set('discordDisplayName', 'Discord');
     formData.set('discordEnabled', 'on');
+    formData.set('discordAutoRespond', 'on');
+    formData.set('discordHistorySyncEnabled', 'on');
+    formData.set('discordExternalChannelId', 'channel-1');
     formData.set('discordGuildId', 'guild-1');
     formData.set('discordMentionRoleIds', 'role-1\nrole-2');
     formData.set('discordApplicationId', 'app-1');
@@ -19,6 +22,9 @@ describe('AI agent settings payload builder', () => {
     formData.set('discordBotToken', 'discord-token');
     formData.set('zaloDisplayName', 'Zalo');
     formData.set('zaloEnabled', 'on');
+    formData.set('zaloAutoRespond', 'on');
+    formData.set('zaloHistorySyncEnabled', 'on');
+    formData.set('zaloExternalChannelId', 'oa-thread');
     formData.set('zaloOfficialAccountId', 'oa-1');
     formData.set('zaloBotToken', 'zalo-token');
     formData.set('zaloWebhookSecret', 'zalo-secret');
@@ -27,7 +33,10 @@ describe('AI agent settings payload builder', () => {
       channels: [
         {
           adapter: 'discord',
+          autoRespond: true,
           discordGuildId: 'guild-1',
+          externalChannelId: 'channel-1',
+          historySyncEnabled: true,
           id: 'support-discord',
           mentionRoleIds: ['role-1', 'role-2'],
           secrets: {
@@ -39,6 +48,9 @@ describe('AI agent settings payload builder', () => {
         },
         {
           adapter: 'zalo',
+          autoRespond: true,
+          externalChannelId: 'oa-thread',
+          historySyncEnabled: true,
           id: 'support-zalo',
           secrets: {
             botToken: 'zalo-token',

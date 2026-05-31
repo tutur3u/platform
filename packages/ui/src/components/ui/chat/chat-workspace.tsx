@@ -44,9 +44,11 @@ import {
   type ChatConversationScope,
   filterChatConversations,
   getChatConversationTypesForScope,
+  getChatSelectionStorageKey,
   getConversationTitle,
   isReadOnlyChatConversation,
   normalizeChatConversationScope,
+  resolveChatConversationSelection,
 } from './utils';
 
 interface ChatWorkspaceProps {
@@ -74,6 +76,10 @@ export function ChatWorkspace({
   const [sharedContentOpen, setSharedContentOpen] = useState(false);
   const [archiveFilter, setArchiveFilter] =
     useState<ChatConversationArchiveFilter>('active');
+  const [storedConversationId, setStoredConversationId] = useState<
+    string | null
+  >(null);
+  const [storedSelectionLoaded, setStoredSelectionLoaded] = useState(false);
   const [selectedTypes, setSelectedTypes] = useState<
     ChatConversation['type'][]
   >([...CHAT_CONVERSATION_TYPE_FILTERS]);
@@ -99,11 +105,23 @@ export function ChatWorkspace({
         types: selectedTypes,
       })
     : allConversations;
-  const conversationIds = useMemo(
-    () => new Set(conversations.map((conversation) => conversation.id)),
+  const conversationIdList = useMemo(
+    () => conversations.map((conversation) => conversation.id),
     [conversations]
   );
-  const selectedConversationId = searchParams.get('conversationId');
+  const conversationIds = useMemo(
+    () => new Set(conversationIdList),
+    [conversationIdList]
+  );
+  const requestedConversationId = searchParams.get('conversationId');
+  const selectionStorageKey = conversationScope
+    ? getChatSelectionStorageKey(wsId, conversationScope)
+    : null;
+  const selectedConversationId = resolveChatConversationSelection({
+    conversationIds: conversationIdList,
+    requestedConversationId,
+    storedConversationId,
+  });
   const selectedConversation = useMemo(
     () =>
       (selectedConversationId && conversationIds.has(selectedConversationId)
@@ -116,6 +134,10 @@ export function ChatWorkspace({
   const activeConversationId = selectedConversation?.id ?? null;
   const selectedReadOnly = isReadOnlyChatConversation(selectedConversation);
   const selectedAiConversation = selectedConversation?.type === 'ai';
+  const selectedAgentReadOnly =
+    (selectedConversation?.metadata.source === 'ai-agent' ||
+      selectedConversation?.metadata.source === 'ai-agent-external-thread') &&
+    selectedReadOnly;
   const selectedVirtualReadOnly =
     selectedConversation?.metadata.source === 'ai-agent' && selectedReadOnly;
   const selectedMembership =
@@ -177,6 +199,45 @@ export function ChatWorkspace({
   const detailsOpen = Boolean(sharedContentOpen && activeConversationId);
 
   useChatRealtime(wsId);
+
+  useEffect(() => {
+    setStoredSelectionLoaded(false);
+    if (!selectionStorageKey) {
+      setStoredConversationId(null);
+      setStoredSelectionLoaded(true);
+      return;
+    }
+
+    setStoredConversationId(localStorage.getItem(selectionStorageKey));
+    setStoredSelectionLoaded(true);
+  }, [selectionStorageKey]);
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    if (!storedSelectionLoaded && !requestedConversationId) return;
+
+    if (selectionStorageKey) {
+      localStorage.setItem(selectionStorageKey, activeConversationId);
+    }
+
+    if (requestedConversationId === activeConversationId) return;
+
+    const nextParams = new URLSearchParams(searchParams.toString());
+    nextParams.set('conversationId', activeConversationId);
+    const nextQuery = nextParams.toString();
+    window.history.replaceState(
+      null,
+      '',
+      nextQuery ? `${pathname}?${nextQuery}` : pathname
+    );
+  }, [
+    activeConversationId,
+    pathname,
+    requestedConversationId,
+    searchParams,
+    selectionStorageKey,
+    storedSelectionLoaded,
+  ]);
 
   useEffect(() => {
     if (selectedReadOnly) return;
@@ -246,6 +307,9 @@ export function ChatWorkspace({
       '',
       nextQuery ? `${pathname}?${nextQuery}` : pathname
     );
+    if (selectionStorageKey) {
+      localStorage.setItem(selectionStorageKey, conversationId);
+    }
   }
 
   function handleCreated(conversation: ChatConversation) {
@@ -441,7 +505,7 @@ export function ChatWorkspace({
         )}
       </div>
 
-      {selectedVirtualReadOnly ? (
+      {selectedAgentReadOnly ? (
         <ChatAgentDetailsSidebar
           conversation={selectedConversation}
           open={detailsOpen}

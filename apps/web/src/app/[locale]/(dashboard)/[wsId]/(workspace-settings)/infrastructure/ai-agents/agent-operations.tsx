@@ -118,6 +118,26 @@ export function AgentOperations({
               </span>
               <span>{channel.lastEventAt ?? t('status.never')}</span>
             </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">
+                {t('fields.auto_respond')}
+              </span>
+              <span>
+                {channel.autoRespond === false
+                  ? t('status.disabled')
+                  : t('status.enabled')}
+              </span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="text-muted-foreground">
+                {t('fields.history_sync')}
+              </span>
+              <span>
+                {channel.historySyncEnabled === false
+                  ? t('status.disabled')
+                  : t('status.enabled')}
+              </span>
+            </div>
             {channel.secrets.map((secret) => (
               <div className="flex justify-between gap-3" key={secret.name}>
                 <span className="text-muted-foreground">{secret.name}</span>

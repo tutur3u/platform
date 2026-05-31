@@ -73,6 +73,8 @@ describe('AI agent registry codec', () => {
     });
     expect(agents[0]?.channels[0]).toMatchObject({
       adapter: 'zalo',
+      autoRespond: true,
+      historySyncEnabled: true,
       status: 'deployed',
       webhookUrl:
         'https://tuturuuu.com/api/v1/webhooks/ai-agents/zalo/zalo-main',
@@ -83,6 +85,33 @@ describe('AI agent registry codec', () => {
       { configured: true, lastFour: 'cret', name: 'webhookSecret' },
     ]);
     expect(JSON.stringify(agents)).not.toContain('zalo-webhook-secret');
+  });
+
+  it('preserves external chat setup options in channel metadata', () => {
+    const agents = buildAgentDefinitions([
+      {
+        name: 'AI_AGENT_REGISTRY:support:meta',
+        value: JSON.stringify({ id: 'support', name: 'Support Agent' }),
+      },
+      {
+        name: channelMetaKey('support', 'discord-main'),
+        value: JSON.stringify({
+          adapter: 'discord',
+          autoRespond: false,
+          displayName: 'Discord Main',
+          externalChannelId: 'channel-1',
+          historySyncEnabled: false,
+          status: 'draft',
+          workspaceId: 'workspace-1',
+        }),
+      },
+    ]);
+
+    expect(agents[0]?.channels[0]).toMatchObject({
+      autoRespond: false,
+      externalChannelId: 'channel-1',
+      historySyncEnabled: false,
+    });
   });
 
   it('splits large instructions and validates serialized field size', () => {

@@ -89,7 +89,7 @@ export function MessageBubble({
 
           <div
             className={cn(
-              'group flex min-w-0 flex-1 flex-col gap-1',
+              'group flex min-w-0 max-w-[min(42rem,calc(100%-2.75rem))] flex-none flex-col gap-1',
               isOwnMessage && 'items-end'
             )}
           >
@@ -256,7 +256,7 @@ function MessageContent({
   return (
     <div
       className={cn(
-        'w-full rounded-md border px-3 py-2 text-sm leading-6 shadow-xs',
+        'w-fit max-w-full overflow-hidden rounded-md border px-3 py-2 text-sm leading-6 shadow-xs',
         isOwnMessage
           ? 'border-dynamic-blue/20 bg-dynamic-blue/10'
           : 'bg-muted/40'
