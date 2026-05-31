@@ -526,7 +526,7 @@ export async function createWorkspaceChatFriendRequest(
   options?: InternalApiClientOptions
 ) {
   const client = getInternalApiClient(options);
-  return client.json<{ request: ChatFriendRequest }>(
+  return client.json<{ queued: true }>(
     `${chatBasePath(workspaceId)}/friend-requests`,
     {
       body: JSON.stringify(payload),

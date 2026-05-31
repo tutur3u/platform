@@ -56,6 +56,7 @@ const DEFAULT_PAGE_SIZE = 50;
 const DEFAULT_TIMEFRAME_HOURS = 24;
 const MAX_PAGE_SIZE = 200;
 const MAX_AGGREGATE_ROWS = 5_000;
+const MAX_LOG_EVENTS_PER_GROUP = 100;
 const RESOURCE_SAMPLE_MIN_INTERVAL_MS = 60_000;
 const RESOURCE_SAMPLE_STALE_AFTER_MS = RESOURCE_SAMPLE_MIN_INTERVAL_MS * 5;
 const DEFAULT_PROJECT_ID = 'platform';
@@ -826,56 +827,57 @@ function groupObservabilityLogs(
 
   return [...groups.entries()]
     .map(([key, groupLogs]) => {
-      const events = [...groupLogs].sort(
+      const allEvents = [...groupLogs].sort(
         (left, right) => left.createdAt - right.createdAt
       );
-      const latest = events[events.length - 1] as ObservabilityLogEvent;
+      const events = allEvents.slice(-MAX_LOG_EVENTS_PER_GROUP);
+      const latest = allEvents[allEvents.length - 1] as ObservabilityLogEvent;
 
       return {
         createdAt: latest.createdAt,
         deploymentColor:
           latest.deploymentColor ??
-          events.find((event) => event.deploymentColor)?.deploymentColor ??
+          allEvents.find((event) => event.deploymentColor)?.deploymentColor ??
           null,
         deploymentStamp:
           latest.deploymentStamp ??
-          events.find((event) => event.deploymentStamp)?.deploymentStamp ??
+          allEvents.find((event) => event.deploymentStamp)?.deploymentStamp ??
           null,
         durationMs:
-          events
+          allEvents
             .map((event) => event.durationMs)
             .filter((duration): duration is number => duration != null)
             .sort((left, right) => right - left)[0] ?? null,
         errorName:
           latest.errorName ??
-          events.find((event) => event.errorName)?.errorName ??
+          allEvents.find((event) => event.errorName)?.errorName ??
           null,
         errorStack:
           latest.errorStack ??
-          events.find((event) => event.errorStack)?.errorStack ??
+          allEvents.find((event) => event.errorStack)?.errorStack ??
           null,
-        eventCount: events.length,
+        eventCount: allEvents.length,
         events,
-        firstEventAt: events[0]?.createdAt ?? latest.createdAt,
+        firstEventAt: allEvents[0]?.createdAt ?? latest.createdAt,
         id: key,
         ipAddress:
           latest.ipAddress ??
-          events.find((event) => event.ipAddress)?.ipAddress ??
+          allEvents.find((event) => event.ipAddress)?.ipAddress ??
           null,
-        level: getRepresentativeLevel(events),
-        message: getRepresentativeMessage(events),
+        level: getRepresentativeLevel(allEvents),
+        message: getRepresentativeMessage(allEvents),
         metadata: latest.metadata,
         requestId:
           latest.requestId ??
-          events.find((event) => event.requestId)?.requestId ??
+          allEvents.find((event) => event.requestId)?.requestId ??
           null,
         route:
-          latest.route ?? events.find((event) => event.route)?.route ?? null,
+          latest.route ?? allEvents.find((event) => event.route)?.route ?? null,
         source: latest.source,
-        status: getRepresentativeStatus(events),
+        status: getRepresentativeStatus(allEvents),
         userAgent:
           latest.userAgent ??
-          events.find((event) => event.userAgent)?.userAgent ??
+          allEvents.find((event) => event.userAgent)?.userAgent ??
           null,
       };
     })

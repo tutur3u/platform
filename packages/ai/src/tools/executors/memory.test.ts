@@ -117,6 +117,11 @@ describe('Mira memory tool compatibility', () => {
         query: 'favorite music',
       })
     );
+    expect(memoryMocks.searchAiMemories).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        includeProductFilter: false,
+      })
+    );
   });
 
   it('lists and deletes existing Mira memories through stable tool names', async () => {

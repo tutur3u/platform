@@ -8,10 +8,43 @@ import {
 } from '../request-access';
 import { flattenWalletCreditList } from './wallet-access';
 
+const FULL_WALLET_SELECT =
+  '*, credit_wallets(limit, statement_date, payment_date)';
+const INVOICE_SAFE_WALLET_SELECT = 'id,name,type,currency,icon,image_src';
+
 interface Params {
   params: Promise<{
     wsId: string;
   }>;
+}
+
+async function loadWorkspaceWallets({
+  invoiceSafeOnly,
+  normalizedWsId,
+  sbAdmin,
+  walletIds,
+}: {
+  invoiceSafeOnly: boolean;
+  normalizedWsId: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sbAdmin: any;
+  walletIds?: string[];
+}) {
+  let query = sbAdmin
+    .from('workspace_wallets')
+    .select(invoiceSafeOnly ? INVOICE_SAFE_WALLET_SELECT : FULL_WALLET_SELECT)
+    .eq('ws_id', normalizedWsId);
+
+  if (walletIds) {
+    query = query.in('id', walletIds);
+  }
+
+  const { data, error } = await query.order('name', { ascending: true });
+
+  return {
+    data: invoiceSafeOnly ? (data ?? []) : flattenWalletCreditList(data ?? []),
+    error,
+  };
 }
 
 export async function GET(
@@ -32,6 +65,8 @@ export async function GET(
   // Check if user has manage_finance permission
   const hasManageFinance = !withoutPermission('manage_finance');
   const hasCreateInvoices = !withoutPermission('create_invoices');
+  const canReadWalletFinancialFields =
+    hasManageFinance || !withoutPermission('view_transactions');
   const defaultInvoiceWalletId = hasCreateInvoices
     ? await getWorkspaceConfig(normalizedWsId, 'default_wallet_id')
     : null;
@@ -39,14 +74,12 @@ export async function GET(
     hasCreateInvoices &&
     (!defaultInvoiceWalletId || canSetAnyFinanceWalletOnCreate(permissions));
 
-  if (hasManageFinance || canReadAllWalletsForInvoiceCreation) {
-    // Invoice creators need wallet choices when there is no default wallet or
-    // their role can override the default during creation.
-    const { data, error } = await sbAdmin
-      .from('workspace_wallets')
-      .select('*, credit_wallets(limit, statement_date, payment_date)')
-      .eq('ws_id', normalizedWsId)
-      .order('name', { ascending: true });
+  if (hasManageFinance) {
+    const { data, error } = await loadWorkspaceWallets({
+      invoiceSafeOnly: false,
+      normalizedWsId,
+      sbAdmin,
+    });
 
     if (error) {
       console.log(error);
@@ -56,7 +89,27 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(flattenWalletCreditList(data ?? []));
+    return NextResponse.json(data);
+  }
+
+  if (canReadAllWalletsForInvoiceCreation) {
+    // Invoice creators need wallet choices when there is no default wallet or
+    // their role can override the default during creation.
+    const { data, error } = await loadWorkspaceWallets({
+      invoiceSafeOnly: true,
+      normalizedWsId,
+      sbAdmin,
+    });
+
+    if (error) {
+      console.log(error);
+      return NextResponse.json(
+        { message: 'Error fetching transaction wallets' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(data);
   }
 
   // User doesn't have manage_finance - check wallet whitelist
@@ -84,12 +137,12 @@ export async function GET(
       return NextResponse.json([]);
     }
 
-    const { data: wallets, error: walletsError } = await sbAdmin
-      .from('workspace_wallets')
-      .select('*, credit_wallets(limit, statement_date, payment_date)')
-      .eq('ws_id', normalizedWsId)
-      .in('id', defaultInvoiceWalletIds)
-      .order('name', { ascending: true });
+    const { data: wallets, error: walletsError } = await loadWorkspaceWallets({
+      invoiceSafeOnly: !canReadWalletFinancialFields,
+      normalizedWsId,
+      sbAdmin,
+      walletIds: defaultInvoiceWalletIds,
+    });
 
     if (walletsError) {
       console.log(walletsError);
@@ -134,12 +187,12 @@ export async function GET(
   ];
 
   // Fetch wallet details
-  const { data: wallets, error: walletsError } = await sbAdmin
-    .from('workspace_wallets')
-    .select('*, credit_wallets(limit, statement_date, payment_date)')
-    .eq('ws_id', normalizedWsId)
-    .in('id', walletIds)
-    .order('name', { ascending: true });
+  const { data: wallets, error: walletsError } = await loadWorkspaceWallets({
+    invoiceSafeOnly: !canReadWalletFinancialFields,
+    normalizedWsId,
+    sbAdmin,
+    walletIds,
+  });
 
   if (walletsError) {
     console.log(walletsError);
@@ -207,13 +260,16 @@ export async function GET(
     { viewing_window: string | null; custom_days: number | null }
   >());
 
-  const walletsWithWindow = flattenWalletCreditList(wallets ?? []).map(
-    (wallet) => ({
-      ...wallet,
-      viewing_window: walletMap.get(wallet.id)?.viewing_window,
-      custom_days: walletMap.get(wallet.id)?.custom_days,
-    })
-  );
+  const walletRows = (wallets ?? []) as Array<
+    { id: string } & Record<string, unknown>
+  >;
+  const walletsWithWindow = canReadWalletFinancialFields
+    ? walletRows.map((wallet) => ({
+        ...wallet,
+        viewing_window: walletMap.get(wallet.id)?.viewing_window,
+        custom_days: walletMap.get(wallet.id)?.custom_days,
+      }))
+    : walletRows;
 
   return NextResponse.json(walletsWithWindow);
 }

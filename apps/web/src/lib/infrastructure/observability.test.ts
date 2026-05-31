@@ -348,6 +348,70 @@ describe('createResourceSamplingSummary', () => {
 });
 
 describe('readObservabilityLogs', () => {
+  it('caps embedded grouped events while preserving total event count', async () => {
+    const tempDir = fs.mkdtempSync(
+      path.join(os.tmpdir(), 'observability-capped-logs-')
+    );
+    const now = Date.now();
+
+    try {
+      const watchDir = path.join(tempDir, 'watch');
+      const requestLogDir = path.join(watchDir, 'blue-green-request-logs');
+      fs.mkdirSync(requestLogDir, { recursive: true });
+      fs.writeFileSync(
+        path.join(watchDir, 'blue-green-request-telemetry.state.json'),
+        JSON.stringify({
+          chunks: [
+            {
+              count: 1,
+              file: 'requests-1.jsonl',
+              firstRequestAt: now - 20_000,
+              lastRequestAt: now - 20_000,
+            },
+          ],
+          currentChunkCount: 1,
+          currentChunkFile: 'requests-1.jsonl',
+          totalRecords: 1,
+        })
+      );
+      fs.writeFileSync(
+        path.join(requestLogDir, 'requests-1.jsonl'),
+        JSON.stringify({
+          consoleLogs: Array.from({ length: 150 }, (_, index) => ({
+            level: 'info',
+            message: `event-${index}`,
+            source: 'route',
+            time: now - 20_000 + index,
+          })),
+          deploymentStamp: 'deploy-capped',
+          host: 'tuturuuu.com',
+          isInternal: false,
+          method: 'GET',
+          path: '/api/cron/infrastructure/sample-resources',
+          requestTimeMs: 24,
+          status: 200,
+          time: now - 20_000,
+        })
+      );
+      process.env.PLATFORM_BLUE_GREEN_MONITORING_DIR = tempDir;
+      process.env.PLATFORM_LOG_DRAIN_ENABLED = 'false';
+
+      const logs = await readObservabilityLogs({
+        pageSize: 1,
+        route: '/api/cron/infrastructure/sample-resources',
+        timeframeHours: 1,
+      });
+
+      expect(logs.total).toBe(1);
+      expect(logs.items[0]?.eventCount).toBe(150);
+      expect(logs.items[0]?.events).toHaveLength(100);
+      expect(logs.items[0]?.events[0]?.message).toBe('event-50');
+      expect(logs.items[0]?.events.at(-1)?.message).toBe('event-149');
+    } finally {
+      fs.rmSync(tempDir, { force: true, recursive: true });
+    }
+  });
+
   it('groups legacy console logs by request id and exposes route/status facets', async () => {
     const tempDir = fs.mkdtempSync(
       path.join(os.tmpdir(), 'observability-logs-')

@@ -26,7 +26,8 @@ export interface LogDrainEvent {
   userAgent: string | null;
 }
 
-interface LogDrainContext {
+export interface LogDrainContext {
+  clientRequestId: string | null;
   cronJobId: string | null;
   events: LogDrainEvent[];
   ipAddress: string | null;
@@ -39,13 +40,13 @@ interface LogDrainContext {
   userAgent: string | null;
 }
 
-interface RequestDrainOptions {
+export interface RequestDrainOptions {
   request: Request;
   route?: string;
   source?: Extract<LogDrainSource, 'api' | 'server'>;
 }
 
-interface CronDrainOptions {
+export interface CronDrainOptions {
   jobId: string;
   path: string;
   request?: Request;
@@ -61,6 +62,7 @@ const DEFAULT_RAW_RETENTION_DAYS = 30;
 const DEFAULT_SUMMARY_RETENTION_DAYS = 90;
 const MAX_SERIALIZED_ARG_LENGTH = 4_000;
 const MAX_LOG_EVENTS_PER_CONTEXT = 500;
+const MAX_CLIENT_REQUEST_ID_LENGTH = 256;
 const DEFAULT_PROJECT_ID = 'platform';
 
 const storage = new AsyncLocalStorage<LogDrainContext>();
@@ -340,6 +342,13 @@ function getRequestClientMetadata(request: Request | undefined) {
   };
 }
 
+function getClientRequestId(request: Request | undefined) {
+  const value = request?.headers.get('x-request-id')?.trim();
+  if (!value) return null;
+
+  return value.slice(0, MAX_CLIENT_REQUEST_ID_LENGTH);
+}
+
 function getDeploymentMetadata() {
   return {
     deploymentColor: process.env.PLATFORM_BLUE_GREEN_COLOR?.trim() || null,
@@ -510,7 +519,9 @@ async function persistContext({
     const durationMs = Math.max(0, endedAt - context.startedAt);
     const deployment = getDeploymentMetadata();
     const projectId = context.projectId || deployment.projectId;
-    const requestMetadata = {};
+    const requestMetadata = context.clientRequestId
+      ? { clientRequestId: context.clientRequestId }
+      : {};
 
     await sql.begin(async (transaction) => {
       await transaction`
@@ -565,6 +576,7 @@ async function persistContext({
           error_stack = EXCLUDED.error_stack,
           ip_address = EXCLUDED.ip_address,
           user_agent = EXCLUDED.user_agent,
+          metadata = EXCLUDED.metadata,
           ended_at = EXCLUDED.ended_at
       `;
 
@@ -683,6 +695,49 @@ function createRequestId(prefix: string) {
   return `${prefix}-${Date.now()}-${crypto.randomUUID()}`;
 }
 
+export function createRequestLogDrainContext(
+  options: RequestDrainOptions
+): LogDrainContext {
+  const url = new URL(options.request.url);
+  const clientMetadata = getRequestClientMetadata(options.request);
+  const deployment = getDeploymentMetadata();
+
+  return {
+    clientRequestId: getClientRequestId(options.request),
+    cronJobId: null,
+    events: [],
+    ipAddress: clientMetadata.ipAddress,
+    method: options.request.method,
+    path: options.route ?? url.pathname,
+    projectId: deployment.projectId,
+    requestId: createRequestId('req'),
+    source: options.source ?? 'api',
+    startedAt: Date.now(),
+    userAgent: clientMetadata.userAgent,
+  };
+}
+
+export function createCronLogDrainContext(
+  options: CronDrainOptions
+): LogDrainContext {
+  const clientMetadata = getRequestClientMetadata(options.request);
+  const deployment = getDeploymentMetadata();
+
+  return {
+    clientRequestId: getClientRequestId(options.request),
+    cronJobId: options.jobId,
+    events: [],
+    ipAddress: clientMetadata.ipAddress,
+    method: options.request?.method ?? 'GET',
+    path: options.path,
+    projectId: deployment.projectId,
+    requestId: createRequestId('cron'),
+    source: 'cron',
+    startedAt: Date.now(),
+    userAgent: clientMetadata.userAgent,
+  };
+}
+
 async function runWithLogDrain<T>(
   context: LogDrainContext,
   handler: () => Promise<T>
@@ -713,47 +768,14 @@ export async function withRequestLogDrain<T extends Response>(
   options: RequestDrainOptions,
   handler: () => Promise<T>
 ) {
-  const url = new URL(options.request.url);
-  const clientMetadata = getRequestClientMetadata(options.request);
-  const deployment = getDeploymentMetadata();
-  const context: LogDrainContext = {
-    cronJobId: null,
-    events: [],
-    ipAddress: clientMetadata.ipAddress,
-    method: options.request.method,
-    path: options.route ?? url.pathname,
-    projectId: deployment.projectId,
-    requestId:
-      options.request.headers.get('x-request-id') ?? createRequestId('req'),
-    source: options.source ?? 'api',
-    startedAt: Date.now(),
-    userAgent: clientMetadata.userAgent,
-  };
-
-  return runWithLogDrain(context, handler);
+  return runWithLogDrain(createRequestLogDrainContext(options), handler);
 }
 
 export async function withCronLogDrain<T extends Response>(
   options: CronDrainOptions,
   handler: () => Promise<T>
 ) {
-  const clientMetadata = getRequestClientMetadata(options.request);
-  const deployment = getDeploymentMetadata();
-  const context: LogDrainContext = {
-    cronJobId: options.jobId,
-    events: [],
-    ipAddress: clientMetadata.ipAddress,
-    method: options.request?.method ?? 'GET',
-    path: options.path,
-    projectId: deployment.projectId,
-    requestId:
-      options.request?.headers.get('x-request-id') ?? createRequestId('cron'),
-    source: 'cron',
-    startedAt: Date.now(),
-    userAgent: clientMetadata.userAgent,
-  };
-
-  return runWithLogDrain(context, handler);
+  return runWithLogDrain(createCronLogDrainContext(options), handler);
 }
 
 function writeServerLog(level: LogDrainLevel, args: unknown[]) {

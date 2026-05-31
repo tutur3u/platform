@@ -22,6 +22,7 @@ import { getTranslations } from 'next-intl/server';
 import { type ReactNode, Suspense } from 'react';
 import { WorkspacePreparing } from '@/components/workspace-preparing';
 import {
+  PROD_MODE,
   SIDEBAR_BEHAVIOR_COOKIE_NAME,
   SIDEBAR_COLLAPSED_COOKIE_NAME,
 } from '@/constants/common';
@@ -32,6 +33,7 @@ import { SettingsDialogHost } from '../../settings-dialog-host';
 import { UserNav } from '../../user-nav';
 import InvitationCard from './invitation-card';
 import { WorkspaceNavigationLinks } from './navigation';
+import { filterDashboardNavigationLinks } from './navigation-visibility';
 import { PersonalWorkspaceCollaborationBanner } from './personal-workspace-collaboration-banner';
 import PersonalWorkspacePrompt from './personal-workspace-prompt';
 import { Structure } from './structure';
@@ -190,6 +192,15 @@ export default async function Layout({ children, params }: LayoutProps) {
     isPersonal: !!workspace.personal,
     isTuturuuuUser: !!user.email?.endsWith('@tuturuuu.com'),
   });
+  const visibleNavigationLinks = filterDashboardNavigationLinks(
+    navigationLinks,
+    {
+      currentWsId: wsId,
+      prodMode: PROD_MODE,
+      userEmail: user.email,
+      workspaceTier: workspace.tier ?? null,
+    }
+  );
 
   return (
     <SidebarProvider initialBehavior={sidebarBehavior}>
@@ -214,7 +225,7 @@ export default async function Layout({ children, params }: LayoutProps) {
         user={user}
         workspace={workspace}
         defaultCollapsed={defaultCollapsed}
-        links={navigationLinks}
+        links={visibleNavigationLinks}
         actions={
           <Suspense
             key={user.id}
@@ -239,7 +250,7 @@ export default async function Layout({ children, params }: LayoutProps) {
               hideMetadata
               workspace={workspace}
               renderSettingsDialog={false}
-              navLinks={navigationLinks}
+              navLinks={visibleNavigationLinks}
             />
           </Suspense>
         }

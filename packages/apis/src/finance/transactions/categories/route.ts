@@ -32,6 +32,8 @@ export async function GET(
   }
 
   const { normalizedWsId, permissions, sbAdmin } = access.context;
+  const canViewTransactions =
+    !permissions.withoutPermission('view_transactions');
 
   if (
     !hasAnyFinancePermission(permissions, [
@@ -45,11 +47,19 @@ export async function GET(
     );
   }
 
-  const { data, error } = await sbAdmin
-    .rpc('get_transaction_categories_with_amount_by_workspace', {
-      p_ws_id: normalizedWsId,
-    })
-    .order('name', { ascending: true });
+  const query = canViewTransactions
+    ? sbAdmin
+        .rpc('get_transaction_categories_with_amount_by_workspace', {
+          p_ws_id: normalizedWsId,
+        })
+        .order('name', { ascending: true })
+    : sbAdmin
+        .from('transaction_categories')
+        .select('id,name,is_expense,icon,color')
+        .eq('ws_id', normalizedWsId)
+        .order('name', { ascending: true });
+
+  const { data, error } = await query;
 
   if (error) {
     console.log(error);

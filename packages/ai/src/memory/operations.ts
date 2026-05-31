@@ -215,7 +215,7 @@ export async function rememberAiMemory({
 export async function searchAiMemories({
   category,
   ignoreSettings,
-  includeProductFilter = false,
+  includeProductFilter = true,
   limit = DEFAULT_CONTEXT_LIMIT,
   query,
   scope,
@@ -386,17 +386,20 @@ export async function forgetAiMemory({
 
 export async function buildAiMemoryContext({
   ignoreSettings,
+  includeProductFilter = true,
   limit = DEFAULT_CONTEXT_LIMIT,
   query,
   scope,
 }: {
   ignoreSettings?: boolean;
+  includeProductFilter?: boolean;
   limit?: number;
   query?: string | null;
   scope: AiMemoryScope | null;
 }): Promise<string> {
   const search = await searchAiMemories({
     ignoreSettings,
+    includeProductFilter,
     limit,
     query: query ?? '',
     scope,

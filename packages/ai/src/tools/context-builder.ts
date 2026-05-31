@@ -135,7 +135,7 @@ export async function buildMiraContext(
           .limit(10)
       : Promise.resolve({ data: null, error: null }),
 
-    // Cross-product AI memories from Supermemory, scoped to the current user + workspace.
+    // Mira AI memories from Supermemory, scoped to the current user + workspace.
     buildAiMemoryContext({
       limit: 15,
       scope: resolveAiMemoryScope({

@@ -2,10 +2,10 @@ import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { withSessionAuth } from '@/lib/api-auth';
 import {
-  type ChatFriendRequest,
   type ChatFriendRequests,
   callPrivateChatRpc,
   chatRpcErrorResponse,
+  getChatRpcErrorStatus,
   resolveChatRouteContext,
 } from '@/lib/chat/private-rpc';
 
@@ -16,6 +16,10 @@ type RouteParams = {
 const createFriendRequestSchema = z.object({
   email: z.string().trim().email().max(320),
 });
+
+function friendRequestQueuedResponse() {
+  return NextResponse.json({ queued: true }, { status: 202 });
+}
 
 export const GET = withSessionAuth<RouteParams>(
   async (_request: NextRequest, auth, params) => {
@@ -75,7 +79,7 @@ export const POST = withSessionAuth<RouteParams>(
     }
 
     try {
-      const friendRequest = await callPrivateChatRpc<ChatFriendRequest>(
+      await callPrivateChatRpc<{ queued: boolean }>(
         'chat_create_friend_request_by_email',
         {
           p_actor_user_id: auth.user.id,
@@ -84,8 +88,12 @@ export const POST = withSessionAuth<RouteParams>(
         }
       );
 
-      return NextResponse.json({ request: friendRequest }, { status: 201 });
+      return friendRequestQueuedResponse();
     } catch (error) {
+      if (getChatRpcErrorStatus(error) === 404) {
+        return friendRequestQueuedResponse();
+      }
+
       return chatRpcErrorResponse(error, 'Failed to create friend request');
     }
   },

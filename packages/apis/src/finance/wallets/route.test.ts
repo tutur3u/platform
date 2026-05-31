@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   walletEq: vi.fn(),
   walletIn: vi.fn(),
   walletOrder: vi.fn(),
+  walletSelect: vi.fn(),
 }));
 
 vi.mock('@tuturuuu/utils/workspace-helper', () => ({
@@ -40,8 +41,11 @@ describe('wallets route', () => {
 
       if (table === 'workspace_wallets') {
         return {
-          select: vi.fn().mockReturnValue({
-            eq: mocks.walletEq,
+          select: vi.fn((columns: string) => {
+            mocks.walletSelect(columns);
+            return {
+              eq: mocks.walletEq,
+            };
           }),
         };
       }
@@ -67,9 +71,38 @@ describe('wallets route', () => {
     mocks.walletIn.mockReturnValue({
       order: mocks.walletOrder,
     });
-    mocks.walletOrder.mockResolvedValue({
-      data: [{ id: 'wallet-default', name: 'Default Wallet' }],
-      error: null,
+    mocks.walletOrder.mockImplementation(async () => {
+      const selectedColumns = mocks.walletSelect.mock.calls.at(-1)?.[0];
+
+      return {
+        data:
+          selectedColumns === 'id,name,type,currency,icon,image_src'
+            ? [
+                {
+                  currency: 'USD',
+                  icon: null,
+                  id: 'wallet-default',
+                  image_src: null,
+                  name: 'Default Wallet',
+                  type: 'CASH',
+                },
+              ]
+            : [
+                {
+                  balance: 1200,
+                  credit_wallets: {
+                    limit: 5000,
+                    payment_date: 15,
+                    statement_date: 1,
+                  },
+                  currency: 'USD',
+                  id: 'wallet-default',
+                  name: 'Default Wallet',
+                  type: 'CREDIT',
+                },
+              ],
+        error: null,
+      };
     });
   });
 
@@ -98,8 +131,18 @@ describe('wallets route', () => {
 
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual([
-      { id: 'wallet-default', name: 'Default Wallet' },
+      {
+        currency: 'USD',
+        icon: null,
+        id: 'wallet-default',
+        image_src: null,
+        name: 'Default Wallet',
+        type: 'CASH',
+      },
     ]);
+    expect(mocks.walletSelect).toHaveBeenCalledWith(
+      'id,name,type,currency,icon,image_src'
+    );
     expect(mocks.walletIn).toHaveBeenCalledWith('id', ['wallet-default']);
   });
 
@@ -128,8 +171,48 @@ describe('wallets route', () => {
 
     expect(response.status).toBe(200);
     expect(mocks.roleMembersEq).not.toHaveBeenCalled();
+    expect(mocks.walletSelect).toHaveBeenCalledWith(
+      'id,name,type,currency,icon,image_src'
+    );
     expect(mocks.walletOrder).toHaveBeenCalledWith('name', {
       ascending: true,
     });
+  });
+
+  it('returns full wallet fields for finance managers', async () => {
+    mocks.getWorkspaceConfig.mockResolvedValue(null);
+    mocks.getFinanceRouteContext.mockResolvedValue({
+      context: {
+        normalizedWsId: 'ws-1',
+        permissions: withPermissions(['manage_finance']),
+        sbAdmin: createAdminClient(),
+        user: {
+          id: 'user-1',
+        },
+      },
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new Request('http://localhost/api/v1/workspaces/ws-1/wallets'),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual([
+      expect.objectContaining({
+        balance: 1200,
+        limit: 5000,
+        payment_date: 15,
+        statement_date: 1,
+      }),
+    ]);
+    expect(mocks.walletSelect).toHaveBeenCalledWith(
+      '*, credit_wallets(limit, statement_date, payment_date)'
+    );
   });
 });

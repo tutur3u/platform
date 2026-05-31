@@ -3,6 +3,7 @@ import {
   buildAiMemoryContext,
   listAiMemories,
   rememberAiMemory,
+  searchAiMemories,
 } from './operations';
 import { resolveAiMemoryScope } from './scope';
 
@@ -129,6 +130,50 @@ describe('Supermemory operations', () => {
         containerTags: [scope?.containerTag],
         filters: expect.objectContaining({ key: 'product', value: 'mira' }),
         includeContent: true,
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('searches memories with the product filter by default', async () => {
+    await expect(
+      searchAiMemories({ query: 'style', scope })
+    ).resolves.toMatchObject({
+      ok: true,
+      value: [{ key: 'style', value: 'Prefers concise summaries' }],
+    });
+
+    expect(memoryMocks.searchMemories).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.objectContaining({ key: 'product', value: 'mira' }),
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('allows explicit cross-product memory search opt-out', async () => {
+    await searchAiMemories({
+      includeProductFilter: false,
+      query: 'style',
+      scope,
+    });
+
+    expect(memoryMocks.searchMemories).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: undefined,
+      }),
+      expect.any(Object)
+    );
+  });
+
+  it('builds memory context with the product filter by default', async () => {
+    await expect(
+      buildAiMemoryContext({ query: 'style', scope })
+    ).resolves.toContain('Prefers concise summaries');
+
+    expect(memoryMocks.searchMemories).toHaveBeenCalledWith(
+      expect.objectContaining({
+        filters: expect.objectContaining({ key: 'product', value: 'mira' }),
       }),
       expect.any(Object)
     );

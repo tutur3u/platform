@@ -17,7 +17,6 @@ import { Structure as BaseStructure } from '@tuturuuu/ui/custom/structure';
 import { TuturuuLogo } from '@tuturuuu/ui/custom/tuturuuu-logo';
 import { toast } from '@tuturuuu/ui/sonner';
 import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
-import { isValidTuturuuuEmail } from '@tuturuuu/utils/email/client';
 import { cn } from '@tuturuuu/utils/format';
 import { setCookie } from 'cookies-next';
 import Link from 'next/link';
@@ -36,8 +35,8 @@ import { ActiveTimerIndicator } from '@/components/active-timer-indicator';
 import { PROD_MODE, SIDEBAR_COLLAPSED_COOKIE_NAME } from '@/constants/common';
 import { useSidebar } from '@/context/sidebar-context';
 import { useUserBooleanConfig } from '@/hooks/use-user-config';
-import { meetsAnyTierRequirement } from '@/lib/feature-tiers';
 import { Nav } from './nav';
+import { filterDashboardNavigationLinks } from './navigation-visibility';
 import { RecentSidebarItems } from './recent-sidebar-items';
 import {
   applySidebarNavigationPreferences,
@@ -694,142 +693,16 @@ export function Structure({
       }
     : undefined;
 
-  const isRootWorkspace = wsId === ROOT_WORKSPACE_ID;
-
-  /**
-   * Remove consecutive nulls to avoid repeated separators in navigation.
-   * Also removes leading and trailing nulls.
-   */
-  const removeConsecutiveNulls = (
-    arr: (NavLink | null)[]
-  ): (NavLink | null)[] => {
-    const withoutConsecutive = arr.reduce<(NavLink | null)[]>(
-      (acc, item, index) => {
-        // Skip null if previous item was also null
-        if (item === null && index > 0 && arr[index - 1] === null) {
-          return acc;
-        }
-        acc.push(item);
-        return acc;
-      },
-      []
-    );
-
-    // Remove leading nulls
-    while (withoutConsecutive.length > 0 && withoutConsecutive[0] === null) {
-      withoutConsecutive.shift();
-    }
-
-    // Remove trailing nulls
-    while (
-      withoutConsecutive.length > 0 &&
-      withoutConsecutive[withoutConsecutive.length - 1] === null
-    ) {
-      withoutConsecutive.pop();
-    }
-
-    return withoutConsecutive;
-  };
-
   const getFilteredLinks = (
     linksToFilter: (NavLink | null)[] | undefined
-  ): (NavLink | null)[] => {
-    const filtered = (linksToFilter || []).flatMap((link) => {
-      // Preserve null separators
-      if (!link) return [null];
-
-      if (link.disabled) return [];
-      if (link.disableOnProduction && PROD_MODE) return [];
-      if (link.requireRootMember && !isValidTuturuuuEmail(user?.email))
-        return [];
-
-      if (link.requireRootWorkspace && !isRootWorkspace) return [];
-
-      const archivedItems = link.preferenceArchivedItems
-        ? getFilteredLinks(link.preferenceArchivedItems).filter(
-            (archivedItem): archivedItem is NavLink => Boolean(archivedItem)
-          )
-        : undefined;
-
-      if (link.preferenceArchivedItems && archivedItems?.length === 0) {
-        return [];
-      }
-
-      const linkWithArchivedItems = archivedItems
-        ? { ...link, preferenceArchivedItems: archivedItems }
-        : link;
-
-      // Check tier requirement
-      if (linkWithArchivedItems.requiredWorkspaceTier) {
-        const currentTier = workspace?.tier || 'FREE';
-        const meetsTier = meetsAnyTierRequirement(
-          currentTier,
-          linkWithArchivedItems.requiredWorkspaceTier.requiredTier
-        );
-
-        // Tuturuuu employees can access features but still see the tier UI
-        const isTuturuuuEmployee = isValidTuturuuuEmail(user?.email);
-
-        if (!meetsTier) {
-          if (linkWithArchivedItems.requiredWorkspaceTier.alwaysShow) {
-            return [
-              {
-                ...linkWithArchivedItems,
-                // Tuturuuu employees can still access, but see the tier badge
-                tempDisabled: !isTuturuuuEmployee,
-              },
-            ];
-          } else {
-            // Hide it (but Tuturuuu employees can still see)
-            if (isTuturuuuEmployee) {
-              return [linkWithArchivedItems];
-            }
-            return [];
-          }
-        } else {
-          // Tier requirement is met - remove the badge
-          return [
-            {
-              ...linkWithArchivedItems,
-              requiredWorkspaceTier: undefined,
-            },
-          ];
-        }
-      }
-
-      if (
-        linkWithArchivedItems.children &&
-        linkWithArchivedItems.children.length > 1
-      ) {
-        const filteredChildren = getFilteredLinks(
-          linkWithArchivedItems.children
-        );
-        // Count non-null items to determine if we have actual content
-        const hasContent = filteredChildren.some((child) => child !== null);
-        if (!hasContent) {
-          return [];
-        }
-        return [
-          {
-            ...linkWithArchivedItems,
-            children: filteredChildren, // Preserve nulls for separators
-          },
-        ];
-      }
-      // Flatten links with a single child
-      if (
-        linkWithArchivedItems.children &&
-        linkWithArchivedItems.children.length === 1
-      ) {
-        return getFilteredLinks([linkWithArchivedItems.children[0] as NavLink]);
-      }
-
-      return [linkWithArchivedItems];
+  ): (NavLink | null)[] =>
+    filterDashboardNavigationLinks(linksToFilter, {
+      currentWsId: wsId,
+      flattenSingleChild: true,
+      prodMode: PROD_MODE,
+      userEmail: user?.email,
+      workspaceTier: workspace?.tier ?? null,
     });
-
-    // Clean up consecutive nulls after filtering
-    return removeConsecutiveNulls(filtered);
-  };
 
   const backButton: NavLink = {
     title: t('common.back'),
