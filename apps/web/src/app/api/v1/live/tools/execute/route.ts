@@ -6,10 +6,10 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import type { TablesUpdate } from '@tuturuuu/types';
 import {
-  PERSONAL_WORKSPACE_SLUG,
-  resolveWorkspaceId,
-} from '@tuturuuu/utils/constants';
-import { getWorkspaceTier } from '@tuturuuu/utils/workspace-helper';
+  getWorkspaceTier,
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
 import { isFeatureAvailable } from '@/lib/feature-tiers';
 
 type ToolCallRequest = {
@@ -18,75 +18,12 @@ type ToolCallRequest = {
   args: Record<string, unknown>;
 };
 
-/**
- * Normalizes workspace ID from slug to UUID for API routes
- * - "personal" → User's personal workspace UUID (DB query)
- * - "internal" → ROOT_WORKSPACE_ID constant
- * - Valid UUID → Passes through unchanged
- *
- * Note: We can't use getWorkspace() here because it uses redirect()/notFound()
- * which don't work in API routes. Instead, we query the database directly.
- */
-async function normalizeWorkspaceId(wsId: string): Promise<string> {
-  if (wsId.toLowerCase() === PERSONAL_WORKSPACE_SLUG) {
-    // Query personal workspace directly for API route context
-    const supabase = await createClient();
-
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
-
-    if (!user) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user's personal workspace (joined via workspace_members)
-    const { data: workspace, error } = await supabase
-      .from('workspaces')
-      .select('id, workspace_members!inner(user_id)')
-      .eq('personal', true)
-      .eq('workspace_members.user_id', user.id)
-      .maybeSingle();
-
-    if (error) {
-      console.error(
-        '[normalizeWorkspaceId] Database error resolving personal workspace:',
-        {
-          userId: user.id,
-          errorCode: error.code,
-          errorMessage: error.message,
-          errorDetails: error.details,
-        }
-      );
-      throw new Error(`Personal workspace query failed: ${error.message}`);
-    }
-
-    if (!workspace) {
-      console.error(
-        '[normalizeWorkspaceId] Personal workspace not found for user:',
-        {
-          userId: user.id,
-        }
-      );
-      throw new Error(
-        'Personal workspace not found. Please ensure your account has a personal workspace.'
-      );
-    }
-
-    console.log('[normalizeWorkspaceId] Personal workspace resolved:', {
-      userId: user.id,
-      workspaceId: workspace.id,
-    });
-
-    return workspace.id;
-  }
-  return resolveWorkspaceId(wsId);
-}
-
 export async function POST(req: Request) {
   let functionName: string | undefined;
 
   try {
     // 1. Authenticate user
-    const supabase = await createClient();
+    const supabase = await createClient(req);
     const { user } = await resolveAuthenticatedSessionUser(supabase);
 
     if (!user) {
@@ -107,7 +44,7 @@ export async function POST(req: Request) {
     // 3. Normalize workspace ID (personal → UUID, internal → ROOT_WORKSPACE_ID)
     let normalizedWsId: string;
     try {
-      normalizedWsId = await normalizeWorkspaceId(wsId);
+      normalizedWsId = await normalizeWorkspaceId(wsId, supabase);
       console.log('[Tools Execute] Workspace ID normalized:', {
         original: wsId,
         normalized: normalizedWsId,
@@ -122,6 +59,26 @@ export async function POST(req: Request) {
       return Response.json(
         { error: 'Workspace not found or access denied' },
         { status: 404 }
+      );
+    }
+
+    const membership = await verifyWorkspaceMembershipType({
+      wsId: normalizedWsId,
+      userId: user.id,
+      supabase,
+    });
+
+    if (membership.error === 'membership_lookup_failed') {
+      return Response.json(
+        { error: 'Failed to verify workspace access' },
+        { status: 500 }
+      );
+    }
+
+    if (!membership.ok) {
+      return Response.json(
+        { error: 'You are not a member of this workspace' },
+        { status: 403 }
       );
     }
 
