@@ -3556,6 +3556,51 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_education_access_requests: {
+        Row: {
+          admin_notes: string | null;
+          created_at: string;
+          creator_id: string;
+          feature: Database['public']['Enums']['feature_flag'];
+          id: string;
+          message: string;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+          updated_at: string;
+          workspace_name: string;
+          ws_id: string;
+        };
+        Insert: {
+          admin_notes?: string | null;
+          created_at?: string;
+          creator_id: string;
+          feature?: Database['public']['Enums']['feature_flag'];
+          id?: string;
+          message: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          workspace_name: string;
+          ws_id: string;
+        };
+        Update: {
+          admin_notes?: string | null;
+          created_at?: string;
+          creator_id?: string;
+          feature?: Database['public']['Enums']['feature_flag'];
+          id?: string;
+          message?: string;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+          updated_at?: string;
+          workspace_name?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_scheduling_metadata: {
         Row: {
           bumped_habits: number | null;
@@ -24260,136 +24305,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'workspace_documents_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_education_access_requests: {
-        Row: {
-          admin_notes: string | null;
-          created_at: string;
-          creator_id: string;
-          feature: Database['public']['Enums']['feature_flag'];
-          id: string;
-          message: string;
-          reviewed_at: string | null;
-          reviewed_by: string | null;
-          status: string;
-          updated_at: string;
-          workspace_name: string;
-          ws_id: string;
-        };
-        Insert: {
-          admin_notes?: string | null;
-          created_at?: string;
-          creator_id: string;
-          feature?: Database['public']['Enums']['feature_flag'];
-          id?: string;
-          message: string;
-          reviewed_at?: string | null;
-          reviewed_by?: string | null;
-          status?: string;
-          updated_at?: string;
-          workspace_name: string;
-          ws_id: string;
-        };
-        Update: {
-          admin_notes?: string | null;
-          created_at?: string;
-          creator_id?: string;
-          feature?: Database['public']['Enums']['feature_flag'];
-          id?: string;
-          message?: string;
-          reviewed_at?: string | null;
-          reviewed_by?: string | null;
-          status?: string;
-          updated_at?: string;
-          workspace_name?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_education_access_requests_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_creator_id_fkey';
-            columns: ['creator_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_reviewed_by_fkey';
-            columns: ['reviewed_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_reviewed_by_fkey';
-            columns: ['reviewed_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_reviewed_by_fkey';
-            columns: ['reviewed_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_reviewed_by_fkey';
-            columns: ['reviewed_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_education_access_requests_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';

@@ -43,7 +43,6 @@ values
   ('workspace_calendars'),
   ('workspace_credit_packs'),
   ('workspace_debt_loans'),
-  ('workspace_education_access_requests'),
   ('workspace_promotions'),
   ('workspace_subscription_products'),
   ('workspace_tutoring_sessions'),
