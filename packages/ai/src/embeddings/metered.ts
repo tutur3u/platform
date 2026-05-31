@@ -1,11 +1,11 @@
 import { google } from '@ai-sdk/google';
-import { embed } from 'ai';
-import { checkAiCredits } from '../credits/check-credits.js';
+import { checkAiCredits } from '@tuturuuu/ai/credits/check-credits';
 import {
   commitMeteredEmbeddingCredits,
   releaseMeteredEmbeddingCredits,
   reserveMeteredEmbeddingCredits,
-} from '../credits/reservations.js';
+} from '@tuturuuu/ai/credits/reservations';
+import { embed } from 'ai';
 
 export const GEMINI_EMBEDDING_2_MODEL_ID = 'gemini-embedding-2';
 export const GEMINI_EMBEDDING_2_GATEWAY_MODEL_ID = 'google/gemini-embedding-2';

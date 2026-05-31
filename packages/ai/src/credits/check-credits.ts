@@ -1,3 +1,16 @@
+import type {
+  AiFeature,
+  CreditErrorCode,
+} from '@tuturuuu/ai/credits/constants';
+import {
+  matchesAllowedModel,
+  resolveGatewayModelId,
+} from '@tuturuuu/ai/credits/model-mapping';
+import type {
+  CreditCheckResult,
+  CreditDeductionResult,
+  DeductCreditsParams,
+} from '@tuturuuu/ai/credits/types';
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import {
   decrementAiCreditChargeInFlight,
@@ -7,13 +20,6 @@ import {
   isAiCreditSnapshotUsable,
   readAiCreditSnapshot,
 } from '@tuturuuu/utils/ai-temp-auth';
-import type { AiFeature, CreditErrorCode } from './constants.js';
-import { matchesAllowedModel, resolveGatewayModelId } from './model-mapping.js';
-import type {
-  CreditCheckResult,
-  CreditDeductionResult,
-  DeductCreditsParams,
-} from './types.js';
 
 type DeductAiCreditsRpcRow = {
   success?: boolean;

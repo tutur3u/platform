@@ -25,11 +25,11 @@ vi.mock('ai', () => ({
   embed: mocks.embed,
 }));
 
-vi.mock('../credits/check-credits.js', () => ({
+vi.mock('@tuturuuu/ai/credits/check-credits', () => ({
   checkAiCredits: mocks.checkAiCredits,
 }));
 
-vi.mock('../credits/reservations.js', () => ({
+vi.mock('@tuturuuu/ai/credits/reservations', () => ({
   commitMeteredEmbeddingCredits: mocks.commitMeteredEmbeddingCredits,
   releaseMeteredEmbeddingCredits: mocks.releaseMeteredEmbeddingCredits,
   reserveMeteredEmbeddingCredits: mocks.reserveMeteredEmbeddingCredits,

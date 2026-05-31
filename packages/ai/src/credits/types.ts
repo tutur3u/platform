@@ -1,4 +1,7 @@
-import type { AiFeature, CreditErrorCode } from './constants.js';
+import type {
+  AiFeature,
+  CreditErrorCode,
+} from '@tuturuuu/ai/credits/constants';
 
 export type { AiFeature, CreditErrorCode };
 
