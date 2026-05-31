@@ -12,7 +12,7 @@
     "type-check": "tsgo --project tsconfig.typecheck.json"
   },
   "dependencies": {
-    "googleapis": "^172.0.0",
+    "googleapis": "^173.0.0",
     "google-auth-library": "10.6.2"
   },
   "devDependencies": {

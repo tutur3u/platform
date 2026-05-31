@@ -52,3 +52,17 @@ if (typeof window !== 'undefined') {
     configurable: true,
   });
 }
+
+if (
+  typeof document !== 'undefined' &&
+  typeof document.elementFromPoint !== 'function'
+) {
+  Object.defineProperty(Document.prototype, 'elementFromPoint', {
+    configurable: true,
+    value() {
+      return document.activeElement instanceof Element
+        ? document.activeElement
+        : document.body;
+    },
+  });
+}
