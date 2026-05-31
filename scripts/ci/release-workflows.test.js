@@ -109,6 +109,12 @@ test('CI workflows use main instead of retired staging branch filters', () => {
   assert.doesNotMatch(supabaseProductionWorkflow, /runs\?branch=staging/);
 });
 
+test('Supabase staging migration includes every local migration when pushing', () => {
+  const deployJob = readWorkflowJobBlock('supabase-staging.yaml', 'deploy');
+
+  assert.match(deployJob, /supabase db push --include-all/);
+});
+
 test('E2E workflow frees runner disk before loading cached Docker images', () => {
   const workflow = fs.readFileSync(
     path.join(repoRoot, '.github', 'workflows', 'e2e-tests.yaml'),

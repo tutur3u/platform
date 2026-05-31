@@ -1,7 +1,7 @@
 ---
 title: 'Database Migrations Guide'
 description: 'Best practices for creating, testing, and deploying Supabase migrations'
-updatedAt: '2026-05-17'
+updatedAt: '2026-05-31'
 ---
 
 The Tuturuuu platform uses Supabase migrations to manage database schema changes with version control and reproducibility.
@@ -107,11 +107,13 @@ Examples:
 
 Keep new migration timestamps ahead of the latest migration already on `main`,
 `staging`, and `production`. Supabase refuses to apply a local migration that
-sorts before the last remote migration unless the operator passes `--include-all`,
-and CI should not need that recovery flag for ordinary forward deploys. After a
-rebase, merge, or hotfix, re-list `apps/database/supabase/migrations` and rename
-any still-unapplied local migration forward instead of asking staging or
-production to replay out-of-order history.
+sorts before the last remote migration unless the operator passes
+`--include-all`. Staging CI intentionally runs
+`supabase db push --include-all` so the staging project can converge after
+`main` migration history changes, but ordinary forward deploys should still keep
+timestamps monotonic. After a rebase, merge, or hotfix, re-list
+`apps/database/supabase/migrations` and rename any still-unapplied local
+migration forward instead of asking production to replay out-of-order history.
 
 ### File Template
 

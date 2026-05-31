@@ -1,7 +1,7 @@
 ---
 title: "Environments & Release Flow"
 description: "How branches map to environments, and what happens between preview, staging, production, and self-hosted deploys."
-updatedAt: "2026-05-30"
+updatedAt: "2026-05-31"
 ---
 
 This page explains how Tuturuuu moves from code to running environments.
@@ -36,6 +36,9 @@ This page explains how Tuturuuu moves from code to running environments.
 
 - `supabase-staging.yaml` is tied to the `Vercel Platform Preview Deployment` workflow on `main`.
 - The staging migration runs only when the triggering preview deployment concludes successfully, or when manually dispatched.
+- The staging deploy step runs `supabase db push --include-all` after linking
+  the staging Supabase project, so staging can converge after `main` migration
+  history changes.
 - This means `main` is where app preview and staging schema advancement are
   meant to stay aligned.
 

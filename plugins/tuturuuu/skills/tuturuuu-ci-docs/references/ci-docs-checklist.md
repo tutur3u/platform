@@ -10,6 +10,9 @@ Use this checklist when changing CI, validators, docs, or repo automation.
 - Prefer `permissions: contents: read` for validation-only jobs.
 - Prefer standard-library validators for plugin, docs, and repository metadata checks.
 - Keep path-sensitive checks deterministic and run them from the repo root.
+- Keep staging Supabase migration CI on `supabase db push --include-all`;
+  production migration CI stays prerequisite-gated and uses the normal push
+  unless that rollout rule changes.
 - For repo-local Codex plugins, keep `.agents/plugins/marketplace.json` present and pointed at `./plugins/<plugin-name>`.
 
 ## Docs
