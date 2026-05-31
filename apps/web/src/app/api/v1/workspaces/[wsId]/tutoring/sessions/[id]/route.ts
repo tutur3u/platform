@@ -78,7 +78,10 @@ export async function PUT(request: Request, { params }: Params) {
     );
   }
 
-  const updates: TablesUpdate<'workspace_tutoring_sessions'> = {};
+  const updates: TablesUpdate<
+    { schema: 'private' },
+    'workspace_tutoring_sessions'
+  > = {};
   if (parsed.data.teacherUserId !== undefined)
     updates.teacher_user_id = parsed.data.teacherUserId;
   if (parsed.data.sessionDate !== undefined)
@@ -107,15 +110,17 @@ export async function PUT(request: Request, { params }: Params) {
     updates.resolved_at = parsed.data.resolvedAt;
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const tutoringSessionsClient = sbAdmin.schema('private');
 
-  const { data: currentSession, error: currentSessionError } = await sbAdmin
-    .from('workspace_tutoring_sessions')
-    .select(
-      'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
-    )
-    .eq('id', id)
-    .eq('ws_id', normalizedWsId)
-    .maybeSingle();
+  const { data: currentSession, error: currentSessionError } =
+    await tutoringSessionsClient
+      .from('workspace_tutoring_sessions')
+      .select(
+        'id,group_id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
+      )
+      .eq('id', id)
+      .eq('ws_id', normalizedWsId)
+      .maybeSingle();
 
   if (currentSessionError) {
     serverLogger.error('Failed to load tutoring session for update', {
@@ -184,7 +189,7 @@ export async function PUT(request: Request, { params }: Params) {
     const sessionDates = getAdjacentSessionDates(nextSlot.sessionDate);
 
     const teacherQuery = nextSlot.teacherUserId
-      ? sbAdmin
+      ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
             'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
@@ -195,7 +200,7 @@ export async function PUT(request: Request, { params }: Params) {
           .neq('id', id)
       : Promise.resolve({ data: [], error: null });
 
-    const studentQuery = sbAdmin
+    const studentQuery = tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
         'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
@@ -251,7 +256,7 @@ export async function PUT(request: Request, { params }: Params) {
     }
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update(updates)
     .eq('id', id)

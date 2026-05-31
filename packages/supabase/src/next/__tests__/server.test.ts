@@ -257,13 +257,13 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         table: 'topic_announcements',
       });
-      expect(client.from('workspace_tutoring_sessions')).toEqual({
+      expect(client.from('workspace_wallets')).toEqual({
         client: 'admin',
-        table: 'workspace_tutoring_sessions',
+        table: 'workspace_wallets',
       });
-      expect(client.from('workspace_tutoring_sessions')).toEqual({
+      expect(client.from('workspace_wallets')).toEqual({
         client: 'admin',
-        table: 'workspace_tutoring_sessions',
+        table: 'workspace_wallets',
       });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
@@ -327,9 +327,9 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         table: 'topic_announcements',
       });
-      expect(client.from('workspace_tutoring_sessions')).toEqual({
+      expect(client.from('workspace_wallets')).toEqual({
         client: 'admin',
-        table: 'workspace_tutoring_sessions',
+        table: 'workspace_wallets',
       });
       expect(client.schema('private').from('inventory_units')).toEqual({
         client: 'admin',
@@ -463,8 +463,8 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
-      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
-        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
+      expect(() => client.from('workspace_wallets')).toThrow(
+        getProxyOnlyPublicTableError('workspace_wallets')
       );
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',

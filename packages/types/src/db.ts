@@ -338,10 +338,11 @@ export interface FinanceBudgetStatus {
 }
 export type Workspace = Tables<'workspaces'>;
 export type WorkspaceUser = Tables<'workspace_users'>;
-export type WorkspaceTutoringSession = Tables<'workspace_tutoring_sessions'> & {
-  attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
-  reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
-};
+export type WorkspaceTutoringSession =
+  PrivateTable<'workspace_tutoring_sessions'> & {
+    attendance_status: 'PENDING' | 'DONE' | 'NO_SHOW' | 'CANCELLED';
+    reason_type: 'ABSENT_RECOVERY' | 'WEAK_SUPPORT' | 'CUSTOM';
+  };
 export type TopicAnnouncement = Tables<'topic_announcements'>;
 export type TopicAnnouncementBatch = Tables<'topic_announcement_batches'>;
 export type TopicAnnouncementContact = Tables<'topic_announcement_contacts'>;

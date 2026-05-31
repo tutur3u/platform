@@ -273,9 +273,10 @@ export async function listPotentialSchedulingConflicts({
     return { data: [], error: null };
   }
 
+  const tutoringSessionsClient = sbAdmin.schema('private');
   const teacherQuery =
     teacherIds.length > 0
-      ? sbAdmin
+      ? tutoringSessionsClient
           .from('workspace_tutoring_sessions')
           .select(
             'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'
@@ -285,7 +286,7 @@ export async function listPotentialSchedulingConflicts({
           .in('teacher_user_id', teacherIds)
       : Promise.resolve({ data: [], error: null });
 
-  const studentQuery = sbAdmin
+  const studentQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
       'id,session_date,start_time,duration_minutes,teacher_user_id,student_user_id'

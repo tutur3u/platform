@@ -76,24 +76,25 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const tutoringSessionsClient = sbAdmin.schema('private');
   const data = [];
 
   for (let from = 0; ; from += EXPORT_PAGE_SIZE) {
     const to = from + EXPORT_PAGE_SIZE - 1;
-    let query = sbAdmin
+    let query = tutoringSessionsClient
       .from('workspace_tutoring_sessions')
       .select(
         `
       id,
+      group_id,
+      student_user_id,
+      teacher_user_id,
       session_date,
       start_time,
       duration_minutes,
       reason_type,
       content,
-      attendance_status,
-      group:workspace_user_groups!workspace_tutoring_sessions_group_id_fkey(name),
-      student:workspace_users!workspace_tutoring_sessions_student_user_id_fkey(full_name,display_name,email),
-      teacher:workspace_users!workspace_tutoring_sessions_teacher_user_id_fkey(id,full_name,display_name,email)
+      attendance_status
     `
       )
       .eq('ws_id', normalizedWsId)
@@ -128,6 +129,57 @@ export async function GET(request: Request, { params }: Params) {
     }
   }
 
+  const groupIds = [
+    ...new Set(data.map((row) => row.group_id).filter(Boolean)),
+  ];
+  const userIds = [
+    ...new Set(
+      data
+        .flatMap((row) => [row.student_user_id, row.teacher_user_id])
+        .filter((userId): userId is string => Boolean(userId))
+    ),
+  ];
+
+  const [groupsResult, usersResult] = await Promise.all([
+    groupIds.length > 0
+      ? sbAdmin
+          .from('workspace_user_groups')
+          .select('id,name')
+          .in('id', groupIds)
+      : Promise.resolve({ data: [], error: null }),
+    userIds.length > 0
+      ? sbAdmin
+          .from('workspace_users')
+          .select('id,full_name,display_name,email')
+          .in('id', userIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (groupsResult.error || usersResult.error) {
+    serverLogger.error('Failed to load tutoring export relations', {
+      error: groupsResult.error ?? usersResult.error,
+      wsId: normalizedWsId,
+    });
+    return NextResponse.json({ message: 'Export failed' }, { status: 500 });
+  }
+
+  const groupMap = new Map(
+    (groupsResult.data ?? []).map((group) => [group.id, group])
+  );
+  const userMap = new Map(
+    (usersResult.data ?? []).map((user) => [user.id, user])
+  );
+  const dataWithRelations = data.map((row) => ({
+    ...row,
+    group: row.group_id ? (groupMap.get(row.group_id) ?? null) : null,
+    student: row.student_user_id
+      ? (userMap.get(row.student_user_id) ?? null)
+      : null,
+    teacher: row.teacher_user_id
+      ? (userMap.get(row.teacher_user_id) ?? null)
+      : null,
+  }));
+
   if (parsed.data.mode === 'payroll') {
     const byTeacher = new Map<
       string,
@@ -138,7 +190,7 @@ export async function GET(request: Request, { params }: Params) {
       }
     >();
 
-    for (const row of data) {
+    for (const row of dataWithRelations) {
       if (row.attendance_status !== 'DONE') continue;
       const teacher = row.teacher as {
         id: string;
@@ -168,7 +220,7 @@ export async function GET(request: Request, { params }: Params) {
 
   return NextResponse.json({
     mode: 'detailed',
-    data: data.map((row) => ({
+    data: dataWithRelations.map((row) => ({
       id: row.id,
       date: row.session_date,
       time: String(row.start_time).slice(0, 5),

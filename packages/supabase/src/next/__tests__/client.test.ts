@@ -79,8 +79,8 @@ describe('Supabase Client', () => {
     expect(isProxyOnlyPublicTable('topic_announcements')).toBe(true);
   });
 
-  it('treats tutoring sessions as proxy-only', () => {
-    expect(isProxyOnlyPublicTable('workspace_tutoring_sessions')).toBe(true);
+  it('treats wallets as proxy-only', () => {
+    expect(isProxyOnlyPublicTable('workspace_wallets')).toBe(true);
   });
 
   describe('createClient', () => {
@@ -98,8 +98,8 @@ describe('Supabase Client', () => {
       expect(() => client.from('topic_announcements')).toThrow(
         getProxyOnlyPublicTableError('topic_announcements')
       );
-      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
-        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
+      expect(() => client.from('workspace_wallets')).toThrow(
+        getProxyOnlyPublicTableError('workspace_wallets')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
@@ -140,8 +140,8 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
-        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
+      expect(() => client.from('workspace_wallets')).toThrow(
+        getProxyOnlyPublicTableError('workspace_wallets')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
@@ -176,8 +176,8 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
-        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
+      expect(() => client.from('workspace_wallets')).toThrow(
+        getProxyOnlyPublicTableError('workspace_wallets')
       );
     });
 

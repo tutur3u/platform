@@ -40,7 +40,6 @@ values
   ('workspace_debt_loans'),
   ('workspace_promotions'),
   ('workspace_subscription_products'),
-  ('workspace_tutoring_sessions'),
   ('workspace_wallets');
 
 select ok(

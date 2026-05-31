@@ -98,6 +98,7 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const tutoringSessionsClient = sbAdmin.schema('private');
 
   let attendanceQuery = sbAdmin
     .from('user_group_attendance')
@@ -133,7 +134,7 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
-  let completedQuery = sbAdmin
+  let completedQuery = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select('group_id,student_user_id')
     .eq('ws_id', normalizedWsId)

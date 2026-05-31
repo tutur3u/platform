@@ -59,11 +59,12 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const tutoringSessionsClient = sbAdmin.schema('private');
   const { page, pageSize } = parsed.data;
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  let query = sbAdmin
+  let query = tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
       `
@@ -84,10 +85,7 @@ export async function GET(request: Request, { params }: Params) {
         resolved_at,
         created_by,
         created_at,
-        updated_at,
-        group:workspace_user_groups!workspace_tutoring_sessions_group_id_fkey(id,name),
-        student:workspace_users!workspace_tutoring_sessions_student_user_id_fkey(id,full_name,display_name,email),
-        teacher:workspace_users!workspace_tutoring_sessions_teacher_user_id_fkey(id,full_name,display_name,email)
+        updated_at
       `,
       { count: 'exact' }
     )
@@ -119,8 +117,65 @@ export async function GET(request: Request, { params }: Params) {
     );
   }
 
+  const sessions = data ?? [];
+  const groupIds = [
+    ...new Set(sessions.map((session) => session.group_id).filter(Boolean)),
+  ];
+  const userIds = [
+    ...new Set(
+      sessions
+        .flatMap((session) => [
+          session.student_user_id,
+          session.teacher_user_id,
+        ])
+        .filter((userId): userId is string => Boolean(userId))
+    ),
+  ];
+
+  const [groupsResult, usersResult] = await Promise.all([
+    groupIds.length > 0
+      ? sbAdmin
+          .from('workspace_user_groups')
+          .select('id,name')
+          .in('id', groupIds)
+      : Promise.resolve({ data: [], error: null }),
+    userIds.length > 0
+      ? sbAdmin
+          .from('workspace_users')
+          .select('id,full_name,display_name,email')
+          .in('id', userIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (groupsResult.error || usersResult.error) {
+    serverLogger.error('Failed to load tutoring session relations', {
+      error: groupsResult.error ?? usersResult.error,
+      wsId: normalizedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Failed to list sessions' },
+      { status: 500 }
+    );
+  }
+
+  const groupMap = new Map(
+    (groupsResult.data ?? []).map((group) => [group.id, group])
+  );
+  const userMap = new Map(
+    (usersResult.data ?? []).map((user) => [user.id, user])
+  );
+
   return NextResponse.json({
-    data: data ?? [],
+    data: sessions.map((session) => ({
+      ...session,
+      group: session.group_id ? (groupMap.get(session.group_id) ?? null) : null,
+      student: session.student_user_id
+        ? (userMap.get(session.student_user_id) ?? null)
+        : null,
+      teacher: session.teacher_user_id
+        ? (userMap.get(session.teacher_user_id) ?? null)
+        : null,
+    })),
     count: count ?? 0,
     page,
     pageSize,
@@ -164,6 +219,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const tutoringSessionsClient = sbAdmin.schema('private');
   const { user } = await resolveAuthenticatedSessionUser(supabase);
 
   if (!user) {
@@ -310,7 +366,7 @@ export async function POST(request: Request, { params }: Params) {
     created_by: user.id,
   }));
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .insert(rows)
     .select('id');

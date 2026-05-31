@@ -52,7 +52,8 @@ export async function POST(request: Request, { params }: Params) {
   const resolvedAt =
     parsed.data.attendanceStatus === 'DONE' ? new Date().toISOString() : null;
   const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
+  const tutoringSessionsClient = sbAdmin.schema('private');
+  const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update({
       attendance_status: parsed.data.attendanceStatus,

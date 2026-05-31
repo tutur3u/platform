@@ -56,7 +56,8 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
-  const { data, error } = await sbAdmin
+  const tutoringSessionsClient = sbAdmin.schema('private');
+  const { data, error } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .select(
       `
@@ -64,9 +65,9 @@ export async function POST(request: Request, { params }: Params) {
       reason_type,
       session_date,
       start_time,
-      group:workspace_user_groups!workspace_tutoring_sessions_group_id_fkey(name),
-      student:workspace_users!workspace_tutoring_sessions_student_user_id_fkey(full_name,display_name,email),
-      teacher:workspace_users!workspace_tutoring_sessions_teacher_user_id_fkey(full_name,display_name,email)
+      group_id,
+      student_user_id,
+      teacher_user_id
     `
     )
     .eq('id', id)
@@ -91,17 +92,42 @@ export async function POST(request: Request, { params }: Params) {
       : data.reason_type === 'WEAK_SUPPORT'
         ? 'hỗ trợ học lực'
         : 'phụ đạo';
-  const student = data.student as {
-    full_name: string | null;
-    display_name: string | null;
-    email: string | null;
-  } | null;
-  const teacher = data.teacher as {
-    full_name: string | null;
-    display_name: string | null;
-    email: string | null;
-  } | null;
-  const group = data.group as { name: string | null } | null;
+
+  const [groupResult, studentResult, teacherResult] = await Promise.all([
+    sbAdmin
+      .from('workspace_user_groups')
+      .select('name')
+      .eq('id', data.group_id)
+      .maybeSingle(),
+    sbAdmin
+      .from('workspace_users')
+      .select('full_name,display_name,email')
+      .eq('id', data.student_user_id)
+      .maybeSingle(),
+    data.teacher_user_id
+      ? sbAdmin
+          .from('workspace_users')
+          .select('full_name,display_name,email')
+          .eq('id', data.teacher_user_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ]);
+
+  if (groupResult.error || studentResult.error || teacherResult.error) {
+    serverLogger.error('Failed to load tutoring preview relations', {
+      error: groupResult.error ?? studentResult.error ?? teacherResult.error,
+      sessionId: id,
+      wsId: normalizedWsId,
+    });
+    return NextResponse.json(
+      { message: 'Failed to load session' },
+      { status: 500 }
+    );
+  }
+
+  const student = studentResult.data;
+  const teacher = teacherResult.data;
+  const group = groupResult.data;
   const studentName = displayName(student);
 
   const preview = [
@@ -112,7 +138,7 @@ export async function POST(request: Request, { params }: Params) {
     'Xin cảm ơn.',
   ].join(' ');
 
-  const { error: updateError } = await sbAdmin
+  const { error: updateError } = await tutoringSessionsClient
     .from('workspace_tutoring_sessions')
     .update({ parent_message_preview: preview })
     .eq('id', id)
