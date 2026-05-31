@@ -2,15 +2,6 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Ellipsis,
-  FolderSync,
-  Layers2,
-  Plus,
-  RefreshCw,
-  Settings2,
-  Trash2,
-} from '@tuturuuu/icons';
-import {
   bulkUpdateWorkspaceExternalProjectEntries,
   createWorkspaceExternalProjectCollection,
   createWorkspaceExternalProjectEntry,
@@ -31,14 +22,6 @@ import type {
   Json,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
-import { Button } from '@tuturuuu/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@tuturuuu/ui/dropdown-menu';
 import { toast } from '@tuturuuu/ui/sonner';
 import { usePathname, useRouter } from 'next/navigation';
 import { useDeferredValue, useEffect, useState } from 'react';
@@ -70,6 +53,7 @@ import {
   CmsDeleteCollectionDialog,
   CmsDeleteEntryDialog,
 } from './cms-studio-dialogs';
+import { CmsStudioHeader } from './cms-studio-header';
 import {
   type CmsStudioMode,
   type EditSection,
@@ -608,7 +592,7 @@ export function CmsStudioClient({
           activeViewCreateDefaults?.entryTitle ??
           (activeViewIsGames
             ? strings.gamesUntitledEntryTitle
-            : 'Untitled entry'),
+            : strings.untitledContentTitle),
       });
 
       return {
@@ -647,7 +631,7 @@ export function CmsStudioClient({
         activeViewCreateDefaults?.title ||
         (activeViewIsGames
           ? strings.gamesCollectionTitle
-          : 'Untitled collection');
+          : strings.untitledSectionTitle);
       const slug = slugifyLabel(title, `collection-${Date.now()}`);
 
       return createWorkspaceExternalProjectCollection(workspaceId, {
@@ -775,7 +759,7 @@ export function CmsStudioClient({
     mutationFn: async (entryId?: string) => {
       const targetEntryId = entryId ?? currentManagedEntry?.id;
       if (!targetEntryId) {
-        throw new Error('Entry is required');
+        throw new Error(strings.emptyEntries);
       }
 
       return duplicateWorkspaceExternalProjectEntry(workspaceId, targetEntryId);
@@ -797,7 +781,7 @@ export function CmsStudioClient({
     }) => {
       const targetEntryId = payload.entryId ?? currentManagedEntry?.id;
       if (!targetEntryId) {
-        throw new Error('Entry is required');
+        throw new Error(strings.emptyEntries);
       }
 
       return publishWorkspaceExternalProjectEntry(
@@ -1106,102 +1090,30 @@ export function CmsStudioClient({
 
   return (
     <div className="min-h-[calc(100svh-5rem)] space-y-4 pb-6">
-      <section className="flex flex-wrap items-start justify-between gap-4 rounded-[1.5rem] border border-border/70 bg-card/95 px-4 py-4 shadow-none sm:px-5">
-        <div className="space-y-1">
-          <h1 className="font-semibold text-2xl tracking-tight">
-            {strings.title}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            {headerDescription ??
-              binding.canonical_project?.display_name ??
-              previewProjectLabel}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {showModeSwitch ? (
-            <div
-              data-testid="cms-mode-switch"
-              className="inline-flex rounded-xl border border-border/70 bg-background/70 p-1"
-            >
-              <Button
-                size="sm"
-                variant={mode === 'preview' ? 'default' : 'ghost'}
-                onClick={() => setMode('preview')}
-              >
-                {strings.previewModeLabel}
-              </Button>
-              <Button
-                size="sm"
-                variant={mode === 'edit' ? 'default' : 'ghost'}
-                onClick={() => setMode('edit')}
-              >
-                {strings.editModeLabel}
-              </Button>
-            </div>
-          ) : null}
-
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label={strings.manageCollectionAction}
-              >
-                <Ellipsis className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuItem onClick={() => createEntryMutation.mutate()}>
-                <Plus className="mr-2 h-4 w-4" />
-                {strings.createEntryAction}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setCreateCollectionOpen(true)}>
-                <Layers2 className="mr-2 h-4 w-4" />
-                {strings.createCollectionAction}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                disabled={importMutation.isPending}
-                onClick={() => importMutation.mutate()}
-              >
-                <FolderSync className="mr-2 h-4 w-4" />
-                {strings.importAction}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setPreviewRefreshToken((value) => value + 1);
-                  queryClient.invalidateQueries({
-                    queryKey: getCmsStudioQueryKey(workspaceId),
-                  });
-                }}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                {strings.refreshAction}
-              </DropdownMenuItem>
-              {activeCollection ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => openCollectionDetails(activeCollection.id)}
-                  >
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    {strings.editCollectionAction}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() =>
-                      setCollectionDeleteTarget(activeCollection.id)
-                    }
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    {strings.deleteCollectionAction}
-                  </DropdownMenuItem>
-                </>
-              ) : null}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </section>
+      <CmsStudioHeader
+        activeCollection={activeCollection}
+        description={
+          headerDescription ??
+          binding.canonical_project?.display_name ??
+          previewProjectLabel
+        }
+        importPending={importMutation.isPending}
+        mode={mode}
+        onCreateCollection={() => setCreateCollectionOpen(true)}
+        onCreateEntry={() => createEntryMutation.mutate()}
+        onDeleteCollection={setCollectionDeleteTarget}
+        onEditCollection={openCollectionDetails}
+        onImport={() => importMutation.mutate()}
+        onModeChange={setMode}
+        onRefresh={() => {
+          setPreviewRefreshToken((value) => value + 1);
+          queryClient.invalidateQueries({
+            queryKey: getCmsStudioQueryKey(workspaceId),
+          });
+        }}
+        showModeSwitch={showModeSwitch}
+        strings={strings}
+      />
 
       <CmsCreateCollectionDialog
         description={newCollectionDescription}

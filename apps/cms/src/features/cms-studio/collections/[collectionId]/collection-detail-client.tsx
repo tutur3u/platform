@@ -228,7 +228,7 @@ export function CollectionDetailClient({
   const saveCollectionMutation = useMutation({
     mutationFn: async () => {
       if (!activeCollection) {
-        throw new Error('Collection is required');
+        throw new Error(strings.emptyCollection);
       }
 
       return updateWorkspaceExternalProjectCollection(
@@ -264,7 +264,7 @@ export function CollectionDetailClient({
   const createEntryMutation = useMutation({
     mutationFn: async () => {
       if (!activeCollection) {
-        throw new Error('Collection is required');
+        throw new Error(strings.emptyCollection);
       }
 
       const activeFieldDefinitions = getCollectionFieldDefinitions({
@@ -291,7 +291,7 @@ export function CollectionDetailClient({
         status: 'draft',
         subtitle: null,
         summary: null,
-        title: 'Untitled entry',
+        title: strings.untitledContentTitle,
       });
     },
     onError: () => toast.error(strings.editEntryDescription),
@@ -464,9 +464,12 @@ export function CollectionDetailClient({
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
                 <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
-                  {strings.collectionsLabel}
+                  {strings.workspaceStatusTitle}
                 </div>
-                <div className="mt-2 font-medium">{binding.canonical_id}</div>
+                <div className="mt-2 font-medium">
+                  {binding.canonical_project?.display_name ??
+                    strings.unboundLabel}
+                </div>
               </div>
               <div className="rounded-[1.15rem] border border-border/70 bg-background/75 p-4">
                 <div className="text-[11px] text-muted-foreground uppercase tracking-[0.24em]">
@@ -485,7 +488,9 @@ export function CollectionDetailClient({
             <div className="flex items-center justify-between gap-3">
               <div>
                 <CardTitle>{strings.contentTab}</CardTitle>
-                <CardDescription>{activeCollection.slug}</CardDescription>
+                <CardDescription>
+                  {strings.slugLabel}: {activeCollection.slug}
+                </CardDescription>
               </div>
               <Badge variant="outline">{collectionEntries.length}</Badge>
             </div>
@@ -533,7 +538,9 @@ export function CollectionDetailClient({
                             <Badge className={statusTone(entry.status)}>
                               {formatStatus(entry.status, strings)}
                             </Badge>
-                            <Badge variant="outline">{entry.slug}</Badge>
+                            <Badge variant="outline">
+                              {strings.slugLabel}: {entry.slug}
+                            </Badge>
                           </div>
                           <div className="truncate font-medium text-base">
                             {entry.title}

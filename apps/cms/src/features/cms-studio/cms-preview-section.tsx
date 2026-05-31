@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRight } from '@tuturuuu/icons';
 import type {
   ExternalProjectDeliveryCollection,
   ExternalProjectEntry,
@@ -238,11 +239,15 @@ export function CmsPreviewSection({
                     {entry.title}
                   </div>
                   <div className="line-clamp-1 text-muted-foreground text-xs">
-                    {entry.slug}
+                    {strings.slugLabel}: {entry.slug}
                   </div>
                   <p className="line-clamp-2 text-muted-foreground text-xs leading-5">
                     {previewCopy}
                   </p>
+                  <div className="mt-1 inline-flex items-center gap-1 font-medium text-xs">
+                    {strings.openDetailsAction}
+                    <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </div>
                 </div>
               </button>
             );

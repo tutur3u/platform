@@ -74,9 +74,9 @@ export function CmsRolesPanel({
     <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
       <Card className="border-border/70 bg-card/95 shadow-none">
         <CardHeader>
-          <CardTitle>{tRoles('default_permissions')}</CardTitle>
+          <CardTitle>{tSettings('roles_surface_title')}</CardTitle>
           <CardDescription>
-            {tRoles('default_permissions_description')}
+            {tSettings('roles_surface_description')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">

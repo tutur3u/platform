@@ -1,3 +1,4 @@
+import { ArrowRight, CheckCircle2 } from '@tuturuuu/icons';
 import type {
   ExternalProjectAttentionItem,
   ExternalProjectSummaryCollection,
@@ -65,12 +66,14 @@ export function QueuePanel({
   icon,
   items,
   title,
+  urlPathLabel,
 }: {
   actionHref: string;
   emptyLabel: string;
   icon: ReactNode;
   items: ExternalProjectAttentionItem[];
   title: string;
+  urlPathLabel: string;
 }) {
   return (
     <section className="rounded-lg border border-border/70 bg-card/75">
@@ -101,7 +104,7 @@ export function QueuePanel({
                     {item.title}
                   </div>
                   <div className="mt-1 truncate text-muted-foreground text-xs">
-                    {item.collectionTitle} / {item.slug}
+                    {item.collectionTitle} / {urlPathLabel}: {item.slug}
                   </div>
                 </div>
                 <Badge variant="secondary" className="shrink-0 rounded-md">
@@ -114,6 +117,89 @@ export function QueuePanel({
             </Link>
           ))
         )}
+      </div>
+    </section>
+  );
+}
+
+export function ContinueEditingPanel({
+  description,
+  emptyLabel,
+  href,
+  item,
+  title,
+  urlPathLabel,
+}: {
+  description: string;
+  emptyLabel: string;
+  href: string;
+  item: ExternalProjectAttentionItem | null;
+  title: string;
+  urlPathLabel: string;
+}) {
+  return (
+    <Link
+      href={item ? `${href}?entryId=${item.entryId}` : href}
+      className="group grid gap-4 rounded-lg border border-border/70 bg-card/75 p-4 transition-colors hover:border-foreground/25 hover:bg-card md:grid-cols-[minmax(0,1fr)_auto]"
+    >
+      <div className="min-w-0">
+        <div className="font-semibold">{title}</div>
+        <p className="mt-2 text-muted-foreground text-sm leading-6">
+          {item ? description : emptyLabel}
+        </p>
+        {item ? (
+          <div className="mt-3 rounded-md border border-border/70 bg-background/70 px-3 py-2">
+            <div className="truncate font-medium text-sm">{item.title}</div>
+            <div className="mt-1 truncate text-muted-foreground text-xs">
+              {item.collectionTitle} / {urlPathLabel}: {item.slug}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div className="flex size-10 items-center justify-center rounded-md border border-border/70 bg-background/80 text-muted-foreground transition-colors group-hover:text-foreground">
+        <ArrowRight className="h-4 w-4" />
+      </div>
+    </Link>
+  );
+}
+
+export function LaunchChecklist({
+  items,
+  title,
+}: {
+  items: Array<{
+    complete: boolean;
+    href: string;
+    label: string;
+  }>;
+  title: string;
+}) {
+  return (
+    <section className="rounded-lg border border-border/70 bg-card/75">
+      <div className="border-border/70 border-b px-4 py-3">
+        <h2 className="font-semibold">{title}</h2>
+      </div>
+      <div className="grid gap-2 p-3 md:grid-cols-3">
+        {items.map((item) => (
+          <Link
+            key={item.label}
+            href={item.href}
+            className={cn(
+              'flex items-center gap-3 rounded-md border px-3 py-3 text-sm transition-colors',
+              item.complete
+                ? 'border-foreground/15 bg-foreground text-background'
+                : 'border-border/70 bg-background/70 hover:border-foreground/25 hover:bg-background'
+            )}
+          >
+            <CheckCircle2
+              className={cn(
+                'h-4 w-4 shrink-0',
+                item.complete ? 'text-background' : 'text-muted-foreground'
+              )}
+            />
+            <span className="min-w-0 truncate">{item.label}</span>
+          </Link>
+        ))}
       </div>
     </section>
   );

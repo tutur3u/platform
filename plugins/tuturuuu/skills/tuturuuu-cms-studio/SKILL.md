@@ -36,15 +36,25 @@ inside each sibling site.
 
 - Make the default path task-based: landing-page edits, content library,
   preview, and member access should be obvious without knowing CMS internals.
+- Keep visible CMS product copy on consumer vocabulary: site, site template,
+  connection, content, section, URL path, custom details, media, publishing,
+  preview, people, invitations, and team access. Do not expose external project,
+  canonical, adapter, binding, slug, schema, metadata, profile data, payload, or
+  JSON in normal editor paths.
 - Treat landing-page content as first-class for branded projects. Group hero,
   profile, section, featured, navigation, and primary-link collections behind a
   simple "Landing page" surface when possible.
-- Keep content model, raw JSON, adapter binding, and workflow mechanics out of
-  the primary editor path unless the user is doing advanced configuration.
+- Keep raw configuration, implementation IDs, site-type mappings, and workflow
+  mechanics out of the primary editor path unless the user is doing advanced
+  configuration. Put exact implementation values behind collapsed Developer
+  details panels or internal root-console advanced controls.
 - Use explicit empty, loading, error, and review states that tell editors what to
   do next.
 - Add user-facing strings to both `apps/cms/messages/en.json` and
   `apps/cms/messages/vi.json`, then run `bun i18n:sort`.
+- Maintain the CMS product-copy hygiene test when adding CMS-owned strings. Add
+  narrow exceptions only for admin/developer-detail surfaces that genuinely need
+  exact implementation values.
 
 ## Implementation Patterns
 
@@ -64,7 +74,7 @@ inside each sibling site.
 Run focused checks before broader repo checks:
 
 ```bash
-bun test src/features/cms-studio/cms-editor-capabilities.test.ts src/features/cms-studio/cms-content-model.test.ts
+bun test src/features/cms-studio/cms-editor-capabilities.test.ts src/features/cms-studio/cms-content-model.test.ts src/features/cms-studio/cms-product-copy.test.ts
 bun type-check:cms
 bun i18n:sort
 bun i18n:check

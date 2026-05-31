@@ -216,7 +216,7 @@ export function CmsLibrarySection({
                             : 'text-muted-foreground'
                         )}
                       >
-                        {collection.slug}
+                        {strings.slugLabel}: {collection.slug}
                       </span>
                     </span>
                     <span className="shrink-0 rounded-sm border border-current/20 px-1.5 py-0.5 text-xs tabular-nums">

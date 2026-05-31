@@ -47,9 +47,6 @@ function CmsGamesSetting({
   return (
     <SettingItemTab title={title} description={description}>
       <div className="flex items-center gap-3">
-        <span className="rounded-md border border-border/70 bg-muted/40 px-2 py-1 font-mono text-muted-foreground text-xs">
-          {ENABLE_CMS_GAMES_CONFIG_ID}={enabled ? 'true' : 'false'}
-        </span>
         <Switch
           aria-label={toggleLabel}
           checked={enabled}

@@ -1,28 +1,44 @@
 ---
 title: 'CMS'
-description: 'Dedicated Tuturuuu CMS app for workspace content operations, schema-aware authoring, and root-level project linking.'
-updatedAt: '2026-05-18'
+description: 'Dedicated Tuturuuu CMS app for site editing, preview, publishing, media, and team access.'
+updatedAt: '2026-05-31'
 ---
 
 ## Overview
 
-`apps/cms` is the dedicated home for Tuturuuu CMS.
+`apps/cms` is the dedicated home for Tuturuuu CMS. It should feel like a
+consumer-grade site editing product for nontechnical editors, even though it
+continues to use the existing external-project implementation contracts behind
+the scenes.
 
 - It owns the CMS UI, routing, workspace picker, and root-level `/{wsId}/projects` linking console.
 - It remains a satellite frontend. Protected APIs still live in `apps/web`.
 - All CMS `/api/*` traffic is forwarded to `apps/web`.
 
+## Product Vocabulary
+
+Normal CMS product UI should use editor-friendly terms: site, site template,
+connection, content, section, URL path, custom details, media, publishing,
+preview, and team access. Avoid exposing implementation terms such as external
+project, canonical, adapter, binding, slug, schema, metadata, profile data,
+payload, or JSON in the primary UI.
+
+When staff genuinely need exact implementation values, place them behind a
+collapsed "Developer details" or internal root-console advanced panel. Code,
+database names, API paths, tests, and operational docs can keep the existing
+`external-project*` names so route and data contracts remain stable.
+
 ## Routing
 
 - `/{wsId}`: overview
 - `/{wsId}/games`: game-focused content library, visible only when CMS Games is enabled
-- `/{wsId}/library`: content library and canonical entry-editing surface
+- `/{wsId}/library`: content library and primary content editor
 - `/{wsId}/library/entries/{entryId}`: compatibility redirect that opens the library fullscreen editor dialog
 - `/{wsId}/library/collections/{collectionId}`: collection detail
 - `/{wsId}/members`: workspace member and role management
 - `/{wsId}/preview`: delivered-content preview
 - `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
-- `/internal/projects`: root workspace canonical project registry and workspace linking
+- `/internal/projects`: internal site-template registry and workspace linking console
 - `/play/{wsId}/webgl/{assetId}`: public WebGL package player. This route does not require a CMS login, but the proxied WebGL asset API still only serves the package when the owning CMS entry is published. WebGL player iframes must stay sandboxed without `allow-same-origin`.
 
 When `wsId` resolves to the internal/root workspace, `/{wsId}` and other workspace-local routes should bounce to `/internal/projects` instead of trying to render the bound-workspace CMS surfaces.
@@ -45,6 +61,9 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - The root linking console reads the workspace-indexed binding summary from `GET /api/v1/admin/external-project-bindings`.
 - The root linking console may load its initial server-render payload directly with the request-scoped CMS Supabase admin path after `getCmsWorkspaceAccess` proves root admin access. Avoid server-to-server Internal API fetches during that initial render, because production auth/origin forwarding failures turn `/internal/projects` into a hard RSC error page. Keep workspace-secret lookups batched; one `.in('ws_id', allWorkspaceIds)` query can exceed PostgREST/proxy URL limits and return `400 Bad Request` in production.
 - Backend naming stays on `external-project*` contracts even though the product surface is branded as Tuturuuu CMS.
+- Add or update the CMS product-copy hygiene test whenever new visible CMS
+  strings are introduced. The test should protect the consumer vocabulary while
+  allowing collapsed developer-detail and internal-only exceptions.
 
 ## Content Model
 

@@ -79,7 +79,9 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
             <TabsTrigger value="all">{t('ws-members.all')}</TabsTrigger>
             <TabsTrigger value="joined">{t('ws-members.joined')}</TabsTrigger>
             <TabsTrigger value="invited">{t('ws-members.invited')}</TabsTrigger>
-            <TabsTrigger value="roles">{t('common.roles')}</TabsTrigger>
+            <TabsTrigger value="roles">
+              {tSettings('roles_surface_title')}
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex w-full flex-col gap-3 sm:flex-row md:w-auto">
@@ -113,7 +115,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
                       })
                     }
                   >
-                    {tRoles('manage_default_permissions')}
+                    {tSettings('roles_tools_title')}
                   </Button>
                   <Button
                     onClick={() => state.setRoleEditorState({ mode: 'create' })}

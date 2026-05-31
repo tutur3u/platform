@@ -86,7 +86,8 @@ export function EntryDetailFeaturedEntryCard({
                       ) : null}
                     </div>
                     <div className="truncate text-muted-foreground text-xs">
-                      {option.subtitle?.trim() || option.slug}
+                      {option.subtitle?.trim() ||
+                        `${strings.slugLabel}: ${option.slug}`}
                     </div>
                   </div>
                 </button>

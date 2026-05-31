@@ -70,7 +70,7 @@ function CmsWorkflowLane({
                   {entry.title}
                 </div>
                 <div className="mt-1 truncate text-muted-foreground text-xs">
-                  {entry.slug}
+                  {strings.slugLabel}: {entry.slug}
                 </div>
               </button>
             ))}
@@ -237,7 +237,7 @@ export function CmsWorkflowSection({
                     </Badge>
                   </div>
                   <div className="mt-1 text-muted-foreground text-xs">
-                    {entry.slug} ·{' '}
+                    {strings.slugLabel}: {entry.slug} ·{' '}
                     {formatDateLabel(
                       entry.scheduled_for,
                       strings.notScheduledLabel

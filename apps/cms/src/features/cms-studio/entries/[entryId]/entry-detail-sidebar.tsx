@@ -175,16 +175,20 @@ export function EntryDetailSidebar({
             </div>
             {supportsPairedVisual ? (
               <div className="space-y-2">
-                <Label htmlFor="entry-paired-artwork">Paired visual</Label>
+                <Label htmlFor="entry-paired-artwork">
+                  {strings.pairedVisualLabel}
+                </Label>
                 <Select
                   value={pairedArtworkSlug}
                   onValueChange={onPairedArtworkChange}
                 >
                   <SelectTrigger id="entry-paired-artwork">
-                    <SelectValue placeholder="No paired visual" />
+                    <SelectValue placeholder={strings.noPairedVisualLabel} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="__none__">No paired visual</SelectItem>
+                    <SelectItem value="__none__">
+                      {strings.noPairedVisualLabel}
+                    </SelectItem>
                     {artworkOptions.map((artworkEntry) => (
                       <SelectItem
                         key={artworkEntry.id}
@@ -309,7 +313,10 @@ export function EntryDetailSidebar({
                 {activeCollectionTitle}
               </div>
               <div className="mt-2 text-muted-foreground text-sm">
-                {activeCollectionDescription || activeCollectionSlug}
+                {activeCollectionDescription ||
+                  (activeCollectionSlug
+                    ? `${strings.slugLabel}: ${activeCollectionSlug}`
+                    : strings.unknownCollectionLabel)}
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">

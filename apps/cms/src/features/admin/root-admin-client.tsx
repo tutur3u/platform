@@ -23,6 +23,12 @@ import type {
   Json,
   WorkspaceExternalProjectBindingAudit,
 } from '@tuturuuu/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -355,7 +361,7 @@ export function RootExternalProjectsAdminClient({
             <CardContent className="space-y-4">
               <div className="grid gap-2">
                 <Label htmlFor="cms-workspace-search">
-                  {t('common.workspace')}
+                  {tRoot('sites_nav_title')}
                 </Label>
                 <div className="relative">
                   <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -373,7 +379,7 @@ export function RootExternalProjectsAdminClient({
 
               <div className="flex items-center justify-between gap-3 text-sm">
                 <span className="text-muted-foreground">
-                  {filteredBindings.length} {t('common.workspaces')}
+                  {filteredBindings.length} {tRoot('sites_nav_title')}
                 </span>
                 <span className="text-dynamic-green">
                   {tRoot('enabled_only_label')}
@@ -517,7 +523,7 @@ export function RootExternalProjectsAdminClient({
                   <div className="grid gap-4 md:grid-cols-3">
                     <div className="rounded-lg border border-border/70 bg-background/70 p-4">
                       <div className="text-muted-foreground text-xs uppercase">
-                        {t('common.workspace')}
+                        {tRoot('sites_nav_title')}
                       </div>
                       <div className="mt-2 font-medium text-lg">
                         {getWorkspaceLabel(
@@ -821,36 +827,43 @@ export function RootExternalProjectsAdminClient({
                     </Select>
                   </div>
 
-                  <div className="grid gap-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <Label>{tRoot('delivery_profile_label')}</Label>
-                      <span className="text-muted-foreground text-xs">
-                        {tRoot('delivery_profile_hint')}
-                      </span>
-                    </div>
-                    <Textarea
-                      rows={8}
-                      value={createForm.deliveryProfile}
-                      onChange={(event) =>
-                        setCreateForm((current) => ({
-                          ...current,
-                          deliveryProfile: event.target.value,
-                        }))
-                      }
-                      className={
-                        createForm.deliveryProfile.trim() &&
-                        createPayloadJson === null
-                          ? 'border-destructive/70 focus-visible:ring-destructive/30'
-                          : undefined
-                      }
-                    />
-                    {createForm.deliveryProfile.trim() &&
-                    createPayloadJson === null ? (
-                      <p className="text-destructive text-xs">
-                        {tRoot('invalid_json_label')}
-                      </p>
-                    ) : null}
-                  </div>
+                  <Accordion type="single" collapsible>
+                    <AccordionItem
+                      value="developer-settings"
+                      className="rounded-lg border border-border/70 bg-background/65 px-3"
+                    >
+                      <AccordionTrigger>
+                        {tRoot('delivery_profile_label')}
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-2">
+                        <p className="text-muted-foreground text-xs">
+                          {tRoot('delivery_profile_hint')}
+                        </p>
+                        <Textarea
+                          rows={8}
+                          value={createForm.deliveryProfile}
+                          onChange={(event) =>
+                            setCreateForm((current) => ({
+                              ...current,
+                              deliveryProfile: event.target.value,
+                            }))
+                          }
+                          className={
+                            createForm.deliveryProfile.trim() &&
+                            createPayloadJson === null
+                              ? 'border-destructive/70 focus-visible:ring-destructive/30'
+                              : undefined
+                          }
+                        />
+                        {createForm.deliveryProfile.trim() &&
+                        createPayloadJson === null ? (
+                          <p className="text-destructive text-xs">
+                            {tRoot('invalid_json_label')}
+                          </p>
+                        ) : null}
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
 
                   <Button
                     className="gap-2"

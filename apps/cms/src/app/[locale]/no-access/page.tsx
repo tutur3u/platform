@@ -27,7 +27,7 @@ export default async function CmsNoAccessPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center text-muted-foreground text-sm">
-          {tCommon('workspaces')}
+          {tRoot('no_access_hint')}
         </CardContent>
       </Card>
     </div>

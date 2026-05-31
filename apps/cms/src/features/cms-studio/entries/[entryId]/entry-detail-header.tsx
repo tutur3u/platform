@@ -116,7 +116,7 @@ export function EntryDetailHeader({
               {activeEntryTitle}
             </h1>
             <p className="max-w-2xl text-muted-foreground text-sm leading-5">
-              {activeEntry.slug}
+              {strings.slugLabel}: {activeEntry.slug}
             </p>
           </div>
         </div>

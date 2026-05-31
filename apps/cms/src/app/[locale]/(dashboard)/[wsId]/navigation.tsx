@@ -30,7 +30,7 @@ export async function getNavigationLinks({
   if (isInternalWorkspace) {
     return [
       {
-        title: t('common.projects'),
+        title: t('external-projects.root.sites_nav_title'),
         href: `/${personalOrWsId}/projects`,
         icon: <ShieldUser className="h-4 w-4" />,
         matchExact: true,

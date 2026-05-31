@@ -115,7 +115,7 @@ export function CmsEntryIndexCard({
             {formatStatus(entry.status, strings)}
           </Badge>
           <span className="truncate text-muted-foreground text-xs">
-            {entry.slug}
+            {strings.slugLabel}: {entry.slug}
           </span>
         </div>
 

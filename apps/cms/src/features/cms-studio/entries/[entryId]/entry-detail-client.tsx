@@ -69,6 +69,7 @@ import {
   toStudioAsset,
 } from './entry-detail-shared';
 import { EntryDetailSidebar } from './entry-detail-sidebar';
+import { EntryDetailUploadInputs } from './entry-detail-upload-inputs';
 import type { EntryDetailUploadProgressItem } from './entry-detail-upload-progress';
 
 function getUploadProgressId(
@@ -2046,27 +2047,14 @@ export function EntryDetailClient({
 
   const content = (
     <div className="mx-auto min-h-[calc(100svh-5rem)] max-w-[1580px] space-y-6 pb-10">
-      <input
-        ref={coverInputRef}
-        accept="image/*"
-        className="hidden"
-        type="file"
-        onChange={handleCoverInputChange}
-      />
-      <input
-        ref={mediaInputRef}
-        multiple
-        accept={mediaInputAccept}
-        className="hidden"
-        type="file"
-        onChange={handleMediaInputChange}
-      />
-      <input
-        ref={webglInputRef}
-        accept=".zip,application/zip,application/x-zip-compressed"
-        className="hidden"
-        type="file"
-        onChange={handleWebglInputChange}
+      <EntryDetailUploadInputs
+        coverInputRef={coverInputRef}
+        mediaInputAccept={mediaInputAccept}
+        mediaInputRef={mediaInputRef}
+        onCoverChange={handleCoverInputChange}
+        onMediaChange={handleMediaInputChange}
+        onWebglChange={handleWebglInputChange}
+        webglInputRef={webglInputRef}
       />
 
       <EntryDetailHeader

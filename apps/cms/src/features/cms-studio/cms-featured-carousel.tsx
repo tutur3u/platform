@@ -558,7 +558,7 @@ export function CmsFeaturedCarousel({
                   {item.entry.title}
                 </div>
                 <div className="line-clamp-1 text-muted-foreground text-xs">
-                  {item.entry.slug}
+                  {strings.slugLabel}: {item.entry.slug}
                 </div>
               </div>
             </button>

@@ -1,7 +1,7 @@
 ---
 title: 'Tuturuuu CMS'
-description: 'Canonical project registry, workspace bindings, and workspace authoring for external-project delivery.'
-updatedAt: '2026-05-14'
+description: 'Site editing, publishing, preview, team access, and internal site-template operations for Tuturuuu CMS.'
+updatedAt: '2026-05-31'
 ---
 
 ## TL;DR
@@ -12,20 +12,34 @@ Tuturuuu CMS now lives in the dedicated `apps/cms` satellite app.
 - `apps/web` remains the only backend/API owner for CMS and external-project traffic.
 - `apps/cms` rewrites `/api/*` to `apps/web`, so proxy behavior and bot protection stay centralized.
 
+## Product Vocabulary
+
+The visible CMS experience is a site/content product, not an implementation
+console. Bound-workspace UI should say site, site template, connection, content,
+section, URL path, custom details, media, publishing, preview, people,
+invitations, and team access.
+
+Avoid implementation terms in normal UI copy, including external project,
+canonical, adapter, binding, slug, schema, metadata, profile data, payload, and
+JSON. If operators need exact implementation values, show them only in collapsed
+Developer details panels or internal root-console advanced controls. Keep code,
+API routes, database objects, migration names, and integration docs on the
+existing `external-project*` contracts.
+
 ## Route Model
 
 ### Root workspace
 
-- `/internal/projects`: canonical project registry, workspace-indexed binding list, and binding audit history
+- `/internal/projects`: internal site-template registry, workspace-indexed connection list, and connection audit history
 
 ### Bound workspaces
 
 - `/{wsId}`: overview
-- `/{wsId}/library`: library landing for collections and entries
-- `/{wsId}/library/collections/{collectionId}`: collection detail
-- `/{wsId}/library/entries/{entryId}`: entry detail
+- `/{wsId}/library`: library landing for sections and content
+- `/{wsId}/library/collections/{collectionId}`: section detail
+- `/{wsId}/library/entries/{entryId}`: content detail
 - `/{wsId}/members`: workspace member search, invite, removal, role assignment, and role/default-permission management
-- `/{wsId}/preview`: delivery preview
+- `/{wsId}/preview`: site preview
 - `/{wsId}/settings`: legacy compatibility redirect to `/{wsId}/members`
 
 The old CMS route model (`/{wsId}/content`, `/{wsId}/collections/...`, `/{wsId}/admin`) is removed instead of redirected.
@@ -35,15 +49,15 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 
 - Treat `/internal/projects` as a workspace-first control room.
 - The main left panel is the searchable workspace list.
-- Each row shows the current binding state, adapter, canonical project, and most recent change signal.
-- The selected workspace panel owns bind and unbind actions.
-- The canonical project registry is secondary and stays on the same page for create/edit flows.
+- Each row shows the current connection state, site type, site template, and most recent change signal.
+- The selected workspace panel owns connect and disconnect actions.
+- The site-template registry is secondary and stays on the same page for create/edit flows.
 - Binding audits stay anchored to the selected workspace instead of living as a detached global feed.
 
 ## Workspace CMS
 
-- Use `/{wsId}` as the concise starting point for counts, attention queues, recent activity, and bound-project context.
-- Use `/{wsId}/library` for collection browsing and entry navigation.
+- Use `/{wsId}` as the concise starting point for continue-editing tasks, launch readiness, attention queues, recent activity, and connected-site context.
+- Use `/{wsId}/library` for section browsing and content navigation.
 - Use `/{wsId}/members` for routine collaborator management without leaving CMS.
 - Keep collection configuration on collection detail pages and entry authoring on entry detail pages.
 - Use `/{wsId}/preview` as the delivered-content surface backed by the existing preview delivery route.
@@ -62,6 +76,9 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 - Continue adding or extending client helpers in `packages/internal-api` for CMS-facing API calls.
 - Keep preview sourced from the existing delivery route instead of introducing a second preview payload contract.
 - Backend/database naming remains `external-project*`; the product surface is what changed.
+- Protect CMS-owned product copy with the CMS copy hygiene test, and add
+  explicit admin/developer-detail exceptions only when a staff workflow truly
+  needs an implementation value.
 - Translation validation now treats `null` leaves as invalid so missing shared keys fail checks instead of silently passing parity.
 - External app admin dashboards should call `POST /api/v1/workspaces/{wsId}/external-projects/setup` with their sync manifest before diff/apply. The route uses the existing app-coordination token and requires manage access. If the workspace is already bound to an active canonical project for the same adapter, setup preserves that binding while refreshing the project schema and field definitions; otherwise it creates the canonical `{adapter}-main` project if needed and binds the configured workspace without requiring production Supabase keys in the external app.
 - External apps can mark manifest assets with `metadata.publicPath`, `metadata.localAssetPath`, or a relative `sourceUrl` such as `/media/hero.png`.
@@ -73,6 +90,6 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 ## Team Guidance
 
 - Link into the CMS-native route map directly.
-- Prefer the root `/internal/projects` console for canonical project and workspace-link operations.
+- Prefer the root `/internal/projects` console for site-template and workspace-link operations.
 - Keep bound-workspace collaborator management on the dedicated `/{wsId}/members` route, and do not surface `/internal/projects` shortcuts inside non-root workspace sidebars.
 - Update both `apps/cms/messages/en.json` and `apps/cms/messages/vi.json`, then run `bun i18n:sort` whenever CMS copy changes.

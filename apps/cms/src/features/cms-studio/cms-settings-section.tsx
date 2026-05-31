@@ -58,7 +58,7 @@ export function CmsSettingsSection({
               {binding.canonical_project?.display_name ?? strings.unboundLabel}
             </div>
             <div className="mt-1 text-muted-foreground text-xs">
-              {binding.canonical_id ?? strings.noCanonicalIdLabel}
+              {strings.workspaceStatusTitle}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">

@@ -10,7 +10,13 @@ import { useTranslations } from 'next-intl';
 import { isCmsLandingCollection } from '@/features/cms-studio/cms-editor-blueprints';
 import { EXTERNAL_PROJECT_DISPLAY_NAMES } from '@/features/cms-studio/constants';
 import { HomeActionGrid, HomeStatusPanel } from './cms-home-overview';
-import { CollectionGroup, formatDateTime, QueuePanel } from './cms-home-panels';
+import {
+  CollectionGroup,
+  ContinueEditingPanel,
+  formatDateTime,
+  LaunchChecklist,
+  QueuePanel,
+} from './cms-home-panels';
 
 export function CmsHomeClient({
   workspaceId,
@@ -72,6 +78,7 @@ export function CmsHomeClient({
     ...summary.queues.scheduledSoon,
     ...summary.queues.recentlyImportedUnpublished,
   ].slice(0, 6);
+  const continueItem = attentionItems[0] ?? null;
   const needsReview =
     summary.counts.drafts > 0 ||
     summary.counts.scheduled > 0 ||
@@ -124,6 +131,37 @@ export function CmsHomeClient({
         />
       </section>
 
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.72fr)_minmax(0,1fr)]">
+        <ContinueEditingPanel
+          description={t('external-projects.epm.continue_editing_description')}
+          emptyLabel={t('external-projects.epm.home_status_ready_description')}
+          href={libraryHref}
+          item={continueItem}
+          title={t('external-projects.epm.continue_editing_title')}
+          urlPathLabel={t('external-projects.epm.slug_label')}
+        />
+        <LaunchChecklist
+          title={t('external-projects.epm.launch_checklist_title')}
+          items={[
+            {
+              complete: landingCollections.length > 0,
+              href: landingHref,
+              label: t('external-projects.epm.launch_checklist_landing'),
+            },
+            {
+              complete: summary.counts.drafts === 0,
+              href: libraryHref,
+              label: t('external-projects.epm.launch_checklist_media'),
+            },
+            {
+              complete: !needsReview,
+              href: previewHref,
+              label: t('external-projects.epm.launch_checklist_publish'),
+            },
+          ]}
+        />
+      </section>
+
       <section className="grid gap-4 xl:grid-cols-2">
         <CollectionGroup
           collections={landingCollections}
@@ -154,6 +192,7 @@ export function CmsHomeClient({
           icon={<AlertCircle className="h-4 w-4" />}
           items={attentionItems}
           title={t('external-projects.epm.attention_title')}
+          urlPathLabel={t('external-projects.epm.slug_label')}
         />
         <Link
           href={previewHref}

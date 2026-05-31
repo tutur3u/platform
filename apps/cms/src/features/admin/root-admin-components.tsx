@@ -6,6 +6,12 @@ import type {
   ExternalProjectWorkspaceBindingSummary,
   Json,
 } from '@tuturuuu/types';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@tuturuuu/ui/accordion';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
@@ -252,29 +258,38 @@ export function ProjectRegistryCard({
             />
           </div>
 
-          <div className="grid gap-2">
-            <div className="flex items-center justify-between gap-3">
-              <Label>{tRoot('delivery_profile_label')}</Label>
-              <span className="text-muted-foreground text-xs">
-                {tRoot('delivery_profile_hint')}
-              </span>
-            </div>
-            <Textarea
-              rows={6}
-              value={deliveryProfileText}
-              onChange={(event) => setDeliveryProfileText(event.target.value)}
-              className={
-                deliveryProfileText.trim() && deliveryProfileJson === null
-                  ? 'border-destructive/70 focus-visible:ring-destructive/30'
-                  : undefined
-              }
-            />
-            {deliveryProfileText.trim() && deliveryProfileJson === null ? (
-              <p className="text-destructive text-xs">
-                {tRoot('invalid_json_label')}
-              </p>
-            ) : null}
-          </div>
+          <Accordion type="single" collapsible>
+            <AccordionItem
+              value="developer-settings"
+              className="rounded-lg border border-border/70 bg-card/70 px-3"
+            >
+              <AccordionTrigger>
+                {tRoot('delivery_profile_label')}
+              </AccordionTrigger>
+              <AccordionContent className="space-y-2">
+                <p className="text-muted-foreground text-xs">
+                  {tRoot('delivery_profile_hint')}
+                </p>
+                <Textarea
+                  rows={6}
+                  value={deliveryProfileText}
+                  onChange={(event) =>
+                    setDeliveryProfileText(event.target.value)
+                  }
+                  className={
+                    deliveryProfileText.trim() && deliveryProfileJson === null
+                      ? 'border-destructive/70 focus-visible:ring-destructive/30'
+                      : undefined
+                  }
+                />
+                {deliveryProfileText.trim() && deliveryProfileJson === null ? (
+                  <p className="text-destructive text-xs">
+                    {tRoot('invalid_json_label')}
+                  </p>
+                ) : null}
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         <div className="space-y-4">

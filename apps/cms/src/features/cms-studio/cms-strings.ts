@@ -171,6 +171,7 @@ export type CmsStrings = {
   noCoverTitle: string;
   noMediaAssetsTitle: string;
   noFieldDefinitions: string;
+  noPairedVisualLabel: string;
   nextAction: string;
   noneLabel: string;
   notScheduledLabel: string;
@@ -178,6 +179,7 @@ export type CmsStrings = {
   openCollectionAction: string;
   openPreviewAction: string;
   overviewTab: string;
+  pairedVisualLabel: string;
   payloadLabel: string;
   previewCollectionTitle: string;
   previewDescription: string;
@@ -273,6 +275,8 @@ export type CmsStrings = {
   globalFieldsLabel: string;
   stringArrayFieldHint: string;
   unboundLabel: string;
+  untitledContentTitle: string;
+  untitledSectionTitle: string;
   unknownCollectionLabel: string;
   unpublishAction: string;
   unsupportedMediaTypeToast: string;
@@ -501,6 +505,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     noCoverTitle: t('epm.no_cover_title'),
     noFieldDefinitions: t('epm.no_field_definitions'),
     noMediaAssetsTitle: t('epm.no_media_assets_title'),
+    noPairedVisualLabel: t('epm.no_paired_visual_label'),
     nextAction: t('epm.next_action'),
     noneLabel: t('epm.none_label'),
     notScheduledLabel: t('epm.not_scheduled_label'),
@@ -508,6 +513,7 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     openCollectionAction: t('epm.open_collection_action'),
     openPreviewAction: t('epm.open_preview_action'),
     overviewTab: t('epm.overview_tab'),
+    pairedVisualLabel: t('epm.paired_visual_label'),
     payloadLabel: t('epm.payload_label'),
     previewCollectionTitle: t('epm.preview_collection_title'),
     previewDescription: t('epm.preview_description'),
@@ -599,6 +605,8 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     titleLabel: t('epm.title_label'),
     applyTemplateAction: t('epm.apply_template_action'),
     unboundLabel: t('epm.unbound_label'),
+    untitledContentTitle: t('epm.untitled_content_title'),
+    untitledSectionTitle: t('epm.untitled_section_title'),
     unknownCollectionLabel: t('epm.unknown_collection_label'),
     unpublishAction: t('epm.unpublish_action'),
     unsupportedMediaTypeToast: t('epm.unsupported_media_type_toast'),
