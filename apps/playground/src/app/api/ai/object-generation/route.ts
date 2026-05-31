@@ -1,5 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { generateObject } from '@tuturuuu/ai/core';
+import { withAiMemory } from '@tuturuuu/ai/memory';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { NextResponse } from 'next/server';
 import z from 'zod';
 
@@ -26,7 +28,15 @@ export const GET = async () => {
   if (!prompt) return NextResponse.json({ tasks: [] });
 
   const tasks = await generateObject({
-    model: google('gemini-2.5-flash-lite'),
+    model: await withAiMemory({
+      customId: 'playground-object-generation',
+      model: google('gemini-2.5-flash-lite'),
+      product: 'playground',
+      source: 'playground_object_generation',
+      surface: 'playground_object_generation',
+      userId: ROOT_WORKSPACE_ID,
+      wsId: ROOT_WORKSPACE_ID,
+    }),
     schema,
     prompt,
     system: systemPrompt,

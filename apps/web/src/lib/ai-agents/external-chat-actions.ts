@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { generateText, type ModelMessage } from 'ai';
 import { getAiAgentById } from './agent-registry';
 import {
@@ -108,18 +109,22 @@ export async function syncAiAgentExternalThread({
 }
 
 export async function draftAiAgentExternalResponse({
+  actorUserId,
   customPrompt,
   origin,
   threadId,
 }: {
+  actorUserId: string;
   customPrompt: string;
   origin?: string | null;
   threadId: string;
 }): Promise<AiAgentExternalDraftResult> {
-  const { agent, channel } = await resolveExternalThreadContext({
-    origin,
-    threadId,
-  });
+  const { agent, channel, externalThread } = await resolveExternalThreadContext(
+    {
+      origin,
+      threadId,
+    }
+  );
   const messages = await listAiAgentExternalThreadMessages({
     limit: 40,
     threadId,
@@ -144,7 +149,15 @@ ${customPrompt || 'Draft the best helpful response for the latest external messa
   const result = await generateText({
     maxOutputTokens: 800,
     messages: modelMessages,
-    model: google(bareGoogleModel(agent.modelId)),
+    model: await withAiMemory({
+      customId: `ai-agent-external-draft-${threadId}`,
+      model: google(bareGoogleModel(agent.modelId)),
+      product: 'ai_agents',
+      source: 'ai_agent_external_chat_draft',
+      surface: 'ai_agent_external_chat_draft',
+      userId: actorUserId,
+      wsId: externalThread.wsId,
+    }),
     temperature: agent.temperature ?? 0.4,
   });
 

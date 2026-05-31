@@ -5,6 +5,7 @@ import {
   type Message as SdkMessage,
   type SentMessage as SdkSentMessage,
 } from '@tuturuuu/ai/chat-sdk';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import {
   createMiraStreamTools,
   type MiraToolName,
@@ -201,6 +202,15 @@ async function respondWithAgent({
   await thread.startTyping();
 
   const tools = await createAgentTools({ agent, channel, mappedUser });
+  const modelWithMemory = await withAiMemory({
+    customId: `${channel.id}-${message.id ?? Date.now()}`,
+    model: google(bareGoogleModel(agent.modelId)),
+    product: 'ai_agents',
+    source: channel.adapter,
+    surface: 'ai_agent_runtime',
+    userId: mappedUser.userId,
+    wsId: channel.workspaceId,
+  });
   const toolAgent = new ToolLoopAgent({
     instructions: `${agent.instructions}
 
@@ -209,7 +219,7 @@ Workspace ID: ${channel.workspaceId}
 Mapped Tuturuuu user ID: ${mappedUser.userId}
 
 Only use the configured task and calendar tools. If a tool returns a permission error, explain that the mapped Tuturuuu user needs the relevant workspace permission.`,
-    model: google(bareGoogleModel(agent.modelId)),
+    model: modelWithMemory,
     stopWhen: stepCountIs(8),
     temperature: agent.temperature ?? undefined,
     tools,

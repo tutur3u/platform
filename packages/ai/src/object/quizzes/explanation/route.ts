@@ -5,6 +5,7 @@ import {
 } from '@tuturuuu/supabase/next/server';
 import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
+import { withAiMemory } from '../../../memory';
 import { quizOptionExplanationSchema } from '../../types';
 
 const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite';
@@ -70,7 +71,15 @@ export async function POST(req: Request) {
     // }
 
     const result = streamText({
-      model: google(DEFAULT_MODEL_NAME),
+      model: await withAiMemory({
+        customId: `quiz-explanation-${Date.now()}`,
+        model: google(DEFAULT_MODEL_NAME),
+        product: 'education',
+        source: 'quiz_explanation',
+        surface: 'quiz_explanation',
+        userId: user.id,
+        wsId,
+      }),
       prompt: `Generate an explanation with the following context: \n\n"""Question: ${question}""" \n\n"""Option: ${option.value}"""\n\nIs this option correct? ${option.is_correct ? 'Yes' : 'No'}\n\nNOTE: Provide it in the same language as the question and option, be concise and clear.`,
       output: Output.object({ schema: quizOptionExplanationSchema }),
       providerOptions: {

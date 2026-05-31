@@ -75,6 +75,12 @@ const MARKITDOWN_DOCKERFILE_PATH = path.join(
   'discord',
   'Dockerfile.markitdown'
 );
+const SUPERMEMORY_DOCKERFILE_PATH = path.join(
+  ROOT_DIR,
+  'apps',
+  'supermemory',
+  'Dockerfile'
+);
 const WEB_COMPOSE_FILE_PATH = path.join(ROOT_DIR, 'docker-compose.web.yml');
 const WEB_PROD_COMPOSE_FILE_PATH = path.join(
   ROOT_DIR,
@@ -730,6 +736,8 @@ function validateDockerProdCompose(composeContent) {
     '  hive-postgres:',
     '  hive-db-migrate:',
     '  hive-ollama:',
+    '  supermemory-postgres:',
+    '  supermemory:',
     '  markitdown:',
     '  storage-unzip-proxy:',
     '  web-proxy:',
@@ -739,6 +747,7 @@ function validateDockerProdCompose(composeContent) {
     '      dockerfile: apps/chat-realtime/Dockerfile',
     '      dockerfile: apps/hive-realtime/Dockerfile',
     '      dockerfile: apps/meet-realtime/Dockerfile',
+    '      dockerfile: apps/supermemory/Dockerfile',
     '      dockerfile: apps/web/docker/blue-green-watcher.Dockerfile',
     '      dockerfile: apps/web/docker/cron-runner.Dockerfile',
     '    container_name: ' +
@@ -775,6 +784,9 @@ function validateDockerProdCompose(composeContent) {
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
     '      context: ../apps/storage-unzip-proxy',
+    '        SUPERMEMORY_IMAGE: ${' +
+      'SUPERMEMORY_IMAGE:-supermemory-enterprise-self-host:latest' +
+      '}',
     '    - CRON_SECRET',
     '      - CRON_SECRET',
     '      - VERCEL_CRON_SECRET',
@@ -817,6 +829,7 @@ function validateDockerProdCompose(composeContent) {
     'http://127.0.0.1:7815/health',
     'http://127.0.0.1:7816/health',
     'http://127.0.0.1:8788/health',
+    "http://127.0.0.1:'' + port + path",
     '      test: ["CMD", "/app/backend", "healthcheck"]',
     '      - BACKEND_ENV=production\n      - BACKEND_INTERNAL_TOKEN\n      - PORT=7820',
     '      - PORT=8000\n      - SUPABASE_URL',
@@ -866,6 +879,13 @@ function validateDockerProdCompose(composeContent) {
       'PLATFORM_LOG_DRAIN_SUMMARY_RETENTION_DAYS:-90' +
       '}',
     '    - SUPABASE_SERVER_URL',
+    '    - SUPERMEMORY_API_KEY',
+    '    - SUPERMEMORY_BASE_URL=${' +
+      'SUPERMEMORY_BASE_URL:-http://supermemory:8787' +
+      '}',
+    '    - SUPERMEMORY_ENABLED=${' + 'SUPERMEMORY_ENABLED:-false' + '}',
+    '    - SUPERMEMORY_FAIL_OPEN=${' + 'SUPERMEMORY_FAIL_OPEN:-true' + '}',
+    '    - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '    - UPSTASH_REDIS_REST_TOKEN',
     '    - UPSTASH_REDIS_REST_URL',
     '    - ../tmp/docker-web/watch/control:/app/runtime/docker-web-control',
@@ -909,7 +929,22 @@ function validateDockerProdCompose(composeContent) {
     '  platform-buildkit-state:',
     '  platform-log-drain-postgres:',
     '  platform-hive-postgres:',
+    '  platform-supermemory-postgres:',
     '  platform-hive-ollama:',
+    '    image: pgvector/pgvector:pg16',
+    '      POSTGRES_DB: supermemory',
+    '      POSTGRES_USER: supermemory',
+    '      - platform-supermemory-postgres:/var/lib/postgresql/data',
+    '      - DATABASE_URL=${' +
+      'SUPERMEMORY_DATABASE_URL:-postgres://supermemory:$' +
+      '{SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}' +
+      '@supermemory-postgres:5432/supermemory' +
+      '}',
+    '      - SUPERMEMORY_DATABASE_URL=${' +
+      'SUPERMEMORY_DATABASE_URL:-postgres://supermemory:$' +
+      '{SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}' +
+      '@supermemory-postgres:5432/supermemory' +
+      '}',
     '      - DRIVE_UNZIP_PROXY_SHARED_TOKEN',
     '      SRH_TOKEN: ' +
       '${' +
@@ -986,10 +1021,11 @@ function validateDockerBakeFile(bakeContent) {
   const composeProjectNameVariable = '${' + 'COMPOSE_PROJECT_NAME' + '}';
   const requiredSnippets = [
     'target "_platform_local" {\n  output = ["type=docker"]\n}',
-    'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "web-cron-runner"]\n}',
+    'group "blue-green-support" {\n  targets = ["backend", "chat-realtime", "meet-realtime", "markitdown", "storage-unzip-proxy", "supermemory", "web-cron-runner"]\n}',
     `target "backend" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-backend"]\n}`,
     `target "chat-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-chat-realtime"]\n}`,
     `target "meet-realtime" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-meet-realtime"]\n}`,
+    `target "supermemory" {\n  inherits = ["_platform_local"]\n  tags = ["${composeProjectNameVariable}-supermemory"]\n}`,
   ];
 
   for (const snippet of requiredSnippets) {
@@ -1357,6 +1393,24 @@ function validateHiveDbMigrateScript(scriptContent) {
   return errors;
 }
 
+function validateSupermemoryDockerfile(dockerfileContent) {
+  const errors = [];
+  const requiredSnippets = [
+    'ARG SUPERMEMORY_IMAGE=supermemory-enterprise-self-host:latest',
+    'FROM $' + '{SUPERMEMORY_IMAGE}',
+  ];
+
+  for (const snippet of requiredSnippets) {
+    if (!dockerfileContent.includes(snippet)) {
+      errors.push(
+        `apps/supermemory/Dockerfile is missing the expected snippet: ${snippet}`
+      );
+    }
+  }
+
+  return errors;
+}
+
 function checkDockerWebSetup({
   rootDir = ROOT_DIR,
   fsImpl = fs,
@@ -1429,6 +1483,10 @@ function checkDockerWebSetup({
     path.join(rootDir, 'apps', 'chat-realtime', 'Dockerfile'),
     'utf8'
   ),
+  supermemoryDockerfileContent = fsImpl.readFileSync(
+    path.join(rootDir, 'apps', 'supermemory', 'Dockerfile'),
+    'utf8'
+  ),
   hiveDbMigrateScriptContent = fsImpl.readFileSync(
     path.join(rootDir, 'apps', 'hive', 'db', 'migrate-forward.sh'),
     'utf8'
@@ -1470,6 +1528,7 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
+    ...validateSupermemoryDockerfile(supermemoryDockerfileContent),
     ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
@@ -1502,6 +1561,7 @@ module.exports = {
   MEET_REALTIME_DOCKERFILE_PATH,
   CHAT_REALTIME_DOCKERFILE_PATH,
   MARKITDOWN_DOCKERFILE_PATH,
+  SUPERMEMORY_DOCKERFILE_PATH,
   CRON_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERFILE_PATH,
   NATIVE_WEB_RUNNER_DOCKERIGNORE_PATH,
@@ -1532,5 +1592,6 @@ module.exports = {
   validateMarkitdownDockerfile,
   validateMeetRealtimeDockerfile,
   validateNativeWebRunnerDockerfile,
+  validateSupermemoryDockerfile,
   validateWatcherDockerfile,
 };

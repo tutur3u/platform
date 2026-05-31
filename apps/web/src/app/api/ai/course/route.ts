@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { executeConvertFileToMarkdown } from '@tuturuuu/ai/tools/executors/markitdown';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { TablesInsert } from '@tuturuuu/types';
@@ -375,7 +376,15 @@ export const POST = withSessionAuth(
         ? `\n\nTeacher Context:\n${trimmedTeacherContext}`
         : '';
       const { object } = await generateObject({
-        model: google('gemini-2.0-flash'),
+        model: await withAiMemory({
+          customId: `course-generation-${Date.now()}`,
+          model: google('gemini-2.0-flash'),
+          product: 'teach',
+          source: 'course_generation',
+          surface: 'course_generation',
+          userId: context.user.id,
+          wsId: normalizedWsId,
+        }),
         schema: CourseGenerationSchema,
         system: COURSE_GENERATION_PROMPT,
         prompt: `Analyze the following document and create structured course modules with quizzes and flashcards.${contextPrompt}\n\nDocument Content:\n${markitdownResult.markdown}`,

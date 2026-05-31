@@ -6,6 +6,7 @@ import {
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { Output, streamText } from 'ai';
 import { NextResponse } from 'next/server';
+import { withAiMemory } from '../../memory';
 import { yearPlanSchema } from '../types';
 
 interface PlanRequest {
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
     }
 
     const {
-      // wsId,
+      wsId,
       goals,
       planDuration,
       skillLevel,
@@ -115,7 +116,15 @@ export async function POST(req: Request) {
 
     try {
       const result = streamText({
-        model: vertex('gemini-2.5-flash-lite'),
+        model: await withAiMemory({
+          customId: `year-plan-${Date.now()}`,
+          model: vertex('gemini-2.5-flash-lite'),
+          product: 'education',
+          source: 'year_plan',
+          surface: 'year_plan',
+          userId: user.id,
+          wsId,
+        }),
         maxOutputTokens: 8192,
         providerOptions: {
           vertex: {

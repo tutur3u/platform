@@ -1,6 +1,8 @@
 import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
+import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { Output, streamText } from 'ai';
+import { withAiMemory } from '../memory';
 import { calendarEventsSchema } from './events';
 
 export async function POST(req: Request) {
@@ -17,6 +19,7 @@ export async function POST(req: Request) {
       name: string;
       color: string;
     }>;
+    wsId?: string;
   };
 
   const supabase = await createClient();
@@ -60,7 +63,16 @@ For example:
   promptText += `\nContext: ${context.prompt}`;
 
   const result = streamText({
-    model: google('gemini-3.1-flash-lite'),
+    model: await withAiMemory({
+      addMemory: 'never',
+      customId: `calendar-event-${Date.now()}`,
+      model: google('gemini-3.1-flash-lite'),
+      product: 'calendar',
+      source: 'calendar_event_generation',
+      surface: 'calendar_event_generation',
+      userId: user.id,
+      wsId: context.wsId ?? ROOT_WORKSPACE_ID,
+    }),
     output: Output.object({ schema: calendarEventsSchema }),
     prompt: promptText,
   });

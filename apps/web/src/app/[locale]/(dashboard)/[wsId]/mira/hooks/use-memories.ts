@@ -1,6 +1,12 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  type AiMemoryItem,
+  createMiraMemory,
+  deleteWorkspaceAiMemoryItem,
+  listWorkspaceAiMemoryItems,
+} from '@tuturuuu/internal-api/ai-memory';
 import type { MiraMemory, MiraMemoryCategory } from '../types/mira';
 import { miraKeys } from './use-mira';
 
@@ -18,53 +24,89 @@ interface CreateMemoryData {
   confidence?: number;
 }
 
+function mapAiMemoryItemToMiraMemory(item: AiMemoryItem): MiraMemory {
+  const metadata = item.metadata ?? {};
+  const category =
+    typeof metadata.memoryCategory === 'string'
+      ? metadata.memoryCategory
+      : item.category || 'fact';
+  const key =
+    typeof metadata.memoryKey === 'string'
+      ? metadata.memoryKey
+      : item.key || item.title || 'Memory';
+  const value = item.value || item.content || item.summary || item.title || '';
+
+  return {
+    category: category as MiraMemoryCategory,
+    confidence: typeof item.score === 'number' ? item.score : 1,
+    created_at: item.updatedAt,
+    id: item.id,
+    key,
+    last_referenced_at: null,
+    source: typeof metadata.source === 'string' ? metadata.source : null,
+    updated_at: item.updatedAt,
+    user_id: typeof metadata.userId === 'string' ? metadata.userId : '',
+    value,
+  };
+}
+
+function groupMemories(memories: MiraMemory[]) {
+  return memories.reduce(
+    (acc, memory) => {
+      const category = memory.category;
+      acc[category] ??= [];
+      acc[category].push(memory);
+      return acc;
+    },
+    {} as Record<string, MiraMemory[]>
+  );
+}
+
 // Fetch memories
-async function fetchMemories(category?: string): Promise<MemoriesResponse> {
-  const url = category
-    ? `/api/v1/mira/memories?category=${category}`
-    : '/api/v1/mira/memories';
-  const res = await fetch(url, { cache: 'no-store' });
-  if (!res.ok) {
-    throw new Error('Failed to fetch memories');
-  }
-  return res.json();
+async function fetchMemories(
+  wsId: string,
+  category?: string
+): Promise<MemoriesResponse> {
+  const response = await listWorkspaceAiMemoryItems(wsId, {
+    category,
+    product: 'mira',
+  });
+  const memories = response.items.map(mapAiMemoryItemToMiraMemory);
+  return {
+    grouped: groupMemories(memories),
+    memories,
+    total: memories.length,
+  };
 }
 
 // Create/update memory
 async function createMemory(
+  wsId: string,
   data: CreateMemoryData
 ): Promise<{ memory: MiraMemory }> {
-  const res = await fetch('/api/v1/mira/memories', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    throw new Error('Failed to save memory');
-  }
-  return res.json();
+  return createMiraMemory<MiraMemory>(wsId, data);
 }
 
 // Delete memory
-async function deleteMemory(memoryId: string): Promise<{ success: boolean }> {
-  const res = await fetch('/api/v1/mira/memories', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ memory_id: memoryId }),
-  });
-  if (!res.ok) {
-    throw new Error('Failed to delete memory');
-  }
-  return res.json();
+async function deleteMemory({
+  memoryId,
+  wsId,
+}: {
+  memoryId: string;
+  wsId: string;
+}): Promise<{ success: boolean }> {
+  await deleteWorkspaceAiMemoryItem(wsId, memoryId, { product: 'mira' });
+  return { success: true };
 }
 
 /**
  * Hook for fetching memories
  */
-export function useMemories(category?: MiraMemoryCategory) {
+export function useMemories(wsId: string, category?: MiraMemoryCategory) {
   return useQuery({
-    queryKey: miraKeys.memories(category),
-    queryFn: () => fetchMemories(category),
+    enabled: Boolean(wsId),
+    queryKey: [...miraKeys.memories(category), wsId],
+    queryFn: () => fetchMemories(wsId, category),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 }
@@ -72,15 +114,15 @@ export function useMemories(category?: MiraMemoryCategory) {
 /**
  * Hook for creating/updating a memory
  */
-export function useCreateMemory() {
+export function useCreateMemory(wsId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: createMemory,
+    mutationFn: (data: CreateMemoryData) => createMemory(wsId, data),
     onSuccess: (data, variables) => {
       // Optimistically update cache
       queryClient.setQueryData(
-        miraKeys.memories(variables.category),
+        [...miraKeys.memories(variables.category), wsId],
         (old: MemoriesResponse | undefined) => {
           if (!old) return old;
 
@@ -107,7 +149,9 @@ export function useCreateMemory() {
       );
 
       // Also invalidate the "all" memories query
-      queryClient.invalidateQueries({ queryKey: miraKeys.memories() });
+      queryClient.invalidateQueries({
+        queryKey: [...miraKeys.memories(), wsId],
+      });
     },
   });
 }
@@ -115,11 +159,11 @@ export function useCreateMemory() {
 /**
  * Hook for deleting a memory
  */
-export function useDeleteMemory() {
+export function useDeleteMemory(wsId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deleteMemory,
+    mutationFn: (memoryId: string) => deleteMemory({ memoryId, wsId }),
     onSuccess: (_, memoryId) => {
       // Update all memory queries
       queryClient.setQueriesData(
@@ -140,8 +184,8 @@ export function useDeleteMemory() {
 /**
  * Get memories by category
  */
-export function useMemoriesByCategory() {
-  const { data, ...rest } = useMemories();
+export function useMemoriesByCategory(wsId: string) {
+  const { data, ...rest } = useMemories(wsId);
 
   return {
     ...rest,

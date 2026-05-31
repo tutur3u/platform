@@ -5,6 +5,7 @@ import {
   deductAiCredits,
 } from '@tuturuuu/ai/credits/check-credits';
 import { toBareModelName } from '@tuturuuu/ai/credits/model-mapping';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { Json } from '@tuturuuu/types/db';
 import { z } from 'zod';
 import { serverLogger } from '../infrastructure/log-drain';
@@ -375,7 +376,15 @@ async function generateConversation(input: {
 
   try {
     const result = await generateObject({
-      model: google(toBareModelName(modelId)),
+      model: await withAiMemory({
+        customId: `hive-npc-${Date.now()}`,
+        model: google(toBareModelName(modelId)),
+        product: 'hive',
+        source: 'hive_npc_interaction',
+        surface: 'hive_npc_interaction',
+        userId: input.actorUserId,
+        wsId: creditContext.creditWsId,
+      }),
       prompt: [
         input.systemPrompt ||
           'You are a Hive NPC interaction model. Return grounded NPC-to-NPC turns for the current voxel simulation state.',

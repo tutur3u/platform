@@ -1,9 +1,19 @@
 import { google } from '@ai-sdk/google';
 import { convertToModelMessages, generateText, type UIMessage } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
+import {
+  resolveAiMemoryWorkspaceIdForUser,
+  withAiMemory,
+} from '../../../memory';
 import { resolveAiRouteAuth } from '../route-auth';
 
 const model = 'gemini-3.1-flash-lite';
+
+type RawChatMessage = {
+  content: string | null;
+  id: string;
+  role: string;
+};
 
 export function createPATCH() {
   return async function handler(req: NextRequest) {
@@ -33,7 +43,7 @@ export function createPATCH() {
       if (rawMessages.length === 0)
         return new Response('No messages found', { status: 404 });
 
-      const messages = rawMessages.map((msg) => ({
+      const messages = (rawMessages as RawChatMessage[]).map((msg) => ({
         ...msg,
         role: msg.role.toLowerCase(),
         parts: [{ type: 'text', text: msg.content || '' }],
@@ -46,9 +56,22 @@ export function createPATCH() {
         return new Response('Cannot summarize user message', { status: 400 });
 
       const aiMessages = await convertToModelMessages(messages);
+      const wsId = await resolveAiMemoryWorkspaceIdForUser({
+        supabase,
+        userId: auth.user.id,
+      });
 
       const result = await generateText({
-        model: google(model),
+        model: await withAiMemory({
+          addMemory: 'never',
+          customId: `chat-summary-${id}`,
+          model: google(model),
+          product: 'ai_chat',
+          source: 'ai_chat_summary',
+          surface: 'ai_chat_summary',
+          userId: auth.user.id,
+          wsId,
+        }),
         messages: aiMessages,
         system: systemInstruction,
         providerOptions: {

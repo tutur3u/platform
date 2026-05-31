@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@tuturuuu/supabase';
 import type { PermissionId } from '@tuturuuu/types';
 import type { MiraSoulConfig } from '../chat/mira-system-instruction';
+import { buildAiMemoryContext, resolveAiMemoryScope } from '../memory';
 
 /**
  * Token budget for context injection (~4K tokens ≈ 16K chars).
@@ -134,13 +135,18 @@ export async function buildMiraContext(
           .limit(10)
       : Promise.resolve({ data: null, error: null }),
 
-    // Recent memories (most recently referenced or updated)
-    supabase
-      .from('mira_memories')
-      .select('key, value, category')
-      .eq('user_id', userId)
-      .order('last_referenced_at', { ascending: false, nullsFirst: false })
-      .limit(15),
+    // Cross-product AI memories from Supermemory, scoped to the current user + workspace.
+    buildAiMemoryContext({
+      limit: 15,
+      scope: resolveAiMemoryScope({
+        customId: `mira-context-${wsId}`,
+        product: 'mira',
+        source: 'mira_context',
+        surface: 'mira_context',
+        userId,
+        wsId,
+      }),
+    }).then((context) => ({ data: context, error: null })),
   ]);
 
   const sections: string[] = [];
@@ -331,19 +337,9 @@ export async function buildMiraContext(
   }
 
   // ── Memories ──
-  const memories = memoriesResult.data;
-  if (memories?.length) {
-    const memLines = memories.map(
-      (m: { category: string; key: string; value: string }) =>
-        `- [${m.category}] ${m.key}: ${m.value}`
-    );
-
-    sections.push(
-      truncateSection(
-        `## User Memories\n${memLines.join('\n')}`,
-        SECTION_CHAR_LIMITS.memories
-      )
-    );
+  const memories = memoriesResult.data?.trim();
+  if (memories) {
+    sections.push(truncateSection(memories, SECTION_CHAR_LIMITS.memories));
   }
 
   // Combine all sections, respecting total budget

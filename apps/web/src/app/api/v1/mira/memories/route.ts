@@ -1,15 +1,24 @@
-/**
- * Mira Memories API
- * GET /api/v1/mira/memories - Get user's memories
- * POST /api/v1/mira/memories - Create/update a memory
- * DELETE /api/v1/mira/memories - Delete a memory
- */
-
+import {
+  type AiMemoryDocument,
+  forgetAiMemory,
+  listAiMemories,
+  rememberAiMemory,
+  resolveAiMemoryScope,
+} from '@tuturuuu/ai/memory';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
-import { createClient } from '@tuturuuu/supabase/next/server';
+import {
+  createAdminClient,
+  createClient,
+} from '@tuturuuu/supabase/next/server';
+import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { MAX_SUPPORT_INQUIRY_LENGTH } from '@tuturuuu/utils/constants';
-import { NextResponse } from 'next/server';
+import {
+  normalizeWorkspaceId,
+  verifyWorkspaceMembershipType,
+} from '@tuturuuu/utils/workspace-helper';
+import { type NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 const memoryCategories = [
   'preference',
@@ -21,188 +30,332 @@ const memoryCategories = [
 
 const createMemorySchema = z.object({
   category: z.enum(memoryCategories),
-  key: z.string().min(1).max(200),
-  value: z.string().min(1).max(MAX_SUPPORT_INQUIRY_LENGTH),
-  source: z.string().max(200).optional(),
   confidence: z.number().min(0).max(1).optional().default(1.0),
+  key: z.string().min(1).max(200),
+  source: z.string().max(200).optional(),
+  value: z.string().min(1).max(MAX_SUPPORT_INQUIRY_LENGTH),
 });
 
 const deleteMemorySchema = z.object({
-  memory_id: z.guid(),
+  memory_id: z.string().min(1).max(300),
 });
 
-export async function GET(request: Request) {
-  try {
-    const supabase = await createClient();
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+type MiraMemoryCategory = (typeof memoryCategories)[number];
 
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+type MemoryContext =
+  | {
+      ok: false;
+      response: NextResponse;
     }
+  | {
+      ok: true;
+      userId: string;
+      wsId: string;
+    };
 
-    const { searchParams } = new URL(request.url);
-    const category = searchParams.get('category');
-    const limit = Math.min(
-      parseInt(searchParams.get('limit') || '100', 10),
-      500
-    );
+type DefaultWorkspaceRow = {
+  default_workspace_id: string | null;
+};
 
-    // Build query
-    let query = supabase
-      .from('mira_memories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('updated_at', { ascending: false })
-      .limit(limit);
+type PersonalWorkspaceRow = {
+  id: string | null;
+};
 
-    if (
-      category &&
-      memoryCategories.includes(category as (typeof memoryCategories)[number])
-    ) {
-      query = query.eq(
-        'category',
-        category as (typeof memoryCategories)[number]
-      );
+async function resolveDefaultWorkspaceId(
+  sbAdmin: TypedSupabaseClient,
+  userId: string
+) {
+  const { data: userPrivateDetails } = await sbAdmin
+    .from('user_private_details')
+    .select('default_workspace_id')
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  const privateDetails = userPrivateDetails as DefaultWorkspaceRow | null;
+  if (privateDetails?.default_workspace_id) {
+    return privateDetails.default_workspace_id;
+  }
+
+  const { data: personalWorkspace } = await sbAdmin
+    .from('workspaces')
+    .select('id, workspace_members!inner(user_id)')
+    .eq('personal', true)
+    .eq('workspace_members.user_id', userId)
+    .limit(1)
+    .maybeSingle();
+
+  const workspace = personalWorkspace as PersonalWorkspaceRow | null;
+  return workspace?.id ?? null;
+}
+
+async function resolveMiraMemoryContext(
+  request: NextRequest
+): Promise<MemoryContext> {
+  const supabase = await createClient();
+  const { user } = await resolveAuthenticatedSessionUser(supabase);
+  if (!user?.id) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }),
+    };
+  }
+
+  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const requestedWsId = request.nextUrl.searchParams.get('wsId');
+  let wsId: string | null = null;
+
+  if (requestedWsId) {
+    try {
+      wsId = await normalizeWorkspaceId(requestedWsId, supabase, request);
+    } catch (error) {
+      serverLogger.warn('Failed to normalize Mira memory workspace id', error);
+      return {
+        ok: false,
+        response: NextResponse.json(
+          { error: 'Invalid workspace identifier' },
+          { status: 422 }
+        ),
+      };
     }
+  } else {
+    wsId = await resolveDefaultWorkspaceId(sbAdmin, user.id);
+  }
 
-    const { data: memories, error } = await query;
+  if (!wsId) {
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Workspace is required' },
+        { status: 400 }
+      ),
+    };
+  }
 
-    if (error) {
-      console.error('Error getting memories:', error);
-      return NextResponse.json(
-        { error: 'Failed to get memories' },
-        { status: 500 }
-      );
-    }
+  const membership = await verifyWorkspaceMembershipType({
+    requiredType: 'MEMBER',
+    supabase: sbAdmin,
+    userId: user.id,
+    wsId,
+  });
 
-    // Group by category
-    const groupedMemories = (memories || []).reduce(
-      (acc, memory) => {
-        const cat = memory.category;
-        if (!acc[cat]) {
-          acc[cat] = [];
-        }
-        acc[cat].push(memory);
-        return acc;
-      },
-      {} as Record<string, typeof memories>
-    );
-
-    return NextResponse.json({
-      memories: memories || [],
-      grouped: groupedMemories,
-      total: memories?.length || 0,
+  if (membership.error === 'membership_lookup_failed') {
+    serverLogger.error('Failed to verify Mira memory workspace access', {
+      userId: user.id,
+      wsId,
     });
-  } catch (error) {
-    console.error('Unexpected error in GET /api/v1/mira/memories:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      ),
+    };
   }
+
+  if (!membership.ok) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    };
+  }
+
+  return {
+    ok: true,
+    userId: user.id,
+    wsId,
+  };
 }
 
-export async function POST(request: Request) {
-  try {
-    const supabase = await createClient();
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+function mapMemoryDocument({
+  category,
+  content,
+  id,
+  key,
+  metadata,
+  summary,
+  title,
+  updatedAt,
+}: AiMemoryDocument) {
+  const memoryCategory =
+    category && memoryCategories.includes(category as MiraMemoryCategory)
+      ? (category as MiraMemoryCategory)
+      : 'fact';
+  const memoryKey = key || title || 'Memory';
+  const memoryValue = content || summary || title || '';
 
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // Parse and validate request body
-    const body = await request.json();
-    const parsed = createMemorySchema.safeParse(body);
-
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const { category, key, value, source, confidence } = parsed.data;
-
-    // Upsert memory (insert or update if key exists)
-    const { data: memory, error } = await supabase
-      .from('mira_memories')
-      .upsert(
-        {
-          user_id: user.id,
-          category,
-          key,
-          value,
-          source,
-          confidence,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,category,key' }
-      )
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating/updating memory:', error);
-      return NextResponse.json(
-        { error: 'Failed to save memory' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ memory });
-  } catch (error) {
-    console.error('Unexpected error in POST /api/v1/mira/memories:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+  return {
+    category: memoryCategory,
+    confidence: 1,
+    created_at: updatedAt,
+    id,
+    key: memoryKey,
+    last_referenced_at: null,
+    source: typeof metadata?.source === 'string' ? metadata.source : null,
+    updated_at: updatedAt,
+    user_id: typeof metadata?.userId === 'string' ? metadata.userId : '',
+    value: memoryValue,
+  };
 }
 
-export async function DELETE(request: Request) {
-  try {
-    const supabase = await createClient();
-    const { user } = await resolveAuthenticatedSessionUser(supabase);
+function groupMemories<TMemory extends { category: string }>(
+  memories: TMemory[]
+) {
+  return memories.reduce(
+    (acc, memory) => {
+      const bucket = acc[memory.category] ?? [];
+      bucket.push(memory);
+      acc[memory.category] = bucket;
+      return acc;
+    },
+    {} as Record<string, TMemory[]>
+  );
+}
 
-    if (!user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+export async function GET(request: NextRequest) {
+  const context = await resolveMiraMemoryContext(request);
+  if (!context.ok) return context.response;
 
-    // Parse and validate request body
-    const body = await request.json();
-    const parsed = deleteMemorySchema.safeParse(body);
+  const category = request.nextUrl.searchParams.get('category');
+  const limit = Math.min(
+    Number.parseInt(request.nextUrl.searchParams.get('limit') || '100', 10) ||
+      100,
+    500
+  );
+  const scope = resolveAiMemoryScope({
+    customId: 'mira-memory-controls',
+    product: 'mira',
+    source: 'mira_memory_api',
+    surface: 'mira_memory_controls',
+    userId: context.userId,
+    wsId: context.wsId,
+  });
+  const result = await listAiMemories({
+    category,
+    ignoreSettings: true,
+    limit,
+    scope,
+  });
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'Invalid request data', details: parsed.error.issues },
-        { status: 400 }
-      );
-    }
-
-    const { memory_id } = parsed.data;
-
-    // Delete memory (RLS ensures user can only delete their own)
-    const { error } = await supabase
-      .from('mira_memories')
-      .delete()
-      .eq('id', memory_id)
-      .eq('user_id', user.id);
-
-    if (error) {
-      console.error('Error deleting memory:', error);
-      return NextResponse.json(
-        { error: 'Failed to delete memory' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Unexpected error in DELETE /api/v1/mira/memories:', error);
+  if (!result.ok) {
+    serverLogger.error('Failed to load Mira memories from Supermemory', {
+      error: result.error,
+      userId: context.userId,
+      wsId: context.wsId,
+    });
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Failed to get memories' },
       { status: 500 }
     );
   }
+
+  const memories = (result.value ?? []).map(mapMemoryDocument);
+
+  return NextResponse.json({
+    grouped: groupMemories(memories),
+    memories,
+    total: memories.length,
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const context = await resolveMiraMemoryContext(request);
+  if (!context.ok) return context.response;
+
+  const parsed = createMemorySchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request data', details: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const { category, confidence, key, source, value } = parsed.data;
+  const scope = resolveAiMemoryScope({
+    customId: `mira-manual-${category}-${key}`,
+    metadata: {
+      confidence,
+      source: source ?? 'mira_memory_api',
+    },
+    product: 'mira',
+    source: source ?? 'mira_memory_api',
+    surface: 'mira_memory_controls',
+    userId: context.userId,
+    wsId: context.wsId,
+  });
+  const result = await rememberAiMemory({
+    category,
+    ignoreSettings: true,
+    key,
+    scope,
+    value,
+  });
+
+  if (!result.ok) {
+    serverLogger.error('Failed to save Mira memory to Supermemory', {
+      error: result.error,
+      userId: context.userId,
+      wsId: context.wsId,
+    });
+    return NextResponse.json(
+      { error: 'Failed to save memory' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    memory: {
+      category,
+      confidence,
+      created_at: new Date().toISOString(),
+      id: result.value?.id ?? scope?.customId ?? key,
+      key,
+      last_referenced_at: null,
+      source: source ?? null,
+      updated_at: new Date().toISOString(),
+      user_id: context.userId,
+      value,
+    },
+  });
+}
+
+export async function DELETE(request: NextRequest) {
+  const context = await resolveMiraMemoryContext(request);
+  if (!context.ok) return context.response;
+
+  const parsed = deleteMemorySchema.safeParse(await request.json());
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: 'Invalid request data', details: parsed.error.issues },
+      { status: 400 }
+    );
+  }
+
+  const scope = resolveAiMemoryScope({
+    customId: `mira-delete-${parsed.data.memory_id}`,
+    product: 'mira',
+    source: 'mira_memory_api',
+    surface: 'mira_memory_controls',
+    userId: context.userId,
+    wsId: context.wsId,
+  });
+  const result = await forgetAiMemory({
+    ignoreSettings: true,
+    memoryId: parsed.data.memory_id,
+    scope,
+  });
+
+  if (!result.ok) {
+    serverLogger.error('Failed to delete Mira memory from Supermemory', {
+      error: result.error,
+      memoryId: parsed.data.memory_id,
+      userId: context.userId,
+      wsId: context.wsId,
+    });
+    return NextResponse.json(
+      { error: 'Failed to delete memory' },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({ success: true });
 }

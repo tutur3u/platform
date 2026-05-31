@@ -972,6 +972,9 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     fs.mkdirSync(path.join(tempDir, 'apps', 'meet-realtime'), {
       recursive: true,
     });
+    fs.mkdirSync(path.join(tempDir, 'apps', 'supermemory'), {
+      recursive: true,
+    });
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'web', 'Dockerfile'),
       'FROM scratch AS deps\n'
@@ -1030,6 +1033,10 @@ test('checkDockerWebSetup uses rootDir for default docker reads', () => {
     );
     fs.writeFileSync(
       path.join(tempDir, 'apps', 'meet-realtime', 'Dockerfile'),
+      'FROM scratch\n'
+    );
+    fs.writeFileSync(
+      path.join(tempDir, 'apps', 'supermemory', 'Dockerfile'),
       'FROM scratch\n'
     );
     fs.writeFileSync(

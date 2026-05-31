@@ -14,6 +14,7 @@ import { ROOT_WORKSPACE_ID } from '@tuturuuu/utils/constants';
 import { type FinishReason, streamText } from 'ai';
 import { type NextRequest, NextResponse } from 'next/server';
 import { validateApiKeyHash } from '../api-key-hash';
+import { withAiMemory } from '../memory';
 
 const ALLOWED_MODELS = [
   {
@@ -187,7 +188,7 @@ export function createPOST(
 
       const { data: apiKeyData, error: apiKeyError } = await sbAdmin
         .from('workspace_api_keys')
-        .select('id, scopes, key_hash')
+        .select('id, created_by, scopes, key_hash')
         .eq('ws_id', configs.wsId)
         .eq('id', accessKey.id)
         .single();
@@ -239,7 +240,15 @@ export function createPOST(
       }
 
       const stream = streamText({
-        model: google(effectiveModel),
+        model: await withAiMemory({
+          customId: `generate-${apiKeyId}-${Date.now()}`,
+          model: google(effectiveModel),
+          product: 'ai_chat',
+          source: 'api_generate',
+          surface: 'api_generate',
+          userId: apiKeyData.created_by,
+          wsId: configs.wsId,
+        }),
         prompt,
         system: configs.systemPrompt,
         ...(cappedMaxOutput ? { maxOutputTokens: cappedMaxOutput } : {}),

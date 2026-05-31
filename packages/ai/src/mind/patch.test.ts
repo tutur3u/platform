@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { applyMindPatchToSnapshot } from './patch';
-import type { MindAiPatch, MindBoardSnapshot } from './types';
+import type {
+  MindAiPatch,
+  MindBoardSnapshot,
+  MindEdge,
+  MindNode,
+} from './types';
 
 const snapshot: MindBoardSnapshot = {
   board: {
@@ -125,12 +130,12 @@ describe('applyMindPatchToSnapshot', () => {
 
     const next = applyMindPatchToSnapshot(snapshot, patch);
 
-    expect(next.nodes.map((node) => [node.id, node.title])).toEqual([
+    expect(next.nodes.map((node: MindNode) => [node.id, node.title])).toEqual([
       ['node-1', 'Ship Mind v1'],
       ['new-node', 'Iteration engine'],
     ]);
-    expect(next.edges.map((edge) => [edge.id, edge.sourceNodeId])).toEqual([
-      ['new-edge', 'node-1'],
-    ]);
+    expect(
+      next.edges.map((edge: MindEdge) => [edge.id, edge.sourceNodeId])
+    ).toEqual([['new-edge', 'node-1']]);
   });
 });

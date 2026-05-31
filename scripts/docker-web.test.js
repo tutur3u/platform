@@ -201,6 +201,7 @@ test('getBlueGreenDeploymentBuildServices scopes support image builds to changed
       'meet-realtime',
       'markitdown',
       'storage-unzip-proxy',
+      'supermemory',
       'web-cron-runner',
     ]
   );

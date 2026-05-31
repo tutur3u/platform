@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { generateObject } from 'ai';
 import { z } from 'zod';
@@ -14,6 +15,19 @@ const taggerResultSchema = z.object({
   tagIds: z.array(z.guid()),
   reasons: z.array(z.string().trim().max(200)),
 });
+
+async function resolveWorkspaceMemoryUserId(input: {
+  sbAdmin: SepayAdminClient;
+  wsId: string;
+}) {
+  const { data } = await input.sbAdmin
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', input.wsId)
+    .maybeSingle();
+
+  return data?.creator_id ?? null;
+}
 
 export async function classifyTagIds(input: {
   payload: NormalizedSepayPayload;
@@ -46,11 +60,25 @@ export async function classifyTagIds(input: {
     };
   }
 
+  const memoryUserId = await resolveWorkspaceMemoryUserId({
+    sbAdmin: input.sbAdmin,
+    wsId: input.wsId,
+  });
+
   const classification = await runSepayAiEnrichment({
-    execute: (abortSignal) =>
+    execute: async (abortSignal) =>
       generateObject({
         abortSignal,
-        model: google(TAGGER_MODEL),
+        model: await withAiMemory({
+          addMemory: 'never',
+          customId: `sepay-tagger-${input.payload.referenceCode ?? input.payload.code ?? Date.now()}`,
+          model: google(TAGGER_MODEL),
+          product: 'finance',
+          source: 'sepay_webhook_tagger',
+          surface: 'sepay_webhook_tagger',
+          userId: memoryUserId,
+          wsId: input.wsId,
+        }),
         output: 'object',
         schema: taggerResultSchema,
         prompt: [

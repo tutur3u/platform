@@ -89,6 +89,70 @@ services:
     volumes:
       - platform-hive-ollama:/root/.ollama
 
+  supermemory-postgres:
+    container_name: ${COMPOSE_PROJECT_NAME:-tuturuuu}-supermemory-postgres-1
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: supermemory
+      POSTGRES_PASSWORD: ${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}
+      POSTGRES_USER: supermemory
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U supermemory -d supermemory"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    expose:
+      - "5432"
+    volumes:
+      - platform-supermemory-postgres:/var/lib/postgresql/data
+
+  supermemory:
+    build:
+      context: ..
+      dockerfile: apps/supermemory/Dockerfile
+      args:
+        SUPERMEMORY_IMAGE: ${SUPERMEMORY_IMAGE:-supermemory-enterprise-self-host:latest}
+    env_file:
+      - path: ${DOCKER_WEB_COMPOSE_LEGACY_ENV_FILE:-../apps/web/.env.local}
+        required: false
+      - path: ${DOCKER_WEB_COMPOSE_ENV_FILE:-../.env.local}
+        required: false
+    environment:
+      - ANTHROPIC_API_KEY
+      - BETTER_AUTH_SECRET
+      - BETTER_AUTH_URL=${SUPERMEMORY_PUBLIC_BASE_URL:-http://supermemory:8787}
+      - CLOUDFLARE_ACCOUNT_ID
+      - CLOUDFLARE_AI_GATEWAY_NAME
+      - CLOUDFLARE_AI_GATEWAY_TOKEN
+      - CLOUDFLARE_API_TOKEN
+      - DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
+      - GEMINI_API_KEY
+      - GROQ_API_KEY
+      - NEXT_PUBLIC_HOST_ID=${SUPERMEMORY_HOST_ID:-tuturuuu-self-host}
+      - NODE_ENV=production
+      - OPENAI_API_KEY
+      - PORT=8787
+      - RESEND_API_KEY
+      - SUPERMEMORY_API_KEY
+      - SUPERMEMORY_DATABASE_URL=${SUPERMEMORY_DATABASE_URL:-postgres://supermemory:${SUPERMEMORY_POSTGRES_PASSWORD:?Set SUPERMEMORY_POSTGRES_PASSWORD for Supermemory Postgres or configure SUPERMEMORY_DATABASE_URL}@supermemory-postgres:5432/supermemory}
+    expose:
+      - "8787"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'node -e "const port=process.env.PORT||8787; const path=process.env.SUPERMEMORY_HEALTHCHECK_PATH||''/health''; fetch(''http://127.0.0.1:'' + port + path).then((response) => process.exit(response.status < 500 ? 0 : 1)).catch(() => process.exit(1))"',
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 5
+    init: true
+    restart: unless-stopped
+    depends_on:
+      supermemory-postgres:
+        condition: service_healthy
+
   backend:
     build:
       context: ..

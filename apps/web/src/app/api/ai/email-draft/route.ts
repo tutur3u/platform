@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
       revisionInstructions,
       userEmail,
       userDisplayName,
+      wsId,
     } = await req.json();
 
     const isRevision = revisionInstructions && existingContent;
@@ -109,7 +111,15 @@ Format the email content with proper paragraph breaks. Use double line breaks be
 Generate the email with a compelling subject line and well-crafted content.`;
 
     const result = await generateObject({
-      model: google('gemini-3.1-flash-lite'),
+      model: await withAiMemory({
+        customId: `email-draft-${Date.now()}`,
+        model: google('gemini-3.1-flash-lite'),
+        product: 'ai_chat',
+        source: 'email_draft',
+        surface: 'email_draft',
+        userId: user.id,
+        wsId,
+      }),
       schema: emailDraftSchema,
       prompt,
     });

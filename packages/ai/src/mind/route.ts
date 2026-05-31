@@ -25,6 +25,7 @@ import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '../credits/resolve-plan-model';
+import { withAiMemory } from '../memory';
 import { createMiraStreamTools } from '../tools/mira-tools';
 import { createMindStreamTools, type MindToolCallbacks } from './tools';
 
@@ -539,6 +540,18 @@ export function createPOST(callbacks: MindRouteCallbacks) {
       );
       if ('error' in preparedMessages) return preparedMessages.error;
 
+      const modelWithMemory = await withAiMemory({
+        customId: threadId,
+        model: useGoogleNativeModel
+          ? google(toBareModelName(resolvedModelId))
+          : gateway(resolvedModelId),
+        product: 'mind',
+        source: 'mind_chat',
+        surface: 'mind_chat',
+        userId: auth.user.id,
+        wsId: access.wsId,
+      });
+
       const result = streamText({
         abortSignal: request.signal,
         experimental_telemetry: {
@@ -559,9 +572,7 @@ export function createPOST(callbacks: MindRouteCallbacks) {
         maxRetries: 0,
         maxOutputTokens: creditPreflight.cappedMaxOutput ?? undefined,
         messages: preparedMessages.processedMessages,
-        model: useGoogleNativeModel
-          ? google(toBareModelName(resolvedModelId))
-          : gateway(resolvedModelId),
+        model: modelWithMemory,
         ...(useGoogleNativeModel
           ? { providerOptions: { google: thinkingConfig } }
           : {}),

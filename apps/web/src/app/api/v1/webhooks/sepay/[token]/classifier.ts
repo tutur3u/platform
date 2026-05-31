@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import { generateObject } from 'ai';
 import { z } from 'zod';
@@ -11,6 +12,19 @@ const CATEGORY_CONFIDENCE_THRESHOLD = 0.6;
 const CLASSIFIER_MODEL = 'gemini-3.1-flash-lite';
 const CLASSIFIER_TIMEOUT_MS = 4_000;
 const fallbackCategoryCache = new Map<string, Promise<string>>();
+
+async function resolveWorkspaceMemoryUserId(input: {
+  sbAdmin: SepayAdminClient;
+  wsId: string;
+}) {
+  const { data } = await input.sbAdmin
+    .from('workspaces')
+    .select('creator_id')
+    .eq('id', input.wsId)
+    .maybeSingle();
+
+  return data?.creator_id ?? null;
+}
 
 const classifierResultSchema = z.object({
   categoryId: z.guid(),
@@ -124,11 +138,25 @@ export async function classifyCategoryId(input: {
     };
   }
 
+  const memoryUserId = await resolveWorkspaceMemoryUserId({
+    sbAdmin: input.sbAdmin,
+    wsId: input.wsId,
+  });
+
   const classification = await runSepayAiEnrichment({
-    execute: (abortSignal) =>
+    execute: async (abortSignal) =>
       generateObject({
         abortSignal,
-        model: google(CLASSIFIER_MODEL),
+        model: await withAiMemory({
+          addMemory: 'never',
+          customId: `sepay-classifier-${input.payload.referenceCode ?? input.payload.code ?? Date.now()}`,
+          model: google(CLASSIFIER_MODEL),
+          product: 'finance',
+          source: 'sepay_webhook_classifier',
+          surface: 'sepay_webhook_classifier',
+          userId: memoryUserId,
+          wsId: input.wsId,
+        }),
         output: 'object',
         schema: classifierResultSchema,
         prompt: [

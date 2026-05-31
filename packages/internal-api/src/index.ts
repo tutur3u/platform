@@ -21,6 +21,21 @@ export {
   uploadToAiChatSignedUrl,
 } from './ai';
 export {
+  type AiMemoryItem,
+  type AiMemorySettingsResponse,
+  type CreateMiraMemoryPayload,
+  type CreateMiraMemoryResponse,
+  createMiraMemory,
+  deleteWorkspaceAiMemoryItem,
+  type ExportAiMemoryItemsResponse,
+  exportWorkspaceAiMemoryItems,
+  getWorkspaceAiMemorySettings,
+  type ListAiMemoryItemsResponse,
+  listWorkspaceAiMemoryItems,
+  type UpdateAiMemorySettingsPayload,
+  updateWorkspaceAiMemorySettings,
+} from './ai-memory';
+export {
   type ApproveMfaMobileApprovalPayload,
   type ApproveMfaMobileApprovalResponse,
   approveMfaMobileApprovalWithInternalApi,

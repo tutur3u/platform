@@ -114,8 +114,8 @@ const toolHandlers = {
   select_tools: (args) => ({ ok: true, selectedTools: args.tools }),
   no_action_needed: () => ({ ok: true }),
   google_search: executeGoogleSearch,
-  run_parallel_checks: (args, _ctx, options) =>
-    executeParallelChecks(args, options),
+  run_parallel_checks: (args, ctx, options) =>
+    executeParallelChecks(args, ctx, options),
 
   get_my_tasks: executeGetMyTasks,
   create_task: executeCreateTask,
