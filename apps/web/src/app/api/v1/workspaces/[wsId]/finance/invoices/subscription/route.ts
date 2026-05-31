@@ -86,6 +86,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, permissions, sbAdmin, user } = access.context;
+  const privateDb = sbAdmin.schema('private');
 
   let createdInvoiceId: string | null = null;
 
@@ -453,7 +454,7 @@ export async function POST(req: Request, { params }: Params) {
 
     // Promotion linkage
     if (promotion_id && promotion_id !== 'none' && discount_amount > 0) {
-      const { data: promotion, error: promotionFetchError } = await sbAdmin
+      const { data: promotion, error: promotionFetchError } = await privateDb
         .from('workspace_promotions')
         .select('use_ratio, value, name, code, description')
         .eq('id', promotion_id)

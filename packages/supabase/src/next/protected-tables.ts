@@ -5,7 +5,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'nova_problems',
   'nova_submission_test_cases',
   'nova_teams',
-  'workspace_promotions',
   'workspace_subscription_products',
   'workspace_wallets',
 ] as const;

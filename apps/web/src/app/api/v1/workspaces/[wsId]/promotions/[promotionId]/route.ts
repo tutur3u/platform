@@ -53,6 +53,7 @@ export async function PUT(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient(req);
+  const privateDb = supabase.schema('private');
   const parsed = PromotionUpdateSchema.safeParse(await req.json());
 
   if (!parsed.success) {
@@ -64,7 +65,10 @@ export async function PUT(req: Request, { params }: Params) {
 
   const data = parsed.data;
 
-  const updateData: TablesUpdate<'workspace_promotions'> = {
+  const updateData: TablesUpdate<
+    { schema: 'private' },
+    'workspace_promotions'
+  > = {
     name: data.name,
     description: data.description,
     code: data.code,
@@ -76,7 +80,7 @@ export async function PUT(req: Request, { params }: Params) {
     updateData.max_uses = data.max_uses ?? null;
   }
 
-  const { error } = await supabase
+  const { error } = await privateDb
     .from('workspace_promotions')
     .update({
       ...updateData,
@@ -112,8 +116,9 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const supabase = await createClient(req);
+  const privateDb = supabase.schema('private');
 
-  const { error } = await supabase
+  const { error } = await privateDb
     .from('workspace_promotions')
     .delete()
     .eq('id', promotionId)

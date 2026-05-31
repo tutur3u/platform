@@ -135,6 +135,10 @@ const PRIVATE_TABLES = [
     select: 'user_id',
   },
   {
+    name: 'v_user_referral_discounts',
+    select: 'promo_id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },
@@ -144,6 +148,10 @@ const PRIVATE_TABLES = [
   },
   {
     name: 'workspace_credit_packs',
+    select: 'id',
+  },
+  {
+    name: 'workspace_promotions',
     select: 'id',
   },
   {

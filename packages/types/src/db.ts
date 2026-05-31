@@ -407,7 +407,7 @@ export type InternalApiEnhancedWorkspaceMember = PrimitiveUser & {
   workspace_user_id?: string | null;
   workspace_profile_display_name?: string | null;
 };
-export type WorkspacePromotion = Tables<'workspace_promotions'>;
+export type WorkspacePromotion = PrivateTable<'workspace_promotions'>;
 export type WorkspaceFlashcard = Tables<'workspace_flashcards'>;
 export type WorkspaceQuiz = Tables<'workspace_quizzes'>;
 export type WorkspaceWhiteboard = Tables<'workspace_whiteboards'>;

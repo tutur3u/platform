@@ -129,6 +129,7 @@ const PRIVATE_USER_GROUP_POST_TABLES: Set<string> = new Set([
 ]);
 
 const PRIVATE_PROMOTION_TABLES: Set<string> = new Set([
+  'workspace_promotions',
   'user_linked_promotions',
 ]);
 

@@ -1,7 +1,5 @@
-import {
-  createAdminClient,
-  createClient,
-} from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
+import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
@@ -30,10 +28,11 @@ async function getDataWithApiKey({
   apiKey: string;
 }) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
   const apiCheckQuery = validateWorkspaceApiKey(wsId, apiKey);
 
-  const mainQuery = sbAdmin
+  const mainQuery = privateDb
     .from('workspace_promotions')
     .select('count()')
     .eq('ws_id', wsId)
@@ -59,12 +58,18 @@ async function getDataWithApiKey({
 }
 
 async function getDataFromSession({ wsId }: { wsId: string }) {
-  const supabase = await createClient();
+  const permissions = await getPermissions({ wsId });
+  if (!permissions) {
+    return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+  }
 
-  const { data, error } = await supabase
+  const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
+
+  const { data, error } = await privateDb
     .from('workspace_promotions')
     .select('count()')
-    .eq('ws_id', wsId)
+    .eq('ws_id', permissions.wsId)
     .single();
 
   if (error) {

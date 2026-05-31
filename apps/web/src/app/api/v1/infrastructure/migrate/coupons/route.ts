@@ -13,6 +13,7 @@ export async function PUT(req: Request) {
     table: 'workspace_promotions',
     data: json?.data || [],
     onConflict: 'id',
+    schema: 'private',
   });
   return createMigrationResponse(result, 'coupons');
 }

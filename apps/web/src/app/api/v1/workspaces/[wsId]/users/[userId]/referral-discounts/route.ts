@@ -23,8 +23,9 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await privateDb
     .from('v_user_referral_discounts')
     .select('promo_id, calculated_discount_value')
     .eq('ws_id', wsId)

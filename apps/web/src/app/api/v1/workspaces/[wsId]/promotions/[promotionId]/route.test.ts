@@ -4,6 +4,7 @@ type MutationOperation = {
   filters: Array<{ column: string; value: unknown }>;
   mutation: 'delete' | 'update';
   payload?: unknown;
+  schema: 'private' | 'public';
   table: string;
 };
 
@@ -15,6 +16,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 function createMutationBuilder(
+  schema: MutationOperation['schema'],
   table: string,
   mutation: MutationOperation['mutation'],
   payload?: unknown
@@ -23,6 +25,7 @@ function createMutationBuilder(
     filters: [],
     mutation,
     payload,
+    schema,
     table,
   };
   mocks.operations.push(operation);
@@ -64,10 +67,12 @@ describe('workspace promotion item route', () => {
       wsId: 'workspace-1',
     });
     mocks.createClient.mockResolvedValue({
-      from: (table: string) => ({
-        delete: () => createMutationBuilder(table, 'delete'),
-        update: (payload: unknown) =>
-          createMutationBuilder(table, 'update', payload),
+      schema: (schema: 'private' | 'public') => ({
+        from: (table: string) => ({
+          delete: () => createMutationBuilder(schema, table, 'delete'),
+          update: (payload: unknown) =>
+            createMutationBuilder(schema, table, 'update', payload),
+        }),
       }),
     });
   });
@@ -104,6 +109,7 @@ describe('workspace promotion item route', () => {
           { column: 'ws_id', value: 'workspace-1' },
         ],
         mutation: 'update',
+        schema: 'private',
         table: 'workspace_promotions',
       }),
     ]);
@@ -132,6 +138,7 @@ describe('workspace promotion item route', () => {
           { column: 'ws_id', value: 'workspace-1' },
         ],
         mutation: 'delete',
+        schema: 'private',
         table: 'workspace_promotions',
       }),
     ]);

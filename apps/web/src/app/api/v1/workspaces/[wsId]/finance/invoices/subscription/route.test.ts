@@ -6,6 +6,9 @@ const mocks = {
   getPermissions: vi.fn(),
   getUser: vi.fn(),
   getWorkspaceConfig: vi.fn(),
+  sbAdmin: {
+    schema: vi.fn(() => ({})),
+  },
   isGroupBlockedForSubscriptionInvoices: vi.fn(),
   sessionSupabase: {
     auth: {
@@ -66,7 +69,7 @@ describe('subscription invoice create route', () => {
       context: {
         normalizedWsId: '00000000-0000-0000-0000-000000000000',
         permissions: await mocks.getPermissions(),
-        sbAdmin: {},
+        sbAdmin: mocks.sbAdmin,
         supabase: {},
         user: {
           email: 'agent@example.com',

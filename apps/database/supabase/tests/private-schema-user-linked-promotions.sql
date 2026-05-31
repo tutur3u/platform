@@ -87,7 +87,7 @@ select ok(
     from pg_constraint constraint_row
     where constraint_row.conname = 'user_linked_promotions_promo_id_fkey'
       and constraint_row.conrelid = 'private.user_linked_promotions'::regclass
-      and constraint_row.confrelid = 'public.workspace_promotions'::regclass
+      and constraint_row.confrelid = 'private.workspace_promotions'::regclass
   ),
   'private user linked promotions still reference workspace promotions'
 );
@@ -143,7 +143,7 @@ select ok(
     select 1
     from pg_trigger
     where tgname = 't_auto_link_referral_promo'
-      and tgrelid = 'public.workspace_promotions'::regclass
+      and tgrelid = 'private.workspace_promotions'::regclass
       and tgfoid = 'private.auto_link_referral_promotion()'::regprocedure
       and not tgisinternal
   ),

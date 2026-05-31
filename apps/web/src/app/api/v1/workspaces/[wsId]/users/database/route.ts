@@ -314,7 +314,7 @@ export async function GET(request: Request, { params }: Params) {
 
         const { data: promotions, error: promotionsError } =
           promoIds.length > 0
-            ? await sbAdmin
+            ? await privateDb
                 .from('workspace_promotions')
                 .select('id, name, code, value, use_ratio, ws_id')
                 .eq('ws_id', wsId)

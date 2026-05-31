@@ -74,7 +74,7 @@ test.describe('User linked promotions private schema API', () => {
           },
           failOnStatusCode: false,
           headers: {
-            ...serviceHeaders(),
+            ...serviceHeaders('private'),
             prefer: 'return=minimal',
           },
         }
@@ -133,7 +133,7 @@ test.describe('User linked promotions private schema API', () => {
         `${SUPABASE_URL}/rest/v1/workspace_promotions?id=eq.${promoId}`,
         {
           failOnStatusCode: false,
-          headers: serviceHeaders(),
+          headers: serviceHeaders('private'),
         }
       );
     }

@@ -183,7 +183,7 @@ export async function POST(req: Request, { params }: Params) {
   const creatorVirtualUserId = wsUser.virtual_user_id;
 
   // 1) Ensure referrer-owned referral promotion exists
-  const { data: existingPromo, error: promoFetchErr } = await sbAdmin
+  const { data: existingPromo, error: promoFetchErr } = await privateDb
     .from('workspace_promotions')
     .select('id')
     .eq('ws_id', wsId)
@@ -200,7 +200,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   if (!existingPromo) {
-    const { error: promoInsertErr } = await sbAdmin
+    const { error: promoInsertErr } = await privateDb
       .from('workspace_promotions')
       .insert({
         ws_id: wsId,

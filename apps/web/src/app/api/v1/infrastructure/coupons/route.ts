@@ -1,9 +1,10 @@
-import { createClient } from '@tuturuuu/supabase/next/server';
+import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 
 export async function GET(req: Request) {
-  const supabase = await createClient();
+  const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
   const { searchParams } = new URL(req.url);
   const wsId = searchParams.get('ws_id');
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const { data, error, count } = await supabase
+  const { data, error, count } = await privateDb
     .from('workspace_promotions')
     .select('*', { count: 'exact' })
     .eq('ws_id', wsId)

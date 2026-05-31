@@ -62,10 +62,11 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const privateDb = sbAdmin.schema('private');
   const { searchParams } = new URL(req.url);
   const inventoryOnly = searchParams.get('inventoryOnly') === 'true';
 
-  const query = sbAdmin
+  const query = privateDb
     .from('workspace_promotions')
     .select(
       'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id, created_at',
@@ -148,8 +149,9 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const data = parsed.data;
+  const privateDb = sbAdmin.schema('private');
 
-  const { data: created, error } = await sbAdmin
+  const { data: created, error } = await privateDb
     .from('workspace_promotions')
     .insert({
       name: data.name,

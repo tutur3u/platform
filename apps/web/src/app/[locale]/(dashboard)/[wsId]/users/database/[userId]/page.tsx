@@ -621,7 +621,7 @@ async function getCouponData({
     return { data: [], count: 0 };
   }
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await privateDb
     .from('workspace_promotions')
     .select('id, name, description, code, value, use_ratio')
     .eq('ws_id', wsId)

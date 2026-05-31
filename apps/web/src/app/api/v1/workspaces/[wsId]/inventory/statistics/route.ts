@@ -104,7 +104,7 @@ export async function GET(req: Request, { params }: Params) {
       return count ?? 0;
     }),
     countOrZero('promotions', async () => {
-      const { count, error } = await sbAdmin
+      const { count, error } = await inventory
         .from('workspace_promotions')
         .select('id', { count: 'exact', head: true })
         .eq('ws_id', wsId);

@@ -15,7 +15,8 @@ export default async function PromotionsStatistics({ wsId }: { wsId: string }) {
   const { withoutPermission } = permissions;
 
   if (withoutPermission('view_inventory')) return null;
-  const { count: promotions, error } = await supabase
+  const privateDb = supabase.schema('private');
+  const { count: promotions, error } = await privateDb
     .from('workspace_promotions')
     .select('id', {
       count: 'exact',
