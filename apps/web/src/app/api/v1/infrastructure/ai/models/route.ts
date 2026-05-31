@@ -52,6 +52,7 @@ function parseIds(value: string | null) {
 
 export async function GET(request: NextRequest) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
   const searchParams = request.nextUrl.searchParams;
   const pageParam = searchParams.get('page');
   const limitParam = searchParams.get('limit');
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     pageParam !== null ||
     limitParam !== null;
 
-  let query = sbAdmin
+  let query = privateDb
     .from('ai_gateway_models')
     .select(
       PUBLIC_MODEL_COLUMNS,

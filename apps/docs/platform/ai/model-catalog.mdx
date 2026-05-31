@@ -42,4 +42,4 @@ In development, the AI credits admin model sync defaults to the Tuturuuu product
 
 Gemini 3.1 Flash Lite is stable under `gemini-3.1-flash-lite` and `google/gemini-3.1-flash-lite`. Runtime callers should normalize the retired `gemini-3.1-flash-lite-preview` aliases before model resolution so stored preferences and older clients keep working without sending the preview ID to providers.
 
-`ai_gateway_models` stores provider-owned catalog metadata, so its text fields are exempt from the global strict text-field length trigger and generated text check constraints. JSON payload fields on the same table still keep the standard payload-size checks.
+`private.ai_gateway_models` stores provider-owned catalog metadata, so its text fields are exempt from the global strict text-field length trigger and generated text check constraints. JSON payload fields on the same table still keep the standard payload-size checks.

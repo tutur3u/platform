@@ -150,6 +150,7 @@ export async function resolvePlanModel(args: {
   }
 
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
   const tier = await getWorkspaceTier(args.wsId, { useAdmin: true });
 
   const { data: allocationData, error: allocationError } = await sbAdmin
@@ -191,7 +192,7 @@ export async function resolvePlanModel(args: {
     candidateIds.add(resolveGatewayModelId(args.requestedModel));
   }
 
-  const { data: models, error: modelsError } = await sbAdmin
+  const { data: models, error: modelsError } = await privateDb
     .from('ai_gateway_models')
     .select('id, type, is_enabled')
     .in('id', Array.from(candidateIds));

@@ -46,8 +46,9 @@ export async function GET(request: NextRequest) {
     const enabled = request.nextUrl.searchParams.get('enabled') !== 'false';
     const type = request.nextUrl.searchParams.get('type') ?? 'language';
     const sbAdmin = await createAdminClient({ noCookie: true });
+    const privateDb = sbAdmin.schema('private');
 
-    let query = sbAdmin
+    let query = privateDb
       .from('ai_gateway_models')
       .select(PUBLIC_MODEL_COLUMNS)
       .order('provider')

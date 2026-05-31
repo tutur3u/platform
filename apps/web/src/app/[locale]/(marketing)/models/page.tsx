@@ -14,19 +14,20 @@ export async function generateMetadata() {
 
 export default async function ModelsPage() {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
   const {
     data: models,
     error,
     count,
-  } = await sbAdmin
+  } = await privateDb
     .from('ai_gateway_models')
     .select('*', { count: 'exact' })
     .order('provider')
     .order('name')
     .range(0, MODELS_PAGE_SIZE - 1);
 
-  const { data: filterRows, error: filterError } = await sbAdmin
+  const { data: filterRows, error: filterError } = await privateDb
     .from('ai_gateway_models')
     .select('provider, tags, type')
     .order('provider')

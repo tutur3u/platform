@@ -66,7 +66,8 @@ export async function GET(req: NextRequest) {
     const filters = parseAdminAiCreditsModelFilters(searchParams);
 
     const sbAdmin = await createAdminClient();
-    let query = sbAdmin
+    const privateDb = sbAdmin.schema('private');
+    let query = privateDb
       .from('ai_gateway_models')
       .select('*', { count: 'exact' });
 
@@ -150,6 +151,7 @@ export async function PATCH(req: Request) {
     }
 
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('ai_gateway_models')
       .update({ is_enabled: parsed.data.is_enabled })
       .eq('id', parsed.data.id)

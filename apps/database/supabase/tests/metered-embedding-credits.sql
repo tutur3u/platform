@@ -82,7 +82,7 @@ select ok(
 select ok(
   exists (
     select 1
-    from public.ai_gateway_models
+    from private.ai_gateway_models
     where id = 'google/gemini-embedding-2'
       and type = 'embedding'
       and is_enabled

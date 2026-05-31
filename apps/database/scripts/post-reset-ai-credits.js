@@ -23,6 +23,10 @@ const UPSERT_BATCH_SIZE = 100;
 const DEFAULT_FETCH_TIMEOUT_MS = 10_000;
 const DEFAULT_ADMIN_FETCH_MAX_ATTEMPTS = 6;
 const DEFAULT_ADMIN_FETCH_RETRY_DELAY_MS = 1_000;
+const PRIVATE_SCHEMA_REST_HEADERS = {
+  'Accept-Profile': 'private',
+  'Content-Profile': 'private',
+};
 
 function parseHttpsBaseUrl(value) {
   try {
@@ -46,6 +50,14 @@ function parseNumber(value, fallback = null) {
   if (value == null) return fallback;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function resolveGatewayModelMaxTokens(model) {
+  if (model?.id === 'google/gemini-embedding-2') {
+    return 3072;
+  }
+
+  return model?.max_tokens ?? null;
 }
 
 function truncateText(value, maxLength) {
@@ -269,7 +281,7 @@ function mapGatewayModel(model) {
     description: truncateText(model.description, 512),
     type: truncateText(model.type || 'language', 64),
     context_window: model.context_window ?? null,
-    max_tokens: model.max_tokens ?? null,
+    max_tokens: resolveGatewayModelMaxTokens(model),
     tags: Array.isArray(model.tags) ? model.tags : [],
     input_price_per_token: parseNumber(model?.pricing?.input, 0),
     output_price_per_token: parseNumber(model?.pricing?.output, 0),
@@ -310,6 +322,7 @@ async function upsertGatewayModels(baseUrl, serviceRoleKey, rows) {
       {
         method: 'POST',
         headers: {
+          ...PRIVATE_SCHEMA_REST_HEADERS,
           Prefer: 'resolution=merge-duplicates,return=minimal',
         },
         body: JSON.stringify(batch),
@@ -329,6 +342,7 @@ async function enableAllGatewayModels(baseUrl, serviceRoleKey) {
     {
       method: 'PATCH',
       headers: {
+        ...PRIVATE_SCHEMA_REST_HEADERS,
         Prefer: 'return=minimal',
       },
       body: JSON.stringify({

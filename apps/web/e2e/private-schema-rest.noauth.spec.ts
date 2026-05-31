@@ -11,6 +11,10 @@ const SUPABASE_PUBLISHABLE_KEY =
 
 const PRIVATE_TABLES = [
   {
+    name: 'ai_gateway_models',
+    select: 'id',
+  },
+  {
     name: 'mira_accessories',
     select: 'id',
   },

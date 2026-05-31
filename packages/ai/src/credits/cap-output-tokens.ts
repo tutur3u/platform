@@ -11,8 +11,9 @@ async function getOutputPricePerToken(
   modelId: string
 ): Promise<number | null> {
   const gatewayId = resolveGatewayModelId(modelId);
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await sbAdmin
+  const { data, error } = await privateDb
     .from('ai_gateway_models')
     .select('output_price_per_token, output_tiers')
     .or(`id.eq.${gatewayId},id.eq.google/${modelId}`)

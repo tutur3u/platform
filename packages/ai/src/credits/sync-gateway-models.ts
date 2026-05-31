@@ -5,7 +5,10 @@ export type GatewayModelSyncSource =
   | 'tuturuuu-production-public'
   | 'vercel-gateway';
 
-type AIGatewayModelInsert = TablesInsert<'ai_gateway_models'>;
+type AIGatewayModelInsert = TablesInsert<
+  { schema: 'private' },
+  'ai_gateway_models'
+>;
 
 interface GatewayPricingTier {
   cost: string;
@@ -126,6 +129,17 @@ function toNullableJson(value: unknown): Json | null {
   return value === null || value === undefined ? null : (value as Json);
 }
 
+function resolveGatewayModelMaxTokens(
+  id: string,
+  maxTokens: number | null | undefined
+): number | null {
+  if (id === 'google/gemini-embedding-2') {
+    return 3072;
+  }
+
+  return maxTokens ?? null;
+}
+
 async function fetchVercelGatewayModels(): Promise<GatewayModel[]> {
   const response = await fetch(GATEWAY_URL);
   if (!response.ok) {
@@ -187,9 +201,10 @@ async function fetchExistingModelIds(
   sbAdmin: SupabaseClient
 ): Promise<Set<string>> {
   const existingIdSet = new Set<string>();
+  const privateDb = sbAdmin.schema('private');
 
   for (let from = 0; ; from += SELECT_BATCH_SIZE) {
-    const { data, error } = await sbAdmin
+    const { data, error } = await privateDb
       .from('ai_gateway_models')
       .select('id')
       .range(from, from + SELECT_BATCH_SIZE - 1);
@@ -223,7 +238,7 @@ function mapVercelGatewayModel(m: GatewayModel): AIGatewayModelInsert {
     description: m.description || null,
     type: m.type || 'language',
     context_window: m.context_window ?? null,
-    max_tokens: m.max_tokens ?? null,
+    max_tokens: resolveGatewayModelMaxTokens(m.id, m.max_tokens),
     tags: m.tags ?? [],
     input_price_per_token: parseFloat(m.pricing?.input ?? '0'),
     output_price_per_token: parseFloat(m.pricing?.output ?? '0'),
@@ -263,7 +278,7 @@ function mapTuturuuuProductionPublicModel(
     description: m.description ?? null,
     type: m.type || 'language',
     context_window: m.context_window ?? null,
-    max_tokens: m.max_tokens ?? null,
+    max_tokens: resolveGatewayModelMaxTokens(m.id, m.max_tokens),
     tags: m.tags ?? [],
     input_price_per_token: toNumber(m.input_price_per_token),
     output_price_per_token: toNumber(m.output_price_per_token),
@@ -310,10 +325,11 @@ export async function syncGatewayModels(
   }
 
   const existingIdSet = await fetchExistingModelIds(sbAdmin);
+  const privateDb = sbAdmin.schema('private');
 
   for (let i = 0; i < rows.length; i += UPSERT_BATCH_SIZE) {
     const batch = rows.slice(i, i + UPSERT_BATCH_SIZE);
-    const { error } = await sbAdmin
+    const { error } = await privateDb
       .from('ai_gateway_models')
       .upsert(batch, { onConflict: 'id' });
 

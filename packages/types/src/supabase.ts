@@ -236,6 +236,81 @@ export type Database = {
         };
         Relationships: [];
       };
+      ai_gateway_models: {
+        Row: {
+          cache_read_price_per_token: number | null;
+          cache_write_price_per_token: number | null;
+          context_window: number | null;
+          created_at: string;
+          description: string | null;
+          id: string;
+          image_gen_price: number | null;
+          input_price_per_token: number;
+          input_tiers: Json | null;
+          is_enabled: boolean;
+          max_tokens: number | null;
+          name: string;
+          output_price_per_token: number;
+          output_tiers: Json | null;
+          pricing_raw: Json | null;
+          provider: string;
+          released_at: string | null;
+          search_price: number | null;
+          synced_at: string;
+          tags: string[] | null;
+          type: string;
+          web_search_price: number | null;
+        };
+        Insert: {
+          cache_read_price_per_token?: number | null;
+          cache_write_price_per_token?: number | null;
+          context_window?: number | null;
+          created_at?: string;
+          description?: string | null;
+          id: string;
+          image_gen_price?: number | null;
+          input_price_per_token?: number;
+          input_tiers?: Json | null;
+          is_enabled?: boolean;
+          max_tokens?: number | null;
+          name: string;
+          output_price_per_token?: number;
+          output_tiers?: Json | null;
+          pricing_raw?: Json | null;
+          provider: string;
+          released_at?: string | null;
+          search_price?: number | null;
+          synced_at?: string;
+          tags?: string[] | null;
+          type?: string;
+          web_search_price?: number | null;
+        };
+        Update: {
+          cache_read_price_per_token?: number | null;
+          cache_write_price_per_token?: number | null;
+          context_window?: number | null;
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          image_gen_price?: number | null;
+          input_price_per_token?: number;
+          input_tiers?: Json | null;
+          is_enabled?: boolean;
+          max_tokens?: number | null;
+          name?: string;
+          output_price_per_token?: number;
+          output_tiers?: Json | null;
+          pricing_raw?: Json | null;
+          provider?: string;
+          released_at?: string | null;
+          search_price?: number | null;
+          synced_at?: string;
+          tags?: string[] | null;
+          type?: string;
+          web_search_price?: number | null;
+        };
+        Relationships: [];
+      };
       ai_memory_audit: {
         Row: {
           action: string;
@@ -4569,6 +4644,17 @@ export type Database = {
         Args: { p_confidence: number; p_score: number };
         Returns: Database['public']['Enums']['abuse_risk_tier'];
       };
+      compute_ai_cost_from_gateway: {
+        Args: {
+          p_image_count?: number;
+          p_input_tokens: number;
+          p_model_id: string;
+          p_output_tokens: number;
+          p_reasoning_tokens?: number;
+          p_search_count?: number;
+        };
+        Returns: number;
+      };
       count_workspace_user_groups_for_table: {
         Args: {
           p_accessible_group_ids?: string[];
@@ -5944,22 +6030,7 @@ export type Database = {
           updated_at?: string;
           weekly_limit?: number | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'ai_credit_plan_allocations_default_image_model_fkey';
-            columns: ['default_image_model'];
-            isOneToOne: false;
-            referencedRelation: 'ai_gateway_models';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'ai_credit_plan_allocations_default_language_model_fkey';
-            columns: ['default_language_model'];
-            isOneToOne: false;
-            referencedRelation: 'ai_gateway_models';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       ai_credit_transactions: {
         Row: {
@@ -6101,81 +6172,6 @@ export type Database = {
             referencedColumns: ['id'];
           },
         ];
-      };
-      ai_gateway_models: {
-        Row: {
-          cache_read_price_per_token: number | null;
-          cache_write_price_per_token: number | null;
-          context_window: number | null;
-          created_at: string;
-          description: string | null;
-          id: string;
-          image_gen_price: number | null;
-          input_price_per_token: number;
-          input_tiers: Json | null;
-          is_enabled: boolean;
-          max_tokens: number | null;
-          name: string;
-          output_price_per_token: number;
-          output_tiers: Json | null;
-          pricing_raw: Json | null;
-          provider: string;
-          released_at: string | null;
-          search_price: number | null;
-          synced_at: string;
-          tags: string[] | null;
-          type: string;
-          web_search_price: number | null;
-        };
-        Insert: {
-          cache_read_price_per_token?: number | null;
-          cache_write_price_per_token?: number | null;
-          context_window?: number | null;
-          created_at?: string;
-          description?: string | null;
-          id: string;
-          image_gen_price?: number | null;
-          input_price_per_token?: number;
-          input_tiers?: Json | null;
-          is_enabled?: boolean;
-          max_tokens?: number | null;
-          name: string;
-          output_price_per_token?: number;
-          output_tiers?: Json | null;
-          pricing_raw?: Json | null;
-          provider: string;
-          released_at?: string | null;
-          search_price?: number | null;
-          synced_at?: string;
-          tags?: string[] | null;
-          type?: string;
-          web_search_price?: number | null;
-        };
-        Update: {
-          cache_read_price_per_token?: number | null;
-          cache_write_price_per_token?: number | null;
-          context_window?: number | null;
-          created_at?: string;
-          description?: string | null;
-          id?: string;
-          image_gen_price?: number | null;
-          input_price_per_token?: number;
-          input_tiers?: Json | null;
-          is_enabled?: boolean;
-          max_tokens?: number | null;
-          name?: string;
-          output_price_per_token?: number;
-          output_tiers?: Json | null;
-          pricing_raw?: Json | null;
-          provider?: string;
-          released_at?: string | null;
-          search_price?: number | null;
-          synced_at?: string;
-          tags?: string[] | null;
-          type?: string;
-          web_search_price?: number | null;
-        };
-        Relationships: [];
       };
       ai_model_favorites: {
         Row: {
@@ -31718,40 +31714,23 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string };
         Returns: boolean;
       };
-      check_ai_credit_allowance:
-        | {
-            Args: {
-              p_estimated_input_tokens?: number;
-              p_feature: string;
-              p_model_id: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              allowed: boolean;
-              error_code: string;
-              error_message: string;
-              max_output_tokens: number;
-              remaining_credits: number;
-              tier: string;
-            }[];
-          }
-        | {
-            Args: {
-              p_estimated_input_tokens?: number;
-              p_feature: string;
-              p_model_id: string;
-              p_user_id?: string;
-              p_ws_id: string;
-            };
-            Returns: {
-              allowed: boolean;
-              error_code: string;
-              error_message: string;
-              max_output_tokens: number;
-              remaining_credits: number;
-              tier: string;
-            }[];
-          };
+      check_ai_credit_allowance: {
+        Args: {
+          p_estimated_input_tokens?: number;
+          p_feature: string;
+          p_model_id: string;
+          p_user_id?: string;
+          p_ws_id: string;
+        };
+        Returns: {
+          allowed: boolean;
+          error_code: string;
+          error_message: string;
+          max_output_tokens: number;
+          remaining_credits: number;
+          tier: string;
+        }[];
+      };
       check_email_blocked: { Args: { p_email: string }; Returns: boolean };
       check_email_bounce_status: {
         Args: { p_email_hash: string; p_window_days?: number };
@@ -31826,17 +31805,6 @@ export type Database = {
           isOneToOne: true;
           isSetofReturn: false;
         };
-      };
-      compute_ai_cost_from_gateway: {
-        Args: {
-          p_image_count?: number;
-          p_input_tokens: number;
-          p_model_id: string;
-          p_output_tokens: number;
-          p_reasoning_tokens?: number;
-          p_search_count?: number;
-        };
-        Returns: number;
       };
       compute_ai_cost_usd: {
         Args: {

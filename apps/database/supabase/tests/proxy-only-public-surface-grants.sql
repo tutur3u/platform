@@ -11,7 +11,6 @@ on commit drop;
 
 insert into proxy_only_public_tables(table_name)
 values
-  ('ai_gateway_models'),
   ('external_user_monthly_report_logs'),
   ('external_user_monthly_reports'),
   ('form_questions'),

@@ -145,6 +145,7 @@ async function validateDefaultModels(args: {
     args;
 
   const { data: models, error } = await sbAdmin
+    .schema('private')
     .from('ai_gateway_models')
     .select('id, type, is_enabled')
     .in('id', [defaultLanguageModel, defaultImageModel]);
