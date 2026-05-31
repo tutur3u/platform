@@ -5182,19 +5182,31 @@ test('startBlueGreenWatcherContainer writes watcher args and recreates the compo
     assert.equal(fs.existsSync(paths.statusFile), false);
     assert.equal(envs[1][HOST_WORKSPACE_DIR_ENV], tempDir);
     assert.equal(envs[1].COMPOSE_PROJECT_NAME, path.basename(tempDir));
+    assert.equal(envs[1].SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
+    assert.equal(envs[1].SUPERMEMORY_ENABLED, 'true');
+    assert.match(envs[1].SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+    assert.match(envs[1].SUPERMEMORY_POSTGRES_PASSWORD, /^[a-f0-9]{64}$/u);
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
   }
 });
 
 test('getWatcherComposeEnv injects the mirrored host workspace path', () => {
-  const composeEnv = getWatcherComposeEnv({
-    baseEnv: { PATH: 'test-path' },
-    rootDir: '/tmp/platform-worktree',
-  });
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'watch-compose-env-'));
 
-  assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], '/tmp/platform-worktree');
-  assert.equal(composeEnv.COMPOSE_PROJECT_NAME, 'platform-worktree');
+  try {
+    const composeEnv = getWatcherComposeEnv({
+      baseEnv: { PATH: 'test-path' },
+      rootDir: tempDir,
+    });
+
+    assert.equal(composeEnv[HOST_WORKSPACE_DIR_ENV], tempDir);
+    assert.equal(composeEnv.COMPOSE_PROJECT_NAME, path.basename(tempDir));
+    assert.equal(composeEnv.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
+    assert.match(composeEnv.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('getWatcherComposeEnv preserves the existing host workspace path when running in a container', () => {

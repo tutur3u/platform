@@ -20,6 +20,9 @@ const {
   DOCKER_PRONUNCIATION_ASSESSOR_URL,
   DOCKER_STORAGE_UNZIP_PROXY_URL,
   DOCKER_WEB_BACKEND_TOKEN_FILE,
+  DOCKER_WEB_SUPERMEMORY_API_KEY_FILE,
+  DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE,
+  DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE,
   PROD_COMPOSE_FILE,
   WEB_ENV_FILE,
   clearBlueGreenRuntime,
@@ -51,9 +54,11 @@ const {
   getBlueGreenBuildxBakeArgs,
   getBlueGreenComposeMigration,
   getBlueGreenDeploymentBuildServices,
+  getBlueGreenHealthGateSupportServices,
   getBlueGreenWebServiceImageTag,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
+  isBlueGreenSupermemoryEnabled,
   isNativeWebBuildEnabled,
   runBlueGreenProdWorkflow,
   runBlueGreenCachedRecoveryWorkflow,
@@ -91,6 +96,44 @@ test('getBlueGreenDeploymentBuildServices builds only the web lane for web-only 
   assert.deepEqual(
     getBlueGreenDeploymentBuildServices({
       changedFiles: ['apps/web/src/app/page.tsx'],
+      targetColor: 'green',
+    }),
+    ['web-green']
+  );
+});
+
+test('blue-green support services honor explicit Supermemory disablement', () => {
+  const disabledEnv = { SUPERMEMORY_ENABLED: 'false' };
+
+  assert.equal(isBlueGreenSupermemoryEnabled({}), true);
+  assert.equal(isBlueGreenSupermemoryEnabled(disabledEnv), false);
+  assert.deepEqual(getBlueGreenHealthGateSupportServices(disabledEnv), [
+    'backend',
+    'markitdown',
+    'storage-unzip-proxy',
+    'web-cron-runner',
+  ]);
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      env: disabledEnv,
+      forceBuildSupportServices: true,
+      targetColor: 'blue',
+    }),
+    [
+      'web-blue',
+      'backend',
+      'hive-blue',
+      'hive-realtime',
+      'meet-realtime',
+      'markitdown',
+      'storage-unzip-proxy',
+      'web-cron-runner',
+    ]
+  );
+  assert.deepEqual(
+    getBlueGreenDeploymentBuildServices({
+      changedFiles: ['apps/supermemory/Dockerfile'],
+      env: disabledEnv,
       targetColor: 'green',
     }),
     ['web-green']
@@ -772,6 +815,17 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
     assert.equal(env.UPSTASH_REDIS_REST_URL, 'http://serverless-redis-http:80');
     assert.match(env.UPSTASH_REDIS_REST_TOKEN, /^[a-f0-9]{64}$/u);
     assert.equal(env.SRH_TOKEN, env.UPSTASH_REDIS_REST_TOKEN);
+    assert.equal(env.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
+    assert.equal(env.SUPERMEMORY_ENABLED, 'true');
+    assert.equal(env.SUPERMEMORY_FAIL_OPEN, 'true');
+    assert.equal(env.SUPERMEMORY_TIMEOUT_MS, '1500');
+    assert.match(env.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+    assert.match(env.SUPERMEMORY_POSTGRES_PASSWORD, /^[a-f0-9]{64}$/u);
+    assert.match(env.BETTER_AUTH_SECRET, /^[a-f0-9]{64}$/u);
+    assert.equal(
+      env.SUPERMEMORY_DATABASE_URL,
+      `postgres://supermemory:${env.SUPERMEMORY_POSTGRES_PASSWORD}@supermemory-postgres:5432/supermemory`
+    );
     assert.equal(
       fs
         .readFileSync(
@@ -780,6 +834,48 @@ test('getComposeEnvironment derives a server-side Supabase URL for Docker', () =
         )
         .trim(),
       env.UPSTASH_REDIS_REST_TOKEN
+    );
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(
+            tempDir,
+            'tmp',
+            'docker-web',
+            path.basename(DOCKER_WEB_SUPERMEMORY_API_KEY_FILE)
+          ),
+          'utf8'
+        )
+        .trim(),
+      env.SUPERMEMORY_API_KEY
+    );
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(
+            tempDir,
+            'tmp',
+            'docker-web',
+            path.basename(DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE)
+          ),
+          'utf8'
+        )
+        .trim(),
+      env.SUPERMEMORY_POSTGRES_PASSWORD
+    );
+    assert.equal(
+      fs
+        .readFileSync(
+          path.join(
+            tempDir,
+            'tmp',
+            'docker-web',
+            path.basename(DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE)
+          ),
+          'utf8'
+        )
+        .trim(),
+      env.BETTER_AUTH_SECRET
     );
   } finally {
     fs.rmSync(tempDir, { force: true, recursive: true });
@@ -849,14 +945,86 @@ test('getComposeEnvironment pins compose project names from the workspace path',
 });
 
 test('getComposeEnvironment preserves an explicit Buildx attestation override', () => {
-  const env = getComposeEnvironment({
-    baseEnv: {
-      BUILDX_NO_DEFAULT_ATTESTATIONS: '0',
-      PATH: 'test-path',
-    },
-  });
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-buildx-env-')
+  );
 
-  assert.equal(env.BUILDX_NO_DEFAULT_ATTESTATIONS, '0');
+  try {
+    const env = getComposeEnvironment({
+      baseEnv: {
+        BUILDX_NO_DEFAULT_ATTESTATIONS: '0',
+        PATH: 'test-path',
+      },
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.BUILDX_NO_DEFAULT_ATTESTATIONS, '0');
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
+});
+
+test('getComposeEnvironment allows Docker-specific Supermemory overrides', () => {
+  const tempDir = fs.mkdtempSync(
+    path.join(os.tmpdir(), 'docker-web-supermemory-env-')
+  );
+  const envFilePath = path.join(tempDir, '.env.local');
+
+  try {
+    fs.writeFileSync(
+      envFilePath,
+      [
+        'BETTER_AUTH_SECRET=env-file-better-auth',
+        'NEXT_PUBLIC_SUPABASE_URL=https://project-ref.supabase.co',
+        'SUPERMEMORY_API_KEY=env-file-api-key',
+        'SUPERMEMORY_ENABLED=true',
+        'SUPERMEMORY_POSTGRES_PASSWORD=env-file-postgres-password',
+      ].join('\n')
+    );
+
+    const env = getComposeEnvironment({
+      baseEnv: {
+        DOCKER_SUPERMEMORY_API_KEY: 'docker-api-key',
+        DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET: 'docker-better-auth',
+        DOCKER_SUPERMEMORY_DATABASE_URL:
+          'postgres://external-user:external-password@external-db:5432/supermemory',
+        DOCKER_SUPERMEMORY_ENABLED: 'false',
+        DOCKER_SUPERMEMORY_POSTGRES_PASSWORD: 'docker-postgres-password',
+        PATH: 'test-path',
+        SUPERMEMORY_API_KEY: 'standard-api-key',
+        SUPERMEMORY_BASE_URL: 'https://supermemory.example.test',
+        SUPERMEMORY_FAIL_OPEN: 'false',
+        SUPERMEMORY_TIMEOUT_MS: '2500',
+      },
+      envFilePath,
+      rootDir: tempDir,
+    });
+
+    assert.equal(env.SUPERMEMORY_API_KEY, 'docker-api-key');
+    assert.equal(env.BETTER_AUTH_SECRET, 'docker-better-auth');
+    assert.equal(env.SUPERMEMORY_POSTGRES_PASSWORD, 'docker-postgres-password');
+    assert.equal(
+      env.SUPERMEMORY_DATABASE_URL,
+      'postgres://external-user:external-password@external-db:5432/supermemory'
+    );
+    assert.equal(env.SUPERMEMORY_ENABLED, 'false');
+    assert.equal(env.SUPERMEMORY_BASE_URL, 'https://supermemory.example.test');
+    assert.equal(env.SUPERMEMORY_FAIL_OPEN, 'false');
+    assert.equal(env.SUPERMEMORY_TIMEOUT_MS, '2500');
+    assert.equal(
+      fs.existsSync(
+        path.join(
+          tempDir,
+          'tmp',
+          'docker-web',
+          path.basename(DOCKER_WEB_SUPERMEMORY_API_KEY_FILE)
+        )
+      ),
+      false
+    );
+  } finally {
+    fs.rmSync(tempDir, { force: true, recursive: true });
+  }
 });
 
 test('getComposeEnvironment injects blue-green support service URLs when requested', () => {

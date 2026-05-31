@@ -181,6 +181,35 @@ const BLUE_GREEN_PROXY_REQUIRED_HOST_PORTS = Object.freeze([
   },
 ]);
 
+function isExplicitFalseEnvValue(value) {
+  return /^(0|false|no|off)$/iu.test(String(value ?? '').trim());
+}
+
+function isBlueGreenSupermemoryEnabled(env = {}) {
+  const configuredValue =
+    typeof env.SUPERMEMORY_ENABLED === 'string'
+      ? env.SUPERMEMORY_ENABLED
+      : env.DOCKER_SUPERMEMORY_ENABLED;
+
+  return !isExplicitFalseEnvValue(configuredValue);
+}
+
+function getBlueGreenHealthGateSupportServices(env = {}) {
+  return isBlueGreenSupermemoryEnabled(env)
+    ? [...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE]
+    : BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE.filter(
+        (serviceName) => serviceName !== 'supermemory'
+      );
+}
+
+function getBlueGreenSupportBuildServiceNames(env = {}) {
+  return isBlueGreenSupermemoryEnabled(env)
+    ? [...BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES]
+    : BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.filter(
+        (serviceName) => serviceName !== 'supermemory'
+      );
+}
+
 function sleep(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -801,7 +830,11 @@ function createBlueGreenStage(id, target, overrides = {}) {
   };
 }
 
-function createBlueGreenDeploymentStages({ buildServices = [], targetColor }) {
+function createBlueGreenDeploymentStages({
+  buildServices = [],
+  env = {},
+  targetColor,
+}) {
   const webBuildService = buildServices.filter(
     (serviceName) => serviceName === getBlueGreenServiceName(targetColor)
   );
@@ -840,7 +873,7 @@ function createBlueGreenDeploymentStages({ buildServices = [], targetColor }) {
       buildServices: supportBuildServices,
       serviceNames: [
         'meet-realtime',
-        ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+        ...getBlueGreenHealthGateSupportServices(env),
       ].filter(
         (serviceName) =>
           supportBuildServices.length === 0 ||
@@ -947,12 +980,12 @@ function getBlueGreenColorScopedSupportServices(color) {
   return [getBlueGreenHiveServiceName(color), 'hive-realtime', 'meet-realtime'];
 }
 
-function getBlueGreenPromotionHealthGateServices(color) {
+function getBlueGreenPromotionHealthGateServices(color, env = {}) {
   return [
     getBlueGreenHiveServiceName(color),
     'hive-realtime',
     'meet-realtime',
-    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+    ...getBlueGreenHealthGateSupportServices(env),
   ];
 }
 
@@ -1293,19 +1326,25 @@ function writeBlueGreenProxyConfig(
   );
 }
 
-function getBlueGreenProdServices(parsed, targetColor) {
-  return getBlueGreenProdServicesWithProxyOption(parsed, targetColor, true);
+function getBlueGreenProdServices(parsed, targetColor, env = {}) {
+  return getBlueGreenProdServicesWithProxyOption(
+    parsed,
+    targetColor,
+    true,
+    env
+  );
 }
 
 function getBlueGreenProdServicesWithProxyOption(
   parsed,
   targetColor,
-  includeProxy = true
+  includeProxy = true,
+  env = {}
 ) {
   const services = [
     getBlueGreenServiceName(targetColor),
     ...getBlueGreenColorScopedSupportServices(targetColor),
-    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+    ...getBlueGreenHealthGateSupportServices(env),
   ];
 
   if (includeProxy) {
@@ -1350,14 +1389,14 @@ function getBlueGreenSupportBuildServiceName(serviceName, targetColor) {
     : serviceName;
 }
 
-function getBlueGreenAllSupportBuildServices(targetColor) {
-  return BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES.map((serviceName) =>
+function getBlueGreenAllSupportBuildServices(targetColor, env = {}) {
+  return getBlueGreenSupportBuildServiceNames(env).map((serviceName) =>
     getBlueGreenSupportBuildServiceName(serviceName, targetColor)
   );
 }
 
-function getBlueGreenSupportBuildInputSpecs(targetColor) {
-  return [
+function getBlueGreenSupportBuildInputSpecs(targetColor, env = {}) {
+  const specs = [
     {
       paths: [
         '.dockerignore',
@@ -1435,6 +1474,12 @@ function getBlueGreenSupportBuildInputSpecs(targetColor) {
       serviceName: 'web-cron-runner',
     },
   ];
+
+  if (isBlueGreenSupermemoryEnabled(env)) {
+    return specs;
+  }
+
+  return specs.filter((spec) => spec.serviceName !== 'supermemory');
 }
 
 async function listBlueGreenBuildInputFiles({
@@ -1510,7 +1555,7 @@ async function getBlueGreenSupportBuildInputHashes({
   try {
     const hashes = {};
 
-    for (const spec of getBlueGreenSupportBuildInputSpecs(targetColor)) {
+    for (const spec of getBlueGreenSupportBuildInputSpecs(targetColor, env)) {
       const inputFiles = await listBlueGreenBuildInputFiles({
         env,
         paths: spec.paths,
@@ -1530,13 +1575,17 @@ async function getBlueGreenSupportBuildInputHashes({
   }
 }
 
-function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
+function getBlueGreenChangedSupportBuildServices(
+  targetColor,
+  changedFiles,
+  env = {}
+) {
   if (
     BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
   ) {
-    return getBlueGreenAllSupportBuildServices(targetColor);
+    return getBlueGreenAllSupportBuildServices(targetColor, env);
   }
 
   const services = [];
@@ -1595,6 +1644,7 @@ function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
   }
 
   if (
+    isBlueGreenSupermemoryEnabled(env) &&
     BLUE_GREEN_SUPERMEMORY_BUILD_PATHS.some((watchedPath) =>
       changedFilesIncludePath(changedFiles, watchedPath)
     )
@@ -1615,6 +1665,7 @@ function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
 
 function getBlueGreenDeploymentBuildServices({
   changedFiles = null,
+  env = {},
   forceBuildSupportServices = false,
   previousSupportBuildHashes = null,
   supportBuildHashes = null,
@@ -1628,21 +1679,24 @@ function getBlueGreenDeploymentBuildServices({
   let supportServices;
 
   if (forceBuildSupportServices) {
-    supportServices = getBlueGreenAllSupportBuildServices(targetColor);
+    supportServices = getBlueGreenAllSupportBuildServices(targetColor, env);
   } else if (
     hasPreviousSupportBuildHashes &&
     supportBuildHashes &&
     typeof supportBuildHashes === 'object'
   ) {
-    supportServices = getBlueGreenAllSupportBuildServices(targetColor).filter(
+    supportServices = getBlueGreenAllSupportBuildServices(
+      targetColor,
+      env
+    ).filter(
       (serviceName) =>
         previousSupportBuildHashes?.[serviceName] !==
         supportBuildHashes[serviceName]
     );
   } else {
     supportServices = Array.isArray(changedFiles)
-      ? getBlueGreenChangedSupportBuildServices(targetColor, changedFiles)
-      : getBlueGreenAllSupportBuildServices(targetColor);
+      ? getBlueGreenChangedSupportBuildServices(targetColor, changedFiles, env)
+      : getBlueGreenAllSupportBuildServices(targetColor, env);
   }
 
   for (const serviceName of supportServices) {
@@ -2792,7 +2846,7 @@ async function resolveBlueGreenStandbyColor(
     : null;
 }
 
-function getBlueGreenDeploymentServiceGroups(parsed, targetColor) {
+function getBlueGreenDeploymentServiceGroups(parsed, targetColor, env = {}) {
   const webServices = [getBlueGreenServiceName(targetColor)];
   const hiveServices = [
     getBlueGreenHiveServiceName(targetColor),
@@ -2800,7 +2854,7 @@ function getBlueGreenDeploymentServiceGroups(parsed, targetColor) {
   ];
   const supportServices = [
     'meet-realtime',
-    ...BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE,
+    ...getBlueGreenHealthGateSupportServices(env),
   ];
 
   if (hasComposeProfile(parsed.composeGlobalArgs, 'redis')) {
@@ -2963,6 +3017,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
   const needsProxyBootstrap = !!migration || !proxyRunning || needsProxyRefresh;
   let stages = createBlueGreenDeploymentStages({
     buildServices: [],
+    env: targetEnv,
     targetColor,
   });
 
@@ -3000,6 +3055,7 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
     });
     const requestedBuildServices = getBlueGreenDeploymentBuildServices({
       changedFiles: options.changedFiles,
+      env: targetEnv,
       forceBuildSupportServices: !activeColor || !!migration,
       previousSupportBuildHashes,
       supportBuildHashes,
@@ -3012,12 +3068,13 @@ async function runBlueGreenProdWorkflow(parsed, options = {}) {
       : requestedBuildServices;
     stages = createBlueGreenDeploymentStages({
       buildServices,
+      env: targetEnv,
       targetColor,
     });
     const { hiveBuildServices, supportBuildServices, webBuildServices } =
       splitBlueGreenDeploymentBuildServiceGroups(buildServices);
     const { hiveServices, supportServices, webServices } =
-      getBlueGreenDeploymentServiceGroups(parsed, targetColor);
+      getBlueGreenDeploymentServiceGroups(parsed, targetColor, targetEnv);
     const proxyBootstrapServices = needsProxyBootstrap
       ? [
           BLUE_GREEN_PROXY_SERVICE,
@@ -3536,7 +3593,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   const standbyServices = getBlueGreenProdServicesWithProxyOption(
     parsed,
     standbyColor,
-    false
+    false,
+    standbyEnv
   );
   const previousSupportBuildHashes = readBlueGreenSupportBuildHashes(
     paths,
@@ -3551,6 +3609,7 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
   });
   const standbyBuildServices = getBlueGreenDeploymentBuildServices({
     changedFiles: options.changedFiles,
+    env: standbyEnv,
     forceBuildSupportServices: options.forceBuildSupportServices === true,
     previousSupportBuildHashes,
     supportBuildHashes,
@@ -3651,7 +3710,8 @@ async function runBlueGreenStandbyRefreshWorkflow(parsed, options = {}) {
     });
 
     for (const serviceName of getBlueGreenPromotionHealthGateServices(
-      standbyColor
+      standbyColor,
+      standbyEnv
     )) {
       await waitForComposeServiceHealthy(serviceName, {
         composeFile,
@@ -3951,6 +4011,7 @@ module.exports = {
   getBlueGreenBuildxBakeArgs,
   getBlueGreenCacheImageTag,
   getBlueGreenDeploymentBuildServices,
+  getBlueGreenHealthGateSupportServices,
   getBlueGreenPaths,
   getBlueGreenSupportBuildInputHashes,
   getBlueGreenBuildTimeoutMs,
@@ -3962,6 +4023,7 @@ module.exports = {
   getComposeServiceRunningImage,
   hasComposeServiceExpectedImage,
   hasBlueGreenProxyHostPortBindings,
+  isBlueGreenSupermemoryEnabled,
   readBlueGreenDeploymentStamp,
   readBlueGreenSupportBuildHashHistory,
   readBlueGreenSupportBuildHashes,

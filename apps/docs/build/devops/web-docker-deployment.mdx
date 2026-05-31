@@ -105,14 +105,26 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   self-host image or an internal image built from the enterprise deployment
   package. The wrapper Dockerfile only retags that image for the local
   blue/green bake flow; it does not vendor the public Supermemory repository.
-- Supermemory needs `SUPERMEMORY_API_KEY`, `SUPERMEMORY_DATABASE_URL` or the
-  bundled `supermemory-postgres` pgvector database, `SUPERMEMORY_ENABLED=true`,
-  and provider keys such as `OPENAI_API_KEY` or `GEMINI_API_KEY` depending on
-  the deployment package configuration. Keep `SUPERMEMORY_BASE_URL` internal
-  unless you intentionally operate a separate managed endpoint.
+- Dockerized production commands auto-configure Supermemory unless explicitly
+  disabled. `scripts/docker-web/env.js` generates and persists the internal
+  `SUPERMEMORY_API_KEY`, `SUPERMEMORY_POSTGRES_PASSWORD`, and
+  `BETTER_AUTH_SECRET`, injects `SUPERMEMORY_DATABASE_URL`, and defaults
+  `SUPERMEMORY_ENABLED=true`, `SUPERMEMORY_FAIL_OPEN=true`, and
+  `SUPERMEMORY_TIMEOUT_MS=1500`.
+- Operators can override generated values with `DOCKER_SUPERMEMORY_API_KEY`,
+  `DOCKER_SUPERMEMORY_POSTGRES_PASSWORD`,
+  `DOCKER_SUPERMEMORY_DATABASE_URL`,
+  `DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET`, or
+  `DOCKER_SUPERMEMORY_ENABLED`; standard `SUPERMEMORY_*` and
+  `BETTER_AUTH_SECRET` env still work. Provider keys such as `OPENAI_API_KEY`
+  or `GEMINI_API_KEY` and the approved `SUPERMEMORY_IMAGE` remain supplied by
+  the deployment package/operator.
 - Blue/green promotion health-gates `supermemory` with the rest of the support
   services. Changing `apps/supermemory/Dockerfile`, the production Compose
   fragments, or the Docker bake file refreshes the support service set.
+  Explicit `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false`
+  removes that support service from blue/green builds, starts, and health gates
+  for local-only runs that do not have the approved enterprise image.
 
 ## Dockerized E2E
 
@@ -140,6 +152,10 @@ serve local Edge Functions, and excluding that service keeps local runs from
 failing when the Supabase Edge Runtime tries to resolve external JSR packages.
 Set `E2E_SUPABASE_START_EXCLUDE=` when you intentionally need a full local
 Supabase stack for debugging.
+Local E2E also pins `DOCKER_SUPERMEMORY_ENABLED=false` and
+`SUPERMEMORY_ENABLED=false`; the memory integration is not under test there, and
+GitHub-hosted runners do not have access to the private enterprise Supermemory
+image.
 E2E build caps default to `auto` for memory, CPU, and BuildKit max parallelism.
 The runner reads Docker's current `MemTotal` before booting the stack, forwards
 that value as `DOCKER_WEB_DOCKER_MEMORY_LIMIT`, and resolves the BuildKit memory
@@ -375,9 +391,13 @@ Objects for production Meet room logic; use the internal service and
 blue/green watcher instead.
 
 `scripts/docker-web/env.js` persists generated helper tokens under
-`tmp/docker-web/markitdown-token` and `tmp/docker-web/storage-unzip-token`.
-Override them with `DOCKER_MARKITDOWN_ENDPOINT_SECRET` or
-`DOCKER_DRIVE_UNZIP_PROXY_SHARED_TOKEN` when an operator needs fixed values.
+`tmp/docker-web/markitdown-token`, `tmp/docker-web/storage-unzip-token`,
+`tmp/docker-web/supermemory-api-key`,
+`tmp/docker-web/supermemory-postgres-password`, and
+`tmp/docker-web/supermemory-better-auth-secret`. Override them with
+`DOCKER_MARKITDOWN_ENDPOINT_SECRET`,
+`DOCKER_DRIVE_UNZIP_PROXY_SHARED_TOKEN`, or the `DOCKER_SUPERMEMORY_*` env when
+an operator needs fixed values.
 Workspace ZIP auto-extract is enabled by the workspace-level
 `DRIVE_AUTO_EXTRACT_ZIP` secret. Workspaces with `EXTERNAL_PROJECT_ENABLED=true`
 also opt in automatically so CMS/WebGL workspaces can reuse the unzipper without

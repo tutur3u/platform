@@ -47,6 +47,16 @@ infrastructure dashboard changes.
   vendor ships an enterprise image or deployment package, wrap/tag that artifact
   for the local bake flow instead of vendoring the public repository as the
   production source of truth.
+- Docker web env resolution should auto-configure Supermemory for production
+  deploys and watcher recovery: generate/persist internal Supermemory API,
+  Postgres, and Better Auth secrets under `tmp/docker-web`, inject them through
+  the shared Compose env, and preserve explicit `DOCKER_SUPERMEMORY_*` or
+  standard `SUPERMEMORY_*` overrides.
+- When `SUPERMEMORY_ENABLED=false` or `DOCKER_SUPERMEMORY_ENABLED=false` is
+  explicit, blue/green helpers should remove the Supermemory sidecar from
+  support builds, starts, and health gates. This keeps local-only E2E shards from
+  pulling the private enterprise image while production remains enabled by
+  default.
 
 ## Observability
 

@@ -7,6 +7,7 @@ const {
   LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
   LOCAL_E2E_DOCKER_SUPABASE_URL,
+  LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_SECRET_KEY,
   LOCAL_E2E_SUPABASE_URL,
@@ -88,6 +89,14 @@ test('createLocalE2EEnvFileContent is pinned to local Docker E2E values', () => 
     new RegExp(`SUPABASE_SERVER_URL=${LOCAL_E2E_DOCKER_SUPABASE_URL}`)
   );
   assert.match(content, new RegExp(LOCAL_E2E_APP_COORDINATION_SECRET));
+  assert.match(
+    content,
+    new RegExp(`DOCKER_SUPERMEMORY_ENABLED=${LOCAL_E2E_SUPERMEMORY_ENABLED}`)
+  );
+  assert.match(
+    content,
+    new RegExp(`SUPERMEMORY_ENABLED=${LOCAL_E2E_SUPERMEMORY_ENABLED}`)
+  );
   assert.match(content, new RegExp(LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD));
   assert.match(
     content,
@@ -127,6 +136,8 @@ test('createLocalE2EProcessEnv overrides inherited cloud Supabase env', () => {
     LOCAL_E2E_AUTH_BYPASS
   );
   assert.equal(env.SUPABASE_SERVER_URL, LOCAL_E2E_DOCKER_SUPABASE_URL);
+  assert.equal(env.DOCKER_SUPERMEMORY_ENABLED, LOCAL_E2E_SUPERMEMORY_ENABLED);
+  assert.equal(env.SUPERMEMORY_ENABLED, LOCAL_E2E_SUPERMEMORY_ENABLED);
   assert.equal(
     env.SUPERMEMORY_POSTGRES_PASSWORD,
     LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD

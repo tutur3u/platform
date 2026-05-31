@@ -266,25 +266,27 @@ test('processWatcherRecoveryRequest recreates the watcher and clears the request
     });
 
     assert.equal(result.status, 'recreated');
-    assert.deepEqual(calls, [
-      {
-        args: [
-          'compose',
-          '-f',
-          path.join(tempDir, 'docker-compose.web.prod.yml'),
-          '--profile',
-          'redis',
-          'up',
-          '--build',
-          '--detach',
-          '--force-recreate',
-          '--remove-orphans',
-          'web-blue-green-watcher',
-        ],
-        command: 'docker',
-        env: { PLATFORM_HOST_WORKSPACE_DIR: '/workspace-host' },
-      },
+    assert.equal(calls.length, 1);
+    assert.deepEqual(calls[0].args, [
+      'compose',
+      '-f',
+      path.join(tempDir, 'docker-compose.web.prod.yml'),
+      '--profile',
+      'redis',
+      'up',
+      '--build',
+      '--detach',
+      '--force-recreate',
+      '--remove-orphans',
+      'web-blue-green-watcher',
     ]);
+    assert.equal(calls[0].command, 'docker');
+    assert.equal(calls[0].env.PLATFORM_HOST_WORKSPACE_DIR, tempDir);
+    assert.equal(calls[0].env.SUPERMEMORY_BASE_URL, 'http://supermemory:8787');
+    assert.equal(calls[0].env.SUPERMEMORY_ENABLED, 'true');
+    assert.match(calls[0].env.SUPERMEMORY_API_KEY, /^[a-f0-9]{64}$/u);
+    assert.match(calls[0].env.SUPERMEMORY_POSTGRES_PASSWORD, /^[a-f0-9]{64}$/u);
+    assert.match(calls[0].env.BETTER_AUTH_SECRET, /^[a-f0-9]{64}$/u);
     assert.equal(fs.existsSync(paths.watcherRecoveryRequestFile), false);
     assert.equal(
       fs.existsSync(

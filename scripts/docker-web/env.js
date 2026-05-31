@@ -26,6 +26,18 @@ const DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE = path.join(
   DOCKER_WEB_RUNTIME_DIR,
   'storage-unzip-token'
 );
+const DOCKER_WEB_SUPERMEMORY_API_KEY_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'supermemory-api-key'
+);
+const DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'supermemory-better-auth-secret'
+);
+const DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE = path.join(
+  DOCKER_WEB_RUNTIME_DIR,
+  'supermemory-postgres-password'
+);
 const LOCALHOST_HOSTS = new Set([
   '127.0.0.1',
   '0.0.0.0',
@@ -42,6 +54,10 @@ const DOCKER_STORAGE_UNZIP_PROXY_URL =
 const DOCKER_PRONUNCIATION_ASSESSOR_URL =
   'http://pronunciation-assessor:8010/assess';
 const DOCKER_BACKEND_INTERNAL_URL = 'http://backend:7820';
+const DOCKER_SUPERMEMORY_BASE_URL = 'http://supermemory:8787';
+const DOCKER_SUPERMEMORY_DATABASE_HOST = 'supermemory-postgres';
+const DOCKER_SUPERMEMORY_DATABASE_NAME = 'supermemory';
+const DOCKER_SUPERMEMORY_DATABASE_USER = 'supermemory';
 const DEFAULT_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'tuturuuu';
 const LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME = 'platform';
 const DOCKER_WEB_MIGRATE_FROM_COMPOSE_PROJECT_ENV =
@@ -378,6 +394,22 @@ function getComposeEnvironment({
       ]) ?? 'http://web-proxy:7803';
   }
 
+  const dockerSupermemoryRuntime = getDockerSupermemoryRuntime({
+    baseEnv,
+    envFile,
+    fsImpl,
+    rootDir,
+  });
+  composeEnv.BETTER_AUTH_SECRET = dockerSupermemoryRuntime.betterAuthSecret;
+  composeEnv.SUPERMEMORY_API_KEY = dockerSupermemoryRuntime.apiKey;
+  composeEnv.SUPERMEMORY_BASE_URL = dockerSupermemoryRuntime.baseUrl;
+  composeEnv.SUPERMEMORY_DATABASE_URL = dockerSupermemoryRuntime.databaseUrl;
+  composeEnv.SUPERMEMORY_ENABLED = dockerSupermemoryRuntime.enabled;
+  composeEnv.SUPERMEMORY_FAIL_OPEN = dockerSupermemoryRuntime.failOpen;
+  composeEnv.SUPERMEMORY_POSTGRES_PASSWORD =
+    dockerSupermemoryRuntime.postgresPassword;
+  composeEnv.SUPERMEMORY_TIMEOUT_MS = dockerSupermemoryRuntime.timeoutMs;
+
   return composeEnv;
 }
 
@@ -481,6 +513,24 @@ function getDockerWebRuntimePaths(rootDir = ROOT_DIR) {
       'docker-web',
       'storage-unzip-token'
     ),
+    supermemoryApiKeyFile: path.join(
+      rootDir,
+      'tmp',
+      'docker-web',
+      'supermemory-api-key'
+    ),
+    supermemoryBetterAuthSecretFile: path.join(
+      rootDir,
+      'tmp',
+      'docker-web',
+      'supermemory-better-auth-secret'
+    ),
+    supermemoryPostgresPasswordFile: path.join(
+      rootDir,
+      'tmp',
+      'docker-web',
+      'supermemory-postgres-password'
+    ),
   };
 }
 
@@ -532,6 +582,114 @@ function generateDockerRedisToken() {
 
 function generateDockerServiceToken() {
   return crypto.randomBytes(32).toString('hex');
+}
+
+function resolveDockerRuntimeSecret({
+  candidateValues,
+  fsImpl = fs,
+  paths = getDockerWebRuntimePaths(),
+  tokenFile,
+}) {
+  const explicitSecret = getFirstNonBlank(candidateValues);
+
+  if (explicitSecret) {
+    return explicitSecret;
+  }
+
+  const persistedSecret = getPersistedDockerToken(tokenFile, fsImpl);
+
+  if (persistedSecret) {
+    return persistedSecret;
+  }
+
+  const generatedSecret = generateDockerServiceToken();
+  writeDockerToken(generatedSecret, tokenFile, paths, fsImpl);
+  return generatedSecret;
+}
+
+function getDockerSupermemoryRuntime({
+  baseEnv = process.env,
+  envFile = {},
+  fsImpl = fs,
+  rootDir = ROOT_DIR,
+} = {}) {
+  const paths = getDockerWebRuntimePaths(rootDir);
+  const apiKey = resolveDockerRuntimeSecret({
+    candidateValues: [
+      baseEnv.DOCKER_SUPERMEMORY_API_KEY,
+      baseEnv.SUPERMEMORY_API_KEY,
+      envFile.DOCKER_SUPERMEMORY_API_KEY,
+      envFile.SUPERMEMORY_API_KEY,
+    ],
+    fsImpl,
+    paths,
+    tokenFile: paths.supermemoryApiKeyFile,
+  });
+  const betterAuthSecret = resolveDockerRuntimeSecret({
+    candidateValues: [
+      baseEnv.DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET,
+      baseEnv.BETTER_AUTH_SECRET,
+      envFile.DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET,
+      envFile.BETTER_AUTH_SECRET,
+    ],
+    fsImpl,
+    paths,
+    tokenFile: paths.supermemoryBetterAuthSecretFile,
+  });
+  const postgresPassword = resolveDockerRuntimeSecret({
+    candidateValues: [
+      baseEnv.DOCKER_SUPERMEMORY_POSTGRES_PASSWORD,
+      baseEnv.SUPERMEMORY_POSTGRES_PASSWORD,
+      envFile.DOCKER_SUPERMEMORY_POSTGRES_PASSWORD,
+      envFile.SUPERMEMORY_POSTGRES_PASSWORD,
+    ],
+    fsImpl,
+    paths,
+    tokenFile: paths.supermemoryPostgresPasswordFile,
+  });
+  const encodedPostgresPassword = encodeURIComponent(postgresPassword);
+  const defaultDatabaseUrl = `postgres://${DOCKER_SUPERMEMORY_DATABASE_USER}:${encodedPostgresPassword}@${DOCKER_SUPERMEMORY_DATABASE_HOST}:5432/${DOCKER_SUPERMEMORY_DATABASE_NAME}`;
+
+  return {
+    apiKey,
+    baseUrl:
+      getFirstNonBlank([
+        baseEnv.DOCKER_SUPERMEMORY_BASE_URL,
+        baseEnv.SUPERMEMORY_BASE_URL,
+        envFile.DOCKER_SUPERMEMORY_BASE_URL,
+        envFile.SUPERMEMORY_BASE_URL,
+      ]) ?? DOCKER_SUPERMEMORY_BASE_URL,
+    betterAuthSecret,
+    databaseUrl:
+      getFirstNonBlank([
+        baseEnv.DOCKER_SUPERMEMORY_DATABASE_URL,
+        baseEnv.SUPERMEMORY_DATABASE_URL,
+        envFile.DOCKER_SUPERMEMORY_DATABASE_URL,
+        envFile.SUPERMEMORY_DATABASE_URL,
+      ]) ?? defaultDatabaseUrl,
+    enabled:
+      getFirstNonBlank([
+        baseEnv.DOCKER_SUPERMEMORY_ENABLED,
+        baseEnv.SUPERMEMORY_ENABLED,
+        envFile.DOCKER_SUPERMEMORY_ENABLED,
+        envFile.SUPERMEMORY_ENABLED,
+      ]) ?? 'true',
+    failOpen:
+      getFirstNonBlank([
+        baseEnv.DOCKER_SUPERMEMORY_FAIL_OPEN,
+        baseEnv.SUPERMEMORY_FAIL_OPEN,
+        envFile.DOCKER_SUPERMEMORY_FAIL_OPEN,
+        envFile.SUPERMEMORY_FAIL_OPEN,
+      ]) ?? 'true',
+    postgresPassword,
+    timeoutMs:
+      getFirstNonBlank([
+        baseEnv.DOCKER_SUPERMEMORY_TIMEOUT_MS,
+        baseEnv.SUPERMEMORY_TIMEOUT_MS,
+        envFile.DOCKER_SUPERMEMORY_TIMEOUT_MS,
+        envFile.SUPERMEMORY_TIMEOUT_MS,
+      ]) ?? '1500',
+  };
 }
 
 function getDockerRedisRuntime({
@@ -707,7 +865,11 @@ module.exports = {
   DOCKER_WEB_REDIS_TOKEN_FILE,
   DOCKER_WEB_RUNTIME_DIR,
   DOCKER_WEB_STORAGE_UNZIP_TOKEN_FILE,
+  DOCKER_WEB_SUPERMEMORY_API_KEY_FILE,
+  DOCKER_WEB_SUPERMEMORY_BETTER_AUTH_SECRET_FILE,
+  DOCKER_WEB_SUPERMEMORY_POSTGRES_PASSWORD_FILE,
   DOCKER_HOST_ALIAS,
+  DOCKER_SUPERMEMORY_BASE_URL,
   LEGACY_WEB_ENV_FILE,
   LEGACY_DOCKER_WEB_COMPOSE_PROJECT_NAME,
   WEB_ENV_FILE,
@@ -727,6 +889,7 @@ module.exports = {
   getDockerCronRuntime,
   getDockerMarkitdownRuntime,
   getDockerRedisRuntime,
+  getDockerSupermemoryRuntime,
   getDockerStorageUnzipRuntime,
   getDockerWebRuntimePaths,
   getWebEnvFileCandidates,

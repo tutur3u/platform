@@ -12,6 +12,9 @@ const {
   WEB_CRON_CONFIG_PATH,
   readCronConfig,
 } = require('./web-crons.js');
+const {
+  getWatcherComposeEnv,
+} = require('./watch-blue-green/deploy-watcher-runtime.js');
 
 const DEFAULT_INTERNAL_WEB_API_ORIGIN = 'http://web-proxy:7803';
 const DEFAULT_INTERVAL_MS = 30_000;
@@ -343,6 +346,14 @@ async function processWatcherRecoveryRequest({
     { force: true }
   );
 
+  const composeEnv = getWatcherComposeEnv({
+    baseEnv: {
+      ...env,
+      PLATFORM_HOST_WORKSPACE_DIR: env.PLATFORM_HOST_WORKSPACE_DIR || rootDir,
+    },
+    fsImpl,
+    rootDir,
+  });
   const result = await run(
     'docker',
     [
@@ -359,11 +370,7 @@ async function processWatcherRecoveryRequest({
       WATCHER_SERVICE_NAME,
     ],
     {
-      env: {
-        ...env,
-        PLATFORM_HOST_WORKSPACE_DIR:
-          env.PLATFORM_HOST_WORKSPACE_DIR || '/workspace-host',
-      },
+      env: composeEnv,
       stdio: 'pipe',
     }
   );

@@ -38,6 +38,17 @@ SUPERMEMORY_IMAGE=...
 SUPERMEMORY_DATABASE_URL=postgres://...
 ```
 
+For Docker blue/green and watcher deployments, the Docker helper auto-generates
+and injects the internal API key, bundled Postgres password, Better Auth secret,
+database URL, internal base URL, fail-open setting, and timeout. Use
+`DOCKER_SUPERMEMORY_API_KEY`, `DOCKER_SUPERMEMORY_POSTGRES_PASSWORD`,
+`DOCKER_SUPERMEMORY_DATABASE_URL`,
+`DOCKER_SUPERMEMORY_BETTER_AUTH_SECRET`, or
+`DOCKER_SUPERMEMORY_ENABLED=false` only when an operator needs to override that
+generated runtime. An explicit false value also removes the Supermemory sidecar
+from Docker blue/green support builds and health gates, so local-only test runs
+do not need access to the private enterprise image.
+
 `SUPERMEMORY_API_KEY` is internal infrastructure configuration. Never expose it
 through browser-visible env vars or client responses.
 
@@ -73,7 +84,9 @@ with `legacy_mira` metadata.
 The Docker fleet runs Supermemory as an internal support service. The Compose
 service wraps the official enterprise image through `apps/supermemory/Dockerfile`
 so the blue/green bake file can tag and refresh it alongside other support
-services.
+services. The watcher and cron recovery path use the same generated Docker env,
+so recreating `web-blue-green-watcher` does not require manually exporting
+Supermemory secrets.
 
 Supermemory's enterprise self-hosting package is supplied by Supermemory and is
 documented around Cloudflare Workers. For the Docker fleet, set

@@ -7,6 +7,7 @@ const path = require('node:path');
 const {
   LOCAL_E2E_AUTH_BYPASS,
   LOCAL_E2E_BASE_URL,
+  LOCAL_E2E_SUPERMEMORY_ENABLED,
   LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD,
   LOCAL_E2E_SUPABASE_URL,
 } = require('./e2e-local-environment.js');
@@ -95,6 +96,14 @@ test('ensureLocalE2EEnvFile writes a local-only web env file', () => {
     assert.match(
       content,
       new RegExp(`TUTURUUU_LOCAL_E2E_AUTH_BYPASS=${LOCAL_E2E_AUTH_BYPASS}`)
+    );
+    assert.match(
+      content,
+      new RegExp(`DOCKER_SUPERMEMORY_ENABLED=${LOCAL_E2E_SUPERMEMORY_ENABLED}`)
+    );
+    assert.match(
+      content,
+      new RegExp(`SUPERMEMORY_ENABLED=${LOCAL_E2E_SUPERMEMORY_ENABLED}`)
     );
     assert.match(content, new RegExp(LOCAL_E2E_SUPERMEMORY_POSTGRES_PASSWORD));
     assert.match(content, new RegExp(`WEB_APP_URL=${LOCAL_E2E_BASE_URL}`));

@@ -781,6 +781,16 @@ function validateDockerProdCompose(composeContent) {
       '${' +
       'PLATFORM_LOG_DRAIN_ENABLED:-true' +
       '}',
+    '      - BETTER_AUTH_SECRET',
+    '      - SUPERMEMORY_API_KEY',
+    '      - SUPERMEMORY_BASE_URL=${' +
+      'SUPERMEMORY_BASE_URL:-http://supermemory:8787' +
+      '}',
+    '      - SUPERMEMORY_DATABASE_URL',
+    '      - SUPERMEMORY_ENABLED=${' + 'SUPERMEMORY_ENABLED:-true' + '}',
+    '      - SUPERMEMORY_FAIL_OPEN=${' + 'SUPERMEMORY_FAIL_OPEN:-true' + '}',
+    '      - SUPERMEMORY_POSTGRES_PASSWORD',
+    '      - SUPERMEMORY_TIMEOUT_MS=${' + 'SUPERMEMORY_TIMEOUT_MS:-1500' + '}',
     '      - UPSTASH_REDIS_REST_TOKEN',
     '      - UPSTASH_REDIS_REST_URL',
     '      context: ../apps/storage-unzip-proxy',
