@@ -10,6 +10,14 @@ import {
 import { type NextRequest, NextResponse } from 'next/server';
 import { resolveSessionAuthContext } from '@/lib/api-auth';
 
+type TimeTrackingRequestUserRow = {
+  user_id: string | null;
+  user: {
+    display_name?: string | null;
+    id?: string | null;
+  } | null;
+};
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ wsId: string }> }
@@ -71,30 +79,25 @@ export async function GET(
 
     // Get unique users who have submitted time tracking requests
     const { data: requests, error } = await sbAdmin
-      .from('time_tracking_requests')
-      .select(
-        `
-        user_id,
-        user:users!time_tracking_requests_user_id_fkey(
-          id,
-          display_name
-        )
-      `
-      )
+      .schema('private')
+      .from('time_tracking_requests_with_details')
+      .select('user_id, user')
       .eq('workspace_id', normalizedWsId);
 
     if (error) throw error;
 
+    const requestRows = (requests ?? []) as TimeTrackingRequestUserRow[];
+
     // Extract unique users
     const uniqueUsers = Array.from(
       new Map(
-        requests
+        requestRows
           ?.filter((r) => r.user)
           .map((r) => [
             r.user_id,
             {
               id: r.user_id,
-              display_name: r.user.display_name || 'Unknown',
+              display_name: r.user?.display_name || 'Unknown',
             },
           ]) || []
       ).values()

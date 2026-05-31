@@ -147,6 +147,7 @@ export async function POST(
 
     // Create time tracking request (images already uploaded via signed URLs)
     const { data, error } = await sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .insert({
         id: requestId,
@@ -283,6 +284,7 @@ export async function GET(
 
     // Build count query
     let countQuery = sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .select('*', { count: 'exact', head: true })
       .eq('workspace_id', normalizedWsId);
@@ -319,41 +321,9 @@ export async function GET(
 
     // Build data query with explicit relationship hints
     let query = sbAdmin
-      .from('time_tracking_requests')
-      .select(
-        `
-        *,
-        user:users!time_tracking_requests_user_id_fkey(
-          id,
-          display_name,
-          avatar_url,
-          user_private_details(
-            email
-          )
-        ),
-        category:time_tracking_categories(
-          id,
-          name,
-          color
-        ),
-        task:tasks(
-          id,
-          name
-        ),
-        approved_by_user:users!time_tracking_requests_approved_by_fkey(
-          id,
-          display_name
-        ),
-        rejected_by_user:users!time_tracking_requests_rejected_by_fkey(
-          id,
-          display_name
-        ),
-        needs_info_requested_by_user:users!time_tracking_requests_needs_info_requested_by_fkey(
-          id,
-          display_name
-        )
-      `
-      )
+      .schema('private')
+      .from('time_tracking_requests_with_details')
+      .select('*')
       .eq('workspace_id', normalizedWsId);
 
     // Filter by approval status

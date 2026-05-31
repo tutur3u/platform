@@ -54,6 +54,7 @@ export const POST = withSessionAuth(
     const sbAdmin = await createAdminClient();
 
     const { data: requestRecord, error: requestError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .select('id, workspace_id, user_id')
       .eq('id', id)

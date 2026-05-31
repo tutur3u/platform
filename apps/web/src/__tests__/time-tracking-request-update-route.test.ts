@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => {
   const workspaceMemberSingle = vi.fn();
   const adminRequestSingle = vi.fn();
   const adminUpdateRpc = vi.fn();
+  const adminSchema = vi.fn();
   const sessionStorageRemove = vi.fn();
   const adminStorageRemove = vi.fn();
   const normalizeWorkspaceId = vi.fn();
@@ -35,13 +36,8 @@ const mocks = vi.hoisted(() => {
     }),
   };
 
-  const adminSupabase = {
+  const adminPrivateSchema = {
     rpc: adminUpdateRpc,
-    storage: {
-      from: vi.fn(() => ({
-        remove: adminStorageRemove,
-      })),
-    },
     from: vi.fn((table: string) => {
       if (table === 'time_tracking_requests') {
         return {
@@ -59,6 +55,23 @@ const mocks = vi.hoisted(() => {
     }),
   };
 
+  const adminSupabase = {
+    schema: adminSchema,
+    storage: {
+      from: vi.fn(() => ({
+        remove: adminStorageRemove,
+      })),
+    },
+  };
+
+  adminSchema.mockImplementation((schema: string) => {
+    if (schema === 'private') {
+      return adminPrivateSchema;
+    }
+
+    throw new Error(`Unexpected admin schema: ${schema}`);
+  });
+
   const storageClient = {
     storage: {
       from: vi.fn(() => ({
@@ -69,6 +82,7 @@ const mocks = vi.hoisted(() => {
 
   return {
     adminRequestSingle,
+    adminSchema,
     adminSupabase,
     authGetUser,
     adminUpdateRpc,

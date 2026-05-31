@@ -66,6 +66,7 @@ export async function POST(
 
     // Verify request exists and belongs to workspace
     const { data: requestExists, error: requestError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .select('id')
       .eq('id', requestId)
@@ -85,22 +86,14 @@ export async function POST(
 
     // Create comment
     const { data: newComment, error: createError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_request_comments')
       .insert({
         request_id: requestId,
         user_id: user.id,
         content,
       })
-      .select(
-        `
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `
-      )
+      .select('id')
       .single();
 
     if (createError) {
@@ -111,7 +104,22 @@ export async function POST(
       );
     }
 
-    return NextResponse.json(newComment, { status: 201 });
+    const { data: commentWithUser, error: fetchCommentError } = await sbAdmin
+      .schema('private')
+      .from('time_tracking_request_comments_with_users')
+      .select('*')
+      .eq('id', newComment.id)
+      .single();
+
+    if (fetchCommentError) {
+      console.error('Error fetching created comment:', fetchCommentError);
+      return NextResponse.json(
+        { error: 'Failed to fetch created comment' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(commentWithUser, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -169,6 +177,7 @@ export async function GET(
 
     // Verify request exists and belongs to workspace
     const { data: requestExists, error: requestError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .select('id')
       .eq('id', requestId)
@@ -188,17 +197,9 @@ export async function GET(
 
     // Fetch comments
     const { data: comments, error: fetchError } = await sbAdmin
-      .from('time_tracking_request_comments')
-      .select(
-        `
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `
-      )
+      .schema('private')
+      .from('time_tracking_request_comments_with_users')
+      .select('*')
       .eq('request_id', requestId)
       .order('created_at', { ascending: true });
 

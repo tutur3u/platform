@@ -62,6 +62,7 @@ export async function PATCH(
 
     // Get comment to verify ownership and time window
     const { data: existingComment } = await sbAdmin
+      .schema('private')
       .from('time_tracking_request_comments')
       .select('user_id, created_at')
       .eq('id', commentId)
@@ -92,22 +93,14 @@ export async function PATCH(
 
     // Update comment
     const { data: updatedComment, error: updateError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_request_comments')
       .update({
         content,
         updated_at: new Date().toISOString(),
       })
       .eq('id', commentId)
-      .select(
-        `
-        *,
-        user:users(
-          id,
-          display_name,
-          avatar_url
-        )
-      `
-      )
+      .select('id')
       .single();
 
     if (updateError) {
@@ -118,7 +111,22 @@ export async function PATCH(
       );
     }
 
-    return NextResponse.json(updatedComment);
+    const { data: commentWithUser, error: fetchCommentError } = await sbAdmin
+      .schema('private')
+      .from('time_tracking_request_comments_with_users')
+      .select('*')
+      .eq('id', updatedComment.id)
+      .single();
+
+    if (fetchCommentError) {
+      console.error('Error fetching updated comment:', fetchCommentError);
+      return NextResponse.json(
+        { error: 'Failed to fetch updated comment' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json(commentWithUser);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
@@ -174,6 +182,7 @@ export async function DELETE(
 
     // Get comment to verify ownership and time window
     const { data: existingComment } = await sbAdmin
+      .schema('private')
       .from('time_tracking_request_comments')
       .select('user_id, created_at')
       .eq('id', commentId)
@@ -204,6 +213,7 @@ export async function DELETE(
 
     // Delete comment
     const { error: deleteError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_request_comments')
       .delete()
       .eq('id', commentId);

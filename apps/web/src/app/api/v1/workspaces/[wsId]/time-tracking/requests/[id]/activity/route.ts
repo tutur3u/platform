@@ -61,6 +61,7 @@ export async function GET(
 
   // Verify the request belongs to this workspace
   const { data: request, error: requestError } = await sbAdmin
+    .schema('private')
     .from('time_tracking_requests')
     .select('id')
     .eq('id', requestId)
@@ -88,6 +89,7 @@ export async function GET(
 
   // Get total count
   const { count: totalCount, error: countError } = await sbAdmin
+    .schema('private')
     .from('time_tracking_request_activity_with_users')
     .select('*', { count: 'exact', head: true })
     .eq('request_id', requestId);
@@ -102,6 +104,7 @@ export async function GET(
 
   // Fetch activity log with user details using the view
   const { data: activities, error } = await sbAdmin
+    .schema('private')
     .from('time_tracking_request_activity_with_users')
     .select('*')
     .eq('request_id', requestId)

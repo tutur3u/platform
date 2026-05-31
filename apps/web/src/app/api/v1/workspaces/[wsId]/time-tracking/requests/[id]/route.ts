@@ -129,6 +129,7 @@ export async function PATCH(
     }
 
     let supabase = await createClient(request);
+    const sbAdmin = await createAdminClient();
 
     // Get authenticated user
     const auth = await resolveSessionAuthContext(request, {
@@ -185,12 +186,13 @@ export async function PATCH(
     }
 
     // Use the centralized RPC function to handle the update
-    const { data, error: rpcError } = await supabase.rpc(
-      'update_time_tracking_request',
-      {
+    const { data, error: rpcError } = await sbAdmin
+      .schema('private')
+      .rpc('update_time_tracking_request', {
         p_request_id: id,
         p_action: actionData.action,
         p_workspace_id: normalizedWsId,
+        p_actor_auth_uid: user.id,
         p_rejection_reason:
           actionData.action === 'reject'
             ? actionData.rejection_reason
@@ -199,8 +201,7 @@ export async function PATCH(
           actionData.action === 'needs_info'
             ? actionData.needs_info_reason
             : undefined,
-      }
-    );
+      });
 
     if (rpcError) {
       console.error('Error updating time tracking request:', rpcError);
@@ -271,6 +272,7 @@ export async function PUT(
 
     // Fetch the existing request
     const { data: existingRequest, error: fetchError } = await sbAdmin
+      .schema('private')
       .from('time_tracking_requests')
       .select('*')
       .eq('id', id)
@@ -389,9 +391,9 @@ export async function PUT(
 
     // Update the request through an admin RPC while preserving the caller's
     // auth context for SQL trigger enforcement.
-    const { data: updatedRequest, error: updateError } = await sbAdmin.rpc(
-      'update_time_tracking_request_content',
-      {
+    const { data: updatedRequest, error: updateError } = await sbAdmin
+      .schema('private')
+      .rpc('update_time_tracking_request_content', {
         p_request_id: id,
         p_workspace_id: normalizedWsId,
         p_actor_auth_uid: user.id,
@@ -400,8 +402,7 @@ export async function PUT(
         p_start_time: startTime,
         p_end_time: endTime,
         p_images: finalImages.length > 0 ? finalImages : undefined,
-      }
-    );
+      });
 
     if (updateError) {
       // Clean up newly uploaded images on database error

@@ -99,6 +99,18 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'time_tracking_request_activity',
+    select: 'id',
+  },
+  {
+    name: 'time_tracking_request_comments',
+    select: 'id',
+  },
+  {
+    name: 'time_tracking_requests',
+    select: 'id',
+  },
+  {
     name: 'user_group_metric_categories',
     select: 'id',
   },
