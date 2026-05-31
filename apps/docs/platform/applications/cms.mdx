@@ -32,7 +32,8 @@ database names, API paths, tests, and operational docs can keep the existing
 
 - `/{wsId}`: overview
 - `/{wsId}/games`: game-focused content library, visible only when CMS Games is enabled
-- `/{wsId}/library`: content library and primary content editor
+- `/{wsId}/landing`: landing-page builder for hero/profile/page-section edits
+- `/{wsId}/library`: content operations library for non-landing, non-game content
 - `/{wsId}/library/entries/{entryId}`: compatibility redirect that opens the library fullscreen editor dialog
 - `/{wsId}/library/collections/{collectionId}`: collection detail
 - `/{wsId}/members`: workspace member and role management
@@ -51,7 +52,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - A workspace must still satisfy the existing external-project permissions to open CMS workspace routes.
 - CMS Games is disabled by default for every workspace. Enable it from the CMS settings dialog, which writes `ENABLE_CMS_GAMES=true` to workspace configs and reveals the `/{wsId}/games` sidebar route.
 - Only platform admins can open `/internal/projects`.
-- Workspace member and role management lives on `/{wsId}/members` and still respects the existing `manage_workspace_members` and `manage_workspace_roles` permissions.
+- Workspace member and role management lives on `/{wsId}/members`. Read paths resolve through CMS workspace access so editors with CMS access can load people, invites, roles, member defaults, and guest defaults without requiring direct workspace settings-route access. Write paths still respect member and role management permissions.
 
 ## API Ownership
 
@@ -70,7 +71,8 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 - Collections remain the content-type container. Field definitions live in `workspace_external_project_field_definitions`, while entry values continue to be stored in the existing `profile_data` and `metadata` JSON payloads so delivery and sync payloads stay backward-compatible.
 - Field definitions support the manifest field contract: `string`, `markdown`, `number`, `boolean`, `date`, `datetime`, `json`, and `string-array`. Scope controls whether the value is saved under `profile_data` or `metadata`.
 - The CMS Library has a `Content model` section with reusable templates for Profile, Blog Posts, Gallery, Shop Products, Writing Worlds, and Social Links. Applying a template creates the collection if needed, stores the collection schema, and creates any missing field definitions without deleting CMS-only fields.
-- The Library command center is the consolidated authoring entry point for entries, content models, workflow queues, and settings. Keep new CMS operations reachable from that surface before adding another isolated toolbar or settings panel.
+- Landing and Library must stay visibly distinct. Landing is a page-builder surface for landing-only sections, preview-first actions, and page readiness. Library is a content operations surface for search, status, bulk publishing, collection health, and non-landing/non-game content. Keep `landing`, `library`, and `games` capability scopes mutually distinct in tests.
+- The Library command center is the consolidated authoring entry point for content, content models, workflow queues, and settings. Keep new CMS operations reachable from that surface before adding another isolated toolbar or settings panel.
 - Entry detail forms render schema-aware controls for the active collection field definitions. Authors should edit those typed controls instead of hand-editing raw `profile_data` or `metadata` JSON for modeled fields.
 - Body and asset affordances should be driven by the collection schema when available. Naming heuristics for legacy Yoola collections remain as compatibility fallback only.
 - External-project setup and sync import manifest `profileFields` and `metadataFields` into DB field definitions. Sync snapshots are built from DB-managed field definitions, and field removals should only be applied during an explicit destructive sync.
@@ -85,6 +87,7 @@ The previous `/{wsId}/content`, `/{wsId}/collections/...`, and `/{wsId}/admin` C
 
 - Keep route pages server-side only for auth and access gates, then hand off interactive CMS surfaces to client modules backed by TanStack Query.
 - Keep `cms-studio-client.tsx` focused on query state, mutations, and routing. Library rendering should stay split across dedicated gallery, workflow, and settings modules rather than growing back into one large TSX file.
+- Keep CMS team access clients on `@tuturuuu/internal-api` helpers that target external-project-aware `apps/web` routes. Do not call the standard workspace members or roles settings endpoints directly from `apps/cms`.
 - Entry detail now opens as a fullscreen dialog from the library route so the CMS keeps the library cache warm instead of forcing a separate navigation for each entry.
 - The Games route reuses the library client with a game-like collection scope and only exposes WebGL ZIP upload controls when `ENABLE_CMS_GAMES` is explicitly enabled.
 - When a user creates the first Games entry, CMS should automatically create the workspace `Games` collection and then open the new game entry instead of requiring a manual collection setup step.

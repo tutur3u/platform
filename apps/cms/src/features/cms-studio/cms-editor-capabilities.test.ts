@@ -53,6 +53,7 @@ describe('CMS editor capabilities', () => {
     expect(capabilities.collectionViews.map((view) => view.id)).toEqual([
       'all',
       'landing',
+      'library',
       'portfolio',
       'games',
       'collection:games',
@@ -102,6 +103,96 @@ describe('CMS editor capabilities', () => {
     expect(
       collectionMatchesCmsEditorView(collection('gallery'), gamesView)
     ).toBe(false);
+  });
+
+  it('keeps landing sections out of the default library surface', () => {
+    const capabilities = resolveCmsEditorCapabilities({
+      binding,
+      collections: [
+        collection('site-config'),
+        collection('panel-content'),
+        collection('experience'),
+        collection('games', 'game'),
+      ],
+      fieldDefinitions: [],
+      studio: null,
+    });
+    const landingView = getCmsEditorCollectionView(capabilities, 'landing');
+    const libraryView = getCmsEditorCollectionView(capabilities, 'library');
+
+    expect(
+      collectionMatchesCmsEditorView(collection('panel-content'), landingView)
+    ).toBe(true);
+    expect(
+      collectionMatchesCmsEditorView(collection('panel-content'), libraryView)
+    ).toBe(false);
+    expect(
+      collectionMatchesCmsEditorView(collection('games', 'game'), libraryView)
+    ).toBe(false);
+    expect(
+      collectionMatchesCmsEditorView(collection('experience'), libraryView)
+    ).toBe(true);
+  });
+
+  it('adds route-specific views when the platform payload does not provide them yet', () => {
+    const capabilities = resolveCmsEditorCapabilities({
+      binding,
+      collections: [collection('site-config'), collection('experience')],
+      fieldDefinitions: [],
+      studio: {
+        assets: [],
+        blocks: [],
+        cmsCapabilities: {
+          adapter: 'theguyser',
+          appLabel: 'TheGuyser',
+          collectionViews: [
+            {
+              id: 'all',
+              includeAll: true,
+              label: 'All content',
+            },
+          ],
+          contentModel: {
+            enabled: true,
+            fieldDefinitionsEnabled: true,
+          },
+          defaultViewId: 'all',
+          featuredEntryRules: [],
+          media: {
+            assetTypes: ['image'],
+            enabled: true,
+            supportsAltText: true,
+            supportsCoverSelection: true,
+            supportsUploads: true,
+          },
+          navigationLabel: 'TheGuyser',
+          preview: {
+            enabled: true,
+            entryPreviewEnabled: true,
+          },
+          taxonomies: [],
+          version: 1,
+          workflow: {
+            enabled: true,
+            scheduledPublishingEnabled: true,
+            statuses: ['draft', 'scheduled', 'published', 'archived'],
+          },
+        },
+        collections: [],
+        entries: [],
+        fieldDefinitions: [],
+        importJobs: [],
+        loadingData: null,
+        publishEvents: [],
+      },
+    });
+
+    expect(capabilities.collectionViews.map((view) => view.id)).toContain(
+      'landing'
+    );
+    expect(capabilities.collectionViews.map((view) => view.id)).toContain(
+      'library'
+    );
   });
 
   it('uses taxonomy capability selectors instead of adapter-specific branches', () => {

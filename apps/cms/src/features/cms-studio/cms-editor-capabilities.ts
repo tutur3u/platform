@@ -7,7 +7,10 @@ import type {
   ExternalProjectStudioData,
   WorkspaceExternalProjectBinding,
 } from '@tuturuuu/types';
-import { getCmsEditorBlueprintViews } from './cms-editor-blueprints';
+import {
+  getCmsEditorBlueprintViews,
+  getCmsLandingCollectionSlugs,
+} from './cms-editor-blueprints';
 import { isGameLikeCollection } from './cms-games-shared';
 
 type ResolveInput = {
@@ -49,48 +52,19 @@ export function resolveCmsEditorCapabilities({
   collections,
   studio,
 }: ResolveInput): CmsEditorCapabilities {
+  const fallbackCollectionViews = getFallbackCollectionViews({
+    binding,
+    collections,
+  });
+
   if (studio?.cmsCapabilities) {
-    return studio.cmsCapabilities;
-  }
-
-  const blueprintViews = getCmsEditorBlueprintViews(binding.adapter);
-  const collectionViews: CmsEditorCollectionView[] = [
-    {
-      id: 'all',
-      includeAll: true,
-      label: 'All content',
-      navigationLabel: 'Library',
-    },
-    ...blueprintViews,
-    ...collections.map((collection) => ({
-      id: `collection:${collection.slug}`,
-      collectionSlugs: [collection.slug],
-      collectionTypes: [collection.collection_type],
-      description: collection.description,
-      label: collection.title || slugToLabel(collection.slug),
-      navigationLabel: collection.title || slugToLabel(collection.slug),
-    })),
-  ];
-
-  if (collections.some(isGameLikeCollection)) {
-    collectionViews.splice(1 + blueprintViews.length, 0, {
-      id: 'games',
-      collectionSlugs: collections
-        .filter(isGameLikeCollection)
-        .map((collection) => collection.slug),
-      collectionTypes: ['game', 'games'],
-      createCollection: {
-        collectionType: 'game',
-        description: 'Playable projects and game pages.',
-        emptyHint:
-          'Create a games collection and start adding playable project entries.',
-        entryTitle: 'Untitled game',
-        slug: 'games',
-        title: 'Games',
-      },
-      label: 'Games',
-      navigationLabel: 'Games',
-    });
+    return {
+      ...studio.cmsCapabilities,
+      collectionViews: mergeCollectionViews(
+        studio.cmsCapabilities.collectionViews,
+        fallbackCollectionViews
+      ),
+    };
   }
 
   return {
@@ -99,7 +73,7 @@ export function resolveCmsEditorCapabilities({
       binding.canonical_project?.display_name ??
       binding.adapter ??
       'External project',
-    collectionViews,
+    collectionViews: fallbackCollectionViews,
     contentModel: {
       enabled: true,
       fieldDefinitionsEnabled: true,
@@ -129,6 +103,98 @@ export function resolveCmsEditorCapabilities({
       statuses: ['draft', 'scheduled', 'published', 'archived'],
     },
   };
+}
+
+function getFallbackCollectionViews({
+  binding,
+  collections,
+}: {
+  binding: WorkspaceExternalProjectBinding;
+  collections: ExternalProjectCollection[];
+}) {
+  const blueprintViews = getCmsEditorBlueprintViews(binding.adapter);
+  const landingSlugs = new Set(
+    getCmsLandingCollectionSlugs(binding.adapter).map((slug) =>
+      slug.toLowerCase()
+    )
+  );
+  const gameCollections = collections.filter(isGameLikeCollection);
+  const libraryCollections = collections.filter(
+    (collection) =>
+      !landingSlugs.has(collection.slug.toLowerCase()) &&
+      !isGameLikeCollection(collection)
+  );
+  const collectionViews: CmsEditorCollectionView[] = [
+    {
+      id: 'all',
+      includeAll: true,
+      label: 'All content',
+      navigationLabel: 'Library',
+    },
+    ...blueprintViews.filter((view) => view.id === 'landing'),
+    {
+      id: 'library',
+      collectionSlugs: libraryCollections.map((collection) => collection.slug),
+      collectionTypes: [
+        ...new Set(
+          libraryCollections.map((collection) => collection.collection_type)
+        ),
+      ],
+      description: 'Content pages, archives, and reusable sections.',
+      label: 'Library',
+      navigationLabel: 'Library',
+    },
+    ...blueprintViews.filter((view) => view.id !== 'landing'),
+  ];
+
+  if (gameCollections.length > 0) {
+    collectionViews.push({
+      id: 'games',
+      collectionSlugs: gameCollections.map((collection) => collection.slug),
+      collectionTypes: ['game', 'games'],
+      createCollection: {
+        collectionType: 'game',
+        description: 'Playable projects and game pages.',
+        emptyHint:
+          'Create a games collection and start adding playable project entries.',
+        entryTitle: 'Untitled game',
+        slug: 'games',
+        title: 'Games',
+      },
+      label: 'Games',
+      navigationLabel: 'Games',
+    });
+  }
+
+  collectionViews.push(
+    ...collections.map((collection) => ({
+      id: `collection:${collection.slug}`,
+      collectionSlugs: [collection.slug],
+      collectionTypes: [collection.collection_type],
+      description: collection.description,
+      label: collection.title || slugToLabel(collection.slug),
+      navigationLabel: collection.title || slugToLabel(collection.slug),
+    }))
+  );
+
+  return collectionViews;
+}
+
+function mergeCollectionViews(
+  primaryViews: CmsEditorCollectionView[],
+  fallbackViews: CmsEditorCollectionView[]
+) {
+  const mergedViews = [...primaryViews];
+  const knownIds = new Set(mergedViews.map((view) => view.id));
+
+  for (const view of fallbackViews) {
+    if (!knownIds.has(view.id)) {
+      mergedViews.push(view);
+      knownIds.add(view.id);
+    }
+  }
+
+  return mergedViews;
 }
 
 export function getCmsEditorCollectionView(

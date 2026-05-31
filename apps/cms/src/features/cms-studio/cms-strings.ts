@@ -155,9 +155,18 @@ export type CmsStrings = {
   importAction: string;
   importHint: string;
   jsonFieldHint: string;
+  landingBuilderDescription: string;
+  landingBuilderTitle: string;
+  landingDraftSections: string;
+  landingMissingVisuals: string;
+  landingReadySections: string;
+  landingReadinessTitle: string;
+  landingSectionsTitle: string;
   libraryCommandCenterContext: string;
   libraryCommandCenterDescription: string;
   libraryCommandCenterTitle: string;
+  libraryOperationsDescription: string;
+  libraryOperationsTitle: string;
   libraryPageDescription: string;
   loadingPreviewLabel: string;
   metadataLabel: string;
@@ -484,11 +493,20 @@ export function buildCmsStrings(t: (key: any) => string): CmsStrings {
     importAction: t('epm.import_action'),
     importHint: t('epm.import_hint'),
     jsonFieldHint: t('epm.json_field_hint'),
+    landingBuilderDescription: t('epm.landing_builder_description'),
+    landingBuilderTitle: t('epm.landing_builder_title'),
+    landingDraftSections: t('epm.landing_draft_sections'),
+    landingMissingVisuals: t('epm.landing_missing_visuals'),
+    landingReadySections: t('epm.landing_ready_sections'),
+    landingReadinessTitle: t('epm.landing_readiness_title'),
+    landingSectionsTitle: t('epm.landing_sections_title'),
     libraryCommandCenterContext: t('epm.library_command_center_context'),
     libraryCommandCenterDescription: t(
       'epm.library_command_center_description'
     ),
     libraryCommandCenterTitle: t('epm.library_command_center_title'),
+    libraryOperationsDescription: t('epm.library_operations_description'),
+    libraryOperationsTitle: t('epm.library_operations_title'),
     libraryPageDescription: t('epm.library_page_description'),
     loadingPreviewLabel: t('epm.loading_preview_label'),
     metadataLabel: t('epm.metadata_label'),

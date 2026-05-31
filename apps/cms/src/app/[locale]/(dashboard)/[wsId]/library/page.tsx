@@ -35,6 +35,7 @@ export default async function CmsLibraryPage({ params, searchParams }: Props) {
       availableEditSections={['entries', 'workflow']}
       binding={access.binding}
       cmsGamesEnabled={cmsGamesEnabled}
+      collectionScope="library"
       headerDescription={t('epm.library_page_description')}
       initialEditSection="entries"
       initialEditorEntryId={

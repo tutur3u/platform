@@ -81,6 +81,7 @@ export type CmsLibrarySectionProps = {
   selectedBulkIds: string[];
   selectedEntryId: string;
   strings: CmsStrings;
+  surface?: 'games' | 'landing' | 'library';
   taxonomyAvailable: boolean;
   templatePending: boolean;
   workflowEntries: ExternalProjectEntry[];

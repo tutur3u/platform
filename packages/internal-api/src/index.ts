@@ -224,6 +224,22 @@ export {
   uploadValseaClassroomAudioToDrive,
   validateValseaClassroomApiKey,
 } from './education';
+export {
+  addWorkspaceExternalProjectRoleMembers,
+  createWorkspaceExternalProjectRole,
+  deleteWorkspaceExternalProjectRole,
+  getWorkspaceExternalProjectDefaultRole,
+  getWorkspaceExternalProjectMembersContext,
+  getWorkspaceExternalProjectRole,
+  inviteWorkspaceExternalProjectMembers,
+  listWorkspaceExternalProjectMembers,
+  listWorkspaceExternalProjectRoles,
+  removeWorkspaceExternalProjectMember,
+  removeWorkspaceExternalProjectRoleMember,
+  updateWorkspaceExternalProjectDefaultRole,
+  updateWorkspaceExternalProjectRole,
+  type WorkspaceExternalProjectMembersContext,
+} from './external-project-team';
 export type {
   WorkspaceExternalProjectWebglPackageArtifact,
   WorkspaceExternalProjectWebglPackageFinalizeResponse,
@@ -1036,7 +1052,6 @@ export {
   acceptWorkspaceInvite,
   declineWorkspaceInvite,
   getWorkspace,
-  getWorkspaceExternalProjectMembersContext,
   inviteWorkspaceMember,
   inviteWorkspaceMembers,
   listCmsWorkspaces,

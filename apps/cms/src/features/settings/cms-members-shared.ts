@@ -1,5 +1,8 @@
 import type { WorkspaceRoleDetails } from '@tuturuuu/internal-api';
-import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
+import type {
+  InternalApiEnhancedWorkspaceMember,
+  WorkspaceDefaultPermissionMemberType,
+} from '@tuturuuu/types';
 
 export type CmsMembersSectionProps = {
   workspaceSlug: string;
@@ -9,8 +12,34 @@ export type CmsMemberTab = 'all' | 'invited' | 'joined' | 'roles';
 
 export type RoleEditorState =
   | { mode: 'create' }
-  | { mode: 'default'; role: WorkspaceRoleDetails | null }
+  | {
+      memberType: WorkspaceDefaultPermissionMemberType;
+      mode: 'default';
+      role: WorkspaceRoleDetails | null;
+    }
   | { mode: 'edit'; role: WorkspaceRoleDetails };
+
+export function getMemberPermissionIds(
+  member: InternalApiEnhancedWorkspaceMember
+) {
+  const permissionIds = new Set<string>();
+
+  for (const permission of member.default_permissions) {
+    if (permission.enabled) {
+      permissionIds.add(permission.permission);
+    }
+  }
+
+  for (const role of member.roles) {
+    for (const permission of role.permissions) {
+      if (permission.enabled) {
+        permissionIds.add(permission.permission);
+      }
+    }
+  }
+
+  return permissionIds;
+}
 
 export function parseInviteEmails(value: string) {
   return [

@@ -44,6 +44,15 @@ inside each sibling site.
 - Treat landing-page content as first-class for branded projects. Group hero,
   profile, section, featured, navigation, and primary-link collections behind a
   simple "Landing page" surface when possible.
+- Keep Landing, Library, and Games scopes distinct. Landing is a page-builder
+  for landing-only sections and readiness checks; Library is content operations
+  for non-landing/non-game content; Games remains the playable-project surface
+  behind the CMS Games flag. Add capability tests whenever collection grouping
+  changes.
+- CMS team access must use external-project-aware `apps/web` routes and
+  `@tuturuuu/internal-api` helpers. Do not call the standard workspace members
+  or roles settings endpoints directly from `apps/cms`; those routes can 403
+  for app-session users who are valid CMS editors.
 - Keep raw configuration, implementation IDs, site-type mappings, and workflow
   mechanics out of the primary editor path unless the user is doing advanced
   configuration. Put exact implementation values behind collapsed Developer

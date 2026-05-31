@@ -1081,6 +1081,12 @@ export function CmsStudioClient({
     selectedBulkIds,
     selectedEntryId,
     strings,
+    surface:
+      activeCollectionView?.id === 'landing'
+        ? 'landing'
+        : activeCollectionView?.id === 'games'
+          ? 'games'
+          : 'library',
     taxonomyAvailable,
     templatePending: applyContentModelTemplateMutation.isPending,
     workflowEntries,

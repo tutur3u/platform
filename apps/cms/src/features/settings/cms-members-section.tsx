@@ -4,6 +4,14 @@ import { Plus, Search, UserPlus } from '@tuturuuu/icons';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import { Card, CardContent } from '@tuturuuu/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@tuturuuu/ui/dropdown-menu';
 import { Input } from '@tuturuuu/ui/input';
 import { Skeleton } from '@tuturuuu/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@tuturuuu/ui/tabs';
@@ -33,7 +41,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
     state.roleEditorState?.mode === 'edit'
       ? `edit-${state.roleEditorState.role.id}`
       : state.roleEditorState?.mode === 'default'
-        ? 'default'
+        ? `default-${state.roleEditorState.memberType}`
         : 'create';
 
   if (state.contextQuery.isPending) {
@@ -59,6 +67,12 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
   }
 
   const isRolesTab = state.activeTab === 'roles';
+  const roles = state.rolesQuery.data ?? [];
+  const permissionOptions = Array.from(state.permissionTitles.entries()).sort(
+    ([left], [right]) => left.localeCompare(right)
+  );
+  const hasPeopleFilters =
+    state.selectedRoleIds.size > 0 || state.selectedPermissionIds.size > 0;
 
   return (
     <div className="space-y-6">
@@ -75,7 +89,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
         className="space-y-4"
       >
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <TabsList className="grid h-auto w-full grid-cols-4 md:w-auto">
+          <TabsList className="grid h-auto w-full grid-cols-2 gap-1 p-1 sm:grid-cols-4 md:w-auto">
             <TabsTrigger value="all">{t('ws-members.all')}</TabsTrigger>
             <TabsTrigger value="joined">{t('ws-members.joined')}</TabsTrigger>
             <TabsTrigger value="invited">{t('ws-members.invited')}</TabsTrigger>
@@ -105,25 +119,12 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
 
             {isRolesTab ? (
               state.canManageRoles ? (
-                <>
-                  <Button
-                    variant="outline"
-                    onClick={() =>
-                      state.setRoleEditorState({
-                        mode: 'default',
-                        role: state.defaultRoleQuery.data ?? null,
-                      })
-                    }
-                  >
-                    {tSettings('roles_tools_title')}
-                  </Button>
-                  <Button
-                    onClick={() => state.setRoleEditorState({ mode: 'create' })}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    {tRoles('create')}
-                  </Button>
-                </>
+                <Button
+                  onClick={() => state.setRoleEditorState({ mode: 'create' })}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  {tRoles('create')}
+                </Button>
               ) : null
             ) : state.canManageMembers ? (
               <Button onClick={() => setInviteDialogOpen(true)}>
@@ -135,17 +136,111 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
         </div>
 
         {!isRolesTab ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="rounded-full">
-              {tSettings('results_summary', {
-                total: state.tabCounts[state.activeTab],
-                visible: state.visibleMembers.length,
-              })}
-            </Badge>
-            <Badge variant="outline" className="rounded-full">
-              {tSettings('members_needing_roles_label')}:{' '}
-              {state.membersNeedingRolesCount}
-            </Badge>
+          <div className="rounded-xl border border-border/70 bg-card/80 p-3">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="rounded-full">
+                  {tSettings('results_summary', {
+                    total: state.tabCounts[state.activeTab],
+                    visible: state.visibleMembers.length,
+                  })}
+                </Badge>
+                <Badge variant="outline" className="rounded-full">
+                  {tSettings('members_needing_roles_label')}:{' '}
+                  {state.membersNeedingRolesCount}
+                </Badge>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {tSettings('filter_by_access_level')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    <DropdownMenuLabel>
+                      {tSettings('access_levels_label')}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {roles.length === 0 ? (
+                      <div className="px-2 py-1.5 text-muted-foreground text-sm">
+                        {tSettings('roles_empty_title')}
+                      </div>
+                    ) : (
+                      roles.map((role) => (
+                        <DropdownMenuCheckboxItem
+                          key={role.id}
+                          checked={state.selectedRoleIds.has(role.id)}
+                          onCheckedChange={(checked) => {
+                            const next = new Set(state.selectedRoleIds);
+
+                            if (checked) {
+                              next.add(role.id);
+                            } else {
+                              next.delete(role.id);
+                            }
+
+                            state.setSelectedRoleIds(next);
+                          }}
+                        >
+                          {role.name}
+                        </DropdownMenuCheckboxItem>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      {tSettings('filter_by_permission')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="max-h-80 w-72 overflow-y-auto"
+                  >
+                    <DropdownMenuLabel>
+                      {t('ws-roles.permissions')}
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {permissionOptions.map(([permissionId, label]) => (
+                      <DropdownMenuCheckboxItem
+                        key={permissionId}
+                        checked={state.selectedPermissionIds.has(permissionId)}
+                        onCheckedChange={(checked) => {
+                          const next = new Set(state.selectedPermissionIds);
+
+                          if (checked) {
+                            next.add(permissionId);
+                          } else {
+                            next.delete(permissionId);
+                          }
+
+                          state.setSelectedPermissionIds(next);
+                        }}
+                      >
+                        {label}
+                      </DropdownMenuCheckboxItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {hasPeopleFilters ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      state.setSelectedPermissionIds(new Set());
+                      state.setSelectedRoleIds(new Set());
+                    }}
+                  >
+                    {tSettings('clear_filters_action')}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           </div>
         ) : null}
 
@@ -174,7 +269,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
                 userId,
               })
             }
-            roles={state.rolesQuery.data ?? []}
+            roles={roles}
             searchTerm={state.memberSearch}
           />
         </TabsContent>
@@ -204,7 +299,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
                 userId,
               })
             }
-            roles={state.rolesQuery.data ?? []}
+            roles={roles}
             searchTerm={state.memberSearch}
           />
         </TabsContent>
@@ -234,7 +329,7 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
                 userId,
               })
             }
-            roles={state.rolesQuery.data ?? []}
+            roles={roles}
             searchTerm={state.memberSearch}
           />
         </TabsContent>
@@ -242,12 +337,24 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
         <TabsContent value="roles" className="mt-0">
           <CmsRolesPanel
             canManageRoles={state.canManageRoles}
-            defaultRole={state.defaultRoleQuery.data}
             filteredRoles={state.filteredRoles}
-            isDefaultRoleLoading={state.defaultRoleQuery.isPending}
+            guestDefaultRole={state.guestDefaultRoleQuery.data}
+            isGuestDefaultRoleLoading={state.guestDefaultRoleQuery.isPending}
+            isMemberDefaultRoleLoading={state.memberDefaultRoleQuery.isPending}
             isRolesLoading={state.rolesQuery.isPending}
+            memberDefaultRole={state.memberDefaultRoleQuery.data}
             members={state.membersQuery.data ?? []}
             onDeleteRole={(role) => state.setRoleToDelete(role)}
+            onEditDefaultRole={(memberType) =>
+              state.setRoleEditorState({
+                memberType,
+                mode: 'default',
+                role:
+                  memberType === 'GUEST'
+                    ? (state.guestDefaultRoleQuery.data ?? null)
+                    : (state.memberDefaultRoleQuery.data ?? null),
+              })
+            }
             onEditRole={(role) =>
               state.setRoleEditorState({
                 mode: 'edit',
@@ -282,6 +389,11 @@ export function CmsMembersSection({ workspaceSlug }: CmsMembersSectionProps) {
             state.roleEditorState.mode === 'create'
               ? null
               : state.roleEditorState.role
+          }
+          defaultMemberType={
+            state.roleEditorState.mode === 'default'
+              ? state.roleEditorState.memberType
+              : undefined
           }
           mode={state.roleEditorState.mode}
           onOpenChange={(open) => {

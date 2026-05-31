@@ -2,12 +2,13 @@
 
 import { useMutation } from '@tanstack/react-query';
 import {
-  createWorkspaceRole,
-  updateWorkspaceDefaultRole,
-  updateWorkspaceRole,
+  createWorkspaceExternalProjectRole,
+  updateWorkspaceExternalProjectDefaultRole,
+  updateWorkspaceExternalProjectRole,
   type WorkspaceRoleDetails,
 } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
+import type { WorkspaceDefaultPermissionMemberType } from '@tuturuuu/types';
 import { Button } from '@tuturuuu/ui/button';
 import { Checkbox } from '@tuturuuu/ui/checkbox';
 import {
@@ -32,6 +33,7 @@ type CmsRoleEditorMode = 'create' | 'default' | 'edit';
 
 type CmsRoleEditorDialogProps = {
   currentUserEmail?: string | null;
+  defaultMemberType?: WorkspaceDefaultPermissionMemberType;
   initialRole?: WorkspaceRoleDetails | null;
   mode: CmsRoleEditorMode;
   onOpenChange: (open: boolean) => void;
@@ -42,6 +44,7 @@ type CmsRoleEditorDialogProps = {
 
 export function CmsRoleEditorDialog({
   currentUserEmail,
+  defaultMemberType = 'MEMBER',
   initialRole,
   mode,
   onOpenChange,
@@ -86,14 +89,22 @@ export function CmsRoleEditorDialog({
       };
 
       if (mode === 'default') {
-        return updateWorkspaceDefaultRole(workspaceId, payload);
+        return updateWorkspaceExternalProjectDefaultRole(
+          workspaceId,
+          defaultMemberType,
+          payload
+        );
       }
 
       if (mode === 'edit' && initialRole?.id) {
-        return updateWorkspaceRole(workspaceId, initialRole.id, payload);
+        return updateWorkspaceExternalProjectRole(
+          workspaceId,
+          initialRole.id,
+          payload
+        );
       }
 
-      return createWorkspaceRole(workspaceId, payload);
+      return createWorkspaceExternalProjectRole(workspaceId, payload);
     },
     onError: (error) =>
       toast.error(error instanceof Error ? error.message : t('common.error')),
@@ -118,13 +129,17 @@ export function CmsRoleEditorDialog({
     mode === 'create'
       ? t('ws-roles.create')
       : mode === 'default'
-        ? t('ws-roles.manage_default_permissions')
+        ? defaultMemberType === 'GUEST'
+          ? t('external-projects.settings.guest_defaults_title')
+          : t('external-projects.settings.member_defaults_title')
         : t('ws-roles.edit');
   const description =
     mode === 'create'
       ? t('ws-roles.create_description')
       : mode === 'default'
-        ? t('ws-roles.default_permissions_description')
+        ? defaultMemberType === 'GUEST'
+          ? t('external-projects.settings.guest_defaults_description')
+          : t('external-projects.settings.member_defaults_description')
         : t('ws-roles.edit_description');
 
   return (

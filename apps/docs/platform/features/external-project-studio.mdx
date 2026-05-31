@@ -35,7 +35,9 @@ existing `external-project*` contracts.
 ### Bound workspaces
 
 - `/{wsId}`: overview
-- `/{wsId}/library`: library landing for sections and content
+- `/{wsId}/landing`: page-builder surface for landing-only sections
+- `/{wsId}/library`: content operations surface for non-landing, non-game sections and content
+- `/{wsId}/games`: game content surface when CMS Games is enabled
 - `/{wsId}/library/collections/{collectionId}`: section detail
 - `/{wsId}/library/entries/{entryId}`: content detail
 - `/{wsId}/members`: workspace member search, invite, removal, role assignment, and role/default-permission management
@@ -57,7 +59,8 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 ## Workspace CMS
 
 - Use `/{wsId}` as the concise starting point for continue-editing tasks, launch readiness, attention queues, recent activity, and connected-site context.
-- Use `/{wsId}/library` for section browsing and content navigation.
+- Use `/{wsId}/landing` for focused landing-page edits, page readiness, and preview-first section work.
+- Use `/{wsId}/library` for broader content operations: search, status filtering, publishing queues, collection health, and reusable non-landing/non-game content.
 - Use `/{wsId}/members` for routine collaborator management without leaving CMS.
 - Keep collection configuration on collection detail pages and entry authoring on entry detail pages.
 - Use `/{wsId}/preview` as the delivered-content surface backed by the existing preview delivery route.
@@ -68,7 +71,8 @@ The internal/root workspace is not a bindable content workspace, so `/internal` 
 - Workspace member search, invite, remove, and role-assignment controls now have a dedicated `/{wsId}/members` sidebar route.
 - The members surface also absorbs the essentials of the workspace roles page so CMS operators can manage named roles and default permissions without leaving CMS.
 - This keeps standalone CMS usable without forcing operators back into the main platform app for routine collaborator changes.
-- The CMS members surface still respects `manage_workspace_members` and `manage_workspace_roles`.
+- CMS members data must load through external-project-aware `apps/web` API routes and `@tuturuuu/internal-api` helpers. Reads should authorize by CMS workspace access so app-session users do not hit workspace settings-route 403s; writes still respect member and role management permissions.
+- Use CMS copy in this area: team access, people, invites, access levels, member defaults, guest defaults, and Advanced access.
 
 ## Implementation Notes
 

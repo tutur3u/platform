@@ -1,22 +1,16 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from '@tanstack/react-query';
-import {
-  addRoleMembers,
-  deleteWorkspaceRole,
-  getWorkspaceDefaultRole,
+  addWorkspaceExternalProjectRoleMembers,
+  deleteWorkspaceExternalProjectRole,
+  getWorkspaceExternalProjectDefaultRole,
   getWorkspaceExternalProjectMembersContext,
-  getWorkspaceRole,
-  inviteWorkspaceMembers,
-  listEnhancedWorkspaceMembers,
-  listWorkspaceRoles,
-  removeRoleMember,
-  removeWorkspaceMember,
+  inviteWorkspaceExternalProjectMembers,
+  listWorkspaceExternalProjectMembers,
+  listWorkspaceExternalProjectRoles,
+  removeWorkspaceExternalProjectMember,
+  removeWorkspaceExternalProjectRoleMember,
   type WorkspaceRoleDetails,
 } from '@tuturuuu/internal-api';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -29,6 +23,7 @@ import { useState } from 'react';
 import {
   type CmsMemberTab,
   getMemberAccessProfile,
+  getMemberPermissionIds,
   parseInviteEmails,
   type RoleEditorState,
   sortMembers,
@@ -45,6 +40,12 @@ export function useCmsMembersSection({
   const [memberSearch, setMemberSearch] = useState('');
   const [roleSearch, setRoleSearch] = useState('');
   const [activeTab, setActiveTab] = useState<CmsMemberTab>('all');
+  const [selectedPermissionIds, setSelectedPermissionIds] = useState<
+    Set<string>
+  >(new Set());
+  const [selectedRoleIds, setSelectedRoleIds] = useState<Set<string>>(
+    new Set()
+  );
   const [roleEditorState, setRoleEditorState] =
     useState<RoleEditorState | null>(null);
   const [roleToDelete, setRoleToDelete] = useState<WorkspaceRoleDetails | null>(
@@ -84,28 +85,29 @@ export function useCmsMembersSection({
 
   const membersQuery = useQuery({
     enabled: Boolean(workspaceId),
-    queryFn: () => listEnhancedWorkspaceMembers(workspaceId!),
+    queryFn: () => listWorkspaceExternalProjectMembers(workspaceId!, 'all'),
     queryKey: ['cms-members', workspaceId],
     staleTime: 30_000,
   });
   const rolesQuery = useQuery({
-    enabled: Boolean(workspaceId) && (canManageRoles || activeTab === 'roles'),
-    queryFn: () => listWorkspaceRoles(workspaceId!),
+    enabled: Boolean(workspaceId),
+    queryFn: () => listWorkspaceExternalProjectRoles(workspaceId!),
     queryKey: ['cms-member-roles', workspaceId],
     staleTime: 30_000,
   });
-  const defaultRoleQuery = useQuery({
-    enabled: Boolean(workspaceId) && (activeTab === 'roles' || canManageRoles),
-    queryFn: () => getWorkspaceDefaultRole(workspaceId!),
-    queryKey: ['cms-default-role', workspaceId],
+  const memberDefaultRoleQuery = useQuery({
+    enabled: Boolean(workspaceId),
+    queryFn: () =>
+      getWorkspaceExternalProjectDefaultRole(workspaceId!, 'MEMBER'),
+    queryKey: ['cms-default-role', workspaceId, 'MEMBER'],
     staleTime: 30_000,
   });
-  const roleDetailQueries = useQueries({
-    queries: (rolesQuery.data ?? []).map((role) => ({
-      queryFn: () => getWorkspaceRole(workspaceId!, role.id),
-      queryKey: ['cms-member-role', workspaceId, role.id],
-      staleTime: 30_000,
-    })),
+  const guestDefaultRoleQuery = useQuery({
+    enabled: Boolean(workspaceId),
+    queryFn: () =>
+      getWorkspaceExternalProjectDefaultRole(workspaceId!, 'GUEST'),
+    queryKey: ['cms-default-role', workspaceId, 'GUEST'],
+    staleTime: 30_000,
   });
 
   const invalidateAccessData = () => {
@@ -114,16 +116,16 @@ export function useCmsMembersSection({
       queryKey: ['cms-member-roles', workspaceId],
     });
     queryClient.invalidateQueries({
-      queryKey: ['cms-member-role', workspaceId],
-    });
-    queryClient.invalidateQueries({
       queryKey: ['cms-default-role', workspaceId],
     });
   };
 
   const inviteMutation = useMutation({
     mutationFn: async () =>
-      inviteWorkspaceMembers(workspaceId!, parseInviteEmails(inviteEmails)),
+      inviteWorkspaceExternalProjectMembers(
+        workspaceId!,
+        parseInviteEmails(inviteEmails)
+      ),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: (result) => {
@@ -137,7 +139,7 @@ export function useCmsMembersSection({
     mutationFn: async (payload: {
       email?: string | null;
       userId?: string | null;
-    }) => removeWorkspaceMember(workspaceId!, payload),
+    }) => removeWorkspaceExternalProjectMember(workspaceId!, payload),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: () => {
@@ -153,10 +155,18 @@ export function useCmsMembersSection({
       userId: string;
     }) => {
       if (payload.action === 'add') {
-        return addRoleMembers(workspaceId!, payload.roleId, [payload.userId]);
+        return addWorkspaceExternalProjectRoleMembers(
+          workspaceId!,
+          payload.roleId,
+          [payload.userId]
+        );
       }
 
-      return removeRoleMember(workspaceId!, payload.roleId, payload.userId);
+      return removeWorkspaceExternalProjectRoleMember(
+        workspaceId!,
+        payload.roleId,
+        payload.userId
+      );
     },
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
@@ -168,7 +178,7 @@ export function useCmsMembersSection({
 
   const deleteRoleMutation = useMutation({
     mutationFn: async (roleId: string) =>
-      deleteWorkspaceRole(workspaceId!, roleId),
+      deleteWorkspaceExternalProjectRole(workspaceId!, roleId),
     onError: (error) =>
       toastError(t, error instanceof Error ? error.message : t('common.error')),
     onSuccess: () => {
@@ -189,14 +199,35 @@ export function useCmsMembersSection({
       return false;
     }
 
-    if (!memberSearch.trim()) {
-      return true;
+    if (memberSearch.trim()) {
+      const query = memberSearch.toLowerCase();
+      const matchesSearch = [member.display_name, member.email, member.handle]
+        .filter(Boolean)
+        .some((value) => value?.toLowerCase().includes(query));
+
+      if (!matchesSearch) {
+        return false;
+      }
     }
 
-    const query = memberSearch.toLowerCase();
-    return [member.display_name, member.email, member.handle]
-      .filter(Boolean)
-      .some((value) => value?.toLowerCase().includes(query));
+    if (
+      selectedRoleIds.size > 0 &&
+      !member.roles.some((role) => selectedRoleIds.has(role.id))
+    ) {
+      return false;
+    }
+
+    if (selectedPermissionIds.size > 0) {
+      const memberPermissionIds = getMemberPermissionIds(member);
+
+      for (const permissionId of selectedPermissionIds) {
+        if (!memberPermissionIds.has(permissionId)) {
+          return false;
+        }
+      }
+    }
+
+    return true;
   });
 
   const joinedMembers = sortedMembers.filter((member) => !member.pending);
@@ -217,18 +248,7 @@ export function useCmsMembersSection({
     return total + getMemberAccessProfile(member).uniquePermissionCount;
   }, 0);
 
-  const detailedRoles = (rolesQuery.data ?? []).map((role, index) => {
-    const details = roleDetailQueries[index]?.data;
-
-    return (
-      details ?? {
-        ...role,
-        permissions: [],
-      }
-    );
-  });
-
-  const filteredRoles = detailedRoles.filter((role) => {
+  const filteredRoles = (rolesQuery.data ?? []).filter((role) => {
     if (!roleSearch.trim()) {
       return true;
     }
@@ -254,9 +274,9 @@ export function useCmsMembersSection({
     canManageRoles,
     contextQuery,
     currentUserEmail,
-    defaultRoleQuery,
     deleteRoleMutation,
     filteredRoles,
+    guestDefaultRoleQuery,
     guestsCount: guests.length,
     hasMemberSearch: memberSearch.trim().length > 0,
     inviteEmails,
@@ -266,6 +286,7 @@ export function useCmsMembersSection({
     invitedCount: invitedMembers.length,
     joinedCount: joinedMembers.length,
     memberSearch,
+    memberDefaultRoleQuery,
     membersNeedingRolesCount: membersNeedingRoles.length,
     membersQuery,
     membersWithRolesCount: joinedMembersWithRoles.length,
@@ -278,9 +299,13 @@ export function useCmsMembersSection({
     rolesQuery,
     roleToDelete,
     roleMembershipMutation,
+    selectedPermissionIds,
+    selectedRoleIds,
     setActiveTab,
     setInviteEmails,
     setMemberSearch,
+    setSelectedPermissionIds,
+    setSelectedRoleIds,
     setRoleEditorState,
     setRoleSearch,
     setRoleToDelete,

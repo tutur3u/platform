@@ -2,7 +2,10 @@
 
 import { Pencil, Trash2 } from '@tuturuuu/icons';
 import type { WorkspaceRoleDetails } from '@tuturuuu/internal-api';
-import type { InternalApiEnhancedWorkspaceMember } from '@tuturuuu/types';
+import type {
+  InternalApiEnhancedWorkspaceMember,
+  WorkspaceDefaultPermissionMemberType,
+} from '@tuturuuu/types';
 import { Badge } from '@tuturuuu/ui/badge';
 import { Button } from '@tuturuuu/ui/button';
 import {
@@ -43,25 +46,105 @@ function PermissionBadges({
   ));
 }
 
+function DefaultAccessCard({
+  canManageRoles,
+  isLoading,
+  memberType,
+  onEdit,
+  permissionCount,
+  permissionTitles,
+  role,
+}: {
+  canManageRoles: boolean;
+  isLoading: boolean;
+  memberType: WorkspaceDefaultPermissionMemberType;
+  onEdit: (memberType: WorkspaceDefaultPermissionMemberType) => void;
+  permissionCount: number;
+  permissionTitles: Map<string, string>;
+  role: WorkspaceRoleDetails | undefined;
+}) {
+  const t = useTranslations();
+  const tSettings = useTranslations('external-projects.settings');
+  const enabledCount =
+    role?.permissions.filter((permission) => permission.enabled).length ?? 0;
+  const title =
+    memberType === 'GUEST'
+      ? tSettings('guest_defaults_title')
+      : tSettings('member_defaults_title');
+  const description =
+    memberType === 'GUEST'
+      ? tSettings('guest_defaults_description')
+      : tSettings('member_defaults_description');
+
+  return (
+    <Card className="border-border/70 bg-card/95 shadow-none">
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="text-base">{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          {canManageRoles ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(memberType)}
+            >
+              <Pencil className="mr-2 h-4 w-4" />
+              {t('common.edit')}
+            </Button>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {isLoading ? (
+          <Skeleton className="h-24 rounded-xl" />
+        ) : (
+          <>
+            <div className="font-semibold text-2xl">
+              {enabledCount}
+              <span className="ml-1 font-normal text-base text-muted-foreground">
+                / {permissionCount}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <PermissionBadges
+                permissionTitles={permissionTitles}
+                permissions={role?.permissions ?? []}
+              />
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function CmsRolesPanel({
   canManageRoles,
-  defaultRole,
   filteredRoles,
-  isDefaultRoleLoading,
+  guestDefaultRole,
+  isGuestDefaultRoleLoading,
+  isMemberDefaultRoleLoading,
   isRolesLoading,
+  memberDefaultRole,
   members,
   onDeleteRole,
+  onEditDefaultRole,
   onEditRole,
   permissionCount,
   permissionTitles,
 }: {
   canManageRoles: boolean;
-  defaultRole: WorkspaceRoleDetails | undefined;
   filteredRoles: WorkspaceRoleDetails[];
-  isDefaultRoleLoading: boolean;
+  guestDefaultRole: WorkspaceRoleDetails | undefined;
+  isGuestDefaultRoleLoading: boolean;
+  isMemberDefaultRoleLoading: boolean;
   isRolesLoading: boolean;
+  memberDefaultRole: WorkspaceRoleDetails | undefined;
   members: InternalApiEnhancedWorkspaceMember[];
   onDeleteRole: (role: WorkspaceRoleDetails) => void;
+  onEditDefaultRole: (memberType: WorkspaceDefaultPermissionMemberType) => void;
   onEditRole: (role: WorkspaceRoleDetails) => void;
   permissionCount: number;
   permissionTitles: Map<string, string>;
@@ -71,44 +154,43 @@ export function CmsRolesPanel({
   const tSettings = useTranslations('external-projects.settings');
 
   return (
-    <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
+    <div className="space-y-4">
       <Card className="border-border/70 bg-card/95 shadow-none">
-        <CardHeader>
-          <CardTitle>{tSettings('roles_surface_title')}</CardTitle>
-          <CardDescription>
-            {tSettings('roles_surface_description')}
-          </CardDescription>
+        <CardHeader className="pb-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <CardTitle>{tSettings('advanced_access_title')}</CardTitle>
+              <CardDescription>
+                {tSettings('advanced_access_description')}
+              </CardDescription>
+            </div>
+            <Badge variant="outline" className="rounded-full">
+              {filteredRoles.length} {tSettings('access_levels_label')}
+            </Badge>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {isDefaultRoleLoading ? (
-            <Skeleton className="h-40 rounded-2xl" />
-          ) : (
-            <>
-              <div className="rounded-2xl border border-border/70 bg-background/80 p-4">
-                <div className="text-muted-foreground text-sm">
-                  {tRoles('permissions')}
-                </div>
-                <div className="mt-2 font-semibold text-2xl">
-                  {
-                    (defaultRole?.permissions ?? []).filter(
-                      (permission) => permission.enabled
-                    ).length
-                  }
-                  <span className="ml-1 font-normal text-base text-muted-foreground">
-                    / {permissionCount}
-                  </span>
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <PermissionBadges
-                  permissionTitles={permissionTitles}
-                  permissions={defaultRole?.permissions ?? []}
-                />
-              </div>
-            </>
-          )}
-        </CardContent>
       </Card>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <DefaultAccessCard
+          canManageRoles={canManageRoles}
+          isLoading={isMemberDefaultRoleLoading}
+          memberType="MEMBER"
+          onEdit={onEditDefaultRole}
+          permissionCount={permissionCount}
+          permissionTitles={permissionTitles}
+          role={memberDefaultRole}
+        />
+        <DefaultAccessCard
+          canManageRoles={canManageRoles}
+          isLoading={isGuestDefaultRoleLoading}
+          memberType="GUEST"
+          onEdit={onEditDefaultRole}
+          permissionCount={permissionCount}
+          permissionTitles={permissionTitles}
+          role={guestDefaultRole}
+        />
+      </div>
 
       <div className="grid gap-4">
         {isRolesLoading ? (
@@ -118,8 +200,11 @@ export function CmsRolesPanel({
           </>
         ) : filteredRoles.length === 0 ? (
           <Card className="border-border/70 bg-card/95 shadow-none">
-            <CardContent className="flex min-h-[180px] items-center justify-center text-muted-foreground text-sm">
-              {tRoles('plural')} 0
+            <CardContent className="flex min-h-[180px] flex-col items-center justify-center gap-2 text-center text-muted-foreground text-sm">
+              <div className="font-medium text-foreground">
+                {tSettings('roles_empty_title')}
+              </div>
+              <div>{tSettings('roles_empty_description')}</div>
             </CardContent>
           </Card>
         ) : (
