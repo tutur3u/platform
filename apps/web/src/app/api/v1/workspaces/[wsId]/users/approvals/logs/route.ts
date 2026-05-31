@@ -22,6 +22,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const wsId = await normalizeWorkspaceId(id);
 
@@ -60,12 +61,13 @@ export async function GET(request: Request, { params }: Params) {
         );
       }
 
-      const { data, error } = await sbAdmin
-        .from('external_user_monthly_report_logs')
+      const { data, error } = await privateDb
+        .from('external_user_monthly_report_logs_workspace_view')
         .select(
           'id, report_id, title, content, feedback, score, scores, created_at, report_approval_status, approved_at'
         )
         .eq('report_id', reportId)
+        .eq('user_ws_id', wsId)
         .eq('report_approval_status', 'APPROVED')
         .order('created_at', { ascending: false })
         .limit(1)

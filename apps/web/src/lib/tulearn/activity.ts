@@ -25,7 +25,7 @@ interface MonthlyReportRow {
   score: number | null;
   created_at: string;
   group_id: string;
-  workspace_user_groups: NamedGroup | NamedGroup[] | null;
+  group_name: string | null;
 }
 
 interface MetricRow {
@@ -123,23 +123,23 @@ export async function getLearnerReports({
     wsId,
   });
   if (!courseIds.length) return [];
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await sbAdmin
-    .from('external_user_monthly_reports')
+  const { data, error } = await privateDb
+    .from('external_user_monthly_reports_workspace_view')
     .select(
-      'id, title, content, feedback, score, created_at, group_id, workspace_user_groups!inner(id, name, ws_id)'
+      'id, title, content, feedback, score, created_at, group_id, group_name'
     )
     .eq('user_id', studentWorkspaceUserId)
     .in('group_id', courseIds)
-    .eq('workspace_user_groups.ws_id', wsId)
+    .eq('user_ws_id', wsId)
     .order('created_at', { ascending: false })
     .limit(12);
 
   if (error) throw error;
 
-  const rows = (data ?? []) as MonthlyReportRow[];
+  const rows = (data ?? []) as unknown as MonthlyReportRow[];
   return rows.map((report) => {
-    const course = firstOf(report.workspace_user_groups);
     return {
       id: report.id,
       title: report.title,
@@ -147,10 +147,10 @@ export async function getLearnerReports({
       feedback: report.feedback ?? null,
       score: report.score ?? null,
       created_at: report.created_at,
-      course: course
+      course: report.group_name
         ? {
-            id: course.id,
-            name: course.name,
+            id: report.group_id,
+            name: report.group_name,
           }
         : null,
     };

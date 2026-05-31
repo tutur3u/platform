@@ -47,14 +47,13 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
-    let query = sbAdmin
-      .from('external_user_monthly_reports')
-      .select(
-        '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)'
-      )
+    let query = privateDb
+      .from('external_user_monthly_reports_workspace_view')
+      .select('*')
       .eq('group_id', groupId)
-      .eq('user.ws_id', wsId)
+      .eq('user_ws_id', wsId)
       .eq('title', title);
 
     if (status === 'APPROVED') {
@@ -71,25 +70,13 @@ export async function GET(request: Request, { params }: Params) {
       );
     }
 
-    const mappedReports = (data || []).map((raw) => {
-      const user = raw.user as unknown as
-        | { full_name: string | null }
-        | { full_name: string | null }[];
-      const userName = Array.isArray(user)
-        ? user?.[0]?.full_name
-        : user?.full_name;
-
-      const creator = raw.creator as unknown as
-        | { full_name: string | null }
-        | { full_name: string | null }[];
-      const creatorName = Array.isArray(creator)
-        ? creator?.[0]?.full_name
-        : creator?.full_name;
-
+    const mappedReports = (
+      (data || []) as unknown as Array<Record<string, any>>
+    ).map((raw) => {
       return {
         ...raw,
-        user_name: userName,
-        creator_name: creatorName,
+        user_name: raw.user_full_name,
+        creator_name: raw.creator_full_name,
         group_name: raw.group_name,
       };
     });

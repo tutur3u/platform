@@ -60,6 +60,7 @@ export const GET = withSessionAuth(
         { status: 404 }
       );
     }
+    const privateDb = access.sbAdmin.schema('private');
 
     const limit = Math.min(
       Math.max(
@@ -72,10 +73,10 @@ export const GET = withSessionAuth(
       100
     );
 
-    const { data, error } = await access.sbAdmin
-      .from('external_user_monthly_reports')
+    const { data, error } = await privateDb
+      .from('external_user_monthly_reports_workspace_view')
       .select(
-        'id, title, content, feedback, score, scores, created_at, updated_at, user_id, report_approval_status, user:workspace_users!user_id(id, full_name, display_name, email, avatar_url)'
+        'id, title, content, feedback, score, scores, created_at, updated_at, user_id, report_approval_status, user_full_name, user_display_name, user_email'
       )
       .eq('group_id', parsedParams.data.courseId)
       .order('created_at', { ascending: false })
@@ -91,11 +92,14 @@ export const GET = withSessionAuth(
 
     return NextResponse.json({
       data: (data ?? []).map((report) => {
-        const user = Array.isArray(report.user) ? report.user[0] : report.user;
-
         return {
           ...report,
-          user,
+          user: {
+            display_name: report.user_display_name,
+            email: report.user_email,
+            full_name: report.user_full_name,
+            id: report.user_id,
+          },
         };
       }),
     });
@@ -158,6 +162,7 @@ export const POST = withSessionAuth(
         { status: 404 }
       );
     }
+    const privateDb = access.sbAdmin.schema('private');
 
     const { data: membership, error: membershipError } = await access.sbAdmin
       .from('workspace_user_groups_users')
@@ -183,7 +188,7 @@ export const POST = withSessionAuth(
       );
     }
 
-    const { data: existing } = await access.sbAdmin
+    const { data: existing } = await privateDb
       .from('external_user_monthly_reports')
       .select('id')
       .eq('user_id', parsedBody.data.user_id)
@@ -224,7 +229,7 @@ export const POST = withSessionAuth(
     }
 
     const enableReportApproval = (approvalConfig?.value ?? 'true') === 'true';
-    const { data, error } = await access.sbAdmin
+    const { data, error } = await privateDb
       .from('external_user_monthly_reports')
       .insert({
         content: parsedBody.data.content,

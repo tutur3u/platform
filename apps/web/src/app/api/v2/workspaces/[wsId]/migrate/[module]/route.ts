@@ -117,6 +117,18 @@ const PRIVATE_INVENTORY_TABLES: Set<string> = new Set([
   'inventory_units',
 ]);
 
+const PRIVATE_REPORT_TABLES: Set<string> = new Set([
+  'external_user_monthly_report_logs',
+  'external_user_monthly_reports',
+]);
+
+function isPrivateMigrationTable(tableName: string) {
+  return (
+    PRIVATE_INVENTORY_TABLES.has(tableName) ||
+    PRIVATE_REPORT_TABLES.has(tableName)
+  );
+}
+
 // Tables without workspace scoping (global lookup tables)
 const GLOBAL_TABLES: Set<string> = new Set([
   'wallet_types', // Just has 'id', no ws_id
@@ -296,7 +308,7 @@ export const GET = withApiAuth<Params>(
     const privateInventory = supabase.schema(
       'private'
     ) as unknown as SupabaseQueryClient;
-    const tableClient = PRIVATE_INVENTORY_TABLES.has(tableName)
+    const tableClient = isPrivateMigrationTable(tableName)
       ? privateInventory
       : supabase;
 
@@ -944,7 +956,7 @@ export const GET = withApiAuth<Params>(
     if (joinConfig) {
       // For tables without ws_id, query via join with parent table
       // First get parent IDs that belong to this workspace
-      const parentClient = PRIVATE_INVENTORY_TABLES.has(joinConfig.parentTable)
+      const parentClient = isPrivateMigrationTable(joinConfig.parentTable)
         ? privateInventory
         : supabase;
       const { data: parentData, error: parentError } = await parentClient

@@ -38,6 +38,8 @@ type UserGroupMetricRow = {
 type ReportWithNames = WorkspaceUserReport & {
   creator_name?: string | null;
   group_name?: string | null;
+  creator_full_name?: string | null;
+  user_full_name?: string | null;
   user_archived?: boolean;
   user_archived_until?: string | null;
   user_name?: string | null;
@@ -87,11 +89,11 @@ function mapReportWithNames(raw: {
 
   return {
     ...rest,
-    user_name: userName,
-    user_archived: userArchived,
-    user_archived_until: userArchivedUntil,
-    user_note: userNote,
-    creator_name: creatorName,
+    user_name: raw.user_full_name ?? userName,
+    user_archived: raw.user_archived ?? userArchived,
+    user_archived_until: raw.user_archived_until ?? userArchivedUntil,
+    user_note: raw.user_note ?? userNote,
+    creator_name: raw.creator_full_name ?? creatorName,
     group_name: raw.group_name ?? raw.name ?? null,
   } as ReportWithNames;
 }
@@ -159,6 +161,7 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const [
       groupResult,
@@ -191,26 +194,22 @@ export async function GET(request: Request, { params }: Params) {
         _ws_id: wsId,
       }),
       userId
-        ? sbAdmin
-            .from('external_user_monthly_reports')
-            .select(
-              '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name)'
-            )
+        ? privateDb
+            .from('external_user_monthly_reports_workspace_view')
+            .select('*')
             .eq('user_id', userId)
             .eq('group_id', groupId)
-            .eq('user.ws_id', wsId)
+            .eq('user_ws_id', wsId)
             .order('created_at', { ascending: false })
         : Promise.resolve({ data: [], error: null }),
       userId && reportId && reportId !== 'new'
-        ? sbAdmin
-            .from('external_user_monthly_reports')
-            .select(
-              '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)'
-            )
+        ? privateDb
+            .from('external_user_monthly_reports_workspace_view')
+            .select('*')
             .eq('id', reportId)
             .eq('user_id', userId)
             .eq('group_id', groupId)
-            .eq('user.ws_id', wsId)
+            .eq('user_ws_id', wsId)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
       userId

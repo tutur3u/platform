@@ -68,6 +68,7 @@ export async function GET(request: Request, { params }: Params) {
   try {
     const { wsId: id } = await params;
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const wsId = await normalizeWorkspaceId(id);
 
@@ -105,13 +106,13 @@ export async function GET(request: Request, { params }: Params) {
     }
 
     if (kind === 'reports') {
-      let countQuery = sbAdmin
-        .from('external_user_monthly_reports')
-        .select('id, user:workspace_users!user_id!inner(ws_id)', {
+      let countQuery = privateDb
+        .from('external_user_monthly_reports_workspace_view')
+        .select('id', {
           count: 'exact',
           head: true,
         })
-        .eq('user.ws_id', wsId);
+        .eq('user_ws_id', wsId);
 
       if (groupId) countQuery = countQuery.eq('group_id', groupId);
       if (userId) countQuery = countQuery.eq('user_id', userId);
@@ -126,12 +127,12 @@ export async function GET(request: Request, { params }: Params) {
       const { count, error: countError } = await countQuery;
       if (countError) throw countError;
 
-      let dataQuery = sbAdmin
-        .from('external_user_monthly_reports')
+      let dataQuery = privateDb
+        .from('external_user_monthly_reports_workspace_view')
         .select(
-          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier:workspace_users!updated_by(display_name, full_name, email), creator:workspace_users!creator_id(full_name), user:workspace_users!user_id!inner(full_name, ws_id), ...workspace_user_groups(group_name:name)'
+          'id, title, content, feedback, score, scores, created_at, updated_by, user_id, group_id, creator_id, report_approval_status, rejection_reason, approved_at, rejected_at, modifier_display_name, modifier_full_name, modifier_email, creator_full_name, user_full_name, group_name'
         )
-        .eq('user.ws_id', wsId);
+        .eq('user_ws_id', wsId);
 
       if (groupId) dataQuery = dataQuery.eq('group_id', groupId);
       if (userId) dataQuery = dataQuery.eq('user_id', userId);
@@ -152,24 +153,8 @@ export async function GET(request: Request, { params }: Params) {
 
       if (error) throw error;
 
-      const items = (data ?? []).map((row) => {
-        const user = row.user as unknown as
-          | { full_name: string | null }
-          | { full_name: string | null }[];
-        const userName = Array.isArray(user)
-          ? user?.[0]?.full_name
-          : user?.full_name;
-
-        const modifier = row.modifier as unknown as {
-          display_name: string | null;
-          full_name: string | null;
-          email: string | null;
-        } | null;
-
-        const creator = row.creator as unknown as {
-          full_name: string | null;
-        } | null;
-
+      const rows = (data ?? []) as unknown as Array<Record<string, any>>;
+      const items = rows.map((row) => {
         return {
           id: row.id,
           title: row.title,
@@ -187,14 +172,14 @@ export async function GET(request: Request, { params }: Params) {
           approved_at: row.approved_at,
           rejected_at: row.rejected_at,
           group_name: row.group_name,
-          user_name: userName,
+          user_name: row.user_full_name,
           modifier_name:
-            modifier?.display_name ||
-            modifier?.full_name ||
-            modifier?.email ||
-            creator?.full_name ||
+            row.modifier_display_name ||
+            row.modifier_full_name ||
+            row.modifier_email ||
+            row.creator_full_name ||
             null,
-          creator_name: creator?.full_name,
+          creator_name: row.creator_full_name,
         };
       });
 
@@ -358,6 +343,7 @@ export async function PUT(request: Request, { params }: Params) {
     const { wsId: id } = await params;
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const wsId = await normalizeWorkspaceId(id);
 
@@ -420,11 +406,11 @@ export async function PUT(request: Request, { params }: Params) {
         );
 
       if (kind === 'reports') {
-        const { data: report, error: fetchError } = await sbAdmin
-          .from('external_user_monthly_reports')
-          .select('id, user:workspace_users!user_id!inner(ws_id)')
+        const { data: report, error: fetchError } = await privateDb
+          .from('external_user_monthly_reports_workspace_view')
+          .select('id')
           .eq('id', itemId)
-          .eq('user.ws_id', wsId)
+          .eq('user_ws_id', wsId)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
@@ -435,7 +421,7 @@ export async function PUT(request: Request, { params }: Params) {
           );
         }
 
-        const { error } = await sbAdmin
+        const { error } = await privateDb
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'APPROVED' as ApprovalStatus,
@@ -511,11 +497,11 @@ export async function PUT(request: Request, { params }: Params) {
       }
 
       if (kind === 'reports') {
-        const { data: report, error: fetchError } = await sbAdmin
-          .from('external_user_monthly_reports')
-          .select('id, user:workspace_users!user_id!inner(ws_id)')
+        const { data: report, error: fetchError } = await privateDb
+          .from('external_user_monthly_reports_workspace_view')
+          .select('id')
           .eq('id', itemId)
-          .eq('user.ws_id', wsId)
+          .eq('user_ws_id', wsId)
           .maybeSingle();
 
         if (fetchError) throw fetchError;
@@ -526,7 +512,7 @@ export async function PUT(request: Request, { params }: Params) {
           );
         }
 
-        const { error } = await sbAdmin
+        const { error } = await privateDb
           .from('external_user_monthly_reports')
           .update({
             report_approval_status: 'REJECTED' as ApprovalStatus,
@@ -592,10 +578,10 @@ export async function PUT(request: Request, { params }: Params) {
       }> = [];
 
       if (kind === 'reports') {
-        let q = sbAdmin
-          .from('external_user_monthly_reports')
-          .select('id, user:workspace_users!user_id!inner(ws_id)')
-          .eq('user.ws_id', wsId)
+        let q = privateDb
+          .from('external_user_monthly_reports_workspace_view')
+          .select('id')
+          .eq('user_ws_id', wsId)
           .eq('report_approval_status', 'PENDING');
 
         if (filters?.groupId) q = q.eq('group_id', filters.groupId);
@@ -604,7 +590,9 @@ export async function PUT(request: Request, { params }: Params) {
 
         const { data, error } = await q;
         if (error) throw error;
-        allPendingIds = (data ?? []).map((item) => item.id);
+        allPendingIds = (data ?? [])
+          .map((item) => item.id)
+          .filter((id): id is string => typeof id === 'string');
       } else {
         let q = sbAdmin
           .from('user_group_post_checks')
@@ -637,7 +625,7 @@ export async function PUT(request: Request, { params }: Params) {
         for (let i = 0; i < allPendingIds.length; i += BATCH_SIZE) {
           const batch = allPendingIds.slice(i, i + BATCH_SIZE);
           if (kind === 'reports') {
-            const { error } = await sbAdmin
+            const { error } = await privateDb
               .from('external_user_monthly_reports')
               .update({
                 report_approval_status: 'APPROVED' as ApprovalStatus,

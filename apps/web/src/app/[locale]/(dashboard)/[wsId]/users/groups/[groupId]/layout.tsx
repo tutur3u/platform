@@ -169,16 +169,17 @@ async function getRejectedCount(
   canApprovePosts: boolean
 ): Promise<number> {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
   let count = 0;
 
   if (canApproveReports) {
-    const { count: reportCount } = await sbAdmin
-      .from('external_user_monthly_reports')
-      .select('id, user:workspace_users!user_id!inner(ws_id)', {
+    const { count: reportCount } = await privateDb
+      .from('external_user_monthly_reports_workspace_view')
+      .select('id', {
         count: 'exact',
         head: true,
       })
-      .eq('user.ws_id', wsId)
+      .eq('user_ws_id', wsId)
       .eq('group_id', groupId)
       .eq('report_approval_status', 'REJECTED');
     count += reportCount ?? 0;

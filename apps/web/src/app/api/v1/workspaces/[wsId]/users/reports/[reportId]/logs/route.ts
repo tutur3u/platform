@@ -23,14 +23,13 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await sbAdmin
-    .from('external_user_monthly_report_logs')
-    .select(
-      '*, creator:workspace_users!creator_id(full_name, display_name), user:workspace_users!user_id!inner(ws_id)'
-    )
+  const { data, error } = await privateDb
+    .from('external_user_monthly_report_logs_workspace_view')
+    .select('*')
     .eq('report_id', reportId)
-    .eq('user.ws_id', wsId)
+    .eq('user_ws_id', wsId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -42,14 +41,9 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const mappedLogs = (data || []).map((entry) => {
-    const creator = entry.creator as unknown as {
-      full_name: string | null;
-      display_name: string | null;
-    } | null;
-
     return {
       ...entry,
-      creator_name: creator?.display_name || creator?.full_name,
+      creator_name: entry.creator_display_name || entry.creator_full_name,
     };
   });
 

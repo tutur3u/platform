@@ -556,21 +556,39 @@ async function getReportData({
   userId: string;
 }) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
-  const queryBuilder = sbAdmin
-    .from('external_user_monthly_reports')
-    .select('*, user:workspace_users!user_id!inner(ws_id)', {
+  const queryBuilder = privateDb
+    .from('external_user_monthly_reports_workspace_view')
+    .select('*', {
       count: 'exact',
     })
     .eq('user_id', userId)
-    .eq('user.ws_id', wsId)
+    .eq('user_ws_id', wsId)
     .order('created_at', { ascending: false });
 
   const { data: rawData, count, error } = await queryBuilder;
   if (error) throw error;
 
   const data = (rawData || []).map((rowData) => {
-    const { user: _, ...rest } = rowData;
+    const {
+      creator_display_name: _creatorDisplayName,
+      creator_email: _creatorEmail,
+      creator_full_name: _creatorFullName,
+      group_name: _groupName,
+      group_ws_id: _groupWsId,
+      modifier_display_name: _modifierDisplayName,
+      modifier_email: _modifierEmail,
+      modifier_full_name: _modifierFullName,
+      user_archived: _userArchived,
+      user_archived_until: _userArchivedUntil,
+      user_display_name: _userDisplayName,
+      user_email: _userEmail,
+      user_full_name: _userFullName,
+      user_note: _userNote,
+      user_ws_id: _userWsId,
+      ...rest
+    } = rowData;
     return rest as WorkspaceUserReport;
   });
 

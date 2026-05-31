@@ -55,6 +55,7 @@ export async function PUT(req: Request) {
   const json = await req.json();
   const payload = normalizeRows(json?.data);
   const supabase = await createAdminClient({ noCookie: true });
+  const privateDb = supabase.schema('private');
 
   const incomingReportIds = Array.from(
     new Set(
@@ -68,7 +69,7 @@ export async function PUT(req: Request) {
   if (incomingReportIds.length > 0) {
     for (const idChunk of chunkValues(incomingReportIds)) {
       const { data: existingReports, error: existingReportsError } =
-        await supabase
+        await privateDb
           .from('external_user_monthly_reports')
           .select('id')
           .in('id', idChunk);
@@ -125,7 +126,7 @@ export async function PUT(req: Request) {
   const reportIdByCompositeKey = new Map<string, string>();
   for (const userChunk of chunkValues(uniqueUserIds)) {
     for (const groupChunk of chunkValues(uniqueGroupIds)) {
-      const { data: reports, error } = await supabase
+      const { data: reports, error } = await privateDb
         .from('external_user_monthly_reports')
         .select('id,user_id,group_id,title')
         .in('user_id', userChunk)
@@ -189,6 +190,7 @@ export async function PUT(req: Request) {
   const result = await batchUpsert({
     table: 'external_user_monthly_report_logs',
     data: sanitizedPayload,
+    schema: 'private',
     onConflict: 'id',
   });
   return createMigrationResponse(result, 'user monthly report logs');

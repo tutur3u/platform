@@ -89,6 +89,11 @@ const TABLE_COLUMN_PAIRS = [
   { table: 'user_indicators', column: 'creator_id' },
 ] as const;
 
+const PRIVATE_TABLES = new Set([
+  'external_user_monthly_report_logs',
+  'external_user_monthly_reports',
+]);
+
 // Phases 2-5 handle composite PKs, custom fields, and final cleanup
 const FINAL_PHASES = [
   { name: '2', fn: 'merge_workspace_users_phase2' },
@@ -120,8 +125,12 @@ async function migrateTableColumn(
   sourceId: string,
   targetId: string
 ): Promise<MigrateResult> {
+  const tableClient = PRIVATE_TABLES.has(table)
+    ? supabase.schema('private')
+    : supabase;
+
   // Count affected rows first (lightweight HEAD request)
-  const { count, error: countError } = await supabase
+  const { count, error: countError } = await tableClient
     .from(table)
     .select('*', { count: 'exact', head: true })
     .eq(column, sourceId);
@@ -139,7 +148,7 @@ async function migrateTableColumn(
   // Using .eq() keeps the URL small (no .in() with hundreds of UUIDs).
   // The admin client bypasses RLS so there's no per-row policy overhead,
   // making single-query updates fast even for large tables.
-  const { error } = await supabase
+  const { error } = await tableClient
     .from(table)
     .update({ [column]: targetId })
     .eq(column, sourceId);

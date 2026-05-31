@@ -84,13 +84,14 @@ export async function PUT(request: Request, { params }: Params) {
 
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     // Verify report belongs to workspace
-    const { data: report, error: fetchError } = await sbAdmin
-      .from('external_user_monthly_reports')
-      .select('id, user:workspace_users!user_id!inner(ws_id)')
+    const { data: report, error: fetchError } = await privateDb
+      .from('external_user_monthly_reports_workspace_view')
+      .select('id')
       .eq('id', reportId)
-      .eq('user.ws_id', wsId)
+      .eq('user_ws_id', wsId)
       .maybeSingle();
 
     if (fetchError || !report) {
@@ -100,7 +101,10 @@ export async function PUT(request: Request, { params }: Params) {
       );
     }
 
-    const updatePayload: TablesUpdate<'external_user_monthly_reports'> = {
+    const updatePayload: TablesUpdate<
+      { schema: 'private' },
+      'external_user_monthly_reports'
+    > = {
       ...parsed.data,
       updated_at: new Date().toISOString(),
     };
@@ -159,7 +163,7 @@ export async function PUT(request: Request, { params }: Params) {
       }
     }
 
-    const { error } = await sbAdmin
+    const { error } = await privateDb
       .from('external_user_monthly_reports')
       .update(updatePayload)
       .eq('id', reportId);
@@ -192,13 +196,14 @@ export async function DELETE(request: Request, { params }: Params) {
     }
 
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     // Verify report belongs to workspace
-    const { data: report, error: fetchError } = await sbAdmin
-      .from('external_user_monthly_reports')
-      .select('id, user:workspace_users!user_id!inner(ws_id)')
+    const { data: report, error: fetchError } = await privateDb
+      .from('external_user_monthly_reports_workspace_view')
+      .select('id')
       .eq('id', reportId)
-      .eq('user.ws_id', wsId)
+      .eq('user_ws_id', wsId)
       .maybeSingle();
 
     if (fetchError || !report) {
@@ -208,7 +213,7 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-    const { error } = await sbAdmin
+    const { error } = await privateDb
       .from('external_user_monthly_reports')
       .delete()
       .eq('id', reportId);

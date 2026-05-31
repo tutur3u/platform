@@ -61,6 +61,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const workspaceUser = await getWorkspaceUser(wsId, authUser.id);
 
@@ -90,7 +91,7 @@ export async function POST(request: Request, { params }: Params) {
       (reportApprovalConfig?.value ?? 'true') === 'true';
 
     // Check for duplicate report
-    const { data: existing } = await sbAdmin
+    const { data: existing } = await privateDb
       .from('external_user_monthly_reports')
       .select('id')
       .eq('user_id', parsed.data.user_id)
@@ -107,7 +108,7 @@ export async function POST(request: Request, { params }: Params) {
     }
 
     const now = new Date().toISOString();
-    const { data, error } = await sbAdmin
+    const { data, error } = await privateDb
       .from('external_user_monthly_reports')
       .insert({
         user_id: parsed.data.user_id,

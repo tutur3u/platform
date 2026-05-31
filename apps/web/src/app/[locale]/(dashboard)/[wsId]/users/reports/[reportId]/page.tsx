@@ -16,6 +16,15 @@ import {
 } from '../user-archive';
 import EditableReportPreview from './editable-report-preview';
 
+type ReportWorkspaceViewRow = WorkspaceUserReport & {
+  creator_full_name?: string | null;
+  group_name?: string | null;
+  user_archived?: boolean | null;
+  user_archived_until?: string | null;
+  user_full_name?: string | null;
+  user_note?: string | null;
+};
+
 export const metadata: Metadata = {
   title: 'Report Details',
   description:
@@ -219,23 +228,21 @@ export default async function WorkspaceUserDetailsPage({
 
 async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
-  const queryBuilder = sbAdmin
-    .from('external_user_monthly_reports')
-    .select(
-      '*, user:workspace_users!user_id!inner(full_name, ws_id, archived, archived_until, note), creator:workspace_users!creator_id(full_name), ...workspace_user_groups(group_name:name)',
-      {
-        count: 'exact',
-      }
-    )
+  const queryBuilder = privateDb
+    .from('external_user_monthly_reports_workspace_view')
+    .select('*', { count: 'exact' })
     .eq('id', reportId)
-    .eq('user.ws_id', wsId)
+    .eq('user_ws_id', wsId)
     .order('created_at', { ascending: false })
     .maybeSingle();
 
   const { data: rawData, error } = await queryBuilder;
   if (error) throw error;
   if (!rawData) notFound();
+
+  const report = rawData as unknown as ReportWorkspaceViewRow;
 
   const data: WorkspaceUserReport & {
     group_name: string;
@@ -245,23 +252,13 @@ async function getData({ wsId, reportId }: { wsId: string; reportId: string }) {
     user_name?: string;
     creator_name?: string;
   } = {
-    ...rawData,
-    user_name: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.full_name
-      : (rawData.user?.full_name ?? undefined),
-    user_archived: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.archived
-      : (rawData.user?.archived ?? undefined),
-    user_archived_until: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.archived_until
-      : (rawData.user?.archived_until ?? undefined),
-    user_note: Array.isArray(rawData.user)
-      ? rawData.user?.[0]?.note
-      : (rawData.user?.note ?? undefined),
-    creator_name: Array.isArray(rawData.creator)
-      ? rawData.creator?.[0]?.full_name
-      : (rawData.creator?.full_name ?? undefined),
-    group_name: rawData.group_name || 'No group',
+    ...report,
+    user_name: report.user_full_name ?? undefined,
+    user_archived: report.user_archived ?? undefined,
+    user_archived_until: report.user_archived_until ?? undefined,
+    user_note: report.user_note ?? undefined,
+    creator_name: report.creator_full_name ?? undefined,
+    group_name: report.group_name || 'No group',
   };
 
   return data;
@@ -320,30 +317,24 @@ async function getReports(
   forceRedirect = false
 ) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
-  const queryBuilder = sbAdmin
-    .from('external_user_monthly_reports')
-    .select(
-      '*, user:workspace_users!user_id!inner(full_name, ws_id), creator:workspace_users!creator_id(full_name)',
-      {
-        count: 'exact',
-      }
-    )
+  const queryBuilder = privateDb
+    .from('external_user_monthly_reports_workspace_view')
+    .select('*', { count: 'exact' })
     .eq('user_id', userId)
-    .eq('workspace_users.ws_id', wsId)
+    .eq('user_ws_id', wsId)
     .order('created_at', { ascending: false });
 
   const { data: rawData, error, count } = await queryBuilder;
   if (error) throw error;
 
-  const data = (rawData || []).map((row) => ({
+  const rows = (rawData || []) as unknown as ReportWorkspaceViewRow[];
+
+  const data = rows.map((row) => ({
     ...row,
-    user_name: Array.isArray(row.user)
-      ? row.user?.[0]?.full_name
-      : (row.user?.full_name ?? undefined),
-    creator_name: Array.isArray(row.creator)
-      ? row.creator?.[0]?.full_name
-      : (row.creator?.full_name ?? undefined),
+    user_name: row.user_full_name ?? undefined,
+    creator_name: row.creator_full_name ?? undefined,
   }));
 
   if (forceRedirect) {

@@ -21,6 +21,7 @@ export async function GET(request: Request, { params }: Params) {
     const { wsId: rawWsId } = await params;
     const supabase = await createClient(request);
     const sbAdmin = await createAdminClient();
+    const privateDb = sbAdmin.schema('private');
 
     const { user, authError } = await resolveAuthenticatedSessionUser(supabase);
 
@@ -66,13 +67,13 @@ export async function GET(request: Request, { params }: Params) {
       { count: pendingReportsCount, error: reportsCountError },
       { count: pendingPostsCount, error: postsCountError },
     ] = await Promise.all([
-      sbAdmin
-        .from('external_user_monthly_reports')
-        .select('id, user:workspace_users!user_id!inner(ws_id)', {
+      privateDb
+        .from('external_user_monthly_reports_workspace_view')
+        .select('id', {
           count: 'exact',
           head: true,
         })
-        .eq('user.ws_id', wsId)
+        .eq('user_ws_id', wsId)
         .eq('report_approval_status', 'PENDING'),
       sbAdmin
         .from('user_group_post_checks')

@@ -85,6 +85,8 @@ describe('user report detail page permissions', () => {
       containsPermission: mocks.containsPermission,
     });
 
+    const reportQuery = createQueryResult({ count: 0, data: [], error: null });
+
     mocks.createAdminClient.mockResolvedValue({
       from: (table: string) => {
         if (table === 'workspace_user_groups_with_amount') {
@@ -96,9 +98,6 @@ describe('user report detail page permissions', () => {
         }
         if (table === 'workspace_configs') {
           return createQueryResult({ data: [], error: null });
-        }
-        if (table === 'external_user_monthly_reports') {
-          return createQueryResult({ count: 0, data: [], error: null });
         }
         throw new Error(`Unexpected table ${table}`);
       },
@@ -115,6 +114,23 @@ describe('user report detail page permissions', () => {
           ],
           error: null,
         }),
+      schema: (schema: string) => {
+        if (schema !== 'private') {
+          throw new Error(`Unexpected schema ${schema}`);
+        }
+
+        return {
+          from: (table: string) => {
+            if (
+              table === 'external_user_monthly_reports' ||
+              table === 'external_user_monthly_reports_workspace_view'
+            ) {
+              return reportQuery;
+            }
+            throw new Error(`Unexpected private table ${table}`);
+          },
+        };
+      },
     });
 
     const { default: WorkspaceUserDetailsPage } = await import('./page');

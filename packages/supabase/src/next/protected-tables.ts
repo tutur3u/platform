@@ -1,6 +1,4 @@
 export const PROXY_ONLY_PUBLIC_TABLES = [
-  'external_user_monthly_report_logs',
-  'external_user_monthly_reports',
   'form_questions',
   'form_response_answers',
   'form_sections',

@@ -15,6 +15,14 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'external_user_monthly_report_logs',
+    select: 'id',
+  },
+  {
+    name: 'external_user_monthly_reports',
+    select: 'id',
+  },
+  {
     name: 'mira_accessories',
     select: 'id',
   },

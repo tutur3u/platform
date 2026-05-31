@@ -11,18 +11,19 @@ export default async function UserReportsStatistics({
   redirect?: boolean;
 }) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
   const t = await getTranslations();
 
   const enabled = true;
 
   const { count: reports } = enabled
-    ? await sbAdmin
-        .from('external_user_monthly_reports')
-        .select('*, user:workspace_users!user_id!inner(ws_id)', {
+    ? await privateDb
+        .from('external_user_monthly_reports_workspace_view')
+        .select('id', {
           count: 'exact',
           head: true,
         })
-        .eq('user.ws_id', wsId)
+        .eq('user_ws_id', wsId)
     : { count: 0 };
 
   const permissions = await getPermissions({

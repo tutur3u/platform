@@ -41,6 +41,7 @@ export async function PUT(req: Request) {
   const result = await batchUpsert({
     table: 'external_user_monthly_reports',
     data: normalizeMonthlyReportsPayload(json?.data),
+    schema: 'private',
     onConflict: 'user_id,group_id,title',
     ignoreDuplicates: true,
   });

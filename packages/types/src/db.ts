@@ -1279,9 +1279,10 @@ export type MemberWithPermissions = {
   total_permissions: number;
 };
 
-export type WorkspaceUserReport = Tables<'external_user_monthly_reports'> & {
-  href?: string;
-};
+export type WorkspaceUserReport =
+  PrivateTable<'external_user_monthly_reports'> & {
+    href?: string;
+  };
 
 /**
  * Raw report data from Supabase query with joins
@@ -1368,7 +1369,7 @@ export type ReportApprovalItem = Omit<
  * Report log entry for comparison view
  * Represents a snapshot of a report from the logs table
  */
-export type ReportLogEntry = Tables<'external_user_monthly_report_logs'>;
+export type ReportLogEntry = PrivateTable<'external_user_monthly_report_logs'>;
 
 /**
  * Raw post data from Supabase query with joins
