@@ -33,13 +33,15 @@ describe('finance balance trend chart route', () => {
       ],
       error: null,
     });
+    const schemaMock = vi.fn(() => ({ rpc: rpcMock }));
 
     requireFinanceStatsAccessMock.mockResolvedValue({
       context: {
         normalizedWsId: 'ws-1',
-        supabase: {
-          rpc: rpcMock,
+        sbAdmin: {
+          schema: schemaMock,
         },
+        user: { id: 'user-1' },
       },
     });
 
@@ -57,7 +59,9 @@ describe('finance balance trend chart route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(schemaMock).toHaveBeenCalledWith('private');
     expect(rpcMock).toHaveBeenCalledWith('get_balance_trend', {
+      _actor_id: 'user-1',
       _end_date: '2026-05-31',
       _max_points: 60,
       _start_date: '2026-05-01',
@@ -76,5 +80,28 @@ describe('finance balance trend chart route', () => {
         },
       ],
     });
+  });
+
+  it('returns the finance access response before calling the private RPC', async () => {
+    requireFinanceStatsAccessMock.mockResolvedValue({
+      response: new Response(JSON.stringify({ message: 'Forbidden' }), {
+        status: 403,
+      }),
+    });
+
+    const { GET } = await import('./route');
+
+    const response = await GET(
+      new Request(
+        'http://localhost/api/workspaces/ws-1/finance/charts/balance-trend?includeConfidential=true'
+      ),
+      {
+        params: Promise.resolve({
+          wsId: 'ws-1',
+        }),
+      }
+    );
+
+    expect(response.status).toBe(403);
   });
 });

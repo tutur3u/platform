@@ -21,6 +21,30 @@ interface Params {
   }>;
 }
 
+type BalanceTrendPrivateClient = {
+  schema(schema: 'private'): {
+    rpc(
+      fn: 'get_balance_trend',
+      args: {
+        _actor_id: string;
+        _end_date?: string;
+        _max_points: number;
+        _start_date?: string;
+        _ws_id: string;
+        include_confidential: boolean;
+      }
+    ): Promise<{
+      data:
+        | {
+            balance?: number | string | null;
+            date?: string | null;
+          }[]
+        | null;
+      error: { message?: string } | null;
+    }>;
+  };
+};
+
 export async function GET(
   req: Request,
   { params }: Params
@@ -47,15 +71,20 @@ export async function GET(
 
     const access = await requireFinanceStatsAccess(req, wsId);
     if (access.response) return access.response;
-    const { normalizedWsId, supabase } = access.context;
+    const { normalizedWsId, sbAdmin, user } = access.context;
 
-    const { data, error } = await supabase.rpc('get_balance_trend', {
-      _ws_id: normalizedWsId,
-      _start_date: startDate || undefined,
-      _end_date: endDate || undefined,
-      include_confidential: includeConfidential,
-      _max_points: maxPoints,
-    });
+    const { data, error } = await (
+      sbAdmin as unknown as BalanceTrendPrivateClient
+    )
+      .schema('private')
+      .rpc('get_balance_trend', {
+        _actor_id: user.id,
+        _ws_id: normalizedWsId,
+        _start_date: startDate || undefined,
+        _end_date: endDate || undefined,
+        include_confidential: includeConfidential,
+        _max_points: maxPoints,
+      });
 
     if (error) throw error;
 

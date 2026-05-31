@@ -38,6 +38,25 @@ interface Params {
   }>;
 }
 
+type IncomeExpenseSummaryPrivateClient = {
+  schema(schema: 'private'): {
+    rpc(
+      fn: 'get_income_expense_chart_summary',
+      args: {
+        _actor_id: string;
+        _end_date?: string;
+        _interval: 'daily' | 'monthly';
+        _start_date?: string;
+        _ws_id: string;
+        include_confidential: boolean;
+      }
+    ): Promise<{
+      data: unknown;
+      error: { message?: string } | null;
+    }>;
+  };
+};
+
 export async function GET(
   req: Request,
   { params }: Params
@@ -64,18 +83,20 @@ export async function GET(
 
     const access = await requireFinanceStatsAccess(req, wsId);
     if (access.response) return access.response;
-    const { normalizedWsId, supabase } = access.context;
+    const { normalizedWsId, sbAdmin, user } = access.context;
 
-    const { data, error } = await supabase.rpc(
-      'get_income_expense_chart_summary',
-      {
+    const { data, error } = await (
+      sbAdmin as unknown as IncomeExpenseSummaryPrivateClient
+    )
+      .schema('private')
+      .rpc('get_income_expense_chart_summary', {
+        _actor_id: user.id,
         _ws_id: normalizedWsId,
         _start_date: startDate || undefined,
         _end_date: endDate || undefined,
         include_confidential: includeConfidential,
         _interval: interval,
-      }
-    );
+      });
 
     if (error) throw error;
 

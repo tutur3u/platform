@@ -14,29 +14,23 @@ vi.mock('@/lib/infrastructure/log-drain', () => ({
   },
 }));
 
-describe('finance income expense chart summary route', () => {
+describe('finance category breakdown chart route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('returns prepared chart totals and balances from the database RPC', async () => {
+  it('returns category breakdown data from the private database RPC', async () => {
     const rpcMock = vi.fn().mockResolvedValue({
-      data: {
-        average_expense: 25,
-        average_income: 100,
-        closing_balance: 200,
-        data: [
-          {
-            period: '2026-05-24',
-            total_expense: 25,
-            total_income: 100,
-          },
-        ],
-        net_total: 75,
-        opening_balance: 125,
-        total_expense: 25,
-        total_income: 100,
-      },
+      data: [
+        {
+          category_color: '#0f766e',
+          category_icon: 'utensils',
+          category_id: 'category-1',
+          category_name: 'Food',
+          period: '2026-05-01',
+          total: 125,
+        },
+      ],
       error: null,
     });
     const schemaMock = vi.fn(() => ({ rpc: rpcMock }));
@@ -55,7 +49,7 @@ describe('finance income expense chart summary route', () => {
 
     const response = await GET(
       new Request(
-        'http://localhost/api/workspaces/ws-1/finance/charts/income-expense-summary?interval=daily&startDate=2026-05-01&endDate=2026-05-31&includeConfidential=false'
+        'http://localhost/api/workspaces/ws-1/finance/charts/categories?interval=weekly&transactionType=income&anchorToLatest=true&timezone=Asia%2FHo_Chi_Minh&startDate=2026-05-01&endDate=2026-05-31&includeConfidential=false'
       ),
       {
         params: Promise.resolve({
@@ -66,29 +60,28 @@ describe('finance income expense chart summary route', () => {
 
     expect(response.status).toBe(200);
     expect(schemaMock).toHaveBeenCalledWith('private');
-    expect(rpcMock).toHaveBeenCalledWith('get_income_expense_chart_summary', {
+    expect(rpcMock).toHaveBeenCalledWith('get_category_breakdown', {
       _actor_id: 'user-1',
+      _anchor_to_latest: true,
       _end_date: '2026-05-31',
-      _interval: 'daily',
+      _interval: 'weekly',
       _start_date: '2026-05-01',
+      _timezone: 'Asia/Ho_Chi_Minh',
+      _transaction_type: 'income',
       _ws_id: 'ws-1',
       include_confidential: false,
     });
     await expect(response.json()).resolves.toEqual({
-      average_expense: 25,
-      average_income: 100,
-      closing_balance: 200,
       data: [
         {
-          period: '2026-05-24',
-          total_expense: 25,
-          total_income: 100,
+          category_color: '#0f766e',
+          category_icon: 'utensils',
+          category_id: 'category-1',
+          category_name: 'Food',
+          period: '2026-05-01',
+          total: 125,
         },
       ],
-      net_total: 75,
-      opening_balance: 125,
-      total_expense: 25,
-      total_income: 100,
     });
   });
 
@@ -103,7 +96,7 @@ describe('finance income expense chart summary route', () => {
 
     const response = await GET(
       new Request(
-        'http://localhost/api/workspaces/ws-1/finance/charts/income-expense-summary?includeConfidential=true'
+        'http://localhost/api/workspaces/ws-1/finance/charts/categories'
       ),
       {
         params: Promise.resolve({

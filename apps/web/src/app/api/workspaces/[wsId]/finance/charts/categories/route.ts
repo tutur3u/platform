@@ -37,6 +37,37 @@ interface Params {
   }>;
 }
 
+type CategoryBreakdownPrivateClient = {
+  schema(schema: 'private'): {
+    rpc(
+      fn: 'get_category_breakdown',
+      args: {
+        _actor_id: string;
+        _anchor_to_latest: boolean;
+        _end_date?: string;
+        _interval: 'daily' | 'weekly' | 'monthly' | 'yearly';
+        _start_date?: string;
+        _timezone: string;
+        _transaction_type: 'expense' | 'income' | 'all';
+        _ws_id: string;
+        include_confidential: boolean;
+      }
+    ): Promise<{
+      data:
+        | {
+            category_color?: string | null;
+            category_icon?: string | null;
+            category_id?: string | null;
+            category_name?: string | null;
+            period?: string | null;
+            total?: number | string | null;
+          }[]
+        | null;
+      error: { message?: string } | null;
+    }>;
+  };
+};
+
 export async function GET(
   req: Request,
   { params }: Params
@@ -75,19 +106,23 @@ export async function GET(
 
     const access = await requireFinanceStatsAccess(req, wsId);
     if (access.response) return access.response;
-    const { normalizedWsId, supabase } = access.context;
+    const { normalizedWsId, sbAdmin, user } = access.context;
 
-    // Use the category breakdown RPC with interval support
-    const { data, error } = await supabase.rpc('get_category_breakdown', {
-      _ws_id: normalizedWsId,
-      _start_date: startDate || undefined,
-      _end_date: endDate || undefined,
-      include_confidential: includeConfidential,
-      _transaction_type: transactionType,
-      _interval: interval,
-      _anchor_to_latest: anchorToLatest,
-      _timezone: timezone,
-    });
+    const { data, error } = await (
+      sbAdmin as unknown as CategoryBreakdownPrivateClient
+    )
+      .schema('private')
+      .rpc('get_category_breakdown', {
+        _actor_id: user.id,
+        _ws_id: normalizedWsId,
+        _start_date: startDate || undefined,
+        _end_date: endDate || undefined,
+        include_confidential: includeConfidential,
+        _transaction_type: transactionType,
+        _interval: interval,
+        _anchor_to_latest: anchorToLatest,
+        _timezone: timezone,
+      });
 
     if (error) throw error;
 
