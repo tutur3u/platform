@@ -17,10 +17,37 @@ export async function GET(req: Request) {
     );
   }
 
+  const { data: promotions, error: promotionsError } = await supabase
+    .from('workspace_promotions')
+    .select('id, ws_id')
+    .eq('ws_id', wsId);
+
+  if (promotionsError) {
+    serverLogger.error('Error fetching workspace_promotions:', promotionsError);
+    return NextResponse.json(
+      { message: 'Error fetching workspace_promotions' },
+      { status: 500 }
+    );
+  }
+
+  const promotionIds = (promotions ?? []).map((promotion) => promotion.id);
+
+  if (promotionIds.length === 0) {
+    return NextResponse.json({ data: [], count: 0 });
+  }
+
+  const promotionWorkspaceById = new Map(
+    (promotions ?? []).map((promotion) => [
+      promotion.id,
+      { ws_id: promotion.ws_id },
+    ])
+  );
+
   const { data, error, count } = await supabase
+    .schema('private')
     .from('user_linked_promotions')
-    .select('*, workspace_promotions!inner(ws_id)', { count: 'exact' })
-    .eq('workspace_promotions.ws_id', wsId)
+    .select('*', { count: 'exact' })
+    .in('promo_id', promotionIds)
     .range(
       Number.parseInt(offset, 10),
       Number.parseInt(offset, 10) + Number.parseInt(limit, 10) - 1
@@ -35,7 +62,10 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({
-    data: data || [],
+    data: (data || []).map((link) => ({
+      ...link,
+      workspace_promotions: promotionWorkspaceById.get(link.promo_id) ?? null,
+    })),
     count: count || 0,
   });
 }

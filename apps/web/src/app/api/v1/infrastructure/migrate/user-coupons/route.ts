@@ -42,6 +42,7 @@ export async function GET(req: Request) {
 
   // Get promotions for those users
   const { data, error, count } = await supabase
+    .schema('private')
     .from('user_linked_promotions')
     .select('*', { count: 'exact' })
     .in('user_id', userIds)
@@ -66,6 +67,7 @@ export async function PUT(req: Request) {
     table: 'user_linked_promotions',
     data: json?.data || [],
     onConflict: 'user_id,promo_id',
+    schema: 'private',
   });
   return createMigrationResponse(result, 'user coupons');
 }

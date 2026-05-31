@@ -134,6 +134,7 @@ export async function POST(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -249,7 +250,7 @@ export async function POST(req: Request, { params }: Params) {
   const promoIdToLink = workspaceSettings?.referral_promotion_id;
 
   if (shouldLink && promoIdToLink) {
-    const { error: linkErr } = await sbAdmin
+    const { error: linkErr } = await privateDb
       .from('user_linked_promotions')
       .upsert(
         { user_id: referredUserId, promo_id: promoIdToLink },
@@ -269,6 +270,7 @@ export async function DELETE(req: Request, { params }: Params) {
   const { wsId, userId } = await params;
   const supabase = await createClient(req);
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -336,7 +338,7 @@ export async function DELETE(req: Request, { params }: Params) {
 
   const promoIdToRemove = workspaceSettings?.referral_promotion_id;
   if (promoIdToRemove) {
-    await sbAdmin
+    await privateDb
       .from('user_linked_promotions')
       .delete()
       .eq('user_id', referredUserId)

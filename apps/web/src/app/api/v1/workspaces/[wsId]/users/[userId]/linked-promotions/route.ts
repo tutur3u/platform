@@ -24,14 +24,12 @@ export async function GET(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, sbAdmin } = access.context;
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, error } = await sbAdmin
+  const { data: links, error } = await privateDb
     .from('user_linked_promotions')
-    .select(
-      'promo_id, workspace_promotions!inner(id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id)'
-    )
-    .eq('user_id', userId)
-    .eq('workspace_promotions.ws_id', wsId);
+    .select('promo_id')
+    .eq('user_id', userId);
 
   if (error) {
     serverLogger.error('Error fetching linked promotions:', error);
@@ -41,7 +39,40 @@ export async function GET(req: Request, { params }: Params) {
     );
   }
 
-  return NextResponse.json(data ?? []);
+  const promoIds = [...new Set((links ?? []).map((link) => link.promo_id))];
+
+  if (promoIds.length === 0) {
+    return NextResponse.json([]);
+  }
+
+  const { data: promotions, error: promotionsError } = await sbAdmin
+    .from('workspace_promotions')
+    .select(
+      'id, name, description, code, value, use_ratio, promo_type, max_uses, current_uses, ws_id'
+    )
+    .eq('ws_id', wsId)
+    .in('id', promoIds);
+
+  if (promotionsError) {
+    serverLogger.error('Error fetching linked promotions:', promotionsError);
+    return NextResponse.json(
+      { message: 'Error fetching linked promotions' },
+      { status: 500 }
+    );
+  }
+
+  const promotionsById = new Map(
+    (promotions ?? []).map((promotion) => [promotion.id, promotion])
+  );
+
+  return NextResponse.json(
+    (links ?? [])
+      .map((link) => ({
+        promo_id: link.promo_id,
+        workspace_promotions: promotionsById.get(link.promo_id) ?? null,
+      }))
+      .filter((link) => link.workspace_promotions)
+  );
 }
 
 export async function POST(req: Request, { params }: Params) {
@@ -57,6 +88,7 @@ export async function POST(req: Request, { params }: Params) {
   }
 
   const { normalizedWsId: wsId, permissions, sbAdmin } = access.context;
+  const privateDb = sbAdmin.schema('private');
 
   if (!permissions.containsPermission('update_users')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -92,7 +124,7 @@ export async function POST(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await sbAdmin.from('user_linked_promotions').insert({
+  const { error } = await privateDb.from('user_linked_promotions').insert({
     user_id: userId,
     promo_id: promoId,
   });
@@ -121,6 +153,7 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const { permissions, sbAdmin } = access.context;
+  const privateDb = sbAdmin.schema('private');
 
   if (!permissions.containsPermission('update_users')) {
     return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
@@ -136,7 +169,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error } = await sbAdmin
+  const { error } = await privateDb
     .from('user_linked_promotions')
     .delete()
     .eq('user_id', userId)

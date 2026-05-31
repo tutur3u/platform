@@ -603,28 +603,36 @@ async function getCouponData({
   userId: string;
 }) {
   const sbAdmin = await createAdminClient();
+  const privateDb = sbAdmin.schema('private');
 
-  const { data, count, error } = await sbAdmin
+  const { data: links, error: linksError } = await privateDb
     .from('user_linked_promotions')
-    .select(
-      'workspace_promotions!inner(id, name, description, code, value, use_ratio)',
-      {
-        count: 'exact',
-      }
-    )
-    .eq('user_id', userId)
-    .eq('workspace_promotions.ws_id', wsId);
+    .select('promo_id')
+    .eq('user_id', userId);
+
+  if (linksError) {
+    console.error('Error fetching coupon data:', linksError);
+    return { data: [], count: 0 };
+  }
+
+  const promoIds = [...new Set((links ?? []).map((link) => link.promo_id))];
+
+  if (promoIds.length === 0) {
+    return { data: [], count: 0 };
+  }
+
+  const { data, error } = await sbAdmin
+    .from('workspace_promotions')
+    .select('id, name, description, code, value, use_ratio')
+    .eq('ws_id', wsId)
+    .in('id', promoIds);
 
   if (error) {
     console.error('Error fetching coupon data:', error);
     return { data: [], count: 0 };
   }
 
-  const mappedData = (data || [])
-    .map((row) => row.workspace_promotions)
-    .filter((promo): promo is NonNullable<typeof promo> => !!promo);
-
-  return { data: mappedData, count: count || 0 };
+  return { data: data ?? [], count: data?.length ?? 0 };
 }
 
 async function getWorkspaceSettings(wsId: string) {

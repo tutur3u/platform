@@ -5155,6 +5155,24 @@ export type Database = {
           },
         ];
       };
+      user_linked_promotions: {
+        Row: {
+          created_at: string;
+          promo_id: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          promo_id: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          promo_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_calendar_sync_log: {
         Row: {
           created_at: string;
@@ -20538,74 +20556,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'user_indicators_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_linked_promotions: {
-        Row: {
-          created_at: string;
-          promo_id: string;
-          user_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          promo_id: string;
-          user_id: string;
-        };
-        Update: {
-          created_at?: string;
-          promo_id?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_linked_promotions_promo_id_fkey';
-            columns: ['promo_id'];
-            isOneToOne: false;
-            referencedRelation: 'v_user_referral_discounts';
-            referencedColumns: ['promo_id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_promo_id_fkey';
-            columns: ['promo_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_promotions';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_linked_promotions_user_id_fkey';
             columns: ['user_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_users_with_groups';

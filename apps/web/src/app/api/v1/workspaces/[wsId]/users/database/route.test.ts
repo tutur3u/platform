@@ -79,6 +79,11 @@ describe('workspace users database route query parsing', () => {
       from: vi.fn(() => {
         throw new Error('Unexpected table lookup');
       }),
+      schema: vi.fn(() => ({
+        from: vi.fn(() => {
+          throw new Error('Unexpected private table lookup');
+        }),
+      })),
     });
   });
 
@@ -131,6 +136,11 @@ describe('workspace users database route query parsing', () => {
     createAdminClientMock.mockResolvedValue({
       rpc: adminRpcMock,
       from: createUsersDatabaseTableLookup(),
+      schema: vi.fn(() => ({
+        from: vi.fn(() => {
+          throw new Error('Unexpected private table lookup');
+        }),
+      })),
     });
 
     const response = await GET(
@@ -176,6 +186,11 @@ describe('workspace users database route query parsing', () => {
     createAdminClientMock.mockResolvedValue({
       rpc: adminRpcMock,
       from: createUsersDatabaseTableLookup(),
+      schema: vi.fn(() => ({
+        from: vi.fn(() => {
+          throw new Error('Unexpected private table lookup');
+        }),
+      })),
     });
 
     const response = await GET(

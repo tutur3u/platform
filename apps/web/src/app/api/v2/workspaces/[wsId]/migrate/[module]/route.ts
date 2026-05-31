@@ -128,11 +128,16 @@ const PRIVATE_USER_GROUP_POST_TABLES: Set<string> = new Set([
   'user_group_posts',
 ]);
 
+const PRIVATE_PROMOTION_TABLES: Set<string> = new Set([
+  'user_linked_promotions',
+]);
+
 function isPrivateMigrationTable(tableName: string) {
   return (
     PRIVATE_INVENTORY_TABLES.has(tableName) ||
     PRIVATE_REPORT_TABLES.has(tableName) ||
-    PRIVATE_USER_GROUP_POST_TABLES.has(tableName)
+    PRIVATE_USER_GROUP_POST_TABLES.has(tableName) ||
+    PRIVATE_PROMOTION_TABLES.has(tableName)
   );
 }
 

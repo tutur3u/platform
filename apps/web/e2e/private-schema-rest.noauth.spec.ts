@@ -131,6 +131,10 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'user_linked_promotions',
+    select: 'user_id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },

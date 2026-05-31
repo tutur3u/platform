@@ -83,6 +83,7 @@ export async function PUT(request: Request, { params }: Params) {
 
   const previousPromoId = existingSettings?.referral_promotion_id ?? null;
   const nextPromoId = nextValues.referral_promotion_id ?? null;
+  const privateDb = supabase.schema('private');
 
   if (previousPromoId && nextPromoId && previousPromoId !== nextPromoId) {
     try {
@@ -96,7 +97,7 @@ export async function PUT(request: Request, { params }: Params) {
 
       const userIds = (referredUsers ?? []).map((user) => user.id);
       if (userIds.length > 0) {
-        const { data: oldLinks, error: oldLinksError } = await supabase
+        const { data: oldLinks, error: oldLinksError } = await privateDb
           .from('user_linked_promotions')
           .select('user_id')
           .eq('promo_id', previousPromoId)
@@ -108,7 +109,7 @@ export async function PUT(request: Request, { params }: Params) {
         const targetUserIds =
           affectedUserIds.length > 0 ? affectedUserIds : userIds;
 
-        const { error: upsertError } = await supabase
+        const { error: upsertError } = await privateDb
           .from('user_linked_promotions')
           .upsert(
             targetUserIds.map((userId) => ({
@@ -121,7 +122,7 @@ export async function PUT(request: Request, { params }: Params) {
         if (upsertError) throw upsertError;
 
         if (affectedUserIds.length > 0) {
-          const { error: deleteError } = await supabase
+          const { error: deleteError } = await privateDb
             .from('user_linked_promotions')
             .delete()
             .eq('promo_id', previousPromoId)

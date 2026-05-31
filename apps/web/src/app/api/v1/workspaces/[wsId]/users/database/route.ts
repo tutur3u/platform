@@ -253,7 +253,8 @@ export async function GET(request: Request, { params }: Params) {
     >();
 
     if (workspaceUserIds.length > 0) {
-      const [guestResult, promotionsResult, requireAttentionUserIds] =
+      const privateDb = sbAdmin.schema('private');
+      const [guestResult, promotionLinksResult, requireAttentionUserIds] =
         await Promise.all([
           sbAdmin
             .from('workspace_user_groups_users')
@@ -262,12 +263,9 @@ export async function GET(request: Request, { params }: Params) {
             .eq('workspace_user_groups.is_guest', true)
             .in('user_id', workspaceUserIds),
           sp.withPromotions
-            ? sbAdmin
+            ? privateDb
                 .from('user_linked_promotions')
-                .select(
-                  'user_id, workspace_promotions!inner(id, name, code, value, use_ratio, ws_id)'
-                )
-                .eq('workspace_promotions.ws_id', wsId)
+                .select('user_id, promo_id')
                 .in('user_id', workspaceUserIds)
             : Promise.resolve({ data: [], error: null }),
           fetchRequireAttentionUserIds(sbAdmin, {
@@ -298,10 +296,52 @@ export async function GET(request: Request, { params }: Params) {
           .filter((userId): userId is string => Boolean(userId))
       );
 
-      if (sp.withPromotions && promotionsResult.data) {
-        for (const item of promotionsResult.data) {
+      if (sp.withPromotions && promotionLinksResult.error) {
+        console.error(
+          'Error fetching workspace user linked promotions:',
+          promotionLinksResult.error
+        );
+        return NextResponse.json(
+          { message: 'Error fetching workspace users' },
+          { status: 500 }
+        );
+      }
+
+      if (sp.withPromotions && promotionLinksResult.data) {
+        const promoIds = [
+          ...new Set(promotionLinksResult.data.map((link) => link.promo_id)),
+        ];
+
+        const { data: promotions, error: promotionsError } =
+          promoIds.length > 0
+            ? await sbAdmin
+                .from('workspace_promotions')
+                .select('id, name, code, value, use_ratio, ws_id')
+                .eq('ws_id', wsId)
+                .in('id', promoIds)
+            : { data: [], error: null };
+
+        if (promotionsError) {
+          console.error(
+            'Error fetching workspace user linked promotions:',
+            promotionsError
+          );
+          return NextResponse.json(
+            { message: 'Error fetching workspace users' },
+            { status: 500 }
+          );
+        }
+
+        const promotionsById = new Map(
+          (promotions ?? []).map((promotion) => [promotion.id, promotion])
+        );
+
+        for (const item of promotionLinksResult.data) {
+          const promotion = promotionsById.get(item.promo_id);
+          if (!promotion) continue;
+
           const promotions = promotionsMap.get(item.user_id) || [];
-          promotions.push(item.workspace_promotions);
+          promotions.push(promotion);
           promotionsMap.set(item.user_id, promotions);
         }
       }
