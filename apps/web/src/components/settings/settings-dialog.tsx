@@ -776,7 +776,7 @@ export function SettingsDialog({
 
         {activeTab === 'mira_memories' && (
           <div className="h-full">
-            <MiraMemorySettings />
+            <MiraMemorySettings wsId={wsId} />
           </div>
         )}
 

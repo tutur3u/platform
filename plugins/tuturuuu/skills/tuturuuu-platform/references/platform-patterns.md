@@ -28,6 +28,9 @@ shared-package changes.
   sorting, pagination, explorer state, or frequent mutation.
 - Protected workspace/user CRUD belongs behind `apps/web` API routes and
   `@tuturuuu/internal-api` helpers.
+- AI memory access belongs behind `@tuturuuu/ai/memory`, workspace API routes,
+  and internal API helpers. Browser code must not call Supermemory directly or
+  receive server-only Supermemory credentials.
 - API routes should parse JSON inside a `try/catch` before Zod validation and
   return explicit `400` for malformed JSON.
 - Validate UUID path params with shared Zod GUID schemas instead of ad-hoc

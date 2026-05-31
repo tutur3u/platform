@@ -65,6 +65,7 @@
     "@streamdown/code": "^1.1.1",
     "@streamdown/math": "^1.0.2",
     "@streamdown/mermaid": "^1.0.2",
+    "@supermemory/tools": "^2.0.0",
     "@tuturuuu/google": "workspace:*",
     "@tuturuuu/internal-api": "workspace:*",
     "@tuturuuu/supabase": "workspace:*",
@@ -88,6 +89,7 @@
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
     "streamdown": "^2.5.0",
+    "supermemory": "^4.21.1",
     "uuid": "^14.0.0",
     "zod": "^4.4.3"
   },

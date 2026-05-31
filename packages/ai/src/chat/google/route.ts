@@ -17,6 +17,7 @@ import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '../../credits/resolve-plan-model';
+import { withAiMemory } from '../../memory';
 import type { CreditSource as SharedCreditSource } from '../credit-source';
 import {
   shouldForceGoogleSearchForLatestUserMessage,
@@ -440,9 +441,15 @@ export function createPOST(
 
       const effectiveSource = isMiraMode ? 'Mira' : 'Rewise';
 
-      const resolvedGatewayModel = google(
-        resolvedModelId.split('/').slice(-1)[0]!
-      );
+      const resolvedGatewayModel = await withAiMemory({
+        customId: chatId,
+        model: google(resolvedModelId.split('/').slice(-1)[0]!),
+        product: isMiraMode ? 'mira' : 'rewise',
+        source: effectiveSource,
+        surface: 'shared_chat',
+        userId: user.id,
+        wsId: billingWsId ?? normalizedWsId,
+      });
 
       // Reasoning mode: default to fast unless the client explicitly requests thinking.
       const modelLower = resolvedModelId.toLowerCase();

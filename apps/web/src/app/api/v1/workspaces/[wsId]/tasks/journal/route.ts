@@ -9,6 +9,7 @@ import {
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
 import type { CreditCheckResult } from '@tuturuuu/ai/credits/types';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { quickJournalTaskSchema } from '@tuturuuu/ai/object/types';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import type { TypedSupabaseClient } from '@tuturuuu/supabase/next/client';
@@ -378,11 +379,23 @@ async function generateAiTasks(
   modelId: string,
   systemPrompt: string,
   trimmedEntry: string,
-  maxOutputTokens?: number | null
+  maxOutputTokens: number | null | undefined,
+  options: {
+    userId: string;
+    wsId: string;
+  }
 ) {
   const prompt = `${systemPrompt}\n\nJournal note:\n"""\n${trimmedEntry}\n"""`;
   const { object, usage } = await generateObject({
-    model: google(modelId.split('/').slice(-1)[0]!),
+    model: await withAiMemory({
+      customId: `tasks-journal-${Date.now()}`,
+      model: google(modelId.split('/').slice(-1)[0]!),
+      product: 'tasks',
+      source: 'tasks_journal',
+      surface: 'tasks_journal',
+      userId: options.userId,
+      wsId: options.wsId,
+    }),
     schema: quickJournalTaskSchema,
     prompt,
     ...(maxOutputTokens ? { maxOutputTokens } : {}),
@@ -694,7 +707,11 @@ export async function POST(
           resolvedModelId!,
           systemPrompt!,
           trimmedEntry,
-          cappedMaxOutput
+          cappedMaxOutput,
+          {
+            userId: user.id,
+            wsId,
+          }
         );
         aiTasks = result.tasks;
 

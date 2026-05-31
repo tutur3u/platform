@@ -27,6 +27,11 @@
       "import": "./dist/ai.js",
       "require": "./dist/ai.js"
     },
+    "./ai-memory": {
+      "types": "./dist/ai-memory.d.ts",
+      "import": "./dist/ai-memory.js",
+      "require": "./dist/ai-memory.js"
+    },
     "./auth": {
       "types": "./dist/auth.d.ts",
       "import": "./dist/auth.js",

@@ -34,6 +34,7 @@ async function draftResponse(request: NextRequest, params: RouteParams) {
 
   try {
     const result = await draftAiAgentExternalResponse({
+      actorUserId: access.user.id,
       customPrompt: parsed.data.prompt,
       origin: request.nextUrl.origin,
       threadId: params.threadId,

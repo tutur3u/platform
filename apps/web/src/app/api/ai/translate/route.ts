@@ -1,4 +1,5 @@
 import { google } from '@ai-sdk/google';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { resolveAuthenticatedSessionUser } from '@tuturuuu/supabase/next/auth-session-user';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import type { SupabaseUser } from '@tuturuuu/supabase/next/user';
@@ -105,7 +106,16 @@ ${JSON.stringify(viMessages || {}, null, 2)}
 Return ONLY a valid JSON object (not wrapped in any markdown or code blocks) with the complete Vietnamese translations, maintaining the exact same structure as the English JSON.`;
 
     const result = streamText({
-      model: google('gemini-3.1-flash-lite'),
+      model: await withAiMemory({
+        addMemory: 'never',
+        customId: `translation-${Date.now()}`,
+        model: google('gemini-3.1-flash-lite'),
+        product: 'ai_chat',
+        source: 'translation_admin_api',
+        surface: 'translation_admin_api',
+        userId: user.id,
+        wsId: ROOT_WORKSPACE_ID,
+      }),
       prompt,
       temperature: 0.3, // Lower temperature for more consistent translations
     });

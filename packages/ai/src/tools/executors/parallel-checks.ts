@@ -1,6 +1,8 @@
 import { google } from '@ai-sdk/google';
 import { stepCountIs, ToolLoopAgent } from 'ai';
 import { z } from 'zod';
+import { withAiMemory } from '../../memory';
+import type { MiraToolContext } from '../mira-tools';
 
 const PARALLEL_CHECKS_MODEL = 'gemini-3.1-flash-lite';
 
@@ -72,14 +74,27 @@ async function runCheck({
   check,
   context,
   question,
+  toolContext,
 }: {
   abortSignal?: AbortSignal;
   check: CheckKind;
   context?: string;
   question: string;
+  toolContext: MiraToolContext;
 }): Promise<ParallelCheckResult> {
   const agent = new ToolLoopAgent({
-    model: google(PARALLEL_CHECKS_MODEL),
+    model: await withAiMemory({
+      addMemory: 'never',
+      customId: toolContext.chatId
+        ? `${toolContext.chatId}-parallel-checks-${check}`
+        : `parallel-checks-${check}`,
+      model: google(PARALLEL_CHECKS_MODEL),
+      product: 'mira',
+      source: 'mira_parallel_checks_tool',
+      surface: 'mira_parallel_checks_tool',
+      userId: toolContext.userId,
+      wsId: toolContext.workspaceContext?.wsId ?? toolContext.wsId,
+    }),
     instructions: CHECK_INSTRUCTIONS[check],
     stopWhen: stepCountIs(2),
     providerOptions: {
@@ -105,6 +120,7 @@ async function runCheck({
 
 export async function executeParallelChecks(
   args: Record<string, unknown>,
+  ctx: MiraToolContext,
   options?: { abortSignal?: AbortSignal }
 ) {
   const parsed = ParallelChecksArgsSchema.safeParse(args);
@@ -126,6 +142,7 @@ export async function executeParallelChecks(
           check,
           context,
           question,
+          toolContext: ctx,
         })
       )
     );

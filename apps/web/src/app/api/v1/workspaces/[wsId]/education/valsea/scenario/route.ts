@@ -8,6 +8,7 @@ import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { verifyWorkspaceMembershipType } from '@tuturuuu/utils/workspace-helper';
@@ -320,7 +321,15 @@ export const POST = withSessionAuth<Params>(
       }
 
       const { object, usage } = await generateObject({
-        model: google(bareModelId),
+        model: await withAiMemory({
+          customId: `valsea-scenario-${Date.now()}`,
+          model: google(bareModelId),
+          product: 'education',
+          source: 'valsea_scenario',
+          surface: 'valsea_scenario',
+          userId: context.user.id,
+          wsId: resolvedWsId,
+        }),
         schema: ScenarioSchema,
         system:
           'You are Mira, Tuturuuu’s internal education assistant. Create realistic, demo-ready classroom voice lab scenarios for a Valsea edtech hackathon. Keep them useful for teachers and rich enough for sentiment, pronunciation, and provider-observability research.',

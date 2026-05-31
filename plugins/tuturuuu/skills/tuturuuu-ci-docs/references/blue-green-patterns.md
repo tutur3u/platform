@@ -42,6 +42,11 @@ infrastructure dashboard changes.
   builds are capped.
 - Containerized watcher handoffs must run from the mirrored host checkout path
   via `PLATFORM_HOST_WORKSPACE_DIR`, not from a container-only path.
+- Internal support services that power AI capabilities, such as Supermemory,
+  should be wired as health-gated blue/green support services. If the upstream
+  vendor ships an enterprise image or deployment package, wrap/tag that artifact
+  for the local bake flow instead of vendoring the public repository as the
+  production source of truth.
 
 ## Observability
 

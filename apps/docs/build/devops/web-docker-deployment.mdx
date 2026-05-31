@@ -14,6 +14,7 @@ This is the operational guide for the Docker-based `apps/web` runtime.
 - `apps/web/cron.config.json`
 - `apps/backend/Dockerfile`
 - `apps/meet-realtime/Dockerfile`
+- `apps/supermemory/Dockerfile`
 - `docker-compose.web.yml`
 - `docker-compose.web.prod.yml` (Compose `include` entry that merges `docker-compose/compose.web.prod.*.yml` fragments plus shared `secrets` / `volumes`)
 - `scripts/sync-web-crons.js`
@@ -99,6 +100,19 @@ This is the operational guide for the Docker-based `apps/web` runtime.
   not provided and inject `BACKEND_INTERNAL_URL=http://backend:7820` for the
   Go backend service. Dev Compose uses the same internal URL with a local
   fallback token.
+- The production stack runs Supermemory as an internal support service at
+  `http://supermemory:8787`. Set `SUPERMEMORY_IMAGE` to the official enterprise
+  self-host image or an internal image built from the enterprise deployment
+  package. The wrapper Dockerfile only retags that image for the local
+  blue/green bake flow; it does not vendor the public Supermemory repository.
+- Supermemory needs `SUPERMEMORY_API_KEY`, `SUPERMEMORY_DATABASE_URL` or the
+  bundled `supermemory-postgres` pgvector database, `SUPERMEMORY_ENABLED=true`,
+  and provider keys such as `OPENAI_API_KEY` or `GEMINI_API_KEY` depending on
+  the deployment package configuration. Keep `SUPERMEMORY_BASE_URL` internal
+  unless you intentionally operate a separate managed endpoint.
+- Blue/green promotion health-gates `supermemory` with the rest of the support
+  services. Changing `apps/supermemory/Dockerfile`, the production Compose
+  fragments, or the Docker bake file refreshes the support service set.
 
 ## Dockerized E2E
 

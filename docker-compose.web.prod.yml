@@ -19,6 +19,7 @@ volumes:
   platform-log-drain-postgres:
   platform-hive-ollama:
   platform-hive-postgres:
+  platform-supermemory-postgres:
   platform-bun-install:
   platform-blue-green-watcher-node_modules:
   platform-pronunciation-assessor-cache:

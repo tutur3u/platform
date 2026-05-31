@@ -8,6 +8,7 @@ import {
   PlanModelResolutionError,
   resolvePlanModel,
 } from '@tuturuuu/ai/credits/resolve-plan-model';
+import { withAiMemory } from '@tuturuuu/ai/memory';
 import { resolveWorkspaceId } from '@tuturuuu/utils/constants';
 import { isExactTuturuuuDotComEmail } from '@tuturuuu/utils/email/client';
 import { sanitizePath } from '@tuturuuu/utils/storage-path';
@@ -490,7 +491,15 @@ async function generateMiraSentimentLayer({
     }
 
     const { object, usage } = await generateObject({
-      model: google(toBareModelName(modelId)),
+      model: await withAiMemory({
+        customId: `valsea-sentiment-${Date.now()}`,
+        model: google(toBareModelName(modelId)),
+        product: 'education',
+        source: 'valsea_sentiment',
+        surface: 'valsea_sentiment',
+        userId: context.user.id,
+        wsId: resolvedWsId,
+      }),
       schema: MiraSentimentSchema,
       prompt: `Analyze this classroom speech transcript for a teacher and a researcher.
 

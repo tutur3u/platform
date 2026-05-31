@@ -56,18 +56,21 @@ export function applyMindPatchToSnapshot(
   snapshot: MindBoardSnapshot,
   patch: MindAiPatch
 ): MindBoardSnapshot {
-  let nodes = snapshot.nodes.map((node) => ({ ...node }));
-  let edges = snapshot.edges.map((edge) => ({ ...edge }));
+  let nodes: MindNode[] = snapshot.nodes.map((node: MindNode) => ({ ...node }));
+  let edges: MindEdge[] = snapshot.edges.map((edge: MindEdge) => ({ ...edge }));
 
   for (const operation of patch.operations) {
     if (operation.kind === 'create_node') {
       const nextNode = createNode(operation.node);
-      nodes = [...nodes.filter((node) => node.id !== nextNode.id), nextNode];
+      nodes = [
+        ...nodes.filter((node: MindNode) => node.id !== nextNode.id),
+        nextNode,
+      ];
       continue;
     }
 
     if (operation.kind === 'update_node') {
-      nodes = nodes.map((node) =>
+      nodes = nodes.map((node: MindNode) =>
         node.id === operation.nodeId
           ? {
               ...node,
@@ -87,9 +90,9 @@ export function applyMindPatchToSnapshot(
     }
 
     if (operation.kind === 'delete_node') {
-      nodes = nodes.filter((node) => node.id !== operation.nodeId);
+      nodes = nodes.filter((node: MindNode) => node.id !== operation.nodeId);
       edges = edges.filter(
-        (edge) =>
+        (edge: MindEdge) =>
           edge.sourceNodeId !== operation.nodeId &&
           edge.targetNodeId !== operation.nodeId
       );
@@ -98,12 +101,15 @@ export function applyMindPatchToSnapshot(
 
     if (operation.kind === 'create_edge') {
       const nextEdge = normalizeEdge(operation.edge);
-      edges = [...edges.filter((edge) => edge.id !== nextEdge.id), nextEdge];
+      edges = [
+        ...edges.filter((edge: MindEdge) => edge.id !== nextEdge.id),
+        nextEdge,
+      ];
       continue;
     }
 
     if (operation.kind === 'update_edge') {
-      edges = edges.map((edge) =>
+      edges = edges.map((edge: MindEdge) =>
         edge.id === operation.edgeId
           ? {
               ...edge,
@@ -123,16 +129,17 @@ export function applyMindPatchToSnapshot(
     }
 
     if (operation.kind === 'delete_edge') {
-      edges = edges.filter((edge) => edge.id !== operation.edgeId);
+      edges = edges.filter((edge: MindEdge) => edge.id !== operation.edgeId);
     }
   }
 
-  const nodeIds = new Set(nodes.map((node) => node.id));
+  const nodeIds = new Set(nodes.map((node: MindNode) => node.id));
 
   return {
     ...snapshot,
     edges: edges.filter(
-      (edge) => nodeIds.has(edge.sourceNodeId) && nodeIds.has(edge.targetNodeId)
+      (edge: MindEdge) =>
+        nodeIds.has(edge.sourceNodeId) && nodeIds.has(edge.targetNodeId)
     ),
     nodes,
   };

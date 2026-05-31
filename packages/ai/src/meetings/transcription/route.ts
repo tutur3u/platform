@@ -2,6 +2,7 @@ import { google } from '@ai-sdk/google';
 import { createClient } from '@tuturuuu/supabase/next/server';
 import { generateObject } from 'ai';
 import { z } from 'zod';
+import { withAiMemory } from '../../memory';
 
 const DEFAULT_MODEL_NAME = 'gemini-3.1-flash-lite';
 
@@ -43,6 +44,7 @@ export function createPOST() {
 
       const formData = await req.formData();
       const audioFile = formData.get('audio') as File;
+      const wsId = formData.get('wsId') as string | null;
 
       if (!audioFile) {
         return new Response('No audio file provided', { status: 400 });
@@ -53,7 +55,16 @@ export function createPOST() {
       const audioUint8Array = new Uint8Array(audioBuffer);
 
       const result = await generateObject({
-        model: google(DEFAULT_MODEL_NAME),
+        model: await withAiMemory({
+          addMemory: 'never',
+          customId: `meeting-transcription-${Date.now()}`,
+          model: google(DEFAULT_MODEL_NAME),
+          product: 'meetings',
+          source: 'meeting_transcription',
+          surface: 'meeting_transcription',
+          userId: user.id,
+          wsId,
+        }),
         schema: transcriptSchema,
         system: systemInstruction,
         messages: [

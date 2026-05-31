@@ -76,6 +76,7 @@ const BLUE_GREEN_SUPPORT_SERVICES_HEALTH_GATE = Object.freeze([
   'backend',
   'markitdown',
   'storage-unzip-proxy',
+  'supermemory',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_SUPPORT_SERVICES = Object.freeze([
@@ -89,6 +90,7 @@ const BLUE_GREEN_SUPPORT_BUILD_SERVICE_NAMES = Object.freeze([
   'meet-realtime',
   'markitdown',
   'storage-unzip-proxy',
+  'supermemory',
   'web-cron-runner',
 ]);
 const BLUE_GREEN_BUILD_HASH_VERSION = 1;
@@ -97,6 +99,7 @@ const BLUE_GREEN_FORCE_SUPPORT_BUILD_PATHS = Object.freeze([
   'bun.lock',
   'docker-compose.web.prod.yml',
   'docker-compose/compose.web.prod.sidecars.yml',
+  'docker-compose/compose.web.prod.web.yml',
   'package.json',
   'turbo.json',
 ]);
@@ -129,6 +132,9 @@ const BLUE_GREEN_MEET_REALTIME_BUILD_PATHS = Object.freeze([
 const BLUE_GREEN_MARKITDOWN_BUILD_PATHS = Object.freeze(['apps/discord/']);
 const BLUE_GREEN_STORAGE_UNZIP_PROXY_BUILD_PATHS = Object.freeze([
   'apps/storage-unzip-proxy/',
+]);
+const BLUE_GREEN_SUPERMEMORY_BUILD_PATHS = Object.freeze([
+  'apps/supermemory/Dockerfile',
 ]);
 const BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS = Object.freeze([
   'apps/web/docker/cron-runner-entrypoint.js',
@@ -1416,6 +1422,14 @@ function getBlueGreenSupportBuildInputSpecs(targetColor) {
     {
       paths: [
         'docker-compose.web.prod.yml',
+        'docker-compose/compose.web.prod.sidecars.yml',
+        ...BLUE_GREEN_SUPERMEMORY_BUILD_PATHS,
+      ],
+      serviceName: 'supermemory',
+    },
+    {
+      paths: [
+        'docker-compose.web.prod.yml',
         ...BLUE_GREEN_WEB_CRON_RUNNER_BUILD_PATHS,
       ],
       serviceName: 'web-cron-runner',
@@ -1578,6 +1592,14 @@ function getBlueGreenChangedSupportBuildServices(targetColor, changedFiles) {
     )
   ) {
     addService('storage-unzip-proxy');
+  }
+
+  if (
+    BLUE_GREEN_SUPERMEMORY_BUILD_PATHS.some((watchedPath) =>
+      changedFilesIncludePath(changedFiles, watchedPath)
+    )
+  ) {
+    addService('supermemory');
   }
 
   if (

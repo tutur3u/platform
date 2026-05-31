@@ -1,6 +1,7 @@
 import { google } from '@ai-sdk/google';
 import { generateText, stepCountIs } from 'ai';
 import { z } from 'zod';
+import { withAiMemory } from '../../memory';
 import type { MiraToolContext } from '../mira-tools';
 
 const SEARCH_WRAPPER_MODEL = 'gemini-3.1-flash-lite';
@@ -64,13 +65,26 @@ function normalizeSources(value: unknown): SearchSource[] {
   return normalized;
 }
 
-async function runGoogleSearchWrapper(query: string, forceTool: boolean) {
+async function runGoogleSearchWrapper(
+  query: string,
+  forceTool: boolean,
+  ctx: MiraToolContext
+) {
   const prompt = forceTool
     ? `You must call the google_search tool before producing the final answer.\nSearch the web for the query below and provide an accurate, concise answer with key points and cited sources.\n\nQuery: ${query}`
     : `Search the web for the query below and provide an accurate, concise answer with key points and cited sources.\n\nQuery: ${query}`;
 
   return generateText({
-    model: google(SEARCH_WRAPPER_MODEL),
+    model: await withAiMemory({
+      addMemory: 'never',
+      customId: ctx.chatId ? `${ctx.chatId}-google-search` : query,
+      model: google(SEARCH_WRAPPER_MODEL),
+      product: 'mira',
+      source: 'mira_google_search_tool',
+      surface: 'mira_google_search_tool',
+      userId: ctx.userId,
+      wsId: ctx.workspaceContext?.wsId ?? ctx.wsId,
+    }),
     tools: {
       google_search: google.tools.googleSearch({}),
     },
@@ -82,9 +96,8 @@ async function runGoogleSearchWrapper(query: string, forceTool: boolean) {
 
 export async function executeGoogleSearch(
   args: Record<string, unknown>,
-  _ctx: MiraToolContext
+  ctx: MiraToolContext
 ) {
-  void _ctx;
   const parsed = SearchArgsSchema.safeParse(args);
   if (!parsed.success) {
     return {
@@ -96,14 +109,14 @@ export async function executeGoogleSearch(
   const { query } = parsed.data;
 
   try {
-    let result = await runGoogleSearchWrapper(query, false);
+    let result = await runGoogleSearchWrapper(query, false, ctx);
     let sources = normalizeSources((result as { sources?: unknown }).sources);
     let wasToolCalled = hasGoogleSearchCallInSteps(
       (result as { steps?: unknown }).steps
     );
 
     if (!wasToolCalled) {
-      result = await runGoogleSearchWrapper(query, true);
+      result = await runGoogleSearchWrapper(query, true, ctx);
       sources = normalizeSources((result as { sources?: unknown }).sources);
       wasToolCalled = hasGoogleSearchCallInSteps(
         (result as { steps?: unknown }).steps

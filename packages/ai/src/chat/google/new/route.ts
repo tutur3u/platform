@@ -12,6 +12,10 @@ import { generateText, type UIMessage } from 'ai';
 import { NextResponse } from 'next/server';
 import { normalizeStableModelId } from '../../../credits/model-mapping';
 import {
+  resolveAiMemoryWorkspaceIdForUser,
+  withAiMemory,
+} from '../../../memory';
+import {
   isInternalTuturuuuAiUser,
   resolveSupabaseSessionUser,
 } from '../route-auth';
@@ -189,9 +193,23 @@ export function createPOST(options: CreatePostOptions = {}) {
         },
       ]);
 
+      const wsId = await resolveAiMemoryWorkspaceIdForUser({
+        supabase,
+        userId: user.id,
+      });
+
       // Always use TITLE_MODEL for generating chat titles (cheap + fast)
       const result = await generateText({
-        model: google(TITLE_MODEL),
+        model: await withAiMemory({
+          addMemory: 'never',
+          customId: id ? `chat-title-${id}` : `chat-title-${Date.now()}`,
+          model: google(TITLE_MODEL),
+          product: isMiraMode ? 'mira' : 'ai_chat',
+          source: 'ai_chat_title',
+          surface: 'ai_chat_title',
+          userId: user.id,
+          wsId,
+        }),
         prompt,
         providerOptions: {
           google: {

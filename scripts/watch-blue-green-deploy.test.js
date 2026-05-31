@@ -3881,7 +3881,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [prodComposeHiveDbMigrateKey(), createResult('')],
       [
-        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
         createResult(''),
       ],
       [
@@ -3899,6 +3899,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
         createResult('storage-unzip-123\n'),
+      ],
+      [
+        `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
+        createResult('supermemory-123\n'),
       ],
       [
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
@@ -3938,6 +3942,10 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
       ],
       [
         `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
+        createResult('healthy\n'),
+      ],
+      [
+        `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
         createResult('healthy\n'),
       ],
       [
@@ -4034,7 +4042,7 @@ test('runDeployWatchIteration refreshes a stale standby deployment after 15 minu
         `docker compose -f ${PROD_COMPOSE_FILE} --profile redis rm -f web-blue`
       ) <
         calls.indexOf(
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`
         )
     );
     assert.ok(
@@ -4482,7 +4490,7 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [prodComposeHiveDbMigrateKey(), createResult('')],
         [
-          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy web-cron-runner redis serverless-redis-http`,
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis up --detach --no-build --remove-orphans web-blue backend markitdown storage-unzip-proxy supermemory web-cron-runner redis serverless-redis-http`,
           createResult(''),
         ],
         [
@@ -4500,6 +4508,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q storage-unzip-proxy`,
           createResult('storage-unzip-123\n'),
+        ],
+        [
+          `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q supermemory`,
+          createResult('supermemory-123\n'),
         ],
         [
           `docker compose -f ${PROD_COMPOSE_FILE} --profile redis ps -q web-cron-runner`,
@@ -4539,6 +4551,10 @@ test('runDeployWatchIteration honors an instant standby sync request before the 
         ],
         [
           `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} storage-unzip-123`,
+          createResult('healthy\n'),
+        ],
+        [
+          `docker inspect -f {{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}} supermemory-123`,
           createResult('healthy\n'),
         ],
         [

@@ -88,6 +88,7 @@
                 "group": "AI",
                 "pages": [
                   "platform/ai/ai-agent-deployment",
+                  "platform/ai/memory-service",
                   "platform/ai/model-catalog",
                   "platform/ai/omni-channel-chat-sdk",
                   "platform/ai/structured-data"
