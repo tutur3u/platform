@@ -9,6 +9,58 @@ const UpdateWorkspaceLogoSchema = z.object({
   filePath: z.string().min(1),
 });
 
+const SAFE_LOGO_FILENAME_PATTERN = /^logo-\d+\.(png|jpg|jpeg|gif|webp|svg)$/;
+
+function isSafePathSegment(segment: string) {
+  if (!segment || segment === '.' || segment === '..') {
+    return false;
+  }
+
+  try {
+    const decodedSegment = decodeURIComponent(segment);
+
+    if (
+      decodedSegment === '.' ||
+      decodedSegment === '..' ||
+      decodedSegment.includes('/') ||
+      decodedSegment.includes('\\')
+    ) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+
+  return !segment.includes('\\');
+}
+
+function isSafeWorkspaceLogoPath(filePath: string, workspaceId: string) {
+  if (filePath !== filePath.trim() || !isSafePathSegment(workspaceId)) {
+    return false;
+  }
+
+  const segments = filePath.split('/');
+
+  if (segments.length !== 3) {
+    return false;
+  }
+
+  const pathWorkspaceId = segments[0];
+  const directory = segments[1];
+  const filename = segments[2];
+
+  if (!pathWorkspaceId || !directory || !filename) {
+    return false;
+  }
+
+  return (
+    pathWorkspaceId === workspaceId &&
+    directory === 'logos' &&
+    segments.every(isSafePathSegment) &&
+    SAFE_LOGO_FILENAME_PATTERN.test(filename)
+  );
+}
+
 export const GET = withSessionAuth<{ wsId: string }>(
   async (request, { supabase }, { wsId }) => {
     try {
@@ -33,6 +85,10 @@ export const GET = withSessionAuth<{ wsId: string }>(
       }
 
       if (!workspaceData?.logo_url) {
+        return NextResponse.json({ url: null });
+      }
+
+      if (!isSafeWorkspaceLogoPath(workspaceData.logo_url, normalizedWsId)) {
         return NextResponse.json({ url: null });
       }
 
@@ -86,7 +142,7 @@ export const PATCH = withSessionAuth<{ wsId: string }>(
       }
 
       const normalizedWsId = await normalizeWorkspaceId(wsId);
-      if (!body.data.filePath.startsWith(`${normalizedWsId}/`)) {
+      if (!isSafeWorkspaceLogoPath(body.data.filePath, normalizedWsId)) {
         return NextResponse.json(
           { message: 'Invalid file path' },
           { status: 400 }
@@ -152,7 +208,10 @@ export const DELETE = withSessionAuth<{ wsId: string }>(
         throw updateError;
       }
 
-      if (workspaceData?.logo_url) {
+      if (
+        workspaceData?.logo_url &&
+        isSafeWorkspaceLogoPath(workspaceData.logo_url, normalizedWsId)
+      ) {
         try {
           const sbAdmin = await createAdminClient();
           await sbAdmin.storage
