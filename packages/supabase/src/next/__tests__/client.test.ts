@@ -140,8 +140,8 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('workspace_calendars')).toThrow(
-        getProxyOnlyPublicTableError('workspace_calendars')
+      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
+        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
       );
       expect(client.from('workspace_boards')).toEqual({
         table: 'workspace_boards',
@@ -176,8 +176,8 @@ describe('Supabase Client', () => {
         refresh_token: 'test-refresh-token',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.from('workspace_calendars')).toThrow(
-        getProxyOnlyPublicTableError('workspace_calendars')
+      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
+        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
       );
     });
 

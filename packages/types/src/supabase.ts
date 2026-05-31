@@ -3714,6 +3714,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_calendars: {
+        Row: {
+          calendar_type: Database['public']['Enums']['workspace_calendar_type'];
+          color: string | null;
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          is_enabled: boolean;
+          is_system: boolean;
+          name: string;
+          position: number;
+          updated_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
+          color?: string | null;
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          is_enabled?: boolean;
+          is_system?: boolean;
+          name?: string;
+          position?: number;
+          updated_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
       workspace_education_access_requests: {
         Row: {
           admin_notes: string | null;
@@ -6701,13 +6743,6 @@ export type Database = {
             columns: ['auth_token_id'];
             isOneToOne: false;
             referencedRelation: 'calendar_auth_tokens';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'calendar_connections_workspace_calendar_id_fkey';
-            columns: ['workspace_calendar_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_calendars';
             referencedColumns: ['id'];
           },
           {
@@ -22876,13 +22911,6 @@ export type Database = {
             referencedColumns: ['value'];
           },
           {
-            foreignKeyName: 'workspace_calendar_events_source_calendar_id_fkey';
-            columns: ['source_calendar_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_calendars';
-            referencedColumns: ['id'];
-          },
-          {
             foreignKeyName: 'workspace_calendar_events_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
@@ -23007,84 +23035,6 @@ export type Database = {
             foreignKeyName: 'workspace_calendar_sync_coordination_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: true;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      workspace_calendars: {
-        Row: {
-          calendar_type: Database['public']['Enums']['workspace_calendar_type'];
-          color: string | null;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          is_enabled: boolean;
-          is_system: boolean;
-          name: string;
-          position: number;
-          updated_at: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
-          color?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_enabled?: boolean;
-          is_system?: boolean;
-          name: string;
-          position?: number;
-          updated_at?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          calendar_type?: Database['public']['Enums']['workspace_calendar_type'];
-          color?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_enabled?: boolean;
-          is_system?: boolean;
-          name?: string;
-          position?: number;
-          updated_at?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'workspace_calendars_color_fkey';
-            columns: ['color'];
-            isOneToOne: false;
-            referencedRelation: 'calendar_event_colors';
-            referencedColumns: ['value'];
-          },
-          {
-            foreignKeyName: 'workspace_calendars_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendars_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendars_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'workspace_calendars_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
             referencedRelation: 'workspaces';
             referencedColumns: ['id'];
           },

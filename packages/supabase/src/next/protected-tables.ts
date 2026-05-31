@@ -24,7 +24,6 @@ export const PROXY_ONLY_PUBLIC_TABLES = [
   'user_group_post_logs',
   'user_group_posts',
   'user_linked_promotions',
-  'workspace_calendars',
   'workspace_credit_packs',
   'workspace_debt_loans',
   'workspace_promotions',

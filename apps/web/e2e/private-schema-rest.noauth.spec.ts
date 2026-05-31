@@ -34,6 +34,10 @@ const PRIVATE_TABLES = [
     name: 'workspace_education_access_requests',
     select: 'id',
   },
+  {
+    name: 'workspace_calendars',
+    select: 'id',
+  },
 ] as const;
 
 test.describe('Private schema REST surface', () => {

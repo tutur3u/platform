@@ -22,6 +22,7 @@ export const POST = withSessionAuth<Params>(
     try {
       const wsId = await normalizeWorkspaceId(rawWsId, supabase);
       const sbAdmin = await createAdminClient({ noCookie: true });
+      const calendarsClient = sbAdmin.schema('private');
 
       // Check if user has manage_workspace_settings permission
       const { data: hasPermission, error: permissionError } =
@@ -97,7 +98,7 @@ export const POST = withSessionAuth<Params>(
       }
 
       // 4. Reset custom calendars (delete them, keep system calendars)
-      const { error: customCalendarsError } = await sbAdmin
+      const { error: customCalendarsError } = await calendarsClient
         .from('workspace_calendars')
         .delete()
         .eq('ws_id', wsId)

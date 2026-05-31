@@ -131,9 +131,10 @@ export async function GET(request: Request, { params }: Params) {
   }
 
   const { normalizedWsId, sbAdmin } = authorized.context;
+  const calendarsClient = sbAdmin.schema('private');
 
   try {
-    const { data: calendars, error } = await sbAdmin
+    const { data: calendars, error } = await calendarsClient
       .from('workspace_calendars')
       .select('*')
       .eq('ws_id', normalizedWsId)
@@ -173,6 +174,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const { normalizedWsId, sbAdmin } = authorized.context;
+  const calendarsClient = sbAdmin.schema('private');
 
   try {
     let body: unknown;
@@ -191,7 +193,7 @@ export async function POST(request: Request, { params }: Params) {
 
     const validated = createCalendarSchema.parse(body);
 
-    const { data: existing, error: existingError } = await sbAdmin
+    const { data: existing, error: existingError } = await calendarsClient
       .from('workspace_calendars')
       .select('position')
       .eq('ws_id', normalizedWsId)
@@ -207,7 +209,7 @@ export async function POST(request: Request, { params }: Params) {
       ((existing as Array<{ position?: number }> | null)?.[0]?.position ?? 0) +
         1;
 
-    const { data: calendar, error } = await sbAdmin
+    const { data: calendar, error } = await calendarsClient
       .from('workspace_calendars')
       .insert({
         ws_id: normalizedWsId,
@@ -252,6 +254,7 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   const { normalizedWsId, sbAdmin } = authorized.context;
+  const calendarsClient = sbAdmin.schema('private');
 
   try {
     let body: unknown;
@@ -270,7 +273,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
     const validated = updateCalendarSchema.parse(body);
 
-    const { data: existing, error: fetchError } = await sbAdmin
+    const { data: existing, error: fetchError } = await calendarsClient
       .from('workspace_calendars')
       .select('*')
       .eq('id', validated.id)
@@ -312,7 +315,7 @@ export async function PATCH(request: Request, { params }: Params) {
       }
     }
 
-    const { data: calendar, error: updateError } = await sbAdmin
+    const { data: calendar, error: updateError } = await calendarsClient
       .from('workspace_calendars')
       .update(updateData)
       .eq('id', validated.id)
@@ -350,6 +353,7 @@ export async function DELETE(request: Request, { params }: Params) {
   }
 
   const { normalizedWsId, sbAdmin } = authorized.context;
+  const calendarsClient = sbAdmin.schema('private');
 
   try {
     const url = new URL(request.url);
@@ -369,7 +373,7 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-    const { data: existing, error: fetchError } = await sbAdmin
+    const { data: existing, error: fetchError } = await calendarsClient
       .from('workspace_calendars')
       .select('*')
       .eq('id', calendarId)
@@ -394,12 +398,13 @@ export async function DELETE(request: Request, { params }: Params) {
       );
     }
 
-    const { data: primaryCalendar, error: primaryCalendarError } = await sbAdmin
-      .from('workspace_calendars')
-      .select('id')
-      .eq('ws_id', normalizedWsId)
-      .eq('calendar_type', 'primary')
-      .maybeSingle();
+    const { data: primaryCalendar, error: primaryCalendarError } =
+      await calendarsClient
+        .from('workspace_calendars')
+        .select('id')
+        .eq('ws_id', normalizedWsId)
+        .eq('calendar_type', 'primary')
+        .maybeSingle();
 
     if (primaryCalendarError) {
       throw primaryCalendarError;
@@ -417,7 +422,7 @@ export async function DELETE(request: Request, { params }: Params) {
       }
     }
 
-    const { error: deleteError } = await sbAdmin
+    const { error: deleteError } = await calendarsClient
       .from('workspace_calendars')
       .delete()
       .eq('id', calendarId)

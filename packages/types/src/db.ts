@@ -630,7 +630,7 @@ export type UserScopeOverrideStatus =
   Database['public']['Enums']['user_scope_override_status'];
 
 export type WorkspaceCalendarEvent = Tables<'workspace_calendar_events'>;
-export type WorkspaceCalendar = Tables<'workspace_calendars'>;
+export type WorkspaceCalendar = PrivateTable<'workspace_calendars'>;
 export type WorkspaceEncryptionKey = Tables<'workspace_encryption_keys'>;
 export type CalendarConnection = Tables<'calendar_connections'>;
 

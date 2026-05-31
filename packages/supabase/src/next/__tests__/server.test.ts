@@ -257,9 +257,9 @@ describe('Supabase Server Client', () => {
         client: 'admin',
         table: 'topic_announcements',
       });
-      expect(client.from('workspace_calendars')).toEqual({
+      expect(client.from('workspace_tutoring_sessions')).toEqual({
         client: 'admin',
-        table: 'workspace_calendars',
+        table: 'workspace_tutoring_sessions',
       });
       expect(client.from('workspace_tutoring_sessions')).toEqual({
         client: 'admin',
@@ -463,8 +463,8 @@ describe('Supabase Server Client', () => {
           cookies: expect.any(Object),
         })
       );
-      expect(() => client.from('workspace_calendars')).toThrow(
-        getProxyOnlyPublicTableError('workspace_calendars')
+      expect(() => client.from('workspace_tutoring_sessions')).toThrow(
+        getProxyOnlyPublicTableError('workspace_tutoring_sessions')
       );
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
