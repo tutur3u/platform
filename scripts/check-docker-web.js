@@ -1403,8 +1403,21 @@ function validateHiveDbMigrateScript(scriptContent) {
   return errors;
 }
 
-function validateSupermemoryDockerfile(dockerfileContent) {
-  const errors = [];
+function validateSupermemoryDockerfile(
+  dockerfileContent,
+  {
+    workspacePackageJsonPaths = listWorkspacePackageJsonPaths(),
+    fileDependencyPaths = listFileDependencyPaths(),
+  } = {}
+) {
+  const errors = [
+    ...validateDepsStageManifestCopies({
+      dockerfileContent,
+      dockerfileLabel: 'apps/supermemory/Dockerfile',
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
+  ];
   const requiredSnippets = [
     'FROM oven/bun:1.3.14-alpine AS deps',
     'COPY apps/supermemory/package.json ./apps/supermemory/package.json',
@@ -1555,7 +1568,10 @@ function checkDockerWebSetup({
       fileDependencyPaths,
       workspacePackageJsonPaths,
     }),
-    ...validateSupermemoryDockerfile(supermemoryDockerfileContent),
+    ...validateSupermemoryDockerfile(supermemoryDockerfileContent, {
+      fileDependencyPaths,
+      workspacePackageJsonPaths,
+    }),
     ...validateHiveDbMigrateScript(hiveDbMigrateScriptContent),
   ];
 }
