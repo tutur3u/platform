@@ -13,7 +13,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { updateWorkspaceTaskList } from '@tuturuuu/internal-api';
 import type { Workspace, WorkspaceProductTier } from '@tuturuuu/types';
 import type { Task } from '@tuturuuu/types/primitives/Task';
@@ -34,6 +34,7 @@ import { BulkActionsBar } from './kanban/bulk/bulk-actions-bar';
 import { BulkCustomDateDialog } from './kanban/bulk/bulk-custom-date-dialog';
 import { BulkDeleteDialog } from './kanban/bulk/bulk-delete-dialog';
 import { useBulkOperations } from './kanban/bulk/bulk-operations';
+import { listKanbanDeadlineTasks } from './kanban/data/kanban-deadline-query';
 import { useAppliedSets } from './kanban/data/use-applied-sets';
 import { useBulkResources } from './kanban/data/use-bulk-resources';
 import { useFilteredResources } from './kanban/data/use-filtered-resources';
@@ -42,6 +43,7 @@ import { DragPreview } from './kanban/dnd/drag-preview';
 import { useKanbanDnd } from './kanban/dnd/use-kanban-dnd';
 import { DRAG_ACTIVATION_DISTANCE } from './kanban/kanban-constants';
 import { KanbanColumns } from './kanban/rendering/kanban-columns';
+import { buildKanbanDeadlineSections } from './kanban/rendering/kanban-deadline-tasks';
 import { KanbanSkeleton } from './kanban/rendering/kanban-skeleton';
 import { useKeyboardShortcuts } from './kanban/selection/use-keyboard-shortcuts';
 import { useMultiSelect } from './kanban/selection/use-multi-select';
@@ -120,10 +122,20 @@ export function KanbanBoard({
     !wsPresence.isBoardOverLimit(boardId);
 
   const reorderTaskMutation = useReorderTask(boardId ?? '', workspaceId);
-  const { createTask } = useTaskDialog();
+  const { createTask, openTask } = useTaskDialog();
   const { weekStartsOn } = useCalendarPreferences();
 
   const { data: boardConfig } = useBoardConfig(boardId, workspaceId);
+  const { data: deadlineTasks = [] } = useQuery({
+    enabled: Boolean(boardId),
+    queryFn: () =>
+      listKanbanDeadlineTasks({
+        boardId: boardId ?? '',
+        workspaceId,
+      }),
+    queryKey: ['kanban-deadline-tasks', workspaceId, boardId],
+    staleTime: 30_000,
+  });
   const persistListPositions = useCallback(
     async (updates: Array<{ listId: string; newPosition: number }>) => {
       if (!boardId || updates.length === 0) return;
@@ -152,6 +164,42 @@ export function KanbanBoard({
   const columnsId = useMemo(
     () => orderedColumns.map((col) => col.id),
     [orderedColumns]
+  );
+  const deadlineSections = useMemo(
+    () =>
+      buildKanbanDeadlineSections({
+        deadlineTasks,
+        lists: orderedColumns,
+        visibleTasks: tasks,
+      }),
+    [deadlineTasks, orderedColumns, tasks]
+  );
+  const deadlineLabels = useMemo(
+    () => ({
+      overdue: tTasks('overdue'),
+      upcoming: tTasks('upcoming'),
+    }),
+    [tTasks]
+  );
+  const handleOpenDeadlineTask = useCallback(
+    (task: Task) => {
+      const targetBoardId = task.source_board_id ?? boardId;
+      if (!targetBoardId) return;
+
+      openTask(
+        task,
+        targetBoardId,
+        task.source_board_id ? undefined : orderedRealColumns,
+        false,
+        {
+          taskWorkspacePersonal: task.source_workspace_id
+            ? false
+            : workspace.personal,
+          taskWsId: task.source_workspace_id ?? workspaceId,
+        }
+      );
+    },
+    [boardId, openTask, orderedRealColumns, workspace.personal, workspaceId]
   );
 
   // Selection Hook
@@ -409,6 +457,10 @@ export function KanbanBoard({
             }}
             boardRef={boardRef}
             columnsId={columnsId}
+            deadlineLabels={deadlineLabels}
+            deadlineSections={deadlineSections}
+            deadlineTicketPrefix={boardConfig?.ticket_prefix ?? null}
+            onOpenDeadlineTask={handleOpenDeadlineTask}
             onExternalTasksCollapsedChange={onExternalTasksCollapsedChange}
           />
 

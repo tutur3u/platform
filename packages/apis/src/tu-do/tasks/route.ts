@@ -704,6 +704,7 @@ export async function handleTaskRouteGET(
     const assignedToMe = url.searchParams.get('assignedToMe') === 'true';
     const completedMode = url.searchParams.get('completed');
     const closedMode = url.searchParams.get('closed');
+    const hasDueDate = url.searchParams.get('hasDueDate') === 'true';
     const listStatuses = parseTaskListStatuses(
       url.searchParams.get('listStatuses')
     );
@@ -1094,6 +1095,10 @@ export async function handleTaskRouteGET(
         query = query.is('closed_at', null);
       } else if (closedMode === 'only') {
         query = query.not('closed_at', 'is', null) as typeof query;
+      }
+
+      if (hasDueDate) {
+        query = query.not('end_date', 'is', null) as typeof query;
       }
 
       if (assignedToMe) {

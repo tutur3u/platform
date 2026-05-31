@@ -116,6 +116,7 @@ export interface ListWorkspaceTasksOptions {
   assignedToMe?: boolean;
   completed?: 'exclude' | 'only';
   closed?: 'exclude' | 'only';
+  hasDueDate?: boolean;
   externalIncludeDocuments?: boolean;
   externalIncludeDoneClosed?: boolean;
   externalSortBy?: ExternalTaskSortBy;
@@ -877,6 +878,7 @@ export async function listWorkspaceTasks(
         assignedToMe: options?.assignedToMe,
         completed: options?.completed,
         closed: options?.closed,
+        hasDueDate: options?.hasDueDate,
         externalIncludeDocuments: options?.externalIncludeDocuments,
         externalIncludeDoneClosed: options?.externalIncludeDoneClosed,
         externalSortBy: options?.externalSortBy,

@@ -14,6 +14,11 @@ import { TaskListForm } from '../../task-list-form';
 import type { DragPreviewPosition } from '../dnd/use-kanban-dnd';
 import { MAX_SAFE_INTEGER_SORT } from '../kanban-constants';
 import { getKanbanColumnWidth } from './kanban-column-width';
+import {
+  type KanbanDeadlineLabels,
+  KanbanDeadlinePanels,
+} from './kanban-deadline-panels';
+import type { KanbanDeadlineSections } from './kanban-deadline-tasks';
 
 interface KanbanColumnsProps {
   columns: TaskList[];
@@ -45,6 +50,10 @@ interface KanbanColumnsProps {
   boardRef: React.RefObject<HTMLDivElement | null>;
   columnsId: string[];
   onExternalTasksCollapsedChange?: (collapsed: boolean) => void;
+  deadlineLabels?: KanbanDeadlineLabels;
+  deadlineSections?: KanbanDeadlineSections;
+  deadlineTicketPrefix?: string | null;
+  onOpenDeadlineTask?: (task: Task) => void;
 }
 
 export function KanbanColumns({
@@ -72,6 +81,10 @@ export function KanbanColumns({
   boardRef,
   columnsId,
   onExternalTasksCollapsedChange,
+  deadlineLabels,
+  deadlineSections,
+  deadlineTicketPrefix,
+  onOpenDeadlineTask,
 }: KanbanColumnsProps) {
   const realColumns = columns.filter((column) => !column.is_external_staging);
   const snapEdgePadding = columns.length > 0 ? '0.5rem' : '0px';
@@ -110,6 +123,18 @@ export function KanbanColumns({
             paddingRight: 'var(--kanban-snap-right-padding)',
           }}
         >
+          {deadlineSections && deadlineLabels && onOpenDeadlineTask && (
+            <KanbanDeadlinePanels
+              isMultiSelectMode={isMultiSelectMode}
+              labels={deadlineLabels}
+              onOpenTask={onOpenDeadlineTask}
+              onTaskSelect={onTaskSelect}
+              sections={deadlineSections}
+              selectedTasks={selectedTasks}
+              ticketPrefix={deadlineTicketPrefix}
+            />
+          )}
+
           {columns.map((list) => {
             // Filter tasks for this list
             let listTasks = tasks.filter((task) => task.list_id === list.id);

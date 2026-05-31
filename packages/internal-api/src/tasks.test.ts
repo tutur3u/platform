@@ -310,6 +310,32 @@ describe('workspace board internal-api helpers', () => {
     );
   });
 
+  it('serializes the due-date presence task filter', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(createJsonResponse({ tasks: [], count: 0 }));
+
+    await listWorkspaceTasks(
+      'ws-1',
+      {
+        boardId: 'board-1',
+        hasDueDate: true,
+        includeCount: true,
+      },
+      {
+        baseUrl: 'https://internal.example.com',
+        fetch: fetchMock as unknown as typeof fetch,
+      }
+    );
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://internal.example.com/api/v1/workspaces/ws-1/tasks?boardId=board-1&hasDueDate=true&includeCount=true',
+      expect.objectContaining({
+        cache: 'no-store',
+      })
+    );
+  });
+
   it('serializes task source filter controls', async () => {
     const fetchMock = vi
       .fn()

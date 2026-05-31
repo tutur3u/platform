@@ -275,6 +275,32 @@ describe('workspace task route personal external loading', () => {
     ]);
   });
 
+  it('filters direct task queries to due-dated tasks when requested', async () => {
+    queueResult(mocks.adminQueues, 'workspaces', {
+      data: { personal: false },
+      error: null,
+    });
+    queueResult(mocks.adminQueues, 'tasks', {
+      data: [],
+      error: null,
+      count: 0,
+    });
+
+    const { GET } = await import('./route.js');
+    const response = await GET(
+      new NextRequest(
+        `http://localhost/api/v1/workspaces/ws-1/tasks?boardId=${PERSONAL_BOARD_ID}&hasDueDate=true&includeRelationshipSummary=false&includeCount=true`
+      ),
+      { params: Promise.resolve({ wsId: 'ws-1' }) }
+    );
+
+    expect(response.status).toBe(200);
+    const taskQuery = mocks.adminQueries.find(
+      (query) => query.table === 'tasks'
+    );
+    expect(taskQuery?.calls).toContainEqual(['not', ['end_date', 'is', null]]);
+  });
+
   it('includes archived board tasks when requested', async () => {
     queueResult(mocks.adminQueues, 'workspaces', {
       data: { personal: false },
