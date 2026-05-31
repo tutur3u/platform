@@ -94,9 +94,10 @@ describe('Supabase Server Client', () => {
       expect(cookieHandler.getAll()).toEqual([
         { name: 'test-cookie', value: 'test-value' },
       ]);
-      expect(() => client.from('topic_announcements')).toThrow(
-        getProxyOnlyPublicTableError('topic_announcements')
-      );
+      expect(client.from('topic_announcements')).toEqual({
+        client: 'user',
+        table: 'topic_announcements',
+      });
       expect(client.from('workspace_boards')).toEqual({
         client: 'user',
         table: 'workspace_boards',
@@ -254,7 +255,7 @@ describe('Supabase Server Client', () => {
       );
 
       expect(client.from('topic_announcements')).toEqual({
-        client: 'admin',
+        client: 'user',
         table: 'topic_announcements',
       });
       expect(client.from('workspace_wallets')).toEqual({
@@ -271,7 +272,7 @@ describe('Supabase Server Client', () => {
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
       expect(client.schema('public').from('topic_announcements')).toEqual({
-        client: 'admin',
+        client: 'user',
         schema: 'public',
         table: 'topic_announcements',
       });
@@ -324,7 +325,7 @@ describe('Supabase Server Client', () => {
         table: 'workspace_boards',
       });
       expect(client.from('topic_announcements')).toEqual({
-        client: 'admin',
+        client: 'user',
         table: 'topic_announcements',
       });
       expect(client.from('workspace_wallets')).toEqual({
@@ -399,7 +400,7 @@ describe('Supabase Server Client', () => {
       );
 
       expect(client.from('topic_announcements')).toEqual({
-        client: 'admin',
+        client: 'user',
         table: 'topic_announcements',
       });
       expect(client.from('workspace_boards')).toEqual({
@@ -408,7 +409,7 @@ describe('Supabase Server Client', () => {
       });
       expect(client.from('users')).toEqual({ client: 'user', table: 'users' });
       expect(client.schema('public').from('topic_announcements')).toEqual({
-        client: 'admin',
+        client: 'user',
         schema: 'public',
         table: 'topic_announcements',
       });
@@ -470,9 +471,10 @@ describe('Supabase Server Client', () => {
         client: 'user',
         table: 'workspace_boards',
       });
-      expect(() => client.from('topic_announcements')).toThrow(
-        getProxyOnlyPublicTableError('topic_announcements')
-      );
+      expect(client.from('topic_announcements')).toEqual({
+        client: 'user',
+        table: 'topic_announcements',
+      });
     });
   });
 

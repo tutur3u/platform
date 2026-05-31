@@ -20,7 +20,10 @@ import {
   hashTopicAnnouncementVerificationToken,
 } from '@/lib/topic-announcements-verification';
 import { downloadWorkspaceStorageObjectForProvider } from '@/lib/workspace-storage-provider';
-import type { TopicAnnouncementsSupabaseClient } from './shared';
+import {
+  getPublicSchemaClient,
+  type TopicAnnouncementsSupabaseClient,
+} from './shared';
 
 const VERIFICATION_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const VERIFICATION_RESEND_COOLDOWN_MS = 15 * 60 * 1000;
@@ -231,7 +234,8 @@ export async function sendTopicAnnouncement({
     });
   }
 
-  const { data: workspace } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data: workspace } = await publicAdmin
     .from('workspaces')
     .select('name')
     .eq('id', normalizedWsId)

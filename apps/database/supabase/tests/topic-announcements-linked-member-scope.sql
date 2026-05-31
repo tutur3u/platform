@@ -2,64 +2,13 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 
-set local search_path = public, extensions;
+set local search_path = public, private, extensions;
 
 select plan(2);
 
-insert into auth.users (
-  id,
-  aud,
-  role,
-  email,
-  email_confirmed_at,
-  created_at,
-  updated_at
-)
-values
-  (
-    '00000000-0000-0000-0000-000000000801',
-    'authenticated',
-    'authenticated',
-    'workspace-owner@example.com',
-    now(),
-    now(),
-    now()
-  ),
-  (
-    '00000000-0000-0000-0000-000000000802',
-    'authenticated',
-    'authenticated',
-    'linked-teacher@example.com',
-    now(),
-    now(),
-    now()
-  )
-on conflict (id) do update
-set email = excluded.email,
-    email_confirmed_at = excluded.email_confirmed_at,
-    updated_at = excluded.updated_at;
-
-insert into public.users (id)
-values
-  ('00000000-0000-0000-0000-000000000801'),
-  ('00000000-0000-0000-0000-000000000802')
-on conflict (id) do nothing;
-
-insert into public.workspaces (id, name, personal, creator_id)
-values (
-  '00000000-0000-0000-0000-000000000810',
-  'Topic Announcement Linked Member Workspace',
-  false,
-  '00000000-0000-0000-0000-000000000801'
-)
-on conflict (id) do nothing;
-
-insert into public.workspace_members (ws_id, user_id)
-values (
-  '00000000-0000-0000-0000-000000000810',
-  '00000000-0000-0000-0000-000000000801'
-)
-on conflict do nothing;
+delete from public.workspace_members
+where ws_id = '00000000-0000-0000-0000-000000000004'
+  and user_id = '00000000-0000-0000-0000-000000000003';
 
 insert into public.workspace_users (
   id,
@@ -70,10 +19,10 @@ insert into public.workspace_users (
 )
 values (
   '00000000-0000-0000-0000-000000000820',
-  '00000000-0000-0000-0000-000000000810',
+  '00000000-0000-0000-0000-000000000004',
   'Linked Teacher',
   'Linked Teacher',
-  'linked-teacher@example.com'
+  'user2@tuturuuu.com'
 )
 on conflict (id) do nothing;
 
@@ -83,13 +32,13 @@ insert into public.workspace_user_linked_users (
   ws_id
 )
 values (
-  '00000000-0000-0000-0000-000000000802',
+  '00000000-0000-0000-0000-000000000003',
   '00000000-0000-0000-0000-000000000820',
-  '00000000-0000-0000-0000-000000000810'
+  '00000000-0000-0000-0000-000000000004'
 )
 on conflict do nothing;
 
-insert into public.topic_announcement_contacts (
+insert into private.topic_announcement_contacts (
   id,
   ws_id,
   workspace_user_id,
@@ -98,17 +47,17 @@ insert into public.topic_announcement_contacts (
 )
 values (
   '00000000-0000-0000-0000-000000000830',
-  '00000000-0000-0000-0000-000000000810',
+  '00000000-0000-0000-0000-000000000004',
   '00000000-0000-0000-0000-000000000820',
   'Linked Teacher',
-  'linked-teacher@example.com'
+  'user2@tuturuuu.com'
 )
 on conflict (id) do update
 set workspace_user_id = excluded.workspace_user_id,
     email = excluded.email;
 
 select is(
-  public.topic_announcement_contact_has_linked_verified_email(
+  private.topic_announcement_contact_has_linked_verified_email(
     '00000000-0000-0000-0000-000000000830'
   ),
   false,
@@ -117,13 +66,13 @@ select is(
 
 insert into public.workspace_members (ws_id, user_id)
 values (
-  '00000000-0000-0000-0000-000000000810',
-  '00000000-0000-0000-0000-000000000802'
+  '00000000-0000-0000-0000-000000000004',
+  '00000000-0000-0000-0000-000000000003'
 )
 on conflict do nothing;
 
 select is(
-  public.topic_announcement_contact_has_linked_verified_email(
+  private.topic_announcement_contact_has_linked_verified_email(
     '00000000-0000-0000-0000-000000000830'
   ),
   true,

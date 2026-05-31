@@ -78,6 +78,52 @@ type TopicAnnouncementAttachmentDraftInput = {
   storageProvider: 'r2' | 'supabase';
 };
 
+export function getPrivateSchemaClient(
+  client: TopicAnnouncementsSupabaseClient
+): TopicAnnouncementsSupabaseClient {
+  return typeof client?.schema === 'function'
+    ? client.schema('private')
+    : client;
+}
+
+export function getPublicSchemaClient(
+  client: TopicAnnouncementsSupabaseClient
+): TopicAnnouncementsSupabaseClient {
+  return typeof client?.schema === 'function'
+    ? client.schema('public')
+    : client;
+}
+
+export async function attachTopicAnnouncementGroups<
+  T extends { group_id?: string | null },
+>(sbAdmin: TopicAnnouncementsSupabaseClient, rows: T[]): Promise<T[]> {
+  const groupIds = [
+    ...new Set(
+      rows
+        .map((row) => row.group_id)
+        .filter((groupId): groupId is string => Boolean(groupId))
+    ),
+  ];
+
+  if (groupIds.length === 0) return rows;
+
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data, error } = await publicAdmin
+    .from('workspace_user_groups')
+    .select('id,name')
+    .in('id', groupIds);
+  if (error) throw error;
+
+  const groupsById = new Map(
+    (data ?? []).map((group: { id: string; name: string }) => [group.id, group])
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    group: row.group_id ? (groupsById.get(row.group_id) ?? null) : null,
+  }));
+}
+
 export function serializeTopicAnnouncementContact(
   contact: TopicAnnouncementContactRow,
   verificationStatus: SerializedTopicAnnouncementContact['verificationStatus']
@@ -217,9 +263,11 @@ export async function resolveTopicAnnouncementsAccess(
     };
   }
 
-  const sbAdmin =
+  const adminClient =
     (await createAdminClient()) as TopicAnnouncementsSupabaseClient;
-  const { data: workspace, error: workspaceError } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(adminClient);
+  const sbAdmin = getPrivateSchemaClient(adminClient);
+  const { data: workspace, error: workspaceError } = await publicAdmin
     .from('workspaces')
     .select('personal')
     .eq('id', normalizedWsId)

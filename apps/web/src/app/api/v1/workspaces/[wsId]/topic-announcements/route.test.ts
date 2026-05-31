@@ -23,6 +23,7 @@ vi.mock('@tuturuuu/utils/workspace-helper', () => ({
 
 vi.mock('./shared', () => {
   return {
+    attachTopicAnnouncementGroups: vi.fn(async (_sbAdmin, rows) => rows),
     insertTopicAnnouncementAttachmentDrafts: vi.fn(
       async ({
         actorUserId,

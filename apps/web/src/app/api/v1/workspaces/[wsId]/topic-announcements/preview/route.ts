@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { normalizeTopicAnnouncementAttachmentFileName } from '@/lib/topic-announcement-attachments';
 import { renderTopicAnnouncementEmail } from '@/lib/topic-announcements-email';
 import {
+  getPublicSchemaClient,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementPayloadSchema,
   validateTopicAnnouncementGroupId,
@@ -57,7 +58,8 @@ export async function POST(request: Request, { params }: Params) {
   });
   if (invalidGroup) return invalidGroup;
 
-  const { data: workspace, error: workspaceError } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data: workspace, error: workspaceError } = await publicAdmin
     .from('workspaces')
     .select('name')
     .eq('id', normalizedWsId)

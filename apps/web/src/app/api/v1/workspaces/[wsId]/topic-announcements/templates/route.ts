@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  attachTopicAnnouncementGroups,
   mapTopicAnnouncementTemplateRow,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementTemplateSchema,
@@ -21,14 +22,19 @@ export async function GET(request: Request, { params }: Params) {
   const { normalizedWsId, sbAdmin } = access.context;
   const { data, error } = await sbAdmin
     .from('topic_announcement_templates')
-    .select('*, group:workspace_user_groups(id, name)')
+    .select('*')
     .eq('ws_id', normalizedWsId)
     .order('name', { ascending: true });
 
   if (error) throw error;
 
+  const templatesWithGroups = await attachTopicAnnouncementGroups(
+    sbAdmin,
+    data ?? []
+  );
+
   return NextResponse.json({
-    data: (data ?? []).map((row: Record<string, unknown>) =>
+    data: templatesWithGroups.map((row: Record<string, unknown>) =>
       mapTopicAnnouncementTemplateRow(row)
     ),
   });
@@ -92,13 +98,16 @@ export async function POST(request: Request, { params }: Params) {
       updated_by: actorUserId,
       ws_id: normalizedWsId,
     })
-    .select('*, group:workspace_user_groups(id, name)')
+    .select('*')
     .single();
 
   if (error) throw error;
+  const [templateWithGroup] = await attachTopicAnnouncementGroups(sbAdmin, [
+    data,
+  ]);
 
   return NextResponse.json(
-    { data: mapTopicAnnouncementTemplateRow(data) },
+    { data: mapTopicAnnouncementTemplateRow(templateWithGroup ?? data) },
     { status: 201 }
   );
 }

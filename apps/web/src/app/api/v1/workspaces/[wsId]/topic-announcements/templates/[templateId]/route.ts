@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  attachTopicAnnouncementGroups,
   mapTopicAnnouncementTemplateRow,
   resolveTopicAnnouncementsAccess,
   TopicAnnouncementTemplateSchema,
@@ -83,7 +84,7 @@ export async function PATCH(request: Request, { params }: Params) {
     })
     .eq('id', templateId)
     .eq('ws_id', normalizedWsId)
-    .select('*, group:workspace_user_groups(id, name)')
+    .select('*')
     .maybeSingle();
 
   if (error) throw error;
@@ -91,7 +92,13 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ message: 'Not found' }, { status: 404 });
   }
 
-  return NextResponse.json({ data: mapTopicAnnouncementTemplateRow(data) });
+  const [templateWithGroup] = await attachTopicAnnouncementGroups(sbAdmin, [
+    data,
+  ]);
+
+  return NextResponse.json({
+    data: mapTopicAnnouncementTemplateRow(templateWithGroup ?? data),
+  });
 }
 
 export async function DELETE(request: Request, { params }: Params) {

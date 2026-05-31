@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import {
+  attachTopicAnnouncementGroups,
   insertTopicAnnouncementAttachmentDrafts,
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
@@ -66,7 +67,7 @@ export async function GET(request: Request, { params }: Params) {
 
   let query = sbAdmin
     .from('topic_announcements')
-    .select('*, group:workspace_user_groups(id, name)', { count: 'exact' })
+    .select('*', { count: 'exact' })
     .eq('ws_id', normalizedWsId);
 
   if (status === 'active') {
@@ -145,9 +146,14 @@ export async function GET(request: Request, { params }: Params) {
     )
   );
 
+  const announcementsWithGroups = await attachTopicAnnouncementGroups(
+    sbAdmin,
+    data ?? []
+  );
+
   return NextResponse.json({
     count: count ?? 0,
-    data: (data ?? []).map((announcement: any) =>
+    data: announcementsWithGroups.map((announcement: any) =>
       mapTopicAnnouncementRow({
         ...announcement,
         attachments: attachmentsByAnnouncement.get(announcement.id) ?? [],
@@ -261,10 +267,14 @@ export async function POST(request: Request, { params }: Params) {
 
   const { data: enrichedAnnouncement, error: enrichedError } = await sbAdmin
     .from('topic_announcements')
-    .select('*, group:workspace_user_groups(id, name)')
+    .select('*')
     .eq('id', announcement.id)
     .maybeSingle();
   if (enrichedError) throw enrichedError;
+  const [announcementWithGroup] = await attachTopicAnnouncementGroups(
+    sbAdmin,
+    enrichedAnnouncement ? [enrichedAnnouncement] : []
+  );
 
   const { data: attachments, error: attachmentsError } = await sbAdmin
     .from('topic_announcement_attachments')
@@ -278,7 +288,7 @@ export async function POST(request: Request, { params }: Params) {
   return NextResponse.json(
     {
       data: mapTopicAnnouncementRow({
-        ...(enrichedAnnouncement ?? announcement),
+        ...(announcementWithGroup ?? announcement),
         attachments: attachments ?? [],
         contacts: await serializeTopicAnnouncementContacts(
           sbAdmin,

@@ -35,6 +35,34 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'topic_announcement_attachments',
+    select: 'id',
+  },
+  {
+    name: 'topic_announcement_batches',
+    select: 'id',
+  },
+  {
+    name: 'topic_announcement_contact_verifications',
+    select: 'id',
+  },
+  {
+    name: 'topic_announcement_contacts',
+    select: 'id',
+  },
+  {
+    name: 'topic_announcement_recipients',
+    select: 'announcement_id',
+  },
+  {
+    name: 'topic_announcement_templates',
+    select: 'id',
+  },
+  {
+    name: 'topic_announcements',
+    select: 'id',
+  },
+  {
     name: 'user_group_metric_categories',
     select: 'id',
   },

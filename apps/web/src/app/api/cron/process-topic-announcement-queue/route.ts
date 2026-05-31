@@ -3,13 +3,16 @@ import type { TypedSupabaseClient } from '@tuturuuu/supabase/types';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { sendTopicAnnouncement } from '@/app/api/v1/workspaces/[wsId]/topic-announcements/email';
+import { getPrivateSchemaClient } from '@/app/api/v1/workspaces/[wsId]/topic-announcements/shared';
 import { serverLogger, withCronLogDrain } from '@/lib/infrastructure/log-drain';
 
 const LOG_PREFIX = '[TopicAnnouncementQueueCron]';
 const BATCH_LIMIT = 25;
 
 async function handler(request: NextRequest) {
-  const sbAdmin = (await createAdminClient()) as TypedSupabaseClient;
+  const sbAdmin = getPrivateSchemaClient(
+    (await createAdminClient()) as TypedSupabaseClient
+  );
   const now = new Date().toISOString();
 
   const { data: dueRows, error } = await sbAdmin

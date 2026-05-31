@@ -3829,6 +3829,369 @@ export type Database = {
         };
         Relationships: [];
       };
+      topic_announcement_attachments: {
+        Row: {
+          announcement_id: string;
+          content_type: string;
+          created_at: string;
+          created_by: string | null;
+          file_name: string;
+          id: string;
+          metadata: Json;
+          size_bytes: number;
+          storage_path: string;
+          storage_provider: string;
+          ws_id: string;
+        };
+        Insert: {
+          announcement_id: string;
+          content_type: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_name: string;
+          id?: string;
+          metadata?: Json;
+          size_bytes: number;
+          storage_path: string;
+          storage_provider?: string;
+          ws_id: string;
+        };
+        Update: {
+          announcement_id?: string;
+          content_type?: string;
+          created_at?: string;
+          created_by?: string | null;
+          file_name?: string;
+          id?: string;
+          metadata?: Json;
+          size_bytes?: number;
+          storage_path?: string;
+          storage_provider?: string;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_attachments_announcement_id_fkey';
+            columns: ['announcement_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      topic_announcement_batches: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          row_count: number;
+          source_name: string | null;
+          source_type: string;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          row_count?: number;
+          source_name?: string | null;
+          source_type?: string;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          row_count?: number;
+          source_name?: string | null;
+          source_type?: string;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      topic_announcement_contact_verifications: {
+        Row: {
+          contact_id: string;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          id: string;
+          requested_by: string | null;
+          status: string;
+          token_hash: string;
+          updated_at: string;
+          verified_at: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          contact_id: string;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          id?: string;
+          requested_by?: string | null;
+          status?: string;
+          token_hash: string;
+          updated_at?: string;
+          verified_at?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          contact_id?: string;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          id?: string;
+          requested_by?: string | null;
+          status?: string;
+          token_hash?: string;
+          updated_at?: string;
+          verified_at?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_contact_verifications_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcement_contacts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      topic_announcement_contacts: {
+        Row: {
+          archived: boolean;
+          created_at: string;
+          created_by: string | null;
+          email: string;
+          id: string;
+          metadata: Json;
+          name: string;
+          tags: string[];
+          updated_at: string;
+          updated_by: string | null;
+          workspace_user_id: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          archived?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email: string;
+          id?: string;
+          metadata?: Json;
+          name: string;
+          tags?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_user_id?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          archived?: boolean;
+          created_at?: string;
+          created_by?: string | null;
+          email?: string;
+          id?: string;
+          metadata?: Json;
+          name?: string;
+          tags?: string[];
+          updated_at?: string;
+          updated_by?: string | null;
+          workspace_user_id?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      topic_announcement_recipients: {
+        Row: {
+          announcement_id: string;
+          contact_id: string;
+          created_at: string;
+        };
+        Insert: {
+          announcement_id: string;
+          contact_id: string;
+          created_at?: string;
+        };
+        Update: {
+          announcement_id?: string;
+          contact_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcement_recipients_announcement_id_fkey';
+            columns: ['announcement_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcements';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'topic_announcement_recipients_contact_id_fkey';
+            columns: ['contact_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcement_contacts';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      topic_announcement_templates: {
+        Row: {
+          class_label: string | null;
+          created_at: string;
+          created_by: string | null;
+          day_label: string | null;
+          default_contact_ids: string[];
+          end_time: string | null;
+          group_id: string | null;
+          id: string;
+          name: string;
+          place: string | null;
+          room: string | null;
+          session_date: string | null;
+          start_time: string | null;
+          title: string;
+          topic: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          default_contact_ids?: string[];
+          end_time?: string | null;
+          group_id?: string | null;
+          id?: string;
+          name: string;
+          place?: string | null;
+          room?: string | null;
+          session_date?: string | null;
+          start_time?: string | null;
+          title: string;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          default_contact_ids?: string[];
+          end_time?: string | null;
+          group_id?: string | null;
+          id?: string;
+          name?: string;
+          place?: string | null;
+          room?: string | null;
+          session_date?: string | null;
+          start_time?: string | null;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      topic_announcements: {
+        Row: {
+          batch_id: string | null;
+          body: string;
+          class_label: string | null;
+          created_at: string;
+          created_by: string | null;
+          day_label: string | null;
+          end_time: string | null;
+          group_id: string | null;
+          id: string;
+          last_error: string | null;
+          place: string | null;
+          room: string | null;
+          scheduled_send_at: string | null;
+          sent_at: string | null;
+          sent_email_audit_id: string | null;
+          session_date: string | null;
+          source_row_number: number | null;
+          source_type: string;
+          start_time: string | null;
+          status: string;
+          title: string;
+          topic: string;
+          updated_at: string;
+          updated_by: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          batch_id?: string | null;
+          body?: string;
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          end_time?: string | null;
+          group_id?: string | null;
+          id?: string;
+          last_error?: string | null;
+          place?: string | null;
+          room?: string | null;
+          scheduled_send_at?: string | null;
+          sent_at?: string | null;
+          sent_email_audit_id?: string | null;
+          session_date?: string | null;
+          source_row_number?: number | null;
+          source_type?: string;
+          start_time?: string | null;
+          status?: string;
+          title: string;
+          topic: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          batch_id?: string | null;
+          body?: string;
+          class_label?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          day_label?: string | null;
+          end_time?: string | null;
+          group_id?: string | null;
+          id?: string;
+          last_error?: string | null;
+          place?: string | null;
+          room?: string | null;
+          scheduled_send_at?: string | null;
+          sent_at?: string | null;
+          sent_email_audit_id?: string | null;
+          session_date?: string | null;
+          source_row_number?: number | null;
+          source_type?: string;
+          start_time?: string | null;
+          status?: string;
+          title?: string;
+          topic?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'topic_announcements_batch_id_fkey';
+            columns: ['batch_id'];
+            isOneToOne: false;
+            referencedRelation: 'topic_announcement_batches';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       user_group_metric_categories: {
         Row: {
           created_at: string | null;
@@ -5410,6 +5773,10 @@ export type Database = {
         Returns: string;
       };
       safe_parse_inet: { Args: { p_value: string }; Returns: unknown };
+      topic_announcement_contact_has_linked_verified_email: {
+        Args: { p_contact_id: string };
+        Returns: boolean;
+      };
       try_consume_rate_limit_bucket: {
         Args: { p_bucket: string; p_limit: number; p_rate_window: string };
         Returns: {
@@ -18332,932 +18699,6 @@ export type Database = {
           },
           {
             foreignKeyName: 'time_tracking_sessions_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_attachments: {
-        Row: {
-          announcement_id: string;
-          content_type: string;
-          created_at: string;
-          created_by: string | null;
-          file_name: string;
-          id: string;
-          metadata: Json;
-          size_bytes: number;
-          storage_path: string;
-          storage_provider: string;
-          ws_id: string;
-        };
-        Insert: {
-          announcement_id: string;
-          content_type: string;
-          created_at?: string;
-          created_by?: string | null;
-          file_name: string;
-          id?: string;
-          metadata?: Json;
-          size_bytes: number;
-          storage_path: string;
-          storage_provider?: string;
-          ws_id: string;
-        };
-        Update: {
-          announcement_id?: string;
-          content_type?: string;
-          created_at?: string;
-          created_by?: string | null;
-          file_name?: string;
-          id?: string;
-          metadata?: Json;
-          size_bytes?: number;
-          storage_path?: string;
-          storage_provider?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_attachments_announcement_id_fkey';
-            columns: ['announcement_id'];
-            isOneToOne: false;
-            referencedRelation: 'topic_announcements';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_attachments_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_batches: {
-        Row: {
-          created_at: string;
-          created_by: string | null;
-          id: string;
-          row_count: number;
-          source_name: string | null;
-          source_type: string;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          row_count?: number;
-          source_name?: string | null;
-          source_type?: string;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string;
-          created_by?: string | null;
-          id?: string;
-          row_count?: number;
-          source_name?: string | null;
-          source_type?: string;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_batches_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_batches_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_contact_verifications: {
-        Row: {
-          contact_id: string;
-          created_at: string;
-          email: string;
-          expires_at: string;
-          id: string;
-          requested_by: string | null;
-          status: string;
-          token_hash: string;
-          updated_at: string;
-          verified_at: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          contact_id: string;
-          created_at?: string;
-          email: string;
-          expires_at: string;
-          id?: string;
-          requested_by?: string | null;
-          status?: string;
-          token_hash: string;
-          updated_at?: string;
-          verified_at?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          contact_id?: string;
-          created_at?: string;
-          email?: string;
-          expires_at?: string;
-          id?: string;
-          requested_by?: string | null;
-          status?: string;
-          token_hash?: string;
-          updated_at?: string;
-          verified_at?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_contact_id_fkey';
-            columns: ['contact_id'];
-            isOneToOne: false;
-            referencedRelation: 'topic_announcement_contacts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_requested_by_fkey';
-            columns: ['requested_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_requested_by_fkey';
-            columns: ['requested_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_requested_by_fkey';
-            columns: ['requested_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_requested_by_fkey';
-            columns: ['requested_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contact_verifications_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_contacts: {
-        Row: {
-          archived: boolean;
-          created_at: string;
-          created_by: string | null;
-          email: string;
-          id: string;
-          metadata: Json;
-          name: string;
-          tags: string[];
-          updated_at: string;
-          updated_by: string | null;
-          workspace_user_id: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          archived?: boolean;
-          created_at?: string;
-          created_by?: string | null;
-          email: string;
-          id?: string;
-          metadata?: Json;
-          name: string;
-          tags?: string[];
-          updated_at?: string;
-          updated_by?: string | null;
-          workspace_user_id?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          archived?: boolean;
-          created_at?: string;
-          created_by?: string | null;
-          email?: string;
-          id?: string;
-          metadata?: Json;
-          name?: string;
-          tags?: string[];
-          updated_at?: string;
-          updated_by?: string | null;
-          workspace_user_id?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_contacts_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_workspace_user_id_fkey';
-            columns: ['workspace_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_invoice_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_workspace_user_id_fkey';
-            columns: ['workspace_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'distinct_transaction_creators';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_workspace_user_id_fkey';
-            columns: ['workspace_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_user_with_attendance';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_workspace_user_id_fkey';
-            columns: ['workspace_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_workspace_user_id_fkey';
-            columns: ['workspace_user_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_users_with_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_contacts_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_recipients: {
-        Row: {
-          announcement_id: string;
-          contact_id: string;
-          created_at: string;
-        };
-        Insert: {
-          announcement_id: string;
-          contact_id: string;
-          created_at?: string;
-        };
-        Update: {
-          announcement_id?: string;
-          contact_id?: string;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_recipients_announcement_id_fkey';
-            columns: ['announcement_id'];
-            isOneToOne: false;
-            referencedRelation: 'topic_announcements';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_recipients_contact_id_fkey';
-            columns: ['contact_id'];
-            isOneToOne: false;
-            referencedRelation: 'topic_announcement_contacts';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcement_templates: {
-        Row: {
-          class_label: string | null;
-          created_at: string;
-          created_by: string | null;
-          day_label: string | null;
-          default_contact_ids: string[];
-          end_time: string | null;
-          group_id: string | null;
-          id: string;
-          name: string;
-          place: string | null;
-          room: string | null;
-          session_date: string | null;
-          start_time: string | null;
-          title: string;
-          topic: string;
-          updated_at: string;
-          updated_by: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          class_label?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          day_label?: string | null;
-          default_contact_ids?: string[];
-          end_time?: string | null;
-          group_id?: string | null;
-          id?: string;
-          name: string;
-          place?: string | null;
-          room?: string | null;
-          session_date?: string | null;
-          start_time?: string | null;
-          title: string;
-          topic?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          class_label?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          day_label?: string | null;
-          default_contact_ids?: string[];
-          end_time?: string | null;
-          group_id?: string | null;
-          id?: string;
-          name?: string;
-          place?: string | null;
-          room?: string | null;
-          session_date?: string | null;
-          start_time?: string | null;
-          title?: string;
-          topic?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcement_templates_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      topic_announcements: {
-        Row: {
-          batch_id: string | null;
-          body: string;
-          class_label: string | null;
-          created_at: string;
-          created_by: string | null;
-          day_label: string | null;
-          end_time: string | null;
-          group_id: string | null;
-          id: string;
-          last_error: string | null;
-          place: string | null;
-          room: string | null;
-          scheduled_send_at: string | null;
-          sent_at: string | null;
-          sent_email_audit_id: string | null;
-          session_date: string | null;
-          source_row_number: number | null;
-          source_type: string;
-          start_time: string | null;
-          status: string;
-          title: string;
-          topic: string;
-          updated_at: string;
-          updated_by: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          batch_id?: string | null;
-          body?: string;
-          class_label?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          day_label?: string | null;
-          end_time?: string | null;
-          group_id?: string | null;
-          id?: string;
-          last_error?: string | null;
-          place?: string | null;
-          room?: string | null;
-          scheduled_send_at?: string | null;
-          sent_at?: string | null;
-          sent_email_audit_id?: string | null;
-          session_date?: string | null;
-          source_row_number?: number | null;
-          source_type?: string;
-          start_time?: string | null;
-          status?: string;
-          title: string;
-          topic: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          batch_id?: string | null;
-          body?: string;
-          class_label?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          day_label?: string | null;
-          end_time?: string | null;
-          group_id?: string | null;
-          id?: string;
-          last_error?: string | null;
-          place?: string | null;
-          room?: string | null;
-          scheduled_send_at?: string | null;
-          sent_at?: string | null;
-          sent_email_audit_id?: string | null;
-          session_date?: string | null;
-          source_row_number?: number | null;
-          source_type?: string;
-          start_time?: string | null;
-          status?: string;
-          title?: string;
-          topic?: string;
-          updated_at?: string;
-          updated_by?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'topic_announcements_batch_id_fkey';
-            columns: ['batch_id'];
-            isOneToOne: false;
-            referencedRelation: 'topic_announcement_batches';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_created_by_fkey';
-            columns: ['created_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_users_with_post_checks';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'group_with_attendance';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'posts_dashboard_view';
-            referencedColumns: ['group_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_groups_with_tags';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_amount';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_user_groups_with_guest';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_sent_email_audit_id_fkey';
-            columns: ['sent_email_audit_id'];
-            isOneToOne: false;
-            referencedRelation: 'email_audit';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_challenge_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'nova_user_leaderboard';
-            referencedColumns: ['user_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'shortened_links_creator_stats';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_updated_by_fkey';
-            columns: ['updated_by'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'topic_announcements_ws_id_fkey';
             columns: ['ws_id'];
             isOneToOne: false;
             referencedRelation: 'workspaces';
@@ -35058,10 +34499,6 @@ export type Database = {
           p_task_id: string;
           p_user_id: string;
         };
-        Returns: boolean;
-      };
-      topic_announcement_contact_has_linked_verified_email: {
-        Args: { p_contact_id: string };
         Returns: boolean;
       };
       transactions_have_same_abs_amount: {

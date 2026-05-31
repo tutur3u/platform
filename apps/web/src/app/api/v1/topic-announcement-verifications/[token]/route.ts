@@ -1,5 +1,6 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { NextResponse } from 'next/server';
+import { getPrivateSchemaClient } from '@/app/api/v1/workspaces/[wsId]/topic-announcements/shared';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
 import { htmlEscape } from '@/lib/topic-announcements-email';
 import { hashTopicAnnouncementVerificationToken } from '@/lib/topic-announcements-verification';
@@ -48,7 +49,7 @@ export async function GET(_request: Request, { params }: Params) {
     );
   }
 
-  const sbAdmin = (await createAdminClient()) as any;
+  const sbAdmin = getPrivateSchemaClient((await createAdminClient()) as any);
   const tokenHash = hashTopicAnnouncementVerificationToken(token);
   const { data, error } = await sbAdmin
     .from('topic_announcement_contact_verifications')

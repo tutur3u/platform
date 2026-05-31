@@ -69,14 +69,14 @@ describe('Supabase Client', () => {
     __resetBrowserClientCacheForTests();
   });
 
-  it('treats topic announcement tables as proxy-only', () => {
-    expect(isProxyOnlyPublicTable('topic_announcement_batches')).toBe(true);
+  it('does not treat migrated topic announcement tables as proxy-only', () => {
+    expect(isProxyOnlyPublicTable('topic_announcement_batches')).toBe(false);
     expect(
       isProxyOnlyPublicTable('topic_announcement_contact_verifications')
-    ).toBe(true);
-    expect(isProxyOnlyPublicTable('topic_announcement_contacts')).toBe(true);
-    expect(isProxyOnlyPublicTable('topic_announcement_recipients')).toBe(true);
-    expect(isProxyOnlyPublicTable('topic_announcements')).toBe(true);
+    ).toBe(false);
+    expect(isProxyOnlyPublicTable('topic_announcement_contacts')).toBe(false);
+    expect(isProxyOnlyPublicTable('topic_announcement_recipients')).toBe(false);
+    expect(isProxyOnlyPublicTable('topic_announcements')).toBe(false);
   });
 
   it('treats wallets as proxy-only', () => {
@@ -95,9 +95,6 @@ describe('Supabase Client', () => {
         browserAuthOptions
       );
       expect(warnSpy).toHaveBeenCalledTimes(1);
-      expect(() => client.from('topic_announcements')).toThrow(
-        getProxyOnlyPublicTableError('topic_announcements')
-      );
       expect(() => client.from('workspace_wallets')).toThrow(
         getProxyOnlyPublicTableError('workspace_wallets')
       );
@@ -105,9 +102,10 @@ describe('Supabase Client', () => {
         table: 'workspace_boards',
       });
       expect(client.from('users')).toEqual({ table: 'users' });
-      expect(() => client.schema('public').from('topic_announcements')).toThrow(
-        getProxyOnlyPublicTableError('topic_announcements')
-      );
+      expect(client.schema('public').from('topic_announcements')).toEqual({
+        schema: 'public',
+        table: 'topic_announcements',
+      });
     });
 
     it('reuses the same underlying browser client across calls', () => {

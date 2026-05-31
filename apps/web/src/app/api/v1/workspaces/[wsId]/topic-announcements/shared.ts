@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import type { TopicAnnouncementsSupabaseClient } from './server-helpers';
+import { getPublicSchemaClient } from './server-helpers';
 
 export {
   buildTopicAnnouncementVerificationUrl,
@@ -16,6 +18,9 @@ export type {
   TopicAnnouncementsSupabaseClient,
 } from './server-helpers';
 export {
+  attachTopicAnnouncementGroups,
+  getPrivateSchemaClient,
+  getPublicSchemaClient,
   insertTopicAnnouncementAttachmentDrafts,
   mapTopicAnnouncementRow,
   resolveTopicAnnouncementsAccess,
@@ -23,8 +28,6 @@ export {
   serializeTopicAnnouncementContact,
   serializeTopicAnnouncementContacts,
 } from './server-helpers';
-
-import type { TopicAnnouncementsSupabaseClient } from './server-helpers';
 
 const EMAIL_SCHEMA = z.string().trim().email().transform(normalizeEmail);
 export const TOPIC_ANNOUNCEMENT_MAX_ATTACHMENTS = 5;
@@ -231,7 +234,8 @@ export async function getWorkspaceSchedulingTimezone(
   sbAdmin: TopicAnnouncementsSupabaseClient,
   normalizedWsId: string
 ) {
-  const { data, error } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data, error } = await publicAdmin
     .from('workspaces')
     .select('timezone')
     .eq('id', normalizedWsId)
@@ -287,7 +291,8 @@ export async function validateTopicAnnouncementGroupId({
 }) {
   if (!groupId) return null;
 
-  const { data, error } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data, error } = await publicAdmin
     .from('workspace_user_groups')
     .select('id')
     .eq('ws_id', normalizedWsId)
@@ -316,7 +321,8 @@ export async function validateTopicAnnouncementWorkspaceUserId({
 }) {
   if (!workspaceUserId) return null;
 
-  const { data, error } = await sbAdmin
+  const publicAdmin = getPublicSchemaClient(sbAdmin);
+  const { data, error } = await publicAdmin
     .from('workspace_users')
     .select('id')
     .eq('ws_id', normalizedWsId)

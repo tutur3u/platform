@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('../shared', () => ({
+  getPublicSchemaClient: vi.fn((client) => client),
   resolveTopicAnnouncementsAccess: mocks.resolveTopicAnnouncementsAccess,
   TopicAnnouncementPayloadSchema: {
     safeParse: mocks.safeParse,
