@@ -1,6 +1,8 @@
 import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
+import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -10,6 +12,7 @@ interface Params {
 
 export async function POST(req: Request, { params }: Params) {
   const { wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -32,17 +35,18 @@ export async function POST(req: Request, { params }: Params) {
 
   const sbAdmin = await createAdminClient();
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('user_group_metric_categories')
     .insert({
       name: name.trim(),
       description: description?.trim() || null,
-      ws_id: wsId,
+      ws_id: normalizedWsId,
     })
     .select('id, name, description')
     .single();
 
   if (error) {
-    console.error(error);
+    serverLogger.error('Error creating metric category:', error);
     return NextResponse.json(
       { message: 'Error creating metric category' },
       { status: 500 }

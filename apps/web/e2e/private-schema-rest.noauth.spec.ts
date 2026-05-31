@@ -23,6 +23,14 @@ const PRIVATE_TABLES = [
     select: 'id',
   },
   {
+    name: 'user_group_metric_categories',
+    select: 'id',
+  },
+  {
+    name: 'user_group_metric_category_links',
+    select: 'category_id',
+  },
+  {
     name: 'workspace_education_access_requests',
     select: 'id',
   },

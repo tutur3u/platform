@@ -1122,7 +1122,7 @@ values
 
 -- Populate user group metric categories
 insert into
-    public.user_group_metric_categories (id, ws_id, name, description)
+    private.user_group_metric_categories (id, ws_id, name, description)
 values
     (
         '00000000-0000-0000-0000-000000000001',
@@ -1139,7 +1139,7 @@ values
 
 -- Populate user group metric category links
 insert into
-    public.user_group_metric_category_links (category_id, metric_id)
+    private.user_group_metric_category_links (category_id, metric_id)
 values
     (
         '00000000-0000-0000-0000-000000000001',

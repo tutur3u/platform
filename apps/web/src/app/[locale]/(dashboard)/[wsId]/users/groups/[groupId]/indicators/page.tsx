@@ -93,16 +93,37 @@ async function getData(wsId: string, groupId: string) {
 }
 
 function mapMetricCategories(
+  metricCategoriesByMetricId: Map<string, MetricCategory[]>,
+  metricId: string
+) {
+  return metricCategoriesByMetricId.get(metricId) ?? [];
+}
+
+function groupMetricCategoriesByMetricId(
   metricCategoryLinks:
     | {
+        metric_id: string;
         user_group_metric_categories: MetricCategory | MetricCategory[] | null;
       }[]
     | null
     | undefined
 ) {
-  return (metricCategoryLinks ?? [])
-    .flatMap((row) => row.user_group_metric_categories ?? [])
-    .filter((category): category is MetricCategory => Boolean(category));
+  const categoriesByMetricId = new Map<string, MetricCategory[]>();
+
+  for (const link of metricCategoryLinks ?? []) {
+    const categories = Array.isArray(link.user_group_metric_categories)
+      ? link.user_group_metric_categories
+      : link.user_group_metric_categories
+        ? [link.user_group_metric_categories]
+        : [];
+
+    categoriesByMetricId.set(link.metric_id, [
+      ...(categoriesByMetricId.get(link.metric_id) ?? []),
+      ...categories,
+    ]);
+  }
+
+  return categoriesByMetricId;
 }
 
 async function getGroupIndicators(groupId: string) {
@@ -115,16 +136,31 @@ async function getGroupIndicators(groupId: string) {
       name,
       factor,
       unit,
-      is_weighted,
-      user_group_metric_category_links(
-        user_group_metric_categories(id, name, description)
-      )
+      is_weighted
     `)
     .eq('group_id', groupId)
     .order('created_at', { ascending: true });
 
   if (error) throw error;
   if (!data) return [];
+
+  const metricIds = data.map((indicator) => indicator.id);
+  const { data: metricCategoryLinks, error: metricCategoryLinksError } =
+    metricIds.length > 0
+      ? await sbAdmin
+          .schema('private')
+          .from('user_group_metric_category_links')
+          .select(`
+            metric_id,
+            user_group_metric_categories(id, name, description)
+          `)
+          .in('metric_id', metricIds)
+      : { data: [], error: null };
+
+  if (metricCategoryLinksError) throw metricCategoryLinksError;
+
+  const metricCategoriesByMetricId =
+    groupMetricCategoriesByMetricId(metricCategoryLinks);
 
   return data.map(
     (indicator): GroupIndicator => ({
@@ -133,9 +169,7 @@ async function getGroupIndicators(groupId: string) {
       factor: indicator.factor,
       unit: indicator.unit,
       is_weighted: indicator.is_weighted,
-      categories: mapMetricCategories(
-        indicator.user_group_metric_category_links
-      ),
+      categories: mapMetricCategories(metricCategoriesByMetricId, indicator.id),
     })
   );
 }
@@ -144,6 +178,7 @@ async function getMetricCategories(wsId: string) {
   const sbAdmin = await createAdminClient();
 
   const { data, error } = await sbAdmin
+    .schema('private')
     .from('user_group_metric_categories')
     .select('id, name, description')
     .eq('ws_id', wsId)

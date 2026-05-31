@@ -2,6 +2,7 @@ import { createAdminClient } from '@tuturuuu/supabase/next/server';
 import { getPermissions } from '@tuturuuu/utils/workspace-helper';
 import { NextResponse } from 'next/server';
 import { serverLogger } from '@/lib/infrastructure/log-drain';
+import { resolveUserGroupRouteWorkspaceId } from '@/lib/user-groups/route-helpers';
 
 interface Params {
   params: Promise<{
@@ -13,6 +14,7 @@ interface Params {
 
 export async function DELETE(req: Request, { params }: Params) {
   const { categoryId, groupId, wsId } = await params;
+  const normalizedWsId = await resolveUserGroupRouteWorkspaceId(wsId, req);
 
   const permissions = await getPermissions({ wsId, request: req });
   if (!permissions) {
@@ -28,19 +30,20 @@ export async function DELETE(req: Request, { params }: Params) {
   }
 
   const sbAdmin = await createAdminClient();
+  const metricCategories = sbAdmin.schema('private');
 
   const [groupResult, categoryResult] = await Promise.all([
     sbAdmin
       .from('workspace_user_groups')
       .select('id')
       .eq('id', groupId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .maybeSingle(),
-    sbAdmin
+    metricCategories
       .from('user_group_metric_categories')
       .select('id')
       .eq('id', categoryId)
-      .eq('ws_id', wsId)
+      .eq('ws_id', normalizedWsId)
       .maybeSingle(),
   ]);
 
@@ -51,7 +54,7 @@ export async function DELETE(req: Request, { params }: Params) {
     serverLogger.error('Failed to resolve user group for metric deletion', {
       error: groupError,
       groupId,
-      wsId,
+      wsId: normalizedWsId,
     });
     return NextResponse.json(
       { message: 'Error deleting metric category' },
@@ -70,7 +73,7 @@ export async function DELETE(req: Request, { params }: Params) {
     serverLogger.error('Failed to resolve metric category for deletion', {
       categoryId,
       error: categoryError,
-      wsId,
+      wsId: normalizedWsId,
     });
     return NextResponse.json(
       { message: 'Error deleting metric category' },
@@ -85,7 +88,7 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error: linkDeleteError } = await sbAdmin
+  const { error: linkDeleteError } = await metricCategories
     .from('user_group_metric_category_links')
     .delete()
     .eq('category_id', categoryId);
@@ -94,7 +97,7 @@ export async function DELETE(req: Request, { params }: Params) {
     serverLogger.error('Failed to unlink metric category before deletion', {
       categoryId,
       error: linkDeleteError,
-      wsId,
+      wsId: normalizedWsId,
     });
     return NextResponse.json(
       { message: 'Error deleting metric category' },
@@ -102,17 +105,17 @@ export async function DELETE(req: Request, { params }: Params) {
     );
   }
 
-  const { error: deleteError } = await sbAdmin
+  const { error: deleteError } = await metricCategories
     .from('user_group_metric_categories')
     .delete()
     .eq('id', categoryId)
-    .eq('ws_id', wsId);
+    .eq('ws_id', normalizedWsId);
 
   if (deleteError) {
     serverLogger.error('Failed to delete metric category', {
       categoryId,
       error: deleteError,
-      wsId,
+      wsId: normalizedWsId,
     });
     return NextResponse.json(
       { message: 'Error deleting metric category' },

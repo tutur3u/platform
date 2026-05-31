@@ -89,7 +89,6 @@ select ok(
         and t.table_type = 'BASE TABLE'
         and c.table_name not in (
           'ai_gateway_models',
-          'user_group_metric_categories',
           'workspace_external_project_assets',
           'workspace_external_project_collections',
           'workspace_habit_trackers',
@@ -141,7 +140,6 @@ select ok(
         and t.table_type = 'BASE TABLE'
         and c.table_name not in (
           'ai_gateway_models',
-          'user_group_metric_categories',
           'workspace_external_project_assets',
           'workspace_external_project_collections',
           'workspace_habit_trackers',

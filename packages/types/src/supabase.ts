@@ -3616,6 +3616,59 @@ export type Database = {
         };
         Relationships: [];
       };
+      user_group_metric_categories: {
+        Row: {
+          created_at: string | null;
+          description: string | null;
+          id: string;
+          name: string;
+          note: string | null;
+          ws_id: string;
+        };
+        Insert: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name: string;
+          note?: string | null;
+          ws_id: string;
+        };
+        Update: {
+          created_at?: string | null;
+          description?: string | null;
+          id?: string;
+          name?: string;
+          note?: string | null;
+          ws_id?: string;
+        };
+        Relationships: [];
+      };
+      user_group_metric_category_links: {
+        Row: {
+          category_id: string;
+          created_at: string | null;
+          metric_id: string;
+        };
+        Insert: {
+          category_id: string;
+          created_at?: string | null;
+          metric_id: string;
+        };
+        Update: {
+          category_id?: string;
+          created_at?: string | null;
+          metric_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'user_group_metric_category_links_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'user_group_metric_categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       workspace_calendar_sync_log: {
         Row: {
           created_at: string;
@@ -4545,6 +4598,10 @@ export type Database = {
         Returns: {
           item: Json;
         }[];
+      };
+      get_user_group_metric_categories_count: {
+        Args: { p_ws_id: string };
+        Returns: number;
       };
       get_wallet_interest_initial_balance: {
         Args: {
@@ -9932,13 +9989,6 @@ export type Database = {
             columns: ['checkup_id'];
             isOneToOne: false;
             referencedRelation: 'healthcare_checkups';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'healthcare_checkup_vital_groups_group_id_fkey';
-            columns: ['group_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_metric_categories';
             referencedColumns: ['id'];
           },
         ];
@@ -20319,95 +20369,6 @@ export type Database = {
             columns: ['product_id'];
             isOneToOne: false;
             referencedRelation: 'workspace_products';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_group_metric_categories: {
-        Row: {
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          name: string;
-          note: string | null;
-          ws_id: string;
-        };
-        Insert: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name: string;
-          note?: string | null;
-          ws_id: string;
-        };
-        Update: {
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          name?: string;
-          note?: string | null;
-          ws_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_metric_categories_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_metric_categories_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'entity_limit_source__workspaces';
-            referencedColumns: ['personal_ws_id'];
-          },
-          {
-            foreignKeyName: 'user_group_metric_categories_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspace_link_counts';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_metric_categories_ws_id_fkey';
-            columns: ['ws_id'];
-            isOneToOne: false;
-            referencedRelation: 'workspaces';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_group_metric_category_links: {
-        Row: {
-          category_id: string;
-          created_at: string | null;
-          metric_id: string;
-        };
-        Insert: {
-          category_id: string;
-          created_at?: string | null;
-          metric_id: string;
-        };
-        Update: {
-          category_id?: string;
-          created_at?: string | null;
-          metric_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_group_metric_category_links_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_metric_categories';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'user_group_metric_category_links_metric_id_fkey';
-            columns: ['metric_id'];
-            isOneToOne: false;
-            referencedRelation: 'user_group_metrics';
             referencedColumns: ['id'];
           },
         ];
@@ -33899,10 +33860,6 @@ export type Database = {
         }[];
       };
       get_user_email: { Args: { p_user_id: string }; Returns: string };
-      get_user_group_metric_categories_count: {
-        Args: { ws_id: string };
-        Returns: number;
-      };
       get_user_group_metrics_count: {
         Args: { ws_id: string };
         Returns: number;

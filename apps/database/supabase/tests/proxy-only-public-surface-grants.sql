@@ -18,7 +18,6 @@ values
   ('form_response_answers'),
   ('form_sections'),
   ('forms'),
-  ('user_group_metric_categories'),
   ('nova_challenge_criteria'),
   ('nova_challenges'),
   ('nova_problem_test_cases'),

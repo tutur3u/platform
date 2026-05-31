@@ -25,27 +25,32 @@ const mocks = vi.hoisted(() => {
         };
       }
 
-      if (table === 'user_group_metric_categories') {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              eq: vi.fn(() => ({ maybeSingle: categoryMaybeSingle })),
-            })),
-          })),
-          delete: vi.fn(() => ({
-            eq: vi.fn(() => ({ eq: deleteCategoryWsEq })),
-          })),
-        };
-      }
-
-      if (table === 'user_group_metric_category_links') {
-        return {
-          delete: vi.fn(() => ({ eq: deleteLinkEq })),
-        };
-      }
-
       return {};
     }),
+    schema: vi.fn(() => ({
+      from: vi.fn((table: string) => {
+        if (table === 'user_group_metric_categories') {
+          return {
+            select: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                eq: vi.fn(() => ({ maybeSingle: categoryMaybeSingle })),
+              })),
+            })),
+            delete: vi.fn(() => ({
+              eq: vi.fn(() => ({ eq: deleteCategoryWsEq })),
+            })),
+          };
+        }
+
+        if (table === 'user_group_metric_category_links') {
+          return {
+            delete: vi.fn(() => ({ eq: deleteLinkEq })),
+          };
+        }
+
+        return {};
+      }),
+    })),
   };
 
   return {
@@ -117,6 +122,7 @@ describe('user group indicator category item route', () => {
     );
 
     expect(response.status).toBe(200);
+    expect(mocks.adminSupabase.schema).toHaveBeenCalledWith('private');
     expect(mocks.deleteLinkEq).toHaveBeenCalledWith('category_id', CATEGORY_ID);
     expect(mocks.deleteCategoryWsEq).toHaveBeenCalledWith(
       'ws_id',
